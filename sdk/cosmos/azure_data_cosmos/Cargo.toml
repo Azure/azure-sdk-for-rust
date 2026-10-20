@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos"
-version = "0.38.0"
+version = "1.1.0-beta.1"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Cosmos DB"
 readme = "README.md"
 authors.workspace = true
@@ -12,22 +12,26 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_data_cosmos"
 keywords = ["sdk", "cloud", "rest", "nosql"]
 categories = ["api-bindings"]
+exclude.workspace = true
 
 [dependencies]
 async-lock.workspace = true
 async-trait.workspace = true
 azure_core = { workspace = true, default-features = false }
-azure_data_cosmos_driver = { version = "0.7.0", path = "../azure_data_cosmos_driver", default-features = false }
+azure_data_cosmos_driver = { version = "1.1.0-beta.1", path = "../azure_data_cosmos_driver", default-features = false }
 base64.workspace = true
 futures.workspace = true
 opentelemetry = { workspace = true, optional = true, features = ["metrics"] }
 pin-project.workspace = true
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
-serde_json = { workspace = true, features = ["raw_value"] }
+# `float_roundtrip` makes float parsing bit-exact; serde_json's default fast
+# path can land 1 ULP off, which corrupts doubles parsed from text responses.
+serde_json = { workspace = true, features = ["raw_value", "float_roundtrip"] }
 time.workspace = true
 tracing.workspace = true
 url.workspace = true
+uuid = { workspace = true, optional = true, features = ["v4", "fast-rng"] }
 
 # NOTE: Cargo does not support feature-gating dev-dependencies. The `serde` and
 # `tokio test-util` entries below merge into existing features and add no
@@ -72,7 +76,7 @@ tokio = { workspace = true, features = [
   "test-util",
 ] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
-uuid = { workspace = true, features = ["v4", "fast-rng"] }
+uuid = { workspace = true, features = ["v4", "v7", "fast-rng"] }
 
 [lints]
 workspace = true
@@ -90,9 +94,9 @@ rustls = ["reqwest", "azure_data_cosmos_driver/rustls", "__tls"]
 native_tls = ["reqwest", "azure_data_cosmos_driver/native_tls", "__tls"]
 key_auth = [
 ] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
-distributed_tracing = [
+unstable_opentelemetry = [
   "dep:opentelemetry",
-] # Enables the OpenTelemetry distributed-tracing diagnostics handler (off by default)
+] # Enables unstable OpenTelemetry metrics and tracing emission (off by default; OpenTelemetry is in preview)
 control_plane = [
 ] # Enables control-plane APIs: Database and Container CRUD, and Throughput/Offer management. Disabled by default. Intentionally does NOT enable `key_auth` so a future Entra ID control-plane path can opt in without key-based authentication.
 hmac_rust = ["azure_core/hmac_rust"]
@@ -100,12 +104,13 @@ hmac_openssl = ["azure_core/hmac_openssl"]
 fault_injection = [
   "azure_data_cosmos_driver/fault_injection",
 ] # Enables support for fault injection testing
-metrics = [
-  "dep:opentelemetry",
-] # Enables the OpenTelemetry metrics handler (`CosmosMetricsHandler`). Off by default: with the feature disabled the metrics module is not compiled, so there is zero cost.
-preview_dtx = [
-  "azure_data_cosmos_driver/preview_dtx",
-] # Enables preview Distributed Transaction APIs. Disabled by default and not production-ready.
+unstable_dtx = [
+  "azure_data_cosmos_driver/unstable_dtx",
+] # Enables unstable Distributed Transaction APIs. Disabled by default and not production-ready.
+unstable_patch = [
+  "dep:uuid",
+  "azure_data_cosmos_driver/unstable_patch",
+] # Enables the unstable PATCH API with bounded duplicate suppression. Disabled by default.
 __internal_in_memory_emulator = [
   "azure_data_cosmos_driver/__internal_in_memory_emulator",
   "key_auth",
@@ -115,14 +120,14 @@ __tls = []
 
 [package.metadata.docs.rs]
 features = [
-  "distributed_tracing",
   "control_plane",
   "fault_injection",
   "hmac_openssl",
   "hmac_rust",
   "key_auth",
-  "metrics",
+  "unstable_opentelemetry",
   "native_tls",
+  "unstable_patch",
   "rustls",
 ]
 
@@ -133,6 +138,11 @@ features = [
 [[test]]
 name = "emulator"
 path = "tests/emulator.rs"
+required-features = ["key_auth", "control_plane", "fault_injection"]
+
+[[test]]
+name = "live"
+path = "tests/live.rs"
 required-features = ["key_auth", "control_plane", "fault_injection"]
 
 [[test]]
@@ -165,6 +175,17 @@ name = "in_memory_emulator"
 path = "tests/in_memory_emulator.rs"
 required-features = ["__internal_in_memory_emulator"]
 
+[[test]]
+name = "e2e_tests"
+path = "tests/e2e_tests.rs"
+required-features = [
+  "key_auth",
+  "control_plane",
+  "unstable_patch",
+  "fault_injection",
+  "unstable_opentelemetry",
+]
+
 # The `cosmos` example CLI exercises control-plane operations (database and
 # container CRUD, throughput) alongside data-plane commands, so the whole
 # binary requires the `control_plane` feature to compile.
@@ -172,3 +193,10 @@ required-features = ["__internal_in_memory_emulator"]
 name = "cosmos"
 path = "examples/cosmos/main.rs"
 required-features = ["control_plane"]
+
+# The PATCH example calls the unstable `patch_item` API, which only exists
+# when `unstable_patch` is enabled.
+[[example]]
+name = "cosmos_patch"
+path = "examples/cosmos_patch.rs"
+required-features = ["unstable_patch"]

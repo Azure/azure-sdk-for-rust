@@ -24,7 +24,8 @@ pub use query_page::QueryFeedPage;
 // Crate-internal re-exports
 // =========================================================================
 
-#[cfg(feature = "control_plane")]
+// Not gated: `models::response_body` deserializes feed envelopes on the
+// default-feature data plane, not just under `control_plane`.
 pub(crate) use page::FeedBody;
 
 // =========================================================================

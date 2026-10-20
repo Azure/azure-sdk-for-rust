@@ -30,12 +30,12 @@
 //!
 //! 5. **Dual-consistency invariants (V2)** — the V2 RNTBD path must never
 //!    serialize *both* `ConsistencyLevel` and a separate
-//!    `ReadConsistencyStrategy` token. Documented as an invariant lock; the
-//!    underlying RNTBD enum currently exposes only the `ConsistencyLevel`
-//!    token (`tokens.rs`), so the invariant is structurally guaranteed.
+//!    `ReadConsistencyStrategy` token. The inside-crate request-wrapping tests
+//!    assert mutual exclusion; this integration test locks the observable
+//!    transport boundary.
 //!
 //! 6. **Capabilities header pin** — every outgoing request carries
-//!    `x-ms-cosmos-sdk-supportedcapabilities = "8"`. Asserted via the first
+//!    `x-ms-cosmos-sdk-supportedcapabilities = "11"`. Asserted via the first
 //!    captured request through the mock factory.
 //!
 //! ## Why `__internal_mocking`?
@@ -54,7 +54,7 @@ use std::sync::{Arc, Mutex};
 use async_trait::async_trait;
 use azure_data_cosmos_driver::models::AccountReference;
 use azure_data_cosmos_driver::options::DriverOptions;
-use azure_data_cosmos_driver::testing::{
+use azure_data_cosmos_driver::test::{
     ConnectionPoolOptions, HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse,
     TransportClient, TransportError,
 };
@@ -92,7 +92,7 @@ impl TransportClient for CapturingTransport {
 
         Err(TransportError::new(
             azure_data_cosmos_driver::error::CosmosError::builder()
-                .with_status(azure_data_cosmos_driver::CosmosStatus::TRANSPORT_IO_FAILED)
+                .with_status(azure_data_cosmos_driver::error::status_codes::TRANSPORT_IO_FAILED)
                 .with_message("capturing transport refuses every request")
                 .build(),
             azure_data_cosmos_driver::diagnostics::RequestSentStatus::NotSent,
@@ -136,7 +136,7 @@ fn fake_account() -> AccountReference {
         Url::parse("https://gw_v2-pipeline-tests.documents.azure.com/").expect("static URL parses");
     // Master-key value is base64-encoded; the bytes never reach the wire because
     // the capturing transport short-circuits every send.
-    AccountReference::with_master_key(url, "dGVzdC1tYXN0ZXIta2V5")
+    AccountReference::with_account_key(url, "dGVzdC1tYXN0ZXIta2V5")
 }
 
 fn read_env(name: &str) -> Option<String> {
@@ -147,7 +147,7 @@ fn live_account_from_env() -> Option<AccountReference> {
     let endpoint = read_env("AZURE_COSMOS_GW_V2_ENDPOINT")?;
     let key = read_env("AZURE_COSMOS_GW_V2_KEY")?;
     let url = Url::parse(&endpoint).ok()?;
-    Some(AccountReference::with_master_key(url, key))
+    Some(AccountReference::with_account_key(url, key))
 }
 
 /// Builds a runtime with the capturing factory.
@@ -278,11 +278,9 @@ async fn v1_http_never_emits_both_consistency_headers() {
 /// The V2 (RNTBD) path must never serialize *both* a `ConsistencyLevel` token
 /// and a separate `ReadConsistencyStrategy` token on the same wrapped frame.
 ///
-/// Today the RNTBD token enum
-/// (`driver::transport::rntbd::tokens::RntbdRequestToken`) exposes only the
-/// `ConsistencyLevel` variant — there is no `ReadConsistencyStrategy` token
-/// at all — so the invariant is structurally guaranteed by the type system.
-/// This test is therefore a *contract lock* expressed at the boundary this
+/// The RNTBD token enum exposes both `ConsistencyLevel` and
+/// `ReadConsistencyStrategy`, so the request wrapper must enforce mutual
+/// exclusion. This test is a *contract lock* expressed at the boundary this
 /// integration test can actually observe.
 ///
 /// `CapturingTransport` lives at the `HttpClientFactory` layer, so it only
@@ -319,11 +317,7 @@ async fn v2_rntbd_never_emits_both_consistency_tokens() {
     // construction. If this assertion ever fails, RNTBD-bearing traffic has
     // become observable at the HttpClientFactory layer and the body must be
     // structurally decoded to assert mutual exclusion of `ConsistencyLevel`
-    // and any future `ReadConsistencyStrategy` token.
-    //
-    // TODO: when a `ReadConsistencyStrategy` RNTBD token lands,
-    // replace this scheme check with a structural decode of the wrapped
-    // frame and assert at-most-one consistency token per wrapped request.
+    // and `ReadConsistencyStrategy`.
     for req in &captured {
         let scheme = req.url.scheme();
         assert!(
@@ -343,16 +337,11 @@ async fn v2_rntbd_never_emits_both_consistency_tokens() {
 // ----------------------------------------------------------------------------
 
 /// Every outgoing HTTP request must carry
-/// `x-ms-cosmos-sdk-supportedcapabilities: 8`. The bitmask "8" is
-/// `IGNORE_UNKNOWN_RNTBD_TOKENS` (bit 0x08), matching the
-/// `SUPPORTED_CAPABILITIES_IGNORE_UNKNOWN_RNTBD_TOKENS` constant.
-/// Gateway 2.0 inspects this to decide whether
-/// the SDK can tolerate unknown RNTBD tokens; it MUST stay pinned to
-/// "8" in this PR. Additional bits (`PARTITION_MERGE`,
-/// `CHANGE_FEED_WITH_START_TIME_POST_MERGE`) will be added in a
-/// follow-up once their handling is wired through.
+/// `x-ms-cosmos-sdk-supportedcapabilities: 11`. The bitmask combines
+/// `PARTITION_MERGE` (1), `CHANGE_FEED_WITH_START_TIME_POST_MERGE` (2),
+/// and `IGNORE_UNKNOWN_RNTBD_TOKENS` (8).
 #[tokio::test]
-async fn capabilities_header_value_is_pinned_to_eight() {
+async fn capabilities_header_value_is_pinned_to_eleven() {
     const CAPABILITIES: &str = "x-ms-cosmos-sdk-supportedcapabilities";
 
     let (runtime, transport) = capturing_runtime().await;
@@ -370,7 +359,7 @@ async fn capabilities_header_value_is_pinned_to_eight() {
         });
         assert_eq!(
             value.as_deref(),
-            Some("8"),
+            Some("11"),
             "capabilities header missing or wrong on request to {}",
             req.url
         );

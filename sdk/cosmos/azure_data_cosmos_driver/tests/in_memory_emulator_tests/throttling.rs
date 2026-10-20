@@ -10,7 +10,7 @@ static RETRY_AFTER: azure_core::http::headers::HeaderName =
 
 /// Helper to set up a single-region emulator with throttling enabled and a
 /// container provisioned at the given RU/s.
-async fn setup_throttled(throughput_ru: u32) -> TestContext {
+async fn setup_throttled(throughput_ru: u64) -> TestContext {
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
         "East US",
         azure_core::http::Url::parse(GATEWAY_URL).unwrap(),
@@ -476,7 +476,7 @@ async fn fault_injection_429_honors_configurable_throttle_retry_count() {
         .unwrap(),
     );
 
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         azure_core::http::Url::parse(GATEWAY_URL).unwrap(),
         "ZW11bGF0b3Ita2V5",
     );
@@ -533,7 +533,7 @@ async fn fault_injection_429_honors_configurable_throttle_retry_count() {
             .expect("driver should initialize against the in-memory emulator");
 
         let container = driver
-            .resolve_container_by_name("testdb", "testcoll")
+            .resolve_container_by_name("testdb", "testcoll", OperationOptions::default())
             .await
             .expect("container should resolve");
 

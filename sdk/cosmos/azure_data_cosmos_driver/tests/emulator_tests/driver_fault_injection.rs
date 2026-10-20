@@ -7,6 +7,7 @@
 
 use crate::framework::DriverTestClient;
 use azure_data_cosmos_driver::diagnostics::TransportKind;
+use azure_data_cosmos_driver::error::{status_codes, CosmosError};
 use azure_data_cosmos_driver::fault_injection::*;
 use azure_data_cosmos_driver::options::{
     OperationOptions, OperationOptionsBuilder, Region, ThrottlingRetryOptionsBuilder,
@@ -542,10 +543,36 @@ pub async fn gateway_v2_read_session_not_available_remote_preferred() -> Result<
             .create_item(&container, "item1", "pk1", item_json)
             .await?;
 
-        let read_result = context.read_item(&container, "item1", "pk1").await;
-        assert!(
-            read_result.is_err(),
-            "Read should fail when 404/1002 fires on every attempt"
+        let error = context
+            .read_item(&container, "item1", "pk1")
+            .await
+            .expect_err("persistent 404/1002 must surface as a wrapped session failure");
+        let error = error
+            .downcast_ref::<CosmosError>()
+            .expect("the test harness must retain the typed Cosmos error");
+        assert_eq!(
+            error.status(),
+            status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE
+        );
+        let source = error
+            .source()
+            .unwrap()
+            .downcast_ref::<CosmosError>()
+            .unwrap();
+        assert_eq!(source.status(), status_codes::READ_SESSION_NOT_AVAILABLE);
+        assert_eq!(
+            error.diagnostics().unwrap().effective_status(),
+            Some(error.status())
+        );
+        assert_eq!(
+            error
+                .diagnostics()
+                .unwrap()
+                .requests()
+                .last()
+                .unwrap()
+                .status(),
+            &source.status()
         );
 
         // TODO: once diagnostics record metadata-cache hits, assert
@@ -1119,11 +1146,30 @@ pub async fn fault_injection_429_honors_configurable_throttle_retry_count(
             .build(),
         );
 
-        // Pin the throttle-retry budget at the runtime layer of the option
-        // view. A generous cumulative-wait budget keeps the attempt count the
-        // sole limiter for these small retry counts. No end-to-end latency
-        // policy is set, so the transport request carries no deadline and the
-        // forced-final retry is immediate.
+        let metadata_rule = Arc::new(
+            FaultInjectionRuleBuilder::new(
+                "setup-429",
+                FaultInjectionResultBuilder::new()
+                    .with_error(FaultInjectionErrorType::TooManyRequests)
+                    .with_probability(1.0)
+                    .build(),
+            )
+            .with_condition(
+                FaultInjectionConditionBuilder::new()
+                    .with_operation_type(FaultOperationType::MetadataReadContainer)
+                    .build(),
+            )
+            .with_hit_limit(1)
+            .build(),
+        );
+
+        // Pin the throttle-retry budget on the ReadItem operation under test.
+        // Setup and account-metadata operations retain their normal retry
+        // budgets so transient service-side metadata throttling cannot mask the
+        // fault-injection assertion. A generous cumulative-wait budget keeps
+        // the read's attempt count as the sole limiter for these small retry
+        // counts. No end-to-end latency policy is set, so the transport request
+        // carries no deadline and the forced-final retry is immediate.
         let operation_options = OperationOptionsBuilder::new()
             .with_throttling_retry_options(
                 ThrottlingRetryOptionsBuilder::new()
@@ -1134,45 +1180,49 @@ pub async fn fault_injection_429_honors_configurable_throttle_retry_count(
             .build();
 
         let rule_for_assert = Arc::clone(&rule);
-        Box::pin(
-            DriverTestClient::run_with_unique_db_and_fault_injection_options(
-                vec![rule],
-                operation_options,
-                async move |context, database| {
-                    let container_name = context.unique_container_name();
-                    let container = context
-                        .create_container(&database, &container_name, "/pk")
-                        .await?;
+        Box::pin(DriverTestClient::run_with_unique_db_and_fault_injection(
+            vec![rule, Arc::clone(&metadata_rule)],
+            async move |context, database| {
+                let container_name = context.unique_container_name();
+                let container = context
+                    .create_container(&database, &container_name, "/pk")
+                    .await?;
+                assert_eq!(
+                    metadata_rule.hit_count(),
+                    1,
+                    "setup must recover from metadata 429"
+                );
 
-                    // Seed the item with a write. The fault rule targets only
-                    // ReadItem, so the seeding write is unaffected.
-                    let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
-                    context
-                        .create_item(&container, "item1", "pk1", item_json)
-                        .await?;
+                // Seed the item with a write. The fault rule targets only
+                // ReadItem, so the seeding write is unaffected.
+                let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
+                context
+                    .create_item(&container, "item1", "pk1", item_json)
+                    .await?;
 
-                    // The read always observes 429 and ultimately fails once
-                    // the throttle budget is exhausted.
-                    let read_result = context.read_item(&container, "item1", "pk1").await;
-                    assert!(
-                        read_result.is_err(),
-                        "read must fail once the throttle budget is exhausted \
+                // The read always observes 429 and ultimately fails once
+                // the throttle budget is exhausted.
+                let read_result = context
+                    .read_item_with_options(&container, "item1", "pk1", operation_options)
+                    .await;
+                assert!(
+                    read_result.is_err(),
+                    "read must fail once the throttle budget is exhausted \
                          (max_throttle_retry_count={max_throttle_retry_count})",
-                    );
+                );
 
-                    assert_eq!(
-                        rule_for_assert.hit_count(),
-                        expected_hits,
-                        "max_throttle_retry_count={max_throttle_retry_count} must yield \
+                assert_eq!(
+                    rule_for_assert.hit_count(),
+                    expected_hits,
+                    "max_throttle_retry_count={max_throttle_retry_count} must yield \
                          {expected_hits} ReadItem attempts on the wire, but the 429 fault \
                          rule fired {} time(s)",
-                        rule_for_assert.hit_count(),
-                    );
+                    rule_for_assert.hit_count(),
+                );
 
-                    Ok(())
-                },
-            ),
-        )
+                Ok(())
+            },
+        ))
         .await?;
     }
 

@@ -13,6 +13,10 @@
 //!
 //! See [`super::validation`] for the header/body comparison rules.
 
+use azure_data_cosmos_driver::error::{
+    status_codes::{CLIENT_READ_SESSION_NOT_AVAILABLE, READ_SESSION_NOT_AVAILABLE},
+    CosmosError, CosmosStatus,
+};
 use azure_data_cosmos_driver::models::{
     CosmosOperation, DatabaseReference, ItemReference, PartitionKey, ResponseBody,
 };
@@ -24,14 +28,17 @@ use azure_data_cosmos_driver::options::Region;
 
 use super::dual_backend::DualBackend;
 use super::validation::{
-    compare_responses, BodyValidationSpec, HeaderValidationSpec, ResponseSnapshot,
+    compare_responses, parse_body_json, BodyValidationSpec, HeaderValidationSpec, ResponseSnapshot,
 };
+use std::error::Error as _;
 use uuid::Uuid;
 
 /// Parses a single-payload response body as JSON without consuming the response.
 fn body_json(response: &CosmosResponse) -> serde_json::Value {
     match response.body() {
-        ResponseBody::Bytes(b) => serde_json::from_slice(b).unwrap(),
+        ResponseBody::Bytes(b) => {
+            parse_body_json(b).expect("response body should parse as text or binary JSON")
+        }
         ResponseBody::NoPayload => panic!("expected single Bytes body, got no payload"),
         ResponseBody::Items(_) => panic!("expected single Bytes body, got feed response"),
     }
@@ -87,14 +94,14 @@ async fn setup_with_container() -> (
     // Resolve containers
     let emu_container = backend
         .emulator_driver
-        .resolve_container(&db_name, container_name)
+        .resolve_container(&db_name, container_name, OperationOptions::default())
         .await
         .unwrap();
 
     let real_container = if let Some(ref real_driver) = backend.real_driver {
         Some(
             real_driver
-                .resolve_container(&db_name, container_name)
+                .resolve_container(&db_name, container_name, OperationOptions::default())
                 .await
                 .unwrap(),
         )
@@ -205,7 +212,7 @@ async fn create_and_read_item_through_driver() {
 )]
 async fn create_database_and_container_through_driver() {
     let backend = DualBackend::setup().await.unwrap();
-    let db_name = format!("dual-cp-{}", &backend.run_id);
+    let db_name = format!("dual-cp-{}", backend.run_id);
     let container_name = "drivercoll";
 
     // ── Create database ──────────────────────────────────────────
@@ -296,7 +303,7 @@ async fn create_database_and_container_through_driver() {
     // Verify container is resolvable on emulator
     let _emu_coll = backend
         .emulator_driver
-        .resolve_container(&db_name, container_name)
+        .resolve_container(&db_name, container_name, OperationOptions::default())
         .await
         .unwrap();
 
@@ -499,8 +506,96 @@ async fn replace_item_through_driver() {
     backend.cleanup_real_database(&db_name).await;
 }
 
+fn assert_stale_session_read_error(error: &CosmosError, session_default: bool) {
+    if error.status() == CLIENT_READ_SESSION_NOT_AVAILABLE {
+        let source = error
+            .source()
+            .and_then(|source| source.downcast_ref::<CosmosError>())
+            .expect("a wrapped session failure must retain its original Cosmos error");
+        assert_eq!(source.status(), READ_SESSION_NOT_AVAILABLE, "{error:?}");
+    } else {
+        // A non-Session backend may ignore the token, but then the missing item
+        // must produce a plain 404, not a transport or routing failure.
+        assert!(
+            !session_default,
+            "expected a wrapped session failure: {error:?}"
+        );
+        assert_eq!(
+            error.status().status_code(),
+            azure_core::http::StatusCode::NotFound,
+            "{error:?}"
+        );
+        assert!(
+            error
+                .status()
+                .sub_status()
+                .is_none_or(|sub| sub.value() == 0),
+            "{error:?}"
+        );
+    }
+}
+
+#[test]
+fn stale_session_assertion_accepts_wrappers_independently_of_account_default() {
+    let error = CosmosError::builder()
+        .with_status(CLIENT_READ_SESSION_NOT_AVAILABLE)
+        .with_source(
+            CosmosError::builder()
+                .with_status(READ_SESSION_NOT_AVAILABLE)
+                .build(),
+        )
+        .build();
+    for session_default in [false, true] {
+        assert_stale_session_read_error(&error, session_default);
+    }
+}
+
+#[test]
+fn stale_session_assertion_accepts_only_plain_not_found_when_token_is_ignored() {
+    for status in [
+        CosmosStatus::new(azure_core::http::StatusCode::NotFound),
+        CosmosStatus::new(azure_core::http::StatusCode::NotFound).with_sub_status(0),
+    ] {
+        assert_stale_session_read_error(&CosmosError::builder().with_status(status).build(), false);
+    }
+}
+
+#[test]
+fn stale_session_assertion_rejects_unrelated_failures() {
+    for status in [
+        CosmosStatus::new(azure_core::http::StatusCode::ServiceUnavailable),
+        azure_data_cosmos_driver::error::status_codes::TRANSPORT_IO_FAILED,
+        azure_data_cosmos_driver::error::status_codes::CLIENT_WRITE_FORBIDDEN,
+        azure_data_cosmos_driver::error::status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
+        CosmosStatus::new(azure_core::http::StatusCode::NotFound).with_sub_status(1003),
+        READ_SESSION_NOT_AVAILABLE,
+    ] {
+        assert!(
+            std::panic::catch_unwind(|| {
+                assert_stale_session_read_error(
+                    &CosmosError::builder().with_status(status).build(),
+                    false,
+                );
+            })
+            .is_err(),
+            "unexpectedly accepted {status}"
+        );
+    }
+}
+
+#[test]
+#[should_panic(expected = "expected a wrapped session failure")]
+fn stale_session_assertion_rejects_plain_not_found_for_session_default() {
+    assert_stale_session_read_error(
+        &CosmosError::builder()
+            .with_status(CosmosStatus::new(azure_core::http::StatusCode::NotFound))
+            .build(),
+        true,
+    );
+}
+
 #[tokio::test]
-async fn read_with_stale_session_token_returns_404_1002() {
+async fn read_with_stale_session_token_returns_wrapped_503() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
     // We first do a write to get a real session token (with the correct PKRange
@@ -593,17 +688,7 @@ async fn read_with_stale_session_token_returns_404_1002() {
         .await;
 
     let emu_err = emu_err.expect_err("Emulator should return an error for stale session read");
-    assert_eq!(
-        Some(emu_err.status().status_code()),
-        Some(azure_core::http::StatusCode::NotFound),
-        "Emulator error should be HTTP 404",
-    );
-    let error_code = emu_err.status().sub_status().map(|s| s.value().to_string());
-    assert_eq!(
-        error_code.as_deref(),
-        Some("1002"),
-        "Emulator error should have substatus 1002",
-    );
+    assert_stale_session_read_error(&emu_err, true);
 
     // ── Real account (if available) ──────────────────────────────
     if let (Some(ref driver), Some(ref real_ctr)) = (&backend.real_driver, &real_container) {
@@ -639,25 +724,10 @@ async fn read_with_stale_session_token_returns_404_1002() {
             .await;
 
         let real_err = real_err.expect_err("Real should return an error for stale session read");
-        // The read targets a nonexistent item, so it returns HTTP 404 on every
-        // consistency level. Under Session the seed-derived token's bumped LSN
-        // additionally trips the soft 404 / sub-status 1002 (ReadSessionNotAvailable)
-        // path (asserted below); Eventual/Strong ignore the token entirely.
-        assert_eq!(
-            real_err.status().status_code(),
-            azure_core::http::StatusCode::NotFound,
-            "Real stale session read should return HTTP 404",
+        assert_stale_session_read_error(
+            &real_err,
+            DualBackend::real_account_uses_session_consistency(),
         );
-        // Substatus 1002 is only produced under Session consistency; on
-        // Eventual/Strong accounts the stale token is ignored and the missing
-        // item surfaces as a plain 404/0. Only assert 1002 on Session accounts.
-        if DualBackend::real_account_uses_session_consistency() {
-            assert_eq!(
-                real_err.status().sub_status().map(|s| s.value()),
-                Some(1002),
-                "Real 404 stale session read should surface substatus 1002",
-            );
-        }
     }
 
     // Cleanup
@@ -871,7 +941,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
     );
     emulator_store.pause_replication("West US");
 
-    let account = AccountReference::with_master_key(Url::parse(east_url).unwrap(), "dGVzdGtleQ==");
+    let account = AccountReference::with_account_key(Url::parse(east_url).unwrap(), "dGVzdGtleQ==");
     let driver = emulator_runtime
         .create_driver(
             DriverOptionsBuilder::new(account)
@@ -882,7 +952,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .unwrap();
 
     let container = driver
-        .resolve_container(&db_name, "hub-testcoll")
+        .resolve_container(&db_name, "hub-testcoll", OperationOptions::default())
         .await
         .unwrap();
 
@@ -951,9 +1021,44 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .await
         .expect_err("paused satellite should not observe the hub write yet");
     assert_eq!(
-        Some(west_read_before_resume.status().status_code()),
-        Some(azure_core::http::StatusCode::NotFound),
+        west_read_before_resume.status(),
+        CLIENT_READ_SESSION_NOT_AVAILABLE,
         "read should fail while West US replication is paused",
+    );
+
+    let session_retry = OperationOptionsBuilder::new()
+        .with_availability_strategy(
+            azure_data_cosmos_driver::options::AvailabilityStrategy::Disabled,
+        )
+        .build();
+    let recovered_read = driver
+        .execute_singleton_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "hub-item",
+            )),
+            session_retry,
+        )
+        .await
+        .expect("session retry must route the stale read to a caught-up endpoint");
+    assert_eq!(
+        recovered_read.status().status_code(),
+        azure_core::http::StatusCode::Ok
+    );
+    assert!(
+        recovered_read
+            .diagnostics()
+            .requests()
+            .iter()
+            .any(|request| {
+                request.status().status_code() == azure_core::http::StatusCode::NotFound
+                    && request
+                        .status()
+                        .sub_status()
+                        .is_some_and(|sub_status| sub_status.value() == 1002)
+            }),
+        "session recovery must observe 404/1002 from the paused preferred region"
     );
 
     emulator_store.resume_replication("West US");
@@ -1020,7 +1125,7 @@ async fn create_retries_after_429_throttling() {
             .unwrap(),
     );
 
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         Url::parse("https://eastus.emulator.local").unwrap(),
         "dGVzdGtleQ==",
     );
@@ -1029,7 +1134,7 @@ async fn create_retries_after_429_throttling() {
         .await
         .unwrap();
     let container = driver
-        .resolve_container(&db_name, "throttle_coll")
+        .resolve_container(&db_name, "throttle_coll", OperationOptions::default())
         .await
         .unwrap();
 
@@ -1138,9 +1243,7 @@ async fn read_failover_on_503_via_fault_injection() {
     use azure_data_cosmos_driver::options::DriverOptionsBuilder;
     use std::sync::Arc;
 
-    let _ = tracing_subscriber::fmt::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-        .try_init();
+    super::init_test_tracing();
 
     // ── Fault injection rule: 503 on ReadItem in East US ─────────
     let fault_result = FaultInjectionResultBuilder::new()
@@ -1198,7 +1301,7 @@ async fn read_failover_on_503_via_fault_injection() {
     );
 
     let emu_account =
-        AccountReference::with_master_key(Url::parse(east_url).unwrap(), "dGVzdGtleQ==");
+        AccountReference::with_account_key(Url::parse(east_url).unwrap(), "dGVzdGtleQ==");
     let emu_driver_opts = DriverOptionsBuilder::new(emu_account.clone())
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
         .with_fault_injection_rules(vec![Arc::clone(&emu_rule)])
@@ -1210,7 +1313,7 @@ async fn read_failover_on_503_via_fault_injection() {
         .unwrap();
 
     let emu_container = emu_driver
-        .resolve_container("fi-testdb", "fi-testcoll")
+        .resolve_container("fi-testdb", "fi-testcoll", OperationOptions::default())
         .await
         .unwrap();
 
@@ -1358,7 +1461,7 @@ async fn try_real_failover_comparison(
     let conn_str: ConnectionString = conn_str_raw.parse().ok()?;
     let endpoint: Url = conn_str.account_endpoint().parse().ok()?;
     let key = conn_str.account_key().secret().to_string();
-    let account = AccountReference::with_master_key(endpoint, key);
+    let account = AccountReference::with_account_key(endpoint, key);
 
     // Reset shared hit count for the real leg.
     shared_hit_count.store(0, std::sync::atomic::Ordering::SeqCst);
@@ -1424,7 +1527,7 @@ async fn try_real_failover_comparison(
         .ok()?;
 
     let container = driver
-        .resolve_container(&db_name, "fi-testcoll")
+        .resolve_container(&db_name, "fi-testcoll", OperationOptions::default())
         .await
         .ok()?;
 
@@ -1498,13 +1601,13 @@ async fn setup_with_v1_container() -> (
 
     let emu_container = backend
         .emulator_driver
-        .resolve_container(&db_name, container_name)
+        .resolve_container(&db_name, container_name, OperationOptions::default())
         .await
         .unwrap();
     let real_container = if let Some(ref real_driver) = backend.real_driver {
         Some(
             real_driver
-                .resolve_container(&db_name, container_name)
+                .resolve_container(&db_name, container_name, OperationOptions::default())
                 .await
                 .unwrap(),
         )

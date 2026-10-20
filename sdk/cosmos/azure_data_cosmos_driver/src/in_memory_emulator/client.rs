@@ -14,14 +14,13 @@ use azure_core::Bytes;
 use super::config::VirtualAccountConfig;
 use super::dispatch::{parse_request, resolve_region};
 use super::observer::RequestObserver;
-use super::operations::handle_operation;
+use super::operations::{database_account_not_found_response, handle_operation};
 use super::store::EmulatorStore;
 use crate::driver::transport::cosmos_transport_client::{
     HttpRequest as DriverHttpRequest, HttpResponse as DriverHttpResponse, TransportClient,
     TransportError,
 };
 use crate::driver::transport::http_client_factory::{HttpClientConfig, HttpClientFactory};
-use crate::models::CosmosStatus;
 use crate::options::ConnectionPoolOptions;
 
 /// An HTTP client that intercepts all requests and serves them from an in-memory store.
@@ -47,10 +46,16 @@ pub struct InMemoryEmulatorHttpClient {
 impl InMemoryEmulatorHttpClient {
     /// Creates a new emulator HTTP client with the given virtual account configuration.
     pub fn new(config: VirtualAccountConfig) -> Self {
-        Self {
+        Self::try_new(config).expect("invalid in-memory emulator account configuration")
+    }
+
+    /// Tries to create an emulator HTTP client with the given virtual account configuration.
+    pub fn try_new(config: VirtualAccountConfig) -> crate::error::Result<Self> {
+        config.validate()?;
+        Ok(Self {
             store: EmulatorStore::new(config),
             request_observer: None,
-        }
+        })
     }
 
     /// Returns a handle to the underlying emulator store for test hooks and provisioning.
@@ -94,7 +99,7 @@ impl InMemoryEmulatorHttpClient {
     /// ));
     ///
     /// let runtime = emulator.runtime_builder().build().await?;
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://eastus.emulator.local").unwrap(),
     ///     "emulator-key",
     /// );
@@ -129,7 +134,9 @@ impl InMemoryEmulatorHttpClient {
         let fault_factory = Arc::new(
             crate::fault_injection::FaultInjectingHttpClientFactory::new(emulator_factory, rules),
         );
-        crate::driver::CosmosDriverRuntimeBuilder::new().with_http_client_factory(fault_factory)
+        crate::driver::CosmosDriverRuntimeBuilder::new()
+            .with_http_client_factory(fault_factory)
+            .with_fault_injection_enabled(true)
     }
 }
 
@@ -160,9 +167,39 @@ impl InMemoryEmulatorHttpClient {
 
         let parsed = parse_request(request);
 
-        // Resolve region from URL
+        // Retired regions still resolve: a client keeps sending to a removed
+        // endpoint until its next topology refresh, and the service answers
+        // those with 403/1008 rather than failing to route.
         let region_name = match resolve_region(request.url(), self.store.config()) {
-            Some(r) => r,
+            Some(resolved) if resolved.status.is_unreachable() => {
+                // An offlined region has had its regional DNS record withdrawn,
+                // so the request never reaches the service. Surfacing a Cosmos
+                // 403/1008 here would be wrong: the driver's transport layer
+                // classifies this as `TRANSPORT_DNS_FAILED`, and that is the
+                // path a client actually takes against an offlined region.
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::status_codes::TRANSPORT_DNS_FAILED)
+                    .with_message(format!(
+                        "in-memory emulator: region '{}' is offline; its endpoint \
+                         does not resolve",
+                        resolved.name
+                    ))
+                    .build());
+            }
+            Some(resolved) if !resolved.status.is_unavailable() => resolved.name,
+            Some(_) => {
+                // The service names the account in this error, derived from the
+                // regional host it was called on.
+                let account_id = request
+                    .url()
+                    .host_str()
+                    .and_then(|host| host.split('.').next())
+                    .unwrap_or("emulator-account");
+                return Ok(database_account_not_found_response(
+                    account_id,
+                    std::time::Instant::now(),
+                ));
+            }
             None => {
                 return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
                     .with_message(format!(
@@ -178,7 +215,7 @@ impl InMemoryEmulatorHttpClient {
 
         let response = handle_operation(
             &self.store,
-            region_name,
+            &region_name,
             &parsed,
             request.headers(),
             &body_bytes,
@@ -247,7 +284,7 @@ impl TransportClient for EmulatorTransportClient {
         // Collect the buffered response
         let raw = async_response.try_into_raw_response().await.map_err(|e| {
             let cosmos_err = crate::error::CosmosError::builder()
-                .with_status(CosmosStatus::TRANSPORT_BODY_READ_FAILED)
+                .with_status(crate::error::status_codes::TRANSPORT_BODY_READ_FAILED)
                 .with_message(e.to_string())
                 .with_source(e)
                 .build();

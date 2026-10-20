@@ -6,7 +6,8 @@
 #![allow(clippy::large_futures)]
 
 use std::{
-    borrow::Cow, collections::BTreeSet, error::Error, num::NonZeroU32, sync::Arc, time::Duration,
+    borrow::Cow, collections::BTreeSet, error::Error, future::Future, num::NonZeroU32, sync::Arc,
+    time::Duration,
 };
 
 use azure_core::{
@@ -18,13 +19,14 @@ use azure_data_cosmos::{
     models::{ContainerProperties, PartitionKeyDefinition, PartitionKeyVersion},
     options::{
         ConnectionPoolOptions, ExcludedRegions, MaxItemCountHint, OperationOptions, QueryOptions,
-        Region, ServerCertificateValidation,
+        QueryPlanMode, Region, ServerCertificateValidation,
     },
     AccountEndpoint, AccountReference, ContainerClient, CosmosClient, CosmosClientBuilder,
     CosmosRuntimeBuilder, FeedScope, PartitionKey, Query, RoutingStrategy,
 };
 use azure_data_cosmos_driver::{
     driver::CosmosDriverRuntime,
+    error::CosmosError,
     in_memory_emulator::{
         ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
         VirtualRegion,
@@ -73,9 +75,7 @@ impl QueryComparisonHarness {
     }
 
     async fn setup_with_external(include_external: bool) -> Result<Self, Box<dyn Error>> {
-        let _ = tracing_subscriber::fmt::fmt()
-            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-            .try_init();
+        super::init_test_tracing();
 
         let run_id = Uuid::new_v4().to_string()[..8].to_string();
         let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
@@ -87,7 +87,7 @@ impl QueryComparisonHarness {
         let emulator_store = emulator.store();
 
         let emulator_driver_runtime = emulator.runtime_builder().build().await?;
-        let emulator_driver_account = DriverAccountReference::with_master_key(
+        let emulator_driver_account = DriverAccountReference::with_account_key(
             azure_core::http::Url::parse(EMULATOR_GATEWAY_URL)?,
             "dGVzdGtleQ==",
         );
@@ -156,16 +156,68 @@ async fn resolve_external_backend() -> Result<Option<Backend>, Box<dyn Error>> {
     let endpoint = connection.account_endpoint().to_owned();
     let key = connection.account_key().secret().to_string();
 
-    let initial_driver =
-        build_external_driver(&endpoint, &key, OperationOptions::default(), None).await?;
+    let initial_driver = retry_transport_generated_503("initial external driver", || {
+        build_external_driver(&endpoint, &key, OperationOptions::default(), None)
+    })
+    .await?;
     let (hub_region, excluded_regions) = resolve_hub_region_and_exclusions(&initial_driver).await;
     let mut default_options = OperationOptions::default();
     default_options.excluded_regions = excluded_regions;
 
-    let client =
-        build_external_client(&endpoint, &key, default_options.clone(), hub_region.clone()).await?;
-    let driver = build_external_driver(&endpoint, &key, default_options, Some(hub_region)).await?;
+    let client = retry_transport_generated_503("external client", || {
+        build_external_client(&endpoint, &key, default_options.clone(), hub_region.clone())
+    })
+    .await?;
+    let driver = retry_transport_generated_503("external driver", || {
+        build_external_driver(
+            &endpoint,
+            &key,
+            default_options.clone(),
+            Some(hub_region.clone()),
+        )
+    })
+    .await?;
     Ok(Some(Backend { client, driver }))
+}
+
+fn is_transport_generated_503(error: &(dyn Error + 'static)) -> bool {
+    let mut current = Some(error);
+    while let Some(error) = current {
+        if let Some(cosmos) = error.downcast_ref::<CosmosError>() {
+            return cosmos.status().is_transport_generated_503();
+        }
+        current = error.source();
+    }
+    false
+}
+
+async fn retry_transport_generated_503<T, F, Fut>(
+    description: &str,
+    mut operation: F,
+) -> Result<T, Box<dyn Error>>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = Result<T, Box<dyn Error>>>,
+{
+    const MAX_ATTEMPTS: u32 = 12;
+    let mut backoff = Duration::from_millis(250);
+
+    for attempt in 1..=MAX_ATTEMPTS {
+        match operation().await {
+            Ok(result) => return Ok(result),
+            Err(error) if is_transport_generated_503(error.as_ref()) && attempt < MAX_ATTEMPTS => {
+                eprintln!(
+                    "[query-comparison] {description} hit a transport-generated 503 on attempt \
+                     {attempt}/{MAX_ATTEMPTS}; retrying in {backoff:?}: {error}"
+                );
+                tokio::time::sleep(backoff).await;
+                backoff = (backoff * 2).min(Duration::from_secs(5));
+            }
+            Err(error) => return Err(error),
+        }
+    }
+
+    unreachable!("the bounded retry loop always returns on its final attempt")
 }
 
 async fn build_external_client(
@@ -201,7 +253,7 @@ async fn build_external_driver(
         .with_default_operation_options(default_options)
         .build()
         .await?;
-    let account = DriverAccountReference::with_master_key(endpoint.parse()?, key.to_owned());
+    let account = DriverAccountReference::with_account_key(endpoint.parse()?, key.to_owned());
     let mut builder = DriverOptions::builder(account);
     if let Some(region) = hub_region {
         builder = builder.with_preferred_regions(vec![region]);
@@ -256,6 +308,110 @@ enum FixtureKind {
     HashV1,
     HashV2,
     Hpk,
+}
+
+#[tokio::test]
+async fn buffered_query_policy_per_query_options_and_hierarchical_routing(
+) -> Result<(), Box<dyn Error>> {
+    let harness = QueryComparisonHarness::setup_in_memory_only().await?;
+    let handles = provision_fixture_with_topology(
+        &harness,
+        "buffered-policy",
+        FixtureKind::Hpk,
+        Some(ContainerConfig::new().with_partition_count(1).build()?),
+        &[],
+    )
+    .await?;
+    let query = "SELECT DISTINCT VALUE c.value FROM c";
+    let ranges = handles.emulator_container.read_feed_ranges(None).await?;
+    assert_eq!(ranges.len(), 1);
+    for mode in [QueryPlanMode::LocalPreferred, QueryPlanMode::GatewayOnly] {
+        let client = CosmosClientBuilder::new()
+            .with_runtime(
+                CosmosRuntimeBuilder::from(harness.emulator_http.runtime_builder())
+                    .build()
+                    .await?,
+            )
+            .build(
+                AccountReference::with_authentication_key(
+                    EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>()?,
+                    Secret::new("dGVzdGtleQ=="),
+                ),
+                RoutingStrategy::ProximityTo(Region::EAST_US),
+            )
+            .await?;
+        let container = client
+            .database_client("buffered-policy")
+            .container_client("hpk", None)
+            .await?;
+        for (scope, buffered, expected_count) in [
+            (FeedScope::full_container(), true, handles.documents.len()),
+            (
+                FeedScope::range(ranges[0].clone()),
+                true,
+                handles.documents.len(),
+            ),
+            (FeedScope::partition("tenant-a"), true, 7),
+            (
+                FeedScope::partition(("tenant-a", "user-1", "session-1")),
+                false,
+                1,
+            ),
+        ] {
+            for (sql, maximum, denied) in [
+                (query, None, true),
+                (query, Some(u64::MAX), true),
+                ("SELECT DISTINCT TOP 1000 VALUE c.value FROM c", None, false),
+                ("SELECT DISTINCT TOP 1001 VALUE c.value FROM c", None, true),
+                (
+                    "SELECT DISTINCT TOP 1001 VALUE c.value FROM c",
+                    Some(1001),
+                    false,
+                ),
+                (
+                    "SELECT DISTINCT TOP 1000 VALUE c.value FROM c",
+                    Some(999),
+                    true,
+                ),
+            ] {
+                let mut options = QueryOptions::default()
+                    .with_query_plan_mode(mode)
+                    .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));
+                if let Some(maximum) = maximum {
+                    options = options.with_max_buffered_query_window(maximum);
+                }
+                let result = container
+                    .query_items::<Value>(sql, scope.clone(), Some(options))
+                    .await;
+                if buffered && denied {
+                    let error = match result {
+                        Err(error) => error,
+                        Ok(_) => {
+                            panic!("unbounded buffered query must fail before creating a pager")
+                        }
+                    };
+                    assert_eq!(
+                        error.status(),
+                        azure_data_cosmos_driver::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+                    );
+                } else {
+                    let mut pages = result?.into_pages();
+                    if buffered {
+                        assert_eq!(
+                            pages.to_continuation_token().unwrap_err().status(),
+                            azure_data_cosmos_driver::error::status_codes::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED
+                        );
+                    }
+                    let mut values = Vec::new();
+                    while let Some(page) = pages.next().await {
+                        values.extend(page?.into_items());
+                    }
+                    assert_eq!(values.len(), expected_count);
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 impl FixtureKind {
@@ -350,7 +506,7 @@ async fn provision_fixture_with_topology(
     let emulator_driver_container = harness
         .emulator
         .driver
-        .resolve_container(db_name, container_name)
+        .resolve_container(db_name, container_name, OperationOptions::default())
         .await?;
     split_physical_partitions_at_points(harness, db_name, container_name, split_points).await?;
 
@@ -369,7 +525,7 @@ async fn provision_fixture_with_topology(
         .emulator
         .client
         .database_client(db_name)
-        .container_client(container_name)
+        .container_client(container_name, None)
         .await?;
     let external_container = if let Some(external) = &harness.external {
         Some(resolve_container_when_ready(&external.client, db_name, container_name).await?)
@@ -387,7 +543,7 @@ async fn provision_fixture_with_topology(
         Some(
             external
                 .driver
-                .resolve_container(db_name, container_name)
+                .resolve_container(db_name, container_name, OperationOptions::default())
                 .await?,
         )
     } else {
@@ -528,7 +684,7 @@ async fn resolve_container_when_ready(
     loop {
         match client
             .database_client(db_name)
-            .container_client(container_name)
+            .container_client(container_name, None)
             .await
         {
             Ok(container) => return Ok(container),
@@ -1163,8 +1319,8 @@ fn query_plan_ranges(plan: &Value) -> Result<Vec<EpkRangeBounds>, Box<dyn Error>
                 std::io::Error::other(format!("query range missing max: {range}"))
             })?;
             Ok(EpkRangeBounds {
-                min: EffectivePartitionKey::from(min),
-                max: EffectivePartitionKey::from(max),
+                min: EffectivePartitionKey::try_from(min)?,
+                max: EffectivePartitionKey::try_from(max)?,
             })
         })
         .collect()

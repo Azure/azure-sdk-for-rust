@@ -10,6 +10,9 @@
 
 ### Bugs Fixed
 
+- Fixed challenge authentication to cache challenge scopes only after challenge resource verification succeeds, preventing
+  rejected challenges from being reused by later requests.
+
 ### Other Changes
 
 - Avoided double-deserializing pager responses by using borrowed `nextLink` parsing in Key Vault keys list operations.

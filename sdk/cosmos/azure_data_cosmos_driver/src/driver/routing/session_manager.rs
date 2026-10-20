@@ -6,10 +6,11 @@
 //! [`SessionManager`] wraps [`SessionContainer`] and provides consistency-gated
 //! resolve / capture operations that the pipeline calls directly.
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 use crate::models::partition_key_range::PartitionKeyRange;
 use crate::models::{
-    CosmosOperation, CosmosResponseHeaders, OperationType, ResourceType, SessionToken,
+    ContainerReference, CosmosOperation, CosmosResponseHeaders, OperationType, ResourceType,
+    SessionToken,
 };
 
 use super::session_container::SessionContainer;
@@ -63,11 +64,11 @@ impl SessionManager {
     /// 1. If the user explicitly provided a session token via
     ///    [`CosmosOperation::with_session_token`](crate::models::CosmosOperation::with_session_token), use that.
     /// 2. If the request targets a specific partition-key range (`pk_range_id`
-    ///    is `Some`), return only that range's cached token. The RNTBD/thin-client
-    ///    backend rejects a multi-range composite token on a partition-scoped
-    ///    request with `"Session token specified is invalid."`, so a scoped
-    ///    request must carry only its own range's token (matching direct-mode
-    ///    semantics). Returns `None` when that range has no cached token yet.
+    ///    is `Some`), return only that range's cached token. Parent-aware callers
+    ///    may additionally re-key merged parent vectors for a freshly split
+    ///    child. The RNTBD/thin-client backend rejects a multi-range composite
+    ///    token on a partition-scoped request with `"Session token specified is
+    ///    invalid."`, so a scoped request must carry one range segment.
     /// 3. Otherwise (no resolved range — e.g. a not-yet-routed or non-partitioned
     ///    request), fall back to the full composite cached by container.
     ///
@@ -78,21 +79,34 @@ impl SessionManager {
         user_token: Option<&SessionToken>,
         pk_range_id: Option<&str>,
     ) -> Option<SessionToken> {
+        self.resolve_session_token_with_parents(operation, user_token, pk_range_id, &[])
+    }
+
+    /// Checks whether automatic session resolution has any cached token to scope.
+    pub(crate) fn has_session_token(&self, operation: &CosmosOperation) -> bool {
+        operation
+            .container()
+            .is_some_and(|container| self.container.has_session_token(container))
+    }
+
+    /// Resolves a scoped token, falling back to parent vectors after a split.
+    pub(crate) fn resolve_session_token_with_parents(
+        &self,
+        operation: &CosmosOperation,
+        user_token: Option<&SessionToken>,
+        pk_range_id: Option<&str>,
+        parents: &[String],
+    ) -> Option<SessionToken> {
         // User-provided token takes precedence
         if let Some(token) = user_token {
             return Some(token.clone());
         }
 
-        // TODO(partition-key-range-parents): When a PKRange cache is available,
-        // use it to resolve parent range IDs during splits/merges. Currently
-        // only the direct RID is looked up. Java uses PartitionKeyRangeCache to
-        // map child ranges back to their parent session tokens.
-
         let container = operation.container()?;
         match pk_range_id {
             Some(pk_range_id) => self
                 .container
-                .resolve_session_token_for_range(container, pk_range_id),
+                .resolve_session_token_for_partition_key_range(container, pk_range_id, parents),
             None => self.container.resolve_session_token(container),
         }
     }
@@ -132,8 +146,18 @@ impl SessionManager {
         self.container.set_session_token(container, session_token);
     }
 
+    /// Clears the old RID's cached tokens and moves the logical container name
+    /// to the replacement RID.
+    pub(crate) fn remap_container(
+        &self,
+        old: &ContainerReference,
+        new: &ContainerReference,
+    ) -> bool {
+        self.container.remap_container(old, new)
+    }
+
     /// Merges per-operation DTX session tokens into the shared session cache.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub(crate) fn merge_distributed_transaction_session_tokens(
         &self,
         response: &crate::models::DistributedTransactionResponse,
@@ -190,7 +214,7 @@ impl SessionManager {
     /// that cannot produce a token, it falls back to the compound
     /// collection-level token so the coordinator can select the relevant
     /// segment.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub(crate) fn resolve_distributed_transaction_session_token(
         &self,
         operation: &crate::models::DistributedTransactionOperation,
@@ -215,7 +239,7 @@ impl SessionManager {
     }
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn dtx_malformed_session_token_error(message: String) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
         .with_status(crate::error::CosmosStatus::new(
@@ -236,7 +260,7 @@ mod tests {
     use url::Url;
 
     fn test_container() -> ContainerReference {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -310,6 +334,29 @@ mod tests {
     }
 
     #[test]
+    fn resolves_split_child_from_parent_session_token() {
+        let mgr = SessionManager::new();
+        let container = test_container();
+        let op = CosmosOperation::read_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let headers = make_response_headers(
+            Some("parent:1#100#1=10"),
+            Some("coll_rid1"),
+            Some("dbs/db1/colls/coll1"),
+        );
+        mgr.capture_session_token(&op, &headers);
+
+        let token = mgr
+            .resolve_session_token_with_parents(&op, None, Some("child"), &["parent".to_string()])
+            .unwrap();
+
+        assert_eq!(token.as_str(), "child:1#100#1=10");
+    }
+
+    #[test]
     fn capture_skips_missing_session_token() {
         let mgr = SessionManager::new();
         let container = test_container();
@@ -357,7 +404,7 @@ mod tests {
         let mgr = SessionManager::new();
 
         // Capture a token for a container with a specific RID
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -430,7 +477,7 @@ mod tests {
         assert_eq!(token.as_str(), "0:1#100");
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_merge_valid_token_updates_session_cache() {
         use crate::models::{
@@ -482,7 +529,7 @@ mod tests {
         assert_eq!(token.as_str(), "0:1#100#1=10");
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_split_session_token_without_pk_range_prefix_errors_under_session_consistency() {
         use crate::models::{
@@ -531,7 +578,7 @@ mod tests {
         );
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_malformed_success_token_errors_under_session_consistency() {
         use crate::models::{
@@ -580,7 +627,7 @@ mod tests {
         );
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_malformed_success_token_is_lenient_without_session_consistency() {
         use crate::models::{
@@ -626,7 +673,7 @@ mod tests {
             .unwrap();
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_token_without_colon_errors_even_with_pk_range_under_session_consistency() {
         use crate::models::{
@@ -683,7 +730,7 @@ mod tests {
             .unwrap();
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_not_modified_sub_operation_skipped_under_session_consistency() {
         use crate::models::{
@@ -740,7 +787,7 @@ mod tests {
         assert!(mgr.resolve_session_token(&read_op, None, None).is_none());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_merges_successful_sub_operation_token_on_non_success_response() {
         use crate::models::{
@@ -795,7 +842,7 @@ mod tests {
         assert_eq!(token.as_str(), "0:1#100#1=10");
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_resolve_stamps_cached_token_and_preserves_user_token() {
         use crate::models::{
@@ -907,7 +954,7 @@ mod tests {
     fn multiple_containers_isolated() {
         let mgr = SessionManager::new();
 
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -1070,7 +1117,7 @@ mod tests {
         // Container Create targets data partitions (NOT master), but the
         // operation has no ContainerReference so capture is skipped.
         let mgr = SessionManager::new();
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -1118,7 +1165,7 @@ mod tests {
     fn capture_skipped_for_container_read_feed() {
         // Container ReadFeed (list containers) targets master, so skip capture.
         let mgr = SessionManager::new();
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );

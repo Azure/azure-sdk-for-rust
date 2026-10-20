@@ -8,6 +8,22 @@ This file contains coding guidelines and architectural patterns specific to the 
 
 ## Core Principles
 
+### Documentation navigation
+
+- Start with [`docs/README.md`](docs/README.md) to inventory Cosmos project
+  documentation.
+- Read [`docs/Project.md`](docs/Project.md) and
+  [`docs/Architecture.md`](docs/Architecture.md) for project and architecture
+  context, then use the indexes in `docs/README.md` to find relevant specs,
+  ADRs, and reports.
+- Do not use relative links in `docs/`. Keep useful target paths as plain code
+  instead, for example, `specs/0017-patch-handler.md`. Use absolute links from
+  crate READMEs.
+- Do not link from Markdown to Rust source files. Those implementation links
+  atrophy as code moves.
+- Do not load the entire documentation set when only a few indexed documents
+  are relevant.
+
 ### Design guidelines
 
 - Follow the [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html) as the primary reference for API design, error handling, async patterns, and module organization unless they conflict with Cosmos-specific requirements outlined below or in other `cosmos.*.instructions.md` files.
@@ -55,6 +71,15 @@ impl std::str::FromStr for MyType {
 If you need a non-fallible parse internally, create a **private** helper method and have the trait implementation call it.
 
 **Encode domain semantics in trait impls**: When a type has a domain-specific comparison rule, ordering, or equality definition, implement it directly in the type's `Ord`/`PartialOrd`/`Eq` traits rather than creating standalone helper functions that callers must remember to use. This prevents inconsistency — every comparison automatically gets the right semantics, and you can't accidentally use the wrong one.
+
+### Integer Type Selection
+
+Choose integer types deliberately; don't default to `usize` or `i32` out of habit:
+
+- Use `usize` **only** for memory-related numbers (addresses, array indices, memory/buffer sizes) — including at FFI boundaries when the number refers to memory.
+- Use a specific-size integer when it's necessary for a specific, well-understood memory optimization (e.g., packing a struct), or to match an FFI/ABI requirement.
+- Use `u16` or `u32` for domain numbers when they will clearly fit — not just "`u16`/`u32` should be enough", but "more than 65,535/4 billion of these would be ridiculous" (e.g., retry counts, byte offsets within a single document).
+- Use `u64` for domain numbers when the expected range isn't clear, or is known to potentially exceed 32 bits.
 
 ### Cosmos-Specific Patterns
 
@@ -152,13 +177,26 @@ The Cosmos DB implementation is split across three crates with distinct purposes
 
 ### Schema-Agnostic Data Plane Principle
 
-**Critical Architectural Rule**: `azure_data_cosmos_driver` is completely ignorant of document/item schemas and serialization formats.
+**Critical Architectural Rule**: `azure_data_cosmos_driver` is completely ignorant of document/item *schemas*.
 
 **Rationale**:
 
 - Cosmos DB is a **schemaless database** - item structure is application-defined
 - Driver must support multiple language SDKs (Rust, Java, .NET, Python) each with native serialization patterns
-- Serialization is a **core capability** that must be handled natively in the consuming SDK
+- Mapping items to application types is a **core capability** that must be handled natively in the consuming SDK
+
+**Where the wire encoding sits**: schema-ignorance does *not* extend to the Cosmos binary
+wire encoding. That encoding is negotiated with the service by the driver, on a header the
+driver owns (`x-ms-cosmos-supported-serialization-formats`), and the query pipeline cannot
+do its job without understanding it — nodes such as the ordered merge and `SkipTake` split
+a feed envelope apart, re-order documents across pages, and reassemble a new envelope. That
+is impossible to do over opaque bytes. So the boundary is:
+
+- **Driver owns the *envelope* and the wire encoding**: negotiating it, parsing feed pages,
+  and emitting pages in the negotiated encoding.
+- **SDK owns the *item***: turning a document's bytes into an application type and back.
+
+The driver never inspects or depends on the fields *inside* a document.
 
 **Driver Data Plane Contract**:
 
@@ -201,7 +239,18 @@ where
 }
 ```
 
-**Content Encoding**: UTF-8 JSON vs Cosmos binary encoding is detected automatically based on the first byte value (transparent to API).
+**Content Encoding**: a *received* body is recognized as UTF-8 JSON or Cosmos binary from its
+first byte, so decoding is transparent to the API. Do **not** extend that sniffing to decide
+what a pipeline node *emits* — the emitted encoding is a property of the operation
+(`CosmosOperation::emits_binary_payload`), not of the bytes that happened to arrive. Deriving
+emission from received bytes lets two nodes in the same pipeline disagree when the service
+answers in a format other than the one that was requested.
+
+Note `emits_binary_payload` rather than `negotiates_binary_response`: the former is what the
+caller receives, the latter is what the wire carries. They diverge under
+`BinaryEncodingOptions::request_text_response`, where the wire stays binary but the driver
+hands back text — so a node keyed off the wire format would re-encode items that
+`execute_plan` immediately decodes again.
 
 **Implications**:
 
@@ -223,11 +272,11 @@ where
 - ✅ **Management/metadata resource representations**: Account properties, offers, database properties, container properties, partition key ranges (NOT data plane documents/items)
 - ✅ **Supporting structures**: Types that are properties of models (IndexingPolicy, PartitionKeyDefinition, VectorEmbeddingPolicy, consistency levels, indexing modes, connection modes)
 - ✅ **Operation-specific envelopes**: Structures created for operation support (TransactionalBatch, PatchInstructions, BulkOperations)
-- ✅ **Header/wire values**: Types serialized into request headers or body (ETag, SessionToken, PartitionKey, TriggerReference, ThroughputControlGroupName)
+- ✅ **Header/wire values**: Types serialized into request headers or body (ETag, SessionToken, PartitionKey, TriggerReference)
 
 **Exclude from `models/` (use dedicated modules)**:
 
-- ❌ **Configuration/options types** → `options/` module (e.g., Region for excluded regions, TriggerOptions for which triggers to use, ThroughputControlGroupOptions)
+- ❌ **Configuration/options types** → `options/` module (e.g., Region for excluded regions, TriggerOptions for which triggers to use, ThroughputControlOptions)
 - ❌ Client types → `clients/` module
 - ❌ Error types → `error.rs` or crate root
 - ❌ **Diagnostics/telemetry types** → `diagnostics/` module
@@ -449,11 +498,11 @@ Run cspell to check for spelling errors in changed files (requires Node.js):
 pwsh eng/common/scripts/check-spelling-in-changed-files.ps1 -TargetCommittish "upstream/main"
 ```
 
-To fix spelling errors, either correct typos in source code or add legitimate terms to dictionary files:
+To fix spelling errors, either correct typos in source code or add legitimate terms to the appropriate spelling configuration:
 
 - **Crate names**: `eng/dict/crates.txt`
-- **Service-specific terms**: `sdk/<service>/.dict.txt` (e.g., `sdk/cosmos/.dict.txt`)
-- **Global dictionary**: `.vscode/cspell.json`
+- **Cosmos-specific words not in the dictionary**: add them to `ignoreWords` in `sdk/cosmos/.cspell.json`. Do not add Cosmos-specific words to the global `.vscode/cspell.json`; changing the global file triggers reviews from the central SDK reviewers.
+- **Terms shared across SDKs**: `.vscode/cspell.json`
 
 ### Pre-Completion Validation Checklist
 
@@ -534,8 +583,54 @@ Every public API should document:
 - **Performance**: RU/s implications, if relevant
 - **Partition Key**: Whether the operation is partition-scoped
 
+### Source comment references
+
+- Rust source comments and rendered Rustdoc must not contain direct paths or
+  links to Markdown files. Avoid stale pseudo-links such as repository-relative
+  paths written as text or Markdown links.
+- `include_str!` may embed Markdown in a `doc` attribute, including crate
+  READMEs and shared Rustdoc fragments. The compiler validates these paths, and
+  the path is not rendered in the generated documentation.
+- Public doc comments must not reference Cosmos specs or ADRs.
+- Internal doc comments on private or `pub(crate)` items may reference a spec
+  or ADR only by its number and title, for example, "Spec 0017: Patch handler"
+  or "ADR 0005: Flat native ABI data model."
+- Non-doc comments may use the same number-and-title form.
+- Put detailed rationale in `docs/`; use `docs/README.md` to locate it rather
+  than embedding a file path in Rust source.
+
+### Comment Brevity (IMPORTANT)
+
+Keep comments **short and dense**. Long, chatty comment blocks are noise: they age badly, bury the
+signal, and read as filler.
+
+- **Inline comments**: 1–2 lines. 3 is the hard ceiling. Explain *why*, never *what* the code already says.
+- **Doc comments**: lead with a one-sentence summary. Add detail only when a caller genuinely needs it
+  to use the API correctly.
+- **Test comments**: usually unnecessary — a good test name plus a clear assertion message says it.
+  Comment only a non-obvious setup or a subtle invariant.
+- **Never** restate an argument three ways, narrate the diff ("this used to be X, now it's Y"),
+  re-explain something already covered by a nearby doc comment, or write a mini design doc inline.
+  Refer to an applicable spec by number and title only when the source comment
+  rules above allow it.
+- When a rationale really needs paragraphs, it belongs in `docs/`, not in the source.
+
+```rust
+// ❌ BAD: five lines to say one thing
+// This is a client-side re-encode of a payload the driver itself produced,
+// not a malformed service envelope, so it is a serialization fault (not the
+// 500 `SERVICE_ORDER_BY_ENVELOPE_INVALID`). Include the item ordinal to
+// correlate on a large page.
+
+// ✅ GOOD
+// Client-side re-encode failure, not a malformed service envelope.
+```
+
 ## Additional Resources
 
+- [Cosmos documentation index](docs/README.md)
+- [Cosmos project overview](docs/Project.md)
+- [Cosmos architecture overview](docs/Architecture.md)
 - [Azure Cosmos DB REST API Reference](https://learn.microsoft.com/rest/api/cosmos-db/)
 - [Cosmos DB Best Practices](https://learn.microsoft.com/azure/cosmos-db/best-practice-dotnet)
 - [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html)

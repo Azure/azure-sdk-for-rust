@@ -117,7 +117,6 @@ mod tests {
     use super::*;
     use std::sync::RwLock;
 
-    use azure_data_cosmos::CosmosStatus;
     use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
 
     fn seed_cache(n: usize) -> FeedRangeCache {
@@ -150,10 +149,9 @@ mod tests {
         let cache = seed_cache(2);
         refresh_once(&stats, &cache, || async {
             Err(DriverCosmosError::builder()
-                .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_status(azure_data_cosmos_driver::error::status_codes::TRANSPORT_GENERATED_503)
                 .with_message("simulated transport failure")
-                .build()
-                .into())
+                .build())
         })
         .await;
         assert_eq!(cache_len(&cache), 2);

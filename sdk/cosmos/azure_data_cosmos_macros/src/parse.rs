@@ -76,8 +76,12 @@ impl Layer {
 
 /// Parsed representation of a single field in the option struct.
 pub struct OptionField {
+    /// Internal state initialized to None, excluded from configuration resolution.
+    pub skip: bool,
     /// The field name.
     pub ident: Ident,
+    /// Conditional compilation attributes to copy onto generated members.
+    pub cfg_attrs: Vec<syn::Attribute>,
     /// The inner type (unwrapped from `Option<T>`).
     pub inner_type: Type,
     /// The full `Option<T>` type.
@@ -245,6 +249,7 @@ fn parse_fields(data: &DataStruct) -> Result<Vec<OptionField>> {
         })?;
 
         let ParsedOptionAttrs {
+            skip,
             env_var,
             merge,
             nested,
@@ -253,7 +258,14 @@ fn parse_fields(data: &DataStruct) -> Result<Vec<OptionField>> {
         } = parse_option_attrs(&field.attrs)?;
 
         result.push(OptionField {
+            skip,
             ident,
+            cfg_attrs: field
+                .attrs
+                .iter()
+                .filter(|attr| attr.path().is_ident("cfg"))
+                .cloned()
+                .collect(),
             inner_type,
             full_type: field.ty.clone(),
             env_var,
@@ -269,6 +281,7 @@ fn parse_fields(data: &DataStruct) -> Result<Vec<OptionField>> {
 
 /// The parsed `#[option(...)]` field-level attributes for a single field.
 struct ParsedOptionAttrs {
+    skip: bool,
     env_var: Option<String>,
     merge: Option<String>,
     nested: bool,
@@ -277,6 +290,7 @@ struct ParsedOptionAttrs {
 }
 
 fn parse_option_attrs(attrs: &[syn::Attribute]) -> Result<ParsedOptionAttrs> {
+    let mut skip = false;
     let mut env_var = None;
     let mut merge = None;
     let mut nested = false;
@@ -289,7 +303,10 @@ fn parse_option_attrs(attrs: &[syn::Attribute]) -> Result<ParsedOptionAttrs> {
         }
 
         attr.parse_nested_meta(|meta| {
-            if meta.path.is_ident("env") {
+            if meta.path.is_ident("skip") {
+                skip = true;
+                Ok(())
+            } else if meta.path.is_ident("env") {
                 let value = meta.value()?;
                 let lit: syn::LitStr = value.parse()?;
                 env_var = Some(lit.value());
@@ -322,6 +339,12 @@ fn parse_option_attrs(attrs: &[syn::Attribute]) -> Result<ParsedOptionAttrs> {
     }
 
     // Validate attribute combinations.
+    if skip && (env_var.is_some() || merge.is_some() || nested || overridable || parser.is_some()) {
+        return Err(Error::new(
+            Span::call_site(),
+            "`skip` cannot be combined with other option attributes",
+        ));
+    }
     if env_var.is_some() && merge.is_some() {
         return Err(Error::new(
             Span::call_site(),
@@ -354,6 +377,7 @@ fn parse_option_attrs(attrs: &[syn::Attribute]) -> Result<ParsedOptionAttrs> {
     }
 
     Ok(ParsedOptionAttrs {
+        skip,
         env_var,
         merge,
         nested,

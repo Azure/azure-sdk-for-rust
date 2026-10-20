@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "accounts": {
+    "eventual-singlewrite": {
+      "endpoint": "https://REPLACE-eventual-singlewrite.documents.azure.com:443/",
+      "key": "REPLACE_KEY",
+      "secondaryKey": "REPLACE_SECONDARY_KEY",
+      "database": "shared-test-db",
+      "consistency": "Eventual",
+      "testCategory": "emulator",
+      "multiWrite": false,
+      "multiRegion": false,
+      "regions": ["East US 2"]
+    },
+    "session-singlewrite": {
+      "endpoint": "https://REPLACE-session-singlewrite.documents.azure.com:443/",
+      "key": "REPLACE_KEY",
+      "secondaryKey": "REPLACE_SECONDARY_KEY",
+      "database": "shared-test-db",
+      "consistency": "Session",
+      "testCategory": "emulator",
+      "multiWrite": false,
+      "multiRegion": false,
+      "regions": ["East US 2"]
+    },
+    "strong-singlewrite": {
+      "endpoint": "https://REPLACE-strong-singlewrite.documents.azure.com:443/",
+      "key": "REPLACE_KEY",
+      "secondaryKey": "REPLACE_SECONDARY_KEY",
+      "database": "shared-test-db",
+      "consistency": "Strong",
+      "testCategory": "emulator",
+      "multiWrite": false,
+      "multiRegion": false,
+      "regions": ["East US 2"]
+    },
+    "session-multiwrite": {
+      "endpoint": "https://REPLACE-session-multiwrite.documents.azure.com:443/",
+      "key": "REPLACE_KEY",
+      "secondaryKey": "REPLACE_SECONDARY_KEY",
+      "database": "shared-test-db",
+      "consistency": "Session",
+      "testCategory": "multi_write",
+      "multiWrite": true,
+      "multiRegion": true,
+      "regions": ["East US 2", "West US 3"]
+    },
+    "session-split": {
+      "endpoint": "https://REPLACE-session-split.documents.azure.com:443/",
+      "key": "REPLACE_KEY",
+      "secondaryKey": "REPLACE_SECONDARY_KEY",
+      "database": "shared-test-db",
+      "consistency": "Session",
+      "testCategory": "split",
+      "multiWrite": false,
+      "multiRegion": false,
+      "regions": ["East US 2"]
+    },
+    "session-mr-failover": {
+      "endpoint": "https://REPLACE-session-mr-failover.documents.azure.com:443/",
+      "key": "REPLACE_KEY",
+      "secondaryKey": "REPLACE_SECONDARY_KEY",
+      "database": "shared-test-db",
+      "consistency": "Session",
+      "testCategory": "multi_region",
+      "multiWrite": false,
+      "multiRegion": true,
+      "regions": ["East US 2", "West US 3"]
+    }
+  }
+}

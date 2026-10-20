@@ -5,17 +5,22 @@
 //! In-memory document store with multi-region support.
 
 use std::collections::{BTreeMap, HashMap, VecDeque};
-use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
-use super::config::{ContainerConfig, VirtualAccountConfig};
+use super::config::{
+    already_present, ContainerConfig, SeedingPolicy, VirtualAccountConfig, VirtualRegion, WriteMode,
+};
 use super::epk::Epk;
 use super::rid::RidGenerator;
 use super::session::SessionState;
 use crate::models::{PartitionKeyDefinition, PartitionKeyKind, PartitionKeyVersion};
 
 type SplitMergeLocks = HashMap<(String, String), Arc<async_lock::Mutex<()>>>;
+type ReplicationTrackerHandle = Arc<std::sync::Mutex<ReplicationTracker>>;
+type CatchUpJournals = Arc<std::sync::Mutex<HashMap<(String, u64), Vec<PendingReplication>>>>;
+type ReplicationRegistrationHook = Arc<dyn Fn() + Send + Sync>;
 /// Sentinel pkrange id used for control-plane (database/container/offer) session
 /// tokens. Chosen as `u32::MAX` so it cannot collide with any user pkrange id,
 /// since real Cosmos partition counts are bounded far below this value.
@@ -59,32 +64,86 @@ impl ControlPlaneProgression {
     }
 }
 
+struct ControlPlaneExecution {
+    progression: ControlPlaneProgression,
+    completion: Option<futures::channel::oneshot::Sender<Option<ManualControlPlaneResult>>>,
+    transition_guard: Option<async_lock::MutexGuardArc<()>>,
+}
+
+impl ControlPlaneExecution {
+    fn automatic(
+        duration: Duration,
+        completion: Option<futures::channel::oneshot::Sender<Option<ManualControlPlaneResult>>>,
+    ) -> Self {
+        Self {
+            progression: ControlPlaneProgression::Automatic(duration),
+            completion,
+            transition_guard: None,
+        }
+    }
+
+    fn manual(
+        release: futures::channel::oneshot::Receiver<()>,
+        completion: futures::channel::oneshot::Sender<Option<ManualControlPlaneResult>>,
+        transition_guard: async_lock::MutexGuardArc<()>,
+    ) -> Self {
+        Self {
+            progression: ControlPlaneProgression::Manual(release),
+            completion: Some(completion),
+            transition_guard: Some(transition_guard),
+        }
+    }
+}
+
+/// Immutable result captured while a manual split or merge owns its transition guard.
+#[doc(hidden)]
+#[derive(Debug, PartialEq, Eq)]
+pub enum ManualControlPlaneResult {
+    /// The physical partition IDs produced by a split.
+    Split([u32; 2]),
+    /// The physical partition ID produced by a merge.
+    Merge(u32),
+}
+
 /// Handle for a manually progressed split or merge operation.
 #[doc(hidden)]
 pub struct ManualControlPlaneOperation {
     release: Option<futures::channel::oneshot::Sender<()>>,
-    completed: futures::channel::oneshot::Receiver<bool>,
+    completed: futures::channel::oneshot::Receiver<Option<ManualControlPlaneResult>>,
 }
 
 impl ManualControlPlaneOperation {
     /// Releases the operation's partition lock and waits for topology replacement.
-    pub async fn complete(mut self) -> crate::error::Result<()> {
+    pub async fn complete(mut self) -> crate::error::Result<ManualControlPlaneResult> {
         self.release
             .take()
             .ok_or_else(|| host_control_plane_error("manual operation was already released"))?
             .send(())
             .map_err(|_| host_control_plane_error("manual operation task ended before release"))?;
+        self.completed
+            .await
+            .map_err(|_| host_control_plane_error("manual operation ended without a result"))?
+            .ok_or_else(|| {
+                host_control_plane_error(
+                    "manual operation could not update the requested partitions",
+                )
+            })
+    }
+
+    /// Cancels the operation and waits until its partition locks are released.
+    pub async fn cancel(mut self) -> crate::error::Result<()> {
+        self.release.take();
         if self
             .completed
             .await
             .map_err(|_| host_control_plane_error("manual operation ended without a result"))?
+            .is_some()
         {
-            Ok(())
-        } else {
-            Err(host_control_plane_error(
-                "manual operation could not update the requested partitions",
-            ))
+            return Err(host_control_plane_error(
+                "manual operation completed while cancellation was requested",
+            ));
         }
+        Ok(())
     }
 }
 
@@ -207,13 +266,13 @@ pub struct EmulatorStore {
     /// per-id locks is preferable to a remove-on-drop dance that races
     /// fresh acquisitions.
     control_plane_locks: std::sync::Mutex<HashMap<String, Arc<async_lock::Mutex<()>>>>,
-    /// Serializes emulator document writes while preview distributed
+    /// Serializes emulator document writes while unstable distributed
     /// transactions are enabled.
     ///
     /// DTX rollback restores pre-images. Without a transaction-wide write
     /// guard, a concurrent point write can commit between preimage capture and
     /// rollback, then be overwritten by the restore path.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     document_write_lock: Arc<async_lock::Mutex<()>>,
     /// Buffers replication issued while a distributed transaction is applying so
     /// a rollback can discard replicas that were never durably committed.
@@ -225,10 +284,33 @@ pub struct EmulatorStore {
     /// immediate-replication path. On commit the buffer is drained and
     /// replayed; on abort it is dropped so rolled-back writes never reach
     /// secondary regions.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     dtx_replication_capture: std::sync::Mutex<Option<Vec<CapturedReplication>>>,
     /// Tracks spawned replication tasks so tests can drain them.
     replication_tasks: std::sync::Mutex<tokio::task::JoinSet<()>>,
+    /// Coordinates local mutation registration with delayed catch-up.
+    ///
+    /// Writes share the barrier; catch-up takes it exclusively across snapshot
+    /// and finalization.
+    replication_barrier: Arc<async_lock::RwLock<()>>,
+    /// Delayed replications that have been scheduled but not yet applied.
+    ///
+    /// Region enrollment replays this bounded set into the joining replica so
+    /// a mutation already queued for the seed hub cannot fall between the
+    /// source snapshot and target enrollment. The tracker retains the newest
+    /// mutation for an item until every older in-flight mutation completes.
+    replication_tracker: ReplicationTrackerHandle,
+    next_replication_operation_id: AtomicU64,
+    /// Per-incarnation mutation journals for regions using delayed catch-up.
+    ///
+    /// Every replication committed from enrollment through the catch-up timer
+    /// is appended here. After the source snapshot is copied, replaying the
+    /// journal in LWW order preserves later deletes and prevents an
+    /// enrollment-time create from being resurrected.
+    catch_up_journals: CatchUpJournals,
+    next_catch_up_journal_id: AtomicU64,
+    /// Optional deterministic interleaving hook for emulator regression tests.
+    before_replication_registration: std::sync::Mutex<Option<ReplicationRegistrationHook>>,
     /// Tracks spawned split/merge tasks separately from replication so a
     /// control-plane panic does not surface inside an unrelated point-write
     /// handler that happens to call `replicate()`.
@@ -270,7 +352,7 @@ pub struct EmulatorStore {
 
 /// A replication operation buffered during a distributed transaction so it can
 /// be replayed on commit or dropped on rollback.
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 struct CapturedReplication {
     source_region: String,
     db_id: String,
@@ -283,7 +365,7 @@ impl EmulatorStore {
     /// Creates a new store from the given account configuration.
     pub(crate) fn new(config: VirtualAccountConfig) -> Arc<Self> {
         let mut regions = HashMap::new();
-        for region in config.regions() {
+        for region in config.active_regions() {
             regions.insert(region.name().to_string(), Arc::new(RegionStore::new()));
         }
 
@@ -294,11 +376,17 @@ impl EmulatorStore {
 
             split_merge_locks: std::sync::Mutex::new(HashMap::new()),
             control_plane_locks: std::sync::Mutex::new(HashMap::new()),
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             document_write_lock: Arc::new(async_lock::Mutex::new(())),
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_replication_capture: std::sync::Mutex::new(None),
             replication_tasks: std::sync::Mutex::new(tokio::task::JoinSet::new()),
+            replication_barrier: Arc::new(async_lock::RwLock::new(())),
+            replication_tracker: Arc::new(std::sync::Mutex::new(ReplicationTracker::default())),
+            next_replication_operation_id: AtomicU64::new(0),
+            catch_up_journals: Arc::new(std::sync::Mutex::new(HashMap::new())),
+            next_catch_up_journal_id: AtomicU64::new(0),
+            before_replication_registration: std::sync::Mutex::new(None),
             control_plane_tasks: std::sync::Mutex::new(Vec::new()),
             transport_request_counter: AtomicU32::new(0),
             replication_semaphore: Arc::new(tokio::sync::Semaphore::new(
@@ -473,14 +561,27 @@ impl EmulatorStore {
         self.control_plane_lock(&format!("{}::{}", db, coll))
     }
 
-    /// Returns the preview-DTX document write lock.
-    #[cfg(feature = "preview_dtx")]
+    /// Returns the unstable-DTX document write lock.
+    #[cfg(feature = "unstable_dtx")]
     pub(crate) fn document_write_lock(&self) -> Arc<async_lock::Mutex<()>> {
         self.document_write_lock.clone()
     }
 
-    /// Returns the preview-DTX document write lock for internal emulator tests.
-    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn replication_barrier(&self) -> Arc<async_lock::RwLock<()>> {
+        Arc::clone(&self.replication_barrier)
+    }
+
+    /// Sets a hook invoked after local commit and before replication registration.
+    #[doc(hidden)]
+    pub fn set_before_replication_registration_hook_for_tests(
+        &self,
+        hook: Option<Arc<dyn Fn() + Send + Sync>>,
+    ) {
+        *self.before_replication_registration.lock().unwrap() = hook;
+    }
+
+    /// Returns the unstable-DTX document write lock for internal emulator tests.
+    #[cfg(feature = "unstable_dtx")]
     #[doc(hidden)]
     pub fn document_write_lock_for_tests(&self) -> Arc<async_lock::Mutex<()>> {
         self.document_write_lock.clone()
@@ -606,6 +707,23 @@ impl EmulatorStore {
         pk_def: PartitionKeyDefinition,
         config: ContainerConfig,
     ) -> ContainerMetadata {
+        self.create_container_with_properties_internal(
+            db_id,
+            coll_id,
+            pk_def,
+            config,
+            serde_json::Map::new(),
+        )
+    }
+
+    pub(crate) fn create_container_with_properties_internal(
+        &self,
+        db_id: &str,
+        coll_id: &str,
+        pk_def: PartitionKeyDefinition,
+        config: ContainerConfig,
+        properties: serde_json::Map<String, serde_json::Value>,
+    ) -> ContainerMetadata {
         let db_meta = {
             let regions = self.regions.read().unwrap();
             let region = regions.values().next().unwrap();
@@ -627,6 +745,7 @@ impl EmulatorStore {
             self_link: format!("dbs/{}/colls/{}/", db_meta.rid, coll_rid),
             etag: new_etag(),
             partition_key: pk_def,
+            properties,
             partition_count: config.partition_count(),
             partition_key_range_page_size: config.partition_key_range_page_size(),
             provisioned_throughput_ru: config.provisioned_throughput_ru(),
@@ -673,10 +792,32 @@ impl EmulatorStore {
         meta
     }
 
+    pub(crate) fn replace_container_properties(
+        &self,
+        db_id: &str,
+        coll_id: &str,
+        properties: serde_json::Map<String, serde_json::Value>,
+    ) -> Option<ContainerMetadata> {
+        let ts = current_timestamp();
+        let etag = new_etag();
+        let regions = self.regions.read().unwrap();
+        let mut updated = None;
+        for region in regions.values() {
+            let mut containers = region.containers.write().unwrap();
+            if let Some(container) = containers.get_mut(&(db_id.to_owned(), coll_id.to_owned())) {
+                container.metadata.ts = ts;
+                container.metadata.etag = etag.clone();
+                container.metadata.properties = properties.clone();
+                updated = Some(container.metadata.clone());
+            }
+        }
+        updated
+    }
+
     pub(crate) fn replace_offer_internal(
         &self,
         offer_id: &str,
-        throughput: u32,
+        throughput: u64,
     ) -> Option<OfferMetadata> {
         let regions = self.regions.read().unwrap();
         let ts = current_timestamp();
@@ -853,10 +994,357 @@ impl EmulatorStore {
                 ))
                 .build()
         })?;
-        partition
-            .session_state
-            .set_force_unavailable_for(&epk.to_hex());
+        partition.session_state.set_force_unavailable_for(&epk);
         Ok(())
+    }
+
+    /// Adds a region to the account at runtime.
+    ///
+    /// The new region is seeded from the current write region (mirroring the
+    /// initial replication a joining region receives) and inserted into the
+    /// store before being advertised in the account topology, so a running
+    /// driver picks it up on its next background account refresh with no
+    /// restart and never resolves it before it can serve requests.
+    ///
+    /// Errors with `400` if the region is already part of the account.
+    pub fn add_region(
+        &self,
+        region: VirtualRegion,
+        seeding: SeedingPolicy,
+    ) -> crate::error::Result<()> {
+        let region_name = region.name().to_string();
+        let catch_up_journal_id = matches!(seeding, SeedingPolicy::Delayed(_))
+            .then(|| self.next_catch_up_journal_id.fetch_add(1, Ordering::SeqCst));
+        // Hold the map's write lock across source selection, snapshot, and
+        // target insertion. Replication discovers targets under the matching
+        // read lock, so a concurrent write is either included in the snapshot
+        // or sees the newly enrolled target -- it cannot fall between both.
+        //
+        // Resolving the current hub under this same lock also closes the race
+        // where a prior hub is removed between reading its name and looking up
+        // its store.
+        let (region_store, seed_source) = {
+            let mut regions = self.regions.write().unwrap();
+            if regions.contains_key(&region_name) {
+                return Err(already_present(&region_name));
+            }
+            let source_name = self.config.write_region_name();
+            let source = regions
+                .get(&source_name)
+                .map(Arc::clone)
+                .expect("the current write region must have a region store");
+            if source.containers.read().unwrap().values().any(|container| {
+                container
+                    .physical_partitions
+                    .iter()
+                    .any(PhysicalPartition::is_locked)
+            }) {
+                return Err(partition_transition_conflict());
+            }
+            let region_store = RegionStore::seeded_from(&source);
+            if matches!(seeding, SeedingPolicy::Delayed(_)) {
+                region_store.clear_documents();
+            }
+
+            // Replay mutations that were committed before enrollment but have
+            // not reached every existing replica yet. Delayed tasks remain in
+            // the replication tracker until apply; paused targets retain their
+            // entries in per-region buffers. A write beginning after this
+            // snapshot blocks on the regions read lock and will discover the
+            // newly inserted target normally.
+            let mut pending: Vec<PendingReplication> = {
+                // Keep the same tracker -> journals lock order as
+                // `replicate`. Journal creation and replication registration
+                // are atomic relative to each other: a mutation is either in
+                // this initial snapshot or appended to the new journal.
+                let tracker = self.replication_tracker.lock().unwrap();
+                let pending = tracker.replay_snapshot();
+                if let Some(journal_id) = catch_up_journal_id {
+                    self.catch_up_journals
+                        .lock()
+                        .unwrap()
+                        .insert((region_name.clone(), journal_id), pending.clone());
+                }
+                pending
+            };
+            let mut buffered = Vec::new();
+            for existing_region in regions.values() {
+                buffered.extend(
+                    existing_region
+                        .replication_buffer
+                        .read()
+                        .unwrap()
+                        .iter()
+                        .cloned(),
+                );
+            }
+            if let Some(journal_id) = catch_up_journal_id {
+                self.catch_up_journals
+                    .lock()
+                    .unwrap()
+                    .get_mut(&(region_name.clone(), journal_id))
+                    .expect("catch-up journal was created above")
+                    .extend(buffered);
+            } else {
+                pending.extend(buffered);
+                sort_pending_replications(&mut pending);
+                for entry in &pending {
+                    region_store.apply_pending_replication(entry);
+                }
+            }
+
+            let region_store = Arc::new(region_store);
+            regions.insert(region_name.clone(), Arc::clone(&region_store));
+            (region_store, source)
+        };
+
+        let hidden_until_ready = matches!(seeding, SeedingPolicy::HiddenUntilReady(_));
+        let add_operation_id = match self.config.add_region(region, hidden_until_ready) {
+            Ok((_, operation_id)) => operation_id,
+            Err(error) => {
+                self.regions.write().unwrap().remove(&region_name);
+                if let Some(journal_id) = catch_up_journal_id {
+                    self.catch_up_journals
+                        .lock()
+                        .unwrap()
+                        .remove(&(region_name.clone(), journal_id));
+                }
+                return Err(error);
+            }
+        };
+
+        // Only after the region is published, so the new region's own partitions
+        // are included in the bump and every region agrees on the version.
+        self.advance_vector_clock_versions();
+
+        if let SeedingPolicy::Delayed(delay) = seeding {
+            // Delayed intentionally starts empty, then takes a later snapshot.
+            // This preserves the original policy's observable lag behavior.
+            let target = Arc::clone(&region_store);
+            let barrier = Arc::clone(&self.replication_barrier);
+            let tracker = Arc::clone(&self.replication_tracker);
+            let journals = Arc::clone(&self.catch_up_journals);
+            let journal_key = (
+                region_name.clone(),
+                catch_up_journal_id.expect("Delayed always allocates a catch-up journal"),
+            );
+            tokio::spawn(async move {
+                tokio::time::sleep(delay).await;
+                let _replication_guard = barrier.write().await;
+                target.catch_up_from(&seed_source);
+                // Match replication registration's tracker -> journals lock
+                // order. A mutation registered before finalization either
+                // appends before removal or blocks finalization at in-flight.
+                let tracker_guard = tracker.lock().unwrap();
+                let mut journals_guard = journals.lock().unwrap();
+                let mut pending = journals_guard.remove(&journal_key).unwrap_or_default();
+                sort_pending_replications(&mut pending);
+                for entry in &pending {
+                    target.apply_pending_replication(entry);
+                }
+                // Keep registration blocked until ordered replay is complete:
+                // no mutation can apply to the target between journal removal
+                // and replay.
+                drop(journals_guard);
+                drop(tracker_guard);
+            });
+        } else if let SeedingPolicy::HiddenUntilReady(delay) = seeding {
+            // Hidden buildout is already internally seeded and participates in
+            // normal replication while external clients cannot see or write to
+            // it. Completion therefore changes visibility only -- no late
+            // snapshot can overwrite newer writes or miss deletion tombstones.
+            let config = self.config.clone();
+            let completion_region_name = region_name.clone();
+            let operation_id =
+                add_operation_id.expect("HiddenUntilReady always allocates an operation ID");
+            tokio::spawn(async move {
+                tokio::time::sleep(delay).await;
+                config.complete_region_add(&completion_region_name, operation_id);
+            });
+        }
+
+        Ok(())
+    }
+
+    /// Advances every partition's vector-clock version across all regions.
+    ///
+    /// A region membership change bumps the session-token version on the live
+    /// service (observed: `-1 -> 0` on add, `2 -> 3` on remove, `3 -> 4` on
+    /// re-add). That bump is what makes a client's older token safe: region
+    /// entries recorded under a previous version are superseded rather than
+    /// compared against a topology that no longer exists.
+    ///
+    /// Applied uniformly to every region so the versions cannot diverge.
+    fn advance_vector_clock_versions(&self) {
+        let regions = self.regions.read().unwrap();
+        for region in regions.values() {
+            let containers = region.containers.read().unwrap();
+            for state in containers.values() {
+                for partition in &state.physical_partitions {
+                    partition
+                        .vector_clock_version
+                        .fetch_add(1, Ordering::SeqCst);
+                }
+            }
+        }
+    }
+
+    /// Starts draining a region at runtime: its endpoint begins rejecting
+    /// requests with `403/1008` while the account read still advertises it.
+    ///
+    /// Reproduces the real removal ordering — the regional endpoint fails within
+    /// seconds, the account read keeps listing the region for minutes — so a
+    /// client that refreshes topology in response to the 1008 still gets the
+    /// dead region back. Follow with [`Self::remove_region`] to complete it.
+    pub fn begin_region_removal(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.begin_region_removal(region_name)
+    }
+
+    /// Aborts an in-flight region removal, returning a draining region to
+    /// normal service. Without this, draining would be a one-way door.
+    pub fn cancel_region_removal(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.cancel_region_removal(region_name)
+    }
+
+    /// Removes a region from the account at runtime.
+    ///
+    /// The region's data is dropped, but its endpoint stays resolvable and
+    /// answers `403/1008 DatabaseAccountNotFound` — matching what the service
+    /// returns to a client that has not yet refreshed its topology.
+    ///
+    /// Errors with `400` if the region is unknown, is the last region, or is the
+    /// current write region.
+    pub fn remove_region(&self, region_name: &str) -> crate::error::Result<()> {
+        // Bump versions *before* publishing the new membership. The reverse
+        // order leaves a window where account reads already show the region
+        // gone while partitions still expose the pre-change version, so a token
+        // naming the removed region is compared instead of superseded. Bumping
+        // first errs the other way -- tokens are superseded a moment early,
+        // which is the safe direction.
+        //
+        // Pre-flight first so a rejected removal has no side effects; `config`
+        // stays the single source of the error messages.
+        let topology = self.config.topology_snapshot();
+        let removable = topology.active.len() > 1
+            && topology.write_region != region_name
+            && topology.active.iter().any(|r| r.name() == region_name);
+        if !removable {
+            return self.config.remove_region(region_name);
+        }
+
+        self.advance_vector_clock_versions();
+        self.config.remove_region(region_name)?;
+        {
+            // Match replication registration's tracker -> journals order so
+            // no mutation can append to an orphaned journal during cleanup.
+            let _tracker = self.replication_tracker.lock().unwrap();
+            self.catch_up_journals
+                .lock()
+                .unwrap()
+                .retain(|(name, _), _| name != region_name);
+        }
+        self.regions.write().unwrap().remove(region_name);
+        Ok(())
+    }
+
+    /// Switches the account between single- and multi-write at runtime.
+    pub fn set_write_mode(&self, mode: WriteMode) {
+        self.config.set_write_mode(mode);
+    }
+
+    /// Revokes local write status from a satellite region of a multi-write
+    /// account without removing it from the advertised location lists.
+    ///
+    /// Writes routed there fail with `403/3 WriteForbidden`; reads continue to
+    /// work. The hub write region cannot be revoked.
+    pub fn revoke_region_write(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.revoke_region_write(region_name)
+    }
+
+    /// Restores local write status to a previously revoked satellite region.
+    pub fn restore_region_write(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.restore_region_write(region_name)
+    }
+
+    /// Moves write ownership to another region, as a failover would.
+    ///
+    /// Writes to the demoted region then fail with `403/3 WriteForbidden`.
+    pub fn set_write_region(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.set_write_region(region_name)
+    }
+
+    /// Takes a region out of service, as the ARM `offlineRegion` operation does.
+    ///
+    /// The region stays a member of the account but disappears from both
+    /// `readableLocations` and `writableLocations`, and its endpoint stops
+    /// resolving: requests routed there fail with `503/20012
+    /// TransportDnsFailed` rather than the `403/1008` a *removed* region
+    /// returns.
+    ///
+    /// Offlining the write region is permitted and fails over to the next
+    /// region in priority order, matching the service. Errors with `400` if the
+    /// region is unknown or is the last one still online.
+    ///
+    /// The region's data store is retained, so bringing it back with
+    /// [`Self::set_region_online`] restores it without re-seeding -- an offline
+    /// region keeps its replica, unlike a removed one.
+    pub fn set_region_offline(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.set_region_offline(region_name)
+    }
+
+    /// Returns an offlined region to service.
+    ///
+    /// Does not restore write ownership if offlining this region caused a
+    /// failover.
+    ///
+    /// On a live account the corresponding `onlineRegion` operation is gated
+    /// behind an account capability that is off by default.
+    pub fn set_region_online(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.set_region_online(region_name)
+    }
+
+    /// Reorders the account's failover priorities, as the ARM
+    /// `failoverPriorityChange` operation does.
+    ///
+    /// `order` must name every active region exactly once. A reorder that
+    /// changes position 0 moves the account hub in both modes. Under
+    /// [`WriteMode::Single`] that is also a manual failover and moves exclusive
+    /// write ownership; under multi-write the other eligible regions remain
+    /// writable.
+    pub fn set_failover_priorities(&self, order: &[&str]) -> crate::error::Result<()> {
+        self.config.set_failover_priorities(order)
+    }
+
+    /// Announces an upcoming failover without moving write ownership.
+    ///
+    /// `writableLocations` widens to include the incoming region while the
+    /// **outgoing** region still accepts writes — the leading edge of a
+    /// failover, modeling the service's `Topology.NextWriteRegion`. Observed on
+    /// a live account as a ~6 s window in which both regions were advertised
+    /// and writes to the outgoing region still returned `201`.
+    ///
+    /// The full transition is `announce_failover` → [`Self::begin_failover`] →
+    /// [`Self::complete_failover`].
+    pub fn announce_failover(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.announce_failover(region_name)
+    }
+
+    /// Begins a manual failover, entering the state where both the outgoing and
+    /// incoming write regions are advertised as writable while
+    /// `enableMultipleWriteLocations` stays `false`.
+    ///
+    /// Write ownership moves immediately, so the outgoing region rejects writes
+    /// with `403/3` while still being advertised -- the stale-payload race a
+    /// real failover exposes. Call [`Self::complete_failover`] to narrow the
+    /// payload to the new write region.
+    pub fn begin_failover(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.begin_failover(region_name)
+    }
+
+    /// Ends an in-flight failover, narrowing `writableLocations` to the single
+    /// current write region.
+    pub fn complete_failover(&self) {
+        self.config.complete_failover();
     }
 
     /// Pauses replication TO the given target region.
@@ -946,7 +1434,7 @@ impl EmulatorStore {
         // DTX write path holds `document_write_lock` for the whole transaction,
         // which serializes all emulator writes, so this cannot capture an
         // unrelated concurrent write's replication.
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         {
             let mut capture = self.dtx_replication_capture.lock().unwrap();
             if let Some(buffer) = capture.as_mut() {
@@ -993,6 +1481,34 @@ impl EmulatorStore {
             }
         }
 
+        // Register before target discovery. add_region snapshots this map while
+        // holding regions.write(), so a concurrent enrollment either replays
+        // this mutation or the discovery below sees the newly inserted target.
+        // Immediate and delayed replication share the same ordering guarantee.
+        let operation_id = self
+            .next_replication_operation_id
+            .fetch_add(1, Ordering::SeqCst);
+        let pending_replication = PendingReplication {
+            db_id: db_id.to_string(),
+            coll_id: coll_id.to_string(),
+            source_region: source_region.to_string(),
+            doc: doc.clone(),
+            is_delete,
+        };
+        let registration_hook = self.before_replication_registration.lock().unwrap().clone();
+        if let Some(hook) = registration_hook {
+            hook();
+        }
+        {
+            // Match add_region's tracker -> journals lock order.
+            let mut tracker = self.replication_tracker.lock().unwrap();
+            let mut journals = self.catch_up_journals.lock().unwrap();
+            tracker.register(operation_id, pending_replication.clone());
+            for journal in journals.values_mut() {
+                journal.push(pending_replication.clone());
+            }
+        }
+
         let regions = self.regions.read().unwrap();
         let region_names: Vec<String> = regions
             .keys()
@@ -1000,6 +1516,15 @@ impl EmulatorStore {
             .cloned()
             .collect();
         drop(regions);
+
+        if region_names.is_empty() {
+            self.replication_tracker
+                .lock()
+                .unwrap()
+                .complete(operation_id);
+            return;
+        }
+        let remaining_targets = Arc::new(AtomicUsize::new(region_names.len()));
 
         for target_name in region_names {
             let repl_config = self.config.replication_for(source_region, &target_name);
@@ -1015,6 +1540,7 @@ impl EmulatorStore {
             if delay.is_zero() {
                 // Immediate replication — no async needed
                 store.apply_replication(&target, &source, &db, &coll, &document, is_delete);
+                store.complete_replication_target(operation_id, &remaining_targets);
             } else {
                 // Async delayed replication. Bound concurrency via the
                 // per-store semaphore so a burst of writes against a multi-
@@ -1023,13 +1549,24 @@ impl EmulatorStore {
                 // apply, which serializes excess work behind the cap.
                 let store_clone = store;
                 let semaphore = Arc::clone(&self.replication_semaphore);
+                let remaining = Arc::clone(&remaining_targets);
                 self.replication_tasks.lock().unwrap().spawn(async move {
                     let _permit = semaphore.acquire_owned().await.ok();
                     tokio::time::sleep(delay).await;
                     store_clone
                         .apply_replication(&target, &source, &db, &coll, &document, is_delete);
+                    store_clone.complete_replication_target(operation_id, &remaining);
                 });
             }
+        }
+    }
+
+    fn complete_replication_target(&self, operation_id: u64, remaining_targets: &AtomicUsize) {
+        if remaining_targets.fetch_sub(1, Ordering::SeqCst) == 1 {
+            self.replication_tracker
+                .lock()
+                .unwrap()
+                .complete(operation_id);
         }
     }
 
@@ -1037,7 +1574,7 @@ impl EmulatorStore {
     /// paired with [`Self::commit_dtx_replication_capture`] (replay) or
     /// [`Self::abort_dtx_replication_capture`] (discard). Called under
     /// `document_write_lock`, which serializes all emulator writes.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub(crate) fn begin_dtx_replication_capture(&self) {
         *self.dtx_replication_capture.lock().unwrap() = Some(Vec::new());
     }
@@ -1045,7 +1582,7 @@ impl EmulatorStore {
     /// Replays every replication buffered since
     /// [`Self::begin_dtx_replication_capture`], then returns to immediate
     /// replication. Called after a distributed transaction commits.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub(crate) fn commit_dtx_replication_capture(self: &Arc<Self>) {
         let captured = self.dtx_replication_capture.lock().unwrap().take();
         let Some(captured) = captured else {
@@ -1066,7 +1603,7 @@ impl EmulatorStore {
     /// [`Self::begin_dtx_replication_capture`], then returns to immediate
     /// replication. Called after a distributed transaction rolls back so
     /// rolled-back writes never reach secondary regions.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub(crate) fn abort_dtx_replication_capture(&self) {
         *self.dtx_replication_capture.lock().unwrap() = None;
     }
@@ -1279,6 +1816,117 @@ impl RegionStore {
             master_partition_lsn: AtomicU64::new(0),
         }
     }
+
+    /// Builds a region store seeded with a snapshot of `source`.
+    ///
+    /// Models the initial replication a region receives when it joins an
+    /// account: it comes online already holding the data, with the same
+    /// partition layout (so post-split layouts carry over) and LSN high-water
+    /// marks as the region it was seeded from. Pending replication buffers are
+    /// deliberately not copied — they belong to the source region.
+    fn seeded_from(source: &RegionStore) -> Self {
+        let seeded = Self::new();
+
+        *seeded.databases.write().unwrap() = source.databases.read().unwrap().clone();
+        *seeded.offers.write().unwrap() = source.offers.read().unwrap().clone();
+        seeded.master_partition_lsn.store(
+            source.master_partition_lsn.load(Ordering::SeqCst),
+            Ordering::SeqCst,
+        );
+
+        let source_containers = source.containers.read().unwrap();
+        let mut containers = seeded.containers.write().unwrap();
+        for (key, state) in source_containers.iter() {
+            containers.insert(
+                key.clone(),
+                ContainerState {
+                    metadata: state.metadata.clone(),
+                    physical_partitions: state
+                        .physical_partitions
+                        .iter()
+                        .map(PhysicalPartition::seeded_copy)
+                        .collect(),
+                },
+            );
+        }
+        drop(containers);
+
+        seeded
+    }
+
+    /// Drops every document **and rewinds the LSN counters**, keeping the
+    /// catalog and partition layout.
+    ///
+    /// Used by [`SeedingPolicy::Delayed`] to emulate the window in which a
+    /// region is advertised in the account topology but has not yet caught up.
+    /// The counters must be rewound along with the documents: session-token
+    /// freshness is judged against them, so a region left at the source's
+    /// high-water mark with no data would report itself fully caught up and
+    /// answer a session read with a bare `404` instead of the
+    /// `404/1002 ReadSessionNotAvailable` a genuinely lagging replica returns.
+    fn clear_documents(&self) {
+        self.master_partition_lsn.store(0, Ordering::SeqCst);
+        let containers = self.containers.read().unwrap();
+        for state in containers.values() {
+            for partition in &state.physical_partitions {
+                partition.documents.write().unwrap().clear();
+                partition.lsn.store(0, Ordering::SeqCst);
+                partition.local_lsn.store(0, Ordering::SeqCst);
+            }
+        }
+    }
+
+    /// Copies documents and LSN high-water marks from `source` into this
+    /// region, completing a [`SeedingPolicy::Delayed`] catch-up.
+    ///
+    /// Only partitions present in both regions are copied; a split that
+    /// happened during the delay window is left for normal replication to
+    /// reconcile.
+    fn catch_up_from(&self, source: &RegionStore) {
+        self.master_partition_lsn.store(
+            source.master_partition_lsn.load(Ordering::SeqCst),
+            Ordering::SeqCst,
+        );
+        let source_containers = source.containers.read().unwrap();
+        let containers = self.containers.read().unwrap();
+        for (key, source_state) in source_containers.iter() {
+            let Some(state) = containers.get(key) else {
+                continue;
+            };
+            for source_partition in &source_state.physical_partitions {
+                let Some(partition) = state
+                    .physical_partitions
+                    .iter()
+                    .find(|p| p.id == source_partition.id)
+                else {
+                    continue;
+                };
+                *partition.documents.write().unwrap() =
+                    source_partition.documents.read().unwrap().clone();
+                partition.lsn.store(
+                    source_partition.lsn.load(Ordering::SeqCst),
+                    Ordering::SeqCst,
+                );
+                partition.local_lsn.store(
+                    source_partition.local_lsn.load(Ordering::SeqCst),
+                    Ordering::SeqCst,
+                );
+            }
+        }
+    }
+
+    /// Applies a pending mutation directly to this joining replica.
+    fn apply_pending_replication(&self, pending: &PendingReplication) {
+        let containers = self.containers.read().unwrap();
+        let key = (pending.db_id.clone(), pending.coll_id.clone());
+        let Some(state) = containers.get(&key) else {
+            return;
+        };
+        let Some(partition) = state.find_partition(&pending.doc.epk) else {
+            return;
+        };
+        apply_doc_to_partition(partition, &pending.doc, pending.is_delete);
+    }
 }
 
 /// Pending replication entry.
@@ -1292,6 +1940,112 @@ pub(crate) struct PendingReplication {
     pub source_region: String,
     pub doc: StoredDocument,
     pub is_delete: bool,
+}
+
+#[derive(Clone, Eq, Ord, PartialEq, PartialOrd)]
+struct ReplicationKey {
+    db_id: String,
+    coll_id: String,
+    epk: Epk,
+    id: String,
+}
+
+struct TrackedReplication {
+    operation_id: u64,
+    pending: PendingReplication,
+}
+
+#[derive(Default)]
+struct ReplicationTracker {
+    in_flight: HashMap<u64, PendingReplication>,
+    in_flight_counts: BTreeMap<ReplicationKey, usize>,
+    latest_by_item: BTreeMap<ReplicationKey, TrackedReplication>,
+}
+
+impl ReplicationTracker {
+    fn register(&mut self, operation_id: u64, pending: PendingReplication) {
+        let key = pending.key();
+        *self.in_flight_counts.entry(key.clone()).or_default() += 1;
+        let should_replace = self
+            .latest_by_item
+            .get(&key)
+            .is_none_or(|tracked| pending.lww_order() > tracked.pending.lww_order());
+        if should_replace {
+            self.latest_by_item.insert(
+                key,
+                TrackedReplication {
+                    operation_id,
+                    pending: pending.clone(),
+                },
+            );
+        }
+        self.in_flight.insert(operation_id, pending);
+    }
+
+    fn complete(&mut self, operation_id: u64) {
+        let Some(pending) = self.in_flight.remove(&operation_id) else {
+            return;
+        };
+        let key = pending.key();
+        let count = self
+            .in_flight_counts
+            .get_mut(&key)
+            .expect("registered replication must have an in-flight count");
+        *count -= 1;
+        if *count == 0 {
+            self.in_flight_counts.remove(&key);
+            self.latest_by_item.remove(&key);
+        }
+    }
+
+    fn replay_snapshot(&self) -> Vec<PendingReplication> {
+        let mut pending: Vec<_> = self.in_flight.values().cloned().collect();
+        pending.extend(
+            self.latest_by_item
+                .values()
+                .filter(|tracked| !self.in_flight.contains_key(&tracked.operation_id))
+                .map(|tracked| tracked.pending.clone()),
+        );
+        pending
+    }
+}
+
+impl PendingReplication {
+    fn key(&self) -> ReplicationKey {
+        ReplicationKey {
+            db_id: self.db_id.clone(),
+            coll_id: self.coll_id.clone(),
+            epk: self.doc.epk.clone(),
+            id: self.doc.id.clone(),
+        }
+    }
+
+    fn lww_order(&self) -> (u64, u64) {
+        (self.doc.ts, self.doc.lsn)
+    }
+}
+
+fn sort_pending_replications(pending: &mut [PendingReplication]) {
+    pending.sort_by(|a, b| {
+        (
+            &a.db_id,
+            &a.coll_id,
+            &a.doc.epk,
+            &a.doc.id,
+            a.doc.ts,
+            a.doc.lsn,
+            &a.source_region,
+        )
+            .cmp(&(
+                &b.db_id,
+                &b.coll_id,
+                &b.doc.epk,
+                &b.doc.id,
+                b.doc.ts,
+                b.doc.lsn,
+                &b.source_region,
+            ))
+    });
 }
 
 /// Database metadata.
@@ -1318,9 +2072,10 @@ pub(crate) struct ContainerMetadata {
     pub self_link: String,
     pub etag: String,
     pub partition_key: PartitionKeyDefinition,
+    pub properties: serde_json::Map<String, serde_json::Value>,
     pub partition_count: u32,
     pub partition_key_range_page_size: Option<u32>,
-    pub provisioned_throughput_ru: Option<u32>,
+    pub provisioned_throughput_ru: Option<u64>,
     /// Shared atomic counter for allocating new partition IDs (split/merge).
     /// Authoritative across *all* regions so partition IDs cannot diverge —
     /// real Cosmos DB pkrange IDs are properties of the container, not the
@@ -1340,7 +2095,7 @@ pub(crate) struct OfferMetadata {
     pub id: String,
     pub rid: String,
     pub offer_resource_id: String,
-    pub throughput: u32,
+    pub throughput: u64,
     pub ts: u64,
     pub self_link: String,
     pub etag: String,
@@ -1405,7 +2160,7 @@ pub(crate) struct PhysicalPartition {
     pub rid_prefix: u32,
     pub throughput_fraction: f64,
     pub parents: Vec<u32>,
-    pub locked: AtomicBool,
+    lock_count: AtomicUsize,
     pub throughput_tracker: Option<ThroughputTracker>,
     /// Replicated writes that arrived while this partition was locked for a
     /// split/merge. `execute_split` / `execute_merge` drain this buffer
@@ -1416,6 +2171,34 @@ pub(crate) struct PhysicalPartition {
 }
 
 impl PhysicalPartition {
+    /// Copies this partition into a freshly seeded region.
+    ///
+    /// Documents and LSN counters carry over so the new region starts at the
+    /// source's high-water mark; transient state (split/merge lock, deferred
+    /// replications, forced session markers) intentionally does not.
+    fn seeded_copy(&self) -> Self {
+        Self {
+            id: self.id,
+            epk_min: self.epk_min.clone(),
+            epk_max: self.epk_max.clone(),
+            lsn: AtomicU64::new(self.lsn.load(Ordering::SeqCst)),
+            local_lsn: AtomicU64::new(self.local_lsn.load(Ordering::SeqCst)),
+            vector_clock_version: AtomicU64::new(self.vector_clock_version.load(Ordering::SeqCst)),
+            documents: RwLock::new(self.documents.read().unwrap().clone()),
+            session_state: SessionState::new(),
+            rid: self.rid.clone(),
+            rid_prefix: self.rid_prefix,
+            throughput_fraction: self.throughput_fraction,
+            parents: self.parents.clone(),
+            lock_count: AtomicUsize::new(0),
+            throughput_tracker: self
+                .throughput_tracker
+                .as_ref()
+                .map(|t| ThroughputTracker::new(t.provisioned_ru())),
+            deferred_replications: RwLock::new(Vec::new()),
+        }
+    }
+
     /// Checks if an EPK falls within this partition's range [min_inclusive, max_exclusive).
     pub fn contains_epk(&self, epk: &Epk) -> bool {
         *epk >= self.epk_min && *epk < self.epk_max
@@ -1448,7 +2231,19 @@ impl PhysicalPartition {
 
     /// Returns whether this partition is currently locked (split/merge in progress).
     pub fn is_locked(&self) -> bool {
-        self.locked.load(Ordering::SeqCst)
+        self.lock_count.load(Ordering::SeqCst) > 0
+    }
+
+    fn lock(&self) {
+        self.lock_count.fetch_add(1, Ordering::SeqCst);
+    }
+
+    fn unlock(&self) {
+        self.lock_count
+            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |count| {
+                count.checked_sub(1)
+            })
+            .expect("partition transition lock count cannot underflow");
     }
 
     /// Restores the partition's LSN counters to previously captured values.
@@ -1457,7 +2252,7 @@ impl PhysicalPartition {
     /// distributed transaction: applied point operations advance the LSN, so an
     /// abort must reset the counters (in addition to the document map) to leave
     /// no trace of the rolled-back writes.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub fn restore_counters(&self, lsn: u64, local_lsn: u64, vector_clock_version: u64) {
         self.lsn.store(lsn, Ordering::SeqCst);
         self.local_lsn.store(local_lsn, Ordering::SeqCst);
@@ -1553,18 +2348,19 @@ fn create_partitions(
         let min = if i == 0 {
             Epk::MIN.clone()
         } else {
-            Epk::from(boundaries[(i - 1) as usize].clone())
+            boundaries[(i - 1) as usize].clone()
         };
         let max = if i == n - 1 {
             Epk::MAX.clone()
         } else {
-            Epk::from(boundaries[i as usize].clone())
+            boundaries[i as usize].clone()
         };
 
         let rid = pkrange_rid_for(meta, rid_gen, i);
 
         let per_partition_ru = if throttling_enabled {
-            meta.provisioned_throughput_ru.map(|total| total / n)
+            meta.provisioned_throughput_ru
+                .map(|total| total / u64::from(n))
         } else {
             None
         };
@@ -1582,7 +2378,7 @@ fn create_partitions(
             rid_prefix: i,
             throughput_fraction: 1.0 / n as f64,
             parents: Vec::new(),
-            locked: AtomicBool::new(false),
+            lock_count: AtomicUsize::new(0),
             throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
             deferred_replications: RwLock::new(Vec::new()),
         });
@@ -1591,10 +2387,9 @@ fn create_partitions(
     partitions
 }
 
-/// Computes the N-1 internal EPK boundary strings that divide the reachable
-/// hash space into N equal ranges, returning the boundaries in lex-comparable
-/// hex form. The endpoints (partition 0's lower bound and partition N-1's
-/// upper bound) are represented by the [`Epk::MIN.clone()`] / [`Epk::MAX.clone()`]
+/// Computes the N-1 internal EPK boundaries that divide the reachable
+/// hash space into N equal ranges. The endpoints (partition 0's lower bound
+/// and partition N-1's upper bound) are represented by [`Epk::MIN`] / [`Epk::MAX`]
 /// sentinels at the call site, so they are intentionally not emitted here.
 ///
 /// # Boundary scheme by partition key kind/version
@@ -1617,7 +2412,7 @@ fn compute_partition_boundaries(
     n: u32,
     kind: PartitionKeyKind,
     version: PartitionKeyVersion,
-) -> Vec<String> {
+) -> Vec<Epk> {
     if n <= 1 {
         return Vec::new();
     }
@@ -1629,13 +2424,13 @@ fn compute_partition_boundaries(
 }
 
 /// V2 / MultiHash boundaries: evenly-spaced 126-bit values in 32-char hex.
-fn v2_boundaries(n: u32) -> Vec<String> {
+fn v2_boundaries(n: u32) -> Vec<Epk> {
     let mut boundaries = Vec::with_capacity((n - 1) as usize);
     let total: u128 = 1u128 << 126;
     let step = total / n as u128;
     for i in 1..n {
         let boundary = step * i as u128;
-        boundaries.push(format!("{:032X}", boundary));
+        boundaries.push(Epk::from_bytes(boundary.to_be_bytes().to_vec()));
     }
     boundaries
 }
@@ -1649,7 +2444,7 @@ fn v2_boundaries(n: u32) -> Vec<String> {
 /// strictly *above* the boundary (the EPK has the appended-component bytes,
 /// the boundary does not). That matches the half-open `[min_inclusive,
 /// max_exclusive)` convention used by [`PhysicalPartition::contains_epk`].
-fn v1_boundaries(n: u32) -> Vec<String> {
+fn v1_boundaries(n: u32) -> Vec<Epk> {
     let mut boundaries = Vec::with_capacity((n - 1) as usize);
     let total: u64 = 1u64 << 32;
     let step = total / n as u64;
@@ -1657,21 +2452,11 @@ fn v1_boundaries(n: u32) -> Vec<String> {
         let boundary_hash = (step * i as u64) as u32;
         let mut buf = Vec::new();
         crate::models::partition_key::write_number_v1_binary(boundary_hash as f64, &mut buf);
-        boundaries.push(bytes_to_hex_upper(&buf));
+        boundaries.push(Epk::from_bytes(buf));
     }
     boundaries
 }
 
-/// Uppercase hex encoding of a byte slice. Local helper so the V1 boundary
-/// code does not depend on the production crate's private hex helpers.
-fn bytes_to_hex_upper(bytes: &[u8]) -> String {
-    use std::fmt::Write;
-    let mut s = String::with_capacity(bytes.len() * 2);
-    for b in bytes {
-        let _ = write!(&mut s, "{:02X}", b);
-    }
-    s
-}
 /// Returns true if `epk` represents the open lower bound of the EPK space.
 ///
 /// Intentionally treats *any* all-`'0'` hex string as the lower-bound sentinel
@@ -1718,7 +2503,7 @@ pub(crate) fn new_etag() -> String {
 /// - bursts cannot accidentally span a second boundary and double the available
 ///   budget when the wall clock happens to tick during the burst.
 pub(crate) struct ThroughputTracker {
-    provisioned_ru: u32,
+    provisioned_ru: u64,
     inner: std::sync::Mutex<ThroughputWindow>,
 }
 
@@ -1730,7 +2515,7 @@ struct ThroughputWindow {
 const THROUGHPUT_WINDOW: std::time::Duration = std::time::Duration::from_secs(1);
 
 impl ThroughputTracker {
-    pub fn new(provisioned_ru: u32) -> Self {
+    pub fn new(provisioned_ru: u64) -> Self {
         Self {
             provisioned_ru,
             inner: std::sync::Mutex::new(ThroughputWindow {
@@ -1740,12 +2525,17 @@ impl ThroughputTracker {
         }
     }
 
+    /// Returns the provisioned RU/s budget this tracker enforces.
+    pub fn provisioned_ru(&self) -> u64 {
+        self.provisioned_ru
+    }
+
     /// Attempts to consume `charge` RU. Returns `Ok(())` if within budget,
     /// or `Err(retry_after_ms)` if throttled.
     pub fn try_consume(&self, charge: f64) -> Result<(), u64> {
         let now = std::time::Instant::now();
         let charge_centiru = (charge * 100.0) as u64;
-        let budget_centiru = (self.provisioned_ru as u64) * 100;
+        let budget_centiru = self.provisioned_ru.saturating_mul(100);
         let mut w = self.inner.lock().unwrap();
         if now.duration_since(w.window_start) >= THROUGHPUT_WINDOW {
             w.window_start = now;
@@ -1775,7 +2565,7 @@ impl EmulatorStore {
         split_epk: &Epk,
     ) -> crate::error::Result<()> {
         let region = self
-            .region(self.config.write_region_name())
+            .region(&self.config.write_region_name())
             .ok_or_else(|| host_control_plane_error("write region does not exist"))?;
         region
             .with_container(db_id, coll_id, |state| {
@@ -1810,7 +2600,7 @@ impl EmulatorStore {
         partition_id: u32,
     ) -> crate::error::Result<Epk> {
         let region = self
-            .region(self.config.write_region_name())
+            .region(&self.config.write_region_name())
             .ok_or_else(|| host_control_plane_error("write region does not exist"))?;
         region
             .with_container(db_id, coll_id, |state| {
@@ -1846,7 +2636,7 @@ impl EmulatorStore {
         partition_id: u32,
     ) -> crate::error::Result<Epk> {
         let region = self
-            .region(self.config.write_region_name())
+            .region(&self.config.write_region_name())
             .ok_or_else(|| host_control_plane_error("write region does not exist"))?;
         region
             .with_container(db_id, coll_id, |state| {
@@ -1919,7 +2709,7 @@ impl EmulatorStore {
     #[cfg(feature = "__internal_in_memory_emulator")]
     #[doc(hidden)]
     pub fn child_partition_ids(&self, db_id: &str, coll_id: &str, parent_ids: &[u32]) -> Vec<u32> {
-        let Some(region) = self.region(self.config.write_region_name()) else {
+        let Some(region) = self.region(&self.config.write_region_name()) else {
             return Vec::new();
         };
         let mut children = region
@@ -1957,24 +2747,17 @@ impl EmulatorStore {
             coll_id,
             partition_id,
             Some(split_epk),
-            ControlPlaneProgression::Automatic(min_lock_duration),
-            Some(completion),
+            ControlPlaneExecution::automatic(min_lock_duration, Some(completion)),
         );
-        if !completed
+        match completed
             .await
             .map_err(|_| host_control_plane_error("split task ended before reporting a result"))?
         {
-            return Err(host_control_plane_error(
+            Some(ManualControlPlaneResult::Split(children)) => Ok(children.into()),
+            _ => Err(host_control_plane_error(
                 "split did not complete; verify the partition and EPK boundary",
-            ));
+            )),
         }
-        let children = self.child_partition_ids(db_id, coll_id, &[partition_id]);
-        if children.len() != 2 {
-            return Err(host_control_plane_error(
-                "split completed without producing exactly two child partitions",
-            ));
-        }
-        Ok(children)
     }
 
     /// Locks a partition for a split that completes only when its handle is released.
@@ -1985,7 +2768,11 @@ impl EmulatorStore {
         coll_id: &str,
         partition_id: u32,
         split_epk: Epk,
-    ) -> ManualControlPlaneOperation {
+    ) -> crate::error::Result<ManualControlPlaneOperation> {
+        let transition_guard = self
+            .split_merge_lock(db_id, coll_id)
+            .try_lock_arc()
+            .ok_or_else(partition_transition_conflict)?;
         let (release, released) = futures::channel::oneshot::channel();
         let (completion, completed) = futures::channel::oneshot::channel();
         self.split_partition_internal(
@@ -1993,13 +2780,12 @@ impl EmulatorStore {
             coll_id,
             partition_id,
             Some(split_epk),
-            ControlPlaneProgression::Manual(released),
-            Some(completion),
+            ControlPlaneExecution::manual(released, completion, transition_guard),
         );
-        ManualControlPlaneOperation {
+        Ok(ManualControlPlaneOperation {
             release: Some(release),
             completed,
-        }
+        })
     }
 
     /// Splits a physical partition into two child partitions.
@@ -2021,8 +2807,7 @@ impl EmulatorStore {
             coll_id,
             partition_id,
             None,
-            ControlPlaneProgression::Automatic(min_lock_duration),
-            None,
+            ControlPlaneExecution::automatic(min_lock_duration, None),
         );
     }
 
@@ -2041,8 +2826,7 @@ impl EmulatorStore {
             coll_id,
             partition_id,
             Some(split_epk),
-            ControlPlaneProgression::Automatic(min_lock_duration),
-            None,
+            ControlPlaneExecution::automatic(min_lock_duration, None),
         );
     }
 
@@ -2052,9 +2836,13 @@ impl EmulatorStore {
         coll_id: &str,
         partition_id: u32,
         split_epk: Option<Epk>,
-        progression: ControlPlaneProgression,
-        completion: Option<futures::channel::oneshot::Sender<bool>>,
+        execution: ControlPlaneExecution,
     ) {
+        let ControlPlaneExecution {
+            progression,
+            completion,
+            transition_guard,
+        } = execution;
         // Lock the partition in all regions
         {
             let regions = self.regions.read().unwrap();
@@ -2067,7 +2855,7 @@ impl EmulatorStore {
                         .iter()
                         .find(|p| p.id == partition_id)
                     {
-                        p.locked.store(true, Ordering::SeqCst);
+                        p.lock();
                     }
                 }
             }
@@ -2085,19 +2873,24 @@ impl EmulatorStore {
         };
         let track_in_test_registry = completion.is_none();
         let handle = tokio::spawn(async move {
-            let _guard = lock.lock().await;
+            let guard = match transition_guard {
+                Some(guard) => guard,
+                None => lock.lock_arc().await,
+            };
             if !progression.wait().await {
                 store.unlock_partitions(&(db.clone(), coll.clone()), &[partition_id]);
+                drop(guard);
                 if let Some(completion) = completion {
-                    let _ = completion.send(false);
+                    let _ = completion.send(None);
                 }
                 return;
             }
             // execute_split does the actual doc redistribution under the lock,
             // then unlocks partitions when done
-            let succeeded = store.execute_split(&db, &coll, partition_id, split_epk);
+            let children = store.execute_split(&db, &coll, partition_id, split_epk);
+            drop(guard);
             if let Some(completion) = completion {
-                let _ = completion.send(succeeded);
+                let _ = completion.send(children.map(ManualControlPlaneResult::Split));
             }
         });
         if track_in_test_registry {
@@ -2112,7 +2905,7 @@ impl EmulatorStore {
         coll_id: &str,
         partition_id: u32,
         split_epk: Option<Epk>,
-    ) -> bool {
+    ) -> Option<[u32; 2]> {
         // Local-only enum used to ferry preview state out of a regions read
         // guard so we can drop the guard before re-acquiring it on the abort
         // path. Avoids recursive same-thread RwLock::read (unspecified in std).
@@ -2127,7 +2920,7 @@ impl EmulatorStore {
                 child_id_2: u32,
                 child_rid_1: String,
                 child_rid_2: String,
-                total_throughput: Option<u32>,
+                total_throughput: Option<u64>,
             },
             AbortUnlock,
         }
@@ -2238,9 +3031,9 @@ impl EmulatorStore {
             Some(SplitPreview::Found { .. }) => preview.unwrap(),
             Some(SplitPreview::AbortUnlock) => {
                 self.unlock_partitions(&key, &[partition_id]);
-                return false;
+                return None;
             }
-            None => return false,
+            None => return None,
         })
         else {
             unreachable!()
@@ -2284,18 +3077,17 @@ impl EmulatorStore {
                 let parent_forced = parent.session_state.snapshot_forced_epks();
                 let child1_session = SessionState::new();
                 let child2_session = SessionState::new();
-                for epk_str in parent_forced {
-                    let epk = Epk::from(epk_str.clone());
+                for epk in parent_forced {
                     if epk < midpoint {
-                        child1_session.set_force_unavailable_for(&epk_str);
+                        child1_session.set_force_unavailable_for(&epk);
                     } else {
-                        child2_session.set_force_unavailable_for(&epk_str);
+                        child2_session.set_force_unavailable_for(&epk);
                     }
                 }
 
-                let n = state.physical_partitions.len() as f64 + 1.0;
+                let n = state.physical_partitions.len() as u64 + 1;
                 let per_partition_ru = if self.config.throttling_enabled() {
-                    total_throughput.map(|total| total / (n as u32))
+                    total_throughput.map(|total| total / n)
                 } else {
                     None
                 };
@@ -2316,9 +3108,9 @@ impl EmulatorStore {
                     session_state: child1_session,
                     rid: child_rid_1.clone(),
                     rid_prefix: child_id_1,
-                    throughput_fraction: 1.0 / n,
+                    throughput_fraction: 1.0 / n as f64,
                     parents: vec![partition_id],
-                    locked: AtomicBool::new(false),
+                    lock_count: AtomicUsize::new(0),
                     throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
                     deferred_replications: RwLock::new(Vec::new()),
                 };
@@ -2334,9 +3126,9 @@ impl EmulatorStore {
                     session_state: child2_session,
                     rid: child_rid_2.clone(),
                     rid_prefix: child_id_2,
-                    throughput_fraction: 1.0 / n,
+                    throughput_fraction: 1.0 / n as f64,
                     parents: vec![partition_id],
-                    locked: AtomicBool::new(false),
+                    lock_count: AtomicUsize::new(0),
                     throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
                     deferred_replications: RwLock::new(Vec::new()),
                 };
@@ -2371,7 +3163,7 @@ impl EmulatorStore {
                 // child IDs were allocated.
             }
         }
-        true
+        Some([child_id_1, child_id_2])
     }
 
     /// Merges two adjacent physical partitions into one child partition.
@@ -2394,8 +3186,7 @@ impl EmulatorStore {
             coll_id,
             partition_id_a,
             partition_id_b,
-            ControlPlaneProgression::Automatic(min_lock_duration),
-            None,
+            ControlPlaneExecution::automatic(min_lock_duration, None),
         );
     }
 
@@ -2416,22 +3207,15 @@ impl EmulatorStore {
             coll_id,
             partition_id_a,
             partition_id_b,
-            ControlPlaneProgression::Automatic(min_lock_duration),
-            Some(completion),
+            ControlPlaneExecution::automatic(min_lock_duration, Some(completion)),
         );
-        if !completed
+        match completed
             .await
             .map_err(|_| host_control_plane_error("merge task ended before reporting a result"))?
         {
-            return Err(host_control_plane_error(
-                "merge did not complete; verify that both partitions exist and are adjacent",
-            ));
-        }
-        let children = self.child_partition_ids(db_id, coll_id, &[partition_id_a, partition_id_b]);
-        match children.as_slice() {
-            [child] => Ok(*child),
+            Some(ManualControlPlaneResult::Merge(child)) => Ok(child),
             _ => Err(host_control_plane_error(
-                "merge completed without producing exactly one child partition",
+                "merge did not complete; verify that both partitions exist and are adjacent",
             )),
         }
     }
@@ -2444,7 +3228,11 @@ impl EmulatorStore {
         coll_id: &str,
         partition_id_a: u32,
         partition_id_b: u32,
-    ) -> ManualControlPlaneOperation {
+    ) -> crate::error::Result<ManualControlPlaneOperation> {
+        let transition_guard = self
+            .split_merge_lock(db_id, coll_id)
+            .try_lock_arc()
+            .ok_or_else(partition_transition_conflict)?;
         let (release, released) = futures::channel::oneshot::channel();
         let (completion, completed) = futures::channel::oneshot::channel();
         self.merge_partitions_internal(
@@ -2452,13 +3240,12 @@ impl EmulatorStore {
             coll_id,
             partition_id_a,
             partition_id_b,
-            ControlPlaneProgression::Manual(released),
-            Some(completion),
+            ControlPlaneExecution::manual(released, completion, transition_guard),
         );
-        ManualControlPlaneOperation {
+        Ok(ManualControlPlaneOperation {
             release: Some(release),
             completed,
-        }
+        })
     }
 
     fn merge_partitions_internal(
@@ -2467,9 +3254,13 @@ impl EmulatorStore {
         coll_id: &str,
         partition_id_a: u32,
         partition_id_b: u32,
-        progression: ControlPlaneProgression,
-        completion: Option<futures::channel::oneshot::Sender<bool>>,
+        execution: ControlPlaneExecution,
     ) {
+        let ControlPlaneExecution {
+            progression,
+            completion,
+            transition_guard,
+        } = execution;
         // Lock both partitions in all regions
         {
             let regions = self.regions.read().unwrap();
@@ -2479,7 +3270,7 @@ impl EmulatorStore {
                 if let Some(state) = containers.get(&key) {
                     for p in &state.physical_partitions {
                         if p.id == partition_id_a || p.id == partition_id_b {
-                            p.locked.store(true, Ordering::SeqCst);
+                            p.lock();
                         }
                     }
                 }
@@ -2498,20 +3289,25 @@ impl EmulatorStore {
         };
         let track_in_test_registry = completion.is_none();
         let handle = tokio::spawn(async move {
-            let _guard = lock.lock().await;
+            let guard = match transition_guard {
+                Some(guard) => guard,
+                None => lock.lock_arc().await,
+            };
             if !progression.wait().await {
                 store.unlock_partitions(
                     &(db.clone(), coll.clone()),
                     &[partition_id_a, partition_id_b],
                 );
+                drop(guard);
                 if let Some(completion) = completion {
-                    let _ = completion.send(false);
+                    let _ = completion.send(None);
                 }
                 return;
             }
-            let succeeded = store.execute_merge(&db, &coll, partition_id_a, partition_id_b);
+            let child = store.execute_merge(&db, &coll, partition_id_a, partition_id_b);
+            drop(guard);
             if let Some(completion) = completion {
-                let _ = completion.send(succeeded);
+                let _ = completion.send(child.map(ManualControlPlaneResult::Merge));
             }
         });
         if track_in_test_registry {
@@ -2529,7 +3325,7 @@ impl EmulatorStore {
                         let deferred = {
                             let mut deferred = partition.deferred_replications.write().unwrap();
                             let entries = std::mem::take(&mut *deferred);
-                            partition.locked.store(false, Ordering::SeqCst);
+                            partition.unlock();
                             entries
                         };
                         for (doc, is_delete) in deferred {
@@ -2548,9 +3344,9 @@ impl EmulatorStore {
         coll_id: &str,
         partition_id_a: u32,
         partition_id_b: u32,
-    ) -> bool {
+    ) -> Option<u32> {
         enum MergePreview {
-            Ready((Epk, Epk, u64, u32, String, Option<u32>)),
+            Ready((Epk, Epk, u64, u32, String, Option<u64>)),
             NonAdjacent(Epk, Epk),
         }
 
@@ -2621,11 +3417,11 @@ impl EmulatorStore {
                         "in-memory emulator: rejecting merge for non-adjacent partitions",
                     );
                     self.unlock_partitions(&key, &[partition_id_a, partition_id_b]);
-                    return false;
+                    return None;
                 }
                 None => {
                     self.unlock_partitions(&key, &[partition_id_a, partition_id_b]);
-                    return false;
+                    return None;
                 }
             };
         let new_container_etag = new_etag();
@@ -2750,16 +3546,16 @@ impl EmulatorStore {
 
                 // Merge forced-session-not-available markers from both parents.
                 let merged_session = SessionState::new();
-                for epk_str in lower.session_state.snapshot_forced_epks() {
-                    merged_session.set_force_unavailable_for(&epk_str);
+                for epk in lower.session_state.snapshot_forced_epks() {
+                    merged_session.set_force_unavailable_for(&epk);
                 }
-                for epk_str in upper.session_state.snapshot_forced_epks() {
-                    merged_session.set_force_unavailable_for(&epk_str);
+                for epk in upper.session_state.snapshot_forced_epks() {
+                    merged_session.set_force_unavailable_for(&epk);
                 }
 
-                let n = state.physical_partitions.len() as f64 - 1.0;
+                let n = state.physical_partitions.len().saturating_sub(1).max(1) as u64;
                 let per_partition_ru = if self.config.throttling_enabled() {
-                    total_throughput.map(|total| total / (n.max(1.0) as u32))
+                    total_throughput.map(|total| total / n)
                 } else {
                     None
                 };
@@ -2775,9 +3571,9 @@ impl EmulatorStore {
                     session_state: merged_session,
                     rid: child_rid.clone(),
                     rid_prefix: child_id,
-                    throughput_fraction: 1.0 / n.max(1.0),
+                    throughput_fraction: 1.0 / n as f64,
                     parents: vec![partition_id_a, partition_id_b],
-                    locked: AtomicBool::new(false),
+                    lock_count: AtomicUsize::new(0),
                     throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
                     deferred_replications: RwLock::new(Vec::new()),
                 };
@@ -2793,7 +3589,7 @@ impl EmulatorStore {
                 state.metadata.etag = new_container_etag.clone();
             }
         }
-        true
+        Some(child_id)
     }
 }
 
@@ -2804,6 +3600,15 @@ fn host_control_plane_error(message: impl Into<String>) -> crate::error::CosmosE
             azure_core::http::StatusCode::BadRequest,
         ))
         .with_message(message.into())
+        .build()
+}
+
+fn partition_transition_conflict() -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::new(
+            azure_core::http::StatusCode::Conflict,
+        ))
+        .with_message("another partition transition is already active")
         .build()
 }
 
@@ -2880,7 +3685,7 @@ fn compute_epk_midpoint_v2(min: &Epk, max: &Epk) -> Result<Epk, String> {
     // Safe midpoint: `min/2 + max/2` loses 1 bit when both operands are odd.
     // Add the missing carry explicitly.
     let mid = min_val / 2 + max_val / 2 + ((min_val & 1) & (max_val & 1));
-    Ok(Epk::from(format!("{:032X}", mid)))
+    Ok(Epk::from_bytes(mid.to_be_bytes().to_vec()))
 }
 
 /// V1 split midpoint.
@@ -2926,7 +3731,7 @@ fn compute_epk_midpoint_v1(min: &Epk, max: &Epk) -> Result<Epk, String> {
     let mid = ((min_val as u64 + max_val as u64) / 2) as u32;
     let mut buf = Vec::new();
     crate::models::partition_key::write_number_v1_binary(mid as f64, &mut buf);
-    Ok(Epk::from(bytes_to_hex_upper(&buf)))
+    Ok(Epk::from_bytes(buf))
 }
 
 /// V1 EPK type-marker byte for `Number` components — must match
@@ -3002,6 +3807,199 @@ fn decode_v1_number_hex_to_u32(hex: &str) -> Result<u32, String> {
 mod tests {
     use super::*;
 
+    fn test_store(config: VirtualAccountConfig) -> Arc<EmulatorStore> {
+        let store = EmulatorStore::new(config);
+        store.create_database("db");
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap();
+        store.create_container_with_config(
+            "db",
+            "c",
+            partition_key,
+            ContainerConfig::new()
+                .with_partition_count(1)
+                .build()
+                .unwrap(),
+        );
+        store
+    }
+
+    fn test_document(id: &str, ts: u64, lsn: u64) -> StoredDocument {
+        StoredDocument {
+            body: serde_json::json!({"id": id, "pk": "value"}),
+            id: id.to_string(),
+            rid: format!("rid-{id}"),
+            etag: format!("etag-{lsn}"),
+            ts,
+            self_link: format!("dbs/db/colls/c/docs/{id}/"),
+            lsn,
+            epk: Epk::MIN,
+            body_size_bytes: 32,
+            source_region: "West".to_string(),
+        }
+    }
+
+    fn apply_local_document(
+        store: &EmulatorStore,
+        region_name: &str,
+        doc: &StoredDocument,
+        is_delete: bool,
+    ) {
+        let region = Arc::clone(
+            store
+                .regions
+                .read()
+                .unwrap()
+                .get(region_name)
+                .expect("test region must exist"),
+        );
+        let containers = region.containers.read().unwrap();
+        let state = containers
+            .get(&("db".to_string(), "c".to_string()))
+            .expect("test container must exist");
+        let partition = state
+            .find_partition(&doc.epk)
+            .expect("test partition must exist");
+        apply_doc_to_partition(partition, doc, is_delete);
+    }
+
+    fn contains_document(store: &EmulatorStore, region_name: &str, epk: &Epk, id: &str) -> bool {
+        let region = Arc::clone(
+            store
+                .regions
+                .read()
+                .unwrap()
+                .get(region_name)
+                .expect("test region must exist"),
+        );
+        let containers = region.containers.read().unwrap();
+        let state = containers
+            .get(&("db".to_string(), "c".to_string()))
+            .expect("test container must exist");
+        let partition = state
+            .find_partition(epk)
+            .expect("test partition must exist");
+        let documents = partition.documents.read().unwrap();
+        documents.get(epk).is_some_and(|docs| docs.contains_key(id))
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn region_add_replays_completed_delete_after_older_create() {
+        let delay_call = Arc::new(AtomicUsize::new(0));
+        let delay_call_clone = Arc::clone(&delay_call);
+        let replication = super::super::config::ReplicationConfig::immediate()
+            .with_replication_delay_fn(Arc::new(move || {
+                if delay_call_clone.fetch_add(1, Ordering::SeqCst) == 0 {
+                    Duration::from_secs(3_600)
+                } else {
+                    Duration::ZERO
+                }
+            }));
+        let config = VirtualAccountConfig::new(vec![
+            VirtualRegion::new("East", url::Url::parse("https://east.local").unwrap()),
+            VirtualRegion::new("West", url::Url::parse("https://west.local").unwrap()),
+        ])
+        .unwrap()
+        .with_replication_config(replication);
+        let store = test_store(config);
+        let mut create = test_document("item", 1, 1);
+        create.source_region = "East".to_string();
+        let mut delete = test_document("item", 2, 2);
+        delete.body = serde_json::Value::Null;
+        delete.source_region = "East".to_string();
+
+        apply_local_document(&store, "East", &create, false);
+        store.replicate("East", "db", "c", &create, false);
+        apply_local_document(&store, "East", &delete, true);
+        store.replicate("East", "db", "c", &delete, true);
+
+        store
+            .add_region(
+                VirtualRegion::new("Central", url::Url::parse("https://central.local").unwrap()),
+                SeedingPolicy::Immediate,
+            )
+            .unwrap();
+
+        assert!(!contains_document(&store, "Central", &Epk::MIN, "item"));
+        tokio::time::advance(Duration::from_secs(3_600)).await;
+        store.drain_pending_replications().await;
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn delayed_catch_up_waits_for_local_replication_registration() {
+        let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+            "East",
+            url::Url::parse("https://east.local").unwrap(),
+        )])
+        .unwrap()
+        .with_write_mode(WriteMode::Multi)
+        .with_replication_config(super::super::config::ReplicationConfig::fixed(
+            Duration::from_secs(3_600),
+        ));
+        let store = test_store(config);
+        store
+            .add_region(
+                VirtualRegion::new("West", url::Url::parse("https://west.local").unwrap()),
+                SeedingPolicy::Delayed(Duration::from_secs(10)),
+            )
+            .unwrap();
+        tokio::task::yield_now().await;
+
+        let barrier = store.replication_barrier();
+        let replication_guard = barrier.read().await;
+        let document = test_document("item", 1, 1);
+        apply_local_document(&store, "West", &document, false);
+
+        tokio::time::advance(Duration::from_secs(10)).await;
+        tokio::task::yield_now().await;
+        store.replicate("West", "db", "c", &document, false);
+        drop(replication_guard);
+
+        for _ in 0..10 {
+            if store.catch_up_journals.lock().unwrap().is_empty() {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+
+        assert!(
+            store.catch_up_journals.lock().unwrap().is_empty(),
+            "catch-up must finish after the replication barrier is released"
+        );
+        assert!(contains_document(&store, "West", &Epk::MIN, "item"));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn removing_delayed_region_clears_catch_up_journal() {
+        let config = super::super::config::VirtualAccountConfig::new(vec![
+            super::super::config::VirtualRegion::new(
+                "r1",
+                url::Url::parse("https://r1.local").unwrap(),
+            ),
+        ])
+        .unwrap();
+        let store = EmulatorStore::new(config);
+        store
+            .add_region(
+                super::super::config::VirtualRegion::new(
+                    "r2",
+                    url::Url::parse("https://r2.local").unwrap(),
+                ),
+                SeedingPolicy::Delayed(Duration::from_secs(3_600)),
+            )
+            .unwrap();
+        assert_eq!(store.catch_up_journals.lock().unwrap().len(), 1);
+
+        store.remove_region("r2").unwrap();
+
+        assert!(
+            store.catch_up_journals.lock().unwrap().is_empty(),
+            "removed region must not retain an orphaned catch-up journal"
+        );
+    }
+
     #[tokio::test]
     async fn manual_split_waits_for_explicit_completion() {
         use crate::models::PartitionKeyDefinition;
@@ -3030,7 +4028,9 @@ mod tests {
         );
 
         let split_epk = store.midpoint_split_epk("db", "c", 0).unwrap();
-        let operation = store.begin_manual_split_partition("db", "c", 0, split_epk);
+        let operation = store
+            .begin_manual_split_partition("db", "c", 0, split_epk)
+            .unwrap();
         let locked = store
             .region("r1")
             .unwrap()
@@ -3242,7 +4242,7 @@ mod tests {
         assert_eq!(bs.len(), 3);
         for b in &bs {
             assert!(
-                b.starts_with("05"),
+                b.as_bytes().starts_with(&[0x05]),
                 "V1 boundary {b} must start with Number type marker '05'",
             );
         }
@@ -3263,8 +4263,8 @@ mod tests {
         let bs = super::v2_boundaries(4);
         assert_eq!(bs.len(), 3);
         for b in &bs {
-            assert_eq!(b.len(), 32, "V2 boundary must be 32 hex chars: {b}");
-            let first_nibble = u8::from_str_radix(&b[..1], 16).unwrap();
+            assert_eq!(b.as_bytes().len(), 16, "V2 boundary must be 16 bytes: {b}");
+            let first_nibble = b.as_bytes()[0] >> 4;
             assert!(
                 first_nibble < 0x4,
                 "V2 boundary {b} first nibble {:X} must be <0x4 (top 2 bits cleared)",
@@ -3297,9 +4297,10 @@ mod tests {
     fn decode_v1_number_round_trips_v1_boundaries() {
         for n in [2u32, 4, 8, 16, 100, 1024] {
             let bs = super::v1_boundaries(n);
-            for (i, hex) in bs.iter().enumerate() {
+            for (i, epk) in bs.iter().enumerate() {
+                let hex = epk.to_hex();
                 let expected = ((1u64 << 32) / n as u64) as u32 * (i as u32 + 1);
-                let recovered = super::decode_v1_number_hex_to_u32(hex)
+                let recovered = super::decode_v1_number_hex_to_u32(&hex)
                     .unwrap_or_else(|e| panic!("decode failed for n={n} i={i} hex={hex}: {e}"));
                 assert_eq!(
                     recovered, expected,
@@ -3333,7 +4334,7 @@ mod tests {
         for &v in cases {
             let mut buf = Vec::new();
             crate::models::partition_key::write_number_v1_binary(v as f64, &mut buf);
-            let hex = super::bytes_to_hex_upper(&buf);
+            let hex = Epk::from_bytes(buf).to_hex();
             let back = super::decode_v1_number_hex_to_u32(&hex)
                 .unwrap_or_else(|e| panic!("decode failed for v={v} hex={hex}: {e}"));
             assert_eq!(back, v, "round-trip failed for v={v} hex={hex} back={back}");
@@ -3367,7 +4368,7 @@ mod tests {
         let encode = |v: u32| -> Epk {
             let mut buf = Vec::new();
             crate::models::partition_key::write_number_v1_binary(v as f64, &mut buf);
-            Epk::from(super::bytes_to_hex_upper(&buf))
+            Epk::from_bytes(buf)
         };
         let mid_narrow = super::compute_epk_midpoint(
             &encode(lo_u32),

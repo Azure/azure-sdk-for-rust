@@ -96,7 +96,7 @@ fn build_two_region_emulator(
 }
 
 fn account() -> AccountReference {
-    AccountReference::with_master_key(Url::parse(EAST_URL).unwrap(), "ZW11bGF0b3Ita2V5")
+    AccountReference::with_account_key(Url::parse(EAST_URL).unwrap(), "ZW11bGF0b3Ita2V5")
 }
 
 /// Multi-master regional fallback: when every preferred region is in
@@ -124,7 +124,7 @@ async fn dataplane_excluded_all_preferred_multi_master_falls_back_to_hub() {
         .expect("driver should initialize");
 
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
 
@@ -196,7 +196,7 @@ async fn dataplane_excluded_all_preferred_single_master_falls_back_to_hub() {
         .expect("driver should initialize");
 
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
 

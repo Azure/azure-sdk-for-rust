@@ -15,7 +15,7 @@ use crate::query::ast::{
     SqlOrderByClause, SqlPathSegment, SqlQuery, SqlScalarExpression, SqlSelectSpec, SqlSortOrder,
     SqlTopSpec, SqlUnaryOp, SqlWhereClause,
 };
-use crate::query::common::get_root_alias;
+use crate::query::common::{get_root_alias, infer_property_name};
 use crate::query::value::CosmosValue;
 
 // (#16) Built-in scalar function dispatch lives in a sibling file to keep
@@ -766,7 +766,7 @@ pub fn query_documents(
 ) -> crate::error::Result<Vec<serde_json::Value>> {
     let program = crate::query::parse(sql).map_err(|e| {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message(format!("failed to parse query: {e}"))
             .with_source(e)
             .build()
@@ -1001,6 +1001,24 @@ pub fn query_documents(
             }
         });
         results = indices.iter().map(|&i| results[i].clone()).collect();
+    }
+
+    // ── Step 3b: DISTINCT ────────────────────────────────────────────────
+    //
+    // The real backend deduplicates within each physical partition before the
+    // client deduplicates globally, so the emulator must too — otherwise an
+    // emulator-backed test would exercise a page shape production never
+    // produces. Uses the same structural hash the client-side
+    // `Distinct` stage uses, so the two agree on what "equal" means.
+    if query.select.distinct {
+        let mut seen = std::collections::HashSet::new();
+        let mut deduped = Vec::with_capacity(results.len());
+        for row in results {
+            if seen.insert(crate::driver::dataflow::distinct_hash::hash_value(&row)?) {
+                deduped.push(row);
+            }
+        }
+        results = deduped;
     }
 
     // ── Step 4: TOP ──────────────────────────────────────────────────────
@@ -1599,16 +1617,6 @@ fn like_match_dp(text: &[char], pattern: &[char], escape: Option<char>) -> bool 
         }
     }
     dp[0][0]
-}
-
-/// Infer a property name from a select expression for unnamed columns.
-fn infer_property_name(expr: &SqlScalarExpression, position: usize) -> String {
-    match expr {
-        SqlScalarExpression::PropertyRef(name) => name.clone(),
-        SqlScalarExpression::MemberRef { member, .. } => member.clone(),
-        SqlScalarExpression::FunctionCall { name, .. } => name.clone(),
-        _ => format!("${position}"),
-    }
 }
 
 fn project_star_row(doc: &serde_json::Value) -> serde_json::Value {

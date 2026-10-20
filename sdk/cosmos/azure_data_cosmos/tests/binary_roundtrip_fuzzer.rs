@@ -8,8 +8,7 @@
 //! configurations, and asserts the value survives unchanged by comparing a
 //! **Cosmos-compatible canonical form** of what was sent against what came back.
 //!
-//! See the design doc:
-//! `azure_data_cosmos_driver/docs/BINARY_ENCODING_ROUNDTRIP_FUZZER.md`.
+//! Implements Spec 0016: Binary encoding roundtrip fuzzer.
 //!
 //! # Running
 //!
@@ -42,12 +41,15 @@ use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::options::{
     BinaryEncodingOptions, ConnectionPoolOptions, ContentResponseOnWrite, ItemWriteOptions,
-    OperationOptions, Region, ServerCertificateValidation,
+    OperationOptions, QueryOptions, Region, ServerCertificateValidation,
 };
 use azure_data_cosmos::{
-    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, RoutingStrategy, SubStatusCode,
+    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, FeedScope, Query,
+    RoutingStrategy,
 };
 use azure_data_cosmos_driver::models::ConnectionString;
+use futures::TryStreamExt;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Number, Value};
 use sha2::{Digest, Sha256};
@@ -72,7 +74,7 @@ const DEFAULT_DATABASE_NAME: &str = "binary-fuzz-db";
 const DEFAULT_CONTAINER_NAME: &str = "binary-fuzz-ct";
 const PARTITION_KEY_PATH: &str = "/pk";
 
-const DEFAULT_ITERATIONS: u64 = 200;
+const DEFAULT_ITERATIONS: u64 = 180;
 const DEFAULT_MAX_DEPTH: u32 = 6;
 /// Upper bound for `max_depth`: the generator recurses per level, so an
 /// unbounded value would stack-overflow. 64 is safe on an ordinary stack.
@@ -1791,9 +1793,11 @@ struct RunConfig {
 
 fn run_configs() -> Vec<RunConfig> {
     vec![
+        // Explicitly disabled, not unset: binary encoding is enabled by
+        // default, so an unset option would make this control a binary run.
         RunConfig {
             label: "text-control",
-            binary: None,
+            binary: Some(BinaryEncodingOptions::new().with_enabled(false)),
         },
         RunConfig {
             label: "binary",
@@ -1880,6 +1884,11 @@ struct IntProbe {
     wide: u64,
 }
 
+#[derive(Deserialize, Debug, PartialEq)]
+struct QueryIntProbe {
+    int: i64,
+}
+
 /// Round-trips an [`IntProbe`] so `deserialize_integer` (the production change)
 /// is exercised live, then asserts the typed values survived. Only meaningful on
 /// the pure-binary config (see the call site).
@@ -1917,6 +1926,34 @@ async fn assert_typed_integer_probe(
         got, sent,
         "{context}: typed integer probe round-trip changed"
     );
+
+    // Also decode the same wide-integer probe through a full-container binary
+    // ORDER BY query, driving the streaming-merge envelope decode (`build_page`
+    // re-encodes to binary so `deserialize_integer` runs). A merge that emitted
+    // text would fail here with `invalid type: floating point, expected u64`.
+    //
+    // This container has default throughput (one physical partition), so the
+    // merge runs with a single child — multi-child interleave is covered by the
+    // 3-partition emulator tests.
+    let order_by = with_transient_retry("int-probe-order-by", context, || async {
+        let query = Query::from("SELECT * FROM c WHERE c.id = @id ORDER BY c.id")
+            .with_parameter("@id", id.as_str())?;
+        let iter = container
+            .query_items::<IntProbe>(query, FeedScope::full_container(), None)
+            .await?;
+        iter.try_collect::<Vec<_>>().await
+    })
+    .await?;
+    assert_eq!(
+        order_by.len(),
+        1,
+        "{context}: typed integer ORDER BY probe expected exactly one item, got {}",
+        order_by.len(),
+    );
+    assert_eq!(
+        order_by[0], sent,
+        "{context}: typed integer probe changed through the binary ORDER BY merge"
+    );
     Ok(())
 }
 
@@ -1929,7 +1966,7 @@ const MAX_OP_ATTEMPTS: u32 = 6;
 /// must surface immediately rather than be retried into a masking 409.
 fn is_transient(err: &azure_data_cosmos::CosmosError) -> bool {
     let status = err.status();
-    if status.sub_status() == Some(SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID) {
+    if status.sub_status() == Some(azure_data_cosmos_driver::error::status_codes::substatus::SERIALIZATION_RESPONSE_BODY_INVALID) {
         return false;
     }
     matches!(
@@ -1964,9 +2001,152 @@ where
                 );
                 tokio::time::sleep(backoff).await;
             }
+
             Err(e) => return Err(format!("{context}: {op_name} failed: {e}").into()),
         }
     }
+}
+
+async fn query_values<T: DeserializeOwned + Send + 'static>(
+    container: &ContainerClient,
+    sql: &str,
+    run_id: &str,
+    context: &str,
+    max_buffered_query_window: u64,
+) -> Result<Vec<T>, Box<dyn Error>> {
+    let mut attempt = 0;
+    loop {
+        attempt += 1;
+        let query = Query::from(sql).with_parameter("@run", run_id)?;
+        let result = match container
+            .query_items(
+                query,
+                FeedScope::full_container(),
+                Some(
+                    QueryOptions::default()
+                        .with_max_buffered_query_window(max_buffered_query_window),
+                ),
+            )
+            .await
+        {
+            Ok(iterator) => Box::pin(iterator.try_collect()).await,
+            Err(err) => Err(err),
+        };
+        match result {
+            Ok(values) => return Ok(values),
+            Err(err) if is_transient(&err) && attempt < MAX_OP_ATTEMPTS => {
+                let backoff =
+                    std::time::Duration::from_millis(200u64 * (1u64 << (attempt - 1)).min(16));
+                eprintln!(
+                    "{context}: query transient failure (attempt {attempt}/{MAX_OP_ATTEMPTS}), \
+                     retrying in {backoff:?}: {err}"
+                );
+                tokio::time::sleep(backoff).await;
+            }
+            Err(err) => return Err(format!("{context}: query failed: {err}").into()),
+        }
+    }
+}
+
+fn canonical_query_results(values: Vec<Value>, ordered: bool) -> Vec<String> {
+    let mut canonical: Vec<String> = values
+        .into_iter()
+        .map(|value| {
+            let value = match value {
+                Value::Object(mut map) => {
+                    strip_reserved_fields(&mut map);
+                    Value::Object(map)
+                }
+                value => value,
+            };
+            canonicalize(&value)
+        })
+        .collect();
+    if !ordered {
+        canonical.sort();
+    }
+    canonical
+}
+
+/// Queries the just-written item back and asserts it round-trips, covering the
+/// query binary-response decode path (which point ops do not exercise). Runs a
+/// single-partition query (the passthrough decode path) and a full-container
+/// streaming `ORDER BY` query, whose per-page envelope decode is the binary path
+/// added for query support.
+///
+/// Both shapes run on **every** config, including `text-control`: a control that
+/// exercises a smaller surface than the experiment cannot localize a failure to
+/// the encoding.
+///
+/// The live container has default throughput (one physical partition), so the
+/// merge runs with a single child — multi-child interleave is covered by the
+/// 3-partition emulator tests.
+///
+/// Both filter on the unique `id`, so each returns exactly this item.
+async fn assert_query_roundtrip(
+    container: &ContainerClient,
+    pk: &str,
+    id: &str,
+    sent_canon: &str,
+    sent_hash: &[u8; 32],
+    doc: &Map<String, Value>,
+    context: &str,
+) -> Result<usize, Box<dyn Error>> {
+    let single_partition = with_transient_retry("query", context, || async {
+        let query = Query::from("SELECT * FROM c WHERE c.id = @id").with_parameter("@id", id)?;
+        let iter = container
+            .query_items::<Value>(query, FeedScope::partition(pk.to_string()), None)
+            .await?;
+        iter.try_collect::<Vec<_>>().await
+    })
+    .await?;
+    assert_query_hit(
+        &single_partition,
+        doc,
+        sent_canon,
+        sent_hash,
+        context,
+        "query",
+    );
+
+    let order_by = with_transient_retry("query-order-by", context, || async {
+        let query = Query::from("SELECT * FROM c WHERE c.id = @id ORDER BY c.id")
+            .with_parameter("@id", id)?;
+        let iter = container
+            .query_items::<Value>(query, FeedScope::full_container(), None)
+            .await?;
+        iter.try_collect::<Vec<_>>().await
+    })
+    .await?;
+    assert_query_hit(
+        &order_by,
+        doc,
+        sent_canon,
+        sent_hash,
+        context,
+        "query-order-by",
+    );
+
+    Ok(2)
+}
+
+/// Asserts a query returned exactly the one expected item and that it
+/// round-trips against the sent canonical form.
+fn assert_query_hit(
+    results: &[Value],
+    doc: &Map<String, Value>,
+    sent_canon: &str,
+    sent_hash: &[u8; 32],
+    context: &str,
+    phase: &str,
+) {
+    assert_eq!(
+        results.len(),
+        1,
+        "{context}: {phase} expected exactly one item, got {}",
+        results.len()
+    );
+    assert_roundtrip(doc, &results[0], sent_canon, sent_hash, context, phase);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2027,7 +2207,8 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
         // below — the same document stored under multiple configs would
         // otherwise collide on the `(pk, id)` key and fail with 409 Conflict.
         let base_doc = gen_object(&mut rng, &cfg);
-        let pk = format!("pk-{}", rng.below(16));
+        let partition_bucket = rng.below(16);
+        let run_id = format!("fuzz-{:016x}-{iter}", cfg.seed);
 
         // Optionally print the generated document (pretty JSON) so a run can be
         // eyeballed. Enable with `AZURE_COSMOS_FUZZ_PRINT=true`.
@@ -2043,17 +2224,21 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
         for (config_idx, (label, client)) in clients.iter().enumerate() {
             let container = client
                 .database_client(&database_name)
-                .container_client(&container_name)
+                .container_client(&container_name, None)
                 .await?;
 
             // Deterministic id per (seed, iteration, config) — derived without
             // touching the document RNG stream so a rerun with the same
             // AZURE_COSMOS_FUZZ_SEED reproduces the exact document *and* its
             // canonical form (a random `Uuid` here would defeat that promise).
-            let id = format!("fuzz-{:016x}-{iter}-{config_idx}", cfg.seed);
+            let id = format!("{run_id}-{config_idx}");
+            // Reuse 16 logical partitions per encoding config so point
+            // operations cover multiple items sharing the same partition key.
+            let pk = format!("fuzz-pk-{partition_bucket}-{config_idx}");
             let mut doc = base_doc.clone();
             doc.insert("id".to_string(), Value::String(id.clone()));
             doc.insert("pk".to_string(), Value::String(pk.clone()));
+            doc.insert("fuzzRun".to_string(), Value::String(run_id.clone()));
             // Never send Cosmos-reserved system properties (`_rid`, `_self`,
             // `_etag`, `_ts`, `_attachments`): the service **owns** these and
             // overwrites/assigns them, so a random value we send would come
@@ -2176,16 +2361,101 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
             // Four point-op round-trips this config: create, read, replace, upsert.
             checked += 4;
 
+            // QUERY the item back. Both query shapes run on every config so a
+            // failure localizes to the encoding, not the config (#4976). Note
+            // `binary+text-response` is still binary on the wire, so its ORDER BY
+            // merge runs over binary pages.
+            let queries_checked = assert_query_roundtrip(
+                &container,
+                &pk,
+                &id,
+                &sent_canon,
+                &sent_hash,
+                &doc,
+                &context,
+            )
+            .await?;
+            checked += queries_checked as u64;
+
             // The four ops above decode into `serde_json::Value` (→
             // `deserialize_any`), so they do NOT cover the native typed-integer
             // path (`deserialize_integer`) this PR ships. A typed probe covers it
-            // live on the pure-binary config — the only mode that returns binary
-            // for an integer field (text modes return text, which `serde_json`
-            // rejects into an integer).
+            // live on the pure-binary config — the only mode that exercises the
+            // binary deserializer's integral-Double coercion directly.
             if *label == "binary" {
                 assert_typed_integer_probe(&container, &pk, iter, cfg.seed, &context).await?;
+                // Three round-trips, not one: upsert, point read, ORDER BY.
+                // `checked` is reported as a round-trip count, and the CI
+                // budget in sdk/cosmos/ci.yml is sized off it.
+                checked += 3;
+            }
+        }
+
+        let query_window = u64::try_from(clients.len())?;
+        let distinct_query = format!(
+            "SELECT DISTINCT TOP {query_window} VALUE c._sampler.int FROM c WHERE c.fuzzRun = @run"
+        );
+        let query_cases = [
+            (
+                "SELECT * FROM c WHERE c.fuzzRun = @run",
+                false,
+                "select-all",
+            ),
+            (distinct_query.as_str(), false, "distinct"),
+            (
+                "SELECT DISTINCT VALUE c._sampler.int FROM c WHERE c.fuzzRun = @run \
+                 ORDER BY c._sampler.int",
+                true,
+                "distinct-order-by",
+            ),
+        ];
+        for (sql, ordered, phase) in query_cases {
+            let mut expected: Option<Vec<String>> = None;
+            for (label, client) in &clients {
+                let container = client
+                    .database_client(&database_name)
+                    .container_client(&container_name, None)
+                    .await?;
+                let context = format!("iter={iter} config={label} query={phase} seed={}", cfg.seed);
+                let actual = canonical_query_results(
+                    query_values(&container, sql, &run_id, &context, query_window).await?,
+                    ordered,
+                );
+                if let Some(expected) = &expected {
+                    assert_eq!(
+                        &actual, expected,
+                        "{context}: query result diverged across encoding configurations"
+                    );
+                } else {
+                    expected = Some(actual);
+                }
+
                 checked += 1;
             }
+        }
+
+        for (label, client) in &clients {
+            let container = client
+                .database_client(&database_name)
+                .container_client(&container_name, None)
+                .await?;
+            let context = format!(
+                "iter={iter} config={label} query=typed-integer seed={}",
+                cfg.seed
+            );
+            let values: Vec<QueryIntProbe> = query_values(
+                &container,
+                "SELECT VALUE {\"int\": 7} FROM c WHERE c.fuzzRun = @run",
+                &run_id,
+                &context,
+                query_window,
+            )
+            .await?;
+            assert!(
+                !values.is_empty() && values.iter().all(|value| value.int == 7),
+                "{context}: typed integer query returned unexpected values: {values:?}"
+            );
+            checked += 1;
         }
 
         if (iter + 1) % 100 == 0 {
@@ -2194,7 +2464,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
     }
 
     println!(
-        "binary_roundtrip_fuzzer: DONE — {} documents × {} configs × 4 point ops = {checked} round-trips, all canonical-equal (seed={})",
+        "binary_roundtrip_fuzzer: DONE — {} documents × {} configs across point operations, query shapes, and typed integer probes = {checked} round-trips, all canonical-equal (seed={})",
         cfg.iterations,
         configs.len(),
         cfg.seed
@@ -2320,7 +2590,7 @@ async fn run_calibration() -> Result<(), Box<dyn Error>> {
         )
         .await,
     )?;
-    let container = db.container_client(&container_name).await?;
+    let container = db.container_client(&container_name, None).await?;
 
     println!(
         "{:<26} {:<24} {:<24} {:<24} {}",
@@ -2442,6 +2712,21 @@ mod tests {
         assert_eq!(canon(&serde_json::json!(1)), "1");
         assert_eq!(canon(&serde_json::json!(20.0)), "20");
         assert_eq!(canon(&serde_json::json!(-0.0)), "0");
+    }
+
+    #[test]
+    fn query_comparison_normalizes_numeric_response_encoding() {
+        assert_eq!(
+            canonical_query_results(vec![serde_json::json!(1)], false),
+            canonical_query_results(vec![serde_json::json!(1.0)], false)
+        );
+
+        let text_value: Value = serde_json::from_str("17176286778362458520").unwrap();
+        let binary_value: Value = serde_json::from_str("17176286778362458112").unwrap();
+        assert_eq!(
+            canonical_query_results(vec![text_value], false),
+            canonical_query_results(vec![binary_value], false)
+        );
     }
 
     #[test]

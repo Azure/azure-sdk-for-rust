@@ -20,7 +20,7 @@ use azure_storage_blob::models::{
 use azure_storage_blob::StorageError;
 use common::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
-    get_container_name, poll_until, StorageAccount,
+    get_container_name, StorageAccount,
 };
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
@@ -189,7 +189,7 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     ctx.recording()
@@ -235,43 +235,21 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
     .await?;
 
     // Find "hello world" blob by its tag {"foo": "bar"}.
-    // In live mode, poll until tags are indexed (up to 60s total timeout).
-    // In record mode, use a fixed 15s sleep.
-    poll_until(ctx.recording(), || async {
-        let mut pager = container_client
-            .find_blobs_by_tags("\"foo\"='bar'", None)?
-            .into_pages();
-        if let Some(resp) = pager.try_next().await? {
-            let segment = resp.into_model()?;
-            if segment
-                .blob_items
-                .iter()
-                .any(|b| b.name.as_deref() == Some(blob2_name.as_str()))
-            {
-                return Ok(true);
-            }
-        }
-        Ok(false)
-    })
-    .await?;
-    // Final assertion (covers record/playback where poll_until doesn't check the condition)
-    {
-        let mut pager = container_client
-            .find_blobs_by_tags("\"foo\"='bar'", None)?
-            .into_pages();
-        let filter_blob_segment = pager
-            .try_next()
-            .await?
-            .expect("expected at least one page from find_blobs_by_tags")
-            .into_model()?;
-        let blobs = &filter_blob_segment.blob_items;
-        assert!(
-            blobs
-                .iter()
-                .any(|blob| blob.name.as_deref() == Some(blob2_name.as_str())),
-            "Failed to find \"{blob2_name}\" in filtered blob results."
-        );
-    }
+    let mut pager = container_client
+        .find_blobs_by_tags("\"foo\"='bar'", None)?
+        .into_pages();
+    let filter_blob_segment = pager
+        .try_next()
+        .await?
+        .expect("expected at least one page from find_blobs_by_tags")
+        .into_model()?;
+    let blobs = &filter_blob_segment.blob_items;
+    assert!(
+        blobs
+            .iter()
+            .any(|blob| blob.name.as_deref() == Some(blob2_name.as_str())),
+        "Failed to find \"{blob2_name}\" in filtered blob results."
+    );
 
     // Find "ferris the crab" blob by its tag {"fizz": "buzz"}
     let mut pager = container_client

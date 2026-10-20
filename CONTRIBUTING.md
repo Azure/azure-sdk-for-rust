@@ -394,6 +394,33 @@ harness = false
 
 criterion requires `harness = false` to supply its own test harness.
 
+##### Live HTTP transport benchmarks
+
+The `azure_core` `http_transport_benchmarks` benchmark uses `AZURE_TEST_HTTPBIN_URL`.
+Set it to the HTTP or HTTPS origin of an existing local or deployed
+[httpbin](https://httpbin.org/) service. The previous SDK-hosted httpbin service has
+been retired; there is no default endpoint and these commands do not provision a server.
+The configured origin must serve `GET /get` with status 200. A trailing slash is optional;
+credentials, other paths, query strings, and fragments are not supported.
+
+For example, if you already run httpbin on port 8080, run from the repository root:
+
+```sh
+AZURE_TEST_HTTPBIN_URL=http://localhost:8080 cargo bench -p azure_core --bench http_transport_benchmarks
+```
+
+When the variable is unset, the four live transport benchmarks are not registered and
+a notice is printed. This is not a successful HTTP test. Other, offline benchmarks are
+unaffected. Invalid configuration and failed requests fail the run rather than skipping it.
+The existing macOS exclusion remains: even with an endpoint configured, these live
+benchmarks do not execute on macOS and print a notice instead.
+
+The `core_ureq_client` example requires the same endpoint configuration:
+
+```sh
+AZURE_TEST_HTTPBIN_URL=http://localhost:8080 cargo run -p azure_core --example core_ureq_client
+```
+
 #### Performance Tests
 
 For scheduled performance tests that are compared across languages and tracked for regressions, use `azure_core_test::perf::PerfRunner`. These files go under `perf/` in the crate directory. Add the following to `Cargo.toml`:

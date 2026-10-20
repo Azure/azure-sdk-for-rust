@@ -28,14 +28,14 @@ const MAX_BACKOFF: Duration = Duration::from_secs(30);
 pub async fn ensure_container(
     db_client: &DatabaseClient,
     container_name: &str,
-    throughput: usize,
+    throughput: u64,
     default_ttl: Option<TimeToLive>,
 ) -> Result<ContainerClient, Box<dyn std::error::Error>> {
     // Try to resolve the existing container first. `container_client` is
     // not a constructor — it surfaces the same 404 that `read` would,
     // so we have to branch on the error here instead of unconditionally
     // `?`-propagating it (which would short-circuit the create path).
-    match db_client.container_client(container_name).await {
+    match db_client.container_client(container_name, None).await {
         Ok(container_client) => match container_client.read(None).await {
             Ok(_) => {
                 println!("Container '{container_name}' already exists.");
@@ -76,7 +76,7 @@ pub async fn ensure_container(
     let mut backoff = INITIAL_BACKOFF;
 
     for attempt in 1..=MAX_RETRIES {
-        match db_client.container_client(container_name).await {
+        match db_client.container_client(container_name, None).await {
             Ok(container_client) => match container_client.read(None).await {
                 Ok(_) => {
                     println!("Container '{container_name}' confirmed readable.");

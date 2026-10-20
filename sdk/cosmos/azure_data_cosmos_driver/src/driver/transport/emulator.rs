@@ -62,14 +62,14 @@ pub(crate) fn is_emulator_host(endpoint: &AccountEndpoint) -> bool {
 /// # Errors
 ///
 /// Returns a [`CosmosError`](crate::error::CosmosError) with
-/// [`CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL`](crate::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL)
+/// [`crate::error::status_codes::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL`](crate::error::status_codes::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL)
 /// when the endpoint uses `http://` but does not point to an emulator host.
 pub(crate) fn ensure_endpoint_scheme_allowed(
     endpoint: &AccountEndpoint,
 ) -> crate::error::Result<()> {
     if endpoint.url().scheme() == "http" && !is_emulator_host(endpoint) {
         return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL)
+            .with_status(crate::error::status_codes::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL)
             .with_message(
                 "invalid account endpoint: http:// (non-HTTPS) endpoints are only permitted \
                  when connecting to the Cosmos DB emulator; use an https:// endpoint for \
@@ -242,7 +242,7 @@ mod tests {
         let error = ensure_endpoint_scheme_allowed(&endpoint).unwrap_err();
         assert_eq!(
             error.status(),
-            crate::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
+            crate::error::status_codes::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
         );
     }
 

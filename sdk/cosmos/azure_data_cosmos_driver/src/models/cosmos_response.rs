@@ -4,7 +4,7 @@
 //! Cosmos DB operation result types.
 
 use crate::diagnostics::DiagnosticsContext;
-use crate::models::{CosmosResponseHeaders, CosmosStatus, ResponseBody};
+use crate::models::{CosmosResponseHeaders, CosmosStatus, PatchTrackingId, ResponseBody};
 use crate::options::Region;
 use std::sync::Arc;
 
@@ -91,6 +91,9 @@ pub struct CosmosResponse {
 
     /// Full diagnostics context for this operation.
     diagnostics: Arc<DiagnosticsContext>,
+
+    /// Whether the terminal request used operation-specific fallback routing.
+    routing_fallback: bool,
 }
 
 impl CosmosResponse {
@@ -109,7 +112,19 @@ impl CosmosResponse {
             payload: CosmosResponsePayload::new(body, headers),
             status,
             diagnostics,
+            routing_fallback: false,
         }
+    }
+
+    /// Records whether the terminal request used operation-specific fallback routing.
+    pub(crate) fn with_routing_fallback(mut self, routing_fallback: bool) -> Self {
+        self.routing_fallback = routing_fallback;
+        self
+    }
+
+    /// Returns whether the terminal request used operation-specific fallback routing.
+    pub(crate) fn routing_fallback(&self) -> bool {
+        self.routing_fallback
     }
 
     /// Returns a reference to the wire-level payload (body + headers).
@@ -135,6 +150,13 @@ impl CosmosResponse {
     /// Consumes the response and returns the body.
     pub fn into_body(self) -> ResponseBody {
         self.payload.into_body()
+    }
+
+    /// Suppresses the response payload while preserving status, headers,
+    /// diagnostics, and routing metadata.
+    pub(crate) fn without_body(mut self) -> Self {
+        self.payload.body = ResponseBody::NoPayload;
+        self
     }
 
     /// Transcodes a binary JSON response body to text JSON in place.
@@ -177,6 +199,14 @@ impl CosmosResponse {
     /// Returns a borrow of the diagnostics [`Arc`] without cloning it.
     pub fn diagnostics_ref(&self) -> &Arc<DiagnosticsContext> {
         &self.diagnostics
+    }
+
+    /// Returns the effective duplicate-suppression identity for a tracked PATCH.
+    ///
+    /// This includes IDs generated internally by the driver. It is `None` for
+    /// operations that do not require PATCH tracking.
+    pub fn patch_tracking_id(&self) -> Option<PatchTrackingId> {
+        self.diagnostics.patch_tracking_id()
     }
 
     /// Returns the region that actually produced this response, if known.
@@ -314,7 +344,7 @@ mod tests {
         let status = result.status();
         assert!(!status.is_success());
         assert!(status.is_throttled());
-        assert_eq!(status, CosmosStatus::RU_BUDGET_EXCEEDED);
+        assert_eq!(status, crate::error::status_codes::RU_BUDGET_EXCEEDED);
     }
 
     #[test]
@@ -350,7 +380,7 @@ mod tests {
     fn cosmos_response_status_accessor() {
         let status = make_status(
             Some(StatusCode::NotFound),
-            Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+            Some(crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE),
         );
         let result = CosmosResponse::new(
             b"{}".to_vec(),
@@ -358,7 +388,7 @@ mod tests {
             status,
             make_diagnostics(
                 Some(StatusCode::NotFound),
-                Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+                Some(crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE),
             ),
         );
 

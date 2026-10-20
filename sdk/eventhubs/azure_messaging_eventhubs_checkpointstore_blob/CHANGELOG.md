@@ -1,14 +1,22 @@
 # Release History
 
-## 0.9.0 (Unreleased)
-
-### Features Added
-
-### Breaking Changes
-
-### Bugs Fixed
+## 0.11.0 (2026-09-14)
 
 ### Other Changes
+
+- Updated `azure_messaging_eventhubs` to 0.17.0, which withdraws AMQP-over-WebSockets support and removes the prohibited `sha1` dependency. ([#5261](https://github.com/Azure/azure-sdk-for-rust/issues/5261))
+
+## 0.10.0 (2026-09-08)
+
+### Other Changes
+
+- Updated dependencies.
+
+## 0.9.0 (2026-06-03)
+
+### Other Changes
+
+- Updated dependencies.
 
 ## 0.8.0 (2026-04-22)
 

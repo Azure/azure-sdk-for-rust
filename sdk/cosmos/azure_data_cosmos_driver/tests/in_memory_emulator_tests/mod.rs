@@ -6,9 +6,13 @@
 pub mod account_metadata_refresh;
 pub mod batch;
 pub mod binary_response_format;
+#[cfg(feature = "fault_injection")]
+pub mod container_recreation;
 pub mod control_plane;
-#[cfg(feature = "preview_dtx")]
+pub mod distinct;
+#[cfg(feature = "unstable_dtx")]
 pub mod distributed_transaction;
+pub mod dynamic_topology;
 #[cfg(feature = "fault_injection")]
 pub mod endpoint_probe_failback;
 pub mod error_cases;
@@ -16,23 +20,39 @@ pub mod error_diagnostics;
 pub mod excluded_regions_fallback;
 #[cfg(feature = "fault_injection")]
 pub mod hedging;
+#[cfg(feature = "fault_injection")]
+pub mod hedging_dynamic_suppression;
 pub mod host_recorder;
+pub mod local_query_planning;
 pub mod metadata_hedging;
 #[cfg(feature = "fault_injection")]
 pub mod metadata_hedging_stress;
 pub mod multi_region;
 pub mod offers;
 pub mod order_by;
+pub mod partition_key_range_cache_lifecycle;
+pub mod partition_topology_cache;
+pub mod patch_default;
+#[cfg(feature = "fault_injection")]
+#[cfg(feature = "unstable_patch")]
+pub mod patch_retry_faults;
+#[cfg(feature = "unstable_patch")]
+pub mod patch_strategy;
+#[cfg(feature = "unstable_patch")]
+pub mod patch_verification_routing;
 pub mod point_operations;
 pub mod ppaf_dynamic_enablement;
 pub mod query;
 pub mod read_feed;
+pub mod region_online_offline;
 #[cfg(feature = "fault_injection")]
 pub mod regional_gateway_unreachable;
+pub mod skip_take;
 pub mod split_merge;
 pub mod throttling;
 #[cfg(feature = "fault_injection")]
 pub mod topology_refresh_on_substatus;
+pub mod topology_sdk_behavior;
 
 use azure_core::http::{
     headers::{HeaderName, HeaderValue, Headers},
@@ -264,6 +284,39 @@ pub fn upsert_item_request(
     req
 }
 
+/// Parses a response body, accepting either text JSON or Cosmos binary JSON.
+///
+/// Binary encoding is enabled by default, so a body is detected by its `0x80`
+/// preamble rather than assumed to be text.
+pub fn parse_json_body(bytes: &[u8]) -> Option<serde_json::Value> {
+    if azure_data_cosmos_driver::binary_json::is_binary(bytes) {
+        azure_data_cosmos_driver::binary_json::decode(bytes).ok()
+    } else {
+        serde_json::from_slice(bytes).ok()
+    }
+}
+
+/// Decodes a query page's documents into JSON values, accepting either a
+/// pre-split `Items` body (as the cross-partition skip/take and streaming
+/// ORDER BY nodes now emit) or a raw `{"Documents":[...]}` envelope in a single
+/// `Bytes` payload (as a single-partition passthrough returns).
+pub fn page_document_values(
+    response: azure_data_cosmos_driver::models::CosmosResponse,
+) -> Vec<serde_json::Value> {
+    use azure_data_cosmos_driver::models::ResponseBody;
+    match response.into_body() {
+        ResponseBody::NoPayload => Vec::new(),
+        ResponseBody::Items(items) => items
+            .iter()
+            .map(|b| parse_json_body(b).expect("item should parse as text or binary JSON"))
+            .collect(),
+        ResponseBody::Bytes(b) => {
+            let value = parse_json_body(&b).expect("page should parse as text or binary JSON");
+            value["Documents"].as_array().cloned().unwrap_or_default()
+        }
+    }
+}
+
 /// Reads the response body as JSON. Consumes the response.
 pub async fn read_response_body(response: AsyncRawResponse) -> serde_json::Value {
     let raw = response.try_into_raw_response().await.unwrap();
@@ -271,7 +324,7 @@ pub async fn read_response_body(response: AsyncRawResponse) -> serde_json::Value
     if body_bytes.is_empty() {
         serde_json::Value::Null
     } else {
-        serde_json::from_slice(body_bytes).unwrap_or(serde_json::Value::Null)
+        parse_json_body(body_bytes).unwrap_or(serde_json::Value::Null)
     }
 }
 
@@ -286,7 +339,7 @@ pub async fn collect_response(
     let body = if body_bytes.is_empty() {
         serde_json::Value::Null
     } else {
-        serde_json::from_slice(body_bytes).unwrap_or(serde_json::Value::Null)
+        parse_json_body(body_bytes).unwrap_or(serde_json::Value::Null)
     };
     (status, headers, body)
 }

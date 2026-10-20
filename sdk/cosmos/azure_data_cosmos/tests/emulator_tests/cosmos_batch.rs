@@ -36,7 +36,7 @@ async fn create_container(
             None,
         )
         .await?;
-    let container_client = db_client.container_client(&container_id).await?;
+    let container_client = db_client.container_client(&container_id, None).await?;
 
     Ok(container_client)
 }

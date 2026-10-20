@@ -14,6 +14,7 @@
 //! for session authentication.
 
 use azure_core::{
+    base64,
     error::ErrorKind,
     http::{
         headers::{HeaderName, CONTENT_LENGTH, CONTENT_TYPE, IF_MATCH},
@@ -21,7 +22,6 @@ use azure_core::{
     },
     Error, Result,
 };
-use base64::{engine::general_purpose::STANDARD, Engine as _};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use std::collections::BTreeMap;
@@ -52,7 +52,7 @@ pub(crate) fn sign(request: &Request, account: &str, session_key: &str) -> Resul
 /// The session key is a base64-encoded symmetric key, mirroring how a Storage
 /// account key is decoded before use as the HMAC key.
 fn compute_signature(session_key: &str, string_to_sign: &str) -> Result<String> {
-    let key = STANDARD.decode(session_key).map_err(|e| {
+    let key = base64::decode(session_key).map_err(|e| {
         Error::with_message(
             ErrorKind::DataConversion,
             format!("Session key is not valid base64: {e}"),
@@ -62,7 +62,7 @@ fn compute_signature(session_key: &str, string_to_sign: &str) -> Result<String> 
         Error::with_message(ErrorKind::Other, format!("Invalid session key length: {e}"))
     })?;
     mac.update(string_to_sign.as_bytes());
-    Ok(STANDARD.encode(mac.finalize().into_bytes()))
+    Ok(base64::encode(mac.finalize().into_bytes()))
 }
 
 /// Builds the Storage Shared Key string-to-sign for `request`.
@@ -237,6 +237,12 @@ mod tests {
     fn compute_signature_matches_known_answer() {
         // Independently computed with .NET HMAC-SHA256 over the same inputs.
         let signature = compute_signature("c2Vzc2lvbi1rZXk=", "test-string-to-sign").unwrap();
+        assert_eq!(signature, "I4BGEfas+uyRVJfNiy9KsuLp3XnhEw7x1yOgv0y3RTM=");
+    }
+
+    #[test]
+    fn compute_signature_accepts_base64_key_without_padding() {
+        let signature = compute_signature("c2Vzc2lvbi1rZXk", "test-string-to-sign").unwrap();
         assert_eq!(signature, "I4BGEfas+uyRVJfNiy9KsuLp3XnhEw7x1yOgv0y3RTM=");
     }
 

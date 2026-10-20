@@ -47,6 +47,7 @@ AI agents can assist with:
    - Running `cargo fmt` and `cargo clippy` on all modified crates (see [Linting and Formatting](#linting-and-formatting))
 
 2. **Code Review**
+   - Use the [review-doc-comments skill](.github/skills/review-doc-comments/SKILL.md) whenever reviewing code that affects public APIs, even when no doc comments changed.
    - Identifying potential bugs or safety issues
    - Suggesting improvements for idiomatic Rust patterns
    - Checking adherence to Azure SDK design guidelines
@@ -150,11 +151,14 @@ You are an expert Rust programmer. You write safe, efficient, maintainable, and 
 
 - Dependencies should be defined in the root workspace's `Cargo.toml` file.
 - Published dependencies should generally inherit the root workspace entry with `workspace = true`; this is the default for crates under `sdk/`.
+- When deciding whether a crate can ship against already-published workspace versions, evaluate the package's normal `[dependencies]`. Crates used only from `[dev-dependencies]` for tests, examples, or doc tests may remain local path dependencies.
 - When a crate needs unreleased changes, depend on the local crate with both `path` and `version`.
 - Local dev-dependencies should generally be `path`-only so `cargo package` can validate publishable crates without requiring unpublished versions from crates.io.
+- If the same package appears in both `[dependencies]` and `[dev-dependencies]` of one manifest, keep both entries on the same source. Cargo rejects mixed published and local sources for the same package within one manifest.
 - In `sdk/core`, keep dependency versions managed from the root workspace and use local `path + version` only when the core stack (`typespec -> typespec_client_core -> azure_core`) must move together on unreleased changes.
 - Outside `sdk/core`, crates should usually inherit workspace dependencies that resolve to published versions; switch to local `path + version` on `sdk/core` crates only when they require unreleased core changes.
 - When a service crate switches to local `sdk/core` crates, check neighboring crates in the same build, test, or example graph for exchanged `sdk/core`-exposed types; they may also need matching local path dependencies to avoid mixed-graph type mismatches.
+- When selecting a third-party Cargo dependency version for a crate that is not built in this repository, agents must emit an error instead of choosing a crates.io release newer than 7 days old. CI resolves crates through the Azure Artifacts Cargo feed, and new upstream releases may not be mirrored there yet.
 
 ### General
 
@@ -276,6 +280,7 @@ Additional specialized instructions for specific workflows can be found in:
   - `create-perf-test` - Generate a new performance test
   - `create-recorded-test` - Generate a new recorded integration test
   - `lint-markdown` - Check and fix formatting in markdown files using markdownlint-cli2
+- Before changing GitHub Agentic Workflows, run `gh extension upgrade aw`. For repository-wide upgrades, run `gh aw upgrade`; after any workflow change, run `gh aw compile` to update all workflow lock files.
 - Keep local AGENTS terse: add only deltas, use short imperative bullets, and link instead of repeating detail.
 
 ## Cross-References

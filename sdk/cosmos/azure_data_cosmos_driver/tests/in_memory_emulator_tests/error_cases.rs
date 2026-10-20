@@ -521,3 +521,63 @@ async fn session_not_available_404_1002() {
         .unwrap_or("0");
     assert_eq!(substatus, "1002");
 }
+
+#[tokio::test]
+async fn latest_committed_overrides_session_token_validation() {
+    let ctx = setup_single_region().await;
+    let body = serde_json::json!({"id": "item1", "pk": "pk1", "value": 42});
+    let create = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &body,
+        r#"["pk1"]"#,
+        false,
+    );
+    let created = ctx.emulator.execute_request(&create).await.unwrap();
+    assert_eq!(created.status(), StatusCode::Created);
+    let pkrange_id = created
+        .headers()
+        .get_optional_str(&SESSION_TOKEN)
+        .expect("create should return a session token")
+        .split(':')
+        .next()
+        .expect("session token should include a partition range")
+        .to_string();
+    let future_session = format!("{pkrange_id}:-1#999");
+
+    let request = |latest_committed: bool| {
+        let url = format!("{}/dbs/testdb/colls/testcoll/docs/item1", ctx.gateway_url);
+        let mut request = azure_core::http::Request::new(
+            azure_core::http::Url::parse(&url).unwrap(),
+            azure_core::http::Method::Get,
+        );
+        request.headers_mut().insert(
+            PARTITION_KEY.clone(),
+            azure_core::http::headers::HeaderValue::from(r#"["pk1"]"#.to_string()),
+        );
+        request.headers_mut().insert(
+            SESSION_TOKEN.clone(),
+            azure_core::http::headers::HeaderValue::from(future_session.clone()),
+        );
+        if latest_committed {
+            request.headers_mut().insert(
+                azure_core::http::headers::HeaderName::from_static(
+                    "x-ms-cosmos-read-consistency-strategy",
+                ),
+                azure_core::http::headers::HeaderValue::from_static("LatestCommitted"),
+            );
+        }
+        request
+    };
+
+    let session_response = ctx.emulator.execute_request(&request(false)).await.unwrap();
+    assert_eq!(session_response.status(), StatusCode::NotFound);
+    assert_eq!(
+        session_response.headers().get_optional_str(&SUBSTATUS),
+        Some("1002")
+    );
+
+    let latest_response = ctx.emulator.execute_request(&request(true)).await.unwrap();
+    assert_eq!(latest_response.status(), StatusCode::Ok);
+}

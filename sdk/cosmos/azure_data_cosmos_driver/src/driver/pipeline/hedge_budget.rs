@@ -45,7 +45,7 @@
 
 use async_lock::{Semaphore, SemaphoreGuard};
 
-use crate::diagnostics::PipelineType;
+use crate::diagnostics::PipelineKind;
 use crate::options::HedgingOptions;
 
 /// Per-client ceiling on concurrent cross-region metadata hedge races.
@@ -83,7 +83,7 @@ impl HedgeBudget {
     ///
     /// The returned permit releases its slot on drop, so a race that ends early
     /// (primary wins pre-threshold, deadline fires) frees its slot immediately.
-    pub(crate) fn try_admit(&self, pipeline_type: PipelineType) -> Option<HedgePermit<'_>> {
+    pub(crate) fn try_admit(&self, pipeline_type: PipelineKind) -> Option<HedgePermit<'_>> {
         if !pipeline_type.is_metadata() {
             return Some(HedgePermit::Unbudgeted);
         }
@@ -120,12 +120,12 @@ mod tests {
     fn permits_are_issued_up_to_the_limit() {
         let budget = HedgeBudget::with_metadata_limit(2);
 
-        let first = budget.try_admit(PipelineType::Metadata);
-        let second = budget.try_admit(PipelineType::Metadata);
+        let first = budget.try_admit(PipelineKind::Metadata);
+        let second = budget.try_admit(PipelineKind::Metadata);
         assert!(first.is_some());
         assert!(second.is_some());
         assert!(
-            budget.try_admit(PipelineType::Metadata).is_none(),
+            budget.try_admit(PipelineKind::Metadata).is_none(),
             "a third metadata race must be refused rather than queued"
         );
     }
@@ -134,13 +134,13 @@ mod tests {
     fn dropping_a_permit_returns_the_slot() {
         let budget = HedgeBudget::with_metadata_limit(1);
 
-        let permit = budget.try_admit(PipelineType::Metadata);
+        let permit = budget.try_admit(PipelineKind::Metadata);
         assert!(permit.is_some());
-        assert!(budget.try_admit(PipelineType::Metadata).is_none());
+        assert!(budget.try_admit(PipelineKind::Metadata).is_none());
 
         drop(permit);
         assert!(
-            budget.try_admit(PipelineType::Metadata).is_some(),
+            budget.try_admit(PipelineKind::Metadata).is_some(),
             "a finished race must free its slot immediately"
         );
     }
@@ -150,13 +150,13 @@ mod tests {
         let budget = HedgeBudget::with_metadata_limit(0);
 
         assert!(
-            budget.try_admit(PipelineType::Metadata).is_none(),
+            budget.try_admit(PipelineKind::Metadata).is_none(),
             "a zero metadata limit refuses every metadata race"
         );
         let permits: Vec<_> = (0..1000)
             .map(|_| {
                 budget
-                    .try_admit(PipelineType::DataPlane)
+                    .try_admit(PipelineKind::DataPlane)
                     .expect("data-plane hedging must not be gated by the metadata budget")
             })
             .collect();
@@ -168,9 +168,9 @@ mod tests {
         let budget = HedgeBudget::with_metadata_limit(1);
         for _ in 0..64 {
             let permit = budget
-                .try_admit(PipelineType::Metadata)
+                .try_admit(PipelineKind::Metadata)
                 .expect("slot must be free at the start of each round");
-            assert!(budget.try_admit(PipelineType::Metadata).is_none());
+            assert!(budget.try_admit(PipelineKind::Metadata).is_none());
             drop(permit);
         }
     }
@@ -185,11 +185,11 @@ mod tests {
         let permits: Vec<_> = (0..3)
             .map(|_| {
                 budget
-                    .try_admit(PipelineType::Metadata)
+                    .try_admit(PipelineKind::Metadata)
                     .expect("the configured limit must be admitted in full")
             })
             .collect();
-        assert!(budget.try_admit(PipelineType::Metadata).is_none());
+        assert!(budget.try_admit(PipelineKind::Metadata).is_none());
         drop(permits);
     }
 
@@ -199,12 +199,12 @@ mod tests {
         let permits: Vec<_> = (0..DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS)
             .map(|_| {
                 budget
-                    .try_admit(PipelineType::Metadata)
+                    .try_admit(PipelineKind::Metadata)
                     .expect("default budget must admit up to its limit")
             })
             .collect();
-        assert!(budget.try_admit(PipelineType::Metadata).is_none());
+        assert!(budget.try_admit(PipelineKind::Metadata).is_none());
         drop(permits);
-        assert!(budget.try_admit(PipelineType::Metadata).is_some());
+        assert!(budget.try_admit(PipelineKind::Metadata).is_some());
     }
 }

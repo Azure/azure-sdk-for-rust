@@ -65,7 +65,7 @@ pub struct Config {
 
     /// Provisioned throughput (RU/s) for the container when it is created.
     #[arg(long, default_value_t = 400)]
-    pub throughput: usize,
+    pub throughput: u64,
 
     // --- Workload ---------------------------------------------------------
     /// Number of documents to seed before the load loop starts.
@@ -300,10 +300,11 @@ impl Config {
                     .into(),
             );
         }
-        if !cfg!(feature = "metrics") && self.extended_metrics {
+        if !cfg!(feature = "unstable_opentelemetry") && self.extended_metrics {
             return Err(
                 "--extended-metrics was requested but this build was compiled without \
-                        the `metrics` feature; rebuild with `--features metrics` (on by default)"
+                        the `unstable_opentelemetry` feature; rebuild with \
+                        `--features unstable_opentelemetry` (on by default)"
                     .into(),
             );
         }

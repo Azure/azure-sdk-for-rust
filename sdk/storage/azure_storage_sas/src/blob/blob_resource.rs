@@ -36,7 +36,12 @@ impl BlobResource {
     }
 
     pub(crate) fn canonicalized_resource(&self, account: &str) -> String {
-        format!("/blob/{}/{}/{}", account, self.container, self.blob)
+        format!(
+            "/blob/{}/{}/{}",
+            account,
+            self.container,
+            self.blob.replace('\\', "/")
+        )
     }
 
     pub(crate) fn snapshot_time(&self) -> Option<&str> {
@@ -116,5 +121,20 @@ impl BlobPermissions {
             s.push('i');
         }
         s
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn canonicalized_resource_normalizes_backslashes() {
+        let resource = BlobResource::new("container", r"dir\blob.txt");
+
+        assert_eq!(
+            resource.canonicalized_resource("account"),
+            "/blob/account/container/dir/blob.txt"
+        );
     }
 }

@@ -19,7 +19,11 @@ pub enum AmqpErrorKind {
     /// Azure Core error.
     AzureCore(azure_core::Error),
 
-    /// Described error - An error described by the remote peer.
+    /// Described error - An error that carries an AMQP error condition.
+    ///
+    /// The remote peer sends most of these errors. The client also reports a
+    /// local violation of an AMQP limit this way, for example a message that is
+    /// larger than the link allows (`amqp:link:message-size-exceeded`).
     AmqpDescribedError(AmqpDescribedError),
 
     /// Remote peer closed the link

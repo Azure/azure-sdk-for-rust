@@ -80,7 +80,15 @@ fn generate_c_header() {
          #define COSMOS_VALUE_KIND_I64    1\n\
          #define COSMOS_VALUE_KIND_F64    2\n\
          #define COSMOS_VALUE_KIND_BOOL   3\n\
-         #define COSMOS_VALUE_KIND_U64    4",
+         #define COSMOS_VALUE_KIND_U64    4\n\
+         \n\
+         // Discriminants for cosmos_operation_options_t.query_plan_mode.\n\
+         #define COSMOS_QUERY_PLAN_MODE_UNSET           0\n\
+         #define COSMOS_QUERY_PLAN_MODE_LOCAL_PREFERRED 1\n\
+         #define COSMOS_QUERY_PLAN_MODE_GATEWAY_ONLY    2\n\
+         \n\
+         // Version of the size-prefixed native fault-injection records.\n\
+         #define COSMOS_FAULT_INJECTION_ABI_VERSION_1 1",
         env!("CARGO_PKG_VERSION")
     );
 
@@ -96,11 +104,28 @@ fn generate_c_header() {
     // Renames for types not currently emitted are harmless no-ops, so the
     // table can list the full naming policy in one place.
     let rename = HashMap::from([
+        ("CosmosCursorRequest".into(), "cursor_request_t".into()),
+        (
+            "CosmosCursorCompletion".into(),
+            "cursor_completion_t".into(),
+        ),
+        ("CosmosCursorBytes".into(), "cursor_bytes_t".into()),
+        ("CursorHandle".into(), "cursor_t".into()),
+        (
+            "CursorCompletionBacking".into(),
+            "cursor_completion_backing_t".into(),
+        ),
         ("RuntimeContext".into(), "runtime_t".into()),
+        (
+            "OperationOptionsSnapshot".into(),
+            "operation_options_snapshot_t".into(),
+        ),
         ("CosmosDriver".into(), "driver_t".into()),
         ("DriverHandle".into(), "driver_t".into()),
         ("AccountReference".into(), "account_ref_t".into()),
         ("AccountRefHandle".into(), "account_ref_t".into()),
+        ("CosmosTokenRequest".into(), "token_request_t".into()),
+        ("CosmosTokenProvider".into(), "token_provider_t".into()),
         ("DatabaseReference".into(), "database_ref_t".into()),
         ("DatabaseRefHandle".into(), "database_ref_t".into()),
         ("ContainerReference".into(), "container_ref_t".into()),
@@ -122,6 +147,11 @@ fn generate_c_header() {
         ("FeedRange".into(), "feed_range_t".into()),
         ("FeedRangeHandle".into(), "feed_range_t".into()),
         ("DiagnosticsContext".into(), "diagnostics_t".into()),
+        ("CosmosDiagnostics".into(), "diagnostics_t".into()),
+        (
+            "CosmosDiagnosticsVerbosity".into(),
+            "diagnostics_verbosity_t".into(),
+        ),
         ("CompletionQueue".into(), "completion_queue_t".into()),
         (
             "CompletionQueueInner".into(),
@@ -152,6 +182,7 @@ fn generate_c_header() {
             "CosmosPartitionKeyComponentValue".into(),
             "partition_key_component_value_t".into(),
         ),
+        ("CosmosStringView".into(), "string_view_t".into()),
         ("CosmosResponseHeader".into(), "response_header_t".into()),
         ("CosmosValue".into(), "value_t".into()),
         ("CosmosValueKind".into(), "value_kind_t".into()),
@@ -164,11 +195,48 @@ fn generate_c_header() {
             "CosmosOperationRequest".into(),
             "operation_request_t".into(),
         ),
+        (
+            "CosmosOperationRequestV2".into(),
+            "operation_request_v2_t".into(),
+        ),
         ("CosmosRuntimeOptions".into(), "runtime_options_t".into()),
         (
             "CosmosDriverOptionsConfig".into(),
             "driver_options_config_t".into(),
         ),
+        (
+            "CosmosDriverOptionsConfigV2".into(),
+            "driver_options_config_v2_t".into(),
+        ),
+        (
+            "CosmosFaultInjectionRecordHeader".into(),
+            "fault_injection_record_header_t".into(),
+        ),
+        (
+            "CosmosFaultInjectionCondition".into(),
+            "fault_injection_condition_t".into(),
+        ),
+        (
+            "CosmosFaultInjectionResult".into(),
+            "fault_injection_result_t".into(),
+        ),
+        (
+            "CosmosFaultInjectionRule".into(),
+            "fault_injection_rule_t".into(),
+        ),
+        (
+            "CosmosFaultInjectionOperationType".into(),
+            "fault_injection_operation_type_t".into(),
+        ),
+        (
+            "CosmosFaultInjectionErrorType".into(),
+            "fault_injection_error_type_t".into(),
+        ),
+        (
+            "CosmosFaultInjectionTransportKind".into(),
+            "fault_injection_transport_kind_t".into(),
+        ),
+        ("CosmosQueryPlanMode".into(), "query_plan_mode_t".into()),
         // Enums / option structs. Variant prefixes are baked into
         // the Rust variant names (e.g. `CompletionQueueStateRunning`,
         // `CompletionOutcomeOk`) so the `ScreamingSnakeCase` enum rule
@@ -195,6 +263,7 @@ fn generate_c_header() {
             "CosmosContentResponseOnWrite".into(),
             "content_response_on_write_t".into(),
         ),
+        ("CosmosPatchStrategy".into(), "patch_strategy_t".into()),
     ]);
 
     let config = cbindgen::Config {
@@ -247,10 +316,14 @@ fn generate_c_header() {
                 "CosmosPreconditionKind".into(),
                 "CosmosReadConsistencyStrategy".into(),
                 "CosmosContentResponseOnWriteOpt".into(),
+                "CosmosPatchStrategy".into(),
                 // Named mirror of the driver's synthetic sub-status codes. Not
                 // referenced by any exported struct field (hosts read the low 16
                 // bits of a packed cosmos_status_code_t), so force its emission.
                 "CosmosSubStatus".into(),
+                "CosmosFaultInjectionOperationType".into(),
+                "CosmosFaultInjectionErrorType".into(),
+                "CosmosFaultInjectionTransportKind".into(),
             ],
             // Test-only C-ABI helpers gated behind the `test-abi` feature.
             // Kept out of the public header even when the feature is on so
@@ -262,7 +335,10 @@ fn generate_c_header() {
             // double-prefixing it into `cosmos_COSMOS_STATUS_SUCCESS`.
             exclude: vec![
                 "__test_only_enqueue_ok_completion_with_all_value_kinds".into(),
+                "cosmos_test_cursor_fixture".into(),
+                "__test_only_create_fault_injection_fixture".into(),
                 "COSMOS_STATUS_SUCCESS".into(),
+                "COSMOS_FAULT_INJECTION_ABI_VERSION_1".into(),
             ],
             rename,
             ..Default::default()

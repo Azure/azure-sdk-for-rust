@@ -117,7 +117,7 @@ async fn write_transaction_rejects_container_from_different_account() -> Result<
     );
     let foreign_container = container_client_owner
         .database_client("db")
-        .container_client("coll")
+        .container_client("coll", None)
         .await?;
 
     let transaction = azure_data_cosmos::DistributedWriteTransaction::new().delete_item(
@@ -162,7 +162,7 @@ async fn read_transaction_rejects_container_from_different_account() -> Result<(
     );
     let foreign_container = container_client_owner
         .database_client("db")
-        .container_client("coll")
+        .container_client("coll", None)
         .await?;
 
     let transaction = azure_data_cosmos::DistributedReadTransaction::new().read_item(
@@ -269,14 +269,20 @@ async fn emulator_point_writes_wait_for_dtx_write_guard() -> Result<(), Box<dyn 
     let runtime = emulator.runtime_builder().build().await?;
     let driver = runtime
         .create_driver(
-            DriverOptions::builder(DriverAccountReference::with_master_key(
+            DriverOptions::builder(DriverAccountReference::with_account_key(
                 Url::parse(endpoint)?,
                 "dGVzdGtleQ==",
             ))
             .build(),
         )
         .await?;
-    let container = driver.resolve_container("db", "coll").await?;
+    let container = driver
+        .resolve_container(
+            "db",
+            "coll",
+            azure_data_cosmos_driver::options::OperationOptions::default(),
+        )
+        .await?;
     let mut write_task = tokio::spawn(async move {
         let body = serde_json::to_vec(&json!({
             "id": "blocked-item",

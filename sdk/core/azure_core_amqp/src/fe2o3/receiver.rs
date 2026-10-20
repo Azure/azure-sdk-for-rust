@@ -4,7 +4,7 @@
 use crate::{
     error::{AmqpErrorKind, Result},
     messaging::{AmqpDelivery, AmqpSource},
-    receiver::{AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
+    receiver::{AmqpDeliveryOutcome, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
     session::AmqpSession,
     AmqpError,
 };
@@ -184,6 +184,56 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         Ok(())
     }
 
+    async fn settle_delivery(
+        &self,
+        delivery: &AmqpDelivery,
+        outcome: AmqpDeliveryOutcome,
+    ) -> Result<()> {
+        let receiver = self
+            .receiver
+            .get()
+            .ok_or_else(Self::receiver_not_set)?
+            .lock()
+            .await;
+
+        trace!("Settling delivery with outcome: {:?}", outcome);
+        match outcome {
+            AmqpDeliveryOutcome::Accepted => receiver
+                .accept(&delivery.0.delivery)
+                .await
+                .map_err(AmqpError::from)?,
+            AmqpDeliveryOutcome::Released => receiver
+                .release(&delivery.0.delivery)
+                .await
+                .map_err(AmqpError::from)?,
+            AmqpDeliveryOutcome::Rejected(error) => receiver
+                .reject(
+                    &delivery.0.delivery,
+                    error.map(fe2o3_amqp_types::definitions::Error::from),
+                )
+                .await
+                .map_err(AmqpError::from)?,
+            AmqpDeliveryOutcome::Modified {
+                delivery_failed,
+                undeliverable_here,
+                message_annotations,
+            } => receiver
+                .modify(
+                    &delivery.0.delivery,
+                    fe2o3_amqp_types::messaging::Modified {
+                        delivery_failed,
+                        undeliverable_here,
+                        message_annotations: message_annotations.map(Into::into),
+                    },
+                )
+                .await
+                .map_err(AmqpError::from)?,
+        }
+        trace!("Settled delivery.");
+
+        Ok(())
+    }
+
     async fn release_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
         let receiver = self
             .receiver
@@ -235,7 +285,8 @@ impl From<fe2o3_amqp::link::ReceiverAttachError> for AmqpError {
             fe2o3_amqp::link::ReceiverAttachError::RemoteClosedWithError(e) => {
                 AmqpErrorKind::AmqpDescribedError(e.into()).into()
             }
-            fe2o3_amqp::link::ReceiverAttachError::IllegalSessionState
+            fe2o3_amqp::link::ReceiverAttachError::SessionStopped(_)
+            | fe2o3_amqp::link::ReceiverAttachError::SessionNotMapped
             | fe2o3_amqp::link::ReceiverAttachError::IllegalState => {
                 AmqpErrorKind::ConnectionDropped(Box::new(e)).into()
             }
@@ -254,6 +305,9 @@ impl From<fe2o3_amqp::link::RecvError> for AmqpError {
             // this for `SendError::LinkStateError`.
             fe2o3_amqp::link::RecvError::LinkStateError(link_state_error) => {
                 AmqpError::from(link_state_error)
+            }
+            fe2o3_amqp::link::RecvError::MessageSizeExceeded(exceeded) => {
+                super::error::message_size_exceeded(exceeded)
             }
             fe2o3_amqp::link::RecvError::TransferLimitExceeded => {
                 AmqpErrorKind::TransferLimitExceeded(Box::new(e)).into()
@@ -400,7 +454,9 @@ mod tests {
     #[test]
     fn recv_link_state_other_carries_the_link_state_error() {
         let recv_error = fe2o3_amqp::link::RecvError::LinkStateError(
-            fe2o3_amqp::link::LinkStateError::IllegalSessionState,
+            fe2o3_amqp::link::LinkStateError::SessionStopped(
+                fe2o3_amqp::link::SessionStopReason::RemoteEnded,
+            ),
         );
         let amqp_error = AmqpError::from(recv_error);
         let AmqpErrorKind::LinkStateError(source) = amqp_error.kind() else {
@@ -412,5 +468,43 @@ mod tests {
                 .is_some(),
             "the reported error must carry the LinkStateError, not the enclosing RecvError"
         );
+    }
+
+    #[test]
+    fn recv_message_size_exceeded_reports_payload_size_condition() {
+        let recv_error = fe2o3_amqp::link::RecvError::MessageSizeExceeded(
+            fe2o3_amqp::link::MessageSizeExceeded {
+                size: 2048,
+                max_size: 1024,
+            },
+        );
+        let error = AmqpError::from(recv_error);
+        let AmqpErrorKind::AmqpDescribedError(described) = error.kind() else {
+            panic!("an oversized delivery must report a described error");
+        };
+        assert_eq!(
+            described.condition,
+            crate::error::AmqpErrorCondition::LinkPayloadSizeExceeded
+        );
+        let description = described
+            .description
+            .as_deref()
+            .expect("an oversized delivery must report its size and the link maximum");
+        assert!(description.contains("2048"));
+        assert!(description.contains("1024"));
+        assert!(described.info.is_empty());
+    }
+
+    // fe2o3-amqp 0.17 replaced `IllegalSessionState` with `SessionStopped`.
+    // The attach failure must keep the recovery kind it had before.
+    #[test]
+    fn receiver_attach_session_stopped_reports_connection_dropped() {
+        let attach_error = fe2o3_amqp::link::ReceiverAttachError::SessionStopped(
+            fe2o3_amqp::link::SessionStopReason::RemoteEnded,
+        );
+        assert!(matches!(
+            AmqpError::from(attach_error).kind(),
+            AmqpErrorKind::ConnectionDropped(_)
+        ));
     }
 }

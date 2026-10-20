@@ -104,6 +104,22 @@ impl CosmosClient {
         CosmosClientBuilder::new()
     }
 
+    /// Returns the writable and readable regions cached from the account
+    /// properties response used to initialize this client.
+    ///
+    /// **Unsupported internal API** used only by tests that need to mirror the
+    /// topology of an optional live account.
+    #[cfg(any(feature = "__internal_in_memory_emulator", feature = "fault_injection"))]
+    #[doc(hidden)]
+    pub async fn cached_account_regions_for_testing(
+        &self,
+    ) -> Option<(Vec<crate::options::Region>, Vec<crate::options::Region>)> {
+        self.context
+            .driver
+            .cached_account_regions_for_testing()
+            .await
+    }
+
     /// Gets a [`DatabaseClient`] that can be used to access the database with the
     /// specified identity.
     ///
@@ -129,12 +145,12 @@ impl CosmosClient {
         DatabaseClient::new(self.context.clone(), database.into())
     }
 
-    /// Commits a preview distributed write transaction.
+    /// Commits an unstable distributed write transaction.
     ///
-    /// **Preview / work in progress.** Requires the disabled-by-default
-    /// `preview_dtx` feature and a service account with the DTX feature enabled.
+    /// **Unstable / work in progress.** Requires the disabled-by-default
+    /// `unstable_dtx` feature and a service account with the DTX feature enabled.
     /// Not supported for production use; the API may change without notice.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub async fn commit_distributed_write(
         &self,
         transaction: crate::clients::DistributedWriteTransaction,
@@ -146,12 +162,12 @@ impl CosmosClient {
         .await
     }
 
-    /// Executes a preview distributed read transaction.
+    /// Executes an unstable distributed read transaction.
     ///
-    /// **Preview / work in progress.** Requires the disabled-by-default
-    /// `preview_dtx` feature and a service account with the DTX feature enabled.
+    /// **Unstable / work in progress.** Requires the disabled-by-default
+    /// `unstable_dtx` feature and a service account with the DTX feature enabled.
     /// Not supported for production use; the API may change without notice.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub async fn execute_distributed_read(
         &self,
         transaction: crate::clients::DistributedReadTransaction,

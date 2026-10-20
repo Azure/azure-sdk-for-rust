@@ -4,17 +4,17 @@
 //! Operation options that participate in runtime/account/operation resolution.
 
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::Duration;
 
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_data_cosmos_macros::CosmosOptions;
 
-use crate::{
-    models::ThroughputControlGroupName,
-    options::{
-        AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
-        EndToEndOperationLatencyPolicy, ExcludedRegions, PriorityLevel, ReadConsistencyStrategy,
-    },
+#[cfg(feature = "unstable_patch")]
+use crate::options::PatchStrategy;
+use crate::options::{
+    AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
+    EndToEndOperationLatencyPolicy, ExcludedRegions, PriorityLevel, ReadConsistencyStrategy,
 };
 
 /// Options that apply to individual Cosmos DB requests.
@@ -39,6 +39,20 @@ use crate::{
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]
 pub struct OperationOptions {
+    #[option(skip)]
+    pub(crate) resolution_snapshot: Option<Arc<OperationResolutionSnapshot>>,
+    /// How PATCH operations are executed.
+    ///
+    /// `None` inherits from a lower layer (default: [`PatchStrategy::Auto`]).
+    /// `AZURE_COSMOS_PATCH_STRATEGY=ServerSide` therefore applies process-wide
+    /// unless a higher-priority runtime, account, or operation value overrides
+    /// it. Unsafe server-side PATCH does not persist a tracking marker and is
+    /// not retried after an ambiguous outcome; client-side-only settings are
+    /// ignored whenever the resolved strategy uses the server path.
+    #[cfg(feature = "unstable_patch")]
+    #[option(env = "AZURE_COSMOS_PATCH_STRATEGY")]
+    pub patch_strategy: Option<PatchStrategy>,
+
     /// Read consistency strategy for this request.
     ///
     /// Controls the consistency guarantee for read operations. Set to `None` to
@@ -72,13 +86,16 @@ pub struct OperationOptions {
     pub max_failover_retry_count: Option<u32>,
 
     /// How long an endpoint is considered unavailable after a failure.
+    #[option(env = "AZURE_COSMOS_ENDPOINT_UNAVAILABLE_TTL_MS", parser = parse_milliseconds)]
     pub endpoint_unavailability_ttl: Option<Duration>,
 
     /// Disables automatic session token management.
     ///
     /// When `None` or `Some(false)`, session tokens are captured from responses
-    /// and sent on subsequent requests for session consistency.
-    /// Set to `Some(true)` to disable this behavior.
+    /// and sent on subsequent requests for session consistency. Set to `Some(true)`
+    /// to disable both automatic capture and automatic resolution. User-provided
+    /// session tokens are unaffected. This setting cannot enable automatic session
+    /// token management when the driver's partition key range cache is disabled.
     pub session_capturing_disabled: Option<bool>,
 
     /// Maximum number of session-consistency retries on 404/1002 errors.
@@ -139,8 +156,14 @@ pub struct OperationOptions {
     /// `Some(true)` forces it on, regardless of the strategy configured here.
     pub availability_strategy: Option<AvailabilityStrategy>,
 
-    // Additional headers beyond those natively supported by the driver.
-    // May be removed in the future as we analyze exactly what options are needed.
+    /// Extra headers for purposes not represented by Cosmos-specific options.
+    ///
+    /// Never use this field to set Cosmos-specific HTTP headers. Gateway V2 may
+    /// ignore these headers.
+    ///
+    /// Use typed SDK options for consistency, session and routing, throughput,
+    /// and other Cosmos settings. Do not reject custom headers at runtime or
+    /// invent a header denylist.
     pub custom_headers: Option<HashMap<HeaderName, HeaderValue>>,
 
     /// Cosmos binary JSON encoding for this operation.
@@ -148,9 +171,58 @@ pub struct OperationOptions {
     /// Controls whether the operation uses binary on the wire and whether the
     /// driver transcodes the response back to text. Schema-agnostic, so it is
     /// honored uniformly for the Rust SDK and FFI callers. `None` inherits from
-    /// a lower level (default: text JSON, no binary). See
+    /// a lower level (default: binary encoding enabled). See
     /// [`BinaryEncodingOptions`].
     pub binary_encoding: Option<BinaryEncodingOptions>,
+}
+
+#[derive(Debug)]
+pub(crate) struct OperationResolutionSnapshot {
+    env_override: Arc<OperationOptions>,
+    env: Arc<OperationOptions>,
+    runtime: Arc<OperationOptions>,
+    account: Arc<OperationOptions>,
+}
+
+fn parse_milliseconds(value: &str) -> Option<Duration> {
+    value.parse::<u64>().ok().map(Duration::from_millis)
+}
+
+impl OperationOptions {
+    /// Pins the lower configuration layers for this operation and its clones.
+    ///
+    /// Intended for native bindings admitting work before driver initialization.
+    /// Nested fields still resolve independently; unset values cannot observe
+    /// subsequent runtime updates.
+    #[doc(hidden)]
+    pub fn with_resolution_snapshot(
+        mut self,
+        env_override: Arc<OperationOptions>,
+        env: Arc<OperationOptions>,
+        runtime: Arc<OperationOptions>,
+        account: Arc<OperationOptions>,
+    ) -> Self {
+        self.resolution_snapshot = Some(Arc::new(OperationResolutionSnapshot {
+            env_override,
+            env,
+            runtime,
+            account,
+        }));
+        self
+    }
+
+    /// Returns the pinned layered view, when admission captured one.
+    #[doc(hidden)]
+    pub fn resolution_snapshot_view(&self) -> Option<OperationOptionsView<'_>> {
+        let snapshot = self.resolution_snapshot.as_ref()?;
+        Some(OperationOptionsView::new_with_override(
+            Some(Arc::clone(&snapshot.env_override)),
+            Some(Arc::clone(&snapshot.env)),
+            Some(Arc::clone(&snapshot.runtime)),
+            Some(Arc::clone(&snapshot.account)),
+            Some(self),
+        ))
+    }
 }
 
 /// Retry behavior for requests throttled by the service (HTTP 429,
@@ -212,63 +284,27 @@ pub struct ThrottlingRetryOptions {
 
 /// Throughput-control tuning for an individual request (or layer default).
 ///
-/// Mirrors the [`ThrottlingRetryOptions`] pattern: three independently
+/// Mirrors the [`ThrottlingRetryOptions`] pattern: two independently
 /// layered knobs grouped under a single nested option group on
 /// [`OperationOptions`]. None of these fields read from environment
 /// variables — throughput control is a per-application policy.
 ///
-/// # Resolution
-///
-/// Each inner field participates independently in the standard runtime →
-/// account → operation layered resolution. Once resolved, the driver
-/// computes the wire headers (`x-ms-cosmos-priority-level`,
-/// `x-ms-cosmos-throughput-bucket`) using a two-step rule per field:
-///
-/// 1. If the layered value for the field is `Some`, use it directly.
-/// 2. Else, if [`group_name`](Self::group_name) resolves to a group
-///    registered on the driver via
-///    [`DriverOptionsBuilder::register_throughput_control_group`](crate::options::DriverOptionsBuilder::register_throughput_control_group),
-///    use the group's value for the field (if the group sets it).
-/// 3. Else, the header is omitted.
-///
-/// The two fields resolve independently, so a layered
-/// `throughput_bucket = Some(...)` does not suppress a
-/// `priority_level` carried by the registered group, and vice versa.
-///
-/// # Why direct overrides exist
-///
-/// The direct [`throughput_bucket`](Self::throughput_bucket) /
-/// [`priority_level`](Self::priority_level) overrides let callers set the
-/// per-operation headers without having to register a
-/// [`ThroughputControlGroupOptions`](super::ThroughputControlGroupOptions)
-/// on the driver. Use a registered group when you want shared, mutable
-/// values to apply to a family of operations; use the direct fields for
-/// one-off overrides.
+/// Each inner field resolves independently across the runtime → account →
+/// operation layers. When set, the driver sends it in the corresponding
+/// `x-ms-cosmos-throughput-bucket` or `x-ms-cosmos-priority-level` header;
+/// otherwise that header is omitted.
 #[derive(CosmosOptions, Clone, Debug)]
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]
 pub struct ThroughputControlOptions {
-    /// Name of a previously-registered throughput-control group.
-    ///
-    /// Used as the fallback source for
-    /// [`throughput_bucket`](Self::throughput_bucket) and
-    /// [`priority_level`](Self::priority_level) when those fields are not
-    /// set at any layer. A name that does not resolve to a registered group
-    /// produces an error at request time.
-    pub group_name: Option<ThroughputControlGroupName>,
-
     /// Direct override for the `x-ms-cosmos-throughput-bucket` header.
     ///
-    /// Takes precedence over the bucket carried by the resolved
-    /// [`group_name`](Self::group_name) (if any). `None` falls back to the
-    /// resolved group's bucket, then to no header.
+    /// `None` inherits from a lower layer, then omits the header if unset.
     pub throughput_bucket: Option<u32>,
 
     /// Direct override for the `x-ms-cosmos-priority-level` header.
     ///
-    /// Takes precedence over the priority carried by the resolved
-    /// [`group_name`](Self::group_name) (if any). `None` falls back to the
-    /// resolved group's priority level, then to no header.
+    /// `None` inherits from a lower layer, then omits the header if unset.
     pub priority_level: Option<PriorityLevel>,
 }
 
@@ -277,8 +313,85 @@ mod tests {
     use super::*;
 
     #[test]
+    fn snapshot_preserves_all_layers_and_override_when_cloned_for_patch() {
+        let environment = Arc::new(OperationOptions::from_env_vars(|name| match name {
+            "AZURE_COSMOS_HEDGING_ENABLED" => Ok("true".into()),
+            "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT" => Ok("3".into()),
+            "AZURE_COSMOS_ENDPOINT_UNAVAILABLE_TTL_MS" => Ok("12".into()),
+            _ => Err(std::env::VarError::NotPresent),
+        }));
+        let override_options = Arc::new(OperationOptions::from_env_override_vars(|name| {
+            (name == "AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE")
+                .then(|| "false".into())
+                .ok_or(std::env::VarError::NotPresent)
+        }));
+        let runtime = Arc::new(OperationOptions {
+            read_consistency_strategy: Some(ReadConsistencyStrategy::Eventual),
+            content_response_on_write: Some(ContentResponseOnWrite::Enabled),
+            max_failover_retry_count: Some(u32::MAX),
+            session_capturing_disabled: Some(true),
+            excluded_regions: Some(ExcludedRegions::new().with_region("East US")),
+            end_to_end_latency_policy: Some(Duration::from_secs(4).into()),
+            #[cfg(feature = "unstable_patch")]
+            patch_strategy: Some(PatchStrategy::ServerSide),
+            custom_headers: Some(HashMap::from([(
+                HeaderName::from("x-test"),
+                HeaderValue::from("runtime"),
+            )])),
+            ..Default::default()
+        });
+        let account = Arc::new(OperationOptions {
+            max_session_retry_count: Some(4),
+            #[cfg(feature = "unstable_patch")]
+            patch_strategy: Some(PatchStrategy::Auto),
+            ..Default::default()
+        });
+        let request = OperationOptions {
+            hedging_enabled: Some(true),
+            excluded_regions: Some(ExcludedRegions::new()),
+            custom_headers: Some(HashMap::new()),
+            availability_strategy: Some(AvailabilityStrategy::Disabled),
+            ..Default::default()
+        }
+        .with_resolution_snapshot(override_options, environment, runtime, account);
+        let mut patch_read = request.clone();
+        patch_read.read_consistency_strategy = Some(ReadConsistencyStrategy::LatestCommitted);
+        let view = patch_read.resolution_snapshot_view().unwrap();
+        assert_eq!(view.hedging_enabled(), Some(&false));
+        assert_eq!(view.max_failover_retry_count(), Some(&u32::MAX));
+        assert_eq!(view.max_session_retry_count(), Some(&4));
+        assert_eq!(
+            view.endpoint_unavailability_ttl(),
+            Some(&Duration::from_millis(12))
+        );
+        #[cfg(feature = "unstable_patch")]
+        assert_eq!(view.patch_strategy(), Some(&PatchStrategy::Auto));
+        assert_eq!(
+            view.read_consistency_strategy(),
+            Some(&ReadConsistencyStrategy::LatestCommitted)
+        );
+        assert_eq!(
+            view.content_response_on_write(),
+            Some(&ContentResponseOnWrite::Enabled)
+        );
+        assert_eq!(view.session_capturing_disabled(), Some(&true));
+        assert_eq!(view.excluded_regions(), Some(&ExcludedRegions::new()));
+        assert!(view.custom_headers().unwrap().is_empty());
+        assert_eq!(
+            view.end_to_end_latency_policy().unwrap().timeout(),
+            Duration::from_secs(4)
+        );
+        assert_eq!(
+            view.availability_strategy(),
+            Some(&AvailabilityStrategy::Disabled)
+        );
+    }
+
+    #[test]
     fn default_operation_options() {
         let options = OperationOptions::default();
+        #[cfg(feature = "unstable_patch")]
+        assert!(options.patch_strategy.is_none());
         assert!(options.read_consistency_strategy.is_none());
         assert!(options.excluded_regions.is_none());
         assert!(options.content_response_on_write.is_none());
@@ -293,7 +406,10 @@ mod tests {
             .with_max_retry_count(4)
             .with_max_retry_wait_time(Duration::from_secs(12))
             .build();
-        let options = OperationOptionsBuilder::new()
+        let builder = OperationOptionsBuilder::new();
+        #[cfg(feature = "unstable_patch")]
+        let builder = builder.with_patch_strategy(PatchStrategy::ClientSide);
+        let options = builder
             .with_content_response_on_write(ContentResponseOnWrite::Disabled)
             .with_read_consistency_strategy(ReadConsistencyStrategy::Session)
             .with_max_failover_retry_count(5)
@@ -301,6 +417,8 @@ mod tests {
             .with_throttling_retry_options(throttling)
             .build();
 
+        #[cfg(feature = "unstable_patch")]
+        assert_eq!(options.patch_strategy, Some(PatchStrategy::ClientSide));
         assert_eq!(
             options.content_response_on_write,
             Some(ContentResponseOnWrite::Disabled)
@@ -326,6 +444,8 @@ mod tests {
         use std::sync::Arc;
 
         let env = Arc::new(OperationOptions {
+            #[cfg(feature = "unstable_patch")]
+            patch_strategy: Some(PatchStrategy::ServerSide),
             read_consistency_strategy: Some(ReadConsistencyStrategy::Eventual),
             max_failover_retry_count: Some(3),
             ..Default::default()
@@ -343,6 +463,8 @@ mod tests {
         });
 
         let operation = OperationOptions {
+            #[cfg(feature = "unstable_patch")]
+            patch_strategy: Some(PatchStrategy::ClientSide),
             read_consistency_strategy: Some(ReadConsistencyStrategy::Session),
             ..Default::default()
         };
@@ -350,6 +472,9 @@ mod tests {
         let view =
             OperationOptionsView::new(Some(env), Some(runtime), Some(account), Some(&operation));
 
+        // Operation overrides env
+        #[cfg(feature = "unstable_patch")]
+        assert_eq!(view.patch_strategy(), Some(&PatchStrategy::ClientSide));
         // Operation overrides env
         assert_eq!(
             view.read_consistency_strategy(),
@@ -396,6 +521,7 @@ mod tests {
     #[test]
     fn from_env_vars_parses_known_vars() {
         let options = OperationOptions::from_env_vars(|key| match key {
+            "AZURE_COSMOS_PATCH_STRATEGY" => Ok("ServerSide".to_string()),
             "AZURE_COSMOS_READ_CONSISTENCY_STRATEGY" => Ok("Session".to_string()),
             "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE" => Ok("true".to_string()),
             "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT" => Ok("7".to_string()),
@@ -404,6 +530,8 @@ mod tests {
             _ => Err(std::env::VarError::NotPresent),
         });
 
+        #[cfg(feature = "unstable_patch")]
+        assert_eq!(options.patch_strategy, Some(PatchStrategy::ServerSide));
         assert_eq!(
             options.read_consistency_strategy,
             Some(ReadConsistencyStrategy::Session)
@@ -440,6 +568,8 @@ mod tests {
     fn from_env_vars_returns_none_for_missing_vars() {
         let options = OperationOptions::from_env_vars(|_| Err(std::env::VarError::NotPresent));
 
+        #[cfg(feature = "unstable_patch")]
+        assert!(options.patch_strategy.is_none());
         assert!(options.read_consistency_strategy.is_none());
         assert!(options.content_response_on_write.is_none());
         assert!(options.excluded_regions.is_none());
@@ -447,6 +577,15 @@ mod tests {
         assert!(options.max_session_retry_count.is_none());
         assert!(options.availability_strategy.is_none());
         assert!(options.hedging_enabled.is_none());
+    }
+
+    #[cfg(not(feature = "unstable_patch"))]
+    #[test]
+    fn from_env_does_not_read_unstable_patch_strategy() {
+        OperationOptions::from_env_vars(|key| {
+            assert_ne!(key, "AZURE_COSMOS_PATCH_STRATEGY");
+            Err(std::env::VarError::NotPresent)
+        });
     }
 
     #[test]
@@ -729,7 +868,6 @@ mod tests {
 
         let runtime = Arc::new(OperationOptions {
             throughput_control: Some(ThroughputControlOptions {
-                group_name: Some(ThroughputControlGroupName::new("runtime-group")),
                 throughput_bucket: Some(7),
                 priority_level: Some(PriorityLevel::Low),
             }),
@@ -738,7 +876,6 @@ mod tests {
 
         let operation = OperationOptions {
             throughput_control: Some(ThroughputControlOptions {
-                group_name: None,
                 throughput_bucket: Some(99),
                 priority_level: None,
             }),
@@ -748,11 +885,6 @@ mod tests {
         let view = OperationOptionsView::new(None, Some(runtime), None, Some(&operation));
         let throughput = view.throughput_control();
 
-        assert_eq!(
-            throughput.group_name(),
-            Some(&ThroughputControlGroupName::new("runtime-group")),
-            "missing inner field on the operation layer must fall through to runtime",
-        );
         assert_eq!(
             throughput.throughput_bucket(),
             Some(&99),
@@ -774,7 +906,6 @@ mod tests {
         let view = OperationOptionsView::new(None, None, None, Some(&op));
         let throughput = view.throughput_control();
 
-        assert!(throughput.group_name().is_none());
         assert!(throughput.throughput_bucket().is_none());
         assert!(throughput.priority_level().is_none());
     }
@@ -799,6 +930,8 @@ mod real_env_tests {
         // With no variables set, the env layer contributes nothing.
         with_scoped_env(OPERATION_ENV_VARS, &[], || {
             let o = OperationOptions::from_env();
+            #[cfg(feature = "unstable_patch")]
+            assert!(o.patch_strategy.is_none());
             assert!(o.read_consistency_strategy.is_none());
             assert!(o.content_response_on_write.is_none());
             assert!(o.max_failover_retry_count.is_none());
@@ -809,13 +942,18 @@ mod real_env_tests {
 
     #[test]
     fn real_env_value_flows_through() {
-        // A real `AZURE_COSMOS_READ_CONSISTENCY_STRATEGY` flows through
-        // `from_env`, proving the production accessor is connected.
+        // Real strategy and consistency values flow through `from_env`,
+        // proving the production accessor is connected.
         with_scoped_env(
             OPERATION_ENV_VARS,
-            &[("AZURE_COSMOS_READ_CONSISTENCY_STRATEGY", "Session")],
+            &[
+                ("AZURE_COSMOS_PATCH_STRATEGY", "ClientSide"),
+                ("AZURE_COSMOS_READ_CONSISTENCY_STRATEGY", "Session"),
+            ],
             || {
                 let o = OperationOptions::from_env();
+                #[cfg(feature = "unstable_patch")]
+                assert_eq!(o.patch_strategy, Some(PatchStrategy::ClientSide));
                 assert_eq!(
                     o.read_consistency_strategy,
                     Some(ReadConsistencyStrategy::Session)

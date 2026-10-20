@@ -43,9 +43,7 @@ use crate::seed::SharedItems;
 /// from cache or when the gateway omitted the diagnostic header) or when
 /// the value is infinite or negative.
 pub(crate) fn extract_backend_duration(headers: &ResponseHeaders) -> Option<Duration> {
-    headers
-        .server_duration_ms()
-        .map(|ms| Duration::from_secs_f64(ms / 1000.0))
+    headers.server_duration()
 }
 
 /// A single executable perf test operation.
@@ -138,10 +136,9 @@ pub async fn create_operations(
         let initial = container.read_feed_ranges(None).await?;
         if initial.is_empty() {
             return Err(azure_data_cosmos_driver::error::CosmosError::builder()
-                .with_status(azure_data_cosmos::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_status(azure_data_cosmos_driver::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("read_feed_ranges returned empty list during seed")
-                .build()
-                .into());
+                .build());
         }
         let cache: FeedRangeCache = Arc::new(RwLock::new(Arc::new(initial)));
         if !config.no_feed_range_queries {

@@ -8,7 +8,7 @@
 //! `execute_operation()`.
 
 use crate::framework::DriverTestClient;
-use azure_data_cosmos_driver::diagnostics::{PipelineType, TransportSecurity};
+use azure_data_cosmos_driver::diagnostics::{PipelineKind, TransportSecurity};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
@@ -67,7 +67,7 @@ pub async fn create_and_read_item() -> Result<(), Box<dyn Error>> {
 
             // Verify pipeline type is DataPlane
             let requests = create_diagnostics.requests();
-            assert_eq!(requests[0].pipeline_type(), PipelineType::DataPlane);
+            assert_eq!(requests[0].pipeline_type(), PipelineKind::DataPlane);
 
             // Read the item back
             let read_result = context
@@ -229,7 +229,7 @@ pub async fn diagnostics_contain_expected_fields() -> Result<(), Box<dyn Error>>
         // Verify pipeline type
         assert_eq!(
             request.pipeline_type(),
-            PipelineType::DataPlane,
+            PipelineKind::DataPlane,
             "Item operations should use data plane pipeline"
         );
 

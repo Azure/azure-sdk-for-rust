@@ -472,12 +472,12 @@ dependencies = [
 
 [[package]]
 name = "azure_core"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.2"
 dependencies = [
  "async-lock",
  "async-trait",
  "azure_core_examples",
- "azure_core_macros 1.1.0-beta.1",
+ "azure_core_macros 1.0.0",
  "azure_core_test 0.2.0",
  "bytes",
  "clap",
@@ -494,12 +494,11 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "thiserror",
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 1.2.0-beta.1",
- "typespec_client_core 1.2.0-beta.1",
+ "typespec 1.2.0-beta.2",
+ "typespec_client_core 1.2.0-beta.2",
  "ureq",
 ]
 
@@ -511,13 +510,13 @@ checksum = "f4d270c927b83dbee3c6f5fb5340b38c6019452eeb6ea097f40148ec164fafe1"
 dependencies = [
  "async-trait",
  "azure_core 1.1.0",
- "fe2o3-amqp",
- "fe2o3-amqp-cbs",
- "fe2o3-amqp-ext",
- "fe2o3-amqp-management",
- "fe2o3-amqp-types",
+ "fe2o3-amqp 0.14.0",
+ "fe2o3-amqp-cbs 0.14.0",
+ "fe2o3-amqp-ext 0.14.0",
+ "fe2o3-amqp-management 0.14.0",
+ "fe2o3-amqp-types 0.14.0",
  "serde",
- "serde_amqp",
+ "serde_amqp 0.14.1",
  "serde_bytes",
  "tokio",
  "tracing",
@@ -527,24 +526,27 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.3"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
- "fe2o3-amqp",
- "fe2o3-amqp-cbs",
- "fe2o3-amqp-ext",
- "fe2o3-amqp-management",
- "fe2o3-amqp-types",
+ "azure_core 1.2.0-beta.2",
+ "fe2o3-amqp 0.18.3",
+ "fe2o3-amqp-cbs 0.18.0",
+ "fe2o3-amqp-ext 0.18.0",
+ "fe2o3-amqp-management 0.18.0",
+ "fe2o3-amqp-types 0.18.0",
+ "rustls",
+ "rustls-platform-verifier",
  "serde",
- "serde_amqp",
+ "serde_amqp 0.18.0",
  "serde_bytes",
  "serde_json",
  "tokio",
+ "tokio-rustls",
  "tracing",
  "tracing-subscriber",
- "typespec 1.2.0-beta.1",
- "typespec_macros 1.1.0-beta.1",
+ "typespec 1.2.0-beta.2",
+ "typespec_macros 1.0.0",
 ]
 
 [[package]]
@@ -552,7 +554,7 @@ name = "azure_core_examples"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "base64",
  "futures",
  "serde",
@@ -585,26 +587,14 @@ dependencies = [
 
 [[package]]
 name = "azure_core_opentelemetry"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b71bd721089367eee3399ab7820052421ddb35916327d70d14667303617dfd21"
+version = "1.1.0-beta.2"
 dependencies = [
- "azure_core 1.1.0",
- "opentelemetry 0.31.0",
- "opentelemetry_sdk 0.31.0",
- "tracing",
-]
-
-[[package]]
-name = "azure_core_opentelemetry"
-version = "1.1.0-beta.1"
-dependencies = [
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
  "azure_core_test_macros 0.2.0",
- "azure_identity 1.1.0-beta.1",
- "opentelemetry 0.32.0",
- "opentelemetry_sdk 0.32.1",
+ "azure_identity 1.1.0-beta.2",
+ "opentelemetry",
+ "opentelemetry_sdk",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -615,10 +605,10 @@ name = "azure_core_test"
 version = "0.2.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_examples",
  "azure_core_test_macros 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.1.0-beta.2",
  "clap",
  "dotenvy",
  "flate2",
@@ -668,9 +658,11 @@ dependencies = [
 name = "azure_core_test_macros"
 version = "0.2.0"
 dependencies = [
+ "azure_core_test 0.2.0",
  "proc-macro2",
  "quote",
  "syn 2.0.119",
+ "tokio",
 ]
 
 [[package]]
@@ -686,7 +678,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos"
-version = "0.38.0"
+version = "1.1.0-beta.1"
 dependencies = [
  "arbitrary",
  "async-lock",
@@ -699,8 +691,8 @@ dependencies = [
  "clap",
  "futures",
  "json-canon",
- "opentelemetry 0.32.0",
- "opentelemetry_sdk 0.32.1",
+ "opentelemetry",
+ "opentelemetry_sdk",
  "pin-project",
  "reqwest",
  "serde",
@@ -731,24 +723,26 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos_driver"
-version = "0.7.0"
+version = "1.1.0-beta.1"
 dependencies = [
  "arc-swap",
  "async-lock",
  "async-trait",
  "azure_core 1.1.0",
- "azure_data_cosmos_macros 0.2.0",
+ "azure_data_cosmos_macros",
  "azure_identity 1.0.0",
  "backtrace",
  "base64",
  "bytes",
  "crossbeam-epoch",
  "futures",
+ "getrandom 0.4.3",
  "h2",
  "percent-encoding",
  "quick-xml",
  "rand 0.10.2",
  "reqwest",
+ "rustc_version",
  "serde",
  "serde_json",
  "time",
@@ -762,12 +756,15 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos_driver_native"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
+ "async-trait",
  "azure_core 1.1.0",
  "azure_data_cosmos_driver",
  "cbindgen",
  "futures",
+ "serde_json",
+ "time",
  "tokio",
  "tracing",
  "url",
@@ -791,18 +788,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos_macros"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7171e936ab196e5889af4cbee33f775a8a7548c03be8076207e560776d7b87ba"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.119",
-]
-
-[[package]]
-name = "azure_data_cosmos_macros"
-version = "0.3.0"
+version = "1.1.0-beta.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -819,10 +805,10 @@ dependencies = [
  "azure_identity 1.0.0",
  "clap",
  "futures",
- "opentelemetry 0.32.0",
+ "opentelemetry",
  "opentelemetry-otlp",
  "opentelemetry-stdout",
- "opentelemetry_sdk 0.32.1",
+ "opentelemetry_sdk",
  "rand 0.10.2",
  "serde",
  "serde_json",
@@ -847,6 +833,7 @@ dependencies = [
  "hdrhistogram",
  "hostname",
  "rand 0.10.2",
+ "reqwest",
  "serde",
  "serde_json",
  "sysinfo",
@@ -877,11 +864,11 @@ dependencies = [
 
 [[package]]
 name = "azure_identity"
-version = "1.1.0-beta.1"
+version = "1.1.0-beta.2"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_examples",
  "azure_core_test 0.2.0",
  "clap",
@@ -890,6 +877,7 @@ dependencies = [
  "openssl",
  "pin-project",
  "rand 0.10.2",
+ "reqwest",
  "serde",
  "serde_json",
  "serde_test",
@@ -903,21 +891,21 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs"
-version = "0.15.0"
+version = "0.17.0"
 dependencies = [
  "async-lock",
  "async-stream",
  "async-trait",
- "azure_core 1.1.0",
- "azure_core_amqp 1.1.0",
- "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "azure_identity 1.0.0",
+ "azure_core 1.2.0-beta.2",
+ "azure_core_amqp 1.2.0-beta.3",
+ "azure_core_test 0.2.0",
+ "azure_identity 1.1.0-beta.2",
  "azure_messaging_eventhubs",
  "azure_messaging_eventhubs_checkpointstore_blob",
- "azure_storage_blob 1.0.0",
+ "azure_storage_blob",
  "base64",
  "criterion",
- "fe2o3-amqp",
+ "fe2o3-amqp 0.18.3",
  "futures",
  "hmac",
  "include-file",
@@ -933,20 +921,20 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs_checkpointstore_blob"
-version = "0.9.0"
+version = "0.11.0"
 dependencies = [
  "async-trait",
- "azure_core 1.1.0",
- "azure_core_opentelemetry 1.0.0",
- "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "azure_identity 1.0.0",
+ "azure_core 1.2.0-beta.2",
+ "azure_core_opentelemetry",
+ "azure_core_test 0.2.0",
+ "azure_identity 1.1.0-beta.2",
  "azure_messaging_eventhubs",
- "azure_storage_blob 1.0.0",
+ "azure_storage_blob",
  "futures",
- "opentelemetry 0.32.0",
+ "opentelemetry",
  "opentelemetry-appender-tracing",
  "opentelemetry-stdout",
- "opentelemetry_sdk 0.32.1",
+ "opentelemetry_sdk",
  "serde",
  "serde_json",
  "time",
@@ -983,9 +971,9 @@ version = "1.1.0-beta.2"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.1.0-beta.2",
  "azure_security_keyvault_keys",
  "azure_security_keyvault_test",
  "futures",
@@ -1005,9 +993,9 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.1.0-beta.2",
  "azure_security_keyvault_test",
  "clap",
  "criterion",
@@ -1029,9 +1017,9 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.1.0-beta.2",
  "azure_security_keyvault_test",
  "clap",
  "futures",
@@ -1050,44 +1038,24 @@ name = "azure_security_keyvault_test"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "tokio",
 ]
 
 [[package]]
 name = "azure_storage_blob"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1756febbcca86c862ef718b983b505d08bd65a9bc984a915b0a16af4a4c3fe5b"
-dependencies = [
- "async-stream",
- "async-trait",
- "azure_core 1.1.0",
- "bytes",
- "futures",
- "percent-encoding",
- "pin-project",
- "serde",
- "serde_json",
- "time",
- "tokio",
-]
-
-[[package]]
-name = "azure_storage_blob"
-version = "1.1.0-beta.3"
+version = "1.2.0-beta.1"
 dependencies = [
  "arrow-array",
  "arrow-ipc",
  "arrow-schema",
  "async-stream",
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.1.0-beta.2",
  "azure_storage_common",
  "azure_storage_sas",
- "base64",
  "bytes",
  "clap",
  "flate2",
@@ -1108,9 +1076,9 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_common"
-version = "0.2.0"
+version = "1.1.0-beta.1"
 dependencies = [
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "serde",
  "serde_json",
  "time",
@@ -1118,12 +1086,12 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_queue"
-version = "1.1.0-beta.2"
+version = "1.2.0-beta.1"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.1.0-beta.2",
  "azure_storage_common",
  "azure_storage_sas",
  "futures",
@@ -1135,9 +1103,9 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_sas"
-version = "0.2.0"
+version = "1.1.0-beta.1"
 dependencies = [
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_storage_common",
  "base64",
  "hmac",
@@ -1145,6 +1113,48 @@ dependencies = [
  "percent-encoding",
  "sha2",
  "time",
+]
+
+[[package]]
+name = "azure_storage_stress"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "azure_core 1.2.0-beta.2",
+ "azure_core_test 0.2.0",
+ "bytes",
+ "clap",
+ "crc-fast",
+ "futures",
+ "pin-project",
+ "rand 0.10.2",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "azure_storage_stress_blob"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "azure_core 1.2.0-beta.2",
+ "azure_core_test 0.2.0",
+ "azure_identity 1.1.0-beta.2",
+ "azure_storage_blob",
+ "azure_storage_stress",
+ "bytes",
+ "clap",
+ "crc-fast",
+ "futures",
+ "rand 0.10.2",
+ "reqwest",
+ "serde",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]
@@ -1506,9 +1516,9 @@ dependencies = [
 
 [[package]]
 name = "convert_case"
-version = "0.6.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec182b0ca2f35d8fc196cf3404988fd8b8c739a4d270ff118a398feb0cbec1ca"
+checksum = "1af709f1f33454bf52eadfc8c78b3b9ef9cb26fb54d16dc9cd9a7299f899fd1b"
 dependencies = [
  "unicode-segmentation",
 ]
@@ -1545,6 +1555,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b2a41393f66f16b0823bb79094d54ac5fbd34ab292ddafb9a0456ac9f87d201"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "crc"
+version = "3.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9710d3b3739c2e349eb44fe848ad0b7c8cb1e42bd87ee49371df2f7acaf3e675"
+dependencies = [
+ "crc-catalog",
+]
+
+[[package]]
+name = "crc-catalog"
+version = "2.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "217698eaf96b4a3f0bc4f3662aaa55bdf913cd54d7204591faa790070c6d0853"
+
+[[package]]
+name = "crc-fast"
+version = "1.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2fd92aca2c6001b1bf5ba0ff84ee74ec8501b52bbef0cac80bf25a6c1d87a83d"
+dependencies = [
+ "crc",
+ "digest",
+ "rustversion",
+ "spin",
 ]
 
 [[package]]
@@ -1644,9 +1681,9 @@ dependencies = [
 
 [[package]]
 name = "darling"
-version = "0.20.11"
+version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc7f46116c46ff9ab3eb1597a45688b6715c6e628b5c133e288e709a29bcb4ee"
+checksum = "ed17f5901b6630b993ca003def43f2f8ef4014fc13b047b57aad617ff32bc2ec"
 dependencies = [
  "darling_core",
  "darling_macro",
@@ -1654,27 +1691,26 @@ dependencies = [
 
 [[package]]
 name = "darling_core"
-version = "0.20.11"
+version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d00b9596d185e565c2207a0b01f8bd1a135483d02d9b7b0a54b11da8d53412e"
+checksum = "6837e2cf7485aaae18f86181d2f0e9a7ed297a025e220aeabf63fdebd3a2ddff"
 dependencies = [
- "fnv",
  "ident_case",
  "proc-macro2",
  "quote",
  "strsim",
- "syn 2.0.119",
+ "syn 3.0.2",
 ]
 
 [[package]]
 name = "darling_macro"
-version = "0.20.11"
+version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc34b93ccb385b40dc71c6fceac4b2ad23662c7eeb248cf10d529b7e055b6ead"
+checksum = "2ac7135c3ef02b2f7833bbeb1be5ba7f966dcde8a87c6b87f65a778d71a02785"
 dependencies = [
  "darling_core",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.2",
 ]
 
 [[package]]
@@ -1791,14 +1827,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a579ef4f1fb186f04bcdc9caf0c335adedebe879227c96d56876d473aa3d20a"
 dependencies = [
  "bytes",
- "fe2o3-amqp-types",
+ "fe2o3-amqp-types 0.14.0",
  "futures-util",
  "getrandom 0.3.4",
  "native-tls",
  "parking_lot",
  "pin-project-lite",
  "serde",
- "serde_amqp",
+ "serde_amqp 0.14.1",
  "serde_bytes",
  "slab",
  "thiserror",
@@ -1806,10 +1842,37 @@ dependencies = [
  "tokio-native-tls",
  "tokio-stream",
  "tokio-util",
+ "url",
+ "uuid",
+ "wasmtimer",
+]
+
+[[package]]
+name = "fe2o3-amqp"
+version = "0.18.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5474a3b580e12b716a34cfef7f2857fa3aca70751e96c85a477549ac3179dfe0"
+dependencies = [
+ "bytes",
+ "fe2o3-amqp-types 0.18.0",
+ "futures-util",
+ "getrandom 0.4.3",
+ "parking_lot",
+ "pin-project-lite",
+ "rustls",
+ "serde",
+ "serde_amqp 0.18.0",
+ "serde_bytes",
+ "slab",
+ "thiserror",
+ "tokio",
+ "tokio-rustls",
+ "tokio-util",
  "tracing",
  "url",
  "uuid",
  "wasmtimer",
+ "webpki-roots",
 ]
 
 [[package]]
@@ -1818,8 +1881,19 @@ version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6cae904b214ffa3c9bae26e4129d300fe79189d2ef70503071fb25ff9127531e"
 dependencies = [
- "fe2o3-amqp",
- "fe2o3-amqp-management",
+ "fe2o3-amqp 0.14.0",
+ "fe2o3-amqp-management 0.14.0",
+ "trait-variant",
+]
+
+[[package]]
+name = "fe2o3-amqp-cbs"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aba27aa79b79e44a0365b7e30b232276efb3297253368bd303a9f19eea2e184f"
+dependencies = [
+ "fe2o3-amqp 0.18.3",
+ "fe2o3-amqp-management 0.18.0",
  "trait-variant",
 ]
 
@@ -1829,8 +1903,18 @@ version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6362c13b91a80dca77360eecdfbe85425e6dff1523f16c3a79fac541c47cf27d"
 dependencies = [
- "fe2o3-amqp-types",
- "serde_amqp",
+ "fe2o3-amqp-types 0.14.0",
+ "serde_amqp 0.14.1",
+]
+
+[[package]]
+name = "fe2o3-amqp-ext"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd3252c335fc2cc9d92da592b114912b7b40b511f04758c726cc9d93a52549a6"
+dependencies = [
+ "fe2o3-amqp-types 0.18.0",
+ "serde_amqp 0.18.0",
 ]
 
 [[package]]
@@ -1839,8 +1923,20 @@ version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0582084762bdf022540c37868a0808e9f54dbcc51fe56f6212da59c167569cda"
 dependencies = [
- "fe2o3-amqp",
- "fe2o3-amqp-types",
+ "fe2o3-amqp 0.14.0",
+ "fe2o3-amqp-types 0.14.0",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "fe2o3-amqp-management"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7141df54f8a0d418bc102b5aa0dd0b3dfcac6520f4a59fa393e1faaed8e38d1b"
+dependencies = [
+ "fe2o3-amqp 0.18.3",
+ "fe2o3-amqp-types 0.18.0",
  "serde",
  "thiserror",
 ]
@@ -1853,7 +1949,20 @@ checksum = "8bcc8d13ed13fbb2fb664a6df114bcc32f8ca85c9cb6b89d4e7576c47f583706"
 dependencies = [
  "ordered-float",
  "serde",
- "serde_amqp",
+ "serde_amqp 0.14.1",
+ "serde_bytes",
+ "serde_repr",
+]
+
+[[package]]
+name = "fe2o3-amqp-types"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "647fe7665ea8a44b95570287a5e8b1ed2f59bc5720afdc8c2b00c9fe6b27a6d6"
+dependencies = [
+ "ordered-float",
+ "serde",
+ "serde_amqp 0.18.0",
  "serde_bytes",
  "serde_repr",
 ]
@@ -2094,9 +2203,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.4.15"
+version = "0.4.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6cb093c84e8bd9b188d4c4a8cb6579fc016968d14c99882163cd3ff402a4f155"
+checksum = "7d29020232d6aa3fb1daca64c1127cf662cf97f254ae16c18c05b8ab635fc118"
 dependencies = [
  "atomic-waker",
  "bytes",
@@ -2888,20 +2997,6 @@ dependencies = [
 
 [[package]]
 name = "opentelemetry"
-version = "0.31.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b84bcd6ae87133e903af7ef497404dda70c60d0ea14895fc8a5e6722754fc2a0"
-dependencies = [
- "futures-core",
- "futures-sink",
- "js-sys",
- "pin-project-lite",
- "thiserror",
- "tracing",
-]
-
-[[package]]
-name = "opentelemetry"
 version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0142c63252a9e054e68a4c61a5778f7b14f576274d593f8ce883d191a099682"
@@ -2920,7 +3015,7 @@ version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c0080f0dc1d7c786f467cd85a4e395fcab11ee852004f39a29a18ab7c25d837"
 dependencies = [
- "opentelemetry 0.32.0",
+ "opentelemetry",
  "tracing",
  "tracing-core",
  "tracing-subscriber",
@@ -2933,9 +3028,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9966929966d17620d7c316c643ba62631826e10021409357772d5eea84f62c35"
 dependencies = [
  "http",
- "opentelemetry 0.32.0",
+ "opentelemetry",
  "opentelemetry-proto",
- "opentelemetry_sdk 0.32.1",
+ "opentelemetry_sdk",
  "prost 0.14.4",
  "thiserror",
  "tokio",
@@ -2949,8 +3044,8 @@ version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56d658ba1faf63f7b9c492cfbe6e0ec365440a16132d3270c1065f7b33f1b638"
 dependencies = [
- "opentelemetry 0.32.0",
- "opentelemetry_sdk 0.32.1",
+ "opentelemetry",
+ "opentelemetry_sdk",
  "prost 0.14.4",
  "tonic 0.14.6",
  "tonic-prost",
@@ -2963,23 +3058,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a1b1c6a247d79091f0062a5f4bd058589525cf987a8d4c169440d9c1be72f0ad"
 dependencies = [
  "chrono",
- "opentelemetry 0.32.0",
- "opentelemetry_sdk 0.32.1",
-]
-
-[[package]]
-name = "opentelemetry_sdk"
-version = "0.31.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e14ae4f5991976fd48df6d843de219ca6d31b01daaab2dad5af2badeded372bd"
-dependencies = [
- "futures-channel",
- "futures-executor",
- "futures-util",
- "opentelemetry 0.31.0",
- "percent-encoding",
- "rand 0.9.5",
- "thiserror",
+ "opentelemetry",
+ "opentelemetry_sdk",
 ]
 
 [[package]]
@@ -2991,7 +3071,7 @@ dependencies = [
  "futures-channel",
  "futures-executor",
  "futures-util",
- "opentelemetry 0.32.0",
+ "opentelemetry",
  "percent-encoding",
  "portable-atomic",
  "rand 0.9.5",
@@ -3836,16 +3916,32 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_amqp_derive"
-version = "0.3.0"
+name = "serde_amqp"
+version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22da57ecf44834259b4416250608e11da620750be91305bf6ae5d398954ddc6d"
+checksum = "733df19246e5e2dd2b8030cbabc70e51d8f66e275eee91a94ccc1df7300e2317"
+dependencies = [
+ "bytes",
+ "indexmap 2.14.0",
+ "ordered-float",
+ "serde",
+ "serde_amqp_derive",
+ "serde_bytes",
+ "thiserror",
+ "uuid",
+]
+
+[[package]]
+name = "serde_amqp_derive"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ed6d00fd958e85ba2419add81456008b253de3fb60fda81b5c53c1687ab7f7c"
 dependencies = [
  "convert_case",
  "darling",
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.2",
 ]
 
 [[package]]
@@ -4057,6 +4153,12 @@ dependencies = [
  "libc",
  "windows-sys 0.61.2",
 ]
+
+[[package]]
+name = "spin"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "023a211cb3138dbc438680b32560ad89f699977624c9f8dbb95a47d5b4c07dd3"
 
 [[package]]
 name = "stable_deref_trait"
@@ -4354,6 +4456,7 @@ checksum = "9ae9cec805b01e8fc3fd2fe289f89149a9b66dd16786abd8b19cfa7b48cb0098"
 dependencies = [
  "bytes",
  "futures-core",
+ "futures-io",
  "futures-sink",
  "pin-project-lite",
  "tokio",
@@ -4673,7 +4776,6 @@ dependencies = [
  "base64",
  "bytes",
  "futures",
- "quick-xml",
  "serde",
  "serde_json",
  "url",
@@ -4681,7 +4783,7 @@ dependencies = [
 
 [[package]]
 name = "typespec"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.2"
 dependencies = [
  "base64",
  "bytes",
@@ -4720,7 +4822,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_client_core"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.2"
 dependencies = [
  "async-trait",
  "base64",
@@ -4736,10 +4838,12 @@ dependencies = [
  "serde_json",
  "time",
  "tokio",
+ "tokio-stream",
+ "tokio-util",
  "tracing",
  "tracing-subscriber",
- "typespec 1.2.0-beta.1",
- "typespec_macros 1.1.0-beta.1",
+ "typespec 1.2.0-beta.2",
+ "typespec_macros 1.0.0",
  "url",
  "uuid",
 ]
@@ -4767,7 +4871,7 @@ dependencies = [
  "serde_json",
  "syn 2.0.119",
  "tokio",
- "typespec_client_core 1.2.0-beta.1",
+ "typespec_client_core 1.2.0-beta.2",
 ]
 
 [[package]]

@@ -124,6 +124,10 @@ impl ResponseBody {
     /// either Cosmos binary JSON or UTF-8 text JSON (auto-detected by the
     /// `0x80` preamble).
     ///
+    /// Owned `serde_json::value::RawValue` is supported; on the binary path its
+    /// raw text is the codec's normalized rendering, not the service bytes
+    /// verbatim.
+    ///
     /// Returns an error if the body is a feed [`Items`](Self::Items) response
     /// or if the body is [`NoPayload`](Self::NoPayload) (nothing to parse).
     pub fn into_single<T: DeserializeOwned>(self) -> crate::error::Result<T> {
@@ -145,19 +149,13 @@ impl ResponseBody {
             }
             Self::Items(items) => items
                 .into_iter()
-                // NOTE: `deserialize_response` auto-detects binary per slice via
-                // the `0x80` preamble, but the feed pipeline that produces
-                // `Self::Items` splits the `Documents` array by scanning **text**
-                // JSON — it is not binary-aware. A single-preamble binary feed
-                // envelope would therefore be sliced into sub-documents *without*
-                // preambles, which `is_binary` would then route to the text path.
-                // This is inert today because query/feed binary negotiation is
-                // deferred (the service does not emit binary feeds without the
-                // negotiation header), so the binary `Items` branch is only
-                // exercised by hand-prefixed synthetic tests. When feed/query
-                // binary negotiation is added, the feed splitter must be made
-                // binary-aware (or each slice re-prefixed) before this path can
-                // decode real binary feeds.
+                // Items are decoded independently, auto-detecting binary per
+                // slice via the `0x80` preamble. Safe because every producer
+                // (`skip_take_page::split_feed_envelope`, `build_page`) emits
+                // each document already standalone-encoded. A future splitter
+                // that slices a single-preamble envelope by scanning text would
+                // yield preamble-less sub-documents misrouted to the text path,
+                // so it must re-prefix per document first.
                 .map(|b| deserialize_response(&b, "failed to deserialize feed item"))
                 .collect(),
         }
@@ -186,7 +184,7 @@ impl ResponseBody {
             }
             let text = crate::binary_json::transcode_to_text(bytes).map_err(|e| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message(format!("failed to transcode binary response to text: {e}"))
                     .with_source(e)
                     .build()
@@ -204,6 +202,32 @@ impl ResponseBody {
                     .collect::<crate::error::Result<Vec<_>>>()?;
                 Ok(Self::Items(converted))
             }
+        }
+    }
+
+    /// Transcodes text JSON payloads to standalone Cosmos binary JSON buffers.
+    ///
+    /// Each [`Items`](Self::Items) slice is encoded independently, so every
+    /// resulting item carries the `0x80` preamble required for auto-detection.
+    #[allow(dead_code)] // Defensive mirror for direct body conversion; pipeline nodes encode today.
+    pub(crate) fn transcode_to_binary(self) -> crate::error::Result<Self> {
+        fn convert(bytes: Bytes) -> crate::error::Result<Bytes> {
+            if crate::binary_json::is_binary(&bytes) {
+                return Ok(bytes);
+            }
+            crate::binary_json::transcode_to_binary(&bytes)
+                .map(Bytes::from)
+                .map_err(|e| invalid_body_error("failed to transcode response body to binary", e))
+        }
+
+        match self {
+            Self::NoPayload => Ok(Self::NoPayload),
+            Self::Bytes(bytes) => convert(bytes).map(Self::Bytes),
+            Self::Items(items) => items
+                .into_iter()
+                .map(convert)
+                .collect::<crate::error::Result<Vec<_>>>()
+                .map(Self::Items),
         }
     }
 }
@@ -227,7 +251,7 @@ where
     E: std::error::Error + Send + Sync + 'static,
 {
     crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+        .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
         .with_message(message)
         .with_source(source)
         .build()
@@ -285,6 +309,28 @@ mod tests {
     fn no_payload_into_items_yields_empty_vec() {
         let items: Vec<serde_json::Value> = ResponseBody::NoPayload.into_items().unwrap();
         assert!(items.is_empty());
+    }
+
+    #[test]
+    fn transcode_items_to_binary_prefixes_every_item() {
+        let body = ResponseBody::from_items(vec![
+            Bytes::from_static(br#"{"id":"1"}"#),
+            Bytes::from_static(br#"{"id":"2"}"#),
+        ]);
+        let ResponseBody::Items(items) = body.transcode_to_binary().unwrap() else {
+            panic!("expected item body");
+        };
+
+        assert_eq!(items.len(), 2);
+        assert!(items.iter().all(|item| crate::binary_json::is_binary(item)));
+        let decoded: Vec<serde_json::Value> = ResponseBody::from_items(items).into_items().unwrap();
+        assert_eq!(
+            decoded,
+            vec![
+                serde_json::json!({"id": "1"}),
+                serde_json::json!({"id": "2"})
+            ]
+        );
     }
 
     #[test]
@@ -403,6 +449,40 @@ mod tests {
         }
     }
 
+    /// A query page arrives as pre-split `Items`, so honoring
+    /// `request_text_response` for a query means transcoding every item, not
+    /// just a single body. Mixed input also proves the per-item binary sniff:
+    /// an already-text item must survive untouched rather than being re-parsed.
+    #[test]
+    fn transcode_to_text_converts_every_item_of_a_query_page() {
+        let binary_a = crate::binary_json::transcode_to_binary(br#"{"id":"a","n":1}"#).unwrap();
+        let binary_b = crate::binary_json::transcode_to_binary(br#"{"id":"b","n":2}"#).unwrap();
+        let already_text = Bytes::from_static(br#"{"id":"c"}"#);
+
+        let body = ResponseBody::from_items(vec![
+            Bytes::from(binary_a),
+            Bytes::from(binary_b),
+            already_text.clone(),
+        ]);
+        let text = body.transcode_to_text().unwrap();
+
+        match &text {
+            ResponseBody::Items(items) => {
+                assert_eq!(items.len(), 3);
+                for item in items {
+                    assert!(
+                        !crate::binary_json::is_binary(item),
+                        "every item must be text after transcoding",
+                    );
+                }
+                assert_eq!(&items[0][..], br#"{"id":"a","n":1}"#);
+                assert_eq!(&items[1][..], br#"{"id":"b","n":2}"#);
+                assert_eq!(&items[2][..], &already_text[..]);
+            }
+            _ => panic!("expected Items variant"),
+        }
+    }
+
     #[test]
     fn is_empty_true_for_empty_items_vec() {
         assert!(ResponseBody::from_items(Vec::new()).is_empty());
@@ -466,6 +546,37 @@ mod tests {
         let body = ResponseBody::Bytes(binary(&id_object(7)));
         let item: Item = body.into_single().unwrap();
         assert_eq!(item, Item { id: 7 });
+    }
+
+    #[test]
+    fn into_single_reads_raw_value_from_binary_body() {
+        use serde_json::value::RawValue;
+
+        // Regression for issue #5328: a `RawValue` caller (raw passthrough) hit
+        // the binary body straight through `into_single`, which failed with a
+        // misclassified serialization error once binary encoding became the
+        // default. It must now succeed, matching the text path.
+        let text = ResponseBody::Bytes(Bytes::from_static(br#"{"id":7}"#));
+        let text_raw: Box<RawValue> = text.into_single().unwrap();
+
+        let binary_body = ResponseBody::Bytes(binary(&id_object(7)));
+        let binary_raw: Box<RawValue> = binary_body
+            .into_single()
+            .expect("RawValue must deserialize from a binary body");
+
+        assert_eq!(binary_raw.get(), text_raw.get());
+    }
+
+    #[test]
+    fn into_items_reads_raw_value_from_binary_items() {
+        use serde_json::value::RawValue;
+
+        let body = ResponseBody::from_items(vec![binary(&id_object(1)), binary(&id_object(2))]);
+        let items: Vec<Box<RawValue>> = body
+            .into_items()
+            .expect("RawValue items must deserialize from binary slices");
+        let rendered: Vec<&str> = items.iter().map(|r| r.get()).collect();
+        assert_eq!(rendered, vec![r#"{"id":1}"#, r#"{"id":2}"#]);
     }
 
     #[test]

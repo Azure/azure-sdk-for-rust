@@ -26,9 +26,9 @@ use std::any::Any;
 use std::future::Future;
 use std::sync::Arc;
 
-use azure_data_cosmos_driver::driver::CosmosDriver;
 use azure_data_cosmos_driver::models::{AccountReference, ContainerReference, CosmosResponse};
 use azure_data_cosmos_driver::options::DriverOptions;
+use azure_data_cosmos_driver::{driver::CosmosDriver, options::OperationOptions};
 
 use crate::account_ref::AccountRefHandle;
 use crate::completion::{
@@ -38,6 +38,7 @@ use crate::driver::DriverHandle;
 use crate::driver_options::DriverOptionsHandle;
 use crate::error::{CosmosErrorCode, CosmosStatusCode};
 use crate::op_request::{build_request, CosmosOperationRequest};
+use crate::options_snapshot::OperationOptionsSnapshot;
 use crate::runtime::RuntimeContext;
 
 /// Send-safe encoding of the opaque `user_data` cookie round-tripped
@@ -178,37 +179,36 @@ fn spawn_oneshot<Fut, R>(
         // leaks. Catching the panic here lets us still publish exactly one
         // completion, honoring the spec section 3.6 invariant.
         let work = std::panic::AssertUnwindSafe(async move { fut.await.map(to_success) });
-        let work = work.catch_unwind();
-        tokio::pin!(work);
-
-        // Race the driver work against a cancel signal. `notify_one` (in
-        // `cosmos_operation_handle_cancel`) stores a permit, so a cancel that
-        // arrives before this task starts waiting is still observed on the
-        // first poll of `notified()`. `biased` makes a pending cancel win
-        // deterministically over a simultaneously-ready result. On cancel we
-        // simply stop awaiting `work`; dropping it cancels the driver future
-        // (best-effort cooperative cancellation per spec section 3.6.3).
-        let outcome = tokio::select! {
-            biased;
-            _ = ctx.op_inner.cancel_notify.notified() => None,
-            done = &mut work => Some(done),
-        };
+        let done = work.catch_unwind().await;
 
         let user_data = ctx.user_data.as_isize();
-        let completion = match outcome {
-            // Cancelled: drop the driver future and synthesize a CANCELLED
-            // completion so the host's continuation is released.
-            None => PendingCompletion::cancelled(user_data, ctx.op_inner.clone()),
-            Some(Ok(Ok(success))) => match success {
+        let completion = match done {
+            Ok(Ok(success)) => match success {
                 SuccessKind::Response {
                     response,
                     next_continuation,
-                } => PendingCompletion::ok_response(
-                    user_data,
-                    ctx.op_inner.clone(),
-                    response.map(|b| *b),
-                    next_continuation,
-                ),
+                } => {
+                    if response.as_ref().is_some_and(|response| {
+                        matches!(
+                            response.body(),
+                            azure_data_cosmos_driver::models::ResponseBody::Items(_)
+                        )
+                    }) {
+                        PendingCompletion::error(
+                            user_data,
+                            ctx.op_inner.clone(),
+                            crate::cursor::legacy_representation_error(),
+                            ctx.include_error_details,
+                        )
+                    } else {
+                        PendingCompletion::ok_response(
+                            user_data,
+                            ctx.op_inner.clone(),
+                            response.map(|b| *b),
+                            next_continuation,
+                        )
+                    }
+                }
                 SuccessKind::Driver(driver) => {
                     PendingCompletion::ok_driver(user_data, ctx.op_inner.clone(), driver)
                 }
@@ -216,13 +216,13 @@ fn spawn_oneshot<Fut, R>(
                     PendingCompletion::ok_container(user_data, ctx.op_inner.clone(), *container)
                 }
             },
-            Some(Ok(Err(err))) => PendingCompletion::error(
+            Ok(Err(err)) => PendingCompletion::error(
                 user_data,
                 ctx.op_inner.clone(),
                 err,
                 ctx.include_error_details,
             ),
-            Some(Err(panic_payload)) => {
+            Err(panic_payload) => {
                 // The driver future (or success conversion) panicked. Synthesize
                 // a driver error carrying the CLIENT_FFI_PANIC status and route
                 // it through the normal rich-error path so the completion's
@@ -324,6 +324,19 @@ pub extern "C" fn cosmos_submit_operation(
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
+    submit_operation_with_builder(driver, queue, user_data, out_pre_error, || {
+        // SAFETY: caller guarantees the v1 request fields follow their contracts.
+        unsafe { build_request(request) }
+    })
+}
+
+fn submit_operation_with_builder(
+    driver: *const DriverHandle,
+    queue: *mut CompletionQueue,
+    user_data: isize,
+    out_pre_error: *mut CosmosStatusCode,
+    build: impl FnOnce() -> Result<crate::op_request::BuiltRequest, CosmosErrorCode>,
+) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
@@ -341,9 +354,7 @@ pub extern "C" fn cosmos_submit_operation(
 
     // Build the driver operation + options + inbound continuation from the
     // flat request. Validation failures abort before we spend a spawn.
-    // SAFETY: caller guarantees `request`'s pointer fields per the struct
-    // contract.
-    let built = match unsafe { build_request(request) } {
+    let built = match build() {
         Ok(b) => b,
         Err(code) => {
             write_err(code);
@@ -351,6 +362,14 @@ pub extern "C" fn cosmos_submit_operation(
         }
     };
 
+    if built
+        .snapshot
+        .as_ref()
+        .is_some_and(|snapshot| !snapshot.matches_driver(&driver_arc))
+    {
+        write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        return std::ptr::null_mut();
+    }
     let (ctx, op_handle) = match pre_flight_spawn(queue, user_data) {
         Ok(pair) => pair,
         Err(code) => {
@@ -361,21 +380,35 @@ pub extern "C" fn cosmos_submit_operation(
 
     let runtime = Arc::clone(ctx.queue.runtime());
     let crate::op_request::BuiltRequest {
+        snapshot,
         operation,
         options,
+        patch_tracking_id,
         continuation,
         plan_options,
     } = built;
+    if let Some(tracking_id) = patch_tracking_id {
+        ctx.op_inner.set_patch_tracking_id(tracking_id.to_string());
+    }
 
     spawn_oneshot(
         ctx,
         runtime,
-        async move {
+        OperationOptionsSnapshot::execute(snapshot, async move {
             // Plan with the inbound continuation, then execute a single
             // page. Mirrors `CosmosDriver::execute_operation` but threads
             // the continuation token through the planner and retains the
             // plan so we can mint the next-page token.
             let container = operation.container().cloned();
+            let is_feed = matches!(
+                operation.operation_type(),
+                azure_data_cosmos_driver::models::OperationType::Query
+                    | azure_data_cosmos_driver::models::OperationType::ReadFeed
+            );
+            let server_token_feed = operation.operation_type()
+                == azure_data_cosmos_driver::models::OperationType::ReadFeed
+                && operation.is_trivial()
+                && !operation.is_change_feed();
             let mut plan = Box::pin(driver_arc.plan_operation(
                 operation,
                 &options,
@@ -386,19 +419,22 @@ pub extern "C" fn cosmos_submit_operation(
             let page = driver_arc
                 .execute_plan(&mut plan, container, options)
                 .await?;
-            // After a page, snapshot the next-page token from the plan.
-            // Token derivation is best-effort: a failure here (e.g. a
-            // non-query trivial op that doesn't support client tokens)
-            // simply yields no next token rather than failing the page.
-            let next = match page {
-                Some(_) => plan
-                    .to_continuation_token()
-                    .ok()
-                    .map(|t| t.as_str().to_owned()),
-                None => None,
+            let next = match &page {
+                Some(page) if server_token_feed => page.headers().continuation.clone(),
+                Some(_) if is_feed => Some(plan.to_continuation_token()?.as_str().to_owned()),
+                _ => None,
             };
+            // Legacy feeds must fail rather than silently drop multipart payloads.
+            if page.as_ref().is_some_and(|page| {
+                matches!(
+                    page.body(),
+                    azure_data_cosmos_driver::models::ResponseBody::Items(_)
+                )
+            }) {
+                return Err(crate::cursor::legacy_representation_error());
+            }
             Ok((page, next))
-        },
+        }),
         |(page, next): (Option<CosmosResponse>, Option<String>)| SuccessKind::Response {
             response: page.map(Box::new),
             next_continuation: next,
@@ -434,6 +470,25 @@ pub extern "C" fn cosmos_submit_singleton_operation(
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
+    // SAFETY: caller guarantees a complete request or NULL.
+    if unsafe { request.as_ref() }
+        .is_some_and(|request| crate::cursor_request::is_feed_kind(request.kind))
+    {
+        return cosmos_submit_operation(driver, request, queue, user_data, out_pre_error);
+    }
+    submit_singleton_operation_with_builder(driver, queue, user_data, out_pre_error, || {
+        // SAFETY: caller guarantees the v1 request fields follow their contracts.
+        unsafe { build_request(request) }
+    })
+}
+
+fn submit_singleton_operation_with_builder(
+    driver: *const DriverHandle,
+    queue: *mut CompletionQueue,
+    user_data: isize,
+    out_pre_error: *mut CosmosStatusCode,
+    build: impl FnOnce() -> Result<crate::op_request::BuiltRequest, CosmosErrorCode>,
+) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
@@ -449,9 +504,7 @@ pub extern "C" fn cosmos_submit_singleton_operation(
     };
     let driver_arc: Arc<CosmosDriver> = Arc::clone(&driver_inner.inner);
 
-    // SAFETY: caller guarantees `request`'s pointer fields per the struct
-    // contract.
-    let built = match unsafe { build_request(request) } {
+    let built = match build() {
         Ok(b) => b,
         Err(code) => {
             write_err(code);
@@ -459,6 +512,14 @@ pub extern "C" fn cosmos_submit_singleton_operation(
         }
     };
 
+    if built
+        .snapshot
+        .as_ref()
+        .is_some_and(|snapshot| !snapshot.matches_driver(&driver_arc))
+    {
+        write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        return std::ptr::null_mut();
+    }
     let (ctx, op_handle) = match pre_flight_spawn(queue, user_data) {
         Ok(pair) => pair,
         Err(code) => {
@@ -470,17 +531,24 @@ pub extern "C" fn cosmos_submit_singleton_operation(
     let runtime = Arc::clone(ctx.queue.runtime());
     // `continuation` is intentionally dropped: singletons do not paginate.
     let crate::op_request::BuiltRequest {
-        operation, options, ..
+        snapshot,
+        operation,
+        options,
+        patch_tracking_id,
+        ..
     } = built;
+    if let Some(tracking_id) = patch_tracking_id {
+        ctx.op_inner.set_patch_tracking_id(tracking_id.to_string());
+    }
 
     spawn_oneshot(
         ctx,
         runtime,
-        async move {
+        OperationOptionsSnapshot::execute(snapshot, async move {
             driver_arc
                 .execute_singleton_operation(operation, options)
                 .await
-        },
+        }),
         |response: CosmosResponse| SuccessKind::Response {
             response: Some(Box::new(response)),
             next_continuation: None,
@@ -578,8 +646,8 @@ pub extern "C" fn cosmos_driver_get_or_create_submit(
 #[no_mangle]
 pub extern "C" fn cosmos_driver_resolve_container_submit(
     driver: *const DriverHandle,
-    database_id: *const std::os::raw::c_char,
-    container_id: *const std::os::raw::c_char,
+    database_id: crate::string::CosmosStringView,
+    container_id: crate::string::CosmosStringView,
     queue: *mut CompletionQueue,
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
@@ -597,14 +665,26 @@ pub extern "C" fn cosmos_driver_resolve_container_submit(
         write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
         return std::ptr::null_mut();
     };
-    let db_id = match try_cstr_to_string(database_id) {
+    // SAFETY: input view remains readable until submit returns.
+    let db_id = match unsafe {
+        crate::string::required_text(
+            database_id,
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+        )
+    } {
         Ok(s) => s,
         Err(code) => {
             write_err(code);
             return std::ptr::null_mut();
         }
     };
-    let container_id = match try_cstr_to_string(container_id) {
+    // SAFETY: input view remains readable until submit returns.
+    let container_id = match unsafe {
+        crate::string::required_text(
+            container_id,
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+        )
+    } {
         Ok(s) => s,
         Err(code) => {
             write_err(code);
@@ -628,7 +708,7 @@ pub extern "C" fn cosmos_driver_resolve_container_submit(
         task_runtime,
         async move {
             driver_arc
-                .resolve_container_by_name(&db_id, &container_id)
+                .resolve_container_by_name(&db_id, &container_id, OperationOptions::default())
                 .await
         },
         |container_ref: azure_data_cosmos_driver::models::ContainerReference| {
@@ -641,17 +721,6 @@ pub extern "C" fn cosmos_driver_resolve_container_submit(
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-fn try_cstr_to_string(p: *const std::os::raw::c_char) -> Result<String, CosmosErrorCode> {
-    if p.is_null() {
-        return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
-    }
-    // SAFETY: caller contract.
-    let cstr = unsafe { std::ffi::CStr::from_ptr(p) };
-    cstr.to_str()
-        .map(|s| s.to_owned())
-        .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidUtf8)
-}
 
 #[cfg(test)]
 mod tests {
@@ -723,8 +792,8 @@ mod tests {
         let mut err: CosmosStatusCode = COSMOS_STATUS_SUCCESS;
         let h = cosmos_driver_resolve_container_submit(
             ptr::null(),
-            ptr::null(),
-            ptr::null(),
+            crate::string::CosmosStringView::default(),
+            crate::string::CosmosStringView::default(),
             ptr::null_mut(),
             0,
             &mut err,
@@ -767,12 +836,13 @@ mod tests {
     }
 
     #[test]
-    fn spawn_oneshot_cancellation_yields_cancelled_completion() {
+    fn spawn_oneshot_delivers_ok_completion_with_patch_tracking_id() {
         use crate::completion::{
-            cosmos_completion_queue_create, cosmos_completion_queue_free,
-            cosmos_completion_queue_free_completions, cosmos_completion_queue_wait,
-            cosmos_operation_handle_cancel, cosmos_operation_handle_free, CosmosCompletion,
-            CosmosCompletionOutcome, CosmosCompletionQueueOptions,
+            cosmos_completion_patch_tracking_id, cosmos_completion_queue_create,
+            cosmos_completion_queue_free, cosmos_completion_queue_free_completions,
+            cosmos_completion_queue_wait, cosmos_operation_handle_free,
+            cosmos_operation_handle_state, CosmosCompletion, CosmosCompletionOutcome,
+            CosmosCompletionQueueOptions, CosmosOperationHandleState,
         };
         use crate::runtime::{__test_only_create_default_runtime, cosmos_runtime_free};
         use std::mem::MaybeUninit;
@@ -787,23 +857,23 @@ mod tests {
         assert!(!queue.is_null());
 
         let (ctx, op_handle) = pre_flight_spawn(queue, 0).expect("pre-flight ok");
+        let tracking_id = "7f5241c9-d7c2-4071-97a3-43bdebf6ef8f";
+        ctx.op_inner.set_patch_tracking_id(tracking_id.to_owned());
         let runtime = Arc::clone(ctx.queue.runtime());
 
-        // A future that never resolves on its own — only cancellation can end
-        // this operation.
+        // A ready future drives the happy path: the spawned task awaits it and
+        // publishes exactly one OK completion. An end-of-feed shell (no
+        // response) keeps the op's resolved patch tracking id, which is set
+        // before execution begins.
         spawn_oneshot(
             ctx,
             runtime,
-            futures::future::pending::<azure_data_cosmos_driver::error::Result<CosmosResponse>>(),
-            |r: CosmosResponse| SuccessKind::Response {
-                response: Some(Box::new(r)),
+            futures::future::ready(Ok::<(), azure_data_cosmos_driver::error::CosmosError>(())),
+            |_: ()| SuccessKind::Response {
+                response: None,
                 next_continuation: None,
             },
         );
-
-        // Request cancellation; the spawned task's select must observe it and
-        // post a CANCELLED completion instead of hanging forever.
-        cosmos_operation_handle_cancel(op_handle);
 
         let mut slot = MaybeUninit::<CosmosCompletion>::uninit();
         let n = cosmos_completion_queue_wait(queue, slot.as_mut_ptr(), 1, u32::MAX);
@@ -812,9 +882,21 @@ mod tests {
         let mut c = unsafe { slot.assume_init() };
         assert_eq!(
             c.outcome,
-            CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled
+            CosmosCompletionOutcome::CosmosCompletionOutcomeOk
         );
-        assert_eq!(c.was_cancel_requested, 1);
+        assert_eq!(
+            cosmos_operation_handle_state(op_handle),
+            CosmosOperationHandleState::CosmosOperationHandleStateCompleted
+        );
+        let actual = cosmos_completion_patch_tracking_id(&c);
+        assert!(!actual.is_null());
+        // SAFETY: the pointer is borrowed from the live completion backing.
+        assert_eq!(
+            unsafe { std::ffi::CStr::from_ptr(actual) }
+                .to_str()
+                .unwrap(),
+            tracking_id
+        );
 
         cosmos_completion_queue_free_completions(&mut c as *mut CosmosCompletion, 1);
         cosmos_operation_handle_free(op_handle);

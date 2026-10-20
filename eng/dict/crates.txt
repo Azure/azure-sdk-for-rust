@@ -57,11 +57,13 @@ fe2o3_amqp_cbs
 fe2o3_amqp_ext
 fe2o3_amqp_management
 fe2o3_amqp_types
+fe2o3_amqp_ws
 fe2o3-amqp
 fe2o3-amqp-cbs
 fe2o3-amqp-ext
 fe2o3-amqp-management
 fe2o3-amqp-types
+fe2o3-amqp-ws
 flate2
 futures
 getrandom
@@ -78,6 +80,8 @@ json_canon
 json-canon
 json_patch
 json-patch
+libfuzzer_sys
+libfuzzer-sys
 litemap
 openssl
 opentelemetry
@@ -118,6 +122,8 @@ time
 tokio
 tokio_metrics
 tokio-metrics
+tokio_tungstenite
+tokio-tungstenite
 tracing
 tracing_subscriber
 tracing-subscriber

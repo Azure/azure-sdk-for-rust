@@ -5,8 +5,9 @@ use crate::{
     driver::PackageMetadata,
     model::{
         ApiAttribute, ApiItem, ApiItemKind, ApiMember, ApiMemberKind, ApiModel, ApiModule,
-        ApiNavigationPath, ApiPathReference, InherentImplSortKey,
+        ApiNavigationPath, ApiPathReference, InherentImplSortKey, SourceLocation,
     },
+    rustdoc_compat,
 };
 use rustdoc_types::{
     Constant, Crate, Function, FunctionHeader, GenericArg, GenericArgs, GenericBound,
@@ -21,6 +22,68 @@ pub(crate) trait WorkspaceResolver {
     fn is_workspace_crate(&self, crate_name: &str) -> bool;
     fn load_workspace_model(&mut self, crate_name: &str) -> Result<Option<Arc<ApiModel>>, String>;
     fn load_workspace_crate(&mut self, crate_name: &str) -> Result<Option<Arc<Crate>>, String>;
+}
+
+fn source_location_at_offset(item: &Item, source: &str, offset: usize) -> Option<SourceLocation> {
+    let mut location = source_location(item)?;
+    let prefix = source.get(..offset)?;
+    let line_count = prefix.bytes().filter(|byte| *byte == b'\n').count();
+    location.line += line_count;
+    location.column = if line_count == 0 {
+        location.column + prefix.chars().count()
+    } else {
+        prefix
+            .rsplit_once('\n')
+            .map_or(0, |(_, suffix)| suffix.chars().count())
+    };
+    Some(location)
+}
+
+fn proc_macro_helper_location(item: &Item, helper: &str) -> Option<SourceLocation> {
+    let span = item.span.as_ref()?;
+    let source = crate::source_cache::get(&span.filename)?;
+    let lines = source.lines().collect::<Vec<_>>();
+    let item_line = span.begin.0.saturating_sub(1).min(lines.len());
+    let attribute_start = (0..item_line)
+        .rev()
+        .find(|index| lines[*index].contains("#[proc_macro_derive"))?;
+
+    let mut in_helpers = false;
+    for (line_index, line) in lines
+        .iter()
+        .enumerate()
+        .take(item_line)
+        .skip(attribute_start)
+    {
+        let search_from = if in_helpers {
+            0
+        } else {
+            let Some(attributes) = line.find("attributes") else {
+                continue;
+            };
+            in_helpers = true;
+            attributes + "attributes".len()
+        };
+        if let Some(column) = find_identifier(&line[search_from..], helper) {
+            return Some(SourceLocation {
+                path: repo_relative_source_path(&span.filename)?,
+                line: line_index,
+                column: search_from + column,
+            });
+        }
+    }
+    None
+}
+
+fn find_identifier(text: &str, identifier: &str) -> Option<usize> {
+    text.match_indices(identifier)
+        .map(|(index, _)| index)
+        .find(|index| {
+            let before = text[..*index].chars().next_back();
+            let after = text[*index + identifier.len()..].chars().next();
+            !before.is_some_and(|character| character == '_' || character.is_alphanumeric())
+                && !after.is_some_and(|character| character == '_' || character.is_alphanumeric())
+        })
 }
 
 fn find_item_entry<'a>(
@@ -77,7 +140,11 @@ pub(crate) fn extract_model(
         return Err("rustdoc JSON root item was not a module".to_string());
     };
 
-    let mut model = ApiModel::new(package.name.clone(), package.version.clone());
+    let mut model = ApiModel::new(
+        package.name.clone(),
+        package.version.clone(),
+        package.api.clone(),
+    );
     model.root_module = extract_module(krate, root, package.name.clone(), resolver)?;
     Ok(model)
 }
@@ -94,6 +161,7 @@ fn extract_module(
 
     let mut result = ApiModule {
         path,
+        declaration_location: source_location(item),
         doc_comments: extract_doc_comments(item),
         attributes: extract_module_attributes(item, module.is_crate),
         items: Vec::new(),
@@ -114,7 +182,8 @@ fn extract_module(
                     result.path,
                     child.name.as_deref().unwrap_or("unknown_module")
                 );
-                let module = extract_module(krate, child, child_path, resolver)?;
+                let mut module = extract_module(krate, child, child_path, resolver)?;
+                module.declaration_location = module_declaration_location(item, child);
                 insert_module(&mut result.modules, &mut seen_modules, module);
             }
             ItemEnum::Impl(impl_block) => {
@@ -730,11 +799,11 @@ fn extract_item(krate: &Crate, item: &Item) -> ApiItem {
     if let Some(attribute) = synthesize_pin_project_attribute(krate, item, &attributes) {
         prepend_attributes(&mut attributes, &[attribute]);
     }
-    if matches!(item.inner, ItemEnum::Trait(_)) && trait_uses_async_trait(krate, item) {
+    if let Some(mode) = trait_async_trait_mode(krate, item) {
         prepend_attributes(
             &mut attributes,
             &[ApiAttribute {
-                text: "#[async_trait]".to_string(),
+                text: mode.attribute().to_string(),
             }],
         );
     }
@@ -742,7 +811,9 @@ fn extract_item(krate: &Crate, item: &Item) -> ApiItem {
     ApiItem {
         name: item_name(krate, item),
         kind: item_kind(item),
-        source_id: Some(qualified_source_id(krate, item.id)),
+        declaration_location: source_location(item),
+        source_id: (!matches!(item.inner, ItemEnum::Use(_)))
+            .then(|| qualified_source_id(krate, item.id)),
         navigation_paths: item_navigation_paths(krate, item),
         owner_name: None,
         owner_kind: None,
@@ -780,8 +851,8 @@ fn item_name(krate: &Crate, item: &Item) -> String {
 
 fn extract_members(krate: &Crate, item: &Item) -> Vec<ApiMember> {
     match &item.inner {
-        ItemEnum::Macro(source) => extract_macro_members(source),
-        ItemEnum::ProcMacro(proc_macro) => extract_proc_macro_members(proc_macro),
+        ItemEnum::Macro(source) => extract_macro_members(item, source),
+        ItemEnum::ProcMacro(proc_macro) => extract_proc_macro_members(item, proc_macro),
         ItemEnum::Struct(struct_item) => extract_struct_members(krate, struct_item),
         ItemEnum::Enum(enum_item) => extract_enum_members(krate, enum_item),
         ItemEnum::Trait(trait_item) => extract_trait_members(krate, trait_item),
@@ -821,6 +892,172 @@ fn qualified_source_id(krate: &Crate, id: Id) -> String {
         .and_then(|summary| summary.path.first())
         .map(|crate_name| format!("{crate_name}::{}", id.0))
         .unwrap_or_else(|| id.0.to_string())
+}
+
+fn source_location(item: &Item) -> Option<SourceLocation> {
+    let span = item.span.as_ref()?;
+    Some(SourceLocation {
+        path: repo_relative_source_path(&span.filename)?,
+        line: span.begin.0.saturating_sub(1),
+        column: span.begin.1.saturating_sub(1),
+    })
+}
+
+fn module_declaration_location(parent: &Item, module: &Item) -> Option<SourceLocation> {
+    let parent_span = parent.span.as_ref()?;
+    let module_span = module.span.as_ref()?;
+    if parent_span.filename == module_span.filename {
+        return source_location(module);
+    }
+
+    let name = module.name.as_deref()?;
+    let source = crate::source_cache::get(&parent_span.filename)?;
+    let (line, column) = find_module_declaration(
+        &source,
+        name,
+        parent_span.begin.0.saturating_sub(1),
+        parent_span.end.0,
+        Some(&module_span.filename),
+        matches!(module.visibility, Visibility::Public),
+    )?;
+    Some(SourceLocation {
+        path: repo_relative_source_path(&parent_span.filename)?,
+        line,
+        column,
+    })
+}
+
+fn find_module_declaration(
+    source: &str,
+    name: &str,
+    start_line: usize,
+    end_line: usize,
+    module_file: Option<&std::path::Path>,
+    is_public: bool,
+) -> Option<(usize, usize)> {
+    let mut candidates = Vec::new();
+    for (line_index, line) in source
+        .lines()
+        .enumerate()
+        .skip(start_line)
+        .take(end_line.saturating_sub(start_line))
+    {
+        for (mod_index, _) in line.match_indices("mod") {
+            let before = &line[..mod_index];
+            let previous = before.chars().next_back();
+            if previous.is_some_and(|character| character == '_' || character.is_alphanumeric()) {
+                continue;
+            }
+
+            let prefix = before.trim();
+            if !is_module_declaration_prefix(prefix) {
+                continue;
+            }
+
+            let after_mod = &line[mod_index + 3..];
+            let after_whitespace = after_mod.trim_start();
+            let Some(after_name) = after_whitespace.strip_prefix(name) else {
+                continue;
+            };
+            if after_name
+                .chars()
+                .next()
+                .is_some_and(|character| character == '_' || character.is_alphanumeric())
+            {
+                continue;
+            }
+            if matches!(after_name.trim_start().chars().next(), Some(';' | '{')) {
+                candidates.push((
+                    line_index,
+                    line.len() - line.trim_start().len(),
+                    path_attribute_before(source, line_index),
+                    is_public_module_declaration_prefix(prefix),
+                ));
+            }
+        }
+    }
+    if candidates.len() == 1 {
+        return candidates.pop().map(|(line, column, _, _)| (line, column));
+    }
+
+    let candidates = candidates
+        .into_iter()
+        .filter(|(_, _, _, candidate_is_public)| *candidate_is_public == is_public)
+        .collect::<Vec<_>>();
+    if candidates.len() == 1 {
+        return candidates
+            .into_iter()
+            .next()
+            .map(|(line, column, _, _)| (line, column));
+    }
+
+    let module_file = module_file?.to_string_lossy().replace('\\', "/");
+    candidates
+        .into_iter()
+        .find(|(_, _, path, _)| {
+            path.as_deref()
+                .is_some_and(|path| module_file.ends_with(&path.replace('\\', "/")))
+        })
+        .map(|(line, column, _, _)| (line, column))
+}
+
+fn is_module_declaration_prefix(prefix: &str) -> bool {
+    let visibility = prefix
+        .strip_suffix("unsafe")
+        .map(str::trim_end)
+        .unwrap_or(prefix);
+    visibility.is_empty()
+        || visibility == "pub"
+        || (visibility.starts_with("pub(") && visibility.ends_with(')'))
+}
+
+fn is_public_module_declaration_prefix(prefix: &str) -> bool {
+    prefix
+        .strip_suffix("unsafe")
+        .map(str::trim_end)
+        .unwrap_or(prefix)
+        == "pub"
+}
+
+fn path_attribute_before(source: &str, line_index: usize) -> Option<String> {
+    for line in source
+        .lines()
+        .collect::<Vec<_>>()
+        .into_iter()
+        .take(line_index)
+        .rev()
+    {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with("///") || line.starts_with("//!") {
+            continue;
+        }
+        if !line.starts_with("#[") {
+            break;
+        }
+        let Some(path) = line.strip_prefix("#[path") else {
+            continue;
+        };
+        let start = path.find('"')? + 1;
+        let end = path[start..].find('"')? + start;
+        return Some(path[start..end].to_string());
+    }
+    None
+}
+
+fn repo_relative_source_path(path: &std::path::Path) -> Option<String> {
+    let path = if path.is_absolute() {
+        path.strip_prefix(std::env::current_dir().ok()?).ok()?
+    } else {
+        path
+    };
+    if path
+        .components()
+        .any(|component| matches!(component, std::path::Component::ParentDir))
+    {
+        return None;
+    }
+
+    Some(path.to_string_lossy().replace('\\', "/"))
 }
 
 fn reexport_navigation_paths(path: &str) -> Vec<String> {
@@ -930,7 +1167,14 @@ fn collect_function_declaration_path_references(
             references,
         );
     }
-    if let Some(output) = &function.sig.output {
+    if let Some(output) = async_trait_output(function) {
+        collect_type_path_references_with_elision(
+            krate,
+            output.type_,
+            &synthetic_lifetimes,
+            references,
+        );
+    } else if let Some(output) = &function.sig.output {
         collect_type_path_references_with_elision(krate, output, &synthetic_lifetimes, references);
     }
     collect_where_predicates_path_references_with_elision(
@@ -1306,12 +1550,14 @@ fn collect_type_path_references_with_elision(
                     );
                 }
             }
-            collect_generic_args_path_references_with_elision(
-                krate,
-                args,
-                synthetic_lifetimes,
-                references,
-            );
+            if let Some(args) = args {
+                collect_generic_args_path_references_with_elision(
+                    krate,
+                    args,
+                    synthetic_lifetimes,
+                    references,
+                );
+            }
         }
         Type::Generic(_) | Type::Primitive(_) | Type::Infer => {}
     }
@@ -1339,12 +1585,14 @@ fn collect_generic_args_path_references_with_elision(
                 }
             }
             for constraint in constraints {
-                collect_generic_args_path_references_with_elision(
-                    krate,
-                    &constraint.args,
-                    synthetic_lifetimes,
-                    references,
-                );
+                if let Some(args) = &constraint.args {
+                    collect_generic_args_path_references_with_elision(
+                        krate,
+                        args,
+                        synthetic_lifetimes,
+                        references,
+                    );
+                }
                 match &constraint.binding {
                     rustdoc_types::AssocItemConstraintKind::Equality(term) => {
                         collect_term_path_references_with_elision(
@@ -1632,9 +1880,7 @@ fn field_has_pin_attribute(field_item: &Item) -> bool {
 }
 
 fn has_automatically_derived(item: &Item) -> bool {
-    item.attrs
-        .iter()
-        .any(|attr| attr.contains("automatically_derived"))
+    rustdoc_compat::is_automatically_derived(item)
 }
 
 fn known_derive_trait_name(path: &Path) -> Option<&'static str> {
@@ -1674,10 +1920,20 @@ fn extract_trait_impl(
     let trait_path = impl_block.trait_.as_ref()?;
     let self_type = render_type(&impl_block.for_);
     let declaration = render_trait_impl_declaration(impl_block, trait_path, &self_type);
+    let mut attributes = extract_attributes(item);
+    if let Some(mode) = impl_async_trait_mode(krate, impl_block) {
+        prepend_attributes(
+            &mut attributes,
+            &[ApiAttribute {
+                text: mode.attribute().to_string(),
+            }],
+        );
+    }
 
     Some(ApiItem {
         name: self_type,
         kind: ApiItemKind::TraitImpl,
+        declaration_location: source_location(item),
         source_id: Some(qualified_source_id(krate, item.id)),
         navigation_paths: Vec::new(),
         owner_name: owner.map(|owner| {
@@ -1690,12 +1946,12 @@ fn extract_trait_impl(
         owner_source_id: owner.map(|owner| qualified_source_id(krate, owner.id)),
         inherent_impl_sort_key: None,
         doc_comments: extract_doc_comments(item),
-        attributes: extract_attributes(item),
+        attributes,
         declaration,
         declaration_path_references: collect_trait_impl_declaration_path_references(
             krate, impl_block,
         ),
-        members: extract_impl_items(krate, &impl_block.items),
+        members: extract_impl_items(krate, &impl_block.items, false),
     })
 }
 
@@ -1725,7 +1981,7 @@ fn extract_inherent_impl(
     impl_block: &Impl,
 ) -> Option<ApiItem> {
     let self_type = render_type(&impl_block.for_);
-    let members = extract_impl_items(krate, &impl_block.items);
+    let members = extract_impl_items(krate, &impl_block.items, true);
     if members.is_empty() {
         return None;
     }
@@ -1736,6 +1992,7 @@ fn extract_inherent_impl(
             .clone()
             .unwrap_or_else(|| fallback_item_name(target).to_string()),
         kind: ApiItemKind::InherentImpl,
+        declaration_location: source_location(item),
         source_id: Some(qualified_source_id(krate, item.id)),
         navigation_paths: Vec::new(),
         owner_name: Some(
@@ -1786,12 +2043,16 @@ fn inherent_impl_type_arg_classes(type_: &Type) -> Vec<u8> {
     }
 }
 
-fn extract_impl_items(krate: &Crate, item_ids: &[Id]) -> Vec<ApiMember> {
+fn extract_impl_items(
+    krate: &Crate,
+    item_ids: &[Id],
+    functions_are_public: bool,
+) -> Vec<ApiMember> {
     item_ids
         .iter()
         .filter_map(|item_id| krate.index.get(item_id))
         .filter(|item| is_visible(item))
-        .filter_map(|item| extract_associated_member(krate, item))
+        .filter_map(|item| extract_associated_member(krate, item, functions_are_public))
         .collect()
 }
 
@@ -1800,17 +2061,62 @@ fn extract_trait_members(krate: &Crate, trait_item: &Trait) -> Vec<ApiMember> {
         .items
         .iter()
         .filter_map(|item_id| krate.index.get(item_id))
-        .filter_map(|item| extract_associated_member(krate, item))
+        .filter_map(|item| extract_associated_member(krate, item, false))
         .collect()
 }
 
-fn extract_macro_members(source: &str) -> Vec<ApiMember> {
-    parse_macro_definition(source)
-        .map(|(_, members)| members)
+fn extract_macro_members(item: &Item, source: &str) -> Vec<ApiMember> {
+    let source = source_text_for_span(item).unwrap_or_else(|| source.to_string());
+    parse_macro_definition(&source)
+        .map(|parsed| {
+            parsed
+                .members
+                .into_iter()
+                .map(|(offset, mut member)| {
+                    member.declaration_location = source_location_at_offset(item, &source, offset);
+                    member
+                })
+                .collect()
+        })
         .unwrap_or_default()
 }
 
-fn extract_proc_macro_members(proc_macro: &rustdoc_types::ProcMacro) -> Vec<ApiMember> {
+fn source_text_for_span(item: &Item) -> Option<String> {
+    let span = item.span.as_ref()?;
+    let source = crate::source_cache::get(&span.filename)?;
+    let lines = source.lines().collect::<Vec<_>>();
+    let start_line = span.begin.0.checked_sub(1)?;
+    let end_line = span.end.0.min(lines.len());
+    let mut selected = lines.get(start_line..end_line)?.to_vec();
+    let start_column = span.begin.1.saturating_sub(1);
+    let end_column = span.end.1.saturating_sub(1);
+    if selected.len() == 1 {
+        let line = *selected.first()?;
+        let start_byte = byte_index_at_character(line, start_column);
+        let end_byte = byte_index_at_character(line, end_column);
+        *selected.first_mut()? = line.get(start_byte..end_byte)?;
+    } else {
+        let first = *selected.first()?;
+        let start_byte = byte_index_at_character(first, start_column);
+        *selected.first_mut()? = first.get(start_byte..)?;
+
+        let last = *selected.last()?;
+        let end_byte = byte_index_at_character(last, end_column);
+        *selected.last_mut()? = last.get(..end_byte)?;
+    }
+    Some(selected.join("\n"))
+}
+
+fn byte_index_at_character(text: &str, character: usize) -> usize {
+    text.char_indices()
+        .nth(character)
+        .map_or(text.len(), |(index, _)| index)
+}
+
+fn extract_proc_macro_members(
+    item: &Item,
+    proc_macro: &rustdoc_types::ProcMacro,
+) -> Vec<ApiMember> {
     if !matches!(proc_macro.kind, MacroKind::Derive) || proc_macro.helpers.is_empty() {
         return Vec::new();
     }
@@ -1822,6 +2128,7 @@ fn extract_proc_macro_members(proc_macro: &rustdoc_types::ProcMacro) -> Vec<ApiM
     members.extend(proc_macro.helpers.iter().map(|helper| ApiMember {
         name: helper.clone(),
         kind: ApiMemberKind::MacroInput,
+        declaration_location: proc_macro_helper_location(item, helper),
         doc_comments: Vec::new(),
         attributes: Vec::new(),
         declaration: format!("#[{helper}]"),
@@ -1859,6 +2166,7 @@ fn extract_enum_members(krate: &Crate, enum_item: &rustdoc_types::Enum) -> Vec<A
         .map(|variant_item| ApiMember {
             name: variant_item.name.clone().unwrap_or_default(),
             kind: ApiMemberKind::Variant,
+            declaration_location: source_location(variant_item),
             doc_comments: extract_doc_comments(variant_item),
             attributes: extract_attributes(variant_item),
             declaration: render_variant(krate, variant_item),
@@ -1874,6 +2182,7 @@ fn extract_field_member(krate: &Crate, field_item: &Item) -> Option<ApiMember> {
     render_named_field(field_item).map(|declaration| ApiMember {
         name: field_item.name.clone().unwrap_or_default(),
         kind: ApiMemberKind::Field,
+        declaration_location: source_location(field_item),
         doc_comments: extract_doc_comments(field_item),
         attributes: extract_attributes(field_item),
         declaration,
@@ -1885,8 +2194,9 @@ fn api_member(krate: &Crate, item: &Item, kind: ApiMemberKind, declaration: Stri
     ApiMember {
         name: item.name.clone().unwrap_or_default(),
         kind,
+        declaration_location: source_location(item),
         doc_comments: extract_doc_comments(item),
-        attributes: extract_attributes(item),
+        attributes: extract_associated_member_attributes(item),
         declaration,
         declaration_path_references: collect_associated_member_declaration_path_references(
             krate, item,
@@ -1894,10 +2204,31 @@ fn api_member(krate: &Crate, item: &Item, kind: ApiMemberKind, declaration: Stri
     }
 }
 
+fn extract_associated_member_attributes(item: &Item) -> Vec<ApiAttribute> {
+    let attributes = extract_attributes(item);
+    let ItemEnum::Function(function) = &item.inner else {
+        return attributes;
+    };
+    if !function_uses_async_trait(function) {
+        return attributes;
+    }
+
+    attributes
+        .into_iter()
+        .filter(|attribute| {
+            attribute.text != "#[must_use]"
+                && !(attribute.text.starts_with("#[allow(")
+                    && attribute.text.contains("clippy::type_complexity")
+                    && attribute.text.contains("clippy::type_repetition_in_bounds"))
+        })
+        .collect()
+}
+
 fn text_member(name: impl Into<String>, declaration: impl Into<String>) -> ApiMember {
     ApiMember {
         name: name.into(),
         kind: ApiMemberKind::Text,
+        declaration_location: None,
         doc_comments: Vec::new(),
         attributes: Vec::new(),
         declaration: declaration.into(),
@@ -1905,7 +2236,11 @@ fn text_member(name: impl Into<String>, declaration: impl Into<String>) -> ApiMe
     }
 }
 
-fn extract_associated_member(krate: &Crate, item: &Item) -> Option<ApiMember> {
+fn extract_associated_member(
+    krate: &Crate,
+    item: &Item,
+    function_is_public: bool,
+) -> Option<ApiMember> {
     match &item.inner {
         ItemEnum::Function(function) => Some(api_member(
             krate,
@@ -1914,7 +2249,7 @@ fn extract_associated_member(krate: &Crate, item: &Item) -> Option<ApiMember> {
             render_function_declaration(
                 item.name.as_deref().unwrap_or("unknown_fn"),
                 function,
-                false,
+                function_is_public,
             ),
         )),
         ItemEnum::AssocConst { type_, value } => Some(api_member(
@@ -1947,19 +2282,19 @@ fn extract_associated_member(krate: &Crate, item: &Item) -> Option<ApiMember> {
 }
 
 fn extract_attributes(item: &Item) -> Vec<ApiAttribute> {
-    item.attrs
-        .iter()
+    rustdoc_compat::attribute_texts(item)
+        .into_iter()
         .map(|text| ApiAttribute {
-            text: normalize_attribute(text),
+            text: normalize_attribute(&text),
         })
         .collect()
 }
 
 fn extract_module_attributes(item: &Item, is_crate_root: bool) -> Vec<ApiAttribute> {
-    item.attrs
-        .iter()
+    rustdoc_compat::attribute_texts(item)
+        .into_iter()
         .map(|text| ApiAttribute {
-            text: normalize_module_attribute(text, is_crate_root),
+            text: normalize_module_attribute(&text, is_crate_root),
         })
         .collect()
 }
@@ -2106,7 +2441,11 @@ fn collapse_attribute_whitespace(attribute: &str) -> String {
             continue;
         }
 
-        if pending_space && !normalized.is_empty() && !normalized.ends_with(['(', '[', '{']) {
+        if pending_space
+            && !normalized.is_empty()
+            && !normalized.ends_with(['(', '[', '{'])
+            && !matches!(ch, ')' | ']' | '}' | ',')
+        {
             normalized.push(' ');
         }
         pending_space = false;
@@ -2284,7 +2623,7 @@ fn render_item_declaration(krate: &Crate, item: &Item) -> String {
 
 fn render_macro_declaration(source: &str) -> String {
     parse_macro_definition(source)
-        .map(|(declaration, _)| declaration)
+        .map(|parsed| parsed.declaration)
         .unwrap_or_else(|| source.to_string())
 }
 
@@ -2327,7 +2666,13 @@ fn render_proc_macro_declaration(name: &str, proc_macro: &rustdoc_types::ProcMac
     }
 }
 
-fn parse_macro_definition(source: &str) -> Option<(String, Vec<ApiMember>)> {
+struct ParsedMacro {
+    declaration: String,
+    members: Vec<(usize, ApiMember)>,
+}
+
+fn parse_macro_definition(source: &str) -> Option<ParsedMacro> {
+    let leading_whitespace = source.len() - source.trim_start().len();
     let source = source.trim();
     let open_index = source.find('{')?;
     let close_index = find_matching_delimiter(source, open_index, '{', '}')?;
@@ -2340,20 +2685,29 @@ fn parse_macro_definition(source: &str) -> Option<(String, Vec<ApiMember>)> {
     let members = split_macro_arms(body)
         .into_iter()
         .enumerate()
-        .map(|(index, arm)| ApiMember {
-            name: format!("arm_{index}"),
-            kind: ApiMemberKind::MacroInput,
-            doc_comments: Vec::new(),
-            attributes: Vec::new(),
-            declaration: summarize_macro_arm(&arm),
-            declaration_path_references: Vec::new(),
+        .map(|(index, (offset, arm))| {
+            (
+                leading_whitespace + open_index + 1 + offset,
+                ApiMember {
+                    name: format!("arm_{index}"),
+                    kind: ApiMemberKind::MacroInput,
+                    declaration_location: None,
+                    doc_comments: Vec::new(),
+                    attributes: Vec::new(),
+                    declaration: summarize_macro_arm(&arm),
+                    declaration_path_references: Vec::new(),
+                },
+            )
         })
         .collect::<Vec<_>>();
 
-    (!members.is_empty()).then_some((declaration, members))
+    (!members.is_empty()).then_some(ParsedMacro {
+        declaration,
+        members,
+    })
 }
 
-fn split_macro_arms(body: &str) -> Vec<String> {
+fn split_macro_arms(body: &str) -> Vec<(usize, String)> {
     let mut arms = Vec::new();
     let mut start = None;
     let mut paren_depth = 0usize;
@@ -2381,7 +2735,7 @@ fn split_macro_arms(body: &str) -> Vec<String> {
                 if let Some(start_index) = start {
                     let arm = body[start_index..index].trim();
                     if !arm.is_empty() {
-                        arms.push(arm.to_string());
+                        arms.push((start_index, arm.to_string()));
                     }
                 }
                 start = None;
@@ -2396,7 +2750,7 @@ fn split_macro_arms(body: &str) -> Vec<String> {
     if let Some(start_index) = start {
         let arm = body[start_index..].trim();
         if !arm.is_empty() {
-            arms.push(arm.to_string());
+            arms.push((start_index, arm.to_string()));
         }
     }
 
@@ -2475,12 +2829,16 @@ fn find_matching_delimiter(
 
 fn render_function_declaration(name: &str, function: &Function, is_public: bool) -> String {
     let synthetic_lifetimes = synthetic_async_trait_lifetimes(function);
+    let async_trait_output = async_trait_output(function);
     let mut declaration = String::new();
     if is_public {
         declaration.push_str("pub ");
     }
 
-    declaration.push_str(&render_function_header(&function.header));
+    declaration.push_str(&render_function_header(
+        &function.header,
+        async_trait_output.is_some(),
+    ));
     declaration.push_str("fn ");
     declaration.push_str(name);
     declaration.push_str(&render_generics_declaration_with_elision(
@@ -2508,7 +2866,15 @@ fn render_function_declaration(name: &str, function: &Function, is_public: bool)
     }
     declaration.push(')');
 
-    if let Some(output) = &function.sig.output {
+    if let Some(output) = async_trait_output {
+        if !matches!(output.type_, Type::Tuple(types) if types.is_empty()) {
+            declaration.push_str(" -> ");
+            declaration.push_str(&render_type_with_elision(
+                output.type_,
+                &synthetic_lifetimes,
+            ));
+        }
+    } else if let Some(output) = &function.sig.output {
         declaration.push_str(" -> ");
         declaration.push_str(&render_type_with_elision(output, &synthetic_lifetimes));
     }
@@ -2556,12 +2922,12 @@ fn render_self_parameter(argument_name: &str, argument_type: &Type) -> Option<St
     }
 }
 
-fn render_function_header(header: &FunctionHeader) -> String {
+fn render_function_header(header: &FunctionHeader, force_async: bool) -> String {
     let mut parts = Vec::new();
     if header.is_const {
         parts.push("const".to_string());
     }
-    if header.is_async {
+    if header.is_async || force_async {
         parts.push("async".to_string());
     }
     if header.is_unsafe {
@@ -3177,7 +3543,7 @@ fn render_type_with_elision(type_: &Type, synthetic_lifetimes: &HashSet<String>)
         Type::Generic(name) => name.clone(),
         Type::Primitive(name) => name.clone(),
         Type::FunctionPointer(pointer) => {
-            let mut rendered = render_function_header(&pointer.header);
+            let mut rendered = render_function_header(&pointer.header, false);
             rendered.push_str("fn");
             let rendered_generic_params = pointer
                 .generic_params
@@ -3280,7 +3646,9 @@ fn render_type_with_elision(type_: &Type, synthetic_lifetimes: &HashSet<String>)
             }
             rendered.push_str(">::");
             rendered.push_str(name);
-            rendered.push_str(&render_generic_args_with_elision(args, synthetic_lifetimes));
+            if let Some(args) = args {
+                rendered.push_str(&render_generic_args_with_elision(args, synthetic_lifetimes));
+            }
             rendered
         }
     }
@@ -3355,10 +3723,9 @@ fn render_assoc_constraint_with_elision(
     synthetic_lifetimes: &HashSet<String>,
 ) -> String {
     let mut rendered = constraint.name.clone();
-    rendered.push_str(&render_generic_args_with_elision(
-        &constraint.args,
-        synthetic_lifetimes,
-    ));
+    if let Some(args) = &constraint.args {
+        rendered.push_str(&render_generic_args_with_elision(args, synthetic_lifetimes));
+    }
     match &constraint.binding {
         rustdoc_types::AssocItemConstraintKind::Equality(term) => {
             rendered.push_str(" = ");
@@ -3379,20 +3746,56 @@ fn render_assoc_constraint_with_elision(
     rendered
 }
 
-fn trait_uses_async_trait(krate: &Crate, item: &Item) -> bool {
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum AsyncTraitMode {
+    Send,
+    NotSend,
+}
+
+impl AsyncTraitMode {
+    fn attribute(self) -> &'static str {
+        match self {
+            Self::Send => "#[async_trait]",
+            Self::NotSend => "#[async_trait(?Send)]",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+struct AsyncTraitOutput<'a> {
+    type_: &'a Type,
+    mode: AsyncTraitMode,
+}
+
+fn trait_async_trait_mode(krate: &Crate, item: &Item) -> Option<AsyncTraitMode> {
     let ItemEnum::Trait(trait_item) = &item.inner else {
-        return false;
+        return None;
     };
 
-    trait_item
-        .items
+    async_trait_mode(krate, &trait_item.items)
+}
+
+fn impl_async_trait_mode(krate: &Crate, impl_block: &Impl) -> Option<AsyncTraitMode> {
+    async_trait_mode(krate, &impl_block.items)
+}
+
+fn async_trait_mode(krate: &Crate, item_ids: &[Id]) -> Option<AsyncTraitMode> {
+    item_ids
         .iter()
         .filter_map(|item_id| krate.index.get(item_id))
         .filter_map(|item| match &item.inner {
             ItemEnum::Function(function) => Some(function),
             _ => None,
         })
-        .any(function_uses_async_trait)
+        .filter_map(async_trait_output)
+        .map(|output| output.mode)
+        .reduce(|left, right| {
+            if left == AsyncTraitMode::NotSend || right == AsyncTraitMode::NotSend {
+                AsyncTraitMode::NotSend
+            } else {
+                AsyncTraitMode::Send
+            }
+        })
 }
 
 fn synthetic_async_trait_lifetimes(function: &Function) -> HashSet<String> {
@@ -3411,7 +3814,78 @@ fn synthetic_async_trait_lifetimes(function: &Function) -> HashSet<String> {
 }
 
 fn function_uses_async_trait(function: &Function) -> bool {
-    !synthetic_async_trait_lifetimes(function).is_empty()
+    async_trait_output(function).is_some()
+}
+
+fn async_trait_output(function: &Function) -> Option<AsyncTraitOutput<'_>> {
+    if synthetic_async_trait_lifetimes(function).is_empty() {
+        return None;
+    }
+
+    let output = function.sig.output.as_ref()?;
+    let Type::ResolvedPath(pin) = output else {
+        return None;
+    };
+    if last_path_segment(&pin.path) != "Pin" {
+        return None;
+    }
+
+    let Type::ResolvedPath(boxed) = single_type_argument(pin)? else {
+        return None;
+    };
+    if last_path_segment(&boxed.path) != "Box" {
+        return None;
+    }
+
+    let Type::DynTrait(dyn_trait) = single_type_argument(boxed)? else {
+        return None;
+    };
+    if dyn_trait.lifetime.as_deref() != Some("'async_trait") {
+        return None;
+    }
+
+    let mode = if dyn_trait
+        .traits
+        .iter()
+        .any(|bound| last_path_segment(&bound.trait_.path) == "Send")
+    {
+        AsyncTraitMode::Send
+    } else {
+        AsyncTraitMode::NotSend
+    };
+
+    let type_ = dyn_trait.traits.iter().find_map(|bound| {
+        if last_path_segment(&bound.trait_.path) != "Future" {
+            return None;
+        }
+        let args = bound.trait_.args.as_deref()?;
+        let GenericArgs::AngleBracketed { constraints, .. } = args else {
+            return None;
+        };
+        constraints.iter().find_map(|constraint| {
+            if constraint.name != "Output" {
+                return None;
+            }
+            match &constraint.binding {
+                rustdoc_types::AssocItemConstraintKind::Equality(Term::Type(output)) => {
+                    Some(output)
+                }
+                _ => None,
+            }
+        })
+    })?;
+
+    Some(AsyncTraitOutput { type_, mode })
+}
+
+fn single_type_argument(path: &Path) -> Option<&Type> {
+    let GenericArgs::AngleBracketed { args, .. } = path.args.as_deref()? else {
+        return None;
+    };
+    let [GenericArg::Type(type_)] = args.as_slice() else {
+        return None;
+    };
+    Some(type_)
 }
 
 fn is_synthetic_async_trait_lifetime(name: &str) -> bool {

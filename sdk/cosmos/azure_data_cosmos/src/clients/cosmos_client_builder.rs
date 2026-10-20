@@ -10,7 +10,7 @@ use crate::{
     diagnostics::{CosmosClientInfo, DiagnosticsHandler},
     options::{
         BinaryEncodingOptions, CosmosClientOptions, OperationOptions, PartitionFailoverOptions,
-        ThroughputControlGroupOptions, UserAgentSuffix,
+        UserAgentSuffix,
     },
     AccountReference, CosmosClient, CosmosCredential, CosmosRuntime, RoutingStrategy,
 };
@@ -87,8 +87,6 @@ pub struct CosmosClientBuilder {
     /// Pre-built runtime to attach. If `None`, the client falls back to
     /// a default global runtime.
     runtime: Option<CosmosRuntime>,
-    /// Throughput control groups to register on this client's driver options.
-    throughput_control_groups: Vec<ThroughputControlGroupOptions>,
     /// Fault-injection rules to apply on this client's driver.
     ///
     /// Evaluated by the driver's transport-layer fault-injection client.
@@ -132,20 +130,22 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Configures the driver-level partition-failover / PPCB tuning for this
-    /// client.
+    /// Configures driver-level partition topology loading, partition failover,
+    /// and PPCB tuning for this client.
     ///
     /// These knobs are read once when the client's underlying driver is
     /// constructed (in [`build`](Self::build)) and govern the per-partition
-    /// circuit breaker and partition-level failover for the lifetime of the
-    /// client. They are independent of per-request [`OperationOptions`].
+    /// partition topology cache, circuit breaker, and partition-level failover
+    /// behavior for the lifetime of the client. They are independent of
+    /// per-request [`OperationOptions`].
     ///
     /// When this setter is **not** called, the driver resolves these options
-    /// from the `AZURE_COSMOS_PPCB_*` environment variables — including the
-    /// `AZURE_COSMOS_PPCB_ENABLED` master switch and the
+    /// from `AZURE_COSMOS_PARTITION_TOPOLOGY_CACHE_MODE` and the
+    /// `AZURE_COSMOS_PPCB_*` environment variables — including the
+    /// `AZURE_COSMOS_PPCB_ENABLED` master switch and
     /// `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch — falling back to
-    /// compile-time defaults for anything unset. Passing an explicit value
-    /// here takes precedence over those variables (except the
+    /// compile-time defaults for anything unset. Passing an explicit value here
+    /// takes precedence over those variables (except the
     /// `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch, which is read from the
     /// environment when you build the [`PartitionFailoverOptions`] and remains
     /// authoritative). To disable PPCB regardless of the account property, set
@@ -158,12 +158,9 @@ impl CosmosClientBuilder {
     /// Sets a per-client suffix to append to the User-Agent header for
     /// telemetry, overriding any runtime-wide default suffix.
     ///
-    /// Construct the suffix explicitly via
-    /// [`UserAgentSuffix::new`](crate::options::UserAgentSuffix::new) for trusted
-    /// values, or [`UserAgentSuffix::try_new`](crate::options::UserAgentSuffix::try_new)
-    /// for untrusted input. Validation rules (max 25 characters,
-    /// HTTP-header-safe) are enforced at the construction site rather than
-    /// here, which keeps any panic local to the caller's input handling.
+    /// Construct the suffix with [`UserAgentSuffix::try_from`] and handle
+    /// invalid input before passing it to this builder. Validation (max 25
+    /// characters, HTTP-header-safe) occurs at construction.
     ///
     /// # Arguments
     ///
@@ -177,13 +174,16 @@ impl CosmosClientBuilder {
     ///
     /// Binary encoding governs two things together: encoding item write bodies
     /// as binary and advertising that the client accepts binary responses via
-    /// the response-format negotiation header. The options are resolved once at
-    /// [`build()`](Self::build) time.
+    /// the response-format negotiation header. Response negotiation applies to
+    /// queries as well as point item operations; body encoding does not, since
+    /// a query body is a query spec rather than a document. The options are
+    /// resolved once at [`build()`](Self::build) time.
     ///
-    /// When this setter is **not** called, enablement falls back to the
-    /// `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable (truthy
-    /// values `1` / `true` / `yes` / `on`, case-insensitive, trimmed). Passing
-    /// explicit options here takes precedence over that variable.
+    /// Binary encoding is enabled by default. When this setter is **not**
+    /// called, `AZURE_COSMOS_BINARY_ENCODING_ENABLED` can override the default;
+    /// truthy values are `1` / `true` / `yes` / `on` (case-insensitive,
+    /// trimmed), and any other value disables encoding. Passing explicit
+    /// options here takes precedence over that variable.
     pub fn with_binary_encoding_options(mut self, options: BinaryEncodingOptions) -> Self {
         self.options.binary_encoding = Some(options);
         self
@@ -226,22 +226,8 @@ impl CosmosClientBuilder {
     ) -> crate::Result<Self> {
         // Defer validation to the driver-options layer which already enforces unique IDs.
         // Storing the vec here keeps build() lazy and lets us detect duplicates at the
-        // single concatenation point in build_driver_options.
+        // single concatenation point in DriverOptionsInput::build.
         self.fault_injection_rules = rules;
-        Ok(self)
-    }
-
-    /// Throughput-control groups are scoped to this client's driver — the
-    /// per-runtime registry has been removed, so every client owns its own
-    /// set of groups. Duplicate group names supplied to the same builder are
-    /// surfaced as an error at `build()` time.
-    pub fn register_throughput_control_group(
-        mut self,
-        group: ThroughputControlGroupOptions,
-    ) -> crate::Result<Self> {
-        // Defer cross-layer validation to build_driver_options where the
-        // full registry is composed; here we only collect.
-        self.throughput_control_groups.push(group);
         Ok(self)
     }
 
@@ -312,16 +298,16 @@ impl CosmosClientBuilder {
 
         let driver_account =
             build_driver_account(endpoint, driver_credential, self.backup_endpoints);
-        let driver_options = build_driver_options(
-            driver_account,
-            routing_strategy,
-            self.options.operation,
-            self.options.user_agent_suffix,
-            self.partition_failover_options,
+        let driver_options = DriverOptionsInput {
+            account: driver_account,
+            strategy: routing_strategy,
+            operation_options: self.options.operation,
+            user_agent_suffix: self.options.user_agent_suffix,
+            partition_failover_options: self.partition_failover_options,
             #[cfg(feature = "fault_injection")]
-            self.fault_injection_rules,
-            self.throughput_control_groups,
-        )?;
+            fault_injection_rules: self.fault_injection_rules,
+        }
+        .build()?;
         let driver = runtime.into_inner().create_driver(driver_options).await?;
 
         Ok(CosmosClient {
@@ -345,51 +331,46 @@ impl CosmosClientBuilder {
 ///   a warning and falls back to an empty list, which causes the driver to use
 ///   the account's own region order.
 /// - [`RoutingStrategy::PreferredRegions`] passes the caller's list through unchanged.
-fn build_driver_options(
+struct DriverOptionsInput {
     account: azure_data_cosmos_driver::models::AccountReference,
     strategy: RoutingStrategy,
     operation_options: OperationOptions,
     user_agent_suffix: Option<UserAgentSuffix>,
     partition_failover_options: Option<PartitionFailoverOptions>,
-    #[cfg(feature = "fault_injection")] fault_injection_rules: Vec<
-        Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>,
-    >,
-    throughput_control_groups: Vec<ThroughputControlGroupOptions>,
-) -> crate::Result<azure_data_cosmos_driver::options::DriverOptions> {
-    let preferred_regions = match strategy {
-        RoutingStrategy::ProximityTo(region) =>
-            crate::region_proximity::generate_preferred_region_list(&region)
-                .map(|s| s.to_vec())
-                .unwrap_or_else(|| {
-                    tracing::warn!(
-                        region = %region,
-                        "unrecognized application region; falling back to account-defined region order"
-                    );
-                    Vec::new()
-                }),
-        RoutingStrategy::PreferredRegions(regions) => regions,
-    };
-    let mut builder = azure_data_cosmos_driver::options::DriverOptions::builder(account)
-        .with_preferred_regions(preferred_regions)
-        .with_operation_options(operation_options);
-    if let Some(suffix) = user_agent_suffix {
-        builder = builder.with_user_agent_suffix(suffix);
-    }
-    if let Some(pfo) = partition_failover_options {
-        builder = builder.with_partition_failover_options(pfo);
-    }
     #[cfg(feature = "fault_injection")]
-    if !fault_injection_rules.is_empty() {
-        builder = builder
-            .with_fault_injection_rules(fault_injection_rules)
-            .map_err(crate::CosmosError::from)?;
+    fault_injection_rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
+}
+
+impl DriverOptionsInput {
+    fn build(self) -> crate::Result<azure_data_cosmos_driver::options::DriverOptions> {
+        let preferred_regions = match self.strategy {
+            RoutingStrategy::ProximityTo(region) =>
+                crate::region_proximity::generate_preferred_region_list(&region)
+                    .map(|s| s.to_vec())
+                    .unwrap_or_else(|| {
+                        tracing::warn!(
+                            region = %region,
+                            "unrecognized application region; falling back to account-defined region order"
+                        );
+                        Vec::new()
+                    }),
+            RoutingStrategy::PreferredRegions(regions) => regions,
+        };
+        let mut builder = azure_data_cosmos_driver::options::DriverOptions::builder(self.account)
+            .with_preferred_regions(preferred_regions)
+            .with_operation_options(self.operation_options);
+        if let Some(suffix) = self.user_agent_suffix {
+            builder = builder.with_user_agent_suffix(suffix);
+        }
+        if let Some(pfo) = self.partition_failover_options {
+            builder = builder.with_partition_failover_options(pfo);
+        }
+        #[cfg(feature = "fault_injection")]
+        if !self.fault_injection_rules.is_empty() {
+            builder = builder.with_fault_injection_rules(self.fault_injection_rules)?;
+        }
+        Ok(builder.build())
     }
-    for group in throughput_control_groups {
-        builder = builder
-            .register_throughput_control_group(group)
-            .map_err(crate::CosmosError::from)?;
-    }
-    Ok(builder.build())
 }
 
 /// Builds a driver [`AccountReference`](azure_data_cosmos_driver::models::AccountReference)
@@ -404,8 +385,8 @@ fn build_driver_account(
             azure_data_cosmos_driver::models::AccountReference::with_credential(endpoint, tc)
         }
         #[cfg(feature = "key_auth")]
-        CosmosCredential::MasterKey(key) => {
-            azure_data_cosmos_driver::models::AccountReference::with_master_key(endpoint, key)
+        CosmosCredential::AccountKey(key) => {
+            azure_data_cosmos_driver::models::AccountReference::with_account_key(endpoint, key)
         }
     };
     base.with_backup_endpoints(backup_endpoints)
@@ -430,7 +411,7 @@ mod tests {
     /// onto `CosmosDriverRuntimeBuilder::with_user_agent_suffix`.
     #[tokio::test]
     async fn user_agent_suffix_is_forwarded_to_driver_runtime() {
-        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let suffix = UserAgentSuffix::try_from("myapp-westus2").unwrap();
 
         let options = CosmosClientOptions {
             user_agent_suffix: Some(suffix.clone()),
@@ -467,16 +448,28 @@ mod tests {
 
     #[test]
     fn user_agent_suffix_setter_records_value() {
-        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let suffix = UserAgentSuffix::try_from("myapp-westus2").unwrap();
         let builder = CosmosClientBuilder::new().with_user_agent_suffix(suffix.clone());
         assert_eq!(builder.options.user_agent_suffix.as_ref(), Some(&suffix));
     }
 
     fn test_account() -> azure_data_cosmos_driver::models::AccountReference {
-        azure_data_cosmos_driver::models::AccountReference::with_master_key(
+        azure_data_cosmos_driver::models::AccountReference::with_account_key(
             "https://test.documents.azure.com/".parse().unwrap(),
             "dGVzdA==",
         )
+    }
+
+    fn test_driver_options_input(strategy: RoutingStrategy) -> DriverOptionsInput {
+        DriverOptionsInput {
+            account: test_account(),
+            strategy,
+            operation_options: OperationOptions::default(),
+            user_agent_suffix: None,
+            partition_failover_options: None,
+            #[cfg(feature = "fault_injection")]
+            fault_injection_rules: Vec::new(),
+        }
     }
 
     /// `CosmosClientBuilder::build` must reject an `http://` production endpoint,
@@ -496,7 +489,7 @@ mod tests {
             .expect_err("http production endpoint must be rejected");
         assert_eq!(
             error.status(),
-            crate::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
+            azure_data_cosmos_driver::error::status_codes::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
         );
     }
 
@@ -504,17 +497,9 @@ mod tests {
     /// with the source region first.
     #[test]
     fn proximity_to_known_region_starts_with_source() {
-        let opts = build_driver_options(
-            test_account(),
-            RoutingStrategy::ProximityTo(Region::EAST_US),
-            OperationOptions::default(),
-            None,
-            None,
-            #[cfg(feature = "fault_injection")]
-            Vec::new(),
-            Vec::new(),
-        )
-        .expect("build_driver_options should succeed");
+        let opts = test_driver_options_input(RoutingStrategy::ProximityTo(Region::EAST_US))
+            .build()
+            .expect("driver options should build");
         let regions = opts.preferred_regions();
         assert!(
             !regions.is_empty(),
@@ -527,17 +512,11 @@ mod tests {
     /// list so the driver uses the account's own region order.
     #[test]
     fn proximity_to_unknown_region_returns_empty_list() {
-        let opts = build_driver_options(
-            test_account(),
-            RoutingStrategy::ProximityTo(Region::from("not-a-real-region")),
-            OperationOptions::default(),
-            None,
-            None,
-            #[cfg(feature = "fault_injection")]
-            Vec::new(),
-            Vec::new(),
-        )
-        .expect("build_driver_options should succeed");
+        let opts = test_driver_options_input(RoutingStrategy::ProximityTo(Region::from(
+            "not-a-real-region",
+        )))
+        .build()
+        .expect("driver options should build");
         assert!(
             opts.preferred_regions().is_empty(),
             "unrecognized region should yield an empty list"
@@ -548,17 +527,9 @@ mod tests {
     #[test]
     fn preferred_regions_passes_through_unchanged() {
         let input = vec![Region::WEST_US, Region::EAST_US, Region::WEST_EUROPE];
-        let opts = build_driver_options(
-            test_account(),
-            RoutingStrategy::PreferredRegions(input.clone()),
-            OperationOptions::default(),
-            None,
-            None,
-            #[cfg(feature = "fault_injection")]
-            Vec::new(),
-            Vec::new(),
-        )
-        .expect("build_driver_options should succeed");
+        let opts = test_driver_options_input(RoutingStrategy::PreferredRegions(input.clone()))
+            .build()
+            .expect("driver options should build");
         assert_eq!(opts.preferred_regions(), input.as_slice());
     }
 
@@ -566,23 +537,18 @@ mod tests {
     /// the driver builds a User-Agent that overrides the runtime default.
     #[test]
     fn user_agent_suffix_flows_to_driver_options() {
-        let suffix = UserAgentSuffix::new("myapp-westus2");
-        let opts = build_driver_options(
-            test_account(),
-            RoutingStrategy::PreferredRegions(Vec::new()),
-            OperationOptions::default(),
-            Some(suffix.clone()),
-            None,
-            #[cfg(feature = "fault_injection")]
-            Vec::new(),
-            Vec::new(),
-        )
-        .expect("build_driver_options should succeed");
+        let suffix = UserAgentSuffix::try_from("myapp-westus2").unwrap();
+        let opts = DriverOptionsInput {
+            user_agent_suffix: Some(suffix.clone()),
+            ..test_driver_options_input(RoutingStrategy::PreferredRegions(Vec::new()))
+        }
+        .build()
+        .expect("driver options should build");
         assert_eq!(opts.user_agent_suffix(), Some(&suffix));
     }
 
     /// Setting partition-failover options via the builder must thread through
-    /// `build_driver_options` and land on the resulting `DriverOptions`.
+    /// `DriverOptionsInput::build` and land on the resulting `DriverOptions`.
     #[test]
     fn partition_failover_options_flow_to_driver_options() {
         let pfo = PartitionFailoverOptions::builder()
@@ -591,17 +557,12 @@ mod tests {
             .build()
             .expect("valid partition failover options");
 
-        let opts = build_driver_options(
-            test_account(),
-            RoutingStrategy::PreferredRegions(Vec::new()),
-            OperationOptions::default(),
-            None,
-            Some(pfo),
-            #[cfg(feature = "fault_injection")]
-            Vec::new(),
-            Vec::new(),
-        )
-        .expect("build_driver_options should succeed");
+        let opts = DriverOptionsInput {
+            partition_failover_options: Some(pfo),
+            ..test_driver_options_input(RoutingStrategy::PreferredRegions(Vec::new()))
+        }
+        .build()
+        .expect("driver options should build");
 
         assert!(opts.partition_failover_options().circuit_breaker_enabled());
         assert_eq!(
@@ -618,17 +579,9 @@ mod tests {
     /// than a bare `Default` that bypasses the environment entirely.
     #[test]
     fn missing_partition_failover_options_resolves_from_env_then_default() {
-        let opts = build_driver_options(
-            test_account(),
-            RoutingStrategy::PreferredRegions(Vec::new()),
-            OperationOptions::default(),
-            None,
-            None,
-            #[cfg(feature = "fault_injection")]
-            Vec::new(),
-            Vec::new(),
-        )
-        .expect("build_driver_options should succeed");
+        let opts = test_driver_options_input(RoutingStrategy::PreferredRegions(Vec::new()))
+            .build()
+            .expect("driver options should build");
 
         assert_eq!(
             opts.partition_failover_options().circuit_breaker_enabled(),

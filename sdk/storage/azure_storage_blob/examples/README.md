@@ -17,7 +17,7 @@ This directory contains a set of examples for the use of the Blob Storage client
 | `storage_error.rs` | Structured error handling with `StorageError` |
 
 For logging and OpenTelemetry distributed tracing, see the
-[`samples/storage_blob_logging`](https://github.com/Azure/azure-sdk-for-rust/tree/main/samples/storage_blob_logging) sample.
+[`samples/storage/storage_blob_logging`](https://github.com/Azure/azure-sdk-for-rust/tree/main/samples/storage/storage_blob_logging) sample.
 Logging and distributed tracing works the same across all Azure SDK for Rust client libraries.
 
 ## Setup

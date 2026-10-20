@@ -19,7 +19,7 @@
     {
       "component": {
         "type": "cargo",
-        "cargo": { "name": "cargo-semver-checks", "version": "0.45.0" }
+        "cargo": { "name": "cargo-semver-checks", "version": "0.50.0" }
       },
       "developmentDependency": true
     },

@@ -23,4 +23,3 @@ steps:
     workingDirectory: eng/
     env:
       VCPKG_BINARY_SOURCES: $(VCPKG_BINARY_SOURCES_SECRET)
-      X_VCPKG_ASSET_SOURCES: $(X_VCPKG_ASSET_SOURCES_SECRET)

@@ -23,6 +23,10 @@ pub use consumer::{
 };
 pub use producer::{
     batch::{EventDataBatch, EventDataBatchOptions},
+    buffered::{
+        BufferedProducerClient, EnqueueEventOptions, SendBatchFailedContext,
+        SendBatchSucceededContext,
+    },
     ProducerClient, SendBatchOptions, SendEventOptions, SendMessageOptions,
 };
 
@@ -36,6 +40,7 @@ pub use event_processor::{processor::EventProcessor, CheckpointStore, ProcessorS
 pub mod builders {
     pub use crate::consumer::builders::ConsumerClientBuilder;
     pub use crate::event_processor::processor::builders::EventProcessorBuilder;
+    pub use crate::producer::buffered::builders::BufferedProducerClientBuilder;
     pub use crate::producer::builders::ProducerClientBuilder;
 }
 pub use common::connection_string::ConnectionString;

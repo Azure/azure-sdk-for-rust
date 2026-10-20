@@ -17,7 +17,7 @@ pub(crate) use account_endpoint_state::AccountEndpointState;
 pub(crate) use endpoint::{CosmosEndpoint, LocationIndex, UnavailableReason};
 pub(crate) use location_effects::{LocationEffect, UnavailablePartition};
 #[cfg(feature = "tokio")]
-pub(crate) use location_state_store::EndpointProbeFn;
+pub(crate) use location_state_store::{background_refresh_interval, EndpointProbeFn};
 pub(crate) use location_state_store::{LocationSnapshot, LocationStateStore};
 #[allow(unused_imports)] // Spec-defined system function; kept for future steps.
 pub(crate) use routing_systems::{

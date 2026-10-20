@@ -62,7 +62,7 @@ impl FromStr for ConnectionString {
     fn from_str(connection_string: &str) -> Result<Self, Self::Err> {
         if connection_string.is_empty() {
             return Err(CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_CONNECTION_STRING_EMPTY)
+                .with_status(crate::error::status_codes::CLIENT_CONNECTION_STRING_EMPTY)
                 .with_message("connection string cannot be empty")
                 .build());
         }
@@ -80,7 +80,7 @@ impl FromStr for ConnectionString {
             let (key, value) = part.split_once('=').ok_or_else(|| {
                 CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_CONNECTION_STRING_MALFORMED_PART,
+                        crate::error::status_codes::CLIENT_CONNECTION_STRING_MALFORMED_PART,
                     )
                     .with_message("invalid connection string")
                     .build()
@@ -98,7 +98,7 @@ impl FromStr for ConnectionString {
         let Some(endpoint) = account_endpoint else {
             return Err(CosmosError::builder()
                 .with_status(
-                    crate::error::CosmosStatus::CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_ENDPOINT,
+                    crate::error::status_codes::CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_ENDPOINT,
                 )
                 .with_message("invalid connection string, missing 'AccountEndpoint'")
                 .build());
@@ -107,7 +107,7 @@ impl FromStr for ConnectionString {
         let Some(key) = account_key else {
             return Err(CosmosError::builder()
                 .with_status(
-                    crate::error::CosmosStatus::CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY,
+                    crate::error::status_codes::CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY,
                 )
                 .with_message("invalid connection string, missing 'AccountKey'")
                 .build());

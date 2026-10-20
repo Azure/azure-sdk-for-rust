@@ -6,7 +6,8 @@
 //! # Example
 //!
 //! ```rust no_run
-//! use azure_storage_sas::{SasBuilder, SasProtocol, UserDelegationKey};
+//! use azure_storage_common::models::UserDelegationKey;
+//! use azure_storage_sas::{SasBuilder, SasProtocol};
 //! use time::OffsetDateTime;
 //!
 //! # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {

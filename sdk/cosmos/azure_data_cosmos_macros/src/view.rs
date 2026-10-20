@@ -54,7 +54,12 @@ pub fn generate_view(input: &OptionsInput) -> Result<TokenStream> {
     let accessors = input
         .fields
         .iter()
-        .map(|field| generate_accessor(field, layers))
+        .filter(|field| !field.skip)
+        .map(|field| {
+            let cfg_attrs = &field.cfg_attrs;
+            let accessor = generate_accessor(field, layers)?;
+            Ok(quote! { #(#cfg_attrs)* #accessor })
+        })
         .collect::<Result<Vec<_>>>()?;
 
     // Constructor bodies. `new` always exposes the base (override-free)

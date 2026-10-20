@@ -6,7 +6,8 @@
 //! HTTP client wrapper that evaluates fault injection rules on each request.
 
 use super::result::FaultInjectionResult;
-use super::rule::FaultInjectionRule;
+use super::rule::{FaultInjectionHitReservation, FaultInjectionRule};
+use super::EvaluationCollector;
 use super::FaultInjectionErrorType;
 use super::FaultInjectionEvaluation;
 use super::FaultOperationType;
@@ -14,8 +15,10 @@ use crate::diagnostics::{RequestSentStatus, TransportKind};
 use crate::driver::transport::cosmos_transport_client::{
     HttpRequest, HttpResponse, TransportClient, TransportError,
 };
-use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
-use crate::models::{CosmosResponseHeaders, CosmosStatus, SubStatusCode};
+use crate::models::cosmos_headers::fault_injection_header_names::{
+    FAULT_INJECTION_OPERATION, FAULT_INJECTION_REGION,
+};
+use crate::models::CosmosResponseHeaders;
 use async_trait::async_trait;
 use azure_core::http::headers::HeaderName;
 use azure_core::http::StatusCode;
@@ -26,6 +29,12 @@ use std::time::{Duration, Instant};
 enum ApplyResult {
     /// Fault was injected — return this response/error to the caller.
     Injected(Result<HttpResponse, TransportError>),
+    /// Forward the request, then discard a successful service response.
+    ResponseTimeoutAfterService {
+        reservation: FaultInjectionHitReservation,
+        rule_id: String,
+        delay: Option<Duration>,
+    },
     /// Rule matched but the probability check failed.
     ProbabilityMiss,
     /// Rule had no error_type and no custom_response — effectively no-op.
@@ -127,7 +136,13 @@ impl FaultClient {
         }
 
         if let Some(region) = condition.region() {
-            if !host_matches_region(&request.url, region.as_str()) {
+            let routed_region = request
+                .headers
+                .get_optional_str(&HeaderName::from_static(FAULT_INJECTION_REGION));
+            let matches = routed_region
+                .map(|routed| routed == region.as_str())
+                .unwrap_or_else(|| host_matches_region(&request.url, region.as_str()));
+            if !matches {
                 return Some(FaultInjectionEvaluation::RegionMismatch {
                     rule_id: rule.id().to_owned(),
                 });
@@ -157,6 +172,19 @@ impl FaultClient {
         None // Condition matches
     }
 
+    fn is_successful_service_response(&self, response: &HttpResponse) -> bool {
+        if self.transport_kind != Some(TransportKind::GatewayV2) {
+            return (200..300).contains(&response.status);
+        }
+
+        crate::driver::transport::unwrap_response_for_gateway_v2(HttpResponse {
+            status: response.status,
+            headers: response.headers.clone(),
+            body: response.body.clone(),
+        })
+        .is_ok_and(|unwrapped| (200..300).contains(&unwrapped.status))
+    }
+
     /// Applies the fault injection result and returns an error or modifies the response.
     ///
     /// This method handles the full fault lifecycle: probability check, delay application,
@@ -172,6 +200,7 @@ impl FaultClient {
         server_error: &FaultInjectionResult,
         rule: &FaultInjectionRule,
         evaluations: &mut Vec<FaultInjectionEvaluation>,
+        collector: Option<&EvaluationCollector>,
     ) -> ApplyResult {
         // Check probability
         if server_error.probability() < 1.0 {
@@ -184,21 +213,50 @@ impl FaultClient {
             }
         }
 
-        // Probability check passed — count this as a hit.
-        rule.increment_hit_count();
+        // Probability passed. Reserve the hit atomically so concurrent
+        // requests cannot exceed the rule's limit.
+        let Some(reservation) = rule.try_reserve_hit() else {
+            evaluations.push(FaultInjectionEvaluation::HitLimitExhausted {
+                rule_id: rule.id().to_owned(),
+                hit_count: rule.hit_count(),
+                hit_limit: rule
+                    .hit_limit()
+                    .expect("reservation only fails with a hit limit"),
+            });
+            return ApplyResult::NoEffect;
+        };
+        let mut reservation = Some(reservation);
         let rule_id = rule.id();
 
-        // Record that the rule was applied before serializing evaluations.
-        evaluations.push(FaultInjectionEvaluation::Applied {
-            rule_id: rule_id.to_owned(),
-        });
+        let deferred = server_error.custom_response().is_none()
+            && server_error.error_type()
+                == Some(FaultInjectionErrorType::ResponseTimeoutAfterService);
+        if !deferred {
+            let applied = FaultInjectionEvaluation::Applied {
+                rule_id: rule_id.to_owned(),
+            };
+            evaluations.push(applied);
+            if let Some(collector) = collector {
+                tracing::trace!(
+                    evaluations = ?evaluations,
+                    "fault injection rule evaluation"
+                );
+                collector.push_all(evaluations);
+            }
+            reservation
+                .take()
+                .expect("ordinary fault retains its reservation")
+                .commit();
+        }
 
-        // Apply delay if configured (only when fault is actually injected).
-        if let Some(delay) = server_error.delay() {
-            if delay > Duration::ZERO {
-                let delay = azure_core::time::Duration::try_from(delay)
-                    .unwrap_or(azure_core::time::Duration::ZERO);
-                azure_core::sleep(delay).await;
+        // Deferred faults apply their delay only after the service succeeds.
+        if !deferred {
+            if let Some(delay) = server_error.delay() {
+                if delay > Duration::ZERO {
+                    let delay = azure_core::time::Duration::try_from(delay)
+                        .unwrap_or(azure_core::time::Duration::ZERO);
+                    azure_core::sleep(delay).await;
+                }
             }
         }
 
@@ -223,7 +281,7 @@ impl FaultClient {
         let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::ConnectionError => {
                 let cosmos_err = crate::error::CosmosError::builder()
-                    .with_status(CosmosStatus::TRANSPORT_CONNECTION_FAILED)
+                    .with_status(crate::error::status_codes::TRANSPORT_CONNECTION_FAILED)
                     .with_message("Injected fault: connection error")
                     .build();
                 return ApplyResult::Injected(Err(TransportError::new(
@@ -233,13 +291,22 @@ impl FaultClient {
             }
             FaultInjectionErrorType::ResponseTimeout => {
                 let cosmos_err = crate::error::CosmosError::builder()
-                    .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
                     .with_message("Injected fault: response timeout")
                     .build();
                 return ApplyResult::Injected(Err(TransportError::new(
                     cosmos_err,
                     RequestSentStatus::Unknown,
                 )));
+            }
+            FaultInjectionErrorType::ResponseTimeoutAfterService => {
+                return ApplyResult::ResponseTimeoutAfterService {
+                    reservation: reservation
+                        .take()
+                        .expect("deferred fault retains its reservation"),
+                    rule_id: rule_id.to_owned(),
+                    delay: server_error.delay(),
+                };
             }
             FaultInjectionErrorType::InternalServerError => (
                 StatusCode::InternalServerError,
@@ -258,7 +325,7 @@ impl FaultClient {
             ),
             FaultInjectionErrorType::ReadSessionNotAvailable => (
                 StatusCode::NotFound,
-                Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+                Some(crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE),
                 "Read Session Not Available - Injected fault",
             ),
             FaultInjectionErrorType::Timeout => (
@@ -273,17 +340,17 @@ impl FaultClient {
             ),
             FaultInjectionErrorType::PartitionIsGone => (
                 StatusCode::Gone,
-                Some(SubStatusCode::PARTITION_KEY_RANGE_GONE),
+                Some(crate::error::status_codes::substatus::PARTITION_KEY_RANGE_GONE),
                 "Partition Is Gone - Injected fault",
             ),
             FaultInjectionErrorType::WriteForbidden => (
                 StatusCode::Forbidden,
-                Some(SubStatusCode::WRITE_FORBIDDEN),
+                Some(crate::error::status_codes::substatus::WRITE_FORBIDDEN),
                 "Write Forbidden - Injected fault",
             ),
             FaultInjectionErrorType::DatabaseAccountNotFound => (
                 StatusCode::Forbidden,
-                Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND),
+                Some(crate::error::status_codes::substatus::DATABASE_ACCOUNT_NOT_FOUND),
                 "Database Account Not Found - Injected fault",
             ),
         };
@@ -340,23 +407,33 @@ impl TransportClient for FaultClient {
         // Apply the fault if we found a matching rule.
         // `apply_fault` pushes the Applied evaluation; all evaluations are then
         // written into the request's evaluation collector.
-        let fault_response = if let Some(ref rule) = matched_rule {
+        let (fault_response, timeout_after_service) = if let Some(ref rule) = matched_rule {
             match self
-                .apply_fault(rule.result(), rule, &mut evaluations)
+                .apply_fault(
+                    rule.result(),
+                    rule,
+                    &mut evaluations,
+                    request.evaluation_collector.as_ref(),
+                )
                 .await
             {
-                ApplyResult::Injected(response) => Some(response),
+                ApplyResult::Injected(response) => (Some(response), None),
+                ApplyResult::ResponseTimeoutAfterService {
+                    reservation,
+                    rule_id,
+                    delay,
+                } => (None, Some((reservation, rule_id, delay))),
                 ApplyResult::ProbabilityMiss => {
                     evaluations.push(FaultInjectionEvaluation::ProbabilityMiss {
                         rule_id: rule.id().to_owned(),
                         probability: rule.result().probability(),
                     });
-                    None
+                    (None, None)
                 }
-                ApplyResult::NoEffect => None,
+                ApplyResult::NoEffect => (None, None),
             }
         } else {
-            None
+            (None, None)
         };
 
         // Write evaluations into the collector and log them.
@@ -378,6 +455,7 @@ impl TransportClient for FaultClient {
             // before forwarding to the real transport.
             let mut clean_headers = request.headers.clone();
             clean_headers.remove(FAULT_INJECTION_OPERATION);
+            clean_headers.remove(FAULT_INJECTION_REGION);
 
             // Collector intentionally omitted: evaluations already captured above.
             let clean_request = HttpRequest {
@@ -389,8 +467,36 @@ impl TransportClient for FaultClient {
                 evaluation_collector: None,
             };
 
-            // No fault injection, proceed with actual request
-            self.inner.send(&clean_request).await
+            // No pre-service fault injection: proceed with the actual request.
+            let response = self.inner.send(&clean_request).await;
+            if let Some((reservation, rule_id, delay)) = timeout_after_service {
+                if !response
+                    .as_ref()
+                    .is_ok_and(|response| self.is_successful_service_response(response))
+                {
+                    return response;
+                }
+                let mut applied = vec![FaultInjectionEvaluation::Applied { rule_id }];
+                tracing::trace!(evaluations = ?applied, "fault injection rule evaluation");
+                if let Some(ref collector) = request.evaluation_collector {
+                    collector.push_all(&mut applied);
+                }
+                reservation.commit();
+                if let Some(delay) = delay {
+                    if delay > Duration::ZERO {
+                        let delay = azure_core::time::Duration::try_from(delay)
+                            .unwrap_or(azure_core::time::Duration::ZERO);
+                        azure_core::sleep(delay).await;
+                    }
+                }
+                let error = crate::error::CosmosError::builder()
+                    .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
+                    .with_message("Injected fault: response timeout after service execution")
+                    .build();
+                Err(TransportError::new(error, RequestSentStatus::Unknown))
+            } else {
+                response
+            }
         }
     }
 }
@@ -424,7 +530,7 @@ fn host_matches_region(url: &url::Url, region: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{host_matches_region, FaultClient};
-    use crate::diagnostics::TransportKind;
+    use crate::diagnostics::{RequestSentStatus, TransportKind};
     use crate::driver::transport::cosmos_transport_client::{
         HttpRequest, HttpResponse, TransportClient, TransportError,
     };
@@ -433,12 +539,14 @@ mod tests {
         FaultInjectionErrorType, FaultInjectionEvaluation, FaultInjectionResultBuilder,
         FaultInjectionRuleBuilder, FaultOperationType,
     };
-    use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
-    use crate::models::SubStatusCode;
+    use crate::models::cosmos_headers::fault_injection_header_names::{
+        FAULT_INJECTION_OPERATION, FAULT_INJECTION_REGION,
+    };
+
     use crate::options::Region;
     use async_trait::async_trait;
     use azure_core::http::{headers::Headers, Method, StatusCode, Url};
-    use std::sync::atomic::{AtomicU32, Ordering};
+    use std::sync::atomic::{AtomicU16, AtomicU32, Ordering};
     use std::sync::Arc;
     use std::time::{Duration, Instant};
 
@@ -446,13 +554,37 @@ mod tests {
     #[derive(Debug)]
     struct MockTransportClient {
         call_count: AtomicU32,
+        status: AtomicU16,
+        body: Vec<u8>,
     }
 
     impl MockTransportClient {
         fn new() -> Self {
             Self {
                 call_count: AtomicU32::new(0),
+                status: AtomicU16::new(200),
+                body: Vec::new(),
             }
+        }
+
+        fn with_status(status: StatusCode) -> Self {
+            Self {
+                call_count: AtomicU32::new(0),
+                status: AtomicU16::new(status.into()),
+                body: Vec::new(),
+            }
+        }
+
+        fn with_response(status: StatusCode, body: Vec<u8>) -> Self {
+            Self {
+                call_count: AtomicU32::new(0),
+                status: AtomicU16::new(status.into()),
+                body,
+            }
+        }
+
+        fn set_status(&self, status: StatusCode) {
+            self.status.store(status.into(), Ordering::SeqCst);
         }
 
         fn call_count(&self) -> u32 {
@@ -467,11 +599,19 @@ mod tests {
 
             // Return a minimal valid response
             Ok(HttpResponse {
-                status: 200,
+                status: self.status.load(Ordering::SeqCst),
                 headers: Headers::new(),
-                body: vec![],
+                body: self.body.clone(),
             })
         }
+    }
+
+    fn gateway_v2_response_frame(status: StatusCode) -> Vec<u8> {
+        let mut frame = Vec::with_capacity(24);
+        frame.extend_from_slice(&24_u32.to_le_bytes());
+        frame.extend_from_slice(&u32::from(u16::from(status)).to_le_bytes());
+        frame.extend_from_slice(&[0; 16]);
+        frame
     }
 
     fn create_test_request() -> (HttpRequest, EvaluationCollector) {
@@ -685,6 +825,29 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn routed_region_header_overrides_endpoint_host_for_matching() {
+        let mock_client = Arc::new(MockTransportClient::new());
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_region(Region::EAST_US)
+            .build();
+        let fault = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("routed-region-rule", fault)
+            .with_condition(condition)
+            .build();
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
+
+        let (mut request, _collector) = create_test_request();
+        request.url = "https://eastus.example.com/".parse().unwrap();
+        request.headers.insert(FAULT_INJECTION_REGION, "westus");
+
+        let result = fault_client.send(&request).await;
+        assert!(result.is_ok());
+        assert_eq!(mock_client.call_count(), 1);
+    }
+
+    #[tokio::test]
     async fn execute_request_container_matching() {
         let mock_client = Arc::new(MockTransportClient::new());
 
@@ -747,19 +910,19 @@ mod tests {
         let test_cases = vec![
             (
                 FaultInjectionErrorType::ReadSessionNotAvailable,
-                Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+                Some(crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE),
             ),
             (
                 FaultInjectionErrorType::PartitionIsGone,
-                Some(SubStatusCode::PARTITION_KEY_RANGE_GONE),
+                Some(crate::error::status_codes::substatus::PARTITION_KEY_RANGE_GONE),
             ),
             (
                 FaultInjectionErrorType::WriteForbidden,
-                Some(SubStatusCode::WRITE_FORBIDDEN),
+                Some(crate::error::status_codes::substatus::WRITE_FORBIDDEN),
             ),
             (
                 FaultInjectionErrorType::DatabaseAccountNotFound,
-                Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND),
+                Some(crate::error::status_codes::substatus::DATABASE_ACCOUNT_NOT_FOUND),
             ),
             (FaultInjectionErrorType::InternalServerError, None),
             (FaultInjectionErrorType::ServiceUnavailable, None),
@@ -832,7 +995,7 @@ mod tests {
         // with `TRANSPORT_CONNECTION_FAILED` sub-status.
         assert_eq!(
             err.error.status().sub_status(),
-            Some(crate::models::SubStatusCode::TRANSPORT_CONNECTION_FAILED),
+            Some(crate::error::status_codes::substatus::TRANSPORT_CONNECTION_FAILED),
             "connection error should map to TRANSPORT_CONNECTION_FAILED"
         );
         assert_eq!(mock_client.call_count(), 0);
@@ -858,10 +1021,184 @@ mod tests {
         // with `TRANSPORT_IO_FAILED` sub-status.
         assert_eq!(
             err.error.status().sub_status(),
-            Some(crate::models::SubStatusCode::TRANSPORT_IO_FAILED),
+            Some(crate::error::status_codes::substatus::TRANSPORT_IO_FAILED),
             "response timeout should map to TRANSPORT_IO_FAILED"
         );
         assert_eq!(mock_client.call_count(), 0);
+    }
+
+    #[tokio::test]
+    async fn response_timeout_after_service_forwards_then_produces_io_error() {
+        let mock_client = Arc::new(MockTransportClient::new());
+
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ResponseTimeoutAfterService)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("post-service-timeout", error).build();
+
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
+        let (request, _collector) = create_test_request();
+
+        let err = fault_client.send(&request).await.unwrap_err();
+        assert_eq!(
+            err.error.status().sub_status(),
+            Some(crate::error::status_codes::substatus::TRANSPORT_IO_FAILED)
+        );
+        assert_eq!(
+            err.request_sent,
+            crate::diagnostics::RequestSentStatus::Unknown
+        );
+        assert_eq!(mock_client.call_count(), 1);
+    }
+
+    #[tokio::test]
+    async fn response_timeout_after_service_delays_after_forwarding() {
+        let mock_client = Arc::new(MockTransportClient::new());
+
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ResponseTimeoutAfterService)
+            .with_delay(Duration::from_millis(200))
+            .build();
+        let rule = Arc::new(
+            FaultInjectionRuleBuilder::new("delayed-post-service-timeout", error)
+                .with_hit_limit(1)
+                .build(),
+        );
+        let fault_client = FaultClient::new(mock_client.clone(), vec![rule.clone()], None);
+        let (request, collector) = create_test_request();
+
+        let result =
+            tokio::time::timeout(Duration::from_millis(50), fault_client.send(&request)).await;
+
+        assert!(
+            result.is_err(),
+            "the post-service delay should still be pending"
+        );
+        assert_eq!(
+            mock_client.call_count(),
+            1,
+            "the request must reach the service before the configured delay"
+        );
+        assert_eq!(
+            rule.hit_count(),
+            1,
+            "the effective fault must consume its hit"
+        );
+        assert!(collector
+            .take()
+            .iter()
+            .any(|evaluation| matches!(evaluation, FaultInjectionEvaluation::Applied { .. })));
+    }
+
+    #[tokio::test]
+    async fn response_timeout_after_service_preserves_service_error() {
+        let mock_client = Arc::new(MockTransportClient::with_status(
+            StatusCode::PreconditionFailed,
+        ));
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ResponseTimeoutAfterService)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("post-service-timeout", error).build();
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
+        let (request, _collector) = create_test_request();
+
+        let response = fault_client.send(&request).await.unwrap();
+
+        assert_eq!(response.status, u16::from(StatusCode::PreconditionFailed));
+        assert_eq!(mock_client.call_count(), 1);
+    }
+
+    #[tokio::test]
+    async fn response_timeout_after_service_preserves_gateway_v2_backend_error() {
+        let mock_client = Arc::new(MockTransportClient::with_response(
+            StatusCode::Ok,
+            gateway_v2_response_frame(StatusCode::PreconditionFailed),
+        ));
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ResponseTimeoutAfterService)
+            .build();
+        let rule = Arc::new(FaultInjectionRuleBuilder::new("post-service-timeout", error).build());
+        let fault_client = FaultClient::new(
+            mock_client.clone(),
+            vec![rule.clone()],
+            Some(TransportKind::GatewayV2),
+        );
+        let (request, collector) = create_test_request();
+
+        let response = fault_client.send(&request).await.unwrap();
+
+        assert_eq!(response.status, u16::from(StatusCode::Ok));
+        assert_eq!(
+            response.body,
+            gateway_v2_response_frame(StatusCode::PreconditionFailed)
+        );
+        assert_eq!(rule.hit_count(), 0);
+        assert!(collector
+            .take()
+            .iter()
+            .all(|evaluation| !matches!(evaluation, FaultInjectionEvaluation::Applied { .. })));
+    }
+
+    #[tokio::test]
+    async fn response_timeout_after_service_discards_gateway_v2_backend_success() {
+        let mock_client = Arc::new(MockTransportClient::with_response(
+            StatusCode::Ok,
+            gateway_v2_response_frame(StatusCode::Ok),
+        ));
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ResponseTimeoutAfterService)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("post-service-timeout", error).build();
+        let fault_client = FaultClient::new(
+            mock_client,
+            vec![Arc::new(rule)],
+            Some(TransportKind::GatewayV2),
+        );
+        let (request, _collector) = create_test_request();
+
+        let error = fault_client.send(&request).await.unwrap_err();
+
+        assert_eq!(
+            error.error.status(),
+            crate::error::status_codes::TRANSPORT_IO_FAILED
+        );
+        assert_eq!(error.request_sent, RequestSentStatus::Unknown);
+    }
+
+    #[tokio::test]
+    async fn response_timeout_after_service_consumes_hit_only_on_success() {
+        let mock_client = Arc::new(MockTransportClient::with_status(
+            StatusCode::PreconditionFailed,
+        ));
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ResponseTimeoutAfterService)
+            .build();
+        let rule = Arc::new(
+            FaultInjectionRuleBuilder::new("post-service-timeout", error)
+                .with_hit_limit(1)
+                .build(),
+        );
+        let fault_client = FaultClient::new(mock_client.clone(), vec![rule.clone()], None);
+        let (request, collector) = create_test_request();
+
+        let first = fault_client.send(&request).await.unwrap();
+        assert_eq!(first.status, u16::from(StatusCode::PreconditionFailed));
+        assert_eq!(rule.hit_count(), 0);
+        assert!(collector
+            .clone()
+            .take()
+            .iter()
+            .all(|evaluation| !matches!(evaluation, FaultInjectionEvaluation::Applied { .. })));
+
+        mock_client.set_status(StatusCode::Ok);
+        let second = fault_client.send(&request).await;
+        assert!(second.is_err(), "the successful response must be discarded");
+        assert_eq!(rule.hit_count(), 1);
+        assert!(collector
+            .take()
+            .iter()
+            .any(|evaluation| matches!(evaluation, FaultInjectionEvaluation::Applied { .. })));
+        assert_eq!(mock_client.call_count(), 2);
     }
 
     #[tokio::test]

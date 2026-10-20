@@ -1,5 +1,8 @@
 #!/usr/bin/env pwsh
 
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 #Requires -Version 7.0
 [CmdletBinding(DefaultParameterSetName = 'ManifestDir')]
 param(
@@ -25,20 +28,17 @@ param(
 $ErrorActionPreference = 'Stop'
 
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
-. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'common.ps1'))
 
 Write-Host @"
 Packing crates with
     RUSTFLAGS: '${env:RUSTFLAGS}'
 "@
 
-if ($ManifestDir) {
-  [string[]] $script:manifestPath = Join-Path $ManifestDir 'Cargo.toml' -Resolve
-}
-
-function Test-IsPublishable($package) {
-  return $null -eq $package.publish
-}
+[string[]] $script:manifestPath = Get-CargoManifestPaths `
+  -PackageName $PackageName `
+  -ManifestDir $ManifestDir `
+  -PackageInfoDirectory $PackageInfoDirectory
 
 function Get-PackagesToBuild() {
   $packages = Get-CargoPackages
@@ -57,7 +57,7 @@ function Get-PackagesToBuild() {
 
     foreach ($dependency in $package.UnreleasedDependencies) {
       if (
-        (Test-IsPublishable $dependency) -and
+        (Test-CargoPackagePublishable $dependency) -and
         !$packagesToBuild.Contains($dependency) -and
         !$toProcess.Contains($dependency)
       ) {
@@ -76,24 +76,23 @@ function Get-OutputPackageNames($packages) {
     # Falls through to default case if empty.
     { $ManifestDir } {
       LogDebug "Packing manifest(s) '$( $manifestPath -join "', '" )' and dependencies"
-      $names = $packages.Where({ $_.manifest_path -in $manifestPath }).name
     }
 
     'PackageName' {
       LogDebug "Packing package(s) '$( $PackageName -join "', '" )' and dependencies"
-      $names = $PackageName
     }
 
     'PackageInfo' {
       LogDebug "Packing packages from '$PackageInfoDirectory'"
-      $names = Get-PackageNamesFromPackageInfo $PackageInfoDirectory
     }
 
     default {
       LogDebug "Packing all packages in workspace"
-      return $packages.Where({ Test-IsPublishable $_ }).name
+      return $packages.Where({ Test-CargoPackagePublishable $_ }).name
     }
   }
+
+  $names = (Get-CargoPackagesFromManifestPaths -ManifestPath $manifestPath -WorkspacePackages $packages).name
 
   foreach ($name in $names) {
     $package = $packages | Where-Object -Property name -EQ -Value $name | Select-Object -First 1
@@ -102,7 +101,7 @@ function Get-OutputPackageNames($packages) {
       exit 1
     }
 
-    if (-not (Test-IsPublishable $package)) {
+    if (-not (Test-CargoPackagePublishable $package)) {
       LogError "Package '$name' has publish = false and cannot be packed for publishing"
       exit 1
     }
@@ -117,11 +116,13 @@ function New-ApiFile(
   [string] $OutputDirectory
 ) {
   $manifestPath = $package.manifest_path
-  $command = "cargo run --manifest-path `"$RepoRoot/eng/tools/Cargo.toml`" -p generate_api -- --manifest-path `"$manifestPath`" --format $Format --output `"$OutputDirectory`""
+  $generateApiManifestPath = [System.IO.Path]::Combine($RepoRoot, 'eng', 'tools', 'generate_api', 'Cargo.toml')
+  $reviewArgument = $Format -eq 'markdown' ? ' --review' : ''
+  $command = "cargo run --manifest-path `"$generateApiManifestPath`" -- --manifest-path `"$manifestPath`" --format $Format --output-dir `"$OutputDirectory`"$reviewArgument"
   Invoke-LoggedCommand $command -GroupOutput | Out-Host
 
   $fileName = switch ($Format) {
-    'markdown' { 'API.md' }
+    'markdown' { 'api.md' }
     'apiview' { 'apiview.json' }
     default {
       LogError "Unsupported API output format '$Format'"
@@ -161,13 +162,21 @@ try {
   Set-Location $RepoRoot
 
   [array]$packages = Get-PackagesToBuild
-  $packageParams = @()
-  foreach ($package in $packages) {
-    $packageParams += "--package", $package.name
+  $packageParams = if ($packages.Count -gt 1) {
+    @('--manifest-path', ([System.IO.Path]::Combine($RepoRoot, 'Cargo.toml')))
+  }
+  else {
+    @('--manifest-path', "'$($packages[0].manifest_path)'")
+  }
+
+  if ($packages.Count -gt 1) {
+    foreach ($package in $packages) {
+      $packageParams += '--package', $package.name
+    }
   }
 
   if ($NoVerify) {
-    $packageParams += "--no-verify"
+    $packageParams += '--no-verify'
   }
 
   # Some packages are not publishable, in cases where the script is not in a
@@ -179,22 +188,25 @@ try {
     $subCommand = @("publish", "--dry-run")
   }
 
-  LogGroupStart "cargo $($subCommand -join ' ') --locked --allow-dirty $($packageParams -join ' ')"
-  Write-Host "cargo $($subCommand -join ' ') --locked --allow-dirty $($packageParams -join ' ')"
-  & cargo @subCommand --locked --allow-dirty @packageParams 2>&1 `
-  | Tee-Object -Variable packResult `
-  | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
-  LogGroupEnd
+  $packResult = Invoke-LoggedCommand `
+    "cargo $($subCommand -join ' ') --locked --allow-dirty $($packageParams -join ' ') 2>&1" `
+    -GroupOutput `
+    -DoNotExitOnFailedExitCode `
+    -OutputProcessor {
+      param($line)
+      Write-Host $line -ForegroundColor Gray
+      $line
+    }
 
-  Write-Host "Finished packing crates"
   if ($LASTEXITCODE) {
     if ($packResult -match 'cannot update the lock file') {
       LogWarning "cargo package could not update the lock file. Rebase on the main branch and try again."
     }
 
-    Write-Host "cargo publish failed with exit code $LASTEXITCODE"
+    LogError "cargo $($subCommand -join ' ') failed with exit code $LASTEXITCODE"
     exit $LASTEXITCODE
   }
+  Write-Host "Finished packing crates"
 
   if ($APIReview) {
     foreach ($package in $packages) {
@@ -212,7 +224,7 @@ try {
 
       # Cargo uses different .crate output locations depending on command and version.
       # Prefer the expected layout for the current build mode, but fall back to the
-      # other known location so the pack pipeline works on both 1.92 and newer toolchains.
+      # other known location for compatibility with Cargo's alternate layout.
       $cratePath = Get-CratePath -package $package -ReleaseBuild $Release
 
       $targetPath = [System.IO.Path]::Combine($OutputPath, $package.name)

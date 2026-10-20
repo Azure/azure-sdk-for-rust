@@ -20,9 +20,12 @@ use std::collections::BTreeSet;
 
 use serde::Deserialize;
 
-const CATALOG_JSON: &str = include_str!("fixtures/streaming_order_by_scenarios.json");
+mod scenario_catalog_common;
+use scenario_catalog_common::{
+    assert_scenario_has_source, assert_scenario_layers_known, assert_unique_scenario_ids, Source,
+};
 
-const KNOWN_LAYERS: &[&str] = &["comparator", "mockPipeline", "inMemoryEmulator", "recorded"];
+const CATALOG_JSON: &str = include_str!("fixtures/streaming_order_by_scenarios.json");
 
 #[derive(Deserialize)]
 struct Catalog {
@@ -54,16 +57,6 @@ struct Scenario {
     expected_continuation: Option<serde_json::Value>,
     #[serde(rename = "expectedError")]
     expected_error: Option<ExpectedError>,
-}
-
-#[derive(Deserialize)]
-struct Source {
-    #[allow(dead_code)]
-    sdk: String,
-    #[allow(dead_code)]
-    path: String,
-    #[allow(dead_code)]
-    test: String,
 }
 
 #[derive(Deserialize)]
@@ -153,32 +146,14 @@ fn catalog_is_non_empty() {
 #[test]
 fn no_duplicate_scenario_ids() {
     let catalog = load_catalog();
-    let mut seen = BTreeSet::new();
-    for scenario in &catalog.scenarios {
-        assert!(
-            seen.insert(scenario.id.clone()),
-            "duplicate scenario id: {}",
-            scenario.id
-        );
-    }
+    assert_unique_scenario_ids(catalog.scenarios.iter().map(|s| s.id.as_str()));
 }
 
 #[test]
 fn every_scenario_declares_at_least_one_known_layer() {
     let catalog = load_catalog();
     for scenario in &catalog.scenarios {
-        assert!(
-            !scenario.layers.is_empty(),
-            "scenario {} declares no layers",
-            scenario.id
-        );
-        for layer in &scenario.layers {
-            assert!(
-                KNOWN_LAYERS.contains(&layer.as_str()),
-                "scenario {} declares unknown layer {layer:?}",
-                scenario.id
-            );
-        }
+        assert_scenario_layers_known(&scenario.id, &scenario.layers);
     }
 }
 
@@ -186,11 +161,7 @@ fn every_scenario_declares_at_least_one_known_layer() {
 fn every_scenario_has_at_least_one_source() {
     let catalog = load_catalog();
     for scenario in &catalog.scenarios {
-        assert!(
-            !scenario.sources.is_empty(),
-            "scenario {} has no cross-SDK source attribution",
-            scenario.id
-        );
+        assert_scenario_has_source(&scenario.id, &scenario.sources);
     }
 }
 

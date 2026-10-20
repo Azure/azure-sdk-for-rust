@@ -33,6 +33,8 @@ mod dispatch;
 mod epk;
 #[cfg(feature = "__internal_in_memory_emulator")]
 mod gateway_v2;
+#[doc(hidden)]
+pub use gateway_v2::GatewayV2PayloadAudit;
 mod observer;
 mod operations;
 mod response;
@@ -44,12 +46,13 @@ mod system_properties;
 
 pub use client::InMemoryEmulatorHttpClient;
 pub use config::{
-    ConsistencyLevel, ContainerConfig, ReplicationConfig, VirtualAccountConfig, VirtualRegion,
-    WriteMode, DEFAULT_MAX_BUFFERED_REPLICATIONS,
+    ConsistencyLevel, ContainerConfig, RegionStatus, ReplicationConfig, ResolvedRegion,
+    SeedingPolicy, TopologySnapshot, VirtualAccountConfig, VirtualRegion, WriteMode,
+    DEFAULT_MAX_BUFFERED_REPLICATIONS,
 };
 pub use epk::Epk;
 pub use observer::RequestObserver;
 #[doc(hidden)]
 pub use response::headers as test_headers;
-pub use ru_model::RuChargingModel;
-pub use store::{EmulatorStore, ManualControlPlaneOperation};
+pub use ru_model::RequestUnitChargingModel;
+pub use store::{EmulatorStore, ManualControlPlaneOperation, ManualControlPlaneResult};

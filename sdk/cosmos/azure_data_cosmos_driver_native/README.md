@@ -5,11 +5,20 @@
 C ABI wrapper around [`azure_data_cosmos_driver`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_driver),
 designed for cross-language SDK reuse (.NET, Java, Go, Python, native C/C++).
 The full design is in
-[NATIVE_WRAPPER_SPEC.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md);
+[the native wrapper specification](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md);
 the picture-first overview is in
-[ASYNC_INVOCATION_ARCHITECTURE.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/ASYNC_INVOCATION_ARCHITECTURE.md);
+[the native async invocation overview](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0020-native-async-invocation.md);
 this README is a short orientation and a quick-start for each supported
 binding language.
+
+See the [Cosmos SDK project documentation](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/README.md) for the broader
+project and architecture context.
+
+The native SemVer and C FFI compatibility policy, implemented Rust release
+gates, and proposed downstream and host-SDK propagation model are documented in
+[Native driver versioning and releases](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/docs/NATIVE_VERSIONING_AND_RELEASES.md).
+Release operators should follow the
+[native driver release guide](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/docs/RELEASE_GUIDE.md).
 
 ## What this crate ships
 
@@ -25,34 +34,96 @@ binding language.
 
 The wrapper supports end-to-end CRUD against a real Cosmos account. The
 remaining items below are surface-area additions on top of a functional core.
-See [the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md)
+See [the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md)
 for the full design.
 
 ### Capability matrix (current)
 
 | Capability | Status |
-|---|---|
+| --- | --- |
 | Master-key authentication | ✅ |
-| Token-credential / resource-token authentication | ⏳ follow-up (needs `TokenCredential` FFI bridge) |
+| AAD token-credential authentication | ✅ via host credential bridge |
+| Resource-token authentication | ⏳ follow-up |
 | Sync driver creation (`_blocking`) | ✅ |
 | Async driver creation (`_submit`) | ✅ |
-| Cache-hit advisory (`5001 OPTIONS_IGNORED_ON_CACHE_HIT`) | ⏳ needs driver-side `was_cached` signal |
+| Same-endpoint clients sharing cached container references | ✅ runtime-owned container cache |
 | Sync + async `resolve_container` | ✅ |
 | Single + hierarchical partition keys | ✅ |
-| Item-CRUD operations (read / create / upsert / replace / delete / patch) | ✅ |
+| Item-CRUD operations (read / create / upsert / replace / delete) | ✅ |
+| Item PATCH | ✅ (preview exposure is controlled by the consuming SDK) |
 | Container-CRUD operations (read / replace / delete) | ✅ |
 | Database + account-scope operations | ✅ |
 | `cosmos_submit_singleton_operation` (point ops) | ✅ |
-| `cosmos_submit_operation` (feeds + pagination) | ✅ |
+| `cosmos_submit_operation` (legacy feeds) | ✅ with explicit errors for unrepresentable results |
 | Response status / RU / body / activity-id / session-token / etag / continuation | ✅ |
-| Pagination (read-feeds + query result sets) | ⏳ planned |
-| Multi-part response body iteration | ⏳ planned |
-| Diagnostics accessors | ⏳ planned |
+| Retained query/read-feed/change-feed cursors | Supported through `cosmos_cursor_*` |
+| Multi-part response body iteration | All buffers in cursor completions |
+| Diagnostics accessors | Supported through completion diagnostics |
 | Patch instruction builder | ⏳ planned |
 | Transactional batch sub-operation builder | ⏳ planned |
 | Custom per-operation request headers | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
+| Driver fault injection | Supported through versioned `cosmos_driver_options_config_v2_t` records |
 
 ## Building
+
+Version **0.2.0** is a breaking C ABI revision. Check `cosmos_version()` against
+`AZURECOSMOSDRIVER_H_VERSION` before any layout-sensitive call, including options
+returned by value. Rebuild host bindings and vendor the generated header together
+with the matching library; do not mix 0.1.x headers and 0.2.x libraries.
+
+### Operation defaults and admission snapshots
+
+The same `cosmos_operation_options_t` supplies request, driver and runtime defaults.
+Initialize it with `cosmos_operation_options_default()`, not zero initialization:
+negative numeric values inherit, while zero retry counts and durations are explicit.
+Retry counts and throughput buckets accept the complete `uint32_t` range through
+checked `int64_t` fields. Non-NULL, zero-length regions/headers clear inherited
+collections. Throughput and throttle members inherit independently; binary flags
+replace their whole group. Hedging environment overrides retain driver precedence.
+
+Set `cosmos_runtime_options_t.operation_options` during construction or atomically
+replace the complete runtime group with `cosmos_runtime_set_operation_options`.
+NULL resets the defaults; rejected updates do not change them. Inputs are copied.
+
+Before lazy initialization, call `cosmos_operation_options_snapshot_create` with
+the runtime, client defaults and request overrides. It returns a resolved timeout
+in milliseconds (-1 if absent) and an owned snapshot. Put the handle in
+`cosmos_operation_request_t.options_snapshot`; the shared fields in `request.options`
+are then ignored, but its query-plan mode still applies. Submit copies the snapshot,
+so it may be freed immediately afterward. A driver from another runtime is rejected.
+All native retries and client-side patch stages retain the same configuration
+generation, including unset values and environment overrides.
+Account metadata refreshes triggered during recovery also retain the admitted
+throttle retry count and wait budget, including regional and HTTP-version fallback.
+Independently scheduled background refreshes use current runtime defaults.
+
+Cursor requests can carry the same admission snapshot in their common operation
+fields. The cursor retains it across opening and page requests: the original
+deadline includes time the host spends between pages, rather than restarting
+for each page. A snapshot from another runtime is rejected before admission.
+
+The snapshot starts its deadline at capture, deducting time spent in host
+initialization before execution; it never restarts the full budget at submit.
+Rust clamps configured latency below one second. Hosts may impose a stricter
+context deadline independently. Bootstrap/metadata initialization remains separate
+work, governed by the host's same deadline and the driver's metadata policy.
+
+Endpoint-unavailability TTL is resolved per operation during routing without
+mutating shared cooldown settings. The existing TTL environment variable is
+captured at runtime construction; background probes retain their construction policy.
+
+Drivers sharing a runtime reuse its container-reference cache, including name/RID
+lookups and recreation refreshes. Cached references retain the credentials used
+to create them, so same-account clients on one runtime must use compatible
+credentials. Use separate runtimes when credential isolation is required.
+
+Host-requested cancellation is not supported: dropping an in-flight driver future
+can discard its diagnostics. The CANCELLED outcome and handle-state values remain
+reserved. Hosts must retain operation cookies and drain terminal completions even
+if their own callers stop waiting. Admission deadlines remain enforced separately;
+an admission timeout does not guarantee partial driver diagnostics.
+
+### Commands
 
 ```bash
 # Rust side (produces the cdylib / staticlib and regenerates the header).
@@ -64,6 +135,13 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
+The Cosmos Azure DevOps CI pipeline runs the Rust unit tests and C ABI suite
+on dedicated Linux, macOS, and Windows matrix legs whenever Cosmos CI runs,
+including pull requests changing this crate. These legs enable the driver's
+test-setup hook with `AZURE_COSMOS_NATIVE_TESTS=true`; other legs are unchanged.
+C ABI results appear in the pipeline's Tests tab. These tests need no Cosmos
+account credentials; supply-chain publishing remains manual-only.
+
 The resulting shared library lands at:
 
 - Linux:   `target/release/libazurecosmosdriver.so`
@@ -73,6 +151,186 @@ The resulting shared library lands at:
 Language bindings should either bundle the library next to their executable,
 publish it to the system loader path, or use a per-language helper to point
 at the build output (`LD_LIBRARY_PATH=…`, `[DllImport]` resolver, etc.).
+
+## Retained feed cursors
+
+Use `cosmos_cursor_*` for queries, read feeds, and change feed. The cursor retains
+the driver's plan between pages, including buffered queries that cannot produce
+a serialized continuation. See
+[the cursor specification](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0029-native-feed-cursor.md)
+for the complete contract.
+
+Read feeds preserve the driver's existing scope limits: database/container and
+single-partition item reads are supported; full-container item read-all returns
+`400/20112` (fan-out required). The cursor does not add read-feed range traversal.
+
+Initialize `cosmos_cursor_request_t` with `cosmos_cursor_request_init`. Its
+`abi_version` is 1; the size/version header belongs to the new cursor record and
+does not change any legacy record. Ordinary queries/read feeds use
+`request.operation.kind`; change feeds set that kind to 0 and select
+`change_feed_mode` (1: LatestVersion, 2: AllVersionsAndDeletes).
+The fresh change-feed `start_from` values are 1: Beginning, 2: Now, 3: PointInTime
+(with counted RFC 3339 `start_time`). Use 0 when resuming with a token.
+AllVersionsAndDeletes supports Now/resume; other well-formed starts and account
+opt-in/retention restrictions surface service errors.
+
+Create a dedicated queue with `cosmos_cursor_queue_create(runtime, capacity)`.
+Capacity counts admitted work as well as queued results; 0 is unbounded.
+The cursor stays bound to that queue. Open/Next/Checkpoint return operation
+handles, just like legacy submissions. Drain with `cosmos_cursor_queue_wait`,
+which returns allocated completion pointers. Never mix the legacy and cursor
+wait APIs: the new API returns a format error; legacy wait cannot return a
+packed error, so it logs an error and returns zero without consuming results.
+
+| Successful `result_kind` | Meaning |
+| --- | --- |
+| 1 | Opened; detach with `cosmos_cursor_completion_take_cursor`. |
+| 2 | Page, including empty pages and change-feed 304 idle responses. |
+| 3 | Checkpoint; copy the counted token before freeing its completion. |
+| 4 | End of a finite feed; repeated Next returns End without I/O. |
+
+Check `common.status`/`common.outcome` before interpreting the result kind.
+For a Page, `body_kind` is 0: NoPayload, 1: RawBytes (`common.body`/`body_len`),
+or 2: Items (`items`/`items_len`, every buffer in order). RawBytes may be a whole
+feed envelope. Never infer payload shape from JSON field names, and never assume
+binary-negotiated bytes are UTF-8. Set operation
+`binary_encoding_request_text_response = 2` when the host needs text output.
+Free each result with `cosmos_cursor_completion_free`, not the legacy array-free
+function; do not separately free its embedded common record.
+
+The following bounded helper reads at most `page_budget` pages from an already
+opened cursor on an otherwise idle queue. `consume` must copy bytes it retains after returning; the complete
+page remains valid until its completion is freed.
+
+```c
+#include "azurecosmosdriver.h"
+
+static cosmos_status_code_t read_pages(
+    cosmos_cursor_t *cursor, cosmos_completion_queue_t *queue,
+    unsigned page_budget, void (*consume)(const cosmos_cursor_completion_t *))
+{
+    for (unsigned page = 0; page < page_budget; ++page) {
+        cosmos_status_code_t status = COSMOS_STATUS_SUCCESS;
+        cosmos_operation_handle_t *op =
+            cosmos_cursor_next_submit(cursor, 0, &status);
+        if (!op) return status;
+        cosmos_cursor_completion_t *result = NULL;
+        size_t count = 0;
+        status = cosmos_cursor_queue_wait(queue, &result, 1, UINT32_MAX, &count);
+        if (!status && count == 0) {
+            status = cosmos_operation_handle_status(op);
+            if (!status) status = cosmos_cursor_status(cursor);
+            if (!status) status = (503 << 16) | COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_SHUTDOWN;
+        }
+        cosmos_operation_handle_free(op);
+        if (status || count == 0) return status;
+        status = result->common.status;
+        bool stop = result->result_kind == 4 ||
+                    result->common.http_status_code == 304;
+        if (!status && result->result_kind == 2) consume(result);
+        cosmos_cursor_completion_free(result);
+        if (status || stop) return status;
+    }
+    return COSMOS_STATUS_SUCCESS;
+}
+```
+
+For a query, set `operation.kind = COSMOS_OPERATION_KIND_QUERY_ITEMS`, supply the
+resolved container and a JSON query body, then submit Open and take the cursor
+from its completion. For a change feed, set `change_feed_mode = 1`,
+`start_from = 2`, and the container instead of a query body. The helper stops
+at 304 to let the caller choose a polling delay; 304 does not close the cursor.
+Always free the cursor and its queue when finished.
+
+`cosmos_cursor_checkpoint_submit` is separate from Next. DISTINCT and buffered
+non-streaming ORDER BY can reject a checkpoint while still allowing subsequent
+pages; ordinary read-feed checkpoints also retain the driver's existing
+unsupported status. A token is never required to advance a live cursor.
+Checkpoint errors indicating corrupted progress and execution failures terminate
+the cursor; inspect `cosmos_cursor_status` for its failure.
+
+Only one operation per cursor may be outstanding, until its result is transferred
+by the wait call. Overlap returns Busy. **Wrapper-managed prefetch is supported**:
+request another page after transfer while keeping earlier page completions alive.
+Bound that buffering in the host SDK. Capture and associate supported checkpoints
+with page boundaries before advancing, and persist only the token matching
+application-consumed progress. Native automatic prefetch/polling is not performed.
+
+On-demand cancellation is not supported; configure the operation's end-to-end
+timeout to bound execution. Free is non-blocking and does not cancel admitted work. Synchronize raw handle
+Free against new calls. Queue shutdown permits admitted work to drain, whereas
+queue Free abandons undelivered results and makes affected cursors unusable.
+Use `cosmos_operation_handle_status` to observe delivery loss even without a
+completion. Successful pages and driver errors, including timeouts, expose borrowed
+diagnostics through `common.diagnostics`, valid until the cursor completion is freed.
+
+**Legacy migration:** existing ABI layouts are unchanged, but one-shot feed
+submission now returns an explicit error for unsupported checkpoints or Items
+payloads instead of silently returning incomplete output. Feed kinds passed to
+the singleton entry point use the feed path and its guards. Normal point
+operations and representable raw feed responses keep their existing behavior.
+
+---
+
+## Fault injection
+
+Native hosts can install the driver's existing fault-injection rules when they
+construct driver options. Existing callers keep using
+`cosmos_driver_options_config_t` and `cosmos_driver_options_build`; the additive
+surface is `cosmos_driver_options_config_v2_t` plus
+`cosmos_driver_options_build_v2`.
+
+Initialize every v2 record with its default function:
+
+```c
+cosmos_fault_injection_rule_t rule = cosmos_fault_injection_rule_default();
+cosmos_fault_injection_condition_t condition =
+    cosmos_fault_injection_condition_default();
+cosmos_fault_injection_result_t result =
+    cosmos_fault_injection_result_default();
+
+rule.id = SV("throttle-reads");
+condition.operation_type =
+    COSMOS_FAULT_INJECTION_OPERATION_TYPE_READ_ITEM;
+result.custom_status_code = 429;
+result.custom_sub_status = 3200;
+result.retry_after_ms = 0;
+rule.condition = &condition;
+rule.result = &result;
+rule.hit_limit = 1;
+
+cosmos_driver_options_config_v2_t config =
+    cosmos_driver_options_config_v2_default();
+config.fault_injection_rules = &rule;
+config.fault_injection_rules_len = 1;
+config.fault_injection_rule_stride = sizeof(rule);
+
+cosmos_driver_options_t *options = NULL;
+cosmos_status_code_t status =
+    cosmos_driver_options_build_v2(account, &config, &options);
+```
+
+Condition fields match the operation/resource pair, region, container id, and
+Gateway/GatewayV2 transport. Results support the driver's predefined HTTP and
+transport failures, custom HTTP status/substatus, response headers and body,
+retry-after, delay, probability, hit limit, start delay, and expiration.
+Custom responses take precedence over predefined errors. Values of `-1` mean
+"unset" for optional signed fields; zero remains a configured value.
+
+All records are size/version-prefixed, and the rule array is explicitly
+strided. A v1 host sets each record to ABI version 1 and uses
+`sizeof(cosmos_fault_injection_rule_t)` as the stride. The input records and
+every pointer reachable from them are borrowed only for
+`cosmos_driver_options_build_v2`: the function validates and copies rule ids,
+strings, headers, and body bytes before returning. The resulting options handle
+owns the rules and is freed with `cosmos_driver_options_free`. Driver creation
+clones rule ownership, so the host may free the options immediately after
+creating the driver. There are no independently allocated rule handles and no
+additional rule free function.
+
+Faults enter below retry/failover. Consequently, a retryable injected response
+may be consumed by normal driver retries, and hit limits count transport
+attempts rather than top-level submissions.
 
 ---
 
@@ -97,7 +355,7 @@ cosmos_status_code_t = (http_status << 16) | sub_status
 The synthetic sub-status codes the driver can produce are re-exported as
 `cosmos_sub_status_t` / `COSMOS_SUB_STATUS_*` constants in the generated header.
 These are a **named mirror of the driver's canonical
-`azure_data_cosmos_driver::error::SubStatusCode` constants** — the
+`azure_data_cosmos_driver::error::status_codes::substatus` constants** — the
 `CosmosSubStatus` enum in `src/error.rs` re-exports each value so C hosts get
 stable, documented constant names. A host can therefore switch on
 `sub == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT`, etc.
@@ -138,10 +396,10 @@ below for the production-shape guidance.
 > (`cosmos_operation_create_item`, `cosmos_operation_with_body`,
 > `cosmos_operation_options_builder_*`, `cosmos_driver_submit`, …) has been
 > **removed**. Operations are now described by a single flat,
-> self-describing `cosmos_CosmosOperationRequest` struct (kind-tagged via
+> self-describing `cosmos_operation_request_t` struct (kind-tagged via
 > `cosmos_CosmosOperationKind`, with per-call settings on the tri-state
 > `cosmos_CosmosOperationOptions` seeded by `cosmos_operation_options_default`)
-> and executed through exactly two entry points:
+> and executed through two entry points:
 >
 > - `cosmos_submit_singleton_operation` — point operations
 >   (create / read / replace / delete / patch item, database & container CRUD,
@@ -150,15 +408,36 @@ below for the production-shape guidance.
 >   (queries, read-all, change feed); resumes from and surfaces a continuation
 >   token.
 >
-> Both take `(driver, const cosmos_CosmosOperationRequest *request, queue,
+> Item PATCH, `patch_max_attempts`, and bounded tracking are fields on the
+> canonical `cosmos_operation_request_t`. Per-operation PATCH execution is
+> selected through `cosmos_operation_options_t.patch_strategy`; leave it
+> `COSMOS_PATCH_STRATEGY_UNSET` to inherit, or set `AUTO`, `CLIENT_SIDE`, or
+> `SERVER_SIDE`. Consuming language SDKs decide whether and how to expose PATCH
+> as preview. For unsafe instruction lists executed client-side, the driver
+> stores `_azsdkPatchTracking` on the item. Passing NULL/0 for
+> `patch_tracking_id` generates an ID for the invocation. Retrieve the effective
+> UUID from `cosmos_completion_patch_tracking_id`, then persist and reuse it for
+> application retries. The wrapper resolves the ID before starting the driver
+> operation, so it is available on the completion regardless of outcome. Entries use a
+> 5-minute retention window by default;
+> `patch_tracking_retention_seconds` configures a positive whole-second window.
+> The default capacity is 1024; when full, the oldest entry is evicted. Duplicate
+> suppression is bounded by the earlier of retention expiry or FIFO eviction.
+> Every writer must preserve the reserved property and marker order.
+>
+> Query-plan selection is per operation through
+> `cosmos_operation_options_t.query_plan_mode`. Leave it
+> `COSMOS_QUERY_PLAN_MODE_UNSET` for the `LocalPreferred` default, or set
+> `COSMOS_QUERY_PLAN_MODE_LOCAL_PREFERRED` or
+> `COSMOS_QUERY_PLAN_MODE_GATEWAY_ONLY` for an individual query. The
+> setting is per-query only; no client/runtime or environment defaults apply.
+>
+> The v1 functions take `(driver, const cosmos_operation_request_t *request, queue,
 > user_data, out_pre_error)` and return a `cosmos_operation_handle_t *`.
 > The checked-in [header](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/include/azurecosmosdriver.h) is the authoritative
-> source for the struct field layout and the 25 operation kinds. The C#
-> example below is written against this new API; the Java, Go, and Python
-> examples that follow are pending migration and currently show the **old**
-> factory flow — translate them field-for-field from the C# example and the
-> header until they are updated.
-
+> source for the struct field layout and the 25 operation kinds. All four
+> examples below use the current counted-input ABI and flat request layout.
+>
 > **Minimizing FFI round-trips.** Two parts of the surface let a host avoid
 > chatty per-field calls:
 >
@@ -167,19 +446,18 @@ below for the production-shape guidance.
 >   fill an array of `cosmos_partition_key_component_t` (each entry is a
 >   `kind` byte plus a nested `value` union whose active leg —
 >   `value.string_value` / `value.number_value` / `value.bool_value` — is
->   selected by `kind`) and point
+>   selected by `kind`). String values use
+>   `cosmos_string_view_t { data, len }`, so the declared UTF-8 byte range may
+>   contain embedded NULs and needs no terminator. Point
 >   `cosmos_CosmosOperationRequest.partition_key_components` /
 >   `partition_key_len` at it. When set, this takes precedence over the
 >   `partition_key` handle and is assembled in one shot. The pre-built handle
 >   path still works for reusable keys.
-> - **Snapshot views.** `cosmos_response_view(resp, &view)` fills a flat
->   `cosmos_response_view_t` (status, RU, the four header strings, both
->   continuation tokens, and the body pointer/len) in one call, replacing up
->   to eight accessors. `cosmos_completion_view(c, &view)` does the same for a
->   completion's scalars (outcome, status, user-data, cancel flag). Every
->   borrowed pointer in a view stays valid until the owning handle is freed.
->   The ownership-transfer accessors (`cosmos_completion_take_response` /
->   `_take_error`) are intentionally not part of the views.
+> - **Flat completions.** A drained `cosmos_completion_t` carries status and
+>   body directly; header-derived metadata (including RU) is in its typed
+>   `headers` array. All borrowed output data remains valid until
+>   `cosmos_completion_queue_free_completions`. The examples print status/body;
+>   inspect the response-header value's discriminant before reading its union.
 
 ### .NET (C# 12 / .NET 8+)
 
@@ -203,11 +481,11 @@ internal static class Cosmos
     [DllImport(Lib)] public static extern void    cosmos_completion_queue_free(IntPtr q);
     [DllImport(Lib)] public static extern void    cosmos_completion_queue_free_completions(ref Completion completions, UIntPtr count);
 
-    [DllImport(Lib)] public static extern int  cosmos_account_ref_with_master_key(byte[] endpoint, byte[] key, out IntPtr acct, out IntPtr err);
+    [DllImport(Lib)] public static extern int  cosmos_account_ref_with_master_key(StringView endpoint, StringView key, out IntPtr acct, out IntPtr err);
     [DllImport(Lib)] public static extern void cosmos_account_ref_free(IntPtr a);
     [DllImport(Lib)] public static extern int  cosmos_driver_get_or_create_blocking(IntPtr rt, IntPtr acct, IntPtr opts, out IntPtr drv, out IntPtr err);
     [DllImport(Lib)] public static extern void cosmos_driver_free(IntPtr d);
-    [DllImport(Lib)] public static extern int  cosmos_driver_resolve_container_blocking(IntPtr rt, IntPtr drv, byte[] db, byte[] coll, out IntPtr c, out IntPtr err);
+    [DllImport(Lib)] public static extern int  cosmos_driver_resolve_container_blocking(IntPtr rt, IntPtr drv, StringView db, StringView coll, out IntPtr c, out IntPtr err);
     [DllImport(Lib)] public static extern void cosmos_container_ref_free(IntPtr c);
 
     [DllImport(Lib)] public static extern int  cosmos_partition_key_create(ref PartitionKeyComponent components, UIntPtr len, out IntPtr pk);
@@ -220,12 +498,25 @@ internal static class Cosmos
     public const int OUTCOME_OK       = 0;
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct StringView
+    {
+        public IntPtr  data;
+        public UIntPtr len;
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    public struct PartitionKeyComponentValue
+    {
+        [FieldOffset(0)] public StringView string_value;
+        [FieldOffset(0)] public double number_value;
+        [FieldOffset(0)] public byte bool_value;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct PartitionKeyComponent
     {
-        public int    kind;          // 0 = STRING
-        public IntPtr string_value;  // char*
-        public double number_value;
-        public byte   bool_value;
+        public byte kind; // 0 = STRING
+        public PartitionKeyComponentValue value;
     }
 
     // Flat, self-describing request (mirrors `cosmos_operation_request_t`).
@@ -237,24 +528,29 @@ internal static class Cosmos
         public IntPtr    account;
         public IntPtr    database;
         public IntPtr    container;
-        public IntPtr    item_id;                  // char*
-        public IntPtr    resource_link;            // char*
+        public StringView item_id;
+        public StringView resource_link;
         public IntPtr    partition_key;
         public IntPtr    partition_key_components; // borrowed component array
         public UIntPtr   partition_key_len;
         public IntPtr    feed_range;
         public IntPtr    body;                     // const uint8_t* — NULL iff body_len == 0
         public UIntPtr   body_len;                 // 0 = no body
-        public IntPtr    session_token;            // char*
-        public IntPtr    activity_id;              // char*
-        public IntPtr    continuation_token;       // char*
+        public StringView session_token;
+        public StringView activity_id;
+        public StringView continuation_token;
         public int       max_item_count;           // < 0 = unset
+        public uint      max_fan_out;               // 0 = unset
         public byte      patch_max_attempts;       // 0 = unset
         public sbyte     populate_index_metrics;   // tri-state bool (0/1/2)
         public sbyte     populate_query_metrics;   // tri-state bool (0/1/2)
         public int       precondition_kind;        // 0 = none
-        public IntPtr    precondition_etag;        // char*
+        public StringView precondition_etag;
         public IntPtr    options;                  // cosmos_operation_options_t*
+        public StringView patch_tracking_id;              // UUID, NULL/0 = generate
+        public ushort    patch_tracking_capacity;          // 0 = driver default
+        public uint      patch_tracking_retention_seconds; // 0 = driver default
+        public IntPtr    options_snapshot;                 // NULL = no admission snapshot
     }
 
     // A drained completion. All pointers are borrowed until free_completions.
@@ -264,17 +560,9 @@ internal static class Cosmos
         public int     outcome;
         public int     status;
         public IntPtr  user_data;
-        public byte    was_cancel_requested;
         public ushort  http_status_code;
-        public int     sub_status;
-        public double  request_charge;
-        public long    retry_after_ms;
         public byte    is_from_wire;
         public IntPtr  message;
-        public IntPtr  activity_id;
-        public IntPtr  session_token;
-        public IntPtr  etag;
-        public IntPtr  continuation;
         public IntPtr  next_continuation;
         public IntPtr  backtrace;
         public IntPtr  headers;
@@ -293,7 +581,22 @@ internal static class Cosmos
     [DllImport(Lib)] public static extern void   cosmos_operation_handle_free(IntPtr h);
     [DllImport(Lib)] public static extern void   cosmos_error_free(IntPtr e);
 
-    public static byte[] Cstr(string s) => Encoding.UTF8.GetBytes(s + "\0");
+    public sealed class NativeText : IDisposable
+    {
+        public StringView View { get; private set; }
+        public NativeText(string text)
+        {
+            var bytes = Encoding.UTF8.GetBytes(text);
+            var data = Marshal.AllocHGlobal(Math.Max(1, bytes.Length));
+            Marshal.Copy(bytes, 0, data, bytes.Length);
+            View = new StringView { data = data, len = (UIntPtr)bytes.Length };
+        }
+        public void Dispose()
+        {
+            Marshal.FreeHGlobal(View.data);
+            View = default;
+        }
+    }
     public static int PackedHttp(int code) => (int)((uint)code >> 16);
     public static int PackedSub(int code) => (int)((uint)code & 0xffff);
     public static bool HasSub(int code) => PackedSub(code) != 0;
@@ -312,7 +615,7 @@ internal static class Cosmos
     }
 }
 
-internal sealed record OperationResult(int Status, int HttpStatusCode, int SubStatus, double RequestCharge, byte[] Body, string? Message);
+internal sealed record OperationResult(int Status, int HttpStatusCode, byte[] Body, string? Message);
 
 internal static class Program
 {
@@ -337,7 +640,7 @@ internal static class Program
                 Marshal.Copy(comp.body, body, 0, len);
             }
 
-            var result = new OperationResult(comp.status, comp.http_status_code, comp.sub_status, comp.request_charge, body, message);
+            var result = new OperationResult(comp.status, comp.http_status_code, body, message);
             if (comp.outcome != Cosmos.OUTCOME_OK)
             {
                 throw new InvalidOperationException($"operation failed ({Cosmos.FormatStatus(result.Status)}): {result.Message}");
@@ -360,20 +663,35 @@ internal static class Program
         var q = Cosmos.cosmos_completion_queue_create(rt, IntPtr.Zero);
 
         // 2. Account → driver → container
+        using var endpoint = new Cosmos.NativeText("https://localhost:8081/");
+        using var key = new Cosmos.NativeText("C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==");
+        using var database = new Cosmos.NativeText("sample-db");
+        using var collection = new Cosmos.NativeText("sample-coll");
+        using var itemId = new Cosmos.NativeText("doc1");
         Cosmos.CheckStatus(Cosmos.cosmos_account_ref_with_master_key(
-            Cosmos.Cstr("https://localhost:8081/"),
-            Cosmos.Cstr("C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="),
+            endpoint.View, key.View,
             out var acct, out err), err, "account ref");
         Cosmos.CheckStatus(Cosmos.cosmos_driver_get_or_create_blocking(rt, acct, IntPtr.Zero, out var drv, out err), err, "driver create");
-        Cosmos.CheckStatus(Cosmos.cosmos_driver_resolve_container_blocking(rt, drv, Cosmos.Cstr("sample-db"), Cosmos.Cstr("sample-coll"), out var coll, out err), err, "resolve container");
+        Cosmos.CheckStatus(Cosmos.cosmos_driver_resolve_container_blocking(rt, drv, database.View, collection.View, out var coll, out err), err, "resolve container");
 
         // 3. Partition key
-        var pkBytes = Cosmos.Cstr("tenant-42");
+        var pkBytes = Encoding.UTF8.GetBytes("tenant-42");
         var pkPin = GCHandle.Alloc(pkBytes, GCHandleType.Pinned);
         IntPtr pk;
         try
         {
-            var component = new Cosmos.PartitionKeyComponent { kind = 0, string_value = pkPin.AddrOfPinnedObject() };
+            var component = new Cosmos.PartitionKeyComponent
+            {
+                kind = 0,
+                value = new Cosmos.PartitionKeyComponentValue
+                {
+                    string_value = new Cosmos.StringView
+                    {
+                        data = pkPin.AddrOfPinnedObject(),
+                        len = (UIntPtr)pkBytes.Length,
+                    },
+                },
+            };
             Cosmos.CheckStatus(Cosmos.cosmos_partition_key_create(ref component, (UIntPtr)1, out pk), IntPtr.Zero, "partition key create");
         }
         finally { pkPin.Free(); }
@@ -388,17 +706,18 @@ internal static class Program
                 kind           = Cosmos.KIND_CREATE_ITEM,
                 container      = coll,
                 partition_key  = pk,
+                item_id        = itemId.View,
                 body           = bodyPin.AddrOfPinnedObject(),
                 body_len       = (UIntPtr)body.Length,
                 max_item_count = -1,
             };
             var create = SubmitAndWait(drv, ref req, q);
-            Console.WriteLine($"CREATE status={create.HttpStatusCode} ru={create.RequestCharge:F2}");
+            Console.WriteLine($"CREATE status={create.HttpStatusCode}");
         }
         finally { bodyPin.Free(); }
 
         // 5. READ — item-id addressed, no body.
-        var idBytes = Cosmos.Cstr("doc1");
+        var idBytes = Encoding.UTF8.GetBytes("doc1");
         var idPin = GCHandle.Alloc(idBytes, GCHandleType.Pinned);
         try
         {
@@ -407,7 +726,7 @@ internal static class Program
                 kind           = Cosmos.KIND_READ_ITEM,
                 container      = coll,
                 partition_key  = pk,
-                item_id        = idPin.AddrOfPinnedObject(),
+                item_id        = new Cosmos.StringView { data = idPin.AddrOfPinnedObject(), len = (UIntPtr)idBytes.Length },
                 max_item_count = -1,
             };
             var read = SubmitAndWait(drv, ref req, q);
@@ -419,7 +738,7 @@ internal static class Program
                 kind           = Cosmos.KIND_DELETE_ITEM,
                 container      = coll,
                 partition_key  = pk,
-                item_id        = idPin.AddrOfPinnedObject(),
+                item_id        = new Cosmos.StringView { data = idPin.AddrOfPinnedObject(), len = (UIntPtr)idBytes.Length },
                 max_item_count = -1,
             };
             var delete = SubmitAndWait(drv, ref del, q);
@@ -455,7 +774,21 @@ public final class CosmosSample {
     static MethodHandle h(String name, FunctionDescriptor fd) {
         return LINKER.downcallHandle(LOOKUP.find(name).orElseThrow(), fd);
     }
-    static MemorySegment cstr(Arena a, String s) { return a.allocateUtf8String(s); }
+    // This example targets 64-bit LP64/LLP64; size_t and pointers are 8 bytes.
+    static final GroupLayout STRING_VIEW = MemoryLayout.structLayout(
+        ADDRESS.withName("data"), JAVA_LONG.withName("len"));
+    static {
+        if (ADDRESS.byteSize() != Long.BYTES) throw new UnsupportedOperationException("64-bit example");
+    }
+    static MemorySegment text(Arena arena, String value) {
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        MemorySegment data = arena.allocate(Math.max(1, bytes.length));
+        MemorySegment.copy(bytes, 0, data, JAVA_BYTE, 0, bytes.length);
+        MemorySegment view = arena.allocate(STRING_VIEW);
+        view.set(ADDRESS, 0, data);
+        view.set(JAVA_LONG, ADDRESS.byteSize(), (long) bytes.length);
+        return view;
+    }
 
     static final MethodHandle RT_BUILD         = h("cosmos_runtime_build", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS));
     static final MethodHandle RT_FREE          = h("cosmos_runtime_free", FunctionDescriptor.ofVoid(ADDRESS));
@@ -463,11 +796,11 @@ public final class CosmosSample {
     static final MethodHandle CQ_WAIT          = h("cosmos_completion_queue_wait", FunctionDescriptor.of(JAVA_LONG, ADDRESS, ADDRESS, JAVA_LONG, JAVA_INT));
     static final MethodHandle CQ_FREE          = h("cosmos_completion_queue_free", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle CQ_FREE_COMPS    = h("cosmos_completion_queue_free_completions", FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG));
-    static final MethodHandle ACCT_WITH_KEY    = h("cosmos_account_ref_with_master_key", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS, ADDRESS));
+    static final MethodHandle ACCT_WITH_KEY    = h("cosmos_account_ref_with_master_key", FunctionDescriptor.of(JAVA_INT, STRING_VIEW, STRING_VIEW, ADDRESS, ADDRESS));
     static final MethodHandle ACCT_FREE        = h("cosmos_account_ref_free", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle DRV_GOC_BLK      = h("cosmos_driver_get_or_create_blocking", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS));
     static final MethodHandle DRV_FREE         = h("cosmos_driver_free", FunctionDescriptor.ofVoid(ADDRESS));
-    static final MethodHandle RESOLVE_BLK      = h("cosmos_driver_resolve_container_blocking", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS));
+    static final MethodHandle RESOLVE_BLK      = h("cosmos_driver_resolve_container_blocking", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, STRING_VIEW, STRING_VIEW, ADDRESS, ADDRESS));
     static final MethodHandle CONTAINER_FREE   = h("cosmos_container_ref_free", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle PK_CREATE        = h("cosmos_partition_key_create", FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_LONG, ADDRESS));
     static final MethodHandle PK_FREE          = h("cosmos_partition_key_free", FunctionDescriptor.ofVoid(ADDRESS));
@@ -482,13 +815,14 @@ public final class CosmosSample {
     static final int OUTCOME_OK = 0;
 
     // Layout of cosmos_partition_key_component_t on LP64/LLP64.
-    static final GroupLayout PK_COMPONENT = MemoryLayout.structLayout(
-        JAVA_INT.withName("kind"),
-        MemoryLayout.paddingLayout(4),
-        ADDRESS.withName("string_value"),
+    static final UnionLayout PK_VALUE = MemoryLayout.unionLayout(
+        STRING_VIEW.withName("string_value"),
         JAVA_DOUBLE.withName("number_value"),
-        JAVA_BYTE.withName("bool_value"),
-        MemoryLayout.paddingLayout(7));
+        JAVA_BYTE.withName("bool_value"));
+    static final GroupLayout PK_COMPONENT = MemoryLayout.structLayout(
+        JAVA_BYTE.withName("kind"),
+        MemoryLayout.paddingLayout(7),
+        PK_VALUE.withName("value"));
 
     // Layout of the flat cosmos_operation_request_t. Field order MUST match the
     // header; cbindgen emits the C struct in declaration order.
@@ -498,45 +832,41 @@ public final class CosmosSample {
         ADDRESS.withName("account"),
         ADDRESS.withName("database"),
         ADDRESS.withName("container"),
-        ADDRESS.withName("item_id"),
-        ADDRESS.withName("resource_link"),
+        STRING_VIEW.withName("item_id"),
+        STRING_VIEW.withName("resource_link"),
         ADDRESS.withName("partition_key"),
         ADDRESS.withName("partition_key_components"),
         JAVA_LONG.withName("partition_key_len"),
         ADDRESS.withName("feed_range"),
         ADDRESS.withName("body"),
         JAVA_LONG.withName("body_len"),
-        ADDRESS.withName("session_token"),
-        ADDRESS.withName("activity_id"),
-        ADDRESS.withName("continuation_token"),
+        STRING_VIEW.withName("session_token"),
+        STRING_VIEW.withName("activity_id"),
+        STRING_VIEW.withName("continuation_token"),
         JAVA_INT.withName("max_item_count"),
+        JAVA_INT.withName("max_fan_out"),
         JAVA_BYTE.withName("patch_max_attempts"),
         JAVA_BYTE.withName("populate_index_metrics"),
         JAVA_BYTE.withName("populate_query_metrics"),
         MemoryLayout.paddingLayout(1),
         JAVA_INT.withName("precondition_kind"),
-        MemoryLayout.paddingLayout(4),
-        ADDRESS.withName("precondition_etag"),
-        ADDRESS.withName("options"));
+        STRING_VIEW.withName("precondition_etag"),
+        ADDRESS.withName("options"),
+        STRING_VIEW.withName("patch_tracking_id"),
+        JAVA_SHORT.withName("patch_tracking_capacity"),
+        MemoryLayout.paddingLayout(2),
+        JAVA_INT.withName("patch_tracking_retention_seconds"),
+        ADDRESS.withName("options_snapshot"));
 
     // Layout of cosmos_completion_t. Pointers and intptr_t/uintptr_t are 8 bytes.
     static final GroupLayout COMPLETION = MemoryLayout.structLayout(
         JAVA_INT.withName("outcome"),
         JAVA_INT.withName("status"),
         JAVA_LONG.withName("user_data"),
-        JAVA_BYTE.withName("was_cancel_requested"),
-        MemoryLayout.paddingLayout(1),
         JAVA_SHORT.withName("http_status_code"),
-        JAVA_INT.withName("sub_status"),
-        JAVA_DOUBLE.withName("request_charge"),
-        JAVA_LONG.withName("retry_after_ms"),
         JAVA_BYTE.withName("is_from_wire"),
-        MemoryLayout.paddingLayout(7),
+        MemoryLayout.paddingLayout(5),
         ADDRESS.withName("message"),
-        ADDRESS.withName("activity_id"),
-        ADDRESS.withName("session_token"),
-        ADDRESS.withName("etag"),
-        ADDRESS.withName("continuation"),
         ADDRESS.withName("next_continuation"),
         ADDRESS.withName("backtrace"),
         ADDRESS.withName("headers"),
@@ -549,7 +879,14 @@ public final class CosmosSample {
         ADDRESS.withName("backing"));
 
     static final long PK_KIND = PK_COMPONENT.byteOffset(MemoryLayout.PathElement.groupElement("kind"));
-    static final long PK_STRING = PK_COMPONENT.byteOffset(MemoryLayout.PathElement.groupElement("string_value"));
+    static final long PK_STRING_DATA = PK_COMPONENT.byteOffset(
+        MemoryLayout.PathElement.groupElement("value"),
+        MemoryLayout.PathElement.groupElement("string_value"),
+        MemoryLayout.PathElement.groupElement("data"));
+    static final long PK_STRING_LEN = PK_COMPONENT.byteOffset(
+        MemoryLayout.PathElement.groupElement("value"),
+        MemoryLayout.PathElement.groupElement("string_value"),
+        MemoryLayout.PathElement.groupElement("len"));
     static final long REQ_KIND = REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("kind"));
     static final long REQ_CONTAINER = REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("container"));
     static final long REQ_ITEM_ID = REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("item_id"));
@@ -560,13 +897,11 @@ public final class CosmosSample {
     static final long C_OUTCOME = COMPLETION.byteOffset(MemoryLayout.PathElement.groupElement("outcome"));
     static final long C_STATUS = COMPLETION.byteOffset(MemoryLayout.PathElement.groupElement("status"));
     static final long C_HTTP_STATUS = COMPLETION.byteOffset(MemoryLayout.PathElement.groupElement("http_status_code"));
-    static final long C_SUB_STATUS = COMPLETION.byteOffset(MemoryLayout.PathElement.groupElement("sub_status"));
-    static final long C_RU = COMPLETION.byteOffset(MemoryLayout.PathElement.groupElement("request_charge"));
     static final long C_MESSAGE = COMPLETION.byteOffset(MemoryLayout.PathElement.groupElement("message"));
     static final long C_BODY = COMPLETION.byteOffset(MemoryLayout.PathElement.groupElement("body"));
     static final long C_BODY_LEN = COMPLETION.byteOffset(MemoryLayout.PathElement.groupElement("body_len"));
 
-    record Result(int status, int httpStatus, int subStatus, double requestCharge, byte[] body) {}
+    record Result(int status, int httpStatus, byte[] body) {}
 
     static int packedHttp(int code) { return code >>> 16; }
     static int packedSub(int code) { return code & 0xffff; }
@@ -603,7 +938,7 @@ public final class CosmosSample {
         req.set(ADDRESS, REQ_CONTAINER, coll);
         req.set(ADDRESS, REQ_PARTITION_KEY, pk);
         if (itemId != null && !itemId.equals(MemorySegment.NULL)) {
-            req.set(ADDRESS, REQ_ITEM_ID, itemId);
+            MemorySegment.copy(itemId, 0, req, REQ_ITEM_ID, STRING_VIEW.byteSize());
         }
         if (body != null && body.length > 0) {
             MemorySegment bodySeg = arena.allocate(body.length);
@@ -637,8 +972,6 @@ public final class CosmosSample {
             int outcome = comp.get(JAVA_INT, C_OUTCOME);
             int status = comp.get(JAVA_INT, C_STATUS);
             int http = Short.toUnsignedInt(comp.get(JAVA_SHORT, C_HTTP_STATUS));
-            int sub = comp.get(JAVA_INT, C_SUB_STATUS);
-            double ru = comp.get(JAVA_DOUBLE, C_RU);
             MemorySegment msgPtr = comp.get(ADDRESS, C_MESSAGE);
             String message = msgPtr.equals(MemorySegment.NULL) ? "" : msgPtr.reinterpret(Long.MAX_VALUE).getUtf8String(0);
             MemorySegment bodyPtr = comp.get(ADDRESS, C_BODY);
@@ -650,7 +983,7 @@ public final class CosmosSample {
             if (outcome != OUTCOME_OK) {
                 throw new RuntimeException(name + " failed (" + formatStatus(status) + "): " + message);
             }
-            return new Result(status, http, sub, ru, body);
+            return new Result(status, http, body);
         } finally {
             CQ_FREE_COMPS.invokeExact(comp, n);
         }
@@ -678,8 +1011,8 @@ public final class CosmosSample {
                 MemorySegment outAcct = outAddress(arena);
                 outErr = outAddress(arena);
                 checkStatus((int) ACCT_WITH_KEY.invokeExact(
-                    cstr(arena, "https://localhost:8081/"),
-                    cstr(arena, "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="),
+                    text(arena, "https://localhost:8081/"),
+                    text(arena, "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="),
                     outAcct, outErr), outErr, "account ref");
                 acct = outAcct.get(ADDRESS, 0);
 
@@ -690,13 +1023,17 @@ public final class CosmosSample {
 
                 MemorySegment outColl = outAddress(arena);
                 outErr = outAddress(arena);
-                checkStatus((int) RESOLVE_BLK.invokeExact(rt, drv, cstr(arena, "sample-db"), cstr(arena, "sample-coll"), outColl, outErr), outErr, "resolve container");
+                checkStatus((int) RESOLVE_BLK.invokeExact(rt, drv, text(arena, "sample-db"), text(arena, "sample-coll"), outColl, outErr), outErr, "resolve container");
                 coll = outColl.get(ADDRESS, 0);
 
                 // 3. Partition key
                 MemorySegment component = arena.allocate(PK_COMPONENT);
-                component.set(JAVA_INT, PK_KIND, 0);
-                component.set(ADDRESS, PK_STRING, cstr(arena, "tenant-42"));
+                byte[] pkBytes = "tenant-42".getBytes(StandardCharsets.UTF_8);
+                MemorySegment pkData = arena.allocate(Math.max(1, pkBytes.length));
+                MemorySegment.copy(pkBytes, 0, pkData, JAVA_BYTE, 0, pkBytes.length);
+                component.set(JAVA_BYTE, PK_KIND, (byte) 0);
+                component.set(ADDRESS, PK_STRING_DATA, pkData);
+                component.set(JAVA_LONG, PK_STRING_LEN, (long) pkBytes.length);
                 MemorySegment outPk = outAddress(arena);
                 checkStatus((int) PK_CREATE.invokeExact(component, 1L, outPk), MemorySegment.NULL, "partition key create");
                 pk = outPk.get(ADDRESS, 0);
@@ -704,15 +1041,15 @@ public final class CosmosSample {
                 byte[] body = "{\"id\":\"doc1\",\"pk\":\"tenant-42\",\"name\":\"hello\"}".getBytes(StandardCharsets.UTF_8);
 
                 // 4. CREATE — host SDK serializes its own JSON (Jackson, Gson, ...).
-                Result create = submit(arena, drv, q, itemRequest(arena, KIND_CREATE_ITEM, coll, pk, MemorySegment.NULL, body), "CREATE");
-                System.out.printf("CREATE status=%d ru=%.2f%n", create.httpStatus(), create.requestCharge());
+                Result create = submit(arena, drv, q, itemRequest(arena, KIND_CREATE_ITEM, coll, pk, text(arena, "doc1"), body), "CREATE");
+                System.out.printf("CREATE status=%d%n", create.httpStatus());
 
                 // 5. READ.
-                Result read = submit(arena, drv, q, itemRequest(arena, KIND_READ_ITEM, coll, pk, cstr(arena, "doc1"), null), "READ");
+                Result read = submit(arena, drv, q, itemRequest(arena, KIND_READ_ITEM, coll, pk, text(arena, "doc1"), null), "READ");
                 System.out.printf("READ status=%d body=%s%n", read.httpStatus(), new String(read.body(), StandardCharsets.UTF_8));
 
                 // 6. DELETE.
-                Result delete = submit(arena, drv, q, itemRequest(arena, KIND_DELETE_ITEM, coll, pk, cstr(arena, "doc1"), null), "DELETE");
+                Result delete = submit(arena, drv, q, itemRequest(arena, KIND_DELETE_ITEM, coll, pk, text(arena, "doc1"), null), "DELETE");
                 System.out.printf("DELETE status=%d%n", delete.httpStatus());
             } finally {
                 // 7. Tear-down (LIFO)
@@ -739,6 +1076,16 @@ package main
 #cgo LDFLAGS: -lazurecosmosdriver
 #include <azurecosmosdriver.h>
 #include <stdlib.h>
+
+static inline cosmos_partition_key_component_t string_partition_key_component(
+    const uint8_t *data, uintptr_t len)
+{
+    cosmos_partition_key_component_t component = {0};
+    component.kind = COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING;
+    component.value.string_value.data = data;
+    component.value.string_value.len = len;
+    return component;
+}
 */
 import "C"
 
@@ -765,9 +1112,18 @@ const (
 type result struct {
     status        C.cosmos_status_code_t
     httpStatus    uint16
-    subStatus     int32
-    requestCharge float64
     body          []byte
+}
+
+// Allocate in C memory, including a non-NULL allocation for explicitly empty text.
+func text(value string) (C.cosmos_string_view_t, func()) {
+    bytes := []byte(value)
+    length := len(bytes)
+    if length == 0 { bytes = []byte{0} }
+    data := C.CBytes(bytes)
+    return C.cosmos_string_view_t{
+        data: (*C.uint8_t)(data), len: C.uintptr_t(length),
+    }, func() { C.free(data) }
 }
 
 func packedHTTP(code C.cosmos_status_code_t) uint16 {
@@ -829,8 +1185,6 @@ func submit(drv *C.cosmos_driver_t, q *C.cosmos_completion_queue_t, req *C.cosmo
     r := result{
         status:        C.cosmos_status_code_t(comp.status),
         httpStatus:    uint16(comp.http_status_code),
-        subStatus:     int32(comp.sub_status),
-        requestCharge: float64(comp.request_charge),
     }
     if comp.body != nil && comp.body_len > 0 {
         r.body = C.GoBytes(unsafe.Pointer(comp.body), C.int(comp.body_len))
@@ -848,7 +1202,7 @@ func submit(drv *C.cosmos_driver_t, q *C.cosmos_completion_queue_t, req *C.cosmo
 // itemRequest builds a flat request for an item operation. partition_key,
 // item_id, and body are all borrowed by the submit call, so the caller keeps
 // ownership and frees them after submit returns.
-func itemRequest(kind C.int32_t, container *C.cosmos_container_ref_t, pk *C.cosmos_partition_key_t, itemID *C.char, body []byte) C.cosmos_operation_request_t {
+func itemRequest(kind C.int32_t, container *C.cosmos_container_ref_t, pk *C.cosmos_partition_key_t, itemID C.cosmos_string_view_t, body []byte) (C.cosmos_operation_request_t, func()) {
     req := C.cosmos_operation_request_t{
         kind:              kind,
         container:         container,
@@ -857,11 +1211,13 @@ func itemRequest(kind C.int32_t, container *C.cosmos_container_ref_t, pk *C.cosm
         max_item_count:    -1,
         precondition_kind: 0,
     }
+    var data unsafe.Pointer
     if len(body) > 0 {
-        req.body = (*C.uint8_t)(unsafe.Pointer(&body[0]))
+        data = C.CBytes(body) // No Go pointer stored inside the request passed to C.
+        req.body = (*C.uint8_t)(data)
         req.body_len = C.uintptr_t(len(body))
     }
-    return req
+    return req, func() { C.free(data) }
 }
 
 func main() {
@@ -876,13 +1232,13 @@ func main() {
     defer C.cosmos_completion_queue_free(q)
 
     // 2. Account -> driver -> container.
-    endp := C.CString("https://localhost:8081/")
-    key := C.CString("C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==")
+    endp, freeEndpoint := text("https://localhost:8081/")
+    key, freeKey := text("C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==")
     var acct *C.cosmos_account_ref_t
     err = nil
     rc := C.cosmos_account_ref_with_master_key(endp, key, &acct, &err)
-    C.free(unsafe.Pointer(endp))
-    C.free(unsafe.Pointer(key))
+    freeEndpoint()
+    freeKey()
     checkStatus(rc, err, "account ref")
     defer C.cosmos_account_ref_free(acct)
 
@@ -891,50 +1247,56 @@ func main() {
     checkStatus(C.cosmos_driver_get_or_create_blocking(rt, acct, nil, &drv, &err), err, "driver create")
     defer C.cosmos_driver_free(drv)
 
-    db := C.CString("sample-db")
-    collName := C.CString("sample-coll")
+    db, freeDatabase := text("sample-db")
+    collName, freeCollection := text("sample-coll")
     var container *C.cosmos_container_ref_t
     err = nil
     rc = C.cosmos_driver_resolve_container_blocking(rt, drv, db, collName, &container, &err)
-    C.free(unsafe.Pointer(db))
-    C.free(unsafe.Pointer(collName))
+    freeDatabase()
+    freeCollection()
     checkStatus(rc, err, "resolve container")
     defer C.cosmos_container_ref_free(container)
 
     // 3. Partition key.
-    pkVal := C.CString("tenant-42")
-    component := C.cosmos_partition_key_component_t{kind: 0, string_value: pkVal}
+    pkText, freePKText := text("tenant-42")
+    component := C.string_partition_key_component(
+        pkText.data,
+        pkText.len,
+    )
     var pk *C.cosmos_partition_key_t
     rc = C.cosmos_partition_key_create(&component, C.uintptr_t(1), &pk)
-    C.free(unsafe.Pointer(pkVal))
+    freePKText()
     if rc != 0 {
         log.Fatalf("partition key create failed: %s", formatStatus(rc))
     }
     defer C.cosmos_partition_key_free(pk)
 
-    docID := C.CString("doc1")
-    defer C.free(unsafe.Pointer(docID))
+    docID, freeID := text("doc1")
+    defer freeID()
 
     // 4. CREATE.
     body, _ := json.Marshal(Doc{ID: "doc1", Pk: "tenant-42", Name: "hello"})
-    createReq := itemRequest(C.int32_t(kindCreateItem), container, pk, nil, body)
+    createReq, freeCreate := itemRequest(C.int32_t(kindCreateItem), container, pk, docID, body)
     create, errGo := submit(drv, q, &createReq)
+    freeCreate()
     if errGo != nil {
         log.Fatalf("CREATE: %v", errGo)
     }
-    fmt.Printf("CREATE status=%d ru=%.2f\n", create.httpStatus, create.requestCharge)
+    fmt.Printf("CREATE status=%d\n", create.httpStatus)
 
     // 5. READ.
-    readReq := itemRequest(C.int32_t(kindReadItem), container, pk, docID, nil)
+    readReq, freeRead := itemRequest(C.int32_t(kindReadItem), container, pk, docID, nil)
     read, errGo := submit(drv, q, &readReq)
+    freeRead()
     if errGo != nil {
         log.Fatalf("READ: %v", errGo)
     }
     fmt.Printf("READ status=%d body=%s\n", read.httpStatus, read.body)
 
     // 6. DELETE.
-    deleteReq := itemRequest(C.int32_t(kindDeleteItem), container, pk, docID, nil)
+    deleteReq, freeDelete := itemRequest(C.int32_t(kindDeleteItem), container, pk, docID, nil)
     deleteResult, errGo := submit(drv, q, &deleteReq)
+    freeDelete()
     if errGo != nil {
         log.Fatalf("DELETE: %v", errGo)
     }
@@ -998,12 +1360,34 @@ def format_status(code: int) -> str:
     return f"http={packed_http(code)} raw={code}"
 
 
-class CosmosPartitionKeyComponent(ctypes.Structure):
+class CosmosStringView(ctypes.Structure):
     _fields_ = [
-        ("kind", ctypes.c_int32),
-        ("string_value", c_char_p),
+        ("data", u8_p),
+        ("len", size_t),
+    ]
+
+def text(value):
+    if value is None:
+        return CosmosStringView()
+    data = value.encode("utf-8")
+    buffer = ctypes.create_string_buffer(data, max(1, len(data)))
+    result = CosmosStringView(ctypes.cast(buffer, u8_p), len(data))
+    result._buffer = buffer
+    return result
+
+
+class CosmosPartitionKeyComponentValue(ctypes.Union):
+    _fields_ = [
+        ("string_value", CosmosStringView),
         ("number_value", ctypes.c_double),
         ("bool_value", ctypes.c_uint8),
+    ]
+
+
+class CosmosPartitionKeyComponent(ctypes.Structure):
+    _fields_ = [
+        ("kind", ctypes.c_uint8),
+        ("value", CosmosPartitionKeyComponentValue),
     ]
 
 
@@ -1015,24 +1399,29 @@ class CosmosOperationRequest(ctypes.Structure):
         ("account", void_p),
         ("database", void_p),
         ("container", void_p),
-        ("item_id", c_char_p),
-        ("resource_link", c_char_p),
+        ("item_id", CosmosStringView),
+        ("resource_link", CosmosStringView),
         ("partition_key", void_p),
         ("partition_key_components", ctypes.POINTER(CosmosPartitionKeyComponent)),
         ("partition_key_len", size_t),
         ("feed_range", void_p),
         ("body", u8_p),
         ("body_len", size_t),
-        ("session_token", c_char_p),
-        ("activity_id", c_char_p),
-        ("continuation_token", c_char_p),
+        ("session_token", CosmosStringView),
+        ("activity_id", CosmosStringView),
+        ("continuation_token", CosmosStringView),
         ("max_item_count", ctypes.c_int32),
+        ("max_fan_out", ctypes.c_uint32),
         ("patch_max_attempts", ctypes.c_uint8),
         ("populate_index_metrics", ctypes.c_int8),
         ("populate_query_metrics", ctypes.c_int8),
         ("precondition_kind", ctypes.c_int32),
-        ("precondition_etag", c_char_p),
+        ("precondition_etag", CosmosStringView),
         ("options", void_p),
+        ("patch_tracking_id", CosmosStringView),
+        ("patch_tracking_capacity", ctypes.c_uint16),
+        ("patch_tracking_retention_seconds", ctypes.c_uint32),
+        ("options_snapshot", void_p),
     ]
 
 
@@ -1042,17 +1431,9 @@ class CosmosCompletion(ctypes.Structure):
         ("outcome", ctypes.c_int32),
         ("status", ctypes.c_int32),
         ("user_data", intptr_t),
-        ("was_cancel_requested", ctypes.c_uint8),
         ("http_status_code", ctypes.c_uint16),
-        ("sub_status", ctypes.c_int32),
-        ("request_charge", ctypes.c_double),
-        ("retry_after_ms", ctypes.c_int64),
         ("is_from_wire", ctypes.c_uint8),
         ("message", c_char_p),
-        ("activity_id", c_char_p),
-        ("session_token", c_char_p),
-        ("etag", c_char_p),
-        ("continuation", c_char_p),
         ("next_continuation", c_char_p),
         ("backtrace", c_char_p),
         ("headers", void_p),
@@ -1076,11 +1457,11 @@ _cq_create             = _decl("cosmos_completion_queue_create", [void_p, void_p
 _cq_wait               = _decl("cosmos_completion_queue_wait", [void_p, comp_p, size_t, ctypes.c_uint32], size_t)
 _cq_free               = _decl("cosmos_completion_queue_free", [void_p], None)
 _cq_free_completions   = _decl("cosmos_completion_queue_free_completions", [comp_p, size_t], None)
-_acct_with_key         = _decl("cosmos_account_ref_with_master_key", [c_char_p, c_char_p, ctypes.POINTER(void_p), ctypes.POINTER(void_p)], ctypes.c_int32)
+_acct_with_key         = _decl("cosmos_account_ref_with_master_key", [CosmosStringView, CosmosStringView, ctypes.POINTER(void_p), ctypes.POINTER(void_p)], ctypes.c_int32)
 _acct_free             = _decl("cosmos_account_ref_free", [void_p], None)
 _driver_goc_blk        = _decl("cosmos_driver_get_or_create_blocking", [void_p, void_p, void_p, ctypes.POINTER(void_p), ctypes.POINTER(void_p)], ctypes.c_int32)
 _driver_free           = _decl("cosmos_driver_free", [void_p], None)
-_resolve_container_blk = _decl("cosmos_driver_resolve_container_blocking", [void_p, void_p, c_char_p, c_char_p, ctypes.POINTER(void_p), ctypes.POINTER(void_p)], ctypes.c_int32)
+_resolve_container_blk = _decl("cosmos_driver_resolve_container_blocking", [void_p, void_p, CosmosStringView, CosmosStringView, ctypes.POINTER(void_p), ctypes.POINTER(void_p)], ctypes.c_int32)
 _container_free        = _decl("cosmos_container_ref_free", [void_p], None)
 _pk_create             = _decl("cosmos_partition_key_create", [component_p, size_t, ctypes.POINTER(void_p)], ctypes.c_int32)
 _pk_free               = _decl("cosmos_partition_key_free", [void_p], None)
@@ -1126,8 +1507,6 @@ def submit(drv, q, req):
         return {
             "status": comp.status,
             "http_status": comp.http_status_code,
-            "sub_status": comp.sub_status,
-            "request_charge": comp.request_charge,
             "body": body,
         }
     finally:
@@ -1141,7 +1520,8 @@ def item_request(kind, container, pk, item_id=None, body=b""):
     req.kind = kind
     req.container = container
     req.partition_key = pk
-    req.item_id = item_id
+    req._item_text = text(item_id)
+    req.item_id = req._item_text
     req.max_item_count = -1
     if body:
         buf = (ctypes.c_uint8 * len(body)).from_buffer_copy(body)
@@ -1169,30 +1549,40 @@ def main() -> int:
         # 2. Account -> driver -> container.
         err = void_p()
         check_status(_acct_with_key(
-            b"https://localhost:8081/",
-            b"C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
+            text("https://localhost:8081/"),
+            text("C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="),
             ctypes.byref(acct), ctypes.byref(err),
         ), err, "account ref")
         err = void_p()
         check_status(_driver_goc_blk(rt, acct, None, ctypes.byref(drv), ctypes.byref(err)), err, "driver create")
         err = void_p()
-        check_status(_resolve_container_blk(rt, drv, b"sample-db", b"sample-coll", ctypes.byref(container), ctypes.byref(err)), err, "resolve container")
+        check_status(_resolve_container_blk(rt, drv, text("sample-db"), text("sample-coll"), ctypes.byref(container), ctypes.byref(err)), err, "resolve container")
 
         # 3. Partition key.
-        component = CosmosPartitionKeyComponent(kind=0, string_value=b"tenant-42")
+        pk_bytes = b"tenant-42"
+        pk_buffer = ctypes.create_string_buffer(pk_bytes, max(1, len(pk_bytes)))
+        component = CosmosPartitionKeyComponent(
+            kind=0,
+            value=CosmosPartitionKeyComponentValue(
+                string_value=CosmosStringView(
+                    data=ctypes.cast(pk_buffer, u8_p),
+                    len=len(pk_bytes),
+                ),
+            ),
+        )
         check_status(_pk_create(ctypes.byref(component), 1, ctypes.byref(pk)), None, "partition key create")
 
         # 4. CREATE.
         body = json.dumps({"id": "doc1", "pk": "tenant-42", "name": "hello"}).encode("utf-8")
-        create = submit(drv, q, item_request(KIND_CREATE_ITEM, container, pk, body=body))
-        print(f"CREATE status={create['http_status']} ru={create['request_charge']:.2f}")
+        create = submit(drv, q, item_request(KIND_CREATE_ITEM, container, pk, "doc1", body=body))
+        print(f"CREATE status={create['http_status']}")
 
         # 5. READ.
-        read = submit(drv, q, item_request(KIND_READ_ITEM, container, pk, b"doc1"))
+        read = submit(drv, q, item_request(KIND_READ_ITEM, container, pk, "doc1"))
         print(f"READ status={read['http_status']} body={read['body'].decode('utf-8')}")
 
         # 6. DELETE.
-        delete = submit(drv, q, item_request(KIND_DELETE_ITEM, container, pk, b"doc1"))
+        delete = submit(drv, q, item_request(KIND_DELETE_ITEM, container, pk, "doc1"))
         print(f"DELETE status={delete['http_status']}")
         return 0
     finally:
@@ -1258,14 +1648,25 @@ if __name__ == "__main__":
    `cosmos_operation_request_t.body` / `.body_len`.
    Bytes are **copied** before the submit call returns; callers may release
    their source buffer immediately.
-6. **Diagnostics-on-error** is currently only available via the rich
-   `cosmos_error_t` on `outcome == ERROR` completions. The success-path
-   `cosmos_response_diagnostics` accessor is a planned follow-up.
-7. **Single-runtime caching.** Drivers are cached by endpoint URL on the
-   `cosmos_runtime_t` that created them. Multiple `cosmos_runtime_t`
-   instances do **not** share their caches — see
-   [section 4.4.1 in the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md)
-   for the full contract.
+6. **Diagnostics on every completion.** When an operation produces driver
+   diagnostics, the completion's `diagnostics` field points at an opaque
+   `cosmos_diagnostics_t` owned by the completion (NULL when none are
+   available). It is populated on success and on errors that carry
+   diagnostics — including timeouts — and stays valid until the completion is
+   freed; do not free it separately. Read it with the NULL-safe
+   `cosmos_diagnostics_*` accessors: scalar rollups
+   (`total_request_charge`, `total_elapsed_micros`, `request_count`),
+   operation-level status (`is_completed`, `is_failure`),
+   the `iter_regions_contacted` / `iter_attempts` visitors (per-attempt
+   endpoint, region, status + sub-status, latency, and RU), and a borrowed
+   JSON snapshot via `to_json` (which takes a verbosity selector). Under a
+   retry storm the per-attempt list can be a compacted subset — `is_compacted`
+   / `retained_request_count` report that, while `request_count` and
+   `total_request_charge` stay exact.
+7. **Shared runtime caches.** Every construction creates a fresh driver, but
+   container references, account metadata and runtime transport resources are
+   shared. Cached container references can reuse another same-account client's
+   credentials; use separate runtimes when that is not intended.
 
 ## Repository archaeology — files removed by PR #4103
 
@@ -1275,9 +1676,9 @@ commit `ccf43caae`) shipped a handful of files that have **not** been
 reintroduced in this crate; their content now lives elsewhere:
 
 | Old file | New location |
-|---|---|
+| --- | --- |
 | `azurecosmos.pc.in` (pkg-config template) | This crate ships a sibling `azurecosmosdriver.pc.in` with the same shape but a new package name. |
-| `docs/next_generation_sdks_design_principles.md` | Folded into [NATIVE_WRAPPER_SPEC.md section 2](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md). |
+| `docs/next_generation_sdks_design_principles.md` | Folded into [sdk/cosmos/docs/specs/0019-native-wrapper.md section 2](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md). |
 | `c_tests/test_common.h` runtime / client / database fixtures | Re-added incrementally as the corresponding C entry points land. |
 
 If you are spelunking the git history of the old crate looking for a behavior

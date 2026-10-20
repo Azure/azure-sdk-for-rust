@@ -21,7 +21,6 @@ mod protocol;
 pub mod blob;
 pub mod queue;
 
-pub use azure_storage_common::models::UserDelegationKey;
 pub use builder::SasBuilder;
 pub use ip_range::SasIpRange;
 pub use protocol::SasProtocol;

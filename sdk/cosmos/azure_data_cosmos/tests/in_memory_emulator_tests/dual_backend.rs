@@ -48,9 +48,8 @@ const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
 
 /// Environment variable exposing the real account's configured default
-/// consistency level (emitted by the test-resources deployment). Substatus
-/// `1002` (ReadSessionNotAvailable) is only produced under Session
-/// consistency, so consistency-sensitive assertions consult this.
+/// consistency level (emitted by the test-resources deployment).
+/// This describes the default, not how a backend handles an explicit session token.
 const DEFAULT_CONSISTENCY_ENV_VAR: &str = "AZURE_COSMOS_DEFAULT_CONSISTENCY";
 
 /// Gateway URL used by the in-memory emulator.
@@ -97,9 +96,7 @@ impl DualBackend {
     /// The emulator is always created. The real backend is created only when
     /// the environment is configured (see module-level docs).
     pub async fn setup() -> Result<Self, Box<dyn Error>> {
-        let _ = tracing_subscriber::fmt::fmt()
-            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-            .try_init();
+        super::init_test_tracing();
 
         let run_id = Uuid::new_v4().to_string()[..8].to_string();
 
@@ -115,7 +112,7 @@ impl DualBackend {
         let emulator_store = emulator.store();
         let emulator_runtime = emulator.runtime_builder().build().await?;
 
-        let emulator_account = AccountReference::with_master_key(
+        let emulator_account = AccountReference::with_account_key(
             Url::parse(EMULATOR_GATEWAY_URL).unwrap(),
             "dGVzdGtleQ==",
         );
@@ -152,8 +149,8 @@ impl DualBackend {
 
     /// Whether the configured real account uses Session default consistency.
     ///
-    /// Substatus `1002` (ReadSessionNotAvailable) is only produced under Session
-    /// consistency; Eventual/Strong reads never emit it. Reads
+    /// A non-Session default does not guarantee that explicit session tokens
+    /// are ignored. Reads
     /// [`DEFAULT_CONSISTENCY_ENV_VAR`], defaulting to `true` when unset (local
     /// dev accounts and the Session CI legs are Session; the Eventual/Strong
     /// legs set it explicitly).
@@ -350,7 +347,10 @@ impl DualBackend {
             let deadline = Instant::now() + setup_timeout;
 
             while Instant::now() < deadline {
-                match driver.resolve_container(db, container).await {
+                match driver
+                    .resolve_container(db, container, OperationOptions::default())
+                    .await
+                {
                     Ok(region_container) => {
                         let probe = driver
                             .execute_singleton_operation(
@@ -530,7 +530,7 @@ async fn resolve_real_account(
     let conn_str: ConnectionString = conn_str_raw.parse()?;
     let endpoint: Url = conn_str.account_endpoint().parse()?;
     let key = conn_str.account_key().secret().to_string();
-    let account = AccountReference::with_master_key(endpoint, key);
+    let account = AccountReference::with_account_key(endpoint, key);
 
     let mut pool_builder = ConnectionPoolOptions::builder();
     // If connecting to the local emulator, disable cert validation

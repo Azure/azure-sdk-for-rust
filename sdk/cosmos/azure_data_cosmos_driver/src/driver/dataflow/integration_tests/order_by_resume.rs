@@ -19,7 +19,7 @@ use super::super::{
     mocks::{MockRequestExecutor, MockTopologyProvider},
     order_by::OrderByResumeValue,
     planner::build_streaming_ordered_merge,
-    query_plan::{QueryInfo, QueryPlan, QueryRange, SortOrder},
+    query_plan::{DistinctType, QueryInfo, QueryPlan, QueryRange, SortOrder},
     snapshot::{OrderByRangeToken, ValueBoundary},
     Pipeline, PipelineContext, PipelineNodeState, ResolvedRange,
 };
@@ -37,7 +37,7 @@ use crate::{
 // ── Test fixtures ───────────────────────────────────────────────────────────
 
 fn test_account() -> AccountReference {
-    AccountReference::with_master_key(
+    AccountReference::with_account_key(
         url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
         "dGVzdA==",
     )
@@ -79,6 +79,27 @@ fn order_by_operation_with_page_size(n: u32) -> Arc<CosmosOperation> {
             .with_max_item_count(MaxItemCountHint::Limit(
                 std::num::NonZeroU32::new(n).unwrap(),
             )),
+    )
+}
+
+/// A binary-negotiated ORDER BY operation.
+fn binary_order_by_operation() -> Arc<CosmosOperation> {
+    Arc::new(
+        CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+            .with_body(br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#.to_vec())
+            .with_supported_serialization_formats("CosmosBinary"),
+    )
+}
+
+/// Like [`binary_order_by_operation`] but with an explicit `max_item_count`.
+fn binary_order_by_operation_with_page_size(n: u32) -> Arc<CosmosOperation> {
+    Arc::new(
+        CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+            .with_body(br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#.to_vec())
+            .with_max_item_count(MaxItemCountHint::Limit(
+                std::num::NonZeroU32::new(n).unwrap(),
+            ))
+            .with_supported_serialization_formats("CosmosBinary"),
     )
 }
 
@@ -170,15 +191,15 @@ fn label_rid(label: &str) -> String {
     real_rid(u64::from_be_bytes(ordinal))
 }
 
-fn resolved(min: &str, max: &str, pk_range_id: &str) -> ResolvedRange {
-    ResolvedRange {
+fn resolved(min: &str, max: &str, pk_range_id: &str) -> crate::error::Result<ResolvedRange> {
+    Ok(ResolvedRange {
         partition_key_range_id: pk_range_id.to_string(),
+        parents: Vec::new(),
         range: FeedRange::new(
-            EffectivePartitionKey::from(min),
-            EffectivePartitionKey::from(max),
-        )
-        .unwrap(),
-    }
+            EffectivePartitionKey::try_from(min)?,
+            EffectivePartitionKey::try_from(max)?,
+        )?,
+    })
 }
 
 /// Builds a rewritten-envelope page with one row per `(rid, rank)` pair.
@@ -208,6 +229,43 @@ fn envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> CosmosResp
     headers.request_charge = Some(crate::models::RequestCharge::new(1.5));
     CosmosResponse::new(
         serde_json::to_vec(&body).unwrap(),
+        headers,
+        CosmosStatus::new(azure_core::http::StatusCode::Ok),
+        Arc::new(diagnostics.complete()),
+    )
+}
+
+/// Like [`envelope_page`] but encodes the feed body as Cosmos **binary** JSON,
+/// exercising `parse_envelope_page`'s transcode path through the merge.
+fn binary_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> CosmosResponse {
+    let documents: Vec<serde_json::Value> = rows
+        .iter()
+        .map(|(rid, rank)| {
+            serde_json::json!({
+                "_rid": label_rid(rid),
+                "orderByItems": [{"item": rank}],
+                "payload": {"id": rid, "rank": rank},
+            })
+        })
+        .collect();
+    let body = serde_json::json!({
+        "_rid": "",
+        "Documents": documents,
+        "_count": documents.len(),
+    });
+    let text = serde_json::to_vec(&body).unwrap();
+    let binary = crate::binary_json::transcode_to_binary(&text).unwrap();
+    assert!(crate::binary_json::is_binary(&binary));
+    let mut diagnostics = DiagnosticsContextBuilder::new(
+        ActivityId::new_uuid(),
+        Arc::new(DiagnosticsOptions::default()),
+    );
+    diagnostics.set_operation_status(azure_core::http::StatusCode::Ok, None);
+    let mut headers = CosmosResponseHeaders::new();
+    headers.continuation = continuation.map(str::to_owned);
+    headers.request_charge = Some(crate::models::RequestCharge::new(1.5));
+    CosmosResponse::new(
+        binary,
         headers,
         CosmosStatus::new(azure_core::http::StatusCode::Ok),
         Arc::new(diagnostics.complete()),
@@ -317,15 +375,37 @@ fn array_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> Cosm
     )
 }
 
-/// Extracts every item's `id` across `page`'s `Documents`, in wire order.
+/// Extracts every emitted item's `id`, in wire order. The pipeline emits a
+/// pre-split `Items` body (one payload per document). A binary-negotiated merge
+/// emits binary items, so each is transcoded to text before parsing — mirroring
+/// the SDK's per-slice format-agnostic decode.
 fn ids_in_page(page: &CosmosResponse) -> Vec<String> {
-    let value: serde_json::Value = serde_json::from_slice(page.body_bytes()).unwrap();
-    value["Documents"]
-        .as_array()
-        .unwrap()
+    let items = match page.body() {
+        crate::models::ResponseBody::Items(items) => items.clone(),
+        crate::models::ResponseBody::NoPayload => Vec::new(),
+        crate::models::ResponseBody::Bytes(_) => panic!("expected Items body"),
+    };
+    items
         .iter()
-        .map(|item| item["id"].as_str().unwrap().to_owned())
+        .map(|item| {
+            let text = crate::binary_json::transcode_to_text(item).unwrap();
+            let value: serde_json::Value = serde_json::from_slice(&text).unwrap();
+            value["id"].as_str().unwrap().to_owned()
+        })
         .collect()
+}
+
+/// Whether every item in an emitted page is Cosmos binary JSON. An empty page
+/// (no items) is treated as binary-neutral (`true`) so a trailing empty page
+/// does not fail a binary-source assertion.
+fn page_is_binary(page: &CosmosResponse) -> bool {
+    match page.body() {
+        crate::models::ResponseBody::Items(items) => {
+            items.iter().all(|item| crate::binary_json::is_binary(item))
+        }
+        crate::models::ResponseBody::NoPayload => true,
+        crate::models::ResponseBody::Bytes(b) => crate::binary_json::is_binary(b),
+    }
 }
 
 async fn drain_all(pipeline: &mut Pipeline, executor: &mut MockRequestExecutor) -> Vec<String> {
@@ -387,12 +467,12 @@ fn round_trip_state(state: PipelineNodeState, op: &CosmosOperation) -> PipelineN
 // ── Tests ────────────────────────────────────────────────────────────────
 
 #[tokio::test]
-async fn slow_consumer_fetches_only_one_head_page_per_partition() {
+async fn slow_consumer_fetches_only_one_head_page_per_partition() -> crate::error::Result<()> {
     let operation = order_by_operation_with_page_size(1);
     let plan = order_by_plan();
     let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor = MockRequestExecutor::new(vec![
         Ok(envelope_page(
@@ -446,18 +526,19 @@ async fn slow_consumer_fetches_only_one_head_page_per_partition() {
         2,
         "dropping the stream must not schedule additional requests"
     );
+    Ok(())
 }
 
 /// Baseline: two partitions each locally sorted ascending by `rank`; the
 /// merge must interleave them into one globally sorted stream.
 #[tokio::test]
-async fn merges_two_partitions_into_global_order() {
+async fn merges_two_partitions_into_global_order() -> crate::error::Result<()> {
     let op = order_by_operation();
     let plan = order_by_plan();
 
     let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor = MockRequestExecutor::new(vec![
         Ok(envelope_page(&[("l1", 1), ("l2", 3), ("l3", 5)], None)),
@@ -477,16 +558,258 @@ async fn merges_two_partitions_into_global_order() {
             .collect::<Vec<_>>(),
         "rows must interleave in ascending rank order across both partitions"
     );
+    Ok(())
+}
+
+/// Binary-negotiated ORDER BY pages must merge into the same global order as
+/// the text path — proof the merge is format-agnostic.
+#[tokio::test]
+async fn merges_two_binary_partitions_into_global_order() -> crate::error::Result<()> {
+    let op = binary_order_by_operation();
+    let plan = order_by_plan();
+
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
+    ])]);
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(binary_envelope_page(
+            &[("l1", 1), ("l2", 3), ("l3", 5)],
+            None,
+        )),
+        Ok(binary_envelope_page(
+            &[("r1", 2), ("r2", 4), ("r3", 6)],
+            None,
+        )),
+    ]);
+
+    let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+        .await
+        .unwrap();
+    let ids = drain_all(&mut pipeline, &mut executor).await;
+
+    assert_eq!(
+        ids,
+        vec!["l1", "r1", "l2", "r2", "l3", "r3"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<Vec<_>>(),
+        "binary ORDER BY pages must interleave in the same global order as text"
+    );
+    Ok(())
+}
+
+/// Alternating text and binary backend pages must remain format-agnostic
+/// through the complete ordered pipeline. The duplicate `b` straddles the
+/// encoding boundary; the global window applies after it is removed.
+#[tokio::test]
+async fn mixed_backend_formats_flow_through_ordered_distinct_and_skip_take(
+) -> crate::error::Result<()> {
+    let op = binary_order_by_operation_with_page_size(2);
+    let mut plan = order_by_plan();
+    {
+        let info = plan.query_info.as_mut().unwrap();
+        info.distinct_type = DistinctType::Ordered;
+        info.offset = Some(1);
+        info.limit = Some(3);
+    }
+
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(envelope_page(&[("a", 1), ("b", 2)], Some("page-2"))),
+        Ok(binary_envelope_page(&[("b", 2), ("c", 3)], Some("page-3"))),
+        Ok(envelope_page(&[("d", 4), ("e", 5)], None)),
+    ]);
+
+    let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+        .await
+        .unwrap();
+    let mut ids = Vec::new();
+    let mut emitted_pages = 0usize;
+    let mut noop_topology = super::super::mocks::NoopTopologyProvider;
+    loop {
+        let mut context = PipelineContext::new(&mut executor, Some(&mut noop_topology));
+        match pipeline.next_page(&mut context).await.unwrap() {
+            Some(response) => {
+                let page_ids = ids_in_page(&response);
+                if !page_ids.is_empty() {
+                    assert!(
+                        page_is_binary(&response),
+                        "negotiated binary output must not follow each backend page's format"
+                    );
+                    emitted_pages += 1;
+                }
+                ids.extend(page_ids);
+            }
+            None => break,
+        }
+    }
+
+    assert_eq!(ids, vec!["b", "c", "d"]);
+    assert!(
+        emitted_pages >= 2,
+        "the window must span output pages for the composition test to be meaningful"
+    );
+    assert_eq!(
+        executor.continuation_calls.len(),
+        3,
+        "all three alternating backend pages must be consumed"
+    );
+    Ok(())
+}
+
+/// Regression: a binary-negotiated merge must emit binary on every output page,
+/// including pages served entirely from buffered rows. With page size 1 and one
+/// 3-row backend page, pages 2 and 3 consume no backend response.
+#[tokio::test]
+async fn binary_merge_keeps_every_page_binary_including_buffer_only_pages(
+) -> crate::error::Result<()> {
+    let op = binary_order_by_operation_with_page_size(1);
+    let plan = order_by_plan();
+
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
+    let mut executor = MockRequestExecutor::new(vec![Ok(binary_envelope_page(
+        &[("a", 1), ("b", 2), ("c", 3)],
+        None,
+    ))]);
+
+    let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+        .await
+        .unwrap();
+
+    let mut formats = Vec::new();
+    let mut ids = Vec::new();
+    let mut noop_topology = super::super::mocks::NoopTopologyProvider;
+    loop {
+        let mut context = PipelineContext::new(&mut executor, Some(&mut noop_topology));
+        match pipeline.next_page(&mut context).await.unwrap() {
+            Some(response) => {
+                let page_ids = ids_in_page(&response);
+                // `page_is_binary` is vacuously true for an empty page.
+                if !page_ids.is_empty() {
+                    formats.push(page_is_binary(&response));
+                }
+                ids.extend(page_ids);
+            }
+            None => break,
+        }
+    }
+
+    assert_eq!(
+        ids,
+        vec!["a".to_owned(), "b".to_owned(), "c".to_owned()],
+        "all rows must still be emitted in order",
+    );
+    // The single backend page fills 3 rows; page size 1 emits 3 pages.
+    assert!(
+        formats.len() >= 3,
+        "expected at least 3 output pages, got {}",
+        formats.len()
+    );
+    assert!(
+        formats.iter().all(|&is_binary| is_binary),
+        "every page of a binary-sourced merge must stay binary, got {formats:?}",
+    );
+    Ok(())
+}
+
+/// A binary-negotiated merge resumed from a continuation token must keep the
+/// global order across the checkpoint and keep emitting binary. The mid-page
+/// checkpoint also exercises the value-boundary resume path.
+#[tokio::test]
+async fn binary_merge_resumed_from_continuation_preserves_order_and_stays_binary(
+) -> crate::error::Result<()> {
+    let op = binary_order_by_operation_with_page_size(1);
+    let plan = order_by_plan();
+
+    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
+    ])]);
+    let mut executor1 = MockRequestExecutor::new(vec![
+        Ok(binary_envelope_page(&[("l1", 1), ("l2", 3)], None)),
+        Ok(binary_envelope_page(&[("r1", 2), ("r2", 4)], None)),
+    ]);
+    let mut pipeline1 = build_streaming_ordered_merge(&plan, &mut topology1, &op, None)
+        .await
+        .unwrap();
+
+    let mut noop = super::super::mocks::NoopTopologyProvider;
+    let mut context = PipelineContext::new(&mut executor1, Some(&mut noop));
+    let first = pipeline1
+        .next_page(&mut context)
+        .await
+        .unwrap()
+        .expect("expected a first page");
+    assert_eq!(ids_in_page(&first), vec!["l1".to_owned()]);
+    assert!(
+        page_is_binary(&first),
+        "a binary-sourced merge must emit binary before the checkpoint"
+    );
+
+    let state = pipeline1.snapshot_state().unwrap();
+    drop(pipeline1);
+
+    // The mock re-serves full pages, so the client-side discard must strip the
+    // already-emitted "l1" row.
+    let resumed_state = round_trip_state(state, &op);
+    // A two-range resume re-resolves per saved range, so queue a result each.
+    let ranges = vec![
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
+    ];
+    let mut topology2 =
+        MockTopologyProvider::new(vec![Ok(ranges.clone()), Ok(ranges.clone()), Ok(ranges)]);
+    let mut executor2 = MockRequestExecutor::new(vec![
+        Ok(binary_envelope_page(&[("l1", 1), ("l2", 3)], None)),
+        Ok(binary_envelope_page(&[("r1", 2), ("r2", 4)], None)),
+    ]);
+    let mut pipeline2 =
+        build_streaming_ordered_merge(&plan, &mut topology2, &op, Some(resumed_state))
+            .await
+            .unwrap();
+
+    let mut ids = Vec::new();
+    let mut formats = Vec::new();
+    let mut noop2 = super::super::mocks::NoopTopologyProvider;
+    loop {
+        let mut context = PipelineContext::new(&mut executor2, Some(&mut noop2));
+        match pipeline2.next_page(&mut context).await.unwrap() {
+            Some(response) => {
+                let page_ids = ids_in_page(&response);
+                if !page_ids.is_empty() {
+                    formats.push(page_is_binary(&response));
+                }
+                ids.extend(page_ids);
+            }
+            None => break,
+        }
+    }
+
+    assert_eq!(
+        ids,
+        vec!["r1", "l2", "r2"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<Vec<_>>(),
+        "resumed binary merge must continue the global order without \
+         re-emitting the pre-checkpoint row"
+    );
+    assert!(
+        formats.iter().all(|&is_binary| is_binary),
+        "every page after a binary resume must stay binary, got {formats:?}"
+    );
+    Ok(())
 }
 
 /// A single partition, single page: the trivial case must still flow
 /// through the merge machinery correctly (no fan-out needed).
 #[tokio::test]
-async fn single_partition_passthrough() {
+async fn single_partition_passthrough() -> crate::error::Result<()> {
     let op = order_by_operation();
     let plan = order_by_plan();
 
-    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor =
         MockRequestExecutor::new(vec![Ok(envelope_page(&[("a", 1), ("b", 2)], None))]);
 
@@ -495,16 +818,17 @@ async fn single_partition_passthrough() {
         .unwrap();
     let ids = drain_all(&mut pipeline, &mut executor).await;
     assert_eq!(ids, vec!["a".to_owned(), "b".to_owned()]);
+    Ok(())
 }
 
 /// An empty backend page carrying a continuation must be transparently
 /// re-polled, not mistaken for "drained" or surfaced as an empty result.
 #[tokio::test]
-async fn empty_page_with_continuation_is_repolled() {
+async fn empty_page_with_continuation_is_repolled() -> crate::error::Result<()> {
     let op = order_by_operation();
     let plan = order_by_plan();
 
-    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor = MockRequestExecutor::new(vec![
         Ok(envelope_page(&[], Some("ct-empty"))),
         Ok(envelope_page(&[("a", 1)], None)),
@@ -519,16 +843,17 @@ async fn empty_page_with_continuation_is_repolled() {
         executor.continuation_calls,
         vec![None, Some("ct-empty".to_owned())]
     );
+    Ok(())
 }
 
 /// Empty total result must surface as a single empty, terminal page
 /// (matching a plain `Request`), not an error.
 #[tokio::test]
-async fn empty_total_result_surfaces_as_terminal_empty_page() {
+async fn empty_total_result_surfaces_as_terminal_empty_page() -> crate::error::Result<()> {
     let op = order_by_operation();
     let plan = order_by_plan();
 
-    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor = MockRequestExecutor::new(vec![Ok(envelope_page(&[], None))]);
 
     let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
@@ -536,16 +861,17 @@ async fn empty_total_result_surfaces_as_terminal_empty_page() {
         .unwrap();
     let ids = drain_all(&mut pipeline, &mut executor).await;
     assert!(ids.is_empty());
+    Ok(())
 }
 
 /// Baseline resume: session 1 drains one page (continuation "ct-1"
 /// pending); session 2 must forward it, not fresh-start.
 #[tokio::test]
-async fn resume_with_unchanged_topology_forwards_continuation() {
+async fn resume_with_unchanged_topology_forwards_continuation() -> crate::error::Result<()> {
     let op = order_by_operation_with_page_size(1);
     let plan = order_by_plan();
 
-    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor1 =
         MockRequestExecutor::new(vec![Ok(envelope_page(&[("a", 1)], Some("ct-1")))]);
     let mut pipeline1 = build_streaming_ordered_merge(&plan, &mut topology1, &op, None)
@@ -568,7 +894,7 @@ async fn resume_with_unchanged_topology_forwards_continuation() {
     drop(pipeline1);
 
     let resumed_state = round_trip_state(state, &op);
-    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor2 = MockRequestExecutor::new(vec![Ok(envelope_page(&[("b", 2)], None))]);
     let mut pipeline2 =
         build_streaming_ordered_merge(&plan, &mut topology2, &op, Some(resumed_state))
@@ -581,19 +907,21 @@ async fn resume_with_unchanged_topology_forwards_continuation() {
         vec![Some("ct-1".to_owned())],
         "resume must reuse the saved plain continuation when topology is unchanged"
     );
+    Ok(())
 }
 
 /// Regression: a mid-page checkpoint (no safe `server_continuation`)
 /// resumed against unchanged topology must apply the value-boundary
 /// resume path, not a fresh restart that re-emits delivered rows.
 #[tokio::test]
-async fn resume_with_unchanged_topology_and_no_saved_continuation_does_not_duplicate_rows() {
+async fn resume_with_unchanged_topology_and_no_saved_continuation_does_not_duplicate_rows(
+) -> crate::error::Result<()> {
     let op = order_by_operation_with_page_size(1);
     let plan = order_by_plan();
 
     // `max_item_count = 1` surfaces one row per call, leaving two rows
     // buffered — the "mid-page" case forcing `server_continuation = None`.
-    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor1 = MockRequestExecutor::new(vec![Ok(envelope_page(
         &[("a", 1), ("b", 2), ("c", 3)],
         None,
@@ -625,7 +953,7 @@ async fn resume_with_unchanged_topology_and_no_saved_continuation_does_not_dupli
     let resumed_state = round_trip_state(state, &op);
     // Mock re-returns the full unfiltered page (mock can't evaluate SQL
     // filters); the client-side discard must strip the "a" row back out.
-    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor2 = MockRequestExecutor::new(vec![Ok(envelope_page(
         &[("a", 1), ("b", 2), ("c", 3)],
         None,
@@ -641,13 +969,15 @@ async fn resume_with_unchanged_topology_and_no_saved_continuation_does_not_dupli
         "row \"a\" was already emitted before the checkpoint and must not \
          be re-emitted on resume"
     );
+    Ok(())
 }
 
 /// Catalog-sourced regression for `equal_key_resume_requiring_skip_count`:
 /// resuming a tied-row value boundary on unchanged topology must apply
 /// the `_rid`-aware discard, not a fresh restart.
 #[tokio::test]
-async fn catalog_equal_key_resume_requiring_skip_count_replays_correctly() {
+async fn catalog_equal_key_resume_requiring_skip_count_replays_correctly(
+) -> crate::error::Result<()> {
     const CATALOG_JSON: &str =
         include_str!("../../../../tests/fixtures/streaming_order_by_scenarios.json");
 
@@ -732,7 +1062,7 @@ async fn catalog_equal_key_resume_requiring_skip_count_replays_correctly() {
         }],
     };
 
-    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor = MockRequestExecutor::new(vec![Ok(join_envelope_page(&row_refs, None))]);
     let mut pipeline =
         build_streaming_ordered_merge(&plan, &mut topology, &op, Some(resumed_state))
@@ -744,12 +1074,13 @@ async fn catalog_equal_key_resume_requiring_skip_count_replays_correctly() {
         "scenario {} drained ids do not match the catalog's expectedIds",
         scenario["id"]
     );
+    Ok(())
 }
 
 /// Split during live iteration: the merge must splice in replacement
 /// ranges and keep global ordering across the remaining rows.
 #[tokio::test]
-async fn split_mid_merge_splices_replacements_and_preserves_order() {
+async fn split_mid_merge_splices_replacements_and_preserves_order() -> crate::error::Result<()> {
     let op = order_by_operation();
     let plan = order_by_plan();
 
@@ -757,10 +1088,10 @@ async fn split_mid_merge_splices_replacements_and_preserves_order() {
     // produces its replacement nodes; the merge consumes those directly, so no
     // second resolution is queued.
     let mut topology = MockTopologyProvider::new(vec![
-        Ok(vec![resolved("", "FF", "pk-0")]),
+        Ok(vec![resolved("", "FF", "pk-0")?]),
         Ok(vec![
-            resolved("", "80", "pk-left"),
-            resolved("80", "FF", "pk-right"),
+            resolved("", "80", "pk-left")?,
+            resolved("80", "FF", "pk-right")?,
         ]),
     ]);
     let mut executor = MockRequestExecutor::new(vec![
@@ -780,6 +1111,7 @@ async fn split_mid_merge_splices_replacements_and_preserves_order() {
             .map(str::to_owned)
             .collect::<Vec<_>>()
     );
+    Ok(())
 }
 
 /// Regression for the in-flight split ordering defect: the split happens
@@ -789,7 +1121,8 @@ async fn split_mid_merge_splices_replacements_and_preserves_order() {
 /// P1's `50` emitted ahead of them. A default (large) page cap keeps popping
 /// within a single page so the mis-ordering would surface immediately.
 #[tokio::test]
-async fn split_during_replenish_fills_all_replacements_preserving_order() {
+async fn split_during_replenish_fills_all_replacements_preserving_order() -> crate::error::Result<()>
+{
     let op = order_by_operation();
     let plan = order_by_plan();
 
@@ -798,12 +1131,12 @@ async fn split_during_replenish_fills_all_replacements_preserving_order() {
     // (the merge consumes them directly, without a second resolution).
     let mut topology = MockTopologyProvider::new(vec![
         Ok(vec![
-            resolved("", "80", "pk-p0"),
-            resolved("80", "FF", "pk-p1"),
+            resolved("", "80", "pk-p0")?,
+            resolved("80", "FF", "pk-p1")?,
         ]),
         Ok(vec![
-            resolved("", "40", "pk-a"),
-            resolved("40", "80", "pk-b"),
+            resolved("", "40", "pk-a")?,
+            resolved("40", "80", "pk-b")?,
         ]),
     ]);
     // P0's first page delivers 1, 2 (continuation pending); replenishing it
@@ -830,6 +1163,7 @@ async fn split_during_replenish_fills_all_replacements_preserving_order() {
             .collect::<Vec<_>>(),
         "the second split replacement's rows (10, 20) must precede 50"
     );
+    Ok(())
 }
 
 /// Companion to the large-cap regression: a page cap that fills exactly as a
@@ -837,18 +1171,18 @@ async fn split_during_replenish_fills_all_replacements_preserving_order() {
 /// (snapshotting both replacements), then resume in global order. Page 1
 /// yields 1, 2, 3; the persisted token resumes 10, 20, 50 across the split.
 #[tokio::test]
-async fn split_during_replenish_checkpoint_resumes_in_global_order() {
+async fn split_during_replenish_checkpoint_resumes_in_global_order() -> crate::error::Result<()> {
     let op = order_by_operation_with_page_size(3);
     let plan = order_by_plan();
 
     let mut topology1 = MockTopologyProvider::new(vec![
         Ok(vec![
-            resolved("", "80", "pk-p0"),
-            resolved("80", "FF", "pk-p1"),
+            resolved("", "80", "pk-p0")?,
+            resolved("80", "FF", "pk-p1")?,
         ]),
         Ok(vec![
-            resolved("", "40", "pk-a"),
-            resolved("40", "80", "pk-b"),
+            resolved("", "40", "pk-a")?,
+            resolved("40", "80", "pk-b")?,
         ]),
     ]);
     let mut executor1 = MockRequestExecutor::new(vec![
@@ -893,8 +1227,8 @@ async fn split_during_replenish_checkpoint_resumes_in_global_order() {
     // On resume both saved ranges are unchanged; P0b re-seeks past its value
     // boundary (mock returns 10, 20 unfiltered), P1 restarts fresh (50).
     let mut topology2 = MockTopologyProvider::new(vec![
-        Ok(vec![resolved("40", "80", "pk-b")]),
-        Ok(vec![resolved("80", "FF", "pk-p1")]),
+        Ok(vec![resolved("40", "80", "pk-b")?]),
+        Ok(vec![resolved("80", "FF", "pk-p1")?]),
     ]);
     let mut executor2 = MockRequestExecutor::new(vec![
         Ok(envelope_page(&[("d10", 10), ("d20", 20)], None)),
@@ -913,6 +1247,7 @@ async fn split_during_replenish_checkpoint_resumes_in_global_order() {
             .collect::<Vec<_>>(),
         "resume continues the global order across the split checkpoint"
     );
+    Ok(())
 }
 
 /// Two full snapshot/resume cycles over a JOIN tie run: one document (`docA`)
@@ -921,7 +1256,7 @@ async fn split_during_replenish_checkpoint_resumes_in_global_order() {
 /// docA rows, and the next resume skips exactly the ones already delivered.
 /// Every result id must appear exactly once across all three pages.
 #[tokio::test]
-async fn two_snapshot_resume_cycles_accumulate_join_skip_count() {
+async fn two_snapshot_resume_cycles_accumulate_join_skip_count() -> crate::error::Result<()> {
     // Page size 2 forces a checkpoint mid-tie-run. The mock can't honor the
     // structured resumeFilter, so it re-returns the whole page each cycle and
     // the client-side `skip_count` discard trims the already-emitted prefix.
@@ -944,7 +1279,7 @@ async fn two_snapshot_resume_cycles_accumulate_join_skip_count() {
     let mut resume: Option<PipelineNodeState> = None;
     // Cycle 0 emits a1,a2; cycle 1 emits a3,a4; cycle 2 emits b1 (terminal).
     for cycle in 0..3 {
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
         let mut executor = MockRequestExecutor::new(vec![Ok(full_page())]);
         let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, resume.clone())
             .await
@@ -963,12 +1298,14 @@ async fn two_snapshot_resume_cycles_accumulate_join_skip_count() {
             .collect::<Vec<_>>(),
         "each JOIN result row is emitted exactly once across two resume cycles"
     );
+    Ok(())
 }
 
 /// Regression: after a split, both sub-ranges resume from the same
 /// boundary; the `_rid`-aware discard must avoid dropping/duplicating rows.
 #[tokio::test]
-async fn resume_after_split_with_emitted_ties_has_no_omissions_or_duplicates() {
+async fn resume_after_split_with_emitted_ties_has_no_omissions_or_duplicates(
+) -> crate::error::Result<()> {
     let op = order_by_operation();
     let plan = order_by_plan();
     let resumed_state = PipelineNodeState::StreamingOrderedMerge {
@@ -988,8 +1325,8 @@ async fn resume_after_split_with_emitted_ties_has_no_omissions_or_duplicates() {
 
     // The saved range resolves to two post-split sub-ranges.
     let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     // Mock can't honor the server-side filter, so each sub-range returns
     // rows unfiltered. `[,80)` holds a, c (emitted), e (unemitted tie),
@@ -1016,6 +1353,7 @@ async fn resume_after_split_with_emitted_ties_has_no_omissions_or_duplicates() {
         "already-emitted tied rows (a, b, c) are dropped by `_rid`; the \
          unemitted tied row `e` survives with no duplicates"
     );
+    Ok(())
 }
 
 /// Array/object ORDER BY sort keys are not supported: the envelope parser
@@ -1024,10 +1362,10 @@ async fn resume_after_split_with_emitted_ties_has_no_omissions_or_duplicates() {
 /// the backend's structural hash order, which the client cannot reproduce
 /// from JSON alone.
 #[tokio::test]
-async fn complex_order_by_values_are_rejected() {
+async fn complex_order_by_values_are_rejected() -> crate::error::Result<()> {
     let op = order_by_operation();
     let plan = order_by_plan();
-    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor = MockRequestExecutor::new(vec![Ok(array_envelope_page(&[("a", 5)], None))]);
 
     let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
@@ -1041,18 +1379,19 @@ async fn complex_order_by_values_are_rejected() {
         .expect_err("an array ORDER BY value must fail the query");
     assert_eq!(
         error.status().sub_status(),
-        Some(crate::error::SubStatusCode::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED),
+        Some(crate::error::status_codes::substatus::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED),
     );
     assert!(
         error.to_string().contains("not currently supported"),
         "the error must say complex sort keys are unsupported: {error}"
     );
+    Ok(())
 }
 
 /// Regression: a saved sub-range resolving to a wider merged partition
 /// must be clipped to scope, not rejected as "over-covering".
 #[tokio::test]
-async fn resume_after_merge_clips_widened_range_and_drains() {
+async fn resume_after_merge_clips_widened_range_and_drains() -> crate::error::Result<()> {
     let op = order_by_operation();
     let plan = order_by_plan();
     let resumed_state = PipelineNodeState::StreamingOrderedMerge {
@@ -1072,7 +1411,7 @@ async fn resume_after_merge_clips_widened_range_and_drains() {
 
     // Post-merge: the saved [,80) sub-range is now served by a wider
     // physical partition [,FF).
-    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-merged")])]);
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-merged")?])]);
     let mut executor = MockRequestExecutor::new(vec![Ok(envelope_page(
         &[("a", 5), ("c", 5), ("e", 5), ("n", 8)],
         None,
@@ -1091,6 +1430,7 @@ async fn resume_after_merge_clips_widened_range_and_drains() {
             .collect::<Vec<_>>(),
         "already-emitted rows (a, c) are dropped; the range's unemitted rows drain"
     );
+    Ok(())
 }
 
 /// A continuation token shaped for a different node type (e.g.
@@ -1111,7 +1451,7 @@ async fn resume_rejects_wrong_node_shape() {
         .unwrap_err();
     assert_eq!(
         err.status(),
-        CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH
+        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH
     );
 }
 
@@ -1135,13 +1475,14 @@ async fn resume_from_drained_short_circuits() {
 /// Request charge is summed across every backend page; the emitted page
 /// never carries a raw backend continuation header.
 #[tokio::test]
-async fn aggregates_request_charge_and_omits_backend_continuation_header() {
+async fn aggregates_request_charge_and_omits_backend_continuation_header(
+) -> crate::error::Result<()> {
     let op = order_by_operation();
     let plan = order_by_plan();
 
     let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor = MockRequestExecutor::new(vec![
         Ok(envelope_page(&[("l1", 1)], None)),
@@ -1164,6 +1505,7 @@ async fn aggregates_request_charge_and_omits_backend_continuation_header() {
         "charge from both partitions' pages must be summed"
     );
     assert!(response.headers().continuation.is_none());
+    Ok(())
 }
 
 // ── Query-shape / continuation-binding regression ───────────────────────────
@@ -1235,12 +1577,12 @@ async fn run_resume_filtered_binding_cycle(
     session3_page: &[(&str, i64)],
     resume_filtered_ct: &str,
     expected_order: &[&str],
-) {
+) -> crate::error::Result<()> {
     let op = order_by_operation_with_page_size(1);
     let plan = order_by_plan();
 
     // ── Session 1: fresh, mid-page checkpoint ───────────────────────────
-    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor1 =
         MockRequestExecutor::new(vec![Ok(envelope_page(session1_page, Some("s1-more")))]);
     let mut pipeline1 = build_streaming_ordered_merge(&plan, &mut topology1, &op, None)
@@ -1284,7 +1626,7 @@ async fn run_resume_filtered_binding_cycle(
 
     // ── Session 2: scalar value-boundary resume-filtered query ──────────
     let resumed1 = round_trip_state(state1, &op);
-    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor2 = MockRequestExecutor::new(vec![Ok(envelope_page(
         session2_page,
         Some(resume_filtered_ct),
@@ -1332,7 +1674,7 @@ async fn run_resume_filtered_binding_cycle(
 
     // ── Session 3: second resume ────────────────────────────────────────
     let resumed2 = round_trip_state(state2, &op);
-    let mut topology3 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology3 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor3 = MockRequestExecutor::new(vec![Ok(envelope_page(session3_page, None))]);
     let mut pipeline3 = build_streaming_ordered_merge(&plan, &mut topology3, &op, Some(resumed2))
         .await
@@ -1369,12 +1711,14 @@ async fn run_resume_filtered_binding_cycle(
             .collect::<Vec<_>>(),
         "across two snapshot/resume cycles every row must be delivered exactly once, in order"
     );
+    Ok(())
 }
 
 /// Regression (distinct keys): a resume-filtered checkpoint with a live
 /// continuation must not persist it; next resume re-derives from boundary.
 #[tokio::test]
-async fn resume_filtered_query_never_replays_backend_continuation_against_plain_query() {
+async fn resume_filtered_query_never_replays_backend_continuation_against_plain_query(
+) -> crate::error::Result<()> {
     run_resume_filtered_binding_cycle(
         &[("a", 1), ("b", 2)],
         &[("a", 1), ("b", 2)],
@@ -1382,13 +1726,15 @@ async fn resume_filtered_query_never_replays_backend_continuation_against_plain_
         "resume-filtered-ct-1",
         &["a", "b", "c"],
     )
-    .await;
+    .await?;
+    Ok(())
 }
 
 /// Regression (tied keys): correctness rests on the `_rid` tiebreak
 /// surviving the resume-filtered snapshot without mis-binding.
 #[tokio::test]
-async fn resume_filtered_query_with_tied_keys_never_replays_backend_continuation() {
+async fn resume_filtered_query_with_tied_keys_never_replays_backend_continuation(
+) -> crate::error::Result<()> {
     run_resume_filtered_binding_cycle(
         &[("a", 5), ("b", 5)],
         &[("a", 5), ("b", 5)],
@@ -1396,7 +1742,8 @@ async fn resume_filtered_query_with_tied_keys_never_replays_backend_continuation
         "resume-filtered-ct-tied",
         &["a", "b", "c"],
     )
-    .await;
+    .await?;
+    Ok(())
 }
 
 /// A resume whose boundary value is a string full of SQL special characters
@@ -1406,7 +1753,8 @@ async fn resume_filtered_query_with_tied_keys_never_replays_backend_continuation
 /// `@cosmos...` parameter is synthesized, and the `resumeFilter` carries the
 /// exact string verbatim as a plain value.
 #[tokio::test]
-async fn string_boundary_resume_travels_in_resume_filter_not_inline_sql() {
+async fn string_boundary_resume_travels_in_resume_filter_not_inline_sql() -> crate::error::Result<()>
+{
     let nasty = "a' OR 1=1 -- \\ \n\t\u{2713}";
     let op = order_by_operation();
     let plan = order_by_plan();
@@ -1427,7 +1775,7 @@ async fn string_boundary_resume_travels_in_resume_filter_not_inline_sql() {
         }],
     };
 
-    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor = MockRequestExecutor::new(vec![Ok(envelope_page(&[], None))]);
     let mut pipeline =
         build_streaming_ordered_merge(&plan, &mut topology, &op, Some(resumed_state))
@@ -1455,6 +1803,7 @@ async fn string_boundary_resume_travels_in_resume_filter_not_inline_sql() {
         serde_json::Value::String(nasty.to_owned()),
         "the exact boundary string round-trips as the resumeFilter value"
     );
+    Ok(())
 }
 
 /// Asserts a recorded request body's resume filter carries `expected` as its
@@ -1480,14 +1829,14 @@ fn assert_string_resume_filter_boundary(body: &str, expected: &str) {
 /// binding must survive each token serialize/deserialize round-trip, and all
 /// rows must be delivered exactly once in order.
 #[tokio::test]
-async fn repeated_string_boundary_resume_binds_parameter_each_cycle() {
+async fn repeated_string_boundary_resume_binds_parameter_each_cycle() -> crate::error::Result<()> {
     // Keys sort a < b < c and each carries a distinct special character.
     let (ka, kb, kc) = ("k1' ", "k2\\", "k3\t");
     let op = order_by_operation_with_page_size(1);
     let plan = order_by_plan();
 
     // ── Session 1: fresh, emit "a", checkpoint mid-page ─────────────────
-    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor1 = MockRequestExecutor::new(vec![Ok(string_envelope_page(
         &[("a", ka), ("b", kb), ("c", kc)],
         Some("s1-more"),
@@ -1502,7 +1851,7 @@ async fn repeated_string_boundary_resume_binds_parameter_each_cycle() {
 
     // ── Session 2: resume from the "a" (ka) boundary ────────────────────
     let resumed1 = round_trip_state(state1, &op);
-    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor2 = MockRequestExecutor::new(vec![Ok(string_envelope_page(
         &[("b", kb), ("c", kc)],
         Some("s2-more"),
@@ -1518,7 +1867,7 @@ async fn repeated_string_boundary_resume_binds_parameter_each_cycle() {
 
     // ── Session 3: second resume from the "b" (kb) boundary ─────────────
     let resumed2 = round_trip_state(state2, &op);
-    let mut topology3 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology3 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor3 =
         MockRequestExecutor::new(vec![Ok(string_envelope_page(&[("c", kc)], None))]);
     let mut pipeline3 = build_streaming_ordered_merge(&plan, &mut topology3, &op, Some(resumed2))
@@ -1539,6 +1888,7 @@ async fn repeated_string_boundary_resume_binds_parameter_each_cycle() {
             .collect::<Vec<_>>(),
         "across two string-boundary resume cycles every row is delivered once, in order"
     );
+    Ok(())
 }
 
 // ── Full-key tie, direction-aware, multi-page, two-resume regression ───────
@@ -1560,7 +1910,9 @@ async fn repeated_string_boundary_resume_binds_parameter_each_cycle() {
 ///
 /// Every one of the six rids must be delivered exactly once, in strict
 /// `direction` order — proving no duplicates and no omissions.
-async fn tied_full_key_resume_spans_pages_and_two_cycles(direction: SortOrder) {
+async fn tied_full_key_resume_spans_pages_and_two_cycles(
+    direction: SortOrder,
+) -> crate::error::Result<()> {
     const RANK: i64 = 5;
     // Ordinals in `direction`'s document order, matching real backend
     // behavior for a full-key tie within one partition.
@@ -1583,7 +1935,7 @@ async fn tied_full_key_resume_spans_pages_and_two_cycles(direction: SortOrder) {
 
     // ── Session A: fresh. The tie run spans two raw backend page fetches
     // (rid(0),rid(1) then rid(2),rid(3)) before any checkpoint. ──
-    let mut topology_a = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology_a = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor_a = MockRequestExecutor::new(vec![
         Ok(envelope_page(&refs(0..2), Some("bp-1"))),
         Ok(envelope_page(&refs(2..4), None)),
@@ -1620,7 +1972,7 @@ async fn tied_full_key_resume_spans_pages_and_two_cycles(direction: SortOrder) {
     // it replays the whole unfiltered tie run; the client-side discard
     // strips rid(0)..=rid(2) (already emitted), surfacing only rid(3). ──
     let resumed_a = round_trip_state(state_a, &op);
-    let mut topology_b = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology_b = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor_b = MockRequestExecutor::new(vec![
         Ok(envelope_page(&refs(0..4), Some("bp-2"))),
         Ok(envelope_page(&refs(4..6), None)),
@@ -1679,7 +2031,7 @@ async fn tied_full_key_resume_spans_pages_and_two_cycles(direction: SortOrder) {
     // boundary) — the discard must stay active across that whole page and
     // into backend page 2, where rid(4) finally survives. ──
     let resumed_b = round_trip_state(state_b, &op);
-    let mut topology_c = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology_c = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor_c = MockRequestExecutor::new(vec![
         Ok(envelope_page(&refs(0..4), Some("bp-3"))),
         Ok(envelope_page(&refs(4..6), None)),
@@ -1716,16 +2068,19 @@ async fn tied_full_key_resume_spans_pages_and_two_cycles(direction: SortOrder) {
         (0..6).map(rid).collect::<Vec<_>>(),
         "every tied row must be delivered exactly once, in strict {direction:?} rid order"
     );
+    Ok(())
 }
 
 #[tokio::test]
-async fn ascending_full_key_ties_span_backend_pages_and_survive_two_resumes() {
-    tied_full_key_resume_spans_pages_and_two_cycles(SortOrder::Ascending).await;
+async fn ascending_full_key_ties_span_backend_pages_and_survive_two_resumes(
+) -> crate::error::Result<()> {
+    tied_full_key_resume_spans_pages_and_two_cycles(SortOrder::Ascending).await
 }
 
 #[tokio::test]
-async fn descending_full_key_ties_span_backend_pages_and_survive_two_resumes() {
-    tied_full_key_resume_spans_pages_and_two_cycles(SortOrder::Descending).await;
+async fn descending_full_key_ties_span_backend_pages_and_survive_two_resumes(
+) -> crate::error::Result<()> {
+    tied_full_key_resume_spans_pages_and_two_cycles(SortOrder::Descending).await
 }
 
 /// End-to-end: a token minted by one query must not resume a different one.
@@ -1735,12 +2090,12 @@ async fn descending_full_key_ties_span_backend_pages_and_survive_two_resumes() {
 /// fingerprinted on the *original* body, not the Gateway-rewritten text, so a
 /// service-side rewrite change never invalidates in-flight tokens.
 #[tokio::test]
-async fn resume_against_a_different_query_is_rejected() {
+async fn resume_against_a_different_query_is_rejected() -> crate::error::Result<()> {
     // One row per page so a single `next_page` stops at a clean boundary.
     let op = order_by_operation_with_page_size(1);
     let plan = order_by_plan();
 
-    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor =
         MockRequestExecutor::new(vec![Ok(envelope_page(&[("d1", 1)], Some("ct-1")))]);
     let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
@@ -1751,7 +2106,7 @@ async fn resume_against_a_different_query_is_rejected() {
     drop(pipeline);
 
     // Same query text and parameters: resumes cleanly.
-    let mut topology_ok = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology_ok = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     build_streaming_ordered_merge(
         &plan,
         &mut topology_ok,
@@ -1773,7 +2128,7 @@ async fn resume_against_a_different_query_is_rejected() {
                 std::num::NonZeroU32::new(1).unwrap(),
             )),
     );
-    let mut topology_bad = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology_bad = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let err = build_streaming_ordered_merge(
         &plan,
         &mut topology_bad,
@@ -1785,7 +2140,10 @@ async fn resume_against_a_different_query_is_rejected() {
     .expect("a token minted by a different query must be rejected");
     assert_eq!(
         err.status().sub_status(),
-        Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+        Some(
+            crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID
+        ),
         "got: {err}"
     );
+    Ok(())
 }

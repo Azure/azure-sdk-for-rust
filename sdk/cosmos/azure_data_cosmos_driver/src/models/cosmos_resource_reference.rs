@@ -141,6 +141,35 @@ impl CosmosResourceReference {
         }
     }
 
+    /// Replaces the resolved metadata for the same name-addressed container.
+    pub(crate) fn retarget_container(
+        &mut self,
+        replacement: ContainerReference,
+    ) -> crate::error::Result<()> {
+        let current = self.container().ok_or_else(|| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+                .with_message("operation does not target a container")
+                .build()
+        })?;
+
+        let same_logical_container = !current.is_by_rid()
+            && !replacement.is_by_rid()
+            && current.account().endpoint() == replacement.account().endpoint()
+            && current.database_name() == replacement.database_name()
+            && current.name() == replacement.name();
+        if !same_logical_container {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+                .with_message("replacement metadata does not identify the same named container")
+                .build());
+        }
+
+        self.account = replacement.account().clone();
+        self.scope = ResourceScope::Container(replacement);
+        Ok(())
+    }
+
     /// Returns the database reference, if this operation is anchored directly to a
     /// database (not a container-or-below resource).
     fn database(&self) -> Option<&DatabaseReference> {
@@ -286,7 +315,7 @@ impl CosmosResourceReference {
             return ResourcePaths::empty();
         }
 
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         if self.resource_type == ResourceType::DistributedTransactionBatch {
             return ResourcePaths {
                 buf: "/operations/dtc".to_owned(),
@@ -456,11 +485,11 @@ impl CosmosResourceReference {
     ///
     /// See [`addressing_conflict`](Self::addressing_conflict) for `leaf_in_path`.
     ///
-    /// [`CLIENT_MIXED_NAME_RID_ADDRESSING`]: crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+    /// [`CLIENT_MIXED_NAME_RID_ADDRESSING`]: crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING
     pub(crate) fn validate_addressing(&self, leaf_in_path: bool) -> crate::error::Result<()> {
         if let Some(conflict) = self.addressing_conflict(leaf_in_path) {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING)
+                .with_status(crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING)
                 .with_message(format!(
                     "mixed name/RID addressing is not allowed ({conflict}); the service \
                      classifies a request from its `dbs` segment, so a RID-addressed path must \
@@ -623,7 +652,7 @@ impl CosmosResourceReference {
                     "/offers".to_string()
                 }
             }
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             ResourceType::DistributedTransactionBatch => {
                 if let Some(ref id) = self.id {
                     let id_str = Self::identifier_str(id);
@@ -645,7 +674,7 @@ impl CosmosResourceReference {
                 // Parent is the account — empty link.
                 Cow::Borrowed("")
             }
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             ResourceType::DistributedTransactionBatch => Cow::Borrowed(""),
             ResourceType::DocumentCollection => {
                 // Parent is the database.
@@ -848,7 +877,7 @@ mod tests {
     use url::Url;
 
     fn test_account() -> AccountReference {
-        AccountReference::with_master_key(
+        AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
@@ -1248,7 +1277,7 @@ mod tests {
             .expect_err("mixed addressing must be rejected");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+            crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING
         );
     }
 
@@ -1305,7 +1334,7 @@ mod tests {
             .expect_err("a name leaf under a RID parent must be rejected");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+            crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING
         );
     }
 
@@ -1329,7 +1358,7 @@ mod tests {
             .expect_err("a RID leaf under a name parent must be rejected");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+            crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING
         );
     }
 

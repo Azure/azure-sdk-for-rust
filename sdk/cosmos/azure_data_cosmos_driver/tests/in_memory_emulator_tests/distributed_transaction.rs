@@ -277,6 +277,77 @@ async fn dtx_patch_with_filter_predicate_updates_item() {
     assert_eq!(body["status"], "done");
 }
 
+/// DTX patch is the one path that puts `PatchInstructions` on the wire, so the
+/// `op` tags must match the Cosmos contract rather than the Rust variant names.
+/// `Increment` is `incr` on the wire; the hand-written body below is the
+/// service-shaped payload, and the assertion pins our serializer to it.
+#[tokio::test]
+async fn dtx_patch_increment_uses_incr_wire_tag() {
+    use azure_data_cosmos_driver::models::{PatchInstructions, PatchOperation};
+
+    let ctx = setup_single_region().await;
+
+    let create = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &serde_json::json!({"id": "incr-target", "pk": "pk1", "visits": 41}),
+        r#"["pk1"]"#,
+        false,
+    );
+    let response = ctx.emulator.execute_request(&create).await.unwrap();
+    let (status, _, _) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Created);
+
+    let wire_instructions = serde_json::json!({
+        "operations": [{"op": "incr", "path": "/visits", "value": 1}]
+    });
+    assert_eq!(
+        serde_json::to_value(PatchInstructions::from(vec![PatchOperation::increment(
+            "/visits", 1i64
+        )]))
+        .unwrap(),
+        wire_instructions,
+    );
+
+    let patch_body = serde_json::json!({
+        "operations": [{
+            "databaseName": "testdb",
+            "collectionName": "testcoll",
+            "id": "incr-target",
+            "partitionKey": ["pk1"],
+            "index": 0,
+            "operationType": "Patch",
+            "resourceType": "Document",
+            "resourceBody": wire_instructions
+        }]
+    });
+
+    let response = ctx
+        .emulator
+        .execute_request(&dtx_request(&ctx.gateway_url, patch_body))
+        .await
+        .unwrap();
+    let (status, _, body) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Ok);
+    assert_eq!(body["operationResponses"][0]["statusCode"], 200);
+
+    let response = ctx
+        .emulator
+        .execute_request(&read_item_request(
+            &ctx.gateway_url,
+            "testdb",
+            "testcoll",
+            "incr-target",
+            r#"["pk1"]"#,
+        ))
+        .await
+        .unwrap();
+    let (status, _, body) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Ok);
+    assert_eq!(body["visits"], 42);
+}
+
 #[tokio::test]
 async fn dtx_patch_filter_failure_rolls_back_siblings() {
     let ctx = setup_single_region().await;

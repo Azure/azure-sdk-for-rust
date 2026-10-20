@@ -1,6 +1,6 @@
 # Release History
 
-## 0.3.0 (Unreleased)
+## 1.1.0-beta.1 (Unreleased)
 
 ### Features Added
 
@@ -9,6 +9,18 @@
 ### Bugs Fixed
 
 ### Other Changes
+
+## 1.0.0 (2026-10-08)
+
+### Features Added
+
+- Added `#[option(skip)]` for internal optional state excluded from configuration views and builder setters. ([#5366](https://github.com/Azure/azure-sdk-for-rust/pull/5366))
+
+## 1.0.0-beta.1 (2026-09-28)
+
+### Breaking Changes
+
+- `CosmosOptions` now propagates field-level `#[cfg]` attributes to generated builders, views, defaults, and environment-variable APIs. ([#5346](https://github.com/Azure/azure-sdk-for-rust/pull/5346))
 
 ## 0.2.0 (2026-06-19)
 
@@ -23,4 +35,3 @@
 ### Features Added
 
 - Initial release of `azure_data_cosmos_macros` (procedural macros for the Cosmos DB SDK hierarchical configuration model). ([#3868](https://github.com/Azure/azure-sdk-for-rust/pull/3868))
-

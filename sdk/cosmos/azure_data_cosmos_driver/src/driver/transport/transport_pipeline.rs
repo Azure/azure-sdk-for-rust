@@ -18,15 +18,15 @@ use std::time::{Duration, Instant};
 use futures::{future::Either, pin_mut};
 use tracing::trace;
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 use crate::models::ResourceType;
 use crate::{
     diagnostics::{
-        DiagnosticsContextBuilder, ExecutionContext, FailedTransportShardDiagnostics, PipelineType,
+        DiagnosticsContextBuilder, ExecutionContext, FailedTransportShardDiagnostics, PipelineKind,
         RequestEvent, RequestEventType, RequestHandle, RequestSentStatus, TransportSecurity,
         TransportShardDiagnostics,
     },
-    models::{CosmosResponseHeaders, CosmosStatus, Credential, SubStatusCode},
+    models::{CosmosResponseHeaders, CosmosStatus, Credential},
 };
 
 use super::{
@@ -149,7 +149,7 @@ pub(crate) struct TransportPipelineContext<'a> {
     pub credential: &'a Credential,
     pub user_agent: &'a azure_core::http::headers::HeaderValue,
     pub client_id: &'a azure_core::http::headers::HeaderValue,
-    pub pipeline_type: PipelineType,
+    pub pipeline_type: PipelineKind,
     pub transport_security: TransportSecurity,
     /// Pre-computed `host:port` key for the target endpoint.
     ///
@@ -232,7 +232,7 @@ pub(crate) async fn execute_transport_pipeline(
         } else if throttle_state.attempt_count == 0 {
             request.execution_context
         } else {
-            ExecutionContext::Retry
+            ExecutionContext::OperationRetry
         };
 
         let request_handle = diagnostics.start_request(
@@ -243,6 +243,14 @@ pub(crate) async fn execute_transport_pipeline(
             ctx.transport.diagnostics_http_version(),
             &request.endpoint,
         );
+
+        if let Some(fallback) = request.routing_fallback {
+            diagnostics.add_event(
+                request_handle,
+                RequestEvent::new(RequestEventType::RoutingFallback)
+                    .with_details(fallback.as_str()),
+            );
+        }
 
         for failed_transport_shard in prior_failed_transport_shards.iter().cloned() {
             diagnostics.add_failed_transport_shard(request_handle, failed_transport_shard);
@@ -301,11 +309,11 @@ pub(crate) async fn execute_transport_pipeline(
                 request_handle,
                 cosmos_err.to_string(),
                 RequestSentStatus::NotSent,
-                CosmosStatus::CLIENT_GENERATED_401,
+                crate::error::status_codes::CLIENT_GENERATED_401,
             );
             return TransportResult {
                 outcome: TransportOutcome::TransportError {
-                    status: CosmosStatus::CLIENT_GENERATED_401,
+                    status: crate::error::status_codes::CLIENT_GENERATED_401,
                     error: cosmos_err,
                     request_sent: RequestSentStatus::NotSent,
                 },
@@ -328,7 +336,7 @@ pub(crate) async fn execute_transport_pipeline(
                 Ok(wrapped_request) => http_request = wrapped_request,
                 Err(e) => {
                     let cosmos_err = crate::error::CosmosError::builder()
-                        .with_status(CosmosStatus::CLIENT_BAD_REQUEST)
+                        .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
                         .with_message(format!("Gateway 2.0 request wrap failed: {e}"))
                         .with_source(e)
                         .build();
@@ -396,10 +404,10 @@ pub(crate) async fn execute_transport_pipeline(
         // DTX request detection only exists when the preview feature is enabled;
         // in default builds no request can carry the DTX typed resource value, so
         // the flag is a constant `false` and the throttle path behaves as before.
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         let is_distributed_transaction_request =
             request.resource_type == ResourceType::DistributedTransactionBatch;
-        #[cfg(not(feature = "preview_dtx"))]
+        #[cfg(not(feature = "unstable_dtx"))]
         let is_distributed_transaction_request = false;
         let action =
             evaluate_transport_retry(&result, &throttle_state, is_distributed_transaction_request);
@@ -657,7 +665,7 @@ fn finalize_http_attempt(
                         // failure here is a real protocol error.
                         None => {
                             let cosmos_err = crate::error::CosmosError::builder()
-                                .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                                .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
                                 .with_message(format!(
                                     "Gateway 2.0 response unwrap failed: {error}"
                                 ))
@@ -740,13 +748,13 @@ fn is_connectivity_error(error: &crate::error::CosmosError) -> bool {
     }
     matches!(
         error.status().sub_status(),
-        Some(SubStatusCode::TRANSPORT_GENERATED_503)
-            | Some(SubStatusCode::TRANSPORT_CONNECTION_FAILED)
-            | Some(SubStatusCode::TRANSPORT_IO_FAILED)
-            | Some(SubStatusCode::TRANSPORT_DNS_FAILED)
-            | Some(SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE)
-            | Some(SubStatusCode::TRANSPORT_BODY_READ_FAILED)
-            | Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+        Some(crate::error::status_codes::substatus::TRANSPORT_GENERATED_503)
+            | Some(crate::error::status_codes::substatus::TRANSPORT_CONNECTION_FAILED)
+            | Some(crate::error::status_codes::substatus::TRANSPORT_IO_FAILED)
+            | Some(crate::error::status_codes::substatus::TRANSPORT_DNS_FAILED)
+            | Some(crate::error::status_codes::substatus::TRANSPORT_HTTP2_INCOMPATIBLE)
+            | Some(crate::error::status_codes::substatus::TRANSPORT_BODY_READ_FAILED)
+            | Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT)
     )
 }
 
@@ -755,7 +763,7 @@ fn gateway_v2_wrap_error_result(
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
-    let status = CosmosStatus::CLIENT_BAD_REQUEST;
+    let status = crate::error::status_codes::CLIENT_BAD_REQUEST;
     let error_details = format_transport_error_details_cosmos(&error);
     diagnostics.fail_transport_request(
         request_handle,
@@ -778,7 +786,7 @@ fn gateway_v2_unwrap_error_result(
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
-    let status = CosmosStatus::TRANSPORT_GENERATED_503;
+    let status = crate::error::status_codes::TRANSPORT_GENERATED_503;
     let error_details = format_transport_error_details_cosmos(&error);
     diagnostics.add_event(
         request_handle,
@@ -811,7 +819,7 @@ fn transport_error_result(
     } else {
         infer_request_sent_status(&cosmos_error)
     };
-    let status = CosmosStatus::TRANSPORT_GENERATED_503;
+    let status = crate::error::status_codes::TRANSPORT_GENERATED_503;
     let error_details = format_transport_error_details_cosmos(&cosmos_error);
 
     if headers_received {
@@ -902,6 +910,7 @@ fn map_http_response_payload(
 mod tests {
     use super::*;
     use crate::driver::pipeline::components::METADATA_MAX_PER_RETRY_DELAY;
+    use crate::error::SubStatusCode;
     use std::{
         collections::VecDeque,
         sync::{Arc, Mutex},
@@ -931,9 +940,71 @@ mod tests {
     static TEST_CLIENT_ID_HEADER: azure_core::http::headers::HeaderName =
         azure_core::http::headers::HeaderName::from_static("x-ms-client-id");
 
+    fn connectivity_failure(request_sent: RequestSentStatus) -> TransportResult {
+        TransportResult {
+            outcome: TransportOutcome::TransportError {
+                status: crate::error::status_codes::TRANSPORT_IO_FAILED,
+                error: crate::error::CosmosError::builder()
+                    .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
+                    .with_message("connection reset")
+                    .build(),
+                request_sent,
+            },
+        }
+    }
+
+    /// A request that definitively never left the client is safe to retry for
+    /// every operation type, so the caller's flag is not consulted.
+    #[test]
+    fn unsent_connectivity_failure_retries_regardless_of_caller_flag() {
+        let result = connectivity_failure(RequestSentStatus::NotSent);
+        assert!(should_retry_connectivity_failure(&result, false));
+        assert!(should_retry_connectivity_failure(&result, true));
+    }
+
+    /// Once the request may have reached the backend, the same predicate the
+    /// operation pipeline uses for cross-region failover decides this retry.
+    /// Callers pass `CosmosOperation::allows_ambiguous_outcome_retry`, so the
+    /// two layers cannot disagree about a single failure.
+    #[test]
+    fn possibly_sent_connectivity_failure_defers_to_caller_flag() {
+        for request_sent in [RequestSentStatus::Sent, RequestSentStatus::Unknown] {
+            let result = connectivity_failure(request_sent);
+            assert!(
+                !should_retry_connectivity_failure(&result, false),
+                "{request_sent:?} must not retry when the operation forbids ambiguous retries"
+            );
+            assert!(
+                should_retry_connectivity_failure(&result, true),
+                "{request_sent:?} must retry when the operation allows ambiguous retries"
+            );
+        }
+    }
+
+    /// The retry is bounded to a single extra same-endpoint attempt; widening
+    /// it would multiply duplicate executions for non-idempotent writes.
+    #[test]
+    fn local_connectivity_retries_are_capped_at_one() {
+        assert_eq!(MAX_LOCAL_CONNECTIVITY_RETRIES, 1);
+    }
+
     #[derive(Debug)]
     struct HangingTransportClient {
         delay: Duration,
+    }
+
+    #[derive(Debug)]
+    struct SuccessfulTransportClient;
+
+    #[async_trait]
+    impl TransportClient for SuccessfulTransportClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            Ok(HttpResponse {
+                status: 200,
+                headers: azure_core::http::headers::Headers::new(),
+                body: Vec::new(),
+            })
+        }
     }
 
     #[async_trait]
@@ -946,7 +1017,7 @@ mod tests {
             .await;
             Err(TransportError::new(
                 crate::error::CosmosError::builder()
-                    .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
                     .with_message("request should have timed out before completion")
                     .build(),
                 crate::diagnostics::RequestSentStatus::Unknown,
@@ -1217,7 +1288,7 @@ mod tests {
     #[test]
     fn evaluate_transport_retry_dtx_bodyless_429_ru_budget_uses_shared_throttle() {
         let result = make_throttled_result_with_substatus_and_retry_after(
-            SubStatusCode::RU_BUDGET_EXCEEDED,
+            crate::error::status_codes::substatus::RU_BUDGET_EXCEEDED,
             42,
         );
         let state = ThrottleRetryState::new();
@@ -1314,7 +1385,7 @@ mod tests {
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             url: endpoint.url().clone(),
             headers: azure_core::http::headers::Headers::new(),
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             resource_type: ResourceType::Database,
             body: None,
             auth_context: super::super::AuthorizationContext::new(
@@ -1323,6 +1394,7 @@ mod tests {
                 "",
             ),
             execution_context: ExecutionContext::Initial,
+            routing_fallback: None,
             deadline: Some(Instant::now() + Duration::from_millis(100)),
         };
         let client = AdaptiveTransport::Gateway(Arc::new(HangingTransportClient {
@@ -1341,7 +1413,7 @@ mod tests {
                 credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
                 client_id: &TEST_CLIENT_ID,
-                pipeline_type: PipelineType::Metadata,
+                pipeline_type: PipelineKind::Metadata,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: endpoint.endpoint_key(),
                 account_name: None,
@@ -1363,6 +1435,60 @@ mod tests {
         let requests = completed.requests();
         assert_eq!(requests.len(), 1);
         assert!(requests[0].timed_out());
+    }
+
+    #[tokio::test]
+    async fn routing_fallback_is_recorded_in_request_diagnostics() {
+        use crate::driver::pipeline::components::RoutingFallbackReason;
+
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let mut request = test_request(None);
+        request.routing_fallback =
+            Some(RoutingFallbackReason::PatchVerificationReadWriteEndpointUnavailableOrExcluded);
+        let client = AdaptiveTransport::Gateway(Arc::new(SuccessfulTransportClient));
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("routing-fallback".to_owned()),
+            Arc::new(DiagnosticsOptions::default()),
+        );
+
+        let result = execute_transport_pipeline(
+            request,
+            &TransportPipelineContext {
+                transport: &client,
+                allow_sent_transport_retry: false,
+                credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
+                user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                client_id: &TEST_CLIENT_ID,
+                pipeline_type: PipelineKind::DataPlane,
+                transport_security: TransportSecurity::Secure,
+                endpoint_key: endpoint.endpoint_key(),
+                account_name: None,
+                collection_rid: None,
+                max_throttle_attempts: 0,
+                max_throttle_wait_time: Duration::ZERO,
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
+            },
+            &mut diagnostics,
+        )
+        .await;
+
+        assert!(matches!(result.outcome, TransportOutcome::Success { .. }));
+        let completed = diagnostics.complete();
+        let requests = completed.requests();
+        assert_eq!(requests.len(), 1);
+        let fallback = requests[0]
+            .events()
+            .iter()
+            .find(|event| {
+                event.event_type() == &crate::diagnostics::RequestEventType::RoutingFallback
+            })
+            .expect("routing fallback event must be recorded");
+        assert_eq!(
+            fallback.details(),
+            Some("patch_verification_read_write_endpoint_unavailable_or_excluded")
+        );
     }
 
     #[tokio::test]
@@ -1390,7 +1516,7 @@ mod tests {
                 credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
                 client_id: &TEST_CLIENT_ID,
-                pipeline_type: PipelineType::DataPlane,
+                pipeline_type: PipelineKind::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: endpoint.endpoint_key(),
                 account_name: None,
@@ -1466,7 +1592,7 @@ mod tests {
                 credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
                 client_id: &TEST_CLIENT_ID,
-                pipeline_type: PipelineType::DataPlane,
+                pipeline_type: PipelineKind::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
                 account_name: None,
@@ -1531,7 +1657,7 @@ mod tests {
                 credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
                 client_id: &TEST_CLIENT_ID,
-                pipeline_type: PipelineType::DataPlane,
+                pipeline_type: PipelineKind::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
                 account_name: None,
@@ -1603,7 +1729,7 @@ mod tests {
                     credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                     user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
                     client_id: &TEST_CLIENT_ID,
-                    pipeline_type: PipelineType::DataPlane,
+                    pipeline_type: PipelineKind::DataPlane,
                     transport_security: TransportSecurity::Secure,
                     endpoint_key: test_endpoint_key(),
                     account_name: None,
@@ -1699,13 +1825,13 @@ mod tests {
 
         for (pipeline_type, attempts, wait, per_retry) in [
             (
-                PipelineType::DataPlane,
+                PipelineKind::DataPlane,
                 DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
                 DATA_PLANE_MAX_THROTTLE_WAIT,
                 DATA_PLANE_MAX_PER_RETRY_DELAY,
             ),
             (
-                PipelineType::Metadata,
+                PipelineKind::Metadata,
                 METADATA_MAX_THROTTLE_ATTEMPTS,
                 METADATA_MAX_THROTTLE_WAIT,
                 METADATA_MAX_PER_RETRY_DELAY,
@@ -1865,7 +1991,7 @@ mod tests {
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             url: endpoint.url().clone(),
             headers: azure_core::http::headers::Headers::new(),
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             resource_type: ResourceType::Database,
             body: None,
             auth_context: super::super::AuthorizationContext::new(
@@ -1874,6 +2000,7 @@ mod tests {
                 "",
             ),
             execution_context: ExecutionContext::Initial,
+            routing_fallback: None,
             deadline,
         }
     }
@@ -1906,7 +2033,7 @@ mod tests {
         );
         let request_handle = diagnostics.start_request(
             ExecutionContext::Initial,
-            PipelineType::DataPlane,
+            PipelineKind::DataPlane,
             TransportSecurity::Secure,
             crate::diagnostics::TransportKind::GatewayV2,
             crate::diagnostics::TransportHttpVersion::Http2,
@@ -1978,9 +2105,9 @@ mod tests {
     #[tokio::test]
     async fn execute_transport_pipeline_retries_not_sent_connectivity_error_on_different_shard() {
         let client = scripted_transport(
-            CosmosStatus::TRANSPORT_CONNECTION_FAILED,
+            crate::error::status_codes::TRANSPORT_CONNECTION_FAILED,
             "first shard failed",
-            CosmosStatus::TRANSPORT_CONNECTION_FAILED,
+            crate::error::status_codes::TRANSPORT_CONNECTION_FAILED,
             "second shard failed",
         );
         let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -1996,7 +2123,7 @@ mod tests {
                 credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
                 client_id: &TEST_CLIENT_ID,
-                pipeline_type: PipelineType::DataPlane,
+                pipeline_type: PipelineKind::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
                 account_name: None,
@@ -2034,9 +2161,9 @@ mod tests {
         let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
 
         let client_without_retry = scripted_transport(
-            CosmosStatus::TRANSPORT_IO_FAILED,
+            crate::error::status_codes::TRANSPORT_IO_FAILED,
             "first io shard failed",
-            CosmosStatus::TRANSPORT_IO_FAILED,
+            crate::error::status_codes::TRANSPORT_IO_FAILED,
             "second io shard failed",
         );
         let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -2051,7 +2178,7 @@ mod tests {
                 credential: &credential,
                 user_agent: &user_agent,
                 client_id: &TEST_CLIENT_ID,
-                pipeline_type: PipelineType::DataPlane,
+                pipeline_type: PipelineKind::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
                 account_name: None,
@@ -2077,9 +2204,9 @@ mod tests {
         }
 
         let client_with_retry = scripted_transport(
-            CosmosStatus::TRANSPORT_IO_FAILED,
+            crate::error::status_codes::TRANSPORT_IO_FAILED,
             "first io shard failed",
-            CosmosStatus::TRANSPORT_IO_FAILED,
+            crate::error::status_codes::TRANSPORT_IO_FAILED,
             "second io shard failed",
         );
         let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -2094,7 +2221,7 @@ mod tests {
                 credential: &credential,
                 user_agent: &user_agent,
                 client_id: &TEST_CLIENT_ID,
-                pipeline_type: PipelineType::DataPlane,
+                pipeline_type: PipelineKind::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
                 account_name: None,
@@ -2135,7 +2262,7 @@ mod tests {
                 )),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
                 client_id: &TEST_CLIENT_ID,
-                pipeline_type: PipelineType::DataPlane,
+                pipeline_type: PipelineKind::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
                 account_name: None,
@@ -2154,10 +2281,10 @@ mod tests {
                 request_sent,
                 ..
             } => {
-                assert_eq!(status, CosmosStatus::CLIENT_GENERATED_401);
+                assert_eq!(status, crate::error::status_codes::CLIENT_GENERATED_401);
                 assert_eq!(
                     status.sub_status(),
-                    Some(SubStatusCode::CLIENT_GENERATED_401)
+                    Some(crate::error::status_codes::substatus::CLIENT_GENERATED_401)
                 );
                 assert_eq!(request_sent, RequestSentStatus::NotSent);
             }
@@ -2167,7 +2294,10 @@ mod tests {
         let completed = diagnostics.complete();
         let requests = completed.requests();
         assert_eq!(requests.len(), 1);
-        assert_eq!(requests[0].status(), &CosmosStatus::CLIENT_GENERATED_401);
+        assert_eq!(
+            requests[0].status(),
+            &crate::error::status_codes::CLIENT_GENERATED_401
+        );
         assert_eq!(requests[0].request_sent(), RequestSentStatus::NotSent);
     }
 
@@ -2197,7 +2327,7 @@ mod tests {
             self.responses.lock().unwrap().pop_front().ok_or_else(|| {
                 TransportError::new(
                     crate::error::CosmosError::builder()
-                        .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                        .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
                         .with_message("no response queued")
                         .build(),
                     RequestSentStatus::Unknown,
@@ -2224,7 +2354,7 @@ mod tests {
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             url: endpoint.url().clone(),
             headers,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             resource_type: ResourceType::Document,
             body: None,
             auth_context: super::super::AuthorizationContext::new(
@@ -2233,6 +2363,7 @@ mod tests {
                 "dbs/db1/colls/coll1/docs/doc1",
             ),
             execution_context: ExecutionContext::Initial,
+            routing_fallback: None,
             deadline: None,
         }
     }
@@ -2250,7 +2381,7 @@ mod tests {
             credential,
             user_agent,
             client_id: &TEST_CLIENT_ID,
-            pipeline_type: PipelineType::DataPlane,
+            pipeline_type: PipelineKind::DataPlane,
             transport_security: TransportSecurity::Secure,
             endpoint_key,
             account_name,
@@ -2401,7 +2532,7 @@ mod tests {
                 request_sent,
                 ..
             } => {
-                assert_eq!(status, CosmosStatus::TRANSPORT_GENERATED_503);
+                assert_eq!(status, crate::error::status_codes::TRANSPORT_GENERATED_503);
                 assert_eq!(request_sent, RequestSentStatus::Sent);
             }
             other => panic!("expected transport error, got {other:?}"),
@@ -2579,7 +2710,7 @@ mod tests {
     fn format_transport_error_details_includes_error_chain() {
         let inner = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "socket reset");
         let cosmos = crate::error::CosmosError::builder()
-            .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+            .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
             .with_message("failed to execute `reqwest` request")
             .with_source(inner)
             .build();

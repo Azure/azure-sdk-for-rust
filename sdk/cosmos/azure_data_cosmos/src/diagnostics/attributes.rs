@@ -58,6 +58,43 @@ pub(crate) const CONNECTION_MODE: &str = "azure.cosmosdb.connection.mode";
 /// `azure.cosmosdb.operation.contacted_regions` — regions contacted (ordered `string[]`).
 pub(crate) const CONTACTED_REGIONS: &str = "azure.cosmosdb.operation.contacted_regions";
 
+/// `azure.cosmosdb.operation.hedging_started` — `true` when the operation
+/// dispatched at least one cross-region hedge (fan-out occurred).
+pub(crate) const HEDGING_STARTED: &str = "azure.cosmosdb.operation.hedging_started";
+
+/// `azure.cosmosdb.operation.hedge_region` — the alternate region the hedge was
+/// dispatched to, when a hedge fan-out occurred.
+pub(crate) const HEDGE_REGION: &str = "azure.cosmosdb.operation.hedge_region";
+
+/// `azure.cosmosdb.operation.hedge_terminal_state` — how the hedging race ended
+/// (see `HedgeTerminalState::as_str`).
+pub(crate) const HEDGE_TERMINAL_STATE: &str = "azure.cosmosdb.operation.hedge_terminal_state";
+
+/// `azure.cosmosdb.operation.requested_regions` — regions dispatched to, in
+/// dispatch order (`string[]`). High-signal for hedge fan-out.
+///
+/// Bounded by `max_request_diagnostics`; see [`REQUESTED_REGIONS_TOTAL`].
+pub(crate) const REQUESTED_REGIONS: &str = "azure.cosmosdb.operation.requested_regions";
+
+/// `azure.cosmosdb.operation.requested_regions_total` — exact dispatch count,
+/// emitted only when [`REQUESTED_REGIONS`] was truncated under a retry storm so
+/// the elision is explicit rather than silent.
+pub(crate) const REQUESTED_REGIONS_TOTAL: &str = "azure.cosmosdb.operation.requested_regions_total";
+
+/// `azure.cosmosdb.operation.responded_regions` — regions that returned a
+/// service reply, in arrival order (`string[]`).
+///
+/// Bounded by `max_request_diagnostics`; see [`RESPONDED_REGIONS_TOTAL`].
+pub(crate) const RESPONDED_REGIONS: &str = "azure.cosmosdb.operation.responded_regions";
+
+/// `azure.cosmosdb.operation.responded_regions_total` — exact reply count,
+/// emitted only when [`RESPONDED_REGIONS`] was truncated under a retry storm.
+pub(crate) const RESPONDED_REGIONS_TOTAL: &str = "azure.cosmosdb.operation.responded_regions_total";
+
+/// `azure.cosmosdb.request.hedge` — `true` on the per-attempt (child) span for a
+/// speculative hedge leg dispatched to an alternate region.
+pub(crate) const HEDGE_LEG: &str = "azure.cosmosdb.request.hedge";
+
 /// `azure.cosmosdb.response.sub_status_code` — the Cosmos sub-status code.
 pub(crate) const SUB_STATUS_CODE: &str = "azure.cosmosdb.response.sub_status_code";
 

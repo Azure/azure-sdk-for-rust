@@ -25,14 +25,12 @@
 //! the container/item-scope operation factories (`cosmos_operation_read_item`,
 //! `cosmos_operation_create_item`, etc.) consume.
 //!
-//! See [`docs/NATIVE_WRAPPER_SPEC.md`] section 4.3 + section 4.4 + section 4.7.
-//!
-//! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
-
-use std::ffi::{c_char, CStr};
+use crate::string::{required_text, CosmosStringView};
 use std::sync::Arc;
 
-use azure_data_cosmos_driver::models::ContainerReference as DriverContainerReference;
+use azure_data_cosmos_driver::{
+    models::ContainerReference as DriverContainerReference, options::OperationOptions,
+};
 
 use crate::driver::DriverHandle;
 use crate::error::{CosmosError, CosmosErrorCode, CosmosStatusCode};
@@ -74,16 +72,6 @@ impl ContainerRefHandle {
     }
 }
 
-fn try_cstr_to_str<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
-    if p.is_null() {
-        return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
-    }
-    // SAFETY: caller contract on every entry point.
-    let cstr = unsafe { CStr::from_ptr(p) };
-    cstr.to_str()
-        .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidUtf8)
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // FFI: lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
@@ -106,15 +94,18 @@ pub extern "C" fn cosmos_container_ref_free(container: *mut ContainerRefHandle) 
 /// [`azure_data_cosmos_driver::driver::CosmosDriver::resolve_container_by_name`]
 /// through the wrapper's Tokio runtime via `block_on`.
 ///
-/// Touches the network on cache miss (reads container metadata from
-/// the gateway). On cache hit returns immediately without I/O.
+/// May read container metadata and partition topology from the gateway. In the
+/// default eager topology mode, a container-metadata cache hit can still issue
+/// `/pkranges` requests because topology is cached per driver. Resolution
+/// returns without I/O only when every required cache entry is warm; lazy
+/// topology mode skips the topology load during resolution.
 ///
 /// # Parameters
 ///
 /// - `runtime` — non-NULL.
 /// - `driver` — non-NULL; the driver whose container cache to consult.
-/// - `database_id` — NUL-terminated UTF-8.
-/// - `container_id` — NUL-terminated UTF-8.
+/// - `database_id` — required counted UTF-8, per [`CosmosStringView`].
+/// - `container_id` — required counted UTF-8, per [`CosmosStringView`].
 /// - `out_container` — non-NULL slot for the resolved handle.
 /// - `out_error` — optional rich error on failure. NULL silently drops.
 ///
@@ -129,12 +120,14 @@ pub extern "C" fn cosmos_container_ref_free(container: *mut ContainerRefHandle) 
 ///   is not valid UTF-8.
 /// - The packed HTTP/sub-status derived from the driver-side error on resolve
 ///   failure; `*out_error` is populated when non-NULL.
+///
+/// Embedded NUL in either identifier is rejected as an invalid option.
 #[no_mangle]
 pub extern "C" fn cosmos_driver_resolve_container_blocking(
     runtime: *const RuntimeContext,
     driver: *const DriverHandle,
-    database_id: *const c_char,
-    container_id: *const c_char,
+    database_id: CosmosStringView,
+    container_id: CosmosStringView,
     out_container: *mut *mut ContainerRefHandle,
     out_error: *mut *mut CosmosError,
 ) -> CosmosStatusCode {
@@ -147,19 +140,31 @@ pub extern "C" fn cosmos_driver_resolve_container_blocking(
     let Some(driver_inner) = DriverHandle::inner_arc(driver) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     };
-    let db_id = match try_cstr_to_str(database_id) {
-        Ok(s) => s.to_owned(),
+    // SAFETY: input view is readable for the duration of this FFI call.
+    let db_id = match unsafe {
+        required_text(
+            database_id,
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+        )
+    } {
+        Ok(s) => s,
         Err(code) => return code.as_status_code(),
     };
-    let container_id = match try_cstr_to_str(container_id) {
-        Ok(s) => s.to_owned(),
+    // SAFETY: input view is readable for the duration of this FFI call.
+    let container_id = match unsafe {
+        required_text(
+            container_id,
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+        )
+    } {
+        Ok(s) => s,
         Err(code) => return code.as_status_code(),
     };
 
     let driver_arc = Arc::clone(&driver_inner.inner);
     let result = runtime_inner.tokio.block_on(async move {
         driver_arc
-            .resolve_container_by_name(&db_id, &container_id)
+            .resolve_container_by_name(&db_id, &container_id, OperationOptions::default())
             .await
     });
 
@@ -186,6 +191,9 @@ pub extern "C" fn cosmos_driver_resolve_container_blocking(
 }
 
 #[cfg(test)]
+mod counted_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use std::ptr;
@@ -205,8 +213,8 @@ mod tests {
             cosmos_driver_resolve_container_blocking(
                 ptr::null(),
                 ptr::null(),
-                std::ffi::CString::new("db").unwrap().as_ptr(),
-                std::ffi::CString::new("c").unwrap().as_ptr(),
+                crate::string::view(b"db"),
+                crate::string::view(b"c"),
                 &mut out,
                 &mut err,
             ),

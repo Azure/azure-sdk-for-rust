@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cSpell:ignore benchdb benchcontainer benchitem
-
 //! Shared transport infrastructure for `azure_data_cosmos_benchmarks`.
 //!
 //! Provides both a mock transport (zero-latency, in-memory) and a live-transport
@@ -19,7 +17,7 @@ use azure_data_cosmos_driver::{
     driver::CosmosDriverRuntimeBuilder,
     models::{AccountReference, CosmosOperation, DatabaseReference, ItemReference, PartitionKey},
     options::{DriverOptions, OperationOptions},
-    testing::{
+    test::{
         ConnectionPoolOptions, HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse,
         TransportClient, TransportError,
     },
@@ -253,7 +251,7 @@ pub async fn setup_live() -> (Arc<CosmosDriver>, ItemReference) {
     let item_id = std::env::var("AZURE_COSMOS_ITEM_ID").unwrap_or_else(|_| "item1".to_string());
 
     let endpoint_url = Url::parse(&endpoint).expect("AZURE_COSMOS_ENDPOINT is not a valid URL");
-    let account = AccountReference::with_master_key(endpoint_url, key.clone());
+    let account = AccountReference::with_account_key(endpoint_url, key.clone());
 
     let runtime = CosmosDriverRuntimeBuilder::new()
         .build()
@@ -297,7 +295,11 @@ pub async fn setup_live() -> (Arc<CosmosDriver>, ItemReference) {
 
     // Resolve the container (primes the container cache).
     let container_ref = driver
-        .resolve_container(database.as_str(), container.as_str())
+        .resolve_container(
+            database.as_str(),
+            container.as_str(),
+            OperationOptions::default(),
+        )
         .await
         .expect("failed to resolve container");
 
@@ -359,7 +361,7 @@ pub async fn setup() -> (Arc<CosmosDriver>, ItemReference) {
         .await
         .expect("failed to build runtime");
 
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         Url::parse("https://bench.documents.azure.com:443/").unwrap(),
         "dGVzdA==",
     );
@@ -370,7 +372,7 @@ pub async fn setup() -> (Arc<CosmosDriver>, ItemReference) {
         .expect("failed to create driver");
 
     let container = driver
-        .resolve_container("benchdb", "benchcontainer")
+        .resolve_container("benchdb", "benchcontainer", OperationOptions::default())
         .await
         .expect("failed to resolve container");
 

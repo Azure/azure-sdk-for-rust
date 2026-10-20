@@ -68,7 +68,7 @@ SHOULD
 - Keep names concise; avoid unclear abbreviations.
 - Prefer Azure Core policy implementations over custom ones.
 - Prefer deriving `SafeDebug` instead of `Debug` when PII risk exists; never trace/telemeter PII.
-- Include/verify docs+snippets guidance relevance for changed public API.
+- Use the [review-doc-comments skill](../skills/review-doc-comments/SKILL.md) whenever reviewing code that affects public APIs, even when no doc comments changed; preserve this review's high-signal reporting threshold.
 - Use Rust code intelligence/LSP evidence when available.
 
 MAY

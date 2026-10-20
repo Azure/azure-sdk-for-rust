@@ -17,7 +17,7 @@ use crate::{
     models::{
         effective_partition_key::EffectivePartitionKey, AccountReference, ActivityId,
         CosmosOperation, CosmosResponse, CosmosResponseHeaders, CosmosStatus, DatabaseReference,
-        FeedRange, PartitionKey, SubStatusCode,
+        FeedRange, PartitionKey,
     },
     options::DiagnosticsOptions,
 };
@@ -27,6 +27,7 @@ use crate::{
 /// A mock leaf node that returns pre-configured page results.
 pub(crate) struct MockLeaf {
     pages: VecDeque<crate::error::Result<PageResult>>,
+    pending_error: Option<crate::error::CosmosError>,
     feed_range: Option<FeedRange>,
     snapshot: Option<PipelineNodeState>,
 }
@@ -36,6 +37,7 @@ impl MockLeaf {
     pub fn with_pages(pages: Vec<crate::error::Result<PageResult>>) -> Self {
         Self {
             pages: pages.into(),
+            pending_error: None,
             feed_range: None,
             snapshot: None,
         }
@@ -44,6 +46,11 @@ impl MockLeaf {
     /// Sets the feed range reported by [`PipelineNode::feed_range`].
     pub fn with_feed_range(mut self, range: FeedRange) -> Self {
         self.feed_range = Some(range);
+        self
+    }
+
+    pub(crate) fn with_pending_error(mut self, error: crate::error::CosmosError) -> Self {
+        self.pending_error = Some(error);
         self
     }
 
@@ -57,6 +64,10 @@ impl MockLeaf {
 
 #[async_trait::async_trait]
 impl PipelineNode for MockLeaf {
+    fn take_pending_error(&mut self) -> Option<crate::error::CosmosError> {
+        self.pending_error.take()
+    }
+
     async fn next_page(
         &mut self,
         _context: &mut PipelineContext<'_>,
@@ -190,12 +201,16 @@ impl TopologyProvider for NoopTopologyProvider {
 /// A mock topology provider that returns pre-configured resolved ranges.
 pub(crate) struct MockTopologyProvider {
     results: VecDeque<crate::error::Result<Vec<ResolvedRange>>>,
+    pub refresh_calls: Vec<PartitionRoutingRefresh>,
+    pub range_calls: Vec<FeedRange>,
 }
 
 impl MockTopologyProvider {
     pub fn new(results: Vec<crate::error::Result<Vec<ResolvedRange>>>) -> Self {
         Self {
             results: results.into(),
+            refresh_calls: Vec::new(),
+            range_calls: Vec::new(),
         }
     }
 }
@@ -203,9 +218,11 @@ impl MockTopologyProvider {
 impl TopologyProvider for MockTopologyProvider {
     fn resolve_ranges<'a>(
         &'a mut self,
-        _range: &'a FeedRange,
-        _refresh: PartitionRoutingRefresh,
+        range: &'a FeedRange,
+        refresh: PartitionRoutingRefresh,
     ) -> BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
+        self.refresh_calls.push(refresh);
+        self.range_calls.push(range.clone());
         let result = self
             .results
             .pop_front()
@@ -275,7 +292,7 @@ pub(crate) fn assert_drained(result: crate::error::Result<PageResult>) {
 
 /// Creates a test `CosmosOperation`.
 pub(crate) fn operation() -> CosmosOperation {
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
         "dGVzdA==",
     );
@@ -285,17 +302,20 @@ pub(crate) fn operation() -> CosmosOperation {
 
 /// Creates a `RequestTarget` for a logical partition key.
 pub(crate) fn logical_partition_target() -> RequestTarget {
-    RequestTarget::LogicalPartitionKey(PartitionKey::from("pk"))
+    RequestTarget::logical_partition_key(PartitionKey::from("pk"), None)
 }
 
 /// Creates a `RequestTarget` for an EPK range ("" to "80", partition key range ID "0").
-pub(crate) fn epk_range_target() -> RequestTarget {
+pub(crate) fn epk_range_target() -> crate::error::Result<RequestTarget> {
     let range = FeedRange::new(
         EffectivePartitionKey::MIN,
-        EffectivePartitionKey::from("80"),
-    )
-    .unwrap();
-    RequestTarget::effective_partition_key_range(range.clone(), "0".to_string(), range)
+        EffectivePartitionKey::try_from("80")?,
+    )?;
+    Ok(RequestTarget::effective_partition_key_range(
+        range.clone(),
+        "0".to_string(),
+        range,
+    ))
 }
 
 /// Creates a test response with the given body.
@@ -323,11 +343,28 @@ pub(crate) fn response_with_continuation(
     )
 }
 
+/// Creates a test response carrying a specific request charge (RU) header.
+pub(crate) fn response_with_charge(body: &[u8], request_charge: f64) -> CosmosResponse {
+    let mut diagnostics = DiagnosticsContextBuilder::new(
+        ActivityId::new_uuid(),
+        Arc::new(DiagnosticsOptions::default()),
+    );
+    diagnostics.set_operation_status(StatusCode::Ok, None);
+    let mut headers = CosmosResponseHeaders::new();
+    headers.request_charge = Some(crate::models::RequestCharge::new(request_charge));
+    CosmosResponse::new(
+        body.to_vec(),
+        headers,
+        CosmosStatus::new(StatusCode::Ok),
+        Arc::new(diagnostics.complete()),
+    )
+}
+
 /// Creates a test response whose diagnostics carry `requests` per-attempt
 /// records, so tests can assert on attempt counts surviving aggregation.
 pub(crate) fn response_with_request_diagnostics(requests: usize) -> CosmosResponse {
     use crate::diagnostics::{
-        ExecutionContext, PipelineType, TransportHttpVersion, TransportKind, TransportSecurity,
+        ExecutionContext, PipelineKind, TransportHttpVersion, TransportKind, TransportSecurity,
     };
 
     let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -340,7 +377,7 @@ pub(crate) fn response_with_request_diagnostics(requests: usize) -> CosmosRespon
     for _ in 0..requests {
         let _ = diagnostics.start_request(
             ExecutionContext::Initial,
-            PipelineType::DataPlane,
+            PipelineKind::DataPlane,
             TransportSecurity::Secure,
             TransportKind::Gateway,
             TransportHttpVersion::Http11,
@@ -383,13 +420,49 @@ pub(crate) fn gone_error() -> crate::error::CosmosError {
         ))
         .with_status(CosmosStatus::from_parts(
             StatusCode::Gone,
-            Some(SubStatusCode::PARTITION_KEY_RANGE_GONE),
+            Some(crate::error::status_codes::substatus::PARTITION_KEY_RANGE_GONE),
         ))
         .with_message("partition topology changed")
         .with_response_parts(crate::models::CosmosResponsePayload::new(
             Vec::new(),
             CosmosResponseHeaders::default(),
         ))
+        .build()
+}
+
+pub(crate) fn gone_error_with_diagnostics() -> crate::error::CosmosError {
+    use crate::diagnostics::{
+        ExecutionContext, PipelineKind, TransportHttpVersion, TransportKind, TransportSecurity,
+    };
+    let status = gone_error().status();
+    let mut diagnostics = DiagnosticsContextBuilder::new(
+        ActivityId::new_uuid(),
+        Arc::new(
+            DiagnosticsOptions::builder()
+                .with_max_request_diagnostics(16)
+                .build()
+                .unwrap(),
+        ),
+    );
+    let endpoint = crate::driver::routing::CosmosEndpoint::global(
+        url::Url::parse("https://acct.example/").unwrap(),
+    );
+    let handle = diagnostics.start_request(
+        ExecutionContext::Initial,
+        PipelineKind::DataPlane,
+        TransportSecurity::Secure,
+        TransportKind::Gateway,
+        TransportHttpVersion::Http11,
+        &endpoint,
+    );
+    diagnostics.update_request(handle, |request| {
+        request.with_charge(crate::models::RequestCharge::new(1.0))
+    });
+    diagnostics.complete_request(handle, status.status_code(), status.sub_status());
+    diagnostics.set_operation_status(status.status_code(), status.sub_status());
+    crate::error::CosmosError::builder()
+        .with_status(status)
+        .with_diagnostics(Arc::new(diagnostics.complete()))
         .build()
 }
 
@@ -401,7 +474,7 @@ pub(crate) fn non_topology_gone_error() -> crate::error::CosmosError {
         ))
         .with_status(CosmosStatus::from_parts(
             StatusCode::Gone,
-            Some(SubStatusCode::NAME_CACHE_STALE),
+            Some(crate::error::status_codes::substatus::NAME_CACHE_STALE),
         ))
         .with_message("name cache is stale")
         .with_response_parts(crate::models::CosmosResponsePayload::new(

@@ -72,4 +72,65 @@ mod tests {
             Some("totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01")
         );
     }
+
+    /// Regression test for the cross-partition consumer branch: a pre-split
+    /// `ResponseBody::Items` body (produced by the driver's SkipTake / streaming
+    /// ORDER BY merge nodes) must be decoded item-by-item by
+    /// [`QueryFeedPage::from_response`] rather than being parsed as a single
+    /// `{"Documents":[...]}` envelope. Each `Bytes` element is one whole document.
+    #[test]
+    fn items_body_decodes_per_item_not_as_envelope() {
+        use crate::feed::QueryFeedPage;
+        use crate::models::CosmosResponse;
+        use azure_core::http::StatusCode;
+        use azure_data_cosmos_driver::diagnostics::DiagnosticsContext;
+        use azure_data_cosmos_driver::models::{ActivityId, CosmosStatus, ResponseBody};
+        use std::sync::Arc;
+
+        let body = ResponseBody::from_items(vec![
+            azure_core::Bytes::from_static(br#"{"id":"a","rank":1}"#),
+            azure_core::Bytes::from_static(br#"{"id":"b","rank":2}"#),
+        ]);
+        let status = CosmosStatus::new(StatusCode::Ok);
+        let diagnostics = Arc::new(DiagnosticsContext::for_testing(ActivityId::new_uuid()));
+        let cosmos_response = CosmosResponse::from_driver_parts(
+            body.into(),
+            CosmosResponseHeaders::new().into(),
+            status,
+            diagnostics,
+        );
+
+        let page = QueryFeedPage::<serde_json::Value>::from_response(cosmos_response).unwrap();
+        let ids: Vec<&str> = page
+            .items()
+            .iter()
+            .map(|v| v["id"].as_str().unwrap())
+            .collect();
+        assert_eq!(ids, vec!["a", "b"]);
+    }
+
+    /// A pre-split empty page arrives as `ResponseBody::Items(vec![])` and must
+    /// decode to zero items (not error, not one empty item).
+    #[test]
+    fn empty_items_body_decodes_to_no_items() {
+        use crate::feed::QueryFeedPage;
+        use crate::models::CosmosResponse;
+        use azure_core::http::StatusCode;
+        use azure_data_cosmos_driver::diagnostics::DiagnosticsContext;
+        use azure_data_cosmos_driver::models::{ActivityId, CosmosStatus, ResponseBody};
+        use std::sync::Arc;
+
+        let body = ResponseBody::from_items(Vec::new());
+        let status = CosmosStatus::new(StatusCode::Ok);
+        let diagnostics = Arc::new(DiagnosticsContext::for_testing(ActivityId::new_uuid()));
+        let cosmos_response = CosmosResponse::from_driver_parts(
+            body.into(),
+            CosmosResponseHeaders::new().into(),
+            status,
+            diagnostics,
+        );
+
+        let page = QueryFeedPage::<serde_json::Value>::from_response(cosmos_response).unwrap();
+        assert!(page.items().is_empty());
+    }
 }

@@ -1,6 +1,6 @@
 [package]
 name = "typespec"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.2"
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -10,6 +10,7 @@ repository.workspace = true
 license.workspace = true
 categories = ["compilers", "development-tools"]
 keywords = []
+exclude.workspace = true
 
 [dependencies]
 base64.workspace = true

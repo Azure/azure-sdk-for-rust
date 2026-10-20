@@ -23,6 +23,15 @@ use crate::models::{partition_key_range::PartitionKeyRange, PartitionKeyDefiniti
 /// topology.
 ///
 /// Use [`FeedRange::full()`] for the entire key space (`""..FF`).
+///
+/// Serializing or converting a logical-partition range to a string retains only its
+/// effective bounds. Parsing or deserializing it does not restore the
+/// partition-key identity or logical routing semantics. Do not persist a
+/// single-partition feed range to recreate logical scope later; preserve the
+/// partition key and recreate the scope or range with the current container
+/// definition. To resume an existing feed or query, use that operation's
+/// continuation token and follow its documented scope requirements. A
+/// serialized range is not a replacement for a continuation token.
 #[derive(Clone, SafeDebug, PartialEq, Eq, Hash)]
 #[safe(true)]
 pub struct FeedRange(FeedRangeRepr);
@@ -123,6 +132,13 @@ impl FeedRange {
     /// (`min < max`) so the thin-client proxy can scope the per-pkrange request
     /// down to just the prefix subrange instead of returning every row in the
     /// pkrange.
+    ///
+    /// The partition-key identity is retained only in this in-memory logical
+    /// range. Serialization/stringification keeps the effective bounds, but
+    /// parsing/deserialization cannot restore the identity or its logical
+    /// routing semantics. Preserve the partition key and use the current
+    /// container definition to recreate this range when needed. Use the
+    /// operation's continuation token to resume an existing feed or query.
     pub fn for_partition(partition_key: PartitionKey, definition: &PartitionKeyDefinition) -> Self {
         // `compute_range` returns the right shape for both full and partial keys.
         // Fall back to a point range built from `compute` if the inputs are
@@ -218,8 +234,8 @@ impl FeedRange {
             return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message("feed range must have [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)").build());
         }
 
-        let min = EffectivePartitionKey::from(json.range.min);
-        let max = EffectivePartitionKey::from(json.range.max);
+        let min = EffectivePartitionKey::try_from(json.range.min)?;
+        let max = EffectivePartitionKey::try_from(json.range.max)?;
 
         if min > max {
             return Err(crate::error::CosmosError::builder()
@@ -274,6 +290,11 @@ impl FromStr for FeedRange {
     type Err = crate::error::CosmosError;
 
     /// Parses a feed range from a base64-encoded JSON string.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the base64 or JSON is invalid, either bound is not
+    /// even-length hexadecimal, or the range lacks ordered `[min, max)` bounds.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let decoded_bytes = base64::engine::general_purpose::STANDARD
             .decode(s)
@@ -289,7 +310,7 @@ impl FromStr for FeedRange {
 
         let json: FeedRangeJson = serde_json::from_slice(&decoded_bytes).map_err(|e| {
             crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("feed range JSON is invalid")
                 .with_source(e)
                 .build()
@@ -330,110 +351,112 @@ mod tests {
     }
 
     #[test]
-    fn is_subset_of_full() {
+    fn is_subset_of_full() -> crate::error::Result<()> {
         let full = FeedRange::full();
         let sub = FeedRange::new(
-            EffectivePartitionKey::from("00"),
-            EffectivePartitionKey::from("80"),
-        )
-        .unwrap();
+            EffectivePartitionKey::try_from("00")?,
+            EffectivePartitionKey::try_from("80")?,
+        )?;
         assert!(sub.is_subset_of(&full));
         assert!(!full.is_subset_of(&sub));
+        Ok(())
     }
 
     #[test]
-    fn is_subset_of_self() {
+    fn is_subset_of_self() -> crate::error::Result<()> {
         let range = FeedRange::new(
-            EffectivePartitionKey::from("20"),
-            EffectivePartitionKey::from("80"),
-        )
-        .unwrap();
+            EffectivePartitionKey::try_from("20")?,
+            EffectivePartitionKey::try_from("80")?,
+        )?;
         assert!(range.is_subset_of(&range));
+        Ok(())
     }
 
     #[test]
-    fn overlaps_basic() {
+    fn overlaps_basic() -> crate::error::Result<()> {
         let a = FeedRange::new(
-            EffectivePartitionKey::from("00"),
-            EffectivePartitionKey::from("50"),
-        )
-        .unwrap();
+            EffectivePartitionKey::try_from("00")?,
+            EffectivePartitionKey::try_from("50")?,
+        )?;
         let b = FeedRange::new(
-            EffectivePartitionKey::from("30"),
-            EffectivePartitionKey::from("80"),
-        )
-        .unwrap();
+            EffectivePartitionKey::try_from("30")?,
+            EffectivePartitionKey::try_from("80")?,
+        )?;
         assert!(a.overlaps(&b));
         assert!(b.overlaps(&a));
+        Ok(())
     }
 
     #[test]
-    fn overlaps_adjacent_no_overlap() {
+    fn overlaps_adjacent_no_overlap() -> crate::error::Result<()> {
         let a = FeedRange::new(
-            EffectivePartitionKey::from("00"),
-            EffectivePartitionKey::from("50"),
-        )
-        .unwrap();
+            EffectivePartitionKey::try_from("00")?,
+            EffectivePartitionKey::try_from("50")?,
+        )?;
         let b = FeedRange::new(
-            EffectivePartitionKey::from("50"),
-            EffectivePartitionKey::from("FF"),
-        )
-        .unwrap();
+            EffectivePartitionKey::try_from("50")?,
+            EffectivePartitionKey::try_from("FF")?,
+        )?;
         assert!(!a.overlaps(&b));
         assert!(!b.overlaps(&a));
+        Ok(())
     }
 
     #[test]
-    fn overlaps_disjoint() {
+    fn overlaps_disjoint() -> crate::error::Result<()> {
         let a = FeedRange::new(
-            EffectivePartitionKey::from("00"),
-            EffectivePartitionKey::from("30"),
-        )
-        .unwrap();
+            EffectivePartitionKey::try_from("00")?,
+            EffectivePartitionKey::try_from("30")?,
+        )?;
         let b = FeedRange::new(
-            EffectivePartitionKey::from("50"),
-            EffectivePartitionKey::from("FF"),
-        )
-        .unwrap();
+            EffectivePartitionKey::try_from("50")?,
+            EffectivePartitionKey::try_from("FF")?,
+        )?;
         assert!(!a.overlaps(&b));
         assert!(!b.overlaps(&a));
+        Ok(())
     }
 
     #[test]
-    fn display_round_trip() {
+    fn display_round_trip() -> crate::error::Result<()> {
         let range = FeedRange::new(
-            EffectivePartitionKey::from("3FFFFFFFFFFF"),
-            EffectivePartitionKey::from("7FFFFFFFFFFF"),
-        )
-        .unwrap();
+            EffectivePartitionKey::try_from("3FFFFFFFFFFF")?,
+            EffectivePartitionKey::try_from("7FFFFFFFFFFF")?,
+        )?;
 
         let serialized = range.to_string();
-        let parsed: FeedRange = serialized.parse().unwrap();
+        let parsed: FeedRange = serialized.parse()?;
 
         assert_eq!(parsed, range);
+        Ok(())
     }
 
     #[test]
-    fn serde_json_round_trip() {
+    fn serde_json_round_trip() -> Result<(), Box<dyn std::error::Error>> {
         let range = FeedRange::new(
-            EffectivePartitionKey::from(""),
-            EffectivePartitionKey::from("FF"),
-        )
-        .unwrap();
+            EffectivePartitionKey::try_from("")?,
+            EffectivePartitionKey::try_from("FF")?,
+        )?;
 
-        let json = serde_json::to_string(&range).unwrap();
-        let parsed: FeedRange = serde_json::from_str(&json).unwrap();
+        let json = serde_json::to_string(&range)?;
+        let parsed: FeedRange = serde_json::from_str(&json)?;
 
         assert_eq!(parsed, range);
+        Ok(())
     }
 
     #[test]
-    fn try_from_partition_key_range() {
-        let pkr = PartitionKeyRange::new("0".to_string(), "".to_string(), "FF".to_string());
-        let feed_range = FeedRange::try_from(&pkr).unwrap();
+    fn try_from_partition_key_range() -> crate::error::Result<()> {
+        let pkr = PartitionKeyRange::new(
+            "0".to_string(),
+            EffectivePartitionKey::try_from("")?,
+            EffectivePartitionKey::try_from("FF")?,
+        );
+        let feed_range = FeedRange::try_from(&pkr)?;
 
         assert_eq!(feed_range.min_inclusive().to_hex(), "");
         assert_eq!(feed_range.max_exclusive().to_hex(), "FF");
+        Ok(())
     }
 
     #[test]
@@ -474,5 +497,43 @@ mod tests {
         let json =
             r#"{"Range":{"min":"FF","max":"","isMinInclusive":true,"isMaxInclusive":false}}"#;
         assert!(serde_json::from_str::<FeedRange>(json).is_err());
+    }
+
+    #[test]
+    fn json_and_base64_reject_malformed_epk_bounds() {
+        for malformed in [
+            "4", "408", "GG", "40G0", "4080GG", "4080x", "é", "4080é", "😀", "８０",
+        ] {
+            for (min, max) in [(malformed, "FF"), ("", malformed)] {
+                let json = serde_json::json!({
+                    "Range": {
+                        "min": min,
+                        "max": max,
+                        "isMinInclusive": true,
+                        "isMaxInclusive": false
+                    }
+                })
+                .to_string();
+                assert!(serde_json::from_str::<FeedRange>(&json).is_err());
+                let encoded = base64::engine::general_purpose::STANDARD.encode(json.as_bytes());
+                assert!(encoded.parse::<FeedRange>().is_err());
+            }
+        }
+    }
+
+    #[test]
+    fn json_and_base64_preserve_epk_padding() -> Result<(), Box<dyn std::error::Error>> {
+        let json = r#"{"Range":{"min":"3a0000","max":"3a00ff","isMinInclusive":true,"isMaxInclusive":false}}"#;
+        let range: FeedRange = serde_json::from_str(json)?;
+        assert_eq!(range.min_inclusive().to_hex(), "3A0000");
+        assert_eq!(range.max_exclusive().to_hex(), "3A00FF");
+        assert_eq!(
+            range.min_inclusive(),
+            &EffectivePartitionKey::try_from("3A")?
+        );
+        let parsed: FeedRange = range.to_string().parse()?;
+        assert_eq!(parsed.min_inclusive().to_hex(), "3A0000");
+        assert_eq!(parsed.max_exclusive().to_hex(), "3A00FF");
+        Ok(())
     }
 }

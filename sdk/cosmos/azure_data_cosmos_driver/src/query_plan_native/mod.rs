@@ -188,11 +188,38 @@ impl NativeQueryPlanProvider {
             _ => native::PartitionKind::Hash,
         };
 
-        let options = provider::QueryPlanOptions {
-            partition_kind,
-            ..provider::QueryPlanOptions::default()
-        };
+        let options = query_plan_options(partition_kind);
 
         provider.get_partition_key_ranges(query_spec_json, partition_key_paths, &options, None)
+    }
+}
+
+fn query_plan_options(partition_kind: native::PartitionKind) -> provider::QueryPlanOptions {
+    provider::QueryPlanOptions {
+        partition_kind,
+        // Match the .NET query-plan contract: the service decides whether the
+        // resulting plan is streaming or non-streaming, and both pipelines can
+        // consume the formattable ORDER BY rewrite.
+        require_formattable_order_by_query: true,
+        is_continuation_expected: false,
+        ..provider::QueryPlanOptions::default()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn query_plan_options_request_formattable_ordering() {
+        for partition_kind in [
+            native::PartitionKind::Hash,
+            native::PartitionKind::MultiHash,
+        ] {
+            let options = query_plan_options(partition_kind);
+            assert!(options.require_formattable_order_by_query);
+            assert!(!options.is_continuation_expected);
+            assert_eq!(options.partition_kind, partition_kind);
+        }
     }
 }

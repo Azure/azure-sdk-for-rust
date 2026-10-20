@@ -8,8 +8,7 @@ use std::sync::Arc;
 use crate::{
     models::AccountReference,
     options::{
-        HedgingOptions, OperationOptions, PartitionFailoverOptions, Region,
-        ThroughputControlGroupOptions, ThroughputControlGroupRegistry, UserAgentSuffix,
+        HedgingOptions, OperationOptions, PartitionFailoverOptions, Region, UserAgentSuffix,
     },
 };
 
@@ -31,7 +30,7 @@ use crate::fault_injection::FaultInjectionRule;
 /// };
 /// use url::Url;
 ///
-/// let account = AccountReference::with_master_key(
+/// let account = AccountReference::with_account_key(
 ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
 ///     "my-master-key",
 /// );
@@ -79,14 +78,6 @@ pub struct DriverOptions {
     /// rules; they do not interact.
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Option<Vec<Arc<FaultInjectionRule>>>,
-    /// Driver-level throughput control group registrations.
-    ///
-    /// At driver-creation time, the driver merges the runtime's registered
-    /// groups with these driver-level groups into a single registry. The
-    /// driver uses the merged registry to look up groups for every request.
-    /// Cross-layer name collisions (or two `is_default=true` groups for the
-    /// same container) error at driver creation.
-    throughput_control_groups: ThroughputControlGroupRegistry,
     /// Driver-level partition-failover / PPCB tuning.
     ///
     /// These knobs are read once at driver construction time and govern the
@@ -141,15 +132,6 @@ impl DriverOptions {
         self.fault_injection_rules.as_deref()
     }
 
-    /// Returns the driver-level throughput control group registry.
-    ///
-    /// This registry is merged with the runtime's registry at driver
-    /// creation; the merged registry is what gets consulted on the request
-    /// path.
-    pub(crate) fn throughput_control_groups(&self) -> &ThroughputControlGroupRegistry {
-        &self.throughput_control_groups
-    }
-
     /// Returns the driver-level partition-failover / PPCB tuning options.
     pub fn partition_failover_options(&self) -> &PartitionFailoverOptions {
         &self.partition_failover_options
@@ -174,7 +156,6 @@ pub struct DriverOptionsBuilder {
     user_agent_suffix: Option<UserAgentSuffix>,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Option<Vec<Arc<FaultInjectionRule>>>,
-    throughput_control_groups: ThroughputControlGroupRegistry,
     partition_failover_options: Option<PartitionFailoverOptions>,
     hedging_options: Option<HedgingOptions>,
 }
@@ -189,7 +170,6 @@ impl DriverOptionsBuilder {
             user_agent_suffix: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: None,
-            throughput_control_groups: ThroughputControlGroupRegistry::new(),
             partition_failover_options: None,
             hedging_options: None,
         }
@@ -258,7 +238,7 @@ impl DriverOptionsBuilder {
             if !seen.insert(rule.id().to_string()) {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID,
+                        crate::error::status_codes::CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID,
                     )
                     .with_message(format!("duplicate fault injection rule id: {}", rule.id()))
                     .build());
@@ -269,31 +249,6 @@ impl DriverOptionsBuilder {
             Some(existing) => existing.extend(rules),
             None => self.fault_injection_rules = Some(rules),
         }
-        Ok(self)
-    }
-
-    /// Registers a throughput-control group on this driver.
-    ///
-    /// At driver-creation time, the driver merges the runtime's registry
-    /// with the per-driver registry into a single registry consulted on
-    /// every request. Cross-layer collisions (duplicate `(container, name)`
-    /// key, or two `is_default=true` groups for the same container) are
-    /// detected and surfaced at driver creation.
-    ///
-    /// Calling this multiple times appends groups; collisions within this
-    /// builder are surfaced as soon as the conflict is introduced.
-    pub fn register_throughput_control_group(
-        mut self,
-        group: ThroughputControlGroupOptions,
-    ) -> crate::error::Result<Self> {
-        self.throughput_control_groups
-            .register(group)
-            .map_err(|e| {
-                crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
-                    .with_message(e.to_string())
-                    .build()
-            })?;
         Ok(self)
     }
 
@@ -321,9 +276,10 @@ impl DriverOptionsBuilder {
     /// Builds the [`DriverOptions`].
     ///
     /// When [`with_partition_failover_options`](Self::with_partition_failover_options)
-    /// was not called, the partition-failover / PPCB options are resolved from
-    /// the `AZURE_COSMOS_PPCB_*` environment variables. Resolution is fail-soft:
-    /// an out-of-bounds value is logged and the group falls back to
+    /// was not called, partition topology loading and partition-failover
+    /// options are resolved from `AZURE_COSMOS_PARTITION_TOPOLOGY_CACHE_MODE`
+    /// and the `AZURE_COSMOS_PPCB_*` environment variables. Resolution is
+    /// fail-soft: an invalid value is logged and the group falls back to
     /// [`PartitionFailoverOptions::default`], so `build` stays infallible.
     pub fn build(self) -> DriverOptions {
         self.build_from_env(&|k| std::env::var(k).ok())
@@ -348,12 +304,12 @@ impl DriverOptionsBuilder {
                     tracing::warn!(
                         error = %e,
                         "failed to resolve PartitionFailoverOptions from the environment \
-                         (AZURE_COSMOS_PPCB_*); falling back to defaults",
+                         (AZURE_COSMOS_PARTITION_TOPOLOGY_CACHE_MODE / \
+                         AZURE_COSMOS_PPCB_*); falling back to defaults",
                     );
                     PartitionFailoverOptions::default()
                 }),
         };
-
         DriverOptions {
             account: self.account,
             operation_options: Arc::new(self.operation_options.unwrap_or_default()),
@@ -361,7 +317,6 @@ impl DriverOptionsBuilder {
             user_agent_suffix: self.user_agent_suffix,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: self.fault_injection_rules.filter(|r| !r.is_empty()),
-            throughput_control_groups: self.throughput_control_groups,
             partition_failover_options,
             hedging_options: self.hedging_options.unwrap_or_default(),
         }
@@ -376,7 +331,7 @@ mod tests {
     use url::Url;
 
     fn test_account() -> AccountReference {
-        AccountReference::with_master_key(
+        AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
@@ -619,11 +574,11 @@ mod tests {
 #[cfg(test)]
 mod real_env_tests {
     use super::*;
-    use crate::options::env_parsing::test_env::{with_scoped_env, PPCB_ENV_VARS};
+    use crate::options::env_parsing::test_env::{with_scoped_env, PARTITION_FAILOVER_ENV_VARS};
     use url::Url;
 
     fn test_account() -> AccountReference {
-        AccountReference::with_master_key(
+        AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
@@ -634,7 +589,7 @@ mod real_env_tests {
         // The exact customer scenario, end to end: env disables PPCB and the
         // caller never supplies options, so the driver must observe `false`.
         with_scoped_env(
-            PPCB_ENV_VARS,
+            PARTITION_FAILOVER_ENV_VARS,
             &[("AZURE_COSMOS_PPCB_ENABLED", "false")],
             || {
                 let options = DriverOptionsBuilder::new(test_account()).build();
@@ -647,7 +602,7 @@ mod real_env_tests {
 
     #[test]
     fn real_env_omitted_options_default_enabled_when_unset() {
-        with_scoped_env(PPCB_ENV_VARS, &[], || {
+        with_scoped_env(PARTITION_FAILOVER_ENV_VARS, &[], || {
             let options = DriverOptionsBuilder::new(test_account()).build();
             assert!(options
                 .partition_failover_options()

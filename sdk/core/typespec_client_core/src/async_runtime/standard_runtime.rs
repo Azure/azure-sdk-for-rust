@@ -6,10 +6,9 @@ use crate::async_runtime::AbortableTask;
 use crate::time::Duration;
 use futures::{executor::LocalPool, task::SpawnExt};
 use std::error::Error;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::{
     future,
-    sync::{Arc, Mutex},
+    sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError},
     task::{Context, Poll, Waker},
     thread,
 };
@@ -166,7 +165,7 @@ impl AsyncRuntime for StdRuntime {
     /// implementation is available by using the `tokio` crate feature.
     fn sleep(&self, duration: Duration) -> TaskFuture {
         Box::pin(Sleep {
-            signal: None,
+            state: None,
             duration,
         })
     }
@@ -179,31 +178,179 @@ impl AsyncRuntime for StdRuntime {
 
 #[derive(Debug)]
 struct Sleep {
-    signal: Option<Arc<AtomicBool>>,
+    state: Option<Arc<SleepState>>,
     duration: Duration,
+}
+
+#[derive(Debug, Default)]
+struct SleepState {
+    inner: Mutex<SleepInner>,
+    condvar: Condvar,
+    #[cfg(test)]
+    thread_started: std::sync::atomic::AtomicBool,
+    #[cfg(test)]
+    thread_exited: std::sync::atomic::AtomicBool,
+}
+
+#[derive(Debug, Default)]
+struct SleepInner {
+    completed: bool,
+    canceled: bool,
+    waker: Option<Waker>,
+}
+
+impl SleepState {
+    /// Locks the shared state, recovering from a poisoned mutex.
+    ///
+    /// A panic while the lock is held cannot leave the state inconsistent,
+    /// and failing to lock would either hang the future or leak the thread.
+    fn lock(&self) -> MutexGuard<'_, SleepInner> {
+        self.inner.lock().unwrap_or_else(PoisonError::into_inner)
+    }
 }
 
 impl Future for Sleep {
     type Output = ();
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        if let Some(signal) = &self.signal {
-            if signal.load(Ordering::Acquire) {
-                Poll::Ready(())
-            } else {
-                Poll::Pending
+        if let Some(state) = &self.state {
+            // Holding the lock while checking and registering the waker
+            // guarantees the worker either sees the current waker or has
+            // already marked the sleep completed.
+            let mut inner = state.lock();
+            if inner.completed {
+                return Poll::Ready(());
             }
-        } else {
-            let signal = Arc::new(AtomicBool::new(false));
-            let waker = cx.waker().clone();
-            let duration = self.duration;
-            self.get_mut().signal = Some(signal.clone());
-            thread::spawn(move || {
-                thread::sleep(duration.try_into().expect("Duration conversion failed"));
-                signal.store(true, Ordering::Release);
-                waker.wake();
-            });
-            Poll::Pending
+            inner.waker = Some(cx.waker().clone());
+            return Poll::Pending;
         }
+
+        let state = Arc::new(SleepState::default());
+        state.lock().waker = Some(cx.waker().clone());
+
+        let duration = self.duration;
+        self.get_mut().state = Some(state.clone());
+        thread::spawn(move || {
+            #[cfg(test)]
+            state.thread_started.store(true, Ordering::SeqCst);
+
+            #[cfg(test)]
+            let _thread_exit_guard = SleepThreadExitGuard {
+                state: state.clone(),
+            };
+
+            let duration = duration.try_into().unwrap_or(std::time::Duration::ZERO);
+            let (mut inner, _) = state
+                .condvar
+                .wait_timeout_while(state.lock(), duration, |inner| !inner.canceled)
+                .unwrap_or_else(PoisonError::into_inner);
+
+            inner.completed = true;
+            let waker = inner.waker.take();
+            drop(inner);
+
+            if let Some(waker) = waker {
+                waker.wake();
+            }
+        });
+        Poll::Pending
+    }
+}
+
+impl Drop for Sleep {
+    fn drop(&mut self) {
+        if let Some(state) = &self.state {
+            state.lock().canceled = true;
+            state.condvar.notify_one();
+        }
+    }
+}
+
+#[cfg(test)]
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+#[cfg(test)]
+struct SleepThreadExitGuard {
+    state: Arc<SleepState>,
+}
+
+#[cfg(test)]
+impl Drop for SleepThreadExitGuard {
+    fn drop(&mut self) {
+        self.state.thread_exited.store(true, Ordering::SeqCst);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use futures::task::{waker, ArcWake};
+    use std::time::{Duration as StdDuration, Instant};
+
+    #[derive(Default)]
+    struct CountingWaker {
+        wake_count: AtomicUsize,
+    }
+
+    impl ArcWake for CountingWaker {
+        fn wake_by_ref(arc_self: &Arc<Self>) {
+            arc_self.wake_count.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+
+    fn wait_until(mut predicate: impl FnMut() -> bool) {
+        let deadline = Instant::now() + StdDuration::from_secs(1);
+        while !predicate() && Instant::now() < deadline {
+            std::thread::sleep(StdDuration::from_millis(1));
+        }
+        assert!(predicate());
+    }
+
+    #[test]
+    fn dropped_sleep_cancels_thread() {
+        let mut sleep = Box::pin(Sleep {
+            state: None,
+            duration: Duration::seconds(30),
+        });
+        let waker = futures::task::noop_waker();
+        let mut cx = Context::from_waker(&waker);
+        assert!(matches!(sleep.as_mut().poll(&mut cx), Poll::Pending));
+
+        let state = sleep.state.as_ref().unwrap().clone();
+        wait_until(|| state.thread_started.load(Ordering::SeqCst));
+
+        drop(sleep);
+
+        wait_until(|| state.thread_exited.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn completed_sleep_wakes_latest_waker() {
+        let duration = StdDuration::from_millis(50);
+        let mut sleep = Box::pin(Sleep {
+            state: None,
+            duration: duration.try_into().unwrap(),
+        });
+        let first = Arc::new(CountingWaker::default());
+        let first_waker = waker(first.clone());
+        let mut first_cx = Context::from_waker(&first_waker);
+        let started = Instant::now();
+        assert!(matches!(sleep.as_mut().poll(&mut first_cx), Poll::Pending));
+
+        let state = sleep.state.as_ref().unwrap().clone();
+        let latest = Arc::new(CountingWaker::default());
+        let latest_waker = waker(latest.clone());
+        let mut latest_cx = Context::from_waker(&latest_waker);
+        assert!(matches!(sleep.as_mut().poll(&mut latest_cx), Poll::Pending));
+
+        wait_until(|| latest.wake_count.load(Ordering::SeqCst) > 0);
+
+        assert_eq!(first.wake_count.load(Ordering::SeqCst), 0);
+        assert!(started.elapsed() >= duration);
+        assert!(matches!(
+            sleep.as_mut().poll(&mut latest_cx),
+            Poll::Ready(())
+        ));
+        wait_until(|| state.thread_exited.load(Ordering::SeqCst));
     }
 }

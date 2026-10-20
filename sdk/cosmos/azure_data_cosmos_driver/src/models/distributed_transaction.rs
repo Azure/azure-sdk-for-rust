@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Preview Distributed Transaction wire models.
+//! Unstable Distributed Transaction wire models.
 //!
-//! **Preview / work in progress.** Gated behind the disabled-by-default
-//! `preview_dtx` feature; the DTX service feature is not yet generally
+//! **Unstable / work in progress.** Gated behind the disabled-by-default
+//! `unstable_dtx` feature; the DTX service feature is not yet generally
 //! available. These types may change or be removed without notice and are
 //! **not supported for production use**.
 
@@ -217,7 +217,7 @@ impl DistributedTransactionRequest {
 
         serde_json::to_vec(&serde_json::json!({ "operations": operations })).map_err(|error| {
             crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("failed to serialize distributed transaction request body")
                 .with_source(error)
                 .build()
@@ -316,7 +316,7 @@ fn serialize_operation(
         let mut resource_body =
             serde_json::from_slice::<serde_json::Value>(body).map_err(|error| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message(
                         "distributed transaction operation resource body must be valid JSON",
                     )
@@ -413,11 +413,11 @@ fn validate_resource_body_id(
 fn partition_key_json(
     target: &DistributedTransactionTarget,
 ) -> crate::error::Result<serde_json::Value> {
-    let (_, value) = target
-        .partition_key
-        .as_headers()?
-        .next()
-        .ok_or_else(|| invalid_partition_key("partition key did not produce a header value"))?;
+    let (_, value) = target.partition_key.as_headers()?.next().ok_or_else(|| {
+        invalid_partition_key(
+            "distributed transaction operations require a non-empty partition key",
+        )
+    })?;
     let text = value.as_str();
     serde_json::from_str(text).map_err(|error| {
         crate::error::CosmosError::builder()
@@ -950,7 +950,7 @@ mod tests {
     use url::Url;
 
     fn container() -> ContainerReference {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://example.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -964,7 +964,7 @@ mod tests {
     }
 
     fn rid_container() -> ContainerReference {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://example.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -979,6 +979,36 @@ mod tests {
 
     fn target(id: &str) -> DistributedTransactionTarget {
         DistributedTransactionTarget::new(container(), PartitionKey::from("pk1"), id.to_owned())
+    }
+
+    /// A distributed transaction addresses a single item, so an empty partition
+    /// key is a client error rather than a cross-partition request.
+    ///
+    /// This used to be caught only by accident: `partition_key_json` took the
+    /// first header an empty key produced — `…enablecrosspartition: True` —
+    /// and rejected it because `True` is not valid JSON (JSON's boolean is
+    /// lowercase). Now that an empty key emits no headers at all, the
+    /// dedicated `ok_or_else` arm is what rejects it.
+    #[test]
+    fn empty_partition_key_is_rejected() {
+        let target =
+            DistributedTransactionTarget::new(container(), PartitionKey::EMPTY, "item1".to_owned());
+        let operation =
+            DistributedTransactionOperation::new(DistributedTransactionOperationKind::Read, target);
+        let request =
+            DistributedTransactionRequest::new(DistributedTransactionType::Read, vec![operation]);
+
+        let error = request
+            .serialize_body()
+            .expect_err("an empty partition key cannot address a single item");
+        assert_eq!(
+            error.status().status_code(),
+            azure_core::http::StatusCode::BadRequest
+        );
+        assert!(
+            error.to_string().contains("non-empty partition key"),
+            "the message must name the actual problem, got {error}"
+        );
     }
 
     #[test]

@@ -6,10 +6,12 @@
 use azure_core::http::StatusCode;
 #[cfg(feature = "fault_injection")]
 use azure_data_cosmos_driver::fault_injection::FaultInjectionRule;
+#[cfg(feature = "unstable_patch")]
+use azure_data_cosmos_driver::options::PatchStrategy;
 #[cfg(feature = "__internal_testing")]
 use azure_data_cosmos_driver::CosmosDriver;
 use azure_data_cosmos_driver::{
-    diagnostics::{DiagnosticsContext, PipelineType, TransportSecurity},
+    diagnostics::{DiagnosticsContext, PipelineKind, TransportSecurity},
     driver::CosmosDriverRuntime,
     error::CosmosError,
     models::{
@@ -17,8 +19,8 @@ use azure_data_cosmos_driver::{
         DatabaseReference, ItemReference, PartitionKey,
     },
     options::{
-        ConnectionPoolOptions, DriverOptions, OperationOptions, PartitionFailoverOptions, Region,
-        ServerCertificateValidation,
+        ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsBuilder,
+        PartitionFailoverOptions, Region, ServerCertificateValidation,
     },
     SubStatusCode,
 };
@@ -32,6 +34,42 @@ use super::env::{
     GATEWAY_V2_MULTI_REGION_ENDPOINT_ENV_VAR, GATEWAY_V2_MULTI_REGION_KEY_ENV_VAR,
 };
 
+/// Applies the runtime-level test defaults every framework-built
+/// [`CosmosDriverRuntime`] shares.
+///
+/// Under `test_category = "emulator_vnext"` this defaults binary encoding off:
+/// the vnext emulator cannot decode a binary request body and rejects item
+/// writes with `400/1001 PartitionKeyMismatch` (#5240). Runtime is the lowest
+/// explicit layer, so a test that sets binary encoding at the driver or
+/// operation layer still wins.
+///
+/// `emulator_tests::driver_vnext_binary_encoding_canary` goes red when vnext
+/// starts accepting binary writes, which is the signal to delete this.
+fn runtime_operation_options(options: OperationOptions) -> OperationOptions {
+    #[cfg(test_category = "emulator_vnext")]
+    let options = {
+        let mut options = options;
+        if options.binary_encoding.is_none() {
+            options.binary_encoding = Some(
+                azure_data_cosmos_driver::options::BinaryEncodingOptions::new().with_enabled(false),
+            );
+        }
+        options
+    };
+    options
+}
+
+fn test_env_filter() -> EnvFilter {
+    match std::env::var("RUST_LOG") {
+        Ok(value) if value.trim().eq_ignore_ascii_case("trace") => EnvFilter::new("debug"),
+        _ => EnvFilter::builder()
+            // Tests with intentional failures cause noise, so silence them
+            // unless the user explicitly configures logging.
+            .with_default_directive("off".parse().unwrap())
+            .from_env_lossy(),
+    }
+}
+
 /// A test client that provides access to a Cosmos DB driver for testing.
 pub struct DriverTestClient {
     runtime: Arc<CosmosDriverRuntime>,
@@ -40,7 +78,7 @@ pub struct DriverTestClient {
     /// per-operation helpers (`create_database`, `read_item`, …). Empty by
     /// default; populated by [`run_with_unique_db_and_hedging`] for the
     /// hedging path, which requires application-preferred regions to be set
-    /// per `HEDGING_SPEC.md` §5.2.
+    /// per Spec 0009: Cross-region hedging, §5.2.
     preferred_regions: Vec<Region>,
     /// Driver-level fault-injection rules applied to every driver created by
     /// the per-operation helpers. Empty by default; populated by the
@@ -69,13 +107,7 @@ pub struct TestEnv {
 /// Returns `Ok(None)` if the environment is not configured and tests should be skipped.
 pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
     let _ = tracing_subscriber::fmt::fmt()
-        .with_env_filter(
-            EnvFilter::builder()
-                // Tests with intentional failures cause noise, so we set the default level to "off"
-                // to silence them unless the user explicitly configures it.
-                .with_default_directive("off".parse().unwrap())
-                .from_env_lossy(),
-        )
+        .with_env_filter(test_env_filter())
         .try_init();
 
     let test_mode = get_test_mode();
@@ -119,7 +151,7 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
     let conn_str: ConnectionString = connection_string.parse()?;
     let endpoint = conn_str.account_endpoint().parse()?;
     let key = conn_str.account_key().secret().to_string();
-    let account = AccountReference::with_master_key(endpoint, key);
+    let account = AccountReference::with_account_key(endpoint, key);
 
     let mut connection_pool_builder = ConnectionPoolOptions::builder();
     if connection_string.eq_ignore_ascii_case(EMULATOR_CONNECTION_STRING) {
@@ -189,7 +221,7 @@ fn resolve_gateway_v2_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, 
                     )
                     .into()
                 })?;
-            let account = AccountReference::with_master_key(endpoint, key);
+            let account = AccountReference::with_account_key(endpoint, key);
             let connection_pool = ConnectionPoolOptions::builder().build()?;
             Ok(Some(TestEnv {
                 account,
@@ -257,6 +289,7 @@ impl DriverTestClient {
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
+            .with_default_operation_options(runtime_operation_options(OperationOptions::default()))
             .build()
             .await?;
 
@@ -284,6 +317,7 @@ impl DriverTestClient {
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
+            .with_default_operation_options(runtime_operation_options(OperationOptions::default()))
             .build()
             .await?;
 
@@ -378,7 +412,7 @@ impl DriverTestClient {
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
-            .with_default_operation_options(operation_options)
+            .with_default_operation_options(runtime_operation_options(operation_options))
             .build()
             .await?;
 
@@ -428,6 +462,7 @@ impl DriverTestClient {
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
+            .with_default_operation_options(runtime_operation_options(OperationOptions::default()))
             .build()
             .await?;
 
@@ -453,8 +488,8 @@ impl DriverTestClient {
 
     /// Like [`run_with_unique_db_and_fault_injection_options`](Self::run_with_unique_db_and_fault_injection_options)
     /// but additionally pre-configures driver-level `preferred_regions`,
-    /// which is required for cross-region hedging eligibility per
-    /// `HEDGING_SPEC.md` §5.2 (the §5.1 `should_hedge()` short-circuits
+    /// which is required for cross-region hedging eligibility per Spec 0009:
+    /// Cross-region hedging, §5.2 (the §5.1 `should_hedge()` short-circuits
     /// when no application-preferred regions are configured).
     ///
     /// The `preferred_regions` are stored on the client and applied to every
@@ -464,7 +499,7 @@ impl DriverTestClient {
     #[cfg(feature = "fault_injection")]
     pub async fn run_with_unique_db_and_hedging<F, Fut>(
         rules: Vec<Arc<FaultInjectionRule>>,
-        runtime_operation_options: OperationOptions,
+        operation_options: OperationOptions,
         preferred_regions: Vec<Region>,
         f: F,
     ) -> Result<(), Box<dyn Error>>
@@ -479,7 +514,7 @@ impl DriverTestClient {
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
-            .with_default_operation_options(runtime_operation_options)
+            .with_default_operation_options(runtime_operation_options(operation_options))
             .build()
             .await?;
 
@@ -523,6 +558,46 @@ impl DriverTestClient {
         })
         .await
     }
+
+    /// Runs a test with runtime operation options and a unique database.
+    pub async fn run_with_unique_db_options<F, Fut>(
+        operation_options: OperationOptions,
+        f: F,
+    ) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(DriverTestRunContext, DatabaseReference) -> Fut,
+        Fut: Future<Output = Result<(), Box<dyn Error>>>,
+    {
+        let Some(env) = resolve_test_env()? else {
+            println!("Skipping test: Cosmos DB environment not configured");
+            return Ok(());
+        };
+
+        let runtime = CosmosDriverRuntime::builder()
+            .with_connection_pool(env.connection_pool)
+            .with_default_operation_options(runtime_operation_options(operation_options))
+            .build()
+            .await?;
+
+        let client = Self {
+            runtime,
+            account: env.account,
+            preferred_regions: Vec::new(),
+            #[cfg(feature = "fault_injection")]
+            fault_injection_rules: Vec::new(),
+            partition_failover_options: None,
+        };
+        let context = DriverTestRunContext::new(client);
+        let db_name = context.unique_database_name();
+        let db_ref = context.create_database(&db_name).await?;
+
+        let result = f(context.clone(), db_ref.clone()).await;
+
+        // Cleanup (best effort)
+        let _ = context.delete_database(&db_ref).await;
+
+        result
+    }
 }
 
 /// Context for a test run, providing helpers for driver operations.
@@ -536,7 +611,11 @@ impl DriverTestRunContext {
     fn new(client: DriverTestClient) -> Self {
         Self {
             client: Arc::new(client),
-            run_id: Uuid::new_v4().to_string()[..8].to_string(),
+            // v7 (not v4) so a cleanup sweep can decode the creation time straight from the
+            // name; kept un-truncated (unlike unique_container_name) because v7's timestamp
+            // occupies the leading hex digits - truncating there would drop all randomness
+            // and risk collisions between runs started in the same time bucket.
+            run_id: Uuid::now_v7().simple().to_string(),
         }
     }
 
@@ -607,15 +686,20 @@ impl DriverTestRunContext {
         F: FnMut() -> Fut,
         Fut: Future<Output = Result<T, Box<dyn Error>>>,
     {
+        const MAX_ATTEMPTS: u32 = 12;
+
         let mut delay = Duration::from_millis(250);
         let mut last_error = None;
-        for attempt in 1..=6 {
+        for attempt in 1..=MAX_ATTEMPTS {
             match f().await {
                 Ok(result) => return Ok(result),
-                Err(error) if Self::is_transport_generated_503(error.as_ref()) && attempt < 6 => {
+                Err(error)
+                    if Self::is_transport_generated_503(error.as_ref())
+                        && attempt < MAX_ATTEMPTS =>
+                {
                     last_error = Some(error.to_string());
                     eprintln!(
-                        "transient transport failure during {operation}; retrying attempt {attempt}/6 after {delay:?}: {}",
+                        "transient transport failure during {operation}; retrying attempt {attempt}/{MAX_ATTEMPTS} after {delay:?}: {}",
                         last_error.as_deref().unwrap_or("<unknown>")
                     );
                     tokio::time::sleep(delay).await;
@@ -759,8 +843,17 @@ impl DriverTestRunContext {
         let operation =
             CosmosOperation::create_container(database.clone()).with_body(body.into_bytes());
 
-        let create_result = driver
-            .execute_singleton_operation(operation, OperationOptions::default())
+        let create_result = self
+            .retry_transient_transport("create container", || {
+                let operation = operation.clone();
+                let driver = driver.clone();
+                async move {
+                    driver
+                        .execute_singleton_operation(operation, OperationOptions::default())
+                        .await
+                        .map_err(Into::into)
+                }
+            })
             .await;
         // Tolerate a 409 Conflict from the create itself: a client-side
         // timeout (surfaced as a synthetic `TransportGenerated503`) doesn't
@@ -769,8 +862,15 @@ impl DriverTestRunContext {
         // already exists. Fall through to the resolve-retry loop below
         // exactly as a successful create would, since that's what actually
         // produces the `ContainerReference` this method returns.
-        match create_result {
-            Err(error) if error.status().status_code() == StatusCode::Conflict => {}
+        let mut ambiguous_create_error = match create_result {
+            Err(error)
+                if error
+                    .downcast_ref::<CosmosError>()
+                    .is_some_and(|error| error.status().status_code() == StatusCode::Conflict) =>
+            {
+                None
+            }
+            Err(error) if Self::is_transport_generated_503(error.as_ref()) => Some(error),
             other => {
                 let result = other?;
                 // Check for success status (201 Created)
@@ -779,8 +879,9 @@ impl DriverTestRunContext {
                 if !status.map(|s| s.is_success()).unwrap_or(false) {
                     return Err(format!("Failed to create container, status: {:?}", status).into());
                 }
+                None
             }
-        }
+        };
         let db_name = database
             .name()
             .ok_or_else(|| "database reference must be name-based".to_string())?;
@@ -796,7 +897,7 @@ impl DriverTestRunContext {
         let mut last_err_msg: Option<String> = None;
         for _ in 0..12 {
             match driver
-                .resolve_container_by_name(db_name, container_name)
+                .resolve_container_by_name(db_name, container_name, OperationOptions::default())
                 .await
             {
                 Ok(c) => return Ok(c),
@@ -806,16 +907,24 @@ impl DriverTestRunContext {
                     let status = e.status();
                     let create_in_progress = status.status_code() == StatusCode::NotFound
                         && status.sub_status()
-                            == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS);
-                    if create_in_progress {
+                            == Some(azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_CREATE_IN_PROGRESS);
+                    let ambiguous_not_found = ambiguous_create_error.is_some()
+                        && status.status_code() == StatusCode::NotFound;
+                    if create_in_progress || ambiguous_not_found {
                         tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
                         delay_ms = (delay_ms * 2).min(5000);
                         last_err_msg = Some(format!("{e}"));
                         continue;
                     }
+                    if let Some(error) = ambiguous_create_error.take() {
+                        return Err(error);
+                    }
                     return Err(e.into());
                 }
             }
+        }
+        if let Some(error) = ambiguous_create_error.take() {
+            return Err(error);
         }
         Err(format!(
             "resolve_container_by_name failed after 12 retries: {}",
@@ -838,6 +947,26 @@ impl DriverTestRunContext {
         partition_key: impl Into<PartitionKey>,
         body: &[u8],
     ) -> Result<CosmosResponse, Box<dyn Error>> {
+        self.create_item_with_operation_options(
+            container,
+            item_id,
+            partition_key,
+            body,
+            OperationOptions::default(),
+        )
+        .await
+    }
+
+    /// Creates an item with explicit operation-level options, which override
+    /// the runtime defaults applied by [`runtime_operation_options`].
+    pub async fn create_item_with_operation_options(
+        &self,
+        container: &ContainerReference,
+        item_id: &str,
+        partition_key: impl Into<PartitionKey>,
+        body: &[u8],
+        options: OperationOptions,
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
         let driver = self
             .client
             .runtime
@@ -849,7 +978,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::create_item(item_ref).with_body(body.to_vec());
 
         let result = driver
-            .execute_singleton_operation(operation, OperationOptions::default())
+            .execute_singleton_operation(operation, options)
             .await?;
 
         Ok(result)
@@ -907,6 +1036,23 @@ impl DriverTestRunContext {
         item_id: &str,
         partition_key: impl Into<PartitionKey>,
     ) -> Result<CosmosResponse, Box<dyn Error>> {
+        self.read_item_with_options(
+            container,
+            item_id,
+            partition_key,
+            OperationOptions::default(),
+        )
+        .await
+    }
+
+    /// Reads an item with options scoped to the read, not driver initialization.
+    pub async fn read_item_with_options(
+        &self,
+        container: &ContainerReference,
+        item_id: &str,
+        partition_key: impl Into<PartitionKey>,
+        options: OperationOptions,
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
         let driver = self
             .client
             .runtime
@@ -918,7 +1064,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::read_item(item_ref);
 
         let result = driver
-            .execute_singleton_operation(operation, OperationOptions::default())
+            .execute_singleton_operation(operation, options)
             .await?;
 
         Ok(result)
@@ -936,6 +1082,7 @@ impl DriverTestRunContext {
     ///
     /// If `max_attempts` is `None`, the handler uses
     /// `DEFAULT_PATCH_MAX_ATTEMPTS` (5).
+    #[cfg(feature = "unstable_patch")]
     pub async fn patch_item(
         &self,
         container: &ContainerReference,
@@ -958,8 +1105,11 @@ impl DriverTestRunContext {
             operation = operation.with_patch_max_attempts(n);
         }
 
+        let options = OperationOptionsBuilder::new()
+            .with_patch_strategy(PatchStrategy::ClientSide)
+            .build();
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_operation(operation, options)
             .await?
             .expect("PATCH operation must return a response");
 
@@ -985,7 +1135,7 @@ impl DriverTestRunContext {
             .await?;
         Ok(driver
             .resolve_all_partition_key_ranges(container, force_refresh)
-            .await)
+            .await?)
     }
 
     /// Creates a single long-lived driver that the caller holds for the
@@ -1080,7 +1230,7 @@ impl DriverTestRunContext {
         let first_request = &requests[0];
         assert_eq!(
             first_request.pipeline_type(),
-            PipelineType::DataPlane,
+            PipelineKind::DataPlane,
             "Should use data plane pipeline for item operations"
         );
 
@@ -1110,5 +1260,35 @@ impl DriverTestRunContext {
             first_request.request_charge().value() >= 0.0,
             "Request charge should be non-negative"
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::runtime_operation_options;
+    use azure_data_cosmos_driver::options::{BinaryEncodingOptions, OperationOptions};
+
+    #[test]
+    #[cfg(test_category = "emulator_vnext")]
+    fn vnext_disables_binary_encoding_by_default() {
+        let defaulted = runtime_operation_options(OperationOptions::default());
+        assert!(!defaulted.binary_encoding.unwrap().enabled);
+
+        let mut explicit = OperationOptions::default();
+        explicit.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(true));
+        assert!(
+            runtime_operation_options(explicit)
+                .binary_encoding
+                .unwrap()
+                .enabled
+        );
+    }
+
+    #[test]
+    #[cfg(not(test_category = "emulator_vnext"))]
+    fn binary_encoding_is_untouched_outside_vnext() {
+        assert!(runtime_operation_options(OperationOptions::default())
+            .binary_encoding
+            .is_none());
     }
 }

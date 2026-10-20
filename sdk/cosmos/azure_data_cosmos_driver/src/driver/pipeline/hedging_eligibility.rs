@@ -40,7 +40,8 @@ const DEFAULT_THRESHOLD_CAP: Duration = Duration::from_millis(1000);
 /// .NET metadata hedging threshold (first-attempt timeout + 500ms = 1.5s).
 /// Metadata reads run with `OperationOptions::default()` (no configured
 /// end-to-end latency), so deriving from `request_timeout` is not meaningful;
-/// the value is fixed and not customer-configurable. See `docs/HEDGING_SPEC.md`.
+/// the value is fixed and not customer-configurable. See Spec 0009:
+/// Cross-region hedging.
 const METADATA_HEDGE_THRESHOLD: Duration = Duration::from_millis(1500);
 
 /// `(ResourceType, OperationType)` pairs eligible for cross-region hedging.
@@ -61,7 +62,7 @@ const METADATA_HEDGE_THRESHOLD: Duration = Duration::from_millis(1500);
 ///   wins, later pages are pinned to the winning region (the continuation ETag
 ///   is region-affine) via `OperationOverrides::region_pin`.
 ///
-/// See `docs/HEDGING_SPEC.md`.
+/// See Spec 0009: Cross-region hedging.
 const HEDGEABLE_PAIRS: &[(ResourceType, OperationType)] = &[
     (ResourceType::Document, OperationType::Read),
     (ResourceType::DocumentCollection, OperationType::Read),
@@ -216,6 +217,8 @@ pub(crate) struct HedgeUpgrade {
 /// it). `request_timeout` is plumbed through to
 /// [`resolve_availability_strategy`] so the driver default
 /// (`min(1000ms, request_timeout / 2)`) can be computed.
+/// `cross_region_hedging_disabled` is the current account-level service
+/// suppression signal.
 ///
 /// Returns `None` when hedging is disabled, the operation is ineligible,
 /// or no applicable region distinct from `primary` exists — in all cases
@@ -227,12 +230,17 @@ pub(crate) fn evaluate_hedge_eligibility(
     account_state: &AccountEndpointState,
     primary: &RoutingDecision,
     request_timeout: Option<Duration>,
+    cross_region_hedging_disabled: bool,
 ) -> Option<HedgeUpgrade> {
+    if cross_region_hedging_disabled {
+        return None;
+    }
+
     let strategy = resolve_availability_strategy(options, request_timeout)?;
 
     let user_excluded: Vec<Region> = options
         .excluded_regions()
-        .map(|r| r.0.clone())
+        .map(|r| r.iter().cloned().collect())
         .unwrap_or_default();
 
     if !should_hedge(Some(&strategy), operation, account_state, &user_excluded) {
@@ -293,6 +301,7 @@ pub(crate) fn evaluate_hedge_eligibility(
         transport_mode,
         endpoint_key: secondary_endpoint_key,
         endpoint: secondary_ep,
+        routing_fallback: None,
     };
 
     // Metadata cache reads use a fixed threshold (see METADATA_HEDGE_THRESHOLD),
@@ -376,7 +385,7 @@ mod tests {
     }
 
     fn fake_container_reference() -> ContainerReference {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://acct.documents.azure.com/").unwrap(),
             "k",
         );
@@ -401,7 +410,7 @@ mod tests {
     }
 
     fn read_database_operation() -> CosmosOperation {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://acct.documents.azure.com/").unwrap(),
             "k",
         );
@@ -410,7 +419,7 @@ mod tests {
     }
 
     fn read_container_operation() -> CosmosOperation {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://acct.documents.azure.com/").unwrap(),
             "k",
         );
@@ -535,7 +544,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn should_hedge_distributed_transaction_never() {
         // DTX operations carry `ResourceType::DistributedTransactionBatch`, which
@@ -546,7 +555,7 @@ mod tests {
         // pair-gating exclusion (not the classifier short-circuit) is what
         // keeps DTX out of hedging. Pin it directly.
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://acct.documents.azure.com/").unwrap(),
             "k",
         );
@@ -876,7 +885,7 @@ mod tests {
             Some(&enabled_strategy()),
             &op,
             &state,
-            &excluded.0,
+            &excluded.iter().cloned().collect::<Vec<_>>(),
         ));
     }
 
@@ -895,6 +904,7 @@ mod tests {
             transport_mode: TransportMode::Gateway,
             endpoint_key,
             endpoint: ep,
+            routing_fallback: None,
         }
     }
 
@@ -915,6 +925,7 @@ mod tests {
             transport_mode: TransportMode::Gateway,
             endpoint_key,
             endpoint: ep,
+            routing_fallback: None,
         }
     }
 
@@ -927,7 +938,7 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false)
             .expect("eligible multi-region read");
 
         // Secondary pinned to applicable[1] = WEST_US_2.
@@ -954,7 +965,7 @@ mod tests {
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
         for op in [read_container_operation(), read_pk_ranges_operation()] {
-            let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+            let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false)
                 .expect("eligible metadata read");
             assert_eq!(
                 upgrade.threshold.get(),
@@ -970,9 +981,15 @@ mod tests {
         // A data-plane point read still gets the driver default (1000ms), even
         // with a request_timeout supplied, so the metadata override is scoped.
         let dp = read_item_operation();
-        let dp_upgrade =
-            evaluate_hedge_eligibility(&dp, &view, &state, &primary, Some(Duration::from_secs(10)))
-                .expect("eligible data-plane read");
+        let dp_upgrade = evaluate_hedge_eligibility(
+            &dp,
+            &view,
+            &state,
+            &primary,
+            Some(Duration::from_secs(10)),
+            false,
+        )
+        .expect("eligible data-plane read");
         assert_eq!(dp_upgrade.threshold.get(), Duration::from_millis(1000));
     }
 
@@ -985,7 +1002,7 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none());
+        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).is_none());
     }
 
     #[test]
@@ -997,7 +1014,7 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none());
+        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).is_none());
     }
 
     #[test]
@@ -1011,7 +1028,50 @@ mod tests {
             .build();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none());
+        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).is_none());
+    }
+
+    #[test]
+    fn account_suppression_overrides_enabled_data_and_metadata_hedging() {
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let primary = primary_routing_for(&state);
+        let strategy =
+            HedgingStrategy::new(HedgeThreshold::new(Duration::from_millis(200)).unwrap());
+        let op_opts = OperationOptionsBuilder::new()
+            .with_hedging_enabled(true)
+            .with_availability_strategy(AvailabilityStrategy::Hedging(strategy))
+            .build();
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        for operation in [
+            read_item_operation(),
+            read_container_operation(),
+            read_pk_ranges_operation(),
+        ] {
+            assert!(
+                evaluate_hedge_eligibility(&operation, &view, &state, &primary, None, true,)
+                    .is_none()
+            );
+            assert!(
+                evaluate_hedge_eligibility(&operation, &view, &state, &primary, None, false,)
+                    .is_some()
+            );
+        }
+    }
+
+    #[test]
+    fn account_resume_does_not_override_local_disable() {
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let primary = primary_routing_for(&state);
+        let operation = read_item_operation();
+        let op_opts = OperationOptionsBuilder::new()
+            .with_availability_strategy(AvailabilityStrategy::Disabled)
+            .build();
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        assert!(
+            evaluate_hedge_eligibility(&operation, &view, &state, &primary, None, false,).is_none()
+        );
     }
 
     #[test]
@@ -1024,7 +1084,7 @@ mod tests {
         op_opts.excluded_regions = Some([Region::WEST_US_2].into_iter().collect());
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none());
+        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).is_none());
     }
 
     #[test]
@@ -1040,7 +1100,7 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false)
             .expect("eligible three-region read");
 
         let url_str = upgrade.secondary_routing.selected_url.as_str();
@@ -1100,13 +1160,14 @@ mod tests {
             endpoint_key: EndpointKey::try_from(primary_ep.selected_url(true))
                 .expect("valid proxy url"),
             endpoint: primary_ep,
+            routing_fallback: None,
         };
 
         let op = read_item_operation();
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false)
             .expect("eligible multi-region GatewayV2 read");
         let secondary = &upgrade.secondary_routing;
 
@@ -1148,11 +1209,13 @@ mod tests {
         // Configured timeout = 800ms → expected threshold = 400ms (cap = 1s).
         let configured_timeout = Some(Duration::from_millis(800));
 
-        let first = evaluate_hedge_eligibility(&op, &view, &state, &primary, configured_timeout)
-            .expect("first call eligible");
+        let first =
+            evaluate_hedge_eligibility(&op, &view, &state, &primary, configured_timeout, false)
+                .expect("first call eligible");
         std::thread::sleep(Duration::from_millis(10));
-        let second = evaluate_hedge_eligibility(&op, &view, &state, &primary, configured_timeout)
-            .expect("second call eligible");
+        let second =
+            evaluate_hedge_eligibility(&op, &view, &state, &primary, configured_timeout, false)
+                .expect("second call eligible");
 
         assert_eq!(
             first.threshold.get(),
@@ -1191,7 +1254,7 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false)
             .expect("eligible three-region read");
 
         let secondary_region = upgrade.secondary_routing.endpoint.region().cloned();
@@ -1229,7 +1292,7 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None).expect(
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).expect(
             "request must still be hedged when the primary is not \
              preferred_read_endpoints[0]",
         );
@@ -1273,7 +1336,7 @@ mod tests {
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
         assert!(
-            evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none(),
+            evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).is_none(),
             "no distinct alternate exists — must fall back to non-hedged decision",
         );
     }

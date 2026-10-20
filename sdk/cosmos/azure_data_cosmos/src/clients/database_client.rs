@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::clients::{ClientContext, ContainerClient};
+use crate::options::ContainerClientOptions;
 use crate::{ResourceId, ResourceIdentity};
 #[cfg(feature = "control_plane")]
 use azure_data_cosmos_driver::models::DatabaseReference;
@@ -71,9 +72,13 @@ impl DatabaseClient {
     /// Gets a [`ContainerClient`] that can be used to access the container with the
     /// specified identity.
     ///
-    /// This method eagerly resolves immutable container metadata (resource ID and partition key
-    /// definition) from the service, so the returned client is ready for immediate use without
-    /// per-operation cache lookups.
+    /// This method eagerly resolves immutable container metadata (resource ID
+    /// and partition key definition) from the service. By default, it also
+    /// loads the complete partition topology so later operations avoid an
+    /// unexpected full-cache latency spike. Eager topology loading is strongly
+    /// recommended. See
+    /// [`PartitionFailoverOptionsBuilder::with_partition_topology_cache_mode`](crate::options::PartitionFailoverOptionsBuilder::with_partition_topology_cache_mode)
+    /// to configure when topology is loaded.
     ///
     /// The container's addressing mode must match this database's: a name-addressed
     /// database accepts only name-addressed containers, and a RID-addressed database
@@ -84,13 +89,25 @@ impl DatabaseClient {
     ///
     /// # Errors
     ///
-    /// Returns an error if the container does not exist, the metadata cannot be
-    /// resolved, or the addressing mode does not match this database's.
+    /// * `options` - Optional parameters for creating the client.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the container does not exist, its metadata or eagerly
+    /// loaded partition topology cannot be resolved, or the addressing mode does
+    /// not match this database's.
     pub async fn container_client(
         &self,
         container: impl Into<ResourceIdentity>,
+        options: Option<ContainerClientOptions>,
     ) -> crate::Result<ContainerClient> {
-        ContainerClient::new(self.context.clone(), &self.identity, container.into()).await
+        ContainerClient::new(
+            self.context.clone(),
+            &self.identity,
+            container.into(),
+            options.unwrap_or_default(),
+        )
+        .await
     }
 
     /// Returns the identity (name or RID) used to construct this client.
@@ -283,15 +300,16 @@ impl DatabaseClient {
             // would otherwise silently read or replace that container's offer.
             // Reject any RID that is not database-level before reusing it.
             if !azure_data_cosmos_driver::models::is_database_rid(rid.as_str()) {
-                return Err(crate::DriverCosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                return Err(crate::CosmosError::builder()
+                    .with_status(
+                        azure_data_cosmos_driver::error::status_codes::CLIENT_INVALID_RESOURCE_ID,
+                    )
                     .with_message(format!(
                         "'{}' is not a database resource id; a DatabaseClient's throughput \
                          operations require a database-level RID",
                         rid.as_str()
                     ))
-                    .build()
-                    .into());
+                    .build());
             }
             return Ok(rid.as_str().to_owned());
         }
@@ -382,13 +400,12 @@ fn resource_id_or_error(rid: Option<String>, resource_kind: &str) -> crate::Resu
         "service should always return a '_rid' for a {resource_kind}"
     );
     rid.ok_or_else(|| {
-        crate::DriverCosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERVICE_RETURNED_OBJECT_WITHOUT_RID)
+        crate::CosmosError::builder()
+            .with_status(azure_data_cosmos_driver::error::status_codes::SERVICE_RETURNED_OBJECT_WITHOUT_RID)
             .with_message(format!(
                 "service did not return a '_rid' for a {resource_kind}; cannot resolve the throughput offer"
             ))
             .build()
-            .into()
     })
 }
 
@@ -405,7 +422,7 @@ mod tests {
         fn assert_send<T: Send>(_: T) {}
         let client: &DatabaseClient = todo!();
         let container_identity: ResourceIdentity = todo!();
-        assert_send(client.container_client(container_identity));
+        assert_send(client.container_client(container_identity, None));
         assert_send(client.read(todo!()));
         assert_send(client.query_containers(Query::from("SELECT * FROM c"), todo!()));
         assert_send(client.create_container(todo!(), todo!()));

@@ -324,6 +324,14 @@ impl Token {
         Self::new(RntbdRequestToken::Match, TokenValue::String(value))
     }
 
+    /// Point-in-time change feed start (id `0x0047`, `String`).
+    pub(crate) fn if_modified_since(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::IfModifiedSince,
+            TokenValue::String(value),
+        )
+    }
+
     pub(crate) fn consistency_level(value: DefaultConsistencyLevel) -> Self {
         Self::new(
             RntbdRequestToken::ConsistencyLevel,
@@ -331,7 +339,8 @@ impl Token {
         )
     }
 
-    /// `ReadConsistencyStrategy` token (id `0x00FE`, `Byte`).
+    /// `ReadConsistencyStrategy` token (id `0x00FE`, `Byte`) shared by
+    /// Gateway 2.0 and Direct RNTBD requests.
     ///
     /// Server requires this token in place of `ConsistencyLevel` when the caller
     /// specifies a non-`Default` read consistency strategy on a read request.
@@ -435,6 +444,17 @@ impl Token {
         )
     }
 
+    /// `SupportedSerializationFormats` (ID 0x00C4, Byte). Flags byte of the
+    /// response formats the client accepts (`JsonText = 0x01`,
+    /// `CosmosBinary = 0x02`, `HybridRow = 0x04`; OR-combinable), forwarded from
+    /// the `x-ms-cosmos-supported-serialization-formats` header.
+    pub(crate) fn supported_serialization_formats(value: u8) -> Self {
+        Self::new(
+            RntbdRequestToken::SupportedSerializationFormats,
+            TokenValue::Byte(value),
+        )
+    }
+
     /// `StartEpkHash` (ID 0x00D2, Bytes). Per-partition routing key for
     /// thin-client cross-partition queries. The partition's `minInclusive` hex
     /// string is converted to bytes and emitted alongside `EndEpkHash`.
@@ -454,6 +474,19 @@ impl Token {
     pub(crate) fn partition_key_range_id(value: String) -> Self {
         Self::new(
             RntbdRequestToken::PartitionKeyRangeId,
+            TokenValue::String(value),
+        )
+    }
+
+    /// Change-feed mode (`A_IM`, ID `0x003F`, `String`).
+    pub(crate) fn a_im(value: String) -> Self {
+        Self::new(RntbdRequestToken::AIm, TokenValue::String(value))
+    }
+
+    /// Change-feed response shape (`ChangeFeedWireFormatVersion`, ID `0x00B2`, `String`).
+    pub(crate) fn change_feed_wire_format_version(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::ChangeFeedWireFormatVersion,
             TokenValue::String(value),
         )
     }
@@ -572,12 +605,16 @@ pub(crate) enum RntbdRequestToken {
     TransportRequestId,
     PartitionKey,
     PartitionKeyRangeId,
+    AIm,
+    IfModifiedSince,
     EffectivePartitionKey,
     AllowTentativeWrites,
     ReturnPreference,
     SDKSupportedCapabilities,
+    ChangeFeedWireFormatVersion,
     GlobalDatabaseAccountName,
     ReadConsistencyStrategy,
+    SupportedSerializationFormats,
     SupportedQueryFeatures,
     QueryVersion,
     StartEpkHash,
@@ -604,11 +641,15 @@ impl TryFrom<u16> for RntbdRequestToken {
             0x002B => Ok(Self::PartitionKey),
             0x002C => Ok(Self::PartitionKeyRangeId),
             0x0035 => Ok(Self::CollectionRid),
+            0x003F => Ok(Self::AIm),
+            0x0047 => Ok(Self::IfModifiedSince),
             0x004D => Ok(Self::TransportRequestId),
             0x005A => Ok(Self::EffectivePartitionKey),
             0x0066 => Ok(Self::AllowTentativeWrites),
             0x0082 => Ok(Self::ReturnPreference),
             0x00A2 => Ok(Self::SDKSupportedCapabilities),
+            0x00B2 => Ok(Self::ChangeFeedWireFormatVersion),
+            0x00C4 => Ok(Self::SupportedSerializationFormats),
             0x00CE => Ok(Self::GlobalDatabaseAccountName),
             0x00FE => Ok(Self::ReadConsistencyStrategy),
             0x00FF => Ok(Self::SupportedQueryFeatures),
@@ -638,11 +679,15 @@ impl From<RntbdRequestToken> for u16 {
             RntbdRequestToken::PartitionKey => 0x002B,
             RntbdRequestToken::PartitionKeyRangeId => 0x002C,
             RntbdRequestToken::CollectionRid => 0x0035,
+            RntbdRequestToken::AIm => 0x003F,
+            RntbdRequestToken::IfModifiedSince => 0x0047,
             RntbdRequestToken::TransportRequestId => 0x004D,
             RntbdRequestToken::EffectivePartitionKey => 0x005A,
             RntbdRequestToken::AllowTentativeWrites => 0x0066,
             RntbdRequestToken::ReturnPreference => 0x0082,
             RntbdRequestToken::SDKSupportedCapabilities => 0x00A2,
+            RntbdRequestToken::ChangeFeedWireFormatVersion => 0x00B2,
+            RntbdRequestToken::SupportedSerializationFormats => 0x00C4,
             RntbdRequestToken::GlobalDatabaseAccountName => 0x00CE,
             RntbdRequestToken::ReadConsistencyStrategy => 0x00FE,
             RntbdRequestToken::SupportedQueryFeatures => 0x00FF,
@@ -842,7 +887,7 @@ impl From<ResourceType> for RntbdResourceType {
             ResourceType::Offer => 0x000F,
             // Distributed transactions do not use the thin-client RNTBD
             // encoder; they route through the standard gateway coordinator.
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             ResourceType::DistributedTransactionBatch => unreachable!(
                 "ResourceType::DistributedTransactionBatch must not reach RNTBD encoding"
             ),
@@ -898,8 +943,12 @@ impl RntbdOperationType {
 
 impl From<OperationType> for RntbdOperationType {
     fn from(value: OperationType) -> Self {
+        // Keep these IDs aligned with the Java SDK's
+        // RntbdConstants.RntbdOperationType wire enum:
+        // https://github.com/Azure/azure-sdk-for-java/blob/main/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/directconnectivity/rntbd/RntbdConstants.java
         let id = match value {
             OperationType::Create => 0x0001,
+            OperationType::Patch => 0x0002,
             OperationType::Read => 0x0003,
             OperationType::ReadFeed => 0x0004,
             OperationType::Delete => 0x0005,
@@ -914,18 +963,9 @@ impl From<OperationType> for RntbdOperationType {
             OperationType::HeadFeed => 0x0012,
             OperationType::Upsert => 0x0013,
             OperationType::Batch => 0x0025,
-            // Patch operations are handled by the driver-side patch_handler
-            // pipeline stage (Read-Modify-Write) and never reach the RNTBD
-            // transport encoder. Reaching this arm is a bug in the driver
-            // dispatch path.
-            OperationType::Patch => {
-                unreachable!(
-                    "OperationType::Patch must be handled by patch_handler before RNTBD encoding"
-                )
-            }
             // Distributed transactions do not use the thin-client RNTBD
             // encoder; they route through the standard gateway coordinator.
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             OperationType::CommitDistributedTransaction
             | OperationType::ReadDistributedTransaction => {
                 unreachable!("distributed transaction operations must not reach RNTBD encoding")
@@ -940,8 +980,8 @@ impl TryFrom<u16> for RntbdOperationType {
 
     fn try_from(value: u16) -> azure_core::Result<Self> {
         match value {
-            0x0001 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0008 | 0x0009 | 0x000F | 0x0011
-            | 0x0012 | 0x0013 | 0x0025 | 0x0042 => Ok(Self(value)),
+            0x0001 | 0x0002 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0008 | 0x0009 | 0x000F
+            | 0x0011 | 0x0012 | 0x0013 | 0x0025 | 0x0042 => Ok(Self(value)),
             other => Err(data_conversion_error(format!(
                 "unknown RNTBD operation type 0x{other:04X}"
             ))),
@@ -955,6 +995,7 @@ impl TryFrom<RntbdOperationType> for OperationType {
     fn try_from(value: RntbdOperationType) -> azure_core::Result<Self> {
         match value.0 {
             0x0001 => Ok(Self::Create),
+            0x0002 => Ok(Self::Patch),
             0x0003 => Ok(Self::Read),
             0x0004 => Ok(Self::ReadFeed),
             0x0005 => Ok(Self::Delete),
@@ -1182,8 +1223,9 @@ mod tests {
     #[test]
     fn read_consistency_strategy_token_byte_mapping() {
         // The RNTBD `ReadConsistencyStrategy` token has id `0x00FE`, `Byte`
-        // type, and these exact byte values. A drift here means the SDK and
-        // the gateway disagree about what consistency the caller requested.
+        // type, and these exact byte values in both Gateway 2.0 and Direct
+        // mode. A drift here means the SDK and backend disagree about what
+        // consistency the caller requested.
         let cases = [
             (ReadConsistencyStrategy::Eventual, 0x01u8),
             (ReadConsistencyStrategy::Session, 0x02u8),

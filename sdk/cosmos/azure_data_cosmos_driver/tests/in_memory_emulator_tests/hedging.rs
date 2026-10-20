@@ -4,7 +4,7 @@
 //! Cross-region hedging integration tests using the in-memory emulator.
 //!
 //! Implements the initial subset of spec §15.2 ("Fault-injection / multi-region
-//! tests") from `docs/HEDGING_SPEC.md`. This is the first driver-level test
+//! tests") from Spec 0009: Cross-region hedging. This is the first driver-level test
 //! coverage of the hedging stack: prior phases were covered by unit tests
 //! against synthetic eligibility/race fixtures (§15.1).
 //!
@@ -179,7 +179,7 @@ const COLL_NAME: &str = "testcoll";
 /// use. The in-memory emulator's `ReplicationConfig::immediate()` replicates
 /// the write synchronously across regions, so a read against either region's
 /// gateway returns the same item.
-async fn seed_item(ctx: &MultiRegionTestContext, item_id: &str, pk: &str) {
+pub(super) async fn seed_item(ctx: &MultiRegionTestContext, item_id: &str, pk: &str) {
     let body = serde_json::json!({
         "id": item_id,
         "pk": pk,
@@ -201,7 +201,7 @@ async fn seed_item(ctx: &MultiRegionTestContext, item_id: &str, pk: &str) {
 
 /// Builds a driver wired to the multi-region emulator with the supplied
 /// fault-injection rules and a hedging strategy at `threshold`.
-async fn make_hedging_driver(
+pub(super) async fn make_hedging_driver(
     ctx: &MultiRegionTestContext,
     threshold: Duration,
     rules: Vec<Arc<FaultInjectionRule>>,
@@ -213,7 +213,7 @@ async fn make_hedging_driver(
         .await
         .expect("runtime builds");
 
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         Url::parse(ACCOUNT_ENDPOINT).expect("valid endpoint"),
         // Cosmos master keys are base64; the emulator does not actually
         // validate the signature so any well-formed base64 value works.
@@ -249,14 +249,14 @@ async fn make_hedging_driver(
 /// `OperationOptions`. Returns the response's optional `HedgeDiagnostics` —
 /// callers assert on whether it should be `Some(_)` (hedge race ran) or
 /// `None` (primary completed without hedging being entered).
-async fn read_item_hedge_diagnostics(
+pub(super) async fn read_item_hedge_diagnostics(
     driver: &Arc<CosmosDriver>,
     op_options: OperationOptions,
     item_id: &str,
     pk: &str,
 ) -> Option<HedgeDiagnostics> {
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -290,7 +290,7 @@ async fn read_item_result(
     azure_data_cosmos_driver::error::CosmosError,
 > {
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -366,6 +366,27 @@ async fn hedging_read_primary_fast() {
         &Region::EAST_US,
         "primary_region must record East US on the zero-overhead happy \
          path; diag={hedge_diag:?}",
+    );
+}
+
+#[tokio::test]
+async fn account_suppression_prevents_data_plane_hedging_when_locally_enabled() {
+    let ctx = setup_multi_region(WriteMode::Single).await;
+    ctx.emulator
+        .store()
+        .config()
+        .set_cross_region_hedging_disabled(Some(true));
+    seed_item(&ctx, "account-suppressed-item", "pk1").await;
+
+    let (driver, mut op_options) =
+        make_hedging_driver(&ctx, Duration::from_millis(500), Vec::new()).await;
+    op_options.hedging_enabled = Some(true);
+
+    let hedge_diag =
+        read_item_hedge_diagnostics(&driver, op_options, "account-suppressed-item", "pk1").await;
+    assert!(
+        hedge_diag.is_none(),
+        "the account signal must prevent entering the data-plane hedge path"
     );
 }
 
@@ -562,7 +583,7 @@ async fn hedging_write_not_hedged() {
     let (driver, op_options) = make_hedging_driver(&ctx, Duration::from_millis(100), rules).await;
 
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
     let item_ref = ItemReference::from_name(&container, PartitionKey::from("pk1"), "wpk-1");
@@ -638,7 +659,7 @@ async fn hedging_disabled_per_operation() {
         .build()
         .await
         .expect("runtime builds");
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         Url::parse(ACCOUNT_ENDPOINT).expect("valid endpoint"),
         "ZW11bGF0b3JrZXk=",
     );
@@ -1010,7 +1031,7 @@ async fn hedging_with_ppcb_existing_failures() {
         .build()
         .await
         .expect("runtime builds");
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         Url::parse(ACCOUNT_ENDPOINT).expect("valid endpoint"),
         "ZW11bGF0b3JrZXk=",
     );
@@ -1110,7 +1131,7 @@ async fn hedging_alternate_wins_trip_ppcb() {
         .build()
         .await
         .expect("runtime builds");
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         Url::parse(ACCOUNT_ENDPOINT).expect("valid endpoint"),
         "ZW11bGF0b3JrZXk=",
     );
@@ -1337,7 +1358,7 @@ async fn hedging_exclude_regions_under_503_retry() {
         .build()
         .await
         .expect("runtime builds");
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         Url::parse(ACCOUNT_ENDPOINT).expect("valid endpoint"),
         "ZW11bGF0b3JrZXk=",
     );

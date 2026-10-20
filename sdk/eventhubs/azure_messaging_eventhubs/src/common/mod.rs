@@ -19,6 +19,22 @@ pub(crate) use retry::recover_azure_operation;
 /// Signature. JWT (Entra) tokens use the default type, signalled by `None`.
 pub(crate) const SAS_TOKEN_TYPE: &str = "servicebus.windows.net:sastoken";
 
+pub(crate) fn validate_idle_timeout(
+    idle_timeout: Option<azure_core::time::Duration>,
+) -> crate::Result<()> {
+    let Some(idle_timeout) = idle_timeout else {
+        return Ok(());
+    };
+    let milliseconds = idle_timeout.whole_milliseconds();
+    if !(1..=i128::from(u32::MAX)).contains(&milliseconds) {
+        return Err(crate::EventHubsError::with_message(format!(
+            "The idle timeout must be between 1 and {} milliseconds.",
+            u32::MAX
+        )));
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 pub(crate) mod tests {
 

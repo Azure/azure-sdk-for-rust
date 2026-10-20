@@ -61,11 +61,13 @@ async fn main() -> Result<()> {
         let binding = bound_gateway.binding();
         let gateway_emulator = emulator.clone();
         let gateway_binding = binding.clone();
+        let gateway_metrics = metrics.clone();
         listeners.spawn(async move {
             data_plane::serve(
                 bound_gateway.gateway.listener,
                 gateway_binding,
                 gateway_emulator,
+                gateway_metrics,
             )
             .await
         });

@@ -487,9 +487,9 @@ async fn ensure_database(client: &CosmosClient, db_name: &str) -> Result<(), Box
 async fn ensure_container(
     db_client: &DatabaseClient,
     container_name: &str,
-    throughput: usize,
+    throughput: u64,
 ) -> Result<ContainerClient, Box<dyn Error>> {
-    match db_client.container_client(container_name).await {
+    match db_client.container_client(container_name, None).await {
         Ok(container) => match container.read(None).await {
             Ok(_) => {
                 println!("Container '{container_name}' already exists.");
@@ -513,7 +513,7 @@ async fn ensure_container(
 
     let mut backoff = INITIAL_BACKOFF;
     for attempt in 1..=MAX_SETUP_RETRIES {
-        match db_client.container_client(container_name).await {
+        match db_client.container_client(container_name, None).await {
             Ok(container) => match container.read(None).await {
                 Ok(_) => {
                     println!("Container '{container_name}' confirmed readable.");

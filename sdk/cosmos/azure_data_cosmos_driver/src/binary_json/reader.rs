@@ -45,7 +45,7 @@ use super::{is_binary, BinaryError, Result};
 /// stack's `JsonObjectState.JsonMaxNestingDepth` (256 simultaneously-open
 /// containers), so the Rust decoder enforces the same nesting policy while
 /// guarding against stack exhaustion from adversarial input.
-const MAX_DEPTH: usize = 256;
+pub(crate) const MAX_DEPTH: usize = 256;
 
 /// A single native scalar token read directly from the buffer, used by the
 /// native serde deserializer ([`super::de`]) to feed a visitor without
@@ -894,8 +894,9 @@ impl<'a> Reader<'a> {
     /// Reads a GUID string: the 16-byte encoded form (following the marker)
     /// expanded to the canonical `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` hex text.
     ///
-    /// This is a straight sequential hex dump of the 16 bytes (not the .NET
-    /// `Guid` mixed-endian layout), mirroring .NET `DecodeGuidStringValue`.
+    /// Each byte packs two hex characters **low nibble first**, the same 4-bit
+    /// character packing [`read_table_string`] uses (not the .NET `Guid`
+    /// mixed-endian layout), mirroring .NET `DecodeGuidStringValue`.
     /// `uppercase` selects the hex case. When `quoted`, the original JSON string
     /// included literal quote characters, so they are re-added around the text.
     fn read_guid_string(&mut self, uppercase: bool, quoted: bool) -> Result<String> {
@@ -918,8 +919,8 @@ impl<'a> Reader<'a> {
             if DASH_POSITIONS.contains(&index) {
                 out.push('-');
             }
-            out.push(char::from(digits[usize::from(byte >> 4)]));
             out.push(char::from(digits[usize::from(byte & 0x0F)]));
+            out.push(char::from(digits[usize::from(byte >> 4)]));
         }
         if quoted {
             out.push('"');
@@ -1468,6 +1469,54 @@ mod tests {
         assert_eq!(
             decode(&buf(&bytes)),
             Err(BinaryError::UnexpectedEof { needed: 12 }),
+        );
+    }
+
+    /// Payload captured from a live account: the 16 bytes the service sent for
+    /// an `_etag` whose text-encoded value was
+    /// `"00004812-0000-0200-0000-6a7fa98a0000"`.
+    const LIVE_ETAG_GUID_BYTES: [u8; 16] = [
+        0x00, 0x00, 0x84, 0x21, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0xa6, 0xf7, 0x9a, 0xa8, 0x00,
+        0x00,
+    ];
+
+    #[test]
+    fn decodes_guid_string_low_nibble_first() {
+        // Each byte packs two hex characters low nibble first, so 0x84 is "48".
+        // Decoding high nibble first yields the nibble-swapped
+        // "00008421-0000-2000-0000-a6f79aa80000".
+        let mut bytes = vec![markers::LOWERCASE_GUID_STRING];
+        bytes.extend_from_slice(&LIVE_ETAG_GUID_BYTES);
+        assert_eq!(
+            decode(&buf(&bytes)),
+            Ok(Value::String(
+                "00004812-0000-0200-0000-6a7fa98a0000".to_string()
+            )),
+        );
+    }
+
+    #[test]
+    fn decodes_double_quoted_guid_string_as_etag_text() {
+        // The ETag wire form keeps the literal quotes that appear in the JSON.
+        let mut bytes = vec![markers::DOUBLE_QUOTED_LOWERCASE_GUID_STRING];
+        bytes.extend_from_slice(&LIVE_ETAG_GUID_BYTES);
+        assert_eq!(
+            decode(&buf(&bytes)),
+            Ok(Value::String(
+                "\"00004812-0000-0200-0000-6a7fa98a0000\"".to_string()
+            )),
+        );
+    }
+
+    #[test]
+    fn decodes_uppercase_guid_string_low_nibble_first() {
+        let mut bytes = vec![markers::UPPERCASE_GUID_STRING];
+        bytes.extend_from_slice(&LIVE_ETAG_GUID_BYTES);
+        assert_eq!(
+            decode(&buf(&bytes)),
+            Ok(Value::String(
+                "00004812-0000-0200-0000-6A7FA98A0000".to_string()
+            )),
         );
     }
 

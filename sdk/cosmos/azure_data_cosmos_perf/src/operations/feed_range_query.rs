@@ -18,7 +18,7 @@ use std::time::Duration;
 
 use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::{feed::FeedRange, CosmosStatus, FeedScope, Query};
+use azure_data_cosmos::{feed::FeedRange, FeedScope, Query};
 use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
 use futures::StreamExt;
 
@@ -67,10 +67,9 @@ impl Operation for FeedRangeQueryOperation {
             // Should be impossible after a successful seed; surface as a
             // typed error rather than panicking so the worker records it.
             return Err(DriverCosmosError::builder()
-                .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_status(azure_data_cosmos_driver::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("feed-range cache is empty")
-                .build()
-                .into());
+                .build());
         }
 
         let idx = self.cursor.fetch_add(1, Ordering::Relaxed) % snapshot.len();

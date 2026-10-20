@@ -15,6 +15,14 @@
 
 #include "../include/azurecosmosdriver.h"
 
+/* Literal-only helper: sizeof preserves embedded NUL and counts UTF-8 bytes. */
+#define SV(literal) ((cosmos_string_view_t){(const uint8_t *)(literal), sizeof(literal) - 1})
+#define SV_NULL ((cosmos_string_view_t){NULL, 0})
+
+static inline cosmos_string_view_t string_view(const char *text) {
+    return (cosmos_string_view_t){(const uint8_t *)text, strlen(text)};
+}
+
 // The packed `cosmos_status_code_t` decode helpers COSMOS_STATUS_HTTP /
 // COSMOS_STATUS_SUB are emitted by the generated header above. Tests assert on
 // the sub-status (via COSMOS_SUB_STATUS_* constants) since it uniquely

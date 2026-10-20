@@ -187,6 +187,13 @@ pub(crate) struct AccountProperties {
     #[serde(default)]
     pub enable_per_partition_failover_behavior: bool,
 
+    /// Service-controlled suppression signal for cross-region hedging.
+    ///
+    /// `None` means the service omitted the property, which lets refresh
+    /// reconciliation preserve the last explicitly observed value.
+    #[serde(default)]
+    pub disable_cross_regional_hedging: Option<bool>,
+
     /// User replication settings (min/max replica set sizes).
     #[serde(default)]
     pub user_replication_policy: ReplicationPolicy,
@@ -336,6 +343,25 @@ impl AccountMetadataCache {
         self.cache.get(endpoint).await
     }
 
+    /// Applies `action` only if `properties` is still the cached value.
+    ///
+    /// Cache replacement is blocked until the synchronous action completes,
+    /// preventing a stale operation from publishing account state after a
+    /// newer refresh has replaced the cache entry.
+    pub(crate) async fn apply_if_current<F>(
+        &self,
+        endpoint: &AccountEndpoint,
+        properties: &Arc<AccountProperties>,
+        action: F,
+    ) -> bool
+    where
+        F: FnOnce(),
+    {
+        self.cache
+            .apply_if_current(endpoint, properties, action)
+            .await
+    }
+
     /// Atomically replaces the cached account properties for an endpoint by
     /// running the supplied factory under the cache's single-pending-I/O
     /// lock. Use this when the caller has already produced fresh data
@@ -372,7 +398,7 @@ impl Default for AccountMetadataCache {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
     fn test_endpoint(name: &str) -> AccountEndpoint {
         AccountEndpoint::from(
@@ -505,6 +531,53 @@ mod tests {
         assert!(cache.cache.get(&test_endpoint("account2")).await.is_none());
     }
 
+    #[tokio::test]
+    async fn stale_properties_cannot_be_applied_after_refresh() {
+        let cache = AccountMetadataCache::new();
+        let endpoint = test_endpoint("myaccount");
+        let stale = cache
+            .get_or_fetch(endpoint.clone(), || async {
+                let mut properties = test_properties("westus");
+                properties.disable_cross_regional_hedging = Some(false);
+                Ok(properties)
+            })
+            .await
+            .unwrap();
+        let current = cache
+            .get_or_refresh_with(
+                endpoint.clone(),
+                |_| true,
+                || async {
+                    let mut properties = test_properties("westus");
+                    properties.disable_cross_regional_hedging = Some(true);
+                    properties
+                },
+            )
+            .await
+            .unwrap();
+
+        assert!(
+            !cache
+                .apply_if_current(&endpoint, &stale, || {
+                    panic!("a replaced cache value must not be applied");
+                })
+                .await,
+            "a replaced cache value must not be published"
+        );
+        let current_value_applied = AtomicBool::new(false);
+        assert!(
+            cache
+                .apply_if_current(&endpoint, &current, || {
+                    current_value_applied.store(
+                        current.disable_cross_regional_hedging.unwrap(),
+                        Ordering::SeqCst,
+                    );
+                })
+                .await
+        );
+        assert!(current_value_applied.load(Ordering::SeqCst));
+    }
+
     #[test]
     fn deserialize_full_account_payload() {
         let json = r#"{
@@ -525,6 +598,7 @@ mod tests {
             "continuousBackupEnabled": false,
             "enableNRegionSynchronousCommit": false,
             "enablePerPartitionFailoverBehavior": false,
+            "disableCrossRegionalHedging": true,
             "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
             "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
             "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
@@ -545,6 +619,7 @@ mod tests {
             DefaultConsistencyLevel::Session
         );
         assert!(!props.enable_multiple_write_locations);
+        assert_eq!(props.disable_cross_regional_hedging, Some(true));
     }
 
     #[test]
@@ -608,6 +683,7 @@ mod tests {
         assert!(props.media.is_empty());
         assert!(props.query_engine_configuration.is_empty());
         assert!(!props.enable_multiple_write_locations);
+        assert_eq!(props.disable_cross_regional_hedging, None);
 
         // Present fields are still honored.
         assert_eq!(props.write_region().unwrap().as_str(), "southcentralus");

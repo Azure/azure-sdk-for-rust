@@ -12,7 +12,7 @@ use azure_data_cosmos::{
     feed::FeedScope,
     models::{ContainerProperties, ThroughputProperties},
     options::CreateContainerOptions,
-    CosmosStatus, Query, ResourceId,
+    Query, ResourceId,
 };
 use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
@@ -107,7 +107,7 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
 
             // ...and the container by RID under that RID-addressed database.
             let rid_container = rid_db_client
-                .container_client(ResourceId::from(container_rid.clone()))
+                .container_client(ResourceId::from(container_rid.clone()), None)
                 .await?;
 
             // Reading by RID resolves back to the same container.
@@ -122,7 +122,7 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
             let mgmt_rid_container = run_context
                 .management_client()
                 .database_client(ResourceId::from(db_rid.clone()))
-                .container_client(ResourceId::from(container_rid.clone()))
+                .container_client(ResourceId::from(container_rid.clone()), None)
                 .await?;
             let throughput = mgmt_rid_container
                 .read_throughput(None)
@@ -158,7 +158,7 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
                 let err = result.expect(
                     "a name-addressed point operation on a RID-addressed container must be rejected",
                 );
-                assert_eq!(CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING, err.status());
+                assert_eq!(azure_data_cosmos_driver::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING, err.status());
             }
 
             // The item really was created through the RID-addressed container:
@@ -242,12 +242,15 @@ pub async fn mixed_name_and_rid_addressing_is_rejected() -> Result<(), Box<dyn E
             // `db_client` is name-addressed; addressing the container by RID
             // mixes the two modes and must be rejected.
             let Err(err) = db_client
-                .container_client(ResourceId::from(container_rid))
+                .container_client(ResourceId::from(container_rid), None)
                 .await
             else {
                 panic!("expected mixed name/RID addressing to be rejected");
             };
-            assert_eq!(CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING, err.status());
+            assert_eq!(
+                azure_data_cosmos_driver::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING,
+                err.status()
+            );
 
             Ok(())
         },
@@ -312,7 +315,7 @@ pub async fn container_rid_from_another_database_is_rejected() -> Result<(), Box
                 .client()
                 .database_client(ResourceId::from(db1_rid));
             let result = rid_db1_client
-                .container_client(ResourceId::from(container2_rid))
+                .container_client(ResourceId::from(container2_rid), None)
                 .await;
 
             // Clean up db2 regardless of the assertion outcome below.
@@ -321,7 +324,10 @@ pub async fn container_rid_from_another_database_is_rejected() -> Result<(), Box
             let Err(err) = result else {
                 panic!("expected a container RID from another database to be rejected");
             };
-            assert_eq!(CosmosStatus::CLIENT_INVALID_RESOURCE_ID, err.status());
+            assert_eq!(
+                azure_data_cosmos_driver::error::status_codes::CLIENT_INVALID_RESOURCE_ID,
+                err.status()
+            );
 
             Ok(())
         },

@@ -26,9 +26,11 @@ mod hedging;
 mod identity;
 mod operation_options;
 mod partition_failover;
+mod patch_strategy;
 mod plan_options;
 mod policies;
 mod priority;
+mod query_plan_mode;
 mod read_consistency;
 mod region;
 mod throughput_control;
@@ -46,23 +48,24 @@ pub(crate) use env_parsing::parse_duration_millis_from_env;
 pub use hedging::{
     HedgingOptions, HedgingOptionsBuilder, DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS,
 };
-pub use identity::{CorrelationId, UserAgentSuffix, WorkloadId};
+pub use identity::{CorrelationId, UserAgentProperty, UserAgentSuffix, WorkloadId};
 pub use operation_options::{
     OperationOptions, OperationOptionsBuilder, OperationOptionsView, ThrottlingRetryOptions,
     ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView, ThroughputControlOptions,
     ThroughputControlOptionsBuilder, ThroughputControlOptionsView,
 };
-pub use partition_failover::{PartitionFailoverOptions, PartitionFailoverOptionsBuilder};
-pub use plan_options::{PlanOptions, DEFAULT_MAX_FAN_OUT};
+pub use partition_failover::{
+    PartitionFailoverOptions, PartitionFailoverOptionsBuilder, PartitionTopologyCacheMode,
+};
+pub use patch_strategy::PatchStrategy;
+pub use plan_options::{PlanOptions, DEFAULT_MAX_BUFFERED_QUERY_WINDOW, DEFAULT_MAX_FAN_OUT};
 pub use policies::{
     ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
     ServerCertificateValidation, TlsBackend,
 };
 pub use priority::PriorityLevel;
+pub use query_plan_mode::QueryPlanMode;
 pub(crate) use read_consistency::resolve_effective_consistency;
 pub use read_consistency::ReadConsistencyStrategy;
 pub use region::Region;
-pub use throughput_control::ThroughputControlGroupOptions;
-pub(crate) use throughput_control::{
-    ResolvedThroughputControl, ThroughputControlGroupRegistry, ThroughputControlGroupSnapshot,
-};
+pub(crate) use throughput_control::ResolvedThroughputControl;

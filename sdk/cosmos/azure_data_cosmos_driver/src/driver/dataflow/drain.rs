@@ -14,6 +14,7 @@ use async_trait::async_trait;
 
 use crate::models::FeedRange;
 
+use super::recovery_diagnostics::RecoveryDiagnostics;
 use super::{PageResult, PipelineContext, PipelineNode, PipelineNodeState, RangedToken};
 
 /// Maximum number of consecutive split retries before giving up.
@@ -49,17 +50,23 @@ impl PipelineNode for SequentialDrain {
         context: &mut PipelineContext<'_>,
     ) -> crate::error::Result<PageResult> {
         let mut split_retries = 0;
+        let mut recovery = RecoveryDiagnostics::default();
 
         loop {
             let Some(current) = self.children.front_mut() else {
                 return Ok(PageResult::Drained);
             };
 
-            match current.next_page(context).await? {
+            match current
+                .next_page(context)
+                .await
+                .map_err(|error| recovery.attach_error(error))?
+            {
                 PageResult::Page {
                     response,
                     is_terminal,
                 } => {
+                    let response = recovery.attach_response(response);
                     if is_terminal {
                         // The front child has emitted its last page; evict it
                         // now so a snapshot taken after this call no longer
@@ -80,18 +87,23 @@ impl PipelineNode for SequentialDrain {
                     self.children.pop_front();
                     // Loop to try the next child.
                 }
-                PageResult::SplitRequired { replacements } => {
+                PageResult::SplitRequired { mut replacements } => {
+                    recovery.absorb(replacements.take_diagnostics());
                     split_retries += 1;
                     if split_retries > MAX_SPLIT_RETRIES {
                         // This should be ridiculously rare.
                         // The topology provider already waits for splits to converge before returning.
-                        return Err(crate::error::CosmosError::builder()
-                            .with_status(crate::error::CosmosStatus::CLIENT_SPLIT_RETRIES_EXHAUSTED)
-                            .with_message(format!(
-                                "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
+                        return Err(recovery.attach_error(
+                            crate::error::CosmosError::builder()
+                                .with_status(
+                                    crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED,
+                                )
+                                .with_message(format!(
+                                    "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                  in SequentialDrain"
-                            ))
-                            .build());
+                                ))
+                                .build(),
+                        ));
                     }
 
                     // Remove the split child and splice in replacements at the front.
@@ -124,7 +136,7 @@ impl PipelineNode for SequentialDrain {
         for (idx, child) in self.children.iter().enumerate() {
             let Some(range) = child.feed_range() else {
                 return Err(crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE)
+                    .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE)
                     .with_message(format!(
                         "SequentialDrain child {idx} of {total} has no feed_range; \
                          cannot snapshot continuation state safely",
@@ -149,7 +161,7 @@ impl PipelineNode for SequentialDrain {
                     if cursor.is_some() {
                         return Err(crate::error::CosmosError::builder()
                             .with_status(
-                                crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE,
+                                crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE,
                             )
                             .with_message(format!(
                                 "SequentialDrain child {idx} of {total} is Drained after the cursor was \
@@ -709,7 +721,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn terminal_page_pops_child_eagerly() {
+    async fn terminal_page_pops_child_eagerly() -> crate::error::Result<()> {
         // The first child returns one terminal page; the drain must pop it
         // immediately so a snapshot taken right after the call already
         // points at the next child. We give child2 a `Request { Some }`
@@ -722,8 +734,8 @@ mod tests {
         })])
         .with_feed_range(
             FeedRange::new(
-                EffectivePartitionKey::from("00"),
-                EffectivePartitionKey::from("80"),
+                EffectivePartitionKey::try_from("00")?,
+                EffectivePartitionKey::try_from("80")?,
             )
             .unwrap(),
         );
@@ -736,8 +748,8 @@ mod tests {
         ])
         .with_feed_range(
             FeedRange::new(
-                EffectivePartitionKey::from("80"),
-                EffectivePartitionKey::from("FF"),
+                EffectivePartitionKey::try_from("80")?,
+                EffectivePartitionKey::MAX,
             )
             .unwrap(),
         )
@@ -770,10 +782,11 @@ mod tests {
         assert_eq!(active_tokens[0].min_epk, "80");
         assert_eq!(active_tokens[0].max_epk, "FF");
         assert_eq!(active_tokens[0].server_continuation, "c2-tok");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn snapshot_preserves_all_pending_children() {
+    async fn snapshot_preserves_all_pending_children() -> crate::error::Result<()> {
         // Mid-fan-out: every child still owes a server continuation, so
         // the sparse snapshot must record an `active_tokens` entry per
         // child (cursor at the first child's `min_inclusive`). A snapshot
@@ -782,8 +795,8 @@ mod tests {
         let child1 = MockLeaf::with_pages(vec![])
             .with_feed_range(
                 FeedRange::new(
-                    EffectivePartitionKey::from("00"),
-                    EffectivePartitionKey::from("55"),
+                    EffectivePartitionKey::try_from("00")?,
+                    EffectivePartitionKey::try_from("55")?,
                 )
                 .unwrap(),
             )
@@ -793,8 +806,8 @@ mod tests {
         let child2 = MockLeaf::with_pages(vec![])
             .with_feed_range(
                 FeedRange::new(
-                    EffectivePartitionKey::from("55"),
-                    EffectivePartitionKey::from("AA"),
+                    EffectivePartitionKey::try_from("55")?,
+                    EffectivePartitionKey::try_from("AA")?,
                 )
                 .unwrap(),
             )
@@ -804,8 +817,8 @@ mod tests {
         let child3 = MockLeaf::with_pages(vec![])
             .with_feed_range(
                 FeedRange::new(
-                    EffectivePartitionKey::from("AA"),
-                    EffectivePartitionKey::from("FF"),
+                    EffectivePartitionKey::try_from("AA")?,
+                    EffectivePartitionKey::MAX,
                 )
                 .unwrap(),
             )
@@ -834,6 +847,7 @@ mod tests {
         assert_eq!(active_tokens[2].min_epk, "AA");
         assert_eq!(active_tokens[2].max_epk, "FF");
         assert_eq!(active_tokens[2].server_continuation, "c3-tok");
+        Ok(())
     }
 
     #[tokio::test]
@@ -846,15 +860,15 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn terminal_page_on_last_child_marks_drain_terminal() {
+    async fn terminal_page_on_last_child_marks_drain_terminal() -> crate::error::Result<()> {
         let only_child = MockLeaf::with_pages(vec![Ok(PageResult::Page {
             response: response(b"final"),
             is_terminal: true,
         })])
         .with_feed_range(
             FeedRange::new(
-                EffectivePartitionKey::from("00"),
-                EffectivePartitionKey::from("FF"),
+                EffectivePartitionKey::try_from("00")?,
+                EffectivePartitionKey::MAX,
             )
             .unwrap(),
         );
@@ -878,5 +892,6 @@ mod tests {
             drain.snapshot_state().unwrap(),
             PipelineNodeState::Drained
         ));
+        Ok(())
     }
 }

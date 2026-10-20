@@ -24,13 +24,15 @@ use crate::{
 };
 
 use super::{
+    distinct_hash::Hash128,
     intersect_feed_ranges,
     query_plan::{QueryInfo, QueryPlan, SortOrder},
     query_response,
     snapshot::{OrderByRangeToken, ValueBoundary},
-    streaming_ordered_merge, DrainedLeaf, OperationPlan, PartitionRoutingRefresh, Pipeline,
-    PipelineNode, PipelineNodeState, RangedToken, Request, RequestTarget, ResolvedRange,
-    SequentialDrain, StreamingOrderedMerge, TopologyProvider, UnorderedMerge,
+    streaming_ordered_merge, Distinct, DrainedLeaf, NonStreamingOrderedMerge, OperationPlan,
+    PartitionRoutingRefresh, Pipeline, PipelineNode, PipelineNodeState, RangedToken, Request,
+    RequestTarget, ResolvedRange, SequentialDrain, SkipTake, StreamingOrderedMerge,
+    TopologyProvider, UnorderedMerge,
 };
 
 /// Builds a single-node [`Pipeline`] for a trivial operation.
@@ -52,8 +54,9 @@ use super::{
 /// Debug-asserts that the operation is indeed trivial. In release builds,
 /// returns an error if a non-trivial operation (e.g. a cross-partition query)
 /// is passed.
-pub(crate) fn build_trivial_pipeline(
+pub(crate) async fn build_trivial_pipeline(
     operation: Arc<CosmosOperation>,
+    topology_provider: Option<&mut dyn TopologyProvider>,
     resume: Option<PipelineNodeState>,
 ) -> crate::error::Result<Pipeline> {
     debug_assert!(
@@ -75,7 +78,7 @@ pub(crate) fn build_trivial_pipeline(
         }
         Some(other) => {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
                 .with_message(format!(
                     "continuation token shape {} does not match a trivial operation",
                     snapshot_kind(&other)
@@ -91,11 +94,45 @@ pub(crate) fn build_trivial_pipeline(
         None => RequestTarget::NonPartitioned,
         Some(f) => {
             if let Some(pk) = f.partition_key() {
-                RequestTarget::LogicalPartitionKey(pk.clone())
+                let resolved_partition_key_range = match topology_provider {
+                    Some(provider) => {
+                        match provider
+                            .resolve_ranges(f, PartitionRoutingRefresh::UseCached)
+                            .await
+                        {
+                            Ok(ranges) => {
+                                let resolved = super::single_resolved_range(&ranges);
+                                if resolved.is_none() {
+                                    tracing::debug!(
+                                        resolved_range_count = ranges.len(),
+                                        "logical partition planning did not resolve exactly one physical partition"
+                                    );
+                                }
+                                resolved.map(|range| {
+                                    (range.partition_key_range_id.clone(), range.parents.clone())
+                                })
+                            }
+                            Err(error) => {
+                                tracing::debug!(
+                                    error = %error,
+                                    "logical partition topology resolution failed; planning without a physical partition identity"
+                                );
+                                None
+                            }
+                        }
+                    }
+                    None => None,
+                };
+                match resolved_partition_key_range {
+                    Some((id, parents)) => {
+                        RequestTarget::logical_partition_key_with_parents(pk.clone(), id, parents)
+                    }
+                    None => RequestTarget::logical_partition_key(pk.clone(), None),
+                }
             } else {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE,
+                        crate::error::status_codes::CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE,
                     )
                     .with_message(
                         "FeedRange targeting requires a fan-out pipeline; \
@@ -124,7 +161,7 @@ pub(crate) fn build_trivial_pipeline(
 /// mid-execution may push the effective fan-out above the limit, and the
 /// operation keeps running rather than aborting.
 ///
-/// Returns a [`CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED`](crate::error::CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED)
+/// Returns a [`crate::error::status_codes::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED`](crate::error::status_codes::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED)
 /// error when a fresh plan exceeds [`PlanOptions::max_fan_out`].
 pub(crate) fn finalize_plan(
     pipeline: Pipeline,
@@ -136,7 +173,7 @@ pub(crate) fn finalize_plan(
         let width = pipeline.fan_out_width();
         if width > plan_options.max_fan_out as usize {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED)
+                .with_status(crate::error::status_codes::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED)
                 .with_message(format!(
                     "operation fans out to {width} partitions, exceeding the maximum of {}; \
                      raise max_fan_out (via FeedOptions) to run a broader cross-partition query",
@@ -145,7 +182,12 @@ pub(crate) fn finalize_plan(
                 .build());
         }
     }
-    Ok(OperationPlan::new(pipeline, operation))
+    Ok(OperationPlan::new(
+        pipeline,
+        operation,
+        plan_options.clone(),
+        !is_fresh,
+    ))
 }
 
 /// Builds a fan-out [`Pipeline`] from a backend query plan as a sequential drain.
@@ -195,9 +237,73 @@ pub(crate) async fn build_sequential_drain(
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
 ) -> crate::error::Result<Pipeline> {
+    build_sequential_drain_inner(query_plan, topology_provider, operation, resume).await
+}
+
+async fn build_sequential_drain_inner(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    resume: Option<PipelineNodeState>,
+) -> crate::error::Result<Pipeline> {
     validate_query_plan(query_plan)?;
 
-    let saved_snapshot = match resume {
+    // Global OFFSET / LIMIT / TOP window derived from the query plan.
+    let query_info = query_plan.query_info.as_ref();
+    let mut skip = query_info.and_then(|info| info.offset).unwrap_or(0);
+    let mut take = query_info.and_then(combine_take);
+    // Whether the *query plan* itself carries a skip/take window, i.e. whether
+    // the resumed pipeline will contain a `SkipTake` node. Used to validate a
+    // resumed continuation's pipeline shape below.
+    let plan_has_window = skip > 0 || take.is_some();
+
+    // A `SkipTake` continuation wraps the fan-out snapshot; peel it so the saved
+    // remaining window overrides the plan and the inner child drives the
+    // fan-out resume below.
+    let inner_resume = match resume {
+        Some(PipelineNodeState::SkipTake {
+            remaining_skip,
+            remaining_take,
+            child,
+        }) => {
+            // Resume validates the *pipeline* shape, not the query shape: `TOP n`
+            // and `OFFSET x LIMIT y` build an identical global skip/take
+            // pipeline, so a token minted by one legitimately resumes the other.
+            // We only reject when the resumed query has no skip/take window at
+            // all — then the pipeline has no `SkipTake` node to resume into.
+            if !plan_has_window {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
+                    )
+                    .with_message(
+                        "continuation token carries a skip/take (OFFSET/LIMIT/TOP) window but \
+                         the resumed query has no such window",
+                    )
+                    .build());
+            }
+            skip = remaining_skip;
+            take = remaining_take;
+            Some(*child)
+        }
+        other => other,
+    };
+
+    // `DISTINCT` sits *inside* the skip/take window (SQL applies OFFSET /
+    // LIMIT / TOP to the deduplicated stream), so its token state nests one
+    // level below `SkipTake`'s and is peeled second.
+    let distinct_type = plan_distinct_type(query_plan);
+    let (inner_resume, last_hash) = peel_distinct_resume(inner_resume, distinct_type)?;
+    let resumed_drained = matches!(inner_resume, Some(PipelineNodeState::Drained));
+
+    let needs_skip_take = skip > 0 || take.is_some();
+
+    // Per-partition requests must use the plan's `rewrittenQuery` so
+    // OFFSET / LIMIT / TOP are applied once, globally, by the `SkipTake` node
+    // here rather than being re-applied inside every partition.
+    let effective_operation = rewritten_operation(operation, query_plan)?;
+
+    let saved_snapshot = match inner_resume {
         None => None,
         Some(PipelineNodeState::Drained) => {
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
@@ -211,7 +317,7 @@ pub(crate) async fn build_sequential_drain(
         )?),
         Some(other) => {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
                 .with_message(format!(
                     "continuation token shape {} does not match a cross-partition operation",
                     snapshot_kind(&other)
@@ -221,9 +327,10 @@ pub(crate) async fn build_sequential_drain(
     };
 
     let request_nodes = if let Some(saved) = saved_snapshot.as_ref() {
-        plan_resume_from_saved_snapshot(query_plan, topology_provider, operation, saved).await?
+        plan_resume_from_saved_snapshot(query_plan, topology_provider, &effective_operation, saved)
+            .await?
     } else {
-        plan_fresh(query_plan, topology_provider, operation).await?
+        plan_fresh(query_plan, topology_provider, &effective_operation).await?
     };
 
     // The max fan-out limit is enforced centrally in
@@ -238,7 +345,7 @@ pub(crate) async fn build_sequential_drain(
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
         return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_status(crate::error::status_codes::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
             .with_message("query plan produced no partition ranges to query")
             .build());
     }
@@ -246,7 +353,31 @@ pub(crate) async fn build_sequential_drain(
     // Even when there's only one request node, we still need to wrap it in
     // a SequentialDrain so the pipeline can react to splits by replacing
     // the single Request with multiple Requests.
-    let root = Box::new(SequentialDrain::new(request_nodes));
+    let fanout: Box<dyn PipelineNode> = Box::new(SequentialDrain::new(request_nodes));
+
+    // `DISTINCT` deduplicates the fan-out stream first; the global skip/take
+    // window then counts deduplicated rows, matching SQL semantics.
+    let deduped = apply_distinct(
+        fanout,
+        distinct_type,
+        last_hash,
+        resumed_drained,
+        operation.emits_binary_payload(),
+    );
+
+    // Cross-partition OFFSET / LIMIT / TOP applies a global skip/take over the
+    // fan-out's EPK-ordered stream. When none is present the fan-out is the
+    // pipeline root directly.
+    let root: Box<dyn PipelineNode> = if needs_skip_take {
+        Box::new(SkipTake::new(
+            deduped,
+            skip,
+            take,
+            operation.emits_binary_payload(),
+        ))
+    } else {
+        deduped
+    };
     Ok(Pipeline::new(root))
 }
 
@@ -254,6 +385,156 @@ pub(crate) async fn build_sequential_drain(
 /// more `ORDER BY` columns not requiring the non-streaming buffered sort).
 pub(crate) fn is_streaming_order_by(info: &QueryInfo) -> bool {
     !info.order_by.is_empty() && !info.has_non_streaming_order_by
+}
+
+/// `true` if `query_info` selects the fully buffered non-streaming ORDER BY pipeline.
+pub(crate) fn is_non_streaming_order_by(info: &QueryInfo) -> bool {
+    info.has_non_streaming_order_by
+}
+
+/// Validates admission using global, normalized metadata, never partition rewrites.
+pub(crate) fn validate_buffered_query(
+    query_plan: &QueryPlan,
+    max_buffered_query_window: u64,
+) -> crate::error::Result<()> {
+    let Some(info) = query_plan.query_info.as_ref() else {
+        return Ok(());
+    };
+    let shape = if is_non_streaming_order_by(info) {
+        "non-streaming ORDER BY (including buffered vector search)"
+    } else if info.distinct_type == DistinctType::Unordered {
+        "unordered DISTINCT"
+    } else {
+        return Ok(());
+    };
+    buffered_query_window(info, max_buffered_query_window, shape).map(|_| ())
+}
+
+fn buffered_query_window(info: &QueryInfo, maximum: u64, shape: &str) -> crate::error::Result<u64> {
+    if let Some(window) =
+        combine_take(info).and_then(|take| info.offset.unwrap_or(0).checked_add(take))
+    {
+        if window <= maximum {
+            return Ok(window);
+        }
+    }
+    Err(crate::error::CosmosError::builder()
+        .with_status(crate::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW)
+        .with_message(format!(
+            "cross-partition {shape} requires a finite global TOP or LIMIT and OFFSET plus effective take at most max_buffered_query_window ({maximum})"
+        ))
+        .build())
+}
+
+/// Builds a fully buffered merge for an admitted non-streaming ORDER BY query.
+pub(crate) async fn build_non_streaming_ordered_merge(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    resume: Option<PipelineNodeState>,
+) -> crate::error::Result<Pipeline> {
+    if resume.is_some() {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(
+                crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED,
+            )
+            .with_message(
+                "cross-partition non-streaming ORDER BY queries cannot be resumed from a continuation token",
+            )
+            .build());
+    }
+
+    if query_plan.hybrid_search_query_info.is_some() {
+        return Err(unsupported_feature(
+            "hybrid search combined with non-streaming ORDER BY",
+        ));
+    }
+
+    let info = query_plan.query_info.as_ref().ok_or_else(|| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_UNSUPPORTED_QUERY_FEATURE)
+            .with_message(
+                "internal error: non-streaming ORDER BY path selected with no queryInfo present",
+            )
+            .build()
+    })?;
+    if !info.has_non_streaming_order_by {
+        return Err(unsupported_feature(
+            "non-streaming ORDER BY path selected for a streaming query",
+        ));
+    }
+    if info.distinct_type != DistinctType::None {
+        return Err(unsupported_feature(
+            "DISTINCT combined with non-streaming ORDER BY",
+        ));
+    }
+    if !info.aggregates.is_empty() {
+        return Err(unsupported_feature(
+            "aggregates combined with non-streaming ORDER BY",
+        ));
+    }
+    if !info.group_by_expressions.is_empty() {
+        return Err(unsupported_feature(
+            "GROUP BY combined with non-streaming ORDER BY",
+        ));
+    }
+    if info.order_by.is_empty() {
+        return Err(unsupported_feature(
+            "non-streaming ORDER BY requires at least one sort key",
+        ));
+    }
+    if info
+        .rewritten_query
+        .as_deref()
+        .is_none_or(|query| query.is_empty())
+    {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(
+                crate::error::status_codes::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY,
+            )
+            .with_message(
+                "query plan reported non-streaming ORDER BY but did not supply a non-empty rewrittenQuery",
+            )
+            .build());
+    }
+
+    let skip = info.offset.unwrap_or(0);
+    // Admission has checked the per-query policy; enforce a finite representation here too.
+    let window = buffered_query_window(info, u64::MAX, "non-streaming ORDER BY")?;
+    let retention_limit = usize::try_from(window).map_err(|_| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
+            .with_message("non-streaming ORDER BY candidate window does not fit in memory")
+            .build()
+    })?;
+    let skip = usize::try_from(skip).map_err(|_| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
+            .with_message("non-streaming ORDER BY OFFSET does not fit in memory")
+            .build()
+    })?;
+    let take = retention_limit - skip;
+
+    let effective_operation = rewritten_operation(operation, query_plan)?;
+    let request_nodes = plan_fresh(query_plan, topology_provider, &effective_operation).await?;
+    if request_nodes.is_empty() {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_message("query plan produced no partition ranges to query")
+            .build());
+    }
+
+    let fanout: Box<dyn PipelineNode> = Box::new(SequentialDrain::new(request_nodes));
+    let root = Box::new(NonStreamingOrderedMerge::new(
+        fanout,
+        info.order_by.clone(),
+        retention_limit,
+        skip,
+        take,
+        operation.request_headers().max_item_count,
+        operation.emits_binary_payload(),
+    ));
+    Ok(Pipeline::new(root))
 }
 
 /// Builds a [`streaming_ordered_merge::StreamingOrderedMerge`] pipeline
@@ -271,6 +552,15 @@ pub(crate) async fn build_streaming_ordered_merge(
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
 ) -> crate::error::Result<Pipeline> {
+    build_streaming_ordered_merge_inner(query_plan, topology_provider, operation, resume).await
+}
+
+async fn build_streaming_ordered_merge_inner(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    resume: Option<PipelineNodeState>,
+) -> crate::error::Result<Pipeline> {
     validate_query_plan_for_streaming_order_by(query_plan)?;
     let info = query_plan
         .query_info
@@ -283,7 +573,7 @@ pub(crate) async fn build_streaming_ordered_merge(
         .ok_or_else(|| {
             crate::error::CosmosError::builder()
                 .with_status(
-                    crate::error::CosmosStatus::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY,
+                    crate::error::status_codes::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY,
                 )
                 .with_message(
                     "query plan reported one or more ORDER BY columns but did not supply a \
@@ -292,6 +582,52 @@ pub(crate) async fn build_streaming_ordered_merge(
                 .build()
         })?;
     let directions = info.order_by.clone();
+
+    // Global OFFSET / LIMIT / TOP window (mirrors `build_sequential_drain`): an
+    // ORDER BY query may also carry a skip/take, which is applied *globally* on
+    // top of the ordered merge by a `SkipTake` root rather than per partition.
+    let mut skip = info.offset.unwrap_or(0);
+    let mut take = combine_take(info);
+    let plan_has_window = skip > 0 || take.is_some();
+
+    // A combined ORDER BY + OFFSET/LIMIT/TOP continuation nests the ordered-merge
+    // snapshot inside a `SkipTake`; peel it so the saved remaining window
+    // overrides the plan and the inner snapshot drives the ordered-merge resume
+    // below. Mirrors the peel in `build_sequential_drain`.
+    let resume = match resume {
+        Some(PipelineNodeState::SkipTake {
+            remaining_skip,
+            remaining_take,
+            child,
+        }) => {
+            // Resume validates pipeline shape, not query shape (see
+            // `build_sequential_drain`): `TOP` and `OFFSET`/`LIMIT` build the
+            // same skip/take node, so either token resumes the other. Only a
+            // token whose query has lost its window entirely is rejected.
+            if !plan_has_window {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
+                    )
+                    .with_message(
+                        "continuation token carries a skip/take (OFFSET/LIMIT/TOP) window but \
+                         the resumed query has no such window",
+                    )
+                    .build());
+            }
+            skip = remaining_skip;
+            take = remaining_take;
+            Some(*child)
+        }
+        other => other,
+    };
+
+    // `DISTINCT` sits *inside* the skip/take window (SQL applies OFFSET /
+    // LIMIT / TOP to the deduplicated stream), so its token state nests one
+    // level below `SkipTake`'s and is peeled second.
+    let distinct_type = plan_distinct_type(query_plan);
+    let (resume, last_hash) = peel_distinct_resume(resume, distinct_type)?;
+    let resumed_drained = matches!(resume, Some(PipelineNodeState::Drained));
 
     let query_from_beginning = query_response::rewritten_query_from_beginning(rewritten_query)?;
     let plain_body = query_response::rewrite_query_body(operation.body(), &query_from_beginning)?;
@@ -323,7 +659,7 @@ pub(crate) async fn build_streaming_ordered_merge(
         )?),
         Some(other) => {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
                 .with_message(format!(
                     "continuation token shape {} does not match a streaming ORDER BY operation",
                     snapshot_kind(&other)
@@ -346,7 +682,7 @@ pub(crate) async fn build_streaming_ordered_merge(
                 if !saved.range.is_subset_of(scope) {
                     return Err(crate::error::CosmosError::builder()
                         .with_status(
-                            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
+                            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
                         )
                         .with_message(format!(
                             "continuation token covers {}-{}, which is not contained in the requested feed scope {}-{}",
@@ -405,17 +741,37 @@ pub(crate) async fn build_streaming_ordered_merge(
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
         return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_status(crate::error::status_codes::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
             .with_message("query plan produced no partition ranges to query")
             .build());
     }
 
-    let root = Box::new(StreamingOrderedMerge::new(
+    let emit_binary = plain_operation.emits_binary_payload();
+    let ordered_root: Box<dyn PipelineNode> = Box::new(StreamingOrderedMerge::new(
         plain_operation,
         directions,
         children,
         query_fingerprint,
     ));
+
+    // `DISTINCT` deduplicates the ordered stream first; the global skip/take
+    // window then counts deduplicated rows, matching SQL semantics.
+    let deduped = apply_distinct(
+        ordered_root,
+        distinct_type,
+        last_hash,
+        resumed_drained,
+        emit_binary,
+    );
+
+    // Apply the global OFFSET / LIMIT / TOP window over the ordered stream. When
+    // the query carries none, the ordered merge is the pipeline root directly.
+    let needs_skip_take = skip > 0 || take.is_some();
+    let root: Box<dyn PipelineNode> = if needs_skip_take {
+        Box::new(SkipTake::new(deduped, skip, take, emit_binary))
+    } else {
+        deduped
+    };
     Ok(Pipeline::new(root))
 }
 
@@ -466,8 +822,16 @@ fn validate_streaming_order_by_snapshot(
     let mut parsed = Vec::with_capacity(ranges.len());
     let mut prev_max: Option<EffectivePartitionKey> = None;
     for entry in ranges {
-        let min = EffectivePartitionKey::from(entry.min_epk);
-        let max = EffectivePartitionKey::from(entry.max_epk);
+        let min = parse_continuation_epk(
+            &entry.min_epk,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
+            "StreamingOrderedMerge min_epk",
+        )?;
+        let max = parse_continuation_epk(
+            &entry.max_epk,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
+            "StreamingOrderedMerge max_epk",
+        )?;
         if min >= max {
             return Err(order_by_state_invalid(format!(
                 "continuation token has an invalid range (min `{}` >= max `{}`)",
@@ -535,9 +899,26 @@ fn order_by_state_invalid(
     message: impl Into<std::borrow::Cow<'static, str>>,
 ) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID)
+        .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID)
         .with_message(message)
         .build()
+}
+
+fn parse_continuation_epk(
+    value: &str,
+    status: crate::error::CosmosStatus,
+    field: &str,
+) -> crate::error::Result<EffectivePartitionKey> {
+    EffectivePartitionKey::try_from(value).map_err(|error| {
+        crate::error::CosmosError::builder()
+            .with_status(status)
+            .with_message(format!(
+                "continuation token {field} contains malformed EPK `{value}`; \
+                 EPK bounds must be even-length hexadecimal strings"
+            ))
+            .with_source(error)
+            .build()
+    })
 }
 
 /// Builds an [`UnorderedMerge`] pipeline for change feed operations.
@@ -578,7 +959,7 @@ pub(crate) async fn build_unordered_merge(
         ),
         Some(other) => {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
                 .with_message(format!(
                     "continuation token shape {} does not match a change feed operation",
                     snapshot_kind(&other)
@@ -690,7 +1071,7 @@ pub(crate) async fn build_unordered_merge(
 
     if request_nodes.is_empty() {
         return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_status(crate::error::status_codes::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
             .with_message("change feed produced no partition ranges to query")
             .build());
     }
@@ -716,9 +1097,10 @@ fn push_change_feed_leaf(
     resolved_range: &ResolvedRange,
     continuation: Option<String>,
 ) {
-    let target = RequestTarget::effective_partition_key_range(
+    let target = RequestTarget::effective_partition_key_range_with_parents(
         leaf_range,
         resolved_range.partition_key_range_id.clone(),
+        resolved_range.parents.clone(),
         resolved_range.range.clone(),
     );
     request_nodes.push(Box::new(Request::new(
@@ -771,9 +1153,10 @@ async fn plan_fresh(
                     topology_range_not_overlapping_error(&resolved_range.range, &feed_range)
                 })?;
 
-            let target = RequestTarget::effective_partition_key_range(
+            let target = RequestTarget::effective_partition_key_range_with_parents(
                 range,
                 resolved_range.partition_key_range_id,
+                resolved_range.parents,
                 resolved_range.range,
             );
             nodes.push(Box::new(Request::new(Arc::clone(operation), target, None)));
@@ -876,9 +1259,10 @@ async fn plan_resume_from_saved_snapshot(
                 if overlap_min > cursor_within_leaf {
                     // Gap before this token entry — fresh-start sub-leaf.
                     let gap = FeedRange::new(cursor_within_leaf.clone(), overlap_min.clone())?;
-                    let target = RequestTarget::effective_partition_key_range(
+                    let target = RequestTarget::effective_partition_key_range_with_parents(
                         gap,
                         resolved_range.partition_key_range_id.clone(),
+                        resolved_range.parents.clone(),
                         resolved_range.range.clone(),
                     );
                     nodes.push(Box::new(Request::new(Arc::clone(operation), target, None)));
@@ -886,9 +1270,10 @@ async fn plan_resume_from_saved_snapshot(
 
                 let intersection = FeedRange::new(overlap_min, overlap_max.clone())?;
                 coverage[idx].push(intersection.clone());
-                let target = RequestTarget::effective_partition_key_range(
+                let target = RequestTarget::effective_partition_key_range_with_parents(
                     intersection,
                     resolved_range.partition_key_range_id.clone(),
+                    resolved_range.parents.clone(),
                     resolved_range.range.clone(),
                 );
                 nodes.push(Box::new(Request::new(
@@ -904,9 +1289,10 @@ async fn plan_resume_from_saved_snapshot(
                 // Trailing gap after the last overlapping token entry.
                 let gap =
                     FeedRange::new(cursor_within_leaf, effective_leaf.max_exclusive().clone())?;
-                let target = RequestTarget::effective_partition_key_range(
+                let target = RequestTarget::effective_partition_key_range_with_parents(
                     gap,
                     resolved_range.partition_key_range_id.clone(),
+                    resolved_range.parents.clone(),
                     resolved_range.range.clone(),
                 );
                 nodes.push(Box::new(Request::new(Arc::clone(operation), target, None)));
@@ -946,7 +1332,7 @@ async fn plan_resume_from_saved_snapshot(
             };
             return Err(crate::error::CosmosError::builder()
                 .with_status(
-                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED,
+                    crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED,
                 )
                 .with_message(format!(
                     "continuation token active range [{}, {}) could not be fully covered \
@@ -1001,8 +1387,19 @@ fn query_range_to_feed_range(
     query_range: &super::query_plan::QueryRange,
     normalized_len: Option<usize>,
 ) -> crate::error::Result<FeedRange> {
-    let min = EffectivePartitionKey::from(query_range.min.as_str());
-    let max = EffectivePartitionKey::from(query_range.max.as_str());
+    let parse_bound = |value: &str, field: &str| {
+        EffectivePartitionKey::try_from(value).map_err(|error| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message(format!(
+                    "query plan {field} contains malformed EPK `{value}`"
+                ))
+                .with_source(error)
+                .build()
+        })
+    };
+    let min = parse_bound(query_range.min.as_str(), "min")?;
+    let max = parse_bound(query_range.max.as_str(), "max")?;
     // Only a closed *point* `[X, X]` (equality / `IN`, min == max) is
     // transformed — into the non-empty half-open window `[X, successor(X))`.
     // Every other range is left as-is (upstream behavior).
@@ -1018,7 +1415,13 @@ fn query_range_to_feed_range(
     } else {
         max
     };
-    FeedRange::new(min, max)
+    FeedRange::new(min, max).map_err(|error| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message("query plan contains an invalid EPK range")
+            .with_source(error)
+            .build()
+    })
 }
 
 /// Returns true if the union of `pieces` covers `range` end-to-end.
@@ -1076,16 +1479,28 @@ fn validate_saved_snapshot(
     left_most_undrained_epk: String,
     active_tokens: Vec<RangedToken>,
 ) -> crate::error::Result<SavedSnapshot> {
-    let cursor = EffectivePartitionKey::from(left_most_undrained_epk);
+    let cursor = parse_continuation_epk(
+        &left_most_undrained_epk,
+        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+        "SequentialDrain left_most_undrained_epk",
+    )?;
 
     let mut parsed: Vec<SavedActiveToken> = Vec::with_capacity(active_tokens.len());
     for entry in active_tokens {
-        let min = EffectivePartitionKey::from(entry.min_epk);
-        let max = EffectivePartitionKey::from(entry.max_epk);
+        let min = parse_continuation_epk(
+            &entry.min_epk,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            "SequentialDrain active_tokens min_epk",
+        )?;
+        let max = parse_continuation_epk(
+            &entry.max_epk,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            "SequentialDrain active_tokens max_epk",
+        )?;
         if min > max {
             return Err(crate::error::CosmosError::builder()
                 .with_status(
-                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                    crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
                 )
                 .with_message(format!(
                     "continuation token has invalid active_tokens entry (min `{}` > max `{}`)",
@@ -1100,7 +1515,7 @@ fn validate_saved_snapshot(
             // a diagnostic message that points at the entry itself.
             return Err(crate::error::CosmosError::builder()
                 .with_status(
-                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                    crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
                 )
                 .with_message(format!(
                     "continuation token has zero-width active_tokens entry (min == max == `{}`); \
@@ -1114,7 +1529,7 @@ fn validate_saved_snapshot(
             if range.min_inclusive() < prev.range.max_exclusive() {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
                     )
                     .with_message(format!(
                         "continuation token active_tokens must be sorted and non-overlapping; \
@@ -1139,7 +1554,7 @@ fn validate_saved_snapshot(
     if let Some(first) = parsed.first() {
         if &cursor > first.range.min_inclusive() {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE)
+                .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE)
                 .with_message(format!(
                     "continuation token cursor `{}` is past the first active_tokens entry [{}, {}); \
                      cursor must be at or before every active range",
@@ -1163,7 +1578,9 @@ fn snapshot_kind(state: &PipelineNodeState) -> &'static str {
         PipelineNodeState::Request { .. } => "Request",
         PipelineNodeState::SequentialDrain { .. } => "SequentialDrain",
         PipelineNodeState::UnorderedMerge { .. } => "UnorderedMerge",
+        PipelineNodeState::SkipTake { .. } => "SkipTake",
         PipelineNodeState::StreamingOrderedMerge { .. } => "StreamingOrderedMerge",
+        PipelineNodeState::Distinct { .. } => "Distinct",
     }
 }
 
@@ -1176,12 +1593,20 @@ fn validate_unordered_merge_tokens(
 ) -> crate::error::Result<Vec<SavedActiveToken>> {
     let mut parsed: Vec<SavedActiveToken> = Vec::with_capacity(active_tokens.len());
     for entry in active_tokens {
-        let min = EffectivePartitionKey::from(entry.min_epk);
-        let max = EffectivePartitionKey::from(entry.max_epk);
+        let min = parse_continuation_epk(
+            &entry.min_epk,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            "UnorderedMerge active_tokens min_epk",
+        )?;
+        let max = parse_continuation_epk(
+            &entry.max_epk,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            "UnorderedMerge active_tokens max_epk",
+        )?;
         if min >= max {
             return Err(crate::error::CosmosError::builder()
                 .with_status(
-                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                    crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
                 )
                 .with_message(format!(
                     "continuation token has invalid active_tokens entry \
@@ -1196,7 +1621,7 @@ fn validate_unordered_merge_tokens(
             if range.min_inclusive() < prev.range.max_exclusive() {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
                     )
                     .with_message(format!(
                         "continuation token active_tokens must be sorted and non-overlapping; \
@@ -1217,6 +1642,119 @@ fn validate_unordered_merge_tokens(
     Ok(parsed)
 }
 
+/// The kind of deduplication this query plan asks for, or
+/// [`DistinctType::None`] when it asks for none.
+fn plan_distinct_type(plan: &QueryPlan) -> DistinctType {
+    plan.query_info
+        .as_ref()
+        .map(|info| info.distinct_type)
+        .unwrap_or_default()
+}
+
+/// Wraps `pipeline`'s root in a [`Distinct`] stage when the plan calls for
+/// deduplication, leaving it untouched otherwise.
+///
+/// `DISTINCT` composes *above* the fan-out root, matching .NET's
+/// `PipelineFactory` and Java's `PipelinedDocumentQueryExecutionContext`:
+/// merge/`ORDER BY` -> aggregate -> **DISTINCT** -> `GROUP BY` ->
+/// `OFFSET`/`LIMIT`/`TOP`.
+/// Wraps `node` in a [`Distinct`] stage when the plan calls for one.
+///
+/// `DISTINCT` deduplicates *before* any `OFFSET` / `LIMIT` / `TOP` window is
+/// applied, so callers must wrap the fan-out with this first and only then
+/// apply [`SkipTake`]; otherwise the window would count duplicate rows.
+fn apply_distinct(
+    node: Box<dyn PipelineNode>,
+    distinct_type: DistinctType,
+    last_hash: Option<Hash128>,
+    resumed_drained: bool,
+    emit_binary: bool,
+) -> Box<dyn PipelineNode> {
+    if distinct_type == DistinctType::None {
+        return node;
+    }
+    // A fully-drained resume needs no deduplication stage: the inner pipeline
+    // is a `DrainedLeaf` and will emit nothing. Wrapping it would leave a
+    // `Distinct` whose `exhausted` is still `false`, so an unordered query
+    // would refuse to re-snapshot a token it had just accepted.
+    if resumed_drained {
+        return node;
+    }
+    Box::new(Distinct::with_last_hash(
+        node,
+        distinct_type,
+        last_hash,
+        emit_binary,
+    ))
+}
+
+/// Splits a resume state into the inner (fan-out) state and the `DISTINCT`
+/// stage's saved `last_hash`, rejecting any token whose shape or distinct kind
+/// does not match the current query plan.
+///
+/// A token minted before DISTINCT support (or for a non-DISTINCT query) has no
+/// `Distinct` layer; resuming it into a DISTINCT plan would silently skip
+/// deduplication, so it is rejected rather than reinterpreted. The mirror case
+/// — a `Distinct` token resumed into a non-DISTINCT plan — falls through to the
+/// inner builders, which reject the unexpected shape.
+fn peel_distinct_resume(
+    resume: Option<PipelineNodeState>,
+    distinct_type: DistinctType,
+) -> crate::error::Result<(Option<PipelineNodeState>, Option<Hash128>)> {
+    match resume {
+        Some(PipelineNodeState::Distinct {
+            distinct_type: saved,
+            last_hash,
+            child,
+        }) => {
+            if saved != distinct_type {
+                return Err(distinct_token_mismatch(saved, distinct_type));
+            }
+            if saved != DistinctType::Ordered {
+                // We never mint one, so this is a hand-crafted or corrupted
+                // token. Resuming would re-emit every value seen before the
+                // checkpoint.
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED,
+                    )
+                    .with_message(
+                        "continuation token carries unordered DISTINCT state, which cannot be \
+                         resumed; add a matching ORDER BY to make the query resumable",
+                    )
+                    .build());
+            }
+            Ok((Some(*child), last_hash))
+        }
+        // `Drained` is shape-agnostic: the whole pipeline, DISTINCT included,
+        // finished.
+        Some(PipelineNodeState::Drained) => Ok((Some(PipelineNodeState::Drained), None)),
+        Some(other) if distinct_type != DistinctType::None => {
+            Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_message(format!(
+                    "continuation token shape {} does not match a DISTINCT query",
+                    snapshot_kind(&other)
+                ))
+                .build())
+        }
+        other => Ok((other, None)),
+    }
+}
+
+fn distinct_token_mismatch(
+    saved: DistinctType,
+    expected: DistinctType,
+) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+        .with_message(format!(
+            "continuation token was minted for {saved:?} DISTINCT but the query plan reports \
+             {expected:?}"
+        ))
+        .build()
+}
+
 /// Validates that the query plan does not require features we don't yet support.
 fn validate_query_plan(plan: &QueryPlan) -> crate::error::Result<()> {
     if plan.hybrid_search_query_info.is_some() {
@@ -1231,14 +1769,6 @@ fn validate_query_plan(plan: &QueryPlan) -> crate::error::Result<()> {
 }
 
 fn validate_query_info(info: &QueryInfo) -> crate::error::Result<()> {
-    if info.top.is_some() {
-        return Err(unsupported_feature("TOP clause in cross-partition queries"));
-    }
-    if info.limit.is_some() {
-        return Err(unsupported_feature(
-            "LIMIT clause in cross-partition queries",
-        ));
-    }
     if !info.order_by.is_empty() {
         return Err(unsupported_feature("ORDER BY in cross-partition queries"));
     }
@@ -1248,10 +1778,80 @@ fn validate_query_info(info: &QueryInfo) -> crate::error::Result<()> {
     if !info.group_by_expressions.is_empty() {
         return Err(unsupported_feature("GROUP BY in cross-partition queries"));
     }
-    if info.distinct_type != DistinctType::None {
-        return Err(unsupported_feature("DISTINCT in cross-partition queries"));
-    }
     Ok(())
+}
+
+/// Combines a query plan's `TOP` and `LIMIT` into a single global take bound.
+///
+/// Both clauses cap the number of documents returned, so the effective take is
+/// the tighter of the two (`min`), treating an absent clause as unbounded.
+fn combine_take(info: &QueryInfo) -> Option<u64> {
+    match (info.top, info.limit) {
+        (Some(top), Some(limit)) => Some(top.min(limit)),
+        (Some(top), None) => Some(top),
+        (None, Some(limit)) => Some(limit),
+        (None, None) => None,
+    }
+}
+
+/// Returns `operation` with its query text replaced by the plan's
+/// `rewrittenQuery`, if the plan provides a non-empty one.
+///
+/// The gateway rewrites `OFFSET x LIMIT y` (and `TOP n`) into a per-partition
+/// bound (e.g. `OFFSET 0 LIMIT x + y`) so each partition returns enough
+/// documents for the client to apply the *global* skip/take in
+/// [`SkipTake`](super::SkipTake). Sending the original query to each partition
+/// would double-apply the clause, so this substitution is required for
+/// correctness — not an optimization. When the plan carries no rewritten query
+/// the operation is returned unchanged (a cheap `Arc` clone).
+fn rewritten_operation(
+    operation: &Arc<CosmosOperation>,
+    query_plan: &QueryPlan,
+) -> crate::error::Result<Arc<CosmosOperation>> {
+    let Some(rewritten) = query_plan
+        .query_info
+        .as_ref()
+        .and_then(|info| info.rewritten_query.as_deref())
+        .filter(|query| !query.is_empty())
+    else {
+        return Ok(Arc::clone(operation));
+    };
+    let rewritten = query_response::rewritten_query_from_beginning(rewritten)?;
+
+    let mut body: serde_json::Value = match operation.body() {
+        Some(bytes) if !bytes.is_empty() => serde_json::from_slice(bytes).map_err(|e| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_QUERY_REWRITE_BODY_INVALID)
+                .with_message(
+                    "cross-partition query request body is not valid JSON; \
+                     cannot apply the plan's rewritten query",
+                )
+                .with_source(e)
+                .build()
+        })?,
+        _ => serde_json::Value::Object(serde_json::Map::new()),
+    };
+
+    let serde_json::Value::Object(map) = &mut body else {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_QUERY_REWRITE_BODY_INVALID)
+            .with_message(
+                "cross-partition query request body must be a JSON object; \
+                 cannot apply the plan's rewritten query",
+            )
+            .build());
+    };
+    map.insert("query".to_owned(), serde_json::Value::String(rewritten));
+
+    let new_body = serde_json::to_vec(&body).map_err(|e| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_QUERY_REWRITE_BODY_INVALID)
+            .with_message("failed to serialize rewritten cross-partition query body")
+            .with_source(e)
+            .build()
+    })?;
+
+    Ok(Arc::new((**operation).clone().with_body(new_body)))
 }
 
 /// Validates a query plan for [`build_streaming_ordered_merge`]: `ORDER BY`
@@ -1265,7 +1865,7 @@ fn validate_query_plan_for_streaming_order_by(plan: &QueryPlan) -> crate::error:
     let info = plan.query_info.as_ref().ok_or_else(|| {
         // Precondition of `is_streaming_order_by`; an internal planner bug if violated.
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
+            .with_status(crate::error::status_codes::CLIENT_UNSUPPORTED_QUERY_FEATURE)
             .with_message(
                 "internal error: streaming ORDER BY path selected with no queryInfo present",
             )
@@ -1276,16 +1876,9 @@ fn validate_query_plan_for_streaming_order_by(plan: &QueryPlan) -> crate::error:
             "non-streaming ORDER BY in cross-partition queries",
         ));
     }
-    if info.top.is_some() {
-        return Err(unsupported_feature(
-            "TOP combined with streaming ORDER BY (requires the TOP composition stage)",
-        ));
-    }
-    if info.offset.is_some() || info.limit.is_some() {
-        return Err(unsupported_feature(
-            "OFFSET/LIMIT combined with ORDER BY in cross-partition queries",
-        ));
-    }
+    // `TOP` and `OFFSET`/`LIMIT` are supported combined with streaming ORDER BY:
+    // the ordered merge streams the globally-sorted rows and a `SkipTake` root
+    // (composed in `build_streaming_ordered_merge`) applies the window on top.
     if !info.aggregates.is_empty() {
         return Err(unsupported_feature(
             "aggregates combined with ORDER BY in cross-partition queries",
@@ -1296,17 +1889,12 @@ fn validate_query_plan_for_streaming_order_by(plan: &QueryPlan) -> crate::error:
             "GROUP BY combined with ORDER BY in cross-partition queries",
         ));
     }
-    if info.distinct_type != DistinctType::None {
-        return Err(unsupported_feature(
-            "DISTINCT combined with ORDER BY in cross-partition queries",
-        ));
-    }
     Ok(())
 }
 
 fn unsupported_feature(feature: &str) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
+        .with_status(crate::error::status_codes::CLIENT_UNSUPPORTED_QUERY_FEATURE)
         .with_message(format!("unsupported query feature: {feature}"))
         .build()
 }
@@ -1324,7 +1912,7 @@ fn topology_range_not_overlapping_error(
     query: &FeedRange,
 ) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY)
+        .with_status(crate::error::status_codes::CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY)
         .with_message(format!(
             "resolved topology range {} does not overlap query plan EPK {}",
             render_feed_range_for_error(resolved),
@@ -1346,18 +1934,23 @@ fn render_feed_range_for_error(range: &FeedRange) -> String {
 mod tests {
     use std::borrow::Cow;
 
+    use super::super::mocks::{response_with_continuation, MockRequestExecutor};
     use super::*;
     use crate::{
-        driver::dataflow::{mocks::*, query_plan::QueryRange, RangedToken, ResolvedRange},
+        driver::dataflow::{
+            mocks::*, query_plan::QueryRange, PageResult, PipelineContext, RangedToken,
+            ResolvedRange,
+        },
         models::{
             effective_partition_key::EffectivePartitionKey, AccountReference, ContainerProperties,
-            ContainerReference, DatabaseReference, ItemReference, OperationType, PartitionKey,
-            PartitionKeyDefinition, ResourceType, SystemProperties,
+            ContainerReference, CosmosResponse, DatabaseReference, ItemReference, MaxItemCountHint,
+            OperationType, PartitionKey, PartitionKeyDefinition, RequestCharge, ResourceType,
+            ResponseBody, SystemProperties,
         },
     };
 
     fn test_account() -> AccountReference {
-        AccountReference::with_master_key(
+        AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         )
@@ -1403,22 +1996,23 @@ mod tests {
 
     /// A cross-partition query scoped to an explicit EPK feed-range target,
     /// e.g. `FeedScope::range([min, max))`.
-    fn query_operation_with_target(min: &str, max: &str) -> CosmosOperation {
+    fn query_operation_with_target(min: &str, max: &str) -> crate::error::Result<CosmosOperation> {
         let target = FeedRange::new(
-            EffectivePartitionKey::from(min),
-            EffectivePartitionKey::from(max),
-        )
-        .unwrap();
-        CosmosOperation::query_items(test_container(), Some(target))
-            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec())
+            EffectivePartitionKey::try_from(min)?,
+            EffectivePartitionKey::try_from(max)?,
+        )?;
+        Ok(CosmosOperation::query_items(test_container(), Some(target))
+            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec()))
     }
 
     // --- build_trivial_pipeline tests ---
 
-    #[test]
-    fn plans_non_partitioned_pipeline_for_database_read() {
+    #[tokio::test]
+    async fn plans_non_partitioned_pipeline_for_database_read() {
         let op = CosmosOperation::read_database(test_database());
-        let pipeline = build_trivial_pipeline(Arc::new(op), None).unwrap();
+        let pipeline = build_trivial_pipeline(Arc::new(op), None, None)
+            .await
+            .unwrap();
 
         let request = pipeline.root().downcast_ref::<Request>().unwrap();
         assert_eq!(*request.target(), RequestTarget::NonPartitioned);
@@ -1426,24 +2020,51 @@ mod tests {
         assert_eq!(request.operation().resource_type(), ResourceType::Database);
     }
 
-    #[test]
-    fn plans_logical_partition_pipeline_for_item_read() {
+    #[tokio::test]
+    async fn plans_logical_partition_pipeline_for_item_read() {
         let pk = PartitionKey::from("pk-value");
         let item = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
         let op = CosmosOperation::read_item(item);
-        let pipeline = build_trivial_pipeline(Arc::new(op), None).unwrap();
+        let pipeline = build_trivial_pipeline(Arc::new(op), None, None)
+            .await
+            .unwrap();
 
         let request = pipeline.root().downcast_ref::<Request>().unwrap();
         assert_eq!(
             *request.target(),
-            RequestTarget::LogicalPartitionKey(pk.clone())
+            RequestTarget::logical_partition_key(pk.clone(), None)
         );
         assert_eq!(request.operation().operation_type(), OperationType::Read);
         assert_eq!(request.operation().resource_type(), ResourceType::Document);
     }
 
-    #[test]
-    fn plans_logical_partition_pipeline_for_partition_scoped_query() {
+    #[tokio::test]
+    async fn plans_item_read_with_resolved_physical_identity() -> crate::error::Result<()> {
+        let pk = PartitionKey::from("pk-value");
+        let item = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
+        let op = CosmosOperation::read_item(item);
+        let expected_range = op.target().cloned().unwrap();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "7")?])]);
+
+        let pipeline = build_trivial_pipeline(Arc::new(op), Some(&mut topology), None)
+            .await
+            .unwrap();
+
+        let request = pipeline.root().downcast_ref::<Request>().unwrap();
+        assert_eq!(
+            *request.target(),
+            RequestTarget::logical_partition_key(pk, Some("7".to_string()))
+        );
+        assert_eq!(
+            topology.refresh_calls,
+            vec![PartitionRoutingRefresh::UseCached]
+        );
+        assert_eq!(topology.range_calls, vec![expected_range]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn plans_logical_partition_pipeline_for_partition_scoped_query() {
         // Regression for the SDK→driver differentiation (issue #4574 follow-up):
         // a query scoped to a COMPLETE partition key via `FeedScope::Partition`
         // / `cosmos_feed_range_for_partition_key` (a `LogicalPartition` feed
@@ -1459,20 +2080,128 @@ mod tests {
         // The operation is trivial (complete PK), so it routes through the
         // single-request trivial pipeline rather than the cross-partition planner.
         assert!(op.is_trivial());
-        let pipeline = build_trivial_pipeline(Arc::new(op), None).unwrap();
+        let pipeline = build_trivial_pipeline(Arc::new(op), None, None)
+            .await
+            .unwrap();
 
         let request = pipeline.root().downcast_ref::<Request>().unwrap();
-        assert_eq!(*request.target(), RequestTarget::LogicalPartitionKey(pk));
+        assert_eq!(
+            *request.target(),
+            RequestTarget::logical_partition_key(pk, None)
+        );
     }
 
-    #[test]
-    fn rejects_feed_range_target() {
+    #[tokio::test]
+    async fn plans_partition_scoped_query_with_resolved_physical_identity(
+    ) -> crate::error::Result<()> {
+        let pk = PartitionKey::from("pk-value");
+        let feed_range = FeedRange::for_partition(pk.clone(), &test_partition_key_definition());
+        let op = CosmosOperation::query_items(test_container(), Some(feed_range))
+            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec());
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "9")?])]);
+
+        let pipeline = build_trivial_pipeline(Arc::new(op), Some(&mut topology), None)
+            .await
+            .unwrap();
+
+        let request = pipeline.root().downcast_ref::<Request>().unwrap();
+        assert_eq!(
+            *request.target(),
+            RequestTarget::logical_partition_key(pk, Some("9".to_string()))
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn plans_logical_partition_without_identity_when_resolution_fails() {
+        let pk = PartitionKey::from("pk-value");
+        let item = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
+        let op = CosmosOperation::read_item(item);
+        let mut topology = MockTopologyProvider::new(vec![Err(gone_error())]);
+
+        let pipeline = build_trivial_pipeline(Arc::new(op), Some(&mut topology), None)
+            .await
+            .unwrap();
+
+        let request = pipeline.root().downcast_ref::<Request>().unwrap();
+        assert_eq!(
+            *request.target(),
+            RequestTarget::logical_partition_key(pk, None)
+        );
+    }
+
+    #[tokio::test]
+    async fn plans_logical_partition_without_identity_for_non_single_resolution(
+    ) -> crate::error::Result<()> {
+        for ranges in [Vec::new(), vec![rr("", "80", "0")?, rr("80", "FF", "1")?]] {
+            let pk = PartitionKey::from("pk-value");
+            let item = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
+            let op = CosmosOperation::read_item(item);
+            let mut topology = MockTopologyProvider::new(vec![Ok(ranges)]);
+
+            let pipeline = build_trivial_pipeline(Arc::new(op), Some(&mut topology), None)
+                .await
+                .unwrap();
+
+            let request = pipeline.root().downcast_ref::<Request>().unwrap();
+            assert_eq!(
+                *request.target(),
+                RequestTarget::logical_partition_key(pk, None)
+            );
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn non_partitioned_trivial_plan_does_not_resolve_topology() {
+        let op = CosmosOperation::read_database(test_database());
+        let mut topology = NoopTopologyProvider;
+
+        let pipeline = build_trivial_pipeline(Arc::new(op), Some(&mut topology), None)
+            .await
+            .unwrap();
+
+        let request = pipeline.root().downcast_ref::<Request>().unwrap();
+        assert_eq!(*request.target(), RequestTarget::NonPartitioned);
+    }
+
+    #[tokio::test]
+    async fn resumed_logical_plan_resolves_current_physical_identity() -> crate::error::Result<()> {
+        let pk = PartitionKey::from("pk-value");
+        let item = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
+        let op = CosmosOperation::read_item(item);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "current")?])]);
+        let resume = PipelineNodeState::Request {
+            server_continuation: Some("server-token".to_string()),
+        };
+
+        let pipeline = build_trivial_pipeline(Arc::new(op), Some(&mut topology), Some(resume))
+            .await
+            .unwrap();
+
+        let request = pipeline.root().downcast_ref::<Request>().unwrap();
+        assert_eq!(
+            *request.target(),
+            RequestTarget::logical_partition_key(pk, Some("current".to_string()))
+        );
+        assert_eq!(
+            request.snapshot_state().unwrap(),
+            PipelineNodeState::Request {
+                server_continuation: Some("server-token".to_string())
+            }
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn rejects_feed_range_target() {
         let op = CosmosOperation::read_all_items_cross_partition(test_container());
 
         // In debug builds, this panics via debug_assert; in release builds it returns Err.
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            build_trivial_pipeline(Arc::new(op), None)
-        }));
+        use futures::FutureExt;
+        let result = std::panic::AssertUnwindSafe(build_trivial_pipeline(Arc::new(op), None, None))
+            .catch_unwind()
+            .await;
 
         match result {
             // Panicked in debug mode (expected)
@@ -1507,15 +2236,15 @@ mod tests {
     }
 
     /// Shorthand to build a `ResolvedRange` from (min, max, pk_range_id).
-    fn rr(min: &str, max: &str, pk_range_id: &str) -> ResolvedRange {
-        ResolvedRange {
+    fn rr(min: &str, max: &str, pk_range_id: &str) -> crate::error::Result<ResolvedRange> {
+        Ok(ResolvedRange {
             partition_key_range_id: pk_range_id.to_string(),
+            parents: Vec::new(),
             range: FeedRange::new(
-                EffectivePartitionKey::from(min),
-                EffectivePartitionKey::from(max),
-            )
-            .unwrap(),
-        }
+                EffectivePartitionKey::try_from(min)?,
+                EffectivePartitionKey::try_from(max)?,
+            )?,
+        })
     }
 
     /// Builds a query plan with the given query ranges (and no query info).
@@ -1528,24 +2257,52 @@ mod tests {
         }
     }
 
+    /// Asserts the pipeline root is a `SkipTake`, returning its
+    /// `(remaining_skip, remaining_take)` window and the wrapped fan-out child.
+    fn unwrap_skip_take(pipeline: Pipeline) -> (u64, Option<u64>, Box<SequentialDrain>) {
+        let root = pipeline
+            .into_root()
+            .downcast::<SkipTake>()
+            .expect("expected SkipTake root");
+        let (skip, take) = match root.snapshot_state().unwrap() {
+            PipelineNodeState::SkipTake {
+                remaining_skip,
+                remaining_take,
+                ..
+            } => (remaining_skip, remaining_take),
+            other => panic!("expected SkipTake snapshot, got {other:?}"),
+        };
+        let mut children = root.into_children();
+        assert_eq!(children.len(), 1, "SkipTake must wrap exactly one child");
+        let child = children
+            .pop()
+            .unwrap()
+            .downcast::<SequentialDrain>()
+            .expect("expected SequentialDrain child");
+        (skip, take, child)
+    }
+
     /// Asserts that the pipeline is a `SequentialDrain` containing `Request` nodes
     /// targeting the given EPK ranges (in order).
     type ExpectedDrainRequestWithPartition<'a> = (&'a str, &'a str, &'a str, &'a str, &'a str);
     type ExpectedDrainRequestWithContinuation<'a> =
         (&'a str, &'a str, &'a str, &'a str, &'a str, Option<&'a str>);
 
-    fn assert_drain_requests(pipeline: Pipeline, expected: &[(&str, &str, &str)]) {
+    fn assert_drain_requests(
+        pipeline: Pipeline,
+        expected: &[(&str, &str, &str)],
+    ) -> crate::error::Result<()> {
         let expected = expected
             .iter()
             .map(|&(min, max, pk_range_id)| (min, max, pk_range_id, min, max))
             .collect::<Vec<_>>();
-        assert_drain_requests_with_partitions(pipeline, &expected);
+        assert_drain_requests_with_partitions(pipeline, &expected)
     }
 
     fn assert_drain_requests_with_partitions(
         pipeline: Pipeline,
         expected: &[ExpectedDrainRequestWithPartition<'_>],
-    ) {
+    ) -> crate::error::Result<()> {
         let drain = pipeline
             .into_root()
             .downcast::<SequentialDrain>()
@@ -1568,26 +2325,25 @@ mod tests {
                 *request.target(),
                 RequestTarget::effective_partition_key_range(
                     FeedRange::new(
-                        EffectivePartitionKey::from(min),
-                        EffectivePartitionKey::from(max),
-                    )
-                    .unwrap(),
+                        EffectivePartitionKey::try_from(min)?,
+                        EffectivePartitionKey::try_from(max)?,
+                    )?,
                     pk_range_id.to_string(),
                     FeedRange::new(
-                        EffectivePartitionKey::from(partition_min),
-                        EffectivePartitionKey::from(partition_max),
-                    )
-                    .unwrap(),
+                        EffectivePartitionKey::try_from(partition_min)?,
+                        EffectivePartitionKey::try_from(partition_max)?,
+                    )?,
                 ),
                 "mismatch for pk range {pk_range_id}"
             );
         }
+        Ok(())
     }
 
     fn assert_drain_requests_with_partitions_and_continuation(
         pipeline: Pipeline,
         expected: &[ExpectedDrainRequestWithContinuation<'_>],
-    ) {
+    ) -> crate::error::Result<()> {
         let drain = pipeline
             .into_root()
             .downcast::<SequentialDrain>()
@@ -1611,16 +2367,14 @@ mod tests {
                 *request.target(),
                 RequestTarget::effective_partition_key_range(
                     FeedRange::new(
-                        EffectivePartitionKey::from(min),
-                        EffectivePartitionKey::from(max),
-                    )
-                    .unwrap(),
+                        EffectivePartitionKey::try_from(min)?,
+                        EffectivePartitionKey::try_from(max)?,
+                    )?,
                     pk_range_id.to_string(),
                     FeedRange::new(
-                        EffectivePartitionKey::from(partition_min),
-                        EffectivePartitionKey::from(partition_max),
-                    )
-                    .unwrap(),
+                        EffectivePartitionKey::try_from(partition_min)?,
+                        EffectivePartitionKey::try_from(partition_max)?,
+                    )?,
                 ),
                 "mismatch for pk range {pk_range_id}"
             );
@@ -1630,28 +2384,29 @@ mod tests {
             };
             assert_eq!(request.snapshot_state().unwrap(), expected_state);
         }
+        Ok(())
     }
 
     #[tokio::test]
-    async fn builds_single_node_pipeline_for_one_partition() {
+    async fn builds_single_node_pipeline_for_one_partition() -> crate::error::Result<()> {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")?])]);
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
-        assert_drain_requests(pipeline, &[("", "FF", "pkrange-0")]);
+        assert_drain_requests(pipeline, &[("", "FF", "pkrange-0")])
     }
 
     #[tokio::test]
-    async fn builds_sequential_drain_for_multiple_partitions() {
+    async fn builds_sequential_drain_for_multiple_partitions() -> crate::error::Result<()> {
         // Query targets full range, topology has two partitions split at "80".
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-            rr("", "80", "pkrange-left"),
-            rr("80", "FF", "pkrange-right"),
+            rr("", "80", "pkrange-left")?,
+            rr("80", "FF", "pkrange-right")?,
         ])]);
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
@@ -1660,41 +2415,41 @@ mod tests {
         assert_drain_requests(
             pipeline,
             &[("", "80", "pkrange-left"), ("80", "FF", "pkrange-right")],
-        );
+        )
     }
 
     // --- fan-out limit / finalize_plan tests ---
 
     /// Builds a fresh two-partition sequential drain for the fan-out tests.
-    async fn two_partition_drain() -> Pipeline {
+    async fn two_partition_drain() -> crate::error::Result<Pipeline> {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-            rr("", "80", "pkrange-left"),
-            rr("80", "FF", "pkrange-right"),
+            rr("", "80", "pkrange-left")?,
+            rr("80", "FF", "pkrange-right")?,
         ])]);
-        build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
-            .await
-            .unwrap()
+        build_sequential_drain(&plan, &mut topology, &Arc::new(op), None).await
     }
 
     #[tokio::test]
-    async fn fan_out_width_sums_leaf_nodes() {
-        let pipeline = two_partition_drain().await;
+    async fn fan_out_width_sums_leaf_nodes() -> crate::error::Result<()> {
+        let pipeline = two_partition_drain().await?;
         assert_eq!(pipeline.fan_out_width(), 2);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn finalize_plan_allows_fresh_plan_within_limit() {
-        let pipeline = two_partition_drain().await;
+    async fn finalize_plan_allows_fresh_plan_within_limit() -> crate::error::Result<()> {
+        let pipeline = two_partition_drain().await?;
         let op = Arc::new(cross_partition_query_operation());
         let options = PlanOptions::default().with_max_fan_out(2);
         finalize_plan(pipeline, op, true, &options).expect("plan at the limit should be allowed");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn finalize_plan_rejects_fresh_plan_exceeding_limit() {
-        let pipeline = two_partition_drain().await;
+    async fn finalize_plan_rejects_fresh_plan_exceeding_limit() -> crate::error::Result<()> {
+        let pipeline = two_partition_drain().await?;
         let op = Arc::new(cross_partition_query_operation());
         let options = PlanOptions::default().with_max_fan_out(1);
         let err = match finalize_plan(pipeline, op, true, &options) {
@@ -1703,29 +2458,31 @@ mod tests {
         };
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED),
+            Some(crate::error::status_codes::substatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED),
             "unexpected error: {err}",
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn finalize_plan_skips_limit_on_resume() {
-        let pipeline = two_partition_drain().await;
+    async fn finalize_plan_skips_limit_on_resume() -> crate::error::Result<()> {
+        let pipeline = two_partition_drain().await?;
         let op = Arc::new(cross_partition_query_operation());
         // A width of 2 exceeds the limit of 1, but resume (is_fresh = false)
         // must not re-check the fan-out.
         let options = PlanOptions::default().with_max_fan_out(1);
         finalize_plan(pipeline, op, false, &options).expect("resume must skip the fan-out check");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn builds_pipeline_for_multiple_query_ranges() {
+    async fn builds_pipeline_for_multiple_query_ranges() -> crate::error::Result<()> {
         // Query plan specifies two disjoint query ranges; each resolves to one partition.
         let plan = plan_with_ranges(vec![qr("", "40"), qr("80", "FF")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![
-            Ok(vec![rr("", "40", "pkrange-A")]),
-            Ok(vec![rr("80", "FF", "pkrange-C")]),
+            Ok(vec![rr("", "40", "pkrange-A")?]),
+            Ok(vec![rr("80", "FF", "pkrange-C")?]),
         ]);
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
@@ -1734,18 +2491,18 @@ mod tests {
         assert_drain_requests(
             pipeline,
             &[("", "40", "pkrange-A"), ("80", "FF", "pkrange-C")],
-        );
+        )
     }
 
     #[tokio::test]
-    async fn query_range_spans_multiple_topology_partitions() {
+    async fn query_range_spans_multiple_topology_partitions() -> crate::error::Result<()> {
         // A single query range [00, C0) spans three topology partitions.
         let plan = plan_with_ranges(vec![qr("00", "C0")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-            rr("00", "40", "pkrange-1"),
-            rr("40", "80", "pkrange-2"),
-            rr("80", "C0", "pkrange-3"),
+            rr("00", "40", "pkrange-1")?,
+            rr("40", "80", "pkrange-2")?,
+            rr("80", "C0", "pkrange-3")?,
         ])]);
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
@@ -1758,11 +2515,11 @@ mod tests {
                 ("40", "80", "pkrange-2"),
                 ("80", "C0", "pkrange-3"),
             ],
-        );
+        )
     }
 
     #[tokio::test]
-    async fn multiple_query_ranges_each_spanning_multiple_partitions() {
+    async fn multiple_query_ranges_each_spanning_multiple_partitions() -> crate::error::Result<()> {
         // Two query ranges, each resolving to multiple partitions. The resulting
         // pipeline should have all resolved ranges in order.
         let plan = plan_with_ranges(vec![qr("", "60"), qr("A0", "FF")]);
@@ -1770,13 +2527,13 @@ mod tests {
         let mut topology = MockTopologyProvider::new(vec![
             // First query range [, 60) spans two partitions.
             Ok(vec![
-                rr("", "30", "pkrange-alpha"),
-                rr("30", "60", "pkrange-beta"),
+                rr("", "30", "pkrange-alpha")?,
+                rr("30", "60", "pkrange-beta")?,
             ]),
             // Second query range [A0, FF) spans two partitions.
             Ok(vec![
-                rr("A0", "D0", "pkrange-gamma"),
-                rr("D0", "FF", "pkrange-delta"),
+                rr("A0", "D0", "pkrange-gamma")?,
+                rr("D0", "FF", "pkrange-delta")?,
             ]),
         ]);
 
@@ -1791,24 +2548,24 @@ mod tests {
                 ("A0", "D0", "pkrange-gamma"),
                 ("D0", "FF", "pkrange-delta"),
             ],
-        );
+        )
     }
 
     #[tokio::test]
-    async fn topology_partition_wider_than_query_range() {
+    async fn topology_partition_wider_than_query_range() -> crate::error::Result<()> {
         // The topology partition [, FF) is wider than query range [20, 80).
         let plan = plan_with_ranges(vec![qr("20", "80")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-wide")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-wide")?])]);
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
-        assert_drain_requests_with_partitions(pipeline, &[("20", "80", "pkrange-wide", "", "FF")]);
+        assert_drain_requests_with_partitions(pipeline, &[("20", "80", "pkrange-wide", "", "FF")])
     }
 
     #[tokio::test]
-    async fn closed_point_query_range_emits_epk_window() {
+    async fn closed_point_query_range_emits_epk_window() -> crate::error::Result<()> {
         // Regression for issues #4574 / #4638: an equality / `IN` predicate on
         // the partition key makes the gateway return a *closed* point range
         // `[X, X]` (isMinInclusive == isMaxInclusive == true). Option B: the
@@ -1825,24 +2582,24 @@ mod tests {
         let plan = plan_with_ranges(vec![point]);
         let op = cross_partition_query_operation();
         // The single physical partition `["", "FF")` owns EPK "30".
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")?])]);
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
 
         // Narrow `[30, successor(30))` EPK window over the owning partition.
-        let s30 = EffectivePartitionKey::from("30")
+        let s30 = EffectivePartitionKey::try_from("30")?
             .normalized_successor(16)
             .to_hex();
         assert_drain_requests_with_partitions(
             pipeline,
             &[("30", s30.as_str(), "pkrange-0", "", "FF")],
-        );
+        )
     }
 
     #[tokio::test]
-    async fn in_predicate_colocated_points_emit_one_window_each() {
+    async fn in_predicate_colocated_points_emit_one_window_each() -> crate::error::Result<()> {
         // `WHERE c.pk IN (@a, @b)` where both values hash into the same
         // physical partition: the gateway returns two point ranges, both
         // resolving to `pkrange-0`. Option B emits a distinct, disjoint EPK
@@ -1865,18 +2622,18 @@ mod tests {
         let op = cross_partition_query_operation();
         // Both points resolve to the same single partition.
         let mut topology = MockTopologyProvider::new(vec![
-            Ok(vec![rr("", "FF", "pkrange-0")]),
-            Ok(vec![rr("", "FF", "pkrange-0")]),
+            Ok(vec![rr("", "FF", "pkrange-0")?]),
+            Ok(vec![rr("", "FF", "pkrange-0")?]),
         ]);
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
 
-        let s30 = EffectivePartitionKey::from("30")
+        let s30 = EffectivePartitionKey::try_from("30")?
             .normalized_successor(16)
             .to_hex();
-        let s50 = EffectivePartitionKey::from("50")
+        let s50 = EffectivePartitionKey::try_from("50")?
             .normalized_successor(16)
             .to_hex();
         assert_drain_requests_with_partitions(
@@ -1885,11 +2642,12 @@ mod tests {
                 ("30", s30.as_str(), "pkrange-0", "", "FF"),
                 ("50", s50.as_str(), "pkrange-0", "", "FF"),
             ],
-        );
+        )
     }
 
     #[tokio::test]
-    async fn in_predicate_points_across_partitions_emit_one_window_each() {
+    async fn in_predicate_points_across_partitions_emit_one_window_each() -> crate::error::Result<()>
+    {
         // `WHERE c.pk IN (@a, @b)` where the values live in different
         // partitions: each point normalizes to its own `[X, successor(X))`
         // EPK window scoped to the owning partition.
@@ -1909,18 +2667,18 @@ mod tests {
         ]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![
-            Ok(vec![rr("", "80", "pkrange-left")]),
-            Ok(vec![rr("80", "FF", "pkrange-right")]),
+            Ok(vec![rr("", "80", "pkrange-left")?]),
+            Ok(vec![rr("80", "FF", "pkrange-right")?]),
         ]);
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
 
-        let s20 = EffectivePartitionKey::from("20")
+        let s20 = EffectivePartitionKey::try_from("20")?
             .normalized_successor(16)
             .to_hex();
-        let sc0 = EffectivePartitionKey::from("C0")
+        let sc0 = EffectivePartitionKey::try_from("C0")?
             .normalized_successor(16)
             .to_hex();
         assert_drain_requests_with_partitions(
@@ -1929,7 +2687,56 @@ mod tests {
                 ("20", s20.as_str(), "pkrange-left", "", "80"),
                 ("C0", sc0.as_str(), "pkrange-right", "80", "FF"),
             ],
+        )
+    }
+
+    #[test]
+    fn query_range_to_feed_range_preserves_valid_bound_encodings() -> crate::error::Result<()> {
+        for (min, max) in [
+            ("", "FF"),
+            ("0a", "ab"),
+            ("01020304", "aabbccddeeff001122334455667788990001020304"),
+            ("400000", "8000"),
+        ] {
+            let range = query_range_to_feed_range(&qr(min, max), None)?;
+            assert_eq!(range.min_inclusive().to_hex(), min.to_ascii_uppercase());
+            assert_eq!(range.max_exclusive().to_hex(), max.to_ascii_uppercase());
+        }
+        assert_eq!(
+            query_range_to_feed_range(&qr("400000", "8000"), None)?,
+            query_range_to_feed_range(&qr("40", "80"), None)?
         );
+        Ok(())
+    }
+
+    #[test]
+    fn query_range_to_feed_range_rejects_malformed_bounds() {
+        for malformed in ["408", "40G0", "é80"] {
+            for range in [qr(malformed, "FF"), qr("", malformed)] {
+                let Err(error) = query_range_to_feed_range(&range, None) else {
+                    panic!("malformed query plan bound {malformed:?} must be rejected");
+                };
+                assert_eq!(
+                    error.status(),
+                    crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
+                );
+                assert!(error.to_string().contains("query plan"));
+                assert!(error.to_string().contains("malformed EPK"));
+                assert!(std::error::Error::source(&error).is_some());
+            }
+        }
+    }
+
+    #[test]
+    fn query_range_to_feed_range_rejects_reversed_bounds_as_invalid_response() {
+        let Err(error) = query_range_to_feed_range(&qr("80", "40"), None) else {
+            panic!("reversed query plan bounds must be rejected");
+        };
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
+        );
+        assert!(std::error::Error::source(&error).is_some());
     }
 
     #[test]
@@ -2021,7 +2828,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn restricts_fanout_to_explicit_target_range() {
+    async fn restricts_fanout_to_explicit_target_range() -> crate::error::Result<()> {
         // The reported bug: query plan spans the whole space `[, FF)` but the
         // caller scoped the query to `[00, 80)` via `FeedScope::range`. Only
         // the requested slice must be queried, not the neighbouring `[80, FF)`
@@ -2029,43 +2836,43 @@ mod tests {
         // so a planner that ignores the target would resolve and emit a leaf
         // for `[80, FF)` as well.
         let plan = plan_with_ranges(vec![qr("", "FF")]);
-        let op = query_operation_with_target("00", "80");
+        let op = query_operation_with_target("00", "80")?;
         let mut topology = PhysicalTopologyProvider::new(vec![
-            rr("00", "80", "pkrange-left"),
-            rr("80", "FF", "pkrange-right"),
+            rr("00", "80", "pkrange-left")?,
+            rr("80", "FF", "pkrange-right")?,
         ]);
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
-        assert_drain_requests(pipeline, &[("00", "80", "pkrange-left")]);
+        assert_drain_requests(pipeline, &[("00", "80", "pkrange-left")])
     }
 
     #[tokio::test]
-    async fn drops_query_ranges_outside_target() {
+    async fn drops_query_ranges_outside_target() -> crate::error::Result<()> {
         // Two disjoint query-plan ranges; the target only overlaps the first.
         // The second range must contribute no request leaves (and its topology
         // must never be resolved).
         let plan = plan_with_ranges(vec![qr("", "40"), qr("80", "FF")]);
-        let op = query_operation_with_target("", "40");
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "40", "pkrange-A")])]);
+        let op = query_operation_with_target("", "40")?;
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "40", "pkrange-A")?])]);
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
-        assert_drain_requests(pipeline, &[("", "40", "pkrange-A")]);
+        assert_drain_requests(pipeline, &[("", "40", "pkrange-A")])
     }
 
     #[tokio::test]
-    async fn clips_query_range_to_partial_target_overlap() {
+    async fn clips_query_range_to_partial_target_overlap() -> crate::error::Result<()> {
         // The target `[20, 60)` partially overlaps a single query-plan range
         // spanning several partitions. Only partitions within the target,
         // clipped to its bounds, may be queried.
         let plan = plan_with_ranges(vec![qr("", "FF")]);
-        let op = query_operation_with_target("20", "60");
+        let op = query_operation_with_target("20", "60")?;
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-            rr("00", "40", "pkrange-1"),
-            rr("40", "80", "pkrange-2"),
+            rr("00", "40", "pkrange-1")?,
+            rr("40", "80", "pkrange-2")?,
         ])]);
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
@@ -2077,40 +2884,40 @@ mod tests {
                 ("20", "40", "pkrange-1", "00", "40"),
                 ("40", "60", "pkrange-2", "40", "80"),
             ],
-        );
+        )
     }
 
     #[tokio::test]
-    async fn drops_query_range_touching_target_boundary() {
+    async fn drops_query_range_touching_target_boundary() -> crate::error::Result<()> {
         // A query-plan range that only *touches* the target's exclusive upper
         // bound (target `[, 40)`, range `[40, FF)`) shares no EPKs with the
         // target and must be dropped, not queried. Exercises the exact
         // boundary case where `intersect_feed_ranges` collapses to empty.
         let plan = plan_with_ranges(vec![qr("", "40"), qr("40", "FF")]);
-        let op = query_operation_with_target("", "40");
+        let op = query_operation_with_target("", "40")?;
         let mut topology = PhysicalTopologyProvider::new(vec![
-            rr("", "40", "pkrange-A"),
-            rr("40", "FF", "pkrange-B"),
+            rr("", "40", "pkrange-A")?,
+            rr("40", "FF", "pkrange-B")?,
         ]);
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
-        assert_drain_requests(pipeline, &[("", "40", "pkrange-A")]);
+        assert_drain_requests(pipeline, &[("", "40", "pkrange-A")])
     }
 
     #[tokio::test]
-    async fn resume_restricts_fanout_to_target_range() {
+    async fn resume_restricts_fanout_to_target_range() -> crate::error::Result<()> {
         // Resuming a target-scoped query must also honour the target: the
         // `[80, FF)` partition lies outside `[00, 80)` and must not be queried
         // even though the query plan spans `[, FF)` and that partition exists
         // in the physical topology. An unclipped resume would emit a second,
         // fresh-start leaf for `[80, FF)`.
         let plan = plan_with_ranges(vec![qr("", "FF")]);
-        let op = query_operation_with_target("00", "80");
+        let op = query_operation_with_target("00", "80")?;
         let mut topology = PhysicalTopologyProvider::new(vec![
-            rr("00", "80", "pkrange-left"),
-            rr("80", "FF", "pkrange-right"),
+            rr("00", "80", "pkrange-left")?,
+            rr("80", "FF", "pkrange-right")?,
         ]);
 
         let resume = saved_drain(vec![("00", "80", saved_request(Some("server-token-xyz")))]);
@@ -2128,11 +2935,11 @@ mod tests {
                 "80",
                 Some("server-token-xyz"),
             )],
-        );
+        )
     }
 
     #[tokio::test]
-    async fn rejects_query_plan_with_top() {
+    async fn rejects_query_plan_with_top() -> crate::error::Result<()> {
         let plan = QueryPlan {
             query_info: Some(QueryInfo {
                 top: Some(10),
@@ -2141,38 +2948,212 @@ mod tests {
             ..plan_with_ranges(vec![qr("", "FF")])
         };
         let op = cross_partition_query_operation();
-        let mut topology = NoopTopologyProvider;
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-a")?])]);
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
-            .unwrap_err();
-        let rendered = err.to_string();
-        assert!(
-            rendered.ends_with("unsupported query feature: TOP clause in cross-partition queries"),
-            "unexpected: {rendered}"
-        );
+            .unwrap();
+        let (skip, take, _child) = unwrap_skip_take(pipeline);
+        assert_eq!(skip, 0);
+        assert_eq!(take, Some(10));
+        Ok(())
     }
 
     #[tokio::test]
-    async fn rejects_query_plan_with_limit() {
+    async fn wraps_fanout_in_skip_take_for_offset_limit() -> crate::error::Result<()> {
         let plan = QueryPlan {
             query_info: Some(QueryInfo {
-                limit: Some(20),
+                offset: Some(5),
+                limit: Some(10),
+                top: Some(7),
                 ..Default::default()
             }),
             ..plan_with_ranges(vec![qr("", "FF")])
         };
         let op = cross_partition_query_operation();
-        let mut topology = NoopTopologyProvider;
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-a")?])]);
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
-            .unwrap_err();
-        let rendered = err.to_string();
-        assert!(
-            rendered
-                .ends_with("unsupported query feature: LIMIT clause in cross-partition queries"),
-            "unexpected: {rendered}"
+            .unwrap();
+        let (skip, take, _child) = unwrap_skip_take(pipeline);
+        assert_eq!(skip, 5);
+        // Effective take = min(top = 7, limit = 10) = 7.
+        assert_eq!(take, Some(7));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn no_skip_take_wrapper_without_offset_limit_top() -> crate::error::Result<()> {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-a")?])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+        // The fan-out is the pipeline root directly (no SkipTake wrapper).
+        assert_drain_requests(pipeline, &[("", "FF", "pkrange-a")])
+    }
+
+    #[tokio::test]
+    async fn skip_take_continuation_accepts_cross_construct_window() -> crate::error::Result<()> {
+        // The plan is an OFFSET/LIMIT query but the continuation token was minted
+        // by a TOP query. Both build the identical global skip/take pipeline, so
+        // resume validates the pipeline shape (a SkipTake node exists), not which
+        // SQL construct minted the token — this must resume, not reject.
+        let plan = QueryPlan {
+            query_info: Some(QueryInfo {
+                offset: Some(2),
+                limit: Some(5),
+                ..Default::default()
+            }),
+            ..plan_with_ranges(vec![qr("", "FF")])
+        };
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-a")?])]);
+
+        let resume = PipelineNodeState::SkipTake {
+            remaining_skip: 0,
+            remaining_take: Some(3),
+            child: Box::new(PipelineNodeState::Drained),
+        };
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .expect("a TOP-shaped window token should resume an OFFSET/LIMIT query");
+        // The saved child was `Drained`, so the resumed pipeline is drained.
+        let mut root = pipeline.into_root();
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        assert!(matches!(
+            root.next_page(&mut context).await.unwrap(),
+            PageResult::Drained
+        ));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn skip_take_continuation_rejects_window_token_against_windowless_query(
+    ) -> crate::error::Result<()> {
+        // The token carries a skip/take window, but the resumed query has no
+        // OFFSET/LIMIT/TOP — so the pipeline it resumes into has no SkipTake node
+        // to receive it. This is a genuine pipeline-shape mismatch and is
+        // rejected rather than silently applying a phantom window.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-a")?])]);
+
+        let resume = PipelineNodeState::SkipTake {
+            remaining_skip: 0,
+            remaining_take: Some(3),
+            child: Box::new(PipelineNodeState::Drained),
+        };
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .expect_err("a skip/take token must not resume a query with no skip/take window");
+        assert_eq!(
+            err.status(),
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
+            "expected SHAPE_MISMATCH for a window token against a windowless query; got {err:?}",
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn skip_take_continuation_accepts_matching_stage() -> crate::error::Result<()> {
+        // A matching-window continuation (OFFSET/LIMIT token, OFFSET/LIMIT query)
+        // resumes without error. The `Drained` child yields a drained pipeline.
+        let plan = QueryPlan {
+            query_info: Some(QueryInfo {
+                offset: Some(2),
+                limit: Some(5),
+                ..Default::default()
+            }),
+            ..plan_with_ranges(vec![qr("", "FF")])
+        };
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-a")?])]);
+
+        let resume = PipelineNodeState::SkipTake {
+            remaining_skip: 1,
+            remaining_take: Some(3),
+            child: Box::new(PipelineNodeState::Drained),
+        };
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .expect("matching-stage continuation should resume");
+        // The saved child was `Drained`, so the resumed pipeline is drained.
+        let mut root = pipeline.into_root();
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        assert!(matches!(
+            root.next_page(&mut context).await.unwrap(),
+            PageResult::Drained
+        ));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn applies_rewritten_query_to_request_bodies() -> crate::error::Result<()> {
+        let plan = QueryPlan {
+            query_info: Some(QueryInfo {
+                offset: Some(2),
+                limit: Some(3),
+                rewritten_query: Some("SELECT * FROM c OFFSET 0 LIMIT 5".to_owned()),
+                ..Default::default()
+            }),
+            ..plan_with_ranges(vec![qr("", "FF")])
+        };
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-a")?])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+        let (_skip, _take, child) = unwrap_skip_take(pipeline);
+        let requests = child.into_children();
+        assert_eq!(requests.len(), 1);
+        let request = requests
+            .into_iter()
+            .next()
+            .unwrap()
+            .downcast::<Request>()
+            .expect("expected Request node");
+        let body = request.operation().body().expect("request body");
+        let parsed: serde_json::Value = serde_json::from_slice(body).unwrap();
+        assert_eq!(parsed["query"], "SELECT * FROM c OFFSET 0 LIMIT 5");
+        Ok(())
+    }
+
+    #[test]
+    fn rewritten_operation_replaces_formattable_order_by_placeholder() {
+        let operation = Arc::new(
+            cross_partition_query_operation().with_body(
+                br#"{"query":"SELECT TOP 2 * FROM c ORDER BY VectorDistance(c.v, @v, false)","parameters":[{"name":"@v","value":[0.0,1.0]}]}"#
+                    .to_vec(),
+            ),
+        );
+        let plan = QueryPlan {
+            query_info: Some(QueryInfo {
+                rewritten_query: Some(
+                    "SELECT TOP 2 c._rid, [{\"item\": VectorDistance(c.v, @v, false)}] AS orderByItems, c AS payload FROM c WHERE {documentdb-formattableorderbyquery-filter} ORDER BY VectorDistance(c.v, @v, false)"
+                        .to_owned(),
+                ),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        let rewritten = rewritten_operation(&operation, &plan).unwrap();
+        let body: serde_json::Value = serde_json::from_slice(rewritten.body().unwrap()).unwrap();
+        let query = body["query"].as_str().unwrap();
+        assert!(query.contains("WHERE true"));
+        assert!(!query.contains("documentdb-formattableorderbyquery-filter"));
+        assert_eq!(
+            body["parameters"][0]["value"],
+            serde_json::json!([0.0, 1.0])
         );
     }
 
@@ -2270,15 +3251,15 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn accepts_query_plan_with_no_query_info() {
+    async fn accepts_query_plan_with_no_query_info() -> crate::error::Result<()> {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")?])]);
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
-        assert_drain_requests(pipeline, &[("", "FF", "pkrange-0")]);
+        assert_drain_requests(pipeline, &[("", "FF", "pkrange-0")])
     }
 
     #[tokio::test]
@@ -2298,14 +3279,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn rejects_target_disjoint_from_query_ranges() {
+    async fn rejects_target_disjoint_from_query_ranges() -> crate::error::Result<()> {
         // A target that shares no EPKs with any query-plan range clips every
         // range away, leaving zero request leaves. On the fresh path this is
         // reported as the same hard error as an empty query plan — the clip
         // does not silently swallow the query. `NoopTopologyProvider` asserts
         // no partition is ever resolved (the clip skips before resolution).
         let plan = plan_with_ranges(vec![qr("80", "FF")]);
-        let op = query_operation_with_target("00", "40");
+        let op = query_operation_with_target("00", "40")?;
         let mut topology = NoopTopologyProvider;
 
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
@@ -2316,6 +3297,7 @@ mod tests {
             rendered.ends_with("query plan produced no partition ranges to query"),
             "unexpected: {rendered}"
         );
+        Ok(())
     }
 
     #[tokio::test]
@@ -2397,10 +3379,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn resume_drained_state_yields_drained_pipeline() {
+    async fn resume_drained_state_yields_drained_pipeline() -> crate::error::Result<()> {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")?])]);
 
         let pipeline = build_sequential_drain(
             &plan,
@@ -2415,19 +3397,20 @@ mod tests {
             pipeline.snapshot_state().unwrap(),
             PipelineNodeState::Drained
         ));
+        Ok(())
     }
 
     #[tokio::test]
-    async fn resume_skips_topology_below_first_saved_child() {
+    async fn resume_skips_topology_below_first_saved_child() -> crate::error::Result<()> {
         // Saved children cover only `[55, FF)`. The topology has a range
         // `[, 55)` that falls outside every saved range — that range has
         // already been drained on a prior page and must not be re-queried.
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-            rr("", "55", "pk-a"),
-            rr("55", "AA", "pk-b"),
-            rr("AA", "FF", "pk-c"),
+            rr("", "55", "pk-a")?,
+            rr("55", "AA", "pk-b")?,
+            rr("AA", "FF", "pk-c")?,
         ])]);
 
         let resume = saved_drain(vec![
@@ -2438,11 +3421,12 @@ mod tests {
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
             .await
             .unwrap();
-        assert_drain_requests(pipeline, &[("55", "AA", "pk-b"), ("AA", "FF", "pk-c")]);
+        assert_drain_requests(pipeline, &[("55", "AA", "pk-b"), ("AA", "FF", "pk-c")])
     }
 
     #[tokio::test]
-    async fn resume_propagates_server_continuation_to_every_surviving_leaf_after_split() {
+    async fn resume_propagates_server_continuation_to_every_surviving_leaf_after_split(
+    ) -> crate::error::Result<()> {
         // The saved `[55, AA)` child held a server continuation. Between
         // sessions the underlying partition split into `[55, 70)` + `[70, AA)`;
         // every surviving leaf in the saved child's scope must carry the
@@ -2451,10 +3435,10 @@ mod tests {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-            rr("", "55", "pk-a"),
-            rr("55", "70", "pk-b1"),
-            rr("70", "AA", "pk-b2"),
-            rr("AA", "FF", "pk-c"),
+            rr("", "55", "pk-a")?,
+            rr("55", "70", "pk-b1")?,
+            rr("70", "AA", "pk-b2")?,
+            rr("AA", "FF", "pk-c")?,
         ])]);
 
         let resume = saved_drain(vec![
@@ -2472,11 +3456,12 @@ mod tests {
                 ("70", "AA", "pk-b2", "70", "AA", Some("server-token-xyz")),
                 ("AA", "FF", "pk-c", "AA", "FF", None),
             ],
-        );
+        )
     }
 
     #[tokio::test]
-    async fn resume_does_not_leak_continuation_into_siblings_past_saved_scope() {
+    async fn resume_does_not_leak_continuation_into_siblings_past_saved_scope(
+    ) -> crate::error::Result<()> {
         // Saved child `[55, AA)` holds a continuation; sibling `[AA, FF)`
         // does not. Topology unchanged across sessions: each saved child
         // maps 1:1 to its leaf, and the continuation must not propagate
@@ -2484,9 +3469,9 @@ mod tests {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-            rr("", "55", "pk-a"),
-            rr("55", "AA", "pk-b"),
-            rr("AA", "FF", "pk-c"),
+            rr("", "55", "pk-a")?,
+            rr("55", "AA", "pk-b")?,
+            rr("AA", "FF", "pk-c")?,
         ])]);
 
         let resume = saved_drain(vec![
@@ -2503,18 +3488,18 @@ mod tests {
                 ("55", "AA", "pk-b", "55", "AA", Some("server-token-xyz")),
                 ("AA", "FF", "pk-c", "AA", "FF", None),
             ],
-        );
+        )
     }
 
     #[tokio::test]
-    async fn resume_does_not_leak_continuation_across_query_ranges() {
+    async fn resume_does_not_leak_continuation_across_query_ranges() -> crate::error::Result<()> {
         // Two disjoint query-plan ranges. The first saved child holds the
         // continuation; every leaf in the second range must start fresh.
         let plan = plan_with_ranges(vec![qr("", "55"), qr("80", "FF")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![
-            Ok(vec![rr("", "30", "pk-a"), rr("30", "55", "pk-b")]),
-            Ok(vec![rr("80", "C0", "pk-c"), rr("C0", "FF", "pk-d")]),
+            Ok(vec![rr("", "30", "pk-a")?, rr("30", "55", "pk-b")?]),
+            Ok(vec![rr("80", "C0", "pk-c")?, rr("C0", "FF", "pk-d")?]),
         ]);
 
         let resume = saved_drain(vec![
@@ -2533,18 +3518,19 @@ mod tests {
                 ("80", "C0", "pk-c", "80", "C0", None),
                 ("C0", "FF", "pk-d", "C0", "FF", None),
             ],
-        );
+        )
     }
 
     #[tokio::test]
-    async fn resume_with_cursor_past_topology_yields_drained_pipeline() {
+    async fn resume_with_cursor_past_topology_yields_drained_pipeline() -> crate::error::Result<()>
+    {
         // Wire form `SequentialDrain { cursor = "FF", active_tokens = [] }`
         // means every range has been drained: the cursor is at or past
         // the last topology max, and no range above it owes a token.
         // The planner emits no leaves → pipeline is drained.
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-a")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-a")?])]);
 
         let resume = PipelineNodeState::SequentialDrain {
             left_most_undrained_epk: "FF".to_owned(),
@@ -2558,17 +3544,18 @@ mod tests {
             pipeline.snapshot_state().unwrap(),
             PipelineNodeState::Drained
         ));
+        Ok(())
     }
 
     #[tokio::test]
-    async fn resume_on_merged_range_splits_resumed_slice_and_tail() {
+    async fn resume_on_merged_range_splits_resumed_slice_and_tail() -> crate::error::Result<()> {
         // Two saved children: `[55, AA)` with a token, `[AA, FF)` without.
         // Between sessions the topology merged into one wide `[, FF)` range;
         // each saved child intersects the merged range and produces its own
         // leaf, preserving the token/no-token distinction.
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-merged")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-merged")?])]);
 
         let resume = saved_drain(vec![
             ("55", "AA", saved_request(Some("server-token-xyz"))),
@@ -2585,16 +3572,16 @@ mod tests {
                 ("55", "AA", "pk-merged", "", "FF", Some("server-token-xyz")),
                 ("AA", "FF", "pk-merged", "", "FF", None),
             ],
-        );
+        )
     }
 
     #[tokio::test]
-    async fn resume_validates_saved_children_sorted_non_overlapping() {
+    async fn resume_validates_saved_children_sorted_non_overlapping() -> crate::error::Result<()> {
         // Out-of-order active_tokens: [55, AA) then [00, 55) violates
         // strict ascending order.
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-a")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-a")?])]);
 
         let resume = saved_drain(vec![
             ("55", "AA", saved_request(Some("tok-a"))),
@@ -2606,18 +3593,21 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE),
+            Some(
+                crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE
+            ),
             "expected invalid-children sub-status, got: {err}",
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn resume_validates_saved_children_no_overlap() {
+    async fn resume_validates_saved_children_no_overlap() -> crate::error::Result<()> {
         // Overlapping active_tokens: [00, 80) and [55, FF) overlap on
         // [55, 80).
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-a")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-a")?])]);
 
         let resume = saved_drain(vec![
             ("00", "80", saved_request(Some("tok-a"))),
@@ -2629,19 +3619,22 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE),
+            Some(
+                crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE
+            ),
             "expected invalid-children sub-status, got: {err}",
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn resume_errors_when_non_drained_saved_range_unhonored() {
+    async fn resume_errors_when_non_drained_saved_range_unhonored() -> crate::error::Result<()> {
         // Saved child `[55, AA)` holds a continuation, but the topology
         // only covers `[00, 40)`. The planner cannot honor the saved
         // continuation without risking duplicate emission or data loss.
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "40", "pk-a")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "40", "pk-a")?])]);
 
         let resume = saved_drain(vec![("55", "AA", saved_request(Some("server-token-xyz")))]);
 
@@ -2650,13 +3643,15 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED),
             "expected saved-range-unhonored sub-status, got: {err}",
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn resume_with_cursor_skips_drained_prefix_and_fresh_starts_uncovered_tail() {
+    async fn resume_with_cursor_skips_drained_prefix_and_fresh_starts_uncovered_tail(
+    ) -> crate::error::Result<()> {
         // Sparse semantics: the cursor marks the end of the drained
         // prefix. Anything above the cursor that has no active token is
         // implicitly fresh-start — there's no "drained range past the
@@ -2670,9 +3665,9 @@ mod tests {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-            rr("", "55", "pk-a"),
-            rr("55", "AA", "pk-b"),
-            rr("AA", "FF", "pk-c"),
+            rr("", "55", "pk-a")?,
+            rr("55", "AA", "pk-b")?,
+            rr("AA", "FF", "pk-c")?,
         ])]);
 
         let resume = PipelineNodeState::SequentialDrain {
@@ -2693,11 +3688,11 @@ mod tests {
                 ("55", "AA", "pk-b", "55", "AA", Some("server-token-xyz")),
                 ("AA", "FF", "pk-c", "AA", "FF", None),
             ],
-        );
+        )
     }
 
     #[tokio::test]
-    async fn resume_in_predicate_drops_point_partition_below_cursor() {
+    async fn resume_in_predicate_drops_point_partition_below_cursor() -> crate::error::Result<()> {
         // Regression for issues #4574 / #4638 resume path (Option B): an
         // `IN (@a, @b)` whose values hash into two different partitions, resumed
         // with a cursor that has fully drained the first point's window. Each
@@ -2721,8 +3716,8 @@ mod tests {
         let op = cross_partition_query_operation();
         // One resolve_ranges call per query range: "20" → left, "C0" → right.
         let mut topology = MockTopologyProvider::new(vec![
-            Ok(vec![rr("", "80", "pk-left")]),
-            Ok(vec![rr("80", "FF", "pk-right")]),
+            Ok(vec![rr("", "80", "pk-left")?]),
+            Ok(vec![rr("80", "FF", "pk-right")?]),
         ]);
 
         // Cursor at "80": the left window `[20, successor(20))` is fully drained.
@@ -2736,17 +3731,18 @@ mod tests {
             .await
             .unwrap();
         // Left window dropped (at/below cursor); right window emitted fresh-start.
-        let sc0 = EffectivePartitionKey::from("C0")
+        let sc0 = EffectivePartitionKey::try_from("C0")?
             .normalized_successor(16)
             .to_hex();
         assert_drain_requests_with_partitions_and_continuation(
             pipeline,
             &[("C0", sc0.as_str(), "pk-right", "80", "FF", None)],
-        );
+        )
     }
 
     #[tokio::test]
-    async fn resume_in_predicate_colocated_windows_carry_their_continuations() {
+    async fn resume_in_predicate_colocated_windows_carry_their_continuations(
+    ) -> crate::error::Result<()> {
         // Resume path, Option B: an `IN (@a, @b)` whose values are co-located in
         // ONE partition. Each equality value is its own `[X, successor(X))` EPK
         // window with an independent server continuation, so the saved snapshot
@@ -2769,14 +3765,14 @@ mod tests {
         let op = cross_partition_query_operation();
         // Both resumed point fragments resolve to the same single partition.
         let mut topology = MockTopologyProvider::new(vec![
-            Ok(vec![rr("", "FF", "pk-0")]),
-            Ok(vec![rr("", "FF", "pk-0")]),
+            Ok(vec![rr("", "FF", "pk-0")?]),
+            Ok(vec![rr("", "FF", "pk-0")?]),
         ]);
 
-        let s20 = EffectivePartitionKey::from("20")
+        let s20 = EffectivePartitionKey::try_from("20")?
             .normalized_successor(16)
             .to_hex();
-        let s50 = EffectivePartitionKey::from("50")
+        let s50 = EffectivePartitionKey::try_from("50")?
             .normalized_successor(16)
             .to_hex();
 
@@ -2806,11 +3802,12 @@ mod tests {
                 ("20", s20.as_str(), "pk-0", "", "FF", Some("tok-a")),
                 ("50", s50.as_str(), "pk-0", "", "FF", Some("tok-b")),
             ],
-        );
+        )
     }
 
     #[tokio::test]
-    async fn resume_multiple_saved_children_in_one_resolved_range_no_duplicate_leaves() {
+    async fn resume_multiple_saved_children_in_one_resolved_range_no_duplicate_leaves(
+    ) -> crate::error::Result<()> {
         // The topology has merged the saved children into one wide range.
         // Each active token produces exactly one leaf scoped to its own
         // range, and the trailing portion of the merged range above the
@@ -2820,7 +3817,7 @@ mod tests {
         // implicitly fresh-start).
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-merged")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-merged")?])]);
 
         let resume = saved_drain(vec![
             ("10", "30", saved_request(Some("tok-a"))),
@@ -2837,11 +3834,12 @@ mod tests {
                 ("30", "60", "pk-merged", "", "FF", Some("tok-b")),
                 ("60", "FF", "pk-merged", "", "FF", None),
             ],
-        );
+        )
     }
 
     #[tokio::test]
-    async fn resume_emits_fresh_leaves_for_topology_gaps_above_cursor() {
+    async fn resume_emits_fresh_leaves_for_topology_gaps_above_cursor() -> crate::error::Result<()>
+    {
         // Sparse semantics: any topology range above the cursor that is
         // NOT covered by an active token is fresh-start (not drained).
         // This is the O(S) trade-off — only ranges below the cursor are
@@ -2856,11 +3854,11 @@ mod tests {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-            rr("", "20", "pk-a"),
-            rr("20", "40", "pk-b"),
-            rr("40", "60", "pk-c"),
-            rr("60", "80", "pk-d"),
-            rr("80", "FF", "pk-e"),
+            rr("", "20", "pk-a")?,
+            rr("20", "40", "pk-b")?,
+            rr("40", "60", "pk-c")?,
+            rr("60", "80", "pk-d")?,
+            rr("80", "FF", "pk-e")?,
         ])]);
 
         let resume = PipelineNodeState::SequentialDrain {
@@ -2882,7 +3880,7 @@ mod tests {
                 ("60", "80", "pk-d", "60", "80", None),
                 ("80", "FF", "pk-e", "80", "FF", None),
             ],
-        );
+        )
     }
 
     /// An older serialized shape — a top-level bare `Request` continuation
@@ -2890,10 +3888,10 @@ mod tests {
     /// rather than silently re-interpreted as a full-range cursor. Guards
     /// the planner's existing rejection of that shape.
     #[tokio::test]
-    async fn legacy_top_level_bare_request_shape_fails_to_resume() {
+    async fn legacy_top_level_bare_request_shape_fails_to_resume() -> crate::error::Result<()> {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")?])]);
 
         let legacy = PipelineNodeState::Request {
             server_continuation: Some("OLD".to_owned()),
@@ -2904,9 +3902,10 @@ mod tests {
         let err = result.expect_err("bare top-level Request shape must be rejected on resume");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
             "expected SHAPE_MISMATCH for top-level bare Request shape; got {err:?}",
         );
+        Ok(())
     }
 
     /// Zero-width active_tokens entries are well-formed JSON but cannot
@@ -2914,10 +3913,10 @@ mod tests {
     /// points at the entry itself rather than at a downstream "could not
     /// be fully covered" error.
     #[tokio::test]
-    async fn rejects_zero_width_saved_child_entry_with_clear_message() {
+    async fn rejects_zero_width_saved_child_entry_with_clear_message() -> crate::error::Result<()> {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")?])]);
 
         let resume = PipelineNodeState::SequentialDrain {
             left_most_undrained_epk: String::new(),
@@ -2933,13 +3932,14 @@ mod tests {
             .expect_err("zero-width active_tokens entry must be rejected");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
         );
         let rendered = err.to_string();
         assert!(
             rendered.contains("zero-width"),
             "error message should describe the zero-width entry; got: {rendered}"
         );
+        Ok(())
     }
 
     /// The continuation-token validator must reject an `active_tokens`
@@ -2949,10 +3949,11 @@ mod tests {
     /// semantics (e.g., `EffectivePartitionKey::Ord`) can't silently
     /// downgrade this fail-loud path to a silent re-query.
     #[tokio::test]
-    async fn malformed_min_greater_than_max_child_is_rejected_by_validator() {
+    async fn malformed_min_greater_than_max_child_is_rejected_by_validator(
+    ) -> crate::error::Result<()> {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")?])]);
 
         let resume = PipelineNodeState::SequentialDrain {
             left_most_undrained_epk: String::new(),
@@ -2968,9 +3969,10 @@ mod tests {
             .expect_err("malformed min>max entry must be rejected by the validator");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
             "malformed min>max entry must trip the EPK-range validator path",
         );
+        Ok(())
     }
 
     /// Companion to the test above: when a malformed `min >= max` entry
@@ -2979,10 +3981,11 @@ mod tests {
     /// entries, continue with the valid ones" relaxation that would
     /// silently swallow snapshot corruption.
     #[tokio::test]
-    async fn malformed_min_greater_than_max_appended_to_valid_children_still_rejects() {
+    async fn malformed_min_greater_than_max_appended_to_valid_children_still_rejects(
+    ) -> crate::error::Result<()> {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")?])]);
 
         let resume = PipelineNodeState::SequentialDrain {
             left_most_undrained_epk: String::new(),
@@ -3005,8 +4008,9 @@ mod tests {
             .expect_err("appended malformed min>max entry must still be rejected");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
         );
+        Ok(())
     }
 
     /// Symmetric variant of the cascading-split scenario — the FRONT
@@ -3016,7 +4020,8 @@ mod tests {
     /// assuming the "still-pending" sibling is always the back one)
     /// that would be invisible to the existing back-split test.
     #[tokio::test]
-    async fn cascading_split_of_front_sibling_propagates_token_to_grand_children() {
+    async fn cascading_split_of_front_sibling_propagates_token_to_grand_children(
+    ) -> crate::error::Result<()> {
         // Saved state: cursor at start, active_tokens has one entry for
         // [, 80) owing T1 (front sibling is in progress). The back range
         // [80, FF) is not in active_tokens, so it's implicitly fresh-start.
@@ -3025,9 +4030,9 @@ mod tests {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-            rr("", "40", "pkrange-front-left"),
-            rr("40", "80", "pkrange-front-right"),
-            rr("80", "FF", "pkrange-back"),
+            rr("", "40", "pkrange-front-left")?,
+            rr("40", "80", "pkrange-front-right")?,
+            rr("80", "FF", "pkrange-back")?,
         ])]);
 
         let resume = PipelineNodeState::SequentialDrain {
@@ -3077,6 +4082,7 @@ mod tests {
                 "front grand-child {idx} must carry T1",
             );
         }
+        Ok(())
     }
 
     // ── Streaming ORDER BY selection and validation ───────────────────────
@@ -3114,6 +4120,395 @@ mod tests {
         let mut non_streaming = order_by_query_info(Some("SELECT 1"));
         non_streaming.has_non_streaming_order_by = true;
         assert!(!is_streaming_order_by(&non_streaming));
+        assert!(is_non_streaming_order_by(&non_streaming));
+    }
+
+    fn non_streaming_order_by_operation() -> CosmosOperation {
+        CosmosOperation::query_items(test_container(), Some(FeedRange::full())).with_body(
+            br#"{"query":"SELECT TOP 5 c.id FROM c ORDER BY c.rank, c.tie DESC","parameters":[]}"#
+                .to_vec(),
+        )
+    }
+
+    fn non_streaming_order_by_plan() -> QueryPlan {
+        QueryPlan {
+            partitioned_query_execution_info_version: 2,
+            query_info: Some(QueryInfo {
+                top: Some(5),
+                order_by: vec![SortOrder::Ascending, SortOrder::Descending],
+                order_by_expressions: vec!["c.rank".to_owned(), "c.tie".to_owned()],
+                rewritten_query: Some(
+                    "SELECT c._rid, [{\"item\": c.rank}, {\"item\": c.tie}] AS orderByItems, c.id AS payload FROM c ORDER BY c.rank, c.tie DESC"
+                        .to_owned(),
+                ),
+                has_non_streaming_order_by: true,
+                ..Default::default()
+            }),
+            query_ranges: vec![qr("", "FF")],
+            hybrid_search_query_info: None,
+        }
+    }
+
+    #[tokio::test]
+    async fn build_non_streaming_ordered_merge_trusts_plan_metadata() -> crate::error::Result<()> {
+        let operation = Arc::new(non_streaming_order_by_operation());
+        let plan = non_streaming_order_by_plan();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "80", "pk-left")?,
+            rr("80", "FF", "pk-right")?,
+        ])]);
+
+        let pipeline = build_non_streaming_ordered_merge(&plan, &mut topology, &operation, None)
+            .await
+            .unwrap();
+        let merge = pipeline
+            .into_root()
+            .downcast::<crate::driver::dataflow::NonStreamingOrderedMerge>()
+            .expect("root must be a NonStreamingOrderedMerge");
+        let mut children = merge.into_children();
+        let drain = children
+            .pop()
+            .unwrap()
+            .downcast::<crate::driver::dataflow::SequentialDrain>()
+            .expect("buffered merge child must be a SequentialDrain");
+        assert_eq!(drain.into_children().len(), 2);
+        Ok(())
+    }
+
+    #[test]
+    fn non_streaming_ordered_merge_always_requires_finite_window() {
+        let mut plan = non_streaming_order_by_plan();
+        plan.query_info.as_mut().unwrap().top = None;
+        let err = validate_buffered_query(&plan, u64::MAX).unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+        );
+    }
+
+    #[test]
+    fn buffered_admission_uses_only_global_normalized_bounds() {
+        for non_streaming in [false, true] {
+            for distinct_type in [
+                DistinctType::None,
+                DistinctType::Ordered,
+                DistinctType::Unordered,
+            ] {
+                for order_by in [Vec::new(), vec![SortOrder::Ascending]] {
+                    for (top, limit, offset, maximum, accepted) in [
+                        (None, None, 0, u64::MAX, false),
+                        (Some(0), None, 0, 0, true),
+                        (None, Some(0), 1, 0, false),
+                        (Some(0), None, u64::MAX, u64::MAX, true),
+                        (Some(1), None, 0, 0, false),
+                        (Some(1000), None, 0, 1000, true),
+                        (None, Some(1001), 0, 1000, false),
+                        (Some(1001), None, 0, 1001, true),
+                        (Some(3), None, 997, 1000, true),
+                        (None, Some(3), 998, 1000, false),
+                        (Some(10), Some(3), 997, 1000, true),
+                        (Some(3), Some(10), 997, 1000, true),
+                        (Some(u64::MAX), Some(0), 0, 0, true),
+                        (Some(u64::MAX), None, 1, u64::MAX, false),
+                        (Some(1), None, u64::MAX, u64::MAX, false),
+                    ] {
+                        let plan = QueryPlan {
+                            query_info: Some(QueryInfo {
+                                top,
+                                limit,
+                                offset: Some(offset),
+                                has_non_streaming_order_by: non_streaming,
+                                distinct_type,
+                                order_by: order_by.clone(),
+                                rewritten_query: Some(
+                                    "SELECT TOP 1 VALUE 'private SQL' FROM c".into(),
+                                ),
+                                ..Default::default()
+                            }),
+                            ..Default::default()
+                        };
+                        let denied = !accepted
+                            && (non_streaming || distinct_type == DistinctType::Unordered);
+                        let result = validate_buffered_query(&plan, maximum);
+                        assert_eq!(result.is_err(), denied);
+                        if let Err(error) = result {
+                            let message = error.to_string();
+                            assert!(message.contains("TOP or LIMIT"));
+                            assert!(message.contains("max_buffered_query_window"));
+                            assert!(!message.contains("private SQL"));
+                            assert!(message.contains(if non_streaming {
+                                "non-streaming ORDER BY"
+                            } else {
+                                "unordered DISTINCT"
+                            }));
+                            assert_eq!(
+                                    error.status(),
+                                    crate::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+                                );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn global_take_preserves_zero_and_selects_minimum() {
+        for (top, limit, expected) in [
+            (None, None, None),
+            (Some(0), None, Some(0)),
+            (None, Some(0), Some(0)),
+            (Some(7), Some(3), Some(3)),
+            (Some(3), Some(7), Some(3)),
+        ] {
+            assert_eq!(
+                combine_take(&QueryInfo {
+                    top,
+                    limit,
+                    ..Default::default()
+                }),
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn native_and_gateway_metadata_share_buffered_admission() {
+        for native in [false, true] {
+            for top in [None, Some(0), Some(1000), Some(1001)] {
+                let wire = serde_json::json!({
+                    "queryInfo": {
+                        "hasNonStreamingOrderBy": if native { serde_json::json!(1) } else { serde_json::json!(true) },
+                        "orderBy": ["Ascending"],
+                        "top": top,
+                        "rewrittenQuery": "SELECT TOP 1 c._rid, [{\"item\": 0}] AS orderByItems, c AS payload FROM c"
+                    },
+                    "queryRanges": [{
+                        "min": "", "max": "FF",
+                        "isMinInclusive": if native { serde_json::json!(1) } else { serde_json::json!(true) },
+                        "isMaxInclusive": if native { serde_json::json!(0) } else { serde_json::json!(false) }
+                    }]
+                });
+                let plan: QueryPlan = if native {
+                    serde_json::from_value(wire).unwrap()
+                } else {
+                    let raw: super::super::query_plan::RawQueryPlan =
+                        serde_json::from_value(wire).unwrap();
+                    raw.resolve(&test_partition_key_definition()).unwrap()
+                };
+                assert_eq!(
+                    validate_buffered_query(&plan, 1000).is_ok(),
+                    top.is_some_and(|take| take <= 1000)
+                );
+                assert_eq!(
+                    validate_buffered_query(&plan, u64::MAX).is_ok(),
+                    top.is_some()
+                );
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn admitted_finite_non_streaming_plan_preserves_partition_rewrite(
+    ) -> crate::error::Result<()> {
+        for input_binary in [false, true] {
+            for output_binary in [false, true] {
+                for (offset, limit, expected) in [
+                    (0, Some(6), vec!["a", "b", "c", "d", "e", "f"]),
+                    (1, Some(6), vec!["b", "c", "d", "e", "f"]),
+                    (1, Some(3), vec!["b", "c", "d"]),
+                    (20, Some(6), vec![]),
+                ] {
+                    let mut plan = non_streaming_order_by_plan();
+                    let info = plan.query_info.as_mut().unwrap();
+                    info.top = None;
+                    info.offset = Some(offset);
+                    info.limit = limit;
+                    let rewrite = info.rewritten_query.clone().unwrap();
+                    let parameters = serde_json::json!([{"name":"@floor","value":-1}]);
+                    let operation = Arc::new(
+                        CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+                            .with_body(serde_json::to_vec(&serde_json::json!({
+                                "query":"SELECT c.id FROM c WHERE c.rank > @floor ORDER BY c.rank, c.tie DESC",
+                                "parameters":parameters
+                            })).unwrap())
+                            .with_max_item_count(MaxItemCountHint::Limit(2.try_into().unwrap()))
+                            .with_supported_serialization_formats(if output_binary { "CosmosBinary" } else { "JsonText" }),
+                    );
+                    validate_buffered_query(&plan, 1000).unwrap();
+                    let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+                        rr("", "80", "a")?,
+                        rr("80", "FF", "b")?,
+                    ])]);
+                    let mut pipeline =
+                        build_non_streaming_ordered_merge(&plan, &mut topology, &operation, None)
+                            .await
+                            .unwrap();
+                    assert_eq!(pipeline.fan_out_width(), 2);
+                    let responses = [
+                        (vec![("e", 3, 0), ("b", 1, 9)], Some("a-next"), "a:1#2"),
+                        (vec![("d", 2, 0)], None, "a:1#4"),
+                        (vec![("f", 4, 0), ("c", 1, 1)], Some("b-next"), "b:1#3"),
+                        (vec![("a", 0, 0)], None, "b:1#5"),
+                    ].into_iter().map(|(rows, continuation, session)| {
+                        let envelope = serde_json::json!({"Documents": rows.into_iter().map(|(id, rank, tie)| {
+                            serde_json::json!({"_rid":id,"orderByItems":[{"item":rank},{"item":tie}],"payload":id})
+                        }).collect::<Vec<_>>()});
+                        let body = if input_binary {
+                            crate::binary_json::to_vec(&envelope).unwrap()
+                        } else {
+                            serde_json::to_vec(&envelope).unwrap()
+                        };
+                        let response = response_with_continuation(&body, continuation);
+                        let mut headers = response.headers().clone();
+                        headers.request_charge = Some(RequestCharge::new(1.25));
+                        headers.session_token = Some(crate::models::SessionToken::new(session));
+                        Ok(CosmosResponse::new(body, headers, response.status(), response.diagnostics()))
+                    }).collect();
+                    let mut executor = MockRequestExecutor::new(responses);
+                    let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+                    let mut actual = Vec::new();
+                    let mut charge = 0.0;
+                    while let Some(page) = pipeline.next_page(&mut context).await.unwrap() {
+                        charge += page.headers().request_charge.unwrap().value();
+                        let session = page.headers().session_token.as_ref().unwrap().to_string();
+                        assert!(session.contains("a:1#4"), "{session}");
+                        assert!(session.contains("b:1#5"), "{session}");
+                        let ResponseBody::Items(items) = page.body() else {
+                            panic!("expected items")
+                        };
+                        assert!(items.len() <= 2);
+                        for item in items {
+                            assert_eq!(crate::binary_json::is_binary(item), output_binary);
+                            let value: String = if output_binary {
+                                crate::binary_json::from_slice(item).unwrap()
+                            } else {
+                                serde_json::from_slice(item).unwrap()
+                            };
+                            actual.push(value);
+                        }
+                    }
+                    assert_eq!(actual, expected);
+                    assert_eq!(charge, 5.0);
+                    assert!(pipeline.next_page(&mut context).await.unwrap().is_none());
+                    assert_eq!(
+                        pipeline.snapshot_state().unwrap_err().status(),
+                        crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
+                    );
+                    assert_eq!(
+                        executor.continuation_calls,
+                        vec![None, Some("a-next".into()), None, Some("b-next".into())]
+                    );
+                    assert_eq!(executor.target_calls.len(), 4);
+                    assert_eq!(executor.target_calls[0], executor.target_calls[1]);
+                    assert_eq!(executor.target_calls[2], executor.target_calls[3]);
+                    assert_ne!(executor.target_calls[0], executor.target_calls[2]);
+                    assert!(executor.responses.is_empty());
+                    for body in &executor.query_bodies {
+                        let body: serde_json::Value =
+                            serde_json::from_slice(body.as_ref().unwrap()).unwrap();
+                        assert_eq!(
+                            body,
+                            serde_json::json!({"query":rewrite,"parameters":parameters})
+                        );
+                        assert!(!body["query"].as_str().unwrap().contains("TOP"));
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn non_streaming_window_overflow_is_reported_before_topology() {
+        let mut plan = non_streaming_order_by_plan();
+        let info = plan.query_info.as_mut().unwrap();
+        info.top = Some(u64::MAX);
+        info.offset = Some(1);
+        let error = build_non_streaming_ordered_merge(
+            &plan,
+            &mut NoopTopologyProvider,
+            &Arc::new(non_streaming_order_by_operation()),
+            None,
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+        );
+    }
+
+    #[tokio::test]
+    async fn build_non_streaming_ordered_merge_accepts_large_finite_window(
+    ) -> crate::error::Result<()> {
+        let operation = Arc::new(non_streaming_order_by_operation());
+        let mut plan = non_streaming_order_by_plan();
+        let info = plan.query_info.as_mut().unwrap();
+        info.top = None;
+        info.offset = Some(50_000);
+        info.limit = Some(3);
+        validate_buffered_query(&plan, 50_003).unwrap();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-range")?])]);
+
+        let pipeline = build_non_streaming_ordered_merge(&plan, &mut topology, &operation, None)
+            .await
+            .expect("explicitly admitted finite window builds");
+        assert!(pipeline
+            .into_root()
+            .downcast::<crate::driver::dataflow::NonStreamingOrderedMerge>()
+            .is_some());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn build_non_streaming_ordered_merge_rejects_resume_and_streaming_plan() {
+        let operation = Arc::new(non_streaming_order_by_operation());
+        let plan = non_streaming_order_by_plan();
+        let mut topology = MockTopologyProvider::new(Vec::new());
+        let err = build_non_streaming_ordered_merge(
+            &plan,
+            &mut topology,
+            &operation,
+            Some(PipelineNodeState::Drained),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
+        );
+
+        let mut streaming_plan = non_streaming_order_by_plan();
+        streaming_plan
+            .query_info
+            .as_mut()
+            .unwrap()
+            .has_non_streaming_order_by = false;
+        let err =
+            build_non_streaming_ordered_merge(&streaming_plan, &mut topology, &operation, None)
+                .await
+                .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::status_codes::CLIENT_UNSUPPORTED_QUERY_FEATURE
+        );
+    }
+
+    #[tokio::test]
+    async fn build_non_streaming_ordered_merge_rejects_distinct() {
+        let operation = Arc::new(non_streaming_order_by_operation());
+        let mut plan = non_streaming_order_by_plan();
+        plan.query_info.as_mut().unwrap().distinct_type = DistinctType::Unordered;
+        let mut topology = MockTopologyProvider::new(Vec::new());
+
+        let err = build_non_streaming_ordered_merge(&plan, &mut topology, &operation, None)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::status_codes::CLIENT_UNSUPPORTED_QUERY_FEATURE
+        );
     }
 
     #[test]
@@ -3129,30 +4524,33 @@ mod tests {
         let err = validate_query_plan_for_streaming_order_by(&plan).unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
+            crate::error::status_codes::CLIENT_UNSUPPORTED_QUERY_FEATURE
         );
     }
 
     #[test]
-    fn validate_query_plan_for_streaming_order_by_rejects_top() {
+    fn validate_query_plan_for_streaming_order_by_accepts_top() {
+        // TOP combined with streaming ORDER BY is now supported: the ordered
+        // merge streams sorted rows and a `SkipTake` root applies the window.
         let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
         plan.query_info.as_mut().unwrap().top = Some(5);
-        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_ok());
     }
 
     #[test]
-    fn validate_query_plan_for_streaming_order_by_rejects_offset_limit() {
+    fn validate_query_plan_for_streaming_order_by_accepts_offset_limit() {
+        // OFFSET/LIMIT combined with streaming ORDER BY is now supported.
         let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
         plan.query_info.as_mut().unwrap().offset = Some(1);
-        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_ok());
 
         let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
         plan.query_info.as_mut().unwrap().limit = Some(1);
-        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_ok());
     }
 
     #[test]
-    fn validate_query_plan_for_streaming_order_by_rejects_aggregates_group_by_distinct() {
+    fn validate_query_plan_for_streaming_order_by_rejects_aggregates_and_group_by() {
         let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
         plan.query_info.as_mut().unwrap().aggregates = vec!["Count".to_owned()];
         assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
@@ -3160,10 +4558,176 @@ mod tests {
         let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
         plan.query_info.as_mut().unwrap().group_by_expressions = vec!["c.a".to_owned()];
         assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+    }
 
+    /// DISTINCT is now composed as a stage above the merge rather than
+    /// rejected, so plan validation must accept it in both forms.
+    #[test]
+    fn validate_query_plan_for_streaming_order_by_accepts_distinct() {
+        for distinct_type in [DistinctType::Ordered, DistinctType::Unordered] {
+            let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+            plan.query_info.as_mut().unwrap().distinct_type = distinct_type;
+            assert!(
+                validate_query_plan_for_streaming_order_by(&plan).is_ok(),
+                "{distinct_type:?} DISTINCT must be accepted alongside ORDER BY"
+            );
+        }
+    }
+
+    // ── DISTINCT continuation-token validation ───────────────────────────
+    //
+    // The catalog scenarios `malformed_token_rejected`,
+    // `token_shape_mismatch_rejected`, and
+    // `distinct_type_mismatch_on_resume_rejected` are pinned here, since they
+    // are about token shape rather than page contents.
+
+    fn distinct_state(distinct_type: DistinctType) -> PipelineNodeState {
+        PipelineNodeState::Distinct {
+            distinct_type,
+            last_hash: None,
+            child: Box::new(PipelineNodeState::SequentialDrain {
+                left_most_undrained_epk: String::new(),
+                active_tokens: Vec::new(),
+            }),
+        }
+    }
+
+    #[test]
+    fn peel_distinct_resume_unwraps_a_matching_ordered_token() {
+        let (inner, last_hash) = peel_distinct_resume(
+            Some(distinct_state(DistinctType::Ordered)),
+            DistinctType::Ordered,
+        )
+        .expect("a matching ordered token resumes");
+        assert!(matches!(
+            inner,
+            Some(PipelineNodeState::SequentialDrain { .. })
+        ));
+        assert_eq!(last_hash, None);
+    }
+
+    /// Catalog: `distinct_type_mismatch_on_resume_rejected`. Reinterpreting an
+    /// ordered token as unordered would apply adjacency deduplication to an
+    /// unsorted stream.
+    #[test]
+    fn peel_distinct_resume_rejects_a_distinct_type_mismatch() {
+        let err = peel_distinct_resume(
+            Some(distinct_state(DistinctType::Ordered)),
+            DistinctType::Unordered,
+        )
+        .expect_err("an ordered token must not resume an unordered plan");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+        );
+        assert!(err.to_string().contains("minted for"));
+    }
+
+    /// We never mint an unordered DISTINCT token, so one can only be
+    /// hand-crafted or corrupted — and resuming it would re-emit every value
+    /// seen before the checkpoint.
+    #[test]
+    fn peel_distinct_resume_rejects_a_hand_crafted_unordered_token() {
+        let err = peel_distinct_resume(
+            Some(distinct_state(DistinctType::Unordered)),
+            DistinctType::Unordered,
+        )
+        .expect_err("an unordered DISTINCT token is never resumable");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::status_codes::substatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED)
+        );
+        assert!(err.to_string().contains("ORDER BY"));
+    }
+
+    /// Catalog: `token_shape_mismatch_rejected`. A token minted before DISTINCT
+    /// support (or for a non-DISTINCT query) has no `Distinct` layer; resuming
+    /// it would silently skip deduplication for every remaining page.
+    #[test]
+    fn peel_distinct_resume_rejects_a_token_without_a_distinct_layer() {
+        let err = peel_distinct_resume(
+            Some(PipelineNodeState::SequentialDrain {
+                left_most_undrained_epk: String::new(),
+                active_tokens: Vec::new(),
+            }),
+            DistinctType::Unordered,
+        )
+        .expect_err("a non-DISTINCT token must not resume a DISTINCT plan");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+        );
+        assert!(err.to_string().contains("does not match a DISTINCT query"));
+    }
+
+    /// The mirror case: a `Distinct` token handed to a plan that no longer asks
+    /// for deduplication is rejected rather than reinterpreted.
+    #[test]
+    fn peel_distinct_resume_rejects_a_distinct_token_for_a_plain_plan() {
+        let err = peel_distinct_resume(
+            Some(distinct_state(DistinctType::Ordered)),
+            DistinctType::None,
+        )
+        .expect_err("a DISTINCT token cannot resume a plain plan");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+        );
+    }
+
+    /// `Drained` is shape-agnostic: the whole pipeline, DISTINCT included,
+    /// finished, so it must resume for any plan shape.
+    #[test]
+    fn peel_distinct_resume_passes_drained_through_unchanged() {
+        for distinct_type in [
+            DistinctType::None,
+            DistinctType::Ordered,
+            DistinctType::Unordered,
+        ] {
+            let (inner, last_hash) =
+                peel_distinct_resume(Some(PipelineNodeState::Drained), distinct_type)
+                    .expect("a drained token resumes for any shape");
+            assert!(matches!(inner, Some(PipelineNodeState::Drained)));
+            assert_eq!(last_hash, None);
+        }
+    }
+
+    #[test]
+    fn peel_distinct_resume_passes_a_fresh_start_through() {
+        let (inner, last_hash) = peel_distinct_resume(None, DistinctType::Unordered)
+            .expect("a fresh start needs no token");
+        assert!(inner.is_none());
+        assert_eq!(last_hash, None);
+    }
+
+    /// Catalog: `malformed_token_rejected`. Wrapping the fan-out state in a
+    /// `Distinct` layer must not bypass the inner state's own validation — a
+    /// malformed child is still rejected rather than silently restarting the
+    /// query (which would re-emit every row).
+    #[tokio::test]
+    async fn distinct_token_with_a_malformed_child_is_still_rejected() {
         let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
         plan.query_info.as_mut().unwrap().distinct_type = DistinctType::Ordered;
-        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+        let operation = Arc::new(order_by_operation());
+        let mut topology = MockTopologyProvider::new(vec![]);
+
+        // A `SequentialDrain` child is the wrong shape under a streaming
+        // ORDER BY plan, and the inner builder must say so.
+        let malformed = PipelineNodeState::Distinct {
+            distinct_type: DistinctType::Ordered,
+            last_hash: None,
+            child: Box::new(PipelineNodeState::SequentialDrain {
+                left_most_undrained_epk: String::new(),
+                active_tokens: Vec::new(),
+            }),
+        };
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &operation, Some(malformed))
+            .await
+            .expect_err("a malformed inner state must not resume");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+        );
     }
 
     #[test]
@@ -3191,7 +4755,7 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY
+            crate::error::status_codes::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY
         );
     }
 
@@ -3205,17 +4769,18 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY
+            crate::error::status_codes::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY
         );
     }
 
     #[tokio::test]
-    async fn build_streaming_ordered_merge_builds_one_child_per_resolved_range() {
+    async fn build_streaming_ordered_merge_builds_one_child_per_resolved_range(
+    ) -> crate::error::Result<()> {
         let op = Arc::new(order_by_operation());
         let plan = order_by_plan(Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"), vec![qr("", "FF")]);
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-            rr("", "80", "pk-left"),
-            rr("80", "FF", "pk-right"),
+            rr("", "80", "pk-left")?,
+            rr("80", "FF", "pk-right")?,
         ])]);
 
         let pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
@@ -3231,6 +4796,140 @@ mod tests {
             2,
             "one child per resolved physical partition"
         );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_wraps_skip_take_for_combined_offset_limit(
+    ) -> crate::error::Result<()> {
+        // ORDER BY combined with OFFSET/LIMIT must compose a `SkipTake` root
+        // over the ordered merge so the window is applied once, globally.
+        let op = Arc::new(order_by_operation());
+        let mut plan = order_by_plan(Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"), vec![qr("", "FF")]);
+        {
+            let info = plan.query_info.as_mut().unwrap();
+            info.offset = Some(2);
+            info.limit = Some(3);
+        }
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")?])]);
+        let pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .expect("combined ORDER BY + OFFSET/LIMIT must build");
+        let skip_take = pipeline
+            .into_root()
+            .downcast::<crate::driver::dataflow::SkipTake>()
+            .expect("combined ORDER BY + OFFSET/LIMIT must wrap the ordered merge in a SkipTake");
+        let mut children = skip_take.into_children();
+        assert_eq!(
+            children.len(),
+            1,
+            "a SkipTake wraps exactly one ordered-merge child"
+        );
+        children
+            .pop()
+            .unwrap()
+            .downcast::<crate::driver::dataflow::StreamingOrderedMerge>()
+            .expect("the SkipTake's child must be the StreamingOrderedMerge");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_wraps_skip_take_for_combined_top(
+    ) -> crate::error::Result<()> {
+        // ORDER BY combined with TOP must also compose a `SkipTake` root.
+        let op = Arc::new(order_by_operation());
+        let mut plan = order_by_plan(Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"), vec![qr("", "FF")]);
+        plan.query_info.as_mut().unwrap().top = Some(4);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")?])]);
+        let pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .expect("combined ORDER BY + TOP must build");
+        assert!(
+            pipeline
+                .into_root()
+                .downcast::<crate::driver::dataflow::SkipTake>()
+                .is_some(),
+            "combined ORDER BY + TOP must wrap the ordered merge in a SkipTake"
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_no_wrap_for_plain_order_by() -> crate::error::Result<()>
+    {
+        // A plain ORDER BY (no window) leaves the ordered merge as the root.
+        let op = Arc::new(order_by_operation());
+        let plan = order_by_plan(Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"), vec![qr("", "FF")]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")?])]);
+        let pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .unwrap();
+        assert!(
+            pipeline
+                .into_root()
+                .downcast::<crate::driver::dataflow::StreamingOrderedMerge>()
+                .is_some(),
+            "a plain ORDER BY must not be wrapped in a SkipTake"
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_accepts_cross_construct_window_token(
+    ) -> crate::error::Result<()> {
+        // A `TOP`-shaped window token resumed against an `OFFSET`/`LIMIT` combined
+        // ORDER BY query builds the identical SkipTake-over-merge pipeline, so it
+        // resumes (resume validates pipeline shape, not the SQL construct).
+        let op = Arc::new(order_by_operation());
+        let mut plan = order_by_plan(Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"), vec![qr("", "FF")]);
+        {
+            let info = plan.query_info.as_mut().unwrap();
+            info.offset = Some(1);
+            info.limit = Some(2);
+        }
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")?])]);
+        let resume = PipelineNodeState::SkipTake {
+            remaining_skip: 0,
+            remaining_take: Some(2),
+            child: Box::new(PipelineNodeState::Drained),
+        };
+        let pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, Some(resume))
+            .await
+            .expect("a window token should resume a combined ORDER BY window query");
+        // The saved child was `Drained`, so the resumed pipeline is drained.
+        let mut root = pipeline.into_root();
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        assert!(matches!(
+            root.next_page(&mut context).await.unwrap(),
+            PageResult::Drained
+        ));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_rejects_window_token_against_plain_order_by(
+    ) -> crate::error::Result<()> {
+        // A skip/take window token resumed against a *plain* ORDER BY (no
+        // OFFSET/LIMIT/TOP) is a pipeline-shape mismatch: the resumed pipeline
+        // has no SkipTake node to receive the window. Must be rejected.
+        let op = Arc::new(order_by_operation());
+        let plan = order_by_plan(Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"), vec![qr("", "FF")]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")?])]);
+        let resume = PipelineNodeState::SkipTake {
+            remaining_skip: 0,
+            remaining_take: Some(2),
+            child: Box::new(PipelineNodeState::Drained),
+        };
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, Some(resume))
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH
+        );
+        Ok(())
     }
 
     #[tokio::test]
@@ -3244,7 +4943,7 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES
+            crate::error::status_codes::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES
         );
     }
 
@@ -3256,7 +4955,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn build_streaming_ordered_merge_accepts_join_query() {
+    async fn build_streaming_ordered_merge_accepts_join_query() -> crate::error::Result<()> {
         // A JOIN can emit multiple rows per document `_rid`; the resume cursor
         // now tracks that with a `_rid`-tie skip count (mirroring .NET), so a
         // JOIN-shaped ORDER BY builds instead of being rejected up front.
@@ -3267,7 +4966,7 @@ mod tests {
             Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c JOIN t IN c.tags ORDER BY c.rank ASC"),
             vec![qr("", "FF")],
         );
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")?])]);
         let pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
             .await
             .expect("a JOIN-shaped ORDER BY must build a pipeline");
@@ -3278,10 +4977,12 @@ mod tests {
                 .is_some(),
             "a JOIN-shaped ORDER BY builds a StreamingOrderedMerge"
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn build_streaming_ordered_merge_accepts_ordinary_parameterized_order_by() {
+    async fn build_streaming_ordered_merge_accepts_ordinary_parameterized_order_by(
+    ) -> crate::error::Result<()> {
         // An ordinary single-source, parameterized ORDER BY builds normally
         // (no local SQL parsing gate stands in the way).
         let op = Arc::new(order_by_operation_with_query(
@@ -3291,7 +4992,7 @@ mod tests {
             Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"),
             vec![qr("", "FF")],
         );
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")?])]);
         let pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
             .await
             .expect("ordinary parameterized ORDER BY must build a pipeline");
@@ -3302,6 +5003,7 @@ mod tests {
                 .is_some(),
             "ordinary parameterized ORDER BY builds a StreamingOrderedMerge"
         );
+        Ok(())
     }
 
     /// A token minted for a different query text (or different parameter
@@ -3327,9 +5029,70 @@ mod tests {
         .expect("a token minted by a different query must be rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
             "got: {err}"
         );
+    }
+
+    #[test]
+    fn continuation_validators_reject_malformed_epk_bounds() {
+        for malformed in ["408", "40G0", "é80"] {
+            let Err(cursor_error) = validate_saved_snapshot(malformed.to_owned(), Vec::new())
+            else {
+                panic!("SequentialDrain must reject malformed cursor EPKs");
+            };
+            assert_eq!(
+                cursor_error.status(),
+                crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE
+            );
+            assert!(cursor_error.to_string().contains("malformed EPK"));
+            assert!(std::error::Error::source(&cursor_error).is_some());
+
+            for (min, max) in [(malformed, "FF"), ("", malformed)] {
+                let Err(streaming_error) = validate_streaming_order_by_snapshot(
+                    &[SortOrder::Ascending],
+                    &[SortOrder::Ascending],
+                    "query",
+                    Some("query"),
+                    vec![OrderByRangeToken {
+                        min_epk: min.to_owned(),
+                        max_epk: max.to_owned(),
+                        server_continuation: None,
+                        boundary: None,
+                    }],
+                ) else {
+                    panic!("streaming ORDER BY must reject malformed EPK bounds");
+                };
+                assert_eq!(
+                    streaming_error.status(),
+                    crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID
+                );
+                assert!(streaming_error.to_string().contains("malformed EPK"));
+                assert!(std::error::Error::source(&streaming_error).is_some());
+
+                let token = RangedToken {
+                    min_epk: min.to_owned(),
+                    max_epk: max.to_owned(),
+                    server_continuation: "token".to_owned(),
+                };
+                let Err(sequential_error) =
+                    validate_saved_snapshot(String::new(), vec![token.clone()])
+                else {
+                    panic!("SequentialDrain must reject malformed range EPKs");
+                };
+                let Err(unordered_error) = validate_unordered_merge_tokens(vec![token]) else {
+                    panic!("UnorderedMerge must reject malformed range EPKs");
+                };
+                for error in [sequential_error, unordered_error] {
+                    assert_eq!(
+                        error.status(),
+                        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE
+                    );
+                    assert!(error.to_string().contains("malformed EPK"));
+                    assert!(std::error::Error::source(&error).is_some());
+                }
+            }
+        }
     }
 
     /// A token minted under one feed scope must not resume under another.
@@ -3338,22 +5101,20 @@ mod tests {
     /// kind and container RID, so without the scope in the fingerprint the
     /// query would read outside the caller's scope.
     #[tokio::test]
-    async fn build_streaming_ordered_merge_rejects_token_from_a_different_feed_scope() {
+    async fn build_streaming_ordered_merge_rejects_token_from_a_different_feed_scope(
+    ) -> crate::error::Result<()> {
         let body = br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#.to_vec();
-        let scoped_op = |min: &str, max: &str| {
-            Arc::new(
+        let scoped_op = |min: &str, max: &str| -> crate::error::Result<_> {
+            Ok(Arc::new(
                 CosmosOperation::query_items(
                     test_container(),
-                    Some(
-                        FeedRange::new(
-                            EffectivePartitionKey::from(min),
-                            EffectivePartitionKey::from(max),
-                        )
-                        .unwrap(),
-                    ),
+                    Some(FeedRange::new(
+                        EffectivePartitionKey::try_from(min)?,
+                        EffectivePartitionKey::try_from(max)?,
+                    )?),
                 )
                 .with_body(body.clone()),
-            )
+            ))
         };
         let plan = order_by_plan(
             Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"),
@@ -3362,9 +5123,9 @@ mod tests {
 
         // Mint a token under the left half of the key space.
         let minted = {
-            let op = scoped_op("", "80");
+            let op = scoped_op("", "80")?;
             let mut topology =
-                PhysicalTopologyProvider::new(vec![rr("", "80", "pk-0"), rr("80", "FF", "pk-1")]);
+                PhysicalTopologyProvider::new(vec![rr("", "80", "pk-0")?, rr("80", "FF", "pk-1")?]);
             build_streaming_ordered_merge(&plan, &mut topology, &op, None)
                 .await
                 .expect("fresh scoped plan must build")
@@ -3387,18 +5148,19 @@ mod tests {
         // The topology resolves against the requested range, so without the
         // scope check this would succeed and happily query `..80` (the token's
         // scope) while the caller asked for `80..`.
-        let op = scoped_op("80", "FF");
+        let op = scoped_op("80", "FF")?;
         let mut topology =
-            PhysicalTopologyProvider::new(vec![rr("", "80", "pk-0"), rr("80", "FF", "pk-1")]);
+            PhysicalTopologyProvider::new(vec![rr("", "80", "pk-0")?, rr("80", "FF", "pk-1")?]);
         let err = build_streaming_ordered_merge(&plan, &mut topology, &op, Some(minted))
             .await
             .err()
             .expect("a token minted under a different feed scope must be rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
             "got: {err}"
         );
+        Ok(())
     }
 
     /// A legacy token predating `query_fingerprint` carries `None`, so the
@@ -3408,17 +5170,15 @@ mod tests {
     /// would make a stale pre-split server continuation look replayable to
     /// `build_children`.
     #[tokio::test]
-    async fn build_streaming_ordered_merge_rejects_legacy_token_ranges_outside_scope() {
+    async fn build_streaming_ordered_merge_rejects_legacy_token_ranges_outside_scope(
+    ) -> crate::error::Result<()> {
         let op = Arc::new(
             CosmosOperation::query_items(
                 test_container(),
-                Some(
-                    FeedRange::new(
-                        EffectivePartitionKey::from(""),
-                        EffectivePartitionKey::from("80"),
-                    )
-                    .unwrap(),
-                ),
+                Some(FeedRange::new(
+                    EffectivePartitionKey::MIN,
+                    EffectivePartitionKey::try_from("80")?,
+                )?),
             )
             .with_body(br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#.to_vec()),
         );
@@ -3447,16 +5207,17 @@ mod tests {
             vec![qr("", "FF")],
         );
         let mut topology =
-            PhysicalTopologyProvider::new(vec![rr("", "80", "pk-0"), rr("80", "FF", "pk-1")]);
+            PhysicalTopologyProvider::new(vec![rr("", "80", "pk-0")?, rr("80", "FF", "pk-1")?]);
 
         let err = build_streaming_ordered_merge(&plan, &mut topology, &op, Some(resume))
             .await
             .expect_err("the `80..FF` saved range lies outside the operation's scope");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
             "got: {err}"
         );
+        Ok(())
     }
 
     /// A token minted before `query_fingerprint` existed carries `None` and
@@ -3511,7 +5272,7 @@ mod tests {
         .expect("an undecodable boundary RID must be rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
             "got: {err}"
         );
     }
@@ -3555,18 +5316,49 @@ mod tests {
         .expect("a non-document boundary RID must be rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
             "got: {err}"
         );
     }
 
-    /// A realistic 16-byte document `_rid`, as the backend emits — the
-    /// boundary validator requires one it can decode.
+    /// A realistic 16-byte document `_rid`, as commonly emitted by the
+    /// backend — the boundary validator requires one it can decode.
     fn valid_rid(doc_id: u64) -> String {
         let mut bytes = [0u8; 16];
         bytes[0..8].copy_from_slice(&[0x0A, 0x0B, 0x0C, 0x0D, 0x80, 0x01, 0x02, 0x03]);
         bytes[8..16].copy_from_slice(&doc_id.to_le_bytes());
         crate::models::resource_id::encode_rid(&bytes)
+    }
+
+    /// vNext may emit the legal 20-byte resource-id form for an ORDER BY
+    /// boundary. It carries the same document ordinal in bytes `[8..16)` plus
+    /// the optional four-byte attachment segment.
+    #[test]
+    fn streaming_order_by_snapshot_accepts_20_byte_document_boundary_rid() {
+        // cspell:ignore EAAAAJAAAAAOAAAA OcAAAAAAAA
+        let ranges = vec![OrderByRangeToken {
+            min_epk: String::new(),
+            max_epk: "FF".to_owned(),
+            server_continuation: None,
+            boundary: Some(ValueBoundary {
+                resume_values: vec![
+                    crate::driver::dataflow::order_by::OrderByResumeValue::Number {
+                        value: 5.0.into(),
+                    },
+                ],
+                last_rid: "EAAAAJAAAAAOAAAA/OcAAAAAAAA=".to_owned(),
+                skip_count: 1,
+            }),
+        }];
+        let parsed = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            "fingerprint",
+            Some("fingerprint"),
+            ranges,
+        )
+        .expect("a 20-byte document hierarchy RID is a valid boundary");
+        assert_eq!(parsed.len(), 1);
     }
 
     /// A boundary in a resumed `StreamingOrderedMerge` snapshot always counts
@@ -3599,7 +5391,7 @@ mod tests {
         .expect("a boundary skip_count of 0 must be rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
             "a boundary skip_count of 0 must be rejected, got: {err}"
         );
     }

@@ -28,12 +28,14 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Install gh-aw extension
-        uses: github/gh-aw-actions/setup-cli@2709137ea6c5b0e19aa621454dc643ea8dc526b1 # v0.85.4
+        uses: github/gh-aw-actions/setup-cli@13f59f7032b1e9a26305dada85d6b99fa2a5e649 # v0.91.6
         with:
-          version: v0.85.4
+          version: v0.89.21
 
       - name: Install essential system dependencies
         run: |
@@ -41,7 +43,7 @@ jobs:
           sudo apt-get install -y pkg-config libssl-dev
 
       - name: Cache cargo dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/bin/
@@ -86,4 +88,3 @@ jobs:
           echo "=== Workspace Structure ==="
           find . -name "Cargo.toml" | head -10
           echo "=== Environment Ready for Copilot Coding Agent ==="
-

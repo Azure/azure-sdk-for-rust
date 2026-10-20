@@ -94,7 +94,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // container per app.
     let items = client
         .database_client(&args.database)
-        .container_client(&args.container)
+        .container_client(&args.container, None)
         .await?;
 
     // ----- 1. Create a brand-new item. --------------------------------------
@@ -165,7 +165,7 @@ async fn create_client(args: &Args) -> Result<CosmosClient, Box<dyn Error>> {
     // A user-agent suffix shows up in service-side request logs and is the
     // easiest way to mark traffic from a specific app or build. Limited to
     // 25 HTTP-header-safe characters.
-    let user_agent_suffix = UserAgentSuffix::new("samples-app");
+    let user_agent_suffix = UserAgentSuffix::try_from("samples-app")?;
 
     if let Some(key) = args.key.as_ref() {
         // Build with a shared account key. The `key_auth` Cargo feature is

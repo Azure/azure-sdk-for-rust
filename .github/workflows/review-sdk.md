@@ -25,6 +25,7 @@ network:
     - learn.microsoft.com
 
 safe-outputs:
+  group-reports: true
   create-pull-request-review-comment:
     max: 100
     target: triggering

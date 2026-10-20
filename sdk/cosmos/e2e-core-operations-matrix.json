@@ -1,0 +1,36 @@
+{
+  "displayNames": {
+    "inmemory-v1": "gateway_v1",
+    "inmemory-v2": "gateway_v2",
+    "coreOperations": "core_operations",
+    "sessionSingleRegion": "session_single_region",
+    "sdkDefault": "sdk_default"
+  },
+  "matrix": {
+    "Agent": {
+      "ubuntu": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      }
+    },
+    "RustToolchainName": [
+      "stable"
+    ],
+    "AZURE_COSMOS_EMULATOR_FLAVOR": [
+      "inmemory-v1",
+      "inmemory-v2"
+    ],
+    "AZURE_COSMOS_E2E_PROFILE": [
+      "coreOperations"
+    ],
+    "AZURE_COSMOS_E2E_ACCOUNT": [
+      "sessionSingleRegion"
+    ],
+    "AZURE_COSMOS_E2E_RUNTIME": [
+      "sdkDefault"
+    ],
+    "AZURE_COSMOS_E2E_CLIENT": [
+      "sdkDefault"
+    ]
+  }
+}

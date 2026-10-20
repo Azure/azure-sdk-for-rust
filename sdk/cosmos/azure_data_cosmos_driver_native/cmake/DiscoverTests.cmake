@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 # Test discovery script for CMake.
 #
 # Runs each test executable with `--discover` to enumerate the tests inside
@@ -46,6 +49,8 @@ foreach(test_exe ${test_executables})
                         "add_test(NAME \"${suite_name}::${test_name}\" COMMAND \"${test_exe}\" \"${test_name}\")\n")
                 endif()
             endforeach()
+        else()
+            message(FATAL_ERROR "Test discovery failed for ${test_exe}: result=${result}, tests='${test_names}'")
         endif()
     else()
         message(WARNING "Skipping non-executable file: ${test_exe}")

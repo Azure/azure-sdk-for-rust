@@ -27,11 +27,18 @@
 //! unit-tested in `driver/pipeline/patch_handler.rs`.
 
 use crate::framework::DriverTestClient;
-use azure_data_cosmos_driver::models::{
-    CosmosNumber, PartitionKey, PatchInstructions, PatchOperation,
+use azure_data_cosmos_driver::{
+    models::{CosmosNumber, PartitionKey, PatchInstructions, PatchOperation},
+    options::{BinaryEncodingOptions, OperationOptions, OperationOptionsBuilder},
 };
 use serde_json::{json, Value};
 use std::error::Error;
+
+fn patch_test_options() -> OperationOptions {
+    OperationOptionsBuilder::new()
+        .with_binary_encoding(BinaryEncodingOptions::new().with_enabled(false))
+        .build()
+}
 
 // ---------------------------------------------------------------------------
 // A5: basic Set returns the locally-merged post-image
@@ -50,7 +57,8 @@ use std::error::Error;
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn cosmos_patch_basic_set() -> Result<(), Box<dyn Error>> {
-    Box::pin(DriverTestClient::run_with_unique_db(
+    Box::pin(DriverTestClient::run_with_unique_db_options(
+        patch_test_options(),
         async |context, database| {
             let container_name = context.unique_container_name();
             let container = context
@@ -115,7 +123,8 @@ pub async fn cosmos_patch_basic_set() -> Result<(), Box<dyn Error>> {
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn cosmos_patch_pk_guard() -> Result<(), Box<dyn Error>> {
-    Box::pin(DriverTestClient::run_with_unique_db(
+    Box::pin(DriverTestClient::run_with_unique_db_options(
+        patch_test_options(),
         async |context, database| {
             let container_name = context.unique_container_name();
             let container = context
@@ -194,7 +203,8 @@ pub async fn cosmos_patch_pk_guard() -> Result<(), Box<dyn Error>> {
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn cosmos_patch_pk_guard_hierarchical() -> Result<(), Box<dyn Error>> {
-    Box::pin(DriverTestClient::run_with_unique_db(
+    Box::pin(DriverTestClient::run_with_unique_db_options(
+        patch_test_options(),
         async |context, database| {
             let container_name = context.unique_container_name();
             let container = context
@@ -819,7 +829,8 @@ fn assert_post_image_props(actual: &Value, expected_props: &Value, case_id: &str
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
-    Box::pin(DriverTestClient::run_with_unique_db(
+    Box::pin(DriverTestClient::run_with_unique_db_options(
+        patch_test_options(),
         async |context, database| {
             let container_name = context.unique_container_name();
             let container = context
@@ -914,7 +925,8 @@ pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn cosmos_patch_read_missing_item_returns_not_found() -> Result<(), Box<dyn Error>> {
-    Box::pin(DriverTestClient::run_with_unique_db(
+    Box::pin(DriverTestClient::run_with_unique_db_options(
+        patch_test_options(),
         async |context, database| {
             let container_name = context.unique_container_name();
             let container = context
@@ -992,46 +1004,49 @@ pub async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
     );
     let rules = vec![Arc::clone(&rule)];
 
-    Box::pin(DriverTestClient::run_with_unique_db_and_fault_injection(
-        rules,
-        async move |context, database| {
-            let container_name = context.unique_container_name();
-            let container = context
-                .create_container(&database, &container_name, "/pk")
-                .await?;
+    Box::pin(
+        DriverTestClient::run_with_unique_db_and_fault_injection_options(
+            rules,
+            patch_test_options(),
+            async move |context, database| {
+                let container_name = context.unique_container_name();
+                let container = context
+                    .create_container(&database, &container_name, "/pk")
+                    .await?;
 
-            let item_id = "patch-412-retry-001";
-            let pk = "p1";
-            let initial = json!({ "id": item_id, "pk": pk, "value": 0 });
-            context
-                .create_seed_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
-                .await?;
+                let item_id = "patch-412-retry-001";
+                let pk = "p1";
+                let initial = json!({ "id": item_id, "pk": pk, "value": 0 });
+                context
+                    .create_seed_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
+                    .await?;
 
-            let spec = PatchInstructions::from(vec![PatchOperation::increment("/value", 1i64)]);
-            let response = context
-                .patch_item(&container, item_id, pk, &spec, None)
-                .await?;
+                let spec = PatchInstructions::from(vec![PatchOperation::increment("/value", 1i64)]);
+                let response = context
+                    .patch_item(&container, item_id, pk, &spec, None)
+                    .await?;
 
-            // Post-image reflects the merged increment.
-            let body: Value = response.into_body().into_single()?;
-            assert_eq!(
-                body.get("value"),
-                Some(&json!(1)),
-                "PATCH post-image should reflect the increment; got {body}",
-            );
+                // Post-image reflects the merged increment.
+                let body: Value = response.into_body().into_single()?;
+                assert_eq!(
+                    body.get("value"),
+                    Some(&json!(1)),
+                    "PATCH post-image should reflect the increment; got {body}",
+                );
 
-            // Fault rule was hit exactly once (one 412 was injected, one
-            // retry succeeded).
-            assert_eq!(
-                rule.hit_count(),
-                1,
-                "fault rule should fire exactly once; hit_count={}",
-                rule.hit_count()
-            );
+                // Fault rule was hit exactly once (one 412 was injected, one
+                // retry succeeded).
+                assert_eq!(
+                    rule.hit_count(),
+                    1,
+                    "fault rule should fire exactly once; hit_count={}",
+                    rule.hit_count()
+                );
 
-            Ok(())
-        },
-    ))
+                Ok(())
+            },
+        ),
+    )
     .await
 }
 
@@ -1068,8 +1083,10 @@ pub async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
     );
     let rules = vec![Arc::clone(&rule)];
 
-    Box::pin(DriverTestClient::run_with_unique_db_and_fault_injection(
+    Box::pin(
+        DriverTestClient::run_with_unique_db_and_fault_injection_options(
         rules,
+        patch_test_options(),
         async move |context, database| {
             let container_name = context.unique_container_name();
             let container = context
@@ -1118,6 +1135,7 @@ pub async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-    ))
+        ),
+    )
     .await
 }

@@ -21,10 +21,9 @@ use azure_data_cosmos::{
 use framework::{MockItem, TestClient, TestOptions};
 use futures::{StreamExt, TryStreamExt};
 
-// We wait 10 minutes for the split to occur. If it doesn't, we "fail" the test,
-// but with a clear message indicating that it only failed because the split didn't happen in time, rather than panicking on some other assumption later in the test.
-// Splits _often_ complete in time, but when they don't, we don't necessarily want to block any given PR.
-const SPLIT_POLL_TIMEOUT: Duration = Duration::from_secs(10 * 60);
+// Backend splits can occasionally exceed 10 minutes under repeated test load.
+// Report a 15-minute miss as inconclusive rather than failing later assumptions.
+const SPLIT_POLL_TIMEOUT: Duration = Duration::from_secs(15 * 60);
 const SPLIT_POLL_INTERVAL: Duration = Duration::from_secs(15);
 
 /// Triggers a partition split on `container_client` by raising throughput to

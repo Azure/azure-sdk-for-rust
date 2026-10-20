@@ -95,17 +95,19 @@ pub struct InnerError {
     pub inner_error: Option<Box<InnerError>>,
 }
 
-/// Internal struct to help with deserialization without allocating Strings.
+/// Internal struct to help with deserializing only the error code and message.
+///
+/// Strings are owned because a JSON string containing escape sequences cannot be borrowed from the
+/// body.
 #[derive(Debug, Deserialize)]
-struct ErrorResponseInternal<'a> {
-    #[serde(borrow)]
-    error: ErrorDetailsInternal<'a>,
+struct ErrorResponseInternal {
+    error: ErrorDetailsInternal,
 }
 
 #[derive(Debug, Deserialize)]
-struct ErrorDetailsInternal<'a> {
-    code: Option<&'a str>,
-    message: Option<&'a str>,
+struct ErrorDetailsInternal {
+    code: Option<String>,
+    message: Option<String>,
 }
 
 /// Represents a response from which we can get a [`StatusCode`] and collect into a [`RawResponse`].
@@ -229,12 +231,12 @@ pub async fn check_success<T: Response>(
     let error_code = raw_response
         .headers()
         .get_optional_str(&ERROR_CODE)
-        .or(internal_response.error.code)
+        .or(internal_response.error.code.as_deref())
         .map(str::to_owned);
     let message = internal_response
         .error
         .message
-        .map_or_else(|| status.to_string(), str::to_owned);
+        .unwrap_or_else(|| status.to_string());
     let error_kind = ErrorKind::HttpResponse {
         status,
         error_code,
@@ -555,10 +557,50 @@ mod tests {
             .expect("Parse success.");
         println!("{:?}", err);
 
-        assert_eq!(err.error.code, Some("InvalidRequest"));
+        assert_eq!(err.error.code.as_deref(), Some("InvalidRequest"));
         assert_eq!(
-            err.error.message,
+            err.error.message.as_deref(),
             Some("The request object is not recognized.")
         );
+    }
+
+    #[test]
+    fn deserialize_to_error_response_internal_with_escapes() {
+        let err: ErrorResponseInternal = serde_json::from_slice(
+            br#"{"error":{"code":"Forbidden","message":"Caller is not authorized.\r\nAction: \"sign\""}}"#,
+        )
+        .expect("Parse success.");
+
+        assert_eq!(err.error.code.as_deref(), Some("Forbidden"));
+        assert_eq!(
+            err.error.message.as_deref(),
+            Some("Caller is not authorized.\r\nAction: \"sign\"")
+        );
+    }
+
+    #[tokio::test]
+    async fn matching_against_http_error_with_escaped_message() {
+        let response = AsyncRawResponse::from_bytes(
+            StatusCode::Forbidden,
+            Headers::new(),
+            Bytes::from_static(
+                br#"{"error":{"code":"Forbidden","message":"Caller is not authorized.\r\nAction: 'sign'","innererror":{"code":"ForbiddenByRbac"}}}"#,
+            ),
+        );
+
+        let err = check_success(response, None).await.unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "Caller is not authorized.\r\nAction: 'sign'"
+        );
+        assert!(matches!(
+            err.kind(),
+            ErrorKind::HttpResponse {
+                status: StatusCode::Forbidden,
+                error_code,
+                raw_response: Some(_),
+            }
+            if error_code.as_deref() == Some("Forbidden")
+        ));
     }
 }

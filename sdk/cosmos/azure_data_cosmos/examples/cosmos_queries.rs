@@ -65,7 +65,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let client = create_client(&args).await?;
     let items = client
         .database_client(&args.database)
-        .container_client(&args.container)
+        .container_client(&args.container, None)
         .await?;
 
     // Make sure there is at least one item to query so the example produces

@@ -1,6 +1,6 @@
 [package]
 name = "azure_core"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.2"
 description = "Rust wrappers around Microsoft Azure REST APIs - Core crate"
 readme = "README.md"
 authors.workspace = true
@@ -12,11 +12,12 @@ keywords = ["sdk", "cloud", "rest", "iot"]
 categories = ["api-bindings"]
 edition.workspace = true
 rust-version.workspace = true
+exclude.workspace = true
 
 [dependencies]
 async-lock.workspace = true
 async-trait.workspace = true
-azure_core_macros = { path = "../azure_core_macros", version = "1.1.0-beta.1" }
+azure_core_macros.workspace = true
 bytes.workspace = true
 futures.workspace = true
 hmac = { workspace = true, optional = true }
@@ -27,8 +28,8 @@ serde_json.workspace = true
 sha2 = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
-typespec = { path = "../typespec", version = "1.2.0-beta.1", features = ["http", "json"] }
-typespec_client_core = { path = "../typespec_client_core", version = "1.2.0-beta.1", default-features = false, features = [
+typespec = { path = "../typespec", version = "1.2.0-beta.2", features = ["http", "json"] }
+typespec_client_core = { path = "../typespec_client_core", version = "1.2.0-beta.2", default-features = false, features = [
   "derive",
   "http",
   "json",
@@ -39,7 +40,7 @@ rustc_version.workspace = true
 
 [dev-dependencies]
 azure_core_examples = { path = "../azure_core_examples" }
-azure_core_macros = { path = "../azure_core_macros" }
+azure_core_macros.workspace = true
 azure_core_test = { path = "../azure_core_test" }
 clap = { workspace = true, features = ["derive"] }
 criterion.workspace = true
@@ -47,7 +48,6 @@ http = "1.4.0"
 include-file.workspace = true
 json-patch = "4.1.0"
 reqwest.workspace = true
-thiserror.workspace = true
 tokio.workspace = true
 tracing-subscriber.workspace = true
 ureq = { version = "3.2.0", default-features = false, features = [

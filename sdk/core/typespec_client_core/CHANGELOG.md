@@ -1,15 +1,28 @@
 # Release History
 
-## 1.2.0-beta.1 (Unreleased)
+## 1.2.0-beta.2 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+- Avoided unnecessary error construction and backtrace capture in `Headers::get_optional_str()` when a header is absent ([#5446](https://github.com/Azure/azure-sdk-for-rust/pull/5446)).
+
+### Other Changes
+
+## 1.2.0-beta.1 (2026-09-04)
 
 ### Features Added
 
 - Added `Tracer::start_span_with_options`, `Tracer::start_span_with_parent_and_options`, and `Span::end_at`, along with a `SpanOptions` struct, to allow reconstructing spans with explicit (backdated) start and end timestamps. These are additive with default implementations, so existing `Tracer`/`Span` implementations continue to work unchanged.
 - Added `DeserializeWith::deserialize_from` with a body-only default, allowing custom model decoders to inspect response headers without requiring serde deserialization.
-
-### Breaking Changes
+- Added cloneable `stream::ReadStream` and `stream::SeekableReadStream` adapters, along with `RequestContent::from_reader` and `RequestContent::from_seekable_reader`, to build request bodies from `futures::io::AsyncRead` sources.
 
 ### Bugs Fixed
+
+- Dropping a sleep future created by the standard (non-`tokio`) async runtime now cancels its worker thread immediately instead of leaving it blocked until the original deadline.
 
 ### Other Changes
 

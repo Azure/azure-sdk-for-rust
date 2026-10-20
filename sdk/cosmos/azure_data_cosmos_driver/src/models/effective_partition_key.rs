@@ -6,10 +6,13 @@
 //! Hashes partition key values into a hex-encoded effective partition key string
 //! that can be used to locate the target partition key range.
 
-use crate::models::{
-    murmur_hash::{murmurhash3_128, murmurhash3_32},
-    partition_key::write_number_v1_binary,
-    PartitionKeyDefinition, PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion,
+use crate::{
+    error::{CosmosError, CosmosStatus},
+    models::{
+        murmur_hash::{murmurhash3_128, murmurhash3_32},
+        partition_key::write_number_v1_binary,
+        PartitionKeyDefinition, PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion,
+    },
 };
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -42,6 +45,10 @@ pub(crate) fn prefix_range_end_hex(prefix: &[u8]) -> String {
 /// full width or trimmed. Deriving `PartialEq` here would make `Eq` and `Ord`
 /// disagree, violating the `Ord` contract and silently rejecting valid
 /// topologies at the several places that compare range bounds.
+///
+/// Use [`TryFrom`] to parse an even-length hexadecimal string. Both letter
+/// cases and the empty string ([`MIN`](Self::MIN)) are accepted. Parsing and
+/// serialization preserve all bytes, including trailing zero padding.
 #[derive(Debug, Clone, Eq)]
 pub struct EffectivePartitionKey(Cow<'static, [u8]>);
 
@@ -156,12 +163,12 @@ impl EffectivePartitionKey {
     fn increment_be(&self, mut bytes: Vec<u8>) -> EffectivePartitionKey {
         if bytes.is_empty() {
             // The minimum EPK ("") successor is the smallest representable EPK.
-            return EffectivePartitionKey::from("00");
+            return Self::from_bytes(vec![0x00]);
         }
         for i in (0..bytes.len()).rev() {
             if bytes[i] != 0xFF {
                 bytes[i] += 1;
-                return EffectivePartitionKey::from(bytes_to_hex_upper(&bytes));
+                return Self::from_bytes(bytes);
             }
             bytes[i] = 0x00;
         }
@@ -230,13 +237,13 @@ impl EffectivePartitionKey {
     ) -> crate::error::Result<std::ops::Range<Self>> {
         if pk_values.is_empty() {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY)
+                .with_status(crate::error::status_codes::CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY)
                 .with_message("compute_range called with empty pk_values")
                 .build());
         }
         if pk_values.len() > pk_definition.paths().len() {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
+                .with_status(crate::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
                 .with_message(format!(
                     "more partition key components ({}) than definition paths ({})",
                     pk_values.len(),
@@ -253,7 +260,7 @@ impl EffectivePartitionKey {
             kind == PartitionKeyKind::MultiHash && pk_values.len() < pk_definition.paths().len();
 
         if kind != PartitionKeyKind::MultiHash && pk_values.len() != pk_definition.paths().len() {
-            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH).with_message(format!(
+            return Err(crate::error::CosmosError::builder().with_status(crate::error::status_codes::CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH).with_message(format!(
                     "non-MultiHash containers require exactly as many components ({}) as paths ({})",
                     pk_values.len(),
                     pk_definition.paths().len()
@@ -286,8 +293,6 @@ impl fmt::Display for EffectivePartitionKey {
 /// assert on the exact wire encoding.
 impl PartialEq<str> for EffectivePartitionKey {
     fn eq(&self, other: &str) -> bool {
-        // Parsed strictly, unlike `From<&str>`: that conversion is infallible and
-        // so tolerates a malformed suffix, which would let `MIN == "GG"` hold.
         try_hex_to_bytes(other)
             .is_some_and(|bytes| self.canonical_bytes() == canonical_slice(&bytes))
     }
@@ -300,22 +305,44 @@ impl PartialEq<&str> for EffectivePartitionKey {
     }
 }
 
-impl From<String> for EffectivePartitionKey {
-    /// Parses an upper- or lower-hex EPK string into raw bytes.
-    fn from(s: String) -> Self {
-        Self::from(s.as_str())
+impl TryFrom<String> for EffectivePartitionKey {
+    type Error = CosmosError;
+
+    /// Parses an owned hexadecimal EPK string, preserving all decoded bytes.
+    ///
+    /// Accepts uppercase and lowercase digits, including an empty string for
+    /// [`MIN`](Self::MIN).
+    ///
+    /// # Errors
+    ///
+    /// Returns a bad-request error if the string has an odd length or contains
+    /// a character other than an ASCII hexadecimal digit.
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        Self::try_from(s.as_str())
     }
 }
 
-impl From<&str> for EffectivePartitionKey {
-    /// Parses an upper- or lower-hex EPK string into raw bytes.
+impl TryFrom<&str> for EffectivePartitionKey {
+    type Error = CosmosError;
+
+    /// Parses a hexadecimal EPK string, preserving all decoded bytes.
     ///
-    /// EPK strings always originate as even-length hex (service pkrange/query
-    /// plan bounds, `compute` output, and the `"…FF"` prefix
-    /// sentinel), so a malformed value is a caller bug; `hex_to_bytes` stops at
-    /// the first byte that fails to parse rather than panicking on the wire path.
-    fn from(s: &str) -> Self {
-        Self(Cow::Owned(hex_to_bytes(s)))
+    /// Accepts uppercase and lowercase digits, including an empty string for
+    /// [`MIN`](Self::MIN).
+    ///
+    /// # Errors
+    ///
+    /// Returns a bad-request error if the string has an odd length or contains
+    /// a character other than an ASCII hexadecimal digit.
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        try_hex_to_bytes(s).map(Self::from_bytes).ok_or_else(|| {
+            CosmosError::builder()
+                .with_status(CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
+                .with_message(
+                    "effective partition key must contain an even number of ASCII hexadecimal digits",
+                )
+                .build()
+        })
     }
 }
 
@@ -338,7 +365,7 @@ impl<'de> Deserialize<'de> for EffectivePartitionKey {
         D: serde::Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        Ok(Self::from(s))
+        Self::try_from(s).map_err(serde::de::Error::custom)
     }
 }
 
@@ -487,11 +514,10 @@ pub(crate) fn effective_partition_key_v1_binary(pk_values: &[PartitionKeyValue])
     let mut buffer: Vec<u8> = Vec::new();
     write_number_v1_binary(hash32 as f64, &mut buffer);
 
-    // Truncate string components to MAX_STRING_BYTES_TO_APPEND, matching the
-    // truncation applied during hashing.
+    // Both writers use the same UTF-16-truncated logical strings; only the binary
+    // writer limits their encoded bytes.
     for v in pk_values {
-        v.truncated_for_v1_encoding()
-            .write_for_binary_encoding_v1(&mut buffer);
+        v.write_for_binary_encoding_v1(&mut buffer);
     }
 
     buffer
@@ -517,9 +543,7 @@ fn canonical_slice(bytes: &[u8]) -> &[u8] {
 }
 
 /// Parses a hex EPK string, returning `None` unless *every* character is a hex
-/// digit and the length is even. [`hex_to_bytes`] is deliberately lenient
-/// because [`From<&str>`](EffectivePartitionKey::from) cannot report an error;
-/// use this wherever accepting a malformed string would be a silent match.
+/// digit and the length is even.
 fn try_hex_to_bytes(s: &str) -> Option<Vec<u8>> {
     let bytes = s.as_bytes();
     if !bytes.len().is_multiple_of(2) {
@@ -529,24 +553,6 @@ fn try_hex_to_bytes(s: &str) -> Option<Vec<u8>> {
         .chunks_exact(2)
         .map(|pair| Some((hex_nibble(pair[0])? << 4) | hex_nibble(pair[1])?))
         .collect()
-}
-
-/// Decodes an even-length hex string (upper or lower case) into bytes.
-///
-/// Returns the bytes decoded so far if the input is malformed. EPK strings are
-/// always well-formed, even-length hex in practice, so this lenient handling
-/// only guards against caller bugs without panicking on the wire path. Use
-/// [`try_hex_to_bytes`] where a malformed string must not be accepted.
-fn hex_to_bytes(s: &str) -> Vec<u8> {
-    let bytes = s.as_bytes();
-    let mut out = Vec::with_capacity(bytes.len() / 2);
-    for pair in bytes.chunks_exact(2) {
-        match (hex_nibble(pair[0]), hex_nibble(pair[1])) {
-            (Some(hi), Some(lo)) => out.push((hi << 4) | lo),
-            _ => break,
-        }
-    }
-    out
 }
 
 fn hex_nibble(c: u8) -> Option<u8> {
@@ -559,6 +565,15 @@ fn hex_nibble(c: u8) -> Option<u8> {
 }
 
 #[cfg(test)]
+fn pk_value<T>(value: T) -> PartitionKeyValue
+where
+    T: TryInto<PartitionKeyValue>,
+    T::Error: std::fmt::Debug,
+{
+    value.try_into().expect("valid partition key fixture")
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -567,7 +582,7 @@ mod tests {
     /// otherwise every bound comparison in the driver silently disagrees with
     /// routing.
     #[test]
-    fn equality_and_hashing_agree_with_ordering() {
+    fn equality_and_hashing_agree_with_ordering() -> crate::error::Result<()> {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
 
@@ -586,8 +601,8 @@ mod tests {
         ];
         for (a, b) in cases {
             let (a, b) = (
-                EffectivePartitionKey::from(a),
-                EffectivePartitionKey::from(b),
+                EffectivePartitionKey::try_from(a)?,
+                EffectivePartitionKey::try_from(b)?,
             );
             assert_eq!(a.cmp(&b), std::cmp::Ordering::Equal, "{a:?} vs {b:?}");
             assert_eq!(a, b, "equality must follow `Ord`");
@@ -595,19 +610,20 @@ mod tests {
         }
 
         // Padding is only insignificant when it is zero.
-        let a = EffectivePartitionKey::from("80");
-        let b = EffectivePartitionKey::from("8001");
+        let a = EffectivePartitionKey::try_from("80")?;
+        let b = EffectivePartitionKey::try_from("8001")?;
         assert_ne!(a.cmp(&b), std::cmp::Ordering::Equal);
         assert_ne!(a, b);
+        Ok(())
     }
 
     /// The `str` comparisons must agree with `PartialEq<Self>`, or a caller
     /// string-comparing a service-supplied bound gets an answer contradicting
     /// every `Ord`-based routing decision in the driver.
     #[test]
-    fn string_equality_agrees_with_self_equality() {
-        let padded = EffectivePartitionKey::from("8000");
-        let trimmed = EffectivePartitionKey::from("80");
+    fn string_equality_agrees_with_self_equality() -> crate::error::Result<()> {
+        let padded = EffectivePartitionKey::try_from("8000")?;
+        let trimmed = EffectivePartitionKey::try_from("80")?;
         assert_eq!(padded, trimmed);
         for probe in ["80", "8000", "800000"] {
             assert_eq!(padded, probe, "padded vs {probe}");
@@ -616,14 +632,13 @@ mod tests {
         assert_ne!(padded, "8001");
         // The wire encoding is still reachable when it is what you want.
         assert_eq!(padded.to_hex(), "8000");
+        Ok(())
     }
 
-    /// `From<&str>` is infallible and so silently truncates at the first
-    /// non-hex pair. String equality must not inherit that, or a malformed
-    /// boundary would compare equal to a valid one.
+    /// Malformed boundaries must not compare equal to valid keys.
     #[test]
-    fn string_equality_rejects_malformed_hex() {
-        let epk = EffectivePartitionKey::from("80");
+    fn string_equality_rejects_malformed_hex() -> crate::error::Result<()> {
+        let epk = EffectivePartitionKey::try_from("80")?;
         assert_ne!(epk, *"80ZZ", "a bad suffix must not be truncated away");
         assert_ne!(epk, *"8", "an odd nibble count is not a valid EPK");
         assert_ne!(
@@ -637,12 +652,79 @@ mod tests {
         assert_eq!(epk, *"8000");
         assert_eq!(epk, *"80");
         assert_eq!(epk, *"8000000000");
-        assert_eq!(EffectivePartitionKey::from("3aab"), *"3AAB");
+        assert_eq!(EffectivePartitionKey::try_from("3aab")?, *"3AAB");
         // Probe-side lowercase: the previous `to_hex() == other` impl compared
         // against uppercase output and would have rejected this.
-        assert_eq!(EffectivePartitionKey::from("3AAB"), *"3aab");
+        assert_eq!(EffectivePartitionKey::try_from("3AAB")?, *"3aab");
         assert_eq!(EffectivePartitionKey::MIN, *"");
         assert_eq!(EffectivePartitionKey::MIN, *"0000");
+        Ok(())
+    }
+
+    #[test]
+    fn string_conversions_preserve_wire_bytes() -> Result<(), Box<dyn std::error::Error>> {
+        for text in [
+            "",
+            "FF",
+            "ff",
+            "00",
+            "4080",
+            "3aAb",
+            "800000",
+            "1631FF",
+            "0102030405",
+        ] {
+            let borrowed = EffectivePartitionKey::try_from(text)?;
+            let owned = EffectivePartitionKey::try_from(text.to_owned())?;
+            assert_eq!(borrowed.as_bytes(), owned.as_bytes());
+            assert_eq!(borrowed.to_hex(), text.to_ascii_uppercase());
+            assert_eq!(borrowed.to_string(), text.to_ascii_uppercase());
+            let json = serde_json::to_string(&borrowed)?;
+            assert_eq!(json, serde_json::to_string(&text.to_ascii_uppercase())?);
+            let decoded: EffectivePartitionKey = serde_json::from_str(&json)?;
+            assert_eq!(decoded.as_bytes(), borrowed.as_bytes());
+            let lowercase: EffectivePartitionKey =
+                serde_json::from_str(&serde_json::to_string(text)?)?;
+            assert_eq!(lowercase.as_bytes(), borrowed.as_bytes());
+        }
+        assert_eq!(
+            EffectivePartitionKey::try_from("")?,
+            EffectivePartitionKey::MIN
+        );
+        assert_eq!(
+            EffectivePartitionKey::try_from("FF")?,
+            EffectivePartitionKey::MAX
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn string_conversions_reject_malformed_bounds() -> Result<(), Box<dyn std::error::Error>> {
+        let mut message = None;
+        for text in [
+            "4", "408", "GG", "40G0", "4080GG", "4080x", "é", "4080é", "😀", "８０", " 80", "80\n",
+        ] {
+            for result in [
+                EffectivePartitionKey::try_from(text),
+                EffectivePartitionKey::try_from(text.to_owned()),
+            ] {
+                let error = match result {
+                    Err(error) => error,
+                    Ok(epk) => return Err(format!("malformed EPK accepted: {epk}").into()),
+                };
+                assert_eq!(
+                    error.status().status_code(),
+                    azure_core::http::StatusCode::BadRequest
+                );
+                match &message {
+                    Some(expected) => assert_eq!(&error.to_string(), expected),
+                    None => message = Some(error.to_string()),
+                }
+            }
+            let json = serde_json::to_string(text)?;
+            assert!(serde_json::from_str::<EffectivePartitionKey>(&json).is_err());
+        }
+        Ok(())
     }
 
     /// Coarsening equality creates an obligation that operations respect the
@@ -651,9 +733,9 @@ mod tests {
     /// so the asymmetry stays a reviewed property rather than a latent trap;
     /// `normalized_successor` is the congruent form when the width is known.
     #[test]
-    fn successor_is_deliberately_not_congruent_with_equality() {
-        let padded = EffectivePartitionKey::from("8000");
-        let trimmed = EffectivePartitionKey::from("80");
+    fn successor_is_deliberately_not_congruent_with_equality() -> crate::error::Result<()> {
+        let padded = EffectivePartitionKey::try_from("8000")?;
+        let trimmed = EffectivePartitionKey::try_from("80")?;
         assert_eq!(padded, trimmed, "the inputs are the same key");
         assert_eq!(padded.successor().to_hex(), "8001");
         assert_eq!(trimmed.successor().to_hex(), "81");
@@ -664,6 +746,7 @@ mod tests {
             padded.normalized_successor(2),
             trimmed.normalized_successor(2)
         );
+        Ok(())
     }
 
     /// The `0xFF` prefix sentinel from `prefix_range_end_bytes` is the one
@@ -671,59 +754,73 @@ mod tests {
     /// must leave it alone — collapsing it would merge an HPK prefix range's
     /// exclusive end into its own start.
     #[test]
-    fn prefix_sentinel_is_not_collapsed_by_canonicalization() {
-        let prefix = EffectivePartitionKey::from("1631");
+    fn prefix_sentinel_is_not_collapsed_by_canonicalization() -> crate::error::Result<()> {
+        let prefix = EffectivePartitionKey::try_from("1631")?;
         let sentinel = EffectivePartitionKey::from_bytes(prefix_range_end_bytes(prefix.as_bytes()));
         assert_eq!(sentinel.to_hex(), "1631FF");
         assert!(prefix < sentinel, "the sentinel must order strictly after");
         assert_ne!(prefix, sentinel);
         // Zero padding on the same prefix stays equal, unlike the sentinel.
-        assert_eq!(prefix, EffectivePartitionKey::from("16310000"));
+        assert_eq!(prefix, EffectivePartitionKey::try_from("16310000")?);
+        Ok(())
     }
 
     #[test]
-    fn successor_increments_last_digit() {
-        assert_eq!(EffectivePartitionKey::from("30").successor().to_hex(), "31");
+    fn successor_increments_last_digit() -> crate::error::Result<()> {
         assert_eq!(
-            EffectivePartitionKey::from("3AAB").successor().to_hex(),
+            EffectivePartitionKey::try_from("30")?.successor().to_hex(),
+            "31"
+        );
+        assert_eq!(
+            EffectivePartitionKey::try_from("3AAB")?
+                .successor()
+                .to_hex(),
             "3AAC"
         );
+        Ok(())
     }
 
     #[test]
-    fn successor_carries_across_trailing_ff() {
+    fn successor_carries_across_trailing_ff() -> crate::error::Result<()> {
         // Last byte 0xFF rolls to 0x00 and carries into the previous byte.
         assert_eq!(
-            EffectivePartitionKey::from("3AFF").successor().to_hex(),
+            EffectivePartitionKey::try_from("3AFF")?
+                .successor()
+                .to_hex(),
             "3B00"
         );
         // Multiple trailing 0xFF bytes all carry.
         assert_eq!(
-            EffectivePartitionKey::from("01FFFF").successor().to_hex(),
+            EffectivePartitionKey::try_from("01FFFF")?
+                .successor()
+                .to_hex(),
             "020000"
         );
+        Ok(())
     }
 
     #[test]
-    fn successor_is_strictly_greater_and_width_preserving() {
-        let a = EffectivePartitionKey::from("22E342F38A486A088463DFF7838A5963");
+    fn successor_is_strictly_greater_and_width_preserving() -> crate::error::Result<()> {
+        let a = EffectivePartitionKey::try_from("22E342F38A486A088463DFF7838A5963")?;
         let next = a.successor();
         assert_eq!(next.to_hex(), "22E342F38A486A088463DFF7838A5964");
         assert_eq!(next.to_hex().len(), a.to_hex().len());
         assert!(next > a);
+        Ok(())
     }
 
     #[test]
-    fn successor_handles_hpk_width() {
+    fn successor_handles_hpk_width() -> crate::error::Result<()> {
         // A full hierarchical (MultiHash) EPK is 64 hex chars; the successor is
         // width-preserving and only touches the final component.
         let hpk = "06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000";
-        let next = EffectivePartitionKey::from(hpk).successor();
+        let next = EffectivePartitionKey::try_from(hpk)?.successor();
         assert_eq!(
             next.to_hex(),
             "06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000001"
         );
         assert_eq!(next.to_hex().len(), 64);
+        Ok(())
     }
 
     #[test]
@@ -732,7 +829,7 @@ mod tests {
     }
 
     #[test]
-    fn normalized_successor_zero_extends_then_increments() {
+    fn normalized_successor_zero_extends_then_increments() -> crate::error::Result<()> {
         // A trailing-zero-trimmed EPK ("3A" for a 16-byte hash) is padded to
         // full width with 0x00 before the increment, so the successor bumps the
         // real last byte position, not the trimmed one.
@@ -741,39 +838,44 @@ mod tests {
         expected[15] = 0x01;
         let expected_hex: String = expected.iter().map(|b| format!("{:02X}", b)).collect();
         assert_eq!(
-            EffectivePartitionKey::from("3A")
+            EffectivePartitionKey::try_from("3A")?
                 .normalized_successor(16)
                 .to_hex(),
             expected_hex
         );
+        Ok(())
     }
 
     #[test]
-    fn normalized_successor_is_noop_pad_for_full_width_key() {
+    fn normalized_successor_is_noop_pad_for_full_width_key() -> crate::error::Result<()> {
         // When the EPK is already at (or beyond) the normalized width, no
         // padding is applied and the result equals the plain successor.
-        let full = EffectivePartitionKey::from("22E342F38A486A088463DFF7838A5963");
+        let full = EffectivePartitionKey::try_from("22E342F38A486A088463DFF7838A5963")?;
         assert_eq!(
             full.normalized_successor(16).to_hex(),
             full.successor().to_hex()
         );
+        Ok(())
     }
 
     #[test]
-    fn normalized_successor_hpk_pads_to_multi_component_width() {
+    fn normalized_successor_hpk_pads_to_multi_component_width() -> crate::error::Result<()> {
         // Hierarchical (MultiHash, 2 paths) width is 32 bytes; a value carrying
         // only the first component is zero-extended across both before +1.
         let first_component = "06AB34CFE4E482236BCACBBF50E234AB";
-        let mut expected = hex_to_bytes(first_component);
+        let mut expected = EffectivePartitionKey::try_from(first_component)?
+            .as_bytes()
+            .to_vec();
         expected.resize(32, 0x00);
         expected[31] = 0x01;
         let expected_hex: String = expected.iter().map(|b| format!("{:02X}", b)).collect();
         assert_eq!(
-            EffectivePartitionKey::from(first_component)
+            EffectivePartitionKey::try_from(first_component)?
                 .normalized_successor(32)
                 .to_hex(),
             expected_hex
         );
+        Ok(())
     }
 
     #[test]
@@ -793,7 +895,7 @@ mod tests {
     }
 
     #[test]
-    fn normalized_successor_encodes_the_planner_algorithm_end_to_end() {
+    fn normalized_successor_encodes_the_planner_algorithm_end_to_end() -> crate::error::Result<()> {
         // Encodes the exact normalization the planner applies to an equality /
         // `IN` point: derive the container's full EPK width from its PK
         // definition, then take the width-normalized successor of a
@@ -809,7 +911,7 @@ mod tests {
         expected[len - 1] = 0x01;
         let expected_hex: String = expected.iter().map(|b| format!("{:02X}", b)).collect();
         assert_eq!(
-            EffectivePartitionKey::from("3A")
+            EffectivePartitionKey::try_from("3A")?
                 .normalized_successor(len)
                 .to_hex(),
             expected_hex
@@ -822,16 +924,19 @@ mod tests {
         let hpk_len = normalized_epk_len(&hpk).unwrap();
         assert_eq!(hpk_len, 48);
         let first_component = "06AB34CFE4E482236BCACBBF50E234AB";
-        let mut expected = hex_to_bytes(first_component);
+        let mut expected = EffectivePartitionKey::try_from(first_component)?
+            .as_bytes()
+            .to_vec();
         expected.resize(hpk_len, 0x00);
         expected[hpk_len - 1] = 0x01;
         let expected_hex: String = expected.iter().map(|b| format!("{:02X}", b)).collect();
         assert_eq!(
-            EffectivePartitionKey::from(first_component)
+            EffectivePartitionKey::try_from(first_component)?
                 .normalized_successor(hpk_len)
                 .to_hex(),
             expected_hex
         );
+        Ok(())
     }
 
     #[test]
@@ -879,44 +984,32 @@ mod tests {
                 PartitionKeyValue::from(false),
                 "2FE1BE91E90A3439635E0E9E37361EF2",
             ),
+            (pk_value(-128f64), "01DAEDABF913540367FE219B2AD06148"),
+            (pk_value(127f64), "0C507ACAC853ECA7977BF4CEFB562A25"),
             (
-                PartitionKeyValue::from(-128f64),
-                "01DAEDABF913540367FE219B2AD06148",
-            ),
-            (
-                PartitionKeyValue::from(127f64),
-                "0C507ACAC853ECA7977BF4CEFB562A25",
-            ),
-            (
-                PartitionKeyValue::from(i64::MIN as f64),
+                pk_value(i64::MIN as f64),
                 "23D5C6395512BDFEAFADAD15328AD2BB",
             ),
             (
-                PartitionKeyValue::from(i64::MAX as f64),
+                pk_value(i64::MAX as f64),
                 "2EDB959178DFCCA18983F89384D1629B",
             ),
             (
-                PartitionKeyValue::from(i32::MIN as f64),
+                pk_value(i32::MIN as f64),
                 "0B1660D5233C3171725B30D4A5F4CC1F",
             ),
             (
-                PartitionKeyValue::from(i32::MAX as f64),
+                pk_value(i32::MAX as f64),
                 "2D9349D64712AEB5EB1406E2F0BE2725",
             ),
             (
-                PartitionKeyValue::from(f64::from_bits(0x1)),
+                pk_value(f64::from_bits(0x1)),
                 "0E6CBA63A280927DE485DEF865800139",
             ),
+            (pk_value(f64::MAX), "31424D996457102634591FF245DBCC4D"),
+            (pk_value(5.0f64), "19C08621B135968252FB34B4CF66F811"),
             (
-                PartitionKeyValue::from(f64::MAX),
-                "31424D996457102634591FF245DBCC4D",
-            ),
-            (
-                PartitionKeyValue::from(5.0f64),
-                "19C08621B135968252FB34B4CF66F811",
-            ),
-            (
-                PartitionKeyValue::from(5.123_124_190_509_124f64),
+                pk_value(5.123_124_190_509_124f64),
                 "0EF2E2D82460884AF0F6440BE4F726A8",
             ),
             (
@@ -944,7 +1037,7 @@ mod tests {
     #[test]
     fn effective_partition_key_hash_v2_multiple_keys() {
         let components = vec![
-            PartitionKeyValue::from(5.0f64),
+            pk_value(5.0f64),
             PartitionKeyValue::from("redmond".to_string()),
             PartitionKeyValue::from(true),
             PartitionKeyValue::from(None::<String>),
@@ -957,6 +1050,102 @@ mod tests {
             PartitionKeyVersion::V2,
         );
         assert_eq!(actual.to_hex(), expected);
+    }
+
+    #[test]
+    fn v1_string_utf16_and_binary_boundaries() {
+        let cases = [
+            (
+                format!("tenant\0{}\u{e9}", "a".repeat(91)),
+                "05C1EFBD31E1740875666F626F750162626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262C4AA00",
+            ),
+            (
+                format!("tenant\0{}\u{e9}", "a".repeat(92)),
+                "05C1C7CDE1BBB00875666F626F75016262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262C4AA",
+            ),
+            (
+                format!("tenant\0{}\u{e9}z", "a".repeat(92)),
+                "05C1C7CDE1BBB00875666F626F75016262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262C4AA",
+            ),
+            (
+                format!("{}\u{1f600}", "a".repeat(97)),
+                "05C1C973BF79680862626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262F1A09981",
+            ),
+            (
+                format!("{}\u{1f600}", "a".repeat(98)),
+                "05C1DD87B7E74C086262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262F1A099",
+            ),
+            (
+                format!("{}\u{1f600}", "a".repeat(99)),
+                "05C1E153DB455808626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262F0C0",
+            ),
+            (
+                format!("{}\u{1f600}", "a".repeat(100)),
+                "05C1EB5921F706086262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626200",
+            ),
+            (
+                format!("{}\u{20ac}", "a".repeat(99)),
+                "05C1D747E54D9008626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262E383",
+            ),
+        ];
+        for (text, expected) in cases {
+            let actual = EffectivePartitionKey::compute(
+                &[PartitionKeyValue::from(text.clone())],
+                PartitionKeyKind::Hash,
+                PartitionKeyVersion::V1,
+            );
+            assert_eq!(actual.to_hex(), expected, "{text:?}");
+        }
+    }
+
+    #[test]
+    fn v1_non_latin_managed_native_expected_values() {
+        let text = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя".repeat(4);
+        let cases = [
+            (49, "05C1C1BD37FE08D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D281D282D283D284D285D286D287D288D289D28AD28BD28CD28DD28ED28FD290D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BF00"),
+            (50, "05C1B339EF472008D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D281D282D283D284D285D286D287D288D289D28AD28BD28CD28DD28ED28FD290D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C000"),
+            (51, "05C1EB1F29DBFA08D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D281D282D283D284D285D286D287D288D289D28AD28BD28CD28DD28ED28FD290D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D2"),
+            (99, "05C1E72F79C71608D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D281D282D283D284D285D286D287D288D289D28AD28BD28CD28DD28ED28FD290D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D2"),
+            (100, "05C1E3653D9F3E08D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D281D282D283D284D285D286D287D288D289D28AD28BD28CD28DD28ED28FD290D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D2"),
+            (101, "05C1E3653D9F3E08D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D281D282D283D284D285D286D287D288D289D28AD28BD28CD28DD28ED28FD290D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D2"),
+        ];
+        for (length, expected) in cases {
+            let value = text.chars().take(length).collect::<String>();
+            let actual = EffectivePartitionKey::compute(
+                &[PartitionKeyValue::from(value)],
+                PartitionKeyKind::Hash,
+                PartitionKeyVersion::V1,
+            );
+            assert_eq!(actual.to_hex(), expected, "UTF-16 length {length}");
+        }
+    }
+
+    #[test]
+    fn non_v1_hashing_retains_full_unicode_strings() {
+        let cases = [
+            (
+                format!("tenant\0{}\u{e9}z", "a".repeat(92)),
+                "3C0D04FB07AECB6B45A1592465FDFAA7",
+            ),
+            (
+                format!("{}\u{1f600}", "a".repeat(99)),
+                "3DCDC7ABFC5BF49867B328ECDB14F0BF",
+            ),
+        ];
+        for (text, expected) in cases {
+            for kind in [
+                PartitionKeyKind::Hash,
+                PartitionKeyKind::MultiHash,
+                PartitionKeyKind::Range,
+            ] {
+                let actual = EffectivePartitionKey::compute(
+                    &[PartitionKeyValue::from(text.clone())],
+                    kind,
+                    PartitionKeyVersion::V2,
+                );
+                assert_eq!(actual.to_hex(), expected, "{kind:?}: {text:?}");
+            }
+        }
     }
 
     /// V1 hash test cases.
@@ -990,35 +1179,35 @@ mod tests {
                 "05C1DB857D857C02",
             ),
             (
-                PartitionKeyValue::from(-128f64),
+                pk_value(-128f64),
                 "05C1D73349F54C053FA0",
             ),
             (
-                PartitionKeyValue::from(127f64),
+                pk_value(127f64),
                 "05C1DD539DDFCC05C05FE0",
             ),
             (
-                PartitionKeyValue::from(i64::MIN as f64),
+                pk_value(i64::MIN as f64),
                 "05C1DB35F33D1C053C20",
             ),
             (
-                PartitionKeyValue::from(i64::MAX as f64),
+                pk_value(i64::MAX as f64),
                 "05C1B799AB2DD005C3E0",
             ),
             (
-                PartitionKeyValue::from(i32::MIN as f64),
+                pk_value(i32::MIN as f64),
                 "05C1DFBF252BCC053E20",
             ),
             (
-                PartitionKeyValue::from(i32::MAX as f64),
+                pk_value(i32::MAX as f64),
                 "05C1E1F503DFB205C1DFFFFFFFFC",
             ),
             (
-                PartitionKeyValue::from(f64::from_bits(0x1)),
+                pk_value(f64::from_bits(0x1)),
                 "05C1E5C91F4D3005800101010101010102",
             ),
             (
-                PartitionKeyValue::from(f64::MAX),
+                pk_value(f64::MAX),
                 "05C1CBE367C53005FFEFFFFFFFFFFFFFFE",
             ),
         ];
@@ -1097,7 +1286,7 @@ mod tests {
     fn multi_hash_two_components() {
         let pk = vec![
             PartitionKeyValue::from("redmond".to_string()),
-            PartitionKeyValue::from(5.0f64),
+            pk_value(5.0f64),
         ];
         let multi = EffectivePartitionKey::compute(
             &pk,
@@ -1172,7 +1361,7 @@ mod tests {
     #[test]
     fn multi_hash_differs_from_single_hash() {
         let pk = vec![
-            PartitionKeyValue::from(5.0f64),
+            pk_value(5.0f64),
             PartitionKeyValue::from("redmond".to_string()),
             PartitionKeyValue::from(true),
             PartitionKeyValue::from(None::<String>),
@@ -1288,40 +1477,178 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod conformance_tests {
+    use super::{pk_value, EffectivePartitionKey};
+    use crate::models::{PartitionKey, PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion};
+    use serde::Deserialize;
+    use std::collections::{BTreeMap, BTreeSet};
+
+    const FIXTURES: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/EffectivePartitionKeyConformance.json"
+    ));
+
+    #[derive(Deserialize)]
+    struct FixtureSet {
+        schema_version: u8,
+        sources: BTreeMap<String, FixtureSource>,
+        cases: Vec<FixtureCase>,
+    }
+
+    #[derive(Deserialize)]
+    struct FixtureSource {
+        repository: String,
+        commit: String,
+        path: String,
+        notes: String,
+    }
+
+    #[derive(Deserialize)]
+    struct FixtureCase {
+        id: String,
+        source: String,
+        kind: FixtureKind,
+        version: u8,
+        values: Vec<FixtureValue>,
+        expected_epk: String,
+    }
+
+    #[derive(Clone, Copy, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    enum FixtureKind {
+        Hash,
+        MultiHash,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(tag = "type", rename_all = "snake_case")]
+    enum FixtureValue {
+        Undefined,
+        Null,
+        Bool { value: bool },
+        Number { value: String },
+        String { value: String },
+        RepeatedString { value: String, count: usize },
+    }
+
+    impl FixtureValue {
+        fn into_partition_key_value(self) -> PartitionKeyValue {
+            match self {
+                Self::Undefined => PartitionKeyValue::UNDEFINED,
+                Self::Null => PartitionKeyValue::NULL,
+                Self::Bool { value } => value.into(),
+                Self::Number { value } => {
+                    pk_value(value.parse::<f64>().unwrap_or_else(|error| {
+                        panic!("invalid fixture number {value:?}: {error}")
+                    }))
+                }
+                Self::String { value } => value.into(),
+                Self::RepeatedString { value, count } => value.repeat(count).into(),
+            }
+        }
+    }
+
+    #[test]
+    fn cross_sdk_final_effective_partition_keys_match_production_pipeline(
+    ) -> crate::error::Result<()> {
+        let fixtures: FixtureSet =
+            serde_json::from_str(FIXTURES).expect("EPK conformance fixture must be valid JSON");
+
+        assert_eq!(fixtures.schema_version, 1);
+        assert!(!fixtures.cases.is_empty());
+
+        for source in fixtures.sources.values() {
+            assert!(!source.repository.is_empty());
+            assert!(
+                source.commit.len() == 40 && source.commit.chars().all(|c| c.is_ascii_hexdigit()),
+                "fixture source commits must be full Git SHAs"
+            );
+            assert!(!source.path.is_empty());
+            assert!(!source.notes.is_empty());
+        }
+
+        let mut ids = BTreeSet::new();
+        for case in fixtures.cases {
+            assert!(
+                ids.insert(case.id.clone()),
+                "duplicate fixture ID {}",
+                case.id
+            );
+            assert!(
+                fixtures.sources.contains_key(&case.source),
+                "{} references unknown source {}",
+                case.id,
+                case.source
+            );
+            assert_eq!(
+                case.expected_epk,
+                case.expected_epk.to_ascii_uppercase(),
+                "{} must store the final EPK as uppercase hex",
+                case.id
+            );
+            EffectivePartitionKey::try_from(case.expected_epk.as_str())?;
+
+            let kind = match case.kind {
+                FixtureKind::Hash => PartitionKeyKind::Hash,
+                FixtureKind::MultiHash => PartitionKeyKind::MultiHash,
+            };
+            let version = match case.version {
+                1 => PartitionKeyVersion::V1,
+                2 => PartitionKeyVersion::V2,
+                other => panic!("{} uses unsupported PK version {other}", case.id),
+            };
+            assert!(!case.values.is_empty(), "{} has no PK components", case.id);
+            assert!(
+                case.values.len() <= 3,
+                "{} has too many PK components",
+                case.id
+            );
+            assert!(
+                !matches!(
+                    (kind, version),
+                    (PartitionKeyKind::MultiHash, PartitionKeyVersion::V1)
+                ),
+                "{} declares unsupported MultiHash V1",
+                case.id
+            );
+            let partition_key = PartitionKey::try_from(
+                case.values
+                    .into_iter()
+                    .map(FixtureValue::into_partition_key_value)
+                    .collect::<Vec<_>>(),
+            )
+            .expect("valid partition key fixture");
+            let actual = EffectivePartitionKey::compute(partition_key.values(), kind, version);
+
+            assert_eq!(
+                actual.to_hex(),
+                case.expected_epk,
+                "{} from {}",
+                case.id,
+                case.source
+            );
+        }
+        Ok(())
+    }
+}
+
+/// Raw MurmurHash baseline tests, intentionally separate from final EPK
+/// conformance.
 ///
-/// These tests operate at two levels:
-///
-/// 1. **Full production pipeline** ([`EffectivePartitionKey::compute`]):
-///    For values representable as [`PartitionKeyValue`] (no edge-cases like
-///    NaN, ±Infinity, −0.0), the test calls `EffectivePartitionKey::compute`
-///    to exercise the complete PK → EPK pipeline.  For single-hash keys this
-///    covers encoding, hashing, V2 masking, and V1 binary encoding.  For
-///    multi-hash (hierarchical PK) keys, it exercises per-component V2
-///    hashing with per-component masking (V1 MultiHash does not exist).
-///    V2 results are compared against the Go baseline hash with top-2-bit
-///    masking applied.  V1 results cannot be directly compared to Go's V1
-///    hash format (which is a zero-padded 32-bit hash, not the full V1 EPK),
-///    so the V1 pipeline is exercised for correctness and separately checked
-///    by the `effective_partition_key_hash_v1` unit test.
-///
-/// 2. **Raw MurmurHash baseline** (encoding + hash, no masking/truncation):
-///    Verifies that the byte encoding of each value type and the MurmurHash
-///    implementation match the cross-SDK baselines.  These use the canonical
-///    byte encoding (without V1 100-byte string truncation or V2 top-2-bit
-///    masking) so that the raw hash outputs are comparable across SDKs.
-///    Edge-case values that [`PartitionKeyValue`] cannot represent (Undefined,
-///    NaN, ±Infinity, −0.0) are encoded directly at this level only.
-///
-/// See: <https://github.com/Azure/azure-sdk-for-go/blob/main/sdk/data/azcosmos/internal/epk/epk_test.go>
+/// These verify that value encoding and the MurmurHash implementations match
+/// the Go cross-SDK baselines. The fixtures store raw hashes, so these tests do
+/// not apply V1 string truncation, V2 masking, or final V1 binary encoding.
+/// Final wire EPKs are covered by `conformance_tests`.
 #[cfg(test)]
 mod baseline_tests {
+    use super::pk_value;
     use crate::models::murmur_hash::{murmurhash3_128, murmurhash3_32};
-    use crate::models::{PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion};
+    use crate::models::PartitionKeyValue;
     use quick_xml::events::Event;
     use quick_xml::Reader;
     use std::fmt::Write;
-
-    use super::EffectivePartitionKey;
 
     // Embed XML test data within the test module so it's absent from product binaries.
     const SINGLETONS_XML: &str =
@@ -1337,14 +1664,11 @@ mod baseline_tests {
     /// A parsed baseline test value.
     ///
     /// Normal values are stored as real `PartitionKeyValue` and use the production
-    /// encoding path.  Edge-case values that `PartitionKeyValue` cannot represent
-    /// (Undefined, NaN, ±Infinity, -0.0) are handled with minimal inline encoding.
+    /// encoding path. Edge-case numbers that `PartitionKeyValue` cannot represent
+    /// (NaN, +/-Infinity, -0.0) are handled with minimal inline encoding.
     enum ParsedValue {
         /// A value representable as a real `PartitionKeyValue`.
         Value(PartitionKeyValue),
-        /// The Undefined sentinel (byte `0x00`).  Not a valid partition key value
-        /// in the production pipeline.
-        Undefined,
         /// A number that `PartitionKeyValue` would normalize or reject:
         /// NaN, ±Infinity, and -0.0.  Encoded as raw float bytes.
         RawNumber(f64),
@@ -1353,7 +1677,7 @@ mod baseline_tests {
     /// Parse the XML `PartitionKeyValue` field into test values, matching Go's `parseValues`.
     fn parse_values(raw: &str) -> Vec<ParsedValue> {
         if raw == "UNDEFINED" {
-            return vec![ParsedValue::Undefined];
+            return vec![ParsedValue::Value(PartitionKeyValue::UNDEFINED)];
         }
         if raw.starts_with('[') && raw.ends_with(']') {
             let inner = &raw[1..raw.len() - 1];
@@ -1391,7 +1715,7 @@ mod baseline_tests {
                 if n == 0.0 && n.is_sign_negative() {
                     ParsedValue::RawNumber(n)
                 } else {
-                    ParsedValue::Value(PartitionKeyValue::from(n))
+                    ParsedValue::Value(pk_value(n))
                 }
             }
         }
@@ -1405,12 +1729,10 @@ mod baseline_tests {
     /// [`PartitionKeyValue::write_for_hashing_v2`] and fixes up the string
     /// suffix byte from `0xFF` to `0x00`.  We cannot use the production
     /// [`PartitionKeyValue::write_for_hashing_v1`] here because it truncates
-    /// strings at 100 bytes, whereas the cross-SDK baselines use the full
+    /// strings at 100 UTF-16 units, whereas the cross-SDK baselines use the full
     /// canonical encoding (no truncation) so that the raw hash outputs are
     /// comparable.  Non-string types produce identical bytes for V1 and V2.
     ///
-    /// The production V1 pipeline (with truncation) is tested separately via
-    /// [`EffectivePartitionKey::compute`] in `run_baseline`.
     fn encode_v1(pv: &ParsedValue, buf: &mut Vec<u8>) {
         match pv {
             ParsedValue::Value(v) => {
@@ -1422,7 +1744,6 @@ mod baseline_tests {
                     *buf.last_mut().unwrap() = 0x00;
                 }
             }
-            ParsedValue::Undefined => buf.push(0x00),
             ParsedValue::RawNumber(f) => {
                 buf.push(0x05); // NUMBER marker
                 buf.extend_from_slice(&f.to_le_bytes());
@@ -1437,7 +1758,6 @@ mod baseline_tests {
     fn encode_v2(pv: &ParsedValue, buf: &mut Vec<u8>) {
         match pv {
             ParsedValue::Value(v) => v.write_for_hashing_v2(buf),
-            ParsedValue::Undefined => buf.push(0x00),
             ParsedValue::RawNumber(f) => {
                 buf.push(0x05); // NUMBER marker
                 buf.extend_from_slice(&f.to_le_bytes());
@@ -1571,27 +1891,6 @@ mod baseline_tests {
         s
     }
 
-    // -- Test runner --
-
-    /// Derives the expected V2 EPK from a Go baseline V2 hash.
-    ///
-    /// The Go baseline V2 hash is the raw reversed MurmurHash3-128.  The Rust
-    /// EPK pipeline clears the top two bits: `byte[0] &= 0x3F`.
-    fn apply_v2_masking(raw_v2_hash: &str) -> String {
-        let first_byte = u8::from_str_radix(&raw_v2_hash[..2], 16).unwrap();
-        let masked = first_byte & 0x3F;
-        format!("{masked:02X}{}", &raw_v2_hash[2..])
-    }
-
-    /// Applies V2 masking to each 32-char component of a multi-hash EPK.
-    fn apply_v2_masking_per_component(raw_v2_hash: &str) -> String {
-        let mut result = String::with_capacity(raw_v2_hash.len());
-        for chunk in raw_v2_hash.as_bytes().chunks(32) {
-            result.push_str(&apply_v2_masking(std::str::from_utf8(chunk).unwrap()));
-        }
-        result
-    }
-
     fn run_baseline(xml: &str, multi_hash: bool) {
         let cases = parse_baseline_xml(xml);
         assert!(!cases.is_empty(), "no test cases parsed from XML");
@@ -1599,75 +1898,6 @@ mod baseline_tests {
         for tc in &cases {
             let values = parse_values(&tc.partition_key_value);
 
-            // --- Full production pipeline (EffectivePartitionKey::compute) ---
-            //
-            // For values representable as PartitionKeyValue (no edge-cases like
-            // NaN, ±Infinity, -0.0), run the complete PK → EPK pipeline and
-            // compare against the Go baseline with V2 masking applied.
-            if values.iter().all(|v| matches!(v, ParsedValue::Value(_))) {
-                let pk_values: Vec<PartitionKeyValue> = values
-                    .iter()
-                    .map(|v| match v {
-                        ParsedValue::Value(v) => v.clone(),
-                        _ => unreachable!(),
-                    })
-                    .collect();
-
-                if multi_hash {
-                    // MultiHash V2: per-component hashing, each component masked independently.
-                    let v2_epk = EffectivePartitionKey::compute(
-                        &pk_values,
-                        PartitionKeyKind::MultiHash,
-                        PartitionKeyVersion::V2,
-                    );
-                    let expected_v2 = apply_v2_masking_per_component(&tc.v2_hash);
-                    assert_eq!(
-                        v2_epk.to_hex(),
-                        expected_v2,
-                        "V2 MultiHash full pipeline mismatch for {} (value: {})",
-                        tc.description,
-                        tc.partition_key_value,
-                    );
-                    // V1 MultiHash does not exist in Cosmos DB; skip V1 pipeline.
-                } else {
-                    // Single-hash V2: one hash of all components, masked once.
-                    let v2_epk = EffectivePartitionKey::compute(
-                        &pk_values,
-                        PartitionKeyKind::Hash,
-                        PartitionKeyVersion::V2,
-                    );
-                    let expected_v2 = apply_v2_masking(&tc.v2_hash);
-                    assert_eq!(
-                        v2_epk.to_hex(),
-                        expected_v2,
-                        "V2 full pipeline mismatch for {} (value: {})",
-                        tc.description,
-                        tc.partition_key_value,
-                    );
-
-                    // V1: Exercise the production V1 pipeline (with 100-byte string
-                    // truncation and binary EPK encoding).  The V1 EPK format
-                    // differs from Go's V1 hash format, so we verify the pipeline
-                    // completes and produces a non-empty hex string.
-                    let v1_epk = EffectivePartitionKey::compute(
-                        &pk_values,
-                        PartitionKeyKind::Hash,
-                        PartitionKeyVersion::V1,
-                    );
-                    assert!(
-                        !v1_epk.to_hex().is_empty(),
-                        "V1 full pipeline produced empty EPK for {} (value: {})",
-                        tc.description,
-                        tc.partition_key_value,
-                    );
-                }
-            }
-
-            // --- Cross-SDK raw hash baseline ---
-            //
-            // Verifies byte encoding + MurmurHash correctness against the same
-            // cross-SDK baselines. Uses canonical
-            // encoding (no V1 truncation, no V2 masking) so raw hashes match.
             let actual_v1 = compute_v1_baseline(&values);
             assert_eq!(
                 actual_v1, tc.v1_hash,

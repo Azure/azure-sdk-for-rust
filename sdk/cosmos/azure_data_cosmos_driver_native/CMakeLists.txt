@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 # cSpell:ignore endforeach pkgconfig libdir includedir TOUPPER MSVC COPYONLY CFLAGS DTEST DCMAKE DLIBRARY azurecosmosdriver corrosion
 
 cmake_minimum_required(VERSION 3.20)
@@ -33,6 +36,7 @@ FetchContent_MakeAvailable(Corrosion)
 
 corrosion_import_crate(
     MANIFEST_PATH ./Cargo.toml
+    CRATES azure_data_cosmos_driver_native
     # Compiles the `__test_only_*` C-ABI helpers that back files under
     # `c_tests/` (e.g. `completion_headers_abi.c`). Off in every non-CMake
     # build so production `cdylib` / `staticlib` artifacts do not export
@@ -57,7 +61,7 @@ configure_file(
 if(NOT WIN32)
     set(PKG_CONFIG_NAME "azurecosmosdriver")
     set(PKG_CONFIG_DESCRIPTION "Azure Cosmos DB driver C API")
-    set(PKG_CONFIG_VERSION "0.1.0")
+    set(PKG_CONFIG_VERSION "0.2.0")
     set(PKG_CONFIG_LIBS "-L\${libdir} -lazurecosmosdriver")
     set(PKG_CONFIG_CFLAGS "-I\${includedir}")
 
@@ -76,12 +80,17 @@ set(TEST_TARGETS "")
 foreach(test_file ${TEST_FILES})
     get_filename_component(test_name ${test_file} NAME_WE)
     add_executable(${test_name} ${test_file})
+    target_compile_features(${test_name} PRIVATE c_std_11)
     target_link_libraries(${test_name} PRIVATE azurecosmosdriver)
     list(APPEND TEST_TARGETS ${test_name})
 endforeach()
 
-set(TEST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>)
-set(LIBRARY_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/$<CONFIG>)
+set(TEST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+set(LIBRARY_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+if(CMAKE_CONFIGURATION_TYPES)
+    string(APPEND TEST_DIR "/$<CONFIG>")
+    string(APPEND LIBRARY_DIR "/$<CONFIG>")
+endif()
 
 # Run test discovery after build and trigger reconfiguration.
 add_custom_target(discover_tests ALL

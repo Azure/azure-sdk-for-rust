@@ -5,7 +5,7 @@
 //!
 //! Owns both a Tokio multi-threaded [`Runtime`] (so the wrapper can drive
 //! `async fn` driver code from synchronous FFI entry points) and an
-//! `Arc<CosmosDriverRuntime>` (so cached drivers, container caches, and the
+//! `Arc<CosmosDriverRuntime>` (so transport resources and the
 //! account-metadata cache stay alive for the lifetime of the handle).
 //!
 //! The runtime pairs the wrapper-side Tokio runtime with the driver runtime
@@ -15,7 +15,7 @@
 //! The runtime is **opaque** at the FFI boundary — consumers get a
 //! `cosmos_runtime_t *` and never look inside. See spec section 3.1.1 + section 4.1.
 
-use std::sync::Arc;
+use std::{mem::ManuallyDrop, sync::Arc};
 
 use azure_data_cosmos_driver::driver::{CosmosDriverRuntime, CosmosDriverRuntimeBuilder};
 use tokio::runtime::Runtime;
@@ -35,7 +35,7 @@ use crate::runtime_builder::RuntimeBuildError;
 ///   `block_on(...)` driver builder construction at FFI-call time and to
 ///   spawn the per-operation tasks that drive submits.
 /// - `driver` — the underlying `azure_data_cosmos_driver` runtime that owns
-///   the per-account driver registry, container cache, account-metadata
+///   the account-metadata
 ///   cache, HTTP transport factory, and so on. Cloning the `Arc` is cheap
 ///   and is how the driver / account surfaces hand out handles.
 pub struct RuntimeContext {
@@ -48,7 +48,7 @@ pub struct RuntimeContext {
         reason = "consumed via `tokio.block_on` / `tokio.spawn`; the field itself \
                   is never read directly"
     )]
-    pub(crate) tokio: Runtime,
+    pub(crate) tokio: ManuallyDrop<Runtime>,
     /// `Arc::clone`d into every per-account handle by the driver / account
     /// surfaces.
     #[allow(
@@ -97,7 +97,10 @@ impl RuntimeContext {
             .block_on(async move { builder.build().await })
             .map_err(RuntimeBuildError::Driver)?;
 
-        Ok(Arc::into_raw(Arc::new(RuntimeContext { tokio, driver })) as *mut RuntimeContext)
+        Ok(Arc::into_raw(Arc::new(RuntimeContext {
+            tokio: ManuallyDrop::new(tokio),
+            driver,
+        })) as *mut RuntimeContext)
     }
 
     /// Returns a cloned `Arc` to the inner state, used by completion queues
@@ -144,6 +147,13 @@ impl RuntimeContext {
         unsafe {
             drop(Arc::from_raw(this as *const RuntimeContext));
         }
+    }
+}
+
+impl Drop for RuntimeContext {
+    fn drop(&mut self) {
+        // SAFETY: the runtime is taken exactly once and never accessed after this destructor.
+        unsafe { ManuallyDrop::take(&mut self.tokio) }.shutdown_background();
     }
 }
 

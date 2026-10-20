@@ -6,12 +6,9 @@
 //!
 //! This crate exposes a schema-agnostic completion-queue-style FFI suitable
 //! for cross-language SDK reuse (.NET, Java, Go, Python, native C/C++). The
-//! design is fully specified in [`docs/NATIVE_WRAPPER_SPEC.md`] in the driver
-//! crate, with a picture-first overview in [`docs/ASYNC_INVOCATION_ARCHITECTURE.md`].
+//! design uses a completion queue and flat C-compatible data structures.
 //!
 //! [`azure_data_cosmos_driver`]: https://docs.rs/azure_data_cosmos_driver
-//! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
-//! [`docs/ASYNC_INVOCATION_ARCHITECTURE.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/ASYNC_INVOCATION_ARCHITECTURE.md
 
 // We routinely dereference C-supplied pointers at the FFI boundary; that is
 // the entire point of the crate.
@@ -25,18 +22,26 @@ pub mod account_ref;
 pub mod bytes;
 pub mod completion;
 pub mod container_ref;
+pub mod credential;
+pub mod cursor;
+pub mod cursor_request;
 pub mod database_ref;
+pub mod diagnostics;
 pub mod driver;
 pub mod driver_options;
 pub mod error;
+pub mod fault_injection;
 pub mod feed_range;
 pub mod op_request;
+pub mod options_snapshot;
 pub mod partition_key;
 pub mod response_header;
 pub mod runtime;
 pub mod runtime_builder;
 pub(crate) mod safety;
 pub mod submit;
+#[cfg(feature = "test-abi")]
+mod test_abi;
 
 // We want this value to be present as a string in the compiled binary so that
 // build provenance can be recovered from a stripped library. Exposing it as a

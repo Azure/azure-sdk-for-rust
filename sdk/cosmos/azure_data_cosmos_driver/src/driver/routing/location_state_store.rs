@@ -24,13 +24,14 @@ use crate::{
         transport::connectivity_probe::{ConnectivityProbe, ProbeOutcome, ProbeRole},
     },
     models::AccountEndpoint,
-    options::{PartitionFailoverOptions, Region},
+    options::{OperationOptionsView, PartitionFailoverOptions, Region, ThrottlingRetryOptions},
 };
 
 use super::{
     advance_hub_region_discovery, build_account_endpoint_state, cache_hub_region,
     expire_partition_overrides, mark_endpoint_unavailable, mark_partition_unavailable,
-    partition_endpoint_state::PartitionEndpointState, partition_key_range_id::PartitionKeyRangeId,
+    partition_endpoint_state::{PartitionEndpointState, PartitionStateUpdate},
+    partition_key_range_id::PartitionKeyRangeId,
     record_hedge_alternate_win, record_hedge_primary_win, AccountEndpointState, CosmosEndpoint,
     LocationEffect,
 };
@@ -40,6 +41,7 @@ use super::{
 pub(crate) struct LocationSnapshot {
     pub account: Arc<AccountEndpointState>,
     pub partitions: Arc<PartitionEndpointState>,
+    pub cross_region_hedging_disabled: bool,
 }
 
 #[cfg(test)]
@@ -48,6 +50,7 @@ impl LocationSnapshot {
         Self {
             account,
             partitions: Arc::new(PartitionEndpointState::default()),
+            cross_region_hedging_disabled: false,
         }
     }
 
@@ -58,6 +61,7 @@ impl LocationSnapshot {
         Self {
             account,
             partitions,
+            cross_region_hedging_disabled: false,
         }
     }
 }
@@ -65,6 +69,7 @@ impl LocationSnapshot {
 type AccountRefreshFn = Arc<
     dyn Fn(
             Option<Arc<AccountProperties>>,
+            Option<ThrottlingRetryOptions>,
         ) -> BoxFuture<'static, crate::error::Result<AccountProperties>>
         + Send
         + Sync,
@@ -93,10 +98,19 @@ pub(crate) const ENDPOINT_PROBE_INTERVAL: Duration = Duration::from_secs(60);
 #[cfg(feature = "tokio")]
 pub(crate) const BACKGROUND_REFRESH_INTERVAL: Duration = Duration::from_secs(300);
 
+#[cfg(feature = "tokio")]
+pub(crate) fn background_refresh_interval(get_env: &dyn Fn(&str) -> Option<String>) -> Duration {
+    get_env("AZURE_COSMOS_E2E_BACKGROUND_ACCOUNT_REFRESH_INTERVAL_MS")
+        .and_then(|value| value.parse::<u64>().ok())
+        .filter(|milliseconds| *milliseconds > 0)
+        .map(Duration::from_millis)
+        .unwrap_or(BACKGROUND_REFRESH_INTERVAL)
+}
+
 /// Unified location state store with lock-free reads and CAS-loop writes.
 pub(crate) struct LocationStateStore {
     account: Atomic<AccountEndpointState>,
-    partitions: Atomic<PartitionEndpointState>,
+    partitions: Atomic<Arc<PartitionEndpointState>>,
     account_metadata_cache: Arc<AccountMetadataCache>,
     account_endpoint: AccountEndpoint,
     account_refresh_fn: AccountRefreshFn,
@@ -116,6 +130,11 @@ pub(crate) struct LocationStateStore {
     /// endpoints. Defaults to `false` (fail-open) so behavior is unchanged
     /// when no probe is wired.
     gateway_v2_runtime_blocked: AtomicBool,
+    /// Last explicitly observed account-level hedging suppression value.
+    ///
+    /// This belongs to the per-account store rather than the shared runtime so
+    /// drivers for different accounts cannot affect each other.
+    cross_region_hedging_disabled: AtomicBool,
     probe_succeeded_regions: std::sync::Mutex<HashSet<Region>>,
     endpoint_unavailability_ttl: Duration,
     refresh_interval: Duration,
@@ -207,6 +226,11 @@ impl Drop for RefreshClaimGuard<'_> {
 }
 
 impl LocationStateStore {
+    #[cfg(test)]
+    pub(crate) fn version_for_tests(&self) -> u64 {
+        self.account_version.load(Ordering::Acquire)
+    }
+
     /// Creates a new location store with a single-endpoint account snapshot.
     #[allow(clippy::too_many_arguments)]
     pub fn new(
@@ -221,11 +245,12 @@ impl LocationStateStore {
         connectivity_probe: Option<Arc<dyn ConnectivityProbe>>,
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
-        let partition_state = PartitionEndpointState::new(partition_failover_options);
+        let partition_state = Arc::new(PartitionEndpointState::new(partition_failover_options));
 
         let initial_snapshot = LocationSnapshot {
             account: Arc::new(account_state.clone()),
-            partitions: Arc::new(partition_state.clone()),
+            partitions: Arc::clone(&partition_state),
+            cross_region_hedging_disabled: false,
         };
 
         Self {
@@ -239,6 +264,7 @@ impl LocationStateStore {
             gateway_v2_enabled,
             connectivity_probe,
             gateway_v2_runtime_blocked: AtomicBool::new(false),
+            cross_region_hedging_disabled: AtomicBool::new(false),
             probe_succeeded_regions: std::sync::Mutex::new(HashSet::new()),
             endpoint_unavailability_ttl,
             // Rate limit for event-driven refreshes emitted by
@@ -286,8 +312,8 @@ impl LocationStateStore {
     /// Uses a fast path when the version hasn't changed since the last
     /// snapshot: the cached `Arc` is cloned without touching the
     /// epoch-protected pointers. On a version mismatch (slow path),
-    /// the current state is loaded under an epoch guard, cloned into
-    /// fresh `Arc`s, and cached for subsequent callers.
+    /// the account state is copied and the partition `Arc` is shared under
+    /// an epoch guard, then cached for subsequent callers.
     pub fn snapshot(&self) -> LocationSnapshot {
         let current_version = self.account_version.load(Ordering::Acquire);
 
@@ -309,12 +335,15 @@ impl LocationStateStore {
         let partitions = {
             // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
             let current = unsafe { self.partitions.load(Ordering::Acquire, &guard).deref() };
-            Arc::new(current.clone())
+            Arc::clone(current)
         };
 
         let snapshot = LocationSnapshot {
             account,
             partitions,
+            cross_region_hedging_disabled: self
+                .cross_region_hedging_disabled
+                .load(Ordering::Acquire),
         };
 
         let mut cached = self.cached_snapshot.lock().unwrap();
@@ -323,11 +352,6 @@ impl LocationStateStore {
         }
 
         snapshot
-    }
-
-    /// Returns the configured endpoint unavailability TTL.
-    pub fn endpoint_unavailability_ttl(&self) -> Duration {
-        self.endpoint_unavailability_ttl
     }
 
     /// Returns the latest account snapshot.
@@ -373,6 +397,15 @@ impl LocationStateStore {
 
     /// Applies location effects (endpoint unavailability and account refresh).
     pub async fn apply(&self, effects: &[LocationEffect]) {
+        self.apply_with_options(effects, None).await;
+    }
+
+    /// Applies operation-triggered effects with the caller's pinned configuration.
+    pub(crate) async fn apply_with_options(
+        &self,
+        effects: &[LocationEffect],
+        options: Option<&OperationOptionsView<'_>>,
+    ) {
         for effect in effects {
             match effect {
                 LocationEffect::MarkEndpointUnavailable { endpoint, reason } => {
@@ -400,7 +433,14 @@ impl LocationStateStore {
                     });
                 }
                 LocationEffect::RefreshAccountProperties => {
-                    self.refresh_account_properties_if_due().await;
+                    let throttling = options.map(|options| {
+                        let view = options.throttling_retry_options();
+                        ThrottlingRetryOptions {
+                            max_retry_count: view.max_retry_count().copied(),
+                            max_retry_wait_time: view.max_retry_wait_time().copied(),
+                        }
+                    });
+                    self.refresh_account_properties_if_due(throttling).await;
                 }
                 LocationEffect::CacheHubRegion {
                     partition_key_range_id,
@@ -459,22 +499,24 @@ impl LocationStateStore {
         }
     }
 
-    /// CAS loop on partition-level state.
+    /// CAS loop on partition-level state; returns whether an update was published.
     pub(crate) fn apply_partition(
         &self,
-        mut f: impl FnMut(&PartitionEndpointState) -> PartitionEndpointState,
-    ) {
+        mut f: impl FnMut(&PartitionEndpointState) -> PartitionStateUpdate,
+    ) -> bool {
         let guard = epoch::pin();
 
         loop {
             let current = self.partitions.load(Ordering::Acquire, &guard);
             // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
             let current_ref = unsafe { current.deref() };
-            let next_state = f(current_ref);
+            let PartitionStateUpdate::Updated(next_state) = f(current_ref) else {
+                return false;
+            };
 
             match self.partitions.compare_exchange(
                 current,
-                Owned::new(next_state),
+                Owned::new(Arc::new(next_state)),
                 Ordering::AcqRel,
                 Ordering::Acquire,
                 &guard,
@@ -487,14 +529,14 @@ impl LocationStateStore {
                     // the pattern in apply_account above).
                     unsafe { guard.defer_destroy(current) };
                     self.account_version.fetch_add(1, Ordering::Release);
-                    return;
+                    return true;
                 }
                 Err(_) => continue,
             }
         }
     }
 
-    async fn refresh_account_properties_if_due(&self) {
+    async fn refresh_account_properties_if_due(&self, throttling: Option<ThrottlingRetryOptions>) {
         let now_ms = epoch_millis();
         let refresh_after_ms = self.refresh_interval.as_millis() as u64;
         let last = self.last_refresh_epoch_ms.load(Ordering::Acquire);
@@ -529,7 +571,7 @@ impl LocationStateStore {
             committed: false,
         };
 
-        if self.refresh_account_properties_inner().await {
+        if self.refresh_account_properties_inner(throttling).await {
             claim.commit();
         }
     }
@@ -548,7 +590,7 @@ impl LocationStateStore {
     /// [`RefreshClaimGuard`] when its own fetch fails or is cancelled, so the
     /// same guarantee holds there.
     async fn force_refresh_account_properties(&self) {
-        let _ = self.refresh_account_properties_inner().await;
+        let _ = self.refresh_account_properties_inner(None).await;
     }
 
     /// Shared implementation of both `refresh_account_properties_if_due`
@@ -568,7 +610,10 @@ impl LocationStateStore {
     ///
     /// Returns `true` only when a fresh snapshot was actually applied, so
     /// callers that pre-claimed the rate-limit clock can roll it back.
-    async fn refresh_account_properties_inner(&self) -> bool {
+    async fn refresh_account_properties_inner(
+        &self,
+        throttling: Option<ThrottlingRetryOptions>,
+    ) -> bool {
         // Capture the previous properties so the refresh callback can use
         // them for regional fallback if the primary endpoint fails. We
         // intentionally do NOT invalidate the cache here — concurrent
@@ -581,7 +626,7 @@ impl LocationStateStore {
             .await;
 
         let refresh_fn = Arc::clone(&self.account_refresh_fn);
-        let fetched = (refresh_fn)(previous_props).await;
+        let fetched = (refresh_fn)(previous_props, throttling).await;
 
         let new_properties = match fetched {
             Ok(props) => props,
@@ -650,22 +695,6 @@ impl LocationStateStore {
     ) {
         self.run_connectivity_probe(&properties).await;
         self.sync_account_properties(properties, default_endpoint);
-    }
-
-    /// Returns the operator-configured Gateway 2.0 (thin-client) toggle,
-    /// independent of the transient connectivity-probe block.
-    ///
-    /// Used to decide whether to always resolve the partition key range id
-    /// (to scope the session token to a single partition), mirroring .NET's
-    /// `ThinClientStoreModel::ShouldResolvePartitionKeyRange() => true`: the
-    /// thin-client backend rejects a multi-range composite session token, so
-    /// any client that may route over it must resolve the target range even
-    /// when per-partition failover/circuit-breaker are both disabled. The
-    /// static flag (not `effective_gateway_v2_enabled`) is deliberate: a
-    /// transient probe block can lift at any time, and resolving on the
-    /// classic path meanwhile is harmless.
-    pub(crate) fn gateway_v2_enabled(&self) -> bool {
-        self.gateway_v2_enabled
     }
 
     /// Returns `gateway_v2_enabled && !gateway_v2_runtime_blocked`. The
@@ -815,8 +844,9 @@ impl LocationStateStore {
     /// Updates account state from properties using a CAS loop that preserves
     /// existing `unavailable_endpoints` marks set by concurrent operations.
     ///
-    /// Skips the CAS loop when the `AccountProperties` etag matches
-    /// the last synced value (same server version, properties unchanged).
+    /// Skips the CAS loop when the `AccountProperties` etag matches the last
+    /// synced value, unless an explicit hedging suppression signal changed
+    /// independently of that etag.
     pub fn sync_account_properties(
         &self,
         properties: Arc<AccountProperties>,
@@ -830,14 +860,26 @@ impl LocationStateStore {
             }
         }
 
+        let hedging_suppression_changed =
+            properties
+                .disable_cross_regional_hedging
+                .is_some_and(|disabled| {
+                    disabled != self.cross_region_hedging_disabled.load(Ordering::Acquire)
+                });
+
         if !properties.etag.is_empty() {
             let last_etag = self.last_synced_etag.lock().unwrap();
-            if *last_etag == properties.etag {
+            if *last_etag == properties.etag && !hedging_suppression_changed {
                 // Etag matches: update the pointer so future calls hit the fast path.
                 drop(last_etag);
                 *self.last_synced_properties.lock().unwrap() = Some(properties);
                 return;
             }
+        }
+
+        if let Some(disabled) = properties.disable_cross_regional_hedging {
+            self.cross_region_hedging_disabled
+                .store(disabled, Ordering::Release);
         }
 
         let default_endpoint = default_endpoint.clone();
@@ -853,7 +895,9 @@ impl LocationStateStore {
             // The background endpoint-probe loop is the sole owner of
             // account-level failback: a marked endpoint is only cleared once a
             // connectivity probe confirms it is reachable, never on a time
-            // basis. See `probe_and_failback_unavailable_endpoints`.
+            // basis. See `probe_and_failback_unavailable_endpoints`, which
+            // skips probing endpoints the account no longer advertises so a
+            // removed region's mark costs nothing while it lingers.
             next.unavailable_endpoints = current.unavailable_endpoints.clone();
             next
         });
@@ -869,20 +913,28 @@ impl LocationStateStore {
 
         *self.last_synced_properties.lock().unwrap() = Some(properties);
         self.apply_partition(|previous| {
-            let mut next = previous.clone();
-            next.per_partition_automatic_failover_enabled =
-                per_partition_automatic_failover_enabled;
             // The incident kill switch (`AZURE_COSMOS_PPCB_ENABLED_OVERRIDE`) is
             // authoritative: when set it wins over both the account property and
             // the base option. Only when it is unset does PPCB fall back to
             // `account property || option`.
-            next.per_partition_circuit_breaker_enabled = previous
+            let per_partition_circuit_breaker_enabled = previous
                 .config
                 .circuit_breaker_enabled_override()
                 .unwrap_or_else(|| {
                     per_partition_automatic_failover_enabled
                         || previous.config.circuit_breaker_enabled()
                 });
+            if previous.per_partition_automatic_failover_enabled
+                == per_partition_automatic_failover_enabled
+                && previous.per_partition_circuit_breaker_enabled
+                    == per_partition_circuit_breaker_enabled
+            {
+                return PartitionStateUpdate::Unchanged;
+            }
+            let mut next = previous.clone();
+            next.per_partition_automatic_failover_enabled =
+                per_partition_automatic_failover_enabled;
+            next.per_partition_circuit_breaker_enabled = per_partition_circuit_breaker_enabled;
 
             // Drop per-partition routing overrides on any edge of either
             // enablement flag. The eligibility gate in `is_eligible_for_ppaf` /
@@ -912,9 +964,10 @@ impl LocationStateStore {
                 // flip also flips PPCB and clears both maps -- exactly the
                 // intended invariant.
                 next.circuit_breaker_overrides.clear();
+                next.consecutive_hedge_wins.clear();
             }
 
-            next
+            PartitionStateUpdate::Updated(next)
         });
     }
 
@@ -942,10 +995,10 @@ impl LocationStateStore {
     /// (the timer interval IS the rate limit, so the event-driven
     /// `refresh_interval` check is bypassed).
     #[cfg(feature = "tokio")]
-    pub fn start_account_refresh_loop(self: &Arc<Self>) {
+    pub fn start_account_refresh_loop(self: &Arc<Self>, interval: Duration) {
         let weak_store: Weak<LocationStateStore> = Arc::downgrade(self);
         self.background_task_manager.spawn(async move {
-            account_refresh_loop(weak_store, BACKGROUND_REFRESH_INTERVAL).await;
+            account_refresh_loop(weak_store, interval).await;
         });
     }
 
@@ -978,6 +1031,15 @@ impl LocationStateStore {
     /// reachable endpoint has its unavailability mark removed (rejoining the
     /// rotation); an unreachable endpoint has its cooldown reset so it is
     /// re-probed after the next interval rather than thrashing.
+    ///
+    /// Endpoints the account no longer advertises are skipped. A mark for a
+    /// region that has left the account is inert for routing — endpoint
+    /// selection only ever consults marks for endpoints drawn from the
+    /// preferred/account endpoint lists — so probing it would burn a
+    /// connection attempt every interval, forever, against a hostname that is
+    /// eventually withdrawn from DNS. Skipping rather than *dropping* the mark
+    /// keeps failback probe-gated: if the region returns to the topology it
+    /// still has to pass a probe before it takes traffic again.
     #[cfg(feature = "tokio")]
     pub(crate) async fn probe_and_failback_unavailable_endpoints(
         &self,
@@ -986,6 +1048,7 @@ impl LocationStateStore {
         let now = Instant::now();
         let ttl = self.endpoint_unavailability_ttl;
         let snapshot = self.account_snapshot();
+        let advertised = advertised_endpoint_urls(&snapshot);
 
         // Capture each due endpoint's observed `marked_at` so we can detect a
         // concurrent re-mark that lands while the (potentially slow) probe is in
@@ -994,6 +1057,7 @@ impl LocationStateStore {
         let due: Vec<(&Url, Instant)> = snapshot
             .unavailable_endpoints
             .iter()
+            .filter(|(url, _)| advertised.contains(*url))
             .filter(|(_, (marked_at, _))| now.saturating_duration_since(*marked_at) >= ttl)
             .map(|(url, (marked_at, _))| (url, *marked_at))
             .collect();
@@ -1008,11 +1072,15 @@ impl LocationStateStore {
                 let mut next = current.clone();
                 if let Some((marked_at, _)) = next.unavailable_endpoints.get_mut(url) {
                     if reachable {
-                        // Only fail back if the mark is the same one we probed.
+                        // Only fail back if the mark is the same one we probed
+                        // *and* the account still advertises the endpoint.
                         // A newer `marked_at` means a concurrent transport
                         // failure re-marked the endpoint while the probe was in
-                        // flight, so keep it out of rotation and re-probe later.
-                        if *marked_at == observed_marked_at {
+                        // flight; an endpoint that left the account in that
+                        // window must also keep its mark, so a later re-add is
+                        // still probe-gated instead of silently taking traffic.
+                        let still_advertised = advertised_endpoint_urls(current).contains(url);
+                        if *marked_at == observed_marked_at && still_advertised {
                             next.unavailable_endpoints.remove(url);
                         }
                     } else {
@@ -1064,15 +1132,26 @@ impl LocationStateStore {
         partition: &PartitionKeyRangeId,
         primary_region: Option<&Region>,
     ) {
-        tracing::debug!(
-            partition = %partition,
-            primary_region = ?primary_region.map(Region::as_str),
-            "recorded alternate-region hedge win",
-        );
-        let account = self.account_snapshot();
-        self.apply_partition(|current| {
-            record_hedge_alternate_win(current, &account, partition, primary_region)
+        let mut account = None;
+        let updated = self.apply_partition(|current| {
+            if !current.per_partition_circuit_breaker_enabled {
+                return PartitionStateUpdate::Unchanged;
+            }
+            let account = account.get_or_insert_with(|| self.account_snapshot());
+            PartitionStateUpdate::Updated(record_hedge_alternate_win(
+                current,
+                account,
+                partition,
+                primary_region,
+            ))
         });
+        if updated {
+            tracing::debug!(
+                partition = %partition,
+                primary_region = ?primary_region.map(Region::as_str),
+                "recorded alternate-region hedge win",
+            );
+        }
     }
 
     /// Records that the primary attempt won in
@@ -1089,15 +1168,38 @@ impl LocationStateStore {
         partition: &PartitionKeyRangeId,
         primary_region: Option<&Region>,
     ) {
-        tracing::debug!(
-            partition = %partition,
-            primary_region = ?primary_region.map(Region::as_str),
-            "recorded primary-region hedge win",
-        );
-        self.apply_partition(|current| {
+        let updated = self.apply_partition(|current| {
+            if !current.per_partition_circuit_breaker_enabled {
+                return PartitionStateUpdate::Unchanged;
+            }
             record_hedge_primary_win(current, partition, primary_region)
         });
+        if updated {
+            tracing::debug!(
+                partition = %partition,
+                primary_region = ?primary_region.map(Region::as_str),
+                "recorded primary-region hedge win",
+            );
+        }
     }
+}
+
+/// Returns the set of endpoint URLs the account currently advertises.
+///
+/// Marks are keyed by the standard gateway URL (see `mark_endpoint_unavailable`),
+/// so only that URL needs matching.
+fn advertised_endpoint_urls(state: &AccountEndpointState) -> HashSet<&Url> {
+    let mut known: HashSet<&Url> = HashSet::new();
+    known.insert(state.default_endpoint.url());
+    for endpoint in state
+        .preferred_read_endpoints
+        .iter()
+        .chain(state.preferred_write_endpoints.iter())
+        .chain(state.account_write_endpoints.iter())
+    {
+        known.insert(endpoint.url());
+    }
+    known
 }
 
 /// Background account-metadata refresh loop. Periodically calls
@@ -1181,6 +1283,10 @@ fn epoch_millis() -> u64 {
 }
 
 #[cfg(test)]
+#[path = "hedge_feedback_tests.rs"]
+mod hedge_feedback_tests;
+
+#[cfg(test)]
 mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -1193,6 +1299,27 @@ mod tests {
     };
 
     use super::*;
+
+    #[cfg(feature = "tokio")]
+    #[test]
+    fn e2e_background_refresh_interval_override_is_bounded_and_optional() {
+        assert_eq!(
+            background_refresh_interval(&|_| None),
+            BACKGROUND_REFRESH_INTERVAL
+        );
+        assert_eq!(
+            background_refresh_interval(&|_| Some("1000".to_owned())),
+            Duration::from_secs(1)
+        );
+        assert_eq!(
+            background_refresh_interval(&|_| Some("0".to_owned())),
+            BACKGROUND_REFRESH_INTERVAL
+        );
+        assert_eq!(
+            background_refresh_interval(&|_| Some("invalid".to_owned())),
+            BACKGROUND_REFRESH_INTERVAL
+        );
+    }
 
     fn test_endpoint() -> AccountEndpoint {
         AccountEndpoint::from(url::Url::parse("https://test.documents.azure.com:443/").unwrap())
@@ -1235,6 +1362,7 @@ mod tests {
             continuous_backup_enabled: false,
             enable_n_region_synchronous_commit: false,
             enable_per_partition_failover_behavior: false,
+            disable_cross_regional_hedging: None,
             user_replication_policy: ReplicationPolicy {
                 min_replica_set_size: 3,
                 max_replica_set_size: 4,
@@ -1274,15 +1402,26 @@ mod tests {
         }
     }
 
+    fn test_payload_with_hedging_signal(disabled: Option<bool>, etag: &str) -> AccountProperties {
+        AccountProperties {
+            disable_cross_regional_hedging: disabled,
+            etag: etag.into(),
+            ..default_account_properties()
+        }
+    }
+
     #[tokio::test]
     async fn apply_marks_endpoint_unavailable() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -1310,12 +1449,15 @@ mod tests {
     #[test]
     fn global_database_account_name_prefers_metadata_id() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -1364,12 +1506,15 @@ mod tests {
     #[tokio::test]
     async fn unavailable_endpoint_fails_back_only_after_successful_probe() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -1422,12 +1567,15 @@ mod tests {
     #[tokio::test]
     async fn failed_probe_resets_cooldown_keeping_endpoint_out_of_rotation() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let make_store = || {
             LocationStateStore::new(
@@ -1520,12 +1668,15 @@ mod tests {
     #[tokio::test]
     async fn endpoint_unavailability_lifecycle_mark_cooldown_probe_restore() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         // Non-zero cooldown so the "not yet due" gate is observable.
         let cooldown = Duration::from_secs(60);
@@ -1621,12 +1772,15 @@ mod tests {
     #[test]
     fn account_sync_preserves_unavailable_marks_for_probe_loop() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -1674,21 +1828,203 @@ mod tests {
         );
     }
 
+    /// A mark for a region the account no longer advertises must not be
+    /// probed: the endpoint is gone (its DNS name is eventually withdrawn), so
+    /// probing it would burn a connection attempt every interval forever.
+    ///
+    /// The mark itself is deliberately *kept*, not dropped — it is inert for
+    /// routing while the region is absent, and keeping it means a region that
+    /// returns to the topology still has to pass a probe before taking traffic.
+    #[tokio::test]
+    async fn probe_skips_endpoints_the_account_no_longer_advertises() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            false,
+            Duration::ZERO, // every mark is immediately due for a probe
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        );
+
+        let westus_endpoint = AccountEndpoint::from(
+            url::Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+        let westus_url = westus_endpoint.url().clone();
+        let westus_region = AccountRegion {
+            name: Region::from("westus"),
+            database_account_endpoint: westus_endpoint,
+        };
+
+        // Two regions, West US marked unavailable.
+        let mut two_regions = default_account_properties();
+        two_regions.readable_locations.push(westus_region);
+        two_regions.etag = "two-regions".into();
+        store.sync_account_properties(Arc::new(two_regions), &default_endpoint);
+        store.apply_account(|current| {
+            let mut next = current.clone();
+            next.unavailable_endpoints.insert(
+                westus_url.clone(),
+                (Instant::now(), UnavailableReason::TransportError),
+            );
+            next
+        });
+
+        // Record which URLs the probe is asked about.
+        let probed: Arc<std::sync::Mutex<Vec<Url>>> = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let probed_clone = Arc::clone(&probed);
+        let probe: EndpointProbeFn = Arc::new(move |url: Url| {
+            probed_clone.lock().unwrap().push(url);
+            let fut: BoxFuture<'static, bool> = Box::pin(async move { false });
+            fut
+        });
+
+        // While the region is advertised, it IS probed.
+        store.probe_and_failback_unavailable_endpoints(&probe).await;
+        assert_eq!(
+            probed.lock().unwrap().as_slice(),
+            std::slice::from_ref(&westus_url),
+            "an advertised endpoint must still be probed",
+        );
+        probed.lock().unwrap().clear();
+
+        // West US leaves the account.
+        let mut one_region = default_account_properties();
+        one_region.etag = "one-region".into();
+        store.sync_account_properties(Arc::new(one_region), &default_endpoint);
+
+        store.probe_and_failback_unavailable_endpoints(&probe).await;
+        assert!(
+            probed.lock().unwrap().is_empty(),
+            "an endpoint the account no longer advertises must not be probed; \
+             probed {:?}",
+            probed.lock().unwrap(),
+        );
+        assert!(
+            store
+                .snapshot()
+                .account
+                .unavailable_endpoints
+                .contains_key(&westus_url),
+            "the mark must be kept so failback stays probe-gated if the region returns",
+        );
+    }
+
+    /// A region that leaves the account *while its probe is in flight* must keep
+    /// its mark. `advertised` is captured before the awaits, so without a
+    /// re-check inside the update a successful probe would clear a mark the
+    /// newer account state still wants held, and a later re-add would take
+    /// traffic without the promised fresh probe.
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn probe_does_not_fail_back_an_endpoint_removed_while_probing() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
+
+        let store = Arc::new(LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            false,
+            Duration::ZERO, // every mark is immediately due for a probe
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        ));
+
+        let westus_endpoint = AccountEndpoint::from(
+            url::Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+        let westus_url = westus_endpoint.url().clone();
+        let westus_region = AccountRegion {
+            name: Region::from("westus"),
+            database_account_endpoint: westus_endpoint,
+        };
+
+        // Two regions, West US advertised and marked unavailable.
+        let mut two_regions = default_account_properties();
+        two_regions.readable_locations.push(westus_region);
+        two_regions.etag = "two-regions".into();
+        store.sync_account_properties(Arc::new(two_regions), &default_endpoint);
+        store.apply_account(|current| {
+            let mut next = current.clone();
+            next.unavailable_endpoints.insert(
+                westus_url.clone(),
+                (Instant::now(), UnavailableReason::TransportError),
+            );
+            next
+        });
+
+        // The probe succeeds, but West US leaves the account *during* the probe.
+        let weak = Arc::downgrade(&store);
+        let probe_default_endpoint = default_endpoint.clone();
+        let probe: EndpointProbeFn = Arc::new(move |_url: Url| {
+            let weak = weak.clone();
+            let default_endpoint = probe_default_endpoint.clone();
+            let fut: BoxFuture<'static, bool> = Box::pin(async move {
+                if let Some(store) = weak.upgrade() {
+                    let mut one_region = default_account_properties();
+                    one_region.etag = "one-region".into();
+                    store.sync_account_properties(Arc::new(one_region), &default_endpoint);
+                }
+                true
+            });
+            fut
+        });
+
+        store.probe_and_failback_unavailable_endpoints(&probe).await;
+
+        assert!(
+            store
+                .snapshot()
+                .account
+                .unavailable_endpoints
+                .contains_key(&westus_url),
+            "an endpoint dropped from the account mid-probe must keep its mark, so a \
+             later re-add is still probe-gated",
+        );
+    }
+
     #[tokio::test]
     async fn refresh_effect_is_rate_limited() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
         let refresh_calls = Arc::new(AtomicUsize::new(0));
         let refresh_calls_clone = Arc::clone(&refresh_calls);
-        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
-            let refresh_calls = Arc::clone(&refresh_calls_clone);
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move {
-                    refresh_calls.fetch_add(1, Ordering::SeqCst);
-                    Ok(payload)
-                });
-            fut
-        });
+        let refresh = Arc::new(
+            move |_previous: Option<Arc<AccountProperties>>,
+                  _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let refresh_calls = Arc::clone(&refresh_calls_clone);
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move {
+                        refresh_calls.fetch_add(1, Ordering::SeqCst);
+                        Ok(payload)
+                    });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -1725,27 +2061,30 @@ mod tests {
         let success_refreshes_clone = Arc::clone(&success_refreshes);
         let total_refreshes_clone = Arc::clone(&total_refreshes);
         // First call fails; subsequent calls succeed.
-        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
-            let total = Arc::clone(&total_refreshes_clone);
-            let success = Arc::clone(&success_refreshes_clone);
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move {
-                    let n = total.fetch_add(1, Ordering::SeqCst);
-                    if n == 0 {
-                        Err(crate::error::CosmosError::builder()
-                            .with_status(crate::error::CosmosStatus::new(
-                                azure_core::http::StatusCode::BadRequest,
-                            ))
-                            .with_message("simulated network failure")
-                            .build())
-                    } else {
-                        success.fetch_add(1, Ordering::SeqCst);
-                        Ok(payload)
-                    }
-                });
-            fut
-        });
+        let refresh = Arc::new(
+            move |_previous: Option<Arc<AccountProperties>>,
+                  _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let total = Arc::clone(&total_refreshes_clone);
+                let success = Arc::clone(&success_refreshes_clone);
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move {
+                        let n = total.fetch_add(1, Ordering::SeqCst);
+                        if n == 0 {
+                            Err(crate::error::CosmosError::builder()
+                                .with_status(crate::error::CosmosStatus::new(
+                                    azure_core::http::StatusCode::BadRequest,
+                                ))
+                                .with_message("simulated network failure")
+                                .build())
+                        } else {
+                            success.fetch_add(1, Ordering::SeqCst);
+                            Ok(payload)
+                        }
+                    });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -1792,27 +2131,30 @@ mod tests {
         let success_refreshes_clone = Arc::clone(&success_refreshes);
         let total_refreshes_clone = Arc::clone(&total_refreshes);
         // First call fails; subsequent calls succeed.
-        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
-            let total = Arc::clone(&total_refreshes_clone);
-            let success = Arc::clone(&success_refreshes_clone);
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move {
-                    let n = total.fetch_add(1, Ordering::SeqCst);
-                    if n == 0 {
-                        Err(crate::error::CosmosError::builder()
-                            .with_status(crate::error::CosmosStatus::new(
-                                azure_core::http::StatusCode::BadRequest,
-                            ))
-                            .with_message("simulated network failure")
-                            .build())
-                    } else {
-                        success.fetch_add(1, Ordering::SeqCst);
-                        Ok(payload)
-                    }
-                });
-            fut
-        });
+        let refresh = Arc::new(
+            move |_previous: Option<Arc<AccountProperties>>,
+                  _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let total = Arc::clone(&total_refreshes_clone);
+                let success = Arc::clone(&success_refreshes_clone);
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move {
+                        let n = total.fetch_add(1, Ordering::SeqCst);
+                        if n == 0 {
+                            Err(crate::error::CosmosError::builder()
+                                .with_status(crate::error::CosmosStatus::new(
+                                    azure_core::http::StatusCode::BadRequest,
+                                ))
+                                .with_message("simulated network failure")
+                                .build())
+                        } else {
+                            success.fetch_add(1, Ordering::SeqCst);
+                            Ok(payload)
+                        }
+                    });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -1884,16 +2226,19 @@ mod tests {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
         let refreshes = Arc::new(AtomicUsize::new(0));
         let refreshes_clone = Arc::clone(&refreshes);
-        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
-            let count = Arc::clone(&refreshes_clone);
-            let payload = refresh_payload_with_g2();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move {
-                    count.fetch_add(1, Ordering::SeqCst);
-                    Ok(payload)
-                });
-            fut
-        });
+        let refresh = Arc::new(
+            move |_previous: Option<Arc<AccountProperties>>,
+                  _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let count = Arc::clone(&refreshes_clone);
+                let payload = refresh_payload_with_g2();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move {
+                        count.fetch_add(1, Ordering::SeqCst);
+                        Ok(payload)
+                    });
+                fut
+            },
+        );
 
         let probe = Arc::new(BlockingProbe::default());
         let store = Arc::new(LocationStateStore::new(
@@ -1945,25 +2290,28 @@ mod tests {
         // Call 1 succeeds (bootstrap seeds the cache); calls 2+ surface a
         // typed 503 mirroring what `fetch_account_properties_with_transport`
         // now produces on a 5xx account-metadata response.
-        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
-            let total = Arc::clone(&total_refreshes_clone);
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move {
-                    let n = total.fetch_add(1, Ordering::SeqCst);
-                    if n == 0 {
-                        Ok(payload)
-                    } else {
-                        Err(crate::error::CosmosError::builder()
-                            .with_status(crate::error::CosmosStatus::new(
-                                azure_core::http::StatusCode::ServiceUnavailable,
-                            ))
-                            .with_message("simulated 5xx on periodic account-metadata refresh")
-                            .build())
-                    }
-                });
-            fut
-        });
+        let refresh = Arc::new(
+            move |_previous: Option<Arc<AccountProperties>>,
+                  _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let total = Arc::clone(&total_refreshes_clone);
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move {
+                        let n = total.fetch_add(1, Ordering::SeqCst);
+                        if n == 0 {
+                            Ok(payload)
+                        } else {
+                            Err(crate::error::CosmosError::builder()
+                                .with_status(crate::error::CosmosStatus::new(
+                                    azure_core::http::StatusCode::ServiceUnavailable,
+                                ))
+                                .with_message("simulated 5xx on periodic account-metadata refresh")
+                                .build())
+                        }
+                    });
+                fut
+            },
+        );
 
         let cache = Arc::new(AccountMetadataCache::new());
         let store = LocationStateStore::new(
@@ -2033,12 +2381,15 @@ mod tests {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
         // The refresh fn is unused in this test — sync_account_properties
         // is called directly with explicit payloads.
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -2173,12 +2524,15 @@ mod tests {
     #[test]
     fn sync_account_properties_adopts_gateway_v2_when_thin_client_locations_appear() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -2301,12 +2655,15 @@ mod tests {
         // fix, the strong ref stays alive until the store itself is dropped.
 
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -2333,7 +2690,7 @@ mod tests {
             next.per_partition_automatic_failover_enabled =
                 !current.per_partition_automatic_failover_enabled;
             next._test_canary = Some(canary_for_closure.clone());
-            next
+            PartitionStateUpdate::Updated(next)
         });
 
         // Drop our outer strong reference. The only remaining strong ref must
@@ -2477,12 +2834,15 @@ mod tests {
     async fn connectivity_probe_failure_suppresses_gateway_v2_then_recovers() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
 
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = refresh_payload_with_g2();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = refresh_payload_with_g2();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let probe = Arc::new(MockProbe::new(ProbeOutcome::Failed {
             failures: vec![(
@@ -2551,12 +2911,15 @@ mod tests {
     async fn connectivity_probe_success_is_sticky_and_not_reprobed() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
 
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = refresh_payload_with_g2();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = refresh_payload_with_g2();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let probe = Arc::new(MockProbe::new(ProbeOutcome::AllHealthy));
 
@@ -2610,12 +2973,15 @@ mod tests {
     fn no_probe_wired_preserves_existing_gateway_v2_behavior() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
 
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = refresh_payload_with_g2();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = refresh_payload_with_g2();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -2642,12 +3008,15 @@ mod tests {
 
     fn build_store_with_two_regions() -> LocationStateStore {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_multi_region_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_multi_region_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -2722,14 +3091,17 @@ mod tests {
     // when the server flag flips off so they cannot silently re-apply if the
     // operator re-enables PPAF later.
 
-    fn build_store_for_ppaf_tests() -> LocationStateStore {
+    pub(super) fn build_store_for_ppaf_tests() -> LocationStateStore {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -2742,6 +3114,127 @@ mod tests {
             Vec::new(),
             None,
         )
+    }
+
+    #[test]
+    fn sync_reconciles_hedging_signal_without_coupling_ppaf() {
+        let store = build_store_for_ppaf_tests();
+        let default_endpoint = store.default_endpoint().clone();
+
+        assert!(!store.snapshot().cross_region_hedging_disabled);
+
+        let mut suppressed = test_payload_with_hedging_signal(Some(true), "etag-on");
+        suppressed.enable_per_partition_failover_behavior = false;
+        store.sync_account_properties(Arc::new(suppressed), &default_endpoint);
+
+        let snapshot = store.snapshot();
+        assert!(snapshot.cross_region_hedging_disabled);
+        assert!(!snapshot.partitions.per_partition_automatic_failover_enabled);
+
+        let mut resumed = test_payload_with_hedging_signal(Some(false), "etag-off");
+        resumed.enable_per_partition_failover_behavior = true;
+        store.sync_account_properties(Arc::new(resumed), &default_endpoint);
+
+        let snapshot = store.snapshot();
+        assert!(!snapshot.cross_region_hedging_disabled);
+        assert!(snapshot.partitions.per_partition_automatic_failover_enabled);
+    }
+
+    #[test]
+    fn sync_preserves_hedging_signal_when_property_is_omitted() {
+        let store = build_store_for_ppaf_tests();
+        let default_endpoint = store.default_endpoint().clone();
+
+        store.sync_account_properties(
+            Arc::new(test_payload_with_hedging_signal(None, "etag-absent")),
+            &default_endpoint,
+        );
+        assert!(!store.snapshot().cross_region_hedging_disabled);
+
+        store.sync_account_properties(
+            Arc::new(test_payload_with_hedging_signal(Some(true), "etag-on")),
+            &default_endpoint,
+        );
+        store.sync_account_properties(
+            Arc::new(test_payload_with_hedging_signal(None, "etag-omitted")),
+            &default_endpoint,
+        );
+
+        assert!(store.snapshot().cross_region_hedging_disabled);
+
+        store.sync_account_properties(
+            Arc::new(test_payload_with_hedging_signal(Some(false), "etag-off")),
+            &default_endpoint,
+        );
+        assert!(!store.snapshot().cross_region_hedging_disabled);
+    }
+
+    #[test]
+    fn sync_detects_flag_only_change_with_unchanged_etag() {
+        let store = build_store_for_ppaf_tests();
+        let default_endpoint = store.default_endpoint().clone();
+
+        store.sync_account_properties(
+            Arc::new(test_payload_with_hedging_signal(Some(false), "same-etag")),
+            &default_endpoint,
+        );
+        let generation_before = store.snapshot().account.generation;
+
+        store.sync_account_properties(
+            Arc::new(test_payload_with_hedging_signal(Some(true), "same-etag")),
+            &default_endpoint,
+        );
+        let snapshot = store.snapshot();
+
+        assert!(snapshot.cross_region_hedging_disabled);
+        assert!(snapshot.account.generation > generation_before);
+    }
+
+    #[test]
+    fn hedging_signal_is_isolated_between_accounts_sharing_cache() {
+        let cache = Arc::new(AccountMetadataCache::new());
+        let build_store = |account_name: &str| {
+            let endpoint = AccountEndpoint::from(
+                url::Url::parse(&format!("https://{account_name}.documents.azure.com:443/"))
+                    .unwrap(),
+            );
+            let default_endpoint = CosmosEndpoint::global(endpoint.url().clone());
+            let refresh = Arc::new(
+                |_previous: Option<Arc<AccountProperties>>,
+                 _throttling: Option<ThrottlingRetryOptions>| {
+                    let payload = test_refresh_payload();
+                    let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                        Box::pin(async move { Ok(payload) });
+                    fut
+                },
+            );
+            LocationStateStore::new(
+                Arc::clone(&cache),
+                endpoint,
+                default_endpoint,
+                refresh,
+                false,
+                Duration::from_secs(60),
+                PartitionFailoverOptions::default(),
+                Vec::new(),
+                None,
+            )
+        };
+
+        let suppressed_account = build_store("suppressed");
+        let enabled_account = build_store("enabled");
+
+        suppressed_account.sync_account_properties(
+            Arc::new(test_payload_with_hedging_signal(Some(true), "etag-a")),
+            suppressed_account.default_endpoint(),
+        );
+        enabled_account.sync_account_properties(
+            Arc::new(test_payload_with_hedging_signal(Some(false), "etag-b")),
+            enabled_account.default_endpoint(),
+        );
+
+        assert!(suppressed_account.snapshot().cross_region_hedging_disabled);
+        assert!(!enabled_account.snapshot().cross_region_hedging_disabled);
     }
 
     #[test]
@@ -2781,6 +3274,64 @@ mod tests {
                 .partitions
                 .per_partition_automatic_failover_enabled,
             "PPAF flag should be false after a sync with enablePerPartitionFailoverBehavior=false"
+        );
+    }
+
+    #[test]
+    fn ppcb_enablement_edges_clear_hedge_history() {
+        let store = build_store_for_ppaf_tests();
+        let endpoint = store.default_endpoint().clone();
+        store.apply_partition(|current| {
+            let mut next = current.clone();
+            next.config = PartitionFailoverOptions::builder()
+                .with_circuit_breaker_enabled(false)
+                .build()
+                .unwrap();
+            PartitionStateUpdate::Updated(next)
+        });
+        let key = "0".parse().unwrap();
+        store.sync_account_properties(Arc::new(test_payload_with_ppaf(true, "enabled")), &endpoint);
+        store.record_consecutive_hedge_win(&key, None);
+        assert_eq!(store.snapshot().partitions.consecutive_hedge_wins.len(), 1);
+
+        // A refresh with identical flags must retain the installed partition pointer.
+        let guard = epoch::pin();
+        let pointer = store.partitions.load(Ordering::Acquire, &guard);
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(true, "still-enabled")),
+            &endpoint,
+        );
+        assert_eq!(pointer, store.partitions.load(Ordering::Acquire, &guard));
+
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(false, "disabled")),
+            &endpoint,
+        );
+        assert!(
+            !store
+                .snapshot()
+                .partitions
+                .per_partition_circuit_breaker_enabled
+        );
+        assert!(store
+            .snapshot()
+            .partitions
+            .consecutive_hedge_wins
+            .is_empty());
+        store.record_consecutive_hedge_win(&key, None);
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(true, "reenabled")),
+            &endpoint,
+        );
+        assert!(store
+            .snapshot()
+            .partitions
+            .consecutive_hedge_wins
+            .is_empty());
+        store.record_consecutive_hedge_win(&key, None);
+        assert_eq!(
+            store.snapshot().partitions.consecutive_hedge_wins[&(key, None)],
+            1
         );
     }
 
@@ -2831,7 +3382,7 @@ mod tests {
             let mut next = current.clone();
             next.failover_overrides
                 .insert(pkrange_id.clone(), entry.clone());
-            next
+            PartitionStateUpdate::Updated(next)
         });
         assert_eq!(
             store.snapshot().partitions.failover_overrides.len(),
@@ -2904,7 +3455,7 @@ mod tests {
             let mut next = current.clone();
             next.failover_overrides
                 .insert(pkrange_id.clone(), entry.clone());
-            next
+            PartitionStateUpdate::Updated(next)
         });
 
         // true -> true with a new etag (still enabled): clear path must not fire.
@@ -2967,7 +3518,7 @@ mod tests {
             let mut next = current.clone();
             next.failover_overrides
                 .insert(pkrange_id.clone(), stale_entry.clone());
-            next
+            PartitionStateUpdate::Updated(next)
         });
         assert_eq!(
             store.snapshot().partitions.failover_overrides.len(),

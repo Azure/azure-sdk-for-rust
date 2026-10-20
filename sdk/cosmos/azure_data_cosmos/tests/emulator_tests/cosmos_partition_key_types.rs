@@ -257,7 +257,7 @@ pub async fn float_partition_key_round_trips() -> Result<(), Box<dyn Error>> {
                 pk: 3.5,
                 label: "fractional".to_string(),
             };
-            let pk = PartitionKey::from(item.pk);
+            let pk = PartitionKey::try_from(item.pk)?;
 
             container
                 .create_item(pk.clone(), &item.id, &item, None)

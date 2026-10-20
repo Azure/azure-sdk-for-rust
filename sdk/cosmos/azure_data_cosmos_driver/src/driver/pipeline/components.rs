@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 use azure_core::http::{headers::Headers, Method};
 use url::Url;
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 use crate::models::ResourceType;
 use crate::{
     diagnostics::{ExecutionContext, RequestSentStatus},
@@ -59,6 +59,23 @@ pub(crate) struct RoutingDecision {
     pub endpoint_key: EndpointKey,
     /// The transport mode for this attempt.
     pub transport_mode: TransportMode,
+    /// Why normal routing replaced the operation's preferred route.
+    pub routing_fallback: Option<RoutingFallbackReason>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum RoutingFallbackReason {
+    PatchVerificationReadWriteEndpointUnavailableOrExcluded,
+}
+
+impl RoutingFallbackReason {
+    pub(crate) const fn as_str(self) -> &'static str {
+        match self {
+            Self::PatchVerificationReadWriteEndpointUnavailableOrExcluded => {
+                "patch_verification_read_write_endpoint_unavailable_or_excluded"
+            }
+        }
+    }
 }
 
 impl std::fmt::Display for RoutingDecision {
@@ -119,27 +136,27 @@ pub const BACKEND_FAILOVER_MAX_TOTAL_DELAY: Duration = Duration::from_secs(5);
 const BACKEND_FAILOVER_MAX_EXPONENT: u32 = 8;
 
 /// Maximum inner retries for bodyless DTX coordinator envelope failures.
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 pub const MAX_DTX_COORDINATOR_RETRIES: u32 = 10;
 
 /// Maximum inner retries for bodyless DTX infrastructure envelope failures.
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 pub const MAX_DTX_INFRA_RETRIES: u32 = 9;
 
 /// Default bodyless DTX coordinator retry delay when the service sends no retry hint.
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 pub const DTX_COORDINATOR_RETRY_INTERVAL: Duration = Duration::from_secs(1);
 
 /// Base bodyless DTX infrastructure retry delay.
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 pub const DTX_INFRA_BASE_BACKOFF: Duration = Duration::from_millis(100);
 
 /// Maximum bodyless DTX infrastructure retry delay.
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 pub const DTX_INFRA_MAX_BACKOFF: Duration = Duration::from_secs(5);
 
 /// Maximum exponent for bodyless DTX infrastructure retry backoff.
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 pub const DTX_INFRA_MAX_EXPONENT: u32 = 6;
 
 /// Operation-level retry state.
@@ -174,10 +191,10 @@ pub(crate) struct OperationRetryState {
     /// regardless of the exponential-backoff curve.
     pub backend_failover_cumulative_delay: Duration,
     /// Bodyless DTX coordinator retry counter.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub dtx_coordinator_retry_count: u32,
     /// Bodyless DTX infrastructure retry counter.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub dtx_infra_retry_count: u32,
     /// Maximum failover retries.
     pub max_failover_retries: u32,
@@ -189,7 +206,7 @@ pub(crate) struct OperationRetryState {
     pub can_use_multiple_write_locations: bool,
     /// Whether this operation is on the data-plane pipeline (vs metadata).
     ///
-    /// Load-bearing: set via `PipelineType::is_data_plane()` so non-exhaustive variants stay scoped out.
+    /// Load-bearing: set via `PipelineKind::is_data_plane()` so non-exhaustive variants stay scoped out.
     pub is_dataplane: bool,
     /// Hub-region-processing-only latch.
     ///
@@ -201,14 +218,24 @@ pub(crate) struct OperationRetryState {
     pub shared_hub_region_latch: Option<Arc<AtomicBool>>,
     /// Regions excluded for this operation.
     pub excluded_regions: Vec<Region>,
+    /// Endpoints already abandoned by this PATCH verification read.
+    ///
+    /// Operation-local so a sent/unknown partition failure can move to the
+    /// next writer without marking an otherwise healthy region unavailable
+    /// for unrelated operations.
+    pub patch_verification_failed_endpoint_urls: Vec<Url>,
     /// Session-retry routing override for read operations.
     pub session_retry_routing: SessionRetryRouting,
     /// Partition key range ID resolved from the first response headers.
     /// `None` until the first transport attempt returns headers.
     pub partition_key_range_id: Option<PartitionKeyRangeId>,
-    /// Whether PPAF allows non-idempotent write retries on failover.
+    /// Whether single-master PPAF write-region discovery is active for this
+    /// operation.
     ///
-    /// Allows non-idempotent write retries for single-master PPAF write-region discovery.
+    /// Despite the name this does not gate any retry — write retries are never
+    /// gated on idempotency (see `retry_evaluation`). It defers
+    /// `MarkEndpointUnavailable` until the write definitively reaches a region,
+    /// so discovery probing does not evict endpoints on the way.
     pub ppaf_write_retry_allowed: bool,
     /// Whether the per-partition circuit breaker is active for this account.
     ///
@@ -259,9 +286,9 @@ impl OperationRetryState {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries,
             max_backend_failover_retries: MAX_BACKEND_FAILOVER_RETRIES,
@@ -271,6 +298,7 @@ impl OperationRetryState {
             hub_region_processing_only: false,
             shared_hub_region_latch: None,
             excluded_regions,
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing: SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
             ppaf_write_retry_allowed: false,
@@ -324,13 +352,13 @@ impl OperationRetryState {
     }
 
     /// Whether the bodyless DTX coordinator retry budget allows another attempt.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub fn can_retry_dtx_coordinator(&self) -> bool {
         self.dtx_coordinator_retry_count < MAX_DTX_COORDINATOR_RETRIES
     }
 
     /// Whether the bodyless DTX infrastructure retry budget allows another attempt.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub fn can_retry_dtx_infra(&self) -> bool {
         self.dtx_infra_retry_count < MAX_DTX_INFRA_RETRIES
     }
@@ -379,7 +407,7 @@ impl OperationRetryState {
     }
 
     /// Advances the bodyless DTX coordinator retry counter.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub fn advance_dtx_coordinator_retry(self) -> Self {
         Self {
             dtx_coordinator_retry_count: self.dtx_coordinator_retry_count + 1,
@@ -388,7 +416,7 @@ impl OperationRetryState {
     }
 
     /// Advances the bodyless DTX infrastructure retry counter.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub fn advance_dtx_infra_retry(self) -> Self {
         Self {
             dtx_infra_retry_count: self.dtx_infra_retry_count + 1,
@@ -464,8 +492,7 @@ impl OperationRetryState {
 ///   over to another region is not the correct response to a concurrency
 ///   conflict).
 ///
-/// Mirrors the policy described in
-/// `sdk/cosmos/azure-cosmos/docs/TimeoutAndRetriesConfig.md`.
+/// Mirrors the legacy timeout and retry configuration policy.
 #[derive(Clone, Debug)]
 pub(crate) struct RetryWithRetryState {
     /// Number of 449 retries already attempted for this operation.
@@ -599,7 +626,7 @@ pub(crate) struct TransportRequest {
     /// Headers to send (includes operation-specific and attempt-specific headers).
     pub headers: Headers,
     /// Type of resource targeted by the operation.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub resource_type: ResourceType,
     /// Request body bytes (schema-agnostic).
     pub body: Option<azure_core::Bytes>,
@@ -607,6 +634,8 @@ pub(crate) struct TransportRequest {
     pub auth_context: AuthorizationContext,
     /// The execution context (Initial/Retry/Hedging/Failover).
     pub execution_context: ExecutionContext,
+    /// Why this request fell back from its operation-specific route.
+    pub routing_fallback: Option<RoutingFallbackReason>,
     /// End-to-end deadline for the overall operation.
     pub deadline: Option<Instant>,
 }
@@ -930,7 +959,7 @@ pub(crate) enum OperationAction {
     /// Retry for session consistency.
     SessionRetry { new_state: OperationRetryState },
     /// Retry a bodyless DTX envelope failure with DTX-specific budget.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     DtxRetry {
         new_state: OperationRetryState,
         delay: Duration,

@@ -339,7 +339,7 @@ unsafe impl Sync for OwnedResponseHeaders {}
 
 impl OwnedResponseHeaders {
     /// An empty header list (no allocations). Used for completions that carry
-    /// no response (errors, cancellations, degenerate side-payload shells).
+    /// no response (errors, degenerate side-payload shells).
     pub(crate) fn empty() -> Self {
         Self {
             strings: Vec::new(),

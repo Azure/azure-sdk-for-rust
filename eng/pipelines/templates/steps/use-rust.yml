@@ -19,17 +19,52 @@ parameters:
   - name: ConfigureRegistry
     type: boolean
     default: true
+  - name: InstallToolchain
+    type: boolean
+    # RustInstaller@1 handles installation for Microsoft Rust consumers.
+    default: true
+  - name: SourcesDir
+    type: string
+    default: $(Build.SourcesDirectory)
+  - name: ToolsDirectory
+    type: string
+    # Optional flat tooling artifact containing Use-Rust.ps1, shared/, and config.toml.template.
+    default: ''
+  - name: ToolchainManifest
+    type: string
+    # Overrides Toolchain with the channel from this manifest.
+    default: ''
 
 steps:
+# `variables/rust.yml` relocates CARGO_HOME off the OS volume. Cargo finds its own
+# subcommands there, but tools invoked directly (taplo, cargo2junit) need it on PATH.
+- pwsh: |
+    . ([System.IO.Path]::Combine(
+      '${{ coalesce(parameters.ToolsDirectory, format('{0}/eng/scripts', parameters.SourcesDir)) }}',
+      'shared',
+      'Rustup.ps1'
+    ))
+    $cargoBin = Get-RustupBinDirectory
+    New-Item -ItemType Directory -Force -Path $cargoBin | Out-Null
+
+    if (($env:PATH -split [System.IO.Path]::PathSeparator) -notcontains $cargoBin) {
+      Write-Host "##vso[task.prependpath]$cargoBin"
+    }
+  displayName: Add cargo bin to PATH
+
 - ${{ if parameters.ConfigureRegistry }}:
   - pwsh: |
-      $cargoHome = $env:CARGO_HOME
-      if (-not $cargoHome) { $cargoHome = ([System.IO.Path]::Combine($HOME, '.cargo')) }
+      . ([System.IO.Path]::Combine(
+        '${{ coalesce(parameters.ToolsDirectory, format('{0}/eng/scripts', parameters.SourcesDir)) }}',
+        'shared',
+        'Rustup.ps1'
+      ))
+      $cargoHome = Get-RustupCargoHome
       New-Item -ItemType Directory -Force -Path $cargoHome | Out-Null
 
       $configPath = ([System.IO.Path]::Combine($cargoHome, 'config.toml'))
       Copy-Item `
-        -Path '$(Build.SourcesDirectory)/eng/templates/config.toml.template' `
+        -LiteralPath '${{ coalesce(parameters.ToolsDirectory, format('{0}/eng/templates', parameters.SourcesDir)) }}/config.toml.template' `
         -Destination $configPath `
         -Force
 
@@ -60,14 +95,16 @@ steps:
     env:
       SYSTEM_ACCESSTOKEN: $(VSS_NUGET_ACCESSTOKEN)
 
-- task: PowerShell@2
-  displayName: "Use Rust ${{ parameters.Toolchain }}"
-  inputs:
-    pwsh: true
-    filePath: $(Build.SourcesDirectory)/eng/scripts/Use-Rust.ps1
-    arguments: >
-      -Toolchain '${{ parameters.Toolchain }}'
-      -MaxAttempts ${{ parameters.MaxAttempts }}
-      -SetDefault $${{ parameters.SetDefault }}
-      -OutsideDirectory '$(Pipeline.Workspace)'
-    workingDirectory: ${{ parameters.WorkingDirectory }}
+- ${{ if parameters.InstallToolchain }}:
+  - task: PowerShell@2
+    displayName: "Use Rust ${{ parameters.Toolchain }}"
+    inputs:
+      pwsh: true
+      filePath: ${{ coalesce(parameters.ToolsDirectory, format('{0}/eng/scripts', parameters.SourcesDir)) }}/Use-Rust.ps1
+      arguments: >
+        -Toolchain '${{ parameters.Toolchain }}'
+        -ToolchainManifest '${{ parameters.ToolchainManifest }}'
+        -SourceDir '${{ parameters.SourcesDir }}'
+        -MaxAttempts ${{ parameters.MaxAttempts }}
+        -SetDefault $${{ parameters.SetDefault }}
+      workingDirectory: ${{ parameters.WorkingDirectory }}

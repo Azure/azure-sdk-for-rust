@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos_driver"
-version = "0.7.0"
+version = "1.1.0-beta.1"
 description = "Core implementation layer for Azure Cosmos DB - provides transport, routing, and protocol handling for cross-language SDK reuse"
 readme = "README.md"
 authors.workspace = true
@@ -12,7 +12,7 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_data_cosmos_driver"
 keywords = ["sdk", "internal"]
 categories = ["api-bindings"]
-
+exclude.workspace = true
 
 [dependencies]
 arc-swap.workspace = true
@@ -21,12 +21,13 @@ async-trait.workspace = true
 azure_core = { workspace = true, default-features = false, features = [
   "hmac_rust",
 ] }
-azure_data_cosmos_macros = "0.2.0"
+azure_data_cosmos_macros = { path = "../azure_data_cosmos_macros", version = "1.1.0-beta.1" }
 backtrace.workspace = true
 base64.workspace = true
 bytes.workspace = true
 crossbeam-epoch = { workspace = true, features = ["std"] }
 futures.workspace = true
+getrandom.workspace = true
 h2 = { workspace = true, optional = true }
 percent-encoding = { workspace = true, optional = true }
 rand.workspace = true
@@ -36,12 +37,25 @@ serde.workspace = true
 # (`driver::dataflow::query_response`) retain each item's `payload` as its
 # exact original JSON bytes while parsing the rewritten-query envelope,
 # instead of re-serializing (and potentially reformatting numbers).
-serde_json = { workspace = true, features = ["raw_value"] }
+# `float_roundtrip` makes float parsing bit-exact; serde_json's default fast
+# path can land 1 ULP off, which corrupts doubles on the text -> binary hop.
+# `unbounded_depth` only *adds* `Deserializer::disable_recursion_limit`; it
+# changes no default behavior. `binary_json::parse_text_json` needs it because
+# serde_json caps nesting at 128 while the binary decoder (and the service)
+# admit 256, and it bounds depth itself before disabling the guard.
+serde_json = { workspace = true, features = [
+    "raw_value",
+    "float_roundtrip",
+    "unbounded_depth",
+] }
 time.workspace = true
 tokio = { workspace = true, optional = true, features = ["rt", "time"] }
 tracing.workspace = true
 url.workspace = true
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
+
+[build-dependencies]
+rustc_version.workspace = true
 
 [dev-dependencies]
 azure_identity.workspace = true
@@ -54,7 +68,7 @@ tokio = { workspace = true, features = [
   "test-util",
 ] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
-uuid = { workspace = true, features = ["v4", "fast-rng"] }
+uuid = { workspace = true, features = ["v4", "v7", "fast-rng"] }
 
 [target.'cfg(windows)'.dependencies]
 windows = { workspace = true, features = [
@@ -81,11 +95,12 @@ reqwest = [
 rustls = ["reqwest", "reqwest/rustls", "__tls"]
 native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
 fault_injection = []
-preview_dtx = [] # Enables preview Distributed Transaction APIs. Disabled by default and not production-ready.
+unstable_dtx = [] # Enables unstable Distributed Transaction APIs. Disabled by default and not production-ready.
+unstable_patch = [] # Enables unstable PATCH strategy configuration; core PATCH remains available without it.
 # `__internal_in_memory_emulator` exposes the in-memory query evaluator
 # (`crate::query::eval`, `crate::query::value`) used by the in-memory Cosmos DB
 # emulator. The evaluator intentionally trades full Cosmos parity for emulator
-# usability (see `docs/IN_MEMORY_EMULATOR_SPEC.md` and the doc comments on the
+# usability (see `sdk/cosmos/docs/specs/0021-in-memory-emulator.md` and the doc comments on the
 # `eval` module). Production code MUST NOT enable this feature; it is not
 # covered by SemVer and may change or disappear at any time.
 __internal_in_memory_emulator = [

@@ -1,6 +1,6 @@
 # Release History
 
-## 1.2.0-beta.1 (Unreleased)
+## 1.2.0-beta.2 (Unreleased)
 
 ### Features Added
 
@@ -8,10 +8,16 @@
 
 ### Bugs Fixed
 
-<!-- cspell:disable-next-line -->
-- Added `azure-deprecating` to the default allowed HTTP header list so shared debug and logging paths stop redacting it.
+- Avoided unnecessary error construction and backtrace capture in `Headers::get_optional_str()` when a header is absent ([#5446](https://github.com/Azure/azure-sdk-for-rust/pull/5446)).
 
 ### Other Changes
+
+## 1.2.0-beta.1 (2026-09-04)
+
+### Bugs Fixed
+
+<!-- cspell:disable-next-line -->
+- Added `azure-deprecating` to the default allowed HTTP header list so shared debug and logging paths stop redacting it.
 
 ## 1.1.0 (2026-07-09)
 

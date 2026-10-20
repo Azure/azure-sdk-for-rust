@@ -47,6 +47,11 @@ const X_MS_MAX_ITEM_COUNT: HeaderName =
     HeaderName::from_static(request_header_names::MAX_ITEM_COUNT);
 const IF_MATCH: HeaderName = HeaderName::from_static(request_header_names::IF_MATCH);
 const IF_NONE_MATCH: HeaderName = HeaderName::from_static(request_header_names::IF_NONE_MATCH);
+const IF_MODIFIED_SINCE: HeaderName =
+    HeaderName::from_static(request_header_names::IF_MODIFIED_SINCE);
+const A_IM: HeaderName = HeaderName::from_static(request_header_names::A_IM);
+const CHANGE_FEED_WIRE_FORMAT_VERSION: HeaderName =
+    HeaderName::from_static(request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION);
 const X_MS_VERSION: HeaderName = HeaderName::from_static(request_header_names::VERSION);
 const CACHE_CONTROL: HeaderName = HeaderName::from_static(request_header_names::CACHE_CONTROL);
 
@@ -241,6 +246,22 @@ pub(crate) fn wrap_request_for_gateway_v2(
     {
         metadata.push(Token::query_version(version.to_owned()));
     }
+    // SupportedSerializationFormats (0x00C4, Byte): forward the binary-response
+    // negotiation from the `x-ms-cosmos-supported-serialization-formats` header
+    // (a string accept-list) as its equivalent RNTBD flags byte. Skip empty or
+    // unrecognized (byte 0) values so nothing changes when binary is off.
+    let supported_serialization_formats_header =
+        HeaderName::from_static(request_header_names::SUPPORTED_SERIALIZATION_FORMATS);
+    if let Some(value) = request
+        .headers
+        .get_optional_str(&supported_serialization_formats_header)
+        .filter(|v| !v.is_empty())
+    {
+        let flags = parse_supported_serialization_formats(value);
+        if flags != 0 {
+            metadata.push(Token::supported_serialization_formats(flags));
+        }
+    }
     // Rule 1+5: when RCS is non-Default on a read, emit the RNTBD
     // ReadConsistencyStrategy token (0x00FE) and DROP the ConsistencyLevel token.
     // Otherwise, emit ConsistencyLevel as before (Default => transparent on wire
@@ -304,6 +325,27 @@ pub(crate) fn wrap_request_for_gateway_v2(
         .filter(|s| !s.is_empty())
     {
         metadata.push(Token::match_condition(value.to_owned()));
+    }
+    if let Some(value) = request
+        .headers
+        .get_optional_str(&IF_MODIFIED_SINCE)
+        .filter(|s| !s.is_empty())
+    {
+        metadata.push(Token::if_modified_since(value.to_owned()));
+    }
+    if let Some(value) = request
+        .headers
+        .get_optional_str(&A_IM)
+        .filter(|s| !s.is_empty())
+    {
+        metadata.push(Token::a_im(value.to_owned()));
+    }
+    if let Some(value) = request
+        .headers
+        .get_optional_str(&CHANGE_FEED_WIRE_FORMAT_VERSION)
+        .filter(|s| !s.is_empty())
+    {
+        metadata.push(Token::change_feed_wire_format_version(value.to_owned()));
     }
 
     // Debug-only visibility into exactly which RNTBD metadata tokens are
@@ -394,10 +436,14 @@ pub(crate) fn wrap_request_for_gateway_v2(
     // operation-typed rules against the G2 path the same way it matches V1.
     #[cfg(feature = "fault_injection")]
     {
-        use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
-        let fault_op_header = HeaderName::from_static(FAULT_INJECTION_OPERATION);
-        if let Some(op) = request.headers.get_optional_str(&fault_op_header) {
-            headers.insert(fault_op_header, HeaderValue::from(op.to_owned()));
+        use crate::models::cosmos_headers::fault_injection_header_names::{
+            FAULT_INJECTION_OPERATION, FAULT_INJECTION_REGION,
+        };
+        for name in [FAULT_INJECTION_OPERATION, FAULT_INJECTION_REGION] {
+            let header = HeaderName::from_static(name);
+            if let Some(value) = request.headers.get_optional_str(&header) {
+                headers.insert(header, HeaderValue::from(value.to_owned()));
+            }
         }
     }
 
@@ -609,7 +655,7 @@ fn proxy_operation_type_name(op: OperationType) -> &'static str {
         // Distributed transactions never reach Gateway 2.0 dispatch (rejected
         // by `is_operation_supported_by_gateway_v2`); they route through the
         // standard gateway coordinator.
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         OperationType::CommitDistributedTransaction | OperationType::ReadDistributedTransaction => {
             unreachable!("distributed transaction operations must not reach Gateway 2.0 dispatch")
         }
@@ -630,7 +676,7 @@ fn proxy_resource_type_name(rt: ResourceType) -> &'static str {
         ResourceType::UserDefinedFunction => "UserDefinedFunction",
         ResourceType::PartitionKeyRange => "PartitionKeyRange",
         ResourceType::Offer => "Offer",
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         ResourceType::DistributedTransactionBatch => {
             unreachable!("distributed transaction batch must not reach Gateway 2.0 dispatch")
         }
@@ -754,6 +800,36 @@ fn hex_nibble(c: u8) -> Option<u8> {
         b'A'..=b'F' => Some(c - b'A' + 10),
         _ => None,
     }
+}
+
+/// `RntbdSupportedSerializationFormats` flag bits (OR-combined), matching the
+/// server-side enum.
+mod supported_serialization_format_flags {
+    pub(super) const JSON_TEXT: u8 = 0x01;
+    pub(super) const COSMOS_BINARY: u8 = 0x02;
+    pub(super) const HYBRID_ROW: u8 = 0x04;
+}
+
+/// Parses the `x-ms-cosmos-supported-serialization-formats` accept-list into the
+/// RNTBD flags byte.
+///
+/// The header is a comma-separated, case-insensitive list of format names. Any
+/// `+`-suffixed feature (e.g. `CosmosBinary+UInt64`) rides a separate token, so
+/// only the base name is matched; unknown entries are skipped (result `0`).
+fn parse_supported_serialization_formats(value: &str) -> u8 {
+    use supported_serialization_format_flags::{COSMOS_BINARY, HYBRID_ROW, JSON_TEXT};
+    let mut flags = 0u8;
+    for entry in value.split(',') {
+        let name = entry.trim().split('+').next().unwrap_or("").trim();
+        if name.eq_ignore_ascii_case("JsonText") {
+            flags |= JSON_TEXT;
+        } else if name.eq_ignore_ascii_case("CosmosBinary") {
+            flags |= COSMOS_BINARY;
+        } else if name.eq_ignore_ascii_case("HybridRow") {
+            flags |= HYBRID_ROW;
+        }
+    }
+    flags
 }
 
 #[cfg(test)]
@@ -1407,6 +1483,97 @@ mod tests {
     }
 
     #[test]
+    fn wrap_emits_supported_serialization_formats_token_from_header() {
+        // `JsonText,CosmosBinary` header => 0x01 | 0x02 token.
+        let mut request = signed_request(None);
+        request.headers.insert(
+            HeaderName::from_static(request_header_names::SUPPORTED_SERIALIZATION_FORMATS),
+            "JsonText,CosmosBinary",
+        );
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let wrapped = wrap_request_for_gateway_v2(
+            request,
+            &wrap_inputs(&auth_context, OperationType::Query, None),
+        )
+        .unwrap();
+        assert_eq!(
+            parse_wrapped_request(&wrapped, 0).tokens[&0x00C4],
+            ParsedTokenValue::Byte(0x03),
+            "SupportedSerializationFormats (0x00C4) must be the OR of the accepted format flags"
+        );
+
+        // Point-op sends `CosmosBinary` alone => 0x02.
+        let mut point = signed_request(None);
+        point.headers.insert(
+            HeaderName::from_static(request_header_names::SUPPORTED_SERIALIZATION_FORMATS),
+            "CosmosBinary",
+        );
+        let wrapped_point = wrap_request_for_gateway_v2(
+            point,
+            &wrap_inputs(&auth_context, OperationType::Read, None),
+        )
+        .unwrap();
+        assert_eq!(
+            parse_wrapped_request(&wrapped_point, 0).tokens[&0x00C4],
+            ParsedTokenValue::Byte(0x02),
+        );
+    }
+
+    #[test]
+    fn wrap_omits_supported_serialization_formats_token_when_absent_or_unknown() {
+        // No header => no token.
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let wrapped = wrap_request_for_gateway_v2(
+            signed_request(None),
+            &wrap_inputs(&auth_context, OperationType::Read, None),
+        )
+        .unwrap();
+        assert!(!parse_wrapped_request(&wrapped, 0)
+            .tokens
+            .contains_key(&0x00C4));
+
+        // An unrecognized value emits nothing, not a zero-flag token.
+        let mut unknown = signed_request(None);
+        unknown.headers.insert(
+            HeaderName::from_static(request_header_names::SUPPORTED_SERIALIZATION_FORMATS),
+            "SomethingElse",
+        );
+        let wrapped_unknown = wrap_request_for_gateway_v2(
+            unknown,
+            &wrap_inputs(&auth_context, OperationType::Read, None),
+        )
+        .unwrap();
+        assert!(!parse_wrapped_request(&wrapped_unknown, 0)
+            .tokens
+            .contains_key(&0x00C4));
+    }
+
+    #[test]
+    fn parse_supported_serialization_formats_maps_names_to_flags() {
+        assert_eq!(parse_supported_serialization_formats("JsonText"), 0x01);
+        assert_eq!(parse_supported_serialization_formats("CosmosBinary"), 0x02);
+        assert_eq!(
+            parse_supported_serialization_formats("JsonText,CosmosBinary"),
+            0x03
+        );
+        assert_eq!(parse_supported_serialization_formats("HybridRow"), 0x04);
+        // Case-insensitive, whitespace-tolerant, `+feature` stripped.
+        assert_eq!(
+            parse_supported_serialization_formats(" cosmosbinary+UInt64 , jsontext "),
+            0x03
+        );
+        assert_eq!(parse_supported_serialization_formats("nonsense"), 0x00);
+    }
+
+    #[test]
     fn wrap_emits_page_size_from_max_item_count_header() {
         // Query/read-feed page size must reach the proxy as PageSize (0x0004,
         // ULong), filled from `x-ms-max-item-count`. A negative (unbounded)
@@ -1469,6 +1636,64 @@ mod tests {
     }
 
     #[test]
+    fn wrap_emits_incremental_feed_a_im_token() {
+        let mut request = signed_request(None);
+        request.headers.insert(
+            HeaderName::from_static(request_header_names::A_IM),
+            request_header_names::INCREMENTAL_FEED,
+        );
+        request.headers.insert(
+            HeaderName::from_static(request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION),
+            request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION_2021_09_15,
+        );
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs",
+        );
+
+        let wrapped = wrap_request_for_gateway_v2(
+            request,
+            &wrap_inputs(&auth_context, OperationType::ReadFeed, None),
+        )
+        .unwrap();
+
+        assert_eq!(
+            parse_wrapped_request(&wrapped, 0).tokens[&0x003F],
+            ParsedTokenValue::String(request_header_names::INCREMENTAL_FEED.into())
+        );
+        assert_eq!(
+            parse_wrapped_request(&wrapped, 0).tokens[&0x00B2],
+            ParsedTokenValue::String(
+                request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION_2021_09_15.into()
+            )
+        );
+    }
+
+    #[test]
+    fn wrap_omits_a_im_token_for_ordinary_read_feed() {
+        let request = signed_request(None);
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs",
+        );
+
+        let wrapped = wrap_request_for_gateway_v2(
+            request,
+            &wrap_inputs(&auth_context, OperationType::ReadFeed, None),
+        )
+        .unwrap();
+
+        assert!(!parse_wrapped_request(&wrapped, 0)
+            .tokens
+            .contains_key(&0x003F));
+        assert!(!parse_wrapped_request(&wrapped, 0)
+            .tokens
+            .contains_key(&0x00B2));
+    }
+
+    #[test]
     fn wrap_emits_match_from_if_match_on_writes() {
         // Writes carry the ETag precondition as Match (0x0008, String) filled
         // from `If-Match`; `If-None-Match` is ignored on a write.
@@ -1525,6 +1750,38 @@ mod tests {
             parse_wrapped_request(&wrapped, 0).tokens[&0x0008],
             ParsedTokenValue::String("\"etag-7\"".into()),
             "Match (0x0008) on a read must come from If-None-Match"
+        );
+    }
+
+    #[test]
+    fn wrap_emits_point_in_time_with_continuation_on_read_feed() {
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs",
+        );
+        let mut request = signed_request(None);
+        request.headers.insert(
+            HeaderName::from_static(request_header_names::IF_NONE_MATCH),
+            "\"etag-7\"",
+        );
+        request.headers.insert(
+            HeaderName::from_static(request_header_names::IF_MODIFIED_SINCE),
+            "Mon, 01 Jan 2024 00:00:00 GMT",
+        );
+        let wrapped = wrap_request_for_gateway_v2(
+            request,
+            &wrap_inputs(&auth_context, OperationType::ReadFeed, None),
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 0);
+        assert_eq!(
+            parsed.tokens[&0x0008],
+            ParsedTokenValue::String("\"etag-7\"".into())
+        );
+        assert_eq!(
+            parsed.tokens[&0x0047],
+            ParsedTokenValue::String("Mon, 01 Jan 2024 00:00:00 GMT".into())
         );
     }
 
@@ -1761,7 +2018,7 @@ mod tests {
         let auth_context =
             AuthorizationContext::new(Method::Get, ResourceType::Document, "dbs/db1/colls/coll1");
         let partition_key =
-            PartitionKey::from(vec![PartitionKeyValue::from("tenant1".to_string())]);
+            PartitionKey::try_from(vec![PartitionKeyValue::from("tenant1".to_string())]).unwrap();
         let partition_key_definition =
             PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
         let expected = effective_partition_key_multi_hash_v2_binary(partition_key.values());
@@ -1813,11 +2070,12 @@ mod tests {
             ResourceType::Document,
             "dbs/db1/colls/coll1/docs/doc1",
         );
-        let partition_key = PartitionKey::from(vec![
+        let partition_key = PartitionKey::try_from(vec![
             PartitionKeyValue::from("tenant1".to_string()),
             PartitionKeyValue::from("user1".to_string()),
             PartitionKeyValue::from("session1".to_string()),
-        ]);
+        ])
+        .unwrap();
         let partition_key_definition =
             PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
 

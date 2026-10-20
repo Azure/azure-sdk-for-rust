@@ -164,6 +164,7 @@ mod tests {
     fn request_frames_round_trip_for_slice_one_operations() {
         let operations = [
             OperationType::Create,
+            OperationType::Patch,
             OperationType::Read,
             OperationType::ReadFeed,
             OperationType::Replace,
@@ -221,6 +222,21 @@ mod tests {
     }
 
     #[test]
+    fn patch_uses_rntbd_operation_id_two() {
+        let frame = RntbdRequestFrame {
+            resource_type: ResourceType::Document,
+            operation_type: OperationType::Patch,
+            activity_id: Uuid::nil(),
+            metadata: Vec::new(),
+            body: Some(br#"{"operations":[]}"#.to_vec()),
+        };
+
+        let bytes = serialize(&frame).unwrap();
+        assert_eq!(u16::from_le_bytes([bytes[6], bytes[7]]), 0x0002);
+        assert_eq!(RntbdRequestFrame::read(&bytes).unwrap(), frame);
+    }
+
+    #[test]
     fn metadata_tokens_are_serialized_between_header_and_body() {
         let frame = RntbdRequestFrame {
             resource_type: ResourceType::Document,
@@ -234,6 +250,26 @@ mod tests {
         let parsed = RntbdRequestFrame::read(&bytes).unwrap();
 
         assert_eq!(parsed, frame);
+    }
+
+    #[test]
+    fn supported_serialization_formats_token_round_trips() {
+        let frame = RntbdRequestFrame {
+            resource_type: ResourceType::Document,
+            operation_type: OperationType::Query,
+            activity_id: Uuid::nil(),
+            metadata: vec![Token::supported_serialization_formats(0x03)],
+            body: None,
+        };
+
+        let bytes = serialize(&frame).unwrap();
+        let parsed = RntbdRequestFrame::read(&bytes).unwrap();
+
+        assert_eq!(parsed, frame);
+        assert_eq!(
+            parsed.metadata[0],
+            Token::new(0x00C4, TokenValue::Byte(0x03)),
+        );
     }
 
     /// Regression: the Gateway 2.0 proxy's RNTBD reader treats `LengthInBytes`

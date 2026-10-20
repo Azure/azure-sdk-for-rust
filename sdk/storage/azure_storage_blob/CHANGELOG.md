@@ -1,6 +1,6 @@
 # Release History
 
-## 1.1.0-beta.3 (Unreleased)
+## 1.2.0-beta.1 (Unreleased)
 
 ### Breaking Changes
 
@@ -15,6 +15,12 @@
 - The service-calculated CRC64 is now surfaced as `content_crc64` on upload responses, alongside `content_md5`, when a content MD5 is provided with the request. This applies to `stage_block`, `stage_block_from_url`, `upload_pages`, `upload_pages_from_url`, `append_block`, `append_block_from_url`, `upload` and `upload_blob_from_url`.
 - Added `access_tier`, `access_tier_changed_on`, and `access_tier_inferred` to `BlobDownloadProperties` and marked the struct as non-exhaustive.
 - Added `BlobClient::start_copy_from_url()` and `BlobClient::abort_copy()` for asynchronous blob copy operations.
+
+## 1.1.0 (2026-09-08)
+
+### Features Added
+
+- Stable release of features from 1.1.0-beta.1 and 1.1.0-beta.2
 
 ## 1.1.0-beta.2 (2026-08-11)
 
