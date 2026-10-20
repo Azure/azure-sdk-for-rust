@@ -477,7 +477,7 @@ impl CosmosResourceReference {
                 || matches!(name, "." | "..")
                 || name
                     .bytes()
-                    .any(|byte| matches!(byte, b'/' | b'\\' | b'?' | b'#'))
+                    .any(|byte| matches!(byte, b'/' | b'\\' | b'?' | b'#' | b'\t' | b'\n' | b'\r'))
         };
 
         match &self.scope {
@@ -524,7 +524,8 @@ impl CosmosResourceReference {
     /// just the SDK's `ContainerClient`.
     ///
     /// Names used as path segments are rejected when empty, equal to a dot
-    /// segment, or containing a separator or delimiter forbidden by Cosmos DB.
+    /// segment, or containing a separator, delimiter, or control byte that URL
+    /// processing could remove.
     ///
     /// See [`addressing_conflict`](Self::addressing_conflict) for `leaf_in_path`.
     ///
@@ -547,7 +548,8 @@ impl CosmosResourceReference {
                 .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
                 .with_message(format!(
                     "{resource_type} name cannot be used as a request-path segment; names must be \
-                     non-empty and cannot contain '/', '\\', '?', '#', or equal '.' or '..'"
+                     non-empty and cannot contain '/', '\\', '?', '#', ASCII tab, line feed, or \
+                     carriage return, or equal '.' or '..'"
                 ))
                 .with_source(std::io::Error::other(
                     "invalid Cosmos resource path segment",
@@ -1442,6 +1444,15 @@ mod tests {
             r"other\container",
             "item?query",
             "item#fragment",
+            "\t",
+            "\n",
+            "\r",
+            ".\t.",
+            ".\n.",
+            ".\r.",
+            "tar\tget",
+            "tar\nget",
+            "tar\rget",
             "../../../../other-db/colls/other-container/docs/target",
         ] {
             let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), name);
@@ -1461,15 +1472,21 @@ mod tests {
 
     #[test]
     fn validate_addressing_rejects_invalid_parent_names() {
-        let database = DatabaseReference::from_name(test_account(), "../other-db");
-        let reference = CosmosResourceReference::from(database)
-            .with_resource_type(ResourceType::DocumentCollection)
-            .into_feed_reference();
+        for name in ["../other-db", ".\t.", "db\nname"] {
+            let database = DatabaseReference::from_name(test_account(), name);
+            let reference = CosmosResourceReference::from(database)
+                .with_resource_type(ResourceType::DocumentCollection)
+                .into_feed_reference();
 
-        let err = reference
-            .validate_addressing(false)
-            .expect_err("invalid parent names must be rejected");
-        assert_eq!(err.status(), crate::error::status_codes::CLIENT_BAD_REQUEST);
+            let err = reference
+                .validate_addressing(false)
+                .expect_err("invalid parent names must be rejected");
+            assert_eq!(
+                err.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST,
+                "name: {name:?}"
+            );
+        }
     }
 
     #[test]
