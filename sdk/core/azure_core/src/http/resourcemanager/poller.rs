@@ -263,8 +263,10 @@ where
                         qb.set_pair(API_VERSION_HEADER_NAME, api_version);
                         qb.build();
                     }
-                    *request.url_mut() = next_link;
-                    request.set_method(Method::Get);
+                    request = Request::new(next_link, Method::Get);
+                    if let Some(accept) = &accept {
+                        request.insert_header(ACCEPT, accept.clone());
+                    }
                 }
 
                 let response = pipeline.send(&context, &mut request, None).await?;
