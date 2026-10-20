@@ -1867,6 +1867,16 @@ same `(operation, endpoint, retry_state, result)` tuple, same
 LocationEffects, plus the new `observed_session_unavailable` signal —
 but no `OperationAction` and no consumption of the underlying error.
 
+#### 9.6.8 Hub-region cache on a hedged win
+
+A leg that sent the hub-region header and returned a success was served by
+the partition's hub, so the race caches that region exactly as the
+non-hedged `Complete` arm does (reads only, PPAF on, skipped when already
+cached). The leg records whether it sent the header when its request is
+built; the shared latch alone is not enough, because it can flip after a
+leg's request was already built without the header. Today only the
+secondary reads the latch, so only a secondary win can populate the cache.
+
 ---
 
 ## 10. Diagnostics & Observability

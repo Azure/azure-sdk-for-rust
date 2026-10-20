@@ -7,8 +7,8 @@ use super::CosmosDriver;
 use crate::{
     diagnostics::HedgeTerminalState,
     fault_injection::{
-        FaultInjectionConditionBuilder, FaultInjectionResultBuilder, FaultInjectionRuleBuilder,
-        FaultOperationType,
+        FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+        FaultInjectionRuleBuilder, FaultOperationType,
     },
     in_memory_emulator::{
         ContainerConfig, InMemoryEmulatorHttpClient, ReplicationConfig, VirtualAccountConfig,
@@ -212,4 +212,135 @@ async fn feedback_respects_ppcb_without_disabling_transport_hedging() {
         assert_eq!(rule.hit_count() - hits, 1);
         assert_eq!(store.version_for_tests(), version);
     }
+}
+
+#[tokio::test(start_paused = true)]
+async fn hedge_win_with_hub_region_header_caches_hub_region() {
+    let east = Url::parse("https://eastus.emulator.local").unwrap();
+    let config = VirtualAccountConfig::new(vec![
+        VirtualRegion::new("East US", east.clone()),
+        VirtualRegion::new(
+            "West US",
+            Url::parse("https://westus.emulator.local").unwrap(),
+        ),
+    ])
+    .unwrap()
+    .with_write_mode(WriteMode::Single)
+    .with_replication_config(ReplicationConfig::immediate())
+    .with_per_partition_failover(true);
+    let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
+    emulator.store().create_database("repro");
+    emulator.store().create_container_with_config(
+        "repro",
+        "items",
+        serde_json::from_value(serde_json::json!({"paths":["/pk"],"kind":"Hash","version":2}))
+            .unwrap(),
+        ContainerConfig::new()
+            .with_partition_count(1)
+            .build()
+            .unwrap(),
+    );
+    let west_read_rule = |id: &str, result| {
+        let rule = Arc::new(
+            FaultInjectionRuleBuilder::new(id, result)
+                .with_condition(
+                    FaultInjectionConditionBuilder::new()
+                        .with_operation_type(FaultOperationType::ReadItem)
+                        .with_region(Region::WEST_US)
+                        .build(),
+                )
+                .build(),
+        );
+        rule.disable();
+        rule
+    };
+    let slow_primary = west_read_rule(
+        "west-slow",
+        FaultInjectionResultBuilder::new()
+            .with_delay(Duration::from_millis(200))
+            .with_probability(1.0)
+            .build(),
+    );
+    let session_unavailable = west_read_rule(
+        "west-1002",
+        FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ReadSessionNotAvailable)
+            .with_probability(1.0)
+            .build(),
+    );
+    let runtime = emulator
+        .runtime_builder_with_fault_rules(vec![slow_primary.clone(), session_unavailable.clone()])
+        .build()
+        .await
+        .unwrap();
+    let account = AccountReference::with_account_key(east, "ZW11bGF0b3JrZXk=");
+    // Seeding through the reader would record a PPAF write override, pre-filling the cache under test.
+    let writer = runtime
+        .create_driver(
+            DriverOptions::builder(account.clone())
+                .with_preferred_regions(vec![Region::EAST_US])
+                .build(),
+        )
+        .await
+        .unwrap();
+    let driver = runtime
+        .create_driver(
+            DriverOptions::builder(account)
+                .with_preferred_regions(vec![Region::WEST_US, Region::EAST_US])
+                .build(),
+        )
+        .await
+        .unwrap();
+    let container = driver
+        .resolve_container("repro", "items", OperationOptions::default())
+        .await
+        .unwrap();
+    let pk = PartitionKey::from("key");
+    let item = ItemReference::from_name(&container, pk.clone(), "key");
+    writer
+        .execute_singleton_operation(
+            CosmosOperation::create_item(item.clone()).with_body(
+                serde_json::to_vec(&serde_json::json!({"id":"key","pk":"key"})).unwrap(),
+            ),
+            OperationOptions::default(),
+        )
+        .await
+        .unwrap();
+    let range_id = driver
+        .resolve_partition_key_ranges_for_key(&container, &pk, false)
+        .await
+        .unwrap()
+        .unwrap()[0]
+        .id
+        .clone();
+    let options = OperationOptionsBuilder::new()
+        .with_availability_strategy(AvailabilityStrategy::Hedging(HedgingStrategy::new(
+            HedgeThreshold::new(Duration::from_millis(20)).unwrap(),
+        )))
+        .build();
+    let store = &driver.location_state_store;
+
+    // Without the hub-only header, the winning region says nothing about the hub.
+    slow_primary.enable();
+    assert_eq!(
+        read(&driver, &item, options.clone()).await,
+        HedgeTerminalState::AlternateWon
+    );
+    slow_primary.disable();
+    assert!(store.snapshot().partitions.failover_overrides.is_empty());
+
+    // A fast 1002 on the primary latches the header before the alternate (write region) leg is built.
+    session_unavailable.enable();
+    assert_eq!(
+        read(&driver, &item, options).await,
+        HedgeTerminalState::AlternateWon
+    );
+    session_unavailable.disable();
+    let hub = store
+        .snapshot()
+        .partitions
+        .failover_overrides
+        .get(range_id.as_str())
+        .and_then(|entry| entry.current_endpoint.region().cloned());
+    assert_eq!(hub, Some(Region::EAST_US));
 }

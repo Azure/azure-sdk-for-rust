@@ -1204,22 +1204,12 @@ pub(crate) async fn execute_operation_pipeline(
                 // that latch the header skip the 403/3 discovery chain.
                 if let Some(pk_range_id) = hub_region_cache_populate_target(&retry_state, operation)
                 {
-                    // Skip the apply when it would not change state: PPAF off
-                    // (the cache effect is a no-op) or the entry already points
-                    // at this hub endpoint. Both would only churn a clone + CAS.
-                    let partitions = location_state_store.snapshot().partitions;
-                    let already_cached = partitions
-                        .failover_overrides
-                        .get(pk_range_id.as_str())
-                        .is_some_and(|entry| entry.current_endpoint == routing.endpoint);
-                    if partitions.per_partition_automatic_failover_enabled && !already_cached {
-                        location_state_store
-                            .apply(&[LocationEffect::CacheHubRegion {
-                                partition_key_range_id: pk_range_id,
-                                hub_endpoint: routing.endpoint.clone(),
-                            }])
-                            .await;
-                    }
+                    populate_hub_region_cache(
+                        location_state_store,
+                        &pk_range_id,
+                        &routing.endpoint,
+                    )
+                    .await;
                 }
 
                 return build_cosmos_response(
@@ -2993,6 +2983,51 @@ fn hub_region_cache_populate_target(
     }
 }
 
+/// Caches `hub_endpoint` as the partition's hub region.
+///
+/// Skips the apply when it would not change state: PPAF off (the cache effect
+/// is a no-op) or the entry already points at this endpoint.
+async fn populate_hub_region_cache(
+    location_state_store: &LocationStateStore,
+    pk_range_id: &PartitionKeyRangeId,
+    hub_endpoint: &CosmosEndpoint,
+) {
+    let partitions = location_state_store.snapshot().partitions;
+    let already_cached = partitions
+        .failover_overrides
+        .get(pk_range_id.as_str())
+        .is_some_and(|entry| entry.current_endpoint == *hub_endpoint);
+    if partitions.per_partition_automatic_failover_enabled && !already_cached {
+        location_state_store
+            .apply(&[LocationEffect::CacheHubRegion {
+                partition_key_range_id: pk_range_id.clone(),
+                hub_endpoint: hub_endpoint.clone(),
+            }])
+            .await;
+    }
+}
+
+/// Hedged counterpart of the `Complete` arm's hub-region cache populate: a
+/// leg that sent the hub-region-processing-only header and succeeded was
+/// served by the partition's hub.
+async fn populate_hub_region_cache_for_hedge_winner(
+    ctx: &AttemptContext<'_>,
+    endpoint: &CosmosEndpoint,
+    sent_hub_region_header: bool,
+    result: &TransportResult,
+    pk_range_id: Option<&PartitionKeyRangeId>,
+) {
+    let Some(pk_range_id) = pk_range_id else {
+        return;
+    };
+    if sent_hub_region_header
+        && ctx.operation.is_read_only()
+        && matches!(result.outcome, TransportOutcome::Success { .. })
+    {
+        populate_hub_region_cache(ctx.location_state_store, pk_range_id, endpoint).await;
+    }
+}
+
 // ── Hedging dispatch (Part 4b) ────────────────────────────────────────
 //
 // `maybe_upgrade_to_hedge` + `AttemptContext` + `perform_single_attempt`
@@ -3470,6 +3505,7 @@ async fn perform_single_attempt(
     routing: &RoutingDecision,
     execution_context: ExecutionContext,
     shared_hub_region_latch: Option<&Arc<AtomicBool>>,
+    sent_hub_region_header: Option<&AtomicBool>,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> crate::error::Result<TransportResult> {
     // Resolve session token using the same precedence the main loop uses.
@@ -3513,6 +3549,9 @@ async fn perform_single_attempt(
             HeaderName::from_static(request_header_names::HUB_REGION_PROCESSING_ONLY),
             HeaderValue::from_static("True"),
         );
+        if let Some(sent) = sent_hub_region_header {
+            sent.store(true, Ordering::Relaxed);
+        }
     }
     apply_optional_request_headers(&mut transport_request, ctx.operation, ctx.options);
 
@@ -4007,6 +4046,7 @@ async fn execute_hedged(
             primary_routing,
             ExecutionContext::Initial,
             None,
+            None,
             &mut diag,
         )
         .await;
@@ -4208,6 +4248,9 @@ async fn execute_hedged(
         crate::diagnostics::ExecutionContext::Hedging,
     );
     parent_diagnostics.record_hedge_fanout(primary_dispatch, secondary_dispatch);
+    // Recorded at send time: the shared latch can flip after this leg's request was built.
+    let secondary_sent_hub_region_header = Arc::new(AtomicBool::new(false));
+    let sent_hub_region_header = Arc::clone(&secondary_sent_hub_region_header);
     let secondary_attempt = Box::pin(async move {
         let mut diag = secondary_diag;
         let result = perform_single_attempt(
@@ -4215,6 +4258,7 @@ async fn execute_hedged(
             secondary_routing,
             ExecutionContext::Hedging,
             secondary_shared_latch.as_ref(),
+            Some(&sent_hub_region_header),
             &mut diag,
         )
         .await;
@@ -4379,6 +4423,16 @@ async fn execute_hedged(
                                 primary_region.as_ref(),
                             );
                             capture_session_token_for_winner(ctx, &tr);
+                            populate_hub_region_cache_for_hedge_winner(
+                                ctx,
+                                &secondary_routing.endpoint,
+                                secondary_sent_hub_region_header.load(Ordering::Relaxed),
+                                &tr,
+                                captured_pk_range_id
+                                    .as_ref()
+                                    .or(ctx.partition_key_range_id.as_ref()),
+                            )
+                            .await;
                             HedgedRaceResult::Terminal(finalize_hedge_attempt(
                                 tr,
                                 parent_diagnostics,
@@ -4458,6 +4512,16 @@ async fn execute_hedged(
                         primary_region.as_ref(),
                     );
                     capture_session_token_for_winner(ctx, &tr);
+                    populate_hub_region_cache_for_hedge_winner(
+                        ctx,
+                        &secondary_routing.endpoint,
+                        secondary_sent_hub_region_header.load(Ordering::Relaxed),
+                        &tr,
+                        captured_pk_range_id
+                            .as_ref()
+                            .or(ctx.partition_key_range_id.as_ref()),
+                    )
+                    .await;
                     HedgedRaceResult::Terminal(finalize_hedge_attempt(tr, parent_diagnostics))
                 }
                 HedgeClass::Transient => {
