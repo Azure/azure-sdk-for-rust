@@ -108,9 +108,7 @@ pub(crate) async fn run(config: &Config) -> Result<(), Error> {
         || config.commit_sha.as_ref() != Some(&environment.source_commit)
         || !valid_sha(&environment.source_commit)
         || !valid_sha(&environment.baseline_commit)
-        || !environment
-            .account_resource_id
-            .starts_with("/subscriptions/")
+        || !environment.matches_account_endpoint()
     {
         return Err(
             "preflight environment does not match source, endpoint, region, or profile".into(),
@@ -897,7 +895,7 @@ mod tests {
         let environment = Environment {
             source_commit: "1".repeat(40),
             baseline_commit: "2".repeat(40),
-            account_resource_id: "/subscriptions/test".into(),
+            account_name: "emulator".into(),
             endpoint: url.into(),
             region: "East US".into(),
             vm_size: profile.vm_size.clone(),

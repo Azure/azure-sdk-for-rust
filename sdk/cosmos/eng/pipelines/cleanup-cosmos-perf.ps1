@@ -3,6 +3,7 @@
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+. ([System.IO.Path]::Combine($PSScriptRoot, 'cosmos-perf-data-plane.ps1'))
 $manifest = [System.IO.Path]::Combine($env:COSMOS_PERF_OUTPUT, 'owned-database.json')
 if (-not (Test-Path $manifest)) {
     Write-Host 'No owned database manifest; no cleanup required.'
@@ -13,23 +14,12 @@ if ($owned.database -notmatch '^cosmos-perf-[a-f0-9-]{36}$' -or
     $owned.workload_id -ne $env:BUILD_BUILDID) {
     throw 'Refusing cleanup of a database not owned by this pipeline run.'
 }
-$date = [DateTime]::UtcNow.ToString('r', [Globalization.CultureInfo]::InvariantCulture)
+$endpoint = Get-CosmosPerfEndpoint $env:AZURE_COSMOS_ENDPOINT
 $resource = "dbs/$($owned.database)"
-$text = "delete`ndbs`n$resource`n$($date.ToLowerInvariant())`n`n"
-$hmac = [Security.Cryptography.HMACSHA256]::new([Convert]::FromBase64String($env:AZURE_COSMOS_KEY))
-try {
-    $signature = [Convert]::ToBase64String($hmac.ComputeHash([Text.Encoding]::UTF8.GetBytes($text)))
-} finally {
-    $hmac.Dispose()
-}
-$headers = @{
-    authorization = [Uri]::EscapeDataString("type=master&ver=1.0&sig=$signature")
-    'x-ms-date' = $date
-    'x-ms-version' = '2018-12-31'
-}
+$headers = New-CosmosPerfHeaders -Method delete -ResourceType dbs -ResourceLink $resource -Key $env:AZURE_COSMOS_KEY
 $response = Invoke-WebRequest -Method Delete `
-    -Uri "$($env:AZURE_COSMOS_ENDPOINT.TrimEnd('/'))/$resource" `
-    -Headers $headers -TimeoutSec 60 -SkipHttpErrorCheck
+    -Uri ([Uri]::new($endpoint, $resource)) `
+    -Headers $headers -TimeoutSec 60 -MaximumRedirection 0 -NoProxy -SkipHttpErrorCheck
 if ($response.StatusCode -notin @(204, 404)) {
     throw "Owned database cleanup failed with HTTP $($response.StatusCode)."
 }

@@ -3,6 +3,7 @@
 
 use std::collections::BTreeSet;
 
+use azure_core::http::Url;
 use serde::{Deserialize, Serialize};
 
 use crate::stats::Summary;
@@ -168,11 +169,29 @@ impl Baseline {
 pub(super) struct Environment {
     pub source_commit: String,
     pub baseline_commit: String,
-    pub account_resource_id: String,
+    pub account_name: String,
     pub endpoint: String,
     pub region: String,
     pub vm_size: String,
     pub consistency: String,
+}
+
+impl Environment {
+    pub(super) fn matches_account_endpoint(&self) -> bool {
+        let Ok(endpoint) = Url::parse(&self.endpoint) else {
+            return false;
+        };
+        !self.account_name.is_empty()
+            && endpoint.scheme() == "https"
+            && endpoint.port_or_known_default() == Some(443)
+            && endpoint.host_str()
+                == Some(format!("{}.documents.azure.com", self.account_name).as_str())
+            && endpoint.path() == "/"
+            && endpoint.username().is_empty()
+            && endpoint.password().is_none()
+            && endpoint.query().is_none()
+            && endpoint.fragment().is_none()
+    }
 }
 
 #[derive(Serialize)]
@@ -231,13 +250,40 @@ pub(super) fn evaluate(
 
 #[cfg(test)]
 mod tests {
-    use super::{evaluate, Baseline, Operation, Profile, Threshold};
+    use super::{evaluate, Baseline, Environment, Operation, Profile, Threshold};
     use crate::stats::Stats;
     use std::time::Duration;
 
     fn profile() -> Profile {
         serde_json::from_str(include_str!("../../../eng/pipelines/perf-profile.json"))
             .expect("profile fixture")
+    }
+
+    #[test]
+    fn data_plane_identity_matches_only_the_configured_account() {
+        let mut environment = Environment {
+            source_commit: "1".repeat(40),
+            baseline_commit: "2".repeat(40),
+            account_name: "perf".into(),
+            endpoint: "https://perf.documents.azure.com:443/".into(),
+            region: "East US 2".into(),
+            vm_size: "Standard_D8s_v5".into(),
+            consistency: "Session".into(),
+        };
+        assert!(environment.matches_account_endpoint());
+        for endpoint in [
+            "https://another.documents.azure.com/",
+            "http://perf.documents.azure.com/",
+            "https://perf.documents.azure.com:8443/",
+            "https://user@perf.documents.azure.com/",
+            "https://perf.documents.azure.com/dbs",
+            "https://perf.documents.azure.com/?query=1",
+            "https://perf.documents.azure.com/#fragment",
+            "not a URL",
+        ] {
+            environment.endpoint = endpoint.into();
+            assert!(!environment.matches_account_endpoint(), "{endpoint}");
+        }
     }
 
     #[test]

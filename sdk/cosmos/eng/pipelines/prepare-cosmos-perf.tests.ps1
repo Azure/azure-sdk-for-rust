@@ -8,10 +8,10 @@ Set-StrictMode -Version Latest
 function New-Fixture {
     return @{
         Account = @{
-            documentEndpoint = 'https://perf.documents.azure.com/'
-            readLocations = @(@{ locationName = 'East US 2' })
-            writeLocations = @(@{ locationName = 'East US 2' })
-            consistencyPolicy = @{ defaultConsistencyLevel = 'Session' }
+            id = 'perf'
+            readableLocations = @(@{ name = 'East US 2' })
+            writableLocations = @(@{ name = 'East US 2' })
+            userConsistencyPolicy = @{ defaultConsistencyLevel = 'Session' }
         }
         Vm = @{ location = 'eastus2'; vmSize = 'Standard_D8s_v5'; osType = 'Linux' }
         Profile = @{ vm_size = 'Standard_D8s_v5'; consistency = 'Session' }
@@ -27,12 +27,20 @@ $cases = @{
     'remote VM' = { param($f) $f.Vm.location = 'westus3' }
     'wrong SKU' = { param($f) $f.Vm.vmSize = 'Standard_D2s_v5' }
     'wrong OS' = { param($f) $f.Vm.osType = 'Windows' }
-    'wrong consistency' = { param($f) $f.Account.consistencyPolicy.defaultConsistencyLevel = 'Eventual' }
+    'wrong consistency' = { param($f) $f.Account.userConsistencyPolicy.defaultConsistencyLevel = 'Eventual' }
     'wrong account' = { param($f) $f.Endpoint = 'https://another.documents.azure.com/' }
     'HTTP endpoint' = { param($f) $f.Endpoint = 'http://perf.documents.azure.com/' }
-    'multi-region account' = { param($f) $f.Account.readLocations += @{ locationName = 'West US 3' } }
-    'different write region' = { param($f) $f.Account.writeLocations[0].locationName = 'West US 3' }
-    'missing locations' = { param($f) $f.Account.readLocations = @() }
+    'multi-region account' = { param($f) $f.Account.readableLocations += @{ name = 'West US 3' } }
+    'different write region' = { param($f) $f.Account.writableLocations[0].name = 'West US 3' }
+    'missing locations' = { param($f) $f.Account.readableLocations = @() }
+    'empty location names' = { param($f) $f.Account.writableLocations[0].name = ''; $f.Account.readableLocations[0].name = ''; $f.Vm.location = '' }
+    'wrong metadata identity' = { param($f) $f.Account.id = 'another' }
+    'missing metadata identity' = { param($f) $f.Account.id = '' }
+    'unexpected port' = { param($f) $f.Endpoint = 'https://perf.documents.azure.com:8443/' }
+    'endpoint credentials' = { param($f) $f.Endpoint = 'https://user@perf.documents.azure.com/' }
+    'endpoint query' = { param($f) $f.Endpoint = 'https://perf.documents.azure.com/?query=1' }
+    'endpoint fragment' = { param($f) $f.Endpoint = 'https://perf.documents.azure.com/#fragment' }
+    'endpoint path' = { param($f) $f.Endpoint = 'https://perf.documents.azure.com/dbs' }
 }
 foreach ($name in $cases.Keys) {
     $fixture = New-Fixture
@@ -43,7 +51,7 @@ foreach ($name in $cases.Keys) {
     Write-Host "PASS: rejects $name"
 }
 
-$files = @('prepare-cosmos-perf.ps1', 'run-cosmos-perf.ps1', 'cleanup-cosmos-perf.ps1')
+$files = @('prepare-cosmos-perf.ps1', 'run-cosmos-perf.ps1', 'cleanup-cosmos-perf.ps1', 'cosmos-perf-data-plane.ps1')
 foreach ($file in $files) {
     $tokens = $null
     $errors = $null
@@ -97,3 +105,88 @@ foreach ($sourceRef in @('refs/pull/5469/merge', 'refs/pull/5469/unknown')) {
     if (-not $rejected) { throw "Invalid PR ref accepted: $sourceRef" }
 }
 Write-Host 'PASS: exact PR heads are accepted and synthetic merge refs are rejected'
+
+$key = 'dGVzdGtleQ=='
+$date = [DateTime]::Parse('2026-10-19T22:00:00Z', [Globalization.CultureInfo]::InvariantCulture).ToUniversalTime()
+$headers = New-CosmosPerfHeaders -Method get -ResourceType '' -ResourceLink '' -Key $key -Date $date
+if ($headers.authorization -cne 'type%3Dmaster%26ver%3D1.0%26sig%3D38svEf2gDSQS3c2FLy0%2Bs5xj8U7eMSeCUsRA0ZJJdMs%3D' -or
+    $headers['x-ms-date'] -cne 'Mon, 19 Oct 2026 22:00:00 GMT') {
+    throw 'Account metadata signature or RFC 7231 date does not match the independent fixture.'
+}
+$database = 'cosmos-perf-12345678-1234-1234-1234-123456789abc'
+$headers = New-CosmosPerfHeaders -Method delete -ResourceType dbs -ResourceLink "dbs/$database" -Key $key -Date $date
+if ($headers.authorization -cne 'type%3Dmaster%26ver%3D1.0%26sig%3DwaXAgU44rymsJn2rLHBa4YPiMosgfDYAebkT4NvAyRo%3D') {
+    throw 'Database cleanup signature does not match the independent fixture.'
+}
+Write-Host 'PASS: account reads and database cleanup use correct key-authenticated signatures'
+
+$http = @{
+    Requests = @()
+    Response = @{ StatusCode = 200; Content = ((New-Fixture).Account | ConvertTo-Json -Depth 5) }
+}
+$mockRequest = {
+    param($Method, [Uri]$Uri, $Headers, $TimeoutSec, $MaximumRedirection, [switch]$NoProxy, [switch]$SkipHttpErrorCheck)
+    if ($MaximumRedirection -ne 0 -or -not $NoProxy -or -not $SkipHttpErrorCheck -or $TimeoutSec -le 0) {
+        throw 'Data-plane requests must be direct, bounded, and must not forward credentials through redirects.'
+    }
+    $http.Requests += @{ Method = $Method; Uri = $Uri; Headers = $Headers }
+    return [PSCustomObject]$http.Response
+}.GetNewClosure()
+Set-Item Function:\Invoke-WebRequest $mockRequest
+$temporary = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "cosmos-perf-script-$([Guid]::NewGuid())")
+$savedEnvironment = @{}
+foreach ($name in @('COSMOS_PERF_OUTPUT', 'AZURE_COSMOS_ENDPOINT', 'AZURE_COSMOS_KEY', 'BUILD_BUILDID')) {
+    $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name)
+}
+try {
+    $account = Get-CosmosPerfAccount 'https://perf.documents.azure.com/' $key
+    if ($account.id -ne 'perf' -or $http.Requests.Count -ne 1 -or
+        $http.Requests[0].Method -ne 'Get' -or $http.Requests[0].Uri.AbsolutePath -ne '/' -or
+        $http.Requests[0].Headers['x-ms-cosmos-use-thinclient'] -ne 'true') {
+        throw 'Preflight did not read account metadata through the authenticated root endpoint.'
+    }
+    foreach ($status in @(301, 401, 403, 429, 500)) {
+        $http.Response.StatusCode = $status
+        $rejected = $false
+        try { Get-CosmosPerfAccount 'https://perf.documents.azure.com/' $key | Out-Null } catch { $rejected = $true }
+        if (-not $rejected) { throw "Metadata HTTP $status was accepted." }
+    }
+    $http.Response.StatusCode = 200
+    $http.Response.Content = '{invalid json'
+    $rejected = $false
+    try { Get-CosmosPerfAccount 'https://perf.documents.azure.com/' $key | Out-Null } catch { $rejected = $true }
+    if (-not $rejected) { throw 'Invalid metadata JSON was accepted.' }
+    Write-Host 'PASS: metadata errors and redirects fail instead of providing success-shaped defaults'
+
+    New-Item -ItemType Directory -Path $temporary | Out-Null
+    $env:COSMOS_PERF_OUTPUT = $temporary
+    $env:AZURE_COSMOS_ENDPOINT = 'https://perf.documents.azure.com/'
+    $env:AZURE_COSMOS_KEY = $key
+    $env:BUILD_BUILDID = 'owned-run'
+    $manifest = [System.IO.Path]::Combine($temporary, 'owned-database.json')
+    @{ database = $database; workload_id = 'owned-run' } | ConvertTo-Json | Set-Content $manifest
+    $http.Requests = @()
+    $http.Response = @{ StatusCode = 204; Content = '' }
+    & ([System.IO.Path]::Combine($PSScriptRoot, 'cleanup-cosmos-perf.ps1'))
+    if ($http.Requests.Count -ne 1 -or $http.Requests[0].Method -ne 'Delete' -or
+        $http.Requests[0].Uri.AbsolutePath -ne "/dbs/$database") {
+        throw 'Cleanup did not target exactly the owned database.'
+    }
+    foreach ($ownership in @(
+        @{ database = $database; workload_id = 'another-run' },
+        @{ database = 'shared-test-db'; workload_id = 'owned-run' }
+    )) {
+        $ownership | ConvertTo-Json | Set-Content $manifest
+        $http.Requests = @()
+        $rejected = $false
+        try { & ([System.IO.Path]::Combine($PSScriptRoot, 'cleanup-cosmos-perf.ps1')) } catch { $rejected = $true }
+        if (-not $rejected -or $http.Requests.Count -ne 0) { throw 'Cleanup accepted unowned resources.' }
+    }
+    Write-Host 'PASS: cleanup deletes only this run database, never the account or other databases'
+} finally {
+    Remove-Item Function:\Invoke-WebRequest
+    foreach ($name in $savedEnvironment.Keys) {
+        [Environment]::SetEnvironmentVariable($name, $savedEnvironment[$name])
+    }
+    if (Test-Path -LiteralPath $temporary) { Remove-Item -LiteralPath $temporary -Recurse }
+}

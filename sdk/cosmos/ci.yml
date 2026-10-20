@@ -20,13 +20,9 @@ parameters:
   type: boolean
   default: false
 - name: PerfPool
-  displayName: Dedicated colocated performance agent pool
+  displayName: Performance agent pool (region and SKU verified at runtime)
   type: string
-  default: cosmos-perf
-- name: PerfServiceConnection
-  displayName: Read-only connection for fixed-account metadata
-  type: string
-  default: cosmos-perf-reader
+  default: azsdk-pool-mms-ubuntu-2204-perf
 - name: RunLiveTests
   displayName: Run live tests
   type: boolean
@@ -107,7 +103,6 @@ extends:
       - template: /sdk/cosmos/eng/pipelines/perf-stage.yml
         parameters:
           Pool: ${{ parameters.PerfPool }}
-          ServiceConnection: ${{ parameters.PerfServiceConnection }}
           Calibrate: ${{ and(eq(variables['Build.Reason'], 'Manual'), parameters.CalibratePerf) }}
           Weekly: ${{ endsWith(variables['Build.DefinitionName'], '- weekly') }}
           DependsOn:

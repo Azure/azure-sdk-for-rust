@@ -8,49 +8,49 @@ runs all 14 workload types concurrently for 2,700 seconds, excluding the first
 
 ## Onboarding status
 
-Weekly execution requires no opt-in parameter. Missing infrastructure fails
-visibly rather than omitting the stage. The infrastructure and thresholds are
-**not provisioned or calibrated by this change**. The initial
+Weekly execution requires no opt-in parameter. The job reuses the existing
+`azsdk-pool-mms-ubuntu-2204-perf` pool and fixed-account credentials; it does not
+require a new agent pool, Azure service connection, or ARM account resource ID.
+Agent placement and account configuration are verified before creating workload
+resources. The initial
 `perf-thresholds.json` is explicitly unapproved: weekly runs collect calibration
 measurements until a reviewed baseline is configured, without reporting a
-performance-gate pass. Complete these infrastructure prerequisites:
+performance-gate pass. Confirm these prerequisites:
 
-1. Identify the Azure resource ID for the existing single-region Gateway V2
-   account referenced by `thinclient-test-endpoint` / `thinclient-test-key`.
-   Do not use the unrelated `rust-ci` fixed-account catalog or create another
-   account. Confirm its capacity supports the proposed profile.
-2. Provision a dedicated Linux Azure VM in that account's region and register it
-   in an approved Azure DevOps agent pool. `PerfPool` defaults to `cosmos-perf`.
+1. Verify the existing single-region Gateway V2 account referenced by
+   `thinclient-test-endpoint` / `thinclient-test-key` in
+   `Test Secrets for Cosmos Live Tests - user administered`. These are the only
+   Azure credentials needed. Do not use the unrelated `rust-ci` fixed-account
+   catalog or create another account.
+2. Authorize the pipeline to use the existing Linux perf pool.
+   `PerfPool` defaults to `azsdk-pool-mms-ubuntu-2204-perf`, using its
+   `ubuntu-22.04` image. The agent must be in the account's region and match the
+   profile's VM SKU; preflight fails on a mismatch instead of accepting noisy
+   or cross-region measurements. An alternate existing pool can be supplied
+   through `PerfPool` only if it satisfies the same checks.
    The initial profile proposes `Standard_D8s_v5`, Session consistency, three
    containers at 10,000 RU/s each, 1,000 reference documents, 1,024-byte payload
    fields, and four workers per operation. These are calibration inputs, not
    established production baselines. Review capacity/cost and adjust the profile
-   before calibration if necessary.
-3. Create/approve a read-only Azure service connection for account metadata in
-   the account's owning tenant/subscription. `PerfServiceConnection` defaults to
-   `cosmos-perf-reader`. Data-plane keys cannot supply this permission. The VM
-   must reach Azure Instance Metadata Service directly, without a proxy.
-4. Add `cosmos-perf-account-resource-id`
-   to the existing protected variable group
-   `Test Secrets for Cosmos Live Tests - user administered`.
-   After calibration, add `cosmos-perf-baseline-commit`: a full reviewed commit
-   SHA containing the workload profile and threshold file, available in the
-   pipeline checkout. Without it, weekly runs explicitly collect calibration
-   using the source commit's profile.
-5. Configure an **exclusive-lock check on that same shared variable group**.
+   before calibration if necessary. The agent must reach Azure Instance Metadata
+   Service directly, without a proxy.
+3. Configure an **exclusive-lock check on that same shared variable group**.
    Both the existing Cosmos live-test stage and the new perf stage consume it.
-   This check is essential: a dedicated agent alone cannot prevent other runs
+   This check is essential: a separate agent alone cannot prevent other runs
    from loading the account. Require every other consumer of this account to
    use the same lock. The perf stage also waits for the current run's shared-account
    live tests to finish and uses sequential lock behavior.
-6. Require approvals on the secret group, agent pool, and service connection.
+4. Require appropriate protected-resource checks on the secret group and agent pool.
    Untrusted PR code must not automatically run with these credentials or on a
    privileged persistent agent. Review the source SHA, use an isolated/reset
    runner, and restrict network/identity access before approving such a run.
-7. Review the weekly calibration measurements and thresholds, then pin the
-   approved baseline revision. The next weekly run enforces those thresholds
-   automatically. The repository's existing external weekly schedule remains
-   responsible for queuing that definition; this change does not add another schedule.
+5. After calibration, add `cosmos-perf-baseline-commit` to the protected variable
+   group via its Key Vault mapping: a full reviewed commit SHA containing the
+   workload profile and approved threshold file, available in the checkout.
+   Without it, weekly runs collect calibration using the source commit's profile.
+   The next weekly run enforces the pinned approved thresholds automatically.
+   The existing external weekly schedule queues the definition; no new schedule
+   is required.
 
 Onboarding checks and approvals are external ADO/Azure configuration, not YAML
 settings that can be validated locally. Do not claim the gate is operational
@@ -147,8 +147,12 @@ required artifacts fail the run. Timeout and cleanup time cannot inflate the
 measurement denominator. Background metadata requests are not classified as
 item throughput or data-plane locality evidence.
 
-The preflight compares live account read/write regions with the VM's IMDS
-region and checks SKU, OS, endpoint identity, and consistency. A point-read
+The preflight signs `GET /` against the configured Cosmos HTTPS endpoint using
+the existing account key. It compares the response's `readableLocations` and
+`writableLocations` with the VM's IMDS region and checks SKU, OS, the authenticated
+account name, and `userConsistencyPolicy`. It does not query Azure Resource
+Manager, create an Azure account, or require an ARM resource-ID setting.
+Redirects, non-success responses, and missing metadata are errors. A point-read
 probe must actually use Gateway V2. During the workload, data-plane request
 diagnostics must remain local. Legitimate operation-specific wire behavior
 is not forced into Gateway V2 just to satisfy a protocol label.
@@ -160,6 +164,10 @@ files, verified environment, interval measurements, console log, and atomic
 `summary.json`. This local summary is authoritative; no results container
 competes with the measured account. Calibration and failures remain visible.
 Intervals are diagnostic; only the complete aggregate drives thresholds.
+
+Each invocation creates a fresh `cosmos-perf-<UUID>` database with its own
+`reference`, `mutations`, and `lifecycle` containers inside the existing account.
+No databases or containers from earlier runs are reused.
 
 The crate persists database ownership before issuing creation, including for lost
 creation responses, and deletes its database on ordinary completion/failure. The pipeline's
@@ -178,7 +186,9 @@ pwsh sdk/cosmos/eng/pipelines/prepare-cosmos-perf.tests.ps1
 
 The crate tests execute all workloads concurrently through the SDK's in-memory
 emulator and cover warm-up/cutoff accounting and threshold semantics. The
-PowerShell fixtures reject wrong regions, accounts, SKU/OS, and consistency.
+PowerShell fixtures verify request signing and metadata retrieval, reject
+wrong regions/accounts/SKU/OS/consistency, and check that cleanup can delete
+only this run's database, never the account or unrelated databases.
 They do not replace an approved live Gateway V2 smoke/full run or ADO template
 expansion. Validate a deliberately impossible threshold and a preflight mismatch
 before enabling the scheduled gate.

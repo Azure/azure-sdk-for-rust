@@ -4,8 +4,6 @@
 parameters:
 - name: Pool
   type: string
-- name: ServiceConnection
-  type: string
 - name: Calibrate
   type: boolean
   default: false
@@ -34,6 +32,7 @@ stages:
     cancelTimeoutInMinutes: 5
     pool:
       name: ${{ parameters.Pool }}
+      image: ubuntu-22.04
       os: linux
     workspace:
       clean: all
@@ -49,20 +48,18 @@ stages:
     - template: /eng/pipelines/templates/steps/use-rust.yml
       parameters:
         Toolchain: stable
-    - task: AzureCLI@2
+    - task: PowerShell@2
       displayName: Verify source, baseline, fixed account, and VM region
       inputs:
-        azureSubscription: ${{ parameters.ServiceConnection }}
-        scriptType: pscore
-        scriptLocation: scriptPath
-        scriptPath: sdk/cosmos/eng/pipelines/prepare-cosmos-perf.ps1
+        pwsh: true
+        filePath: sdk/cosmos/eng/pipelines/prepare-cosmos-perf.ps1
       env:
         COSMOS_PERF_OUTPUT: $(PerfOutput)
         COSMOS_PERF_BASELINE_COMMIT: $(cosmos-perf-baseline-commit)
-        COSMOS_PERF_ACCOUNT_RESOURCE_ID: $(cosmos-perf-account-resource-id)
         COSMOS_PERF_CALIBRATE: ${{ parameters.Calibrate }}
         COSMOS_PERF_WEEKLY: ${{ parameters.Weekly }}
         AZURE_COSMOS_ENDPOINT: $(thinclient-test-endpoint)
+        AZURE_COSMOS_KEY: $(thinclient-test-key)
     - pwsh: |
         . ./eng/scripts/shared/common.ps1
         Invoke-LoggedCommand 'cargo build --release --locked -p azure_data_cosmos_perf --bin azure_data_cosmos_perf --features weekly-gate' -GroupOutput

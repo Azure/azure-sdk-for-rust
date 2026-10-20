@@ -151,6 +151,12 @@ baseline is configured, it collects calibration results and reports
 the pinned baseline automatically. Unrelated build or live-test failures do not
 skip performance measurements, but missing runner/account prerequisites still fail.
 
+The job uses the existing SDK Linux perf pool and existing Gateway V2 account
+key; no Azure management-plane service connection is required. Each run creates
+and cleans up a fresh database containing isolated workload containers, never
+the fixed account itself. Preflight verifies the allocated agent's region and
+VM SKU rather than assuming the shared pool is colocated.
+
 The weekly workload runs for 45 minutes after setup, excluding the first
 5 minutes from every gated metric. It checks successful operations/second,
 p99 latency, and error rate separately for every operation. Thresholds are
