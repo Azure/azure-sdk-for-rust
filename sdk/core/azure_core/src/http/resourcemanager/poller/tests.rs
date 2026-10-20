@@ -8,8 +8,8 @@ use crate::{
     http::poller::{PollerStatus, StatusMonitor},
     http::{
         headers::{
-            HeaderName, Headers, ACCEPT, CLIENT_REQUEST_ID, RETRY_AFTER, RETRY_AFTER_MS,
-            X_MS_RETRY_AFTER_MS,
+            HeaderName, Headers, ACCEPT, CLIENT_REQUEST_ID, CONTENT_LENGTH, CONTENT_TYPE,
+            RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS,
         },
         request::options::ClientRequestId,
         AsyncRawResponse, ClientOptions, Context, HttpClient, JsonFormat, Method, Pipeline, Poller,
@@ -1818,6 +1818,94 @@ async fn borrowed_context_flows_to_initial_poll_and_final_requests() {
     drop(context);
     assert_eq!(poller.await.unwrap().into_model().unwrap().id, "finished");
     assert_eq!(calls.load(Ordering::SeqCst), 3);
+}
+
+#[tokio::test]
+async fn polling_and_final_requests_do_not_replay_initial_body() {
+    const BODY: &str = r#"{"location":"westus","properties":{}}"#;
+
+    for method in [Method::Put, Method::Patch] {
+        for header in [
+            None,
+            Some(AZURE_ASYNC_OPERATION),
+            Some(OPERATION_LOCATION),
+            Some(LOCATION),
+        ] {
+            let calls = Arc::new(AtomicUsize::new(0));
+            let calls_for_mock = calls.clone();
+            let header_for_mock = header.clone();
+            let mock = MockHttpClient::new(move |request| {
+                let call = calls_for_mock.fetch_add(1, Ordering::SeqCst);
+                assert_eq!(
+                    request.headers().get_optional_str(&ACCEPT),
+                    Some("application/json")
+                );
+                if call == 0 {
+                    assert_eq!(request.method(), method);
+                    assert_eq!(Bytes::from(request.body()), BODY);
+                    assert_eq!(
+                        request.headers().get_optional_str(&CONTENT_TYPE),
+                        Some("application/json")
+                    );
+                    assert_eq!(
+                        request.headers().get_optional_string(&CONTENT_LENGTH),
+                        Some(BODY.len().to_string())
+                    );
+                } else {
+                    assert_eq!(request.method(), Method::Get);
+                    assert_eq!(request.body().is_empty(), Some(true));
+                    assert_eq!(request.headers().get_optional_str(&CONTENT_TYPE), None);
+                    assert_eq!(request.headers().get_optional_str(&CONTENT_LENGTH), None);
+                }
+                assert_eq!(
+                    request.url().as_str(),
+                    if call == 0 || call == 3 || header_for_mock.is_none() {
+                        RESOURCE_URL
+                    } else {
+                        POLLING_URL
+                    }
+                );
+                let response = match call {
+                    0 => match &header_for_mock {
+                        Some(header) => operation_response(header.clone(), false),
+                        None => monitor_response(
+                            br#"{"properties":{"provisioningState":"RegisteringDns"}}"#,
+                        ),
+                    },
+                    1 => match &header_for_mock {
+                        Some(header) if header == &LOCATION => {
+                            operation_response(LOCATION, false)
+                        }
+                        Some(_) => monitor_response(br#"{"status":"InProgress"}"#),
+                        None => monitor_response(
+                            br#"{"properties":{"provisioningState":"RegisteringDns"}}"#,
+                        ),
+                    },
+                    2 => monitor_response(
+                        br#"{"status":"Succeeded","properties":{"provisioningState":"Succeeded"},"id":"finished"}"#,
+                    ),
+                    3 => monitor_response(br#"{"id":"finished"}"#),
+                    _ => panic!("unexpected request"),
+                };
+                async move { Ok(response) }.boxed()
+            });
+            let mut request = Request::new(RESOURCE_URL.parse().unwrap(), method);
+            request.set_body(BODY);
+            request.insert_header(ACCEPT, "application/json");
+            request.insert_header(CONTENT_TYPE, "application/json");
+            request.insert_header(CONTENT_LENGTH, BODY.len().to_string());
+            let poller: Poller<ArmOperationStatus> =
+                new_poller(pipeline_with(Arc::new(mock)), request, None, None);
+            assert_eq!(poller.await.unwrap().into_model().unwrap().id, "finished");
+            let expected_calls =
+                if header == Some(AZURE_ASYNC_OPERATION) || header == Some(OPERATION_LOCATION) {
+                    4
+                } else {
+                    3
+                };
+            assert_eq!(calls.load(Ordering::SeqCst), expected_calls);
+        }
+    }
 }
 
 #[tokio::test]
