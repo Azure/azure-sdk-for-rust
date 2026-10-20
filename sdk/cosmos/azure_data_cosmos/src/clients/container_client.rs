@@ -41,6 +41,21 @@ pub struct ContainerClient {
 }
 
 impl ContainerClient {
+    pub(crate) async fn bootstrap_change_feed_processor(
+        &self,
+        lease_container: &Self,
+        options: &azure_data_cosmos_driver::change_feed_processor::BootstrapOptions,
+    ) -> crate::Result<()> {
+        azure_data_cosmos_driver::change_feed_processor::bootstrap(
+            &self.context.driver,
+            &self.container_ref,
+            &lease_container.context.driver,
+            &lease_container.container_ref,
+            options,
+        )
+        .await
+    }
+
     /// Returns the resolved [`ContainerReference`] for the container this client is attached to.
     #[cfg(feature = "unstable_dtx")]
     pub(crate) fn container_reference(&self) -> &ContainerReference {
