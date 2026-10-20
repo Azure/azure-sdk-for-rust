@@ -3,7 +3,7 @@
 
 //! Azure cloud configuration.
 
-use std::{any::TypeId, collections::HashMap};
+use std::{any::TypeId, borrow::Cow, collections::HashMap};
 
 /// Configurations for different Azure clouds.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -27,11 +27,7 @@ pub enum CloudConfiguration {
     /// # mod azure_service_module {
     /// #   pub struct Audience;
     /// # }
-    ///
-    /// use azure_core::{
-    ///     cloud::{Audiences, CloudConfiguration, CustomConfiguration},
-    ///     http::ClientOptions,
-    /// };
+    /// use azure_core::cloud::{Audiences, CloudConfiguration, CustomConfiguration};
     ///
     /// let mut custom = CustomConfiguration::default();
     /// custom.audiences = Audiences::new()
@@ -40,6 +36,78 @@ pub enum CloudConfiguration {
     /// let cloud: CloudConfiguration = custom.into();
     /// ```
     Custom(CustomConfiguration),
+}
+
+impl CloudConfiguration {
+    /// Gets the default credential scope.
+    ///
+    /// # Examples
+    ///
+    /// Get the default scope for a known cloud.
+    ///
+    /// ```
+    /// # mod azure_service_module {
+    /// #   pub struct Audience;
+    /// # }
+    /// use azure_core::cloud::CloudConfiguration;
+    ///
+    /// let cloud = CloudConfiguration::AzurePublic;
+    /// assert!(matches!(
+    ///     cloud.default_scope::<azure_service_module::Audience>(),
+    ///     Ok(scope) if &scope == "https://management.azure.com/.default",
+    /// ));
+    /// ```
+    ///
+    /// For [`CloudConfiguration::Custom`] this returns the service-specific audience + "/.default".
+    ///
+    /// ```
+    /// # mod azure_service_module {
+    /// #   pub struct Audience;
+    /// # }
+    /// use azure_core::cloud::{Audiences, CloudConfiguration, CustomConfiguration};
+    ///
+    /// let mut custom = CustomConfiguration::default();
+    /// custom.audiences = Audiences::new()
+    ///     .with::<azure_service_module::Audience>("https://service.mycloud.local".to_string());
+    /// let cloud: CloudConfiguration = custom.into();
+    /// assert!(matches!(
+    ///     cloud.default_scope::<azure_service_module::Audience>(),
+    ///     Ok(scope) if &scope == "https://service.mycloud.local/.default",
+    /// ));
+    /// ```
+    pub fn default_scope<T: 'static>(&self) -> crate::Result<Cow<'static, str>> {
+        match self {
+            Self::AzurePublic => Ok(Cow::Borrowed("https://management.azure.com/.default")),
+            Self::AzureGovernment => Ok(Cow::Borrowed(
+                "https://management.usgovcloudapi.net/.default",
+            )),
+            Self::AzureChina => Ok(Cow::Borrowed(
+                "https://management.chinacloudapi.cn/.default",
+            )),
+            Self::Custom(custom) => custom.audiences.get::<T>().map_or_else(
+                || {
+                    Err(crate::Error::new(
+                        crate::error::ErrorKind::Other,
+                        "missing required audience",
+                    ))
+                },
+                |audience| Ok(Cow::Owned(audience.to_string() + "/.default")),
+            ),
+        }
+    }
+
+    /// Gets the resource manager (ARM) endpoint.
+    ///
+    /// For [`CloudConfiguration::Custom`] this returns [`CustomConfiguration::endpoint`].
+    #[cfg(feature = "resourcemanager")]
+    pub fn endpoint(&self) -> Option<&str> {
+        match self {
+            Self::AzurePublic => Some("https://management.azure.com"),
+            Self::AzureGovernment => Some("https://management.usgovcloudapi.net"),
+            Self::AzureChina => Some("https://management.chinacloudapi.cn"),
+            Self::Custom(custom) => custom.endpoint.as_deref(),
+        }
+    }
 }
 
 /// Configuration for a custom cloud.
@@ -51,6 +119,10 @@ pub struct CustomConfiguration {
 
     /// Map of SDK modules to their Entra ID audiences.
     pub audiences: Audiences,
+
+    /// Resource management endpoint.
+    #[cfg(feature = "resourcemanager")]
+    pub endpoint: Option<String>,
 }
 
 impl From<CustomConfiguration> for CloudConfiguration {
@@ -101,6 +173,7 @@ mod tests {
             audiences: Audiences::new()
                 .with::<A>("A".to_string())
                 .with::<B>("B".to_string()),
+            endpoint: None,
         }
         .into();
 
