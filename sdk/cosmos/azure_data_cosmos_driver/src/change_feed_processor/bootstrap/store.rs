@@ -87,6 +87,31 @@ impl Store<'_> {
         }
     }
 
+    pub(in crate::change_feed_processor) async fn replace<T: Serialize + Clone>(
+        &self,
+        id: &str,
+        value: &T,
+        etag: Etag,
+    ) -> Result<Stored<T>> {
+        let response = self
+            .execute(
+                CosmosOperation::replace_item(self.item(id)?)
+                    .with_body(serde_json::to_vec(value)?)
+                    .with_precondition(Precondition::if_match(etag)),
+            )
+            .await?;
+        let etag = response.headers().etag.clone().ok_or_else(|| {
+            error(
+                StatusCode::InternalServerError,
+                "Lease response has no ETag.",
+            )
+        })?;
+        Ok(Stored {
+            etag,
+            value: value.clone(),
+        })
+    }
+
     pub(super) async fn release(&self, id: &str, etag: Etag) -> Result<()> {
         let operation = CosmosOperation::delete_item(self.item(id)?)
             .with_precondition(Precondition::if_match(etag));

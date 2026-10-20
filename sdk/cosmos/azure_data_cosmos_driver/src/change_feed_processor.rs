@@ -1,14 +1,17 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Initialization of a shared change feed workload.
+//! Coordination and consumption of a shared change feed workload.
 //!
-//! Bootstrap creates unowned range leases without reading change feed pages.
-//! Processing and checkpoint persistence are implemented separately.
+//! Bootstrap creates unowned range leases. Processing acquires these leases and
+//! delivers schema-agnostic batches; consumers acknowledge successful processing
+//! explicitly before the driver saves progress.
 
 mod bootstrap;
+mod processing;
 
 pub use bootstrap::bootstrap;
+pub use processing::{Batch, BatchReceipt, Processor, ProcessorOptions};
 
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};

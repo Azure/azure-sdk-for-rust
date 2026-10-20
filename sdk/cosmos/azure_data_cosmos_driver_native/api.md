@@ -678,6 +678,75 @@ pub mod partition_key {
         pub bool_value: u8,
     }
 }
+pub mod processor {
+    #[no_mangle]
+    pub extern "C" fn cosmos_processor_checkpoint_submit(receipt: *const ProcessorReceipt, user_data: isize, out: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+    #[no_mangle]
+    pub extern "C" fn cosmos_processor_completion_free(completion: *mut CosmosProcessorCompletion);
+    #[no_mangle]
+    pub extern "C" fn cosmos_processor_completion_take_processor(completion: *mut CosmosProcessorCompletion) -> *mut ProcessorHandle;
+    #[no_mangle]
+    pub extern "C" fn cosmos_processor_completion_take_receipt(completion: *mut CosmosProcessorCompletion) -> *mut ProcessorReceipt;
+    #[no_mangle]
+    pub extern "C" fn cosmos_processor_free(processor: *mut ProcessorHandle);
+    #[no_mangle]
+    pub extern "C" fn cosmos_processor_next_submit(processor: *const ProcessorHandle, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+    #[no_mangle]
+    pub extern "C" fn cosmos_processor_queue_create(runtime: *const crate::runtime::RuntimeContext, capacity: u32) -> *mut ProcessorQueue;
+    #[no_mangle]
+    pub extern "C" fn cosmos_processor_queue_free(queue: *mut ProcessorQueue);
+    #[no_mangle]
+    pub extern "C" fn cosmos_processor_queue_shutdown(queue: *const ProcessorQueue);
+    #[no_mangle]
+    pub extern "C" fn cosmos_processor_queue_wait(queue: *const ProcessorQueue, out: *mut *mut CosmosProcessorCompletion, max: usize, timeout_ms: u32, out_count: *mut usize) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
+    pub extern "C" fn cosmos_processor_receipt_free(receipt: *mut ProcessorReceipt);
+    #[no_mangle]
+    pub extern "C" fn cosmos_processor_request_init(out: *mut CosmosProcessorRequest);
+    #[no_mangle]
+    pub extern "C" fn cosmos_processor_start_submit(source_driver: *const crate::driver::DriverHandle, source: *const crate::container_ref::ContainerRefHandle, lease_driver: *const crate::driver::DriverHandle, leases: *const crate::container_ref::ContainerRefHandle, request: *const CosmosProcessorRequest, queue: *mut ProcessorQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+    #[no_mangle]
+    pub extern "C" fn cosmos_processor_stop_submit(processor: *const ProcessorHandle, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+    #[repr(C)]
+    pub struct CosmosProcessorCompletion {
+        pub struct_size_bytes: u32,
+        pub abi_version: u32,
+        pub common: crate::completion::CosmosCompletion,
+        pub result_kind: u32,
+        pub body_kind: u32,
+        pub items: *const crate::cursor::CosmosCursorBytes,
+        pub items_len: usize,
+        pub lease_token: crate::string::CosmosStringView,
+        pub processor: *mut ProcessorHandle,
+        pub receipt: *mut ProcessorReceipt,
+        pub backing: *mut ProcessorCompletionBacking,
+    }
+    #[repr(C)]
+    pub struct CosmosProcessorRequest {
+        pub struct_size_bytes: u32,
+        pub abi_version: u32,
+        pub processor_name: crate::string::CosmosStringView,
+        pub instance_name: crate::string::CosmosStringView,
+        pub mode: u32,
+        pub start_from: u32,
+        pub start_time: crate::string::CosmosStringView,
+        pub continuation: crate::string::CosmosStringView,
+        pub max_item_count: i32,
+        pub poll_delay_ms: u64,
+        pub min_leases: u32,
+        pub max_leases: u32,
+        pub verify_on_restart: u32,
+        pub reserved: [u32; 4],
+    }
+    pub struct ProcessorCompletionBacking {
+    }
+    pub struct ProcessorHandle {
+    }
+    pub struct ProcessorQueue {
+    }
+    pub struct ProcessorReceipt {
+    }
+}
 pub mod response_header {
     #[no_mangle]
     pub extern "C" fn cosmos_header_name(id: CosmosHeaderId) -> *const std::ffi::c_char;

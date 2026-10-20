@@ -65,7 +65,7 @@ pub(super) fn scripted_gated(
     )
 }
 
-pub(super) fn create(current_thread: bool) -> Result<(*mut RuntimeContext, *mut DriverHandle)> {
+pub(crate) fn create(current_thread: bool) -> Result<(*mut RuntimeContext, *mut DriverHandle)> {
     let endpoint = Url::parse("https://eastus.emulator.local").unwrap();
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new("East US", endpoint.clone())])?;
     let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
