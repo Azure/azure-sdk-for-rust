@@ -162,6 +162,8 @@ pub mod cloud {
     pub struct CustomConfiguration {
         pub authority_host: String,
         pub audiences: Audiences,
+        #[cfg(feature = "resourcemanager")]
+        pub endpoint: Option<String>,
     }
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     #[non_exhaustive]
@@ -171,6 +173,11 @@ pub mod cloud {
         AzureGovernment,
         AzureChina,
         Custom(CustomConfiguration),
+    }
+    impl CloudConfiguration {
+        pub fn default_scope<T: 'static>(&self) -> crate::Result<Cow<'static, str>>;
+        #[cfg(feature = "resourcemanager")]
+        pub fn endpoint(&self) -> Option<&str>;
     }
     impl From<CustomConfiguration> for CloudConfiguration {
         fn from(config: CustomConfiguration) -> Self;
