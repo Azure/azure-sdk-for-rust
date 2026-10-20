@@ -130,6 +130,7 @@ tracing-subscriber
 typespec
 typespec_client_core
 typespec_macros
+update-pathversions
 ureq
 url
 uuid
