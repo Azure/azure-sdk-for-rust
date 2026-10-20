@@ -16,12 +16,9 @@ You are in the right place if all of the following are true:
 
 In addition to the standard tooling covered in the base guide, keep these points in mind when preparing the TypeSpec inputs:
 
-- **Emitter options** – `tspconfig.yaml` must emit both the Resource Manager libraries and the Rust emitter. Align the options with other languages so rotation engineers only maintain one config. A minimal block looks like:
+- **Emitter options** – Add Rust options to `tspconfig.yaml` alongside the other languages' configuration. Preserve the existing `emit` list; `tsp-client` selects the Rust emitter explicitly. A minimal options block looks like:
 
     ```yaml
-    emit:
-        - "@azure-tools/typespec-azure-resource-manager"
-        - "@azure-tools/typespec-rust"
     options:
         "@azure-tools/typespec-rust":
             emitter-output-dir: "{output-dir}/{service-dir}/{crate-name}"
@@ -31,8 +28,22 @@ In addition to the standard tooling covered in the base guide, keep these points
             azure-resource-provider: "Microsoft.<ProviderName>"
     ```
 
-- **Naming** – Follow the `azure_resourcemanager_<service>` crate pattern and mirror the service folder layout used by other languages (`sdk/<service>/<crate-name>`).
+- **Naming** – Follow the `azure_resourcemanager_<service>` crate pattern and mirror the service folder layout used by other languages (`sdk/<service>/<crate-name>`). For example, the Key Vault management library is `sdk/keyvault/azure_resourcemanager_keyvault`, distinct from the data-plane `azure_security_keyvault_*` crates.
 - **Spec changes** – Capture the `azure-rest-api-specs` commit SHA (or PR branch commit) that contains the TypeSpec updates; you will reference it from `tsp-location.yaml`.
+
+### Client names
+
+Use the client names supplied by TypeSpec and its applicable client customizations,
+with the normal Rust emitter's `Client` suffix. Resource Manager clients do not
+need a separate naming scheme. For example, `KeyVault` becomes `KeyVaultClient`
+and `KeyVaultVaults` becomes `KeyVaultVaultsClient`. Do not shorten the latter to
+`VaultClient` or add `Management` merely because another language uses that name.
+
+Review existing `client.tsp` language scopes before adding Rust. Shared naming
+customizations may be useful, but compatibility overrides for another language
+are not automatically appropriate. Apply related renames together when needed
+to avoid collisions. Client or enum member renames change SDK identifiers, not
+serialized wire values.
 
 ## Repository setup checklist
 
@@ -72,6 +83,27 @@ Most polish items match the data-plane flow, but a few deserve special emphasis 
 - **Integration tests** – Provision test resources with `eng/common/TestResources/New-TestResources.ps1 -ServiceDirectory <service>` and record with `#[recorded::test]`. Management plane tests frequently require role assignments, so verify the Bicep template grants the test application proper `Microsoft.Authorization/roleAssignments` permissions.
 
 After these tweaks, run the usual validation commands (`cargo fmt`, `cargo clippy`, `cargo test`) as instructed in the base guide. When long-running operations are generated, add a `cargo check -p <crate> --all-features` run to ensure every poller compiles.
+
+### Enum coverage and test resources
+
+Follow the base guide's [enum wire-contract testing](typespec-based-generation.md#enum-wire-contract-tests)
+for both offline serialization checks and recorded service responses. Group live
+scenarios by related operations, not by enum declaration: RSA keys, EC curves,
+rotation policy, secrets, network rules, access policies, and vault recovery can
+be separate subjects. Reuse one test-owned vault for related cases, such as
+multiple EC curves, rather than creating a vault per enum value.
+
+Keep standard vault and managed HSM scenarios in separate test files. Document
+resource counts, provisioning cycles, cleanup, and any dedicated or activated
+fixtures in the crate's `CONTRIBUTING.md`. Leave scenarios requiring unavailable
+provisioning explicitly ignored with a reason; an ignored scenario is not live
+coverage.
+
+Use each operation's actual response contract. For example, Key Vault's
+unversioned key GET returns its rotation policy, while a versioned key GET can
+omit it. Vault responses can omit network ACLs when both settings are defaults;
+exercise non-default combinations to verify each enum spelling rather than
+counting an absent field as coverage.
 
 ## Regeneration cadence
 
