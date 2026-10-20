@@ -5,17 +5,30 @@ edition = "2021"
 
 [dependencies]
 cargo-util-schemas = "0.1.0"
+serde = { version = "1.0.197", features = ["derive"] }
 toml = "0.8.10"
 ---
 
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use cargo_util_schemas::manifest::{InheritableDependency, TomlManifest};
+use serde::Deserialize;
 use std::{
-    collections::HashSet,
+    collections::{BTreeMap, HashSet},
     ffi::OsStr,
     fs::{self, DirEntry},
     io::{self, Write as _},
     path::{Path, PathBuf},
 };
+
+#[derive(Deserialize)]
+#[serde(rename_all = "kebab-case")]
+struct Dependencies {
+    dependencies: Option<BTreeMap<String, InheritableDependency>>,
+    dev_dependencies: Option<BTreeMap<String, InheritableDependency>>,
+    build_dependencies: Option<BTreeMap<String, InheritableDependency>>,
+}
 
 fn main() {
     let mut crate_names: HashSet<String> = HashSet::new();
@@ -71,32 +84,33 @@ fn main() {
         eprintln!("Reading {manifest_path:?}");
 
         let manifest = fs::read_to_string(manifest_path)?;
-        let manifest: TomlManifest = toml::from_str(&manifest)?;
+        let manifest: Dependencies = toml::from_str(&manifest)?;
 
-        let Some(mut dependencies) = manifest.dependencies else {
-            return Ok(());
-        };
-        if let Some(dev_dependencies) = manifest.dev_dependencies {
-            dependencies.extend(dev_dependencies);
-        }
-        if let Some(build_dependencies) = manifest.build_dependencies {
-            dependencies.extend(build_dependencies);
-        }
-
-        let dependencies: Vec<String> = dependencies
-            .iter()
-            .filter_map(|(name, dependency)| {
-                if matches!(dependency, InheritableDependency::Inherit(_)) {
-                    return None;
-                }
-                Some(name.to_string())
-            })
-            .collect();
-        crate_names.extend(dependencies);
+        add_dependencies(&mut crate_names, manifest);
 
         Ok(())
     })
     .expect("expected Cargo.toml manifest");
+
+    for entry in fs::read_dir(workspace_root.join("eng/scripts")).expect("read scripts directory") {
+        let entry = entry.expect("read script entry");
+        let path = entry.path();
+        if !entry.file_type().expect("script file type").is_file()
+            || path.extension() != Some(OsStr::new("rs"))
+        {
+            continue;
+        }
+
+        eprintln!("Reading {path:?}");
+        let script = fs::read_to_string(&path).expect("script content");
+        let script_name = path
+            .file_stem()
+            .and_then(OsStr::to_str)
+            .expect("expected script name");
+        let manifest = script_manifest(&script).expect("deserialize script manifest");
+        crate_names.insert(script_name.to_string());
+        add_dependencies(&mut crate_names, manifest);
+    }
 
     // Sort and write the crate names along with import names for crates with "-" in the name.
     let mut crate_names: Vec<String> = crate_names.into_iter().collect();
@@ -134,6 +148,40 @@ fn main() {
     writeln!(f, "{}", crate_names.join("\n")).expect("serialize crate names");
 }
 
+fn add_dependencies(crate_names: &mut HashSet<String>, manifest: Dependencies) {
+    for dependencies in [
+        manifest.dependencies,
+        manifest.dev_dependencies,
+        manifest.build_dependencies,
+    ]
+    .into_iter()
+    .flatten()
+    {
+        crate_names.extend(dependencies.into_iter().filter_map(|(name, dependency)| {
+            (!matches!(dependency, InheritableDependency::Inherit(_))).then_some(name.to_string())
+        }));
+    }
+}
+
+fn script_manifest(script: &str) -> Result<Dependencies, Box<dyn std::error::Error + Send + Sync>> {
+    let mut lines = script.lines();
+    if lines.find(|line| *line == "---").is_some() {
+        let mut manifest = String::new();
+        for line in lines {
+            if line == "---" {
+                return Ok(toml::from_str(&manifest)?);
+            }
+            manifest.push_str(line);
+            manifest.push('\n');
+        }
+    }
+    Err(io::Error::new(
+        io::ErrorKind::InvalidData,
+        "missing script manifest delimiters",
+    )
+    .into())
+}
+
 fn get_workspace_root() -> PathBuf {
     for dir in std::env::current_dir()
         .expect("current directory")
@@ -169,4 +217,60 @@ where
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{add_dependencies, script_manifest};
+    use std::collections::HashSet;
+
+    #[test]
+    fn script_dependencies() {
+        let script = "#!/usr/bin/env -S cargo -Zscript\n---\n\
+            [package]\nedition = \"2021\"\n\
+            [dependencies]\ncargo-util-schemas = \"0.1\"\n\
+            serde = { workspace = true }\n\
+            [dev-dependencies]\ntoml_edit = { version = \"0.22\" }\n\
+            [build-dependencies]\nsyn = \"2\"\n---\nfn main() {}\n";
+        for script in [script.to_string(), script.replace('\n', "\r\n")] {
+            let mut names = HashSet::new();
+            let manifest = script_manifest(&script).unwrap();
+            add_dependencies(&mut names, manifest);
+            assert_eq!(
+                names,
+                HashSet::from([
+                    "cargo-util-schemas".to_string(),
+                    "toml_edit".to_string(),
+                    "syn".to_string()
+                ])
+            );
+        }
+    }
+
+    #[test]
+    fn script_manifest_without_package() {
+        let manifest =
+            script_manifest("---\n[dev-dependencies]\ntoml = \"0.8\"\n---\nfn main() {}\n")
+                .unwrap();
+        let mut names = HashSet::new();
+        add_dependencies(&mut names, manifest);
+        assert_eq!(names, HashSet::from(["toml".to_string()]));
+    }
+
+    #[test]
+    fn script_manifest_ignores_unrelated_tables() {
+        let manifest =
+            script_manifest("---\n[package]\nname = 42\n[unrelated]\nvalue = true\n---\n").unwrap();
+        let mut names = HashSet::new();
+        add_dependencies(&mut names, manifest);
+        assert!(names.is_empty());
+    }
+
+    #[test]
+    fn script_manifest_requires_delimiters() {
+        assert!(script_manifest("fn main() {}\n").is_err());
+        assert!(script_manifest("---\n[dependencies]\n").is_err());
+        assert!(script_manifest("---\nnot valid toml\n---\n").is_err());
+        assert!(script_manifest("---\n[dependencies]\ntoml = 42\n---\n").is_err());
+    }
 }
