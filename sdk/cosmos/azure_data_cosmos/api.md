@@ -66,6 +66,61 @@ impl AccountReference {
     pub fn with_authentication_key<impl Into<Secret>: Into<Secret>>(endpoint: AccountEndpoint, key: impl Into<Secret>) -> Self;
     pub fn with_credential(endpoint: AccountEndpoint, credential: Arc<dyn TokenCredential>) -> Self;
 }
+#[derive(Clone, Copy, Debug)]
+pub struct AllVersionsAndDeletes;
+impl ChangeFeedProcessorMode for AllVersionsAndDeletes {
+}
+#[must_use]
+#[cfg_attr(not(all(test, feature = "__internal_in_memory_emulator")), expect(dead_code, reason = "Configuration is retained for future execution."))]
+#[expect(dead_code, reason = "Configuration is retained for future execution.")]
+pub struct ChangeFeedProcessor<M: ChangeFeedProcessorMode, T, H> {
+}
+impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessor<M, T, H> {
+    pub async fn current_state(&self) -> crate::Result<Vec<ChangeFeedProcessorState>>;
+    pub fn is_started(&self) -> bool;
+    pub async fn start(&self) -> crate::Result<()>;
+    pub async fn stop(&self) -> crate::Result<()>;
+}
+#[must_use]
+#[cfg_attr(not(all(test, feature = "__internal_in_memory_emulator")), expect(dead_code, reason = "Configuration is retained for future execution."))]
+#[expect(dead_code, reason = "Configuration is retained for future execution.")]
+pub struct ChangeFeedProcessorBuilder<M: ChangeFeedProcessorMode, T = (), H = ()> {
+}
+impl<M: ChangeFeedProcessorMode> ChangeFeedProcessorBuilder<M> {
+    pub fn handle_change_feed<T, H, Fut>(self, handler: H) -> ChangeFeedProcessorBuilder<M, T, H> where T: DeserializeOwned + Send + 'static, H: Fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut + Send + Sync + 'static, Fut: Future<Output = crate::Result<()>> + Send + 'static;
+    pub fn new<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(mode: M, monitored_container: ContainerClient, lease_container: ContainerClient, processor_name: impl Into<String>, instance_name: impl Into<String>) -> Self;
+}
+impl<M, T, H, Fut> ChangeFeedProcessorBuilder<M, T, H> where M: ChangeFeedProcessorMode, T: DeserializeOwned + Send + 'static, H: Fn(ChangeFeedProcessorContext, Vec<crate::models::ChangeFeedItem<T>>) -> Fut + Send + Sync + 'static, Fut: Future<Output = crate::Result<()>> + Send + 'static {
+    pub fn build(self) -> crate::Result<ChangeFeedProcessor<M, T, H>>;
+}
+impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessorBuilder<M, T, H> {
+    pub fn with_feed_poll_delay(self, feed_poll_delay: Duration) -> Self;
+    pub fn with_lease_verification_enabled_on_restart(self, enabled: bool) -> Self;
+    pub fn with_max_item_count(self, max_item_count: MaxItemCountHint) -> Self;
+    pub fn with_max_scale_count(self, max_scale_count: u32) -> Self;
+    pub fn with_min_scale_count(self, min_scale_count: u32) -> Self;
+    pub fn with_start_continuation(self, continuation: ContinuationToken) -> Self;
+}
+impl<T, H> ChangeFeedProcessorBuilder<LatestVersion, T, H> {
+    pub fn with_start_from_beginning(self) -> Self;
+    pub fn with_start_from_now(self) -> Self;
+    pub fn with_start_time(self, start_time: OffsetDateTime) -> Self;
+}
+#[derive(Clone, Debug)]
+pub struct ChangeFeedProcessorContext {
+}
+impl ChangeFeedProcessorContext {
+    pub fn lease_token(&self) -> &str;
+}
+#[derive(Clone, Debug)]
+pub struct ChangeFeedProcessorState {
+}
+impl ChangeFeedProcessorState {
+    pub fn continuation_token(&self) -> Option<&ContinuationToken>;
+    pub fn estimated_lag(&self) -> Option<u64>;
+    pub fn host_name(&self) -> Option<&str>;
+    pub fn lease_token(&self) -> &str;
+}
 #[derive(Clone)]
 pub struct CosmosError {
 }
@@ -165,6 +220,10 @@ impl PartialEq<StatusCode> for CosmosStatus {
 }
 impl Serialize for CosmosStatus {
     fn serialize<S>(&self, serializer: S) -> Result<<S as >::Ok, <S as >::Error> where S: serde::Serializer;
+}
+#[derive(Clone, Copy, Debug)]
+pub struct LatestVersion;
+impl ChangeFeedProcessorMode for LatestVersion {
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
@@ -294,6 +353,8 @@ impl From<&str> for ResourceIdentity {
 }
 impl From<String> for ResourceIdentity {
     fn from(name: String) -> Self;
+}
+pub trait ChangeFeedProcessorMode: private::Sealed {
 }
 pub mod clients {
     #[derive(Clone)]
