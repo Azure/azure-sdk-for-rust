@@ -155,7 +155,7 @@ mod tests {
     use futures::TryStreamExt;
     use rand::random;
 
-    use crate::structured_message::{
+    use crate::content_validation::structured_message::{
         derive_structured_message_length, encode_in_place::encode_bytes_in_structured_message,
     };
 

@@ -4,12 +4,14 @@
 pub use crate::generated::clients::{BlockBlobClient, BlockBlobClientOptions};
 
 use crate::{
+    content_validation::{self, StorageUploadBody},
     generated::models::{
         BlockBlobClientCommitBlockListResultHeaders, BlockBlobClientUploadInternalOptions,
         BlockBlobClientUploadInternalResultHeaders,
     },
     models::{
-        BlockBlobClientCommitBlockListOptions, BlockBlobClientStageBlockOptions,
+        BlockBlobClientCommitBlockListOptions, BlockBlobClientStageBlockHandwrittenOptions,
+        BlockBlobClientStageBlockOptions, BlockBlobClientStageBlockResult,
         BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
@@ -17,11 +19,12 @@ use crate::{
 use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
+    error::ErrorKind,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Body, NoFormat, Pipeline, RequestContent, Url,
+        Body, NoFormat, Pipeline, RequestContent, Response, Url,
     },
-    tracing, Bytes, Result, Uuid,
+    tracing, Bytes, Error, Result, Uuid,
 };
 use futures::lock::Mutex;
 use std::sync::Arc;
@@ -192,6 +195,37 @@ impl BlockBlobClient {
                 "Upload completed without setting result.",
             )
         })
+    }
+
+    pub async fn stage_block_handwritten(
+        &self,
+        block_id: &[u8],
+        content_length: u64,
+        body: RequestContent<Bytes, NoFormat>,
+        options: Option<BlockBlobClientStageBlockHandwrittenOptions<'_>>,
+    ) -> Result<Response<BlockBlobClientStageBlockResult, NoFormat>> {
+        let mut options = options.unwrap_or_default();
+        let mut content_length = content_length;
+
+        let body = content_validation::apply_upload_content_validation(
+            body.into(),
+            options.content_validation.take(),
+            #[allow(deprecated)]
+            &mut options.transactional_content_crc64,
+            #[allow(deprecated)]
+            &mut options.transactional_content_md5,
+        )?;
+        if let StorageUploadBody::StructuredMessage(body) = &body {
+            content_length = body.len().ok_or_else(|| {
+                Error::with_message(
+                    ErrorKind::Other,
+                    "Expected structured message to have known length.",
+                )
+            })?;
+            todo!("Set structured body headers");
+        }
+        self.stage_block(block_id, content_length, body.into(), Some(options.into()))
+            .await
     }
 }
 

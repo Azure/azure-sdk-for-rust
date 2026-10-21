@@ -380,6 +380,12 @@ impl SeekableStream for SeekableStructuredMessageEncodingStream {
     }
 }
 
+impl From<SeekableStructuredMessageEncodingStream> for azure_core::http::Body {
+    fn from(stream: SeekableStructuredMessageEncodingStream) -> Self {
+        azure_core::http::Body::SeekableStream(Box::new(stream))
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 struct ChecksumPair {
     crc: u64,
@@ -402,8 +408,7 @@ mod tests {
     use azure_core::stream::BytesStream;
     use futures::AsyncReadExt;
 
-    use crate::structured_message::tests::*;
-
+    use super::super::tests::*;
     use super::*;
 
     #[tokio::test]

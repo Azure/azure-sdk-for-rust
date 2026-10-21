@@ -10,9 +10,25 @@ use azure_core::{
 use time::OffsetDateTime;
 
 use crate::models::{
-    AccessTier, BlobClientDownloadInternalOptions, EncryptionAlgorithmType, HttpRange,
-    ImmutabilityPolicyMode,
+    AccessTier, BlobClientDownloadInternalOptions, BlockBlobClientStageBlockOptions,
+    EncryptionAlgorithmType, HttpRange, ImmutabilityPolicyMode,
 };
+
+#[derive(Clone, Default, Debug)]
+pub enum UploadContentValidation {
+    #[default]
+    Auto,
+    None,
+    Crc64Nvme(Option<[u8; 8]>),
+}
+
+#[derive(Clone, Default, Debug)]
+pub enum DownloadContentValidation {
+    #[default]
+    Auto,
+    None,
+    Crc64Nvme,
+}
 
 /// Options to be passed to `BlobClient::download()`
 #[derive(Clone, Default, SafeDebug)]
@@ -105,6 +121,68 @@ impl<'a> From<BlobClientDownloadOptions<'a>> for BlobClientDownloadInternalOptio
             structured_body_type: None,
             timeout: value.timeout,
             version_id: value.version_id,
+        }
+    }
+}
+
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlockBlobClientStageBlockHandwrittenOptions<'a> {
+    /// Content validation options. Specifies how block content is validated during the transfer.
+    /// If `None`, the SDK will select a default strategy, which may change across versions.
+    pub content_validation: Option<UploadContentValidation>,
+
+    /// The algorithm used to produce the encryption key hash. Must be provided if the encryption key is provided.
+    pub encryption_algorithm: Option<EncryptionAlgorithmType>,
+
+    /// Specifies the encryption key to use to encrypt the data provided in the request.
+    pub encryption_key: Option<String>,
+
+    /// The SHA-256 hash of the provided encryption key. Must be provided if the encryption key is provided.
+    pub encryption_key_sha256: Option<String>,
+
+    /// Specifies the encryption scope used to encrypt the data.
+    pub encryption_scope: Option<String>,
+
+    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
+    pub lease_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
+    pub timeout: Option<i32>,
+
+    /// Specifies the transactional CRC64 hash for the body.
+    #[deprecated(
+        since = "1.2.0",
+        note = "Use `content_validation` field instead. Operation will fail if both `transactional_content_crc64` and `content_validation` are `Some`."
+    )]
+    pub transactional_content_crc64: Option<Vec<u8>>,
+
+    /// Specifies the transactional MD5 hash for the body.
+    #[deprecated(
+        since = "1.2.0",
+        note = "Use `content_validation` field instead. Operation will fail if both `transactional_content_md5` and `content_validation` are `Some`."
+    )]
+    pub transactional_content_md5: Option<Vec<u8>>,
+}
+
+impl<'a> From<BlockBlobClientStageBlockHandwrittenOptions<'a>>
+    for BlockBlobClientStageBlockOptions<'a>
+{
+    fn from(value: BlockBlobClientStageBlockHandwrittenOptions<'a>) -> Self {
+        Self {
+            encryption_algorithm: value.encryption_algorithm,
+            encryption_key: value.encryption_key,
+            encryption_key_sha256: value.encryption_key_sha256,
+            encryption_scope: value.encryption_scope,
+            lease_id: value.lease_id,
+            method_options: value.method_options,
+            timeout: value.timeout,
+            #[allow(deprecated)]
+            transactional_content_crc64: value.transactional_content_crc64,
+            #[allow(deprecated)]
+            transactional_content_md5: value.transactional_content_md5,
         }
     }
 }
