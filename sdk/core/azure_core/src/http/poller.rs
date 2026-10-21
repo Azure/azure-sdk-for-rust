@@ -3,6 +3,9 @@
 
 //! Types and methods for long-running operations (LROs).
 
+#[cfg(feature = "resourcemanager")]
+pub mod resourcemanager;
+
 use crate::{
     error::{ErrorKind, ErrorResponse},
     http::{
