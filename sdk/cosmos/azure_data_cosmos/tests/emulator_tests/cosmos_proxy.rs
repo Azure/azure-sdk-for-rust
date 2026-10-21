@@ -11,9 +11,23 @@ use framework::{
     EMULATOR_CONNECTION_STRING,
 };
 use std::error::Error;
+use std::ffi::OsString;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 use tokio::net::TcpListener;
+
+struct RestoreEnvironment(Vec<(&'static str, Option<OsString>)>);
+
+impl Drop for RestoreEnvironment {
+    fn drop(&mut self) {
+        for (key, value) in &self.0 {
+            match value {
+                Some(value) => std::env::set_var(key, value),
+                None => std::env::remove_var(key),
+            }
+        }
+    }
+}
 
 /// Returns `true` when the suite is running under AAD auth mode.
 ///
@@ -129,15 +143,23 @@ pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> 
     // `https://`). Setting only `HTTPS_PROXY` silently fails to proxy an
     // `http://` target, since that env var is scheme-specific.
     let proxy_keys = ["HTTP_PROXY", "HTTPS_PROXY"];
+    let no_proxy_keys = ["NO_PROXY", "no_proxy"];
+    let _restore_environment = RestoreEnvironment(
+        proxy_keys
+            .iter()
+            .chain(&no_proxy_keys)
+            .map(|&key| (key, std::env::var_os(key)))
+            .collect(),
+    );
     let proxy_url = format!("http://127.0.0.1:{port}");
-    let prev_values: Vec<Option<String>> = proxy_keys
-        .iter()
-        .map(|key| {
-            let prev = std::env::var(key).ok();
-            std::env::set_var(key, &proxy_url);
-            prev
-        })
-        .collect();
+    for key in proxy_keys {
+        std::env::set_var(key, &proxy_url);
+    }
+
+    // CI bypasses proxies for loopback addresses used by this test.
+    for key in no_proxy_keys {
+        std::env::remove_var(key);
+    }
 
     // Build a client manually with proxy enabled.
     let env_val = std::env::var(CONNECTION_STRING_ENV_VAR)
@@ -191,13 +213,6 @@ pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> 
     let proxy_hit = tokio::time::timeout(std::time::Duration::from_secs(5), connected.notified())
         .await
         .is_ok();
-
-    for (key, prev) in proxy_keys.iter().zip(prev_values) {
-        match prev {
-            Some(v) => std::env::set_var(key, v),
-            None => std::env::remove_var(key),
-        }
-    }
 
     request_handle.abort();
     accept_handle.abort();
