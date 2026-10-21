@@ -71,7 +71,7 @@ cargo run -p azure_data_cosmos_perf -- \
 ### Options
 
 | Flag | Default | Description |
-|------|---------|-------------|
+| ------ | --------- | ------------- |
 | `--endpoint` | *required* | Cosmos DB account endpoint URL |
 | `--database` | `perfdb` | Database name |
 | `--container` | `perfcontainer` | Container name (partition key path must be `/partition_key`) |
@@ -88,6 +88,7 @@ cargo run -p azure_data_cosmos_perf -- \
 | `--throughput` | `100000` | Throughput (RU/s) when creating the container |
 | `--default-ttl` | `3600` | Default TTL in seconds for items (0 to disable) |
 | `--report-interval` | `300` | Stats reporting interval in seconds |
+| `--connection-metrics` | `false` | Record process-wide HTTP/2 connection counters and completed span lifetimes in result documents |
 | `--diagnostics-threshold-ms` | — | Emit rate-limited summary diagnostics for failures and operations slower than this threshold; disabled when omitted |
 | `--results-container` | `perfresults` | Container for storing perf results and error documents |
 | `--results-endpoint` | — | Cosmos DB endpoint for results (omit to use same account as `--endpoint`) |
@@ -170,6 +171,45 @@ If the tool cannot write a result or error document (e.g., the results container
 is temporarily unavailable), a warning is printed to stderr and the workload
 continues unaffected.
 
+### HTTP/2 Connection Metrics
+
+Pass `--connection-metrics` to add a cumulative `connection_metrics` object to
+each summary document. It is omitted by default, and no connection observer is
+installed. Enabling it observes existing `h2` tracing without changing SDK
+transport behavior or recording frame, header, or payload contents.
+
+| Field within `connection_metrics` | Meaning |
+| --- | --- |
+| `opened` | Client connection spans created |
+| `goaway_received` | Received GOAWAY frames, including multiple frames on one connection |
+| `closed` | Connections observed in the `Closed` state, counted once per connection |
+| `closed_after_goaway` | Connections first observed closed after receiving GOAWAY on that same connection |
+| `lifetimes.completed` | Client connection spans whose final reference was released |
+| `lifetimes.total_ms` | Sum of completed span lifetimes in milliseconds |
+| `lifetimes.goaway_completed` | Completed spans that received GOAWAY and reached the closed state |
+| `lifetimes.goaway_total_ms` | Sum of lifetimes for that GOAWAY-and-closed subset |
+
+Lifetime starts at span creation and ends at final span release. Still-open
+spans are excluded from lifetime totals; dropped or aborted spans can contribute
+to `completed` without a corresponding `closed` event. These measurements are
+not exact TCP handshake-to-FIN durations, and GOAWAY followed by closure does
+not prove successful server-side draining. Lifetime counts and duration sums
+are captured together; the separate event counters can advance concurrently.
+
+Scope is all observed HTTP/2 client connections inside the worker process,
+including the results account, not a specific account or external profiling
+sidecars. Counters include setup and seeding and reset when the process
+restarts. Every operation summary in a report repeats the same snapshot, so
+deduplicate by worker/report before aggregating; do not sum repeated snapshots
+across operations or time. Compute interval values from consecutive cumulative
+snapshots within one process run. For weighted average lifetimes, divide the
+sum of duration deltas by the sum of matching completion-count deltas, excluding
+resets and intervals with zero completions.
+
+The observer depends on the internal `h2::proto::connection` tracing contract
+(`Connection` spans with `peer=Client`), tested against `h2` 0.4.19. Re-run the
+local HTTP/2 shutdown test when updating `h2`.
+
 ### Separate Results Account
 
 By default, results are stored on the same account being tested. To avoid adding
@@ -231,7 +271,7 @@ processes, and forwards `Ctrl+C` to all children for graceful shutdown.
 The launcher supports these additional flags:
 
 | Flag | Default | Description |
-|------|---------|-------------|
+| ------ | --------- | ------------- |
 | `--processes N` | `1` | Number of OS processes to spawn |
 | `--cosmos-commit REF` | — | Build against a specific SDK commit/branch/tag |
 | `--poll-branch BRANCH` | — | Continuously poll a remote branch for new commits |

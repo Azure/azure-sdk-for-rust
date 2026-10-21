@@ -4,6 +4,7 @@
 use azure_data_cosmos::models::TimeToLive;
 
 mod config;
+mod connection_metrics;
 mod operations;
 mod runner;
 mod seed;
@@ -76,6 +77,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use clap::Parser;
 
     let config = config::Config::parse();
+    let connection_metrics = config
+        .connection_metrics
+        .then(connection_metrics::ConnectionMetrics::default);
 
     // Initialize tokio-console subscriber when the feature is enabled.
     // This must happen before any tokio tasks are spawned.
@@ -103,10 +107,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let console_builder =
             console_subscriber::ConsoleLayer::builder().server_addr((console_addr, console_port));
-        if config.diagnostics_threshold_ms.is_some() {
+        if config.diagnostics_threshold_ms.is_some() || connection_metrics.is_some() {
             tracing_subscriber::registry()
                 .with(console_builder.spawn())
-                .with(tracing_subscriber::fmt::layer().with_filter(diagnostics_logging_filter()))
+                .with(config.diagnostics_threshold_ms.map(|_| {
+                    tracing_subscriber::fmt::layer().with_filter(diagnostics_logging_filter())
+                }))
+                .with(
+                    connection_metrics
+                        .clone()
+                        .map(|metrics| metrics.with_filter(connection_metrics::ConnectionFilter)),
+                )
                 .init();
         } else {
             console_builder.init();
@@ -138,11 +149,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     #[cfg(not(feature = "tokio-console"))]
-    if config.diagnostics_threshold_ms.is_some() {
+    if config.diagnostics_threshold_ms.is_some() || connection_metrics.is_some() {
         use tracing_subscriber::prelude::*;
 
         tracing_subscriber::registry()
-            .with(tracing_subscriber::fmt::layer().with_filter(diagnostics_logging_filter()))
+            .with(config.diagnostics_threshold_ms.map(|_| {
+                tracing_subscriber::fmt::layer().with_filter(diagnostics_logging_filter())
+            }))
+            .with(
+                connection_metrics
+                    .clone()
+                    .map(|metrics| metrics.with_filter(connection_metrics::ConnectionFilter)),
+            )
             .init();
     }
 
@@ -397,6 +415,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Build config snapshot for Grafana dashboard visibility
     let config_snapshot = ConfigSnapshot {
+        connection_metrics,
         concurrency: config
             .target_rate
             .is_none()
