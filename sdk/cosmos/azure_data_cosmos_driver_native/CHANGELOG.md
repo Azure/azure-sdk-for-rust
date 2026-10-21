@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added an ABI-compatible driver option for enabling request-path resource-name validation. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
+- Added an ABI-compatible driver option for disabling default-on request-path resource-name validation when compatibility requires it. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
 
 ### Breaking Changes
 

@@ -251,11 +251,11 @@ static int test_driver_options_build_v2_validation_and_legacy_layout(void) {
 
     cosmos_driver_options_config_v2_t cfg =
         cosmos_driver_options_config_v2_default();
-    cfg.resource_name_validation_enabled = 2;
+    cfg.resource_name_validation_enabled = 1;
     cosmos_driver_options_t *opts = NULL;
     int32_t rc = cosmos_driver_options_build_v2(account, &cfg, &opts);
     ASSERT(rc == COSMOS_STATUS_SUCCESS,
-           "v2 build accepts enabled resource-name validation (rc=%d)", rc);
+           "v2 build accepts disabled resource-name validation (rc=%d)", rc);
     ASSERT(opts != NULL, "v2 build produced a non-NULL handle");
     cosmos_driver_options_free(opts);
     opts = NULL;

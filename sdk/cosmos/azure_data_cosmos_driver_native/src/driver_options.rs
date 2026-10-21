@@ -195,7 +195,7 @@ pub struct CosmosDriverOptionsConfigV2 {
     /// request URL paths.
     ///
     /// Tri-state bool: `0` leaves the driver default unchanged, `1` disables
-    /// validation, and `2` enables validation.
+    /// validation, and `2` enables validation. The driver default is enabled.
     pub resource_name_validation_enabled: i8,
 }
 
@@ -630,7 +630,7 @@ mod tests {
             crate::error::COSMOS_STATUS_SUCCESS
         );
         let handle = DriverOptionsHandle::inner_arc(options).unwrap();
-        assert!(!handle.inner.resource_name_validation_enabled());
+        assert!(handle.inner.resource_name_validation_enabled());
         drop(handle);
         cosmos_driver_options_free(options);
 

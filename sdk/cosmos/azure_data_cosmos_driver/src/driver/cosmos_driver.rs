@@ -5090,9 +5090,7 @@ mod tests {
     #[tokio::test]
     async fn plan_operation_rejects_invalid_resource_path_name() {
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
-        let driver_options = DriverOptions::builder(test_account())
-            .with_resource_name_validation_enabled(true)
-            .build();
+        let driver_options = DriverOptions::builder(test_account()).build();
         let driver = CosmosDriver::new(cosmos_runtime, driver_options)
             .expect("CosmosDriver::new should succeed in tests");
         let item = ItemReference::from_name(
@@ -5117,11 +5115,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn plan_operation_allows_invalid_resource_path_name_by_default() {
+    async fn plan_operation_allows_invalid_resource_path_name_when_disabled() {
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let driver = CosmosDriver::new(
             cosmos_runtime,
-            DriverOptions::builder(test_account()).build(),
+            DriverOptions::builder(test_account())
+                .with_resource_name_validation_enabled(false)
+                .build(),
         )
         .expect("CosmosDriver::new should succeed in tests");
         let item = ItemReference::from_name(

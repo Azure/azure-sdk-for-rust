@@ -151,6 +151,8 @@ impl DriverOptions {
     /// containing URL separators, delimiters, or control characters before
     /// request planning. This does not inspect resource IDs carried only in
     /// request bodies or transactional protocol fields.
+    ///
+    /// Validation is enabled by default.
     pub fn resource_name_validation_enabled(&self) -> bool {
         self.resource_name_validation_enabled
     }
@@ -186,7 +188,7 @@ impl DriverOptionsBuilder {
             fault_injection_rules: None,
             partition_failover_options: None,
             hedging_options: None,
-            resource_name_validation_enabled: false,
+            resource_name_validation_enabled: true,
         }
     }
 
@@ -291,13 +293,12 @@ impl DriverOptionsBuilder {
     /// Sets whether the driver rejects unsafe user-defined resource names before
     /// placing them in request URL paths.
     ///
-    /// This option is disabled by default to preserve compatibility with
-    /// applications that use names accepted by the service but unsafe for URL
-    /// path construction. Wrapping SDKs can enable it according to their own
-    /// compatibility policy.
+    /// This option is enabled by default. Pass `false` to preserve compatibility
+    /// with applications that use names accepted by the service but unsafe for
+    /// URL path construction.
     ///
-    /// Enabling this option does not validate resource IDs carried only in
-    /// request bodies or transactional protocol fields.
+    /// This option does not validate resource IDs carried only in request
+    /// bodies or transactional protocol fields.
     pub fn with_resource_name_validation_enabled(mut self, enabled: bool) -> Self {
         self.resource_name_validation_enabled = enabled;
         self
@@ -386,7 +387,7 @@ mod tests {
             .operation_options()
             .max_session_retry_count
             .is_none());
-        assert!(!options.resource_name_validation_enabled());
+        assert!(options.resource_name_validation_enabled());
     }
 
     #[test]
@@ -442,12 +443,12 @@ mod tests {
     }
 
     #[test]
-    fn builder_enables_resource_name_validation() {
+    fn builder_disables_resource_name_validation() {
         let options = DriverOptionsBuilder::new(test_account())
-            .with_resource_name_validation_enabled(true)
+            .with_resource_name_validation_enabled(false)
             .build();
 
-        assert!(options.resource_name_validation_enabled());
+        assert!(!options.resource_name_validation_enabled());
     }
 
     // ── Partition-failover / PPCB end-to-end env resolution ─────────────────

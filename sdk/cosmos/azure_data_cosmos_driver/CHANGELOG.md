@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added opt-in driver validation for user-defined Cosmos resource names used as request URL path segments. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
+- Added default-on driver validation for user-defined Cosmos resource names used as request URL path segments, with an option to disable it for compatibility. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
 
 ### Breaking Changes
 

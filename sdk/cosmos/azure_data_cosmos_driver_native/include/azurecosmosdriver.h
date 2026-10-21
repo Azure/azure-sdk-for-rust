@@ -2091,7 +2091,7 @@ typedef struct cosmos_driver_options_config_v2_t {
    * request URL paths.
    *
    * Tri-state bool: `0` leaves the driver default unchanged, `1` disables
-   * validation, and `2` enables validation.
+   * validation, and `2` enables validation. The driver default is enabled.
    */
   int8_t resource_name_validation_enabled;
 } cosmos_driver_options_config_v2_t;

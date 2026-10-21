@@ -1542,7 +1542,7 @@ mod tests {
 
         reference
             .validate_addressing(true, false)
-            .expect("resource-name validation is opt-in");
+            .expect("resource-name validation can be disabled");
     }
 
     #[test]
