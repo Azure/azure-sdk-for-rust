@@ -6,8 +6,6 @@
 
 - Upgraded to API service version `2026-03-01-preview`.
 
-### Breaking Changes
-
 ### Bugs Fixed
 
 - Fixed challenge authentication to cache challenge scopes only after challenge resource verification succeeds, preventing
