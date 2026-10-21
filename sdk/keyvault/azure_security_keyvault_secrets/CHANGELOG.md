@@ -1,12 +1,10 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.1.0-beta.1 (2026-10-21)
 
 ### Features Added
 
 - Upgraded to API service version `2026-03-01-preview`.
-
-### Breaking Changes
 
 ### Bugs Fixed
 
@@ -17,7 +15,7 @@
 
 - Avoided double-deserializing pager responses by using borrowed `nextLink` parsing in Key Vault secrets list operations.
 
-## 1.0.1 (2026-08-25)
+## 1.0.1 (2026-10-21)
 
 ### Bugs Fixed
 
