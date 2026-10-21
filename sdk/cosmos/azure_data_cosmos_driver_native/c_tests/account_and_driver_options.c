@@ -10,8 +10,8 @@
 //   2. Validation paths on `cosmos_account_ref_with_master_key` (NULL
 //      args + invalid endpoint URL).
 //   3. `cosmos_database_ref_create` happy path + NULL-arg rejection.
-//   4. `cosmos_driver_options_build` (flat) happy path + preferred-regions
-//      round-trip + NULL-arg rejection.
+//   4. Driver-options construction, including v2 resource-name validation and
+//      compatibility with the original v2 record layout.
 //
 // `cosmos_driver_get_or_create_blocking` is not exercised here because
 // it touches the network. The emulator-backed scenario (stand up a driver,
@@ -231,6 +231,67 @@ cleanup:
     return result;
 }
 
+typedef struct legacy_driver_options_config_v2_t {
+    cosmos_fault_injection_record_header_t header;
+    const cosmos_string_view_t *preferred_regions;
+    uintptr_t preferred_regions_len;
+    const cosmos_operation_options_t *operation_options;
+    const cosmos_fault_injection_rule_t *fault_injection_rules;
+    uintptr_t fault_injection_rules_len;
+    uintptr_t fault_injection_rule_stride;
+} legacy_driver_options_config_v2_t;
+
+static int test_driver_options_build_v2_validation_and_legacy_layout(void) {
+    int result = TEST_PASS;
+    cosmos_account_ref_t *account = NULL;
+    cosmos_error_t *err = NULL;
+    cosmos_account_ref_with_master_key(
+        SV("https://x.documents.azure.com:443/"), SV("k"), &account, &err);
+    REQUIRE(account != NULL, "account allocated");
+
+    cosmos_driver_options_config_v2_t cfg =
+        cosmos_driver_options_config_v2_default();
+    cfg.resource_name_validation_enabled = 2;
+    cosmos_driver_options_t *opts = NULL;
+    int32_t rc = cosmos_driver_options_build_v2(account, &cfg, &opts);
+    ASSERT(rc == COSMOS_STATUS_SUCCESS,
+           "v2 build accepts enabled resource-name validation (rc=%d)", rc);
+    ASSERT(opts != NULL, "v2 build produced a non-NULL handle");
+    cosmos_driver_options_free(opts);
+    opts = NULL;
+
+    cfg.resource_name_validation_enabled = 3;
+    rc = cosmos_driver_options_build_v2(account, &cfg, &opts);
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE,
+           "v2 build rejects an invalid validation discriminator (rc=%d)", rc);
+    ASSERT(opts == NULL, "invalid v2 config does not produce a handle");
+
+    legacy_driver_options_config_v2_t legacy = {
+        .header = {
+            .struct_size = sizeof(legacy_driver_options_config_v2_t),
+            .version = COSMOS_FAULT_INJECTION_ABI_VERSION_1,
+        },
+        .preferred_regions = NULL,
+        .preferred_regions_len = 0,
+        .operation_options = NULL,
+        .fault_injection_rules = NULL,
+        .fault_injection_rules_len = 0,
+        .fault_injection_rule_stride = sizeof(cosmos_fault_injection_rule_t),
+    };
+    rc = cosmos_driver_options_build_v2(
+        account,
+        (const cosmos_driver_options_config_v2_t *)&legacy,
+        &opts);
+    ASSERT(rc == COSMOS_STATUS_SUCCESS,
+           "v2 build accepts the original record layout (rc=%d)", rc);
+    ASSERT(opts != NULL, "legacy v2 build produced a non-NULL handle");
+    cosmos_driver_options_free(opts);
+
+cleanup:
+    cosmos_account_ref_free(account);
+    return result;
+}
+
 TEST_SUITE_BEGIN("Account / Database / Driver Options Lifecycle")
 TEST_REGISTER(lifecycle_null_safe)
 TEST_REGISTER(account_ref_master_key_happy_path)
@@ -241,4 +302,5 @@ TEST_REGISTER(database_ref_rejects_null_arguments)
 TEST_REGISTER(driver_options_build_happy_path)
 TEST_REGISTER(driver_options_build_null_config)
 TEST_REGISTER(driver_options_build_rejects_nulls)
+TEST_REGISTER(driver_options_build_v2_validation_and_legacy_layout)
 TEST_SUITE_END("Account / Database / Driver Options Lifecycle")

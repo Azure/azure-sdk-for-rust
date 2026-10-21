@@ -2086,6 +2086,14 @@ typedef struct cosmos_driver_options_config_v2_t {
   const struct cosmos_fault_injection_rule_t *fault_injection_rules;
   uintptr_t fault_injection_rules_len;
   uintptr_t fault_injection_rule_stride;
+  /**
+   * Whether to reject unsafe user-defined names before placing them in
+   * request URL paths.
+   *
+   * Tri-state bool: `0` leaves the driver default unchanged, `1` disables
+   * validation, and `2` enables validation.
+   */
+  int8_t resource_name_validation_enabled;
 } cosmos_driver_options_config_v2_t;
 
 /**

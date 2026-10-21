@@ -21,7 +21,10 @@
 //! Transport-side knobs (connection pool, user-agent suffix, workload
 //! id, correlation id) live on the runtime options, not here.
 //!
-use crate::string::{required_text, validate_array, CosmosStringView};
+use crate::{
+    op_request::{decode_tristate_bool, TRISTATE_UNSET},
+    string::{required_text, validate_array, CosmosStringView},
+};
 use std::sync::Arc;
 
 use azure_data_cosmos_driver::options::{DriverOptions, DriverOptionsBuilder, Region};
@@ -188,7 +191,20 @@ pub struct CosmosDriverOptionsConfigV2 {
     pub fault_injection_rules: *const CosmosFaultInjectionRule,
     pub fault_injection_rules_len: usize,
     pub fault_injection_rule_stride: usize,
+    /// Whether to reject unsafe user-defined names before placing them in
+    /// request URL paths.
+    ///
+    /// Tri-state bool: `0` leaves the driver default unchanged, `1` disables
+    /// validation, and `2` enables validation.
+    pub resource_name_validation_enabled: i8,
 }
+
+const DRIVER_OPTIONS_CONFIG_V2_BASE_SIZE: usize = std::mem::offset_of!(
+    CosmosDriverOptionsConfigV2,
+    resource_name_validation_enabled
+);
+const DRIVER_OPTIONS_CONFIG_V2_VALIDATION_SIZE: usize =
+    DRIVER_OPTIONS_CONFIG_V2_BASE_SIZE + std::mem::size_of::<i8>();
 
 /// Returns an all-unset [`CosmosDriverOptionsConfig`] by value. The host
 /// mutates the fields it cares about and leaves the rest at their default
@@ -216,6 +232,7 @@ pub extern "C" fn cosmos_driver_options_config_v2_default() -> CosmosDriverOptio
         fault_injection_rules: std::ptr::null(),
         fault_injection_rules_len: 0,
         fault_injection_rule_stride: std::mem::size_of::<CosmosFaultInjectionRule>(),
+        resource_name_validation_enabled: TRISTATE_UNSET,
     }
 }
 
@@ -317,28 +334,55 @@ pub extern "C" fn cosmos_driver_options_build_v2(
     let Some(account_inner) = AccountRefHandle::from_ptr(account) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     };
-    // SAFETY: the caller supplies at least the size/version prefix.
-    let header = unsafe { (*config).header };
+    // SAFETY: the caller supplies at least the size/version prefix. Read only
+    // that prefix because an older caller may have allocated the shorter
+    // original v2 record.
+    let header = unsafe { std::ptr::addr_of!((*config).header).read() };
     if header.version != COSMOS_FAULT_INJECTION_ABI_VERSION_1
-        || header.struct_size < std::mem::size_of::<CosmosDriverOptionsConfigV2>()
+        || header.struct_size < DRIVER_OPTIONS_CONFIG_V2_BASE_SIZE
     {
         return CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code();
     }
-    // SAFETY: the validated record size covers every v1 field.
-    let cfg = unsafe { &*config };
+
+    // SAFETY: the validated base size covers all original v2 fields. Read each
+    // field separately so callers compiled against the shorter original record
+    // remain valid after the optional validation field was appended.
+    let preferred_regions = unsafe { std::ptr::addr_of!((*config).preferred_regions).read() };
+    let preferred_regions_len =
+        unsafe { std::ptr::addr_of!((*config).preferred_regions_len).read() };
+    let operation_options = unsafe { std::ptr::addr_of!((*config).operation_options).read() };
+    let fault_injection_rules =
+        unsafe { std::ptr::addr_of!((*config).fault_injection_rules).read() };
+    let fault_injection_rules_len =
+        unsafe { std::ptr::addr_of!((*config).fault_injection_rules_len).read() };
+    let fault_injection_rule_stride =
+        unsafe { std::ptr::addr_of!((*config).fault_injection_rule_stride).read() };
+
+    let resource_name_validation_enabled =
+        if header.struct_size >= DRIVER_OPTIONS_CONFIG_V2_VALIDATION_SIZE {
+            // SAFETY: the declared record size covers the appended field.
+            unsafe { std::ptr::addr_of!((*config).resource_name_validation_enabled).read() }
+        } else {
+            TRISTATE_UNSET
+        };
+    let resource_name_validation_enabled =
+        match decode_tristate_bool(resource_name_validation_enabled) {
+            Ok(enabled) => enabled,
+            Err(code) => return code.as_status_code(),
+        };
+
     // SAFETY: caller contract on the region array pointer + length.
     let regions =
-        match unsafe { decode_preferred_regions(cfg.preferred_regions, cfg.preferred_regions_len) }
-        {
+        match unsafe { decode_preferred_regions(preferred_regions, preferred_regions_len) } {
             Ok(regions) => regions,
             Err(code) => return code.as_status_code(),
         };
     // SAFETY: caller contract on the strided rules and nested borrowed inputs.
     let rules = match unsafe {
         decode_rules(
-            cfg.fault_injection_rules,
-            cfg.fault_injection_rules_len,
-            cfg.fault_injection_rule_stride,
+            fault_injection_rules,
+            fault_injection_rules_len,
+            fault_injection_rule_stride,
         )
     } {
         Ok(rules) => rules,
@@ -349,13 +393,16 @@ pub extern "C" fn cosmos_driver_options_build_v2(
     if !regions.is_empty() {
         builder = builder.with_preferred_regions(regions);
     }
-    if !cfg.operation_options.is_null() {
+    if !operation_options.is_null() {
         // SAFETY: caller guarantees a valid operation-options record.
-        let operation_options = match unsafe { (*cfg.operation_options).to_driver() } {
+        let operation_options = match unsafe { (*operation_options).to_driver() } {
             Ok(options) => options,
             Err(code) => return code.as_status_code(),
         };
         builder = builder.with_operation_options(operation_options);
+    }
+    if let Some(enabled) = resource_name_validation_enabled {
+        builder = builder.with_resource_name_validation_enabled(enabled);
     }
     if !rules.is_empty() {
         builder = match builder.with_fault_injection_rules(rules) {
@@ -525,6 +572,77 @@ mod tests {
             CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert!(options.is_null());
+        crate::account_ref::cosmos_account_ref_free(account);
+    }
+
+    #[test]
+    fn v2_build_configures_resource_name_validation() {
+        #[repr(C)]
+        struct LegacyDriverOptionsConfigV2 {
+            header: CosmosFaultInjectionRecordHeader,
+            preferred_regions: *const CosmosStringView,
+            preferred_regions_len: usize,
+            operation_options: *const crate::op_request::CosmosOperationOptions,
+            fault_injection_rules: *const CosmosFaultInjectionRule,
+            fault_injection_rules_len: usize,
+            fault_injection_rule_stride: usize,
+        }
+
+        let account = make_account();
+
+        for (value, expected) in [(1, false), (2, true)] {
+            let mut config = cosmos_driver_options_config_v2_default();
+            config.resource_name_validation_enabled = value;
+            let mut options = ptr::null_mut();
+            assert_eq!(
+                cosmos_driver_options_build_v2(account, &config, &mut options),
+                crate::error::COSMOS_STATUS_SUCCESS
+            );
+            let handle = DriverOptionsHandle::inner_arc(options).unwrap();
+            assert_eq!(handle.inner.resource_name_validation_enabled(), expected);
+            drop(handle);
+            cosmos_driver_options_free(options);
+        }
+
+        assert_eq!(
+            std::mem::size_of::<LegacyDriverOptionsConfigV2>(),
+            DRIVER_OPTIONS_CONFIG_V2_BASE_SIZE
+        );
+        let legacy = LegacyDriverOptionsConfigV2 {
+            header: CosmosFaultInjectionRecordHeader {
+                struct_size: std::mem::size_of::<LegacyDriverOptionsConfigV2>(),
+                version: COSMOS_FAULT_INJECTION_ABI_VERSION_1,
+            },
+            preferred_regions: ptr::null(),
+            preferred_regions_len: 0,
+            operation_options: ptr::null(),
+            fault_injection_rules: ptr::null(),
+            fault_injection_rules_len: 0,
+            fault_injection_rule_stride: std::mem::size_of::<CosmosFaultInjectionRule>(),
+        };
+        let mut options = ptr::null_mut();
+        assert_eq!(
+            cosmos_driver_options_build_v2(
+                account,
+                (&raw const legacy).cast::<CosmosDriverOptionsConfigV2>(),
+                &mut options,
+            ),
+            crate::error::COSMOS_STATUS_SUCCESS
+        );
+        let handle = DriverOptionsHandle::inner_arc(options).unwrap();
+        assert!(!handle.inner.resource_name_validation_enabled());
+        drop(handle);
+        cosmos_driver_options_free(options);
+
+        let mut invalid = cosmos_driver_options_config_v2_default();
+        invalid.resource_name_validation_enabled = 3;
+        let mut options = ptr::null_mut();
+        assert_eq!(
+            cosmos_driver_options_build_v2(account, &invalid, &mut options),
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
+        );
+        assert!(options.is_null());
+
         crate::account_ref::cosmos_account_ref_free(account);
     }
 

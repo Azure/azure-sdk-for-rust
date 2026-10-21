@@ -523,14 +523,18 @@ impl CosmosResourceReference {
     /// guarantee holds for references built through any construction path, not
     /// just the SDK's `ContainerClient`.
     ///
-    /// Names used as path segments are rejected when empty, equal to a dot
-    /// segment, or containing a separator, delimiter, or control byte that URL
-    /// processing could remove.
+    /// When `validate_resource_names` is `true`, names used as path segments
+    /// are rejected when empty, equal to a dot segment, or containing a
+    /// separator, delimiter, or control byte that URL processing could remove.
     ///
     /// See [`addressing_conflict`](Self::addressing_conflict) for `leaf_in_path`.
     ///
     /// [`CLIENT_MIXED_NAME_RID_ADDRESSING`]: crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING
-    pub(crate) fn validate_addressing(&self, leaf_in_path: bool) -> crate::error::Result<()> {
+    pub(crate) fn validate_addressing(
+        &self,
+        leaf_in_path: bool,
+        validate_resource_names: bool,
+    ) -> crate::error::Result<()> {
         if let Some(conflict) = self.addressing_conflict(leaf_in_path) {
             return Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING)
@@ -543,18 +547,20 @@ impl CosmosResourceReference {
                 .build());
         }
 
-        if let Some(resource_type) = self.invalid_path_name(leaf_in_path) {
-            return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
-                .with_message(format!(
-                    "{resource_type} name cannot be used as a request-path segment; names must be \
-                     non-empty and cannot contain '/', '\\', '?', '#', ASCII tab, line feed, or \
-                     carriage return, or equal '.' or '..'"
-                ))
-                .with_source(std::io::Error::other(
-                    "invalid Cosmos resource path segment",
-                ))
-                .build());
+        if validate_resource_names {
+            if let Some(resource_type) = self.invalid_path_name(leaf_in_path) {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+                    .with_message(format!(
+                        "{resource_type} name cannot be used as a request-path segment; names must be \
+                         non-empty and cannot contain '/', '\\', '?', '#', ASCII tab, line feed, or \
+                         carriage return, or equal '.' or '..'"
+                    ))
+                    .with_source(std::io::Error::other(
+                        "invalid Cosmos resource path segment",
+                    ))
+                    .build());
+            }
         }
 
         Ok(())
@@ -1332,7 +1338,7 @@ mod tests {
             .with_resource_type(ResourceType::DocumentCollection)
             .with_rid("Lx1BALxJyZ8=".into());
         let err = r
-            .validate_addressing(true)
+            .validate_addressing(true, false)
             .expect_err("mixed addressing must be rejected");
         assert_eq!(
             err.status(),
@@ -1347,12 +1353,12 @@ mod tests {
         // unchanged.
         let name_ref: CosmosResourceReference = test_container().into();
         name_ref
-            .validate_addressing(true)
+            .validate_addressing(true, false)
             .expect("name addressing is consistent");
 
         let rid_ref: CosmosResourceReference = test_container_by_rid().into();
         rid_ref
-            .validate_addressing(true)
+            .validate_addressing(true, false)
             .expect("RID addressing is consistent");
     }
 
@@ -1368,7 +1374,7 @@ mod tests {
             "Lx1BALxJyZ8BAAAAAAAAAA==",
         );
         let r = CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
-        r.validate_addressing(true)
+        r.validate_addressing(true, false)
             .expect("a RID leaf under a RID parent is consistent");
 
         let paths = r.compute_paths();
@@ -1389,7 +1395,7 @@ mod tests {
             ItemReference::from_name(&test_container_by_rid(), PartitionKey::from("pk1"), "doc1");
         let r = CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
         let err = r
-            .validate_addressing(true)
+            .validate_addressing(true, false)
             .expect_err("a name leaf under a RID parent must be rejected");
         assert_eq!(
             err.status(),
@@ -1413,7 +1419,7 @@ mod tests {
         );
         let r = CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
         let err = r
-            .validate_addressing(true)
+            .validate_addressing(true, false)
             .expect_err("a RID leaf under a name parent must be rejected");
         assert_eq!(
             err.status(),
@@ -1430,7 +1436,7 @@ mod tests {
         let item =
             ItemReference::from_name(&test_container_by_rid(), PartitionKey::from("pk1"), "doc1");
         let r = CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
-        r.validate_addressing(false)
+        r.validate_addressing(false, false)
             .expect("a name leaf that never reaches the path is allowed");
     }
 
@@ -1460,7 +1466,7 @@ mod tests {
                 CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
 
             let err = reference
-                .validate_addressing(true)
+                .validate_addressing(true, true)
                 .expect_err("invalid request-path names must be rejected");
             assert_eq!(
                 err.status(),
@@ -1479,7 +1485,7 @@ mod tests {
                 .into_feed_reference();
 
             let err = reference
-                .validate_addressing(false)
+                .validate_addressing(false, true)
                 .expect_err("invalid parent names must be rejected");
             assert_eq!(
                 err.status(),
@@ -1504,7 +1510,7 @@ mod tests {
                 CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
 
             reference
-                .validate_addressing(true)
+                .validate_addressing(true, true)
                 .expect("path-legal names must remain supported");
         }
     }
@@ -1520,8 +1526,23 @@ mod tests {
             CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
 
         reference
-            .validate_addressing(false)
+            .validate_addressing(false, true)
             .expect("feed-style operations do not put the item name in the path");
+    }
+
+    #[test]
+    fn validate_addressing_allows_invalid_path_names_when_disabled() {
+        let item = ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "../other-container",
+        );
+        let reference =
+            CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
+
+        reference
+            .validate_addressing(true, false)
+            .expect("resource-name validation is opt-in");
     }
 
     #[test]

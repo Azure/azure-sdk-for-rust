@@ -341,15 +341,19 @@ impl CosmosOperation {
         }
     }
 
-    /// Validates request-path names and name/RID addressing consistency.
+    /// Validates name/RID addressing consistency and, when enabled,
+    /// request-path resource names.
     ///
     /// Delegates to
     /// [`CosmosResourceReference::validate_addressing`], telling it whether the
     /// leaf id will appear in the request path so that feed-style operations
     /// (Create/Upsert) are correctly exempted from the leaf check.
-    pub(crate) fn validate_addressing(&self) -> crate::error::Result<()> {
+    pub(crate) fn validate_addressing(
+        &self,
+        validate_resource_names: bool,
+    ) -> crate::error::Result<()> {
         self.resource_reference
-            .validate_addressing(!self.uses_feed_paths())
+            .validate_addressing(!self.uses_feed_paths(), validate_resource_names)
     }
 
     /// Returns the container for this operation, if applicable.
@@ -1492,7 +1496,7 @@ mod tests {
             ItemReference::from_name(&test_container_by_rid(), PartitionKey::from("pk1"), "doc1");
         let op = CosmosOperation::create_item(item_ref);
         assert!(op.uses_feed_paths());
-        op.validate_addressing()
+        op.validate_addressing(false)
             .expect("create on a RID container may carry a name id");
         assert_eq!(
             op.compute_resource_paths().request_path(),
@@ -1510,7 +1514,7 @@ mod tests {
         let op = CosmosOperation::read_item(item_ref);
         assert!(!op.uses_feed_paths());
         let err = op
-            .validate_addressing()
+            .validate_addressing(false)
             .expect_err("a name leaf under a RID parent must be rejected");
         assert_eq!(
             err.status(),
@@ -1528,7 +1532,7 @@ mod tests {
             "Lx1BALxJyZ8BAAAAAAAAAA==",
         );
         let op = CosmosOperation::read_item(item_ref);
-        op.validate_addressing()
+        op.validate_addressing(false)
             .expect("a RID leaf under a RID parent is consistent");
 
         let paths = op.compute_resource_paths();

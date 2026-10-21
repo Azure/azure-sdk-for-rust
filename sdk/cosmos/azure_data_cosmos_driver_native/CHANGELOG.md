@@ -1,5 +1,17 @@
 # Release History
 
+## 0.3.0 (Unreleased)
+
+### Features Added
+
+- Added an ABI-compatible driver option for enabling request-path resource-name validation. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.2.0 (2026-10-01)
 
 ### Features Added
