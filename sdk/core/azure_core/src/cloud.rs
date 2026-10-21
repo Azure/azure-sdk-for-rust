@@ -87,8 +87,8 @@ impl CloudConfiguration {
             Self::Custom(custom) => custom.audiences.get::<T>().map_or_else(
                 || {
                     Err(crate::Error::new(
-                        crate::error::ErrorKind::Other,
-                        "missing required audience",
+                        crate::error::ErrorKind::Credential,
+                        "missing custom cloud configuration audience",
                     ))
                 },
                 |audience| Ok(Cow::Owned(audience.to_string() + "/.default")),
@@ -107,6 +107,12 @@ impl CloudConfiguration {
             Self::AzureChina => Some("https://management.chinacloudapi.cn"),
             Self::Custom(custom) => custom.endpoint.as_deref(),
         }
+    }
+}
+
+impl Default for &CloudConfiguration {
+    fn default() -> Self {
+        &CloudConfiguration::AzurePublic
     }
 }
 
@@ -196,5 +202,7 @@ mod tests {
             CloudConfiguration::AzurePublic,
             CloudConfiguration::default()
         );
+        let cloud: Option<&CloudConfiguration> = None;
+        assert_eq!(cloud.unwrap_or_default(), &CloudConfiguration::AzurePublic);
     }
 }
