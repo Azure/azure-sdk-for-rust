@@ -14,7 +14,6 @@ use crate::{
     Audience,
 };
 use azure_core::{
-    cloud::CloudConfiguration,
     credentials::TokenCredential,
     error::ErrorKind,
     fmt::SafeDebug,
@@ -72,34 +71,12 @@ impl KeyVaultClient {
         options: Option<KeyVaultClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
-        let (endpoint, scope) = match options.client_options.cloud.as_deref() {
-            None | Some(CloudConfiguration::AzurePublic) => (
-                "https://management.azure.com/".to_string(),
-                "https://management.azure.com/.default".to_string(),
-            ),
-            Some(CloudConfiguration::AzureGovernment) => {
-                todo!("resolve Government cloud Resource Manager configuration")
-            }
-            Some(CloudConfiguration::AzureChina) => {
-                todo!("resolve China cloud Resource Manager configuration")
-            }
-            Some(CloudConfiguration::Custom(custom)) => {
-                let audience = custom.audiences.get::<Audience>().ok_or_else(|| {
-                    Error::new(
-                        ErrorKind::Credential,
-                        "missing custom cloud configuration audience",
-                    )
-                })?;
-                (
-                    audience.to_string(),
-                    format!("{}/.default", audience.trim_end_matches('/')),
-                )
-            }
-            _ => {
-                todo!("resolve Resource Manager configuration for this cloud")
-            }
-        };
-        let endpoint = Url::parse(&endpoint)?;
+        let cloud = options.client_options.cloud.as_deref().unwrap_or_default();
+        let endpoint = cloud
+            .endpoint()
+            .ok_or_else(|| Error::new(ErrorKind::Other, "missing Resource Manager endpoint"))?;
+        let endpoint = Url::parse(endpoint)?;
+        let scope = cloud.default_scope::<Audience>()?.into_owned();
         let auth_policy: Arc<dyn Policy> =
             Arc::new(BearerTokenAuthorizationPolicy::new(credential, vec![scope]));
         Ok(Self {
