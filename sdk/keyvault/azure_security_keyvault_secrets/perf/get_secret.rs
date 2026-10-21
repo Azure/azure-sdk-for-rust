@@ -10,26 +10,22 @@
 //!
 //! To run the test, use the following command line arguments:
 //!
-//! cargo bench --package azure_security_keyvault_secrets --bench perf -- --duration 10 --parallel 20 get_secret -u https://<my_vault>.vault.azure.net/
+//! cargo bench --package azure_security_keyvault_secrets --bench perf -- --duration 10 --parallel 20 get-secret -u https://<my_vault>.vault.azure.net/
 //!
 
 use std::sync::{Arc, OnceLock};
 
-use azure_core::{error::ResultExt, Result};
+use azure_core::Result;
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestFactory},
+    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
     Recording, TestContext,
 };
 use azure_security_keyvault_secrets::{
     models::SetSecretParameters, SecretClient, SecretClientOptions,
 };
-use clap::{Args, Subcommand};
 use futures::FutureExt;
 
-#[derive(Args, Clone, Debug)]
 pub struct VaultArgs {
-    // The URL of the Key Vault to use in the test
-    #[arg(short = 'u', long)]
     vault_url: Option<String>,
 }
 
@@ -112,30 +108,30 @@ impl PerfTest for GetSecrets {
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    match PerfRunner::<SecretsTest>::new(env!("CARGO_MANIFEST_DIR"), file!()) {
-        Ok(runner) => runner.run().await,
-        Err(e) => e.print().with_context(
-            azure_core_test::ErrorKind::Other,
-            "Failed to print parser error",
-        ),
-    }
-}
-
-#[derive(Subcommand, Clone, Debug)]
-enum SecretsTest {
-    GetSecret(VaultArgs),
-}
-
-impl PerfTestFactory for SecretsTest {
-    fn name(&self) -> &'static str {
-        match self {
-            SecretsTest::GetSecret(_) => "get_secret",
-        }
-    }
-
-    fn create_test(&self) -> CreatePerfTestReturn {
-        match self {
-            SecretsTest::GetSecret(options) => GetSecrets::new(options.clone()),
-        }
-    }
+    let runner = PerfRunner::new(
+        env!("CARGO_MANIFEST_DIR"),
+        file!(),
+        vec![PerfTestMetadata {
+            name: "get-secret",
+            description: "Get a secret from Key Vault",
+            options: vec![PerfTestOption {
+                name: "vault_url",
+                short_activator: Some('u'),
+                long_activator: "vault-url",
+                display_message: "The URL of the Key Vault to use in the test",
+                expected_args_len: 1,
+                ..Default::default()
+            }],
+            create_test: |runner| {
+                async move {
+                    GetSecrets::new(VaultArgs {
+                        vault_url: runner.try_get_test_arg("vault_url")?,
+                    })
+                    .await
+                }
+                .boxed_local()
+            },
+        }],
+    )?;
+    runner.run().await
 }
