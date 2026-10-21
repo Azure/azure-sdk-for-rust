@@ -184,61 +184,60 @@ fn default_and_explicit_public_cloud() -> Result<()> {
 
 #[tokio::test]
 async fn custom_cloud_uses_supplied_service_root_and_scope() -> Result<()> {
-    for audience in [
-        "https://custom.example/resource",
-        "https://custom.example/resource/",
-    ] {
-        let mut custom = CustomConfiguration::default();
-        custom.authority_host = "https://login.example/".into();
-        custom.audiences = Audiences::new().with::<Audience>(audience.into());
-        let mock = MockHttpClient::new(|request| {
-            assert_eq!(request.url().host_str(), Some("custom.example"));
-            assert!(request.url().path().starts_with("/resource/"));
-            assert_eq!(
-                request.headers().get_optional_str(&AUTHORIZATION),
-                Some("Bearer TEST TOKEN https://custom.example/resource/.default")
-            );
-            async {
-                Ok(AsyncRawResponse::from_bytes(
-                    StatusCode::Ok,
-                    Headers::new(),
-                    b"{}".as_slice(),
-                ))
-            }
-            .boxed()
-        });
-        let client = KeyVaultClient::new(
-            "sub".into(),
-            MockCredential::new()?,
-            Some(KeyVaultClientOptions {
-                client_options: ClientOptions {
-                    cloud: Some(Arc::new(custom.into())),
-                    transport: Some(Transport::new(Arc::new(mock))),
-                    ..Default::default()
-                },
-                ..Default::default()
-            }),
-        )?;
+    let audience = "https://custom.example/resource";
+    let mut custom = CustomConfiguration::default();
+    custom.authority_host = "https://login.example/".into();
+    custom.endpoint = Some("https://management.example/resource".into());
+    custom.audiences = Audiences::new().with::<Audience>(audience.into());
+    let mock = MockHttpClient::new(|request| {
+        assert_eq!(request.url().host_str(), Some("management.example"));
+        assert!(request.url().path().starts_with("/resource/"));
         assert_eq!(
-            client.endpoint().as_str().trim_end_matches('/'),
-            audience.trim_end_matches('/')
+            request.headers().get_optional_str(&AUTHORIZATION),
+            Some("Bearer TEST TOKEN https://custom.example/resource/.default")
         );
-        client
-            .get_key_vault_vaults_client()
-            .get("group", "vault", None)
-            .await?;
-    }
+        async {
+            Ok(AsyncRawResponse::from_bytes(
+                StatusCode::Ok,
+                Headers::new(),
+                b"{}".as_slice(),
+            ))
+        }
+        .boxed()
+    });
+    let client = KeyVaultClient::new(
+        "sub".into(),
+        MockCredential::new()?,
+        Some(KeyVaultClientOptions {
+            client_options: ClientOptions {
+                cloud: Some(Arc::new(custom.into())),
+                transport: Some(Transport::new(Arc::new(mock))),
+                ..Default::default()
+            },
+            ..Default::default()
+        }),
+    )?;
+    assert_eq!(
+        client.endpoint().as_str(),
+        "https://management.example/resource"
+    );
+    client
+        .get_key_vault_vaults_client()
+        .get("group", "vault", None)
+        .await?;
     Ok(())
 }
 
 #[test]
 fn missing_custom_audience_is_an_error() -> Result<()> {
+    let mut custom = CustomConfiguration::default();
+    custom.endpoint = Some("https://management.example/".into());
     let error = KeyVaultClient::new(
         "sub".into(),
         MockCredential::new()?,
         Some(KeyVaultClientOptions {
             client_options: ClientOptions {
-                cloud: Some(Arc::new(CustomConfiguration::default().into())),
+                cloud: Some(Arc::new(custom.into())),
                 ..Default::default()
             },
             ..Default::default()
@@ -253,26 +252,77 @@ fn missing_custom_audience_is_an_error() -> Result<()> {
 }
 
 #[test]
-fn unfinished_clouds_are_explicit() {
-    for cloud in [
-        CloudConfiguration::AzureGovernment,
-        CloudConfiguration::AzureChina,
+fn missing_custom_endpoint_is_an_error() -> Result<()> {
+    let mut custom = CustomConfiguration::default();
+    custom.audiences = Audiences::new().with::<Audience>("https://custom.example".into());
+    let error = KeyVaultClient::new(
+        "sub".into(),
+        MockCredential::new()?,
+        Some(KeyVaultClientOptions {
+            client_options: ClientOptions {
+                cloud: Some(Arc::new(custom.into())),
+                ..Default::default()
+            },
+            ..Default::default()
+        }),
+    )
+    .err()
+    .expect("missing endpoint must fail");
+    assert!(error
+        .to_string()
+        .contains("missing Resource Manager endpoint"));
+    Ok(())
+}
+
+#[tokio::test]
+async fn sovereign_clouds_use_core_endpoint_and_scope() -> Result<()> {
+    for (cloud, endpoint, scope) in [
+        (
+            CloudConfiguration::AzureGovernment,
+            "https://management.usgovcloudapi.net/",
+            "https://management.usgovcloudapi.net/.default",
+        ),
+        (
+            CloudConfiguration::AzureChina,
+            "https://management.chinacloudapi.cn/",
+            "https://management.chinacloudapi.cn/.default",
+        ),
     ] {
-        let result = std::panic::catch_unwind(|| {
-            KeyVaultClient::new(
-                "sub".into(),
-                MockCredential::new().unwrap(),
-                Some(KeyVaultClientOptions {
-                    client_options: ClientOptions {
-                        cloud: Some(Arc::new(cloud)),
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                }),
-            )
+        let mock = MockHttpClient::new(move |request| {
+            assert!(request.url().as_str().starts_with(endpoint));
+            assert!(request
+                .headers()
+                .get_optional_str(&AUTHORIZATION)
+                .expect("authorization header must be set")
+                .ends_with(scope));
+            async {
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    b"{}".as_slice(),
+                ))
+            }
+            .boxed()
         });
-        assert!(result.is_err());
+        let client = KeyVaultClient::new(
+            "sub".into(),
+            MockCredential::new()?,
+            Some(KeyVaultClientOptions {
+                client_options: ClientOptions {
+                    cloud: Some(Arc::new(cloud)),
+                    transport: Some(Transport::new(Arc::new(mock))),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
+        )?;
+        assert_eq!(client.endpoint().as_str(), endpoint);
+        client
+            .get_key_vault_vaults_client()
+            .get("group", "vault", None)
+            .await?;
     }
+    Ok(())
 }
 
 #[tokio::test]

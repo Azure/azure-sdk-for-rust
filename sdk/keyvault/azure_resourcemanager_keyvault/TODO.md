@@ -153,41 +153,64 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
 
 - [ ] Generate Resource Manager constructors that read
   `options.client_options.cloud` and default to Public cloud when omitted.
-  Public cloud uses service endpoint `https://management.azure.com/` and token
-  scope `https://management.azure.com/.default`.
+  Emit the prototype's borrowed-default pattern:
+
+  ```rust
+  let options = options.unwrap_or_default();
+  let cloud = options.client_options.cloud.as_deref().unwrap_or_default();
+  let endpoint = cloud
+      .endpoint()
+      .ok_or_else(|| Error::new(ErrorKind::Other, "missing Resource Manager endpoint"))?;
+  let endpoint = Url::parse(endpoint)?;
+  let scope = cloud.default_scope::<Audience>()?.into_owned();
+  ```
+
+  Keep `options.client_options` available to move into `Pipeline::new`.
+  Resolve the management endpoint with `CloudConfiguration::endpoint()` and the
+  token scope with `CloudConfiguration::default_scope::<Audience>()`, using the
+  generated crate's `Audience` marker.
+- [ ] Parse the returned endpoint with `Url::parse`, return an explicit
+  configuration error when `endpoint()` returns `None`, and propagate errors
+  from `default_scope::<Audience>()`. Pass the scope's `into_owned()` result to
+  `BearerTokenAuthorizationPolicy`; do not generate endpoint tables, cloud
+  matches, or manual `/.default` concatenation.
 - [ ] Keep the identity authority, service endpoint, authentication audience, and
   token scope conceptually distinct. Never use the login authority as the
   Resource Manager endpoint, and never derive the endpoint from a token scope.
-- [ ] Generate cloud resolution against available core APIs. Use a shared
-  Resource Manager configuration helper when one becomes available rather than
-  duplicating resolution across service crates. The current core cloud API has
-  no separate custom service endpoint; do not emit calls to a nonexistent API.
-- [ ] Honor caller-supplied custom-cloud values. The prototype's generated
-  contract uses the crate's typed `Audience` as both service root and
-  authentication resource, returns an explicit error when it is missing, parses
-  the URL, and appends `/.default` without duplicating a trailing slash.
-  Configure the credential's identity authority separately. Revisit this
-  endpoint/audience coupling when the shared helper is designed.
-- [ ] Preserve the current explicit limitation for Government, China, and future
-  cloud variants: the prototype uses `todo!()` rather than guessing endpoints.
-  Resolve and implement their correct endpoint/audience mappings separately
-  before claiming support.
+- [ ] Honor `CustomConfiguration::endpoint` independently of the crate's typed
+  `Audience`. A custom cloud must supply both an endpoint and an audience;
+  they need not be the same URL. Configure the credential's identity authority
+  separately. Replace the prototype's audience-as-endpoint coupling.
+- [ ] Delegate Public, Government, and China cloud mappings to core. Remove the
+  prototype's Government, China, and future-cloud `todo!()` branches rather than
+  generating a competing list of supported clouds.
 - [ ] Generate accurate constructor documentation for the default cloud,
-  custom-cloud requirements, configuration errors, and unsupported-cloud panics.
+  custom-cloud endpoint and audience requirements, and configuration/URL errors.
+  Remove the obsolete unsupported-cloud panic documentation.
   Use "Resource Manager" in public documentation; use `resourcemanager` for
   modules and features.
 - [ ] Generate a manifest dependency enabling `azure_core`'s `resourcemanager`
   feature, preserve `default-features = false`, and forward default transport
-  features consistently. Require a core version containing the helper.
+  features consistently. Require a core version containing both the polling
+  helper and the cloud endpoint/default-scope APIs.
   The prototype temporarily uses local `azure_core` path plus version
   `1.2.0-beta.2`; do not hard-code local paths into published service generation.
 
 ### Generation regression coverage
 
 - [ ] Port the prototype's constructor and polling cases into emitter fixtures:
-  omitted/Public/custom clouds, missing custom audience, trailing-slash scope
-  handling, borrowed context, every long-running method, streamed monitors
+  omitted/Public/Government/China/custom clouds, distinct custom endpoint and
+  audience URLs, missing custom endpoint, missing custom audience, invalid
+  endpoint URLs, borrowed context, every long-running method, streamed monitors
   followed by awaiting, explicit final-state metadata, and failure propagation.
+- [ ] Verify generated constructors delegate endpoint and scope resolution to
+  core and preserve its errors. Assert that fixtures emit
+  `cloud.as_deref().unwrap_or_default()` rather than cloning the configured
+  cloud, allocating a default `Arc`, or hard-coding `AzurePublic`.
+  Keep cloud mappings and scope normalization
+  semantics tested in `azure_core`, not reimplemented in emitter fixtures.
+  The core API in `dfc31db6e1` appends `/.default` to custom audiences verbatim;
+  do not retain the prototype's trailing-slash normalization as an emitter rule.
 - [ ] Cover all polling protocols, repeated GETs without bodies preserving `Accept`,
   resource and empty final results, and Operation-Location inline extraction.
   Keep protocol semantics tested in `azure_core`; emitter tests should verify
