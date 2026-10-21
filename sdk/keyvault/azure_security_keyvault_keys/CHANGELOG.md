@@ -1,6 +1,6 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.1.0-beta.2 (Unreleased)
 
 ### Features Added
 
@@ -16,6 +16,12 @@
 ### Other Changes
 
 - Avoided double-deserializing pager responses by using borrowed `nextLink` parsing in Key Vault keys list operations.
+
+## 1.0.1 (2026-08-25)
+
+### Bugs Fixed
+
+- Fixed the challenge authentication policy to cache the challenge scope only after the challenge resource is verified, so that a rejected challenge is not cached and reused by subsequent requests.
 
 ## 1.0.0 (2026-05-12)
 
