@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Resource-name validation is now enabled by default; use `CosmosClientBuilder::with_resource_name_validation(false)` only when compatibility requires service-accepted names that are unsafe for URL path construction. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
+
 ### Bugs Fixed
 
 - Keep CPU sampling active for long-lived clients and preserve diagnostics through partition split recovery, including `500/20206` errors. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))

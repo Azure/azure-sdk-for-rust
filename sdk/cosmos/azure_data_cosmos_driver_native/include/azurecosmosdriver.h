@@ -11,7 +11,7 @@
 
 // Specifies the version of azurecosmosdriver this header file was generated from.
 // This should match the version of libazurecosmosdriver you are linking against.
-#define AZURECOSMOSDRIVER_H_VERSION "0.2.0"
+#define AZURECOSMOSDRIVER_H_VERSION "0.3.0"
 
 // Packed-status helpers (see cosmos_status_code_t). Emitted as macros so
 // they keep the SCREAMING_SNAKE_CASE spelling shared with the

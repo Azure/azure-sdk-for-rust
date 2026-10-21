@@ -66,10 +66,10 @@ for the full design.
 
 ## Building
 
-Version **0.2.0** is a breaking C ABI revision. Check `cosmos_version()` against
+Version **0.3.0** is a breaking C ABI revision. Check `cosmos_version()` against
 `AZURECOSMOSDRIVER_H_VERSION` before any layout-sensitive call, including options
 returned by value. Rebuild host bindings and vendor the generated header together
-with the matching library; do not mix 0.1.x headers and 0.2.x libraries.
+with the matching library; do not mix 0.2.x headers and 0.3.x libraries.
 
 ### Operation defaults and admission snapshots
 
