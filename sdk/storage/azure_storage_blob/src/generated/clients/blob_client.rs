@@ -662,11 +662,12 @@ impl BlobClient {
     /// * [`object_replication_rules`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::object_replication_rules) - x-ms-or
     /// * [`object_replication_policy_id`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::object_replication_policy_id) - x-ms-or-policy-id
     /// * [`is_server_encrypted`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::is_server_encrypted) - x-ms-server-encrypted
+    /// * [`smart_access_tier`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::smart_access_tier) - x-ms-smart-access-tier
     /// * [`tag_count`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::tag_count) - x-ms-tag-count
     /// * [`version_id`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`BlobClientDownloadInternalResultHeaders`]: crate::generated::models::BlobClientDownloadInternalResultHeaders
-    #[tracing::function("Customizations.BlobClient.downloadNoSmartTier")]
+    #[tracing::function("Storage.Blob.BlobClient.download")]
     pub(crate) async fn download_internal(
         &self,
         options: Option<BlobClientDownloadInternalOptions<'_>>,
@@ -900,11 +901,12 @@ impl BlobClient {
     /// * [`object_replication_policy_id`()](crate::generated::models::BlobLayoutHeaders::object_replication_policy_id) - x-ms-or-policy-id
     /// * [`rehydrate_priority`()](crate::generated::models::BlobLayoutHeaders::rehydrate_priority) - x-ms-rehydrate-priority
     /// * [`is_server_encrypted`()](crate::generated::models::BlobLayoutHeaders::is_server_encrypted) - x-ms-server-encrypted
+    /// * [`smart_access_tier`()](crate::generated::models::BlobLayoutHeaders::smart_access_tier) - x-ms-smart-access-tier
     /// * [`tag_count`()](crate::generated::models::BlobLayoutHeaders::tag_count) - x-ms-tag-count
     /// * [`version_id`()](crate::generated::models::BlobLayoutHeaders::version_id) - x-ms-version-id
     ///
     /// [`BlobLayoutHeaders`]: crate::generated::models::BlobLayoutHeaders
-    #[tracing::function("Customizations.BlobClient.getLayoutNoSmartTier")]
+    #[tracing::function("Storage.Blob.BlobClient.getLayout")]
     pub fn get_layout(
         &self,
         options: Option<BlobClientGetLayoutOptions<'_>>,
@@ -1085,11 +1087,12 @@ impl BlobClient {
     /// * [`object_replication_policy_id`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::object_replication_policy_id) - x-ms-or-policy-id
     /// * [`rehydrate_priority`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::rehydrate_priority) - x-ms-rehydrate-priority
     /// * [`is_server_encrypted`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::is_server_encrypted) - x-ms-server-encrypted
+    /// * [`smart_access_tier`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::smart_access_tier) - x-ms-smart-access-tier
     /// * [`tag_count`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::tag_count) - x-ms-tag-count
     /// * [`version_id`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`BlobClientGetPropertiesResultHeaders`]: crate::generated::models::BlobClientGetPropertiesResultHeaders
-    #[tracing::function("Customizations.BlobClient.getPropertiesNoSmartTier")]
+    #[tracing::function("Storage.Blob.BlobClient.getProperties")]
     pub async fn get_properties(
         &self,
         options: Option<BlobClientGetPropertiesOptions<'_>>,
