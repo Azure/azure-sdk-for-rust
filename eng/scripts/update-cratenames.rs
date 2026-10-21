@@ -68,8 +68,8 @@ fn main() {
         .dependencies
         .as_ref()
         .expect("expected workspace dependencies")
-        .iter()
-        .map(|(name, _)| name.to_string())
+        .keys()
+        .map(|name| name.to_string())
     {
         crate_names.insert(dependency_name);
     }
@@ -158,14 +158,14 @@ fn add_dependencies(crate_names: &mut HashSet<String>, manifest: Dependencies) {
     .flatten()
     {
         crate_names.extend(dependencies.into_iter().filter_map(|(name, dependency)| {
-            (!matches!(dependency, InheritableDependency::Inherit(_))).then_some(name.to_string())
+            (!matches!(dependency, InheritableDependency::Inherit(_))).then_some(name)
         }));
     }
 }
 
 fn script_manifest(script: &str) -> Result<Dependencies, Box<dyn std::error::Error + Send + Sync>> {
     let mut lines = script.lines();
-    if lines.find(|line| *line == "---").is_some() {
+    if lines.any(|line| line == "---") {
         let mut manifest = String::new();
         for line in lines {
             if line == "---" {
@@ -205,7 +205,7 @@ where
             let path = entry.path();
             if path.is_dir() {
                 if let Some(name) = path.file_name() {
-                    if name == "target" || name.as_encoded_bytes().starts_with(&[b'.']) {
+                    if name == "target" || name.as_encoded_bytes().starts_with(b".") {
                         continue;
                     }
                 }
