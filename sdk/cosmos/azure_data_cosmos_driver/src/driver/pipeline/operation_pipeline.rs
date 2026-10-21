@@ -3008,22 +3008,18 @@ async fn populate_hub_region_cache(
 }
 
 /// Hedged counterpart of the `Complete` arm's hub-region cache populate: a
-/// leg that sent the hub-region-processing-only header and succeeded was
-/// served by the partition's hub.
+/// hub-only read leg that succeeded was served by the partition's hub.
 async fn populate_hub_region_cache_for_hedge_winner(
     ctx: &AttemptContext<'_>,
     endpoint: &CosmosEndpoint,
-    sent_hub_region_header: bool,
+    hub_only_read: bool,
     result: &TransportResult,
     pk_range_id: Option<&PartitionKeyRangeId>,
 ) {
     let Some(pk_range_id) = pk_range_id else {
         return;
     };
-    if sent_hub_region_header
-        && ctx.operation.is_read_only()
-        && matches!(result.outcome, TransportOutcome::Success { .. })
-    {
+    if hub_only_read && matches!(result.outcome, TransportOutcome::Success { .. }) {
         populate_hub_region_cache(ctx.location_state_store, pk_range_id, endpoint).await;
     }
 }
@@ -3219,13 +3215,26 @@ fn classify_hedge_result(result: crate::error::Result<TransportResult>) -> Hedge
 /// wins; a secondary transient stays transient. Data-plane hedging passes
 /// `false` and keeps the first-`Final`-wins semantics of
 /// [`classify_hedge_result`].
+///
+/// `hub_only_read` must be set only for a read whose leg sent the
+/// hub-region-processing-only header: its `403/3` means "not the hub here".
 fn classify_secondary_hedge_result(
     result: crate::error::Result<TransportResult>,
     primary_authoritative: bool,
+    hub_only_read: bool,
 ) -> HedgeClass {
     match classify_hedge_result(result) {
         HedgeClass::Final(tr)
             if primary_authoritative && !matches!(tr.outcome, TransportOutcome::Success { .. }) =>
+        {
+            HedgeClass::Transient
+        }
+        HedgeClass::Final(tr)
+            if hub_only_read
+                && matches!(
+                    &tr.outcome,
+                    TransportOutcome::HttpError { status, .. } if status.is_write_forbidden()
+                ) =>
         {
             HedgeClass::Transient
         }
@@ -3904,6 +3913,7 @@ async fn apply_hedge_leg_effects(
     endpoint: &CosmosEndpoint,
     result: &crate::error::Result<TransportResult>,
     shared_hub_region_latch: Option<&Arc<AtomicBool>>,
+    hub_only_read: bool,
     race_observed_session_unavailable: &mut bool,
 ) {
     // Pre-transport / request-build errors carry no `TransportResult`
@@ -3912,12 +3922,17 @@ async fn apply_hedge_leg_effects(
     let Ok(transport_result) = result.as_ref() else {
         return;
     };
-    let eval = evaluate_hedge_leg_effects(
-        ctx.operation,
-        endpoint,
-        retry_state_snapshot,
-        transport_result,
-    );
+    // Judge the leg by the header it sent: the latch may have flipped after the snapshot.
+    let latched_state;
+    let retry_state = if hub_only_read && !retry_state_snapshot.hub_region_processing_only {
+        let mut state = retry_state_snapshot.clone();
+        state.hub_region_processing_only = true;
+        latched_state = state;
+        &latched_state
+    } else {
+        retry_state_snapshot
+    };
+    let eval = evaluate_hedge_leg_effects(ctx.operation, endpoint, retry_state, transport_result);
     if !eval.effects.is_empty() {
         ctx.location_state_store
             .apply_with_options(&eval.effects, Some(ctx.options))
@@ -4309,6 +4324,7 @@ async fn execute_hedged(
                 &primary_routing.endpoint,
                 &primary_result,
                 shared_hub_region_latch.as_ref(),
+                false,
                 &mut race_observed_session_unavailable,
             )
             .await;
@@ -4385,18 +4401,22 @@ async fn execute_hedged(
                     parent_diagnostics.merge_hedge_attempt(secondary_diag);
                     captured_pk_range_id =
                         captured_pk_range_id.or_else(|| pk_range_id_from_result(&secondary_result));
+                    let hub_only_read = ctx.operation.is_read_only()
+                        && secondary_sent_hub_region_header.load(Ordering::Relaxed);
                     apply_hedge_leg_effects(
                         ctx,
                         retry_state_snapshot,
                         &secondary_routing.endpoint,
                         &secondary_result,
                         shared_hub_region_latch.as_ref(),
+                        hub_only_read,
                         &mut race_observed_session_unavailable,
                     )
                     .await;
                     match classify_secondary_hedge_result(
                         secondary_result,
                         metadata_primary_authoritative,
+                        hub_only_read,
                     ) {
                         HedgeClass::Final(tr) => {
                             parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
@@ -4426,7 +4446,7 @@ async fn execute_hedged(
                             populate_hub_region_cache_for_hedge_winner(
                                 ctx,
                                 &secondary_routing.endpoint,
-                                secondary_sent_hub_region_header.load(Ordering::Relaxed),
+                                hub_only_read,
                                 &tr,
                                 captured_pk_range_id
                                     .as_ref()
@@ -4467,17 +4487,23 @@ async fn execute_hedged(
             parent_diagnostics.merge_hedge_attempt(secondary_diag);
             captured_pk_range_id =
                 captured_pk_range_id.or_else(|| pk_range_id_from_result(&secondary_result));
+            let hub_only_read = ctx.operation.is_read_only()
+                && secondary_sent_hub_region_header.load(Ordering::Relaxed);
             apply_hedge_leg_effects(
                 ctx,
                 retry_state_snapshot,
                 &secondary_routing.endpoint,
                 &secondary_result,
                 shared_hub_region_latch.as_ref(),
+                hub_only_read,
                 &mut race_observed_session_unavailable,
             )
             .await;
-            match classify_secondary_hedge_result(secondary_result, metadata_primary_authoritative)
-            {
+            match classify_secondary_hedge_result(
+                secondary_result,
+                metadata_primary_authoritative,
+                hub_only_read,
+            ) {
                 HedgeClass::Final(tr) => {
                     parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
                         strategy_config,
@@ -4515,7 +4541,7 @@ async fn execute_hedged(
                     populate_hub_region_cache_for_hedge_winner(
                         ctx,
                         &secondary_routing.endpoint,
-                        secondary_sent_hub_region_header.load(Ordering::Relaxed),
+                        hub_only_read,
                         &tr,
                         captured_pk_range_id
                             .as_ref()
@@ -4562,6 +4588,7 @@ async fn execute_hedged(
                         &primary_routing.endpoint,
                         &primary_result,
                         shared_hub_region_latch.as_ref(),
+                        false,
                         &mut race_observed_session_unavailable,
                     )
                     .await;
@@ -11044,7 +11071,7 @@ mod tests {
         // must NOT win — downgraded to Transient so the primary is awaited.
         let tr = http_result(404, None);
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(tr), true),
+            super::classify_secondary_hedge_result(Ok(tr), true, false),
             super::HedgeClass::Transient
         ));
     }
@@ -11054,7 +11081,7 @@ mod tests {
         // Data-plane (primary_authoritative = false) keeps first-Final-wins.
         let tr = http_result(404, None);
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(tr), false),
+            super::classify_secondary_hedge_result(Ok(tr), false, false),
             super::HedgeClass::Final(_)
         ));
     }
@@ -11065,7 +11092,7 @@ mod tests {
         // (the latency benefit).
         let tr = http_result(200, None);
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(tr), true),
+            super::classify_secondary_hedge_result(Ok(tr), true, false),
             super::HedgeClass::Final(_)
         ));
     }
@@ -11074,8 +11101,25 @@ mod tests {
     fn secondary_transient_stays_transient_when_metadata() {
         let tr = http_result(503, None);
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(tr), true),
+            super::classify_secondary_hedge_result(Ok(tr), true, false),
             super::HedgeClass::Transient
+        ));
+    }
+
+    #[test]
+    fn secondary_write_forbidden_keeps_racing_only_on_hub_only_read() {
+        assert!(matches!(
+            super::classify_secondary_hedge_result(Ok(http_result(403, Some(3))), false, true),
+            super::HedgeClass::Transient
+        ));
+        assert!(matches!(
+            super::classify_secondary_hedge_result(Ok(http_result(403, Some(3))), false, false),
+            super::HedgeClass::Final(_)
+        ));
+        // Only 403/3 means "not the hub"; other 403s stay final on a hub-only read.
+        assert!(matches!(
+            super::classify_secondary_hedge_result(Ok(http_result(403, Some(5))), false, true),
+            super::HedgeClass::Final(_)
         ));
     }
 

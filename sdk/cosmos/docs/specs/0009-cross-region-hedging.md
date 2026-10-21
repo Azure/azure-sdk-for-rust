@@ -1200,6 +1200,10 @@ fn is_final_result(status: &CosmosStatus) -> bool {
 > request against another region would, at best, duplicate the denial
 > and, at worst, double a security-sensitive signal that may itself
 > be rate-limited.
+>
+> **Exception:** a `403/3` on a hedge leg of a read that sent the
+> hub-region-processing-only header means "not the hub here", not a
+> denial, so the race treats it as transient (§9.6.9).
 
 ### 7.2.1 429 sub-status sensitivity (hedge-spawn eligibility)
 
@@ -1876,6 +1880,16 @@ cached). The leg records whether it sent the header when its request is
 built; the shared latch alone is not enough, because it can flip after a
 leg's request was already built without the header. Today only the
 secondary reads the latch, so only a secondary win can populate the cache.
+
+#### 9.6.9 Hub-only `403/3` on a hedge leg
+
+For a read leg that sent the hub-region header, `403/3` means the region is
+not the partition's hub. The race treats it as transient and evaluates the
+leg as hub discovery, judged by the header it sent rather than the snapshot,
+so it advances the hub entry instead of recording a PPAF write failover. A
+new hub entry tries the write region first: on a single-write account it is
+the hub unless PPAF moved it. The retry after the race routes to that entry.
+Other 403s, and `403/3` without the header, stay final.
 
 ---
 
