@@ -402,7 +402,7 @@ pub extern "C" fn cosmos_driver_options_build_v2(
         builder = builder.with_operation_options(operation_options);
     }
     if let Some(enabled) = resource_name_validation_enabled {
-        builder = builder.with_resource_name_validation_enabled(enabled);
+        builder = builder.with_resource_name_validation(enabled);
     }
     if !rules.is_empty() {
         builder = match builder.with_fault_injection_rules(rules) {

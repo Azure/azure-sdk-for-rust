@@ -5120,7 +5120,7 @@ mod tests {
         let driver = CosmosDriver::new(
             cosmos_runtime,
             DriverOptions::builder(test_account())
-                .with_resource_name_validation_enabled(false)
+                .with_resource_name_validation(false)
                 .build(),
         )
         .expect("CosmosDriver::new should succeed in tests");

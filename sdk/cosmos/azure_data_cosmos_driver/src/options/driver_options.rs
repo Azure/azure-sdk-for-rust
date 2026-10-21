@@ -299,7 +299,7 @@ impl DriverOptionsBuilder {
     ///
     /// This option does not validate resource IDs carried only in request
     /// bodies or transactional protocol fields.
-    pub fn with_resource_name_validation_enabled(mut self, enabled: bool) -> Self {
+    pub fn with_resource_name_validation(mut self, enabled: bool) -> Self {
         self.resource_name_validation_enabled = enabled;
         self
     }
@@ -445,7 +445,7 @@ mod tests {
     #[test]
     fn builder_disables_resource_name_validation() {
         let options = DriverOptionsBuilder::new(test_account())
-            .with_resource_name_validation_enabled(false)
+            .with_resource_name_validation(false)
             .build();
 
         assert!(!options.resource_name_validation_enabled());
