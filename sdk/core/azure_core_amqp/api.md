@@ -23,13 +23,11 @@ pub struct AmqpClaimsBasedSecurity {
 impl AmqpClaimsBasedSecurity {
     pub fn new(session: AmqpSession) -> Result<Self>;
 }
+#[async_trait]
 impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity {
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn attach(&self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn authorize_path(&self, path: String, token_type: Option<String>, secret: &Secret, expires_on: OffsetDateTime) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn detach(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
+    async fn attach(&self) -> Result<()>;
+    async fn authorize_path(&self, path: String, token_type: Option<String>, secret: &Secret, expires_on: OffsetDateTime) -> Result<()>;
+    async fn detach(self) -> Result<()>;
 }
 #[cfg(feature = "ffi")]
 #[derive(Clone, Debug, PartialEq)]
@@ -49,13 +47,11 @@ impl AmqpConnection {
     pub fn abort(&self);
     pub fn new() -> Self;
 }
+#[async_trait]
 impl AmqpConnectionApis for AmqpConnection {
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn close(&self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn close_with_error(&self, condition: AmqpSymbol, description: Option<String>, info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn open(&self, name: String, url: Url, options: Option<AmqpConnectionOptions>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
+    async fn close(&self) -> Result<()>;
+    async fn close_with_error(&self, condition: AmqpSymbol, description: Option<String>, info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>) -> Result<()>;
+    async fn open(&self, name: String, url: Url, options: Option<AmqpConnectionOptions>) -> Result<()>;
 }
 #[derive(Clone, Debug, Default)]
 pub struct AmqpConnectionOptions {
@@ -170,13 +166,11 @@ pub struct AmqpManagement {
 impl AmqpManagement {
     pub fn new(session: AmqpSession, client_node_name: String, access_token: AccessToken) -> Result<Self>;
 }
+#[async_trait]
 impl AmqpManagementApis for AmqpManagement {
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn attach(&self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn call(&self, operation_type: String, application_properties: AmqpOrderedMap<String, AmqpSimpleValue>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<AmqpOrderedMap<String, AmqpValue>>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn detach(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
+    async fn attach(&self) -> Result<()>;
+    async fn call(&self, operation_type: String, application_properties: AmqpOrderedMap<String, AmqpSimpleValue>) -> Result<AmqpOrderedMap<String, AmqpValue>>;
+    async fn detach(self) -> Result<()>;
 }
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct AmqpMessage {
@@ -295,25 +289,17 @@ pub struct AmqpReceiver {
 impl AmqpReceiver {
     pub fn new() -> Self;
 }
+#[async_trait]
 impl AmqpReceiverApis for AmqpReceiver {
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn accept_delivery(&self, delivery: &AmqpDelivery) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn attach<impl 'async_trait + Into<AmqpSource> + Send: Into<AmqpSource> + Send>(&self, session: &AmqpSession, source: impl Into<AmqpSource> + Send, options: Option<AmqpReceiverOptions>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn credit_mode(&self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<ReceiverCreditMode>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn detach(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn receive_delivery(&self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<AmqpDelivery>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn reject_delivery(&self, delivery: &AmqpDelivery) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn release_delivery(&self, delivery: &AmqpDelivery) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn settle_delivery(&self, delivery: &AmqpDelivery, outcome: AmqpDeliveryOutcome) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
+    async fn accept_delivery(&self, delivery: &AmqpDelivery) -> Result<()>;
+    async fn attach<impl 'async_trait + Into<AmqpSource> + Send: Into<AmqpSource> + Send>(&self, session: &AmqpSession, source: impl Into<AmqpSource> + Send, options: Option<AmqpReceiverOptions>) -> Result<()>;
+    async fn credit_mode(&self) -> Result<ReceiverCreditMode>;
+    async fn detach(self) -> Result<()>;
+    async fn receive_delivery(&self) -> Result<AmqpDelivery>;
+    async fn reject_delivery(&self, delivery: &AmqpDelivery) -> Result<()>;
+    async fn release_delivery(&self, delivery: &AmqpDelivery) -> Result<()>;
+    async fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> Result<()>;
+    async fn settle_delivery(&self, delivery: &AmqpDelivery, outcome: AmqpDeliveryOutcome) -> Result<()>;
 }
 #[derive(Clone, Debug, Default)]
 pub struct AmqpReceiverOptions {
@@ -334,17 +320,13 @@ pub struct AmqpSender {
 impl AmqpSender {
     pub fn new() -> Self;
 }
+#[async_trait]
 impl AmqpSenderApis for AmqpSender {
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn attach<impl 'async_trait + Into<AmqpTarget> + Send: Into<AmqpTarget> + Send>(&self, session: &AmqpSession, name: String, target: impl Into<AmqpTarget> + Send, options: Option<AmqpSenderOptions>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn detach(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn max_message_size(&self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<Option<u64>>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn send<M>(&self, message: M, options: Option<AmqpSendOptions>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<AmqpSendOutcome>> + ::core::marker::Send>> where M: Into<AmqpMessage> + std::fmt::Debug + Send;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn send_ref<M>(&self, message: M, options: Option<AmqpSendOptions>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<AmqpSendOutcome>> + ::core::marker::Send>> where M: AsRef<AmqpMessage> + std::fmt::Debug + Send;
+    async fn attach<impl 'async_trait + Into<AmqpTarget> + Send: Into<AmqpTarget> + Send>(&self, session: &AmqpSession, name: String, target: impl Into<AmqpTarget> + Send, options: Option<AmqpSenderOptions>) -> Result<()>;
+    async fn detach(self) -> Result<()>;
+    async fn max_message_size(&self) -> Result<Option<u64>>;
+    async fn send<M>(&self, message: M, options: Option<AmqpSendOptions>) -> Result<AmqpSendOutcome> where M: Into<AmqpMessage> + std::fmt::Debug + Send;
+    async fn send_ref<M>(&self, message: M, options: Option<AmqpSendOptions>) -> Result<AmqpSendOutcome> where M: AsRef<AmqpMessage> + std::fmt::Debug + Send;
 }
 impl Default for AmqpSender {
     fn default() -> Self;
@@ -366,11 +348,10 @@ pub struct AmqpSession {
 impl AmqpSession {
     pub fn new() -> Self;
 }
+#[async_trait]
 impl AmqpSessionApis for AmqpSession {
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn begin(&self, connection: &AmqpConnection, options: Option<AmqpSessionOptions>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn end(&self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
+    async fn begin(&self, connection: &AmqpConnection, options: Option<AmqpSessionOptions>) -> Result<()>;
+    async fn end(&self) -> Result<()>;
 }
 #[derive(Clone, Debug, Default)]
 pub struct AmqpSessionOptions {
@@ -1347,21 +1328,15 @@ impl From<SenderSettleMode> for fe2o3_amqp_types::definitions::SenderSettleMode 
 }
 #[async_trait]
 pub trait AmqpClaimsBasedSecurityApis {
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn attach(&self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn authorize_path(&self, path: String, token_type: Option<String>, secret: &Secret, expires_on: OffsetDateTime) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn detach(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
+    async fn attach(&self) -> Result<()>;
+    async fn authorize_path(&self, path: String, token_type: Option<String>, secret: &Secret, expires_on: OffsetDateTime) -> Result<()>;
+    async fn detach(self) -> Result<()>;
 }
 #[async_trait]
 pub trait AmqpConnectionApis {
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn close(&self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn close_with_error(&self, condition: AmqpSymbol, description: Option<String>, info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn open(&self, name: String, url: Url, options: Option<AmqpConnectionOptions>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
+    async fn close(&self) -> Result<()>;
+    async fn close_with_error(&self, condition: AmqpSymbol, description: Option<String>, info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>) -> Result<()>;
+    async fn open(&self, name: String, url: Url, options: Option<AmqpConnectionOptions>) -> Result<()>;
 }
 pub trait AmqpDeliveryApis {
     fn delivery_id(&self) -> u32;
@@ -1372,53 +1347,34 @@ pub trait AmqpDeliveryApis {
 }
 #[async_trait]
 pub trait AmqpManagementApis {
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn attach(&self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn call(&self, operation_type: String, application_properties: AmqpOrderedMap<String, AmqpSimpleValue>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<AmqpOrderedMap<String, AmqpValue>>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn detach(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
+    async fn attach(&self) -> Result<()>;
+    async fn call(&self, operation_type: String, application_properties: AmqpOrderedMap<String, AmqpSimpleValue>) -> Result<AmqpOrderedMap<String, AmqpValue>>;
+    async fn detach(self) -> Result<()>;
 }
 #[async_trait]
 pub trait AmqpReceiverApis {
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn accept_delivery(&self, delivery: &AmqpDelivery) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn attach<impl 'async_trait + Into<AmqpSource> + Send: Into<AmqpSource> + Send>(&self, session: &AmqpSession, source: impl Into<AmqpSource> + Send, options: Option<AmqpReceiverOptions>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn credit_mode(&self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<ReceiverCreditMode>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn detach(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn receive_delivery(&self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<AmqpDelivery>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn reject_delivery(&self, delivery: &AmqpDelivery) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn release_delivery(&self, delivery: &AmqpDelivery) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn settle_delivery(&self, delivery: &AmqpDelivery, outcome: AmqpDeliveryOutcome) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>> where Self: ::core::marker::Sync;
+    async fn accept_delivery(&self, delivery: &AmqpDelivery) -> Result<()>;
+    async fn attach<impl 'async_trait + Into<AmqpSource> + Send: Into<AmqpSource> + Send>(&self, session: &AmqpSession, source: impl Into<AmqpSource> + Send, options: Option<AmqpReceiverOptions>) -> Result<()>;
+    async fn credit_mode(&self) -> Result<ReceiverCreditMode>;
+    async fn detach(self) -> Result<()>;
+    async fn receive_delivery(&self) -> Result<AmqpDelivery>;
+    async fn reject_delivery(&self, delivery: &AmqpDelivery) -> Result<()>;
+    async fn release_delivery(&self, delivery: &AmqpDelivery) -> Result<()>;
+    async fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> Result<()>;
+    async fn settle_delivery(&self, delivery: &AmqpDelivery, outcome: AmqpDeliveryOutcome) -> Result<()> where Self: ::core::marker::Sync;
 }
 #[async_trait]
 pub trait AmqpSenderApis {
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn attach<impl 'async_trait + Into<AmqpTarget> + Send: Into<AmqpTarget> + Send>(&self, session: &AmqpSession, name: String, target: impl Into<AmqpTarget> + Send, options: Option<AmqpSenderOptions>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn detach(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn max_message_size(&self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<Option<u64>>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn send<M>(&self, message: M, options: Option<AmqpSendOptions>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<AmqpSendOutcome>> + ::core::marker::Send>> where M: Into<AmqpMessage> + std::fmt::Debug + Send;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn send_ref<M>(&self, message: M, options: Option<AmqpSendOptions>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<AmqpSendOutcome>> + ::core::marker::Send>> where M: AsRef<AmqpMessage> + std::fmt::Debug + Send;
+    async fn attach<impl 'async_trait + Into<AmqpTarget> + Send: Into<AmqpTarget> + Send>(&self, session: &AmqpSession, name: String, target: impl Into<AmqpTarget> + Send, options: Option<AmqpSenderOptions>) -> Result<()>;
+    async fn detach(self) -> Result<()>;
+    async fn max_message_size(&self) -> Result<Option<u64>>;
+    async fn send<M>(&self, message: M, options: Option<AmqpSendOptions>) -> Result<AmqpSendOutcome> where M: Into<AmqpMessage> + std::fmt::Debug + Send;
+    async fn send_ref<M>(&self, message: M, options: Option<AmqpSendOptions>) -> Result<AmqpSendOutcome> where M: AsRef<AmqpMessage> + std::fmt::Debug + Send;
 }
 #[async_trait]
 pub trait AmqpSessionApis {
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn begin(&self, connection: &AmqpConnection, options: Option<AmqpSessionOptions>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn end(&self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
+    async fn begin(&self, connection: &AmqpConnection, options: Option<AmqpSessionOptions>) -> Result<()>;
+    async fn end(&self) -> Result<()>;
 }
 #[cfg(feature = "ffi")]
 pub trait Deserializable<T> {

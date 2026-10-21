@@ -949,9 +949,9 @@ pub mod fault_injection {
     #[non_exhaustive]
     pub struct FaultClient {
     }
+    #[async_trait]
     impl TransportClient for FaultClient {
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn send(&self, request: &HttpRequest) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<HttpResponse, TransportError>> + ::core::marker::Send>>;
+        async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError>;
     }
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
@@ -3322,8 +3322,7 @@ pub mod test {
     }
     #[async_trait]
     pub trait TransportClient: Send + Sync + fmt::Debug {
-        #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-        fn send(&self, request: &HttpRequest) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<HttpResponse, TransportError>> + ::core::marker::Send>>;
+        async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError>;
     }
 }
 ```

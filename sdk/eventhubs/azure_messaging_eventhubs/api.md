@@ -118,15 +118,12 @@ impl InMemoryCheckpointStore {
     pub fn update_ownership(&self, ownership: &Ownership) -> Result<Ownership>;
 }
 #[cfg(feature = "in_memory_checkpoint_store")]
+#[async_trait]
 impl CheckpointStore for InMemoryCheckpointStore {
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn claim_ownership(&self, ownerships: &[Ownership]) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<Vec<Ownership>>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn list_checkpoints(&self, namespace: &str, event_hub_name: &str, consumer_group: &str) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<Vec<Checkpoint>>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn list_ownerships(&self, namespace: &str, event_hub_name: &str, consumer_group: &str) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<Vec<Ownership>>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn update_checkpoint(&self, checkpoint: Checkpoint) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
+    async fn claim_ownership(&self, ownerships: &[Ownership]) -> Result<Vec<Ownership>>;
+    async fn list_checkpoints(&self, namespace: &str, event_hub_name: &str, consumer_group: &str) -> Result<Vec<Checkpoint>>;
+    async fn list_ownerships(&self, namespace: &str, event_hub_name: &str, consumer_group: &str) -> Result<Vec<Ownership>>;
+    async fn update_checkpoint(&self, checkpoint: Checkpoint) -> Result<()>;
 }
 #[cfg(feature = "in_memory_checkpoint_store")]
 impl Default for InMemoryCheckpointStore {
@@ -209,14 +206,10 @@ pub enum StartLocation {
 }
 #[async_trait]
 pub trait CheckpointStore: Send + Sync {
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn claim_ownership(&self, ownerships: &[Ownership]) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<Vec<Ownership>>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn list_checkpoints(&self, namespace: &str, event_hub_name: &str, consumer_group: &str) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<Vec<Checkpoint>>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn list_ownerships(&self, namespace: &str, event_hub_name: &str, consumer_group: &str) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<Vec<Ownership>>> + ::core::marker::Send>>;
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn update_checkpoint(&self, checkpoint: Checkpoint) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
+    async fn claim_ownership(&self, ownerships: &[Ownership]) -> Result<Vec<Ownership>>;
+    async fn list_checkpoints(&self, namespace: &str, event_hub_name: &str, consumer_group: &str) -> Result<Vec<Checkpoint>>;
+    async fn list_ownerships(&self, namespace: &str, event_hub_name: &str, consumer_group: &str) -> Result<Vec<Ownership>>;
+    async fn update_checkpoint(&self, checkpoint: Checkpoint) -> Result<()>;
 }
 pub mod builders {
     pub struct BufferedProducerClientBuilder {
@@ -1227,14 +1220,10 @@ pub mod processor {
     }
     #[async_trait]
     pub trait CheckpointStore: Send + Sync {
-        #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-        fn claim_ownership(&self, ownerships: &[Ownership]) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<Vec<Ownership>>> + ::core::marker::Send>>;
-        #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-        fn list_checkpoints(&self, namespace: &str, event_hub_name: &str, consumer_group: &str) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<Vec<Checkpoint>>> + ::core::marker::Send>>;
-        #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-        fn list_ownerships(&self, namespace: &str, event_hub_name: &str, consumer_group: &str) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<Vec<Ownership>>> + ::core::marker::Send>>;
-        #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-        fn update_checkpoint(&self, checkpoint: Checkpoint) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
+        async fn claim_ownership(&self, ownerships: &[Ownership]) -> Result<Vec<Ownership>>;
+        async fn list_checkpoints(&self, namespace: &str, event_hub_name: &str, consumer_group: &str) -> Result<Vec<Checkpoint>>;
+        async fn list_ownerships(&self, namespace: &str, event_hub_name: &str, consumer_group: &str) -> Result<Vec<Ownership>>;
+        async fn update_checkpoint(&self, checkpoint: Checkpoint) -> Result<()>;
     }
 }
 ```

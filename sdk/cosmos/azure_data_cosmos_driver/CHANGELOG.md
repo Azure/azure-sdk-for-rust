@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added default-on driver validation for user-defined Cosmos resource names used as request URL path segments, with an option to disable it for compatibility. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
+- Single-partition queries are now eligible for cross-region hedging, bounding tail latency on a degraded region at the cost of a second request on pages that exceed the hedge threshold. Cross-partition queries are not yet hedged. ([#5452](https://github.com/Azure/azure-sdk-for-rust/pull/5452))
 
 ### Breaking Changes
 
