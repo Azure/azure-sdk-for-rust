@@ -1,6 +1,6 @@
 # Release History
 
-## 1.1.0-beta.2 (2026-08-25)
+## 1.1.0-beta.2 (2026-10-21)
 
 ### Features Added
 
@@ -17,7 +17,7 @@
 
 - Avoided double-deserializing pager responses by using borrowed `nextLink` parsing in Key Vault certificates list operations.
 
-## 1.0.1 (2026-08-25)
+## 1.0.1 (2026-10-21)
 
 ### Bugs Fixed
 
