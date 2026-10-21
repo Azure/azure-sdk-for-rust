@@ -179,6 +179,9 @@ pub mod cloud {
         #[cfg(feature = "resourcemanager")]
         pub fn endpoint(&self) -> Option<&str>;
     }
+    impl Default for &CloudConfiguration {
+        fn default() -> Self;
+    }
     impl From<CustomConfiguration> for CloudConfiguration {
         fn from(config: CustomConfiguration) -> Self;
     }
