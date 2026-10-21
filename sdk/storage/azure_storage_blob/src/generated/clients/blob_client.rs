@@ -666,7 +666,7 @@ impl BlobClient {
     /// * [`version_id`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`BlobClientDownloadInternalResultHeaders`]: crate::generated::models::BlobClientDownloadInternalResultHeaders
-    #[tracing::function("Storage.Blob.BlobClient.download")]
+    #[tracing::function("Customizations.BlobClient.downloadNoSmartTier")]
     pub(crate) async fn download_internal(
         &self,
         options: Option<BlobClientDownloadInternalOptions<'_>>,
@@ -904,7 +904,7 @@ impl BlobClient {
     /// * [`version_id`()](crate::generated::models::BlobLayoutHeaders::version_id) - x-ms-version-id
     ///
     /// [`BlobLayoutHeaders`]: crate::generated::models::BlobLayoutHeaders
-    #[tracing::function("Storage.Blob.BlobClient.getLayout")]
+    #[tracing::function("Customizations.BlobClient.getLayoutNoSmartTier")]
     pub fn get_layout(
         &self,
         options: Option<BlobClientGetLayoutOptions<'_>>,
@@ -1089,7 +1089,7 @@ impl BlobClient {
     /// * [`version_id`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`BlobClientGetPropertiesResultHeaders`]: crate::generated::models::BlobClientGetPropertiesResultHeaders
-    #[tracing::function("Storage.Blob.BlobClient.getProperties")]
+    #[tracing::function("Customizations.BlobClient.getPropertiesNoSmartTier")]
     pub async fn get_properties(
         &self,
         options: Option<BlobClientGetPropertiesOptions<'_>>,
