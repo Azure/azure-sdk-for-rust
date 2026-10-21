@@ -55,10 +55,8 @@ impl<'a> PollerOptions<'a> {
     }
 }
 
-impl<'a> From<crate::http::resourcemanager::PollerOptions<'a>>
-    for crate::http::poller::PollerOptions<'a>
-{
-    fn from(options: crate::http::resourcemanager::PollerOptions<'a>) -> Self {
+impl<'a> From<PollerOptions<'a>> for crate::http::poller::PollerOptions<'a> {
+    fn from(options: PollerOptions<'a>) -> Self {
         Self {
             context: options.context,
             frequency: options.frequency,
@@ -112,8 +110,7 @@ pub enum FinalStateVia<M: StatusMonitor> {
     /// use azure_core::{
     ///     http::{
     ///         headers::Headers,
-    ///         poller::{PollerStatus, StatusMonitor},
-    ///         resourcemanager::FinalStateVia,
+    ///         poller::{resourcemanager::FinalStateVia, PollerStatus, StatusMonitor},
     ///         JsonFormat, RawResponse, Response, StatusCode,
     ///     },
     ///     Bytes,

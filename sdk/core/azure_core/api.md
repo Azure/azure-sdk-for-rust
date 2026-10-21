@@ -1317,7 +1317,7 @@ pub mod http {
             fn default() -> Self;
         }
         impl<'a> From<PollerOptions<'a>> for crate::http::poller::PollerOptions<'a> {
-            fn from(options: crate::http::resourcemanager::PollerOptions<'a>) -> Self;
+            fn from(options: PollerOptions<'a>) -> Self;
         }
         #[derive(Clone, Debug, Eq, PartialEq)]
         #[non_exhaustive]
@@ -1366,6 +1366,38 @@ pub mod http {
             fn status(&self) -> PollerStatus;
         }
         pub type PollerResultFuture<M, F> = std::pin::Pin<Box<dyn Future<Output = crate::Result<super::PollerResult<M, F>>> + Send + 'static>>;
+        #[cfg(feature = "resourcemanager")]
+        pub mod resourcemanager {
+            pub fn new_poller<'a, M>(pipeline: crate::http::Pipeline, request: crate::http::Request, final_state_via: Option<FinalStateVia<M>>, options: Option<PollerOptions<'a>>) -> crate::http::Poller<M> where M: StatusMonitor + DeserializeOwned + Send + 'static, <M as >::Output: DeserializeOwned + Send + 'static, <M as >::Format: Send + 'static;
+            #[derive(Clone, Debug)]
+            pub struct PollerOptions<'a> {
+                pub context: crate::http::Context<'a>,
+                pub frequency: crate::time::Duration,
+            }
+            impl<'a> PollerOptions<'a> {
+                #[must_use]
+                pub fn into_owned(self) -> PollerOptions<'static>;
+            }
+            impl Default for PollerOptions<'_> {
+                fn default() -> Self;
+            }
+            impl<'a> From<PollerOptions<'a>> for crate::http::poller::PollerOptions<'a> {
+                fn from(options: PollerOptions<'a>) -> Self;
+            }
+            #[derive(Debug)]
+            pub enum FinalStateVia<M: StatusMonitor> {
+                AzureAsyncOperation,
+                Location,
+                OriginalUri,
+                #[allow(clippy::type_complexity)]
+                OperationLocation(fn(crate::http::Response<M>) -> crate::Result<crate::http::Response<<M as >::Output, <M as >::Format>>),
+            }
+            impl<M: StatusMonitor> Clone for FinalStateVia<M> {
+                fn clone(&self) -> Self;
+            }
+            impl<M: StatusMonitor> Copy for FinalStateVia<M> {
+            }
+        }
     }
     pub mod request {
         #[derive(Clone)]
@@ -1607,38 +1639,6 @@ pub mod http {
             impl<S> From<S> for ContentType where S: Into<std::borrow::Cow<'static, str>> {
                 fn from(s: S) -> Self;
             }
-        }
-    }
-    #[cfg(feature = "resourcemanager")]
-    pub mod resourcemanager {
-        pub fn new_poller<'a, M>(pipeline: crate::http::Pipeline, request: crate::http::Request, final_state_via: Option<FinalStateVia<M>>, options: Option<PollerOptions<'a>>) -> crate::http::Poller<M> where M: StatusMonitor + DeserializeOwned + Send + 'static, <M as >::Output: DeserializeOwned + Send + 'static, <M as >::Format: Send + 'static;
-        #[derive(Clone, Debug)]
-        pub struct PollerOptions<'a> {
-            pub context: crate::http::Context<'a>,
-            pub frequency: crate::time::Duration,
-        }
-        impl<'a> PollerOptions<'a> {
-            #[must_use]
-            pub fn into_owned(self) -> PollerOptions<'static>;
-        }
-        impl Default for PollerOptions<'_> {
-            fn default() -> Self;
-        }
-        impl<'a> From<PollerOptions<'a>> for crate::http::poller::PollerOptions<'a> {
-            fn from(options: crate::http::resourcemanager::PollerOptions<'a>) -> Self;
-        }
-        #[derive(Debug)]
-        pub enum FinalStateVia<M: StatusMonitor> {
-            AzureAsyncOperation,
-            Location,
-            OriginalUri,
-            #[allow(clippy::type_complexity)]
-            OperationLocation(fn(crate::http::Response<M>) -> crate::Result<crate::http::Response<<M as >::Output, <M as >::Format>>),
-        }
-        impl<M: StatusMonitor> Clone for FinalStateVia<M> {
-            fn clone(&self) -> Self;
-        }
-        impl<M: StatusMonitor> Copy for FinalStateVia<M> {
         }
     }
     pub mod response {
