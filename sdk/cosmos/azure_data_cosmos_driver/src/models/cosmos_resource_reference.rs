@@ -470,8 +470,8 @@ impl CosmosResourceReference {
         None
     }
 
-    /// Returns the first invalid name that would be used as a request-path segment.
-    fn invalid_path_name(&self, leaf_in_path: bool) -> Option<&'static str> {
+    /// Returns the first invalid user-defined resource name.
+    fn invalid_resource_name(&self) -> Option<&'static str> {
         let invalid = |name: &str| {
             name.is_empty()
                 || matches!(name, "." | "..")
@@ -497,12 +497,11 @@ impl CosmosResourceReference {
             ResourceScope::Account | ResourceScope::Container(_) => {}
         }
 
-        if leaf_in_path
-            && self
-                .id
-                .as_ref()
-                .and_then(ResourceIdentifier::name)
-                .is_some_and(invalid)
+        if self
+            .id
+            .as_ref()
+            .and_then(ResourceIdentifier::name)
+            .is_some_and(invalid)
         {
             return Some(self.resource_type.as_str());
         }
@@ -510,7 +509,7 @@ impl CosmosResourceReference {
         None
     }
 
-    /// Validates that this reference can be safely and consistently addressed.
+    /// Validates that this reference uses consistent name/RID addressing.
     ///
     /// Mixed-addressing validation is the release-mode counterpart to
     /// [`debug_assert_addressing_consistent`](Self::debug_assert_addressing_consistent):
@@ -523,18 +522,10 @@ impl CosmosResourceReference {
     /// guarantee holds for references built through any construction path, not
     /// just the SDK's `ContainerClient`.
     ///
-    /// When `validate_resource_names` is `true`, names used as path segments
-    /// are rejected when empty, equal to a dot segment, or containing a
-    /// separator, delimiter, or control byte that URL processing could remove.
-    ///
     /// See [`addressing_conflict`](Self::addressing_conflict) for `leaf_in_path`.
     ///
     /// [`CLIENT_MIXED_NAME_RID_ADDRESSING`]: crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING
-    pub(crate) fn validate_addressing(
-        &self,
-        leaf_in_path: bool,
-        validate_resource_names: bool,
-    ) -> crate::error::Result<()> {
+    pub(crate) fn validate_addressing(&self, leaf_in_path: bool) -> crate::error::Result<()> {
         if let Some(conflict) = self.addressing_conflict(leaf_in_path) {
             return Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING)
@@ -547,20 +538,25 @@ impl CosmosResourceReference {
                 .build());
         }
 
-        if validate_resource_names {
-            if let Some(resource_type) = self.invalid_path_name(leaf_in_path) {
-                return Err(crate::error::CosmosError::builder()
-                    .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
-                    .with_message(format!(
-                        "{resource_type} name cannot be used as a request-path segment; names must be \
-                         non-empty and cannot contain '/', '\\', '?', '#', ASCII tab, line feed, or \
-                         carriage return, or equal '.' or '..'"
-                    ))
-                    .with_source(std::io::Error::other(
-                        "invalid Cosmos resource path segment",
-                    ))
-                    .build());
-            }
+        Ok(())
+    }
+
+    /// Validates user-defined names used to address Cosmos resources.
+    ///
+    /// This includes item names carried by Create and Upsert operations. Those
+    /// operations target the container feed, but their item names must remain
+    /// safe for later point operations.
+    pub(crate) fn validate_resource_names(&self) -> crate::error::Result<()> {
+        if let Some(resource_type) = self.invalid_resource_name() {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+                .with_message(format!(
+                    "{resource_type} name is unsafe for Cosmos resource addressing; names must be \
+                     non-empty and cannot contain '/', '\\', '?', '#', ASCII tab, line feed, or \
+                     carriage return, or equal '.' or '..'"
+                ))
+                .with_source(std::io::Error::other("invalid Cosmos resource name"))
+                .build());
         }
 
         Ok(())
@@ -1338,7 +1334,7 @@ mod tests {
             .with_resource_type(ResourceType::DocumentCollection)
             .with_rid("Lx1BALxJyZ8=".into());
         let err = r
-            .validate_addressing(true, false)
+            .validate_addressing(true)
             .expect_err("mixed addressing must be rejected");
         assert_eq!(
             err.status(),
@@ -1353,12 +1349,12 @@ mod tests {
         // unchanged.
         let name_ref: CosmosResourceReference = test_container().into();
         name_ref
-            .validate_addressing(true, false)
+            .validate_addressing(true)
             .expect("name addressing is consistent");
 
         let rid_ref: CosmosResourceReference = test_container_by_rid().into();
         rid_ref
-            .validate_addressing(true, false)
+            .validate_addressing(true)
             .expect("RID addressing is consistent");
     }
 
@@ -1374,7 +1370,7 @@ mod tests {
             "Lx1BALxJyZ8BAAAAAAAAAA==",
         );
         let r = CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
-        r.validate_addressing(true, false)
+        r.validate_addressing(true)
             .expect("a RID leaf under a RID parent is consistent");
 
         let paths = r.compute_paths();
@@ -1395,7 +1391,7 @@ mod tests {
             ItemReference::from_name(&test_container_by_rid(), PartitionKey::from("pk1"), "doc1");
         let r = CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
         let err = r
-            .validate_addressing(true, false)
+            .validate_addressing(true)
             .expect_err("a name leaf under a RID parent must be rejected");
         assert_eq!(
             err.status(),
@@ -1419,7 +1415,7 @@ mod tests {
         );
         let r = CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
         let err = r
-            .validate_addressing(true, false)
+            .validate_addressing(true)
             .expect_err("a RID leaf under a name parent must be rejected");
         assert_eq!(
             err.status(),
@@ -1436,12 +1432,12 @@ mod tests {
         let item =
             ItemReference::from_name(&test_container_by_rid(), PartitionKey::from("pk1"), "doc1");
         let r = CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
-        r.validate_addressing(false, false)
+        r.validate_addressing(false)
             .expect("a name leaf that never reaches the path is allowed");
     }
 
     #[test]
-    fn validate_addressing_rejects_invalid_path_names() {
+    fn validate_resource_names_rejects_invalid_names() {
         for name in [
             "",
             ".",
@@ -1466,8 +1462,8 @@ mod tests {
                 CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
 
             let err = reference
-                .validate_addressing(true, true)
-                .expect_err("invalid request-path names must be rejected");
+                .validate_resource_names()
+                .expect_err("invalid resource names must be rejected");
             assert_eq!(
                 err.status(),
                 crate::error::status_codes::CLIENT_BAD_REQUEST,
@@ -1477,7 +1473,7 @@ mod tests {
     }
 
     #[test]
-    fn validate_addressing_rejects_invalid_parent_names() {
+    fn validate_resource_names_rejects_invalid_parent_names() {
         for name in ["../other-db", ".\t.", "db\nname"] {
             let database = DatabaseReference::from_name(test_account(), name);
             let reference = CosmosResourceReference::from(database)
@@ -1485,7 +1481,7 @@ mod tests {
                 .into_feed_reference();
 
             let err = reference
-                .validate_addressing(false, true)
+                .validate_resource_names()
                 .expect_err("invalid parent names must be rejected");
             assert_eq!(
                 err.status(),
@@ -1496,7 +1492,7 @@ mod tests {
     }
 
     #[test]
-    fn validate_addressing_accepts_path_legal_names() {
+    fn validate_resource_names_accepts_safe_names() {
         for name in [
             "item",
             "item with spaces",
@@ -1510,13 +1506,13 @@ mod tests {
                 CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
 
             reference
-                .validate_addressing(true, true)
-                .expect("path-legal names must remain supported");
+                .validate_resource_names()
+                .expect("safe names must remain supported");
         }
     }
 
     #[test]
-    fn validate_addressing_ignores_invalid_leaf_when_leaf_not_in_path() {
+    fn validate_resource_names_rejects_invalid_leaf_when_leaf_not_in_path() {
         let item = ItemReference::from_name(
             &test_container(),
             PartitionKey::from("pk1"),
@@ -1525,24 +1521,10 @@ mod tests {
         let reference =
             CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
 
-        reference
-            .validate_addressing(false, true)
-            .expect("feed-style operations do not put the item name in the path");
-    }
-
-    #[test]
-    fn validate_addressing_allows_invalid_path_names_when_disabled() {
-        let item = ItemReference::from_name(
-            &test_container(),
-            PartitionKey::from("pk1"),
-            "../other-container",
-        );
-        let reference =
-            CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
-
-        reference
-            .validate_addressing(true, false)
-            .expect("resource-name validation can be disabled");
+        let err = reference
+            .validate_resource_names()
+            .expect_err("create and upsert item names must be safe for later point operations");
+        assert_eq!(err.status(), crate::error::status_codes::CLIENT_BAD_REQUEST);
     }
 
     #[test]

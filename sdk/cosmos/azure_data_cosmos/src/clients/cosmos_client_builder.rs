@@ -97,7 +97,7 @@ pub struct CosmosClientBuilder {
     backup_endpoints: Vec<azure_core::http::Url>,
     /// Options to use for per-partition failover (PPAF, PPCB)
     partition_failover_options: Option<PartitionFailoverOptions>,
-    /// Whether to validate resource names before placing them in request URL paths.
+    /// Whether to validate user-defined resource names before request planning.
     resource_name_validation: Option<bool>,
 }
 
@@ -157,14 +157,16 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Controls validation of resource names used as request URL path segments.
+    /// Controls validation of user-defined resource names.
     ///
     /// Validation is enabled by default and rejects names containing syntax that
-    /// could change the request URL path, query, or fragment. Pass `false` only
-    /// when compatibility requires such names.
+    /// could change a request URL path, query, or fragment. It also validates
+    /// item names supplied to Create and Upsert so newly written items remain
+    /// addressable by later point operations. Pass `false` only when
+    /// compatibility requires such names.
     ///
-    /// This option does not validate resource IDs carried only in request bodies
-    /// or transactional protocol fields.
+    /// This option does not parse IDs from request bodies or transactional
+    /// protocol fields.
     pub fn with_resource_name_validation(mut self, enabled: bool) -> Self {
         self.resource_name_validation = Some(enabled);
         self

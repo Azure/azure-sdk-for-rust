@@ -94,7 +94,7 @@ pub struct DriverOptions {
     /// asks for.
     hedging_options: HedgingOptions,
     /// Whether the driver rejects unsafe user-defined resource names before
-    /// placing them in request URL paths.
+    /// request planning.
     resource_name_validation_enabled: bool,
 }
 
@@ -145,12 +145,13 @@ impl DriverOptions {
         &self.hedging_options
     }
 
-    /// Returns whether request-path resource-name validation is enabled.
+    /// Returns whether resource-name validation is enabled.
     ///
     /// When enabled, the driver rejects empty names, dot segments, and names
     /// containing URL separators, delimiters, or control characters before
-    /// request planning. This does not inspect resource IDs carried only in
-    /// request bodies or transactional protocol fields.
+    /// request planning. This includes item names supplied to Create and Upsert
+    /// so created items remain addressable by later point operations. It does
+    /// not parse IDs from request bodies or transactional protocol fields.
     ///
     /// Validation is enabled by default.
     pub fn resource_name_validation_enabled(&self) -> bool {
@@ -291,14 +292,15 @@ impl DriverOptionsBuilder {
     }
 
     /// Sets whether the driver rejects unsafe user-defined resource names before
-    /// placing them in request URL paths.
+    /// request planning.
     ///
     /// This option is enabled by default. Pass `false` to preserve compatibility
     /// with applications that use names accepted by the service but unsafe for
     /// URL path construction.
     ///
-    /// This option does not validate resource IDs carried only in request
-    /// bodies or transactional protocol fields.
+    /// Validation includes item names supplied to Create and Upsert so newly
+    /// written items remain addressable by later point operations. This option
+    /// does not parse IDs from request bodies or transactional protocol fields.
     pub fn with_resource_name_validation(mut self, enabled: bool) -> Self {
         self.resource_name_validation_enabled = enabled;
         self

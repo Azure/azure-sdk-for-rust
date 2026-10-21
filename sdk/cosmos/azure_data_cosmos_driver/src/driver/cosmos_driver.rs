@@ -4233,10 +4233,11 @@ impl CosmosDriver {
         let planning_operation_name = operation.db_operation_name();
         let operation = operation.with_absolute_deadline(effective_deadline);
 
-        // Reject mixed name/RID addressing and, when enabled, invalid path
-        // segments before any I/O work is done. Every executable operation
-        // passes this choke point, including direct plan callers and
-        // multi-page queries.
+        // Reject mixed name/RID addressing and, when enabled, unsafe
+        // user-defined names before any I/O work is done. This includes item
+        // names on Create and Upsert even though those operations use feed
+        // paths. Every executable operation passes this choke point, including
+        // direct plan callers and multi-page queries.
         operation.validate_addressing(self.options.resource_name_validation_enabled())?;
 
         // Planning holds the whole pipeline-builder state across several await
@@ -5088,34 +5089,77 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn plan_operation_rejects_invalid_resource_path_name() {
+    async fn plan_operation_rejects_unsafe_item_name_on_point_operations() {
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let driver_options = DriverOptions::builder(test_account()).build();
         let driver = CosmosDriver::new(cosmos_runtime, driver_options)
             .expect("CosmosDriver::new should succeed in tests");
-        let item = ItemReference::from_name(
-            &epk_test_container(r#"{"paths":["/pk"],"version":2}"#),
-            PartitionKey::from("pk1"),
-            "../../../../other-db/colls/other-container/docs/target",
-        );
-        let operation = CosmosOperation::read_item(item);
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
 
-        let err = match Box::pin(driver.plan_operation(
-            operation,
-            &OperationOptions::default(),
-            None,
-            &PlanOptions::default(),
-        ))
-        .await
-        {
-            Ok(_) => panic!("invalid path name must be rejected before planning"),
-            Err(e) => e,
-        };
-        assert_eq!(err.status(), crate::error::status_codes::CLIENT_BAD_REQUEST);
+        for operation in [
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+            CosmosOperation::delete_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+        ] {
+            let err = match Box::pin(driver.plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            ))
+            .await
+            {
+                Ok(_) => panic!("unsafe item name must be rejected before planning"),
+                Err(e) => e,
+            };
+            assert_eq!(err.status(), crate::error::status_codes::CLIENT_BAD_REQUEST);
+        }
     }
 
     #[tokio::test]
-    async fn plan_operation_allows_invalid_resource_path_name_when_disabled() {
+    async fn plan_operation_rejects_unsafe_item_name_on_create_and_upsert() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        for operation in [
+            CosmosOperation::create_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+            CosmosOperation::upsert_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "item?query",
+            )),
+        ] {
+            let err = match Box::pin(driver.plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            ))
+            .await
+            {
+                Ok(_) => panic!("unsafe item name must be rejected before creation"),
+                Err(error) => error,
+            };
+            assert_eq!(err.status(), crate::error::status_codes::CLIENT_BAD_REQUEST);
+        }
+    }
+
+    #[tokio::test]
+    async fn plan_operation_allows_unsafe_item_names_when_disabled() {
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let driver = CosmosDriver::new(
             cosmos_runtime,
@@ -5124,28 +5168,46 @@ mod tests {
                 .build(),
         )
         .expect("CosmosDriver::new should succeed in tests");
-        let item = ItemReference::from_name(
-            &epk_test_container(r#"{"paths":["/pk"],"version":2}"#),
-            PartitionKey::from("pk1"),
-            "../../../../other-db/colls/other-container/docs/target",
-        );
-        let operation = CosmosOperation::read_item(item);
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
 
-        let err = match Box::pin(driver.plan_operation(
-            operation,
-            &OperationOptions::default(),
-            None,
-            &PlanOptions::default(),
-        ))
-        .await
-        {
-            Ok(_) => panic!("the uninitialized driver should fail after addressing validation"),
-            Err(error) => error,
-        };
-        assert_eq!(
-            err.status(),
-            crate::error::status_codes::CLIENT_DRIVER_NOT_INITIALIZED
-        );
+        for operation in [
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+            CosmosOperation::delete_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+            CosmosOperation::create_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+            CosmosOperation::upsert_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "item?query",
+            )),
+        ] {
+            let err = match Box::pin(driver.plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            ))
+            .await
+            {
+                Ok(_) => panic!("the uninitialized driver should fail after name validation"),
+                Err(error) => error,
+            };
+            assert_eq!(
+                err.status(),
+                crate::error::status_codes::CLIENT_DRIVER_NOT_INITIALIZED
+            );
+        }
     }
 
     #[tokio::test]

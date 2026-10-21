@@ -2087,8 +2087,8 @@ typedef struct cosmos_driver_options_config_v2_t {
   uintptr_t fault_injection_rules_len;
   uintptr_t fault_injection_rule_stride;
   /**
-   * Whether to reject unsafe user-defined names before placing them in
-   * request URL paths.
+   * Whether to reject unsafe user-defined names before request planning,
+   * including item names supplied to Create and Upsert.
    *
    * Tri-state bool: `0` leaves the driver default unchanged, `1` disables
    * validation, and `2` enables validation. The driver default is enabled.

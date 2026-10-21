@@ -274,7 +274,7 @@ operations and representable raw feed responses keep their existing behavior.
 
 ## Versioned driver options and fault injection
 
-Native hosts can configure request-path resource-name validation and install
+Native hosts can configure resource-name validation and install
 the driver's existing fault-injection rules when they construct driver options.
 Existing callers keep using
 `cosmos_driver_options_config_t` and `cosmos_driver_options_build`; the additive
@@ -315,8 +315,10 @@ cosmos_status_code_t status =
 `resource_name_validation_enabled` is a tri-state boolean: `0` leaves the
 driver default unchanged, `1` disables validation, and `2` enables validation.
 Validation is enabled by default. When enabled, the driver rejects unsafe
-user-defined names before placing them in request URL paths. It does not inspect
-IDs carried only in request bodies or transactional protocol fields.
+user-defined names before request planning, including item names supplied to
+Create and Upsert so newly written items remain addressable by later point
+operations. It does not parse IDs from request bodies or transactional protocol
+fields.
 
 Condition fields match the operation/resource pair, region, container id, and
 Gateway/GatewayV2 transport. Results support the driver's predefined HTTP and

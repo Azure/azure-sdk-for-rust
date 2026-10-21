@@ -191,8 +191,8 @@ pub struct CosmosDriverOptionsConfigV2 {
     pub fault_injection_rules: *const CosmosFaultInjectionRule,
     pub fault_injection_rules_len: usize,
     pub fault_injection_rule_stride: usize,
-    /// Whether to reject unsafe user-defined names before placing them in
-    /// request URL paths.
+    /// Whether to reject unsafe user-defined names before request planning,
+    /// including item names supplied to Create and Upsert.
     ///
     /// Tri-state bool: `0` leaves the driver default unchanged, `1` disables
     /// validation, and `2` enables validation. The driver default is enabled.
