@@ -17,16 +17,40 @@ use std::sync::{Arc, OnceLock};
 
 use azure_core::Result;
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
+    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestFactory},
     Recording, TestContext,
 };
 use azure_security_keyvault_secrets::{
     models::SetSecretParameters, SecretClient, SecretClientOptions,
 };
+use clap::{Args, Subcommand};
 use futures::FutureExt;
 
+#[derive(Args, Debug, Clone)]
 pub struct VaultArgs {
+    /// The URL of the Key Vault to use in the test.
+    #[arg(short = 'u', long)]
     vault_url: Option<String>,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+enum Tests {
+    /// Get a secret from Key Vault.
+    GetSecret(VaultArgs),
+}
+
+impl PerfTestFactory for Tests {
+    fn name(&self) -> &'static str {
+        match self {
+            Self::GetSecret(_) => "get-secret",
+        }
+    }
+
+    fn create_test(&self) -> CreatePerfTestReturn {
+        match self {
+            Self::GetSecret(args) => GetSecrets::new(args.clone()),
+        }
+    }
 }
 
 struct GetSecrets {
@@ -108,30 +132,8 @@ impl PerfTest for GetSecrets {
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    let runner = PerfRunner::new(
-        env!("CARGO_MANIFEST_DIR"),
-        file!(),
-        vec![PerfTestMetadata {
-            name: "get-secret",
-            description: "Get a secret from Key Vault",
-            options: vec![PerfTestOption {
-                name: "vault_url",
-                short_activator: Some('u'),
-                long_activator: "vault-url",
-                display_message: "The URL of the Key Vault to use in the test",
-                expected_args_len: 1,
-                ..Default::default()
-            }],
-            create_test: |runner| {
-                async move {
-                    GetSecrets::new(VaultArgs {
-                        vault_url: runner.try_get_test_arg("vault_url")?,
-                    })
-                    .await
-                }
-                .boxed_local()
-            },
-        }],
-    )?;
-    runner.run().await
+    match PerfRunner::<Tests>::new(env!("CARGO_MANIFEST_DIR"), file!()) {
+        Ok(runner) => runner.run().await,
+        Err(error) => error.exit(),
+    }
 }

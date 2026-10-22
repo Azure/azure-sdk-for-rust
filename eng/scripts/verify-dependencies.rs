@@ -40,6 +40,14 @@ static EXEMPTIONS: &[(&str, &str)] = &[
         "azure_messaging_eventhubs_checkpointstore_blob",
         "azure_storage_blob",
     ),
+    // Key Vault releases target published prereleases independently of workspace versions.
+    ("azure_security_keyvault_certificates", "azure_core"),
+    ("azure_security_keyvault_certificates", "azure_identity"),
+    ("azure_security_keyvault_keys", "azure_core"),
+    ("azure_security_keyvault_keys", "azure_identity"),
+    ("azure_security_keyvault_secrets", "azure_core"),
+    ("azure_security_keyvault_secrets", "azure_identity"),
+    ("azure_security_keyvault_test", "azure_core"),
 ];
 
 fn main() {

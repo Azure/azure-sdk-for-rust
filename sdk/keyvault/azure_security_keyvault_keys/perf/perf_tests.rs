@@ -16,59 +16,47 @@
 mod create_key;
 mod get_key;
 
-use azure_core_test::perf::{PerfRunner, PerfTestMetadata, PerfTestOption};
-use futures::FutureExt;
+use azure_core_test::perf::{CreatePerfTestReturn, PerfRunner, PerfTestFactory};
+use clap::{Args, Subcommand};
 
 /// Environment variable for the Azure Key Vault URL
 pub const ENV_NAME: &str = "AZURE_KEYVAULT_URL";
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    let options = vec![PerfTestOption {
-        name: "vault_url",
-        short_activator: Some('u'),
-        long_activator: "vault-url",
-        display_message: "The URL of the Key Vault to use in the test",
-        expected_args_len: 1,
-        ..Default::default()
-    }];
-    let runner = PerfRunner::new(
-        env!("CARGO_MANIFEST_DIR"),
-        file!(),
-        vec![
-            PerfTestMetadata {
-                name: "create-key",
-                description: "Create a key in Key Vault",
-                options: options.clone(),
-                create_test: |runner| {
-                    async move {
-                        create_key::CreateKey::new(VaultArgs {
-                            vault_url: runner.try_get_test_arg("vault_url")?,
-                        })
-                        .await
-                    }
-                    .boxed_local()
-                },
-            },
-            PerfTestMetadata {
-                name: "get-key",
-                description: "Get a key from Key Vault",
-                options,
-                create_test: |runner| {
-                    async move {
-                        get_key::GetKey::new(VaultArgs {
-                            vault_url: runner.try_get_test_arg("vault_url")?,
-                        })
-                        .await
-                    }
-                    .boxed_local()
-                },
-            },
-        ],
-    )?;
-    runner.run().await
+    match PerfRunner::<Tests>::new(env!("CARGO_MANIFEST_DIR"), file!()) {
+        Ok(runner) => runner.run().await,
+        Err(error) => error.exit(),
+    }
 }
 
+#[derive(Subcommand, Debug, Clone)]
+enum Tests {
+    /// Create a key in Key Vault.
+    CreateKey(VaultArgs),
+    /// Get a key from Key Vault.
+    GetKey(VaultArgs),
+}
+
+impl PerfTestFactory for Tests {
+    fn name(&self) -> &'static str {
+        match self {
+            Self::CreateKey(_) => "create-key",
+            Self::GetKey(_) => "get-key",
+        }
+    }
+
+    fn create_test(&self) -> CreatePerfTestReturn {
+        match self {
+            Self::CreateKey(args) => create_key::CreateKey::new(args.clone()),
+            Self::GetKey(args) => get_key::GetKey::new(args.clone()),
+        }
+    }
+}
+
+#[derive(Args, Debug, Clone)]
 pub struct VaultArgs {
+    /// The URL of the Key Vault to use in the test.
+    #[arg(short = 'u', long)]
     vault_url: Option<String>,
 }

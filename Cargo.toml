@@ -93,6 +93,11 @@ version = "1.0.0"
 # azure_storage_blob should only ever be in dev-dependencies herein
 version = "1.0.0"
 
+[patch.crates-io]
+# Align prerelease dependencies with local test helpers without changing release requirements.
+azure_core = { path = "sdk/core/azure_core" }
+azure_identity = { path = "sdk/identity/azure_identity" }
+
 [workspace.dependencies]
 arbitrary = "1.4"
 arrow = { version = "59.1.0", default-features = false }
