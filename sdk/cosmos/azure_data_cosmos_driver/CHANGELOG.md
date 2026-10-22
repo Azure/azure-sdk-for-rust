@@ -10,6 +10,8 @@
 
 ### Bugs Fixed
 
+- Route the retry after a failed cross-region hedge race that observed `404/1002` to the write region on single-write accounts, instead of another read region that rejects the hub-only request with `403/3`. ([#5466](https://github.com/Azure/azure-sdk-for-rust/pull/5466))
+- Cache the partition's hub region when a hedged read that sent the hub-only header succeeds, so later hub-only reads of that partition skip hub discovery. ([#5466](https://github.com/Azure/azure-sdk-for-rust/pull/5466))
 - Avoid unnecessary routing-state copies for hedge feedback and unchanged partition transitions, and skip hedge feedback when the effective partition circuit breaker is disabled without disabling transport hedging. ([#5438](https://github.com/Azure/azure-sdk-for-rust/pull/5438))
 - Share immutable partition routing state across snapshot refreshes instead of copying its maps, while preserving older snapshots for active readers. ([#5438](https://github.com/Azure/azure-sdk-for-rust/pull/5438))
 - Avoid loading partition topology for lazy-mode logical-key operations unless partition-level failover or Gateway 2.0 session-token scoping requires it. ([#5431](https://github.com/Azure/azure-sdk-for-rust/pull/5431))

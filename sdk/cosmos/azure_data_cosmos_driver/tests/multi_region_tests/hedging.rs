@@ -22,19 +22,22 @@
 #![cfg(feature = "fault_injection")]
 
 use crate::framework::DriverTestClient;
+use azure_core::http::StatusCode;
 use azure_data_cosmos_driver::diagnostics::{DiagnosticsContext, HedgeTerminalState};
+use azure_data_cosmos_driver::error::CosmosError;
 use azure_data_cosmos_driver::fault_injection::{
     FaultInjectionConditionBuilder, FaultInjectionResultBuilder, FaultInjectionRuleBuilder,
     FaultOperationType,
 };
 use azure_data_cosmos_driver::models::{
-    ContainerReference, CosmosOperation, CosmosResponse, FeedRange, MaxItemCountHint, PartitionKey,
-    ResponseBody,
+    ContainerReference, CosmosOperation, CosmosResponse, FeedRange, ItemReference,
+    MaxItemCountHint, PartitionKey, ResponseBody,
 };
 use azure_data_cosmos_driver::options::{
     AvailabilityStrategy, ExcludedRegions, HedgeThreshold, HedgingStrategy, OperationOptions,
     OperationOptionsBuilder, PlanOptions, Region,
 };
+use azure_data_cosmos_driver::CosmosDriver;
 use std::error::Error;
 use std::num::NonZeroU32;
 use std::sync::Arc;
@@ -235,6 +238,87 @@ fn sorted_expected_ids() -> Vec<String> {
     expected
 }
 
+/// Bound on waiting for seeded data to become readable in a region. Seeds are
+/// written by throwaway drivers, so later reads carry no session token to wait on.
+const REPLICATION_WAIT: Duration = Duration::from_secs(30);
+
+/// Polls `visible` until it returns `true`, failing after [`REPLICATION_WAIT`].
+/// A 404 also means not yet: a new container can lag in a read region too.
+async fn wait_for_replication(
+    what: &str,
+    mut visible: impl AsyncFnMut() -> Result<bool, Box<dyn Error>>,
+) -> Result<(), Box<dyn Error>> {
+    let deadline = std::time::Instant::now() + REPLICATION_WAIT;
+    loop {
+        let pending = match visible().await {
+            Ok(true) => return Ok(()),
+            Ok(false) => "incomplete".to_owned(),
+            Err(error)
+                if error
+                    .downcast_ref::<CosmosError>()
+                    .is_some_and(|error| error.status().status_code() == StatusCode::NotFound) =>
+            {
+                error.to_string()
+            }
+            Err(error) => return Err(error),
+        };
+        if std::time::Instant::now() >= deadline {
+            return Err(format!("{what} not visible after {REPLICATION_WAIT:?}: {pending}").into());
+        }
+        tokio::time::sleep(Duration::from_millis(250)).await;
+    }
+}
+
+/// Point-reads `item` in the region `options` pins until it succeeds, which
+/// also warms that region's connection on `driver`.
+async fn wait_for_seeded_item(
+    driver: &CosmosDriver,
+    item: &ItemReference,
+    region: &Region,
+    options: &OperationOptions,
+) -> Result<(), Box<dyn Error>> {
+    wait_for_replication(&format!("seeded item in {}", region.as_str()), async || {
+        driver
+            .execute_singleton_operation(CosmosOperation::read_item(item.clone()), options.clone())
+            .await?;
+        Ok(true)
+    })
+    .await
+}
+
+/// Drains [`single_partition_query`] in the region `options` pins until it
+/// returns every seeded document, which also warms that region's connection.
+async fn wait_for_seeded_documents(
+    driver: &CosmosDriver,
+    container: &ContainerReference,
+    region: &Region,
+    options: &OperationOptions,
+) -> Result<(), Box<dyn Error>> {
+    wait_for_replication(
+        &format!("seeded query documents in {}", region.as_str()),
+        async || {
+            let mut plan = driver
+                .plan_operation(
+                    single_partition_query(container),
+                    options,
+                    None,
+                    &PlanOptions::default(),
+                )
+                .await?;
+            let mut ids = Vec::new();
+            while let Some(page) = driver
+                .execute_plan(&mut plan, Some(container.clone()), options.clone())
+                .await?
+            {
+                ids.extend(page_document_ids(page));
+            }
+            ids.sort();
+            Ok(ids == sorted_expected_ids())
+        },
+    )
+    .await
+}
+
 /// Seeds [`QUERY_DOCUMENT_IDS`] into a fresh container's single logical
 /// partition.
 async fn seed_query_partition(
@@ -310,24 +394,26 @@ pub async fn hedging_primary_slow_alternate_wins() -> Result<(), Box<dyn Error>>
             context
                 .create_item_with_pk(&container, "pk1", body.as_bytes())
                 .await?;
+            let driver = context
+                .runtime()
+                .create_driver(context.driver_options()?)
+                .await?;
+            let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), item_id);
 
-            // Warm the alternate region before the measured race. The hedge
-            // leg's first request to a region pays a TLS handshake; if that
-            // outlasts the primary's injected delay the alternate loses for
+            // Warm the alternate region on the measured driver before the race.
+            // The hedge leg's first request to a region pays a TLS handshake; if
+            // that outlasts the primary's injected delay the alternate loses for
             // reasons unrelated to hedging. Scoped to the alternate so the
             // primary-region fault rule does not fire and `hits` stays clean.
-            let _ = context
-                .read_item_with_options(
-                    &container,
-                    item_id,
-                    "pk1",
-                    excluding(std::slice::from_ref(&primary)),
-                )
-                .await;
+            let alternate_only = excluding(std::slice::from_ref(&primary));
+            wait_for_seeded_item(&driver, &item, &alternate, &alternate_only).await?;
 
             let started = std::time::Instant::now();
-            let response = context
-                .read_item(&container, item_id, "pk1")
+            let response = driver
+                .execute_singleton_operation(
+                    CosmosOperation::read_item(item),
+                    OperationOptions::default(),
+                )
                 .await
                 .expect("read should succeed via the hedged alternate region");
             let elapsed = started.elapsed();
@@ -431,14 +517,24 @@ pub async fn hedging_primary_fast_no_alternate() -> Result<(), Box<dyn Error>> {
             context
                 .create_item_with_pk(&container, "pk1", body.as_bytes())
                 .await?;
+            let driver = context
+                .runtime()
+                .create_driver(context.driver_options()?)
+                .await?;
+            let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), item_id);
 
-            // Warm TLS and the metadata caches first. The measured read below
-            // asserts the primary beat the threshold, and a cold first request
-            // pays handshake plus account-metadata setup that can exceed it on
-            // its own.
-            let _ = context.read_item(&container, item_id, "pk1").await?;
+            // Warm the primary on the measured driver: the read below must beat the
+            // threshold, and a cold handshake alone can exceed it. Pinned so the
+            // warm-up isn't hedged; a losing primary leg is dropped mid-handshake.
+            let primary_only = excluding(std::slice::from_ref(&alternate));
+            wait_for_seeded_item(&driver, &item, &primary, &primary_only).await?;
 
-            let response = context.read_item(&container, item_id, "pk1").await?;
+            let response = driver
+                .execute_singleton_operation(
+                    CosmosOperation::read_item(item),
+                    OperationOptions::default(),
+                )
+                .await?;
             let diagnostics = response.diagnostics();
             let hedge_diag = diagnostics.hedge_diagnostics().expect(
                 "hedge diagnostics must be attached even on the zero-overhead happy \
@@ -520,9 +616,12 @@ pub async fn query_continuation_minted_in_primary_resumes_in_alternate(
                 .runtime()
                 .create_driver(context.driver_options()?)
                 .await?;
+            let primary_only = excluding(std::slice::from_ref(&alternate));
+            let alternate_only = excluding(std::slice::from_ref(&primary));
+            wait_for_seeded_documents(&driver, &container, &primary, &primary_only).await?;
+            wait_for_seeded_documents(&driver, &container, &alternate, &alternate_only).await?;
 
             // Page 1 on the primary region.
-            let primary_only = excluding(std::slice::from_ref(&alternate));
             let mut plan = driver
                 .plan_operation(
                     single_partition_query(&container),
@@ -550,7 +649,6 @@ pub async fn query_continuation_minted_in_primary_resumes_in_alternate(
 
             // Every remaining page on the alternate region, resuming the
             // primary-minted token.
-            let alternate_only = excluding(std::slice::from_ref(&primary));
             let mut resumed = driver
                 .plan_operation(
                     single_partition_query(&container),
@@ -647,21 +745,10 @@ pub async fn hedged_paged_query_survives_slow_primary() -> Result<(), Box<dyn Er
             let options = OperationOptions::default();
 
             // Warm the alternate region first — see the matching note in
-            // `hedging_primary_slow_alternate_wins`.
+            // `hedging_primary_slow_alternate_wins`. The session token it captures
+            // also stops a lagging primary from serving a short page.
             let warm = excluding(std::slice::from_ref(&primary));
-            if let Ok(mut warm_plan) = driver
-                .plan_operation(
-                    single_partition_query(&container),
-                    &warm,
-                    None,
-                    &PlanOptions::default(),
-                )
-                .await
-            {
-                let _ = driver
-                    .execute_plan(&mut warm_plan, Some(container.clone()), warm)
-                    .await;
-            }
+            wait_for_seeded_documents(&driver, &container, &alternate, &warm).await?;
 
             let mut plan = driver
                 .plan_operation(
