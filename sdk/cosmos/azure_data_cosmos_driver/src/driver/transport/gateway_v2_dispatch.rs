@@ -132,9 +132,8 @@ pub(crate) fn wrap_request_for_gateway_v2(
         // fall back to the internal `x-ms-thinclient-pkrange-min`/`-max`
         // headers that carry the full physical pkrange bounds (set by
         // `OperationOverrides::apply_headers` for the full-pkrange XPK
-        // fan-out path, where the public EPK headers must NOT be emitted —
-        // the standard gateway rejects public EPK headers paired with
-        // `partitionkeyrangeid` with HTTP 400, regardless of the min bound).
+        // fan-out path). The standard gateway rejects bounded query requests
+        // paired with `partitionkeyrangeid`, but accepts bounded change feeds.
         let start_epk_header = HeaderName::from_static(request_header_names::START_EPK);
         let start_fallback = HeaderName::from_static(request_header_names::THINCLIENT_PKRANGE_MIN);
         if let Some(epk_hex) = request

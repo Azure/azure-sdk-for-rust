@@ -231,7 +231,7 @@ impl OperationPlan {
                 )
                 .build());
         }
-        ContinuationToken::encode_v1(&self.operation, &self.pipeline.snapshot_state()?)
+        ContinuationToken::encode(&self.operation, &self.pipeline.snapshot_state()?)
     }
 
     /// Whether the driver must transcode each page's body back to text before

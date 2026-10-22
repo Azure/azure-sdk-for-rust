@@ -846,9 +846,9 @@ pub async fn query_rejects_newer_sdk_continuation_token() -> Result<(), Box<dyn 
             let container_client =
                 test_data::create_container_with_items(db_client, items, None).await?;
 
-            // A `c2.` prefix indicates the token was issued by a future
+            // A `c3.` prefix indicates the token was issued by a future
             // SDK version this client does not understand.
-            let token = ContinuationToken::from_string("c2.something".to_string());
+            let token = ContinuationToken::from_string("c3.something".to_string());
             let options = QueryOptions::default().with_continuation_token(token);
 
             let Err(err) = container_client

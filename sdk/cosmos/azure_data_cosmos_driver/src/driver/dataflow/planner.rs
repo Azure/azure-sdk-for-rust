@@ -939,24 +939,58 @@ fn parse_continuation_epk(
 /// to its children, while a merge reads each saved sub-range independently
 /// without dropping a continuation — matching the per-EPK-range change feed
 /// resume used by the other Cosmos SDKs (.NET, Java, Python).
+///
+/// The driver must restore the checkpoint's start on `operation` before calling.
 pub(crate) async fn build_unordered_merge(
     feed_range: &FeedRange,
     topology_provider: &mut dyn TopologyProvider,
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
 ) -> crate::error::Result<Pipeline> {
-    let (saved_tokens, resume_start) = match resume {
-        None => (None, None),
+    let (saved_tokens, resume_start, next_poll_min_epk) = match resume {
+        None => (None, None, None),
         Some(PipelineNodeState::Drained) => {
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
         Some(PipelineNodeState::UnorderedMerge {
             active_tokens,
             start_from,
+            next_poll_min_epk,
         }) => (
             Some(validate_unordered_merge_tokens(active_tokens)?),
             start_from,
+            next_poll_min_epk
+                .map(|value| {
+                    parse_continuation_epk(
+                        &value,
+                        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                        "change-feed next polling position",
+                    )
+                })
+                .transpose()?,
         ),
+        Some(PipelineNodeState::Request {
+            server_continuation: None,
+        }) if feed_range.partition_key().is_some() => {
+            // Old prefix plans checkpointed a single request. Before its
+            // first poll, no per-range progress needs to be reconstructed.
+            (
+                Some(Vec::new()),
+                operation.change_feed_start().cloned(),
+                None,
+            )
+        }
+        Some(PipelineNodeState::Request {
+            server_continuation: Some(_),
+        }) if feed_range.partition_key().is_some() => {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_message(
+                    "a single-request prefix checkpoint has no per-range coverage and cannot \
+                         safely resume a prefix fan-out; explicitly choose a new start position",
+                )
+                .build());
+        }
         Some(other) => {
             return Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
@@ -968,16 +1002,21 @@ pub(crate) async fn build_unordered_merge(
         }
     };
 
+    if resume_start
+        .as_ref()
+        .is_some_and(|start| Some(start) != operation.change_feed_start())
+    {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+            .with_message("change-feed checkpoint start must be restored before planning")
+            .build());
+    }
+
     // The start marker is carried so every checkpoint re-persists it. On a
     // fresh start it comes from the operation; on resume the token's persisted
     // marker wins, because the caller only hands back the token and does not
     // repeat the original start position.
-    let is_resume = saved_tokens.is_some();
-    let start_marker = if is_resume {
-        resume_start
-    } else {
-        operation.change_feed_start().cloned()
-    };
+    let start_marker = resume_start.or_else(|| operation.change_feed_start().cloned());
 
     // Full-fidelity (AllVersionsAndDeletes) feeds must pin every range to a
     // concrete starting continuation before the first checkpoint, so a range
@@ -993,19 +1032,6 @@ pub(crate) async fn build_unordered_merge(
     let prime_on_first_drain = operation.request_headers().full_fidelity_feed
         && saved_tokens.as_ref().is_none_or(|tokens| tokens.is_empty());
 
-    // On resume the operation rebuilt by the SDK no longer carries the original
-    // start headers (the caller only passed the continuation token). Re-derive
-    // them from the persisted marker so partitions with no saved continuation
-    // (never polled before the checkpoint) honor the original start position
-    // instead of silently reading from the beginning. Partitions that do have a
-    // saved continuation still take precedence via their `If-None-Match` ETag.
-    let operation: Arc<CosmosOperation> = match (is_resume, &start_marker) {
-        (true, Some(marker)) => {
-            Arc::new((**operation).clone().with_change_feed_start(marker.clone()))
-        }
-        _ => Arc::clone(operation),
-    };
-
     let resolved = topology_provider
         .resolve_ranges(feed_range, PartitionRoutingRefresh::UseCached)
         .await?;
@@ -1013,8 +1039,12 @@ pub(crate) async fn build_unordered_merge(
     let mut request_nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
 
     for resolved_range in resolved {
-        let range = intersect_feed_ranges(&resolved_range.range, feed_range)
-            .expect("topology provider must return ranges that overlap the feed range");
+        let range = intersect_feed_ranges(&resolved_range.range, feed_range).ok_or_else(|| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
+                .with_message("topology provider returned a range that does not overlap the change-feed scope")
+                .build()
+        })?;
 
         // Rebuild this physical range's leaves by sweeping the saved tokens
         // that overlap it, left to right. Each saved sub-range resumes from its
@@ -1044,7 +1074,7 @@ pub(crate) async fn build_unordered_merge(
                     let gap = FeedRange::new(cursor.clone(), slice.min_inclusive().clone())?;
                     push_change_feed_leaf(
                         &mut request_nodes,
-                        &operation,
+                        operation,
                         gap,
                         &resolved_range,
                         None,
@@ -1053,7 +1083,7 @@ pub(crate) async fn build_unordered_merge(
                 cursor = slice.max_exclusive().clone();
                 push_change_feed_leaf(
                     &mut request_nodes,
-                    &operation,
+                    operation,
                     slice,
                     &resolved_range,
                     Some(token.server_continuation.clone()),
@@ -1065,7 +1095,7 @@ pub(crate) async fn build_unordered_merge(
             // Trailing slice with no saved continuation, or the whole range on
             // a fresh (non-resumed) start.
             let tail = FeedRange::new(cursor, range_max)?;
-            push_change_feed_leaf(&mut request_nodes, &operation, tail, &resolved_range, None);
+            push_change_feed_leaf(&mut request_nodes, operation, tail, &resolved_range, None);
         }
     }
 
@@ -1079,7 +1109,8 @@ pub(crate) async fn build_unordered_merge(
     let root = Box::new(
         UnorderedMerge::new(request_nodes)
             .with_start_marker(start_marker)
-            .with_prime_on_first_drain(prime_on_first_drain),
+            .with_prime_on_first_drain(prime_on_first_drain)
+            .with_next_poll_min_epk(next_poll_min_epk)?,
     );
     Ok(Pipeline::new(root))
 }
