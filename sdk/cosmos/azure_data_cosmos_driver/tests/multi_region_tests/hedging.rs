@@ -21,8 +21,7 @@
 
 #![cfg(feature = "fault_injection")]
 
-use crate::framework::DriverTestClient;
-use azure_core::http::StatusCode;
+use crate::framework::{is_regional_readiness_error, DriverTestClient};
 use azure_data_cosmos_driver::diagnostics::{DiagnosticsContext, HedgeTerminalState};
 use azure_data_cosmos_driver::error::CosmosError;
 use azure_data_cosmos_driver::fault_injection::{
@@ -194,9 +193,12 @@ fn single_partition_query(container: &ContainerReference) -> CosmosOperation {
 /// drops the applicable-region count below two, so `should_hedge` returns
 /// `false` and the page is served by exactly one region.
 fn excluding(regions: &[Region]) -> OperationOptions {
-    let mut options = OperationOptions::default();
-    options.excluded_regions = Some(ExcludedRegions::from_iter(regions.iter().cloned()));
-    options
+    OperationOptionsBuilder::new()
+        .with_excluded_regions(ExcludedRegions::from_iter(regions.iter().cloned()))
+        .with_hedging_enabled(false)
+        .with_availability_strategy(AvailabilityStrategy::Disabled)
+        .with_max_session_retry_count(0)
+        .build()
 }
 
 fn page_document_ids(response: CosmosResponse) -> Vec<String> {
@@ -243,7 +245,7 @@ fn sorted_expected_ids() -> Vec<String> {
 const REPLICATION_WAIT: Duration = Duration::from_secs(30);
 
 /// Polls `visible` until it returns `true`, failing after [`REPLICATION_WAIT`].
-/// A 404 also means not yet: a new container can lag in a read region too.
+/// Regional metadata and session-lag errors are retried during setup only.
 async fn wait_for_replication(
     what: &str,
     mut visible: impl AsyncFnMut() -> Result<bool, Box<dyn Error>>,
@@ -256,7 +258,7 @@ async fn wait_for_replication(
             Err(error)
                 if error
                     .downcast_ref::<CosmosError>()
-                    .is_some_and(|error| error.status().status_code() == StatusCode::NotFound) =>
+                    .is_some_and(is_regional_readiness_error) =>
             {
                 error.to_string()
             }
@@ -338,6 +340,17 @@ async fn seed_query_partition(
             .await?;
     }
 
+    for id in QUERY_DOCUMENT_IDS {
+        context
+            .wait_for_item_in_regions(
+                &container,
+                id,
+                QUERY_PARTITION_KEY,
+                &[primary_region(), alternate_region()],
+            )
+            .await?;
+    }
+
     Ok(container)
 }
 
@@ -400,11 +413,15 @@ pub async fn hedging_primary_slow_alternate_wins() -> Result<(), Box<dyn Error>>
                 .await?;
             let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), item_id);
 
-            // Warm the alternate region on the measured driver before the race.
-            // The hedge leg's first request to a region pays a TLS handshake; if
-            // that outlasts the primary's injected delay the alternate loses for
-            // reasons unrelated to hedging. Scoped to the alternate so the
-            // primary-region fault rule does not fire and `hits` stays clean.
+            context
+                .wait_for_item_in_regions(
+                    &container,
+                    item_id,
+                    "pk1",
+                    &[primary.clone(), alternate.clone()],
+                )
+                .await?;
+            // Readiness uses a separate driver; warm this driver's alternate connection too.
             let alternate_only = excluding(std::slice::from_ref(&primary));
             wait_for_seeded_item(&driver, &item, &alternate, &alternate_only).await?;
 
@@ -523,9 +540,15 @@ pub async fn hedging_primary_fast_no_alternate() -> Result<(), Box<dyn Error>> {
                 .await?;
             let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), item_id);
 
-            // Warm the primary on the measured driver: the read below must beat the
-            // threshold, and a cold handshake alone can exceed it. Pinned so the
-            // warm-up isn't hedged; a losing primary leg is dropped mid-handshake.
+            context
+                .wait_for_item_in_regions(
+                    &container,
+                    item_id,
+                    "pk1",
+                    &[primary.clone(), alternate.clone()],
+                )
+                .await?;
+            // Keep connection setup outside the measured primary-only read.
             let primary_only = excluding(std::slice::from_ref(&alternate));
             wait_for_seeded_item(&driver, &item, &primary, &primary_only).await?;
 
@@ -744,9 +767,7 @@ pub async fn hedged_paged_query_survives_slow_primary() -> Result<(), Box<dyn Er
 
             let options = OperationOptions::default();
 
-            // Warm the alternate region first — see the matching note in
-            // `hedging_primary_slow_alternate_wins`. The session token it captures
-            // also stops a lagging primary from serving a short page.
+            // Warm this driver's alternate connection and capture the seeded session.
             let warm = excluding(std::slice::from_ref(&primary));
             wait_for_seeded_documents(&driver, &container, &alternate, &warm).await?;
 
