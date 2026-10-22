@@ -9,7 +9,7 @@
 //! than gating this root on the cfg, so the bodies keep compiling on ordinary
 //! builds and bit-rot surfaces as a build break instead of silent skipping.
 
-#![allow(dead_code, unused_imports)]
-
+#[allow(dead_code, unused_imports)]
 mod framework;
+
 mod multi_region_tests;
