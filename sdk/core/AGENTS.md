@@ -47,3 +47,5 @@ These rules apply in addition to the repository root [AGENTS.md](../../AGENTS.md
 - Put Resource Manager (ARM)-specific functionality in existing `azure_core` modules where appropriate.
 - Use `resource_manager` in module, field, function, method, and feature names; retain `azure_resourcemanager_*` crate names.
 - When names collide, prefer a `resource_manager` submodule gated by the `resource_manager` feature, such as `azure_core::http::poller::resource_manager`, over `ResourceManager` type or variant prefixes; do not re-export its items from parent modules.
+- Use `azure_core::cloud::resource_manager::Audience` in all ARM crates for audience registration, audience lookup, and default credential scopes; do not define crate-specific ARM audience markers.
+- Keep each ARM crate's first README client-configuration example as the normal case. Add a second example configuring and using a custom cloud: set `CustomConfiguration::authority_host` and `endpoint`, register the ARM audience in `Audiences` with the shared marker, and use that cloud to configure the credential and client.

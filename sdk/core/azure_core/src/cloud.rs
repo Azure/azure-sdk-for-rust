@@ -39,7 +39,69 @@ pub enum CloudConfiguration {
 }
 
 impl CloudConfiguration {
+    /// Gets the authentication audience for a service.
+    ///
+    #[cfg_attr(
+        feature = "resourcemanager",
+        doc = "For Azure Resource Manager (ARM) clients, use [`resourcemanager::Audience`] as `T`."
+    )]
+    #[cfg_attr(
+        not(feature = "resourcemanager"),
+        doc = "For Azure Resource Manager (ARM) clients, enable the `resourcemanager` feature and use `azure_core::cloud::resourcemanager::Audience` as `T`."
+    )]
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if a custom cloud has no audience configured for `T`.
+    ///
+    /// # Examples
+    ///
+    /// Get the audience for a known cloud.
+    ///
+    /// ```
+    /// # mod azure_service_module {
+    /// #   pub struct Audience;
+    /// # }
+    /// use azure_core::cloud::CloudConfiguration;
+    ///
+    /// let cloud = CloudConfiguration::AzurePublic;
+    /// assert!(matches!(
+    ///     cloud.audience::<azure_service_module::Audience>(),
+    ///     Ok(audience) if audience == "https://management.azure.com",
+    /// ));
+    /// ```
+    ///
+    /// For [`CloudConfiguration::Custom`], this returns the service-specific audience.
+    ///
+    /// ```
+    /// # mod azure_service_module {
+    /// #   pub struct Audience;
+    /// # }
+    /// use azure_core::cloud::{Audiences, CloudConfiguration, CustomConfiguration};
+    ///
+    /// let mut custom = CustomConfiguration::default();
+    /// custom.audiences = Audiences::new()
+    ///     .with::<azure_service_module::Audience>("https://service.mycloud.local".to_string());
+    /// let cloud: CloudConfiguration = custom.into();
+    /// assert!(matches!(
+    ///     cloud.audience::<azure_service_module::Audience>(),
+    ///     Ok(audience) if audience == "https://service.mycloud.local",
+    /// ));
+    /// ```
+    pub fn audience<T: 'static>(&self) -> crate::Result<&str> {
+        match self {
+            Self::AzurePublic => Ok("https://management.azure.com"),
+            Self::AzureGovernment => Ok("https://management.usgovcloudapi.net"),
+            Self::AzureChina => Ok("https://management.chinacloudapi.cn"),
+            Self::Custom(custom) => custom.audience::<T>(),
+        }
+    }
+
     /// Gets the default credential scope.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if a custom cloud has no audience configured for `T`.
     ///
     /// # Examples
     ///
@@ -84,15 +146,9 @@ impl CloudConfiguration {
             Self::AzureChina => Ok(Cow::Borrowed(
                 "https://management.chinacloudapi.cn/.default",
             )),
-            Self::Custom(custom) => custom.audiences.get::<T>().map_or_else(
-                || {
-                    Err(crate::Error::new(
-                        crate::error::ErrorKind::Credential,
-                        "missing custom cloud configuration audience",
-                    ))
-                },
-                |audience| Ok(Cow::Owned(audience.to_string() + "/.default")),
-            ),
+            Self::Custom(custom) => custom
+                .audience::<T>()
+                .map(|audience| Cow::Owned(audience.to_string() + "/.default")),
         }
     }
 
@@ -120,7 +176,7 @@ impl Default for &CloudConfiguration {
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[non_exhaustive]
 pub struct CustomConfiguration {
-    /// Base URL for authentication, for example "https://login.microsoftonline.com"
+    /// Base URL for authentication, for example "https://login.microsoftonline.com".
     pub authority_host: String,
 
     /// Map of SDK modules to their Entra ID audiences.
@@ -129,6 +185,18 @@ pub struct CustomConfiguration {
     /// Resource management endpoint.
     #[cfg(feature = "resourcemanager")]
     pub endpoint: Option<String>,
+}
+
+impl CustomConfiguration {
+    #[inline]
+    fn audience<T: 'static>(&self) -> crate::Result<&str> {
+        self.audiences.get::<T>().ok_or_else(|| {
+            crate::Error::new(
+                crate::error::ErrorKind::Credential,
+                "missing custom cloud configuration audience",
+            )
+        })
+    }
 }
 
 impl From<CustomConfiguration> for CloudConfiguration {
@@ -164,6 +232,14 @@ impl Audiences {
     }
 }
 
+/// Cloud configuration for Azure Resource Manager (ARM).
+#[cfg(feature = "resourcemanager")]
+pub mod resourcemanager {
+    /// Marker type for Azure Resource Manager audience configuration.
+    #[allow(missing_debug_implementations)]
+    pub struct Audience;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -179,6 +255,7 @@ mod tests {
             audiences: Audiences::new()
                 .with::<A>("A".to_string())
                 .with::<B>("B".to_string()),
+            #[cfg(feature = "resourcemanager")]
             endpoint: None,
         }
         .into();
@@ -199,10 +276,16 @@ mod tests {
     #[test]
     fn default() {
         assert_eq!(
+            CloudConfiguration::default(),
             CloudConfiguration::AzurePublic,
-            CloudConfiguration::default()
         );
         let cloud: Option<&CloudConfiguration> = None;
-        assert_eq!(cloud.unwrap_or_default(), &CloudConfiguration::AzurePublic);
+        assert_eq!(
+            {
+                #[allow(clippy::unnecessary_literal_unwrap)]
+                cloud.unwrap_or_default()
+            },
+            &CloudConfiguration::AzurePublic,
+        );
     }
 }
