@@ -152,9 +152,8 @@ foreach ($package in $packagesToTest) {
     -ManifestPath $manifestPath `
     -OutputFile $allTargetsOutput
 
-  # TODO: Restore benchmark execution before merging into main; disable only on this release branch.
-  # $benchCommand = (@('cargo', 'test', '--benches', '--manifest-path', "'$manifestPath'") + $cargoFeatureArgs + @('--no-fail-fast')) -join ' '
-  # Invoke-LoggedCommand $benchCommand -GroupOutput
+  $benchCommand = (@('cargo', 'test', '--benches', '--manifest-path', "'$manifestPath'") + $cargoFeatureArgs + @('--no-fail-fast')) -join ' '
+  Invoke-LoggedCommand $benchCommand -GroupOutput
 
   $cleanupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Cleanup.ps1'))
   if (Test-Path $cleanupScript) {

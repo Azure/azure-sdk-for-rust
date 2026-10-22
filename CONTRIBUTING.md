@@ -458,9 +458,6 @@ azure_core = { path = "../../core/azure_core", version = "0.31.0" }
 
 See <https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#inheriting-a-dependency-from-a-workspace> for more information about specifying dependencies in `Cargo.toml`.
 
-The root `[patch.crates-io]` entries let prerelease dependencies on `azure_core` and `azure_identity` resolve to local sources for workspace builds and tests.
-Stable requirements do not opt into these prereleases. Published packages do not include the workspace patches, so verify release dependencies with `cargo package --allow-dirty -p <crate-name>` before releasing.
-
 #### Version increment on release
 
 When a release to crates.io completes, the Engineering System opens a pull request to increment versions of released packages. This PR should be merged as soon as possible to put the `main` branch in a "releasable" state and to provide context that code at the HEAD of `main` may not reflect code in a previously released version of a library.
