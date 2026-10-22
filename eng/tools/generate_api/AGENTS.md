@@ -179,6 +179,7 @@ Known synthesized derives:
 Documentation handling:
 
 - rustdoc docs stay separate from attrs in the shared model
+- omit `cfg_attr` whose only attribute is `doc`; rustdoc interleaves active conditional docs with ordinary docs, so preserve that text without reconstructing conditional attributes
 - markdown output omits doc comments and emits them as a companion patch
 - APIView renders comment tokens with documentation markers
 

@@ -20,6 +20,8 @@ pub(crate) fn attribute_texts(item: &Item) -> Vec<String> {
         }
     }
 
+    attributes.retain(|attribute| !is_doc_only_cfg_attr(attribute));
+
     // Format 45 placed non_exhaustive before repr regardless of source order.
     attributes.sort_by_key(|attribute| match attribute_name(attribute) {
         "cfg" | "must_use" | "non_exhaustive" => 0,
@@ -27,6 +29,43 @@ pub(crate) fn attribute_texts(item: &Item) -> Vec<String> {
         _ => 1,
     });
     attributes
+}
+
+fn is_doc_only_cfg_attr(attribute: &str) -> bool {
+    let Some(body) = attribute
+        .strip_prefix("#![")
+        .or_else(|| attribute.strip_prefix("#["))
+        .and_then(|body| body.strip_suffix(']'))
+    else {
+        return false;
+    };
+    let Some(body) = body
+        .strip_prefix("cfg_attr")
+        .or_else(|| body.strip_prefix("<cfg_attr>"))
+        .and_then(|body| body.trim().strip_prefix('('))
+        .and_then(|body| body.trim_end().strip_suffix(')'))
+    else {
+        return false;
+    };
+
+    let mut parser = CfgTraceParser::new(body);
+    if parser.skip_field_value().is_none() || parser.consume(",").is_none() {
+        return false;
+    }
+    if parser.parse_identifier().as_deref() != Some("doc") {
+        return false;
+    }
+    parser.skip_whitespace();
+    if !(parser.starts_with("=") || parser.starts_with("(")) {
+        return false;
+    }
+    if parser.skip_field_value().is_none() {
+        return false;
+    }
+    parser.skip_whitespace();
+    parser.consume(",");
+    parser.skip_whitespace();
+    parser.index == body.len()
 }
 
 pub(crate) fn is_automatically_derived(item: &Item) -> bool {
@@ -467,6 +506,18 @@ impl<'a> CfgTraceParser<'a> {
                 continue;
             }
 
+            if self.starts_with("r") {
+                let remaining = &self.text[self.index + 1..];
+                let hashes = remaining.bytes().take_while(|byte| *byte == b'#').count();
+                if remaining[hashes..].starts_with('"') {
+                    let terminator = format!("\"{}", "#".repeat(hashes));
+                    let content_start = self.index + hashes + 2;
+                    let content_length = self.text[content_start..].find(&terminator)?;
+                    self.index = content_start + content_length + terminator.len();
+                    continue;
+                }
+            }
+
             match ch {
                 '"' => {
                     in_string = true;
@@ -654,10 +705,44 @@ fn attribute_body(attribute: &str) -> &str {
 #[cfg(test)]
 mod tests {
     use super::{
-        render_cfg_trace, render_other_attribute, render_repr, source_attributes_before,
-        source_crate_attributes,
+        is_doc_only_cfg_attr, render_cfg_trace, render_other_attribute, render_repr,
+        source_attributes_before, source_crate_attributes,
     };
     use rustdoc_types::{AttributeRepr, ReprKind};
+
+    #[test]
+    fn recognizes_cfg_attr_with_only_one_doc_attribute() {
+        for attribute in [
+            r#"#[cfg_attr(feature = "resourcemanager", doc = "Conditional docs.")]"#,
+            r#"#[cfg_attr(not(feature = "resourcemanager"), doc = "Fallback docs.")]"#,
+            r#"#![cfg_attr(all(doc, feature = "http"), doc = "Crate docs.")]"#,
+            r#"#[<cfg_attr>(docsrs, doc(cfg(feature = "http")))]"#,
+            r#"#[cfg_attr(doc, doc = "Commas, parentheses (), and \"quotes\".",)]"#,
+            r###"#[cfg_attr(doc, doc = r##"Raw "quotes", commas, and )]"##)]"###,
+            r#"#[cfg_attr(doc, doc = concat!("First, ", "second."))]"#,
+            "#[cfg_attr(\n    doc,\n    doc = \"Multiline docs.\",\n)]",
+        ] {
+            assert!(is_doc_only_cfg_attr(attribute), "{attribute}");
+        }
+    }
+
+    #[test]
+    fn preserves_cfg_attr_with_non_doc_or_multiple_attributes() {
+        for attribute in [
+            r#"#[cfg_attr(docsrs, feature(doc_cfg))]"#,
+            r#"#[cfg_attr(not(feature = "reqwest"), allow(unused_variables))]"#,
+            r#"#[cfg_attr(doc, doc = "Docs.", must_use)]"#,
+            r#"#[cfg_attr(doc, must_use, doc = "Docs.")]"#,
+            r###"#[cfg_attr(doc, doc = r##"Raw "quotes", commas, and )]"##, must_use)]"###,
+            r#"#[cfg_attr(doc, doc = "First.", doc = "Second.")]"#,
+            r#"#[cfg_attr(doc, doc::attribute = "Not a doc attribute.")]"#,
+            r#"#[cfg_attr(doc, documentation = "Not a doc attribute.")]"#,
+            r#"#[doc = "Unconditional docs."]"#,
+            r#"#[cfg(doc)]"#,
+        ] {
+            assert!(!is_doc_only_cfg_attr(attribute), "{attribute}");
+        }
+    }
 
     #[test]
     fn renders_internal_attributes_like_format_45() {
