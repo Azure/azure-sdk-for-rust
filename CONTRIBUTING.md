@@ -453,8 +453,29 @@ azure_core = { workspace = true }
 If a crate needs unreleased changes from `sdk/core`, use an explicit `path`-based dependency with a matching `version` instead of `workspace = true`:
 
 ```toml
-azure_core = { path = "../../core/azure_core", version = "0.31.0" }
+azure_core = { path = "../../core/azure_core", version = "0.31.0", default-features = false }
 ```
+
+Keep `default-features = false` when switching from a workspace dependency to a
+local path: workspace feature settings are not inherited by path dependencies.
+HTTP libraries enable Core defaults through their own default feature instead:
+
+```toml
+[features]
+default = ["azure_core/default"]
+```
+
+This preserves the default HTTP transport while allowing consumers to opt out
+with `default-features = false`. Normal dependencies on other HTTP libraries must
+also disable their defaults to avoid enabling Core defaults transitively. Forward
+any required dependency defaults from the library's own default feature.
+Cosmos and AMQP libraries intentionally select their own transports instead of
+forwarding `azure_core/default`.
+
+`eng/scripts/verify-dependencies.rs`, run by `Analyze-Code.ps1`, checks these
+requirements for publishable libraries, including target-specific dependencies.
+`update-pathversions.rs` only updates dependency versions; it preserves feature
+settings and does not convert workspace dependencies to local paths.
 
 See <https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#inheriting-a-dependency-from-a-workspace> for more information about specifying dependencies in `Cargo.toml`.
 
