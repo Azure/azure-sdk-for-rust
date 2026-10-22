@@ -519,6 +519,9 @@ impl<'a> CfgTraceParser<'a> {
             }
 
             match ch {
+                // Preserve attributes with character literals or lifetimes rather than
+                // interpreting their contents as delimiters.
+                '\'' => return None,
                 '"' => {
                     in_string = true;
                     self.index += ch.len_utf8();
@@ -531,7 +534,7 @@ impl<'a> CfgTraceParser<'a> {
                     if parens == 0 && brackets == 0 && braces == 0 {
                         break;
                     }
-                    parens = parens.saturating_sub(1);
+                    parens = parens.checked_sub(1)?;
                     self.index += 1;
                 }
                 '[' => {
@@ -542,7 +545,7 @@ impl<'a> CfgTraceParser<'a> {
                     if parens == 0 && brackets == 0 && braces == 0 {
                         break;
                     }
-                    brackets = brackets.saturating_sub(1);
+                    brackets = brackets.checked_sub(1)?;
                     self.index += 1;
                 }
                 '{' => {
@@ -553,14 +556,14 @@ impl<'a> CfgTraceParser<'a> {
                     if parens == 0 && brackets == 0 && braces == 0 {
                         break;
                     }
-                    braces = braces.saturating_sub(1);
+                    braces = braces.checked_sub(1)?;
                     self.index += 1;
                 }
                 ',' if parens == 0 && brackets == 0 && braces == 0 => break,
                 _ => self.index += ch.len_utf8(),
             }
         }
-        Some(())
+        (!in_string && parens == 0 && brackets == 0 && braces == 0).then_some(())
     }
 
     fn finish_group(&mut self) -> Option<()> {
@@ -717,6 +720,8 @@ mod tests {
             r#"#[cfg_attr(not(feature = "resourcemanager"), doc = "Fallback docs.")]"#,
             r#"#![cfg_attr(all(doc, feature = "http"), doc = "Crate docs.")]"#,
             r#"#[<cfg_attr>(docsrs, doc(cfg(feature = "http")))]"#,
+            r#"#[cfg_attr(docsrs, doc = "Conditional docs.")]"#,
+            r#"#[cfg_attr(not(docsrs), doc = "Fallback docs.")]"#,
             r#"#[cfg_attr(doc, doc = "Commas, parentheses (), and \"quotes\".",)]"#,
             r###"#[cfg_attr(doc, doc = r##"Raw "quotes", commas, and )]"##)]"###,
             r#"#[cfg_attr(doc, doc = concat!("First, ", "second."))]"#,
@@ -733,12 +738,31 @@ mod tests {
             r#"#[cfg_attr(not(feature = "reqwest"), allow(unused_variables))]"#,
             r#"#[cfg_attr(doc, doc = "Docs.", must_use)]"#,
             r#"#[cfg_attr(doc, must_use, doc = "Docs.")]"#,
+            r#"#[cfg_attr(docsrs, doc = "Docs.", must_use)]"#,
+            r#"#[cfg_attr(not(doc), doc = concat!('(', "Docs."), must_use)]"#,
+            r#"#[cfg_attr(not(docsrs), doc = concat!('(', "Docs."), must_use)]"#,
             r###"#[cfg_attr(doc, doc = r##"Raw "quotes", commas, and )]"##, must_use)]"###,
             r#"#[cfg_attr(doc, doc = "First.", doc = "Second.")]"#,
             r#"#[cfg_attr(doc, doc::attribute = "Not a doc attribute.")]"#,
             r#"#[cfg_attr(doc, documentation = "Not a doc attribute.")]"#,
             r#"#[doc = "Unconditional docs."]"#,
             r#"#[cfg(doc)]"#,
+        ] {
+            assert!(!is_doc_only_cfg_attr(attribute), "{attribute}");
+        }
+    }
+
+    #[test]
+    fn preserves_cfg_attrs_with_unsupported_or_incomplete_values() {
+        for attribute in [
+            r#"#[cfg_attr(doc, doc = concat!('(', "Docs."))]"#,
+            r#"#[cfg_attr(doc, doc = concat!(')', "Docs."))]"#,
+            r#"#[cfg_attr(doc, doc = concat!('\'', "Docs."))]"#,
+            r#"#[cfg_attr(doc, doc = concat!("Docs.")]"#,
+            r#"#[cfg_attr(doc, doc = ["Docs.")]"#,
+            r#"#[cfg_attr(doc, doc = {"Docs.")]"#,
+            r#"#[cfg_attr(doc, doc = "Unterminated)]"#,
+            r##"#[cfg_attr(doc, doc = r#"Unterminated)]"##,
         ] {
             assert!(!is_doc_only_cfg_attr(attribute), "{attribute}");
         }
