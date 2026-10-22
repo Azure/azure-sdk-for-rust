@@ -867,13 +867,13 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_certificates"
-version = "1.1.0-beta.2"
+version = "1.1.0-beta.3"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.1.0",
- "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "azure_identity 1.0.0",
+ "azure_core 1.2.0-beta.2",
+ "azure_core_test 0.2.0",
+ "azure_identity 1.1.0-beta.2",
  "azure_security_keyvault_keys",
  "azure_security_keyvault_test",
  "futures",
@@ -889,15 +889,14 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_keys"
-version = "1.1.0-beta.1"
+version = "1.1.0-beta.2"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.1.0",
- "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "azure_identity 1.0.0",
+ "azure_core 1.2.0-beta.2",
+ "azure_core_test 0.2.0",
+ "azure_identity 1.1.0-beta.2",
  "azure_security_keyvault_test",
- "clap",
  "criterion",
  "futures",
  "include-file",
@@ -913,15 +912,14 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_secrets"
-version = "1.1.0-beta.1"
+version = "1.1.0-beta.2"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.1.0",
- "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "azure_identity 1.0.0",
+ "azure_core 1.2.0-beta.2",
+ "azure_core_test 0.2.0",
+ "azure_identity 1.1.0-beta.2",
  "azure_security_keyvault_test",
- "clap",
  "futures",
  "include-file",
  "rand 0.10.2",
@@ -938,7 +936,7 @@ name = "azure_security_keyvault_test"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.1.0",
+ "azure_core 1.2.0-beta.2",
  "tokio",
 ]
 
