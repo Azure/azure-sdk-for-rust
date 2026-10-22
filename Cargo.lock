@@ -199,9 +199,9 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
 name = "aws-lc-rs"
-version = "1.17.3"
+version = "1.18.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00bdb5da18dac48ca2cc7cd4a98e533e8635a58e2361d13a1a4ee3888e0d72f1"
+checksum = "faac5829c2b74c28f830747e7818ccfb684261b5f48a1118b1e2a13d36dfab13"
 dependencies = [
  "aws-lc-sys",
  "zeroize",
@@ -209,9 +209,9 @@ dependencies = [
 
 [[package]]
 name = "aws-lc-sys"
-version = "0.43.0"
+version = "0.46.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43103168cc76fe62678a375e722fc9cb3a0146159ac5828bc4f0dfd755c2224c"
+checksum = "f1622d8446a2d4b2ce0c7eefc73dd43a99779028d5ee5c2dd8073a658ba8a2bc"
 dependencies = [
  "cc",
  "cmake",
@@ -524,7 +524,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "url",
- "zip",
+ "zip 9.0.5",
 ]
 
 [[package]]
@@ -551,7 +551,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "url",
- "zip",
+ "zip 8.6.0",
 ]
 
 [[package]]
@@ -578,7 +578,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos"
-version = "1.1.0-beta.1"
+version = "1.1.0-beta.2"
 dependencies = [
  "arbitrary",
  "async-lock",
@@ -623,7 +623,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos_driver"
-version = "1.1.0-beta.1"
+version = "1.1.0-beta.2"
 dependencies = [
  "arc-swap",
  "async-lock",
@@ -688,7 +688,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos_macros"
-version = "1.1.0-beta.1"
+version = "1.1.0-beta.2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -871,9 +871,9 @@ version = "1.1.0-beta.2"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.2",
- "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.2",
+ "azure_core 1.1.0",
+ "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "azure_identity 1.0.0",
  "azure_security_keyvault_keys",
  "azure_security_keyvault_test",
  "futures",
@@ -893,9 +893,9 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.2",
- "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.2",
+ "azure_core 1.1.0",
+ "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "azure_identity 1.0.0",
  "azure_security_keyvault_test",
  "clap",
  "criterion",
@@ -917,9 +917,9 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.2",
- "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.2",
+ "azure_core 1.1.0",
+ "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "azure_identity 1.0.0",
  "azure_security_keyvault_test",
  "clap",
  "futures",
@@ -938,7 +938,7 @@ name = "azure_security_keyvault_test"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.1.0",
  "tokio",
 ]
 
@@ -2686,6 +2686,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "nix"
+version = "0.31.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf20d2fde8ff38632c426f1165ed7436270b44f199fc55284c38276f9db47c3d"
+dependencies = [
+ "bitflags",
+ "cfg-if",
+ "cfg_aliases",
+ "libc",
+]
+
+[[package]]
 name = "nom"
 version = "8.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3604,9 +3616,9 @@ checksum = "f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f"
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.13"
+version = "0.103.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61c429a8649f110dddef65e2a5ad240f747e85f7758a6bccc7e5777bd33f756e"
+checksum = "4443b1b6d39d7c663139942cc4558262562d2c84123bb6282ef177009ca8b281"
 dependencies = [
  "aws-lc-rs",
  "ring",
@@ -4070,7 +4082,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "once_cell",
  "rustix",
  "windows-sys 0.61.2",
@@ -4924,18 +4936,18 @@ dependencies = [
 
 [[package]]
 name = "webpki-root-certs"
-version = "1.0.9"
+version = "1.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b96554aa2acc8ccdb7e1c9a58a7a68dd5d13bccc69cd124cb09406db612a1c9b"
+checksum = "58ec80e73fd8baf57bf0d9615554c75348bda990d6d5bbeab964dd068319fecb"
 dependencies = [
  "rustls-pki-types",
 ]
 
 [[package]]
 name = "webpki-roots"
-version = "1.0.9"
+version = "1.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dcd9d09a39985f5344844e66b0c530a33843579125f23e21e9f0f220850f22a"
+checksum = "1c1c8e20c8a38fc7d65abfe74eb7280e4aa667e8eec8bc84996d2874810748d9"
 dependencies = [
  "rustls-pki-types",
 ]
@@ -5365,6 +5377,21 @@ dependencies = [
  "flate2",
  "indexmap 2.14.0",
  "memchr",
+ "typed-path",
+ "zopfli",
+]
+
+[[package]]
+name = "zip"
+version = "9.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e04976da629d3b04204ba8105b396a193af8ad2583b2c79bfb3ab8af580a11e"
+dependencies = [
+ "crc32fast",
+ "flate2",
+ "indexmap 2.14.0",
+ "memchr",
+ "nix",
  "typed-path",
  "zopfli",
 ]

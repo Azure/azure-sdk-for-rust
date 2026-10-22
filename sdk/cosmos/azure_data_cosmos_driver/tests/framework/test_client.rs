@@ -11,14 +11,15 @@ use azure_data_cosmos_driver::options::PatchStrategy;
 use azure_data_cosmos_driver::{
     diagnostics::{DiagnosticsContext, PipelineKind, TransportSecurity},
     driver::CosmosDriverRuntime,
-    error::CosmosError,
+    error::{status_codes, CosmosError},
     models::{
         AccountReference, ConnectionString, ContainerReference, CosmosOperation, CosmosResponse,
         DatabaseReference, ItemReference, PartitionKey,
     },
     options::{
-        ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsBuilder,
-        PartitionFailoverOptions, Region, ServerCertificateValidation,
+        AvailabilityStrategy, ConnectionPoolOptions, DriverOptions, ExcludedRegions,
+        OperationOptions, OperationOptionsBuilder, PartitionFailoverOptions, Region,
+        ServerCertificateValidation,
     },
     CosmosDriver, SubStatusCode,
 };
@@ -56,6 +57,58 @@ fn runtime_operation_options(options: OperationOptions) -> OperationOptions {
         options
     };
     options
+}
+
+/// Identifies transient errors while newly seeded resources reach regional gateways.
+pub fn is_regional_readiness_error(error: &CosmosError) -> bool {
+    let status = error.status();
+    if status == status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE {
+        return true;
+    }
+    match status.status_code() {
+        StatusCode::Unauthorized => error.to_string().contains(
+            "The MAC signature found in the HTTP request is not the same as the computed signature",
+        ),
+        StatusCode::NotFound => {
+            matches!(
+                status.sub_status().map(u16::from),
+                None | Some(0 | 1002 | 1013)
+            )
+        }
+        _ => false,
+    }
+}
+
+async fn wait_for_region_readiness<T, F, Fut>(
+    region: &Region,
+    mut probe: F,
+) -> Result<T, Box<dyn Error>>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = Result<T, CosmosError>>,
+{
+    let timeout = Duration::from_secs(30);
+    let deadline = tokio::time::Instant::now() + timeout;
+    let mut last_error = None;
+    while tokio::time::Instant::now() < deadline {
+        match tokio::time::timeout_at(deadline, probe()).await {
+            Ok(Ok(value)) => return Ok(value),
+            Ok(Err(error)) if is_regional_readiness_error(&error) => {
+                tracing::info!(?region, %error, "waiting for seeded data in region");
+                last_error = Some(error);
+            }
+            Ok(Err(error)) => return Err(error.into()),
+            Err(_) => break,
+        }
+        tokio::time::sleep_until(
+            (tokio::time::Instant::now() + Duration::from_millis(500)).min(deadline),
+        )
+        .await;
+    }
+    Err(format!(
+        "readiness of region {region:?} timed out after {timeout:?}; last error: {last_error:?}"
+    )
+    .into())
 }
 
 fn test_env_filter() -> EnvFilter {
@@ -645,7 +698,11 @@ impl DriverTestRunContext {
     /// configured by the hedging entry point, and any fault-injection rules
     /// configured by the FI entry points, so that every driver created by
     /// these helpers inherits them.
-    fn driver_options(&self) -> Result<DriverOptions, Box<dyn Error>> {
+    ///
+    /// Public so tests that drive the plan/execute API directly (paged
+    /// queries, change feed) can build a driver carrying the same
+    /// region and fault-injection configuration as the helpers.
+    pub fn driver_options(&self) -> Result<DriverOptions, Box<dyn Error>> {
         let mut builder = DriverOptions::builder(self.client.account.clone());
         if !self.client.preferred_regions.is_empty() {
             builder = builder.with_preferred_regions(self.client.preferred_regions.clone());
@@ -1043,6 +1100,54 @@ impl DriverTestRunContext {
         .await
     }
 
+    /// Waits for seeded data in each region without hedging or injected faults.
+    pub async fn wait_for_item_in_regions(
+        &self,
+        container: &ContainerReference,
+        item_id: &str,
+        partition_key: impl Into<PartitionKey>,
+        regions: &[Region],
+    ) -> Result<(), Box<dyn Error>> {
+        if regions.is_empty() {
+            return Err("regional readiness requires at least one region".into());
+        }
+        // Use a clean driver so readiness cannot consume faults or trip the tested circuit breaker.
+        let driver = self
+            .client
+            .runtime
+            .create_driver(
+                DriverOptions::builder(self.client.account.clone())
+                    .with_preferred_regions(regions.to_vec())
+                    .build(),
+            )
+            .await?;
+        let item = ItemReference::from_name(container, partition_key.into(), item_id.to_owned());
+        for region in regions {
+            let excluded: ExcludedRegions =
+                regions.iter().filter(|r| *r != region).cloned().collect();
+            let options = OperationOptionsBuilder::new()
+                .with_excluded_regions(excluded)
+                .with_hedging_enabled(false)
+                .with_availability_strategy(AvailabilityStrategy::Disabled)
+                .with_max_session_retry_count(0)
+                .build();
+            // Fresh regional caches can report a signature mismatch before container metadata arrives.
+            let response = wait_for_region_readiness(region, || {
+                driver.execute_singleton_operation(
+                    CosmosOperation::read_item(item.clone()),
+                    options.clone(),
+                )
+            })
+            .await?;
+            assert_eq!(
+                response.diagnostics().regions_contacted(),
+                vec![region.clone()],
+                "readiness must succeed in the requested region, not through fallback",
+            );
+        }
+        Ok(())
+    }
+
     /// Reads an item with options scoped to the read, not driver initialization.
     pub async fn read_item_with_options(
         &self,
@@ -1244,17 +1349,36 @@ impl DriverTestRunContext {
 
 #[cfg(test)]
 mod tests {
-    use super::runtime_operation_options;
-    #[cfg(feature = "__internal_mocking")]
+    use super::{
+        is_regional_readiness_error, runtime_operation_options, status_codes,
+        wait_for_region_readiness,
+    };
+    #[cfg(any(
+        feature = "__internal_mocking",
+        all(feature = "fault_injection", feature = "__internal_in_memory_emulator")
+    ))]
     use super::{DriverTestClient, DriverTestRunContext};
     #[cfg(feature = "__internal_mocking")]
     use async_trait::async_trait;
+    use azure_core::http::StatusCode;
+    #[cfg(any(
+        feature = "__internal_mocking",
+        all(feature = "fault_injection", feature = "__internal_in_memory_emulator")
+    ))]
+    use azure_core::http::Url;
     #[cfg(feature = "__internal_mocking")]
-    use azure_core::http::{headers::Headers, Method, Url};
-    use azure_data_cosmos_driver::options::{BinaryEncodingOptions, OperationOptions};
+    use azure_core::http::{headers::Headers, Method};
+    #[cfg(any(
+        feature = "__internal_mocking",
+        all(feature = "fault_injection", feature = "__internal_in_memory_emulator")
+    ))]
+    use azure_data_cosmos_driver::models::AccountReference;
+    use azure_data_cosmos_driver::{
+        error::{CosmosError, CosmosStatus},
+        options::{BinaryEncodingOptions, OperationOptions, Region},
+    };
     #[cfg(feature = "__internal_mocking")]
     use azure_data_cosmos_driver::{
-        models::AccountReference,
         options::ConnectionPoolOptions,
         test::{
             HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse, TransportClient,
@@ -1263,9 +1387,24 @@ mod tests {
         CosmosDriverRuntime,
     };
     #[cfg(feature = "__internal_mocking")]
-    use std::sync::{
-        atomic::{AtomicU32, Ordering},
-        Arc,
+    use std::sync::atomic::{AtomicU32, Ordering};
+    #[cfg(any(
+        feature = "__internal_mocking",
+        all(feature = "fault_injection", feature = "__internal_in_memory_emulator")
+    ))]
+    use std::sync::Arc;
+    use std::{future::pending, time::Duration};
+
+    #[cfg(all(feature = "fault_injection", feature = "__internal_in_memory_emulator"))]
+    use azure_data_cosmos_driver::{
+        fault_injection::{
+            FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+            FaultInjectionRuleBuilder, FaultOperationType,
+        },
+        in_memory_emulator::{
+            ConsistencyLevel, InMemoryEmulatorHttpClient, ReplicationConfig, VirtualAccountConfig,
+            VirtualRegion, WriteMode,
+        },
     };
 
     #[cfg(feature = "__internal_mocking")]
@@ -1346,6 +1485,219 @@ mod tests {
         );
         assert!(Arc::ptr_eq(&first, &context.driver().await.unwrap()));
         assert_eq!(transport.requests.load(Ordering::SeqCst), requests);
+    }
+
+    fn readiness_error(status: StatusCode, message: &'static str) -> CosmosError {
+        CosmosError::builder()
+            .with_status(CosmosStatus::new(status))
+            .with_message(message)
+            .build()
+    }
+
+    #[test]
+    fn regional_readiness_only_retries_propagation_errors() {
+        assert!(is_regional_readiness_error(&readiness_error(
+            StatusCode::Unauthorized,
+            "The MAC signature found in the HTTP request is not the same as the computed signature",
+        )));
+        for sub_status in [0, 1002, 1013] {
+            let error = CosmosError::builder()
+                .with_status(CosmosStatus::new(StatusCode::NotFound).with_sub_status(sub_status))
+                .build();
+            assert!(is_regional_readiness_error(&error));
+        }
+        assert!(is_regional_readiness_error(
+            &CosmosError::builder()
+                .with_status(status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE)
+                .build(),
+        ));
+        assert!(!is_regional_readiness_error(
+            &CosmosError::builder()
+                .with_status(
+                    CosmosStatus::new(StatusCode::ServiceUnavailable).with_sub_status(20011)
+                )
+                .build(),
+        ));
+        for status in [
+            StatusCode::Unauthorized,
+            StatusCode::Forbidden,
+            StatusCode::BadRequest,
+            StatusCode::ServiceUnavailable,
+        ] {
+            assert!(!is_regional_readiness_error(&readiness_error(
+                status,
+                "unrelated failure",
+            )));
+        }
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn regional_readiness_waits_for_replication() {
+        let start = tokio::time::Instant::now();
+        let mut attempts = 0;
+        let value = wait_for_region_readiness(&Region::WEST_US_3, || {
+            attempts += 1;
+            let result = if attempts < 3 {
+                Err(readiness_error(StatusCode::NotFound, "not replicated"))
+            } else {
+                Ok(42)
+            };
+            async move { result }
+        })
+        .await
+        .unwrap();
+        assert_eq!(value, 42);
+        assert_eq!(attempts, 3);
+        assert_eq!(start.elapsed(), Duration::from_secs(1));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn regional_readiness_retries_wrapped_session_lag() {
+        let start = tokio::time::Instant::now();
+        let mut attempts = 0;
+        wait_for_region_readiness(&Region::WEST_US_3, || {
+            attempts += 1;
+            let result = if attempts == 1 {
+                Err(CosmosError::builder()
+                    .with_status(status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE)
+                    .build())
+            } else {
+                Ok(())
+            };
+            async move { result }
+        })
+        .await
+        .unwrap();
+        assert_eq!(attempts, 2);
+        assert_eq!(start.elapsed(), Duration::from_millis(500));
+    }
+
+    #[tokio::test]
+    #[cfg(all(feature = "fault_injection", feature = "__internal_in_memory_emulator"))]
+    async fn regional_readiness_session_lag_does_not_fall_back_to_hub() {
+        let hub = Url::parse("https://eastus.emulator.local").unwrap();
+        let config = VirtualAccountConfig::new(vec![
+            VirtualRegion::new("East US", hub.clone()),
+            VirtualRegion::new(
+                "West US",
+                Url::parse("https://westus.emulator.local").unwrap(),
+            ),
+        ])
+        .unwrap()
+        .with_write_mode(WriteMode::Single)
+        .with_consistency(ConsistencyLevel::Session)
+        .with_replication_config(ReplicationConfig::immediate());
+        let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
+        let satellite_lag = Arc::new(
+            FaultInjectionRuleBuilder::new(
+                "satellite-session-lag",
+                FaultInjectionResultBuilder::new()
+                    .with_error(FaultInjectionErrorType::ReadSessionNotAvailable)
+                    .build(),
+            )
+            .with_condition(
+                FaultInjectionConditionBuilder::new()
+                    .with_operation_type(FaultOperationType::ReadItem)
+                    .with_region(Region::WEST_US)
+                    .build(),
+            )
+            .with_hit_limit(1)
+            .build(),
+        );
+        let hub_reads = Arc::new(
+            FaultInjectionRuleBuilder::new(
+                "count-hub-reads",
+                FaultInjectionResultBuilder::new()
+                    .with_delay(Duration::ZERO)
+                    .build(),
+            )
+            .with_condition(
+                FaultInjectionConditionBuilder::new()
+                    .with_operation_type(FaultOperationType::ReadItem)
+                    .with_region(Region::EAST_US)
+                    .build(),
+            )
+            .build(),
+        );
+        let runtime = emulator
+            .runtime_builder_with_fault_rules(vec![
+                Arc::clone(&satellite_lag),
+                Arc::clone(&hub_reads),
+            ])
+            .build()
+            .await
+            .unwrap();
+        let context = DriverTestRunContext::new(DriverTestClient {
+            runtime,
+            account: AccountReference::with_account_key(hub, "ZW11bGF0b3Ita2V5"),
+            preferred_regions: vec![Region::EAST_US, Region::WEST_US],
+            fault_injection_rules: Vec::new(),
+            partition_failover_options: None,
+        });
+        let database = context.create_database("readiness").await.unwrap();
+        let container = context
+            .create_container(&database, "items", "/pk")
+            .await
+            .unwrap();
+        context
+            .create_item_with_pk(&container, "pk1", br#"{"id":"seed","pk":"pk1"}"#)
+            .await
+            .unwrap();
+
+        context
+            .wait_for_item_in_regions(
+                &container,
+                "seed",
+                "pk1",
+                &[Region::WEST_US, Region::EAST_US],
+            )
+            .await
+            .unwrap();
+        assert_eq!(satellite_lag.hit_count(), 1);
+        assert_eq!(
+            hub_reads.hit_count(),
+            1,
+            "only the explicit hub probe may read the hub"
+        );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn regional_readiness_preserves_unrelated_errors() {
+        let start = tokio::time::Instant::now();
+        let error = wait_for_region_readiness::<(), _, _>(&Region::WEST_US_3, || async {
+            Err(readiness_error(
+                StatusCode::Unauthorized,
+                "invalid credentials",
+            ))
+        })
+        .await
+        .unwrap_err();
+        assert!(error.to_string().contains("invalid credentials"));
+        assert_eq!(start.elapsed(), Duration::ZERO);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn regional_readiness_bounds_repeated_failures() {
+        let start = tokio::time::Instant::now();
+        let error = wait_for_region_readiness::<(), _, _>(&Region::WEST_US_3, || async {
+            Err(readiness_error(StatusCode::NotFound, "not replicated"))
+        })
+        .await
+        .unwrap_err();
+        assert_eq!(start.elapsed(), Duration::from_secs(30));
+        assert!(error.to_string().contains("not replicated"));
+        assert!(error.to_string().contains("westus3"));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn regional_readiness_bounds_a_hung_request() {
+        let start = tokio::time::Instant::now();
+        let error =
+            wait_for_region_readiness(&Region::WEST_US_3, || pending::<Result<(), CosmosError>>())
+                .await
+                .unwrap_err();
+        assert_eq!(start.elapsed(), Duration::from_secs(30));
+        assert!(error.to_string().contains("timed out"));
     }
 
     #[test]

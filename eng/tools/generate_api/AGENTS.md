@@ -9,12 +9,11 @@
 3. `api.md.map` — an ECMA-426 source map for declaration lines in `api.md`
 4. `api.documentation.patch` — a unified diff that adds doc comments back to `api.md`
 5. `apiview.json` — an APIView tree-style `CodeFile`
-6. `state/version.txt` and `state/package-relative-path.txt` — Markdown review package state
 
 ## Scope
 
 - This tool lives under `eng/tools/generate_api`.
-- Run the CLI from the repo root.
+- Run the CLI from the repo root, or pass `--root <repo>` when invoking it from elsewhere.
 - Keep this file current as design behavior or integration points change.
 - Keep this file concise for LLMs but still easy for humans to review. Prefer short bullets and only enough detail to preserve intent.
 - Keep `README.md` focused on basic intent and usage: what the tool does, how to call it, what it writes, and where it is called from under `eng/pipelines/`. Keep deeper extraction rendering and ordering rules here.
@@ -24,17 +23,16 @@
 The tool exposes:
 
 - `--manifest-path <path/to/Cargo.toml>`
+- `--root <path/to/repo>` optional; defaults to the current directory
 - `--format <markdown|apiview>` default `markdown`
 - `--review` emits Markdown review sidecars and is valid only with `markdown`
 - `--check` compares generated content with existing files without writing; missing files pass
 - `--output-dir <directory>` defaults to the target crate directory; `--output` remains a CLI alias
-- `--working-dir <directory>` defaults to the resolved output directory and is valid only with `markdown --review`
 
 Behavior:
 
 - default `markdown` writes `api.md`
 - `markdown --review` also writes `api.md.map`, `api.documentation.patch`, and `api.metadata.yml`
-- `markdown --review` writes package state under `<working-dir>/state`
 - `--format apiview` writes `apiview.json`
 - check comparisons ignore line-ending differences and mismatches exit `1`
 - progress goes to stdout
@@ -44,6 +42,7 @@ Behavior:
 
 - Standalone bin crate in the `eng/tools` workspace
 - Uses `eng/tools/rust-toolchain.toml` toolchain `nightly-2026-04-14`
+- API Review Hub uses the compiler and setup files from `languageToolsRef` to keep base and target generation consistent; see [README.md](README.md#api-review-hub) for toolchain setup.
 - Keep rustdoc schema compatibility logic isolated from the tool-owned model and renderers
 - Current deps: `rustdoc-types`, `serde`, `serde_json`, `clap`, `sha2`
 - Add common dependencies to the `eng/tools` workspace using versions already used by the repository
@@ -186,7 +185,7 @@ Documentation handling:
 Package metadata rendering:
 
 - Markdown renders the crate name first; APIView uses only the top-level `PackageName`
-- Markdown review output also writes `api.metadata.yml` with `apiMdSha256`, `packageVersion`, `parserVersion`, and `rustVersion`
+- Markdown review output also writes `api.metadata.yml` with `apiHash`, `packageVersion`, `packageRelativePath`, `parserVersion`, and `rustVersion`
 - missing description, edition, or rust-version values are omitted
 - multiline descriptions render with the `Description` label on its own line
 - features use `default` plus `package.metadata.docs.rs.features` when present
@@ -320,6 +319,13 @@ Current API review caller chain under `eng/pipelines/`:
 5. `eng/scripts/Pack-Crates.ps1`
 
 `pack.yml` also runs the shared `create-apireview` step. `Pack-Crates.ps1` currently generates the artifact that step consumes. If pipeline adoption changes update this caller chain instead of adding a second path.
+
+### API Review Hub integration
+
+- `eng/pipelines/templates/jobs/apireview-hub-build-tools-rust.yml` stages the executable and a few setup files from `languageToolsRef` in `$(BinOutputDirectory)` so historical checkouts do not need current engineering helpers.
+- `eng/pipelines/templates/jobs/apireview-hub-generate-artifact-rust.yml` installs the staged manifest's channel using staged repo-local helpers and checkout `eng/common`, then invokes the executable against the requested package checkout.
+- Generation passes the checked-out repository as `--root` because `$(BinDirectory)` may be outside the repository.
+- The complete review bundle is written to `$(ArtifactOutputDirectory)`.
 
 ## Rustdoc / librustdoc alignment
 

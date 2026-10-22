@@ -191,3 +191,88 @@ struct TomlInfo {
     is_publish_disabled: bool,
     document: DocumentMut,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::update_package_versions;
+    use toml_edit::DocumentMut;
+
+    #[test]
+    fn updating_versions_preserves_feature_settings() {
+        for add in [false, true] {
+            let mut document = r#"
+[features]
+default = ["azure_core/default"]
+
+[dependencies]
+azure_core = { path = "../../core/azure_core", version = "1.0.0", default-features = false, features = ["xml"] }
+
+[dev-dependencies.azure_core]
+path = "../../core/azure_core"
+version = "1.0.0"
+default-features = false
+features = ["test"]
+"#
+            .parse::<DocumentMut>()
+            .expect("manifest");
+            let before = document.to_string();
+            update_package_versions(
+                document.as_table_mut(),
+                &vec![("azure_core".to_string(), "1.2.0-beta.2".to_string(), false)],
+                add,
+            );
+            assert_eq!(
+                document.to_string(),
+                before.replace("version = \"1.0.0\"", "version = \"1.2.0-beta.2\""),
+            );
+        }
+    }
+
+    #[test]
+    fn adding_versions_preserves_dependency_feature_opt_out() {
+        let mut document = r#"
+[dependencies]
+azure_core = { path = "../../core/azure_core", default-features = false, features = ["xml"] }
+"#
+        .parse::<DocumentMut>()
+        .expect("manifest");
+        update_package_versions(
+            document.as_table_mut(),
+            &vec![("azure_core".to_string(), "1.2.0-beta.2".to_string(), false)],
+            true,
+        );
+        let dependency = &document["dependencies"]["azure_core"];
+        assert_eq!(dependency["version"].as_str(), Some("1.2.0-beta.2"));
+        assert_eq!(dependency["default-features"].as_bool(), Some(false));
+        assert_eq!(
+            dependency["features"]
+                .as_array()
+                .expect("features")
+                .get(0)
+                .and_then(toml_edit::Value::as_str),
+            Some("xml"),
+        );
+    }
+
+    #[test]
+    fn workspace_feature_settings_are_preserved() {
+        let mut document = r#"
+[workspace.dependencies.azure_core]
+path = "sdk/core/azure_core"
+version = "1.0.0"
+default-features = false
+"#
+        .parse::<DocumentMut>()
+        .expect("workspace manifest");
+        let before = document.to_string();
+        update_package_versions(
+            document["workspace"].as_table_mut().expect("workspace"),
+            &vec![("azure_core".to_string(), "1.2.0-beta.2".to_string(), false)],
+            false,
+        );
+        assert_eq!(
+            document.to_string(),
+            before.replace("version = \"1.0.0\"", "version = \"1.2.0-beta.2\""),
+        );
+    }
+}

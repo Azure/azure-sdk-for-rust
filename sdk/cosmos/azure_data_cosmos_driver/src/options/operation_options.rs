@@ -15,6 +15,7 @@ use crate::options::PatchStrategy;
 use crate::options::{
     AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
     EndToEndOperationLatencyPolicy, ExcludedRegions, PriorityLevel, ReadConsistencyStrategy,
+    Utf8DecodingMode,
 };
 
 /// Options that apply to individual Cosmos DB requests.
@@ -176,6 +177,14 @@ pub struct OperationOptions {
     /// a lower level (default: binary encoding enabled). See
     /// [`BinaryEncodingOptions`].
     pub binary_encoding: Option<BinaryEncodingOptions>,
+
+    /// How invalid UTF-8 in JSON response bodies is handled.
+    ///
+    /// `None` inherits from a lower layer. If no layer sets a value, the driver
+    /// uses [`Utf8DecodingMode::Strict`]. Lossy decoding preserves binary
+    /// response negotiation and replaces malformed UTF-8 sequences before JSON
+    /// deserialization.
+    pub utf8_decoding_mode: Option<Utf8DecodingMode>,
 }
 
 #[derive(Debug)]
@@ -676,6 +685,15 @@ mod tests {
     }
 
     #[test]
+    fn builder_round_trips_utf8_decoding_mode() {
+        let options = OperationOptionsBuilder::new()
+            .with_utf8_decoding_mode(Utf8DecodingMode::Lossy)
+            .build();
+
+        assert_eq!(options.utf8_decoding_mode, Some(Utf8DecodingMode::Lossy));
+    }
+
+    #[test]
     fn binary_encoding_resolves_via_view() {
         use std::sync::Arc;
 
@@ -703,6 +721,35 @@ mod tests {
         let view_account_wins =
             OperationOptionsView::new(None, None, Some(account), Some(&empty_operation));
         assert_eq!(view_account_wins.binary_encoding(), Some(&account_be));
+    }
+
+    #[test]
+    fn utf8_decoding_mode_resolves_via_view() {
+        use std::sync::Arc;
+
+        let account = Arc::new(OperationOptions {
+            utf8_decoding_mode: Some(Utf8DecodingMode::Lossy),
+            ..Default::default()
+        });
+        let operation = OperationOptions {
+            utf8_decoding_mode: Some(Utf8DecodingMode::Strict),
+            ..Default::default()
+        };
+
+        let view_op_overrides =
+            OperationOptionsView::new(None, None, Some(account.clone()), Some(&operation));
+        assert_eq!(
+            view_op_overrides.utf8_decoding_mode(),
+            Some(&Utf8DecodingMode::Strict)
+        );
+
+        let empty_operation = OperationOptions::default();
+        let view_account_wins =
+            OperationOptionsView::new(None, None, Some(account), Some(&empty_operation));
+        assert_eq!(
+            view_account_wins.utf8_decoding_mode(),
+            Some(&Utf8DecodingMode::Lossy)
+        );
     }
 
     /// The nested [`ThrottlingRetryOptions`] group must participate in the

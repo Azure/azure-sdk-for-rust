@@ -581,6 +581,7 @@ pub mod diagnostics {
         pub fn fault_injection_enabled(&self) -> bool;
         pub fn hedge_diagnostics(&self) -> Option<&HedgeDiagnostics>;
         pub fn hedging_started(&self) -> bool;
+        pub fn invalid_utf8_was_recovered(&self) -> bool;
         pub fn is_completed(&self) -> bool;
         pub fn is_failure(&self) -> bool;
         pub fn is_threshold_violated(&self, thresholds: &DiagnosticsThresholds) -> bool;
@@ -2629,6 +2630,7 @@ pub mod options {
         pub availability_strategy: Option<crate::options::AvailabilityStrategy>,
         pub custom_headers: Option<std::collections::HashMap<azure_core::http::headers::HeaderName, azure_core::http::headers::HeaderValue>>,
         pub binary_encoding: Option<crate::options::BinaryEncodingOptions>,
+        pub utf8_decoding_mode: Option<crate::options::Utf8DecodingMode>,
     }
     #[doc(inline)]
     #[automatically_derived]
@@ -2662,6 +2664,7 @@ pub mod options {
         pub fn with_session_capturing_disabled(self, value: bool) -> Self;
         pub fn with_throttling_retry_options(self, value: ThrottlingRetryOptions) -> Self;
         pub fn with_throughput_control(self, value: ThroughputControlOptions) -> Self;
+        pub fn with_utf8_decoding_mode(self, value: Utf8DecodingMode) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug)]
@@ -3274,6 +3277,14 @@ pub mod options {
     pub enum TlsBackend {
         #[default]
         Rustls,
+    }
+    #[doc(inline)]
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum Utf8DecodingMode {
+        #[default]
+        Strict,
+        Lossy,
     }
 }
 ```

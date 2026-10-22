@@ -582,11 +582,11 @@ pub(crate) fn cache_hub_region(
 /// endpoint after a `403/3 (WriteForbidden)` response on a hub-region
 /// discovery attempt.
 ///
-/// Creates a new entry if none exists (cold cache), or rotates the
-/// existing `current_endpoint` to the next un-tried preferred read
-/// endpoint (warm cache that found a stale hub). If all preferred reads
-/// have been exhausted, the entry is removed so the next attempt falls
-/// back to the default selection logic in `resolve_endpoint`.
+/// Creates a new entry if none exists (cold cache), trying the write region
+/// before the read regions, or rotates the existing `current_endpoint` to the
+/// next un-tried preferred read endpoint (warm cache that found a stale hub).
+/// If all preferred reads have been exhausted, the entry is removed so the
+/// next attempt falls back to the default selection logic in `resolve_endpoint`.
 ///
 /// Returns an explicit update decision; the caller is responsible for the CAS swap.
 pub(crate) fn advance_hub_region_discovery(
@@ -602,6 +602,18 @@ pub(crate) fn advance_hub_region_discovery(
     let mut new_state = current_state.clone();
     let now = Instant::now();
     let next_endpoints = &account_state.preferred_read_endpoints;
+    let is_new_entry = !current_state.failover_overrides.contains_key(pk_range_id);
+    // A new entry tries the write region first: on single-write it is the hub unless PPAF moved it.
+    let write_endpoints: Vec<CosmosEndpoint> = if is_new_entry {
+        account_state
+            .preferred_write_endpoints
+            .iter()
+            .filter(|endpoint| endpoint.region().is_some())
+            .cloned()
+            .collect()
+    } else {
+        Vec::new()
+    };
 
     let entry = new_state
         .failover_overrides
@@ -618,10 +630,12 @@ pub(crate) fn advance_hub_region_discovery(
             failback_jitter: Duration::ZERO,
         });
 
-    if try_move_next_endpoint(entry, next_endpoints, failed_endpoint) {
+    if try_move_next_endpoint(entry, &write_endpoints, failed_endpoint)
+        || try_move_next_endpoint(entry, next_endpoints, failed_endpoint)
+    {
         entry.last_failure_time = now;
     } else {
-        if !current_state.failover_overrides.contains_key(pk_range_id) {
+        if is_new_entry {
             return PartitionStateUpdate::Unchanged;
         }
         // All preferred-read endpoints exhausted — drop the entry so the next
@@ -2323,6 +2337,24 @@ mod tests {
         );
         assert!(entry.failed_endpoints.contains(&endpoints[0]));
         assert!(entry.failed_endpoints.contains(&endpoints[1]));
+    }
+
+    #[test]
+    fn advance_hub_region_discovery_new_entry_tries_write_region_first() {
+        let westus = regional_endpoint("westus");
+        let centralus = regional_endpoint("centralus");
+        let eastus = regional_endpoint("eastus");
+        let mut account = single_master_account();
+        account.preferred_read_endpoints =
+            vec![westus.clone(), centralus.clone(), eastus.clone()].into();
+        let state = partition_state_ppaf_enabled();
+
+        let result =
+            advance_hub_region_discovery(&state, &account, &pk("0"), &centralus).apply(&state);
+
+        let entry = &result.failover_overrides[&pk("0")];
+        assert_eq!(entry.current_endpoint, eastus);
+        assert!(entry.failed_endpoints.contains(&centralus));
     }
 
     #[test]

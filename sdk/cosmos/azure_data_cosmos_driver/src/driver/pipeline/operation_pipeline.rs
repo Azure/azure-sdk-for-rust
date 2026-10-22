@@ -1254,22 +1254,12 @@ pub(crate) async fn execute_operation_pipeline(
                 // that latch the header skip the 403/3 discovery chain.
                 if let Some(pk_range_id) = hub_region_cache_populate_target(&retry_state, operation)
                 {
-                    // Skip the apply when it would not change state: PPAF off
-                    // (the cache effect is a no-op) or the entry already points
-                    // at this hub endpoint. Both would only churn a clone + CAS.
-                    let partitions = location_state_store.snapshot().partitions;
-                    let already_cached = partitions
-                        .failover_overrides
-                        .get(pk_range_id.as_str())
-                        .is_some_and(|entry| entry.current_endpoint == routing.endpoint);
-                    if partitions.per_partition_automatic_failover_enabled && !already_cached {
-                        location_state_store
-                            .apply(&[LocationEffect::CacheHubRegion {
-                                partition_key_range_id: pk_range_id,
-                                hub_endpoint: routing.endpoint.clone(),
-                            }])
-                            .await;
-                    }
+                    populate_hub_region_cache(
+                        location_state_store,
+                        &pk_range_id,
+                        &routing.endpoint,
+                    )
+                    .await;
                 }
 
                 return build_cosmos_response(
@@ -3052,6 +3042,47 @@ fn hub_region_cache_populate_target(
     }
 }
 
+/// Caches `hub_endpoint` as the partition's hub region.
+///
+/// Skips the apply when it would not change state: PPAF off (the cache effect
+/// is a no-op) or the entry already points at this endpoint.
+async fn populate_hub_region_cache(
+    location_state_store: &LocationStateStore,
+    pk_range_id: &PartitionKeyRangeId,
+    hub_endpoint: &CosmosEndpoint,
+) {
+    let partitions = location_state_store.snapshot().partitions;
+    let already_cached = partitions
+        .failover_overrides
+        .get(pk_range_id.as_str())
+        .is_some_and(|entry| entry.current_endpoint == *hub_endpoint);
+    if partitions.per_partition_automatic_failover_enabled && !already_cached {
+        location_state_store
+            .apply(&[LocationEffect::CacheHubRegion {
+                partition_key_range_id: pk_range_id.clone(),
+                hub_endpoint: hub_endpoint.clone(),
+            }])
+            .await;
+    }
+}
+
+/// Hedged counterpart of the `Complete` arm's hub-region cache populate: a
+/// hub-only read leg that succeeded was served by the partition's hub.
+async fn populate_hub_region_cache_for_hedge_winner(
+    ctx: &AttemptContext<'_>,
+    endpoint: &CosmosEndpoint,
+    hub_only_read: bool,
+    result: &TransportResult,
+    pk_range_id: Option<&PartitionKeyRangeId>,
+) {
+    let Some(pk_range_id) = pk_range_id else {
+        return;
+    };
+    if hub_only_read && matches!(result.outcome, TransportOutcome::Success { .. }) {
+        populate_hub_region_cache(ctx.location_state_store, pk_range_id, endpoint).await;
+    }
+}
+
 // ── Hedging dispatch (Part 4b) ────────────────────────────────────────
 //
 // `maybe_upgrade_to_hedge` + `AttemptContext` + `perform_single_attempt`
@@ -3243,13 +3274,26 @@ fn classify_hedge_result(result: crate::error::Result<TransportResult>) -> Hedge
 /// wins; a secondary transient stays transient. Data-plane hedging passes
 /// `false` and keeps the first-`Final`-wins semantics of
 /// [`classify_hedge_result`].
+///
+/// `hub_only_read` must be set only for a read whose leg sent the
+/// hub-region-processing-only header: its `403/3` means "not the hub here".
 fn classify_secondary_hedge_result(
     result: crate::error::Result<TransportResult>,
     primary_authoritative: bool,
+    hub_only_read: bool,
 ) -> HedgeClass {
     match classify_hedge_result(result) {
         HedgeClass::Final(tr)
             if primary_authoritative && !matches!(tr.outcome, TransportOutcome::Success { .. }) =>
+        {
+            HedgeClass::Transient
+        }
+        HedgeClass::Final(tr)
+            if hub_only_read
+                && matches!(
+                    &tr.outcome,
+                    TransportOutcome::HttpError { status, .. } if status.is_write_forbidden()
+                ) =>
         {
             HedgeClass::Transient
         }
@@ -3529,6 +3573,7 @@ async fn perform_single_attempt(
     routing: &RoutingDecision,
     execution_context: ExecutionContext,
     shared_hub_region_latch: Option<&Arc<AtomicBool>>,
+    sent_hub_region_header: Option<&AtomicBool>,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> crate::error::Result<TransportResult> {
     let (routing, resolved_session_token) = match prepare_session_token_for_attempt(
@@ -3572,6 +3617,9 @@ async fn perform_single_attempt(
             HeaderName::from_static(request_header_names::HUB_REGION_PROCESSING_ONLY),
             HeaderValue::from_static("True"),
         );
+        if let Some(sent) = sent_hub_region_header {
+            sent.store(true, Ordering::Relaxed);
+        }
     }
     apply_optional_request_headers(&mut transport_request, ctx.operation, ctx.options);
 
@@ -3924,6 +3972,7 @@ async fn apply_hedge_leg_effects(
     endpoint: &CosmosEndpoint,
     result: &crate::error::Result<TransportResult>,
     shared_hub_region_latch: Option<&Arc<AtomicBool>>,
+    hub_only_read: bool,
     race_observed_session_unavailable: &mut bool,
 ) {
     // Pre-transport / request-build errors carry no `TransportResult`
@@ -3932,12 +3981,17 @@ async fn apply_hedge_leg_effects(
     let Ok(transport_result) = result.as_ref() else {
         return;
     };
-    let eval = evaluate_hedge_leg_effects(
-        ctx.operation,
-        endpoint,
-        retry_state_snapshot,
-        transport_result,
-    );
+    // Judge the leg by the header it sent: the latch may have flipped after the snapshot.
+    let latched_state;
+    let retry_state = if hub_only_read && !retry_state_snapshot.hub_region_processing_only {
+        let mut state = retry_state_snapshot.clone();
+        state.hub_region_processing_only = true;
+        latched_state = state;
+        &latched_state
+    } else {
+        retry_state_snapshot
+    };
+    let eval = evaluate_hedge_leg_effects(ctx.operation, endpoint, retry_state, transport_result);
     if !eval.effects.is_empty() {
         ctx.location_state_store
             .apply_with_options(&eval.effects, Some(ctx.options))
@@ -4065,6 +4119,7 @@ async fn execute_hedged(
             ctx,
             primary_routing,
             ExecutionContext::Initial,
+            None,
             None,
             &mut diag,
         )
@@ -4267,6 +4322,9 @@ async fn execute_hedged(
         crate::diagnostics::ExecutionContext::Hedging,
     );
     parent_diagnostics.record_hedge_fanout(primary_dispatch, secondary_dispatch);
+    // Recorded at send time: the shared latch can flip after this leg's request was built.
+    let secondary_sent_hub_region_header = Arc::new(AtomicBool::new(false));
+    let sent_hub_region_header = Arc::clone(&secondary_sent_hub_region_header);
     let secondary_attempt = Box::pin(async move {
         let mut diag = secondary_diag;
         let result = perform_single_attempt(
@@ -4274,6 +4332,7 @@ async fn execute_hedged(
             secondary_routing,
             ExecutionContext::Hedging,
             secondary_shared_latch.as_ref(),
+            Some(&sent_hub_region_header),
             &mut diag,
         )
         .await;
@@ -4324,6 +4383,7 @@ async fn execute_hedged(
                 &primary_routing.endpoint,
                 &primary_result,
                 shared_hub_region_latch.as_ref(),
+                false,
                 &mut race_observed_session_unavailable,
             )
             .await;
@@ -4400,18 +4460,22 @@ async fn execute_hedged(
                     parent_diagnostics.merge_hedge_attempt(secondary_diag);
                     captured_pk_range_id =
                         captured_pk_range_id.or_else(|| pk_range_id_from_result(&secondary_result));
+                    let hub_only_read = ctx.operation.is_read_only()
+                        && secondary_sent_hub_region_header.load(Ordering::Relaxed);
                     apply_hedge_leg_effects(
                         ctx,
                         retry_state_snapshot,
                         &secondary_routing.endpoint,
                         &secondary_result,
                         shared_hub_region_latch.as_ref(),
+                        hub_only_read,
                         &mut race_observed_session_unavailable,
                     )
                     .await;
                     match classify_secondary_hedge_result(
                         secondary_result,
                         metadata_primary_authoritative,
+                        hub_only_read,
                     ) {
                         HedgeClass::Final(tr) => {
                             parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
@@ -4438,6 +4502,16 @@ async fn execute_hedged(
                                 primary_region.as_ref(),
                             );
                             capture_session_token_for_winner(ctx, &tr);
+                            populate_hub_region_cache_for_hedge_winner(
+                                ctx,
+                                &secondary_routing.endpoint,
+                                hub_only_read,
+                                &tr,
+                                captured_pk_range_id
+                                    .as_ref()
+                                    .or(ctx.partition_key_range_id.as_ref()),
+                            )
+                            .await;
                             HedgedRaceResult::Terminal(finalize_hedge_attempt(
                                 tr,
                                 parent_diagnostics,
@@ -4472,17 +4546,23 @@ async fn execute_hedged(
             parent_diagnostics.merge_hedge_attempt(secondary_diag);
             captured_pk_range_id =
                 captured_pk_range_id.or_else(|| pk_range_id_from_result(&secondary_result));
+            let hub_only_read = ctx.operation.is_read_only()
+                && secondary_sent_hub_region_header.load(Ordering::Relaxed);
             apply_hedge_leg_effects(
                 ctx,
                 retry_state_snapshot,
                 &secondary_routing.endpoint,
                 &secondary_result,
                 shared_hub_region_latch.as_ref(),
+                hub_only_read,
                 &mut race_observed_session_unavailable,
             )
             .await;
-            match classify_secondary_hedge_result(secondary_result, metadata_primary_authoritative)
-            {
+            match classify_secondary_hedge_result(
+                secondary_result,
+                metadata_primary_authoritative,
+                hub_only_read,
+            ) {
                 HedgeClass::Final(tr) => {
                     parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
                         strategy_config,
@@ -4517,6 +4597,16 @@ async fn execute_hedged(
                         primary_region.as_ref(),
                     );
                     capture_session_token_for_winner(ctx, &tr);
+                    populate_hub_region_cache_for_hedge_winner(
+                        ctx,
+                        &secondary_routing.endpoint,
+                        hub_only_read,
+                        &tr,
+                        captured_pk_range_id
+                            .as_ref()
+                            .or(ctx.partition_key_range_id.as_ref()),
+                    )
+                    .await;
                     HedgedRaceResult::Terminal(finalize_hedge_attempt(tr, parent_diagnostics))
                 }
                 HedgeClass::Transient => {
@@ -4557,6 +4647,7 @@ async fn execute_hedged(
                         &primary_routing.endpoint,
                         &primary_result,
                         shared_hub_region_latch.as_ref(),
+                        false,
                         &mut race_observed_session_unavailable,
                     )
                     .await;
@@ -4904,9 +4995,9 @@ fn try_advance_after_both_transient(
 
 /// Flips the per-state and shared `hub_region_processing_only` latches
 /// when a hedge leg observed a 1002 the non-hedged
-/// `build_session_retry_state` would have latched on, and advances
-/// `session_token_retry_count` symmetrically so `max_session_retries`
-/// is honored across both non-hedged and hedge-fallback flows.
+/// `build_session_retry_state` would have latched on, and applies the same
+/// session-retry transition so the retry counter and single-master
+/// write-endpoint routing match the non-hedged flow.
 fn propagate_hedge_session_unavailable(
     retry_state: &mut OperationRetryState,
     observed_session_unavailable: bool,
@@ -4914,12 +5005,9 @@ fn propagate_hedge_session_unavailable(
     if !observed_session_unavailable {
         return;
     }
-    // Mirror `.advance_session_retry()` in the non-hedged path so the
-    // hedge fallback can't exceed `max_session_retries`. Gate on
-    // `can_retry_session` to avoid overflowing past the cap.
+    // Gate on `can_retry_session` to avoid advancing past the cap.
     if retry_state.can_retry_session() {
-        retry_state.session_token_retry_count =
-            retry_state.session_token_retry_count.saturating_add(1);
+        *retry_state = retry_state.clone().advance_session_retry();
     }
     // The `hub_region_processing_only` latch is a single-master-only concept:
     // multi-master accounts never emit the hub-region header and must not enter
@@ -11180,6 +11268,10 @@ mod tests {
             state.session_token_retry_count, 1,
             "session-retry counter must still advance on multi-master",
         );
+        assert_eq!(
+            state.session_retry_routing,
+            crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+        );
     }
 
     /// Single-master: the hedge-fallback setter latches
@@ -11197,6 +11289,60 @@ mod tests {
             "single-master must latch hub_region_processing_only",
         );
         assert_eq!(state.session_token_retry_count, 1);
+        assert_eq!(
+            state.session_retry_routing,
+            crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints,
+        );
+    }
+
+    /// A failed hedge race that observed 404/1002 must route the fallback to
+    /// the write region, not the next read region, so the hub-only retry does
+    /// not hit a non-hub region and receive 403/3.
+    #[test]
+    fn hedge_session_unavailable_fallback_routes_to_write_region() {
+        let read_endpoints: Vec<CosmosEndpoint> =
+            ["region-r1", "region-r2", "region-r3", "region-w"]
+                .into_iter()
+                .map(make_endpoint)
+                .collect();
+        let write_endpoint = make_endpoint("region-w");
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: read_endpoints.clone().into(),
+            preferred_write_endpoints: vec![write_endpoint.clone()].into(),
+            account_write_endpoints: vec![write_endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: write_endpoint.clone(),
+        }));
+        let mut state = make_advance_test_state(0, read_endpoints.len());
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+
+        super::propagate_hedge_session_unavailable(&mut state, true);
+        super::try_advance_after_both_transient(
+            &mut state,
+            &location,
+            operation.is_read_only(),
+            Some(&crate::options::Region::new("region-r1")),
+            Some(&crate::options::Region::new("region-r2")),
+            dummy_last_error(),
+        )
+        .expect("budget should allow advance");
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &state,
+            &location,
+            false,
+            true,
+            Duration::from_secs(60),
+        );
+        assert_eq!(routing.endpoint, write_endpoint);
+        assert!(state.hub_region_processing_only);
     }
 
     // ── apply_tentative_writes_header ────────────────────────────────
@@ -11473,7 +11619,7 @@ mod tests {
         // must NOT win — downgraded to Transient so the primary is awaited.
         let tr = http_result(404, None);
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(tr), true),
+            super::classify_secondary_hedge_result(Ok(tr), true, false),
             super::HedgeClass::Transient
         ));
     }
@@ -11483,7 +11629,7 @@ mod tests {
         // Data-plane (primary_authoritative = false) keeps first-Final-wins.
         let tr = http_result(404, None);
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(tr), false),
+            super::classify_secondary_hedge_result(Ok(tr), false, false),
             super::HedgeClass::Final(_)
         ));
     }
@@ -11494,7 +11640,7 @@ mod tests {
         // (the latency benefit).
         let tr = http_result(200, None);
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(tr), true),
+            super::classify_secondary_hedge_result(Ok(tr), true, false),
             super::HedgeClass::Final(_)
         ));
     }
@@ -11503,8 +11649,25 @@ mod tests {
     fn secondary_transient_stays_transient_when_metadata() {
         let tr = http_result(503, None);
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(tr), true),
+            super::classify_secondary_hedge_result(Ok(tr), true, false),
             super::HedgeClass::Transient
+        ));
+    }
+
+    #[test]
+    fn secondary_write_forbidden_keeps_racing_only_on_hub_only_read() {
+        assert!(matches!(
+            super::classify_secondary_hedge_result(Ok(http_result(403, Some(3))), false, true),
+            super::HedgeClass::Transient
+        ));
+        assert!(matches!(
+            super::classify_secondary_hedge_result(Ok(http_result(403, Some(3))), false, false),
+            super::HedgeClass::Final(_)
+        ));
+        // Only 403/3 means "not the hub"; other 403s stay final on a hub-only read.
+        assert!(matches!(
+            super::classify_secondary_hedge_result(Ok(http_result(403, Some(5))), false, true),
+            super::HedgeClass::Final(_)
         ));
     }
 
