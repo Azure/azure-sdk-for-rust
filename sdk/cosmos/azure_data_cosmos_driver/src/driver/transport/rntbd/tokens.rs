@@ -3,15 +3,74 @@
 
 //! RNTBD metadata token codecs and wire ID mappings.
 
-use std::io::Write;
+use std::{io::Write, str::FromStr};
 
 use azure_core::error::ErrorKind;
 use uuid::Uuid;
 
 use crate::{
-    models::{DefaultConsistencyLevel, OperationType, ResourceType},
+    models::{
+        cosmos_headers::request_header_names, DefaultConsistencyLevel, OperationType, ResourceType,
+    },
     options::ReadConsistencyStrategy,
 };
+
+/// The read-feed filter selector shared by HTTP headers and RNTBD metadata.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u8)]
+pub(crate) enum ReadFeedKeyType {
+    ResourceId = 1,
+    EffectivePartitionKey = 2,
+    EffectivePartitionKeyRange = 3,
+}
+
+impl From<ReadFeedKeyType> for &'static str {
+    fn from(value: ReadFeedKeyType) -> Self {
+        match value {
+            ReadFeedKeyType::ResourceId => "ResourceId",
+            ReadFeedKeyType::EffectivePartitionKey => "EffectivePartitionKey",
+            ReadFeedKeyType::EffectivePartitionKeyRange => {
+                request_header_names::READ_FEED_KEY_TYPE_EPK_RANGE
+            }
+        }
+    }
+}
+
+impl From<ReadFeedKeyType> for u8 {
+    fn from(value: ReadFeedKeyType) -> Self {
+        value as u8
+    }
+}
+
+impl TryFrom<u8> for ReadFeedKeyType {
+    type Error = azure_core::Error;
+
+    fn try_from(value: u8) -> azure_core::Result<Self> {
+        [
+            Self::ResourceId,
+            Self::EffectivePartitionKey,
+            Self::EffectivePartitionKeyRange,
+        ]
+        .into_iter()
+        .find(|kind| u8::from(*kind) == value)
+        .ok_or_else(|| data_conversion_error("unknown ReadFeedKeyType value"))
+    }
+}
+
+impl FromStr for ReadFeedKeyType {
+    type Err = azure_core::Error;
+
+    fn from_str(value: &str) -> azure_core::Result<Self> {
+        [
+            Self::ResourceId,
+            Self::EffectivePartitionKey,
+            Self::EffectivePartitionKeyRange,
+        ]
+        .into_iter()
+        .find(|kind| value.eq_ignore_ascii_case(<&'static str>::from(*kind)))
+        .ok_or_else(|| data_conversion_error("invalid x-ms-read-key-type header"))
+    }
+}
 
 /// The token type byte used by RNTBD metadata tokens.
 ///
@@ -497,8 +556,11 @@ impl Token {
         )
     }
 
-    pub(crate) fn read_feed_key_type(value: u8) -> Self {
-        Self::new(RntbdRequestToken::ReadFeedKeyType, TokenValue::Byte(value))
+    pub(crate) fn read_feed_key_type(value: ReadFeedKeyType) -> Self {
+        Self::new(
+            RntbdRequestToken::ReadFeedKeyType,
+            TokenValue::Byte(value.into()),
+        )
     }
 
     /// `PartitionKeyRangeId` (ID 0x002C, String). Filled from the
@@ -1186,6 +1248,42 @@ mod tests {
     use super::*;
 
     #[test]
+    fn read_feed_key_type_matches_header_and_wire_contract() {
+        for (header, byte, kind) in [
+            ("ResourceId", 1, ReadFeedKeyType::ResourceId),
+            (
+                "EffectivePartitionKey",
+                2,
+                ReadFeedKeyType::EffectivePartitionKey,
+            ),
+            (
+                "EffectivePartitionKeyRange",
+                3,
+                ReadFeedKeyType::EffectivePartitionKeyRange,
+            ),
+        ] {
+            assert_eq!(header.parse::<ReadFeedKeyType>().unwrap(), kind);
+            assert_eq!(
+                header.to_lowercase().parse::<ReadFeedKeyType>().unwrap(),
+                kind
+            );
+            assert_eq!(<&'static str>::from(kind), header);
+            assert_eq!(ReadFeedKeyType::try_from(byte).unwrap(), kind);
+            let mut bytes = Vec::new();
+            Token::read_feed_key_type(kind)
+                .write_to(&mut bytes)
+                .unwrap();
+            assert_eq!(bytes, [0x64, 0, 0, byte]);
+        }
+        for byte in [0, 4, u8::MAX] {
+            assert!(ReadFeedKeyType::try_from(byte).is_err());
+        }
+        for header in ["", "Unknown", " ResourceId", "1"] {
+            assert!(header.parse::<ReadFeedKeyType>().is_err());
+        }
+    }
+
+    #[test]
     fn range_filter_tokens_match_reference_wire_bytes() {
         for (token, expected) in [
             (
@@ -1196,7 +1294,10 @@ mod tests {
                 Token::end_epk("20CD".into()),
                 vec![0x63, 0, 0x0B, 4, 0, b'2', b'0', b'C', b'D'],
             ),
-            (Token::read_feed_key_type(3), vec![0x64, 0, 0, 3]),
+            (
+                Token::read_feed_key_type(ReadFeedKeyType::EffectivePartitionKeyRange),
+                vec![0x64, 0, 0, 3],
+            ),
         ] {
             let mut bytes = Vec::new();
             token.write_to(&mut bytes).unwrap();

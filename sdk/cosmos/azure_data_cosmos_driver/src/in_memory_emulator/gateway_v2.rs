@@ -14,7 +14,7 @@ use uuid::Uuid;
 
 use crate::{
     driver::transport::rntbd::{
-        tokens::{RntbdRequestToken, TokenValue},
+        tokens::{ReadFeedKeyType, RntbdRequestToken, TokenValue},
         RntbdRequestFrame, RntbdResponse,
     },
     models::{
@@ -145,7 +145,7 @@ struct RequestMetadata {
     end_epk_hash: Option<String>,
     start_epk: Option<String>,
     end_epk: Option<String>,
-    read_feed_key_type: Option<&'static str>,
+    read_feed_key_type: Option<ReadFeedKeyType>,
     page_size: Option<u32>,
     return_minimal: bool,
     batch_atomic: Option<bool>,
@@ -335,9 +335,10 @@ fn decode_request(
         request.headers_mut().insert("x-ms-end-epk", value);
     }
     if let Some(value) = metadata.read_feed_key_type {
-        request
-            .headers_mut()
-            .insert(request_header_names::READ_FEED_KEY_TYPE, value);
+        request.headers_mut().insert(
+            request_header_names::READ_FEED_KEY_TYPE,
+            <&'static str>::from(value),
+        );
     }
     if let Some(value) = metadata.start_epk_hash {
         request
@@ -484,12 +485,10 @@ fn decode_metadata(
                 metadata.end_epk = Some(expect_epk_text(kind, token.value)?);
             }
             RntbdRequestToken::ReadFeedKeyType => {
-                metadata.read_feed_key_type = Some(match expect_byte(kind, token.value)? {
-                    1 => "ResourceId",
-                    2 => "EffectivePartitionKey",
-                    3 => request_header_names::READ_FEED_KEY_TYPE_EPK_RANGE,
-                    _ => return Err(gateway_v2_bad_request("unknown ReadFeedKeyType value")),
-                });
+                metadata.read_feed_key_type = Some(
+                    ReadFeedKeyType::try_from(expect_byte(kind, token.value)?)
+                        .map_err(gateway_v2_bad_request)?,
+                );
             }
             RntbdRequestToken::EffectivePartitionKey => {
                 metadata.effective_partition_key = Some(expect_hex(kind, token.value)?);
@@ -1463,7 +1462,7 @@ mod tests {
                 .unwrap(),
             Method::Post,
         );
-        for key_type in [None, Some(3)] {
+        for key_type in [None, Some(ReadFeedKeyType::EffectivePartitionKeyRange)] {
             let mut metadata = vec![
                 Token::database_name("db".into()),
                 Token::collection_name("coll".into()),
@@ -1517,8 +1516,8 @@ mod tests {
             Token::new(RntbdRequestToken::StartEpk, TokenValue::Bytes(vec![0xFF])),
             Token::start_epk("not-hex".into()),
             Token::end_epk("ABC".into()),
-            Token::read_feed_key_type(0),
-            Token::read_feed_key_type(4),
+            Token::new(RntbdRequestToken::ReadFeedKeyType, TokenValue::Byte(0)),
+            Token::new(RntbdRequestToken::ReadFeedKeyType, TokenValue::Byte(4)),
         ] {
             assert!(decode_metadata(vec![token]).is_err());
         }
@@ -1725,7 +1724,7 @@ mod tests {
 
     #[test]
     fn effective_partition_key_does_not_repair_invalid_filter_key_type() {
-        for key_type in [None, Some(2)] {
+        for key_type in [None, Some(ReadFeedKeyType::EffectivePartitionKey)] {
             let mut metadata = vec![
                 Token::database_name("db".into()),
                 Token::collection_name("coll".into()),
@@ -1862,7 +1861,7 @@ mod tests {
                             ),
                             Token::start_epk(start.to_hex()),
                             Token::end_epk(end.to_hex()),
-                            Token::read_feed_key_type(3),
+                            Token::read_feed_key_type(ReadFeedKeyType::EffectivePartitionKeyRange),
                             Token::payload_present(operation == OperationType::Query),
                         ];
                         if with_partition_key {

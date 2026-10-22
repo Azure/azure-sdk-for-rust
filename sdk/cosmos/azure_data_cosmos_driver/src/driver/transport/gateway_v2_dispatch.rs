@@ -193,16 +193,7 @@ pub(crate) fn wrap_request_for_gateway_v2(
         ))
         .filter(|value| !value.is_empty())
     {
-        let key_type = if value.eq_ignore_ascii_case("ResourceId") {
-            1
-        } else if value.eq_ignore_ascii_case("EffectivePartitionKey") {
-            2
-        } else if value.eq_ignore_ascii_case(request_header_names::READ_FEED_KEY_TYPE_EPK_RANGE) {
-            3
-        } else {
-            return Err(data_conversion_error("invalid x-ms-read-key-type header"));
-        };
-        metadata.push(Token::read_feed_key_type(key_type));
+        metadata.push(Token::read_feed_key_type(value.parse()?));
     }
     // String-form partition key (e.g. `["pk1"]`) emitted alongside
     // EffectivePartitionKey. The V1 request already carries it as the
