@@ -7,4 +7,4 @@ mod env;
 mod test_client;
 
 pub use env::{get_test_mode, is_azure_pipelines, CosmosTestMode};
-pub use test_client::{resolve_test_env, DriverTestClient};
+pub use test_client::{resolve_test_env, DriverTestClient, DriverTestRunContext};

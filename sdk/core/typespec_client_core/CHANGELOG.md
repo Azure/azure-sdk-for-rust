@@ -9,6 +9,7 @@
 ### Bugs Fixed
 
 - Avoided unnecessary error construction and backtrace capture in `Headers::get_optional_str()` when a header is absent ([#5446](https://github.com/Azure/azure-sdk-for-rust/pull/5446)).
+- Update TLS dependencies to distrust compromised emSign CAs
 
 ### Other Changes
 

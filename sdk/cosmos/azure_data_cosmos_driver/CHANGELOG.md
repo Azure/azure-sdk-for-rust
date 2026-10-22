@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Single-partition queries are now eligible for cross-region hedging, bounding tail latency on a degraded region at the cost of a second request on pages that exceed the hedge threshold. Cross-partition queries are not yet hedged. ([#5452](https://github.com/Azure/azure-sdk-for-rust/pull/5452))
+
 ### Breaking Changes
 
 - New change-feed checkpoints use `c2.` and are rejected by older SDKs; query checkpoints remain `c1.`. Legacy change-feed checkpoints remain readable except consumed single-request prefix checkpoints, which lack safe per-range coverage; older unpolled single-request checkpoints require the original start on resume. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))

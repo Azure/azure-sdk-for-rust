@@ -7,6 +7,7 @@
 ## Features
 
 - `default`
+  - `azure_core/default`
 
 ```rust
 #![crate_name = "azure_storage_common"]

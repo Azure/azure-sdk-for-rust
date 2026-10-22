@@ -22,12 +22,22 @@ fn main() {
 }
 
 fn run() -> Result<(), String> {
-    verify_repository_root()?;
-
     let request = cli::parse()?;
+    let repository_root = resolve_repository_root(&request)?;
+    std::env::set_current_dir(&repository_root).map_err(|error| {
+        format!(
+            "Failed to set current directory to repository root '{}': {error}",
+            repository_root.display()
+        )
+    })?;
+
     diagnostics::info(format!(
         "Using toolchain channel: {}",
         env!("TOOLCHAIN_CHANNEL")
+    ));
+    diagnostics::info(format!(
+        "Using repository root: {}",
+        repository_root.display()
     ));
     diagnostics::info(format!(
         "Loading manifest: {}",
@@ -36,7 +46,6 @@ fn run() -> Result<(), String> {
 
     let loaded_package = driver::load_model(&request)?;
     let output_dir = request.output_dir(&loaded_package.package_dir);
-    let working_dir = request.working_dir(&loaded_package.package_dir);
     let model = &loaded_package.model;
     let output_path = output::output_path(output_dir, request.format);
     diagnostics::info(format!("Generating file: {}", output_path.display()));
@@ -54,6 +63,7 @@ fn run() -> Result<(), String> {
                 let metadata = output::render_markdown_metadata(
                     &rendered,
                     &model.package_version,
+                    &loaded_package.package_relative_path,
                     &model.parser_version,
                     &rust_version,
                 )?;
@@ -61,8 +71,6 @@ fn run() -> Result<(), String> {
 
                 let map_path = output::output_file_path(output_dir, cli::SOURCE_MAP_FILE_NAME);
                 let mappings = render::markdown::source_mappings_from_lines(&lines);
-                let repository_root = std::env::current_dir()
-                    .map_err(|error| format!("Failed to resolve repository root: {error}"))?;
                 let map = source_map::render(
                     cli::OutputFormat::Markdown.default_file_name(),
                     &mappings,
@@ -76,21 +84,6 @@ fn run() -> Result<(), String> {
                 let file_name = request.format.default_file_name();
                 let patch = render::patch::render(&lines, file_name);
                 save_or_check(&request, &patch_path, &patch)?;
-
-                let version_path = output::state_file_path(working_dir, cli::VERSION_FILE_NAME);
-                save_or_check(
-                    &request,
-                    &version_path,
-                    &format!("{}\n", model.package_version),
-                )?;
-
-                let package_relative_path =
-                    output::state_file_path(working_dir, cli::PACKAGE_RELATIVE_PATH_FILE_NAME);
-                save_or_check(
-                    &request,
-                    &package_relative_path,
-                    &format!("{}\n", loaded_package.package_relative_path),
-                )?;
             }
         }
         cli::OutputFormat::Apiview => {
@@ -118,10 +111,34 @@ fn save_or_check(request: &cli::Request, path: &Path, contents: &str) -> Result<
     Ok(())
 }
 
-fn verify_repository_root() -> Result<(), String> {
-    if Path::new("eng/tools/generate_api").exists() {
+fn resolve_repository_root(request: &cli::Request) -> Result<std::path::PathBuf, String> {
+    let repository_root = if let Some(root) = &request.root {
+        root.clone()
+    } else {
+        std::env::current_dir().map_err(|error| {
+            format!("Failed to resolve current directory as repository root: {error}")
+        })?
+    };
+
+    verify_repository_root(&repository_root)?;
+    std::fs::canonicalize(&repository_root).map_err(|error| {
+        format!(
+            "Failed to resolve repository root '{}': {error}",
+            repository_root.display()
+        )
+    })
+}
+
+fn verify_repository_root(repository_root: &Path) -> Result<(), String> {
+    if repository_root.join("Cargo.toml").is_file() {
         Ok(())
     } else {
-        Err("This tool must be run from the root of the azure-sdk-for-rust repository.".to_string())
+        Err(format!(
+            "Repository root '{}' does not contain Cargo.toml.",
+            repository_root.display()
+        ))
     }
 }
+
+#[cfg(test)]
+mod tests;
