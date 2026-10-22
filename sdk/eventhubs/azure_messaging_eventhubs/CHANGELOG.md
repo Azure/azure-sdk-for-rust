@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added `ConsumerClientBuilder::with_idle_timeout` and `ProducerClientBuilder::with_idle_timeout` to configure the AMQP connection idle timeout and enable peer heartbeat negotiation.
+- Added `EventProcessorBuilder::with_receive_timeout`, which sets the `receive_timeout` of every partition receiver the processor opens. A partition client's `stream_events` then yields a `std::io::ErrorKind::TimedOut` error after that long with no event, and a new `stream_events` call continues on the same receiver. The default stays infinite.
 
 ### Bugs Fixed
 
