@@ -8,6 +8,8 @@
 
 - `default`
   - `azure_core/default`
+  - `azure_messaging_eventhubs/default`
+  - `azure_storage_blob/default`
 
 ```rust
 #![crate_name = "azure_messaging_eventhubs_checkpointstore_blob"]
