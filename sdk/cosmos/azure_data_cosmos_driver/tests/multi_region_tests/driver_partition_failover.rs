@@ -36,10 +36,8 @@ const HUB_REGION: Region = Region::EAST_US_2;
 /// When PPAF is enabled on the account and region 1 returns 503 for a create,
 /// the partition should fail over to the next region and the write should succeed.
 #[tokio::test]
-#[cfg_attr(
-    not(test_category = "multi_region"),
-    ignore = "requires test_category 'multi_region'"
-)]
+// Unconditionally ignored, so the `multi_region` category gate the sibling
+// tests carry would be a redundant duplicate `ignore`.
 #[ignore = "Requires PPAF enabled account with active failover from backend"]
 pub async fn ppaf_enabled_503_on_create_fails_over_to_next_region() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
@@ -104,10 +102,6 @@ pub async fn ppaf_enabled_503_on_create_fails_over_to_next_region() -> Result<()
 /// for a create, the partition should fail over to the next region and the write
 /// should succeed.
 #[tokio::test]
-#[cfg_attr(
-    not(test_category = "multi_region"),
-    ignore = "requires test_category 'multi_region'"
-)]
 #[ignore = "Requires PPAF enabled account with active failover from backend"]
 pub async fn ppaf_enabled_write_forbidden_on_create_fails_over_to_next_region(
 ) -> Result<(), Box<dyn Error>> {
@@ -306,10 +300,6 @@ pub async fn ppcb_enabled_503_on_read_fails_over_after_threshold() -> Result<(),
 ///   failback_sweep_interval + buffer` to guarantee the sweep has had a chance to
 ///   run after the entry's age threshold has been met.
 #[tokio::test]
-#[cfg_attr(
-    not(test_category = "multi_region"),
-    ignore = "requires test_category 'multi_region'"
-)]
 #[ignore = "Requires the fault injection http client bug to be fixed."]
 pub async fn ppcb_failback_to_hub_region_after_fault_clears() -> Result<(), Box<dyn Error>> {
     use std::time::Duration;
@@ -398,7 +388,7 @@ pub async fn ppcb_failback_to_hub_region_after_fault_clears() -> Result<(), Box<
             rule.disable();
 
             let wait =
-                Duration::from_secs((PARTITION_UNAVAILABILITY_SECS + FAILBACK_SWEEP_SECS + 5) as u64);
+                Duration::from_secs(PARTITION_UNAVAILABILITY_SECS + FAILBACK_SWEEP_SECS + 5);
             tracing::info!(
                 "Disabled fault rule; waiting {wait:?} for failback sweep to mark entry as ProbeCandidate"
             );

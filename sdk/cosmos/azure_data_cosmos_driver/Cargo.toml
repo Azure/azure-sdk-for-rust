@@ -141,6 +141,11 @@ features = [
 # custom `test_category = "multi_write"` cfg (set via RUSTFLAGS), which
 # `required-features` cannot express.
 [[test]]
+name = "multi_region"
+path = "tests/multi_region.rs"
+required-features = ["fault_injection"]
+
+[[test]]
 name = "multi_region_failover"
 path = "tests/multi_region_failover.rs"
 required-features = ["fault_injection"]
