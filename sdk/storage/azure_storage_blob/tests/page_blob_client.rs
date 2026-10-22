@@ -9,7 +9,8 @@ use azure_storage_blob::models::{
     BlobClientGetPropertiesResultHeaders, BlobType, HttpRange, PageBlobClientCreateOptions,
     PageBlobClientListPageRangesOptions, PageBlobClientSetSequenceNumberOptions,
     PageBlobClientSetSequenceNumberResultHeaders, PageBlobClientUploadPagesFromUrlOptions,
-    PageBlobClientUploadPagesOptions, PageListHeaders, SequenceNumberActionType,
+    PageBlobClientUploadPagesFromUrlResultHeaders, PageBlobClientUploadPagesOptions,
+    PageBlobClientUploadPagesResultHeaders, PageListHeaders, SequenceNumberActionType,
 };
 use common::{get_blob_name, get_container_client, StorageAccount};
 use futures::TryStreamExt;
@@ -244,7 +245,7 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
             None,
         )
         .await?;
-    page_blob_client_2
+    let upload_response = page_blob_client_2
         .upload_pages_from_url(
             blob_client_1.url().as_str().into(),
             HttpRange::new(0, data_b.len() as u64),
@@ -255,11 +256,49 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .await?;
 
     // Assert
+    assert!(upload_response.content_crc64()?.is_some());
+    assert!(upload_response.content_md5()?.is_none());
+
     let response = blob_client_2.download(None).await?;
     assert_eq!(1024, response.properties.content_length.unwrap());
     data_a.extend(&data_b);
     let body_data = response.body.collect().await?;
     assert_eq!(data_a, body_data);
+
+    // Combined MD5/CRC64 Scenario
+    let md5_source_blob = container_client.blob_client(&get_blob_name(recording));
+    let md5_source_page_client = md5_source_blob.page_blob_client();
+    md5_source_page_client.create(512, None).await?;
+    let md5_data = vec![b'A'; 512];
+    md5_source_page_client
+        .upload_pages(
+            RequestContent::from(md5_data.clone()),
+            512,
+            HttpRange::new(0, 512),
+            None,
+        )
+        .await?;
+    // MD5(512 × b'A') well-known vector
+    let source_md5: Vec<u8> = vec![
+        220, 80, 134, 184, 71, 40, 155, 168, 184, 189, 225, 73, 184, 56, 129, 117,
+    ];
+    let md5_dest_blob = container_client.blob_client(&get_blob_name(recording));
+    let md5_dest_page_client = md5_dest_blob.page_blob_client();
+    md5_dest_page_client.create(512, None).await?;
+    let combined_response = md5_dest_page_client
+        .upload_pages_from_url(
+            md5_source_blob.url().as_str().into(),
+            HttpRange::new(0, 512),
+            512,
+            HttpRange::new(0, 512),
+            Some(PageBlobClientUploadPagesFromUrlOptions {
+                source_content_md5: Some(source_md5),
+                ..Default::default()
+            }),
+        )
+        .await?;
+    assert!(combined_response.content_md5()?.is_some());
+    assert!(combined_response.content_crc64()?.is_some());
 
     container_client.delete(None).await?;
     Ok(())
@@ -464,7 +503,7 @@ async fn test_upload_pages_transactional_checksums(ctx: TestContext) -> Result<(
     );
 
     // MD5 Match Scenario
-    page_blob_client
+    let response = page_blob_client
         .upload_pages(
             RequestContent::from(data.clone()),
             512,
@@ -475,6 +514,8 @@ async fn test_upload_pages_transactional_checksums(ctx: TestContext) -> Result<(
             }),
         )
         .await?;
+    assert!(response.content_md5()?.is_some());
+    assert!(response.content_crc64()?.is_some());
 
     // CRC64 Mismatch Scenario
     let response = page_blob_client
@@ -494,7 +535,7 @@ async fn test_upload_pages_transactional_checksums(ctx: TestContext) -> Result<(
     );
 
     // CRC64 Match Scenario
-    page_blob_client
+    let response = page_blob_client
         .upload_pages(
             RequestContent::from(data.clone()),
             512,
@@ -505,6 +546,8 @@ async fn test_upload_pages_transactional_checksums(ctx: TestContext) -> Result<(
             }),
         )
         .await?;
+    assert!(response.content_crc64()?.is_some());
+    assert!(response.content_md5()?.is_none());
 
     // No Checksum Scenario
     page_blob_client
