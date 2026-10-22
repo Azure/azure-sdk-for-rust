@@ -1,13 +1,11 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.1.0-beta.1 (2026-10-22)
 
 ### Features Added
 
 - Single-partition queries are now eligible for cross-region hedging, bounding tail latency on a degraded region at the cost of a second request on pages that exceed the hedge threshold. Cross-partition queries are not yet hedged. ([#5452](https://github.com/Azure/azure-sdk-for-rust/pull/5452))
 - Added layered `OperationOptions::utf8_decoding_mode` for opt-in lossy recovery of invalid UTF-8 in response JSON strings, with strict decoding by default and a recovery indicator in `DiagnosticsContext`. ([#5367](https://github.com/Azure/azure-sdk-for-rust/issues/5367))
-
-### Breaking Changes
 
 ### Bugs Fixed
 
@@ -18,8 +16,6 @@
 - Avoid loading partition topology for lazy-mode logical-key operations unless partition-level failover or Gateway 2.0 session-token scoping requires it. ([#5431](https://github.com/Azure/azure-sdk-for-rust/pull/5431))
 - Keep CPU sampling active while runtime or diagnostics handles remain alive. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
 - Preserve bounded diagnostic history through partition split recovery, query buffering, and terminal `500/20206` errors. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
-
-### Other Changes
 
 ## 1.0.0 (2026-10-08)
 
