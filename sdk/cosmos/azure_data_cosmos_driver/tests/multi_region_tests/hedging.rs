@@ -254,6 +254,17 @@ async fn seed_query_partition(
             .await?;
     }
 
+    for id in QUERY_DOCUMENT_IDS {
+        context
+            .wait_for_item_in_regions(
+                &container,
+                id,
+                QUERY_PARTITION_KEY,
+                &[primary_region(), alternate_region()],
+            )
+            .await?;
+    }
+
     Ok(container)
 }
 
@@ -311,19 +322,14 @@ pub async fn hedging_primary_slow_alternate_wins() -> Result<(), Box<dyn Error>>
                 .create_item_with_pk(&container, "pk1", body.as_bytes())
                 .await?;
 
-            // Warm the alternate region before the measured race. The hedge
-            // leg's first request to a region pays a TLS handshake; if that
-            // outlasts the primary's injected delay the alternate loses for
-            // reasons unrelated to hedging. Scoped to the alternate so the
-            // primary-region fault rule does not fire and `hits` stays clean.
-            let _ = context
-                .read_item_with_options(
+            context
+                .wait_for_item_in_regions(
                     &container,
                     item_id,
                     "pk1",
-                    excluding(std::slice::from_ref(&primary)),
+                    &[primary.clone(), alternate.clone()],
                 )
-                .await;
+                .await?;
 
             let started = std::time::Instant::now();
             let response = context
@@ -432,11 +438,14 @@ pub async fn hedging_primary_fast_no_alternate() -> Result<(), Box<dyn Error>> {
                 .create_item_with_pk(&container, "pk1", body.as_bytes())
                 .await?;
 
-            // Warm TLS and the metadata caches first. The measured read below
-            // asserts the primary beat the threshold, and a cold first request
-            // pays handshake plus account-metadata setup that can exceed it on
-            // its own.
-            let _ = context.read_item(&container, item_id, "pk1").await?;
+            context
+                .wait_for_item_in_regions(
+                    &container,
+                    item_id,
+                    "pk1",
+                    &[primary.clone(), alternate.clone()],
+                )
+                .await?;
 
             let response = context.read_item(&container, item_id, "pk1").await?;
             let diagnostics = response.diagnostics();
@@ -645,23 +654,6 @@ pub async fn hedged_paged_query_survives_slow_primary() -> Result<(), Box<dyn Er
                 .await?;
 
             let options = OperationOptions::default();
-
-            // Warm the alternate region first — see the matching note in
-            // `hedging_primary_slow_alternate_wins`.
-            let warm = excluding(std::slice::from_ref(&primary));
-            if let Ok(mut warm_plan) = driver
-                .plan_operation(
-                    single_partition_query(&container),
-                    &warm,
-                    None,
-                    &PlanOptions::default(),
-                )
-                .await
-            {
-                let _ = driver
-                    .execute_plan(&mut warm_plan, Some(container.clone()), warm)
-                    .await;
-            }
 
             let mut plan = driver
                 .plan_operation(

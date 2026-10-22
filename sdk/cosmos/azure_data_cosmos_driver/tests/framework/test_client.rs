@@ -19,8 +19,9 @@ use azure_data_cosmos_driver::{
         DatabaseReference, ItemReference, PartitionKey,
     },
     options::{
-        ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsBuilder,
-        PartitionFailoverOptions, Region, ServerCertificateValidation,
+        AvailabilityStrategy, ConnectionPoolOptions, DriverOptions, ExcludedRegions,
+        OperationOptions, OperationOptionsBuilder, PartitionFailoverOptions, Region,
+        ServerCertificateValidation,
     },
     SubStatusCode,
 };
@@ -57,6 +58,54 @@ fn runtime_operation_options(options: OperationOptions) -> OperationOptions {
         options
     };
     options
+}
+
+fn is_regional_readiness_error(error: &CosmosError) -> bool {
+    let status = error.status();
+    match status.status_code() {
+        StatusCode::Unauthorized => error.to_string().contains(
+            "The MAC signature found in the HTTP request is not the same as the computed signature",
+        ),
+        StatusCode::NotFound => {
+            matches!(
+                status.sub_status().map(u16::from),
+                None | Some(0 | 1002 | 1013)
+            )
+        }
+        _ => false,
+    }
+}
+
+async fn wait_for_region_readiness<T, F, Fut>(
+    region: &Region,
+    mut probe: F,
+) -> Result<T, Box<dyn Error>>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = Result<T, CosmosError>>,
+{
+    let timeout = Duration::from_secs(30);
+    let deadline = tokio::time::Instant::now() + timeout;
+    let mut last_error = None;
+    while tokio::time::Instant::now() < deadline {
+        match tokio::time::timeout_at(deadline, probe()).await {
+            Ok(Ok(value)) => return Ok(value),
+            Ok(Err(error)) if is_regional_readiness_error(&error) => {
+                tracing::info!(?region, %error, "waiting for seeded data in region");
+                last_error = Some(error);
+            }
+            Ok(Err(error)) => return Err(error.into()),
+            Err(_) => break,
+        }
+        tokio::time::sleep_until(
+            (tokio::time::Instant::now() + Duration::from_millis(500)).min(deadline),
+        )
+        .await;
+    }
+    Err(format!(
+        "readiness of region {region:?} timed out after {timeout:?}; last error: {last_error:?}"
+    )
+    .into())
 }
 
 fn test_env_filter() -> EnvFilter {
@@ -1049,6 +1098,53 @@ impl DriverTestRunContext {
         .await
     }
 
+    /// Waits for seeded data in each region without hedging or injected faults.
+    pub async fn wait_for_item_in_regions(
+        &self,
+        container: &ContainerReference,
+        item_id: &str,
+        partition_key: impl Into<PartitionKey>,
+        regions: &[Region],
+    ) -> Result<(), Box<dyn Error>> {
+        if regions.is_empty() {
+            return Err("regional readiness requires at least one region".into());
+        }
+        // Use a clean driver so readiness cannot consume faults or trip the tested circuit breaker.
+        let driver = self
+            .client
+            .runtime
+            .create_driver(
+                DriverOptions::builder(self.client.account.clone())
+                    .with_preferred_regions(regions.to_vec())
+                    .build(),
+            )
+            .await?;
+        let item = ItemReference::from_name(container, partition_key.into(), item_id.to_owned());
+        for region in regions {
+            let excluded: ExcludedRegions =
+                regions.iter().filter(|r| *r != region).cloned().collect();
+            let options = OperationOptionsBuilder::new()
+                .with_excluded_regions(excluded)
+                .with_hedging_enabled(false)
+                .with_availability_strategy(AvailabilityStrategy::Disabled)
+                .build();
+            // Fresh regional caches can report a signature mismatch before container metadata arrives.
+            let response = wait_for_region_readiness(region, || {
+                driver.execute_singleton_operation(
+                    CosmosOperation::read_item(item.clone()),
+                    options.clone(),
+                )
+            })
+            .await?;
+            assert_eq!(
+                response.diagnostics().regions_contacted(),
+                vec![region.clone()],
+                "readiness must succeed in the requested region, not through fallback",
+            );
+        }
+        Ok(())
+    }
+
     /// Reads an item with options scoped to the read, not driver initialization.
     pub async fn read_item_with_options(
         &self,
@@ -1269,8 +1365,106 @@ impl DriverTestRunContext {
 
 #[cfg(test)]
 mod tests {
-    use super::runtime_operation_options;
-    use azure_data_cosmos_driver::options::{BinaryEncodingOptions, OperationOptions};
+    use super::{
+        is_regional_readiness_error, runtime_operation_options, wait_for_region_readiness,
+    };
+    use azure_core::http::StatusCode;
+    use azure_data_cosmos_driver::{
+        error::{CosmosError, CosmosStatus},
+        options::{BinaryEncodingOptions, OperationOptions, Region},
+    };
+    use std::{future::pending, time::Duration};
+
+    fn readiness_error(status: StatusCode, message: &'static str) -> CosmosError {
+        CosmosError::builder()
+            .with_status(CosmosStatus::new(status))
+            .with_message(message)
+            .build()
+    }
+
+    #[test]
+    fn regional_readiness_only_retries_propagation_errors() {
+        assert!(is_regional_readiness_error(&readiness_error(
+            StatusCode::Unauthorized,
+            "The MAC signature found in the HTTP request is not the same as the computed signature",
+        )));
+        for sub_status in [0, 1002, 1013] {
+            let error = CosmosError::builder()
+                .with_status(CosmosStatus::new(StatusCode::NotFound).with_sub_status(sub_status))
+                .build();
+            assert!(is_regional_readiness_error(&error));
+        }
+        for status in [
+            StatusCode::Unauthorized,
+            StatusCode::Forbidden,
+            StatusCode::BadRequest,
+            StatusCode::ServiceUnavailable,
+        ] {
+            assert!(!is_regional_readiness_error(&readiness_error(
+                status,
+                "unrelated failure",
+            )));
+        }
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn regional_readiness_waits_for_replication() {
+        let start = tokio::time::Instant::now();
+        let mut attempts = 0;
+        let value = wait_for_region_readiness(&Region::WEST_US_3, || {
+            attempts += 1;
+            let result = if attempts < 3 {
+                Err(readiness_error(StatusCode::NotFound, "not replicated"))
+            } else {
+                Ok(42)
+            };
+            async move { result }
+        })
+        .await
+        .unwrap();
+        assert_eq!(value, 42);
+        assert_eq!(attempts, 3);
+        assert_eq!(start.elapsed(), Duration::from_secs(1));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn regional_readiness_preserves_unrelated_errors() {
+        let start = tokio::time::Instant::now();
+        let error = wait_for_region_readiness::<(), _, _>(&Region::WEST_US_3, || async {
+            Err(readiness_error(
+                StatusCode::Unauthorized,
+                "invalid credentials",
+            ))
+        })
+        .await
+        .unwrap_err();
+        assert!(error.to_string().contains("invalid credentials"));
+        assert_eq!(start.elapsed(), Duration::ZERO);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn regional_readiness_bounds_repeated_failures() {
+        let start = tokio::time::Instant::now();
+        let error = wait_for_region_readiness::<(), _, _>(&Region::WEST_US_3, || async {
+            Err(readiness_error(StatusCode::NotFound, "not replicated"))
+        })
+        .await
+        .unwrap_err();
+        assert_eq!(start.elapsed(), Duration::from_secs(30));
+        assert!(error.to_string().contains("not replicated"));
+        assert!(error.to_string().contains("westus3"));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn regional_readiness_bounds_a_hung_request() {
+        let start = tokio::time::Instant::now();
+        let error =
+            wait_for_region_readiness(&Region::WEST_US_3, || pending::<Result<(), CosmosError>>())
+                .await
+                .unwrap_err();
+        assert_eq!(start.elapsed(), Duration::from_secs(30));
+        assert!(error.to_string().contains("timed out"));
+    }
 
     #[test]
     #[cfg(test_category = "emulator_vnext")]
