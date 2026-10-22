@@ -5,6 +5,7 @@
 ### Features Added
 
 - Single-partition queries are now eligible for cross-region hedging, bounding tail latency on a degraded region at the cost of a second request on pages that exceed the hedge threshold. Cross-partition queries are not yet hedged. ([#5452](https://github.com/Azure/azure-sdk-for-rust/pull/5452))
+- Added layered `OperationOptions::utf8_decoding_mode` for opt-in lossy recovery of invalid UTF-8 in response JSON strings, with strict decoding by default and a recovery indicator in `DiagnosticsContext`. ([#5367](https://github.com/Azure/azure-sdk-for-rust/issues/5367))
 
 ### Breaking Changes
 
