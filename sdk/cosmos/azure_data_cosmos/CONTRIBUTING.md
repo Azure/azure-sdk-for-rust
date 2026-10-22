@@ -18,6 +18,11 @@ and verified cleanup; production accounts require explicit acknowledgment of
 production impact. Playback tests and SDK-local fault injection do not exercise
 this service behavior.
 
+Include baseline and verification requests in the approved request-unit (RU)
+budget, not just requests made during the fault. Follow the canonical guide for
+pending operations, baseline eligibility, recovery, and cleanup evidence; an
+accepted control-plane request does not establish application failover.
+
 ## Running Integration Tests
 
 Our integration tests are designed to run against either the Cosmos DB Emulator, or an actual Azure Cosmos DB account.
