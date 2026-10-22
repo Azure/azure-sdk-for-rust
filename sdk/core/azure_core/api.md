@@ -175,6 +175,9 @@ pub mod cloud {
         Custom(CustomConfiguration),
     }
     impl CloudConfiguration {
+        #[cfg_attr(feature = "resourcemanager", doc = "For Azure Resource Manager (ARM) clients, use [`resourcemanager::Audience`] as `T`.")]
+        #[cfg_attr(not(feature = "resourcemanager"), doc = "For Azure Resource Manager (ARM) clients, enable the `resourcemanager` feature and use `azure_core::cloud::resourcemanager::Audience` as `T`.")]
+        pub fn audience<T: 'static>(&self) -> crate::Result<&str>;
         pub fn default_scope<T: 'static>(&self) -> crate::Result<Cow<'static, str>>;
         #[cfg(feature = "resourcemanager")]
         pub fn endpoint(&self) -> Option<&str>;
@@ -184,6 +187,11 @@ pub mod cloud {
     }
     impl From<CustomConfiguration> for CloudConfiguration {
         fn from(config: CustomConfiguration) -> Self;
+    }
+    #[cfg(feature = "resourcemanager")]
+    pub mod resourcemanager {
+        #[allow(missing_debug_implementations)]
+        pub struct Audience;
     }
 }
 pub mod credentials {
