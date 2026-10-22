@@ -736,6 +736,8 @@ mod tests {
             rehydrate_priority: _,
             remaining_retention_days: _,
             server_encrypted: _,
+            // Intentionally unmapped pending Service support for Smart Tier
+            smart_access_tier: _,
             tag_count: _,
         } = properties.expect("properties should be set");
     }
