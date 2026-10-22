@@ -31,12 +31,6 @@
 
 - Fixed the challenge authentication policy to cache the challenge scope only after the challenge resource is verified, so that a rejected challenge is not cached and reused by subsequent requests.
 
-## 0.12.0 (2026-10-21)
-
-### Other Changes
-
-- Updated dependencies.
-
 ## 1.1.0-beta.1 (2026-06-08)
 
 ### Features Added
@@ -60,6 +54,12 @@
 - Vault URLs must use TLS (https).
 
 ## 0.13.0 (2026-04-22)
+
+### Other Changes
+
+- Updated dependencies.
+
+## 0.12.0 (2026-04-08)
 
 ### Other Changes
 
