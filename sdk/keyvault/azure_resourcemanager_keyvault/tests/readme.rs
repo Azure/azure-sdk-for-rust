@@ -6,6 +6,18 @@ use azure_core_test::{recorded, TestContext, SANITIZE_BODY_NAME};
 use azure_resourcemanager_keyvault::{KeyVaultClient, KeyVaultClientOptions};
 use include_file::include_markdown;
 
+#[test]
+fn client_configuration_examples_compile() {
+    {
+        include_markdown!("README.md", "create_client");
+        let _ = main as fn() -> Result<()>;
+    }
+    {
+        include_markdown!("README.md", "create_custom_cloud_client");
+        let _ = main as fn() -> Result<()>;
+    }
+}
+
 #[recorded::test]
 async fn readme(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();

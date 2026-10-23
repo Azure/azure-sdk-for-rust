@@ -119,7 +119,7 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
 ### Resource Manager polling
 
 - [ ] Detect Resource Manager operations from TypeSpec/client metadata and emit
-  `azure_core::http::resourcemanager::new_poller` instead of duplicating polling
+  `azure_core::http::poller::resourcemanager::new_poller` instead of duplicating polling
   state machines or introducing a separate poller type. Keep returning the
   existing `Poller<OperationStatus>` and preserve lazy initial-request execution.
 - [ ] Migrate every applicable operation, including these eight prototype cases:
@@ -136,8 +136,9 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   and headers and extract the original JSON bytes without serializing the
   complete model again. No Key Vault operation currently exercises this callback.
 - [ ] Generate Resource Manager `PollerOptions` in long-running method options
-  and preserve caller context and polling frequency. Leave ordinary method and
-  pager options unchanged.
+  from `azure_core::http::poller::resourcemanager`, along with `FinalStateVia`
+  in clients, and preserve caller context and polling frequency. Leave ordinary
+  method and pager options unchanged.
 - [ ] Generate `StatusMonitor::Output = ()` with `StatusMonitor::Format = NoFormat`
   for empty final results. The prototype corrected managed HSM delete, managed
   HSM purge, and vault purge. Retain JSON formats for resource results.
@@ -156,6 +157,8 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   Emit the prototype's borrowed-default pattern:
 
   ```rust
+  use azure_core::cloud::resourcemanager::Audience;
+
   let options = options.unwrap_or_default();
   let cloud = options.client_options.cloud.as_deref().unwrap_or_default();
   let endpoint = cloud
@@ -168,7 +171,13 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   Keep `options.client_options` available to move into `Pipeline::new`.
   Resolve the management endpoint with `CloudConfiguration::endpoint()` and the
   token scope with `CloudConfiguration::default_scope::<Audience>()`, using the
-  generated crate's `Audience` marker.
+  shared `azure_core::cloud::resourcemanager::Audience` marker.
+- [ ] For every crate whose name starts with `azure_resourcemanager_`, do not
+  define or re-export a per-crate `Audience`. Continue generating per-crate
+  audience markers for data-plane crates without that prefix.
+  Import `azure_core::cloud::resourcemanager::Audience` in generated
+  constructors and use that same marker in custom-cloud examples and tests.
+  A single custom audience entry must work across Resource Manager crates.
 - [ ] Parse the returned endpoint with `Url::parse`, return an explicit
   configuration error when `endpoint()` returns `None`, and propagate errors
   from `default_scope::<Audience>()`. Pass the scope's `into_owned()` result to
@@ -177,7 +186,7 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
 - [ ] Keep the identity authority, service endpoint, authentication audience, and
   token scope conceptually distinct. Never use the login authority as the
   Resource Manager endpoint, and never derive the endpoint from a token scope.
-- [ ] Honor `CustomConfiguration::endpoint` independently of the crate's typed
+- [ ] Honor `CustomConfiguration::endpoint` independently of the shared ARM
   `Audience`. A custom cloud must supply both an endpoint and an audience;
   they need not be the same URL. Configure the credential's identity authority
   separately. Replace the prototype's audience-as-endpoint coupling.
@@ -189,6 +198,15 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   Remove the obsolete unsupported-cloud panic documentation.
   Use "Resource Manager" in public documentation; use `resourcemanager` for
   modules and features.
+- [ ] Generate two client-construction examples in each Resource Manager README:
+  the normal default-cloud case first, then a custom-cloud case using the shared
+  `azure_core::cloud::resourcemanager::Audience`. Configure
+  `CustomConfiguration::authority_host` and `endpoint`, register the audience,
+  and pass the same cloud to a cloud-aware credential and the service client.
+  `DeveloperToolsCredential` uses the developer tools' cloud settings and has
+  no cloud option; use a credential such as `ClientSecretCredential` for the
+  explicit custom-cloud example. Keep endpoint and authentication audience URLs
+  distinct and load secrets from a secure source, not generated literals.
 - [ ] Generate a manifest dependency enabling `azure_core`'s `resourcemanager`
   feature, preserve `default-features = false`, and forward default transport
   features consistently. Require a core version containing both the polling
@@ -207,10 +225,19 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   core and preserve its errors. Assert that fixtures emit
   `cloud.as_deref().unwrap_or_default()` rather than cloning the configured
   cloud, allocating a default `Arc`, or hard-coding `AzurePublic`.
+  Verify that ARM crates do not emit an `Audience` declaration and use the shared
+  core marker for `default_scope::<Audience>()`. Use `CloudConfiguration` methods
+  for endpoint, audience, and scope resolution rather than inline cloud mappings,
+  custom audience lookups, or scope construction.
   Keep cloud mappings and scope normalization
   semantics tested in `azure_core`, not reimplemented in emitter fixtures.
   The core API in `dfc31db6e1` appends `/.default` to custom audiences verbatim;
   do not retain the prototype's trailing-slash normalization as an emitter rule.
+- [ ] Verify both README client-construction examples compile against generated
+  APIs, including the credential's cloud options. Register custom audiences only
+  with the core Resource Manager marker in fixtures so that a mistakenly emitted
+  per-crate marker fails the custom-cloud test. Verify data-plane generation
+  retains its per-crate audience marker.
 - [ ] Cover all polling protocols, repeated GETs without bodies preserving `Accept`,
   resource and empty final results, and Operation-Location inline extraction.
   Keep protocol semantics tested in `azure_core`; emitter tests should verify

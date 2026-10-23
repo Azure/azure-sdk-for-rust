@@ -29,10 +29,10 @@ az login
 ### Authenticate the client
 
 Use `DeveloperToolsCredential` during local development. Use a managed identity in
-production. The client defaults to Public cloud; Government and China cloud
-construction are not implemented in this initial version.
+production. The client defaults to Public cloud. Use cloud configuration to
+select Government, China, or a custom cloud.
 
-```rust no_run
+```rust no_run create_client
 use azure_identity::DeveloperToolsCredential;
 use azure_resourcemanager_keyvault::KeyVaultClient;
 
@@ -50,10 +50,44 @@ async fn main() -> azure_core::Result<()> {
 ```
 
 Custom cloud configuration is passed through `KeyVaultClientOptions.client_options.cloud`.
-Its `azure_resourcemanager_keyvault::Audience` value supplies both the service root
-and the authentication resource. Configure the credential's login authority
-separately. This initial custom-cloud support does not configure identity credentials
-for you.
+Set the management endpoint separately from the authentication audience. Use
+`azure_core::cloud::resourcemanager::Audience`, which is shared by all Resource
+Manager clients. Configure your developer tool for the custom cloud and sign in
+before using `DeveloperToolsCredential`.
+
+```rust no_run create_custom_cloud_client
+use azure_core::{
+    cloud::{resourcemanager::Audience, Audiences, CustomConfiguration},
+    http::ClientOptions,
+};
+use azure_identity::DeveloperToolsCredential;
+use azure_resourcemanager_keyvault::{KeyVaultClient, KeyVaultClientOptions};
+use std::sync::Arc;
+
+#[tokio::main]
+async fn main() -> azure_core::Result<()> {
+    let mut custom = CustomConfiguration::default();
+    custom.authority_host = "https://login.example.com".into();
+    custom.endpoint = Some("https://management.example.com".into());
+    custom.audiences = Audiences::new()
+        .with::<Audience>("https://resource.example.com".into());
+    let cloud = Arc::new(custom.into());
+    let credential = DeveloperToolsCredential::new(None)?;
+    let client = KeyVaultClient::new(
+        "<subscription-id>".into(),
+        credential,
+        Some(KeyVaultClientOptions {
+            client_options: ClientOptions {
+                cloud: Some(cloud),
+                ..Default::default()
+            },
+            ..Default::default()
+        }),
+    )?;
+    let vaults = client.get_key_vault_vaults_client();
+    Ok(())
+}
+```
 
 ## Key concepts
 
@@ -181,8 +215,8 @@ resource group exist, and the identity has the necessary Resource Manager
 permissions. Data-plane access requires separate permissions.
 
 Managed HSM operations require service availability and subscription quota.
-Government and China cloud constructors currently panic rather than selecting
-an unverified configuration.
+For custom clouds, supply both the management endpoint and the shared Resource
+Manager audience, and ensure the credential authenticates against the correct cloud.
 
 ## Contributing
 

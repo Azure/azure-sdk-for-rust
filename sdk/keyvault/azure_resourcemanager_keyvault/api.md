@@ -13,7 +13,6 @@
 #![crate_name = "azure_resourcemanager_keyvault"]
 #![crate_type = "lib"]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-pub struct Audience;
 pub struct KeyVaultClient {
 }
 impl KeyVaultClient {
@@ -509,7 +508,7 @@ pub mod models {
     }
     #[derive(Clone, Debug, Default)]
     pub struct KeyVaultMHSMPrivateEndpointConnectionsClientBeginDeleteOptions<'a> {
-        pub method_options: azure_core::http::resourcemanager::PollerOptions<'a>,
+        pub method_options: azure_core::http::poller::resourcemanager::PollerOptions<'a>,
     }
     impl KeyVaultMHSMPrivateEndpointConnectionsClientBeginDeleteOptions<'_> {
         pub fn into_owned(self) -> KeyVaultMHSMPrivateEndpointConnectionsClientBeginDeleteOptions<'static>;
@@ -591,7 +590,7 @@ pub mod models {
     }
     #[derive(Clone, Debug, Default)]
     pub struct KeyVaultManagedHsmsClientBeginCreateOrUpdateOptions<'a> {
-        pub method_options: azure_core::http::resourcemanager::PollerOptions<'a>,
+        pub method_options: azure_core::http::poller::resourcemanager::PollerOptions<'a>,
     }
     impl KeyVaultManagedHsmsClientBeginCreateOrUpdateOptions<'_> {
         pub fn into_owned(self) -> KeyVaultManagedHsmsClientBeginCreateOrUpdateOptions<'static>;
@@ -621,7 +620,7 @@ pub mod models {
     }
     #[derive(Clone, Debug, Default)]
     pub struct KeyVaultManagedHsmsClientBeginDeleteOptions<'a> {
-        pub method_options: azure_core::http::resourcemanager::PollerOptions<'a>,
+        pub method_options: azure_core::http::poller::resourcemanager::PollerOptions<'a>,
     }
     impl KeyVaultManagedHsmsClientBeginDeleteOptions<'_> {
         pub fn into_owned(self) -> KeyVaultManagedHsmsClientBeginDeleteOptions<'static>;
@@ -651,7 +650,7 @@ pub mod models {
     }
     #[derive(Clone, Debug, Default)]
     pub struct KeyVaultManagedHsmsClientBeginPurgeDeletedOptions<'a> {
-        pub method_options: azure_core::http::resourcemanager::PollerOptions<'a>,
+        pub method_options: azure_core::http::poller::resourcemanager::PollerOptions<'a>,
     }
     impl KeyVaultManagedHsmsClientBeginPurgeDeletedOptions<'_> {
         pub fn into_owned(self) -> KeyVaultManagedHsmsClientBeginPurgeDeletedOptions<'static>;
@@ -681,7 +680,7 @@ pub mod models {
     }
     #[derive(Clone, Debug, Default)]
     pub struct KeyVaultManagedHsmsClientBeginUpdateOptions<'a> {
-        pub method_options: azure_core::http::resourcemanager::PollerOptions<'a>,
+        pub method_options: azure_core::http::poller::resourcemanager::PollerOptions<'a>,
     }
     impl KeyVaultManagedHsmsClientBeginUpdateOptions<'_> {
         pub fn into_owned(self) -> KeyVaultManagedHsmsClientBeginUpdateOptions<'static>;
@@ -753,7 +752,7 @@ pub mod models {
     }
     #[derive(Clone, Debug, Default)]
     pub struct KeyVaultPrivateEndpointConnectionsClientBeginDeleteOptions<'a> {
-        pub method_options: azure_core::http::resourcemanager::PollerOptions<'a>,
+        pub method_options: azure_core::http::poller::resourcemanager::PollerOptions<'a>,
     }
     impl KeyVaultPrivateEndpointConnectionsClientBeginDeleteOptions<'_> {
         pub fn into_owned(self) -> KeyVaultPrivateEndpointConnectionsClientBeginDeleteOptions<'static>;
@@ -822,7 +821,7 @@ pub mod models {
     }
     #[derive(Clone, Debug, Default)]
     pub struct KeyVaultVaultsClientBeginCreateOrUpdateOptions<'a> {
-        pub method_options: azure_core::http::resourcemanager::PollerOptions<'a>,
+        pub method_options: azure_core::http::poller::resourcemanager::PollerOptions<'a>,
     }
     impl KeyVaultVaultsClientBeginCreateOrUpdateOptions<'_> {
         pub fn into_owned(self) -> KeyVaultVaultsClientBeginCreateOrUpdateOptions<'static>;
@@ -852,7 +851,7 @@ pub mod models {
     }
     #[derive(Clone, Debug, Default)]
     pub struct KeyVaultVaultsClientBeginPurgeDeletedOptions<'a> {
-        pub method_options: azure_core::http::resourcemanager::PollerOptions<'a>,
+        pub method_options: azure_core::http::poller::resourcemanager::PollerOptions<'a>,
     }
     impl KeyVaultVaultsClientBeginPurgeDeletedOptions<'_> {
         pub fn into_owned(self) -> KeyVaultVaultsClientBeginPurgeDeletedOptions<'static>;

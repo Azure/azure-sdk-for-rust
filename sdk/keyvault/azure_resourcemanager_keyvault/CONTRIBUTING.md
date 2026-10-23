@@ -48,6 +48,9 @@ cargo test -p azure_resourcemanager_keyvault --all-features --tests --no-run
 cargo test -p azure_resourcemanager_keyvault --all-features --doc
 ```
 
+`tests/readme.rs` also compiles both client-construction examples without running
+their credentials or making network requests.
+
 The library has 23 offline tests. Eleven enum-family tests cover all 29 generated
 enum types and 155 known wire values, including serialization, deserialization,
 unknown values, wrong-case behavior, and representative nested models. These
