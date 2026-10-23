@@ -15,6 +15,7 @@ use crate::{
     diagnostics::DiagnosticsContext,
     error::{CosmosError, Result},
     models::{CosmosResponse, CosmosResponseHeaders, CosmosStatus, ResponseBody},
+    options::Utf8DecodingMode,
 };
 
 #[derive(Clone, SafeDebug)]
@@ -188,11 +189,7 @@ impl PipelineBody {
                 ResponseBody::Items(items)
             }
         };
-        if text_response {
-            body.transcode_to_text()
-        } else {
-            Ok(body)
-        }
+        Ok(body)
     }
 }
 
@@ -278,6 +275,7 @@ impl PipelineResponse {
         self,
         text_response: bool,
         emit_binary: bool,
+        utf8_decoding_mode: Utf8DecodingMode,
     ) -> Result<CosmosResponse> {
         let diagnostics = self.metadata.diagnostics();
         let body = self
@@ -289,7 +287,11 @@ impl PipelineResponse {
                     .with_diagnostics(diagnostics)
                     .build()
             })?;
-        Ok(self.metadata.with_body(body))
+        let mut response = self.metadata.with_body(body);
+        if text_response {
+            response.transcode_body_to_text_with_utf8_mode(utf8_decoding_mode)?;
+        }
+        Ok(response)
     }
 }
 
@@ -325,6 +327,7 @@ mod tests {
             Distinct, PageResult, PipelineContext, PipelineNode, SkipTake,
         },
         models::{CosmosResponseHeaders, CosmosStatus, ResponseBody},
+        options::Utf8DecodingMode,
     };
     use azure_core::Bytes;
     use std::sync::{
@@ -413,7 +416,9 @@ mod tests {
                 assert!(
                     matches!(response.body(), PipelineBody::ContextualItems(items) if items.len() == 1)
                 );
-                let public = response.into_response(text_response, emit_binary).unwrap();
+                let public = response
+                    .into_response(text_response, emit_binary, Default::default())
+                    .unwrap();
                 drop(root);
                 assert_eq!(count.total.load(Ordering::Relaxed), 1);
                 let binary = emit_binary && !text_response;
@@ -441,6 +446,38 @@ mod tests {
             }
         }
         assert_eq!(item_count(ResponseBody::Items(Vec::new())), 0);
+    }
+
+    #[test]
+    fn final_items_preserve_utf8_recovery_and_diagnostics() {
+        let body = PipelineBody::Items(vec![
+            Bytes::from_static(&[0x80, markers::STR_L1, 1, 0xFF]),
+            Bytes::from_static(&[b'"', 0xFF, b'"']),
+        ]);
+        let response = PipelineResponse::new(
+            body,
+            CosmosResponseHeaders::default(),
+            CosmosStatus::new(azure_core::http::StatusCode::Ok),
+            crate::driver::dataflow::mocks::response(b"").diagnostics(),
+        );
+        let activity_id = response.diagnostics().activity_id().clone();
+        let error = response
+            .clone()
+            .into_response(true, false, Utf8DecodingMode::Strict)
+            .unwrap_err();
+        let diagnostics = error.diagnostics().unwrap();
+        assert_eq!(diagnostics.activity_id(), &activity_id);
+        assert_eq!(diagnostics.status().copied(), Some(error.status()));
+
+        let response = response
+            .into_response(true, false, Utf8DecodingMode::Lossy)
+            .unwrap();
+        assert_eq!(response.diagnostics().activity_id(), &activity_id);
+        assert!(response.diagnostics().invalid_utf8_was_recovered());
+        assert_eq!(
+            response.into_body().into_items::<String>().unwrap(),
+            ["\u{FFFD}", "\u{FFFD}"]
+        );
     }
 
     #[test]

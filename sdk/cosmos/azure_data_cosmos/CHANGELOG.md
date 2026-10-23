@@ -1,6 +1,6 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.1.0-beta.2 (Unreleased)
 
 ### Features Added
 
@@ -8,11 +8,19 @@
 
 ### Bugs Fixed
 
-- Keep CPU sampling active for long-lived clients and preserve diagnostics through partition split recovery, including `500/20206` errors. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
-
 ### Other Changes
 
 - Binary cross-partition `ORDER BY` avoids intermediate document transcoding during sorting and filtering; final raw item buffers remain independently decodable without changing the response-body API. ([#5409](https://github.com/Azure/azure-sdk-for-rust/pull/5409))
+
+## 1.1.0-beta.1 (2026-10-22)
+
+### Features Added
+
+- Added `OperationOptions::utf8_decoding_mode` for opt-in lossy recovery of invalid UTF-8 in response JSON strings. ([#5367](https://github.com/Azure/azure-sdk-for-rust/issues/5367))
+
+### Bugs Fixed
+
+- Keep CPU sampling active for long-lived clients and preserve diagnostics through partition split recovery, including `500/20206` errors. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
 
 ## 1.0.0 (2026-10-08)
 

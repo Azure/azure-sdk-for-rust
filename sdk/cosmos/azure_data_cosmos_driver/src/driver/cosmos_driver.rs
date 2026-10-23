@@ -351,9 +351,16 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
             let operation = operation
                 .clone()
                 .with_absolute_deadline(self.absolute_deadline);
-            let result = driver
+            let mut result = driver
                 .execute_planned_operation_direct(&operation, overrides, self.options)
                 .await;
+            if operation.resolved_utf8_decoding_mode() == crate::options::Utf8DecodingMode::Lossy {
+                if let Ok(response) = &mut result {
+                    response.transcode_body_to_text_with_utf8_mode(
+                        operation.resolved_utf8_decoding_mode(),
+                    )?;
+                }
+            }
             if result.is_ok() {
                 self.successful_requests += 1;
             }
@@ -2136,7 +2143,7 @@ impl CosmosDriver {
         self.location_state_store.apply_partition(|current| {
             let mut next = current.clone();
             next.per_partition_automatic_failover_enabled = true;
-            next
+            crate::driver::routing::partition_endpoint_state::PartitionStateUpdate::Updated(next)
         });
     }
 
@@ -2840,6 +2847,13 @@ impl CosmosDriver {
         options: &OperationOptions,
         resolved_binary: Option<crate::options::BinaryEncodingOptions>,
     ) -> CosmosOperation {
+        let resolved_utf8_decoding_mode = self
+            .operation_options_view(options)
+            .utf8_decoding_mode()
+            .copied()
+            .unwrap_or_default();
+        let operation = operation.with_resolved_utf8_decoding_mode(resolved_utf8_decoding_mode);
+
         if !Self::binary_negotiates_response(operation.resource_type(), operation.operation_type())
         {
             return operation;
@@ -3336,6 +3350,7 @@ impl CosmosDriver {
         match response.into_response(
             plan.transcodes_response_to_text(),
             plan.operation.emits_binary_payload(),
+            plan.resolved_utf8_decoding_mode(),
         ) {
             Ok(response) => Ok(Some(response)),
             Err(error) => {
@@ -4705,6 +4720,14 @@ async fn probe_endpoint_connectivity(
     // be reached.
     transport.send(&request).await.is_ok()
 }
+
+#[cfg(all(
+    test,
+    feature = "__internal_in_memory_emulator",
+    feature = "fault_injection"
+))]
+#[path = "request_hedge_feedback_tests.rs"]
+mod request_hedge_feedback_tests;
 
 #[cfg(test)]
 mod tests {
@@ -7999,6 +8022,10 @@ mod tests {
             crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID,
             "got: {err}",
         );
+        assert!(
+            err.diagnostics().is_some(),
+            "the transcode error must retain the page diagnostics",
+        );
 
         let err = plan
             .to_continuation_token()
@@ -8231,6 +8258,33 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn lossy_utf8_recovers_text_page_and_records_diagnostics() {
+        let driver = transcoding_test_driver().await;
+        let body = [
+            b'{', b'"', b'n', b'a', b'm', b'e', b'"', b':', b'"', b'a', 0xFF, b'b', b'"', b'}',
+        ];
+        let mut plan = lossy_transcoding_plan(&driver, &[&body]);
+
+        let response = driver
+            .execute_plan(&mut plan, None, OperationOptions::default())
+            .await
+            .expect("invalid UTF-8 inside a JSON string should be recovered")
+            .expect("the mock leaf returns one page");
+
+        let crate::models::ResponseBody::Bytes(body) = response.body() else {
+            panic!("expected a single response buffer");
+        };
+        assert_eq!(
+            body.as_ref(),
+            &[
+                b'{', b'"', b'n', b'a', b'm', b'e', b'"', b':', b'"', b'a', 0xEF, 0xBF, 0xBD, b'b',
+                b'"', b'}',
+            ],
+        );
+        assert!(response.diagnostics().invalid_utf8_was_recovered());
+    }
+
     /// A driver marked initialized so `execute_plan` reaches the pipeline. No
     /// request ever leaves it: the plans below are backed by a mock leaf.
     async fn transcoding_test_driver() -> CosmosDriver {
@@ -8264,6 +8318,41 @@ mod tests {
             operation.transcodes_response_to_text(),
             "the fixture must select the transcoding path",
         );
+
+        let last = bodies.len() - 1;
+        let pages = bodies
+            .iter()
+            .enumerate()
+            .map(|(i, body)| {
+                Ok(PageResult::Page {
+                    response: response(body),
+                    is_terminal: i == last,
+                })
+            })
+            .collect();
+        OperationPlan::new(
+            Pipeline::new(Box::new(MockLeaf::with_pages(pages))),
+            std::sync::Arc::new(operation),
+            PlanOptions::default(),
+            false,
+        )
+    }
+
+    fn lossy_transcoding_plan(driver: &CosmosDriver, bodies: &[&[u8]]) -> OperationPlan {
+        use crate::driver::dataflow::mocks::{response, MockLeaf};
+        use crate::driver::dataflow::{PageResult, Pipeline};
+
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
+            .with_utf8_decoding_mode(crate::options::Utf8DecodingMode::Lossy)
+            .build();
+        let operation = driver.apply_response_negotiation(
+            binary_encoding_test_operation(b"{}".to_vec()),
+            &options,
+            None,
+        );
+        assert!(operation.negotiates_binary_response());
+        assert!(operation.transcodes_response_to_text());
 
         let last = bodies.len() - 1;
         let pages = bodies

@@ -245,4 +245,8 @@ impl OperationPlan {
     pub(crate) fn transcodes_response_to_text(&self) -> bool {
         self.operation.transcodes_response_to_text()
     }
+
+    pub(crate) fn resolved_utf8_decoding_mode(&self) -> crate::options::Utf8DecodingMode {
+        self.operation.resolved_utf8_decoding_mode()
+    }
 }

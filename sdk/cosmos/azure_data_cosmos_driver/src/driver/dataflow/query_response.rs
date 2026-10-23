@@ -1200,7 +1200,9 @@ mod tests {
             .collect();
         let private = aggregator.build_page(items);
         assert!(matches!(private.body(), PipelineBody::ContextualItems(_)));
-        let body = private.into_response(true, false).unwrap();
+        let body = private
+            .into_response(true, false, Default::default())
+            .unwrap();
         let crate::models::ResponseBody::Items(items) = body.body() else {
             panic!("text-requested merged output must contain standalone text");
         };

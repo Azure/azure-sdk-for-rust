@@ -212,6 +212,7 @@ pub mod diagnostics {
         pub fn fault_injection_enabled(&self) -> bool;
         pub fn hedge_diagnostics(&self) -> Option<&HedgeDiagnostics>;
         pub fn hedging_started(&self) -> bool;
+        pub fn invalid_utf8_was_recovered(&self) -> bool;
         pub fn is_completed(&self) -> bool;
         pub fn is_failure(&self) -> bool;
         pub fn is_threshold_violated(&self, thresholds: &DiagnosticsThresholds) -> bool;
@@ -949,9 +950,9 @@ pub mod fault_injection {
     #[non_exhaustive]
     pub struct FaultClient {
     }
+    #[async_trait]
     impl TransportClient for FaultClient {
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn send(&self, request: &HttpRequest) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<HttpResponse, TransportError>> + ::core::marker::Send>>;
+        async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError>;
     }
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
@@ -2787,6 +2788,7 @@ pub mod options {
         pub availability_strategy: Option<crate::options::AvailabilityStrategy>,
         pub custom_headers: Option<std::collections::HashMap<azure_core::http::headers::HeaderName, azure_core::http::headers::HeaderValue>>,
         pub binary_encoding: Option<crate::options::BinaryEncodingOptions>,
+        pub utf8_decoding_mode: Option<crate::options::Utf8DecodingMode>,
     }
     #[automatically_derived]
     impl OperationOptions {
@@ -2817,6 +2819,7 @@ pub mod options {
         pub fn with_session_capturing_disabled(self, value: bool) -> Self;
         pub fn with_throttling_retry_options(self, value: ThrottlingRetryOptions) -> Self;
         pub fn with_throughput_control(self, value: ThroughputControlOptions) -> Self;
+        pub fn with_utf8_decoding_mode(self, value: Utf8DecodingMode) -> Self;
     }
     #[automatically_derived]
     pub struct OperationOptionsView<'a> {
@@ -2841,6 +2844,7 @@ pub mod options {
         pub fn session_capturing_disabled(&self) -> Option<&bool>;
         pub fn throttling_retry_options(&self) -> ThrottlingRetryOptionsView<'_>;
         pub fn throughput_control(&self) -> ThroughputControlOptionsView<'_>;
+        pub fn utf8_decoding_mode(&self) -> Option<&Utf8DecodingMode>;
     }
     #[derive(Clone, Debug)]
     #[non_exhaustive]
@@ -3275,6 +3279,13 @@ pub mod options {
         #[default]
         Rustls,
     }
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum Utf8DecodingMode {
+        #[default]
+        Strict,
+        Lossy,
+    }
     pub const DEFAULT_MAX_BUFFERED_QUERY_WINDOW: u64 = 1000;
     pub const DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS: usize = 32;
     pub const DEFAULT_MAX_FAN_OUT: u32 = 100;
@@ -3320,8 +3331,7 @@ pub mod test {
     }
     #[async_trait]
     pub trait TransportClient: Send + Sync + fmt::Debug {
-        #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-        fn send(&self, request: &HttpRequest) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<HttpResponse, TransportError>> + ::core::marker::Send>>;
+        async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError>;
     }
 }
 ```

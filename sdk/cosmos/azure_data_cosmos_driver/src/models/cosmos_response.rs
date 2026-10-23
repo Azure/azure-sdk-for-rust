@@ -46,6 +46,18 @@ impl CosmosResponsePayload {
     pub(crate) fn headers(&self) -> &CosmosResponseHeaders {
         &self.headers
     }
+
+    /// Transcodes any binary JSON body to text JSON in place.
+    fn transcode_body_to_text(
+        &mut self,
+        utf8_decoding_mode: crate::options::Utf8DecodingMode,
+    ) -> crate::error::Result<bool> {
+        let body = std::mem::take(&mut self.body);
+        let (body, invalid_utf8_was_recovered) =
+            body.transcode_to_text_with_utf8_mode_and_recovery(utf8_decoding_mode)?;
+        self.body = body;
+        Ok(invalid_utf8_was_recovered)
+    }
 }
 /// Result of a Cosmos DB operation.
 ///
@@ -149,6 +161,26 @@ impl CosmosResponse {
     pub(crate) fn without_body(mut self) -> Self {
         self.payload.body = ResponseBody::NoPayload;
         self
+    }
+
+    pub(crate) fn transcode_body_to_text_with_utf8_mode(
+        &mut self,
+        utf8_decoding_mode: crate::options::Utf8DecodingMode,
+    ) -> crate::error::Result<()> {
+        let diagnostics = Arc::clone(&self.diagnostics);
+        let invalid_utf8_was_recovered = self
+            .payload
+            .transcode_body_to_text(utf8_decoding_mode)
+            .map_err(|error| {
+                let diagnostics = Arc::new(diagnostics.clone_with_status(error.status()));
+                crate::error::CosmosErrorBuilder::from_error(error)
+                    .with_diagnostics(diagnostics)
+                    .build()
+            })?;
+        if invalid_utf8_was_recovered {
+            Arc::make_mut(&mut self.diagnostics).mark_invalid_utf8_recovered();
+        }
+        Ok(())
     }
 
     /// Returns a reference to the extracted headers.
@@ -374,5 +406,27 @@ mod tests {
         let diagnostics = result.diagnostics();
         let diagnostics_status = diagnostics.status().unwrap();
         assert_eq!(diagnostics_status.status_code(), StatusCode::NotFound);
+    }
+
+    #[test]
+    fn transcode_failure_preserves_response_diagnostics() {
+        let diagnostics = make_diagnostics(Some(StatusCode::Ok), None);
+        let activity_id = diagnostics.activity_id().clone();
+        let mut response = CosmosResponse::new(
+            vec![crate::binary_json::PREAMBLE],
+            CosmosResponseHeaders::new(),
+            make_status(Some(StatusCode::Ok), None),
+            diagnostics,
+        );
+
+        let error = response
+            .transcode_body_to_text_with_utf8_mode(crate::options::Utf8DecodingMode::Lossy)
+            .expect_err("a truncated binary response must fail transcoding");
+        let error_diagnostics = error
+            .diagnostics()
+            .expect("transcoding errors must retain response diagnostics");
+
+        assert_eq!(error_diagnostics.activity_id(), &activity_id);
+        assert_eq!(error_diagnostics.status().copied(), Some(error.status()));
     }
 }

@@ -4371,7 +4371,9 @@ mod tests {
                     let mut actual = Vec::new();
                     let mut charge = 0.0;
                     while let Some(page) = pipeline.next_page(&mut context).await.unwrap() {
-                        let page = page.into_response(false, output_binary).unwrap();
+                        let page = page
+                            .into_response(false, output_binary, Default::default())
+                            .unwrap();
                         charge += page.headers().request_charge.unwrap().value();
                         let session = page.headers().session_token.as_ref().unwrap().to_string();
                         assert!(session.contains("a:1#4"), "{session}");
