@@ -16,11 +16,18 @@
 #![cfg(feature = "fault_injection")]
 
 use crate::framework::DriverTestClient;
+use azure_core::http::StatusCode;
 use azure_data_cosmos_driver::fault_injection::{
     FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
     FaultInjectionRuleBuilder, FaultOperationType,
 };
-use azure_data_cosmos_driver::options::{PartitionFailoverOptions, Region};
+use azure_data_cosmos_driver::{
+    models::{CosmosOperation, ItemReference, PartitionKey},
+    options::{
+        AvailabilityStrategy, DriverOptions, OperationOptionsBuilder, PartitionFailoverOptions,
+        Region,
+    },
+};
 use std::error::Error;
 use std::sync::Arc;
 
@@ -174,6 +181,7 @@ pub async fn ppaf_enabled_write_forbidden_on_create_fails_over_to_next_region(
     ignore = "requires test_category 'multi_region'"
 )]
 pub async fn ppcb_enabled_503_on_read_fails_over_after_threshold() -> Result<(), Box<dyn Error>> {
+    const READ_FAILURE_THRESHOLD: u32 = 10;
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
         .with_region(HUB_REGION)
@@ -195,86 +203,92 @@ pub async fn ppcb_enabled_503_on_read_fails_over_after_threshold() -> Result<(),
     // partition-failover options.
     let partition_failover_options = PartitionFailoverOptions::builder()
         .with_circuit_breaker_enabled(true)
+        .with_read_failure_threshold(READ_FAILURE_THRESHOLD)
         .build()?;
 
-    DriverTestClient::run_with_unique_db_and_fault_injection_partition_failover_options(
-        rules,
-        partition_failover_options,
-        async |context, database| {
-            let container_name = context.unique_container_name();
-            let container = context
-                .create_container(&database, &container_name, "/pk")
-                .await?;
+    DriverTestClient::run_with_unique_db(async |context, database| {
+        let container_name = context.unique_container_name();
+        let container = context
+            .create_container(&database, &container_name, "/pk")
+            .await?;
 
-            // Seed an item first (no fault on writes — rule only targets reads in hub region).
-            let item_json = br#"{"id": "ppcb-item-503", "pk": "pk1", "value": "test"}"#;
-            context
-                .create_item_with_pk(&container, "pk1", item_json)
-                .await?;
+        // Seed an item first (no fault on writes — rule only targets reads in hub region).
+        let item_json = br#"{"id": "ppcb-item-503", "pk": "pk1", "value": "test"}"#;
+        context
+            .create_item_with_pk(&container, "pk1", item_json)
+            .await?;
 
-            // Issue reads to accumulate failures and trigger the circuit breaker threshold.
-            // Default read failure threshold is 10. Each read that hits the hub region
-            // will increment the counter. Reads are retried across regions, so they
-            // should eventually succeed via a non-hub region.
-            let mut read_success_count = 0;
-            let total_reads = 15;
-            for _ in 0..total_reads {
-                match context.read_item(&container, "ppcb-item-503", "pk1").await {
-                    Ok(_) => read_success_count += 1,
-                    Err(e) => {
-                        // Some early reads may fail if the retry budget is exhausted
-                        // before successfully reaching another region.
-                        tracing::info!("Read failed (expected during threshold ramp-up): {e}");
-                    }
+        let regions = [HUB_REGION, Region::WEST_US_3];
+        context
+            .wait_for_item_in_regions(&container, "ppcb-item-503", "pk1", &regions)
+            .await?;
+        // Keep the same driver so failures accumulate in one circuit breaker.
+        let driver = context
+            .runtime()
+            .create_driver(
+                DriverOptions::builder(context.driver_options()?.account().clone())
+                    .with_preferred_regions(regions.to_vec())
+                    .with_partition_failover_options(partition_failover_options)
+                    .with_fault_injection_rules(rules)?
+                    .build(),
+            )
+            .await?;
+        let item = ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "ppcb-item-503".to_owned(),
+        );
+        let read_options = OperationOptionsBuilder::new()
+            .with_hedging_enabled(false)
+            .with_availability_strategy(AvailabilityStrategy::Disabled)
+            .build();
+        let mut read_success_count = 0;
+        let total_reads = READ_FAILURE_THRESHOLD + 5;
+        for _ in 0..total_reads {
+            match driver
+                .execute_singleton_operation(
+                    CosmosOperation::read_item(item.clone()),
+                    read_options.clone(),
+                )
+                .await
+            {
+                Ok(_) => read_success_count += 1,
+                Err(e) if e.status().status_code() == StatusCode::ServiceUnavailable => {
+                    tracing::info!("Read failed (expected during threshold ramp-up): {e}");
                 }
+                Err(e) => return Err(e.into()),
             }
+        }
 
-            // Verify the rule has been hit (faults were injected in the hub region).
-            assert!(
-                rule.hit_count() > 0,
-                "Fault injection rule should have been hit on the hub region for reads"
+        assert!(
+            rule.hit_count() >= READ_FAILURE_THRESHOLD,
+            "hub failures must reach the configured circuit breaker threshold",
+        );
+        assert!(
+            read_success_count > 0,
+            "at least some reads must succeed via failover to the non-faulted region",
+        );
+
+        let hits_after_trip = rule.hit_count();
+        for _ in 0..3 {
+            let response = driver
+                .execute_singleton_operation(
+                    CosmosOperation::read_item(item.clone()),
+                    read_options.clone(),
+                )
+                .await?;
+            let diagnostics = response.diagnostics();
+            assert_eq!(diagnostics.regions_contacted(), vec![Region::WEST_US_3]);
+            assert_eq!(
+                diagnostics.requests().len(),
+                1,
+                "post-threshold reads must succeed without a hub retry",
             );
+        }
+        assert_eq!(rule.hit_count(), hits_after_trip);
 
-            // After the threshold is exceeded, the PPCB should be active and reads
-            // should go directly to the next region (succeeding without hitting the
-            // faulted hub region).
-            assert!(
-                read_success_count == 0,
-                "All reads are failing at the moment with 401 unauthorized error."
-            );
-
-            // TODO: When Fault Injection Rule is injected, even the regions where the rule is not applied responds with a CosmosStatus(401).
-            // This seems like a gap in the fault injection http client and needed to be looked into. Until then this assertion is skipped.
-            // Please remove the above assertion and un-comment the below assertion, once fixed.
-            // assert!(
-            //     read_success_count > 0,
-            //     "At least some reads should succeed via failover to the non-faulted region"
-            // );
-
-            // Now send a few more reads. With the circuit breaker tripped, these
-            // should route directly to the alternate region and succeed on the
-            // first attempt (request_count == 1).
-            // for i in 0..3 {
-            //     let response = context
-            //         .read_item(&container, "ppcb-item-503", "pk1")
-            //         .await
-            //         .expect(
-            //             "Post-threshold reads should succeed directly via the alternate region",
-            //         );
-            //
-            //     let diagnostics = response.diagnostics();
-            //     let regions = diagnostics.regions_contacted();
-            //     assert!(
-            //         !regions.contains(&HUB_REGION),
-            //         "Read {i} after circuit breaker trip should NOT contact the hub region, \
-            //      but regions_contacted={:?}",
-            //         regions
-            //     );
-            // }
-
-            Ok(())
-        },
-    )
+        Ok(())
+    })
     .await
 }
 

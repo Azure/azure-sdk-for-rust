@@ -1,5 +1,5 @@
-apiHash: 60d0294e7551ba49995df5ee4ff54a0d05798771053b8b9d9460ee7cf7bc0739
+apiHash: 186e8d5259e54f2c0cbd2127d4e7fb0f120455f183743653bb1f6e1f5d64238a
 packageVersion: 1.0.0
 packageRelativePath: sdk/storage/azure_storage_blob
-parserVersion: 2.3.0
+parserVersion: 2.3.1
 rustVersion: 1.97.0-nightly

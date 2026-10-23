@@ -6544,16 +6544,15 @@
 @@ -2562,1 +6246,2 @@
 +/// Stream implementations for Azure Blob Storage.
  pub mod stream {
-@@ -2563,3 +6248,4 @@
+@@ -2563,2 +6248,3 @@
 +    /// Tokio-based stream implementations.
      #[cfg(feature = "tokio")]
-     #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
      pub mod tokio {
-@@ -2566,2 +6252,3 @@
+@@ -2565,2 +6251,3 @@
 +        /// A stream over a [`tokio::fs::File`] that implements [`SeekableStream`].
          #[derive(Clone, Debug)]
          pub struct FileStream {
-@@ -2570,1 +6257,11 @@
+@@ -2569,1 +6256,11 @@
 +            /// Creates a new [`FileStreamBuilder`].
 +            ///
 +            /// # Arguments
@@ -6565,7 +6564,7 @@
 +            /// `len()` is the file size returned from [`Metadata::len()`](std::fs::Metadata)
 +            /// regardless of the initial position of the [`File`].
              pub fn builder(file: File) -> FileStreamBuilder;
-@@ -2581,1 +6278,7 @@
+@@ -2580,1 +6277,7 @@
 +            /// Gets the length of the underlying [`File`].
 +            ///
 +            /// # Notes
@@ -6573,11 +6572,11 @@
 +            /// `len()` is the file size returned from [`Metadata::len()`](std::fs::Metadata)
 +            /// regardless of the initial position of the [`File`].
              fn len(&self) -> Option<u64>;
-@@ -2584,2 +6287,3 @@
+@@ -2583,2 +6286,3 @@
 +        /// Builds a [`FileStream`] from a [`tokio::fs::File`].
          #[derive(Debug)]
          pub struct FileStreamBuilder {
-@@ -2588,1 +6292,7 @@
+@@ -2587,1 +6291,7 @@
 +            /// Builds a [`FileStream`].
 +            ///
 +            /// # Notes
@@ -6585,6 +6584,6 @@
 +            /// The [`SeekableStream::len()`] is the file size returned from [`Metadata::len()`](std::fs::Metadata)
 +            /// regardless of the initial position of the [`File`].
              pub async fn build(self) -> azure_core::Result<FileStream>;
-@@ -2589,1 +6299,2 @@
+@@ -2588,1 +6298,2 @@
 +            /// Sets the size of the buffer to use when reading from the stream.
              pub fn with_buffer_size(self, buffer_size: usize) -> Self;
