@@ -93,6 +93,9 @@ pub struct DriverOptions {
     /// per-operation [`AvailabilityStrategy`](crate::options::AvailabilityStrategy)
     /// asks for.
     hedging_options: HedgingOptions,
+    /// Whether the driver rejects unsafe user-defined resource names before
+    /// request planning.
+    resource_name_validation_enabled: bool,
 }
 
 impl DriverOptions {
@@ -141,6 +144,19 @@ impl DriverOptions {
     pub fn hedging_options(&self) -> &HedgingOptions {
         &self.hedging_options
     }
+
+    /// Returns whether resource-name validation is enabled.
+    ///
+    /// When enabled, the driver rejects empty names, dot segments, and names
+    /// containing URL separators, delimiters, or control characters before
+    /// request planning. This includes item names supplied to Create and Upsert
+    /// so created items remain addressable by later point operations. It does
+    /// not parse IDs from request bodies or transactional protocol fields.
+    ///
+    /// Validation is enabled by default.
+    pub fn resource_name_validation_enabled(&self) -> bool {
+        self.resource_name_validation_enabled
+    }
 }
 
 /// Builder for creating [`DriverOptions`].
@@ -158,6 +174,7 @@ pub struct DriverOptionsBuilder {
     fault_injection_rules: Option<Vec<Arc<FaultInjectionRule>>>,
     partition_failover_options: Option<PartitionFailoverOptions>,
     hedging_options: Option<HedgingOptions>,
+    resource_name_validation_enabled: bool,
 }
 
 impl DriverOptionsBuilder {
@@ -172,6 +189,7 @@ impl DriverOptionsBuilder {
             fault_injection_rules: None,
             partition_failover_options: None,
             hedging_options: None,
+            resource_name_validation_enabled: true,
         }
     }
 
@@ -273,6 +291,21 @@ impl DriverOptionsBuilder {
         self
     }
 
+    /// Sets whether the driver rejects unsafe user-defined resource names before
+    /// request planning.
+    ///
+    /// This option is enabled by default. Pass `false` to preserve compatibility
+    /// with applications that use names accepted by the service but unsafe for
+    /// URL path construction.
+    ///
+    /// Validation includes item names supplied to Create and Upsert so newly
+    /// written items remain addressable by later point operations. This option
+    /// does not parse IDs from request bodies or transactional protocol fields.
+    pub fn with_resource_name_validation(mut self, enabled: bool) -> Self {
+        self.resource_name_validation_enabled = enabled;
+        self
+    }
+
     /// Builds the [`DriverOptions`].
     ///
     /// When [`with_partition_failover_options`](Self::with_partition_failover_options)
@@ -319,6 +352,7 @@ impl DriverOptionsBuilder {
             fault_injection_rules: self.fault_injection_rules.filter(|r| !r.is_empty()),
             partition_failover_options,
             hedging_options: self.hedging_options.unwrap_or_default(),
+            resource_name_validation_enabled: self.resource_name_validation_enabled,
         }
     }
 }
@@ -355,6 +389,7 @@ mod tests {
             .operation_options()
             .max_session_retry_count
             .is_none());
+        assert!(options.resource_name_validation_enabled());
     }
 
     #[test]
@@ -407,6 +442,15 @@ mod tests {
             .build();
 
         assert_eq!(options.preferred_regions(), &regions);
+    }
+
+    #[test]
+    fn builder_disables_resource_name_validation() {
+        let options = DriverOptionsBuilder::new(test_account())
+            .with_resource_name_validation(false)
+            .build();
+
+        assert!(!options.resource_name_validation_enabled());
     }
 
     // ── Partition-failover / PPCB end-to-end env resolution ─────────────────
