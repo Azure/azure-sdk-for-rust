@@ -47,7 +47,8 @@ These rules apply in addition to the repository root [AGENTS.md](../../AGENTS.md
 - Use "Resource Manager", not "ARM", in public documentation. "ARM" is acceptable in code; name modules and features `resourcemanager`.
 - Put Resource Manager (ARM)-specific functionality in existing `azure_core` modules where appropriate.
 - When names collide, use a `resourcemanager` submodule gated by the `resourcemanager` feature, such as `azure_core::http::poller::resourcemanager`; do not re-export its items from parent modules.
-- Use `azure_core::cloud::resourcemanager::Audience` in all ARM crates for audience registration, audience lookup, and default credential scopes; do not define crate-specific ARM audience markers.
+- Enable `azure_core`'s `resourcemanager` feature and use `azure_core::cloud::resourcemanager::Audience` for custom audience registration in all ARM crates; do not define crate-specific ARM audience markers.
+- Import `azure_core::cloud::resourcemanager::CloudConfigurationExt as _` in generated and hand-written ARM constructors to call `endpoint()`, `audience()`, and `default_scope()` without audience type parameters. Caller examples configuring `CloudConfiguration` and `CustomConfiguration` do not need this trait.
 - Keep each ARM crate's first README client-configuration example as the normal case. Add a second example configuring and using a custom cloud: set `CustomConfiguration::authority_host` and `endpoint`, register the ARM audience in `Audiences` with the shared marker, and use that cloud to configure the credential and client.
 - Read the caller's `CloudConfiguration` from client options in Resource Manager constructors; use `unwrap_or_default()` when omitted.
 - Resolve built-in service endpoints and authentication audiences in the library; honor supplied custom-cloud values.

@@ -88,9 +88,13 @@ After these tweaks, run the usual validation commands (`cargo fmt`, `cargo clipp
 ### Cloud configuration and shared audience
 
 All `azure_resourcemanager_*` crates use
-`azure_core::cloud::resourcemanager::Audience` for audience registration, lookup,
-and default credential scopes. The emitter must import that marker, not generate
-or re-export a service-specific `Audience`. Audience entries are keyed by Rust
+`azure_core::cloud::resourcemanager::Audience` for custom audience registration.
+The marker and `CloudConfigurationExt` trait are gated by `azure_core`'s
+`resourcemanager` feature. Generated and hand-written constructors must import
+`azure_core::cloud::resourcemanager::CloudConfigurationExt as _` for endpoint,
+audience, and scope resolution without audience type parameters. Core uses the
+shared marker internally; do not generate or re-export a service-specific
+`Audience`. Audience entries are keyed by Rust
 type identity: one custom Resource Manager audience registration must work with
 every Resource Manager crate. Data-plane crates retain their service-specific
 audience markers.
@@ -99,7 +103,7 @@ Constructors read `options.client_options.cloud`, borrowing the configured cloud
 or the default without cloning it or allocating a default `Arc`:
 
 ```rust ignore
-use azure_core::cloud::resourcemanager::Audience;
+use azure_core::cloud::resourcemanager::CloudConfigurationExt as _;
 
 let options = options.unwrap_or_default();
 let cloud = options.client_options.cloud.as_deref().unwrap_or_default();
@@ -107,7 +111,7 @@ let endpoint = cloud
     .endpoint()
     .ok_or_else(|| Error::new(ErrorKind::Other, "missing Resource Manager endpoint"))?;
 let endpoint = Url::parse(endpoint)?;
-let scope = cloud.default_scope::<Audience>()?.into_owned();
+let scope = cloud.default_scope()?.into_owned();
 ```
 
 Pass the scope to `BearerTokenAuthorizationPolicy`, then move the original
@@ -122,7 +126,11 @@ For custom clouds, keep these values distinct:
 - `CustomConfiguration::authority_host` configures the credential's identity authority.
 - `CustomConfiguration::endpoint` supplies the Resource Manager service URL.
 - `Audiences::with::<Audience>(...)` registers the authentication audience.
-  `CloudConfiguration::default_scope::<Audience>()` derives the token scope.
+  The constructor calls `cloud.default_scope()` to derive the token scope.
+
+Configuration of `CloudConfiguration` and `CustomConfiguration` is unchanged.
+Caller examples retain the shared `Audience` import for registration but do not
+need `CloudConfigurationExt`; only constructor implementations need the trait.
 
 The endpoint and audience need not be the same URL; never infer one from the
 other or use the login authority as the service endpoint. A custom cloud must
@@ -139,7 +147,7 @@ tools' cloud settings and has no cloud option. Load secrets from a secure source
 Constructor tests should cover omitted and explicit Public cloud, Government,
 China, distinct custom endpoint and audience URLs, missing custom endpoint or
 audience, and invalid endpoint URLs. Emitter fixtures should verify delegation to
-core and the absence of a generated audience marker, not duplicate core's cloud
+core, the constructor's extension-trait import, and the absence of a generated audience marker, not duplicate core's cloud
 mapping tests. Register only the shared marker in custom-cloud tests so a
 mistaken service-specific marker fails lookup.
 
