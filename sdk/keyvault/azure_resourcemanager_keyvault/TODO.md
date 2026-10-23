@@ -157,7 +157,7 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   Emit the prototype's borrowed-default pattern:
 
   ```rust
-  use azure_core::cloud::resourcemanager::Audience;
+  use azure_core::cloud::resourcemanager::CloudConfigurationExt as _;
 
   let options = options.unwrap_or_default();
   let cloud = options.client_options.cloud.as_deref().unwrap_or_default();
@@ -165,22 +165,24 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
       .endpoint()
       .ok_or_else(|| Error::new(ErrorKind::Other, "missing Resource Manager endpoint"))?;
   let endpoint = Url::parse(endpoint)?;
-  let scope = cloud.default_scope::<Audience>()?.into_owned();
+  let scope = cloud.default_scope()?.into_owned();
   ```
 
   Keep `options.client_options` available to move into `Pipeline::new`.
-  Resolve the management endpoint with `CloudConfiguration::endpoint()` and the
-  token scope with `CloudConfiguration::default_scope::<Audience>()`, using the
-  shared `azure_core::cloud::resourcemanager::Audience` marker.
+  Import `azure_core::cloud::resourcemanager::CloudConfigurationExt as _` in
+  generated and hand-written constructors. Resolve the management endpoint with
+  `cloud.endpoint()` and the token scope with `cloud.default_scope()`. These
+  trait methods take no audience type parameter; core uses the shared
+  `azure_core::cloud::resourcemanager::Audience` marker internally.
 - [ ] For every crate whose name starts with `azure_resourcemanager_`, do not
   define or re-export a per-crate `Audience`. Continue generating per-crate
   audience markers for data-plane crates without that prefix.
-  Import `azure_core::cloud::resourcemanager::Audience` in generated
-  constructors and use that same marker in custom-cloud examples and tests.
+  Use `azure_core::cloud::resourcemanager::Audience` to register custom audiences
+  in examples and tests; constructors import `CloudConfigurationExt` instead.
   A single custom audience entry must work across Resource Manager crates.
 - [ ] Parse the returned endpoint with `Url::parse`, return an explicit
   configuration error when `endpoint()` returns `None`, and propagate errors
-  from `default_scope::<Audience>()`. Pass the scope's `into_owned()` result to
+  from `default_scope()`. Pass the scope's `into_owned()` result to
   `BearerTokenAuthorizationPolicy`; do not generate endpoint tables, cloud
   matches, or manual `/.default` concatenation.
 - [ ] Keep the identity authority, service endpoint, authentication audience, and
@@ -195,6 +197,9 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   generating a competing list of supported clouds.
 - [ ] Generate accurate constructor documentation for the default cloud,
   custom-cloud endpoint and audience requirements, and configuration/URL errors.
+  Fully qualify the shared audience link as
+  ``[`Audience`](azure_core::cloud::resourcemanager::Audience)``; importing only
+  `CloudConfigurationExt as _` does not bring `Audience` into rustdoc scope.
   Remove the obsolete unsupported-cloud panic documentation.
   Use "Resource Manager" in public documentation; use `resourcemanager` for
   modules and features.
@@ -207,10 +212,14 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   no cloud option; use a credential such as `ClientSecretCredential` for the
   explicit custom-cloud example. Keep endpoint and authentication audience URLs
   distinct and load secrets from a secure source, not generated literals.
+  Caller examples do not need `CloudConfigurationExt`: configuring
+  `CloudConfiguration`, `CustomConfiguration`, and `Audiences` is unchanged.
+  Keep the shared `Audience` import for custom audience registration.
 - [ ] Generate a manifest dependency enabling `azure_core`'s `resourcemanager`
   feature, preserve `default-features = false`, and forward default transport
   features consistently. Require a core version containing both the polling
-  helper and the cloud endpoint/default-scope APIs.
+  helper and `cloud::resourcemanager::CloudConfigurationExt` and `Audience`,
+  which are all gated by that feature.
   The prototype temporarily uses local `azure_core` path plus version
   `1.2.0-beta.2`; do not hard-code local paths into published service generation.
 
@@ -225,10 +234,11 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   core and preserve its errors. Assert that fixtures emit
   `cloud.as_deref().unwrap_or_default()` rather than cloning the configured
   cloud, allocating a default `Arc`, or hard-coding `AzurePublic`.
-  Verify that ARM crates do not emit an `Audience` declaration and use the shared
-  core marker for `default_scope::<Audience>()`. Use `CloudConfiguration` methods
-  for endpoint, audience, and scope resolution rather than inline cloud mappings,
-  custom audience lookups, or scope construction.
+  Verify that ARM crates do not emit an `Audience` declaration and import
+  `azure_core::cloud::resourcemanager::CloudConfigurationExt as _` in constructors.
+  Call `endpoint()`, `audience()`, and `default_scope()` without audience type
+  parameters rather than emitting inline cloud mappings, custom audience
+  lookups, or scope construction.
   Keep cloud mappings and scope normalization
   semantics tested in `azure_core`, not reimplemented in emitter fixtures.
   The core API in `dfc31db6e1` appends `/.default` to custom audiences verbatim;
@@ -237,7 +247,9 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   APIs, including the credential's cloud options. Register custom audiences only
   with the core Resource Manager marker in fixtures so that a mistakenly emitted
   per-crate marker fails the custom-cloud test. Verify data-plane generation
-  retains its per-crate audience marker.
+  retains its per-crate audience marker. Verify caller examples configure clouds
+  without importing `CloudConfigurationExt`; only constructor implementations
+  need the trait.
 - [ ] Cover all polling protocols, repeated GETs without bodies preserving `Accept`,
   resource and empty final results, and Operation-Location inline extraction.
   Keep protocol semantics tested in `azure_core`; emitter tests should verify

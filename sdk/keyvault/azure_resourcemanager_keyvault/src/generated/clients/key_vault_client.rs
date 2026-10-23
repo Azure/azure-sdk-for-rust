@@ -11,7 +11,7 @@ use crate::generated::clients::{
     KeyVaultSecretsClient, KeyVaultVaultsClient,
 };
 use azure_core::{
-    cloud::resourcemanager::Audience,
+    cloud::resourcemanager::CloudConfigurationExt as _,
     credentials::TokenCredential,
     error::ErrorKind,
     fmt::SafeDebug,
@@ -72,7 +72,7 @@ impl KeyVaultClient {
             .endpoint()
             .ok_or_else(|| Error::new(ErrorKind::Other, "missing Resource Manager endpoint"))?;
         let endpoint = Url::parse(endpoint)?;
-        let scope = cloud.default_scope::<Audience>()?.into_owned();
+        let scope = cloud.default_scope()?.into_owned();
         let auth_policy: Arc<dyn Policy> =
             Arc::new(BearerTokenAuthorizationPolicy::new(credential, vec![scope]));
         Ok(Self {
