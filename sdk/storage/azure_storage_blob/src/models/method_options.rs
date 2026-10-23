@@ -10,7 +10,7 @@ use azure_core::{
 use time::OffsetDateTime;
 
 use crate::models::{
-    AccessTier, BlobClientDownloadInternalOptions, BlockBlobClientStageBlockOptions,
+    AccessTier, BlobClientDownloadInternalOptions, BlockBlobClientStageBlockInternalOptions,
     EncryptionAlgorithmType, HttpRange, ImmutabilityPolicyMode,
 };
 
@@ -126,7 +126,7 @@ impl<'a> From<BlobClientDownloadOptions<'a>> for BlobClientDownloadInternalOptio
 }
 
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlockBlobClientStageBlockHandwrittenOptions<'a> {
+pub struct BlockBlobClientStageBlockOptions<'a> {
     /// Content validation options. Specifies how block content is validated during the transfer.
     /// If `None`, the SDK will select a default strategy, which may change across versions.
     pub content_validation: Option<UploadContentValidation>,
@@ -162,15 +162,15 @@ pub struct BlockBlobClientStageBlockHandwrittenOptions<'a> {
     /// Specifies the transactional MD5 hash for the body.
     #[deprecated(
         since = "1.2.0",
-        note = "Use `content_validation` field instead. Operation will fail if both `transactional_content_md5` and `content_validation` are `Some`."
+        note = "MD5 checksums are no longer recommended. Instead, use other checksums via `content_validation` field instead. Operation will fail if both `transactional_content_md5` and `content_validation` are `Some`."
     )]
     pub transactional_content_md5: Option<Vec<u8>>,
 }
 
-impl<'a> From<BlockBlobClientStageBlockHandwrittenOptions<'a>>
-    for BlockBlobClientStageBlockOptions<'a>
+impl<'a> From<BlockBlobClientStageBlockOptions<'a>>
+    for BlockBlobClientStageBlockInternalOptions<'a>
 {
-    fn from(value: BlockBlobClientStageBlockHandwrittenOptions<'a>) -> Self {
+    fn from(value: BlockBlobClientStageBlockOptions<'a>) -> Self {
         Self {
             encryption_algorithm: value.encryption_algorithm,
             encryption_key: value.encryption_key,
@@ -183,6 +183,8 @@ impl<'a> From<BlockBlobClientStageBlockHandwrittenOptions<'a>>
             transactional_content_crc64: value.transactional_content_crc64,
             #[allow(deprecated)]
             transactional_content_md5: value.transactional_content_md5,
+            structured_body_type: todo!(),
+            structured_content_length: todo!(),
         }
     }
 }
