@@ -734,6 +734,166 @@ fn extracts_root_module_attributes_as_inner_attrs() {
 }
 
 #[test]
+fn omits_doc_only_cfg_attrs_and_preserves_interleaved_rustdoc_comments() {
+    let source = r#"
+//! Before crate docs.
+#![cfg_attr(doc, doc = "Conditional crate docs.")]
+//! After crate docs.
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
+const _: () = ();
+
+/// Before module docs.
+#[cfg_attr(doc, doc = "Conditional module docs.")]
+/// After module docs.
+pub mod nested {
+    /// Before item docs.
+    #[cfg_attr(doc, doc = "Conditional item docs.")]
+    /// After item docs.
+    #[cfg_attr(not(doc), doc = "Inactive item docs.")]
+    pub struct Example {
+        /// Before field docs.
+        #[cfg_attr(doc, doc = "Conditional field docs.")]
+        /// After field docs.
+        pub value: u32,
+    }
+}
+"#;
+    let path = std::env::temp_dir().join(format!(
+        "generate_api_conditional_docs_{}.rs",
+        std::process::id()
+    ));
+    std::fs::write(&path, source).unwrap();
+
+    let mut krate = crate_with_root_items(
+        vec![Id(1)],
+        vec![
+            module_item(Id(1), "nested", vec![Id(2)], false),
+            item(
+                Id(2),
+                Some("Example"),
+                ItemEnum::Struct(Struct {
+                    kind: StructKind::Plain {
+                        fields: vec![Id(3)],
+                        has_stripped_fields: false,
+                    },
+                    generics: empty_generics(),
+                    impls: Vec::new(),
+                }),
+            ),
+            item(
+                Id(3),
+                Some("value"),
+                ItemEnum::StructField(Type::Primitive("u32".to_string())),
+            ),
+        ],
+    );
+    for (id, declaration, label) in [
+        (Id(0), "//! Before crate docs.", "crate"),
+        (Id(1), "pub mod nested", "module"),
+        (Id(2), "pub struct Example", "item"),
+        (Id(3), "pub value", "field"),
+    ] {
+        let line = source
+            .lines()
+            .position(|line| line.contains(declaration))
+            .unwrap()
+            + 1;
+        let item = krate.index.get_mut(&id).unwrap();
+        item.span = Some(rustdoc_types::Span {
+            filename: path.clone(),
+            begin: (line, 1),
+            end: (source.lines().count(), 1),
+        });
+        // Rustdoc JSON merges active cfg_attr docs with comments in source order.
+        item.docs = Some(format!(
+            "Before {label} docs.\nConditional {label} docs.\nAfter {label} docs."
+        ));
+        item.attrs = vec![rustdoc_types::Attribute::Other(
+            "#[attr = CfgAttrTrace]".to_string(),
+        )];
+    }
+
+    let model = extract_model(&package_metadata("demo"), &krate, &mut NoopResolver);
+    std::fs::remove_file(path).unwrap();
+    let model = model.unwrap();
+    let module = &model.root_module.modules[0];
+    assert!(module.attributes.is_empty());
+    assert!(module.items[0].attributes.is_empty());
+    assert!(module.items[0].members[0].attributes.is_empty());
+    assert_eq!(
+        model
+            .root_module
+            .attributes
+            .iter()
+            .map(|attribute| attribute.text.as_str())
+            .collect::<Vec<_>>(),
+        vec!["#![cfg_attr(docsrs, feature(doc_cfg))]"]
+    );
+
+    let lines = crate::render::markdown::render_lines(&model);
+    let api = crate::render::markdown::render_from_lines(&lines);
+    assert!(!api.contains("doc ="));
+    assert!(!api.contains("///"));
+    assert!(api.contains("#![cfg_attr(docsrs, feature(doc_cfg))]"));
+
+    let patch = crate::render::patch::render(&lines, "api.md");
+    let documentation = diffy::apply(&api, &diffy::Patch::from_str(&patch).unwrap()).unwrap();
+    assert!(!documentation.contains("Inactive item docs."));
+    let unindented = documentation
+        .lines()
+        .map(str::trim_start)
+        .collect::<Vec<_>>()
+        .join("\n");
+    for label in ["crate", "module", "item", "field"] {
+        let prefix = if label == "crate" { "//!" } else { "///" };
+        let expected = format!(
+            "{prefix} Before {label} docs.\n{prefix} Conditional {label} docs.\n{prefix} After {label} docs."
+        );
+        assert!(unindented.contains(&expected), "{label}");
+    }
+
+    let apiview = crate::render::apiview::render(&model, &Default::default()).unwrap();
+    assert!(!apiview.contains("doc ="));
+    assert!(apiview.contains("/// Conditional item docs."));
+}
+
+#[test]
+fn omits_legacy_doc_only_cfg_attrs_but_keeps_mixed_attributes() {
+    let item = item(
+        Id(1),
+        Some("Example"),
+        ItemEnum::Struct(Struct {
+            kind: StructKind::Unit,
+            generics: empty_generics(),
+            impls: Vec::new(),
+        }),
+    )
+    .with_attrs(vec![
+        r#"#[<cfg_attr>(doc, doc = "Conditional docs.")]"#.to_string(),
+        r#"#[cfg_attr(doc, doc = "Mixed docs.", must_use)]"#.to_string(),
+    ])
+    .with_docs("Before.\nConditional docs.\nAfter.\nMixed docs.");
+
+    assert_eq!(
+        extract_attributes(&item)
+            .iter()
+            .map(|attribute| attribute.text.as_str())
+            .collect::<Vec<_>>(),
+        vec![r#"#[cfg_attr(doc, doc = "Mixed docs.", must_use)]"#]
+    );
+    assert_eq!(
+        extract_doc_comments(&item),
+        vec![
+            "/// Before.",
+            "/// Conditional docs.",
+            "/// After.",
+            "/// Mixed docs.",
+        ]
+    );
+}
+
+#[test]
 fn extracts_module_scope_lint_attrs_without_rewriting_item_attrs() {
     let module_id = Id(1);
     let module_item_id = Id(2);
