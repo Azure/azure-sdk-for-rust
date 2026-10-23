@@ -30,8 +30,10 @@ fn debug_tests() {
         .expect("cargo to start running");
     assert!(
         output.status.success(),
-        "tests failed:\n{}",
-        String::from_utf8_lossy(output.stdout.as_ref())
+        "tests failed ({}):\nstdout:\n{}\nstderr:\n{}",
+        output.status,
+        String::from_utf8_lossy(output.stdout.as_ref()),
+        String::from_utf8_lossy(output.stderr.as_ref())
     );
 }
 
@@ -57,7 +59,9 @@ fn safe_debug_tests() {
         .expect("cargo to start running");
     assert!(
         output.status.success(),
-        "tests failed:\n{}",
-        String::from_utf8_lossy(output.stdout.as_ref())
+        "tests failed ({}):\nstdout:\n{}\nstderr:\n{}",
+        output.status,
+        String::from_utf8_lossy(output.stdout.as_ref()),
+        String::from_utf8_lossy(output.stderr.as_ref())
     );
 }
