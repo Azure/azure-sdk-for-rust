@@ -142,6 +142,10 @@ pub struct Config {
     #[arg(long, default_value_t = 300)]
     pub report_interval: u64,
 
+    /// Record HTTP/2 connection and peer-GOAWAY counters for all clients in this process.
+    #[arg(long)]
+    pub connection_metrics: bool,
+
     /// Emit sampled summary diagnostics for operations slower than this threshold in milliseconds.
     ///
     /// Failures are also eligible for emission. Output is rate-limited by the

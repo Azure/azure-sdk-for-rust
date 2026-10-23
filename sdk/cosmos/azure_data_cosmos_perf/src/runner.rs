@@ -39,6 +39,8 @@ fn error_source_chain(error: &dyn std::error::Error) -> Option<String> {
 /// Structured perf result document stored in Cosmos DB for long-term monitoring.
 #[derive(Debug, Serialize)]
 struct PerfResult {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    connection_metrics: Option<crate::connection_metrics::Snapshot>,
     id: String,
     partition_key: String,
     workload_id: String,
@@ -188,6 +190,7 @@ pub struct RunConfig {
 /// Snapshot of runtime configuration emitted with each PerfResult document.
 #[derive(Clone)]
 pub struct ConfigSnapshot {
+    pub connection_metrics: Option<crate::connection_metrics::ConnectionMetrics>,
     pub concurrency: Option<u64>,
     pub target_rate: Option<u64>,
     pub max_in_flight: Option<u64>,
@@ -625,8 +628,13 @@ async fn upsert_results(
         })
         .unwrap_or((0.0, 0, 0.0, 0, 0, None));
 
+    let connection_metrics = config
+        .connection_metrics
+        .as_ref()
+        .map(|metrics| metrics.snapshot());
     for s in summaries {
         let result = PerfResult {
+            connection_metrics: connection_metrics.clone(),
             id: Uuid::new_v4().to_string(),
             partition_key: Uuid::new_v4().to_string(),
             workload_id: workload_id.to_string(),
