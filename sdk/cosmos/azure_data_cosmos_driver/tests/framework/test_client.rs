@@ -38,21 +38,18 @@ use super::env::{
 /// Applies the runtime-level test defaults every framework-built
 /// [`CosmosDriverRuntime`] shares.
 ///
-/// Under `test_category = "emulator_vnext"` this defaults binary encoding off:
-/// the vnext emulator cannot decode a binary request body and rejects item
-/// writes with `400/1001 PartitionKeyMismatch` (#5240). Runtime is the lowest
-/// explicit layer, so a test that sets binary encoding at the driver or
-/// operation layer still wins.
-///
-/// `emulator_tests::driver_vnext_binary_encoding_canary` goes red when vnext
-/// starts accepting binary writes, which is the signal to delete this.
+/// The vNext matrix selects the encoding default; explicit higher-layer options still win.
 fn runtime_operation_options(options: OperationOptions) -> OperationOptions {
-    #[cfg(test_category = "emulator_vnext")]
+    #[cfg(any(
+        test_category = "emulator_vnext",
+        test_category = "emulator_vnext_gateway_v2"
+    ))]
     let options = {
         let mut options = options;
         if options.binary_encoding.is_none() {
             options.binary_encoding = Some(
-                azure_data_cosmos_driver::options::BinaryEncodingOptions::new().with_enabled(false),
+                azure_data_cosmos_driver::options::BinaryEncodingOptions::new()
+                    .with_enabled(cfg!(test_category = "emulator_vnext_binary")),
             );
         }
         options
@@ -207,6 +204,10 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
     let account = AccountReference::with_account_key(endpoint, key);
 
     let mut connection_pool_builder = ConnectionPoolOptions::builder();
+    #[cfg(test_category = "emulator_vnext")]
+    {
+        connection_pool_builder = connection_pool_builder.with_gateway_v2_disabled(true);
+    }
     if connection_string.eq_ignore_ascii_case(EMULATOR_CONNECTION_STRING) {
         connection_pool_builder = connection_pool_builder.with_server_certificate_validation(
             ServerCertificateValidation::RequiredUnlessEmulator,
@@ -1613,23 +1614,31 @@ mod tests {
     }
 
     #[test]
-    #[cfg(test_category = "emulator_vnext")]
-    fn vnext_disables_binary_encoding_by_default() {
+    #[cfg(any(
+        test_category = "emulator_vnext",
+        test_category = "emulator_vnext_gateway_v2"
+    ))]
+    fn vnext_encoding_default_preserves_explicit_overrides() {
+        let selected = cfg!(test_category = "emulator_vnext_binary");
         let defaulted = runtime_operation_options(OperationOptions::default());
-        assert!(!defaulted.binary_encoding.unwrap().enabled);
+        assert_eq!(defaulted.binary_encoding.unwrap().enabled, selected);
 
         let mut explicit = OperationOptions::default();
-        explicit.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(true));
-        assert!(
+        explicit.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(!selected));
+        assert_eq!(
             runtime_operation_options(explicit)
                 .binary_encoding
                 .unwrap()
-                .enabled
+                .enabled,
+            !selected
         );
     }
 
     #[test]
-    #[cfg(not(test_category = "emulator_vnext"))]
+    #[cfg(not(any(
+        test_category = "emulator_vnext",
+        test_category = "emulator_vnext_gateway_v2"
+    )))]
     fn binary_encoding_is_untouched_outside_vnext() {
         assert!(runtime_operation_options(OperationOptions::default())
             .binary_encoding
