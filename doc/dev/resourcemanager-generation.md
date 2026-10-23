@@ -79,10 +79,89 @@ Most polish items match the data-plane flow, but a few deserve special emphasis 
   workspace = true
   ```
 
-- **Credential surface** – Make sure the public constructors accept `azure_identity` credentials and expose subscription-scoped builders, matching existing management plane crates.
+- **Credential surface** – Accept `Arc<dyn azure_core::credentials::TokenCredential>` so callers can use `azure_identity` or another credential implementation. Preserve the subscription arguments defined by TypeSpec.
+- **Core dependency** – Enable `azure_core`'s `resourcemanager` feature. Require a core version containing the shared cloud configuration and polling APIs used by the generated code; preserve the usual transport feature forwarding.
 - **Integration tests** – Provision test resources with `eng/common/TestResources/New-TestResources.ps1 -ServiceDirectory <service>` and record with `#[recorded::test]`. Management plane tests frequently require role assignments, so verify the Bicep template grants the test application proper `Microsoft.Authorization/roleAssignments` permissions.
 
 After these tweaks, run the usual validation commands (`cargo fmt`, `cargo clippy`, `cargo test`) as instructed in the base guide. When long-running operations are generated, add a `cargo check -p <crate> --all-features` run to ensure every poller compiles.
+
+### Cloud configuration and shared audience
+
+All `azure_resourcemanager_*` crates use
+`azure_core::cloud::resourcemanager::Audience` for audience registration, lookup,
+and default credential scopes. The emitter must import that marker, not generate
+or re-export a service-specific `Audience`. Audience entries are keyed by Rust
+type identity: one custom Resource Manager audience registration must work with
+every Resource Manager crate. Data-plane crates retain their service-specific
+audience markers.
+
+Constructors read `options.client_options.cloud`, borrowing the configured cloud
+or the default without cloning it or allocating a default `Arc`:
+
+```rust ignore
+use azure_core::cloud::resourcemanager::Audience;
+
+let options = options.unwrap_or_default();
+let cloud = options.client_options.cloud.as_deref().unwrap_or_default();
+let endpoint = cloud
+    .endpoint()
+    .ok_or_else(|| Error::new(ErrorKind::Other, "missing Resource Manager endpoint"))?;
+let endpoint = Url::parse(endpoint)?;
+let scope = cloud.default_scope::<Audience>()?.into_owned();
+```
+
+Pass the scope to `BearerTokenAuthorizationPolicy`, then move the original
+`options.client_options` into `Pipeline::new`. Propagate missing configuration
+and URL errors. Public cloud is the default; Public, Government, and China
+endpoint and scope mappings belong to `azure_core`, not generated service code.
+Do not generate cloud matches, endpoint tables, or manual scope concatenation
+or normalization.
+
+For custom clouds, keep these values distinct:
+
+- `CustomConfiguration::authority_host` configures the credential's identity authority.
+- `CustomConfiguration::endpoint` supplies the Resource Manager service URL.
+- `Audiences::with::<Audience>(...)` registers the authentication audience.
+  `CloudConfiguration::default_scope::<Audience>()` derives the token scope.
+
+The endpoint and audience need not be the same URL; never infer one from the
+other or use the login authority as the service endpoint. A custom cloud must
+supply both endpoint and audience. Scope formatting belongs to core; its current
+custom-cloud implementation appends `/.default` verbatim, so the emitter must
+not introduce its own trailing-slash trimming.
+
+Keep the normal default-cloud client example first in each crate README, followed
+by a custom-cloud example. Register the audience with the shared core marker and
+pass the same cloud to the service client and a cloud-aware credential, such as
+`ClientSecretCredential`. `DeveloperToolsCredential` instead uses the developer
+tools' cloud settings and has no cloud option. Load secrets from a secure source.
+
+Constructor tests should cover omitted and explicit Public cloud, Government,
+China, distinct custom endpoint and audience URLs, missing custom endpoint or
+audience, and invalid endpoint URLs. Emitter fixtures should verify delegation to
+core and the absence of a generated audience marker, not duplicate core's cloud
+mapping tests. Register only the shared marker in custom-cloud tests so a
+mistaken service-specific marker fails lookup.
+
+### Long-running operation generation
+
+Generate calls to `azure_core::http::poller::resourcemanager::new_poller` and
+method options using that module's `PollerOptions`. Continue returning the
+existing `Poller<OperationStatus>`; do not introduce a service-specific poller or
+generate a competing polling state machine.
+
+Pass final-state metadata as `Option<FinalStateVia<_>>` to the helper. Omitted
+metadata stays `None`, allowing method- and response-based runtime rules; it is
+not an implicit Location selector. For inline Operation-Location results,
+generate the extraction callback from result-path metadata, preserving response
+status, headers, and original result JSON bytes. Empty final results use
+`StatusMonitor::Output = ()` and `NoFormat`; resource results retain their format.
+
+Delegate polling protocols, API-version handling, retry timing, and final GET
+selection to core. Preserve lazy initial execution and caller context. The core
+helper creates body-free continuation GETs and retains the initial `Accept`
+header for polling and final requests. Test emitted metadata and runtime wiring
+rather than reimplementing these protocol rules in emitter fixtures.
 
 ### Enum coverage and test resources
 
