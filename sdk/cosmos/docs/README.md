@@ -62,6 +62,9 @@ directly by Rust source remain with their crates.
 | 0027 | Hosted emulator (`specs/0027-hosted-emulator.md`) |
 | 0028 | Functional E2E testing (`specs/0028-functional-e2e-testing.md`) |
 | 0029 | Generic native feed cursor (`specs/0029-native-feed-cursor.md`) |
+| 0030 | Change Feed Processor package boundaries (`specs/0030-change-feed-processor-package-boundaries.md`) |
+| 0031 | Change Feed Processor public Rust API (`specs/0031-change-feed-processor-public-api.md`) |
+| 0032 | Change Feed Processor alternate lease stores (`specs/0032-change-feed-processor-alternate-lease-stores.md`) |
 
 ## Architecture decision records
 
