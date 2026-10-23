@@ -1,13 +1,13 @@
 # Contributing to the Key Vault Resource Manager library
 
-Follow the [repository contributing guide](../../../CONTRIBUTING.md) for shared
+Follow the [repository contributing guide](https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md) for shared
 development, provisioning, and test-proxy workflows. This guide describes
 crate-specific generation, tests, and resource requirements.
 
 ## Regenerating the library
 
 This library targets stable API version `2026-05-15`. Its source specification
-and commit are pinned in [tsp-location.yaml](tsp-location.yaml). The specification
+and commit are pinned in [tsp-location.yaml](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/azure_resourcemanager_keyvault/tsp-location.yaml). The specification
 does not yet include Rust emitter configuration.
 
 From the repository root, install the pinned generator:
@@ -26,7 +26,7 @@ npm exec --prefix "$TSP_CLIENT_DIR" --no -- tsp-client update \
 
 Generated constructors, polling methods, polling options, empty-result formats,
 and key rotation action wire values currently contain prototype edits.
-Regeneration overwrites those edits. [TODO.md](TODO.md) tracks the specification
+Regeneration overwrites those edits. [TODO.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/azure_resourcemanager_keyvault/TODO.md) tracks the specification
 and emitter changes needed to remove these patches.
 
 After the upstream changes land, update `tsp-location.yaml` and the pinned
@@ -67,7 +67,7 @@ The service's `CustomizedRecoverable+Purgeable` recovery level is not declared
 in the current specification. The seven-day-retention key tests verify its exact
 preserved `UnknownValue`, not named-enum compatibility. The name-availability test
 remains ignored because the service returns undeclared reason `Invalid`.
-[TODO.md](TODO.md) tracks both shared contract corrections.
+[TODO.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/azure_resourcemanager_keyvault/TODO.md) tracks both shared contract corrections.
 
 ## Recorded vault tests
 
