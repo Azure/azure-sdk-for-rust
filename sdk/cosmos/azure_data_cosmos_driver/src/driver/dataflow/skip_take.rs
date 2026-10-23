@@ -18,17 +18,18 @@
 //! node only has to reconcile the child's documents into the final global
 //! window. It does that by splitting each page's `Documents` into per-document
 //! slices (see [`super::skip_take_page`]), dropping/truncating that list, and
-//! emitting the survivors as a [`ResponseBody::Items`] body — no envelope is
-//! re-serialized. It stops early once `take` is satisfied, so a `TOP n` query
+//! emitting the survivors as pre-split items — no envelope is re-serialized.
+//! Binary items from an ordered merge retain their original page and offsets.
+//! It stops early once `take` is satisfied, so a `TOP n` query
 //! never drains partitions it doesn't need.
 
+use crate::driver::dataflow::{ItemView, PipelineBody, PipelineResponse};
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use bytes::Bytes;
 
 use crate::diagnostics::DiagnosticsContext;
-use crate::models::{CosmosResponse, FeedRange, RequestCharge, ResponseBody};
+use crate::models::{FeedRange, RequestCharge};
 
 use super::{
     recovery_diagnostics::RecoveryDiagnostics, skip_take_page, PageResult, PipelineContext,
@@ -57,7 +58,7 @@ pub(crate) struct SkipTake {
     /// skip consumed the very last backend page without a terminal marker) the
     /// accumulated charge/diagnostics can still be flushed as a final empty
     /// page rather than being dropped.
-    pending_flush: Option<CosmosResponse>,
+    pending_flush: Option<PipelineResponse>,
     /// Whether a re-split page is emitted as Cosmos binary JSON. Derived from
     /// the negotiated operation, never from the bytes of a received page, so
     /// this node agrees with [`PageAggregator`] on the same query.
@@ -106,15 +107,14 @@ impl SkipTake {
     /// Rebuilds a response around the surviving per-document `items`, preserving
     /// status and headers (with `x-ms-item-count` updated to `emitted`), and
     /// folding in any request charge and diagnostics accumulated from suppressed
-    /// (fully-skipped) pages. The body is emitted as [`ResponseBody::Items`] so
-    /// the calling SDK reads each document directly without re-parsing an
-    /// envelope.
+    /// (fully-skipped) pages. The body carries pre-split standalone or
+    /// contextual items so the SDK need not re-parse an envelope.
     fn rebuild(
         &mut self,
-        response: &CosmosResponse,
-        items: Vec<Bytes>,
+        response: &PipelineResponse,
+        items: Vec<ItemView>,
         emitted: u64,
-    ) -> CosmosResponse {
+    ) -> PipelineResponse {
         let mut headers = response.headers().clone();
         headers.item_count = Some(emitted as u32);
         // Fold RUs charged by fully-skipped pages into this public page so the
@@ -123,8 +123,8 @@ impl SkipTake {
             let base = headers.request_charge.unwrap_or_default();
             headers.request_charge = Some(base + self.suppressed_charge);
         }
-        let rebuilt = CosmosResponse::new(
-            ResponseBody::from_items(items),
+        let rebuilt = PipelineResponse::new(
+            PipelineBody::from_item_views(items),
             headers,
             response.status(),
             response.diagnostics(),
@@ -138,7 +138,7 @@ impl SkipTake {
 
     /// Accumulates a fully-skipped page's request charge and diagnostics, and
     /// retains it as the flush template (see [`pending_flush`](Self::pending_flush)).
-    fn suppress(&mut self, response: CosmosResponse) {
+    fn suppress(&mut self, response: PipelineResponse) {
         self.suppressed_charge =
             self.suppressed_charge + response.headers().request_charge.unwrap_or_default();
         self.suppressed_diagnostics
@@ -179,8 +179,8 @@ impl SkipTake {
         headers.request_charge = Some(self.suppressed_charge);
         // An empty ordered/unordered page is an empty item list, not an empty
         // re-serialized envelope.
-        let response = CosmosResponse::new(
-            ResponseBody::from_items(Vec::new()),
+        let response = PipelineResponse::new(
+            PipelineBody::from_items(Vec::new()),
             headers,
             template.status(),
             diagnostics,
@@ -208,16 +208,25 @@ impl SkipTake {
     /// whole page at once and cannot return part of it.
     fn process_page(
         &mut self,
-        response: CosmosResponse,
+        response: PipelineResponse,
         is_terminal: bool,
     ) -> crate::error::Result<Option<PageResult>> {
-        // Split the child's page into per-document slices. An ordered merge
-        // hands us pre-split `Items`; a raw backend feed page arrives as
-        // `Bytes` and is split as text, then re-encoded below.
+        // An ordered merge hands us pre-split items. A raw backend feed page
+        // arrives as `Bytes` and is split as text, then re-encoded below.
         let (items, needs_encode) = match response.body() {
-            ResponseBody::Items(items) => (items.clone(), false),
-            ResponseBody::Bytes(b) => (skip_take_page::split_feed_envelope(b)?, true),
-            ResponseBody::NoPayload => (Vec::new(), false),
+            PipelineBody::Items(items) => (
+                items.iter().cloned().map(ItemView::standalone).collect(),
+                false,
+            ),
+            PipelineBody::ContextualItems(items) => (items.clone(), false),
+            PipelineBody::Bytes(b) => (
+                skip_take_page::split_feed_envelope(b)?
+                    .into_iter()
+                    .map(ItemView::standalone)
+                    .collect(),
+                true,
+            ),
+            PipelineBody::NoPayload => (Vec::new(), false),
         };
 
         let outcome =
@@ -226,7 +235,15 @@ impl SkipTake {
         // Encode only the survivors: a document the window discards must not be
         // able to fail the query.
         let emitted_items = if needs_encode {
-            skip_take_page::encode_items(outcome.items, self.emit_binary)?
+            let standalone = outcome
+                .items
+                .iter()
+                .map(ItemView::to_standalone)
+                .collect::<crate::error::Result<Vec<_>>>()?;
+            skip_take_page::encode_items(standalone, self.emit_binary)?
+                .into_iter()
+                .map(ItemView::standalone)
+                .collect()
         } else {
             outcome.items
         };
@@ -409,7 +426,6 @@ impl PipelineNode for SkipTake {
 mod tests {
     use super::*;
     use crate::driver::dataflow::mocks::*;
-    use crate::models::ResponseBody;
 
     #[tokio::test]
     async fn completed_window_without_pending_error_does_not_poll_child_again() {
@@ -451,13 +467,17 @@ mod tests {
         })
     }
 
-    fn ids_of(response: &CosmosResponse) -> Vec<u64> {
+    fn ids_of(response: &PipelineResponse) -> Vec<u64> {
         // SkipTake now emits a pre-split `Items` body; each item is one
         // document's exact bytes.
         let items = match response.body() {
-            ResponseBody::Items(items) => items.clone(),
-            ResponseBody::NoPayload => Vec::new(),
-            ResponseBody::Bytes(_) => panic!("expected Items body"),
+            PipelineBody::Items(items) => items.clone(),
+            PipelineBody::NoPayload => Vec::new(),
+            PipelineBody::Bytes(_) => panic!("expected Items body"),
+            PipelineBody::ContextualItems(items) => items
+                .iter()
+                .map(|item| item.to_standalone().unwrap())
+                .collect(),
         };
         items
             .iter()
@@ -694,7 +714,7 @@ mod tests {
         })
     }
 
-    fn request_charge_of(response: &CosmosResponse) -> f64 {
+    fn request_charge_of(response: &PipelineResponse) -> f64 {
         response
             .headers()
             .request_charge

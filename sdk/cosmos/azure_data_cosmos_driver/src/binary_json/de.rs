@@ -58,21 +58,41 @@ pub fn from_slice<'de, T>(buffer: &'de [u8]) -> Result<T>
 where
     T: serde::Deserialize<'de>,
 {
+    from_slice_at(buffer, 1..buffer.len())
+}
+
+/// Deserializes a value at a page-absolute range, keeping the whole page
+/// available for reference-string resolution.
+pub(crate) fn from_slice_at<'de, T>(buffer: &'de [u8], range: std::ops::Range<usize>) -> Result<T>
+where
+    T: serde::Deserialize<'de>,
+{
     if !is_binary(buffer) {
         return Err(match buffer.first() {
             Some(&found) => BinaryError::MissingPreamble { found },
             None => BinaryError::UnexpectedEof { needed: 1 },
         });
     }
+    if range.start == 0 || range.start > range.end || range.end > buffer.len() {
+        return Err(BinaryError::InvalidLength {
+            detail: "value range lies outside its binary page",
+        });
+    }
 
     let mut de = BinaryDeserializer {
-        reader: Reader::new(buffer, 1),
+        reader: Reader::new(buffer, range.start),
         depth: 0,
     };
     let value = T::deserialize(&mut de)?;
-    let remaining = buffer.len() - de.reader.pos;
-    if remaining != 0 {
-        return Err(BinaryError::TrailingBytes { remaining });
+    if de.reader.pos != range.end {
+        if range.start == 1 && range.end == buffer.len() && de.reader.pos < range.end {
+            return Err(BinaryError::TrailingBytes {
+                remaining: range.end - de.reader.pos,
+            });
+        }
+        return Err(BinaryError::InvalidLength {
+            detail: "decoded value does not fill its declared range",
+        });
     }
     Ok(value)
 }
