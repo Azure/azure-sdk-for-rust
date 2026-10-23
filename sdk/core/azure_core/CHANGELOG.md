@@ -4,9 +4,9 @@
 
 ### Features Added
 
-- Added `CloudConfiguration::audience` and `CloudConfiguration::default_scope` to get authentication audiences and default credential scopes for known and custom clouds.
 - Added `cloud::resource_manager::Audience` behind the `resource_manager` feature as the shared audience marker for Azure Resource Manager clients.
-- Added `CloudConfiguration::endpoint` and `CustomConfiguration::endpoint` behind the `resource_manager` feature to configure Azure Resource Manager endpoints.
+- Added `CloudConfigurationExt::audience`, `CloudConfigurationExt::default_scope`, and `CloudConfigurationExt::endpoint` behind the `resource_manager` feature to get authentication audiences, default credential scopes, and management endpoints for known and custom clouds. `cloud::resource_manager::CloudConfigurationExt` is implemented for `CloudConfiguration` when the `resource_manager` feature is enabled.
+- Added `CustomConfiguration::endpoint` behind the `resource_manager` feature to configure Azure Resource Manager endpoints.
 - Added `resource_manager` feature to support Azure Resource Manager-specific functionality.
 - Added `http::poller::resource_manager::{new_poller, PollerOptions, FinalStateVia}` behind the `resource_manager` feature for Resource Manager polling with optional final-state selection, method- and response-based fallbacks, and a callback for inline operation-location results.
 - `Error` now captures a `std::backtrace::Backtrace` at construction time and includes it in `Debug` output (e.g., `{:?}`) when `RUST_BACKTRACE=1` is set.

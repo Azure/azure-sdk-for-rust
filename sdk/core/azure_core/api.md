@@ -174,13 +174,10 @@ pub mod cloud {
         AzureChina,
         Custom(CustomConfiguration),
     }
-    impl CloudConfiguration {
-        #[cfg_attr(feature = "resourcemanager", doc = "For Azure Resource Manager (ARM) clients, use [`resourcemanager::Audience`] as `T`.")]
-        #[cfg_attr(not(feature = "resourcemanager"), doc = "For Azure Resource Manager (ARM) clients, enable the `resourcemanager` feature and use `azure_core::cloud::resourcemanager::Audience` as `T`.")]
-        pub fn audience<T: 'static>(&self) -> crate::Result<&str>;
-        pub fn default_scope<T: 'static>(&self) -> crate::Result<Cow<'static, str>>;
-        #[cfg(feature = "resourcemanager")]
-        pub fn endpoint(&self) -> Option<&str>;
+    impl CloudConfigurationExt for super::CloudConfiguration {
+        fn audience(&self) -> crate::Result<&str>;
+        fn default_scope(&self) -> crate::Result<Cow<'static, str>>;
+        fn endpoint(&self) -> Option<&str>;
     }
     impl Default for &CloudConfiguration {
         fn default() -> Self;
@@ -192,6 +189,11 @@ pub mod cloud {
     pub mod resourcemanager {
         #[allow(missing_debug_implementations)]
         pub struct Audience;
+        pub trait CloudConfigurationExt: crate::private::Sealed {
+            fn audience(&self) -> crate::Result<&str>;
+            fn default_scope(&self) -> crate::Result<Cow<'static, str>>;
+            fn endpoint(&self) -> Option<&str>;
+        }
     }
 }
 pub mod credentials {
