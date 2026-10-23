@@ -195,6 +195,12 @@ tsp-client update https://github.com/Azure/azure-rest-api-specs/blob/fc08a74c8fd
 
 The `tsp-client init` command should generate a fully functional Rust package for the client, the next steps involve filling in the missing pieces to create a fully functional SDK client.
 
+For `azure_resourcemanager_*` crates, also follow the
+[Resource Manager generation guide](resourcemanager-generation.md#cloud-configuration-and-shared-audience).
+These clients use the shared `azure_core::cloud::resourcemanager::Audience`
+instead of a generated per-crate marker, and delegate endpoint and scope
+resolution to core. This exception does not change data-plane audience generation.
+
 ### Part 3.1: Update the cargo.toml file
 
 The cargo.toml file created will be missing some important sections which need to be filled in:
