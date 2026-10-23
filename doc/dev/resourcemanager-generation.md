@@ -173,7 +173,7 @@ rather than reimplementing these protocol rules in emitter fixtures.
 
 ### Enum coverage and test resources
 
-Follow the base guide's [enum wire-contract testing](typespec-based-generation.md#enum-wire-contract-tests)
+Follow the base guide's [enum wire-contract testing](https://github.com/Azure/azure-sdk-for-rust/blob/main/doc/dev/typespec-based-generation.md#enum-wire-contract-tests)
 for both offline serialization checks and recorded service responses. Group live
 scenarios by related operations, not by enum declaration: RSA keys, EC curves,
 rotation policy, secrets, network rules, access policies, and vault recovery can
