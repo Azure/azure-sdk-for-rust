@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added non-resumable read-many plans with key/id or partition selections, including hierarchical prefixes, parameterized filters, bounded query batches, and shared execution deadlines. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
+
 ### Breaking Changes
 
 ### Bugs Fixed

@@ -101,7 +101,11 @@ impl<T: DeserializeOwned> QueryFeedPage<T> {
         // A feed page's items may arrive either pre-split (an `Items` body from
         // the cross-partition pipeline) or as a raw `{"Documents":[...]}`
         // envelope (a single-partition page); `into_items` decodes both.
-        let items: Vec<T> = response.into_body().into_items()?;
+        let items: Vec<T> = response.into_body().into_items().map_err(|error| {
+            azure_data_cosmos_driver::CosmosErrorBuilder::from_error(error)
+                .with_diagnostics(diagnostics.clone())
+                .build()
+        })?;
 
         Ok(Self {
             page: FeedPage::new(items, ResponseHeaders::from(cosmos_headers), diagnostics),

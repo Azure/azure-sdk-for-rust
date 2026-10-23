@@ -9,9 +9,9 @@ use std::error::Error;
 use azure_data_cosmos::feed::ContinuationToken;
 use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
-    feed::FeedScope,
+    feed::{FeedScope, ReadManyFilter, ReadManySelection},
     models::ThroughputProperties,
-    options::{MaxItemCountHint, QueryOptions},
+    options::{MaxItemCountHint, QueryOptions, ReadManyOptions},
     Query,
 };
 use framework::{test_data, MockItem, TestClient, TestOptions};
@@ -30,6 +30,57 @@ struct QueryTestOptions {
     max_item_count: Option<u32>,
     use_continuation_token_resume: bool,
     result_order: QueryResultOrder,
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires a Cosmos emulator test category"
+)]
+async fn read_many_scoped_filter() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            let items = test_data::generate_mock_items(3, 4);
+            let container =
+                test_data::create_container_with_items(db_client, items.clone(), None).await?;
+            let filter = "c.partitionKey != @excluded"
+                .parse::<ReadManyFilter>()?
+                .with_parameter("@excluded", "partition1")?;
+            let options = ReadManyOptions::default().with_filter(filter);
+            for selection in [
+                ReadManySelection::Partitions(vec![
+                    "partition0".into(),
+                    "partition1".into(),
+                    "partition0".into(),
+                ]),
+                ReadManySelection::Items(
+                    items
+                        .iter()
+                        .filter(|item| item.partition_key != "partition2")
+                        .map(|item| (item.partition_key.clone().into(), item.id.clone()))
+                        .collect(),
+                ),
+            ] {
+                let result = container
+                    .read_many::<MockItem>(selection, Some(options.clone()))
+                    .await?
+                    .collect_all()
+                    .await?;
+                assert_query_results(
+                    collect_matching_items(&items, |item| item.partition_key == "partition0"),
+                    result.into_items(),
+                    QueryResultOrder::Unordered,
+                );
+            }
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
 }
 
 #[derive(Default)]
