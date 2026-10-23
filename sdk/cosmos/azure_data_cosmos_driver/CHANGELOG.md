@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- Honor the emulator certificate-validation policy in Gateway V2 connectivity probes so self-signed emulator certificates do not prevent Gateway V2 connectivity when validation is disabled for emulator hosts. ([#5484](https://github.com/Azure/azure-sdk-for-rust/pull/5484))
+
 ### Other Changes
 
 ## 1.1.0-beta.1 (2026-10-22)
