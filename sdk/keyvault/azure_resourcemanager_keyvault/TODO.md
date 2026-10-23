@@ -5,7 +5,7 @@
 Track changes needed in the specification and Rust emitter to regenerate
 `azure_resourcemanager_keyvault` without manual generated-source patches.
 Local development, test coverage, and recording instructions belong in
-[CONTRIBUTING.md](CONTRIBUTING.md), not this checklist.
+[CONTRIBUTING.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/azure_resourcemanager_keyvault/CONTRIBUTING.md), not this checklist.
 
 ## Azure/azure-rest-api-specs
 
