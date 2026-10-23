@@ -9,6 +9,31 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[command(name = "azure_data_cosmos_perf")]
 pub struct Config {
+    /// Versioned fixed-worker workload profile (requires the weekly-gate feature).
+    #[cfg(feature = "weekly-gate")]
+    #[arg(long)]
+    pub perf_profile: Option<std::path::PathBuf>,
+
+    /// Reviewed thresholds for the fixed-worker workload.
+    #[cfg(feature = "weekly-gate")]
+    #[arg(long, requires = "perf_profile", conflicts_with = "calibrate")]
+    pub thresholds: Option<std::path::PathBuf>,
+
+    /// Collect baseline measurements without reporting a performance pass.
+    #[cfg(feature = "weekly-gate")]
+    #[arg(long, requires = "perf_profile")]
+    pub calibrate: bool,
+
+    /// Verified environment manifest produced by the pipeline preflight.
+    #[cfg(feature = "weekly-gate")]
+    #[arg(long, requires = "perf_profile")]
+    pub perf_environment: Option<std::path::PathBuf>,
+
+    /// Directory for authoritative local gate artifacts.
+    #[cfg(feature = "weekly-gate")]
+    #[arg(long, requires = "perf_profile")]
+    pub perf_output: Option<std::path::PathBuf>,
+
     /// Cosmos DB account endpoint URL.
     #[arg(long)]
     pub endpoint: String,
