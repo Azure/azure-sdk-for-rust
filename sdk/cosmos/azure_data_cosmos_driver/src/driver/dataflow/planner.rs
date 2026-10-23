@@ -20,11 +20,12 @@ use crate::{
         effective_partition_key::{normalized_epk_len, EffectivePartitionKey},
         CosmosOperation, FeedRange,
     },
-    options::PlanOptions,
+    options::{FullTextScoreScope, PlanOptions},
 };
 
 use super::{
     distinct_hash::Hash128,
+    hybrid_search::{hybrid_window, HybridSearch},
     intersect_feed_ranges,
     query_plan::{QueryInfo, QueryPlan, SortOrder},
     query_response,
@@ -175,7 +176,7 @@ pub(crate) fn finalize_plan(
             return Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::status_codes::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED)
                 .with_message(format!(
-                    "operation fans out to {width} partitions, exceeding the maximum of {}; \
+                    "operation plans {width} request leaves, exceeding the maximum of {}; \
                      raise max_fan_out (via FeedOptions) to run a broader cross-partition query",
                     plan_options.max_fan_out
                 ))
@@ -397,6 +398,9 @@ pub(crate) fn validate_buffered_query(
     query_plan: &QueryPlan,
     max_buffered_query_window: u64,
 ) -> crate::error::Result<()> {
+    if let Some(hybrid) = &query_plan.hybrid_search_query_info {
+        return hybrid_window(hybrid, max_buffered_query_window).map(|_| ());
+    }
     let Some(info) = query_plan.query_info.as_ref() else {
         return Ok(());
     };
@@ -408,6 +412,95 @@ pub(crate) fn validate_buffered_query(
         return Ok(());
     };
     buffered_query_window(info, max_buffered_query_window, shape).map(|_| ())
+}
+
+/// Builds the statistics and component fan-out for a ranked full-text or hybrid query.
+pub(crate) async fn build_hybrid_search(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    resume: Option<PipelineNodeState>,
+    scope: FullTextScoreScope,
+    maximum: u64,
+) -> crate::error::Result<Pipeline> {
+    if resume.is_some() {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED)
+            .with_message("cross-partition ranked full-text and hybrid queries cannot be resumed from a continuation token")
+            .build());
+    }
+    let hybrid = query_plan
+        .hybrid_search_query_info
+        .as_ref()
+        .ok_or_else(|| {
+            unsupported_feature("hybrid search path selected without hybridSearchQueryInfo")
+        })?;
+    let (skip, take) = hybrid_window(hybrid, maximum)?;
+    if query_plan.query_info.as_ref().is_some_and(|info| {
+        info.distinct_type != DistinctType::None
+            || !info.aggregates.is_empty()
+            || !info.group_by_expressions.is_empty()
+    }) {
+        return Err(unsupported_feature(
+            "DISTINCT, aggregates, or GROUP BY combined with hybrid search",
+        ));
+    }
+    let target_ranges = if let Some(partition_key) = operation.partition_key() {
+        if operation.is_trivial() {
+            vec![RequestTarget::logical_partition_key(
+                partition_key.clone(),
+                None,
+            )]
+        } else {
+            resolve_fresh_targets(query_plan, topology_provider, operation, operation.target())
+                .await?
+        }
+    } else {
+        resolve_fresh_targets(query_plan, topology_provider, operation, operation.target()).await?
+    };
+    if target_ranges.is_empty() {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_message("hybrid search query plan produced no partition ranges to query")
+            .build());
+    }
+
+    let statistics_ranges = if hybrid.requires_global_statistics {
+        match scope {
+            FullTextScoreScope::Global => {
+                let full_plan = QueryPlan {
+                    query_ranges: vec![super::query_plan::QueryRange {
+                        min: String::new(),
+                        max: "FF".to_owned(),
+                        is_min_inclusive: true,
+                        is_max_inclusive: false,
+                    }],
+                    ..Default::default()
+                };
+                resolve_fresh_targets(&full_plan, topology_provider, operation, None).await?
+            }
+            FullTextScoreScope::Local => target_ranges.clone(),
+        }
+    } else {
+        Vec::new()
+    };
+    if hybrid.requires_global_statistics && statistics_ranges.is_empty() {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_message("hybrid search statistics produced no partition ranges to query")
+            .build());
+    }
+
+    let node = HybridSearch::new(
+        Arc::clone(operation),
+        hybrid,
+        target_ranges,
+        statistics_ranges,
+        scope,
+        skip,
+        take,
+    )?;
+    Ok(Pipeline::new(Box::new(node)))
 }
 
 fn buffered_query_window(info: &QueryInfo, maximum: u64, shape: &str) -> crate::error::Result<u64> {
@@ -1116,7 +1209,23 @@ async fn plan_fresh(
     topology_provider: &mut dyn TopologyProvider,
     operation: &Arc<CosmosOperation>,
 ) -> crate::error::Result<Vec<Box<dyn PipelineNode>>> {
-    let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
+    let targets =
+        resolve_fresh_targets(query_plan, topology_provider, operation, operation.target()).await?;
+    Ok(targets
+        .into_iter()
+        .map(|target| {
+            Box::new(Request::new(Arc::clone(operation), target, None)) as Box<dyn PipelineNode>
+        })
+        .collect())
+}
+
+async fn resolve_fresh_targets(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    scope_range: Option<&FeedRange>,
+) -> crate::error::Result<Vec<RequestTarget>> {
+    let mut targets = Vec::new();
     // Clip each server-supplied query range to the operation scope (e.g.
     // `FeedScope::partition(partial_hpk)`), which bounds the partition-key
     // prefix. The `query_ranges` always cover the full container, so we
@@ -1125,7 +1234,6 @@ async fn plan_fresh(
     // An equality / `IN` predicate yields a point plan range `[X, X]`, which
     // `query_range_to_feed_range` normalizes to the half-open window
     // `[X, successor(X))` so it routes like any other range (#4574 / #4638).
-    let scope_range = operation.target();
     // Full EPK width for this container, used to zero-extend a closed range's
     // (or point's) inclusive upper bound to full width before making it
     // exclusive (#4574).
@@ -1159,10 +1267,10 @@ async fn plan_fresh(
                 resolved_range.parents,
                 resolved_range.range,
             );
-            nodes.push(Box::new(Request::new(Arc::clone(operation), target, None)));
+            targets.push(target);
         }
     }
-    Ok(nodes)
+    Ok(targets)
 }
 
 /// Builds the request leaves for a resumed cross-partition plan, using the

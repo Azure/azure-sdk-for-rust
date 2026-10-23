@@ -901,15 +901,20 @@ impl ContainerClient {
     /// and filters, `TOP`, `OFFSET`/`LIMIT`, streaming single- and multiple-column `ORDER BY`, and
     /// ordered or unordered `DISTINCT`.
     ///
-    /// Cross-partition vector ordering supports pure `ORDER BY VectorDistance(...)` queries with a
-    /// finite `TOP N` or `OFFSET x LIMIT y` window. The SDK buffers that result window before
-    /// returning the first page, so use narrow projections and choose a result window appropriate
-    /// for the memory available to the application.
+    /// Cross-partition vector ordering supports pure `ORDER BY VectorDistance(...)` queries, and
+    /// ranked full-text queries support `ORDER BY RANK FullTextScore(...)`, including weighted
+    /// `RRF(...)` of full-text and vector components. These queries require a finite `TOP N` or
+    /// `OFFSET x LIMIT y` window. The SDK buffers candidates from every targeted partition before
+    /// returning the first page, so use narrow projections and a window appropriate for the
+    /// available memory.
+    /// By default, ranked full-text scoring gathers statistics across the whole container;
+    /// [`QueryOptions::with_full_text_score_scope`] can restrict statistics to the requested scope.
+    /// [`QueryOptions::with_max_buffered_query_window`] bounds the global OFFSET plus take.
     ///
     /// The buffered result can be iterated in pages, but it does not support continuation tokens
-    /// for resuming in another process. Aggregates, `GROUP BY`, and hybrid/full-text ranking remain
-    /// unsupported when their query plans require client-side stages that have not been
-    /// implemented.
+    /// for resuming in another process. The same restriction applies to buffered ranked full-text
+    /// and hybrid queries. Aggregates and `GROUP BY` remain unsupported when their query plans
+    /// require client-side stages that have not been implemented.
     ///
     /// # Examples
     ///
@@ -978,6 +983,27 @@ impl ContainerClient {
     ///
     /// while let Some(item) = matches.try_next().await? {
     ///     println!("{}: {}", item.id, item.score);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Rank full-text matches with a parameterized search term:
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::{feed::FeedScope, Query};
+    /// use futures::TryStreamExt;
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// let query = Query::from(
+    ///     "SELECT TOP 5 c.id FROM c ORDER BY RANK FullTextScore(c.text, @term)",
+    /// )
+    /// .with_parameter("@term", "bicycle")?;
+    /// let mut matches = container_client
+    ///     .query_items::<serde_json::Value>(query, FeedScope::full_container(), None)
+    ///     .await?;
+    /// while let Some(item) = matches.try_next().await? {
+    ///     println!("{item}");
     /// }
     /// # Ok(())
     /// # }
