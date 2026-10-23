@@ -2678,7 +2678,6 @@ pub mod models {
 }
 pub mod stream {
     #[cfg(feature = "tokio")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
     pub mod tokio {
         #[derive(Clone, Debug)]
         pub struct FileStream {
