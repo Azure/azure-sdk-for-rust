@@ -241,11 +241,6 @@ selection and returned documents must satisfy both that scope and any explicit
 range bounds, even when no string partition key or physical range ID is present.
 The adapter must not infer a missing range key type from an effective key.
 
-Regression coverage includes mixed effective-key/filter requests across two
-physical partitions and incremental change-feed pagination using RNTBD `Match`
-from `If-None-Match`. Change-feed checkpoints return as ETags, including on the
-terminal `304`, rather than as ordinary query continuation tokens.
-
 Gateway V1 remains the default. A region without a Gateway 2.0 endpoint does
 not advertise one, so the driver's existing discovery and probe behavior
 selects the correct path without a host-specific client routing switch.

@@ -565,25 +565,3 @@ formatting of driver state.
 - **Cross-backend** — dual-backend tests compare response session tokens between
   the in-memory emulator and a real account, which is what keeps the emulator's
   modeled contract (§1.1) honest.
-- **Classic Gateway live wire checks** — the ignored
-  `classic_gateway_session_scope_live` driver test wraps the production HTTP
-  client and checks outgoing range IDs, transport, status, and returned versions.
-  It covers eager scoping, lazy composite fallback without topology fetches,
-  explicit topology warm-up, caller-token precedence, disabled capture, and
-  Eventual reads. Supply `COSMOS_SESSION_LIVE_ENDPOINT`,
-  `COSMOS_SESSION_LIVE_KEY`, and `COSMOS_SESSION_LIVE_DATABASE` for a disposable
-  database whose name starts with `test-db-session-scope-`, containing an `items`
-  container partitioned on `/pk` with two to eight physical ranges. Provisioning
-  and cleanup belong to the invoking harness. Output excludes full tokens.
-- **Explicit Gateway V2 tokens** — `gateway_v2_explicit_session_scope_live` uses
-  the same disposable fixture to check real caller-supplied compound tokens with
-  capture enabled and disabled. Cold lazy topology retains the original through
-  classic Gateway; explicit warm-up enables range-scoped Gateway V2 requests.
-  The disabled case asserts that responses do not populate the session cache.
-- **Service split** — the `classic_gateway_session_reads_across_service_split`
-  integration test uses a separate management runtime to split an isolated
-  container. It checks automatic and explicit-token reads of post-split writes,
-  including explicit tokens with automatic capture disabled, then repeats
-  automatic reads after topology refresh. It requires completed classic Gateway
-  requests and writes across every replacement range. It runs in the `split`
-  category; successful reads alone do not prove which fallback path executed.
