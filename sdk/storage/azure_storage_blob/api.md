@@ -68,6 +68,7 @@ pub mod clients {
         pub fn append_blob_client(&self) -> AppendBlobClient;
         pub fn block_blob_client(&self) -> BlockBlobClient;
         pub async fn download(&self, options: Option<BlobClientDownloadOptions<'_>>) -> Result<BlobClientDownloadResult>;
+        pub async fn download_into(&self, buffer: &mut [u8], options: Option<BlobClientDownloadOptions<'_>>) -> Result<BlobClientDownloadIntoResult>;
         pub async fn exists(&self) -> Result<bool>;
         pub fn new(blob_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<BlobClientOptions>) -> Result<Self>;
         pub fn page_blob_client(&self) -> PageBlobClient;
@@ -77,6 +78,7 @@ pub mod clients {
         pub fn with_version(&self, version_id: &str) -> Result<Self>;
     }
     impl BlobClient {
+        pub async fn abort_copy(&self, copy_id: &str, options: Option<BlobClientAbortCopyOptions<'_>>) -> Result<Response<(), NoFormat>>;
         pub async fn acquire_lease(&self, duration: i32, options: Option<BlobClientAcquireLeaseOptions<'_>>) -> Result<Response<BlobClientAcquireLeaseResult, NoFormat>>;
         pub async fn break_lease(&self, options: Option<BlobClientBreakLeaseOptions<'_>>) -> Result<Response<BlobClientBreakLeaseResult, NoFormat>>;
         pub async fn change_lease(&self, lease_id: String, proposed_lease_id: String, options: Option<BlobClientChangeLeaseOptions<'_>>) -> Result<Response<BlobClientChangeLeaseResult, NoFormat>>;
@@ -94,6 +96,7 @@ pub mod clients {
         pub async fn set_properties(&self, options: Option<BlobClientSetPropertiesOptions<'_>>) -> Result<Response<(), NoFormat>>;
         pub async fn set_tags(&self, tags: RequestContent<BlobTags, XmlFormat>, options: Option<BlobClientSetTagsOptions<'_>>) -> Result<Response<(), NoFormat>>;
         pub async fn set_tier(&self, tier: AccessTier, options: Option<BlobClientSetTierOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn start_copy_from_url(&self, copy_source: String, options: Option<BlobClientStartCopyFromUrlOptions<'_>>) -> Result<Response<BlobClientStartCopyFromUrlResult, NoFormat>>;
         pub async fn undelete(&self, options: Option<BlobClientUndeleteOptions<'_>>) -> Result<Response<(), NoFormat>>;
     }
     #[derive(Clone, Debug)]
@@ -149,6 +152,7 @@ pub mod clients {
         pub async fn get_account_info(&self, options: Option<BlobServiceClientGetAccountInfoOptions<'_>>) -> Result<Response<BlobServiceClientGetAccountInfoResult, NoFormat>>;
         pub async fn get_properties(&self, options: Option<BlobServiceClientGetPropertiesOptions<'_>>) -> Result<Response<BlobServiceProperties, XmlFormat>>;
         pub async fn get_statistics(&self, options: Option<BlobServiceClientGetStatisticsOptions<'_>>) -> Result<Response<StorageServiceStats, XmlFormat>>;
+        pub async fn get_user_delegation_key(&self, key_info: RequestContent<KeyInfo, XmlFormat>, options: Option<BlobServiceClientGetUserDelegationKeyOptions<'_>>) -> Result<Response<UserDelegationKey, XmlFormat>>;
         pub fn list_containers(&self, options: Option<BlobServiceClientListContainersOptions<'_>>) -> Result<Pager<ListContainersResponse, XmlFormat>>;
         pub async fn set_properties(&self, storage_service_properties: RequestContent<BlobServiceProperties, XmlFormat>, options: Option<BlobServiceClientSetPropertiesOptions<'_>>) -> Result<Response<(), NoFormat>>;
     }
@@ -191,6 +195,7 @@ pub mod clients {
     impl PageBlobClient {
         pub async fn clear_pages(&self, range: HttpRange, options: Option<PageBlobClientClearPagesOptions<'_>>) -> Result<Response<PageBlobClientClearPagesResult, NoFormat>>;
         pub async fn create(&self, size: u64, options: Option<PageBlobClientCreateOptions<'_>>) -> Result<Response<PageBlobClientCreateResult, NoFormat>>;
+        pub fn list_page_ranges(&self, options: Option<PageBlobClientListPageRangesOptions<'_>>) -> Result<PageIterator<Response<PageList, XmlFormat>>>;
         pub async fn resize(&self, size: u64, options: Option<PageBlobClientResizeOptions<'_>>) -> Result<Response<PageBlobClientResizeResult, NoFormat>>;
         pub async fn set_sequence_number(&self, sequence_number_action: SequenceNumberActionType, options: Option<PageBlobClientSetSequenceNumberOptions<'_>>) -> Result<Response<PageBlobClientSetSequenceNumberResult, NoFormat>>;
         pub async fn upload_pages(&self, body: RequestContent<Bytes, NoFormat>, content_length: u64, range: HttpRange, options: Option<PageBlobClientUploadPagesOptions<'_>>) -> Result<Response<PageBlobClientUploadPagesResult, NoFormat>>;
@@ -318,6 +323,12 @@ pub mod models {
     #[derive(Debug)]
     pub struct AppendBlobClientSealResult;
     #[derive(Clone, Debug, Default)]
+    pub struct BlobClientAbortCopyOptions<'a> {
+        pub lease_id: Option<String>,
+        pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub timeout: Option<i32>,
+    }
+    #[derive(Clone, Debug, Default)]
     pub struct BlobClientAcquireLeaseOptions<'a> {
         pub if_match: Option<azure_core::http::Etag>,
         pub if_modified_since: Option<azure_core::time::OffsetDateTime>,
@@ -396,6 +407,12 @@ pub mod models {
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
+    }
+    #[derive(Debug)]
+    pub struct BlobClientDownloadIntoResult {
+        pub len: usize,
+        pub properties: BlobDownloadProperties,
+        pub headers: azure_core::http::headers::Headers,
     }
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientDownloadOptions<'a> {
@@ -558,6 +575,32 @@ pub mod models {
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
     }
+    #[derive(Clone, Debug, Default)]
+    pub struct BlobClientStartCopyFromUrlOptions<'a> {
+        pub blob_tags_string: Option<String>,
+        pub if_match: Option<azure_core::http::Etag>,
+        pub if_modified_since: Option<azure_core::time::OffsetDateTime>,
+        pub if_none_match: Option<azure_core::http::Etag>,
+        pub if_tags: Option<String>,
+        pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
+        pub immutability_policy_expiry: Option<azure_core::time::OffsetDateTime>,
+        pub immutability_policy_mode: Option<super::ImmutabilityPolicyMode>,
+        pub lease_id: Option<String>,
+        pub legal_hold: Option<bool>,
+        pub metadata: Option<std::collections::HashMap<String, String>>,
+        pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub rehydrate_priority: Option<super::RehydratePriority>,
+        pub seal_blob: Option<bool>,
+        pub source_if_match: Option<azure_core::http::Etag>,
+        pub source_if_modified_since: Option<azure_core::time::OffsetDateTime>,
+        pub source_if_none_match: Option<azure_core::http::Etag>,
+        pub source_if_tags: Option<String>,
+        pub source_if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
+        pub tier: Option<super::AccessTier>,
+        pub timeout: Option<i32>,
+    }
+    #[derive(Debug)]
+    pub struct BlobClientStartCopyFromUrlResult;
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientUndeleteOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
@@ -886,6 +929,11 @@ pub mod models {
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
+    pub struct BlobServiceClientGetUserDelegationKeyOptions<'a> {
+        pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub timeout: Option<i32>,
+    }
+    #[derive(Clone, Debug, Default)]
     pub struct BlobServiceClientListContainersOptions<'a> {
         pub include: Option<Vec<super::ListContainersIncludeType>>,
         pub marker: Option<String>,
@@ -1153,6 +1201,14 @@ pub mod models {
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
+    pub struct ClearRange {
+        #[serde(rename = "End", skip_serializing_if = "Option::is_none")]
+        pub end: Option<i64>,
+        #[serde(rename = "Start", skip_serializing_if = "Option::is_none")]
+        pub start: Option<i64>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
     #[serde(rename = "Container")]
     pub struct ContainerItem {
         #[serde(rename = "Deleted", skip_serializing_if = "Option::is_none")]
@@ -1315,6 +1371,19 @@ pub mod models {
         fn from(range: RangeToInclusive<usize>) -> Self;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    pub struct KeyInfo {
+        #[serde(rename = "DelegatedUserTid", skip_serializing_if = "Option::is_none")]
+        pub delegated_user_tid: Option<String>,
+        #[serde(default, deserialize_with = "models_serde::option_offset_date_time_rfc3339::deserialize", rename = "Expiry", serialize_with = "azure_storage_common::rfc3339::seconds_only::option::serialize", skip_serializing_if = "Option::is_none")]
+        pub expiry: Option<azure_core::time::OffsetDateTime>,
+        #[serde(default, deserialize_with = "models_serde::option_offset_date_time_rfc3339::deserialize", rename = "Start", serialize_with = "azure_storage_common::rfc3339::seconds_only::option::serialize", skip_serializing_if = "Option::is_none")]
+        pub start: Option<azure_core::time::OffsetDateTime>,
+    }
+    impl TryFrom<KeyInfo> for azure_core::http::RequestContent<super::KeyInfo, azure_core::http::XmlFormat> {
+        type Error = Error;
+        fn try_from(value: KeyInfo) -> Result<Self>;
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
     #[serde(rename = "EnumerationResults")]
     pub struct ListBlobsResponse {
@@ -1454,6 +1523,24 @@ pub mod models {
     #[derive(Debug)]
     pub struct PageBlobClientCreateResult;
     #[derive(Clone, Debug, Default)]
+    pub struct PageBlobClientListPageRangesOptions<'a> {
+        pub if_match: Option<azure_core::http::Etag>,
+        pub if_modified_since: Option<azure_core::time::OffsetDateTime>,
+        pub if_none_match: Option<azure_core::http::Etag>,
+        pub if_tags: Option<String>,
+        pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
+        pub lease_id: Option<String>,
+        pub marker: Option<String>,
+        pub maxresults: Option<i32>,
+        pub method_options: azure_core::http::pager::PagerOptions<'a>,
+        pub range: Option<crate::models::HttpRange>,
+        pub snapshot: Option<String>,
+        pub timeout: Option<i32>,
+    }
+    impl PageBlobClientListPageRangesOptions<'_> {
+        pub fn into_owned(self) -> PageBlobClientListPageRangesOptions<'static>;
+    }
+    #[derive(Clone, Debug, Default)]
     pub struct PageBlobClientResizeOptions<'a> {
         pub encryption_algorithm: Option<super::EncryptionAlgorithmType>,
         pub encryption_key: Option<String>,
@@ -1537,6 +1624,24 @@ pub mod models {
     }
     #[derive(Debug)]
     pub struct PageBlobClientUploadPagesResult;
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
+    pub struct PageList {
+        #[serde(rename = "ClearRange", skip_serializing_if = "Option::is_none")]
+        pub clear_ranges: Option<Vec<ClearRange>>,
+        #[serde(rename = "NextMarker", skip_serializing_if = "Option::is_none")]
+        pub next_marker: Option<String>,
+        #[serde(default, rename = "PageRange")]
+        pub page_ranges: Vec<PageRange>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
+    pub struct PageRange {
+        #[serde(rename = "End", skip_serializing_if = "Option::is_none")]
+        pub end: Option<i64>,
+        #[serde(rename = "Start", skip_serializing_if = "Option::is_none")]
+        pub start: Option<i64>,
+    }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     pub struct RetentionPolicy {
         #[serde(rename = "AllowPermanentDelete", skip_serializing_if = "Option::is_none")]
@@ -2421,6 +2526,13 @@ pub mod models {
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
         fn lease_id(&self) -> Result<Option<String>>;
     }
+    pub trait BlobClientStartCopyFromUrlResultHeaders: private::Sealed {
+        fn copy_id(&self) -> Result<Option<String>>;
+        fn copy_status(&self) -> Result<Option<CopyStatus>>;
+        fn etag(&self) -> Result<Option<Etag>>;
+        fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+        fn version_id(&self) -> Result<Option<String>>;
+    }
     pub trait BlobContainerClientAcquireLeaseResultHeaders: private::Sealed {
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -2551,6 +2663,11 @@ pub mod models {
         fn encryption_scope(&self) -> Result<Option<String>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn is_server_encrypted(&self) -> Result<Option<bool>>;
+        fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    }
+    pub trait PageListHeaders: private::Sealed {
+        fn blob_content_length(&self) -> Result<Option<i64>>;
+        fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     }
     pub trait SignedIdentifiersHeaders: private::Sealed {
