@@ -29,6 +29,20 @@ finalized decisions, and `reports/` (`reports/`) for archival technical reports.
 Crate READMEs, changelogs, contributor guidance, and Markdown fragments consumed
 directly by Rust source remain with their crates.
 
+## Live PPAF fault testing
+
+For service-side Per-Partition Automatic Failover (PPAF) exercises, use the
+[Cosmos DB agent kit](https://github.com/AzureCosmosDB/cosmosdb-agent-kit).
+The cross-SDK skill is `cosmosdb-ppaf-fault-testing`; its canonical guide lives at
+`skills/cosmosdb-ppaf-fault-testing/README.md` in that repository. Use the kit's
+installation instructions to make the skill available to your agent.
+
+Enable PPAF through the account's **Features** tab in the Azure portal, subject
+to account eligibility. The guide covers the upstream fault script, explicit
+target approval, a bounded workload, and verified fault cleanup. These are live
+service faults, not SDK-local fault injection or emulator simulations.
+Production use requires explicit approval of the target and impact.
+
 ## Specifications
 
 | Number | Specification |
