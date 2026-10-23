@@ -5,7 +5,7 @@
 
 use azure_core::{
     fmt::SafeDebug,
-    http::{pager::PagerOptions, resourcemanager::PollerOptions, ClientMethodOptions},
+    http::{pager::PagerOptions, poller::resourcemanager::PollerOptions, ClientMethodOptions},
 };
 
 /// Options to be passed to [`KeyVaultKeysClient::create_if_not_exist()`](crate::generated::clients::KeyVaultKeysClient::create_if_not_exist())

@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{models, Audience, KeyVaultClient, KeyVaultClientOptions};
+use super::{models, KeyVaultClient, KeyVaultClientOptions};
 use azure_core::{
-    cloud::{Audiences, CloudConfiguration, CustomConfiguration},
+    cloud::{resourcemanager::Audience, Audiences, CloudConfiguration, CustomConfiguration},
     http::{
         headers::{HeaderName, Headers, ACCEPT, AUTHORIZATION, CONTENT_TYPE},
+        poller::resourcemanager::PollerOptions,
         request::{options::ClientRequestId, Body},
-        resourcemanager::PollerOptions,
         AsyncRawResponse, ClientOptions, Context, Method, RetryOptions, StatusCode, Transport,
     },
     Result,
