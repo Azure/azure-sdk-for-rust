@@ -104,6 +104,21 @@ fn generate_c_header() {
     // Renames for types not currently emitted are harmless no-ops, so the
     // table can list the full naming policy in one place.
     let rename = HashMap::from([
+        (
+            "CosmosProcessorRequest".into(),
+            "processor_request_t".into(),
+        ),
+        (
+            "CosmosProcessorCompletion".into(),
+            "processor_completion_t".into(),
+        ),
+        ("ProcessorHandle".into(), "processor_t".into()),
+        ("ProcessorReceipt".into(), "processor_receipt_t".into()),
+        ("ProcessorQueue".into(), "processor_queue_t".into()),
+        (
+            "ProcessorCompletionBacking".into(),
+            "processor_completion_backing_t".into(),
+        ),
         ("CosmosCursorRequest".into(), "cursor_request_t".into()),
         (
             "CosmosCursorCompletion".into(),

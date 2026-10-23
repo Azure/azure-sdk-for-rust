@@ -6,12 +6,20 @@ use crate::{
     CosmosError, CosmosStatus,
 };
 use azure_core::{fmt::SafeDebug, http::StatusCode};
-use azure_data_cosmos_driver::change_feed_processor::{
-    BootstrapOptions, ChangeFeedProcessorMode as DriverMode,
-};
 use serde::de::DeserializeOwned;
-use std::{future::Future, marker::PhantomData, num::NonZeroU32, time::Duration};
+use std::{
+    future::Future,
+    marker::PhantomData,
+    num::NonZeroU32,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    time::Duration,
+};
 use time::OffsetDateTime;
+
+mod execution;
 
 /// Latest-version mode for a [`ChangeFeedProcessorBuilder`].
 ///
@@ -122,13 +130,6 @@ mod private {
     }
 }
 
-#[cfg_attr(
-    not(all(test, feature = "__internal_in_memory_emulator")),
-    expect(
-        dead_code,
-        reason = "Start positions are retained for future execution."
-    )
-)]
 enum ProcessorStartFrom {
     Now,
     Beginning,
@@ -145,7 +146,7 @@ enum ProcessorStartFrom {
 ///
 /// Register an async batch callback with [`handle_change_feed()`](Self::handle_change_feed),
 /// then call [`build()`](Self::build) to transfer the configuration into a
-/// [`ChangeFeedProcessor`]. Execution is not implemented yet. The start
+/// [`ChangeFeedProcessor`]. The start
 /// configuration applies to initialization without saved progress; it does not
 /// configure a reset of existing checkpoints.
 ///
@@ -262,10 +263,6 @@ enum ProcessorStartFrom {
 /// }
 /// ```
 #[must_use]
-#[cfg_attr(
-    not(all(test, feature = "__internal_in_memory_emulator")),
-    expect(dead_code, reason = "Configuration is retained for future execution.")
-)]
 pub struct ChangeFeedProcessorBuilder<M: ChangeFeedProcessorMode, T = (), H = ()> {
     monitored_container: ContainerClient,
     lease_container: ContainerClient,
@@ -278,7 +275,7 @@ pub struct ChangeFeedProcessorBuilder<M: ChangeFeedProcessorMode, T = (), H = ()
     min_scale_count: u32,
     max_scale_count: u32,
     lease_verification_on_restart_enabled: bool,
-    handler: H,
+    handler: Arc<H>,
     item: PhantomData<fn() -> T>,
 }
 
@@ -298,7 +295,7 @@ impl<M: ChangeFeedProcessorMode> ChangeFeedProcessorBuilder<M> {
     /// it is needed elsewhere. This method does not validate the names, perform
     /// network I/O, or start background work. The initial start position is now.
     /// Only latest-version builders expose beginning and time-based start configuration.
-    /// Lease initialization is not implemented in this scaffold.
+    /// Lease identifiers are constructed when the processor starts.
     pub fn new(
         mode: M,
         monitored_container: ContainerClient,
@@ -318,7 +315,7 @@ impl<M: ChangeFeedProcessorMode> ChangeFeedProcessorBuilder<M> {
             min_scale_count: 0,
             max_scale_count: 0,
             lease_verification_on_restart_enabled: false,
-            handler: (),
+            handler: Arc::new(()),
             item: PhantomData,
         }
     }
@@ -334,8 +331,10 @@ impl<M: ChangeFeedProcessorMode> ChangeFeedProcessorBuilder<M> {
     /// and own its state or borrow only `'static` data.
     ///
     /// Consumes the builder and makes [`build()`](Self::build) available. A
-    /// callback can be registered only once. This scaffold retains the callback
-    /// but does not invoke it or implement dispatch or checkpoint persistence.
+    /// callback can be registered only once. Callbacks for different leases can
+    /// overlap. For each lease, a successful callback is followed by a durable
+    /// checkpoint before the next batch is read. Failures can cause replay;
+    /// callbacks should make their external effects idempotent.
     ///
     /// # Examples
     ///
@@ -459,7 +458,7 @@ impl<M: ChangeFeedProcessorMode> ChangeFeedProcessorBuilder<M> {
             min_scale_count: self.min_scale_count,
             max_scale_count: self.max_scale_count,
             lease_verification_on_restart_enabled: self.lease_verification_on_restart_enabled,
-            handler,
+            handler: Arc::new(handler),
             item: PhantomData,
         }
     }
@@ -470,7 +469,7 @@ impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessorBuilder<M, T, H> {
     ///
     /// Defaults to 100. This is a service hint, not a hard limit on callback batch
     /// size. Pass [`MaxItemCountHint::ServerDecides`] to let the service choose.
-    /// This scaffold stores the hint without issuing feed requests.
+    /// The hint applies to each acquired lease's feed requests.
     ///
     /// # Examples
     ///
@@ -510,7 +509,7 @@ impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessorBuilder<M, T, H> {
     /// Sets the delay between feed polls after current changes have been drained.
     ///
     /// Defaults to five seconds. A zero duration requests no polling delay.
-    /// This scaffold stores the delay without scheduling polls.
+    /// The delay applies independently to each idle lease.
     pub fn with_feed_poll_delay(mut self, feed_poll_delay: Duration) -> Self {
         self.feed_poll_delay = feed_poll_delay;
         self
@@ -524,8 +523,8 @@ impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessorBuilder<M, T, H> {
     ///
     /// [`build()`](Self::build) rejects an empty or whitespace-only token.
     /// Supply a lease-scoped change feed token for the monitored source and
-    /// selected mode. This scaffold does not validate token compatibility or
-    /// distribute a container-wide token across leases.
+    /// selected mode. The planner validates compatibility when the lease is
+    /// read; this setting does not distribute a container-wide token across leases.
     pub fn with_start_continuation(mut self, continuation: ContinuationToken) -> Self {
         self.start_from = ProcessorStartFrom::Continuation(continuation);
         self
@@ -580,7 +579,7 @@ where
     ///
     /// Does not invoke the callback, perform network I/O, or start background work.
     /// Container eligibility and continuation-token format, scope, and
-    /// mode compatibility are not validated by this scaffold.
+    /// mode compatibility are validated later during bootstrap and feed planning.
     ///
     /// # Errors
     ///
@@ -656,6 +655,8 @@ where
         }
         Ok(ChangeFeedProcessor {
             configuration: self,
+            running: async_lock::Mutex::new(None),
+            started: Arc::new(AtomicBool::new(false)),
         })
     }
 }
@@ -688,22 +689,28 @@ impl<T, H> ChangeFeedProcessorBuilder<LatestVersion, T, H> {
 
 /// A change feed processor configured for a specific mode.
 ///
-/// Created by [`ChangeFeedProcessorBuilder::build()`]. This scaffold retains
-/// configuration and the callback. [`start()`](Self::start) bootstraps the workload
-/// and then returns a not-implemented error because consumption is not available.
-/// [`stop()`](Self::stop) and [`current_state()`](Self::current_state) also
-/// return local not-implemented errors.
+/// Created by [`ChangeFeedProcessorBuilder::build()`]. Starting bootstraps the
+/// workload and coordinates leases through the shared driver. Each lease has
+/// at most one outstanding callback batch. Checkpoints follow successful callbacks;
+/// replay remains possible after failures or ownership changes.
+///
+/// Dropping the processor requests shutdown. Use [`stop()`](Self::stop) to wait
+/// for shutdown. Monitoring through [`current_state()`](Self::current_state)
+/// is not yet implemented.
 #[must_use]
 pub struct ChangeFeedProcessor<M: ChangeFeedProcessorMode, T, H> {
     configuration: ChangeFeedProcessorBuilder<M, T, H>,
+    running: async_lock::Mutex<Option<execution::Running>>,
+    started: Arc<AtomicBool>,
 }
 
 impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessor<M, T, H> {
     /// Returns whether this processor instance is running.
     ///
-    /// Always returns `false` while execution is not implemented.
+    /// This reports local coordination, not proof of lease ownership or current
+    /// service connectivity. Bootstrap alone does not make the processor running.
     pub fn is_started(&self) -> bool {
-        false
+        self.started.load(Ordering::Acquire)
     }
 
     /// Requests monitoring information for the logical processor's leases.
@@ -744,51 +751,46 @@ impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessor<M, T, H> {
             .build())
     }
 
-    /// Initializes the workload before change feed processing.
+    /// Bootstraps the workload before starting change feed processing.
     ///
-    /// Performs driver-owned bootstrap I/O without reading feed pages or invoking
-    /// callbacks. Compatible initialized workloads preserve existing progress.
-    /// Lease storage must use `/id`, default TTL `-1`, and a single-write-region account.
-    /// Bootstrap alone does not set [`is_started()`](Self::is_started) to `true`.
+    /// Performs network I/O to validate the workload's mode, coordinate
+    /// initialization, and create missing initial leases without continuations.
+    /// Existing checkpoints are preserved. The lease container must use `/id`
+    /// partitioning and a default TTL of `-1` in a single-write-region account.
+    ///
+    /// Starts background balancing, renewal, polling, and callback dispatch after
+    /// bootstrap succeeds. Initial read settings apply only without saved progress.
+    /// The progress watchdog abandons a lease after 425 seconds without a successful
+    /// feed response, including time spent waiting for its callback.
     ///
     /// # Errors
     ///
-    /// Propagates bootstrap errors. After successful bootstrap, returns a local
-    /// [`StatusCode::NotImplemented`] error because consumption is not implemented.
-    pub async fn start(&self) -> crate::Result<()> {
-        let config = &self.configuration;
-        let mode = match config.mode.mode() {
-            crate::options::ChangeFeedMode::LatestVersion => DriverMode::LatestVersion,
-            crate::options::ChangeFeedMode::AllVersionsAndDeletes => {
-                DriverMode::AllVersionsAndDeletes
-            }
-        };
-        let options = BootstrapOptions::new(mode, &config.processor_name, &config.instance_name)
-            .with_lease_verification_enabled_on_restart(
-                config.lease_verification_on_restart_enabled,
-            );
-        config
-            .monitored_container
-            .bootstrap_change_feed_processor(&config.lease_container, &options)
-            .await?;
-        Err(CosmosError::builder()
-            .with_status(CosmosStatus::new(StatusCode::NotImplemented))
-            .with_message("Change feed processor start is not implemented.")
-            .build())
+    /// Propagates bootstrap failures, including incompatible modes, invalid
+    /// lease-container configuration, and service errors. After successful
+    /// bootstrap, starts coordination; later per-lease failures are logged and
+    /// recovered independently. Starting an already-running instance returns
+    /// [`StatusCode::Conflict`].
+    pub async fn start<Fut>(&self) -> crate::Result<()>
+    where
+        T: DeserializeOwned + Send + 'static,
+        H: Fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = crate::Result<()>> + Send + 'static,
+    {
+        execution::start(self).await
     }
 
     /// Requests that change feed processing stop.
     ///
-    /// This scaffold performs no I/O or lease release.
+    /// Cancels pending callbacks, waits for local tasks, and attempts conditional
+    /// lease release. Callback cancellation cannot undo external side effects.
+    /// An unacknowledged batch can be replayed. Stopping an idle instance succeeds.
     ///
     /// # Errors
     ///
-    /// Always returns a local error with [`StatusCode::NotImplemented`].
+    /// Returns an error if the callback-dispatch task fails. Lease release failures
+    /// are logged; other workers can recover those leases after expiration.
     pub async fn stop(&self) -> crate::Result<()> {
-        Err(CosmosError::builder()
-            .with_status(CosmosStatus::new(StatusCode::NotImplemented))
-            .with_message("Change feed processor stop is not implemented.")
-            .build())
+        execution::stop(self).await
     }
 }
 

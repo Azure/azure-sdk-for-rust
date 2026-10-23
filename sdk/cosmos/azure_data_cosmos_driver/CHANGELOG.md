@@ -4,7 +4,9 @@
 
 ### Features Added
 
-- Added driver-owned change feed workload bootstrap with mode binding, create-only range leases, bounded initialization claims, and optional restart verification.
+- Added driver-owned change feed workload bootstrap with RID-based identity, persisted mode checks, TTL initialization claims, bounded retries, and create-only range leases without initial continuations.
+- Added `change_feed_processor::Processor` with equal lease balancing, renewal, progress watchdogs, and schema-agnostic batch receipts that gate durable checkpoints and subsequent polls.
+
 ### Breaking Changes
 
 ### Bugs Fixed
