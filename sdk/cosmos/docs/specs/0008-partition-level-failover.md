@@ -349,8 +349,11 @@ The central structure for partition-level failover state. Resides in
 **Key design decision**: Unlike the SDK's `GlobalPartitionEndpointManager` which
 stores two `RwLock<HashMap>` with interior mutability, the driver follows its
 existing immutable-snapshot pattern. `PartitionEndpointState` is a plain `Clone`
-struct. Mutations create a new instance and swap it atomically via
-`crossbeam_epoch`. This eliminates reader/writer contention on the hot path.
+struct. `LocationStateStore` holds an `Arc<PartitionEndpointState>` behind the
+`crossbeam_epoch` pointer. Real mutations clone the state and publish a new Arc
+via CAS; snapshot refreshes clone only the Arc, including after account-only
+updates. Epoch retirement releases the replaced pointer's ownership, while held
+snapshots keep that immutable state alive until their readers release it.
 
 ```rust
 /// Immutable partition-level endpoint routing state.

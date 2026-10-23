@@ -2178,6 +2178,7 @@ impl DiagnosticsContextBuilder {
             total_responded_regions,
             hedging_started,
             status: self.status,
+            invalid_utf8_was_recovered: false,
             options: self.options,
             cpu_monitor: self.cpu_monitor,
             machine_id: self.machine_id,
@@ -2307,6 +2308,9 @@ pub struct DiagnosticsContext {
 
     /// Operation-level combined HTTP status and sub-status (final status after retries).
     status: Option<CosmosStatus>,
+
+    /// Whether malformed UTF-8 was recovered for this operation.
+    invalid_utf8_was_recovered: bool,
 
     /// Reference to diagnostics configuration.
     options: Arc<DiagnosticsOptions>,
@@ -2503,6 +2507,7 @@ impl DiagnosticsContext {
             total_responded_regions,
             hedging_started,
             status,
+            invalid_utf8_was_recovered: false,
             options: Arc::new(DiagnosticsOptions::default()),
             cpu_monitor: None,
             machine_id: None,
@@ -2793,6 +2798,7 @@ impl DiagnosticsContext {
             cap,
         );
         let hedging_started = sources.iter().any(|c| c.hedging_started);
+        let invalid_utf8_was_recovered = sources.iter().any(|c| c.invalid_utf8_was_recovered);
 
         Some(DiagnosticsContext {
             activity_id: last.activity_id.clone(),
@@ -2806,6 +2812,7 @@ impl DiagnosticsContext {
             total_responded_regions,
             hedging_started,
             status: last.status,
+            invalid_utf8_was_recovered,
             options: Arc::clone(&last.options),
             cpu_monitor: last.cpu_monitor.clone(),
             machine_id: last.machine_id.clone(),
@@ -3238,6 +3245,7 @@ impl DiagnosticsContext {
             total_responded_regions: self.total_responded_regions,
             hedging_started: self.hedging_started,
             status: self.status,
+            invalid_utf8_was_recovered: self.invalid_utf8_was_recovered,
             options: Arc::clone(&self.options),
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
@@ -3258,6 +3266,18 @@ impl DiagnosticsContext {
         let mut context = self.clone_with_operation_name(self.operation_name.clone());
         context.status = Some(status);
         context
+    }
+
+    pub(crate) fn mark_invalid_utf8_recovered(&mut self) {
+        self.invalid_utf8_was_recovered = true;
+        self.cached_json_detailed = OnceLock::new();
+        self.cached_json_summary = OnceLock::new();
+    }
+
+    /// Returns `true` if malformed UTF-8 was replaced while decoding this
+    /// operation's responses.
+    pub fn invalid_utf8_was_recovered(&self) -> bool {
+        self.invalid_utf8_was_recovered
     }
 
     /// Returns `true` when this context represents a finished operation.
@@ -3545,6 +3565,7 @@ impl Clone for DiagnosticsContext {
             total_responded_regions: self.total_responded_regions,
             hedging_started: self.hedging_started,
             status: self.status,
+            invalid_utf8_was_recovered: self.invalid_utf8_was_recovered,
             options: Arc::clone(&self.options),
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
@@ -3597,6 +3618,7 @@ impl PartialEq for DiagnosticsContext {
             && self.total_responded_regions == other.total_responded_regions
             && self.hedging_started == other.hedging_started
             && self.status == other.status
+            && self.invalid_utf8_was_recovered == other.invalid_utf8_was_recovered
             && self.options == other.options
             && self.operation_name == other.operation_name
             && self.patch_tracking_id == other.patch_tracking_id

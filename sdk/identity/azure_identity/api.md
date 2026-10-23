@@ -28,9 +28,9 @@ impl AzureCliCredential {
 impl Debug for AzureCliCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
 }
+#[async_trait]
 impl TokenCredential for AzureCliCredential {
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn get_token(&self, scopes: &[&str], __arg2: Option<TokenRequestOptions<'_>>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = azure_core::Result<AccessToken>> + ::core::marker::Send>>;
+    async fn get_token(&self, scopes: &[&str], __arg2: Option<TokenRequestOptions<'_>>) -> azure_core::Result<AccessToken>;
 }
 #[derive(Clone, Default)]
 pub struct AzureCliCredentialOptions {
@@ -49,9 +49,9 @@ impl AzureDeveloperCliCredential {
 impl Debug for AzureDeveloperCliCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
 }
+#[async_trait]
 impl TokenCredential for AzureDeveloperCliCredential {
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn get_token(&self, scopes: &[&str], __arg2: Option<TokenRequestOptions<'_>>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = azure_core::Result<AccessToken>> + ::core::marker::Send>>;
+    async fn get_token(&self, scopes: &[&str], __arg2: Option<TokenRequestOptions<'_>>) -> azure_core::Result<AccessToken>;
 }
 #[derive(Clone, Default)]
 pub struct AzureDeveloperCliCredentialOptions {
@@ -68,9 +68,9 @@ impl AzurePipelinesCredential {
 impl Debug for AzurePipelinesCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
 }
+#[async_trait]
 impl TokenCredential for AzurePipelinesCredential {
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn get_token(&self, scopes: &[&str], options: Option<TokenRequestOptions<'_>>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = azure_core::Result<AccessToken>> + ::core::marker::Send>>;
+    async fn get_token(&self, scopes: &[&str], options: Option<TokenRequestOptions<'_>>) -> azure_core::Result<AccessToken>;
 }
 #[derive(Default)]
 pub struct AzurePipelinesCredentialOptions {
@@ -84,9 +84,9 @@ pub struct ClientAssertionCredential<C> {
 impl<C: ClientAssertion> ClientAssertionCredential<C> {
     pub fn new(tenant_id: String, client_id: String, assertion: C, options: Option<ClientAssertionCredentialOptions>) -> azure_core::Result<Arc<Self>>;
 }
+#[async_trait]
 impl<C: ClientAssertion> TokenCredential for ClientAssertionCredential<C> {
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn get_token(&self, scopes: &[&str], options: Option<TokenRequestOptions<'_>>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = azure_core::Result<AccessToken>> + ::core::marker::Send>>;
+    async fn get_token(&self, scopes: &[&str], options: Option<TokenRequestOptions<'_>>) -> azure_core::Result<AccessToken>;
 }
 impl<C> Debug for ClientAssertionCredential<C> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -110,9 +110,9 @@ impl Debug for ClientCertificateCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
 }
 #[cfg(feature = "client_certificate")]
+#[async_trait]
 impl TokenCredential for ClientCertificateCredential {
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn get_token(&self, scopes: &[&str], options: Option<TokenRequestOptions<'_>>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = azure_core::Result<AccessToken>> + ::core::marker::Send>>;
+    async fn get_token(&self, scopes: &[&str], options: Option<TokenRequestOptions<'_>>) -> azure_core::Result<AccessToken>;
 }
 #[cfg(feature = "client_certificate")]
 #[derive(Clone, Default)]
@@ -132,9 +132,9 @@ impl ClientSecretCredential {
 impl Debug for ClientSecretCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
 }
+#[async_trait]
 impl TokenCredential for ClientSecretCredential {
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn get_token(&self, scopes: &[&str], options: Option<TokenRequestOptions<'_>>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<AccessToken>> + ::core::marker::Send>>;
+    async fn get_token(&self, scopes: &[&str], options: Option<TokenRequestOptions<'_>>) -> Result<AccessToken>;
 }
 #[derive(Default)]
 pub struct ClientSecretCredentialOptions {
@@ -151,9 +151,9 @@ impl DeveloperToolsCredential {
 impl Debug for DeveloperToolsCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
 }
+#[async_trait]
 impl TokenCredential for DeveloperToolsCredential {
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn get_token(&self, scopes: &[&str], options: Option<TokenRequestOptions<'_>>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = azure_core::Result<AccessToken>> + ::core::marker::Send>>;
+    async fn get_token(&self, scopes: &[&str], options: Option<TokenRequestOptions<'_>>) -> azure_core::Result<AccessToken>;
 }
 #[derive(Clone, Default)]
 pub struct DeveloperToolsCredentialOptions {
@@ -170,9 +170,9 @@ impl ManagedIdentityCredential {
 impl Debug for ManagedIdentityCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
 }
+#[async_trait]
 impl TokenCredential for ManagedIdentityCredential {
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn get_token(&self, scopes: &[&str], options: Option<TokenRequestOptions<'_>>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = azure_core::Result<AccessToken>> + ::core::marker::Send>>;
+    async fn get_token(&self, scopes: &[&str], options: Option<TokenRequestOptions<'_>>) -> azure_core::Result<AccessToken>;
 }
 #[derive(Clone, Default)]
 pub struct ManagedIdentityCredentialOptions {
@@ -195,9 +195,9 @@ impl WorkloadIdentityCredential {
 impl Debug for WorkloadIdentityCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
 }
+#[async_trait]
 impl TokenCredential for WorkloadIdentityCredential {
-    #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-    fn get_token(&self, scopes: &[&str], options: Option<TokenRequestOptions<'_>>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = azure_core::Result<AccessToken>> + ::core::marker::Send>>;
+    async fn get_token(&self, scopes: &[&str], options: Option<TokenRequestOptions<'_>>) -> azure_core::Result<AccessToken>;
 }
 #[derive(Default)]
 pub struct WorkloadIdentityCredentialOptions {
@@ -220,13 +220,11 @@ pub enum UserAssignedId {
 }
 #[async_trait]
 pub trait ClientAssertion: Send + Sync + fmt::Debug {
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn secret(&self, options: Option<ClientMethodOptions<'_>>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = azure_core::Result<String>> + ::core::marker::Send>>;
+    async fn secret(&self, options: Option<ClientMethodOptions<'_>>) -> azure_core::Result<String>;
 }
 #[async_trait]
 pub trait Executor: Send + Sync + fmt::Debug {
-    #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-    fn run(&self, program: &OsStr, args: &[&OsStr]) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = io::Result<Output>> + ::core::marker::Send>>;
+    async fn run(&self, program: &OsStr, args: &[&OsStr]) -> io::Result<Output>;
 }
 pub trait TokenProxyClient: Debug + Send + Sync {
     fn create(&self, options: TokenProxyClientOptions<'_>) -> azure_core::Result<Arc<dyn HttpClient>>;
