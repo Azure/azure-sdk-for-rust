@@ -3,6 +3,9 @@
 
 //! Types and methods for long-running operations (LROs).
 
+#[cfg(feature = "resourcemanager")]
+pub mod resourcemanager;
+
 use crate::{
     error::{ErrorKind, ErrorResponse},
     http::{
@@ -473,7 +476,7 @@ where
         let options = options.unwrap_or_default();
         let (stream, target) = create_poller_stream(make_request, options);
         Self {
-            stream: Box::pin(stream),
+            stream: Box::pin(stream.fuse()),
             target: Some(target),
         }
     }
@@ -1850,6 +1853,14 @@ mod tests {
         assert_eq!(statuses[1].id.as_deref(), Some("op1"));
         assert_eq!(
             statuses[1].result.as_deref(),
+            Some("Operation completed successfully")
+        );
+
+        assert!(poller.try_next().await.unwrap().is_none());
+        let result = poller.await.unwrap().into_model().unwrap();
+        assert_eq!(result.id.as_deref(), Some("op1"));
+        assert_eq!(
+            result.result.as_deref(),
             Some("Operation completed successfully")
         );
 
