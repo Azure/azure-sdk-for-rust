@@ -16,12 +16,9 @@ You are in the right place if all of the following are true:
 
 In addition to the standard tooling covered in the base guide, keep these points in mind when preparing the TypeSpec inputs:
 
-- **Emitter options** – `tspconfig.yaml` must emit both the Resource Manager libraries and the Rust emitter. Align the options with other languages so rotation engineers only maintain one config. A minimal block looks like:
+- **Emitter options** – Add Rust options to `tspconfig.yaml` alongside the other languages' configuration. Preserve the existing `emit` list; `tsp-client` selects the Rust emitter explicitly. A minimal options block looks like:
 
     ```yaml
-    emit:
-        - "@azure-tools/typespec-azure-resource-manager"
-        - "@azure-tools/typespec-rust"
     options:
         "@azure-tools/typespec-rust":
             emitter-output-dir: "{output-dir}/{service-dir}/{crate-name}"
@@ -31,8 +28,22 @@ In addition to the standard tooling covered in the base guide, keep these points
             azure-resource-provider: "Microsoft.<ProviderName>"
     ```
 
-- **Naming** – Follow the `azure_resourcemanager_<service>` crate pattern and mirror the service folder layout used by other languages (`sdk/<service>/<crate-name>`).
+- **Naming** – Follow the `azure_resourcemanager_<service>` crate pattern and mirror the service folder layout used by other languages (`sdk/<service>/<crate-name>`). For example, the Key Vault management library is `sdk/keyvault/azure_resourcemanager_keyvault`, distinct from the data-plane `azure_security_keyvault_*` crates.
 - **Spec changes** – Capture the `azure-rest-api-specs` commit SHA (or PR branch commit) that contains the TypeSpec updates; you will reference it from `tsp-location.yaml`.
+
+### Client names
+
+Use the client names supplied by TypeSpec and its applicable client customizations,
+with the normal Rust emitter's `Client` suffix. Resource Manager clients do not
+need a separate naming scheme. For example, `KeyVault` becomes `KeyVaultClient`
+and `KeyVaultVaults` becomes `KeyVaultVaultsClient`. Do not shorten the latter to
+`VaultClient` or add `Management` merely because another language uses that name.
+
+Review existing `client.tsp` language scopes before adding Rust. Shared naming
+customizations may be useful, but compatibility overrides for another language
+are not automatically appropriate. Apply related renames together when needed
+to avoid collisions. Client or enum member renames change SDK identifiers, not
+serialized wire values.
 
 ## Repository setup checklist
 
@@ -68,10 +79,141 @@ Most polish items match the data-plane flow, but a few deserve special emphasis 
   workspace = true
   ```
 
-- **Credential surface** – Make sure the public constructors accept `azure_identity` credentials and expose subscription-scoped builders, matching existing management plane crates.
+- **Credential surface** – Accept `Arc<dyn azure_core::credentials::TokenCredential>` so callers can use `azure_identity` or another credential implementation. Preserve the subscription arguments defined by TypeSpec.
+- **Core dependency** – Enable `azure_core`'s `resourcemanager` feature. Require a core version containing the shared cloud configuration and polling APIs used by the generated code; preserve the usual transport feature forwarding.
 - **Integration tests** – Provision test resources with `eng/common/TestResources/New-TestResources.ps1 -ServiceDirectory <service>` and record with `#[recorded::test]`. Management plane tests frequently require role assignments, so verify the Bicep template grants the test application proper `Microsoft.Authorization/roleAssignments` permissions.
 
 After these tweaks, run the usual validation commands (`cargo fmt`, `cargo clippy`, `cargo test`) as instructed in the base guide. When long-running operations are generated, add a `cargo check -p <crate> --all-features` run to ensure every poller compiles.
+
+### Cloud configuration and shared audience
+
+All `azure_resourcemanager_*` crates use
+`azure_core::cloud::resourcemanager::Audience` for custom audience registration.
+The marker and `CloudConfigurationExt` trait are gated by `azure_core`'s
+`resourcemanager` feature. Generated and hand-written constructors must import
+`azure_core::cloud::resourcemanager::CloudConfigurationExt as _` for endpoint,
+audience, and scope resolution without audience type parameters. Core uses the
+shared marker internally; do not generate or re-export a service-specific
+`Audience`. Audience entries are keyed by Rust
+type identity: one custom Resource Manager audience registration must work with
+every Resource Manager crate. Data-plane crates retain their service-specific
+audience markers.
+
+Constructors read `options.client_options.cloud`, borrowing the configured cloud
+or the default without cloning it or allocating a default `Arc`:
+
+```rust ignore
+use azure_core::cloud::resourcemanager::CloudConfigurationExt as _;
+
+let options = options.unwrap_or_default();
+let cloud = options.client_options.cloud.as_deref().unwrap_or_default();
+let endpoint = cloud
+    .endpoint()
+    .ok_or_else(|| Error::new(ErrorKind::Other, "missing Resource Manager endpoint"))?;
+let endpoint = Url::parse(endpoint)?;
+let scope = cloud.default_scope()?.into_owned();
+```
+
+Pass the scope to `BearerTokenAuthorizationPolicy`, then move the original
+`options.client_options` into `Pipeline::new`. Propagate missing configuration
+and URL errors. Public cloud is the default; Public, Government, and China
+endpoint and scope mappings belong to `azure_core`, not generated service code.
+Do not generate cloud matches, endpoint tables, or manual scope concatenation
+or normalization.
+
+For custom clouds, keep these values distinct:
+
+- `CustomConfiguration::authority_host` configures the credential's identity authority.
+- `CustomConfiguration::endpoint` supplies the Resource Manager service URL.
+- `Audiences::with::<Audience>(...)` registers the authentication audience.
+  The constructor calls `cloud.default_scope()` to derive the token scope.
+
+Configuration of `CloudConfiguration` and `CustomConfiguration` is unchanged.
+Caller examples retain the shared `Audience` import for registration but do not
+need `CloudConfigurationExt`; only constructor implementations need the trait.
+
+The endpoint and audience need not be the same URL; never infer one from the
+other or use the login authority as the service endpoint. A custom cloud must
+supply both endpoint and audience. Scope formatting belongs to core; its current
+custom-cloud implementation appends `/.default` verbatim, so the emitter must
+not introduce its own trailing-slash trimming.
+
+Keep the normal default-cloud client example first in each crate README, followed
+by a custom-cloud example. Register the audience with the shared core marker and
+pass the same cloud to the service client and a cloud-aware credential, such as
+`ClientSecretCredential`. `DeveloperToolsCredential` instead uses the developer
+tools' cloud settings and has no cloud option. Load secrets from a secure source.
+
+Constructor tests should cover omitted and explicit Public cloud, Government,
+China, distinct custom endpoint and audience URLs, missing custom endpoint or
+audience, and invalid endpoint URLs. Emitter fixtures should verify delegation to
+core, the constructor's extension-trait import, and the absence of a generated audience marker, not duplicate core's cloud
+mapping tests. Register only the shared marker in custom-cloud tests so a
+mistaken service-specific marker fails lookup.
+
+### Long-running operation generation
+
+Generate calls to `azure_core::http::poller::resourcemanager::new_poller` and
+method options using that module's `PollerOptions`. Continue returning the
+existing `Poller<OperationStatus>`; do not introduce a service-specific poller or
+generate a competing polling state machine.
+
+Resource Manager polling is experimental and may change in future releases.
+See the [core polling helper](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/src/http/poller/resourcemanager.rs)
+for the current API and protocol behavior.
+
+Pass final-state metadata as `Option<FinalStateVia<_>>` to the helper. Omitted
+metadata stays `None`, allowing method- and response-based runtime rules; it is
+not an implicit Location selector. The selectors are `AzureAsyncOperation`,
+`Location`, `OriginalUrl`, and `OperationLocation`. For inline Operation-Location results,
+generate the extraction callback from result-path metadata, preserving response
+status, headers, and original result JSON bytes. Empty final results use
+`StatusMonitor::Output = ()` and `NoFormat`; resource results retain their format.
+
+Resource responses use only `properties.provisioningState`. A missing provisioning
+state indicates success; unrelated top-level `status` fields are ignored. Any
+provisioning state other than `Succeeded`, `Failed`, or `Canceled` is still in progress.
+Subsequent operation-monitor responses from `azure-asyncoperation` and
+`operation-location` instead require a top-level `status`. Do not use a
+resource's top-level status as its provisioning state.
+
+Delegate polling protocols, API-version handling, retry timing, and final GET
+selection to core. Preserve lazy initial execution and caller context. The core
+helper creates body-free continuation GETs and retains the initial `Accept`
+header for polling and final requests. Both polling and final GET URLs use the
+initial request's `api-version`, replacing service-supplied versions and adding
+the version when absent.
+
+Location polling continues after HTTP 408, 429, 500, 502, 503, or 504 even when
+pipeline retries are disabled or exhausted. The helper retains the polling URL,
+honors retry delays, and does not yield these transient responses as status
+monitors. A failed operation preserves its response, service error code, message,
+and diagnostic headers through core's HTTP error handling, even when its HTTP
+status is 200. Cancellation returns an explicit cancellation error.
+
+Test emitted metadata and runtime wiring
+rather than reimplementing these protocol rules in emitter fixtures.
+
+### Enum coverage and test resources
+
+Follow the base guide's [enum wire-contract testing](https://github.com/Azure/azure-sdk-for-rust/blob/main/doc/dev/typespec-based-generation.md#enum-wire-contract-tests)
+for both offline serialization checks and recorded service responses. Group live
+scenarios by related operations, not by enum declaration: RSA keys, EC curves,
+rotation policy, secrets, network rules, access policies, and vault recovery can
+be separate subjects. Reuse one test-owned vault for related cases, such as
+multiple EC curves, rather than creating a vault per enum value.
+
+Keep standard vault and managed HSM scenarios in separate test files. Document
+resource counts, provisioning cycles, cleanup, and any dedicated or activated
+fixtures in the crate's `CONTRIBUTING.md`. Leave scenarios requiring unavailable
+provisioning explicitly ignored with a reason; an ignored scenario is not live
+coverage.
+
+Use each operation's actual response contract. For example, Key Vault's
+unversioned key GET returns its rotation policy, while a versioned key GET can
+omit it. Vault responses can omit network ACLs when both settings are defaults;
+exercise non-default combinations to verify each enum spelling rather than
+counting an absent field as coverage.
 
 ## Regeneration cadence
 

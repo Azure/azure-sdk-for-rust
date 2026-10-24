@@ -4,7 +4,7 @@
 This guide provides step-by-step instructions for creating a new Rust SDK client from TypeSpec definitions. There are two approaches:
 
 1. **Fully Generated Client** - All code is generated from TypeSpec (e.g., `azure_security_keyvault_secrets`). This is the solution which is expected for the vast majority of Rust clients.
-1. **Partially Generated Client** - Generated code with custom client wrappers (e.g., `azure_security_keyvault_certificates`). This solution should be limited to the very
+2. **Partially Generated Client** - Generated code with custom client wrappers (e.g., `azure_security_keyvault_certificates`). This solution should be limited to the very
 small set of SDK clients which require additional levels of customization beyond what is available in the `client.tsp` file.
 
 ## Table of Contents
@@ -26,15 +26,15 @@ Before you begin, ensure you have the following installed:
 1. Familiarize yourself with the [Azure API Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html). These define the required
 conventions for an Azure SDK for Rust crate.
 
-1. **Rust toolchain** (version 1.85 or later)
+2. **Rust toolchain** (version 1.85 or later)
 
     To install the rustup tool, follow the [rust-lang install instructions](https://rust-lang.org/tools/install)
 
-1. **Node.js 22+** and **npm**
+3. **Node.js 22+** and **npm**
 
     To install node initially, follow the [node installation instructions](https://nodejs.org/en/download)
 
-1. **tsp-client dependencies** (from the repository root)
+4. **tsp-client dependencies** (from the repository root)
     Installed globally (preferred):
 
     ```bash
@@ -47,7 +47,7 @@ conventions for an Azure SDK for Rust crate.
     npm ci --prefix eng/common/tsp-client
     ```
 
-1. **Azure CLI** (for testing and resource provisioning)
+5. **Azure CLI** (for testing and resource provisioning)
 
     To install the Azure CLI, follow the  [Azure CLI install documentation](https://learn.microsoft.com/cli/azure/install-azure-cli?view=azure-cli-latest)
 
@@ -55,13 +55,13 @@ conventions for an Azure SDK for Rust crate.
     az --version
     ```
 
-1. Bicep (for testing and resource provisioning)
+6. Bicep (for testing and resource provisioning)
 
     ```bash
     az bicep install
     ```
 
-1. **PowerShell** (for running test resource scripts on Windows)
+7. **PowerShell** (for running test resource scripts on Windows)
 
     Powershell install instructions [can be found here](https://learn.microsoft.com/powershell/scripting/install/installing-powershell?view=powershell-7.5).
 
@@ -95,9 +95,9 @@ Typically the crate name will be similar to existing crate names, but that is no
 If the `tspconfig.yaml` doesn't already have Rust emitter configuration, you need to add it:
 
 1. Fork or clone the `Azure/azure-rest-api-specs` repository
-1. Create a new branch
-1. Edit `specification/<service-name>/<TypeSpec.Dir>/tspconfig.yaml`
-1. Add the Rust emitter configuration under the `options` section:
+2. Create a new branch
+3. Edit `specification/<service-name>/<TypeSpec.Dir>/tspconfig.yaml`
+4. Add the Rust emitter configuration under the `options` section:
 
     ```yaml
     options:
@@ -117,8 +117,8 @@ If the `tspconfig.yaml` doesn't already have Rust emitter configuration, you nee
         crate-version: "0.1.0"
     ```
 
-1. Create a pull request with title: "Add Rust emitter support to `<ServiceName>` TypeSpec"
-1. Wait for the PR to be merged (or use a local clone for development)
+5. Create a pull request with title: "Add Rust emitter support to `<ServiceName>` TypeSpec"
+6. Wait for the PR to be merged (or use a local clone for development)
 
 ### Step 1.4: Note the Commit SHA
 
@@ -194,6 +194,12 @@ tsp-client update https://github.com/Azure/azure-rest-api-specs/blob/fc08a74c8fd
 ## Part 3: Generating the SDK - Fully Generated Client
 
 The `tsp-client init` command should generate a fully functional Rust package for the client, the next steps involve filling in the missing pieces to create a fully functional SDK client.
+
+For `azure_resourcemanager_*` crates, also follow the
+[Resource Manager generation guide](https://github.com/Azure/azure-sdk-for-rust/blob/main/doc/dev/resourcemanager-generation.md#cloud-configuration-and-shared-audience).
+These clients use the shared `azure_core::cloud::resourcemanager::Audience`
+instead of a generated per-crate marker, and delegate endpoint and scope
+resolution to core. This exception does not change data-plane audience generation.
 
 ### Part 3.1: Update the cargo.toml file
 
@@ -328,8 +334,8 @@ eng/common/TestResources/New-TestResources.ps1 -ServiceDirectory <service-dir>
 This script will:
 
 1. Deploy the resources defined in `test-resources.bicep`
-1. Create a `.env` file with connection information
-1. Set environment variables for testing
+2. Create a `.env` file with connection information
+3. Set environment variables for testing
 
 ### Step 5.4: Run Tests
 
@@ -344,23 +350,76 @@ AZURE_TEST_MODE=record cargo test -p <crate-name>
 AZURE_TEST_MODE=live cargo test -p <crate-name>
 ```
 
+### Enum wire-contract tests
+
+Rust variant names and service wire values are separate contracts. Test exact
+wire spellings rather than deriving expectations from a variant's name or
+accepting successful deserialization alone.
+
+Group offline tests by related enum families. Cover every declared value through
+JSON deserialization and serialization, along with `FromStr`, `AsRef<str>`, and
+`Display` where generated. Include representative nested models, wrong-case
+inputs, and unknown values: extensible enums should preserve unrecognized
+strings, while closed enums should reject them. These tests verify the declared
+contract without provisioning resources; a round trip alone cannot prove that
+the service uses the same contract.
+
+Recorded tests should compare actual response strings with explicit expected
+wire values and named Rust variants. Check serialized request values for enums
+used as inputs, but do not send every enum value merely to enumerate it. Cover
+related operation scenarios and respect whether fields are writable, read-only,
+optional, or omitted by a particular operation. Compare enum arrays without
+assuming order unless the service guarantees it, while checking their complete
+contents and count.
+
+If a recording reveals a mismatch, inspect the specification, generated wire
+mapping, and service payload before assigning the cause. For example, Key Vault
+declared `notify` and `rotate`, but recorded policy responses returned `Notify`
+and `Rotate`; PascalCase Rust identifiers were not evidence of an emitter bug.
+Record required specification or emitter corrections separately from local test
+work. If a known service value is missing from an extensible enum, an explicit
+assertion of its preserved `UnknownValue` can document the discrepancy, but is
+not named-variant coverage. Do not normalize casing globally to hide it.
+
+Inspect sanitizers before treating a playback value as service evidence. The
+default `SANITIZE_BODY_NAME` targets `$..name`, including nested SKU names.
+Configure any necessary exception per recording, preserve other sanitization,
+and inspect recordings for sensitive values. Re-record only when the request
+sequence or recording configuration needs updating; use
+`AZURE_TEST_MODE=playback` to validate saved recordings.
+
 ## Part 6: Documentation and Examples
 
 ### Step 6.1: Create README.md
 
 Create `sdk/<service-dir>/<crate-name>/README.md`.
 
-The `README.md` file typically has several sections that are common to all crates:
+Keep the README consumer-focused. Use this section order, following the published
+[Key Vault secrets README](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/azure_security_keyvault_secrets/README.md):
 
-- Brief description of the crate, including
-  - Location of crate
-  - Location of crate documentation
-- Prerequisites
-- Key Concepts
-- Examples of hero scenarios
-- Troubleshooting guide
-- Contributing Guide
-- References
+1. Library title, service overview, and source/package/API/product links.
+2. **Getting started**: install the package, prerequisites, install example
+   dependencies, authenticate, and instantiate a client.
+3. **Key concepts**.
+4. **Examples** of primary scenarios.
+5. **Troubleshooting**, beginning with **General**.
+6. **Contributing**: the standard repository contribution link, CLA, and Code of
+   Conduct text.
+7. Reference-style link definitions under `<!-- LINKS -->`.
+
+Preserve executable example labels used by README tests. Use `rust no_run` for
+examples with placeholders, and keep service-specific limitations relevant to
+consumers visible. Copy the standard contribution boilerplate from a published
+crate rather than replacing it with a link to a crate-local contributor guide.
+
+Put generation commands, test provisioning, environment variables, recording
+instructions, resource budgets, and contributor troubleshooting in a sibling
+`CONTRIBUTING.md`. Link to the repository contribution guide there and document
+only crate-specific differences. Crate-local contributor guides need not be
+linked from the README.
+
+The [document-crates skill](https://github.com/Azure/azure-sdk-for-rust/blob/main/.github/skills/document-crates/SKILL.md) provides
+a compact checklist for planning or editing these files.
 
 It is often helpful to look at the `README.md` for the package you are creating from other SDK languages e.g., [sdk/keyvault/azure_security_keyvault_secrets/README.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/azure_security_keyvault_secrets/README.md). They usually contain helpful information that should be included in your `README.md` (this is helpful for the Key Concepts and Hero scenarios sections. It is also extremely helpful to look at other packages within the Azure SDK for Rust SDK for examples of content (this is especially true for the Prerequisites and References sections).
 
