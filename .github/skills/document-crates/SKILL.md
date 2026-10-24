@@ -6,7 +6,7 @@ description: Plan, create, or update README.md and CONTRIBUTING.md files, especi
 # Document crates
 
 - Read the target and applicable instructions. For crate docs, use
-  [Key Vault secrets](../../../sdk/keyvault/azure_security_keyvault_secrets/README.md)
+  [Key Vault secrets](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/azure_security_keyvault_secrets/README.md)
   as the published template; read only relevant sections.
 - Apply the crate template below to crate docs, not repository/tool guides.
   Preserve existing purpose and layout for non-crate files.
