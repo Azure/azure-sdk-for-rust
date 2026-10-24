@@ -2,9 +2,11 @@
 // Licensed under the MIT License.
 
 use super::{
-    new_poller, FinalStateVia, PollerOptions, AZURE_ASYNC_OPERATION, LOCATION, OPERATION_LOCATION,
+    new_poller, FinalStateVia, PollerOptions, PollingInfo, PollingMethod, AZURE_ASYNC_OPERATION,
+    LOCATION, OPERATION_LOCATION,
 };
 use crate::{
+    error::{ErrorKind, ErrorResponse},
     http::poller::{PollerStatus, StatusMonitor},
     http::{
         headers::{
@@ -521,10 +523,8 @@ async fn new_poller_async_pattern_failed() {
     );
 
     let err = poller.await.unwrap_err();
-    assert_eq!(
-        err.to_string(),
-        "Resource Manager long-running operation failed"
-    );
+    assert!(matches!(err.kind(), ErrorKind::HttpResponse { .. }));
+    assert!(err.to_string().contains(r#""status":"Failed""#));
 }
 
 /// When the operation status poll returns a non-success HTTP status, the poller returns an error.
@@ -1016,7 +1016,7 @@ async fn explicit_final_response_selection() {
         None,
         Some(FinalStateVia::AzureAsyncOperation),
         Some(FinalStateVia::Location),
-        Some(FinalStateVia::OriginalUri),
+        Some(FinalStateVia::OriginalUrl),
         Some(FinalStateVia::OperationLocation(unexpected_extraction)),
     ];
     for header in [AZURE_ASYNC_OPERATION, OPERATION_LOCATION] {
@@ -1035,7 +1035,7 @@ async fn explicit_final_response_selection() {
                     } else if header == AZURE_ASYNC_OPERATION {
                         match strategy {
                             Some(FinalStateVia::AzureAsyncOperation) => None,
-                            Some(FinalStateVia::OriginalUri) => Some(RESOURCE_URL),
+                            Some(FinalStateVia::OriginalUrl) => Some(RESOURCE_URL),
                             _ => location.then_some(LOCATION_URL),
                         }
                     } else {
@@ -1097,7 +1097,7 @@ async fn operation_location_resource_location_precedence() {
             None,
             Some(FinalStateVia::AzureAsyncOperation),
             Some(FinalStateVia::Location),
-            Some(FinalStateVia::OriginalUri),
+            Some(FinalStateVia::OriginalUrl),
             Some(FinalStateVia::OperationLocation(unexpected_extraction)),
         ] {
             let final_url = if matches!(strategy, Some(FinalStateVia::Location)) {
@@ -1234,7 +1234,15 @@ async fn operation_location_unsuccessful_status_skips_callback() {
             Some(FinalStateVia::OperationLocation(unexpected_extraction)),
             None,
         );
-        assert!(poller.await.unwrap_err().to_string().contains(message));
+        let error = poller.await.unwrap_err();
+        if message == "failed" {
+            assert!(matches!(
+                error.kind(),
+                crate::error::ErrorKind::HttpResponse { .. }
+            ));
+        } else {
+            assert!(error.to_string().contains(message));
+        }
         assert!(pending.lock().unwrap().is_empty());
     }
 }
@@ -1278,7 +1286,7 @@ async fn explicit_strategy_does_not_change_location_or_body_polling() {
         };
         let initial = match header {
             Some(header) => operation_response(header, false),
-            None => monitor_response(br#"{"status":"InProgress"}"#),
+            None => monitor_response(br#"{"properties":{"provisioningState":"InProgress"}}"#),
         };
         let (pipeline, pending) = scripted_pipeline(vec![
             (Method::Put, RESOURCE_URL, initial),
@@ -1525,29 +1533,22 @@ async fn synchronous_completion_is_lazy_and_does_not_fetch_again() {
 }
 
 #[tokio::test]
-async fn created_body_response_without_state_keeps_polling() {
-    let mut headers = Headers::new();
-    headers.insert(RETRY_AFTER_MS, "0");
-    let (pipeline, pending) = scripted_pipeline(vec![
-        (
+async fn body_response_without_provisioning_state_succeeds() {
+    for status in [StatusCode::Ok, StatusCode::Created, StatusCode::Accepted] {
+        let (pipeline, pending) = scripted_pipeline(vec![(
             Method::Put,
             RESOURCE_URL,
-            AsyncRawResponse::from_bytes(StatusCode::Created, headers, ""),
-        ),
-        (
-            Method::Get,
-            RESOURCE_URL,
-            monitor_response(br#"{"id":"finished"}"#),
-        ),
-    ]);
-    let poller: Poller<ArmOperationStatus> = new_poller(
-        pipeline,
-        Request::new(RESOURCE_URL.parse().unwrap(), Method::Put),
-        None,
-        None,
-    );
-    assert_eq!(poller.await.unwrap().into_model().unwrap().id, "finished");
-    assert!(pending.lock().unwrap().is_empty());
+            AsyncRawResponse::from_bytes(status, Headers::new(), r#"{"id":"finished"}"#),
+        )]);
+        let poller: Poller<ArmOperationStatus> = new_poller(
+            pipeline,
+            Request::new(RESOURCE_URL.parse().unwrap(), Method::Put),
+            None,
+            None,
+        );
+        assert_eq!(poller.await.unwrap().into_model().unwrap().id, "finished");
+        assert!(pending.lock().unwrap().is_empty());
+    }
 }
 
 #[tokio::test]
@@ -2010,4 +2011,348 @@ async fn final_request_accepts_xml_resource() {
     let poller: Poller<Monitor> = new_poller(pipeline_with(Arc::new(mock)), request, None, None);
     assert_eq!(poller.await.unwrap().into_model().unwrap().id, "finished");
     assert_eq!(calls.load(Ordering::SeqCst), 3);
+}
+
+#[test]
+fn status_uses_the_polling_protocol_and_phase() {
+    for method in [
+        PollingMethod::AzureAsyncOperation,
+        PollingMethod::OperationLocation,
+        PollingMethod::Location,
+        PollingMethod::Body,
+    ] {
+        let polling = PollingInfo {
+            method,
+            location: None,
+            operation_url: None,
+        };
+        for initial in [true, false] {
+            let operation_monitor = !initial
+                && matches!(
+                    method,
+                    PollingMethod::AzureAsyncOperation | PollingMethod::OperationLocation
+                );
+            for (body, resource_status, operation_status) in [
+                (
+                    r#"{"status":"Succeeded","properties":{"provisioningState":"Failed"}}"#,
+                    PollerStatus::Failed,
+                    PollerStatus::Succeeded,
+                ),
+                (
+                    r#"{"status":"Enabled","properties":{"provisioningState":"Succeeded"}}"#,
+                    PollerStatus::Succeeded,
+                    PollerStatus::InProgress,
+                ),
+                (
+                    r#"{"status":"Failed","properties":{"provisioningState":"Creating"}}"#,
+                    PollerStatus::InProgress,
+                    PollerStatus::Failed,
+                ),
+                (
+                    r#"{"status":"Succeeded","properties":{"provisioningState":"Completed"}}"#,
+                    PollerStatus::InProgress,
+                    PollerStatus::Succeeded,
+                ),
+            ] {
+                let response: Response<ArmOperationStatus> =
+                    RawResponse::from_bytes(StatusCode::Ok, Headers::new(), body).into();
+                assert_eq!(
+                    polling.status(&response, initial).unwrap(),
+                    if operation_monitor {
+                        operation_status
+                    } else {
+                        resource_status
+                    },
+                );
+            }
+        }
+    }
+}
+
+#[tokio::test]
+async fn resource_status_does_not_require_a_monitor_schema() {
+    for header in [None, Some(LOCATION)] {
+        for body in [
+            br#"{"id":"finished","status":{"value":"ready"}}"#.as_slice(),
+            br#"{"id":"finished","status":"Enabled"}"#,
+            br#"{"id":"finished","status":42}"#,
+        ] {
+            let mut responses = Vec::new();
+            if let Some(header) = &header {
+                responses.push((
+                    Method::Put,
+                    RESOURCE_URL,
+                    operation_response(header.clone(), false),
+                ));
+            }
+            responses.push((
+                if header.is_some() {
+                    Method::Get
+                } else {
+                    Method::Put
+                },
+                if header.is_some() {
+                    POLLING_URL
+                } else {
+                    RESOURCE_URL
+                },
+                monitor_response(body),
+            ));
+            let (pipeline, pending) = scripted_pipeline(responses);
+            let poller: Poller<ArmOperationStatus> = new_poller(
+                pipeline,
+                Request::new(RESOURCE_URL.parse().unwrap(), Method::Put),
+                None,
+                None,
+            );
+            let response = poller.await.unwrap();
+            assert_eq!(response.body().as_ref(), body);
+            assert_eq!(response.into_model().unwrap().id, "finished");
+            assert!(pending.lock().unwrap().is_empty());
+        }
+    }
+}
+
+#[tokio::test]
+async fn failed_operations_preserve_service_error_details() {
+    for header in [
+        None,
+        Some(AZURE_ASYNC_OPERATION),
+        Some(OPERATION_LOCATION),
+        Some(LOCATION),
+    ] {
+        let mut responses = Vec::new();
+        if let Some(header) = &header {
+            responses.push((
+                Method::Put,
+                RESOURCE_URL,
+                operation_response(header.clone(), false),
+            ));
+        }
+        let body = br#"{"status":"Failed","properties":{"provisioningState":"Failed"},"error":{"code":"QuotaExceeded","message":"capacity \"exhausted\"","details":[{"code":"Limit","message":"no capacity"}]}}"#;
+        let mut headers = Headers::new();
+        headers.insert("x-ms-request-id", "diagnostic-id");
+        responses.push((
+            if header.is_some() {
+                Method::Get
+            } else {
+                Method::Put
+            },
+            if header.is_some() {
+                POLLING_URL
+            } else {
+                RESOURCE_URL
+            },
+            AsyncRawResponse::from_bytes(StatusCode::Ok, headers.clone(), body.as_slice()),
+        ));
+        let (pipeline, pending) = scripted_pipeline(responses);
+        let poller: Poller<ArmOperationStatus> = new_poller(
+            pipeline,
+            Request::new(RESOURCE_URL.parse().unwrap(), Method::Put),
+            None,
+            None,
+        );
+        let error = poller.await.unwrap_err();
+        assert_eq!(error.to_string(), "capacity \"exhausted\"");
+        match error.kind() {
+            ErrorKind::HttpResponse {
+                status,
+                error_code,
+                raw_response,
+            } => {
+                assert_eq!(*status, StatusCode::Ok);
+                assert_eq!(error_code.as_deref(), Some("QuotaExceeded"));
+                let response = raw_response.as_ref().unwrap();
+                assert_eq!(response.headers(), &headers);
+                assert_eq!(response.body().as_ref(), body);
+            }
+            kind => panic!("expected a response error, got {kind:?}"),
+        }
+        let detail = ErrorResponse::try_from(error).unwrap().error.unwrap();
+        assert_eq!(detail.code.as_deref(), Some("QuotaExceeded"));
+        assert_eq!(detail.message.as_deref(), Some("capacity \"exhausted\""));
+        assert_eq!(detail.details[0].code.as_deref(), Some("Limit"));
+        assert!(pending.lock().unwrap().is_empty());
+    }
+}
+
+#[tokio::test(start_paused = true)]
+async fn location_polling_preserves_state_after_transient_responses() {
+    for status in [
+        StatusCode::RequestTimeout,
+        StatusCode::TooManyRequests,
+        StatusCode::InternalServerError,
+        StatusCode::BadGateway,
+        StatusCode::ServiceUnavailable,
+        StatusCode::GatewayTimeout,
+    ] {
+        let mut headers = Headers::new();
+        headers.insert(RETRY_AFTER, "3");
+        headers.insert(LOCATION, "http://[");
+        let (pipeline, pending) = scripted_pipeline(vec![
+            (
+                Method::Delete,
+                RESOURCE_URL,
+                operation_response(LOCATION, false),
+            ),
+            (
+                Method::Get,
+                POLLING_URL,
+                AsyncRawResponse::from_bytes(status, headers, "not a monitor"),
+            ),
+            (
+                Method::Get,
+                POLLING_URL,
+                AsyncRawResponse::from_bytes(StatusCode::NoContent, Headers::new(), ""),
+            ),
+        ]);
+        let mut poller: Poller<ArmOperationStatus> = new_poller(
+            pipeline,
+            Request::new(RESOURCE_URL.parse().unwrap(), Method::Delete),
+            None,
+            None,
+        );
+        let start = tokio::time::Instant::now();
+        assert_eq!(
+            poller.try_next().await.unwrap().unwrap().status(),
+            StatusCode::Accepted
+        );
+        assert_eq!(
+            poller.try_next().await.unwrap().unwrap().status(),
+            StatusCode::NoContent
+        );
+        assert!(poller.try_next().await.unwrap().is_none());
+        assert_eq!(poller.await.unwrap().status(), StatusCode::NoContent);
+        assert_eq!(start.elapsed(), std::time::Duration::from_secs(3));
+        assert!(pending.lock().unwrap().is_empty());
+    }
+}
+
+#[tokio::test(start_paused = true)]
+async fn location_polling_continues_after_pipeline_retries_are_exhausted() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let calls_for_mock = calls.clone();
+    let mock = MockHttpClient::new(move |request| {
+        let call = calls_for_mock.fetch_add(1, Ordering::SeqCst);
+        assert_eq!(
+            request.url().as_str(),
+            if call == 0 { RESOURCE_URL } else { POLLING_URL },
+        );
+        let response = match call {
+            0 => operation_response(LOCATION, false),
+            1 | 2 => {
+                let mut headers = Headers::new();
+                headers.insert(RETRY_AFTER, "2");
+                AsyncRawResponse::from_bytes(StatusCode::TooManyRequests, headers, "")
+            }
+            3 => AsyncRawResponse::from_bytes(StatusCode::NoContent, Headers::new(), ""),
+            _ => panic!("unexpected request"),
+        };
+        async move { Ok(response) }.boxed()
+    });
+    let pipeline = Pipeline::new(
+        None,
+        None,
+        ClientOptions {
+            transport: Some(Transport::new(Arc::new(mock))),
+            retry: crate::http::RetryOptions::fixed(crate::http::FixedRetryOptions {
+                delay: Duration::ZERO,
+                max_retries: 1,
+                ..Default::default()
+            }),
+            ..Default::default()
+        },
+        vec![],
+        vec![],
+        None,
+    );
+    let poller: Poller<ArmOperationStatus> = new_poller(
+        pipeline,
+        Request::new(RESOURCE_URL.parse().unwrap(), Method::Delete),
+        None,
+        None,
+    );
+    let start = tokio::time::Instant::now();
+    assert_eq!(poller.await.unwrap().status(), StatusCode::NoContent);
+    assert_eq!(start.elapsed(), std::time::Duration::from_secs(4));
+    assert_eq!(calls.load(Ordering::SeqCst), 4);
+}
+
+#[tokio::test]
+async fn polling_and_final_urls_always_use_the_client_api_version() {
+    for header in [AZURE_ASYNC_OPERATION, OPERATION_LOCATION, LOCATION] {
+        for service_version in ["", "?api-version=service"] {
+            for resource_location in [false, true] {
+                let calls = Arc::new(AtomicUsize::new(0));
+                let calls_for_mock = calls.clone();
+                let header_for_mock = header.clone();
+                let mock = MockHttpClient::new(move |request| {
+                    let call = calls_for_mock.fetch_add(1, Ordering::SeqCst);
+                    let versions: Vec<_> = request
+                        .url()
+                        .query_pairs()
+                        .filter(|(key, _)| key.eq_ignore_ascii_case("api-version"))
+                        .map(|(_, value)| value.into_owned())
+                        .collect();
+                    assert_eq!(versions, ["original"]);
+                    assert_eq!(
+                        request.method(),
+                        if call == 0 { Method::Post } else { Method::Get }
+                    );
+                    let response = match call {
+                        0 => {
+                            assert_eq!(request.url().path(), "/resources/1");
+                            let mut headers = Headers::new();
+                            headers.insert(
+                                header_for_mock.clone(),
+                                format!("/operations/1{service_version}"),
+                            );
+                            if header_for_mock != LOCATION {
+                                headers.insert(LOCATION, format!("/results/1{service_version}"));
+                            }
+                            headers.insert(RETRY_AFTER_MS, "0");
+                            AsyncRawResponse::from_bytes(StatusCode::Accepted, headers, "")
+                        }
+                        1 => {
+                            assert_eq!(request.url().path(), "/operations/1");
+                            let body = if header_for_mock == LOCATION {
+                                r#"{"id":"finished"}"#.to_owned()
+                            } else if resource_location && header_for_mock == OPERATION_LOCATION {
+                                format!(
+                                    r#"{{"status":"Succeeded","resourceLocation":"/results/2{service_version}"}}"#
+                                )
+                            } else {
+                                r#"{"status":"Succeeded"}"#.to_owned()
+                            };
+                            AsyncRawResponse::from_bytes(StatusCode::Ok, Headers::new(), body)
+                        }
+                        2 => {
+                            assert_eq!(
+                                request.url().path(),
+                                if resource_location && header_for_mock == OPERATION_LOCATION {
+                                    "/results/2"
+                                } else {
+                                    "/results/1"
+                                }
+                            );
+                            monitor_response(br#"{"id":"finished"}"#)
+                        }
+                        _ => panic!("unexpected request"),
+                    };
+                    async move { Ok(response) }.boxed()
+                });
+                let poller: Poller<ArmOperationStatus> = new_poller(
+                    pipeline_with(Arc::new(mock)),
+                    Request::new(RESOURCE_URL.parse().unwrap(), Method::Post),
+                    None,
+                    None,
+                );
+                assert_eq!(poller.await.unwrap().into_model().unwrap().id, "finished");
+                assert_eq!(
+                    calls.load(Ordering::SeqCst),
+                    if header == LOCATION { 2 } else { 3 }
+                );
+            }
+        }
+    }
 }
