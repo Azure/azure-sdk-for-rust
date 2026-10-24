@@ -4,7 +4,7 @@
   "id": "bootstrap.backup-fallback",
   "title": "Client bootstrap falls back through ordered unavailable endpoints",
   "requirement": "When the primary and an earlier backup endpoint return service-unavailable responses, client construction uses the first usable backup endpoint without changing credentials.",
-  "maturity": "candidate",
+  "maturity": "stable",
   "precedents": [
     {
       "sdk": "rust",
@@ -13,7 +13,8 @@
     }
   ],
   "profiles": [
-    "configurationResilience"
+    "configurationResilience",
+    "liveConfiguration"
   ],
   "tags": [
     "bootstrap",
@@ -32,7 +33,7 @@
       ]
     },
     "azureLive": {
-      "applicability": "supported",
+      "applicability": "required",
       "fidelity": "full"
     }
   }

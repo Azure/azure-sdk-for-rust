@@ -386,27 +386,79 @@ Scope:
 - promotion of validated `azureLive` applicability from `supported` to
   `required`;
 - complete diagnostics and OpenTelemetry audit;
-- TODO: define the semantic boundary of every hosted-emulator `/health` counter before treating
-  the counters as a reporting contract: decoded request, completed emulator operation, or
-  successfully emitted host response. Then place related Gateway V1/Gateway V2 increments on the
-  chosen side of fallible conversion boundaries and add failure-path tests that pin the result.
-  PR3 intentionally keeps the current placement because generated Gateway V2 responses are
-  buffered and use validated headers, no reachable conversion failure or cross-counter equality
-  contract has been demonstrated, and moving counters now would choose semantics implicitly. The
-  current `defaultConsistencyRequests` name is also retained in PR3: it is used as the wire bucket
-  for requests carrying no non-default read-consistency-strategy signal, not as a semantic count of
-  Default reads. PR5 must decide whether to rename it to reflect that wire meaning or add separate
-  semantic read counters before exposing these values in reports;
-- generated pull-request and scheduled shard manifests;
-- JUnit and scenario/profile/backend coverage reports;
+- hosted-emulator `/health` request, binary, and read-consistency counters use
+  one semantic boundary: the host successfully constructed the complete HTTP
+  response. Gateway V1 and Gateway V2 increments occur after every fallible
+  request decode, emulator dispatch, response buffering, and HTTP conversion.
+  Decode and conversion failures do not increment these counters. The
+  read-consistency fields are named `wire*ConsistencyRequests`; the Default
+  bucket therefore means that no non-default wire signal was present, not
+  that the service necessarily performed a semantic Default read;
+- pull-request, scheduled, and live shard selection in CI matrix files;
+- ordinary test results, with existing JUnit publication on nightly jobs;
 - runtime measurement and shard calibration;
-- 15–20 minute maximum shard target;
-- retry and quarantine policy for environmental failures;
+- a 15–20 minute shard tuning target, not a custom duration gate;
+- test failures remain blocking without a custom quarantine override;
 - documentation for local, hosted-emulator, and live execution; and
 - cross-SDK portability review with Java, .NET, and Python implementations.
 
-PR5 is the release-readiness gate for the suite rather than a place to add
-large amounts of previously untested functionality.
+PR5 focuses on live execution and release readiness rather than adding a
+separate reporting or test-execution system.
+
+The live matrix uses fixed Session accounts for `smokeTests`,
+`coreOperations`, and the two-region `liveConfiguration` profile. A separate
+provisioned Entra ID smoke shard confirms that source-native scenarios do not
+depend on key authentication. Dedicated live shards use nightly Rust so Cargo
+results can be converted to JUnit by the existing repository infrastructure.
+Hosted jobs on stable Rust use normal test output. Both paths retain the
+standard test runner's failure handling; no custom report or quarantine policy
+overrides failed tests.
+
+CI matrix files define shard selection. The 15–20 minute target guides tuning
+against measured CI runtimes; it is not an enforced E2E duration ceiling.
+Existing pipeline job timeouts remain unchanged.
+
+Catalog validation checks scenario/profile documents and implementation mappings,
+not execution evidence. A passing run does not by itself prove that every
+required scenario ran: profile selection can currently return successfully for
+unselected scenarios. Preventing false-green selection remains a separate
+test-selection concern, not a guarantee supplied by a coverage report.
+
+PR5 intentionally does not add a static rule coupling every `azureLive:
+required` scenario to a profile selected by a live matrix. The PR5 catalog was
+audited directly: all 24 required live scenarios are selected across the smoke,
+core, and live-configuration shards. Profiles remain reusable across backends,
+including scenarios that are intentionally not applicable to Azure Live, so a
+bidirectional profile/applicability rule would reject valid catalog entries.
+Revisit this only with an execution-evidence design that preserves that profile
+reuse.
+
+The AAD fixture probes the resolved container after key-authenticated resource
+creation so authorization propagation is checked before the scenario starts.
+PR5 does not add scenario-level retries around AAD reads, queries, or pager
+consumption: a failure after that readiness check remains test evidence rather
+than being hidden by operation-specific retry behavior.
+
+PR5 also leaves the following reviewed hardening ideas unchanged because they
+do not affect any current matrix cell:
+
+- the backup-fallback bootstrap keeps `Region::EAST_US` as a valid proximity
+  anchor; its current profiles use key authentication and the scenario tests
+  ordered endpoint discovery rather than a region-specific data operation;
+- live matrix validation compares axis unions because every profile sharing a
+  current matrix declares identical account, runtime, and client axes;
+- diagnostics-handler telemetry uses profile region names because its only
+  live profile is multi-region and live setup already validates exact region
+  identity and order;
+- successful client initialization may consume a fault rule through legitimate
+  SDK-internal recovery, so it does not emit an additional test-framework
+  warning; and
+- the nightly-matrix error retains its existing JUnit coverage wording because
+  nightly remains required for the structured output converted to JUnit.
+
+Reconsider these choices if a matrix combines profiles with different axes, a
+scenario adds a single-region live profile or AAD selection, or observed fault
+initialization behavior demonstrates a concrete budget regression.
 
 ## Pull-request workflow
 
@@ -451,9 +503,10 @@ The roadmap is complete when:
 - scheduled hosted-emulator matrices cover deterministic fault and topology
   behavior through Gateway V1 and Gateway V2;
 - every eligible scenario runs against appropriate live account profiles;
-- required backend coverage is enforced rather than informational;
-- CI reports scenario/profile/backend coverage;
-- no shard exceeds the 15–20 minute target under normal conditions; and
+- required scenario selection is validated and functional failures fail CI;
+- CI uses standard test results without a separate scenario-coverage report;
+- shard runtimes are measured and tuned toward 15–20 minutes under normal
+  conditions; and
 - the catalog is usable by peer SDK teams without requiring them to adopt Rust
   APIs or a shared behavioral interpreter.
 

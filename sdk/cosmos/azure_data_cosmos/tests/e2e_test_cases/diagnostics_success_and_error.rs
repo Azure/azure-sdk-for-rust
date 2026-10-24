@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 use azure_core::http::StatusCode;
-use azure_data_cosmos::options::Region;
 
 use crate::e2e_test_cases::{
+    catalog::default_region,
     fixture::{E2eTest, TestResult},
     support::{assert_critical_diagnostics, item, should_run},
 };
@@ -18,9 +18,10 @@ async fn diagnostics_cover_success_and_error() -> TestResult {
     if !should_run("diagnostics.success-and-error").await? {
         return Ok(());
     }
+    let region = default_region()?;
     E2eTest::builder()
         .run(async |fixture| {
-            // Arrange one readable item in East US.
+            // Arrange one readable item in the selected region.
             fixture
                 .container
                 .create_item("A", "item-1", item("item-1", "A", 1), None)
@@ -30,10 +31,10 @@ async fn diagnostics_cover_success_and_error() -> TestResult {
             let success = fixture.container.read_item("A", "item-1", None).await?;
             assert_eq!(success.status().status_code(), StatusCode::Ok);
             assert_critical_diagnostics(&success.diagnostics(), "read_item", StatusCode::Ok);
-            assert!(success
-                .diagnostics()
-                .regions_contacted()
-                .contains(&Region::EAST_US));
+            assert_eq!(
+                success.diagnostics().regions_contacted(),
+                std::slice::from_ref(&region)
+            );
 
             // Error diagnostics preserve the same fields while reporting the terminal plain 404.
             let error = fixture
@@ -54,7 +55,10 @@ async fn diagnostics_cover_success_and_error() -> TestResult {
                 .diagnostics()
                 .expect("service error must carry diagnostics");
             assert_critical_diagnostics(&diagnostics, "read_item", StatusCode::NotFound);
-            assert!(diagnostics.regions_contacted().contains(&Region::EAST_US));
+            assert_eq!(
+                diagnostics.regions_contacted(),
+                std::slice::from_ref(&region)
+            );
             Ok(())
         })
         .await

@@ -112,6 +112,7 @@ async fn execute(
                 .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
             (status, error.to_string())
         })?;
+    let response = data_plane::into_http_response(response).await?;
     state
         .metrics
         .record_binary_request(audit.binary_negotiated, audit.binary_request_payload);
@@ -121,7 +122,6 @@ async fn execute(
     state
         .metrics
         .record_read_consistency_strategy(audit.read_consistency_strategy);
-    let response = data_plane::into_http_response(response).await?;
     state.metrics.record_gateway20_request();
     #[cfg(test)]
     if let Some(request_count) = &state.request_count {
@@ -204,6 +204,9 @@ mod tests {
             assert_eq!(error.0, StatusCode::METHOD_NOT_ALLOWED);
         }
         assert_eq!(metrics.gateway20_requests(), 0);
+        assert_eq!(metrics.binary_negotiated_requests(), 0);
+        assert_eq!(metrics.binary_payload_requests(), 0);
+        assert_eq!(metrics.wire_default_consistency_requests(), 0);
     }
 
     #[tokio::test]

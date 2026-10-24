@@ -4,7 +4,7 @@
   "id": "configuration.binary-routing",
   "title": "Binary encoding and routing options preserve typed behavior",
   "requirement": "Client and operation binary-encoding choices, including text-response transcoding, preserve item state while preferred-region and account-order routing remain observable in diagnostics.",
-  "maturity": "candidate",
+  "maturity": "stable",
   "precedents": [
     {
       "sdk": "rust",

@@ -4,7 +4,7 @@
     "id": "topology.continuation-transitions",
     "title": "Feed continuations survive partition transitions",
     "requirement": "Query and change-feed continuations captured before split and merge resume across replacement ranges with ordered query results and no item loss or duplication.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "rust",

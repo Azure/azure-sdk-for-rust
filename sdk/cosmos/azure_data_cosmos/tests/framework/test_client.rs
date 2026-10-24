@@ -129,6 +129,7 @@ const CONTAINER_READINESS_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(5);
 const CONTAINER_READINESS_RETRY_DELAY: Duration = Duration::from_secs(1);
 const SETUP_DNS_TIMEOUT: Duration = Duration::from_secs(30);
 const SETUP_DNS_RETRY_DELAY: Duration = Duration::from_secs(1);
+const FAULT_CLIENT_INITIALIZATION_TIMEOUT: Duration = Duration::from_secs(90);
 const FAULT_INJECTION_READINESS_MAX_ATTEMPTS: usize = 20;
 #[cfg(test_category = "multi_write")]
 const SATELLITE_READINESS_MAX_ATTEMPTS: usize = 8;
@@ -178,6 +179,10 @@ fn setup_dns_failure(error: &CosmosError) -> bool {
     false
 }
 
+fn setup_connectivity_failure(error: &CosmosError) -> bool {
+    setup_dns_failure(error) || error.status() == status_codes::TRANSPORT_CONNECTION_FAILED
+}
+
 /// Retries resource setup/cleanup for 30 seconds after the first DNS failure, preserving the error.
 /// Never use this to replay a test body or an assertion.
 async fn retry_setup_dns<T, F, Fut>(phase: &str, mut operation: F) -> azure_data_cosmos::Result<T>
@@ -192,6 +197,51 @@ where
     let deadline = tokio::time::Instant::now() + SETUP_DNS_TIMEOUT;
     while setup_dns_failure(&error) {
         eprintln!("waiting for DNS during {phase}: {error}");
+        tokio::time::sleep_until(
+            (tokio::time::Instant::now() + SETUP_DNS_RETRY_DELAY).min(deadline),
+        )
+        .await;
+        if tokio::time::Instant::now() >= deadline {
+            break;
+        }
+        match tokio::time::timeout_at(deadline, operation()).await {
+            Ok(Ok(value)) => return Ok(value),
+            Ok(Err(next_error)) => error = next_error,
+            Err(_) => break,
+        }
+    }
+    Err(error)
+}
+
+/// Retries unrelated connectivity failures while constructing a fault client.
+///
+/// A configured rule may intentionally target account discovery. Once any rule
+/// records a hit, its error is part of the test contract and must not be retried.
+/// Client construction performs read-only account discovery; this helper never
+/// replays the test body or resource mutations.
+async fn retry_fault_client_initialization<T, F, Fut, H>(
+    mut operation: F,
+    fault_hit_count: H,
+) -> azure_data_cosmos::Result<T>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = azure_data_cosmos::Result<T>>,
+    H: Fn() -> u64,
+{
+    let initial_fault_hits = fault_hit_count();
+    let deadline = tokio::time::Instant::now() + FAULT_CLIENT_INITIALIZATION_TIMEOUT;
+    let mut error = match tokio::time::timeout_at(deadline, operation()).await {
+        Ok(Ok(value)) => return Ok(value),
+        Ok(Err(error)) => error,
+        Err(_) => {
+            return Err(CosmosError::builder()
+                .with_status(status_codes::TRANSPORT_CONNECTION_FAILED)
+                .with_message("fault client initialization timed out")
+                .build())
+        }
+    };
+    while setup_connectivity_failure(&error) && fault_hit_count() == initial_fault_hits {
+        eprintln!("waiting for connectivity during fault client initialization: {error}");
         tokio::time::sleep_until(
             (tokio::time::Instant::now() + SETUP_DNS_RETRY_DELAY).min(deadline),
         )
@@ -891,7 +941,13 @@ impl TestClient {
         let cosmos_client = if fault_rules.is_empty() {
             retry_setup_dns("key client initialization", build).await
         } else {
-            build().await
+            retry_fault_client_initialization(build, || {
+                fault_rules
+                    .iter()
+                    .map(|rule| u64::from(rule.hit_count()))
+                    .sum()
+            })
+            .await
         }?;
 
         Ok(TestClient {
@@ -2121,9 +2177,9 @@ mod tests {
     use super::{
         aad_token_invalid_issuer, combine_test_and_cleanup_results, effective_binary_encoding,
         item_not_found, rbac_name_based_data_not_ready, read_replication_pending,
-        retry_container_readiness, retry_setup_dns, satellite_probe_should_retry,
-        setup_dns_failure, transient_satellite_readiness_error, AuthMode, BinaryEncodingOptions,
-        SETUP_DNS_TIMEOUT,
+        retry_container_readiness, retry_fault_client_initialization, retry_setup_dns,
+        satellite_probe_should_retry, setup_dns_failure, transient_satellite_readiness_error,
+        AuthMode, BinaryEncodingOptions, FAULT_CLIENT_INITIALIZATION_TIMEOUT, SETUP_DNS_TIMEOUT,
     };
     use azure_core::http::StatusCode;
     use azure_data_cosmos::{CosmosError, CosmosStatus, SubStatusCode};
@@ -2275,6 +2331,12 @@ mod tests {
             .with_source(io::Error::other(
                 "failed to lookup address information: nodename nor servname provided, or not known",
             ))
+            .build()
+    }
+
+    fn connection_error() -> CosmosError {
+        CosmosError::builder()
+            .with_status(status_codes::TRANSPORT_CONNECTION_FAILED)
             .build()
     }
 
@@ -2455,6 +2517,108 @@ mod tests {
         assert_eq!(start.elapsed(), SETUP_DNS_TIMEOUT);
         assert_eq!(attempts.get(), 2);
         assert!(setup_dns_failure(&error));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn fault_client_initialization_recovers_from_unrelated_connection_failure() {
+        let attempts = Cell::new(0);
+        let start = tokio::time::Instant::now();
+        let value = retry_fault_client_initialization(
+            || async {
+                attempts.set(attempts.get() + 1);
+                if attempts.get() < 3 {
+                    Err(connection_error())
+                } else {
+                    Ok(42)
+                }
+            },
+            || 0,
+        )
+        .await
+        .unwrap();
+        assert_eq!(value, 42);
+        assert_eq!(attempts.get(), 3);
+        assert_eq!(start.elapsed(), Duration::from_secs(2));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn fault_client_initialization_does_not_retry_injected_failure() {
+        let attempts = Cell::new(0);
+        let fault_hits = Cell::new(0u64);
+        let error = retry_fault_client_initialization::<(), _, _, _>(
+            || async {
+                attempts.set(attempts.get() + 1);
+                fault_hits.set(fault_hits.get() + 1);
+                Err(connection_error())
+            },
+            || fault_hits.get(),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(error.status(), status_codes::TRANSPORT_CONNECTION_FAILED);
+        assert_eq!(attempts.get(), 1);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn fault_client_initialization_does_not_retry_service_failure() {
+        let attempts = Cell::new(0);
+        let error = retry_fault_client_initialization::<(), _, _, _>(
+            || async {
+                attempts.set(attempts.get() + 1);
+                Err(CosmosError::builder()
+                    .with_status(CosmosStatus::new(StatusCode::ServiceUnavailable))
+                    .build())
+            },
+            || 0,
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(error.status().status_code(), StatusCode::ServiceUnavailable);
+        assert_eq!(attempts.get(), 1);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn fault_client_initialization_bounds_hanging_retry() {
+        let attempts = Cell::new(0);
+        let start = tokio::time::Instant::now();
+        let error = retry_fault_client_initialization::<(), _, _, _>(
+            || async {
+                attempts.set(attempts.get() + 1);
+                if attempts.get() == 1 {
+                    Err(connection_error())
+                } else {
+                    pending().await
+                }
+            },
+            || 0,
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(error.status(), status_codes::TRANSPORT_CONNECTION_FAILED);
+        assert_eq!(attempts.get(), 2);
+        assert_eq!(start.elapsed(), FAULT_CLIENT_INITIALIZATION_TIMEOUT);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn fault_client_initialization_bounds_hanging_initial_attempt() {
+        let attempts = Cell::new(0);
+        let start = tokio::time::Instant::now();
+        let error = retry_fault_client_initialization::<(), _, _, _>(
+            || async {
+                attempts.set(attempts.get() + 1);
+                pending().await
+            },
+            || 0,
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(error.status(), status_codes::TRANSPORT_CONNECTION_FAILED);
+        assert_eq!(
+            error.to_string(),
+            "503/20010: fault client initialization timed out"
+        );
+        assert_eq!(attempts.get(), 1);
+        assert_eq!(start.elapsed(), FAULT_CLIENT_INITIALIZATION_TIMEOUT);
     }
 
     #[test]

@@ -120,6 +120,26 @@ impl CosmosClient {
             .await
     }
 
+    /// Returns account configuration cached from the service metadata response.
+    ///
+    /// **Unsupported internal API** used only by tests that must validate the
+    /// configuration of an optional live account.
+    #[cfg(any(feature = "__internal_in_memory_emulator", feature = "fault_injection"))]
+    #[doc(hidden)]
+    pub async fn cached_account_configuration_for_testing(
+        &self,
+    ) -> Option<(
+        String,
+        bool,
+        Vec<crate::options::Region>,
+        Vec<crate::options::Region>,
+    )> {
+        self.context
+            .driver
+            .cached_account_configuration_for_testing()
+            .await
+    }
+
     /// Gets a [`DatabaseClient`] that can be used to access the database with the
     /// specified identity.
     ///
