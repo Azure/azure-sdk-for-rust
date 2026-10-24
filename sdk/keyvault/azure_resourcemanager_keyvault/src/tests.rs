@@ -4,6 +4,7 @@
 use super::{models, KeyVaultClient, KeyVaultClientOptions};
 use azure_core::{
     cloud::{resourcemanager::Audience, Audiences, CloudConfiguration, CustomConfiguration},
+    error::ErrorResponse,
     http::{
         headers::{HeaderName, Headers, ACCEPT, AUTHORIZATION, CONTENT_TYPE},
         poller::resourcemanager::PollerOptions,
@@ -532,7 +533,7 @@ async fn explicit_location_metadata_overrides_operation_resource_location() -> R
 #[tokio::test]
 async fn streamed_monitors_can_be_followed_by_awaiting() -> Result<()> {
     let (client, pending) = scripted_client(vec![
-        accepted(Method::Put, VAULT, "location"),
+        accepted(Method::Put, VAULT, "azure-asyncoperation"),
         step(
             Method::Get,
             OPERATION,
@@ -545,6 +546,7 @@ async fn streamed_monitors_can_be_followed_by_awaiting() -> Result<()> {
             StatusCode::Ok,
             br#"{"status":"Succeeded","name":"vault"}"#,
         ),
+        step(Method::Get, VAULT, StatusCode::Ok, br#"{"name":"vault"}"#),
     ])?;
     let mut poller = client
         .get_key_vault_vaults_client()
@@ -559,6 +561,7 @@ async fn streamed_monitors_can_be_followed_by_awaiting() -> Result<()> {
         statuses.push(response.into_model()?.status.unwrap().to_string());
     }
     assert_eq!(statuses, ["InProgress", "Running", "Succeeded"]);
+    assert_eq!(pending.lock().unwrap().len(), 1);
     assert_eq!(poller.await?.into_model()?.name.as_deref(), Some("vault"));
     assert!(pending.lock().unwrap().is_empty());
     Ok(())
@@ -568,7 +571,7 @@ async fn streamed_monitors_can_be_followed_by_awaiting() -> Result<()> {
 async fn failures_propagate_without_final_requests() -> Result<()> {
     for state in ["Failed", "Canceled"] {
         let body = if state == "Failed" {
-            br#"{"status":"Failed"}"#.as_slice()
+            br#"{"status":"Failed","error":{"code":"QuotaExceeded","message":"capacity exhausted"}}"#.as_slice()
         } else {
             br#"{"status":"Canceled"}"#.as_slice()
         };
@@ -587,11 +590,15 @@ async fn failures_propagate_without_final_requests() -> Result<()> {
             .await
             .err()
             .expect("terminal failure must propagate");
-        assert!(error.to_string().contains(if state == "Failed" {
-            "failed"
+        if state == "Failed" {
+            assert_eq!(error.http_status(), Some(StatusCode::Ok));
+            assert_eq!(error.to_string(), "capacity exhausted");
+            let detail = ErrorResponse::try_from(error)?.error.unwrap();
+            assert_eq!(detail.code.as_deref(), Some("QuotaExceeded"));
+            assert_eq!(detail.message.as_deref(), Some("capacity exhausted"));
         } else {
-            "canceled"
-        }));
+            assert!(error.to_string().contains("canceled"));
+        }
         assert!(pending.lock().unwrap().is_empty());
     }
     let (client, pending) = scripted_client(vec![step(
