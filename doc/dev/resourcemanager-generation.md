@@ -158,17 +158,40 @@ method options using that module's `PollerOptions`. Continue returning the
 existing `Poller<OperationStatus>`; do not introduce a service-specific poller or
 generate a competing polling state machine.
 
+Resource Manager polling is experimental and may change in future releases.
+See the [core polling helper](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/src/http/poller/resourcemanager.rs)
+for the current API and protocol behavior.
+
 Pass final-state metadata as `Option<FinalStateVia<_>>` to the helper. Omitted
 metadata stays `None`, allowing method- and response-based runtime rules; it is
-not an implicit Location selector. For inline Operation-Location results,
+not an implicit Location selector. The selectors are `AzureAsyncOperation`,
+`Location`, `OriginalUrl`, and `OperationLocation`. For inline Operation-Location results,
 generate the extraction callback from result-path metadata, preserving response
 status, headers, and original result JSON bytes. Empty final results use
 `StatusMonitor::Output = ()` and `NoFormat`; resource results retain their format.
 
+Resource responses use only `properties.provisioningState`. A missing provisioning
+state indicates success; unrelated top-level `status` fields are ignored. Any
+provisioning state other than `Succeeded`, `Failed`, or `Canceled` is still in progress.
+Subsequent operation-monitor responses from `azure-asyncoperation` and
+`operation-location` instead require a top-level `status`. Do not use a
+resource's top-level status as its provisioning state.
+
 Delegate polling protocols, API-version handling, retry timing, and final GET
 selection to core. Preserve lazy initial execution and caller context. The core
 helper creates body-free continuation GETs and retains the initial `Accept`
-header for polling and final requests. Test emitted metadata and runtime wiring
+header for polling and final requests. Both polling and final GET URLs use the
+initial request's `api-version`, replacing service-supplied versions and adding
+the version when absent.
+
+Location polling continues after HTTP 408, 429, 500, 502, 503, or 504 even when
+pipeline retries are disabled or exhausted. The helper retains the polling URL,
+honors retry delays, and does not yield these transient responses as status
+monitors. A failed operation preserves its response, service error code, message,
+and diagnostic headers through core's HTTP error handling, even when its HTTP
+status is 200. Cancellation returns an explicit cancellation error.
+
+Test emitted metadata and runtime wiring
 rather than reimplementing these protocol rules in emitter fixtures.
 
 ### Enum coverage and test resources
