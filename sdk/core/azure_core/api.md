@@ -1388,7 +1388,7 @@ pub mod http {
             pub enum FinalStateVia<M: StatusMonitor> {
                 AzureAsyncOperation,
                 Location,
-                OriginalUri,
+                OriginalUrl,
                 #[allow(clippy::type_complexity)]
                 OperationLocation(fn(crate::http::Response<M>) -> crate::Result<crate::http::Response<<M as >::Output, <M as >::Format>>),
             }

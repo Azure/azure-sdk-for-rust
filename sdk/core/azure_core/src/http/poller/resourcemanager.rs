@@ -2,13 +2,17 @@
 // Licensed under the MIT License.
 
 //! Poller helpers for Azure Resource Manager (ARM) long-running operations (LRO).
+//!
+//! Azure Resource Manager (ARM) polling is experimental and may change in future releases.
 
 use crate::{
-    error::ErrorKind,
+    error::{error_from_response, ErrorKind},
     http::{
+        check_success,
         headers::{HeaderName, Headers, ACCEPT, RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
         poller::{PollerContinuation, PollerResult, PollerState, PollerStatus, StatusMonitor},
-        Context, Method, Pipeline, Poller, RawResponse, Request, Response, StatusCode, Url,
+        Context, Method, Pipeline, PipelineSendOptions, Poller, RawResponse, Request, Response,
+        StatusCode, Url,
     },
     json,
     time::Duration,
@@ -88,7 +92,7 @@ pub enum FinalStateVia<M: StatusMonitor> {
     /// With `operation-location`, PUT and PATCH operations fetch the original resource unless
     /// the terminal response contains `resourceLocation`. POST operations use `resourceLocation`,
     /// `location`, or the terminal response instead.
-    OriginalUri,
+    OriginalUrl,
     /// Extracts a result from the terminal `operation-location` response.
     ///
     /// The function receives the unmodified monitor response and returns the result response.
@@ -186,15 +190,23 @@ impl<M: StatusMonitor> Copy for FinalStateVia<M> {}
 /// 3. `location` header: Polls the URL from the `location` response header,
 ///    which doubles as the final resource URL once polling completes.
 /// 4. Response body fallback: PUT and PATCH operations poll the original resource URL, reading
-///    operation status from the response body's `status` or `properties.provisioningState` field.
+///    operation status from the response body's `properties.provisioningState` field. A missing
+///    provisioning state indicates success.
 ///
 /// Other operations without polling headers complete with their initial response, unless that
 /// response is HTTP 202, which requires a polling URL. The initial request is sent only when the
 /// poller is first polled or awaited. Synchronous completion and successful body or location
 /// polling return the response already received without an additional GET.
 ///
-/// The initial `api-version` query parameter will always be set on the request URL per
-/// [Azure REST API guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#lro-operation-location-includes-api-version).
+/// Polling and final GET requests use the original request's `api-version` query parameter,
+/// replacing any version supplied by the service and adding it when absent.
+///
+/// Operation-monitor responses from `azure-asyncoperation` and `operation-location` use their
+/// top-level `status` field. Resource responses use only `properties.provisioningState`;
+/// unrelated resource `status` fields are ignored.
+///
+/// Location polling continues after HTTP 408, 429, 500, 502, 503, or 504 responses, even after
+/// the pipeline's retries are exhausted, and honors retry delays from those responses.
 ///
 /// Set `final_state_via` from the operation's definition to customize final-response selection.
 /// Passing `None` follows the polling protocol's method- and response-based rules; it does not
@@ -266,7 +278,49 @@ where
                     }
                 }
 
-                let response = pipeline.send(&context, &mut request, None).await?;
+                let location_poll = matches!(poller_state, PollerState::More(_))
+                    && polling
+                        .lock()
+                        .await
+                        .as_ref()
+                        .is_some_and(|info| info.method == PollingMethod::Location);
+                let response = loop {
+                    let response = pipeline
+                        .send(
+                            &context,
+                            &mut request,
+                            Some(PipelineSendOptions {
+                                skip_checks: location_poll,
+                                ..Default::default()
+                            }),
+                        )
+                        .await?;
+                    // The pipeline already retries these codes. Exhausted retries must not
+                    // terminate Location polling or replace its current polling URL.
+                    let transient = location_poll
+                        && matches!(
+                            response.status(),
+                            StatusCode::RequestTimeout
+                                | StatusCode::TooManyRequests
+                                | StatusCode::InternalServerError
+                                | StatusCode::BadGateway
+                                | StatusCode::ServiceUnavailable
+                                | StatusCode::GatewayTimeout
+                        );
+                    if !transient {
+                        break if location_poll {
+                            check_success(response, None).await?
+                        } else {
+                            response
+                        };
+                    }
+                    let retry_after = crate::http::poller::get_retry_after(
+                        response.headers(),
+                        &[RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER],
+                        &poller_options,
+                    );
+                    crate::sleep::sleep(retry_after).await;
+                };
                 let (status_code, headers, body) = response.deconstruct();
                 let retry_after = crate::http::poller::get_retry_after(
                     &headers,
@@ -296,13 +350,16 @@ where
                     }
                 };
 
-                if matches!(status, PollerStatus::Failed | PollerStatus::Canceled) {
-                    let message = if status == PollerStatus::Failed {
-                        "Resource Manager long-running operation failed"
-                    } else {
-                        "Resource Manager long-running operation was canceled"
-                    };
-                    return Err(crate::Error::new(ErrorKind::Other, message));
+                if status == PollerStatus::Failed {
+                    // An operation can fail with HTTP 200. Retain its response and
+                    // deserialize service errors just like an HTTP failure.
+                    return Err(error_from_response(response.to_raw_response()));
+                }
+                if status == PollerStatus::Canceled {
+                    return Err(crate::Error::new(
+                        ErrorKind::Other,
+                        "Resource Manager long-running operation was canceled",
+                    ));
                 }
 
                 Ok(match status {
@@ -437,7 +494,6 @@ impl PollingInfo {
 
         #[derive(serde::Deserialize)]
         struct Monitor {
-            status: Option<String>,
             properties: Option<Properties>,
         }
         #[derive(serde::Deserialize)]
@@ -446,22 +502,30 @@ impl PollingInfo {
             provisioning_state: Option<String>,
         }
 
-        let monitor: Option<Monitor> = if response.body().is_empty() {
+        // Resource status is only properties.provisioningState. In particular,
+        // a resource's unrelated top-level status can have any JSON shape.
+        // Operation endpoints instead require top-level status:
+        // https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/async-operations#azure-asyncoperation-request-and-response
+        let operation_monitor = !initial
+            && matches!(
+                self.method,
+                PollingMethod::AzureAsyncOperation | PollingMethod::OperationLocation
+            );
+        let status = if response.body().is_empty() {
             None
+        } else if operation_monitor {
+            #[derive(serde::Deserialize)]
+            struct OperationMonitor {
+                status: Option<String>,
+            }
+            let monitor: OperationMonitor = json::from_json(response.body())?;
+            monitor.status
         } else {
-            Some(json::from_json(response.body())?)
+            let monitor: Monitor = json::from_json(response.body())?;
+            monitor.properties.and_then(|p| p.provisioning_state)
         };
-        let status = monitor.and_then(|monitor| {
-            monitor
-                .status
-                .or_else(|| monitor.properties.and_then(|p| p.provisioning_state))
-                .filter(|status| !status.is_empty())
-        });
-        if let Some(status) = status {
+        if let Some(status) = status.filter(|status| !status.is_empty()) {
             return Ok(match PollerStatus::from(status.as_str()) {
-                PollerStatus::UnknownValue(_) if status.eq_ignore_ascii_case("completed") => {
-                    PollerStatus::Succeeded
-                }
                 PollerStatus::UnknownValue(_) => PollerStatus::InProgress,
                 status => status,
             });
@@ -488,11 +552,15 @@ impl PollingInfo {
                 "Resource Manager polling response has an empty body",
             ));
         }
-        Ok(match response.status() {
-            StatusCode::Accepted => PollerStatus::InProgress,
-            StatusCode::Created if initial => PollerStatus::InProgress,
-            _ => PollerStatus::Succeeded,
-        })
+        // Missing provisioningState means success for a resource. Location
+        // responses additionally use HTTP 202 to indicate that polling must continue.
+        Ok(
+            if self.method == PollingMethod::Location && response.status() == StatusCode::Accepted {
+                PollerStatus::InProgress
+            } else {
+                PollerStatus::Succeeded
+            },
+        )
     }
 
     fn next_link(
@@ -538,7 +606,7 @@ impl PollingInfo {
                 Method::Put | Method::Patch => Some(resource_url.clone()),
                 Method::Post => match final_state_via {
                     Some(FinalStateVia::AzureAsyncOperation) => None,
-                    Some(FinalStateVia::OriginalUri) => Some(resource_url.clone()),
+                    Some(FinalStateVia::OriginalUrl) => Some(resource_url.clone()),
                     _ => self.location.clone(),
                 },
                 _ => None,
