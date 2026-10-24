@@ -130,8 +130,8 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   `Some(FinalStateVia::Location)` for six operations and `None` for managed HSM
   delete and purge. Preserve omission as method/response-based fallback, not an
   `Automatic` variant or an implicit Location selector.
-- [ ] Support all helper selectors: Azure async operation, Location, original
-  URI, and Operation-Location. For inline Operation-Location results, generate
+- [ ] Support all helper selectors: `AzureAsyncOperation`, `Location`, `OriginalUrl`,
+  and `OperationLocation`. For inline Operation-Location results, generate
   the extraction callback from result-path metadata. Preserve response status
   and headers and extract the original JSON bytes without serializing the
   complete model again. No Key Vault operation currently exercises this callback.
@@ -146,7 +146,11 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   handling, final GET decisions, and empty responses to the helper. Do not emit
   a competing implementation of those rules. The runtime already removes request
   bodies from polling GETs and retains the initial `Accept` header on every
-  subsequent GET.
+  subsequent GET. It uses only `properties.provisioningState` for resource
+  responses, defaults a missing provisioning state to success, and reads
+  top-level `status` only from operation-monitor responses. Polling and final
+  GET requests always use the initial request's API version, replacing any
+  service-supplied version and adding it when absent.
 - [ ] Clean up imports after removing inline polling logic, but retain `json`
   and `RawResponse` wherever pagination still uses them.
 
@@ -252,6 +256,10 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   need the trait.
 - [ ] Cover all polling protocols, repeated GETs without bodies preserving `Accept`,
   resource and empty final results, and Operation-Location inline extraction.
+  Use operation-monitor responses when testing streamed top-level `status`;
+  Location resource responses use `properties.provisioningState` or HTTP status.
+  Verify failed operations expose service error details through `ErrorResponse`
+  even when the HTTP response is 200.
   Keep protocol semantics tested in `azure_core`; emitter tests should verify
   metadata selection and generated integration with that runtime.
 - [ ] Add a generation fixture for key action wire-value fidelity and a secret
