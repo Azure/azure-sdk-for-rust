@@ -1,31 +1,59 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-pub use crate::generated::clients::{BlobClient, BlobClientOptions};
+pub use crate::generated::clients::BlobClient;
 
 use crate::{
+    blob_layout::{build_layout_cache, CachedLayout, LayoutEndpoint},
+    cache::AutoRefreshingCache,
     generated::{
-        clients::BlobClient as GeneratedBlobClient, models::BlobClientDownloadInternalOptions,
+        clients::BlobClient as GeneratedBlobClient,
+        models::{BlobClientDownloadInternalOptions, BlobClientGetLayoutOptions},
     },
     models::{
         BlobClientDownloadIntoResult, BlobClientDownloadOptions, BlobClientDownloadResult,
         BlobClientUploadOptions, BlobClientUploadResult, BlobDownloadProperties, HttpRange,
-        StorageErrorCode,
+        LayoutAwareRouting, StorageErrorCode,
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
-    AppendBlobClient, BlockBlobClient, PageBlobClient,
+    AppendBlobClient, BlockBlobClient, PageBlobClient, SessionOptions,
 };
 use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
+    fmt::SafeDebug,
     http::{
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        AsyncRawResponse, Etag, NoFormat, Pipeline, RequestContent, StatusCode, Url, UrlExt,
+        headers::Headers, AsyncRawResponse, ClientOptions, Etag, NoFormat, RequestContent,
+        StatusCode, Url, UrlExt,
     },
     tracing, Bytes, Result,
 };
-use std::{ops::Range, sync::Arc};
+use std::{
+    ops::Range,
+    sync::{Arc, OnceLock},
+};
+
+/// Options used when creating a [`BlobClient`].
+#[derive(Clone, SafeDebug)]
+pub struct BlobClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Options for session token authentication.
+    pub session_options: Option<SessionOptions>,
+    /// Specifies the version of the operation to use for requests.
+    pub version: String,
+}
+
+impl Default for BlobClientOptions {
+    fn default() -> Self {
+        Self {
+            client_options: ClientOptions::default(),
+            session_options: None,
+            version: crate::generated::clients::BlobClientOptions::default().version,
+        }
+    }
+}
 
 impl BlobClient {
     /// Creates a new BlobClient from a blob URL.
@@ -46,40 +74,23 @@ impl BlobClient {
         if blob_url.cannot_be_a_base() {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
-                format!("{blob_url} is not a valid base URL"),
+                format!("{blob_url} is not a valid base URL."),
             ));
         }
 
         let mut options = options.unwrap_or_default();
-        super::apply_client_defaults(&mut options.client_options);
-
-        let mut per_retry_policies: Vec<Arc<dyn Policy>> = Vec::default();
-        if let Some(token_credential) = credential {
-            if !blob_url.scheme().starts_with("https") {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    format!("{blob_url} must use https"),
-                ));
-            }
-            per_retry_policies.push(Arc::new(BearerTokenAuthorizationPolicy::new(
-                token_credential,
-                vec!["https://storage.azure.com/.default"],
-            )));
-        }
-
-        let pipeline = Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            options.client_options.clone(),
-            Vec::default(),
-            per_retry_policies,
-            None,
-        );
+        let pipeline = super::build_pipeline(
+            &blob_url,
+            credential,
+            options.session_options.as_ref(),
+            &mut options.client_options,
+            &options.version,
+        )?;
 
         Ok(Self {
             endpoint: blob_url,
-            version: options.version,
             pipeline,
+            version: options.version,
         })
     }
 
@@ -194,14 +205,22 @@ impl BlobClient {
         let partition_size = options
             .partition_size
             .unwrap_or(crate::partitioned_transfer::defaults::DEFAULT_DOWNLOAD_PARTITION_SIZE);
-        let range = options.range.clone();
         let inner_client = GeneratedBlobClient {
             endpoint: self.endpoint.clone(),
             pipeline: self.pipeline.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         };
-        let behavior = BlobClientDownloadBehavior::new(inner_client, options.into());
+        let range = options.range.clone();
+        let layout_aware_routing = options.layout_aware_routing;
+        let layout_endpoint = options.layout_endpoint.clone();
+        let behavior = BlobClientDownloadBehavior::new(
+            inner_client,
+            options.into(),
+            layout_aware_routing,
+            layout_endpoint,
+            range.clone(),
+        );
         let response =
             partitioned_transfer::download(range, parallel, partition_size, Arc::new(behavior))
                 .await?;
@@ -238,14 +257,22 @@ impl BlobClient {
         let partition_size = options
             .partition_size
             .unwrap_or(crate::partitioned_transfer::defaults::DEFAULT_DOWNLOAD_PARTITION_SIZE);
-        let range = options.range.clone();
         let inner_client = GeneratedBlobClient {
             endpoint: self.endpoint.clone(),
             pipeline: self.pipeline.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         };
-        let behavior = BlobClientDownloadBehavior::new(inner_client, options.into());
+        let range = options.range.clone();
+        let layout_aware_routing = options.layout_aware_routing;
+        let layout_endpoint = options.layout_endpoint.clone();
+        let behavior = BlobClientDownloadBehavior::new(
+            inner_client,
+            options.into(),
+            layout_aware_routing,
+            layout_endpoint,
+            range.clone(),
+        );
         let (_, headers, len) = partitioned_transfer::download_into(
             buffer,
             range,
@@ -302,13 +329,70 @@ impl BlobClient {
 }
 
 struct BlobClientDownloadBehavior<'a> {
-    client: GeneratedBlobClient,
+    client: Arc<GeneratedBlobClient>,
     options: BlobClientDownloadInternalOptions<'a>,
+    layout_aware_routing: LayoutAwareRouting,
+    /// Caller-supplied endpoint that pins every request this download issues.
+    layout_endpoint: Option<String>,
+    /// The caller-requested range, which `options.range` does not retain because it is rewritten for each partition.
+    requested_range: Option<HttpRange>,
+    layout_cache: OnceLock<AutoRefreshingCache<(), CachedLayout>>,
 }
 
 impl<'a> BlobClientDownloadBehavior<'a> {
-    fn new(client: GeneratedBlobClient, options: BlobClientDownloadInternalOptions<'a>) -> Self {
-        Self { client, options }
+    fn new(
+        client: GeneratedBlobClient,
+        options: BlobClientDownloadInternalOptions<'a>,
+        layout_aware_routing: LayoutAwareRouting,
+        layout_endpoint: Option<String>,
+        requested_range: Option<HttpRange>,
+    ) -> Self {
+        Self {
+            client: Arc::new(client),
+            options,
+            layout_aware_routing,
+            layout_endpoint,
+            requested_range,
+            layout_cache: OnceLock::new(),
+        }
+    }
+
+    /// Resolves the endpoint a request covering `range` should be sent to, preferring a
+    /// caller-supplied endpoint over the fetched layout.
+    ///
+    /// A caller-supplied endpoint applies to every request, including the initial one,
+    /// because it pins the whole call rather than following the blob's layout.
+    async fn resolve_endpoint(&self, range: Option<&Range<usize>>) -> Result<Option<String>> {
+        if let Some(endpoint) = self.layout_endpoint.as_ref() {
+            return Ok(Some(endpoint.clone()));
+        }
+        let (Some(cache), Some(range)) = (self.layout_cache.get(), range) else {
+            return Ok(None);
+        };
+        let cached = cache.get(&()).await?;
+        Ok(cached
+            .layout()
+            .and_then(|layout| layout.ideal_endpoint(range.start as i64))
+            .map(str::to_owned))
+    }
+
+    fn layout_options(&self) -> BlobClientGetLayoutOptions<'static> {
+        BlobClientGetLayoutOptions {
+            encryption_algorithm: self.options.encryption_algorithm,
+            encryption_key: self.options.encryption_key.clone(),
+            encryption_key_sha256: self.options.encryption_key_sha256.clone(),
+            if_match: self.options.if_match.clone(),
+            if_modified_since: self.options.if_modified_since,
+            if_none_match: self.options.if_none_match.clone(),
+            if_tags: self.options.if_tags.clone(),
+            if_unmodified_since: self.options.if_unmodified_since,
+            lease_id: self.options.lease_id.clone(),
+            range: self.requested_range.clone(),
+            snapshot: self.options.snapshot.clone(),
+            timeout: self.options.timeout,
+            version_id: self.options.version_id.clone(),
+            ..Default::default()
+        }
     }
 }
 
@@ -320,6 +404,13 @@ impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
         etag_lock: Option<Etag>,
     ) -> Result<AsyncRawResponse> {
         let mut opt = self.options.clone();
+        if let Some(endpoint) = self.resolve_endpoint(range.as_ref()).await? {
+            opt.method_options.context = opt
+                .method_options
+                .context
+                .clone()
+                .with_value(LayoutEndpoint(endpoint));
+        }
         opt.range = range.map(HttpRange::from);
         if let Some(etag) = etag_lock {
             opt.if_match = Some(etag);
@@ -332,5 +423,24 @@ impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
             .download_internal(Some(opt))
             .await
             .map(AsyncRawResponse::from)
+    }
+
+    async fn prepare(&self, initial_headers: &Headers, etag_lock: Option<&Etag>) -> Result<()> {
+        if self.layout_endpoint.is_some()
+            || self.layout_aware_routing != LayoutAwareRouting::Enabled
+        {
+            return Ok(());
+        }
+        if initial_headers.get_optional_str(&"x-ms-download-hint".into()) != Some("layout") {
+            return Ok(());
+        }
+        let mut layout_options = self.layout_options();
+        if layout_options.if_match.is_none() {
+            layout_options.if_match = etag_lock.cloned();
+        }
+        let context = self.options.method_options.context.clone().into_owned();
+        self.layout_cache
+            .get_or_init(|| build_layout_cache(Arc::clone(&self.client), context, layout_options));
+        Ok(())
     }
 }

@@ -5,14 +5,37 @@ use std::{collections::HashMap, num::NonZero};
 
 use azure_core::{
     fmt::SafeDebug,
-    http::{ClientMethodOptions, Etag},
+    http::{pager::PagerOptions, ClientMethodOptions, Etag},
 };
 use time::OffsetDateTime;
 
 use crate::models::{
-    AccessTier, BlobClientDownloadInternalOptions, EncryptionAlgorithmType, HttpRange,
-    ImmutabilityPolicyMode,
+    AccessTier, BlobClientDownloadInternalOptions,
+    BlobContainerClientListBlobsHierarchicalInternalOptions,
+    BlobContainerClientListBlobsInternalOptions, EncryptionAlgorithmType, HttpRange,
+    ImmutabilityPolicyMode, ListBlobsIncludeItem,
 };
+
+/// Determines whether locality-aware routing is used for the parallel range
+/// requests issued by a download.
+///
+/// This is a performance optimization only - the bytes returned are identical
+/// regardless of the mode used. Routing is disabled by default; opt in with
+/// [`LayoutAwareRouting::Enabled`] to fetch the blob's layout and send each range request
+/// to the endpoint that serves it, falling back to the client's configured endpoint when no
+/// layout is available.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum LayoutAwareRouting {
+    /// Never route range requests based on the blob's layout. All requests are sent
+    /// to the client's configured endpoint.
+    #[default]
+    Disabled,
+
+    /// Use locality-aware routing. The blob's layout is fetched and each range
+    /// download is routed to the endpoint that serves it.
+    Enabled,
+}
 
 /// Options to be passed to `BlobClient::download()`
 #[derive(Clone, Default, SafeDebug)]
@@ -43,6 +66,34 @@ pub struct BlobClientDownloadOptions<'a> {
 
     /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
     pub lease_id: Option<String>,
+
+    /// Determines whether locality-aware routing is used for the parallel range
+    /// requests issued by this download. This is a performance optimization only:
+    /// the bytes returned are identical regardless of the mode.
+    ///
+    /// Defaults to [`LayoutAwareRouting::Disabled`]. Ignored when
+    /// [`layout_endpoint`](Self::layout_endpoint) is set.
+    pub layout_aware_routing: LayoutAwareRouting,
+
+    /// Optional. The layout endpoint (`host:port`) that every request issued by this
+    /// download is sent to, with the client's configured authority preserved as the
+    /// `Host` header.
+    ///
+    /// Setting this disables automatic layout lookup: the blob's layout is not fetched
+    /// and [`layout_aware_routing`](Self::layout_aware_routing) is ignored. To choose an
+    /// endpoint, enumerate the pages returned by
+    /// [`BlobClient::get_layout()`](crate::BlobClient::get_layout) and select the endpoint
+    /// whose layout range covers the offset of the requested [`range`](Self::range).
+    ///
+    /// Because the endpoint applies to every request the download issues, set a
+    /// [`range`](Self::range) that falls within a single layout range; a range spanning
+    /// several layout ranges still returns the correct bytes, but sends them all to one
+    /// endpoint. A malformed or unreachable endpoint fails the download; the request is
+    /// not retried against the client's configured endpoint.
+    ///
+    /// When `None` (the default), requests are sent to the client's configured endpoint
+    /// unless automatic routing applies.
+    pub layout_endpoint: Option<String>,
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
@@ -105,6 +156,140 @@ impl<'a> From<BlobClientDownloadOptions<'a>> for BlobClientDownloadInternalOptio
             structured_body_type: None,
             timeout: value.timeout,
             version_id: value.version_id,
+        }
+    }
+}
+
+/// Options to be passed to [`BlobContainerClient::list_blobs`](crate::BlobContainerClient::list_blobs).
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlobContainerClientListBlobsOptions<'a> {
+    /// Filters the results to return only names that are ordered before this value.
+    #[cfg(feature = "arrow")]
+    pub end_before: Option<String>,
+
+    /// Specify to include additional, optional information.
+    pub include: Option<Vec<ListBlobsIncludeItem>>,
+
+    /// An opaque string value that identifies the portion of the result set to return with this operation.
+    pub marker: Option<String>,
+
+    /// Specifies the maximum number of resources to return.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: PagerOptions<'a>,
+
+    /// Filters the results to return only resources whose name begins with the specified prefix.
+    pub prefix: Option<String>,
+
+    /// Specifies the relative path to list paths from.
+    pub start_from: Option<String>,
+
+    /// The timeout parameter is expressed in seconds.
+    pub timeout: Option<i32>,
+}
+
+impl BlobContainerClientListBlobsOptions<'_> {
+    pub fn into_owned(self) -> BlobContainerClientListBlobsOptions<'static> {
+        BlobContainerClientListBlobsOptions {
+            #[cfg(feature = "arrow")]
+            end_before: self.end_before,
+            include: self.include,
+            marker: self.marker,
+            maxresults: self.maxresults,
+            method_options: PagerOptions {
+                context: self.method_options.context.into_owned(),
+                ..self.method_options
+            },
+            prefix: self.prefix,
+            start_from: self.start_from,
+            timeout: self.timeout,
+        }
+    }
+
+    pub(crate) fn to_internal(
+        &self,
+        method_options: ClientMethodOptions<'static>,
+    ) -> BlobContainerClientListBlobsInternalOptions<'static> {
+        BlobContainerClientListBlobsInternalOptions {
+            #[cfg(feature = "arrow")]
+            end_before: self.end_before.clone(),
+            #[cfg(not(feature = "arrow"))]
+            end_before: None,
+            include: self.include.clone(),
+            marker: self.marker.clone(),
+            maxresults: self.maxresults,
+            method_options,
+            prefix: self.prefix.clone(),
+            start_from: self.start_from.clone(),
+            timeout: self.timeout,
+        }
+    }
+}
+
+/// Options to be passed to [`BlobContainerClient::list_blobs_hierarchical`](crate::BlobContainerClient::list_blobs_hierarchical).
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlobContainerClientListBlobsHierarchicalOptions<'a> {
+    /// Filters the results to return only names that are ordered before this value.
+    #[cfg(feature = "arrow")]
+    pub end_before: Option<String>,
+
+    /// Specify to include additional, optional information.
+    pub include: Option<Vec<ListBlobsIncludeItem>>,
+
+    /// An opaque string value that identifies the portion of the result set to return with this operation.
+    pub marker: Option<String>,
+
+    /// Specifies the maximum number of resources to return.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: PagerOptions<'a>,
+
+    /// Filters the results to return only resources whose name begins with the specified prefix.
+    pub prefix: Option<String>,
+
+    /// Specifies the relative path to list paths from.
+    pub start_from: Option<String>,
+
+    /// The timeout parameter is expressed in seconds.
+    pub timeout: Option<i32>,
+}
+
+impl BlobContainerClientListBlobsHierarchicalOptions<'_> {
+    pub fn into_owned(self) -> BlobContainerClientListBlobsHierarchicalOptions<'static> {
+        BlobContainerClientListBlobsHierarchicalOptions {
+            #[cfg(feature = "arrow")]
+            end_before: self.end_before,
+            include: self.include,
+            marker: self.marker,
+            maxresults: self.maxresults,
+            method_options: PagerOptions {
+                context: self.method_options.context.into_owned(),
+                ..self.method_options
+            },
+            prefix: self.prefix,
+            start_from: self.start_from,
+            timeout: self.timeout,
+        }
+    }
+
+    pub(crate) fn to_internal(
+        &self,
+        method_options: ClientMethodOptions<'static>,
+    ) -> BlobContainerClientListBlobsHierarchicalInternalOptions<'static> {
+        BlobContainerClientListBlobsHierarchicalInternalOptions {
+            #[cfg(feature = "arrow")]
+            end_before: self.end_before.clone(),
+            #[cfg(not(feature = "arrow"))]
+            end_before: None,
+            include: self.include.clone(),
+            marker: self.marker.clone(),
+            maxresults: self.maxresults,
+            method_options,
+            prefix: self.prefix.clone(),
+            start_from: self.start_from.clone(),
+            timeout: self.timeout,
         }
     }
 }

@@ -15,26 +15,33 @@ categories = ["api-bindings"]
 exclude.workspace = true
 
 [features]
-default = ["tokio", "azure_core/default"]
+default = ["arrow", "tokio", "azure_core/default"]
+arrow = ["dep:arrow-array", "dep:arrow-ipc", "dep:arrow-schema"]
 tokio = ["dep:tokio", "azure_core/tokio"]
 
 [dependencies]
+arrow-array = { workspace = true, optional = true }
+arrow-ipc = { workspace = true, optional = true }
+arrow-schema = { workspace = true, optional = true }
 async-stream.workspace = true
 async-trait.workspace = true
 azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.2", default-features = false, features = ["xml"] }
 azure_storage_common = { path = "../azure_storage_common", version = "1.1.0-beta.1", default-features = false }
 bytes.workspace = true
 futures.workspace = true
+hmac.workspace = true
 percent-encoding.workspace = true
 pin-project.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 time.workspace = true
 tokio = { workspace = true, optional = true, features = [
   "fs",
   "io-util",
   "sync",
 ] }
+tracing.workspace = true
 
 [lints]
 workspace = true
@@ -49,12 +56,16 @@ clap = { workspace = true, features = ["env"] }
 flate2.workspace = true
 futures.workspace = true
 rand.workspace = true
+serial_test.workspace = true
 tokio = { workspace = true, features = ["macros", "rt"] }
 tracing.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [package.metadata.docs.rs]
 all-features = true
+
+[package.metadata.cargo-semver-checks.lints]
+enum_variant_added = "allow"
 
 [[bench]]
 name = "perf"
