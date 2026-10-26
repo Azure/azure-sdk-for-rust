@@ -350,6 +350,8 @@ impl CosmosOperation {
     /// Create and Upsert keep their mixed-addressing exemption because their
     /// item id is not in the request path, but name validation still checks that
     /// id so the created item remains addressable by later point operations.
+    /// Batch validation reads only item IDs from the service-defined envelope;
+    /// all other document fields remain schema-agnostic.
     pub(crate) fn validate_addressing(
         &self,
         validate_resource_names: bool,
@@ -358,6 +360,9 @@ impl CosmosOperation {
             .validate_addressing(!self.uses_feed_paths())?;
         if validate_resource_names {
             self.resource_reference.validate_resource_names()?;
+            if self.operation_type == OperationType::Batch {
+                super::transactional_batch::validate_resource_names(self.body())?;
+            }
         }
         Ok(())
     }

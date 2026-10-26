@@ -5176,6 +5176,49 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn plan_operation_rejects_unsafe_transactional_batch_item_names() {
+        // Native and other language SDKs submit this raw batch envelope directly
+        // to the driver, so validation must not depend on the typed Rust SDK.
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        for body in [
+            serde_json::json!([{
+                "operationType": "Create",
+                "resourceBody": {
+                    "id": "../other-container",
+                    "pk": "pk1"
+                }
+            }]),
+            serde_json::json!([{
+                "operationType": "Delete",
+                "id": "item?query"
+            }]),
+        ] {
+            let operation = CosmosOperation::batch(container.clone(), PartitionKey::from("pk1"))
+                .with_body(serde_json::to_vec(&body).unwrap());
+            let error = match Box::pin(driver.plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            ))
+            .await
+            {
+                Ok(_) => panic!("unsafe transactional batch item name must be rejected"),
+                Err(error) => error,
+            };
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST
+            );
+        }
+    }
+
+    #[tokio::test]
     async fn plan_operation_rejects_unsafe_database_and_container_names() {
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let driver_options = DriverOptions::builder(test_account()).build();
@@ -5309,6 +5352,45 @@ mod tests {
                 crate::error::status_codes::CLIENT_DRIVER_NOT_INITIALIZED
             );
         }
+    }
+
+    #[tokio::test]
+    async fn plan_operation_allows_unsafe_transactional_batch_names_when_disabled() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver = CosmosDriver::new(
+            cosmos_runtime,
+            DriverOptions::builder(test_account())
+                .with_resource_name_validation(false)
+                .build(),
+        )
+        .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let operation = CosmosOperation::batch(container, PartitionKey::from("pk1")).with_body(
+            serde_json::to_vec(&serde_json::json!([{
+                "operationType": "Create",
+                "resourceBody": {
+                    "id": "../other-container",
+                    "pk": "pk1"
+                }
+            }]))
+            .unwrap(),
+        );
+
+        let error = match Box::pin(driver.plan_operation(
+            operation,
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        ))
+        .await
+        {
+            Ok(_) => panic!("the uninitialized driver should fail after name validation"),
+            Err(error) => error,
+        };
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::CLIENT_DRIVER_NOT_INITIALIZED
+        );
     }
 
     #[tokio::test]

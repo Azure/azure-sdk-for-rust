@@ -165,9 +165,11 @@ impl CosmosClientBuilder {
     /// addressable by later point operations. Pass `false` only when
     /// compatibility requires such names.
     ///
-    /// Structured transactional batch and distributed transaction item IDs are
-    /// also validated. This option does not parse IDs from arbitrary item
-    /// request bodies.
+    /// The shared driver also validates item IDs in the service-defined
+    /// transactional batch envelope and resource names in structured
+    /// distributed transactions. Malformed transactional batch envelopes are
+    /// rejected as serialization errors. The driver does not parse IDs from
+    /// ordinary item request bodies.
     pub fn with_resource_name_validation(mut self, enabled: bool) -> Self {
         self.resource_name_validation = Some(enabled);
         self

@@ -150,10 +150,12 @@ impl DriverOptions {
     /// When enabled, the driver rejects empty names, dot segments, and names
     /// containing URL separators, delimiters, or control characters before
     /// request planning. This includes item names supplied to Create and Upsert
-    /// so created items remain addressable by later point operations. Structured
-    /// distributed transaction targets are also validated. The driver does not
-    /// parse item IDs embedded in arbitrary request bodies, including raw
-    /// transactional batch bodies.
+    /// so created items remain addressable by later point operations. The
+    /// driver also validates item IDs in the service-defined transactional
+    /// batch envelope and resource names in structured distributed
+    /// transactions. Malformed transactional batch envelopes are rejected as
+    /// serialization errors. The driver does not parse IDs from ordinary item
+    /// request bodies.
     ///
     /// Validation is enabled by default.
     pub fn resource_name_validation_enabled(&self) -> bool {
@@ -301,10 +303,11 @@ impl DriverOptionsBuilder {
     /// URL path construction.
     ///
     /// Validation includes item names supplied to Create and Upsert so newly
-    /// written items remain addressable by later point operations. Structured
-    /// distributed transaction targets are also validated. This option does not
-    /// parse item IDs embedded in arbitrary request bodies, including raw
-    /// transactional batch bodies.
+    /// written items remain addressable by later point operations. The driver
+    /// also validates item IDs in the service-defined transactional batch
+    /// envelope and resource names in structured distributed transactions.
+    /// Malformed transactional batch envelopes are rejected as serialization
+    /// errors. The driver does not parse IDs from ordinary item request bodies.
     pub fn with_resource_name_validation(mut self, enabled: bool) -> Self {
         self.resource_name_validation_enabled = enabled;
         self
