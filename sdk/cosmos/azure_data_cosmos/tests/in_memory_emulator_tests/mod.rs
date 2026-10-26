@@ -54,6 +54,7 @@ fn test_env_filter() -> EnvFilter {
 fn init_test_tracing() {
     let _ = tracing_subscriber::fmt::fmt()
         .with_env_filter(test_env_filter())
+        .with_test_writer()
         .try_init();
 }
 

@@ -171,12 +171,17 @@ impl Headers {
 
     /// Get a header value as a `str`, or err if it is not found.
     pub fn get_str(&self, key: &HeaderName) -> crate::Result<&str> {
-        self.get_with(key, |s| crate::Result::Ok(s.as_str()))
+        self.get_optional_str(key).ok_or_else(|| {
+            Error::with_message(
+                ErrorKind::DataConversion,
+                format!("header not found {}", key.as_str()),
+            )
+        })
     }
 
     /// Optionally get a header value as a `str`.
     pub fn get_optional_str(&self, key: &HeaderName) -> Option<&str> {
-        self.get_str(key).ok()
+        self.0.get(key).map(HeaderValue::as_str)
     }
 
     /// Get a header value parsing it as the type, or err if it's not found or it fails to parse.
@@ -494,6 +499,16 @@ mod tests {
         let headers = Headers::new();
         let content_location: Option<ContentLocationForTest> = headers.get_optional().unwrap();
         assert!(content_location.is_none())
+    }
+
+    #[test]
+    pub fn headers_get_optional_str_returns_none_if_header_not_present() {
+        let headers = Headers::new();
+
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from("content-location")),
+            None
+        );
     }
 
     #[test]

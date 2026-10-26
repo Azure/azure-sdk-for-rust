@@ -49,6 +49,9 @@ pub use reader::decode;
 pub use ser::to_vec;
 pub use writer::encode;
 
+use crate::options::Utf8DecodingMode;
+use std::borrow::Cow;
+
 /// The Cosmos binary JSON preamble byte.
 ///
 /// Every binary JSON buffer starts with this byte. It is the basis for
@@ -109,13 +112,34 @@ pub(crate) const RAW_VALUE_TOKEN: &str = "$serde_json::private::RawValue";
 /// Returns a [`BinaryError`] if `buffer` is binary but malformed, or if the
 /// decoded value cannot be re-serialized as JSON.
 pub fn transcode_to_text(buffer: &[u8]) -> Result<Vec<u8>> {
+    transcode_to_text_with_utf8_mode(buffer, Utf8DecodingMode::Strict)
+}
+
+pub(crate) fn transcode_to_text_with_utf8_mode(
+    buffer: &[u8],
+    utf8_decoding_mode: Utf8DecodingMode,
+) -> Result<Vec<u8>> {
+    transcode_to_text_with_utf8_mode_and_recovery(buffer, utf8_decoding_mode).map(|(text, _)| text)
+}
+
+pub(crate) fn transcode_to_text_with_utf8_mode_and_recovery(
+    buffer: &[u8],
+    utf8_decoding_mode: Utf8DecodingMode,
+) -> Result<(Vec<u8>, bool)> {
     if !is_binary(buffer) {
-        // Already text (or empty): nothing to convert.
-        return Ok(buffer.to_vec());
+        return match utf8_decoding_mode {
+            Utf8DecodingMode::Strict => Ok((buffer.to_vec(), false)),
+            Utf8DecodingMode::Lossy => match String::from_utf8_lossy(buffer) {
+                Cow::Borrowed(text) => Ok((text.as_bytes().to_vec(), false)),
+                Cow::Owned(text) => Ok((text.into_bytes(), true)),
+            },
+        };
     }
-    let mut value = decode(buffer)?;
+    let (mut value, invalid_utf8_was_recovered) =
+        reader::decode_with_utf8_mode_and_recovery(buffer, utf8_decoding_mode)?;
     normalize_integral_floats(&mut value);
     serde_json::to_vec(&value)
+        .map(|text| (text, invalid_utf8_was_recovered))
         .map_err(|e| BinaryError::Custom(format!("failed to re-serialize decoded value: {e}")))
 }
 

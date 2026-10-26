@@ -6,6 +6,8 @@
 #[cfg(test)]
 mod lazy_topology_tests;
 mod query_planning;
+#[cfg(all(test, feature = "reqwest", feature = "__internal_mocking"))]
+mod session_scope_live_tests;
 
 use crate::{
     diagnostics::{
@@ -147,11 +149,10 @@ const BINARY_NEGOTIATION_FORMATS_QUERY: &str = "JsonText,CosmosBinary";
 
 fn should_retry_account_properties_connectivity_error(
     error: &crate::error::CosmosError,
-    request_sent: RequestSentStatus,
     retry_count: u32,
 ) -> bool {
+    // Account discovery is an idempotent GET, even when sending the request was ambiguous.
     retry_count < ACCOUNT_PROPERTIES_CONNECTIVITY_MAX_RETRIES
-        && request_sent.definitely_not_sent()
         && is_account_properties_connectivity_error(error)
 }
 
@@ -216,7 +217,6 @@ struct DriverRequestExecutor<'a> {
 type PkRangeRegionPins = Mutex<HashMap<ContainerReference, CosmosEndpoint>>;
 
 fn request_target_overrides(
-    operation_partition_key: Option<&PartitionKey>,
     target: RequestTarget,
     continuation: Option<String>,
 ) -> OperationOverrides {
@@ -241,32 +241,9 @@ fn request_target_overrides(
         } => OperationOverrides {
             partition_key_range_id: Some(partition_key_range_id),
             resolved_partition_key_range_parents: partition_key_range_parents,
-            // Only emit `x-ms-start-epk`/`x-ms-end-epk` for the narrowed case
-            // (range < partition_key_range). The public EPK headers paired with
-            // `partitionkeyrangeid` are accepted by Gateway 2.0 but rejected by
-            // the standard gateway with HTTP 400 (verified against live
-            // accounts, independent of the min bound value), so we never emit
-            // them on the full-pkrange XPK fan-out path that must also work on
-            // the standard gateway. Because the narrowed case emits both
-            // headers together, it is only valid on the wire against Gateway
-            // 2.0. The GW_V2 dispatcher derives its RNTBD
-            // `StartEpkHash`/`EndEpkHash` tokens from `pkrange_bounds` (below)
-            // when the public headers are absent.
+            // The leaf range already includes the logical-prefix intersection.
             feed_range: range,
-            // Always carry the physical pkrange bounds so the GW_V2 dispatcher
-            // can synthesize StartEpkHash/EndEpkHash tokens (which the
-            // thin-client proxy requires on every Query frame). Surfaced via
-            // internal `x-ms-thinclient-pkrange-min`/`-max` headers in
-            // `apply_headers`; the standard gateway ignores unknown headers.
             pkrange_bounds: Some(partition_key_range),
-            // Propagate the operation's logical partition key (e.g. the
-            // partial-HPK prefix from `FeedScope::partition(...)`) so the
-            // `x-ms-documentdb-partitionkey` HTTP header is emitted on
-            // per-pkrange query fan-out requests. The thin-client proxy
-            // uses this to filter docs within a pkrange by the supplied
-            // prefix; without it, the
-            // backend returns every document in the physical partition.
-            partition_key: operation_partition_key.cloned(),
             continuation,
             ..Default::default()
         },
@@ -340,8 +317,7 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
         continuation: Option<String>,
     ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
         let driver = self.driver;
-        let mut overrides =
-            request_target_overrides(operation.partition_key(), target, continuation);
+        let mut overrides = request_target_overrides(target, continuation);
         overrides.container_recreation_recovery_disabled =
             self.container_recreation_recovery_disabled;
         overrides.container_recreation_recovery_tracker =
@@ -351,9 +327,16 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
             let operation = operation
                 .clone()
                 .with_absolute_deadline(self.absolute_deadline);
-            let result = driver
+            let mut result = driver
                 .execute_planned_operation_direct(&operation, overrides, self.options)
                 .await;
+            if operation.resolved_utf8_decoding_mode() == crate::options::Utf8DecodingMode::Lossy {
+                if let Ok(response) = &mut result {
+                    response.transcode_body_to_text_with_utf8_mode(
+                        operation.resolved_utf8_decoding_mode(),
+                    )?;
+                }
+            }
             if result.is_ok() {
                 self.successful_requests += 1;
             }
@@ -980,7 +963,6 @@ impl CosmosDriver {
                 Err(e) => {
                     if should_retry_account_properties_connectivity_error(
                         &e.error,
-                        e.request_sent,
                         connectivity_retry_count,
                     ) {
                         connectivity_retry_count += 1;
@@ -2167,7 +2149,7 @@ impl CosmosDriver {
         self.location_state_store.apply_partition(|current| {
             let mut next = current.clone();
             next.per_partition_automatic_failover_enabled = true;
-            next
+            crate::driver::routing::partition_endpoint_state::PartitionStateUpdate::Updated(next)
         });
     }
 
@@ -2871,6 +2853,13 @@ impl CosmosDriver {
         options: &OperationOptions,
         resolved_binary: Option<crate::options::BinaryEncodingOptions>,
     ) -> CosmosOperation {
+        let resolved_utf8_decoding_mode = self
+            .operation_options_view(options)
+            .utf8_decoding_mode()
+            .copied()
+            .unwrap_or_default();
+        let operation = operation.with_resolved_utf8_decoding_mode(resolved_utf8_decoding_mode);
+
         if !Self::binary_negotiates_response(operation.resource_type(), operation.operation_type())
         {
             return operation;
@@ -3371,7 +3360,9 @@ impl CosmosDriver {
                 // `next_page` already committed every node's resume position.
                 // Poison the plan if transcoding fails so a later page or token
                 // cannot silently skip the lost page.
-                if let Err(error) = response.transcode_body_to_text() {
+                if let Err(error) = response
+                    .transcode_body_to_text_with_utf8_mode(plan.resolved_utf8_decoding_mode())
+                {
                     plan.poison_continuation();
                     return Err(error);
                 }
@@ -3607,6 +3598,16 @@ impl CosmosDriver {
             // not affect wire routing, so clear it and continue by logical key.
             overrides.clear_resolved_partition_key_range();
         }
+        overrides.session_token_routing_map = match operation.container() {
+            Some(container) => match self.pk_range_cache.cached_routing_map(container).await {
+                Ok(map) => map,
+                Err(error) => {
+                    tracing::debug!(error = %error, "session scoping has no usable topology snapshot");
+                    None
+                }
+            },
+            None => None,
+        };
         tracing::debug!(
             operation_type = ?operation.operation_type(),
             resource_type = ?operation.resource_type(),
@@ -4740,13 +4741,21 @@ async fn probe_endpoint_connectivity(
     transport.send(&request).await.is_ok()
 }
 
+#[cfg(all(
+    test,
+    feature = "__internal_in_memory_emulator",
+    feature = "fault_injection"
+))]
+#[path = "request_hedge_feedback_tests.rs"]
+mod request_hedge_feedback_tests;
+
 #[cfg(test)]
 mod tests {
     use std::collections::VecDeque;
     use std::sync::Mutex;
 
     use async_trait::async_trait;
-    use azure_core::http::headers::Headers;
+    use azure_core::http::headers::{HeaderValue, Headers};
 
     use url::Url;
 
@@ -4831,6 +4840,7 @@ mod tests {
         Success,
         Http2Incompatible,
         ConnectionError,
+        IoError(RequestSentStatus),
         /// 503 body the gateway returns under load (Cosmos-flavored JSON, no `_self`).
         /// Without status-gating the driver would relabel it as a deserialization failure.
         ServiceUnavailable503,
@@ -4864,6 +4874,13 @@ mod tests {
                         .with_message("simulated connection refused")
                         .build(),
                     crate::diagnostics::RequestSentStatus::NotSent,
+                )),
+                ResponsePlan::IoError(request_sent) => Err(TransportError::new(
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
+                        .with_message("simulated account discovery I/O failure")
+                        .build(),
+                    request_sent,
                 )),
                 ResponsePlan::ServiceUnavailable503 => Ok(HttpResponse {
                     status: 503,
@@ -6017,7 +6034,6 @@ mod tests {
     fn logical_partition_override_keeps_physical_identity_internal() {
         let pk = PartitionKey::from("pk");
         let overrides = request_target_overrides(
-            None,
             RequestTarget::logical_partition_key_with_parents(
                 pk.clone(),
                 "7".to_string(),
@@ -6050,7 +6066,6 @@ mod tests {
             EffectivePartitionKey::try_from("40")?,
         )?;
         let overrides = request_target_overrides(
-            None,
             RequestTarget::effective_partition_key_range_with_parents(
                 range.clone(),
                 "merged".to_string(),
@@ -6074,19 +6089,12 @@ mod tests {
     #[test]
     fn effective_partition_key_range_override_omits_feed_range_when_full_pkrange(
     ) -> crate::error::Result<()> {
-        // When the request covers the FULL pkrange (range == partition_key_range),
-        // `feed_range` collapses to None — we do NOT emit the public
-        // `x-ms-start-epk`/`x-ms-end-epk` headers on the legacy gateway path
-        // (it rejects them paired with `partitionkeyrangeid` when min is the
-        // empty-string sentinel). The pkrange bounds are still carried in
-        // `pkrange_bounds` for the GW_V2 dispatcher to derive its
-        // `StartEpkHash`/`EndEpkHash` RNTBD tokens.
+        // Full physical ranges need no additional filter, but retain thin-client routing bounds.
         let range = crate::models::FeedRange::new(
             EffectivePartitionKey::try_from("10")?,
             EffectivePartitionKey::try_from("20")?,
         )?;
         let overrides = request_target_overrides(
-            None,
             RequestTarget::effective_partition_key_range(
                 range.clone(),
                 "pkrange".to_string(),
@@ -6102,22 +6110,13 @@ mod tests {
     }
 
     #[test]
-    fn effective_partition_key_range_override_forwards_logical_partition_key(
-    ) -> crate::error::Result<()> {
-        // Regression: partition-scoped queries (e.g. `FeedScope::partition(partial_hpk)`)
-        // decompose into per-pkrange `EffectivePartitionKeyRange` targets. The operation's
-        // logical partition key must be forwarded into the override so the
-        // `x-ms-documentdb-partitionkey` HTTP header (and the RNTBD `PartitionKey` 0x002B
-        // token on the thin-client proxy) is emitted on every per-pkrange fan-out request.
-        // Without this, the thin-client backend returns every document in the physical
-        // partition because it has no per-component prefix to filter by.
+    fn effective_partition_key_range_override_uses_only_range_routing() -> crate::error::Result<()>
+    {
         let range = crate::models::FeedRange::new(
             EffectivePartitionKey::try_from("10")?,
             EffectivePartitionKey::try_from("20")?,
         )?;
-        let pk = PartitionKey::from("tenant-prefix");
         let overrides = request_target_overrides(
-            Some(&pk),
             RequestTarget::effective_partition_key_range(
                 range.clone(),
                 "pkrange".to_string(),
@@ -6126,7 +6125,7 @@ mod tests {
             None,
         );
 
-        assert_eq!(overrides.partition_key.as_ref(), Some(&pk));
+        assert_eq!(overrides.partition_key, None);
         assert_eq!(overrides.partition_key_range_id.as_deref(), Some("pkrange"));
         assert_eq!(overrides.feed_range, None);
         assert_eq!(overrides.pkrange_bounds, Some(range));
@@ -6769,6 +6768,91 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn fetch_account_properties_retries_ambiguous_io_failures() {
+        for request_sent in [RequestSentStatus::Unknown, RequestSentStatus::Sent] {
+            let client = sequence_client([
+                ResponsePlan::IoError(request_sent),
+                ResponsePlan::IoError(request_sent),
+                ResponsePlan::Success,
+            ]);
+            let transport =
+                crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+            let account = signed_test_account("https://test.documents.azure.com:443/");
+            let user_agent = HeaderValue::from("cosmos-driver-test/0.0.0");
+            let properties = CosmosDriver::fetch_account_properties_with_transport(
+                &runtime,
+                &transport,
+                &account,
+                None,
+                &user_agent,
+                &TEST_CLIENT_ID,
+                false,
+                None,
+            )
+            .await
+            .expect("account GET can retry an ambiguous I/O failure");
+            assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
+        }
+    }
+
+    #[tokio::test]
+    async fn fetch_account_properties_bounds_ambiguous_io_retries() {
+        let client = sequence_client([
+            ResponsePlan::IoError(RequestSentStatus::Unknown),
+            ResponsePlan::IoError(RequestSentStatus::Unknown),
+            ResponsePlan::IoError(RequestSentStatus::Unknown),
+        ]);
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let error = CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            None,
+            &HeaderValue::from("cosmos-driver-test/0.0.0"),
+            &TEST_CLIENT_ID,
+            false,
+            None,
+        )
+        .await
+        .expect_err("the third I/O failure must exhaust the retry budget");
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::TRANSPORT_IO_FAILED
+        );
+        let diagnostics = error.diagnostics().unwrap();
+        let requests = diagnostics.requests();
+        assert_eq!(requests.len(), 3);
+        assert_eq!(requests[0].execution_context(), ExecutionContext::Initial);
+        assert!(requests[1..]
+            .iter()
+            .all(|request| request.execution_context() == ExecutionContext::TransportRetry));
+        assert!(requests
+            .iter()
+            .all(|request| request.request_sent() == RequestSentStatus::Unknown));
+    }
+
+    #[test]
+    fn account_discovery_does_not_retry_configuration_or_authentication_errors() {
+        for status in [
+            crate::error::status_codes::CLIENT_GENERATED_401,
+            crate::error::status_codes::CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED,
+            crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID,
+        ] {
+            let error = crate::error::CosmosError::builder()
+                .with_status(status)
+                .with_message("non-connectivity failure")
+                .build();
+            assert!(!should_retry_account_properties_connectivity_error(
+                &error, 0
+            ));
+        }
+    }
+
+    #[tokio::test]
     async fn fetch_account_properties_does_not_retry_wire_failures() {
         let err = drive_fetch_with(
             503,
@@ -7140,19 +7224,13 @@ mod tests {
         );
         assert_eq!(
             diag.requests().len(),
-            1,
-            "single bootstrap request must produce exactly one request record. Got: {diag:?}"
+            3,
+            "initial attempt and bounded retries must each retain diagnostics. Got: {diag:?}"
         );
-        let req = &diag.requests()[0];
-        assert!(
-            req.endpoint().contains("test.documents.azure.com"),
-            "request diagnostics must record the endpoint contacted. Got: {req:?}"
-        );
-        assert_eq!(
-            req.request_sent(),
-            crate::diagnostics::RequestSentStatus::Sent,
-            "transport.send returned an error after invocation; the request reached the wire side. Got: {req:?}"
-        );
+        for req in diag.requests().iter() {
+            assert!(req.endpoint().contains("test.documents.azure.com"));
+            assert_eq!(req.request_sent(), RequestSentStatus::Sent);
+        }
     }
 
     /// Sign-request failure (e.g. broken TokenCredential, IMDS unreachable) must produce
@@ -8033,6 +8111,10 @@ mod tests {
             crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID,
             "got: {err}",
         );
+        assert!(
+            err.diagnostics().is_some(),
+            "the transcode error must retain the page diagnostics",
+        );
 
         let err = plan
             .to_continuation_token()
@@ -8179,6 +8261,30 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn lossy_utf8_recovers_text_page_and_records_diagnostics() {
+        let driver = transcoding_test_driver().await;
+        let body = [
+            b'{', b'"', b'n', b'a', b'm', b'e', b'"', b':', b'"', b'a', 0xFF, b'b', b'"', b'}',
+        ];
+        let mut plan = lossy_transcoding_plan(&driver, &[&body]);
+
+        let response = driver
+            .execute_plan(&mut plan, None, OperationOptions::default())
+            .await
+            .expect("invalid UTF-8 inside a JSON string should be recovered")
+            .expect("the mock leaf returns one page");
+
+        assert_eq!(
+            response.body_bytes(),
+            &[
+                b'{', b'"', b'n', b'a', b'm', b'e', b'"', b':', b'"', b'a', 0xEF, 0xBF, 0xBD, b'b',
+                b'"', b'}',
+            ],
+        );
+        assert!(response.diagnostics().invalid_utf8_was_recovered());
+    }
+
     /// A driver marked initialized so `execute_plan` reaches the pipeline. No
     /// request ever leaves it: the plans below are backed by a mock leaf.
     async fn transcoding_test_driver() -> CosmosDriver {
@@ -8212,6 +8318,41 @@ mod tests {
             operation.transcodes_response_to_text(),
             "the fixture must select the transcoding path",
         );
+
+        let last = bodies.len() - 1;
+        let pages = bodies
+            .iter()
+            .enumerate()
+            .map(|(i, body)| {
+                Ok(PageResult::Page {
+                    response: response(body),
+                    is_terminal: i == last,
+                })
+            })
+            .collect();
+        OperationPlan::new(
+            Pipeline::new(Box::new(MockLeaf::with_pages(pages))),
+            std::sync::Arc::new(operation),
+            PlanOptions::default(),
+            false,
+        )
+    }
+
+    fn lossy_transcoding_plan(driver: &CosmosDriver, bodies: &[&[u8]]) -> OperationPlan {
+        use crate::driver::dataflow::mocks::{response, MockLeaf};
+        use crate::driver::dataflow::{PageResult, Pipeline};
+
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
+            .with_utf8_decoding_mode(crate::options::Utf8DecodingMode::Lossy)
+            .build();
+        let operation = driver.apply_response_negotiation(
+            binary_encoding_test_operation(b"{}".to_vec()),
+            &options,
+            None,
+        );
+        assert!(operation.negotiates_binary_response());
+        assert!(operation.transcodes_response_to_text());
 
         let last = bodies.len() - 1;
         let pages = bodies

@@ -12,6 +12,7 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_storage_blob"
 keywords = ["sdk", "cloud", "blobs"]
 categories = ["api-bindings"]
+exclude.workspace = true
 
 [features]
 default = ["tokio", "azure_core/default"]
@@ -20,8 +21,8 @@ tokio = ["dep:tokio", "azure_core/tokio"]
 [dependencies]
 async-stream.workspace = true
 async-trait.workspace = true
-azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.2", features = ["xml"] }
-azure_storage_common = { path = "../azure_storage_common", version = "1.1.0-beta.1" }
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.2", default-features = false, features = ["xml"] }
+azure_storage_common = { path = "../azure_storage_common", version = "1.1.0-beta.1", default-features = false }
 bytes.workspace = true
 futures.workspace = true
 percent-encoding.workspace = true
