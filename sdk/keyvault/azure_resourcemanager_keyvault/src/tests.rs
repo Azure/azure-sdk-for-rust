@@ -129,7 +129,7 @@ fn scripted_client(steps: Vec<Step>) -> Result<(KeyVaultClient, Arc<Mutex<VecDeq
         );
         assert_eq!(
             request.headers().get_optional_str(&AUTHORIZATION),
-            Some("Bearer TEST TOKEN https://management.azure.com/.default")
+            Some("Bearer TEST TOKEN https://management.core.windows.net//.default")
         );
         if let Some(expected) = step.request_body {
             assert_eq!(
@@ -281,12 +281,12 @@ async fn sovereign_clouds_use_core_endpoint_and_scope() -> Result<()> {
         (
             CloudConfiguration::AzureGovernment,
             "https://management.usgovcloudapi.net/",
-            "https://management.usgovcloudapi.net/.default",
+            "https://management.core.usgovcloudapi.net//.default",
         ),
         (
             CloudConfiguration::AzureChina,
             "https://management.chinacloudapi.cn/",
-            "https://management.chinacloudapi.cn/.default",
+            "https://management.core.chinacloudapi.cn//.default",
         ),
     ] {
         let mock = MockHttpClient::new(move |request| {
