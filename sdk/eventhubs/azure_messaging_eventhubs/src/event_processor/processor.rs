@@ -17,6 +17,7 @@ use async_lock::Mutex as AsyncMutex;
 use azure_core::{error::ErrorKind as AzureErrorKind, time::Duration, Error};
 use futures::{
     channel::mpsc::{channel, Receiver, Sender},
+    future::join_all,
     SinkExt, StreamExt,
 };
 use std::{
@@ -184,10 +185,20 @@ impl ProcessorConsumersMap {
                 })
                 .collect()
         };
-        for client in to_close {
-            // Keep the remaining clients discoverable by shutdown while detach awaits.
-            client.request_close_receiver().await;
-            self.remove_partition_client(&client)?;
+        // Signal every client before polling any detach. Keep each client discoverable
+        // until its detach completes, including when this future is canceled.
+        let closing: Vec<_> = to_close
+            .iter()
+            .map(|client| {
+                let closing = client.request_close_receiver();
+                async move {
+                    closing.await;
+                    self.remove_partition_client(client)
+                }
+            })
+            .collect();
+        for result in join_all(closing).await {
+            result?;
         }
         Ok(())
     }
@@ -209,9 +220,13 @@ impl ProcessorConsumersMap {
                 .filter_map(|client| client.upgrade())
                 .collect()
         };
-        for client in to_close {
-            client.request_close_receiver().await;
-        }
+        // Construct every future first: request_close_receiver synchronously stops
+        // delivery, while polling its future performs only the network detach.
+        let closing: Vec<_> = to_close
+            .iter()
+            .map(|client| client.request_close_receiver())
+            .collect();
+        join_all(closing).await;
         Ok(())
     }
 }
@@ -1303,6 +1318,50 @@ mod tests {
             ownership.owner_id.is_none(),
             "shutdown must release the completed claim"
         );
+    }
+
+    #[tokio::test]
+    async fn shutdown_signals_all_receivers_before_waiting_for_detach() {
+        let (processor, consumers) = processor_with_queued_clients(&["0", "1", "2"]).await;
+        // Use the map's actual iteration order so the blocked detach is always first.
+        let clients: Vec<_> = consumers
+            .consumers
+            .lock()
+            .unwrap()
+            .values()
+            .map(|client| client.upgrade().unwrap())
+            .collect();
+        let (first_receiver, first_closing, finish_first) =
+            receiver_with_delayed_close(clients[0].get_partition_id());
+        clients[0].set_event_receiver(first_receiver).unwrap();
+        let (pending_receiver, delivery) =
+            receiver_with_pending_receive(clients[1].get_partition_id());
+        clients[1].set_event_receiver(pending_receiver).unwrap();
+        let (last_receiver, mut last_closing, finish_last) =
+            receiver_with_delayed_close(clients[2].get_partition_id());
+        clients[2].set_event_receiver(last_receiver).unwrap();
+        let mut stream = std::pin::pin!(clients[1].stream_events());
+        assert!(poll!(stream.next()).is_pending());
+
+        let mut shutdown = std::pin::pin!(processor.shutdown());
+        assert!(poll!(shutdown.as_mut()).is_pending());
+        first_closing.await.unwrap();
+        let error = tokio::time::timeout(std::time::Duration::from_secs(1), stream.next())
+            .await
+            .expect("a blocked first detach must not leave a later read pending")
+            .unwrap()
+            .unwrap_err();
+        assert!(matches!(error.kind, ErrorKind::ConsumerDisconnected(None)));
+        assert!(clients.iter().all(|client| client.is_closed()));
+        assert!(
+            poll!(&mut last_closing).is_ready(),
+            "later detaches must start while the first detach is still pending"
+        );
+        assert!(delivery.is_canceled());
+
+        finish_first.send(()).unwrap();
+        finish_last.send(()).unwrap();
+        shutdown.await.unwrap();
     }
 
     #[tokio::test]

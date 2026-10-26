@@ -11,6 +11,7 @@ use crate::{
 use azure_core::Uuid;
 use futures::Stream;
 use std::{
+    future::Future,
     pin::Pin,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -69,18 +70,21 @@ impl PartitionClient {
         &self.partition_id
     }
 
-    /// Closes the AMQP receiver so any in-flight `stream_events()` resolves.
+    /// Stops delivery immediately and returns best-effort receiver cleanup.
     /// Called by load-balancer reconciliation as a backstop for the
     /// broker-initiated disconnect path. Idempotent.
-    pub(crate) async fn request_close_receiver(&self) {
+    pub(crate) fn request_close_receiver(&self) -> impl Future<Output = ()> + '_ {
         self.closed.store(true, Ordering::Release);
-        if let Some(receiver) = self.event_receiver.get() {
-            if let Err(e) = receiver.request_close().await {
-                warn!(
-                    partition_id = %self.partition_id,
-                    err = ?e,
-                    "Failed to close event receiver during revocation for partition."
-                );
+        let closing = self.event_receiver.get().map(EventReceiver::request_close);
+        async move {
+            if let Some(closing) = closing {
+                if let Err(e) = closing.await {
+                    warn!(
+                        partition_id = %self.partition_id,
+                        err = ?e,
+                        "Failed to close event receiver during revocation for partition."
+                    );
+                }
             }
         }
     }

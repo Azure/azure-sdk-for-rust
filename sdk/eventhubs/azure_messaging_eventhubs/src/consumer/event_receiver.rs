@@ -13,9 +13,12 @@ use azure_core_amqp::{
     AmqpReceiverOptions, AmqpSource,
 };
 use futures::{channel::oneshot, future::Shared, pin_mut, select_biased, FutureExt, Stream};
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc, Mutex,
+use std::{
+    future::Future,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex,
+    },
 };
 use tracing::{debug, trace, warn, Instrument};
 
@@ -300,15 +303,32 @@ impl EventReceiver {
         self.request_close().await
     }
 
-    /// Closes the AMQP receiver without consuming the `EventReceiver`.
-    /// Used by `EventProcessor` to revoke a partition while the consumer
-    /// still holds an `Arc<PartitionClient>`. Sets the close flag before
-    /// the detach so the next `stream_events()` poll resolves with
-    /// `ConsumerDisconnected` regardless of detach outcome.
-    pub(crate) async fn request_close(&self) -> Result<()> {
+    /// Stops delivery immediately and returns the future that detaches the receiver.
+    /// Calling this method wakes pending reads before the returned future is polled,
+    /// so a processor can signal every partition before waiting for network cleanup.
+    pub(crate) fn request_close(&self) -> impl Future<Output = Result<()>> + '_ {
+        let signaled = self.signal_close();
+        async move {
+            if !signaled? {
+                return Ok(());
+            }
+            #[cfg(test)]
+            {
+                let delayed = self.delayed_close.lock().unwrap().take();
+                if let Some((started, finish)) = delayed {
+                    let _ = started.send(());
+                    finish.await.expect("the test must finish the detach");
+                }
+            }
+            self.connection.close_receiver(&self.source_url).await
+        }
+    }
+
+    /// Returns whether this call is responsible for detaching the receiver.
+    fn signal_close(&self) -> Result<bool> {
         // A retained, closed receiver must not detach a replacement at the same path.
         if self.closed.swap(true, Ordering::AcqRel) {
-            return Ok(());
+            return Ok(false);
         }
         let signal = self
             .close_signal
@@ -318,15 +338,7 @@ impl EventReceiver {
         if let Some(signal) = signal {
             let _ = signal.send(());
         }
-        #[cfg(test)]
-        {
-            let delayed = self.delayed_close.lock().unwrap().take();
-            if let Some((started, finish)) = delayed {
-                let _ = started.send(());
-                finish.await.expect("the test must finish the detach");
-            }
-        }
-        self.connection.close_receiver(&self.source_url).await
+        Ok(true)
     }
 }
 
@@ -405,14 +417,14 @@ mod tests {
     use futures::{poll, StreamExt};
 
     #[tokio::test]
-    async fn close_wakes_pending_receive() {
+    async fn close_wakes_pending_receive_before_detach_is_polled() {
         let (receiver, delivery) = receiver_with_pending_receive("0");
         let mut stream = std::pin::pin!(receiver.stream_events());
         assert!(
             poll!(stream.next()).is_pending(),
             "the receive must be pending before close"
         );
-        receiver.request_close().await.unwrap();
+        let closing = receiver.request_close();
         let result = tokio::time::timeout(std::time::Duration::from_secs(1), stream.next())
             .await
             .expect("close must wake a pending receive")
@@ -424,6 +436,7 @@ mod tests {
             "the pending receive must be canceled"
         );
         assert!(stream.next().await.is_none());
+        closing.await.unwrap();
     }
 
     #[tokio::test]
