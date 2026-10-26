@@ -732,6 +732,8 @@ pub mod builders {
 
         /// Sets the AMQP connection idle timeout.
         ///
+        /// Defaults to 60 seconds.
+        ///
         /// The connection reports an idle timeout when it receives no AMQP frames
         /// within this duration. Setting the timeout also advertises it to the
         /// service so that the peers can negotiate heartbeats. The duration must
