@@ -8,6 +8,8 @@
 //! Azure CLI commands directly, which keeps ARM transport and authentication
 //! details out of the Rust test crates.
 
+// cspell:ignore statuscode
+
 use async_trait::async_trait;
 use azure_core::credentials::TokenCredential;
 use serde::{Deserialize, Serialize};
