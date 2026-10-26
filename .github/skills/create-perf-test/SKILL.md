@@ -39,7 +39,7 @@ For each new perf test:
 - In `sdk/{service-directory}/{crate-name}/perf/${input:testName}.rs`:
   - Add a type that implements `azure_core_test::perf::PerfTest`.
   - Generate a perf test for the currently selected function in ${file} or specified client method name, if any.
-  - Use [sdk/keyvault/azure_security_keyvault_keys/perf/get_key.rs](../../../sdk/keyvault/azure_security_keyvault_keys/perf/get_key.rs) or [sdk/storage/azure_storage_blob/perf/list_blob_test.rs](../../../sdk/storage/azure_storage_blob/perf/list_blob_test.rs) as examples.
+  - Use [sdk/storage/azure_storage_blob/perf/list_blob_test.rs](../../../sdk/storage/azure_storage_blob/perf/list_blob_test.rs) as an example.
   - Define a `test_metadata()` function returning `PerfTestMetadata`, including any required command-line options.
   - Separate setup, the measured operation, and cleanup in the `PerfTest` implementation.
   - If credentials are needed, prefer the crate's existing perf-test pattern (for example `context.recording().credential()` or an existing helper) instead of introducing a new authentication flow.

@@ -115,7 +115,8 @@ impl ConnectionPoolOptions {
 
     /// Returns whether proxy usage is allowed.
     ///
-    /// When `true`, the `HTTPS_PROXY` environment variable will be respected.
+    /// When `true`, Cosmos requests honor `HTTP_PROXY`, `HTTPS_PROXY`, and
+    /// `NO_PROXY` exclusions, including their lowercase forms.
     /// When using a proxy, no end-to-end SLAs are guaranteed by Azure Cosmos DB.
     pub fn proxy_allowed(&self) -> bool {
         self.proxy_allowed
@@ -480,7 +481,10 @@ impl ConnectionPoolOptionsBuilder {
         Self::default()
     }
 
-    /// Sets whether proxy usage is allowed. If true, the HTTPS_PROXY environment variable will be respected.
+    /// Sets whether Cosmos requests honor proxy environment variables.
+    ///
+    /// When `true`, honors `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY` exclusions,
+    /// including their lowercase forms.
     /// When using a proxy, no e2e SLAs are guaranteed by Azure Cosmos DB.
     /// Defaults to `false`.
     pub fn with_proxy_allowed(mut self, value: bool) -> Self {

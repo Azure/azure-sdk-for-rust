@@ -20,6 +20,8 @@ zerofrom = "0.1.5"
 
 [dev-dependencies]
 rustc_version = "0.4.1"
+# Newer uuid releases require Rust 1.89; keep these tests compatible with Rust 1.88.
+uuid = "=1.24.1"
 
 [[bench]]
 name = "debug"

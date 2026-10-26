@@ -19,10 +19,12 @@ param(
 
   [switch] $Check,
 
+  [switch] $Review,
+
   [Parameter(ParameterSetName = 'PackageName')]
   [Parameter(ParameterSetName = 'ManifestDir')]
   [ValidateNotNullOrEmpty()]
-  [string] $OutputPath
+  [string] $OutputDir
 )
 
 $ErrorActionPreference = 'Stop'
@@ -34,13 +36,13 @@ Set-StrictMode -Version 2.0
 function Get-PackagesToExport(
   [string] $SelectedPackageInfoDirectory
 ) {
-  if ($OutputPath -and @($PackageName).Count -gt 1) {
-    LogError '-OutputPath can only be used with a single -PackageName value.'
+  if ($OutputDir -and @($PackageName).Count -gt 1) {
+    LogError '-OutputDir can only be used with a single -PackageName value.'
     exit 1
   }
 
-  if ($OutputPath -and @($ManifestDir).Count -gt 1) {
-    LogError '-OutputPath can only be used with a single -ManifestDir value.'
+  if ($OutputDir -and @($ManifestDir).Count -gt 1) {
+    LogError '-OutputDir can only be used with a single -ManifestDir value.'
     exit 1
   }
 
@@ -53,12 +55,12 @@ function Get-PackagesToExport(
 function Get-OutputDirectory(
   $Package
 ) {
-  if ($OutputPath) {
-    if ([System.IO.Path]::IsPathRooted($OutputPath)) {
-      return $OutputPath
+  if ($OutputDir) {
+    if ([System.IO.Path]::IsPathRooted($OutputDir)) {
+      return $OutputDir
     }
 
-    return [System.IO.Path]::Combine($PWD.Path, $OutputPath)
+    return [System.IO.Path]::Combine($PWD.Path, $OutputDir)
   }
 
   return Split-Path -Path $Package.manifest_path -Parent
@@ -100,8 +102,12 @@ function Get-GenerateApiArguments(
     $arguments += '--check'
   }
 
-  if ($OutputPath) {
+  if ($OutputDir) {
     $arguments += @('--output-dir', (Get-OutputDirectory -Package $Package))
+  }
+
+  if ($Review) {
+    $arguments += '--review'
   }
 
   return $arguments
@@ -114,8 +120,12 @@ function Get-RegenerateCommand(
   $command = 'cargo run --manifest-path "{0}" -- --manifest-path "{1}"' -f `
     (Get-RepoRelativePath -Path $generateApiManifestPath),
     (Get-RepoRelativePath -Path $Package.manifest_path)
-  if ($OutputPath) {
+  if ($OutputDir) {
     $command += ' --output-dir "{0}"' -f (Get-OutputDirectory -Package $Package)
+  }
+
+  if ($Review) {
+    $command += ' --review'
   }
 
   return $command

@@ -13,6 +13,6 @@ pub use resource_manager::{
     resource_manager_from_env, CosmosResourceManager, ResourceManager, ResourceThroughput,
 };
 pub use test_client::{
-    probe_driver_data_plane_ready, resolve_driver_container_ready, resolve_test_env,
-    DriverTestClient,
+    is_regional_readiness_error, probe_driver_data_plane_ready, resolve_driver_container_ready,
+    resolve_test_env, DriverTestClient, DriverTestRunContext,
 };

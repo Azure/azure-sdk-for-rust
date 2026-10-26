@@ -1313,11 +1313,11 @@ pub mod models {
         #[serde(rename = "Where", skip_serializing_if = "Option::is_none")]
         pub where_prop: Option<String>,
     }
+    #[async_trait]
     impl Page for super::FilteredBlobResponse {
         type IntoIter = <Vec<FilterBlobItem> as IntoIterator>::IntoIter;
         type Item = FilterBlobItem;
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn into_items(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<<Self as >::IntoIter>> + ::core::marker::Send>>;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -1402,11 +1402,11 @@ pub mod models {
         #[serde(rename = "@ServiceEndpoint", skip_serializing_if = "Option::is_none")]
         pub service_endpoint: Option<String>,
     }
+    #[async_trait]
     impl Page for super::ListBlobsResponse {
         type IntoIter = <Vec<BlobItem> as IntoIterator>::IntoIter;
         type Item = BlobItem;
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn into_items(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<<Self as >::IntoIter>> + ::core::marker::Send>>;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -1425,11 +1425,11 @@ pub mod models {
         #[serde(rename = "@ServiceEndpoint", skip_serializing_if = "Option::is_none")]
         pub service_endpoint: Option<String>,
     }
+    #[async_trait]
     impl Page for super::ListContainersResponse {
         type IntoIter = <Vec<ContainerItem> as IntoIterator>::IntoIter;
         type Item = ContainerItem;
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn into_items(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<<Self as >::IntoIter>> + ::core::marker::Send>>;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     pub struct Logging {
@@ -2678,7 +2678,6 @@ pub mod models {
 }
 pub mod stream {
     #[cfg(feature = "tokio")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
     pub mod tokio {
         #[derive(Clone, Debug)]
         pub struct FileStream {
@@ -2692,11 +2691,11 @@ pub mod stream {
         impl From<FileStream> for azure_core::http::Body {
             fn from(stream: FileStream) -> Self;
         }
+        #[async_trait]
         impl SeekableStream for FileStream {
             fn buffer_size(&self) -> usize;
             fn len(&self) -> Option<u64>;
-            #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-            fn reset(&mut self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = azure_core::Result<()>> + ::core::marker::Send>>;
+            async fn reset(&mut self) -> azure_core::Result<()>;
         }
         #[derive(Debug)]
         pub struct FileStreamBuilder {

@@ -8,9 +8,12 @@
 
 #[cfg(feature = "unstable_dtx")]
 use crate::models::partition_key_range::PartitionKeyRange;
-use crate::models::{
-    ContainerReference, CosmosOperation, CosmosResponseHeaders, OperationType, ResourceType,
-    SessionToken,
+use crate::{
+    driver::cache::ContainerRoutingMap,
+    models::{
+        ContainerReference, CosmosOperation, CosmosResponseHeaders, OperationType, ResourceType,
+        SessionToken,
+    },
 };
 
 use super::session_container::SessionContainer;
@@ -58,6 +61,15 @@ impl SessionManager {
         }
     }
 
+    /// Scopes caller-owned progress using routing metadata, never cached session state.
+    pub(crate) fn scope_explicit_token(
+        token: &SessionToken,
+        pk_range_id: Option<&str>,
+        topology: Option<&ContainerRoutingMap>,
+    ) -> Option<SessionToken> {
+        SessionContainer::scope_explicit_token(token, pk_range_id, topology)
+    }
+
     /// Resolves the session token that should be sent on the next request.
     ///
     /// Resolution order:
@@ -80,6 +92,31 @@ impl SessionManager {
         pk_range_id: Option<&str>,
     ) -> Option<SessionToken> {
         self.resolve_session_token_with_parents(operation, user_token, pk_range_id, &[])
+    }
+
+    /// Scopes classic Gateway tokens only when topology accounts for all cached progress.
+    pub(crate) fn resolve_gateway_session_token(
+        &self,
+        operation: &CosmosOperation,
+        user_token: Option<&SessionToken>,
+        pk_range_id: Option<&str>,
+        topology: Option<&ContainerRoutingMap>,
+    ) -> Option<SessionToken> {
+        if let Some(token) = user_token {
+            return Some(token.clone());
+        }
+        self.container.resolve_session_token_for_gateway(
+            operation.container()?,
+            pk_range_id,
+            topology,
+        )
+    }
+
+    /// Checks whether automatic session resolution has any cached token to scope.
+    pub(crate) fn has_session_token(&self, operation: &CosmosOperation) -> bool {
+        operation
+            .container()
+            .is_some_and(|container| self.container.has_session_token(container))
     }
 
     /// Resolves a scoped token, falling back to parent vectors after a split.

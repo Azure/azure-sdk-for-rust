@@ -343,19 +343,21 @@ Only `ResourceType::Document` is eligible for gateway 2.0:
 
 These are wire-level HTTP/2 request headers on the outer POST to the proxy. They are **not** inside the RNTBD metadata token stream.
 
-| Header (wire)                          | Rust constant (crate)                          | Semantics                                                              | When emitted                                                                               |
-| -------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `x-ms-thinclient-proxy-operation-type` | `GATEWAY_V2_OPERATION_TYPE` (driver)           | Numeric operation type                                                 | Every Gateway 2.0 request                                                                  |
-| `x-ms-thinclient-proxy-resource-type`  | `GATEWAY_V2_RESOURCE_TYPE` (driver)            | Numeric resource type                                                  | Every Gateway 2.0 request                                                                  |
-| `x-ms-effective-partition-key`         | **NEW** — `EFFECTIVE_PARTITION_KEY` (driver)   | Canonical EPK hex                                                      | Point ops only                                                                             |
-| `x-ms-documentdb-partitionkey`         | existing `PARTITION_KEY` constant (SDK)        | JSON-encoded partition-key value                                       | Point ops AND single-logical-partition query ops, alongside `x-ms-effective-partition-key` |
-| `x-ms-thinclient-range-min`            | **NEW** — `GATEWAY_V2_RANGE_MIN` (driver)      | Lower bound of EPK range                                               | Feed / cross-partition ops only                                                            |
-| `x-ms-thinclient-range-max`            | **NEW** — `GATEWAY_V2_RANGE_MAX` (driver)      | Upper bound of EPK range                                               | Feed / cross-partition ops only                                                            |
-| `x-ms-cosmos-use-thinclient`           | **NEW** — `GATEWAY_V2_USE_THINCLIENT` (driver) | Instructs account-metadata response to advertise Gateway 2.0 endpoints | Account metadata fetches only                                                              |
+| Header (wire) | Rust constant (crate) | Semantics | When emitted |
+| --- | --- | --- | --- |
+| `x-ms-thinclient-proxy-operation-type` | `GATEWAY_V2_OPERATION_TYPE` (driver) | Numeric operation type | Every Gateway 2.0 request |
+| `x-ms-thinclient-proxy-resource-type` | `GATEWAY_V2_RESOURCE_TYPE` (driver) | Numeric resource type | Every Gateway 2.0 request |
+| `x-ms-effective-partition-key` | **NEW** — `EFFECTIVE_PARTITION_KEY` (driver) | Canonical EPK hex | Point ops only |
+| `x-ms-documentdb-partitionkey` | existing `PARTITION_KEY` constant (SDK) | JSON-encoded partition-key value | Point ops AND single-logical-partition query ops, alongside `x-ms-effective-partition-key` |
+| `x-ms-thinclient-range-min` | `GATEWAY_V2_RANGE_MIN` (driver) | Literal `true`: routing minimum is in the RNTBD frame | Queries without an `EffectivePartitionKey` token |
+| `x-ms-thinclient-range-max` | `GATEWAY_V2_RANGE_MAX` (driver) | Literal `true`: routing maximum is in the RNTBD frame | Queries without an `EffectivePartitionKey` token |
+| `x-ms-cosmos-use-thinclient` | **NEW** — `GATEWAY_V2_USE_THINCLIENT` (driver) | Instructs account-metadata response to advertise Gateway 2.0 endpoints | Account metadata fetches only |
 
 > Wire-header strings (`x-ms-thinclient-*`) are server-defined and unchanged; the Rust-side identifiers use the `GATEWAY_V2_*` prefix.
 
-Per Q3 resolution, the Gateway 2.0 proxy requires the header names `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max` (it does **not** accept `x-ms-start-epk` / `x-ms-end-epk`). The Gateway 2.0 path introduces the new constants above; the existing `START_EPK` / `END_EPK` constants are not emitted on it.
+The outer range flags are not filtering boundaries. The public
+`x-ms-start-epk`, `x-ms-end-epk`, and `x-ms-read-key-type` headers are translated
+into RNTBD filtering tokens, not copied to the outer HTTP request.
 
 **Tenant identification (RNTBD token, not HTTP header)**: the proxy identifies the target Cosmos account from the existing RNTBD `GlobalDatabaseAccountName` token (`0x00CE`, `String`, optional) carried inside the RNTBD metadata stream on **every** Gateway 2.0 request. No Gateway-2.0-specific HTTP headers are introduced for account or regional-account identification — the RNTBD token is the canonical carrier and matches the proxy wire contract. The value is the global database account name (e.g., `myacct` from `myacct.documents.azure.com`), parsed once from the account endpoint URL at client construction.
 
@@ -417,9 +419,43 @@ For Rust: thread the resolved consistency value through the pipeline as an expli
 
 #### Range header wire format
 
-EPK range headers (`x-ms-thinclient-range-min` / `-max`) carry the canonical, un-padded hex produced by `EffectivePartitionKey::compute_range()`. **Do not** zero-pad to N×32 on the wire. Local comparisons use `EffectivePartitionKey`'s `Ord` / `cmp` impl, which correctly handles the mixed-length boundaries returned by the backend; the `epk_cmp_*` tests in `container_routing_map.rs` (around L625–665) pin this behavior. The comparator is consumed via `binary_search_by(|r| r.min_inclusive.cmp(&epk_val))` (≈L282 of the same file). An earlier zero-padding proposal in PR #4087 (commit `25233c903`) was **not** adopted; stay consistent with the length-aware convention.
+Routing and document filtering use separate metadata:
+
+| Token | ID | Type | Meaning |
+| --- | --- | --- | --- |
+| `StartEpkHash` / `EndEpkHash` | `0x00D2` / `0x00D3` | `Bytes` | Hex-decoded bounds for physical-partition routing. |
+| `StartEpk` / `EndEpk` | `0x0062` / `0x0063` | `Bytes` | UTF-8 bytes of the original EPK hex text; inclusive minimum and exclusive maximum for document filtering. |
+| `ReadFeedKeyType` | `0x0064` | `Byte` | `ResourceId = 1`, `EffectivePartitionKey = 2`, `EffectivePartitionKeyRange = 3`. |
+
+For a bound `10AB`, the routing token contains bytes `10 AB`, but the filter
+contains bytes `31 30 41 42`. Filtering tokens follow the leading routing
+metadata and are forwarded independently of point/prefix routing. Empty filter
+bounds are omitted, matching the Java encoder; an empty routing minimum remains
+a zero-byte hash. Unknown nonempty key-type values fail request conversion.
+
+Only explicit public filtering headers produce filtering tokens. Internal
+physical-range fallback headers produce routing hashes only. Routing a request
+to the correct partition does not restrict its results to a smaller EPK window.
+Preserve the supplied canonical hex without adding padding.
+
+Planned hierarchical partition-key prefix queries use the intersection of the
+prefix and each physical partition as their EPK range. These leaves must not
+also send a logical `PartitionKey` or point `EffectivePartitionKey` selector.
+The same range-only representation is retained on classic Gateway fallback,
+regional retries, and resumed pages. Full-key logical requests retain their
+partition-key selectors.
 
 > **`Range` semantics pitfall** (from PR #4087): `compute_range` returns a Rust `std::ops::Range<EffectivePartitionKey>` where `start == end` denotes a **point operation**. Standard `Range` iteration treats that as empty, so code that uses `.contains()` or iterates the range directly will misbehave. Always treat `start == end` as the point case explicitly.
+
+#### Batch control wire format
+
+For `Batch` operations, translate `x-ms-cosmos-batch-atomic` into
+`IsBatchAtomic` (`0x0073`, `Byte`) and `x-ms-cosmos-batch-continue-on-error`
+into `ShouldBatchContinueOnError` (`0x0074`, `Byte`). Case-insensitive `true`
+and `false` values, after trimming whitespace, become `1` and `0`; absent
+headers omit the corresponding token. Invalid values fail request conversion.
+Do not force atomicity, add these controls to other operation types, or rely
+on outer HTTP headers to carry them. Forward the operation payload unchanged.
 
 #### Gateway 2.0 Header Injection Flow
 
@@ -428,8 +464,10 @@ When `transport_mode == GatewayV2`:
 1. Set `x-ms-thinclient-proxy-operation-type` (numeric operation type)
 2. Set `x-ms-thinclient-proxy-resource-type` (numeric resource type)
 3. Serialize the `GlobalDatabaseAccountName` RNTBD metadata token (`0x00CE`, `String`, optional) with the account host label (e.g., `myacct`) — every request, see "Tenant identification" note above
-4. Point op or single-logical-partition query op? Set `x-ms-effective-partition-key` (EPK hash from `EffectivePartitionKey::compute()`).
-   Cross-partition feed / query operation? Set `x-ms-thinclient-range-min` and `x-ms-thinclient-range-max` (from `EffectivePartitionKey::compute_range()`); do **not** emit the PK header on the feed path.
+4. Serialize point/prefix routing as `EffectivePartitionKey`, or range routing
+   as `StartEpkHash` / `EndEpkHash`. For queries without a point/prefix token,
+   set the outer range flags to `true`. Independently forward explicit range
+   filters as `StartEpk`, `EndEpk`, and `ReadFeedKeyType`.
 5. Serialize the **already-reconciled** consistency value (per "Consistency header reconciliation" above) into the appropriate RNTBD metadata token: `ConsistencyLevel` token if RCS resolved to `Default`, OR the `ReadConsistencyStrategy` token (`0x00FE`, Byte) if RCS resolved to a non-Default value. Emit exactly one of the two — never both. The serializer consumes the resolved value as input; do not re-run resolution here.
 6. Serialize headers + body into RNTBD binary format (§5.3)
 7. POST RNTBD body to gateway 2.0 endpoint via HTTP/2
@@ -584,7 +622,7 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 | EPK computation                                        | Yes  |             |     | Single/hierarchical PK, hash versions 1 and 2, error cases (MultiHash V1, wrong component count)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | Operation filtering                                    | Yes  |             |     | All ResourceType × OperationType combos; asserts only `Document` ops are eligible and every other resource type (including `StoredProcedure`) falls through to the standard gateway                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Header injection                                       | Yes  |             |     | Point vs feed EPK headers, proxy type headers, range-header un-padded form                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| HPK + Gateway 2.0: full vs partial PK                  | Yes  |             | Yes | Hierarchical container (2- and 3-component PK paths). **Full PK** (all components specified) on a point op → emits `x-ms-effective-partition-key` carrying the single EPK from `EffectivePartitionKey::compute()`. **Partial PK** (1- or 2-component prefix) on a feed / cross-partition / delete-by-PK op → emits `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max` carrying the EPK range from `EffectivePartitionKey::compute_range()`. Asserted at unit level (header presence + exact wire form, range bounds for each prefix length) and E2E (round-trip against a live HPK container). |
+| HPK + Gateway 2.0: full vs partial PK                  | Yes  |             | Yes | Full-key point operations retain logical routing. Planned prefix queries use clipped EPK ranges and physical range identity without logical-PK or point-EPK selectors. Cover both gateways in every advertised read region, exact result membership, pagination, and saved-continuation resumption.                                                                                                                                                                                                                                                                                                   |
 | Account-name RNTBD token                               | Yes  |             |     | `GlobalDatabaseAccountName` (`0x00CE`, `String`) present in the RNTBD metadata stream of every Gateway 2.0 request (point, feed, batch, bulk, change feed). Value matches the host label of the account endpoint URL.                                                                                                                                                                                                                                                                                                                                                                                 |
 | SDK-supported-capabilities header                      | Yes  |             |     | `x-ms-cosmos-sdk-supportedcapabilities` and Gateway V2 RNTBD metadata emit the exact aggregate of `PartitionMerge`, `ChangeFeedWithStartTimePostMerge`, and `IgnoreUnknownRntbdTokens` (`"11"` / `11`).                                                                                                                                                                                                                                                                                                                                                                                               |
 | Consistency reconciliation: token + header encoding    | Yes  |             |     | RNTBD token `0x00FE` Byte round-trip for all 4 strategies; HTTP header `x-ms-cosmos-read-consistency-strategy` exact wire-string mapping for all 4 strategies; `Default` emits neither carrier on either transport.                                                                                                                                                                                                                                                                                                                                                                                   |

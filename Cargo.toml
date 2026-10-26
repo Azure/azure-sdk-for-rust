@@ -49,6 +49,9 @@ edition = "2021"
 license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
 rust-version = "1.88"
+exclude = [
+  "api.md",
+]
 
 [workspace.dependencies.typespec]
 default-features = false
@@ -62,6 +65,8 @@ version = "1.1.0"
 version = "1.0.0"
 
 [workspace.dependencies.azure_core]
+# Keep defaults off here; HTTP clients opt in through [features].default so
+# consumers can disable them. Local path dependencies must preserve this setting.
 default-features = false
 version = "1.1.0"
 
@@ -110,7 +115,7 @@ criterion = { version = "0.8", features = ["async_tokio"] }
 crossbeam = { version = "0.8", default-features = false }
 crossbeam-epoch = { version = "0.9", default-features = false }
 dyn-clone = "1.0"
-fe2o3-amqp = { version = "0.18", features = ["uuid"] }
+fe2o3-amqp = { version = "0.18.3", features = ["uuid"] }
 fe2o3-amqp-ext = { version = "0.18" }
 fe2o3-amqp-management = { version = "0.18" }
 fe2o3-amqp-cbs = { version = "0.18" }
@@ -173,7 +178,7 @@ tracing-subscriber = "0.3"
 url = "2.5"
 uuid = { version = "1.20", features = ["v4"] }
 windows = { version = "0.62", default-features = false }
-zip = { version = "8.2", default-features = false, features = ["deflate"] }
+zip = { version = "9.0", default-features = false, features = ["deflate"] }
 
 # Profile for running benchmarks
 # Inherits release optimizations but keeps debug symbols so that tools
