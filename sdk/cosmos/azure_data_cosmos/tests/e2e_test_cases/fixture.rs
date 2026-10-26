@@ -128,6 +128,10 @@ enum AuthMode {
     Aad,
 }
 
+fn requires_data_plane_readiness_probe(auth_mode: AuthMode, backend: Option<&str>) -> bool {
+    auth_mode == AuthMode::Aad || backend == Some("azureLive")
+}
+
 fn parse_auth_mode(value: Result<String, VarError>) -> TestResult<AuthMode> {
     match value {
         Err(VarError::NotPresent) => Ok(AuthMode::Key),
@@ -316,8 +320,9 @@ impl E2eTestFixture {
                 .database_client(&database_id)
                 .container_client(&container_id, None)
                 .await?;
-            if auth_mode == AuthMode::Aad {
-                crate::framework::probe_data_plane_ready("E2E AAD client", &container).await?;
+            let backend = std::env::var("AZURE_COSMOS_E2E_BACKEND").ok();
+            if requires_data_plane_readiness_probe(auth_mode, backend.as_deref()) {
+                crate::framework::probe_data_plane_ready("E2E data client", &container).await?;
             }
             Ok(container)
         }
@@ -468,7 +473,10 @@ pub(super) fn connection_string_value(connection_string: &str, key: &str) -> Tes
 
 #[cfg(test)]
 mod tests {
-    use super::{account_reference, parse_auth_mode, AuthMode, TestResult, VarError};
+    use super::{
+        account_reference, parse_auth_mode, requires_data_plane_readiness_probe, AuthMode,
+        TestResult, VarError,
+    };
     use azure_core_test::credentials::MockCredential;
 
     #[test]
@@ -492,6 +500,16 @@ mod tests {
         }
         // Inject the environment read error without mutating process-wide state.
         assert!(parse_auth_mode(Err(VarError::NotUnicode("unreadable".into()))).is_err());
+    }
+
+    #[test]
+    fn readiness_probe_covers_aad_and_live_key_auth() {
+        assert!(requires_data_plane_readiness_probe(AuthMode::Aad, None));
+        assert!(requires_data_plane_readiness_probe(
+            AuthMode::Key,
+            Some("azureLive")
+        ));
+        assert!(!requires_data_plane_readiness_probe(AuthMode::Key, None));
     }
 
     #[test]

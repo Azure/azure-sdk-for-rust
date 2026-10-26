@@ -44,10 +44,7 @@
         },
         "azureLive": {
             "applicability": "required",
-            "fidelity": "full",
-            "requires": [
-                "fullFidelityChangeFeed"
-            ]
+            "fidelity": "full"
         }
     }
 }

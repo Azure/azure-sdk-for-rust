@@ -391,15 +391,16 @@ fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosErr
         .build()
 }
 
-/// Data-plane readiness probe used after container creation on AAD legs.
+/// Data-plane readiness probe used after container creation on live legs.
 ///
 /// A `container.read(...)` on both clients confirms the collection is
 /// metadata-visible, but Cosmos authorizes metadata (5301) and name-based data
 /// (5302) on separate RBAC paths — so the first data-plane request on a fresh
 /// container can race and return `403/5302 RbacUnauthorizedNameBasedDataRequest`
 /// before the name→RID mapping is cached on that client's data-plane
-/// connection. Under key auth this is invisible because the master key bypasses
-/// RBAC entirely.
+/// connection. Under key auth the RBAC race is invisible, but the service can
+/// still return `404/1013 CollectionCreateInProgress` until the new container
+/// reaches the selected data-plane region.
 ///
 /// The probe deletes an id that cannot exist: it mutates nothing on success
 /// (the delete answers a bare 404), reuses the same `items/*` grant tests need,
@@ -413,7 +414,7 @@ pub async fn probe_data_plane_ready(
     label: &str,
     container: &ContainerClient,
 ) -> azure_data_cosmos::Result<()> {
-    const MAX_ATTEMPTS: usize = 20;
+    const MAX_ATTEMPTS: usize = 120;
     const RETRY_DELAY: Duration = Duration::from_millis(500);
 
     let probe_id = format!("data-plane-readiness-probe-{}", Uuid::new_v4());
