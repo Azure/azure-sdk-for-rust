@@ -405,11 +405,11 @@ fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosErr
 /// The probe deletes an id that cannot exist: it mutates nothing on success
 /// (the delete answers a bare 404), reuses the same `items/*` grant tests need,
 /// and returns as soon as the data path answers with a normal not-found. It
-/// tolerates `5302` and `collection_create_in_progress` as retryable while the
-/// name registers on this client. Read-path races that leak past this probe
-/// are absorbed by `TestClient::read_item`'s 5302 retry loop; probing reads
-/// here as well would spuriously trip fault-injection assertions that count
-/// retries on the fault client.
+/// tolerates the expected fresh-resource propagation and load-shedding states
+/// while the name registers on this client. Read-path races that leak past
+/// this probe are absorbed by `TestClient::read_item`'s 5302 retry loop;
+/// probing reads here as well would spuriously trip fault-injection assertions
+/// that count retries on the fault client.
 pub async fn probe_data_plane_ready(
     label: &str,
     container: &ContainerClient,
@@ -417,6 +417,7 @@ pub async fn probe_data_plane_ready(
     const MAX_ATTEMPTS: usize = 120;
     const RETRY_DELAY: Duration = Duration::from_millis(500);
 
+    let auth_mode = AuthMode::from_env();
     let probe_id = format!("data-plane-readiness-probe-{}", Uuid::new_v4());
     for attempt in 1..=MAX_ATTEMPTS {
         let outcome = container
@@ -443,8 +444,7 @@ pub async fn probe_data_plane_ready(
             return Ok(());
         }
 
-        let retryable =
-            rbac_name_based_data_not_ready(&error) || collection_create_in_progress(&error);
+        let retryable = satellite_probe_should_retry(&error, auth_mode);
         if !retryable || attempt == MAX_ATTEMPTS {
             return Err(error);
         }
