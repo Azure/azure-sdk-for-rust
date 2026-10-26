@@ -165,8 +165,9 @@ impl CosmosClientBuilder {
     /// addressable by later point operations. Pass `false` only when
     /// compatibility requires such names.
     ///
-    /// This option does not parse IDs from request bodies or transactional
-    /// protocol fields.
+    /// Structured transactional batch and distributed transaction item IDs are
+    /// also validated. This option does not parse IDs from arbitrary item
+    /// request bodies.
     pub fn with_resource_name_validation(mut self, enabled: bool) -> Self {
         self.resource_name_validation = Some(enabled);
         self

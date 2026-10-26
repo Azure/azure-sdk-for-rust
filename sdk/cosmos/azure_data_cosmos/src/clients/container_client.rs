@@ -1275,6 +1275,12 @@ impl ContainerClient {
         options: Option<BatchOptions>,
     ) -> crate::Result<BatchResponse> {
         let options = options.unwrap_or_default();
+        batch.validate_resource_names(
+            self.context
+                .driver
+                .options()
+                .resource_name_validation_enabled(),
+        )?;
         let body = serde_json::to_vec(batch.operations())?;
         let driver_pk = batch.partition_key().clone();
 

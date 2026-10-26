@@ -80,6 +80,38 @@ impl TransactionalBatch {
         &self.operations
     }
 
+    pub(crate) fn validate_resource_names(&self, enabled: bool) -> crate::Result<()> {
+        if !enabled {
+            return Ok(());
+        }
+
+        for operation in &self.operations {
+            let item_id = match operation {
+                TransactionalBatchOperation::Create { resource_body, .. }
+                | TransactionalBatchOperation::Upsert { resource_body, .. } => {
+                    resource_body.get("id").and_then(serde_json::Value::as_str)
+                }
+                TransactionalBatchOperation::Replace { id, .. }
+                | TransactionalBatchOperation::Read { id, .. }
+                | TransactionalBatchOperation::Delete { id, .. } => Some(id.as_ref()),
+            };
+
+            if item_id.is_some_and(is_unsafe_resource_name) {
+                return Err(crate::CosmosError::builder()
+                    .with_status(azure_data_cosmos_driver::error::status_codes::CLIENT_BAD_REQUEST)
+                    .with_message(
+                        "item name is unsafe for Cosmos resource addressing; names must be \
+                         non-empty and cannot contain '/', '\\', '?', '#', ASCII tab, line feed, \
+                         or carriage return, or equal '.' or '..'",
+                    )
+                    .with_source(std::io::Error::other("invalid Cosmos resource name"))
+                    .build());
+            }
+        }
+
+        Ok(())
+    }
+
     /// Adds a create operation to the batch.
     ///
     /// # Arguments
@@ -280,6 +312,14 @@ pub(crate) enum TransactionalBatchOperation {
         #[serde(skip_serializing_if = "Option::is_none")]
         if_match: Option<String>,
     },
+}
+
+fn is_unsafe_resource_name(name: &str) -> bool {
+    name.is_empty()
+        || matches!(name, "." | "..")
+        || name
+            .bytes()
+            .any(|byte| matches!(byte, b'/' | b'\\' | b'?' | b'#' | b'\t' | b'\n' | b'\r'))
 }
 
 /// Response from executing a transactional batch.
@@ -490,5 +530,49 @@ mod tests {
         assert_eq!(serialized, expected);
 
         Ok(())
+    }
+
+    #[test]
+    fn resource_name_validation_rejects_unsafe_transactional_batch_ids() {
+        let unsafe_item = serde_json::json!({
+            "id": "../other-container",
+            "value": 42,
+        });
+
+        let batches = [
+            TransactionalBatch::new("pk")
+                .create_item(&unsafe_item)
+                .unwrap(),
+            TransactionalBatch::new("pk")
+                .upsert_item(&unsafe_item, None)
+                .unwrap(),
+            TransactionalBatch::new("pk")
+                .replace_item("../other-container", &unsafe_item, None)
+                .unwrap(),
+            TransactionalBatch::new("pk").read_item("../other-container", None),
+            TransactionalBatch::new("pk").delete_item("../other-container", None),
+        ];
+
+        for batch in batches {
+            let error = batch
+                .validate_resource_names(true)
+                .expect_err("unsafe transactional batch item names must be rejected");
+            assert_eq!(
+                error.status(),
+                azure_data_cosmos_driver::error::status_codes::CLIENT_BAD_REQUEST
+            );
+        }
+    }
+
+    #[test]
+    fn resource_name_validation_can_be_disabled_for_transactional_batches() {
+        let batch = TransactionalBatch::new("pk")
+            .create_item(serde_json::json!({ "id": "../other-container" }))
+            .unwrap()
+            .delete_item("../other-container", None);
+
+        batch
+            .validate_resource_names(false)
+            .expect("the compatibility option must allow unsafe transactional batch item names");
     }
 }

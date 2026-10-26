@@ -3013,6 +3013,7 @@ impl CosmosDriver {
                 .with_message("cannot execute a distributed transaction with zero operations")
                 .build());
         }
+        request.validate_resource_names(self.options.resource_name_validation_enabled())?;
 
         let operation_count = request.operations.len();
         let is_session_consistency = {
@@ -5171,6 +5172,90 @@ mod tests {
                 Err(error) => error,
             };
             assert_eq!(err.status(), crate::error::status_codes::CLIENT_BAD_REQUEST);
+        }
+    }
+
+    #[tokio::test]
+    async fn plan_operation_rejects_unsafe_database_and_container_names() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        let unsafe_database = epk_test_container_with_names(
+            r#"{"paths":["/pk"],"version":2}"#,
+            "../other-db",
+            "testcontainer",
+        );
+        let unsafe_container = epk_test_container_with_names(
+            r#"{"paths":["/pk"],"version":2}"#,
+            "testdb",
+            "test/container",
+        );
+
+        for operation in [
+            CosmosOperation::read_item(ItemReference::from_name(
+                &unsafe_database,
+                PartitionKey::from("pk1"),
+                "doc1",
+            )),
+            CosmosOperation::query_items(unsafe_container, Some(crate::models::FeedRange::full())),
+        ] {
+            let error = match Box::pin(driver.plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            ))
+            .await
+            {
+                Ok(_) => panic!("unsafe parent resource name must be rejected before planning"),
+                Err(error) => error,
+            };
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST
+            );
+        }
+    }
+
+    #[cfg(feature = "unstable_patch")]
+    #[tokio::test]
+    async fn patch_strategies_reject_unsafe_item_names() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        for strategy in [
+            crate::options::PatchStrategy::ClientSide,
+            crate::options::PatchStrategy::ServerSide,
+        ] {
+            let operation = CosmosOperation::patch_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../other-container",
+            ))
+            .with_body(
+                serde_json::to_vec(&crate::models::PatchInstructions::from(vec![
+                    crate::models::PatchOperation::increment("/count", 1),
+                ]))
+                .unwrap(),
+            );
+            let options = OperationOptionsBuilder::new()
+                .with_patch_strategy(strategy)
+                .build();
+
+            let error = driver
+                .execute_operation(operation, options)
+                .await
+                .expect_err("unsafe item name must be rejected for both PATCH strategies");
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST,
+                "{strategy:?}"
+            );
         }
     }
 
@@ -7665,16 +7750,38 @@ mod tests {
     }
 
     fn epk_test_container_with_rid(pk_json: &str, rid: &str) -> ContainerReference {
+        epk_test_container_with_names_and_rid(pk_json, "testdb", "testcontainer", rid)
+    }
+
+    fn epk_test_container_with_names(
+        pk_json: &str,
+        database_name: &str,
+        container_name: &str,
+    ) -> ContainerReference {
+        epk_test_container_with_names_and_rid(
+            pk_json,
+            database_name,
+            container_name,
+            "testcontainer_rid",
+        )
+    }
+
+    fn epk_test_container_with_names_and_rid(
+        pk_json: &str,
+        database_name: &str,
+        container_name: &str,
+        rid: &str,
+    ) -> ContainerReference {
         let container_props = crate::models::ContainerProperties {
-            id: "testcontainer".into(),
+            id: container_name.to_owned().into(),
             partition_key: serde_json::from_str(pk_json).unwrap(),
             system_properties: Default::default(),
         };
         ContainerReference::new(
             signed_test_account("https://test.documents.azure.com:443/"),
-            "testdb",
+            database_name.to_owned(),
             "testdb_rid",
-            "testcontainer",
+            container_name.to_owned(),
             rid.to_owned(),
             &container_props,
         )

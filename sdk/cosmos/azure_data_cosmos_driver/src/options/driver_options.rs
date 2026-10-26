@@ -150,8 +150,10 @@ impl DriverOptions {
     /// When enabled, the driver rejects empty names, dot segments, and names
     /// containing URL separators, delimiters, or control characters before
     /// request planning. This includes item names supplied to Create and Upsert
-    /// so created items remain addressable by later point operations. It does
-    /// not parse IDs from request bodies or transactional protocol fields.
+    /// so created items remain addressable by later point operations. Structured
+    /// distributed transaction targets are also validated. The driver does not
+    /// parse item IDs embedded in arbitrary request bodies, including raw
+    /// transactional batch bodies.
     ///
     /// Validation is enabled by default.
     pub fn resource_name_validation_enabled(&self) -> bool {
@@ -299,8 +301,10 @@ impl DriverOptionsBuilder {
     /// URL path construction.
     ///
     /// Validation includes item names supplied to Create and Upsert so newly
-    /// written items remain addressable by later point operations. This option
-    /// does not parse IDs from request bodies or transactional protocol fields.
+    /// written items remain addressable by later point operations. Structured
+    /// distributed transaction targets are also validated. This option does not
+    /// parse item IDs embedded in arbitrary request bodies, including raw
+    /// transactional batch bodies.
     pub fn with_resource_name_validation(mut self, enabled: bool) -> Self {
         self.resource_name_validation_enabled = enabled;
         self
