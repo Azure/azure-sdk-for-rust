@@ -7,7 +7,6 @@ use crate::{
     error::{find_link_stolen, ErrorKind, EventHubsError, Result},
     models::ReceivedEventData,
 };
-use async_lock::Mutex;
 use async_stream::try_stream;
 use azure_core::{http::Url, time::Duration};
 use azure_core_amqp::{
@@ -138,7 +137,6 @@ pub struct EventReceiver {
     connection: Arc<RecoverableConnection>,
     receiver_options: AmqpReceiverOptions,
     message_source: AmqpSource,
-    resume_position: Mutex<Option<StartPosition>>,
     source_url: Url,
     partition_id: String,
     timeout: Option<Duration>,
@@ -162,7 +160,6 @@ impl EventReceiver {
             connection,
             receiver_options,
             message_source,
-            resume_position: Mutex::new(None),
             partition_id,
             timeout,
             closed: AtomicBool::new(false),
@@ -186,8 +183,10 @@ impl EventReceiver {
     /// effect, so a [`StartLocation::Latest`] selector can skip events that arrive before a
     /// recovery attachment.
     ///
-    /// Streams created from this receiver share the resume position and receive one event
-    /// at a time. A pending receive retains its turn until it completes or its stream is dropped.
+    /// Receivers opened on the same partition of one [`ConsumerClient`](crate::ConsumerClient)
+    /// share the resume position and receive one event at a time. A pending receive retains
+    /// its turn until it completes or its stream is dropped. Progress survives recovery;
+    /// explicitly closing the receiver resets it for a subsequent receiver attachment.
     ///
     /// # Returns
     ///
@@ -248,9 +247,13 @@ impl EventReceiver {
     }
 
     async fn receive_event(&self) -> Result<ReceivedEventData> {
-        // Serialize source selection, recovery, and cursor advancement across streams.
-        // Keep the guard outside try_stream! so it is released before yielding errors too.
-        let mut resume_position = self.resume_position.lock().await;
+        // Serialize source selection, recovery, and cursor advancement across all
+        // handles using this path. Release the guard before yielding errors too.
+        let shared_position = self
+            .connection
+            .receiver_resume_position(&self.source_url)
+            .await;
+        let mut resume_position = shared_position.lock().await;
         // Check after acquiring the lock so a queued receive cannot reattach after close.
         if self.closed.load(Ordering::Acquire) {
             debug!(

@@ -1065,6 +1065,8 @@ mod tests {
         annotations: LocalAnnotations,
         /// Drop and recreate the event stream before reading resumed events.
         recreate_stream: bool,
+        /// Consume the second event through another handle before recovering the first.
+        alternate_handles: bool,
         /// Use the moving-tail semantics of the `Latest` start position.
         latest: bool,
         /// Omit annotations on the first resumed event, then retry from the known cursor.
@@ -1351,7 +1353,7 @@ mod tests {
                     ..Default::default()
                 },
                 local_source(&source_url, &start),
-                source_url,
+                source_url.clone(),
                 "0".to_string(),
                 None,
             );
@@ -1369,7 +1371,25 @@ mod tests {
             let mut stream = Box::pin(receiver.stream_events());
 
             let mut markers = vec![marker(&next_local_event(&mut stream).await)];
-            markers.push(marker(&next_local_event(&mut stream).await));
+            if config.alternate_handles {
+                let other_receiver = EventReceiver::new(
+                    connection.clone(),
+                    AmqpReceiverOptions {
+                        name: Some("receiver-other-handle".to_string()),
+                        credit_mode: Some(ReceiverCreditMode::Auto(300)),
+                        auto_accept: true,
+                        ..Default::default()
+                    },
+                    local_source(&source_url, &start),
+                    source_url,
+                    "0".to_string(),
+                    None,
+                );
+                let mut other_stream = other_receiver.stream_events();
+                markers.push(marker(&next_local_event(&mut other_stream).await));
+            } else {
+                markers.push(marker(&next_local_event(&mut stream).await));
+            }
             assert_eq!(markers, [1, 2]);
             let initial_selector = timeout(LOCAL_PEER_TIMEOUT, observed_selectors.recv())
                 .await
@@ -1480,6 +1500,7 @@ mod tests {
                 recovery: LocalRecoveryKind::Link,
                 annotations: LocalAnnotations::OffsetAndSequence,
                 recreate_stream: false,
+                alternate_handles: false,
                 latest: false,
                 missing_after_known_offset: false,
             },
@@ -1498,6 +1519,7 @@ mod tests {
                 recovery: LocalRecoveryKind::Session,
                 annotations: LocalAnnotations::OffsetAndSequence,
                 recreate_stream: true,
+                alternate_handles: false,
                 latest: false,
                 missing_after_known_offset: false,
             },
@@ -1516,6 +1538,7 @@ mod tests {
                 recovery: LocalRecoveryKind::Connection,
                 annotations: LocalAnnotations::OffsetAndSequence,
                 recreate_stream: false,
+                alternate_handles: false,
                 latest: false,
                 missing_after_known_offset: false,
             },
@@ -1534,6 +1557,7 @@ mod tests {
                 recovery: LocalRecoveryKind::Connection,
                 annotations: LocalAnnotations::SequenceOnly,
                 recreate_stream: true,
+                alternate_handles: false,
                 latest: false,
                 missing_after_known_offset: false,
             },
@@ -1552,6 +1576,7 @@ mod tests {
                 recovery: LocalRecoveryKind::Link,
                 annotations: LocalAnnotations::OffsetAndSequence,
                 recreate_stream: false,
+                alternate_handles: false,
                 latest: false,
                 missing_after_known_offset: true,
             },
@@ -1570,6 +1595,7 @@ mod tests {
                 recovery: LocalRecoveryKind::Session,
                 annotations: LocalAnnotations::OffsetAndSequence,
                 recreate_stream: false,
+                alternate_handles: false,
                 latest: true,
                 missing_after_known_offset: false,
             },
@@ -1579,20 +1605,70 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn receiver_recovery_local_alternating_handles() {
+        for recovery in [
+            LocalRecoveryKind::Link,
+            LocalRecoveryKind::Session,
+            LocalRecoveryKind::Connection,
+        ] {
+            for start in [
+                StartPosition::default(),
+                StartPosition {
+                    location: StartLocation::Offset("0".to_string()),
+                    inclusive: true,
+                },
+            ] {
+                run_local_recovery(
+                    LocalPeerConfig {
+                        recovery,
+                        annotations: LocalAnnotations::OffsetAndSequence,
+                        recreate_stream: false,
+                        alternate_handles: true,
+                        latest: matches!(start.location, StartLocation::Latest),
+                        missing_after_known_offset: false,
+                    },
+                    start,
+                )
+                .await;
+            }
+        }
+    }
+
+    #[tokio::test]
     async fn receiver_recovery_local_concurrent_latest() {
-        run_concurrent_local_recovery(StartPosition::default()).await;
+        run_concurrent_local_recovery(StartPosition::default(), false).await;
     }
 
     #[tokio::test]
     async fn receiver_recovery_local_concurrent_explicit_offset() {
-        run_concurrent_local_recovery(StartPosition {
-            location: StartLocation::Offset("0".to_string()),
-            inclusive: true,
-        })
+        run_concurrent_local_recovery(
+            StartPosition {
+                location: StartLocation::Offset("0".to_string()),
+                inclusive: true,
+            },
+            false,
+        )
         .await;
     }
 
-    async fn run_concurrent_local_recovery(start: StartPosition) {
+    #[tokio::test]
+    async fn receiver_recovery_local_separate_handles_latest() {
+        run_concurrent_local_recovery(StartPosition::default(), true).await;
+    }
+
+    #[tokio::test]
+    async fn receiver_recovery_local_separate_handles_explicit_offset() {
+        run_concurrent_local_recovery(
+            StartPosition {
+                location: StartLocation::Offset("0".to_string()),
+                inclusive: true,
+            },
+            true,
+        )
+        .await;
+    }
+
+    async fn run_concurrent_local_recovery(start: StartPosition, separate_handles: bool) {
         timeout(StdDuration::from_secs(15), async {
             let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
             let address = listener.local_addr().unwrap();
@@ -1624,6 +1700,14 @@ mod tests {
                 ..Default::default()
             };
             let receiver = EventReceiver::new(
+                connection.clone(),
+                options.clone(),
+                source.clone(),
+                source_url.clone(),
+                "0".to_string(),
+                None,
+            );
+            let other_receiver = EventReceiver::new(
                 connection.clone(),
                 options.clone(),
                 source.clone(),
@@ -1713,7 +1797,11 @@ mod tests {
             drop(canceled);
 
             let mut first = receiver.stream_events();
-            let mut second = receiver.stream_events();
+            let mut second = if separate_handles {
+                other_receiver.stream_events()
+            } else {
+                receiver.stream_events()
+            };
             assert!(futures::poll!(first.next()).is_pending());
             assert!(futures::poll!(second.next()).is_pending());
             // A canceled waiter must not prevent the other streams from advancing.
