@@ -5,7 +5,7 @@
 ### Features Added
 
 - Added `cloud::resource_manager::Audience` behind the `resource_manager` feature as the shared audience marker for Azure Resource Manager clients.
-- Added `CloudConfigurationExt::audience`, `CloudConfigurationExt::default_scope`, and `CloudConfigurationExt::endpoint` behind the `resource_manager` feature to get authentication audiences, default credential scopes, and management endpoints for known and custom clouds. `cloud::resource_manager::CloudConfigurationExt` is implemented for `CloudConfiguration` when the `resource_manager` feature is enabled.
+- Added `CloudConfigurationExt::audience`, `CloudConfigurationExt::default_scope`, and `CloudConfigurationExt::endpoint` behind the `resource_manager` feature to get authentication audiences, default credential scopes matching Azure CLI, and management endpoints for known and custom clouds. `cloud::resource_manager::CloudConfigurationExt` is implemented for `CloudConfiguration` when the `resource_manager` feature is enabled.
 - Added `CustomConfiguration::endpoint` behind the `resource_manager` feature to configure Azure Resource Manager endpoints.
 - Added `resource_manager` feature to support Azure Resource Manager-specific functionality.
 - Added `http::poller::resource_manager::{new_poller, PollerOptions, FinalStateVia}` behind the `resource_manager` feature for Resource Manager polling with optional final-state selection, method- and response-based fallbacks, and a callback for inline operation-location results.

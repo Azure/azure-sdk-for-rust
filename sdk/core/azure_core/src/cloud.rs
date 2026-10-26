@@ -92,21 +92,22 @@ impl Audiences {
     }
 }
 
-/// Cloud configuration for Azure Resource Manager (ARM).
+/// Cloud configuration for Azure Resource Manager.
 #[cfg(feature = "resourcemanager")]
 pub mod resourcemanager {
     use super::{CloudConfiguration, CustomConfiguration};
     use std::borrow::Cow;
 
-    /// Marker type for Azure Resource Manager (ARM) audience configuration.
+    /// Marker type for Azure Resource Manager audience configuration.
     #[allow(missing_debug_implementations)]
     pub struct Audience;
 
-    /// Helper functions for Azure Resource Manager (ARM) client libraries.
+    /// Helper functions for Azure Resource Manager client libraries.
     pub trait CloudConfigurationExt: crate::private::Sealed {
-        /// Gets the Azure Resource Manager (ARM) authority.
+        /// Gets the Azure Resource Manager authentication audience.
         ///
-        /// For [`CloudConfiguration::Custom`] this returns and audience from [`CustomConfiguration::audiences`] using [`Audience`].
+        /// Known clouds use the same resource IDs as Azure CLI, including the trailing slash.
+        /// For [`CloudConfiguration::Custom`], this returns the audience from [`CustomConfiguration::audiences`] using [`Audience`].
         ///
         /// # Errors
         ///
@@ -125,7 +126,7 @@ pub mod resourcemanager {
         /// let cloud = CloudConfiguration::AzurePublic;
         /// assert!(matches!(
         ///     cloud.audience(),
-        ///     Ok(audience) if audience == "https://management.azure.com",
+        ///     Ok(audience) if audience == "https://management.core.windows.net/",
         /// ));
         /// ```
         ///
@@ -148,7 +149,10 @@ pub mod resourcemanager {
         /// ```
         fn audience(&self) -> crate::Result<&str>;
 
-        /// Gets the default Azure Resource Manager (ARM) credential scope.
+        /// Gets the default Azure Resource Manager credential scope.
+        ///
+        /// Appends `/.default` to the authentication audience without removing a trailing slash.
+        /// Known-cloud scopes end in `//.default` to match Azure CLI token cache keys.
         ///
         /// # Errors
         ///
@@ -167,7 +171,7 @@ pub mod resourcemanager {
         /// let cloud = CloudConfiguration::AzurePublic;
         /// assert!(matches!(
         ///     cloud.default_scope(),
-        ///     Ok(scope) if &scope == "https://management.azure.com/.default",
+        ///     Ok(scope) if &scope == "https://management.core.windows.net//.default",
         /// ));
         /// ```
         ///
@@ -190,7 +194,7 @@ pub mod resourcemanager {
         /// ```
         fn default_scope(&self) -> crate::Result<Cow<'static, str>>;
 
-        /// Gets the Azure Resource Manager (ARM) endpoint.
+        /// Gets the Azure Resource Manager endpoint.
         ///
         /// For [`CloudConfiguration::Custom`] this returns [`CustomConfiguration::endpoint`].
         fn endpoint(&self) -> Option<&str>;
@@ -199,21 +203,24 @@ pub mod resourcemanager {
     impl CloudConfigurationExt for CloudConfiguration {
         fn audience(&self) -> crate::Result<&str> {
             match self {
-                Self::AzurePublic => Ok("https://management.azure.com"),
-                Self::AzureGovernment => Ok("https://management.usgovcloudapi.net"),
-                Self::AzureChina => Ok("https://management.chinacloudapi.cn"),
+                Self::AzurePublic => Ok("https://management.core.windows.net/"),
+                Self::AzureGovernment => Ok("https://management.core.usgovcloudapi.net/"),
+                Self::AzureChina => Ok("https://management.core.chinacloudapi.cn/"),
                 Self::Custom(custom) => custom.audience::<Audience>(),
             }
         }
 
         fn default_scope(&self) -> crate::Result<Cow<'static, str>> {
+            // Preserve the audience's trailing slash to match Azure CLI token cache keys.
             match self {
-                Self::AzurePublic => Ok(Cow::Borrowed("https://management.azure.com/.default")),
+                Self::AzurePublic => Ok(Cow::Borrowed(
+                    "https://management.core.windows.net//.default",
+                )),
                 Self::AzureGovernment => Ok(Cow::Borrowed(
-                    "https://management.usgovcloudapi.net/.default",
+                    "https://management.core.usgovcloudapi.net//.default",
                 )),
                 Self::AzureChina => Ok(Cow::Borrowed(
-                    "https://management.chinacloudapi.cn/.default",
+                    "https://management.core.chinacloudapi.cn//.default",
                 )),
                 Self::Custom(custom) => custom
                     .audience::<Audience>()
@@ -248,7 +255,78 @@ pub mod resourcemanager {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "resourcemanager")]
+    use super::resourcemanager::{Audience, CloudConfigurationExt};
     use super::{Audiences, CloudConfiguration, CustomConfiguration};
+    #[cfg(feature = "resourcemanager")]
+    use crate::error::ErrorKind;
+    #[cfg(feature = "resourcemanager")]
+    use std::borrow::Cow;
+
+    #[test]
+    #[cfg(feature = "resourcemanager")]
+    fn resource_manager_known_clouds() {
+        for (cloud, audience, scope, endpoint) in [
+            (
+                CloudConfiguration::AzurePublic,
+                "https://management.core.windows.net/",
+                "https://management.core.windows.net//.default",
+                "https://management.azure.com",
+            ),
+            (
+                CloudConfiguration::AzureGovernment,
+                "https://management.core.usgovcloudapi.net/",
+                "https://management.core.usgovcloudapi.net//.default",
+                "https://management.usgovcloudapi.net",
+            ),
+            (
+                CloudConfiguration::AzureChina,
+                "https://management.core.chinacloudapi.cn/",
+                "https://management.core.chinacloudapi.cn//.default",
+                "https://management.chinacloudapi.cn",
+            ),
+        ] {
+            assert_eq!(cloud.audience().unwrap(), audience);
+            assert!(
+                matches!(cloud.default_scope().unwrap(), Cow::Borrowed(value) if value == scope)
+            );
+            assert_eq!(cloud.endpoint(), Some(endpoint));
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "resourcemanager")]
+    fn resource_manager_custom_cloud() {
+        for audience in [
+            "https://service.mycloud.local",
+            "https://service.mycloud.local/",
+        ] {
+            let mut custom = CustomConfiguration::default();
+            custom.audiences = Audiences::new().with::<Audience>(audience.to_string());
+            custom.endpoint = Some("https://management.mycloud.local".to_string());
+            let cloud: CloudConfiguration = custom.into();
+
+            assert_eq!(cloud.audience().unwrap(), audience);
+            assert_eq!(
+                cloud.default_scope().unwrap(),
+                format!("{audience}/.default")
+            );
+            assert_eq!(cloud.endpoint(), Some("https://management.mycloud.local"));
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "resourcemanager")]
+    fn resource_manager_missing_custom_audience() {
+        let cloud: CloudConfiguration = CustomConfiguration::default().into();
+
+        assert_eq!(cloud.audience().unwrap_err().kind(), &ErrorKind::Credential);
+        assert_eq!(
+            cloud.default_scope().unwrap_err().kind(),
+            &ErrorKind::Credential
+        );
+        assert_eq!(cloud.endpoint(), None);
+    }
 
     #[test]
     fn custom() {
