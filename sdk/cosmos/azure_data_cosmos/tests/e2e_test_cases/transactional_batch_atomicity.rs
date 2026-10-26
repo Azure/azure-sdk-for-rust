@@ -48,6 +48,45 @@ async fn batch_success_and_failure_are_atomic() -> TestResult {
             .expect("batch read must return the committed item");
         assert_eq!(read_in_batch, committed);
 
+        let read_only = fixture
+            .container
+            .execute_transactional_batch(
+                TransactionalBatch::new("A").read_item(committed.id.clone(), None),
+                None,
+            )
+            .await?
+            .into_model()?;
+        assert_eq!(read_only.results().len(), 1);
+        assert_eq!(read_only.results()[0].status_code(), 200);
+        assert_eq!(
+            read_only.results()[0].into_model::<Item>()?,
+            Some(committed)
+        );
+
+        let committed = item("committed", "A", 3);
+        let update = fixture
+            .container
+            .execute_transactional_batch(
+                TransactionalBatch::new("A")
+                    .upsert_item(&committed, None)?
+                    .read_item(committed.id.clone(), None),
+                None,
+            )
+            .await?
+            .into_model()?;
+        assert_eq!(
+            update
+                .results()
+                .iter()
+                .map(|result| result.status_code())
+                .collect::<Vec<_>>(),
+            [200, 200]
+        );
+        assert_eq!(
+            update.results()[1].into_model::<Item>()?,
+            Some(committed.clone())
+        );
+
         let rolled_back = item("rolled-back", "A", 2);
         let failing = TransactionalBatch::new("A")
             .create_item(&rolled_back)?

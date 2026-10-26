@@ -1,10 +1,8 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.1.0-beta.2 (Unreleased)
 
 ### Features Added
-
-- Single-partition queries are now eligible for cross-region hedging, bounding tail latency on a degraded region at the cost of a second request on pages that exceed the hedge threshold. Cross-partition queries are not yet hedged. ([#5452](https://github.com/Azure/azure-sdk-for-rust/pull/5452))
 
 ### Breaking Changes
 
@@ -14,15 +12,31 @@
 ### Bugs Fixed
 
 - Replace stale change-feed start headers, retain starts and polling positions in checkpoints, and preserve hierarchical-prefix leaf bounds on both gateway transports. Invalid keyed change feeds return errors instead of panicking during planning. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- Preserve Gateway 2.0 batch atomicity and continue-on-error controls, preventing partial commits in failed transactional batches. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
+- Correct partition-local session-token scoping across classic Gateway and Gateway 2.0, including explicit compound tokens with automatic capture disabled, while retaining safe fallback for missing or stale topology. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
+- Preserve query and feed EPK filters and avoid conflicting hierarchical partition-key selectors across gateways, regional retries, and continuation requests. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
+- Retry transient account-discovery I/O failures within a bounded budget, including uncertain send outcomes. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
+
+### Other Changes
+
+- Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+
+## 1.1.0-beta.1 (2026-10-22)
+
+### Features Added
+
+- Single-partition queries are now eligible for cross-region hedging, bounding tail latency on a degraded region at the cost of a second request on pages that exceed the hedge threshold. Cross-partition queries are not yet hedged. ([#5452](https://github.com/Azure/azure-sdk-for-rust/pull/5452))
+- Added layered `OperationOptions::utf8_decoding_mode` for opt-in lossy recovery of invalid UTF-8 in response JSON strings, with strict decoding by default and a recovery indicator in `DiagnosticsContext`. ([#5367](https://github.com/Azure/azure-sdk-for-rust/issues/5367))
+
+### Bugs Fixed
+
+- Route the retry after a failed cross-region hedge race that observed `404/1002` to the write region on single-write accounts, instead of another read region that rejects the hub-only request with `403/3`. ([#5466](https://github.com/Azure/azure-sdk-for-rust/pull/5466))
+- Cache the partition's hub region when a hedged read that sent the hub-only header succeeds, so later hub-only reads of that partition skip hub discovery. ([#5466](https://github.com/Azure/azure-sdk-for-rust/pull/5466))
 - Avoid unnecessary routing-state copies for hedge feedback and unchanged partition transitions, and skip hedge feedback when the effective partition circuit breaker is disabled without disabling transport hedging. ([#5438](https://github.com/Azure/azure-sdk-for-rust/pull/5438))
 - Share immutable partition routing state across snapshot refreshes instead of copying its maps, while preserving older snapshots for active readers. ([#5438](https://github.com/Azure/azure-sdk-for-rust/pull/5438))
 - Avoid loading partition topology for lazy-mode logical-key operations unless partition-level failover or Gateway 2.0 session-token scoping requires it. ([#5431](https://github.com/Azure/azure-sdk-for-rust/pull/5431))
 - Keep CPU sampling active while runtime or diagnostics handles remain alive. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
 - Preserve bounded diagnostic history through partition split recovery, query buffering, and terminal `500/20206` errors. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
-
-### Other Changes
-
-- Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 
 ## 1.0.0 (2026-10-08)
 
