@@ -18,7 +18,7 @@ use azure_core::{error::ErrorKind as AzureErrorKind, time::Duration, Error};
 use futures::{
     channel::mpsc::{channel, Receiver, Sender},
     future::join_all,
-    SinkExt, StreamExt,
+    pin_mut, select_biased, FutureExt, SinkExt, StreamExt,
 };
 use std::{
     sync::{
@@ -34,6 +34,10 @@ use tracing::{debug, error, info, warn};
 // SDKs. `0` is itself an exclusive epoch (a new receiver-at-0 displaces a
 // prior receiver-at-0), which is how the processor detects steals.
 const PROCESSOR_OWNER_LEVEL: i64 = 0;
+
+// Give best-effort shutdown cleanup the same 60-second budget as the default
+// operation retry policy. One budget covers detach, claims, and ownership release.
+const STOP_CLEANUP_TIMEOUT: Duration = Duration::seconds(60);
 
 /// Represents the event processor responsible for processing events
 /// from Event Hub partitions.
@@ -387,13 +391,21 @@ impl EventProcessor {
     /// still holds. Pending reads are canceled, and
     /// [`PartitionClient::stream_events()`] yields
     /// [`ErrorKind::ConsumerDisconnected`](crate::error::ErrorKind::ConsumerDisconnected)
-    /// when next polled. The call then releases the
-    /// ownership records of this instance after any pending ownership claims
-    /// complete, so that another instance can claim
-    /// those partitions immediately, without a wait for the expiration.
+    /// when next polled.
     ///
-    /// A failure to release the ownership records does not fail the call. The
-    /// records expire on their own if the release fails.
+    /// Cleanup performs network I/O to detach receivers and release this
+    /// instance's ownership records. Detach, waiting for pending ownership
+    /// claims, and ownership release share a 60-second timeout. Successful
+    /// release lets another instance claim the partitions without waiting for
+    /// ownership expiration. Cleanup failures and timeout are logged and do
+    /// not fail this call; ownership records that remain expire normally.
+    ///
+    /// The timeout starts after this call acquires exclusive access to the
+    /// processor's start/stop state. Concurrent shutdown calls wait their turn
+    /// before starting cleanup. The timeout requires asynchronous work to yield;
+    /// it cannot interrupt blocking checkpoint-store code. It does not cancel an
+    /// ownership claim already running in [`run()`](Self::run), which may finish
+    /// after this call returns. Wait for `run()` to finish before restarting.
     ///
     /// [`close()`](Self::close) is a superset of this call: it
     /// consumes the processor, and it also drains the queued partition clients
@@ -421,10 +433,27 @@ impl EventProcessor {
             *is_running = false;
         }
 
-        self.consumers.close_all_receivers().await?;
-        let _claims = self.load_balancer.lock().await;
-        self.release_ownerships().await;
-        Ok(())
+        let cleanup = async {
+            self.consumers.close_all_receivers().await?;
+            // This is a barrier for an outstanding claim, not a lock protecting
+            // release. The stopped state and lifecycle lock prevent new claims.
+            drop(self.load_balancer.lock().await);
+            self.release_ownerships().await;
+            Ok(())
+        }
+        .fuse();
+        let deadline = azure_core::sleep::sleep(STOP_CLEANUP_TIMEOUT).fuse();
+        pin_mut!(cleanup, deadline);
+        select_biased! {
+            // Poll cleanup first: close_all_receivers synchronously stops every
+            // client's delivery before its first network await. Timeout can then
+            // safely drop the remaining cleanup without reopening any client.
+            result = cleanup => result,
+            _ = deadline => {
+                warn!("Event processor shutdown cleanup timed out; remaining ownerships will expire.");
+                Ok(())
+            }
+        }
     }
 
     /// Releases the ownership records that this instance owns.
@@ -518,7 +547,7 @@ impl EventProcessor {
                 })?
         };
         if self.is_shutdown()? {
-            // Stop releases all completed claims while holding the same lock.
+            // Stop waits for completed claims before attempting their release.
             return Ok(());
         }
 
@@ -715,7 +744,8 @@ impl EventProcessor {
     ///
     /// The call runs the same stop path as
     /// [`shutdown()`](Self::shutdown), and it also drains the queued
-    /// partition clients and closes the consumer client.
+    /// partition clients and closes the consumer client. The shutdown cleanup
+    /// timeout does not cover this additional work.
     pub async fn close(self) -> Result<()> {
         // Stop the delivery and release the ownership first, then continue
         // with the close: a failure here must not leave the connection open.
@@ -1318,6 +1348,192 @@ mod tests {
             ownership.owner_id.is_none(),
             "shutdown must release the completed claim"
         );
+    }
+
+    /// Hangs either the ownership listing or the release write, while allowing
+    /// the test to seed ownership through the normal claim operation.
+    struct PendingReleaseStore {
+        inner: InMemoryCheckpointStore,
+        pending_list: bool,
+    }
+
+    #[async_trait::async_trait]
+    impl CheckpointStore for PendingReleaseStore {
+        async fn claim_ownership(
+            &self,
+            ownerships: &[Ownership],
+        ) -> azure_core::Result<Vec<Ownership>> {
+            if ownerships
+                .iter()
+                .any(|ownership| ownership.owner_id.is_none())
+            {
+                return std::future::pending().await;
+            }
+            self.inner.claim_ownership(ownerships).await
+        }
+
+        async fn list_checkpoints(
+            &self,
+            namespace: &str,
+            hub: &str,
+            group: &str,
+        ) -> azure_core::Result<Vec<Checkpoint>> {
+            self.inner.list_checkpoints(namespace, hub, group).await
+        }
+
+        async fn list_ownerships(
+            &self,
+            namespace: &str,
+            hub: &str,
+            group: &str,
+        ) -> azure_core::Result<Vec<Ownership>> {
+            if self.pending_list {
+                return std::future::pending().await;
+            }
+            self.inner.list_ownerships(namespace, hub, group).await
+        }
+
+        async fn update_checkpoint(&self, checkpoint: Checkpoint) -> azure_core::Result<()> {
+            self.inner.update_checkpoint(checkpoint).await
+        }
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn shutdown_bounds_pending_ownership_release() {
+        for pending_list in [true, false] {
+            let store = Arc::new(PendingReleaseStore {
+                inner: InMemoryCheckpointStore::new(),
+                pending_list,
+            });
+            let (processor, consumers) =
+                processor_with_queued_clients_and_store(&["0"], store.clone()).await;
+            claim_for(&processor, "0", &processor.client_details.client_id).await;
+            let client = strong_client(&consumers, "0");
+            install_offline_receiver(&client, "0");
+            let mut shutdown = std::pin::pin!(processor.shutdown());
+            assert!(poll!(shutdown.as_mut()).is_pending());
+            assert_stream_stops(&client, "0").await;
+            tokio::time::advance(std::time::Duration::from_secs(59)).await;
+            assert!(poll!(shutdown.as_mut()).is_pending());
+            tokio::time::advance(std::time::Duration::from_secs(1)).await;
+            assert!(matches!(
+                poll!(shutdown.as_mut()),
+                std::task::Poll::Ready(Ok(()))
+            ));
+            // Cleanup timeout must leave no lifecycle lock behind.
+            assert!(processor.lifecycle_lock.try_lock().is_some());
+        }
+    }
+
+    #[tokio::test]
+    async fn stopped_dispatch_does_not_wait_for_ownership_release() {
+        let store = Arc::new(PendingReleaseStore {
+            inner: InMemoryCheckpointStore::new(),
+            pending_list: false,
+        });
+        let (processor, consumers) = processor_with_queued_clients_and_store(&["0"], store).await;
+        claim_for(&processor, "0", &processor.client_details.client_id).await;
+        let mut shutdown = std::pin::pin!(processor.shutdown());
+        assert!(poll!(shutdown.as_mut()).is_pending());
+        let mut dispatch = std::pin::pin!(processor.dispatch(&["0"], &consumers));
+        assert!(
+            matches!(poll!(dispatch.as_mut()), std::task::Poll::Ready(Ok(()))),
+            "a stopped dispatch must finish while the release write is still pending"
+        );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn shutdown_bounds_pending_ownership_claim() {
+        let (started, claiming) = oneshot::channel();
+        let (finish, delayed) = oneshot::channel();
+        let store = Arc::new(DelayedClaimStore {
+            inner: InMemoryCheckpointStore::new(),
+            started: Mutex::new(Some(started)),
+            finish: async_lock::Mutex::new(Some(delayed)),
+        });
+        let (mut processor, _consumers) =
+            processor_with_queued_clients_and_store(&["0"], store).await;
+        Arc::get_mut(&mut processor).unwrap().update_interval = Duration::milliseconds(1);
+        drain_partition_client_queue(&processor).await;
+        let running_processor = processor.clone();
+        let running = tokio::spawn(async move { running_processor.run().await });
+        claiming.await.unwrap();
+        let mut shutdown = std::pin::pin!(processor.shutdown());
+        assert!(poll!(shutdown.as_mut()).is_pending());
+        tokio::time::advance(std::time::Duration::from_secs(60)).await;
+        assert!(matches!(
+            poll!(shutdown.as_mut()),
+            std::task::Poll::Ready(Ok(()))
+        ));
+        assert!(
+            !running.is_finished(),
+            "shutdown cannot cancel a running claim"
+        );
+        finish.send(()).unwrap();
+        running.await.unwrap().unwrap();
+        let ownership =
+            ownership_for(&processor.checkpoint_store, &processor.client_details, "0").await;
+        assert_eq!(
+            ownership.owner_id.as_deref(),
+            Some(processor.client_details.client_id.as_str()),
+            "a claim completed after timeout is left to expire"
+        );
+        assert!(processor
+            .next_partition_clients
+            .lock()
+            .await
+            .try_recv()
+            .is_err());
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn shutdown_bounds_stalled_receiver_detach() {
+        let (processor, consumers) = processor_with_queued_clients(&["0", "1"]).await;
+        let zero = strong_client(&consumers, "0");
+        let one = strong_client(&consumers, "1");
+        let (receiver, closing, finish) = receiver_with_delayed_close("0");
+        zero.set_event_receiver(receiver).unwrap();
+        install_offline_receiver(&one, "1");
+        let mut shutdown = std::pin::pin!(processor.shutdown());
+        assert!(poll!(shutdown.as_mut()).is_pending());
+        closing.await.unwrap();
+        tokio::time::advance(std::time::Duration::from_secs(60)).await;
+        assert!(matches!(
+            poll!(shutdown.as_mut()),
+            std::task::Poll::Ready(Ok(()))
+        ));
+        assert_stream_stops(&zero, "0").await;
+        assert_stream_stops(&one, "1").await;
+        assert!(
+            finish.is_canceled(),
+            "timeout must drop the pending detach future"
+        );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn shutdown_shares_cleanup_budget_between_detach_and_release() {
+        let store = Arc::new(PendingReleaseStore {
+            inner: InMemoryCheckpointStore::new(),
+            pending_list: false,
+        });
+        let (processor, consumers) = processor_with_queued_clients_and_store(&["0"], store).await;
+        claim_for(&processor, "0", &processor.client_details.client_id).await;
+        let client = strong_client(&consumers, "0");
+        let (receiver, closing, finish) = receiver_with_delayed_close("0");
+        client.set_event_receiver(receiver).unwrap();
+        let mut shutdown = std::pin::pin!(processor.shutdown());
+        assert!(poll!(shutdown.as_mut()).is_pending());
+        closing.await.unwrap();
+        tokio::time::advance(std::time::Duration::from_secs(30)).await;
+        finish.send(()).unwrap();
+        assert!(poll!(shutdown.as_mut()).is_pending());
+        tokio::time::advance(std::time::Duration::from_secs(29)).await;
+        assert!(poll!(shutdown.as_mut()).is_pending());
+        tokio::time::advance(std::time::Duration::from_secs(1)).await;
+        assert!(matches!(
+            poll!(shutdown.as_mut()),
+            std::task::Poll::Ready(Ok(()))
+        ));
     }
 
     #[tokio::test]
