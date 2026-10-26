@@ -163,7 +163,9 @@ extends:
     # PreTestRunSteps resolves the account selected by each matrix leg's
     # AccountSelector from the rust-ci secret, in place of
     # ARM deployment (DisableAzureResourceCreation: true is set automatically for
-    # this leg by archetype-sdk-client.yml).
+    # this leg by archetype-sdk-client.yml). These key-authenticated jobs do not
+    # construct a resource manager; their databases and containers continue to
+    # be created through the Cosmos data plane with the fixed account key.
     #
     # Unlike per-run ARM-deployed accounts there is no resource-group teardown after
     # each run, so per-run test databases (test-db-<run-id>) from cancelled/crashed
@@ -193,7 +195,7 @@ extends:
       # Binary encoding and partition merge require fresh, dedicated accounts
       # but authenticate exclusively with the federated pipeline identity. The
       # resource template disables local auth, grants Cosmos data-plane RBAC,
-      # and the tests use their typed ARM helper for resource lifecycle.
+      # and the tests use their Azure CLI resource manager for lifecycle.
       #
       # Partition merge intentionally stays on this per-run ARM path rather
       # than FixedAccountMatrixConfigs: the fixed-account generator forces
@@ -207,11 +209,11 @@ extends:
       # (data-plane) client authenticated via Entra ID (AAD) instead of the
       # account key. `AZURE_COSMOS_AUTH_MODE=aad` surfaces as a job env var and
       # is read by the test framework (tests/framework/test_client.rs), which
-      # then uses AAD for data-plane operations and the typed ARM test helper for
-      # database, container, and throughput lifecycle. Local authentication is
-      # disabled on every account in this matrix, proving no account-key fallback
-      # is possible. Pinned to a single consistency config on Linux to bound
-      # live-account cost.
+      # then uses AAD for data-plane operations and the Azure CLI resource
+      # manager for database, container, and throughput lifecycle. Local
+      # authentication is disabled on every account in this matrix, proving no
+      # account-key fallback is possible. Pinned to a single consistency config
+      # on Linux to bound live-account cost.
       - Name: Cosmos_live_test_aad
         Path: sdk/cosmos/live-aad-platform-matrix.json
         Selection: all

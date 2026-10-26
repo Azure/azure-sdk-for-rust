@@ -87,8 +87,8 @@ async fn driver_operations_work_after_backup_boot() -> Result<(), Box<dyn Error>
         "backup-test-{}",
         uuid::Uuid::new_v4().to_string()[..8].to_owned()
     );
-    if let Some(arm_client) = &env.arm_client {
-        arm_client.create_database(&db_name).await?;
+    if let Some(resource_manager) = &env.resource_manager {
+        resource_manager.create_database(&db_name).await?;
     } else {
         let body = format!(r#"{{"id": "{}"}}"#, db_name);
         let operation =
@@ -112,8 +112,8 @@ async fn driver_operations_work_after_backup_boot() -> Result<(), Box<dyn Error>
         result.err()
     );
 
-    if let Some(arm_client) = &env.arm_client {
-        arm_client.delete_database(&db_name).await?;
+    if let Some(resource_manager) = &env.resource_manager {
+        resource_manager.delete_database(&db_name).await?;
     } else {
         driver
             .execute_singleton_operation(

@@ -38,18 +38,18 @@ mod framework;
 
 use framework::{
     probe_driver_data_plane_ready, resolve_driver_container_ready, resolve_test_env,
-    CosmosArmClient,
+    CosmosResourceManager,
 };
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct ArmContainerResource<'a> {
+struct ManagementContainerResource<'a> {
     id: &'a str,
-    partition_key: ArmPartitionKey<'a>,
+    partition_key: ManagementPartitionKey<'a>,
 }
 
 #[derive(Serialize)]
-struct ArmPartitionKey<'a> {
+struct ManagementPartitionKey<'a> {
     paths: [&'a str; 1],
     kind: &'a str,
     version: u8,
@@ -278,12 +278,12 @@ fn assert_final_request_left_faulted_region(response: &CosmosResponse, faulted_r
     );
 }
 
-/// Creates a fresh DB + container, using ARM for federated live accounts.
+/// Creates a fresh DB + container using external management for federated live accounts.
 /// Caller is responsible for cleanup via [`delete_database`].
 async fn create_unique_db_and_container(
     runtime: &Arc<CosmosDriverRuntime>,
     account: &AccountReference,
-    arm_client: Option<&CosmosArmClient>,
+    resource_manager: Option<&dyn CosmosResourceManager>,
 ) -> Result<(DatabaseReference, ContainerReference), Box<dyn Error>> {
     let driver = runtime
         .create_driver(DriverOptions::builder(account.clone()).build())
@@ -292,20 +292,20 @@ async fn create_unique_db_and_container(
     let container_name = "c".to_string();
 
     let db_ref = DatabaseReference::from_name(account.clone(), db_name.clone());
-    if let Some(arm_client) = arm_client {
-        arm_client.create_database(&db_name).await?;
-        arm_client
+    if let Some(resource_manager) = resource_manager {
+        resource_manager.create_database(&db_name).await?;
+        resource_manager
             .create_or_update_container(
                 &db_name,
                 &container_name,
-                &ArmContainerResource {
+                &serde_json::to_value(ManagementContainerResource {
                     id: &container_name,
-                    partition_key: ArmPartitionKey {
+                    partition_key: ManagementPartitionKey {
                         paths: ["/pk"],
                         kind: "Hash",
                         version: 2,
                     },
-                },
+                })?,
                 None,
             )
             .await?;
@@ -337,7 +337,7 @@ async fn create_unique_db_and_container(
         }
     }
 
-    let container_ref = if arm_client.is_some() {
+    let container_ref = if resource_manager.is_some() {
         let container = resolve_driver_container_ready(&driver, &db_name, &container_name).await?;
         probe_driver_data_plane_ready(&driver, &container, 1).await?;
         container
@@ -354,10 +354,10 @@ async fn delete_database(
     runtime: &Arc<CosmosDriverRuntime>,
     account: &AccountReference,
     db: &DatabaseReference,
-    arm_client: Option<&CosmosArmClient>,
+    resource_manager: Option<&dyn CosmosResourceManager>,
 ) {
-    if let (Some(arm_client), Some(database_name)) = (arm_client, db.name()) {
-        let _ = arm_client.delete_database(database_name).await;
+    if let (Some(resource_manager), Some(database_name)) = (resource_manager, db.name()) {
+        let _ = resource_manager.delete_database(database_name).await;
         return;
     }
 
@@ -563,11 +563,11 @@ async fn excluded_regions_honored_end_to_end() -> Result<(), Box<dyn Error>> {
         return Ok(());
     };
     let account = env.account;
-    let arm_client = env.arm_client;
+    let resource_manager = env.resource_manager;
 
     let runtime = CosmosDriverRuntime::builder().build().await?;
     let (db_ref, container_ref) =
-        create_unique_db_and_container(&runtime, &account, arm_client.as_ref()).await?;
+        create_unique_db_and_container(&runtime, &account, resource_manager.as_deref()).await?;
 
     let all_regions = [HUB_REGION, SATELLITE_REGION];
     let mut setup_err = None;
@@ -580,7 +580,7 @@ async fn excluded_regions_honored_end_to_end() -> Result<(), Box<dyn Error>> {
         }
     }
     if let Some(msg) = setup_err {
-        delete_database(&runtime, &account, &db_ref, arm_client.as_ref()).await;
+        delete_database(&runtime, &account, &db_ref, resource_manager.as_deref()).await;
         return Err(msg.into());
     }
 
@@ -617,7 +617,7 @@ async fn excluded_regions_honored_end_to_end() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    delete_database(&runtime, &account, &db_ref, arm_client.as_ref()).await;
+    delete_database(&runtime, &account, &db_ref, resource_manager.as_deref()).await;
     result
 }
 
@@ -644,13 +644,14 @@ where
         return Ok(());
     };
     let account = env.account;
-    let arm_client = env.arm_client;
+    let resource_manager = env.resource_manager;
 
     // Setup runtime: NO fault rule. Used for DB/container creation + warmup so
     // those operations are unaffected by the rule we will exercise.
     let setup_runtime = CosmosDriverRuntime::builder().build().await?;
     let (db_ref, container_ref) =
-        create_unique_db_and_container(&setup_runtime, &account, arm_client.as_ref()).await?;
+        create_unique_db_and_container(&setup_runtime, &account, resource_manager.as_deref())
+            .await?;
 
     let all_regions = [HUB_REGION, SATELLITE_REGION];
     let mut warmup_err = None;
@@ -669,7 +670,13 @@ where
         }
     }
     if let Some(msg) = warmup_err {
-        delete_database(&setup_runtime, &account, &db_ref, arm_client.as_ref()).await;
+        delete_database(
+            &setup_runtime,
+            &account,
+            &db_ref,
+            resource_manager.as_deref(),
+        )
+        .await;
         return Err(msg.into());
     }
 
@@ -694,6 +701,12 @@ where
          before the driver failed over; hit_count was 0. Test result: {result:?}"
     );
 
-    delete_database(&setup_runtime, &account, &db_ref, arm_client.as_ref()).await;
+    delete_database(
+        &setup_runtime,
+        &account,
+        &db_ref,
+        resource_manager.as_deref(),
+    )
+    .await;
     result
 }

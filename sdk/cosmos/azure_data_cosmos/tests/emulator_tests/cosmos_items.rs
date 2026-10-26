@@ -156,7 +156,7 @@ async fn create_v1_container(
 ) -> Result<ContainerClient, Box<dyn Error>> {
     let db_client = run_context.create_db().await?;
     let container_id = format!("Container-V1-{}", Uuid::new_v4());
-    if let Some(arm_client) = run_context.arm_client() {
+    if let Some(resource_manager) = run_context.resource_manager() {
         #[derive(Serialize)]
         #[serde(rename_all = "camelCase")]
         struct V1Container<'a> {
@@ -172,7 +172,7 @@ async fn create_v1_container(
 
         let database_name = db_client
             .name()
-            .ok_or("ARM-backed resource management requires a name-addressed database")?;
+            .ok_or("resource management requires a name-addressed database")?;
         let resource = V1Container {
             id: &container_id,
             partition_key: V1PartitionKey {
@@ -180,8 +180,13 @@ async fn create_v1_container(
                 kind: "Hash",
             },
         };
-        arm_client
-            .create_or_update_container(database_name, &container_id, &resource, None)
+        resource_manager
+            .create_or_update_container(
+                database_name,
+                &container_id,
+                &serde_json::to_value(resource)?,
+                None,
+            )
             .await?;
     } else {
         let connection_string = framework::resolve_connection_string()
@@ -230,7 +235,7 @@ async fn create_v1_container(
     let container_client = db_client.container_client(&container_id, None).await?;
 
     let body = container_client.read(None).await?.into_body().single()?;
-    if run_context.arm_client().is_some() {
+    if run_context.resource_manager().is_some() {
         framework::probe_data_plane_ready("version-less V1 container", &container_client, 1)
             .await?;
     }

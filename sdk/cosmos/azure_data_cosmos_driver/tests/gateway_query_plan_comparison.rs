@@ -37,7 +37,7 @@ use azure_data_cosmos_driver::CosmosDriver;
 
 use framework::{
     probe_driver_data_plane_ready, resolve_driver_container_ready, resolve_test_env,
-    CosmosArmClient,
+    resource_manager_from_env, CosmosResourceManager, ResourceManager,
 };
 
 // ─── Test infrastructure ─────────────────────────────────────────────────────
@@ -65,9 +65,9 @@ async fn get_driver() -> Option<&'static Arc<CosmosDriver>> {
 
 const DB_NAME: &str = "query_plan_test_db";
 
-fn arm_client() -> Option<&'static CosmosArmClient> {
-    static ARM_CLIENT: OnceLock<Option<CosmosArmClient>> = OnceLock::new();
-    ARM_CLIENT
+fn resource_manager() -> Option<&'static dyn CosmosResourceManager> {
+    static RESOURCE_MANAGER: OnceLock<Option<ResourceManager>> = OnceLock::new();
+    RESOURCE_MANAGER
         .get_or_init(|| {
             if !std::env::var("AZURE_COSMOS_AUTH_MODE")
                 .is_ok_and(|value| value.eq_ignore_ascii_case("aad"))
@@ -77,19 +77,19 @@ fn arm_client() -> Option<&'static CosmosArmClient> {
             let credential = azure_core_test::credentials::from_env(None)
                 .expect("failed to resolve federated test credential");
             Some(
-                CosmosArmClient::from_env(credential)
-                    .expect("failed to resolve Cosmos ARM test environment"),
+                resource_manager_from_env(credential)
+                    .expect("failed to resolve Cosmos test environment"),
             )
         })
-        .as_ref()
+        .as_deref()
 }
 
 async fn ensure_database(driver: &CosmosDriver) {
-    if let Some(arm_client) = arm_client() {
-        arm_client
+    if let Some(resource_manager) = resource_manager() {
+        resource_manager
             .create_database(DB_NAME)
             .await
-            .expect("failed to ensure query-plan test database through ARM");
+            .expect("failed to ensure query-plan test database");
         return;
     }
 
@@ -116,8 +116,8 @@ async fn ensure_container(
     ensure_database(driver).await;
     let partition_key_component_count = pk_def.paths().len();
 
-    if let Some(arm_client) = arm_client() {
-        arm_client
+    if let Some(resource_manager) = resource_manager() {
+        resource_manager
             .create_or_update_container(
                 DB_NAME,
                 container_name,
@@ -128,7 +128,7 @@ async fn ensure_container(
                 None,
             )
             .await
-            .expect("failed to ensure query-plan test container through ARM");
+            .expect("failed to ensure query-plan test container");
         let container = resolve_driver_container_ready(driver, DB_NAME, container_name)
             .await
             .expect("failed to resolve container");

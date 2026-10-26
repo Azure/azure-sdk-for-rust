@@ -61,7 +61,7 @@ use uuid::Uuid;
 #[path = "framework/mod.rs"]
 mod framework;
 
-use framework::CosmosArmClient;
+use framework::{resource_manager_from_env, CosmosResourceManager, ResourceManager};
 
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 const AUTH_MODE_ENV_VAR: &str = "AZURE_COSMOS_AUTH_MODE";
@@ -1881,15 +1881,20 @@ fn uses_aad_auth() -> bool {
 
 async fn create_test_resources(
     client: &CosmosClient,
-    arm_client: Option<&CosmosArmClient>,
+    resource_manager: Option<&dyn CosmosResourceManager>,
     database_name: &str,
     container_name: &str,
 ) -> Result<(), Box<dyn Error>> {
     let properties = ContainerProperties::new(container_name.to_owned(), PARTITION_KEY_PATH.into());
-    if let Some(arm_client) = arm_client {
-        arm_client.create_database(database_name).await?;
-        arm_client
-            .create_or_update_container(database_name, container_name, &properties, None)
+    if let Some(resource_manager) = resource_manager {
+        resource_manager.create_database(database_name).await?;
+        resource_manager
+            .create_or_update_container(
+                database_name,
+                container_name,
+                &serde_json::to_value(properties)?,
+                None,
+            )
             .await?;
         let container = client
             .database_client(database_name)
@@ -1906,11 +1911,11 @@ async fn create_test_resources(
 
 async fn delete_test_resources(
     _client: &CosmosClient,
-    arm_client: Option<&CosmosArmClient>,
+    resource_manager: Option<&dyn CosmosResourceManager>,
     database_name: &str,
 ) -> Result<(), Box<dyn Error>> {
-    if let Some(arm_client) = arm_client {
-        arm_client.delete_database(database_name).await?;
+    if let Some(resource_manager) = resource_manager {
+        resource_manager.delete_database(database_name).await?;
     }
     Ok(())
 }
@@ -2247,8 +2252,8 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
         .unwrap_or_else(|_| DEFAULT_CONTAINER_NAME.to_string());
 
     let setup_client = &clients[0].1;
-    let arm_client = if uses_aad_auth() {
-        Some(CosmosArmClient::from_env(
+    let resource_manager: Option<ResourceManager> = if uses_aad_auth() {
+        Some(resource_manager_from_env(
             azure_core_test::credentials::from_env(None)?,
         )?)
     } else {
@@ -2256,7 +2261,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
     };
     create_test_resources(
         setup_client,
-        arm_client.as_ref(),
+        resource_manager.as_deref(),
         &database_name,
         &container_name,
     )
@@ -2548,7 +2553,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
     .await;
 
     let cleanup_result =
-        delete_test_resources(setup_client, arm_client.as_ref(), &database_name).await;
+        delete_test_resources(setup_client, resource_manager.as_deref(), &database_name).await;
     test_result?;
     cleanup_result?;
     Ok(())
@@ -2663,8 +2668,8 @@ async fn run_calibration() -> Result<(), Box<dyn Error>> {
     let container_name = std::env::var(CONTAINER_NAME_ENV_VAR)
         .unwrap_or_else(|_| DEFAULT_CONTAINER_NAME.to_string());
 
-    let arm_client = if uses_aad_auth() {
-        Some(CosmosArmClient::from_env(
+    let resource_manager: Option<ResourceManager> = if uses_aad_auth() {
+        Some(resource_manager_from_env(
             azure_core_test::credentials::from_env(None)?,
         )?)
     } else {
@@ -2672,7 +2677,7 @@ async fn run_calibration() -> Result<(), Box<dyn Error>> {
     };
     create_test_resources(
         &client,
-        arm_client.as_ref(),
+        resource_manager.as_deref(),
         &database_name,
         &container_name,
     )
@@ -2746,7 +2751,8 @@ async fn run_calibration() -> Result<(), Box<dyn Error>> {
     }
     .await;
 
-    let cleanup_result = delete_test_resources(&client, arm_client.as_ref(), &database_name).await;
+    let cleanup_result =
+        delete_test_resources(&client, resource_manager.as_deref(), &database_name).await;
     calibration_result?;
     cleanup_result?;
     Ok(())

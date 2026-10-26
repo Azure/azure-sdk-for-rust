@@ -3,7 +3,7 @@
 
 // cspell:ignore: TEAMPROJECTID
 
-use super::{ArmThroughput, CosmosArmClient};
+use super::{resource_manager_from_env, ResourceManager, ResourceManagerError, ResourceThroughput};
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
@@ -129,8 +129,8 @@ pub fn assert_region_not_contacted(
 
 /// Default timeout for tests (80 seconds).
 pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
-/// Default timeout for live AAD tests whose resource lifecycle uses ARM.
-const DEFAULT_ARM_TEST_TIMEOUT: Duration = Duration::from_secs(180);
+/// Default timeout for live AAD tests with control-plane resource lifecycle.
+const DEFAULT_RESOURCE_TEST_TIMEOUT: Duration = Duration::from_secs(180);
 const CONTAINER_READINESS_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(5);
 const CONTAINER_READINESS_RETRY_DELAY: Duration = Duration::from_secs(1);
 const CHANGE_FEED_READINESS_RESPONSE_TIMEOUT: Duration = Duration::from_secs(2);
@@ -151,9 +151,9 @@ const SATELLITE_READINESS_MAX_BACKOFF: Duration = Duration::from_secs(5);
 #[cfg(test_category = "multi_write")]
 const SATELLITE_READINESS_BUDGET: Duration = Duration::from_secs(45);
 
-fn resolve_test_timeout(configured: Option<Duration>, uses_arm_lifecycle: bool) -> Duration {
-    configured.unwrap_or(if uses_arm_lifecycle {
-        DEFAULT_ARM_TEST_TIMEOUT
+fn resolve_test_timeout(configured: Option<Duration>, uses_resource_manager: bool) -> Duration {
+    configured.unwrap_or(if uses_resource_manager {
+        DEFAULT_RESOURCE_TEST_TIMEOUT
     } else {
         DEFAULT_TEST_TIMEOUT
     })
@@ -556,7 +556,7 @@ pub struct TestOptions {
     /// Timeout for the test.
     ///
     /// If `None`, uses [`DEFAULT_TEST_TIMEOUT`], or 180 seconds for live AAD
-    /// tests whose resource lifecycle uses ARM.
+    /// tests whose resource lifecycle uses an external control plane.
     pub timeout: Option<Duration>,
     /// When `true`, builds the underlying [`CosmosClient`]s with a
     /// [`CosmosRuntime`] configured for
@@ -993,7 +993,7 @@ impl TestClient {
     /// Runs a test function with a new [`TestClient`] and custom test options.
     ///
     /// This method supports:
-    /// - Timeouts (defaults to 180 seconds for ARM-backed live AAD tests and
+    /// - Timeouts (defaults to 180 seconds for control-plane live AAD tests and
     ///   [`DEFAULT_TEST_TIMEOUT`] otherwise)
     /// - Custom CosmosClient options for the normal client
     /// - Preferred regions for the fault injection client
@@ -1119,8 +1119,8 @@ impl TestClient {
                 },
             };
 
-            let arm_client = if auth_mode == AuthMode::Aad && !targets_emulator() {
-                Some(CosmosArmClient::from_env(
+            let resource_manager = if auth_mode == AuthMode::Aad && !targets_emulator() {
+                Some(resource_manager_from_env(
                     azure_core_test::credentials::from_env(None)?,
                 )?)
             } else {
@@ -1129,14 +1129,14 @@ impl TestClient {
             let run = TestRunContext::new(
                 primary_client,
                 fault_cosmos_client,
-                arm_client,
+                resource_manager,
                 fault_injection_rules,
                 options.gateway_v2_disabled,
             );
 
-            // ARM lifecycle operations can include service-side LRO polling and
-            // transient transport retries before the data-plane test starts.
-            let timeout = resolve_test_timeout(options.timeout, run.arm_client().is_some());
+            // Resource lifecycle operations can include service-side provisioning
+            // and transient retries before the data-plane test starts.
+            let timeout = resolve_test_timeout(options.timeout, run.resource_manager().is_some());
 
             let result = tokio::time::timeout(timeout, async {
                 let mut backoff = Duration::from_millis(500);
@@ -1250,8 +1250,8 @@ pub struct TestRunContext {
     client: CosmosClient,
     /// The fault injection Cosmos client (if configured).
     fault_client: Option<CosmosClient>,
-    /// The ARM client used for resource lifecycle in live AAD mode.
-    arm_client: Option<CosmosArmClient>,
+    /// The resource manager used for control-plane lifecycle in live AAD mode.
+    resource_manager: Option<ResourceManager>,
     fault_injection_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
     gateway_v2_disabled: bool,
 }
@@ -1286,7 +1286,7 @@ impl TestRunContext {
     pub fn new(
         client: CosmosClient,
         fault_client: Option<CosmosClient>,
-        arm_client: Option<CosmosArmClient>,
+        resource_manager: Option<ResourceManager>,
         fault_injection_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
         gateway_v2_disabled: bool,
     ) -> Self {
@@ -1295,7 +1295,7 @@ impl TestRunContext {
             run_id,
             client,
             fault_client,
-            arm_client,
+            resource_manager,
             fault_injection_rules,
             gateway_v2_disabled,
         }
@@ -1313,9 +1313,9 @@ impl TestRunContext {
         &self.client
     }
 
-    /// Gets the ARM client used for live AAD resource management.
-    pub fn arm_client(&self) -> Option<&CosmosArmClient> {
-        self.arm_client.as_ref()
+    /// Gets the control-plane implementation used for live AAD resource management.
+    pub fn resource_manager(&self) -> Option<&dyn super::CosmosResourceManager> {
+        self.resource_manager.as_deref()
     }
 
     pub async fn read_container_throughput(
@@ -1323,9 +1323,9 @@ impl TestRunContext {
         db_client: &DatabaseClient,
         container_id: &str,
     ) -> Result<Option<ThroughputProperties>, Box<dyn std::error::Error>> {
-        if let Some(arm_client) = self.arm_client() {
-            return Ok(Some(from_arm_throughput(
-                arm_client
+        if let Some(resource_manager) = self.resource_manager() {
+            return Ok(Some(from_resource_throughput(
+                resource_manager
                     .read_container_throughput(database_name(db_client)?, container_id)
                     .await?,
             )?));
@@ -1341,11 +1341,11 @@ impl TestRunContext {
         &self,
         db_client: &DatabaseClient,
     ) -> Result<Option<ThroughputProperties>, Box<dyn std::error::Error>> {
-        if let Some(arm_client) = self.arm_client() {
-            return Ok(arm_client
+        if let Some(resource_manager) = self.resource_manager() {
+            return Ok(resource_manager
                 .read_database_throughput(database_name(db_client)?)
                 .await?
-                .map(from_arm_throughput)
+                .map(from_resource_throughput)
                 .transpose()?);
         }
         Ok(db_client.read_throughput(None).await?)
@@ -1357,13 +1357,13 @@ impl TestRunContext {
         container_id: &str,
         throughput: ThroughputProperties,
     ) -> Result<ThroughputProperties, Box<dyn std::error::Error>> {
-        if let Some(arm_client) = self.arm_client() {
-            return Ok(from_arm_throughput(
-                arm_client
+        if let Some(resource_manager) = self.resource_manager() {
+            return Ok(from_resource_throughput(
+                resource_manager
                     .replace_container_throughput(
                         database_name(db_client)?,
                         container_id,
-                        to_arm_throughput(&throughput)?,
+                        to_resource_throughput(&throughput)?,
                     )
                     .await?,
             )?);
@@ -1412,15 +1412,15 @@ impl TestRunContext {
     /// Creates a new, empty, database for this test run with default throughput options.
     pub async fn create_db(&self) -> azure_data_cosmos::Result<DatabaseClient> {
         let db_name = self.db_name();
-        if let Some(arm_client) = self.arm_client() {
-            arm_client
+        if let Some(resource_manager) = self.resource_manager() {
+            resource_manager
                 .delete_database(&db_name)
                 .await
-                .map_err(arm_error)?;
-            arm_client
+                .map_err(resource_manager_error)?;
+            resource_manager
                 .create_database(&db_name)
                 .await
-                .map_err(arm_error)?;
+                .map_err(resource_manager_error)?;
         } else {
             match retry_setup_dns("test database creation", || {
                 self.client().create_database(&db_name, None)
@@ -1443,11 +1443,11 @@ impl TestRunContext {
     }
 
     pub async fn create_database(&self, database_name: &str) -> azure_data_cosmos::Result<()> {
-        if let Some(arm_client) = self.arm_client() {
-            arm_client
+        if let Some(resource_manager) = self.resource_manager() {
+            resource_manager
                 .create_database(database_name)
                 .await
-                .map_err(arm_error)?;
+                .map_err(resource_manager_error)?;
         } else {
             match retry_setup_dns("test database creation", || {
                 self.client().create_database(database_name, None)
@@ -1463,11 +1463,11 @@ impl TestRunContext {
     }
 
     pub async fn delete_database(&self, database_name: &str) -> azure_data_cosmos::Result<()> {
-        if let Some(arm_client) = self.arm_client() {
-            arm_client
+        if let Some(resource_manager) = self.resource_manager() {
+            resource_manager
                 .delete_database(database_name)
                 .await
-                .map_err(arm_error)?;
+                .map_err(resource_manager_error)?;
         } else {
             let database = self.client().database_client(database_name);
             retry_setup_dns("test database deletion", || async {
@@ -1555,23 +1555,26 @@ impl TestRunContext {
         properties: azure_data_cosmos::models::ContainerProperties,
         throughput: Option<ThroughputProperties>,
     ) -> azure_data_cosmos::Result<ContainerClient> {
-        if let Some(arm_client) = self.arm_client() {
+        if let Some(resource_manager) = self.resource_manager() {
             let partition_key_component_count = properties.partition_key.paths().len();
             let database_name = database_name(db_client)?;
-            arm_client
+            resource_manager
                 .delete_container(database_name, properties.id.as_ref())
                 .await
-                .map_err(arm_error)?;
-            let resource = to_arm_container_resource(&properties)?;
-            arm_client
+                .map_err(resource_manager_error)?;
+            let resource = to_management_container_resource(&properties)?;
+            resource_manager
                 .create_or_update_container(
                     database_name,
                     properties.id.as_ref(),
                     &resource,
-                    throughput.as_ref().map(to_arm_throughput).transpose()?,
+                    throughput
+                        .as_ref()
+                        .map(to_resource_throughput)
+                        .transpose()?,
                 )
                 .await
-                .map_err(arm_error)?;
+                .map_err(resource_manager_error)?;
             let container =
                 Self::wait_for_container_ready(db_client, properties.id.as_ref()).await?;
             probe_data_plane_ready(
@@ -1633,9 +1636,9 @@ impl TestRunContext {
         db_client: &DatabaseClient,
         properties: azure_data_cosmos::models::ContainerProperties,
     ) -> azure_data_cosmos::Result<ContainerClient> {
-        if let Some(arm_client) = self.arm_client() {
-            let resource = to_arm_container_resource(&properties)?;
-            arm_client
+        if let Some(resource_manager) = self.resource_manager() {
+            let resource = to_management_container_resource(&properties)?;
+            resource_manager
                 .create_or_update_container(
                     database_name(db_client)?,
                     properties.id.as_ref(),
@@ -1643,7 +1646,7 @@ impl TestRunContext {
                     None,
                 )
                 .await
-                .map_err(arm_error)?;
+                .map_err(resource_manager_error)?;
         } else {
             db_client
                 .container_client(properties.id.as_ref(), None)
@@ -1659,11 +1662,11 @@ impl TestRunContext {
         db_client: &DatabaseClient,
         container_id: &str,
     ) -> azure_data_cosmos::Result<()> {
-        if let Some(arm_client) = self.arm_client() {
-            arm_client
+        if let Some(resource_manager) = self.resource_manager() {
+            resource_manager
                 .delete_container(database_name(db_client)?, container_id)
                 .await
-                .map_err(arm_error)?;
+                .map_err(resource_manager_error)?;
         } else {
             db_client
                 .container_client(container_id, None)
@@ -2148,7 +2151,7 @@ impl TestRunContext {
     ///
     /// This is the entry point for AAD integration tests. The returned client
     /// performs data-plane operations under AAD; live resource lifecycle uses
-    /// the ARM client exposed by [`TestRunContext::arm_client`].
+    /// the implementation exposed by [`TestRunContext::resource_manager`].
     ///
     /// See [`build_aad_client_from_env`] for credential-selection details.
     pub async fn aad_client(
@@ -2162,7 +2165,7 @@ impl TestRunContext {
     /// This should be called at the end of a test run to delete any databases created during the test.
     /// If using [`TestClient::run`], this runs automatically with bounded DNS recovery.
     pub async fn cleanup(&self) -> Result<(), Box<dyn std::error::Error>> {
-        if self.arm_client().is_some() {
+        if self.resource_manager().is_some() {
             self.delete_database(&self.db_name()).await?;
             return Ok(());
         }
@@ -2205,12 +2208,12 @@ fn database_name(db_client: &DatabaseClient) -> azure_data_cosmos::Result<&str> 
     db_client.name().ok_or_else(|| {
         azure_data_cosmos_driver::error::CosmosError::builder()
             .with_status(status_codes::CLIENT_INVALID_RESOURCE_ID)
-            .with_message("ARM-backed test resource management requires a name-addressed database")
+            .with_message("test resource management requires a name-addressed database")
             .build()
     })
 }
 
-fn to_arm_container_resource(
+fn to_management_container_resource(
     properties: &azure_data_cosmos::models::ContainerProperties,
 ) -> azure_data_cosmos::Result<serde_json::Value> {
     const READ_ONLY_FIELDS: &[&str] = &[
@@ -2244,18 +2247,18 @@ fn to_arm_container_resource(
     Ok(serde_json::Value::Object(resource.clone()))
 }
 
-fn to_arm_throughput(
+fn to_resource_throughput(
     throughput: &ThroughputProperties,
-) -> azure_data_cosmos::Result<ArmThroughput> {
+) -> azure_data_cosmos::Result<ResourceThroughput> {
     match throughput.autoscale_maximum() {
-        Some(maximum) => Ok(ArmThroughput::Autoscale {
+        Some(maximum) => Ok(ResourceThroughput::Autoscale {
             maximum,
             current: throughput.throughput(),
             increment_percent: throughput.autoscale_increment(),
         }),
         None => throughput
             .throughput()
-            .map(ArmThroughput::Manual)
+            .map(ResourceThroughput::Manual)
             .ok_or_else(|| {
                 azure_data_cosmos_driver::error::CosmosError::builder()
                     .with_status(status_codes::CLIENT_INVALID_RESOURCE_ID)
@@ -2265,12 +2268,12 @@ fn to_arm_throughput(
     }
 }
 
-fn from_arm_throughput(
-    throughput: ArmThroughput,
+fn from_resource_throughput(
+    throughput: ResourceThroughput,
 ) -> azure_data_cosmos::Result<ThroughputProperties> {
     match throughput {
-        ArmThroughput::Manual(value) => Ok(ThroughputProperties::manual(value)),
-        ArmThroughput::Autoscale {
+        ResourceThroughput::Manual(value) => Ok(ThroughputProperties::manual(value)),
+        ResourceThroughput::Autoscale {
             maximum,
             current,
             increment_percent,
@@ -2302,10 +2305,10 @@ fn from_arm_throughput(
     }
 }
 
-fn arm_error(error: azure_core::Error) -> CosmosError {
+fn resource_manager_error(error: ResourceManagerError) -> CosmosError {
     azure_data_cosmos_driver::error::CosmosError::builder()
         .with_status(status_codes::TRANSPORT_GENERATED_503)
-        .with_message("Azure Resource Manager operation failed")
+        .with_message("Cosmos test resource management failed")
         .with_source(error)
         .build()
 }
@@ -2471,12 +2474,12 @@ pub async fn build_aad_client_from_env(
 mod tests {
     use super::{
         aad_token_invalid_issuer, combine_test_and_cleanup_results, effective_binary_encoding,
-        from_arm_throughput, item_not_found, rbac_name_based_data_not_ready,
+        from_resource_throughput, item_not_found, rbac_name_based_data_not_ready,
         read_replication_pending, resolve_test_timeout, retry_container_readiness, retry_setup_dns,
-        satellite_probe_should_retry, setup_dns_failure, to_arm_container_resource,
-        transient_data_plane_readiness_error, transient_satellite_readiness_error, ArmThroughput,
-        AuthMode, BinaryEncodingOptions, DEFAULT_ARM_TEST_TIMEOUT, DEFAULT_TEST_TIMEOUT,
-        SETUP_DNS_TIMEOUT,
+        satellite_probe_should_retry, setup_dns_failure, to_management_container_resource,
+        transient_data_plane_readiness_error, transient_satellite_readiness_error, AuthMode,
+        BinaryEncodingOptions, ResourceThroughput, DEFAULT_RESOURCE_TEST_TIMEOUT,
+        DEFAULT_TEST_TIMEOUT, SETUP_DNS_TIMEOUT,
     };
     use azure_core::http::StatusCode;
     use azure_data_cosmos::{
@@ -2495,9 +2498,12 @@ mod tests {
         time::Duration,
     };
     #[test]
-    fn arm_lifecycle_uses_longer_default_timeout() {
+    fn resource_lifecycle_uses_longer_default_timeout() {
         assert_eq!(resolve_test_timeout(None, false), DEFAULT_TEST_TIMEOUT);
-        assert_eq!(resolve_test_timeout(None, true), DEFAULT_ARM_TEST_TIMEOUT);
+        assert_eq!(
+            resolve_test_timeout(None, true),
+            DEFAULT_RESOURCE_TEST_TIMEOUT
+        );
 
         let configured = Duration::from_secs(42);
         assert_eq!(resolve_test_timeout(Some(configured), false), configured);
@@ -2505,8 +2511,8 @@ mod tests {
     }
 
     #[test]
-    fn arm_autoscale_throughput_preserves_service_values() {
-        let throughput = from_arm_throughput(ArmThroughput::Autoscale {
+    fn autoscale_throughput_preserves_service_values() {
+        let throughput = from_resource_throughput(ResourceThroughput::Autoscale {
             maximum: 5000,
             current: Some(500),
             increment_percent: Some(42),
@@ -2530,7 +2536,7 @@ mod tests {
         }))
         .unwrap();
 
-        let resource = to_arm_container_resource(&properties).unwrap();
+        let resource = to_management_container_resource(&properties).unwrap();
 
         assert_eq!(resource["id"], "container");
         assert_eq!(resource["partitionKey"]["paths"][0], "/pk");

@@ -77,7 +77,7 @@ struct AadTestItem {
 
 /// Drives a full item CRUD round-trip through an AAD-authenticated client.
 ///
-/// Live setup and teardown use the framework's ARM client; item operations use
+/// Live setup and teardown use the framework's resource manager; item operations use
 /// the AAD data-plane client. On the emulator we additionally assert the fake
 /// JWT credential was invoked for the Cosmos scope.
 #[tokio::test]

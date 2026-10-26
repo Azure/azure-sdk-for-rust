@@ -110,7 +110,7 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
             let read_back = rid_container.read(None).await?.into_model()?;
             assert_eq!(container_name, read_back.id);
 
-            let throughput = if run_context.arm_client().is_some() {
+            let throughput = if run_context.resource_manager().is_some() {
                 run_context
                     .read_container_throughput(db_client, &container_name)
                     .await?

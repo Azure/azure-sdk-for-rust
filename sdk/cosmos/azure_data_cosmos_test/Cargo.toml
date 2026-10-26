@@ -9,12 +9,12 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-azure_core = { workspace = true, features = ["reqwest_rustls"] }
+async-trait.workspace = true
+azure_core.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-tokio = { workspace = true, features = ["time"] }
+tokio = { workspace = true, features = ["process", "time"] }
 
 [dev-dependencies]
-azure_core_test.workspace = true
-futures.workspace = true
+time.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "test-util"] }

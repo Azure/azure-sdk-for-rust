@@ -97,8 +97,8 @@ async fn routing_query_and_point_in_time_feed_survive_merge() -> Result<(), Box<
 
             let point_in_time = time::OffsetDateTime::now_utc();
             run_context
-                .arm_client()
-                .ok_or("partition merge requires AAD-backed ARM resource management")?
+                .resource_manager()
+                .ok_or("partition merge requires AAD-backed resource management")?
                 .merge_partitions(
                     db_client
                         .name()

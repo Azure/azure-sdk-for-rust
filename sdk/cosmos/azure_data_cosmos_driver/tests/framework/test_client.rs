@@ -29,12 +29,12 @@ use std::{error::Error, future::Future, sync::Arc, time::Duration};
 use tracing_subscriber::EnvFilter;
 use uuid::Uuid;
 
-use super::arm_client::CosmosArmClient;
 use super::env::{
     get_test_mode, is_azure_pipelines, CosmosTestMode, CONNECTION_STRING_ENV_VAR,
     EMULATOR_CONNECTION_STRING, GATEWAY_V2_ENDPOINT_ENV_VAR, GATEWAY_V2_KEY_ENV_VAR,
     GATEWAY_V2_MULTI_REGION_ENDPOINT_ENV_VAR, GATEWAY_V2_MULTI_REGION_KEY_ENV_VAR,
 };
+use super::resource_manager::{resource_manager_from_env, ResourceManager};
 
 /// Applies the runtime-level test defaults every framework-built
 /// [`CosmosDriverRuntime`] shares.
@@ -76,7 +76,7 @@ fn test_env_filter() -> EnvFilter {
 pub struct DriverTestClient {
     runtime: Arc<CosmosDriverRuntime>,
     account: AccountReference,
-    arm_client: Option<CosmosArmClient>,
+    resource_manager: Option<ResourceManager>,
     /// Driver-level preferred regions applied to every driver created by the
     /// per-operation helpers (`create_database`, `read_item`, …). Empty by
     /// default; populated by [`run_with_unique_db_and_hedging`] for the
@@ -103,7 +103,7 @@ pub struct DriverTestClient {
 pub struct TestEnv {
     pub account: AccountReference,
     pub connection_pool: ConnectionPoolOptions,
-    pub arm_client: Option<CosmosArmClient>,
+    pub resource_manager: Option<ResourceManager>,
 }
 
 const ACCOUNT_HOST_ENV_VAR: &str = "ACCOUNT_HOST";
@@ -111,13 +111,13 @@ const AUTH_MODE_ENV_VAR: &str = "AZURE_COSMOS_AUTH_MODE";
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct ArmContainerResource<'a> {
+struct ManagementContainerResource<'a> {
     id: &'a str,
-    partition_key: ArmPartitionKey<'a>,
+    partition_key: ManagementPartitionKey<'a>,
 }
 
 #[derive(Serialize)]
-struct ArmPartitionKey<'a> {
+struct ManagementPartitionKey<'a> {
     paths: &'a [&'a str],
     kind: &'a str,
     version: u8,
@@ -306,7 +306,7 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
             return Ok(Some(TestEnv {
                 account,
                 connection_pool: ConnectionPoolOptions::builder().build()?,
-                arm_client: Some(CosmosArmClient::from_env(credential)?),
+                resource_manager: Some(resource_manager_from_env(credential)?),
             }));
         }
 
@@ -340,7 +340,7 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
         Ok(Some(TestEnv {
             account,
             connection_pool,
-            arm_client: None,
+            resource_manager: None,
         }))
     }
 }
@@ -404,7 +404,7 @@ fn resolve_gateway_v2_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, 
             Ok(Some(TestEnv {
                 account,
                 connection_pool,
-                arm_client: None,
+                resource_manager: None,
             }))
         }
         (None, None) => {
@@ -475,7 +475,7 @@ impl DriverTestClient {
         Ok(Some(Self {
             runtime,
             account: env.account,
-            arm_client: env.arm_client,
+            resource_manager: env.resource_manager,
             preferred_regions: Vec::new(),
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: Vec::new(),
@@ -504,7 +504,7 @@ impl DriverTestClient {
         Ok(Some(Self {
             runtime,
             account: env.account,
-            arm_client: env.arm_client,
+            resource_manager: env.resource_manager,
             preferred_regions: Vec::new(),
             fault_injection_rules: rules,
             partition_failover_options: None,
@@ -600,7 +600,7 @@ impl DriverTestClient {
         let client = Self {
             runtime,
             account: env.account,
-            arm_client: env.arm_client,
+            resource_manager: env.resource_manager,
             preferred_regions: Vec::new(),
             fault_injection_rules: rules,
             partition_failover_options: None,
@@ -651,7 +651,7 @@ impl DriverTestClient {
         let client = Self {
             runtime,
             account: env.account,
-            arm_client: env.arm_client,
+            resource_manager: env.resource_manager,
             preferred_regions: Vec::new(),
             fault_injection_rules: rules,
             partition_failover_options: Some(partition_failover_options),
@@ -704,7 +704,7 @@ impl DriverTestClient {
         let client = Self {
             runtime,
             account: env.account,
-            arm_client: env.arm_client,
+            resource_manager: env.resource_manager,
             preferred_regions,
             fault_injection_rules: rules,
             partition_failover_options: None,
@@ -766,7 +766,7 @@ impl DriverTestClient {
         let client = Self {
             runtime,
             account: env.account,
-            arm_client: env.arm_client,
+            resource_manager: env.resource_manager,
             preferred_regions: Vec::new(),
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: Vec::new(),
@@ -912,8 +912,8 @@ impl DriverTestRunContext {
         &self,
         db_name: &str,
     ) -> Result<DatabaseReference, Box<dyn Error>> {
-        if let Some(arm_client) = &self.client.arm_client {
-            arm_client.create_database(db_name).await?;
+        if let Some(resource_manager) = &self.client.resource_manager {
+            resource_manager.create_database(db_name).await?;
             return Ok(DatabaseReference::from_name(
                 self.client.account.clone(),
                 db_name.to_string(),
@@ -925,8 +925,9 @@ impl DriverTestRunContext {
 
     /// Executes the driver database-create operation directly.
     ///
-    /// Resource setup uses ARM in AAD mode; tests that explicitly validate the
-    /// driver's database-create path use this method instead.
+    /// Resource setup uses the configured control-plane implementation in AAD
+    /// mode; tests that explicitly validate the driver's database-create path
+    /// use this method instead.
     pub async fn create_database_data_plane(
         &self,
         db_name: &str,
@@ -972,11 +973,11 @@ impl DriverTestRunContext {
         &self,
         database: &DatabaseReference,
     ) -> Result<(), Box<dyn Error>> {
-        if let Some(arm_client) = &self.client.arm_client {
+        if let Some(resource_manager) = &self.client.resource_manager {
             let database_name = database
                 .name()
-                .ok_or("ARM-backed resource management requires a name-addressed database")?;
-            arm_client.delete_database(database_name).await?;
+                .ok_or("resource management requires a name-addressed database")?;
+            resource_manager.delete_database(database_name).await?;
             return Ok(());
         }
 
@@ -1048,22 +1049,27 @@ impl DriverTestRunContext {
         } else {
             "MultiHash"
         };
-        let arm_managed = self.client.arm_client.is_some();
+        let externally_managed = self.client.resource_manager.is_some();
         let mut ambiguous_create_error = None;
-        if let Some(arm_client) = &self.client.arm_client {
+        if let Some(resource_manager) = &self.client.resource_manager {
             let database_name = database
                 .name()
-                .ok_or("ARM-backed resource management requires a name-addressed database")?;
-            let resource = ArmContainerResource {
+                .ok_or("resource management requires a name-addressed database")?;
+            let resource = ManagementContainerResource {
                 id: container_name,
-                partition_key: ArmPartitionKey {
+                partition_key: ManagementPartitionKey {
                     paths: partition_key_paths,
                     kind,
                     version: 2,
                 },
             };
-            arm_client
-                .create_or_update_container(database_name, container_name, &resource, None)
+            resource_manager
+                .create_or_update_container(
+                    database_name,
+                    container_name,
+                    &serde_json::to_value(resource)?,
+                    None,
+                )
                 .await?;
         } else {
             let body = format!(
@@ -1134,7 +1140,7 @@ impl DriverTestRunContext {
                 .await
             {
                 Ok(container) => {
-                    if arm_managed {
+                    if externally_managed {
                         #[cfg(feature = "fault_injection")]
                         let _disabled_rules =
                             DisabledFaultInjectionRules::new(&self.client.fault_injection_rules);
