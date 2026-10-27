@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 use super::{
-    bootstrap, fixture_with_emulator, next, start, Batch, ChangeFeedProcessorMode, Context, Lease,
-    Processor, ProcessorOptions, Update,
+    bootstrap, fixture_with_emulator, next, start, ChangeFeedBatch, ChangeFeedProcessorMode,
+    Context, Lease, Processor, ProcessorOptions, Update,
 };
 use crate::{
     change_feed_processor::bootstrap::{lease_id, store::Stored, RangePlan},
@@ -155,7 +155,7 @@ async fn wait_for(context: &Context, predicate: impl Fn(&[Lease]) -> bool) -> Ve
     .expect("lease state did not converge")
 }
 
-async fn next_from(first: &Processor, second: &Processor) -> Batch {
+async fn next_from(first: &Processor, second: &Processor) -> ChangeFeedBatch {
     tokio::time::timeout(Duration::from_secs(10), async {
         tokio::select! {
             batch = first.next_batch() => batch.unwrap(),
