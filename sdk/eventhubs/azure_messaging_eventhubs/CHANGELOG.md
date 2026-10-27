@@ -8,6 +8,7 @@
 
 ### Bugs Fixed
 
+- `InMemoryCheckpointStore::claim_ownership` now treats a stale ETag as a lost claim instead of an error, the same way `BlobCheckpointStore` does. It skips that partition, returns the partitions it did claim, and logs the conflict at the debug level. A single lost claim used to return an error that reached `EventProcessor::run`, which stopped every partition the instance owned and discarded the new ETag for each partition that the same batch had already renewed. ([#5095](https://github.com/Azure/azure-sdk-for-rust/issues/5095))
 - Producer sends and sender metadata waits now enforce `RetryOptions::max_total_elapsed` while preparation, transport I/O, recovery, or backoff is pending; expiry returns an I/O timeout and retires the captured connection.
 - Connection recovery and client close now terminate failed transports without waiting for graceful shutdown, and cancelled recovery leaves generation state usable.
 - Sends waiting for settlement now retry when a peer invalidates their connection, session, or link. These retries use the configured limits and backoff. A lost acknowledgement can cause duplicate events.
