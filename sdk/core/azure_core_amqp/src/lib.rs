@@ -21,6 +21,8 @@ mod receiver;
 mod sender;
 mod session;
 mod simple_value;
+#[cfg(test)]
+mod test_broker;
 mod value;
 
 pub use cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis};
