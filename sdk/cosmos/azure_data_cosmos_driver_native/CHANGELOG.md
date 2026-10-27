@@ -1,5 +1,19 @@
 # Release History
 
+## 0.3.0 (Unreleased)
+
+### Features Added
+
+- Added a driver option for disabling default-on resource-name validation, including item names supplied to Create and Upsert, when compatibility requires it. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
+
+### Breaking Changes
+
+- Expanded `cosmos_driver_options_config_v2_t`; native hosts must rebuild against the 0.3.0 header and library. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.2.0 (2026-10-01)
 
 ### Features Added
