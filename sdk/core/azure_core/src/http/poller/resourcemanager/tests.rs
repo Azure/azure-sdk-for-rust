@@ -104,9 +104,9 @@ async fn new_poller_supports_async_pattern() {
                     headers.insert(LOCATION, "https://example.com/resources/1");
                     headers.insert(RETRY_AFTER_MS, "0");
                     AsyncRawResponse::from_bytes(
-                        StatusCode::Accepted,
+                        StatusCode::Created,
                         headers,
-                        br#"{"status":"InProgress"}"#.to_vec(),
+                        br#"{"properties":{"provisioningState":"Creating"}}"#.to_vec(),
                     )
                 }
                 2 => AsyncRawResponse::from_bytes(
@@ -172,9 +172,9 @@ async fn new_poller_supports_body_pattern() {
                     let mut headers = Headers::new();
                     headers.insert(RETRY_AFTER_MS, "0");
                     AsyncRawResponse::from_bytes(
-                        StatusCode::Accepted,
+                        StatusCode::Created,
                         headers,
-                        br#"{"properties":{"provisioningState":"InProgress"}}"#.to_vec(),
+                        br#"{"properties":{"provisioningState":"Creating"}}"#.to_vec(),
                     )
                 }
                 2 => AsyncRawResponse::from_bytes(
@@ -312,11 +312,7 @@ async fn new_poller_supports_location_pattern() {
                     let mut headers = Headers::new();
                     headers.insert(LOCATION, "https://example.com/operations/3");
                     headers.insert(RETRY_AFTER_MS, "0");
-                    AsyncRawResponse::from_bytes(
-                        StatusCode::Accepted,
-                        headers,
-                        br#"{"status":"InProgress"}"#.to_vec(),
-                    )
+                    AsyncRawResponse::from_bytes(StatusCode::Accepted, headers, vec![])
                 }
                 2 => {
                     let mut headers = Headers::new();
@@ -324,7 +320,7 @@ async fn new_poller_supports_location_pattern() {
                     AsyncRawResponse::from_bytes(
                         StatusCode::Ok,
                         headers,
-                        br#"{"status":"Succeeded","id":"resource-3"}"#.to_vec(),
+                        br#"{"id":"resource-3"}"#.to_vec(),
                     )
                 }
                 _ => AsyncRawResponse::from_bytes(
@@ -842,63 +838,39 @@ async fn new_poller_location_pattern_failed_with_provisioning_state() {
     );
 }
 
-/// A 204 No Content at the location URL signals successful completion of a DELETE-like operation.
 #[tokio::test]
-async fn new_poller_location_pattern_204_no_content() {
-    let requests = Arc::new(Mutex::new(Vec::new()));
-    let calls = Arc::new(Mutex::new(0usize));
-    let requests_for_mock = requests.clone();
-    let calls_for_mock = calls.clone();
-    let mock = Arc::new(MockHttpClient::new(move |request| {
-        let requests = requests_for_mock.clone();
-        let calls = calls_for_mock.clone();
-        let url = request.url().to_string();
-        async move {
-            requests.lock().unwrap().push(url);
-            let mut call = calls.lock().unwrap();
-            *call += 1;
-
-            let response = match *call {
-                1 => {
-                    let mut headers = Headers::new();
-                    headers.insert(LOCATION, "https://example.com/operations/11");
-                    headers.insert(RETRY_AFTER_MS, "0");
-                    AsyncRawResponse::from_bytes(
-                        StatusCode::Accepted,
-                        headers,
-                        br#"{"status":"InProgress"}"#.to_vec(),
-                    )
-                }
-                // 204 with empty body at the location URL signals completion
-                _ => AsyncRawResponse::from_bytes(StatusCode::NoContent, Headers::new(), vec![]),
-            };
-            Ok(response)
-        }
-        .boxed()
-    })) as Arc<dyn HttpClient>;
-
-    let poller: Poller<ArmOperationStatus> = new_poller(
-        pipeline_with(mock),
-        Request::new(
-            "https://example.com/resources/11?api-version=2024-01-01"
-                .parse()
-                .unwrap(),
-            Method::Delete,
-        ),
-        None,
-        None,
-    );
-
-    let _ = poller.await.unwrap();
-
-    let requests = requests.lock().unwrap().clone();
-    assert_eq!(
-        requests,
-        vec![
-            "https://example.com/resources/11?api-version=2024-01-01",
-            "https://example.com/operations/11?api-version=2024-01-01",
-        ]
-    );
+async fn location_polling_bodyless_result_completes() {
+    for status in [StatusCode::Ok, StatusCode::NoContent] {
+        let mut headers = Headers::new();
+        headers.insert(RETRY_AFTER_MS, "0");
+        let (pipeline, pending) = scripted_pipeline(vec![
+            (
+                Method::Delete,
+                RESOURCE_URL,
+                operation_response(LOCATION, false),
+            ),
+            (
+                Method::Get,
+                POLLING_URL,
+                AsyncRawResponse::from_bytes(StatusCode::Accepted, headers, ""),
+            ),
+            (
+                Method::Get,
+                POLLING_URL,
+                AsyncRawResponse::from_bytes(status, Headers::new(), ""),
+            ),
+        ]);
+        let poller: Poller<ArmOperationStatus> = new_poller(
+            pipeline,
+            Request::new(RESOURCE_URL.parse().unwrap(), Method::Delete),
+            None,
+            None,
+        );
+        let response = poller.await.unwrap();
+        assert_eq!(response.status(), status);
+        assert!(response.body().is_empty());
+        assert!(pending.lock().unwrap().is_empty());
+    }
 }
 
 const RESOURCE_URL: &str = "https://example.com/resources/1?api-version=original";
@@ -927,17 +899,20 @@ fn scripted_pipeline(
 }
 
 fn operation_response(header: HeaderName, location: bool) -> AsyncRawResponse {
+    let body = if header == OPERATION_LOCATION {
+        br#"{"status":"InProgress"}"#.as_slice()
+    } else if header == AZURE_ASYNC_OPERATION {
+        br#"{"properties":{"provisioningState":"Creating"}}"#.as_slice()
+    } else {
+        b"".as_slice()
+    };
     let mut headers = Headers::new();
     headers.insert(header, "/operations/1?api-version=other");
     if location {
         headers.insert(LOCATION, "/results/1?api-version=other");
     }
     headers.insert(RETRY_AFTER_MS, "0");
-    AsyncRawResponse::from_bytes(
-        StatusCode::Accepted,
-        headers,
-        br#"{"status":"InProgress"}"#.as_slice(),
-    )
+    AsyncRawResponse::from_bytes(StatusCode::Accepted, headers, body)
 }
 
 fn monitor_response(body: &'static [u8]) -> AsyncRawResponse {
@@ -1129,6 +1104,267 @@ async fn operation_location_resource_location_precedence() {
 }
 
 #[tokio::test]
+async fn initial_operation_location_status_selects_final_response() {
+    static EXTRACTIONS: AtomicUsize = AtomicUsize::new(0);
+    for (method, strategy, location, resource_location, final_url) in [
+        (
+            Method::Post,
+            Some(FinalStateVia::OperationLocation(|response| {
+                EXTRACTIONS.fetch_add(1, Ordering::SeqCst);
+                extract_result(response)
+            })),
+            false,
+            false,
+            None,
+        ),
+        (Method::Put, None, false, false, Some(RESOURCE_URL)),
+        (Method::Patch, None, false, false, Some(RESOURCE_URL)),
+        (Method::Post, None, true, true, Some(RESOURCE_LOCATION_URL)),
+        (
+            Method::Put,
+            Some(FinalStateVia::Location),
+            true,
+            true,
+            Some(LOCATION_URL),
+        ),
+    ] {
+        let body = if resource_location {
+            br#"{"status":"Succeeded","properties":{"provisioningState":"Failed"},"resourceLocation":"/results/2?api-version=other"}"#.as_slice()
+        } else {
+            br#"{"status":"Succeeded","properties":{"provisioningState":"Failed"},"result":{ "id":"inline" }}"#.as_slice()
+        };
+        let mut headers = Headers::new();
+        headers.insert(OPERATION_LOCATION, POLLING_URL);
+        headers.insert("x-ms-request-id", "initial-monitor");
+        if location {
+            headers.insert(LOCATION, LOCATION_URL);
+        }
+        let mut responses = vec![(
+            method,
+            RESOURCE_URL,
+            AsyncRawResponse::from_bytes(StatusCode::Ok, headers.clone(), body),
+        )];
+        if let Some(url) = final_url {
+            responses.push((Method::Get, url, monitor_response(br#"{"id":"fetched"}"#)));
+        }
+        let (pipeline, pending) = scripted_pipeline(responses);
+        let mut poller: Poller<ArmOperationStatus> = new_poller(
+            pipeline,
+            Request::new(RESOURCE_URL.parse().unwrap(), method),
+            strategy,
+            None,
+        );
+        let extractions = EXTRACTIONS.load(Ordering::SeqCst);
+        let response = poller.try_next().await.unwrap().unwrap();
+        assert_eq!(response.status(), StatusCode::Ok);
+        assert_eq!(response.headers(), &headers);
+        assert_eq!(response.body().as_ref(), body);
+        assert!(poller.try_next().await.unwrap().is_none());
+        assert_eq!(EXTRACTIONS.load(Ordering::SeqCst), extractions);
+        assert_eq!(
+            pending.lock().unwrap().len(),
+            usize::from(final_url.is_some())
+        );
+
+        let result = poller.await.unwrap();
+        if final_url.is_none() {
+            assert_eq!(EXTRACTIONS.load(Ordering::SeqCst), extractions + 1);
+            assert_eq!(result.status(), response.status());
+            assert_eq!(result.headers(), response.headers());
+            let offset = body
+                .windows(6)
+                .position(|value| value == b"{ \"id\"")
+                .unwrap();
+            assert_eq!(result.body().as_ptr(), response.body()[offset..].as_ptr());
+        }
+        assert_eq!(
+            result.into_model().unwrap().id,
+            if final_url.is_some() {
+                "fetched"
+            } else {
+                "inline"
+            },
+        );
+        assert!(pending.lock().unwrap().is_empty());
+    }
+}
+
+#[tokio::test]
+async fn initial_operation_location_unsuccessful_status_skips_result() {
+    for status in ["Failed", "Canceled"] {
+        let body = format!(
+            r#"{{"status":"{status}","properties":{{"provisioningState":"Succeeded"}},"error":{{"code":"ActionError","message":"action failed"}}}}"#,
+        );
+        let mut headers = Headers::new();
+        headers.insert(OPERATION_LOCATION, POLLING_URL);
+        headers.insert(LOCATION, LOCATION_URL);
+        headers.insert("x-ms-request-id", "initial-failure");
+        let (pipeline, pending) = scripted_pipeline(vec![(
+            Method::Post,
+            RESOURCE_URL,
+            AsyncRawResponse::from_bytes(StatusCode::Ok, headers.clone(), body.clone()),
+        )]);
+        let poller: Poller<ArmOperationStatus> = new_poller(
+            pipeline,
+            Request::new(RESOURCE_URL.parse().unwrap(), Method::Post),
+            Some(FinalStateVia::OperationLocation(unexpected_extraction)),
+            None,
+        );
+        let error = poller.await.unwrap_err();
+        if status == "Failed" {
+            assert_eq!(error.to_string(), "action failed");
+            match error.kind() {
+                ErrorKind::HttpResponse {
+                    status,
+                    error_code,
+                    raw_response,
+                } => {
+                    assert_eq!(*status, StatusCode::Ok);
+                    assert_eq!(error_code.as_deref(), Some("ActionError"));
+                    let response = raw_response.as_ref().unwrap();
+                    assert_eq!(response.headers(), &headers);
+                    assert_eq!(response.body().as_ref(), body.as_bytes());
+                }
+                kind => panic!("expected a response error, got {kind:?}"),
+            }
+        } else {
+            assert!(error.to_string().contains("canceled"), "{error}");
+        }
+        assert!(pending.lock().unwrap().is_empty());
+    }
+}
+
+#[tokio::test]
+async fn initial_operation_location_missing_status_keeps_polling() {
+    for body in [
+        "",
+        "{}",
+        r#"{"properties":{"provisioningState":"Failed"}}"#,
+        r#"{"status":"","properties":{"provisioningState":"Succeeded"}}"#,
+    ] {
+        let mut headers = Headers::new();
+        headers.insert(OPERATION_LOCATION, POLLING_URL);
+        headers.insert(RETRY_AFTER_MS, "0");
+        let (pipeline, pending) = scripted_pipeline(vec![
+            (
+                Method::Post,
+                RESOURCE_URL,
+                AsyncRawResponse::from_bytes(StatusCode::Accepted, headers, body),
+            ),
+            (
+                Method::Get,
+                POLLING_URL,
+                monitor_response(br#"{"status":"Succeeded","id":"finished"}"#),
+            ),
+        ]);
+        let poller: Poller<ArmOperationStatus> = new_poller(
+            pipeline,
+            Request::new(RESOURCE_URL.parse().unwrap(), Method::Post),
+            None,
+            None,
+        );
+        assert_eq!(poller.await.unwrap().into_model().unwrap().id, "finished");
+        assert!(pending.lock().unwrap().is_empty());
+    }
+}
+
+#[tokio::test]
+async fn initial_async_post_provisioning_state_does_not_complete_action() {
+    for initial_status in [StatusCode::Ok, StatusCode::Accepted] {
+        for provisioning_state in ["Succeeded", "Failed", "Canceled"] {
+            for terminal_status in ["Succeeded", "Failed"] {
+                let mut headers = Headers::new();
+                headers.insert(AZURE_ASYNC_OPERATION, POLLING_URL);
+                headers.insert(LOCATION, LOCATION_URL);
+                headers.insert(RETRY_AFTER_MS, "0");
+                // CDN stop returns a provisioned resource while the action is still running.
+                let body = format!(
+                    r#"{{"properties":{{"provisioningState":"{provisioning_state}","resourceState":"Stopping"}}}}"#,
+                );
+                let terminal = format!(
+                    r#"{{"status":"{terminal_status}","error":{{"code":"ActionError","message":"action failed"}}}}"#,
+                );
+                let mut responses = vec![
+                    (
+                        Method::Post,
+                        RESOURCE_URL,
+                        AsyncRawResponse::from_bytes(initial_status, headers, body),
+                    ),
+                    (
+                        Method::Get,
+                        POLLING_URL,
+                        monitor_response(br#"{"status":"InProgress"}"#),
+                    ),
+                    (
+                        Method::Get,
+                        POLLING_URL,
+                        AsyncRawResponse::from_bytes(StatusCode::Ok, Headers::new(), terminal),
+                    ),
+                ];
+                if terminal_status == "Succeeded" {
+                    responses.push((
+                        Method::Get,
+                        LOCATION_URL,
+                        monitor_response(br#"{"id":"stopped"}"#),
+                    ));
+                }
+                let (pipeline, pending) = scripted_pipeline(responses);
+                let poller: Poller<ArmOperationStatus> = new_poller(
+                    pipeline,
+                    Request::new(RESOURCE_URL.parse().unwrap(), Method::Post),
+                    None,
+                    None,
+                );
+                let result = poller.await;
+                if terminal_status == "Succeeded" {
+                    assert_eq!(result.unwrap().into_model().unwrap().id, "stopped");
+                } else {
+                    let error = result.unwrap_err();
+                    assert_eq!(error.to_string(), "action failed");
+                    assert!(matches!(
+                        error.kind(),
+                        ErrorKind::HttpResponse { error_code: Some(code), .. } if code == "ActionError",
+                    ));
+                }
+                assert!(pending.lock().unwrap().is_empty());
+            }
+        }
+    }
+}
+
+#[tokio::test]
+async fn initial_async_resource_provisioning_state_can_complete_operation() {
+    for method in [Method::Put, Method::Patch] {
+        let mut headers = Headers::new();
+        headers.insert(AZURE_ASYNC_OPERATION, POLLING_URL);
+        let (pipeline, pending) = scripted_pipeline(vec![
+            (
+                method,
+                RESOURCE_URL,
+                AsyncRawResponse::from_bytes(
+                    StatusCode::Created,
+                    headers,
+                    r#"{"status":{"value":"unrelated"},"properties":{"provisioningState":"Succeeded"}}"#,
+                ),
+            ),
+            (
+                Method::Get,
+                RESOURCE_URL,
+                monitor_response(br#"{"id":"finished"}"#),
+            ),
+        ]);
+        let poller: Poller<ArmOperationStatus> = new_poller(
+            pipeline,
+            Request::new(RESOURCE_URL.parse().unwrap(), method),
+            None,
+            None,
+        );
+        assert_eq!(poller.await.unwrap().into_model().unwrap().id, "finished");
+        assert!(pending.lock().unwrap().is_empty());
+    }
+}
+
+#[tokio::test]
 async fn operation_location_borrowed_result_after_streaming() {
     static EXTRACTIONS: AtomicUsize = AtomicUsize::new(0);
     const BODY: &[u8] =
@@ -1249,31 +1485,43 @@ async fn operation_location_unsuccessful_status_skips_callback() {
 
 #[tokio::test]
 async fn explicit_strategy_keeps_header_priority() {
-    let mut headers = Headers::new();
-    headers.insert(OPERATION_LOCATION, "/operations/1?api-version=other");
-    headers.insert(AZURE_ASYNC_OPERATION, "/async?api-version=other");
-    headers.insert(RETRY_AFTER_MS, "0");
-    let initial = AsyncRawResponse::from_bytes(
-        StatusCode::Accepted,
-        headers,
-        br#"{"status":"InProgress"}"#.as_slice(),
-    );
-    let (pipeline, pending) = scripted_pipeline(vec![
-        (Method::Post, RESOURCE_URL, initial),
+    for (method, strategy, location) in [
         (
-            Method::Get,
-            "https://example.com/async?api-version=original",
-            monitor_response(br#"{"status":"Succeeded","id":"inline"}"#),
+            Method::Post,
+            FinalStateVia::OperationLocation(unexpected_extraction),
+            false,
         ),
-    ]);
-    let poller: Poller<ArmOperationStatus> = new_poller(
-        pipeline,
-        Request::new(RESOURCE_URL.parse().unwrap(), Method::Post),
-        Some(FinalStateVia::OperationLocation(unexpected_extraction)),
-        None,
-    );
-    assert_eq!(poller.await.unwrap().into_model().unwrap().id, "inline");
-    assert!(pending.lock().unwrap().is_empty());
+        (Method::Delete, FinalStateVia::Location, true),
+    ] {
+        let mut headers = Headers::new();
+        headers.insert(OPERATION_LOCATION, "/operations/1?api-version=other");
+        headers.insert(AZURE_ASYNC_OPERATION, "/async?api-version=other");
+        if location {
+            headers.insert(LOCATION, LOCATION_URL);
+        }
+        headers.insert(RETRY_AFTER_MS, "0");
+        let initial = AsyncRawResponse::from_bytes(
+            StatusCode::Accepted,
+            headers,
+            br#"{"status":"InProgress"}"#.as_slice(),
+        );
+        let (pipeline, pending) = scripted_pipeline(vec![
+            (method, RESOURCE_URL, initial),
+            (
+                Method::Get,
+                "https://example.com/async?api-version=original",
+                monitor_response(br#"{"status":"Succeeded","id":"inline"}"#),
+            ),
+        ]);
+        let poller: Poller<ArmOperationStatus> = new_poller(
+            pipeline,
+            Request::new(RESOURCE_URL.parse().unwrap(), method),
+            Some(strategy),
+            None,
+        );
+        assert_eq!(poller.await.unwrap().into_model().unwrap().id, "inline");
+        assert!(pending.lock().unwrap().is_empty());
+    }
 }
 
 #[tokio::test]
@@ -2015,57 +2263,144 @@ async fn final_request_accepts_xml_resource() {
 
 #[test]
 fn status_uses_the_polling_protocol_and_phase() {
-    for method in [
-        PollingMethod::AzureAsyncOperation,
-        PollingMethod::OperationLocation,
-        PollingMethod::Location,
-        PollingMethod::Body,
+    const CONFLICTING: &str =
+        r#"{"status":"Succeeded","properties":{"provisioningState":"Failed"}}"#;
+    const RESOURCE_SUCCEEDED: &str =
+        r#"{"status":"Enabled","properties":{"provisioningState":"Succeeded"}}"#;
+    const RESOURCE_CREATING: &str =
+        r#"{"status":"Failed","properties":{"provisioningState":"Creating"}}"#;
+    for (method, original_method, initial, body, expected) in [
+        (
+            PollingMethod::AzureAsyncOperation,
+            Method::Put,
+            true,
+            CONFLICTING,
+            PollerStatus::Failed,
+        ),
+        (
+            PollingMethod::AzureAsyncOperation,
+            Method::Patch,
+            true,
+            CONFLICTING,
+            PollerStatus::Failed,
+        ),
+        (
+            PollingMethod::AzureAsyncOperation,
+            Method::Post,
+            true,
+            CONFLICTING,
+            PollerStatus::InProgress,
+        ),
+        (
+            PollingMethod::AzureAsyncOperation,
+            Method::Post,
+            false,
+            CONFLICTING,
+            PollerStatus::Succeeded,
+        ),
+        (
+            PollingMethod::OperationLocation,
+            Method::Post,
+            true,
+            CONFLICTING,
+            PollerStatus::Succeeded,
+        ),
+        (
+            PollingMethod::OperationLocation,
+            Method::Put,
+            true,
+            CONFLICTING,
+            PollerStatus::Succeeded,
+        ),
+        (
+            PollingMethod::OperationLocation,
+            Method::Post,
+            false,
+            CONFLICTING,
+            PollerStatus::Succeeded,
+        ),
+        (
+            PollingMethod::Location,
+            Method::Delete,
+            true,
+            CONFLICTING,
+            PollerStatus::Failed,
+        ),
+        (
+            PollingMethod::Location,
+            Method::Delete,
+            false,
+            CONFLICTING,
+            PollerStatus::Failed,
+        ),
+        (
+            PollingMethod::Body,
+            Method::Put,
+            true,
+            CONFLICTING,
+            PollerStatus::Failed,
+        ),
+        (
+            PollingMethod::Body,
+            Method::Patch,
+            false,
+            CONFLICTING,
+            PollerStatus::Failed,
+        ),
+        (
+            PollingMethod::AzureAsyncOperation,
+            Method::Put,
+            true,
+            RESOURCE_SUCCEEDED,
+            PollerStatus::Succeeded,
+        ),
+        (
+            PollingMethod::AzureAsyncOperation,
+            Method::Put,
+            false,
+            RESOURCE_SUCCEEDED,
+            PollerStatus::InProgress,
+        ),
+        (
+            PollingMethod::OperationLocation,
+            Method::Post,
+            true,
+            RESOURCE_SUCCEEDED,
+            PollerStatus::InProgress,
+        ),
+        (
+            PollingMethod::AzureAsyncOperation,
+            Method::Patch,
+            true,
+            RESOURCE_CREATING,
+            PollerStatus::InProgress,
+        ),
+        (
+            PollingMethod::AzureAsyncOperation,
+            Method::Post,
+            false,
+            RESOURCE_CREATING,
+            PollerStatus::Failed,
+        ),
+        (
+            PollingMethod::OperationLocation,
+            Method::Post,
+            true,
+            RESOURCE_CREATING,
+            PollerStatus::Failed,
+        ),
     ] {
         let polling = PollingInfo {
             method,
             location: None,
             operation_url: None,
         };
-        for initial in [true, false] {
-            let operation_monitor = !initial
-                && matches!(
-                    method,
-                    PollingMethod::AzureAsyncOperation | PollingMethod::OperationLocation
-                );
-            for (body, resource_status, operation_status) in [
-                (
-                    r#"{"status":"Succeeded","properties":{"provisioningState":"Failed"}}"#,
-                    PollerStatus::Failed,
-                    PollerStatus::Succeeded,
-                ),
-                (
-                    r#"{"status":"Enabled","properties":{"provisioningState":"Succeeded"}}"#,
-                    PollerStatus::Succeeded,
-                    PollerStatus::InProgress,
-                ),
-                (
-                    r#"{"status":"Failed","properties":{"provisioningState":"Creating"}}"#,
-                    PollerStatus::InProgress,
-                    PollerStatus::Failed,
-                ),
-                (
-                    r#"{"status":"Succeeded","properties":{"provisioningState":"Completed"}}"#,
-                    PollerStatus::InProgress,
-                    PollerStatus::Succeeded,
-                ),
-            ] {
-                let response: Response<ArmOperationStatus> =
-                    RawResponse::from_bytes(StatusCode::Ok, Headers::new(), body).into();
-                assert_eq!(
-                    polling.status(&response, initial).unwrap(),
-                    if operation_monitor {
-                        operation_status
-                    } else {
-                        resource_status
-                    },
-                );
-            }
-        }
+        let response: Response<ArmOperationStatus> =
+            RawResponse::from_bytes(StatusCode::Ok, Headers::new(), body).into();
+        assert_eq!(
+            polling.status(&response, initial, original_method).unwrap(),
+            expected
+        );
     }
 }
 

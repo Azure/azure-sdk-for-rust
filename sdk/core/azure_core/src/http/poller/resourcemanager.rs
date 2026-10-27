@@ -213,9 +213,12 @@ impl<M: StatusMonitor> Copy for FinalStateVia<M> {}
 /// Polling and final GET requests use the original request's `api-version` query parameter,
 /// replacing any version supplied by the service and adding it when absent.
 ///
-/// Operation-monitor responses from `azure-asyncoperation` and `operation-location` use their
-/// top-level `status` field. Resource responses use only `properties.provisioningState`;
-/// unrelated resource `status` fields are ignored.
+/// With `azure-asyncoperation`, the initial response uses `properties.provisioningState`,
+/// except for POST actions, whose initial resource state does not determine action completion.
+/// Subsequent monitor responses use top-level `status`. With `operation-location`, both initial
+/// and subsequent responses use top-level `status`; a terminal initial status skips monitor GETs.
+/// Other resource responses use only `properties.provisioningState`; unrelated resource `status`
+/// fields are ignored.
 ///
 /// Location polling continues after HTTP 408, 429, 500, 502, 503, or 504 responses, even after
 /// the pipeline's retries are exhausted, and honors retry delays from those responses.
@@ -343,7 +346,7 @@ where
                     }
                 };
                 let initial = matches!(poller_state, PollerState::Initial);
-                let status = polling.status(&response, initial)?;
+                let status = polling.status(&response, initial, original_method)?;
                 let previous_next_link = match poller_state {
                     PollerState::Initial => None,
                     PollerState::More(PollerContinuation::Links { next_link, .. }) => {
@@ -478,7 +481,12 @@ impl PollingInfo {
         })
     }
 
-    fn status<M>(&self, response: &Response<M>, initial: bool) -> crate::Result<PollerStatus> {
+    fn status<M>(
+        &self,
+        response: &Response<M>,
+        initial: bool,
+        original_method: Method,
+    ) -> crate::Result<PollerStatus> {
         if self.method == PollingMethod::Nop {
             return if response.status() == StatusCode::Accepted {
                 Err(crate::Error::new(
@@ -491,6 +499,14 @@ impl PollingInfo {
         }
         if response.status() == StatusCode::NoContent {
             return Ok(PollerStatus::Succeeded);
+        }
+        // A POST action can return an existing resource whose provisioning state
+        // does not describe the action.
+        if initial
+            && self.method == PollingMethod::AzureAsyncOperation
+            && original_method == Method::Post
+        {
+            return Ok(PollerStatus::InProgress);
         }
 
         #[derive(serde::Deserialize)]
@@ -507,11 +523,8 @@ impl PollingInfo {
         // a resource's unrelated top-level status can have any JSON shape.
         // Operation endpoints instead require top-level status:
         // https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/async-operations#azure-asyncoperation-request-and-response
-        let operation_monitor = !initial
-            && matches!(
-                self.method,
-                PollingMethod::AzureAsyncOperation | PollingMethod::OperationLocation
-            );
+        let operation_monitor = self.method == PollingMethod::OperationLocation
+            || (!initial && self.method == PollingMethod::AzureAsyncOperation);
         let status = if response.body().is_empty() {
             None
         } else if operation_monitor {
