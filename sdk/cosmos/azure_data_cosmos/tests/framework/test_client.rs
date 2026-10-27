@@ -414,6 +414,17 @@ pub async fn probe_data_plane_ready(
     label: &str,
     container: &ContainerClient,
 ) -> azure_data_cosmos::Result<()> {
+    let probe_id = format!("data-plane-readiness-probe-{}", Uuid::new_v4());
+    probe_data_plane_ready_with_partition_key(label, container, PartitionKey::from(probe_id)).await
+}
+
+/// Probes data-plane readiness using a partition key that matches the target
+/// container's partition-key definition.
+pub async fn probe_data_plane_ready_with_partition_key(
+    label: &str,
+    container: &ContainerClient,
+    partition_key: PartitionKey,
+) -> azure_data_cosmos::Result<()> {
     const MAX_ATTEMPTS: usize = 120;
     const RETRY_DELAY: Duration = Duration::from_millis(500);
 
@@ -421,11 +432,7 @@ pub async fn probe_data_plane_ready(
     let probe_id = format!("data-plane-readiness-probe-{}", Uuid::new_v4());
     for attempt in 1..=MAX_ATTEMPTS {
         let outcome = container
-            .delete_item(
-                PartitionKey::from(probe_id.clone()),
-                probe_id.as_str(),
-                None,
-            )
+            .delete_item(partition_key.clone(), probe_id.as_str(), None)
             .await;
 
         let error = match outcome {

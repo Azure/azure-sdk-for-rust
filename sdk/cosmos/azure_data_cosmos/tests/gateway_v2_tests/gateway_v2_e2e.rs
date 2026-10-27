@@ -353,6 +353,7 @@ async fn wait_for_container_data_plane_ready_in_regions(
     const READINESS_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
     const ATTEMPT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
     const MAX_BACKOFF: std::time::Duration = std::time::Duration::from_secs(5);
+    const REQUIRED_CONSECUTIVE_SUCCESSES: u32 = 2;
 
     let (_, readable_regions) = client
         .cached_account_regions_for_testing()
@@ -362,8 +363,8 @@ async fn wait_for_container_data_plane_ready_in_regions(
         return Err("Gateway 2.0 account must expose at least one readable region".into());
     }
 
-    let deadline = tokio::time::Instant::now() + READINESS_TIMEOUT;
     for target_region in &readable_regions {
+        let deadline = tokio::time::Instant::now() + READINESS_TIMEOUT;
         let excluded_regions = readable_regions
             .iter()
             .filter(|region| *region != target_region)
@@ -375,6 +376,7 @@ async fn wait_for_container_data_plane_ready_in_regions(
         let options = QueryOptions::default().with_operation_options(operation);
         let mut backoff = std::time::Duration::from_millis(100);
         let mut attempt = 1_u32;
+        let mut consecutive_successes = 0_u32;
 
         loop {
             let attempt_deadline = deadline.min(tokio::time::Instant::now() + ATTEMPT_TIMEOUT);
@@ -384,13 +386,20 @@ async fn wait_for_container_data_plane_ready_in_regions(
             )
             .await
             {
-                Ok(Ok(())) => break,
+                Ok(Ok(())) => {
+                    consecutive_successes += 1;
+                    if consecutive_successes >= REQUIRED_CONSECUTIVE_SUCCESSES {
+                        break;
+                    }
+                    backoff = std::time::Duration::from_millis(100);
+                }
                 Ok(Err(error))
                     if is_retryable_data_plane_readiness_failure(
                         &error.status(),
                         &error.to_string(),
                     ) && tokio::time::Instant::now() < deadline =>
                 {
+                    consecutive_successes = 0;
                     eprintln!(
                         "container data-plane readiness probe for region '{}' failed on attempt {attempt}; retrying after {backoff:?}: {error}",
                         target_region.as_str()
@@ -404,6 +413,7 @@ async fn wait_for_container_data_plane_ready_in_regions(
                     .into());
                 }
                 Err(_) if tokio::time::Instant::now() < deadline => {
+                    consecutive_successes = 0;
                     eprintln!(
                         "container data-plane readiness probe for region '{}' timed out on attempt {attempt}; retrying after {backoff:?}",
                         target_region.as_str()

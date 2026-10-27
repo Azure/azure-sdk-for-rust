@@ -10,13 +10,13 @@ use std::{
 use azure_core::{credentials::TokenCredential, Uuid};
 use azure_data_cosmos::{
     clients::ContainerClient,
-    models::{ContainerProperties, PartitionKeyDefinition},
+    models::{ContainerProperties, PartitionKeyDefinition, PartitionKeyValue},
     options::{
         BinaryEncodingOptions, ConnectionPoolOptions, OperationOptions, PartitionFailoverOptions,
         ReadConsistencyStrategy,
     },
     AccountEndpoint, AccountReference, CosmosClient, CosmosClientBuilder, CosmosRuntime,
-    RoutingStrategy,
+    PartitionKey, RoutingStrategy,
 };
 use futures::FutureExt;
 
@@ -130,6 +130,16 @@ enum AuthMode {
 
 fn requires_data_plane_readiness_probe(auth_mode: AuthMode, backend: Option<&str>) -> bool {
     auth_mode == AuthMode::Aad || backend == Some("azureLive")
+}
+
+fn readiness_probe_partition_key(definition: &PartitionKeyDefinition) -> TestResult<PartitionKey> {
+    let values = definition
+        .paths()
+        .iter()
+        .enumerate()
+        .map(|(index, _)| PartitionKeyValue::from(format!("readiness-{index}")))
+        .collect::<Vec<_>>();
+    Ok(PartitionKey::try_from(values)?)
 }
 
 fn parse_auth_mode(value: Result<String, VarError>) -> TestResult<AuthMode> {
@@ -306,6 +316,11 @@ impl E2eTestFixture {
         properties: ContainerProperties,
         auth_mode: AuthMode,
     ) -> TestResult<Self> {
+        let backend = std::env::var("AZURE_COSMOS_E2E_BACKEND").ok();
+        let readiness_partition_key =
+            requires_data_plane_readiness_probe(auth_mode, backend.as_deref())
+                .then(|| readiness_probe_partition_key(&properties.partition_key))
+                .transpose()?;
         // The stale-resource sweeper recognizes the test-db- prefix and ages resources by _ts.
         let database_id = format!("test-db-e2e-{}", Uuid::now_v7());
         let container_id = properties.id.to_string();
@@ -320,9 +335,13 @@ impl E2eTestFixture {
                 .database_client(&database_id)
                 .container_client(&container_id, None)
                 .await?;
-            let backend = std::env::var("AZURE_COSMOS_E2E_BACKEND").ok();
-            if requires_data_plane_readiness_probe(auth_mode, backend.as_deref()) {
-                crate::framework::probe_data_plane_ready("E2E data client", &container).await?;
+            if let Some(partition_key) = readiness_partition_key {
+                crate::framework::probe_data_plane_ready_with_partition_key(
+                    "E2E data client",
+                    &container,
+                    partition_key,
+                )
+                .await?;
             }
             Ok(container)
         }
@@ -474,8 +493,9 @@ pub(super) fn connection_string_value(connection_string: &str, key: &str) -> Tes
 #[cfg(test)]
 mod tests {
     use super::{
-        account_reference, parse_auth_mode, requires_data_plane_readiness_probe, AuthMode,
-        TestResult, VarError,
+        account_reference, parse_auth_mode, readiness_probe_partition_key,
+        requires_data_plane_readiness_probe, AuthMode, PartitionKeyDefinition, TestResult,
+        VarError,
     };
     use azure_core_test::credentials::MockCredential;
 
@@ -510,6 +530,19 @@ mod tests {
             Some("azureLive")
         ));
         assert!(!requires_data_plane_readiness_probe(AuthMode::Key, None));
+    }
+
+    #[test]
+    fn readiness_probe_key_matches_partition_key_arity() -> TestResult {
+        for definition in [
+            PartitionKeyDefinition::from("/pk"),
+            PartitionKeyDefinition::from(("/tenant", "/user")),
+            PartitionKeyDefinition::from(("/tenant", "/user", "/session")),
+        ] {
+            let partition_key = readiness_probe_partition_key(&definition)?;
+            assert!(definition.is_complete(&partition_key));
+        }
+        Ok(())
     }
 
     #[test]
@@ -680,6 +713,23 @@ mod tests {
                 assert_no_databases(&management).await?;
             }
             Ok(())
+        }
+
+        #[tokio::test]
+        async fn aad_readiness_probe_supports_hierarchical_partition_keys() -> TestResult {
+            let emulator = emulator()?;
+            let data = client(&emulator, AuthMode::Aad).await?;
+            let management = client(&emulator, AuthMode::Key).await?;
+            let fixture = E2eTestFixture::new_with_clients(
+                data,
+                management.clone(),
+                ContainerProperties::new("items", ("/tenant", "/user").into()),
+                AuthMode::Aad,
+            )
+            .await?;
+
+            fixture.cleanup().await?;
+            assert_no_databases(&management).await
         }
 
         #[tokio::test]
