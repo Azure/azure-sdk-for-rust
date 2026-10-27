@@ -4440,13 +4440,19 @@ impl CosmosDriver {
                 container_ref,
                 self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
             );
-            let pipeline = planner::build_unordered_merge(
-                &feed_range,
-                &mut topology,
-                &operation,
-                resume_state,
-            )
-            .await?;
+            let pipeline = if plan_options.change_feed_processor {
+                planner::build_change_feed(
+                    &feed_range,
+                    &mut topology,
+                    &operation,
+                    resume_state,
+                    true,
+                )
+                .await?
+            } else {
+                planner::build_unordered_merge(&feed_range, &mut topology, &operation, resume_state)
+                    .await?
+            };
             return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
         }
 
