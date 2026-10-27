@@ -14,14 +14,14 @@
 //!
 //! The framework allows tests to easily run against real Cosmos DB instances, the local emulator, or a mock server using test-proxy.
 
-pub use azure_data_cosmos_test::resource_manager;
+pub use azure_data_cosmos_test::resourcemanager;
 pub mod emulator_credential;
 pub mod mock_account;
 pub mod test_client;
 pub mod test_data;
 
 pub use emulator_credential::{CosmosEmulatorCredential, CredentialRecorder};
-pub use resource_manager::{
+pub use resourcemanager::{
     resource_manager_from_env, CosmosResourceManager, ResourceManager, ResourceManagerError,
     ResourceThroughput,
 };

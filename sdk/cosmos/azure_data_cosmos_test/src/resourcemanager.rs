@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Resource lifecycle support for Cosmos live tests.
+//! Azure Resource Manager lifecycle support for Cosmos live tests.
 //!
 //! The test framework depends on [`CosmosResourceManager`] rather than a
 //! specific control-plane implementation. The current implementation invokes
-//! Azure CLI commands directly, which keeps ARM transport and authentication
-//! details out of the Rust test crates.
+//! Azure CLI commands directly, which keeps Resource Manager transport and
+//! authentication details out of the Rust test crates.
 
 // cspell:ignore statuscode
 

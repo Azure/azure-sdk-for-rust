@@ -35,7 +35,7 @@ use super::env::{
     EMULATOR_CONNECTION_STRING, GATEWAY_V2_ENDPOINT_ENV_VAR, GATEWAY_V2_KEY_ENV_VAR,
     GATEWAY_V2_MULTI_REGION_ENDPOINT_ENV_VAR, GATEWAY_V2_MULTI_REGION_KEY_ENV_VAR,
 };
-use super::resource_manager::{resource_manager_from_env, ResourceManager};
+use super::resourcemanager::{resource_manager_from_env, ResourceManager};
 
 /// Applies the runtime-level test defaults every framework-built
 /// [`CosmosDriverRuntime`] shares.
