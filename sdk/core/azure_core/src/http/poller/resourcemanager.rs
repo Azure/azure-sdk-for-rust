@@ -26,6 +26,18 @@ pub(super) const AZURE_ASYNC_OPERATION: HeaderName =
     HeaderName::from_static("azure-asyncoperation");
 const OPERATION_LOCATION: HeaderName = HeaderName::from_static("operation-location");
 pub(super) const LOCATION: HeaderName = HeaderName::from_static("location");
+const RETRY_HEADERS: &[HeaderName] = &[RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER];
+
+// Keep in sync with DEFAULT_RETRY_STATUS_CODES in
+// sdk/core/typespec_client_core/src/http/policies/retry/mod.rs.
+const DEFAULT_RETRY_STATUS_CODES: &[StatusCode] = &[
+    StatusCode::RequestTimeout,
+    StatusCode::TooManyRequests,
+    StatusCode::InternalServerError,
+    StatusCode::BadGateway,
+    StatusCode::ServiceUnavailable,
+    StatusCode::GatewayTimeout,
+];
 
 /// Options for [`new_poller()`].
 #[derive(Debug, Clone)]
@@ -297,16 +309,8 @@ where
                         .await?;
                     // The pipeline already retries these codes. Exhausted retries must not
                     // terminate Location polling or replace its current polling URL.
-                    let transient = location_poll
-                        && matches!(
-                            response.status(),
-                            StatusCode::RequestTimeout
-                                | StatusCode::TooManyRequests
-                                | StatusCode::InternalServerError
-                                | StatusCode::BadGateway
-                                | StatusCode::ServiceUnavailable
-                                | StatusCode::GatewayTimeout
-                        );
+                    let transient =
+                        location_poll && DEFAULT_RETRY_STATUS_CODES.contains(&response.status());
                     if !transient {
                         break if location_poll {
                             check_success(response, None).await?
@@ -316,17 +320,14 @@ where
                     }
                     let retry_after = crate::http::poller::get_retry_after(
                         response.headers(),
-                        &[RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER],
+                        RETRY_HEADERS,
                         &poller_options,
                     );
                     crate::sleep::sleep(retry_after).await;
                 };
                 let (status_code, headers, body) = response.deconstruct();
-                let retry_after = crate::http::poller::get_retry_after(
-                    &headers,
-                    &[RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER],
-                    &poller_options,
-                );
+                let retry_after =
+                    crate::http::poller::get_retry_after(&headers, RETRY_HEADERS, &poller_options);
                 let response: Response<M> =
                     RawResponse::from_bytes(status_code, headers.clone(), body).into();
                 let polling = {
