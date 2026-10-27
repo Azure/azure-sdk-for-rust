@@ -1,5 +1,17 @@
 # Release History
 
+## Unreleased
+
+### Features Added
+
+- Added `cosmos_processor_*` completion-queue APIs for driver-owned change feed processing and explicit post-callback checkpoint acknowledgments.
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.2.0 (2026-10-01)
 
 ### Features Added

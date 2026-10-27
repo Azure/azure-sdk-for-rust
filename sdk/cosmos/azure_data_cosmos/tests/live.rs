@@ -4,6 +4,8 @@
 // Integration tests compose large Cosmos operation futures on tokio test threads.
 #![allow(clippy::large_futures)]
 
+#[path = "live_tests/change_feed_processor.rs"]
+mod change_feed_processor;
 #[path = "live_tests/cosmos_query.rs"]
 mod cosmos_query;
 mod framework;

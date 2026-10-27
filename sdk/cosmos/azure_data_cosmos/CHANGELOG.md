@@ -4,8 +4,11 @@
 
 ### Features Added
 
-- `ChangeFeedProcessor::start()` now delegates workload bootstrap to the shared driver, preserving existing progress; consumption remains unavailable after initialization.
-- Added a mode-typed change feed processor API scaffold with required async callbacks, feed and lease options, local configuration validation, lease context, and monitoring types; execution and monitoring return not-implemented errors.
+- Added a standalone mode-typed `ChangeFeedProcessorBuilder` requiring a typed mode, clients, names, and an async batch callback registered with `handle_change_feed()` before `build()`; mode-specific start configuration is enforced at compile time.
+- Added processor builder configuration for page-size hints, feed polling delay, initial continuation, minimum and maximum leases per host, and lease verification on restart; the required processor name supplies the workload's lease prefix.
+- Added callback lease identity through `ChangeFeedProcessorContext`, local `is_started()` inspection, and a `current_state()` monitoring scaffold that still returns a not-implemented error.
+- `ChangeFeedProcessorBuilder::build()` now returns a result and rejects blank processor/instance names, inconsistent bounded lease counts, and blank initial continuation tokens without network validation.
+- `ChangeFeedProcessor::start()` bootstraps the workload and starts driver-owned lease balancing, renewal, and polling; a checkpoint follows each successful callback before the next batch for that lease, and `stop()` waits for local shutdown.
 
 ### Breaking Changes
 

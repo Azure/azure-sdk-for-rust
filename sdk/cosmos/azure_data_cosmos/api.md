@@ -76,12 +76,10 @@ pub struct ChangeFeedProcessor<M: ChangeFeedProcessorMode, T, H> {
 impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessor<M, T, H> {
     pub async fn current_state(&self) -> crate::Result<Vec<ChangeFeedProcessorState>>;
     pub fn is_started(&self) -> bool;
-    pub async fn start(&self) -> crate::Result<()>;
+    pub async fn start<Fut>(&self) -> crate::Result<()> where T: DeserializeOwned + Send + 'static, H: Fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut + Send + Sync + 'static, Fut: Future<Output = crate::Result<()>> + Send + 'static;
     pub async fn stop(&self) -> crate::Result<()>;
 }
 #[must_use]
-#[cfg_attr(not(all(test, feature = "__internal_in_memory_emulator")), expect(dead_code, reason = "Configuration is retained for future execution."))]
-#[expect(dead_code, reason = "Configuration is retained for future execution.")]
 pub struct ChangeFeedProcessorBuilder<M: ChangeFeedProcessorMode, T = (), H = ()> {
 }
 impl<M: ChangeFeedProcessorMode> ChangeFeedProcessorBuilder<M> {
