@@ -4,7 +4,7 @@
   "id": "batch.atomicity",
   "title": "Transactional batch commits all operations or none",
   "requirement": "A successful same-partition batch commits every operation, while one failed operation rolls back every mutation and returns per-operation statuses.",
-  "maturity": "candidate",
+  "maturity": "stable",
   "precedents": [
     {
       "sdk": "rust",
@@ -37,7 +37,7 @@
       ]
     },
     "azureLive": {
-      "applicability": "supported",
+      "applicability": "required",
       "fidelity": "full"
     }
   }

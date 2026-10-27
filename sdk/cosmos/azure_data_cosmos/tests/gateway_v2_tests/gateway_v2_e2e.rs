@@ -12,10 +12,10 @@ use azure_data_cosmos::models::{
     ThroughputProperties,
 };
 use azure_data_cosmos::options::{
-    AvailabilityStrategy, BinaryEncodingOptions, ChangeFeedStartFrom, ConnectionPoolOptions,
-    CreateContainerOptions, ExcludedRegions, ItemReadOptions, ItemWriteOptions, MaxItemCountHint,
-    OperationOptionsBuilder, PartitionFailoverOptions, Precondition, QueryOptions,
-    ReadConsistencyStrategy, Region,
+    AvailabilityStrategy, BatchOptions, BinaryEncodingOptions, ChangeFeedStartFrom,
+    ConnectionPoolOptions, ContentResponseOnWrite, CreateContainerOptions, ExcludedRegions,
+    ItemReadOptions, ItemWriteOptions, MaxItemCountHint, OperationOptionsBuilder,
+    PartitionFailoverOptions, Precondition, QueryOptions, ReadConsistencyStrategy, Region,
 };
 use azure_data_cosmos::{
     clients::DatabaseClient, feed::FeedRange, AccountEndpoint, AccountReference, CosmosClient,
@@ -353,6 +353,7 @@ async fn wait_for_container_data_plane_ready_in_regions(
     const READINESS_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
     const ATTEMPT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
     const MAX_BACKOFF: std::time::Duration = std::time::Duration::from_secs(5);
+    const REQUIRED_CONSECUTIVE_SUCCESSES: u32 = 2;
 
     let (_, readable_regions) = client
         .cached_account_regions_for_testing()
@@ -362,8 +363,8 @@ async fn wait_for_container_data_plane_ready_in_regions(
         return Err("Gateway 2.0 account must expose at least one readable region".into());
     }
 
-    let deadline = tokio::time::Instant::now() + READINESS_TIMEOUT;
     for target_region in &readable_regions {
+        let deadline = tokio::time::Instant::now() + READINESS_TIMEOUT;
         let excluded_regions = readable_regions
             .iter()
             .filter(|region| *region != target_region)
@@ -375,6 +376,7 @@ async fn wait_for_container_data_plane_ready_in_regions(
         let options = QueryOptions::default().with_operation_options(operation);
         let mut backoff = std::time::Duration::from_millis(100);
         let mut attempt = 1_u32;
+        let mut consecutive_successes = 0_u32;
 
         loop {
             let attempt_deadline = deadline.min(tokio::time::Instant::now() + ATTEMPT_TIMEOUT);
@@ -384,13 +386,20 @@ async fn wait_for_container_data_plane_ready_in_regions(
             )
             .await
             {
-                Ok(Ok(())) => break,
+                Ok(Ok(())) => {
+                    consecutive_successes += 1;
+                    if consecutive_successes >= REQUIRED_CONSECUTIVE_SUCCESSES {
+                        break;
+                    }
+                    backoff = std::time::Duration::from_millis(100);
+                }
                 Ok(Err(error))
                     if is_retryable_data_plane_readiness_failure(
                         &error.status(),
                         &error.to_string(),
                     ) && tokio::time::Instant::now() < deadline =>
                 {
+                    consecutive_successes = 0;
                     eprintln!(
                         "container data-plane readiness probe for region '{}' failed on attempt {attempt}; retrying after {backoff:?}: {error}",
                         target_region.as_str()
@@ -404,6 +413,7 @@ async fn wait_for_container_data_plane_ready_in_regions(
                     .into());
                 }
                 Err(_) if tokio::time::Instant::now() < deadline => {
+                    consecutive_successes = 0;
                     eprintln!(
                         "container data-plane readiness probe for region '{}' timed out on attempt {attempt}; retrying after {backoff:?}",
                         target_region.as_str()
@@ -1407,6 +1417,11 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
                 .create_container(ContainerProperties::new("batch", "/pk".into()), None)
                 .await?;
             let container = wait_for_container_ready(&client, &database, "batch").await?;
+            let batch_options = BatchOptions::default().with_operation_options(
+                OperationOptionsBuilder::new()
+                    .with_content_response_on_write(ContentResponseOnWrite::Enabled)
+                    .build(),
+            );
             let mut existing = GwV2TestItem {
                 id: "existing".into(),
                 pk: "A".into(),
@@ -1416,7 +1431,7 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
             let created = container
                 .execute_transactional_batch(
                     TransactionalBatch::new("A").create_item(&existing)?,
-                    None,
+                    Some(batch_options.clone()),
                 )
                 .await?;
             assert_transport_kind(&created.diagnostics(), TransportKind::GatewayV2);
@@ -1433,7 +1448,7 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
             let read_only = container
                 .execute_transactional_batch(
                     TransactionalBatch::new("A").read_item(existing.id.clone(), None),
-                    None,
+                    Some(batch_options.clone()),
                 )
                 .await?;
             assert_transport_kind(&read_only.diagnostics(), TransportKind::GatewayV2);
@@ -1461,7 +1476,7 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
                     TransactionalBatch::new("A")
                         .upsert_item(&existing, None)?
                         .read_item(existing.id.clone(), None),
-                    None,
+                    Some(batch_options.clone()),
                 )
                 .await?;
             assert_transport_kind(&updated.diagnostics(), TransportKind::GatewayV2);
@@ -1493,7 +1508,7 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
                     TransactionalBatch::new("A")
                         .create_item(&rolled_back)?
                         .read_item("missing", None),
-                    None,
+                    Some(batch_options.clone()),
                 )
                 .await?;
             assert_transport_kind(&failed.diagnostics(), TransportKind::GatewayV2);

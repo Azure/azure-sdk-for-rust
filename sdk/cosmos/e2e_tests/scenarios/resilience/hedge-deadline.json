@@ -4,7 +4,7 @@
     "id": "resilience.hedge-deadline",
     "title": "An operation deadline cancels an active hedge race",
     "requirement": "After an alternate-region hedge is dispatched, a transient primary followed by an operation deadline while the alternate remains pending returns a client timeout with both regions, applied faults, and cancelled-awaiting-partner state retained in diagnostics.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "rust",

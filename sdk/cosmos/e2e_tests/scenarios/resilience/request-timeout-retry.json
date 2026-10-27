@@ -4,7 +4,7 @@
     "id": "resilience.request-timeout-retry",
     "title": "Request timeout retries honor the failover budget",
     "requirement": "An injected HTTP 408 response fails over to a converged replica when budget remains and is returned without retry when the failover budget is zero.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "rust",

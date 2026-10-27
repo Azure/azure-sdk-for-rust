@@ -10,7 +10,10 @@
       "testCategory": "emulator",
       "multiWrite": false,
       "multiRegion": false,
-      "regions": ["East US 2"]
+      "fullFidelityChangeFeed": false,
+      "regions": [
+        "East US 2"
+      ]
     },
     "session-singlewrite": {
       "endpoint": "https://REPLACE-session-singlewrite.documents.azure.com:443/",
@@ -21,7 +24,10 @@
       "testCategory": "emulator",
       "multiWrite": false,
       "multiRegion": false,
-      "regions": ["East US 2"]
+      "fullFidelityChangeFeed": true,
+      "regions": [
+        "East US 2"
+      ]
     },
     "strong-singlewrite": {
       "endpoint": "https://REPLACE-strong-singlewrite.documents.azure.com:443/",
@@ -32,7 +38,10 @@
       "testCategory": "emulator",
       "multiWrite": false,
       "multiRegion": false,
-      "regions": ["East US 2"]
+      "fullFidelityChangeFeed": false,
+      "regions": [
+        "East US 2"
+      ]
     },
     "session-multiwrite": {
       "endpoint": "https://REPLACE-session-multiwrite.documents.azure.com:443/",
@@ -43,7 +52,11 @@
       "testCategory": "multi_write",
       "multiWrite": true,
       "multiRegion": true,
-      "regions": ["East US 2", "West US 3"]
+      "fullFidelityChangeFeed": false,
+      "regions": [
+        "East US 2",
+        "West US 3"
+      ]
     },
     "session-split": {
       "endpoint": "https://REPLACE-session-split.documents.azure.com:443/",
@@ -54,7 +67,10 @@
       "testCategory": "split",
       "multiWrite": false,
       "multiRegion": false,
-      "regions": ["East US 2"]
+      "fullFidelityChangeFeed": false,
+      "regions": [
+        "East US 2"
+      ]
     },
     "session-mr-failover": {
       "endpoint": "https://REPLACE-session-mr-failover.documents.azure.com:443/",
@@ -65,7 +81,11 @@
       "testCategory": "multi_region",
       "multiWrite": false,
       "multiRegion": true,
-      "regions": ["East US 2", "West US 3"]
+      "fullFidelityChangeFeed": false,
+      "regions": [
+        "East US 2",
+        "West US 3"
+      ]
     }
   }
 }
