@@ -13,6 +13,7 @@ use crate::{
         retry::ErrorRecoveryAction,
         user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
     },
+    consumer::StartPosition,
     error::Result,
     models::AmqpValue,
     producer::DEFAULT_EVENTHUBS_APPLICATION,
@@ -105,6 +106,10 @@ pub(crate) struct RecoverableConnection {
     sender_instances: RwLock<HashMap<Url, GenerationalCell<AmqpSender>>>,
     session_instances: RwLock<HashMap<Url, GenerationalCell<AmqpSession>>>,
     receiver_instances: RwLock<HashMap<Url, GenerationalCell<AmqpReceiver>>>,
+    // Logical receiver progress survives link, session, and connection recovery.
+    // Handles sharing the cached receiver must serialize receives and advance
+    // the same cursor, even when the physical receiver is replaced.
+    receiver_resume_positions: RwLock<HashMap<Url, Arc<AsyncMutex<Option<StartPosition>>>>>,
     pub(super) authorizer: Arc<Authorizer>,
     // The service permits one `$cbs` link for each connection. Every
     // authorization attaches a link, uses it, and then drops it, so two
@@ -320,6 +325,7 @@ impl RecoverableConnection {
                 session_instances: RwLock::new(HashMap::new()),
                 sender_instances: RwLock::new(HashMap::new()),
                 receiver_instances: RwLock::new(HashMap::new()),
+                receiver_resume_positions: RwLock::new(HashMap::new()),
                 mgmt_client: RwLock::new(Arc::new(OnceCell::new())),
                 authorizer,
                 generation: AtomicU64::new(0),
@@ -551,6 +557,22 @@ impl RecoverableConnection {
         Ok(RecoverableSender::new(Arc::downgrade(self), path))
     }
 
+    /// Returns the shared cursor and receive lock for one logical receiver path.
+    pub(crate) async fn receiver_resume_position(
+        &self,
+        source_url: &Url,
+    ) -> Arc<AsyncMutex<Option<StartPosition>>> {
+        if let Some(position) = self.receiver_resume_positions.read().await.get(source_url) {
+            return position.clone();
+        }
+        self.receiver_resume_positions
+            .write()
+            .await
+            .entry(source_url.clone())
+            .or_insert_with(|| Arc::new(AsyncMutex::new(None)))
+            .clone()
+    }
+
     pub(crate) async fn get_receiver(
         self: &Arc<Self>,
         source_url: &Url,
@@ -574,6 +596,12 @@ impl RecoverableConnection {
     }
 
     pub(crate) async fn close_receiver(self: &Arc<Self>, source_url: &Url) -> Result<()> {
+        // Explicit close ends the logical receiver lifetime. Recovery only clears
+        // the physical receiver cache and must retain this cursor.
+        self.receiver_resume_positions
+            .write()
+            .await
+            .remove(source_url);
         // Drop the map's write lock as soon as the cell is removed so the detach
         // (network I/O) doesn't hold it.
         let Some(GenerationalCell { cell, .. }) =
@@ -1519,6 +1547,7 @@ impl Drop for RecoverableConnection {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::consumer::StartLocation;
     use azure_core::{
         credentials::{AccessToken, TokenCredential, TokenRequestOptions},
         http::Url,
@@ -1962,6 +1991,43 @@ mod tests {
         assert!(connection.sender_cell(&path_a).await.get().is_none());
         assert!(connection.session_cell(&path_a).await.get().is_none());
         assert!(connection.receiver_cell(&path_a).await.get().is_none());
+    }
+
+    #[tokio::test]
+    async fn receiver_progress_survives_recovery_until_explicit_close() {
+        let connection = connection_for_generation_invalidation();
+        let path = Url::parse("amqps://example.com/eh/Partitions/0").unwrap();
+        let other_path = Url::parse("amqps://example.com/eh/Partitions/1").unwrap();
+        let first = connection.receiver_resume_position(&path).await;
+        let second = connection.receiver_resume_position(&path).await;
+        let other = connection.receiver_resume_position(&other_path).await;
+        let mut position = first.lock().await;
+        *position = Some(StartPosition {
+            location: StartLocation::Offset("1".to_string()),
+            inclusive: false,
+        });
+        assert!(
+            second.try_lock().is_none(),
+            "one path must serialize receives"
+        );
+        assert!(
+            other.try_lock().is_some(),
+            "other partitions must remain independent"
+        );
+        drop(position);
+        drop((first, second));
+
+        connection.simulate_reconnect().await;
+        let recovered = connection.receiver_resume_position(&path).await;
+        assert_eq!(
+            StartPosition::start_expression(&*recovered.lock().await),
+            "amqp.annotation.x-opt-offset >'1'"
+        );
+        assert!(other.lock().await.is_none());
+
+        connection.close_receiver(&path).await.unwrap();
+        let reopened = connection.receiver_resume_position(&path).await;
+        assert!(reopened.lock().await.is_none());
     }
 
     // #4454: a recovery that clears the per-path caches must bump the recovery
