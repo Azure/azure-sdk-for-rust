@@ -2,8 +2,9 @@
 // Licensed under the MIT License.
 
 use super::{
-    balancing, bootstrap, namespace, now_millis, Batch, BootstrapOptions, ChangeFeedProcessorMode,
-    Context, Identity, Lease, ProcessingLease, Processor, ProcessorOptions, Update, SCHEMA_VERSION,
+    balancing, bootstrap, namespace, now_millis, BootstrapOptions, ChangeFeedBatch,
+    ChangeFeedProcessorMode, Context, Identity, Lease, ProcessingLease, Processor,
+    ProcessorOptions, Update, SCHEMA_VERSION,
 };
 use crate::{
     change_feed_processor::bootstrap::Record,
@@ -120,7 +121,7 @@ async fn insert(context: &Context, id: &str) -> Result<()> {
     Ok(())
 }
 
-async fn next(processor: &Processor) -> Batch {
+async fn next(processor: &Processor) -> ChangeFeedBatch {
     tokio::time::timeout(Duration::from_secs(5), processor.next_batch())
         .await
         .expect("batch timeout")

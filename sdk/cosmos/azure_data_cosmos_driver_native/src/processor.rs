@@ -22,7 +22,8 @@ use crate::{
 };
 use azure_data_cosmos_driver::{
     change_feed_processor::{
-        Batch, BatchReceipt, BootstrapOptions, ChangeFeedProcessorMode, Processor, ProcessorOptions,
+        BatchReceipt, BootstrapOptions, ChangeFeedBatch, ChangeFeedProcessorMode, Processor,
+        ProcessorOptions,
     },
     models::{ChangeFeedStartFrom, ContinuationToken, MaxItemCountHint, ResponseBody},
     CosmosError,
@@ -164,7 +165,7 @@ pub struct ProcessorCompletionBacking {
 
 enum ResultData {
     Started(Arc<ProcessorInner>),
-    Batch(Box<Batch>),
+    Batch(Box<ChangeFeedBatch>),
     CheckpointSaved,
     Stopped,
     End,

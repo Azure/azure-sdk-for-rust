@@ -172,11 +172,6 @@ pub mod binary_json {
 }
 pub mod change_feed_processor {
     pub async fn bootstrap(source_driver: &crate::CosmosDriver, source: &crate::models::ContainerReference, lease_driver: &crate::CosmosDriver, leases: &crate::models::ContainerReference, options: &crate::change_feed_processor::BootstrapOptions) -> crate::Result<()>;
-    pub struct Batch {
-    }
-    impl Batch {
-        pub fn into_parts(self) -> (String, CosmosResponse, BatchReceipt);
-    }
     pub struct BatchReceipt {
     }
     impl BatchReceipt {
@@ -191,12 +186,17 @@ pub mod change_feed_processor {
         pub fn with_lease_verification_enabled_on_restart(self, enabled: bool) -> Self;
         pub fn with_timeout(self, timeout: Duration) -> Self;
     }
+    pub struct ChangeFeedBatch {
+    }
+    impl ChangeFeedBatch {
+        pub fn into_parts(self) -> (String, CosmosResponse, BatchReceipt);
+    }
     #[derive(Clone)]
     pub struct Processor {
     }
     impl Processor {
         pub fn is_running(&self) -> bool;
-        pub async fn next_batch(&self) -> Option<Batch>;
+        pub async fn next_batch(&self) -> Option<ChangeFeedBatch>;
         pub fn request_stop(&self);
         pub async fn start(source_driver: Arc<CosmosDriver>, source: ContainerReference, lease_driver: Arc<CosmosDriver>, leases: ContainerReference, options: ProcessorOptions) -> Result<Self>;
         pub async fn stop(&self);

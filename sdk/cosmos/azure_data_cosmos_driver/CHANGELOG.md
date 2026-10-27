@@ -9,6 +9,8 @@
 
 ### Breaking Changes
 
+- Renamed `change_feed_processor::Batch` to `change_feed_processor::ChangeFeedBatch` to distinguish processor deliveries from transactional batches.
+
 ### Bugs Fixed
 
 - Avoid unnecessary routing-state copies for hedge feedback and unchanged partition transitions, and skip hedge feedback when the effective partition circuit breaker is disabled without disabling transport hedging. ([#5438](https://github.com/Azure/azure-sdk-for-rust/pull/5438))

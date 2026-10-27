@@ -334,13 +334,13 @@ impl BatchReceipt {
 ///
 /// The body preserves the driver's wire envelopes and encoding. No application
 /// item deserialization happens in the driver.
-pub struct Batch {
+pub struct ChangeFeedBatch {
     lease_token: String,
     response: CosmosResponse,
     receipt: BatchReceipt,
 }
 
-impl Batch {
+impl ChangeFeedBatch {
     /// Separates the lease identity, response, and acknowledgment receipt.
     pub fn into_parts(self) -> (String, CosmosResponse, BatchReceipt) {
         (self.lease_token, self.response, self.receipt)
@@ -348,13 +348,13 @@ impl Batch {
 }
 
 struct SharedState {
-    ready: StdMutex<VecDeque<Batch>>,
+    ready: StdMutex<VecDeque<ChangeFeedBatch>>,
     waker: AtomicWaker,
     running: AtomicBool,
 }
 
 impl SharedState {
-    fn deliver(&self, batch: Batch) {
+    fn deliver(&self, batch: ChangeFeedBatch) {
         let mut queue = self.ready.lock().unwrap_or_else(|e| e.into_inner());
         queue.retain(|batch| !batch.receipt.sender.is_canceled());
         queue.push_back(batch);
@@ -503,7 +503,7 @@ impl Processor {
     ///
     /// Canceling this wait does not consume a batch. Progress from 304 responses
     /// is saved internally without invoking application callbacks.
-    pub async fn next_batch(&self) -> Option<Batch> {
+    pub async fn next_batch(&self) -> Option<ChangeFeedBatch> {
         futures::future::poll_fn(|cx| {
             self.owner.state.waker.register(cx.waker());
             let mut ready = self
@@ -759,7 +759,7 @@ async fn poll(
             continue;
         }
         let (sender, received) = oneshot::channel();
-        state.deliver(Batch {
+        state.deliver(ChangeFeedBatch {
             lease_token: initial.base.record.id.clone(),
             response,
             receipt: BatchReceipt {

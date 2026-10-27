@@ -13,7 +13,8 @@ use azure_core::{
 };
 use azure_data_cosmos_driver::{
     change_feed_processor::{
-        Batch, BootstrapOptions, ChangeFeedProcessorMode as DriverMode, Processor, ProcessorOptions,
+        BootstrapOptions, ChangeFeedBatch, ChangeFeedProcessorMode as DriverMode, Processor,
+        ProcessorOptions,
     },
     models::ChangeFeedStartFrom,
 };
@@ -107,7 +108,7 @@ where
     Ok(())
 }
 
-async fn dispatch<T, H, Fut>(container: ContainerClient, handler: Arc<H>, batch: Batch)
+async fn dispatch<T, H, Fut>(container: ContainerClient, handler: Arc<H>, batch: ChangeFeedBatch)
 where
     T: DeserializeOwned + Send + 'static,
     H: Fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut + Send + Sync + 'static,

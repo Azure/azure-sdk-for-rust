@@ -11,7 +11,7 @@ mod bootstrap;
 mod processing;
 
 pub use bootstrap::bootstrap;
-pub use processing::{Batch, BatchReceipt, Processor, ProcessorOptions};
+pub use processing::{BatchReceipt, ChangeFeedBatch, Processor, ProcessorOptions};
 
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
