@@ -12,10 +12,10 @@ use azure_data_cosmos::models::{
     ThroughputProperties,
 };
 use azure_data_cosmos::options::{
-    AvailabilityStrategy, BinaryEncodingOptions, ChangeFeedStartFrom, ConnectionPoolOptions,
-    CreateContainerOptions, ExcludedRegions, ItemReadOptions, ItemWriteOptions, MaxItemCountHint,
-    OperationOptionsBuilder, PartitionFailoverOptions, Precondition, QueryOptions,
-    ReadConsistencyStrategy, Region,
+    AvailabilityStrategy, BatchOptions, BinaryEncodingOptions, ChangeFeedStartFrom,
+    ConnectionPoolOptions, ContentResponseOnWrite, CreateContainerOptions, ExcludedRegions,
+    ItemReadOptions, ItemWriteOptions, MaxItemCountHint, OperationOptionsBuilder,
+    PartitionFailoverOptions, Precondition, QueryOptions, ReadConsistencyStrategy, Region,
 };
 use azure_data_cosmos::{
     clients::DatabaseClient, feed::FeedRange, AccountEndpoint, AccountReference, CosmosClient,
@@ -1417,6 +1417,11 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
                 .create_container(ContainerProperties::new("batch", "/pk".into()), None)
                 .await?;
             let container = wait_for_container_ready(&client, &database, "batch").await?;
+            let batch_options = BatchOptions::default().with_operation_options(
+                OperationOptionsBuilder::new()
+                    .with_content_response_on_write(ContentResponseOnWrite::Enabled)
+                    .build(),
+            );
             let mut existing = GwV2TestItem {
                 id: "existing".into(),
                 pk: "A".into(),
@@ -1426,7 +1431,7 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
             let created = container
                 .execute_transactional_batch(
                     TransactionalBatch::new("A").create_item(&existing)?,
-                    None,
+                    Some(batch_options.clone()),
                 )
                 .await?;
             assert_transport_kind(&created.diagnostics(), TransportKind::GatewayV2);
@@ -1443,7 +1448,7 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
             let read_only = container
                 .execute_transactional_batch(
                     TransactionalBatch::new("A").read_item(existing.id.clone(), None),
-                    None,
+                    Some(batch_options.clone()),
                 )
                 .await?;
             assert_transport_kind(&read_only.diagnostics(), TransportKind::GatewayV2);
@@ -1471,7 +1476,7 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
                     TransactionalBatch::new("A")
                         .upsert_item(&existing, None)?
                         .read_item(existing.id.clone(), None),
-                    None,
+                    Some(batch_options.clone()),
                 )
                 .await?;
             assert_transport_kind(&updated.diagnostics(), TransportKind::GatewayV2);
@@ -1503,7 +1508,7 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
                     TransactionalBatch::new("A")
                         .create_item(&rolled_back)?
                         .read_item("missing", None),
-                    None,
+                    Some(batch_options.clone()),
                 )
                 .await?;
             assert_transport_kind(&failed.diagnostics(), TransportKind::GatewayV2);
