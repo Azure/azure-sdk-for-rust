@@ -3,4 +3,4 @@
 
 //! Shared support for Azure Cosmos DB integration tests.
 
-pub mod resourcemanager;
+pub mod resource_manager;

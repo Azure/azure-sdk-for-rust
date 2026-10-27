@@ -10,7 +10,7 @@
 ```rust
 #![crate_name = "azure_data_cosmos_test"]
 #![crate_type = "lib"]
-pub mod resourcemanager {
+pub mod resource_manager {
     pub fn resource_manager_from_env(credential: std::sync::Arc<dyn TokenCredential>) -> Result<ResourceManager>;
     pub struct AzCliResourceManager {
     }

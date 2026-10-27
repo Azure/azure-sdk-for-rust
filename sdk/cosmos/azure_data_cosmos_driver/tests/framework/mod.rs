@@ -6,10 +6,10 @@
 mod env;
 mod test_client;
 
-pub use azure_data_cosmos_test::resourcemanager;
+pub use azure_data_cosmos_test::resource_manager;
 
 pub use env::{get_test_mode, is_azure_pipelines, CosmosTestMode};
-pub use resourcemanager::{
+pub use resource_manager::{
     resource_manager_from_env, CosmosResourceManager, ResourceManager, ResourceThroughput,
 };
 pub use test_client::{
