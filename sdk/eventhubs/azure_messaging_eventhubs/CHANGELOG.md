@@ -14,6 +14,10 @@
 - Sends waiting for settlement now retry when a peer invalidates their connection, session, or link. These retries use the configured limits and backoff. A lost acknowledgement can cause duplicate events.
 - A receive no longer charges its wait for an event to the recovery budget. `RetryOptions::max_total_elapsed` now counts only recovery work for a receive, so a partition that waited longer than the limit before a recoverable error, such as a dropped session, now recovers instead of returning the error. A receive link that fails after a healthy wait of at least 10 seconds now starts a new recovery with a new retry count, like an empty receive in the .NET SDK. The terminal recovery warning now reports the stop reason, the retry count and elapsed time with their limits, the receive wait, and the connection and partition IDs.
 
+### Breaking Changes
+
+- The checkpoint and ownership blob key that `Checkpoint::get_checkpoint_blob_prefix_name`, `Checkpoint::get_checkpoint_blob_name`, `Ownership::get_ownership_prefix_name`, and `Ownership::get_ownership_name` build now folds the fully qualified namespace, the event hub name, and the consumer group to lowercase ASCII. The partition id keeps its case, so `NS.ServiceBus.Windows.Net/My-Hub/$Default/checkpoint/0` becomes `ns.servicebus.windows.net/my-hub/$default/checkpoint/0`, and the ownership key changes in the same way. Event Hubs treats the consumer group as case insensitive, so a deployment that spelled the group `$Default` on one run and `$default` on the next built two disjoint key sets and reprocessed events. Records that an older Rust client wrote stay at the old key and become unreachable. The change adds no dual read and no fallback lookup, and a processor that starts against an existing container resumes from its configured start position. ([#5099](https://github.com/Azure/azure-sdk-for-rust/issues/5099))
+
 ## 0.17.0 (2026-09-14)
 
 ### Breaking Changes
