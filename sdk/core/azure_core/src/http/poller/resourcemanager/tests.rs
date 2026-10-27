@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore bodyless
 use super::{
     new_poller, FinalStateVia, PollerOptions, PollingInfo, PollingMethod, AZURE_ASYNC_OPERATION,
     LOCATION, OPERATION_LOCATION,
