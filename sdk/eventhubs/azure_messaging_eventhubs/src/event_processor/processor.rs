@@ -223,6 +223,11 @@ impl EventProcessor {
     /// to manage the ownership of partitions and distribute the load
     /// among consumers.
     /// The event processor will run until it is stopped or interrupted.
+    ///
+    /// Each partition receiver attaches its AMQP link on the first poll of
+    /// [`PartitionClient::stream_events`](crate::processor::PartitionClient::stream_events).
+    /// This method does not report an invalid consumer group. The first poll of the
+    /// partition stream reports it.
     /// # Errors
     /// Returns an error if the event processor fails to start.
     /// # Examples
@@ -430,13 +435,14 @@ impl EventProcessor {
             ));
         }
 
-        // Since we can only have a single EventReceiver on a partition, we don't actually attempt to create the receiver until
         let start_position = self.get_start_position(&partition_id, checkpoints);
         debug!(
             partition_id = %partition_id,
             start_position = ?start_position,
             "Start position for partition."
         );
+        // The AMQP link for this partition attaches on the first poll of
+        // `stream_events()`, so this call only builds the receiver.
         let receiver = self
             .consumer_client
             .open_receiver_on_partition(
