@@ -162,7 +162,7 @@ pub mod cloud {
     pub struct CustomConfiguration {
         pub authority_host: String,
         pub audiences: Audiences,
-        #[cfg(feature = "resourcemanager")]
+        #[cfg(feature = "resource_manager")]
         pub endpoint: Option<String>,
     }
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -185,8 +185,8 @@ pub mod cloud {
     impl From<CustomConfiguration> for CloudConfiguration {
         fn from(config: CustomConfiguration) -> Self;
     }
-    #[cfg(feature = "resourcemanager")]
-    pub mod resourcemanager {
+    #[cfg(feature = "resource_manager")]
+    pub mod resource_manager {
         #[allow(missing_debug_implementations)]
         pub struct Audience;
         pub trait CloudConfigurationExt: crate::private::Sealed {
