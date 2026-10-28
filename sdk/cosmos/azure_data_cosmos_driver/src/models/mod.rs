@@ -29,6 +29,7 @@ pub(crate) mod resource_id;
 mod resource_reference;
 mod response_body;
 mod session_token_segment;
+mod transactional_batch;
 mod user_agent;
 pub(crate) mod vector_session_token;
 pub(crate) use cosmos_headers::request_header_names;

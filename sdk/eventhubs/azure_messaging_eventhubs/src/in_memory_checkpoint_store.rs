@@ -7,7 +7,7 @@ use azure_core::{
 };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tracing::{error, trace};
+use tracing::{debug, error, trace};
 
 /// An in-memory checkpoint store for Event Hubs.
 /// This store is used to manage checkpoints and ownerships in memory.
@@ -51,7 +51,36 @@ impl InMemoryCheckpointStore {
     /// `last_modified_time`, for a renewal and for a first claim. A renewal
     /// makes the caller's ETag stale, so the caller must keep the returned
     /// record for its next claim.
+    ///
+    /// A stale ETag returns an error. [`CheckpointStore::claim_ownership`]
+    /// reports the same condition as a lost claim instead.
     pub fn update_ownership(&self, ownership: &Ownership) -> Result<Ownership> {
+        if let Some(updated_ownership) = self.try_update_ownership(ownership)? {
+            return Ok(updated_ownership);
+        }
+
+        let key = Ownership::get_ownership_name(
+            &ownership.fully_qualified_namespace,
+            &ownership.event_hub_name,
+            &ownership.consumer_group,
+            &ownership.partition_id,
+        )?;
+        error!(
+            partition_id = %ownership.partition_id,
+            expected_etag = ?ownership.etag,
+            "ETag mismatch claiming ownership for key {}",
+            key
+        );
+        Err(Error::with_message(
+            AzureErrorKind::Other,
+            format!("ETag mismatch for partition {key}"),
+        ))
+    }
+
+    /// Updates the ownership for a specific partition, and reports a lost
+    /// claim as `Ok(None)`. An `Err` is a store failure or an invalid
+    /// `Ownership`, never a lost claim.
+    fn try_update_ownership(&self, ownership: &Ownership) -> Result<Option<Ownership>> {
         trace!("Update ownership for partition {}", ownership.partition_id);
 
         check_non_empty_parameter!(ownership.fully_qualified_namespace);
@@ -74,20 +103,15 @@ impl InMemoryCheckpointStore {
             Some(existing) => {
                 let actual_etag = existing.etag.clone();
                 if ownership.etag != actual_etag {
-                    // The call returns `Err` from here, so this logs at the
-                    // error level, the same as the other failure path in this
-                    // file.
-                    error!(
+                    debug!(
+                        event = "claim-conflict",
                         partition_id = %ownership.partition_id,
                         expected_etag = ?ownership.etag,
                         actual_etag = ?actual_etag,
-                        "ETag mismatch claiming ownership for key {}",
+                        "Lost ownership claim: ETag mismatch for key {}",
                         key
                     );
-                    return Err(Error::with_message(
-                        AzureErrorKind::Other,
-                        format!("ETag mismatch for partition {key}"),
-                    ));
+                    return Ok(None);
                 }
                 true
             }
@@ -107,7 +131,7 @@ impl InMemoryCheckpointStore {
         } else {
             trace!("Inserted new ownership for key {}", key);
         }
-        Ok(updated_ownership)
+        Ok(Some(updated_ownership))
     }
 }
 
@@ -145,9 +169,10 @@ impl CheckpointStore for InMemoryCheckpointStore {
         trace!("Claim ownership for {} partitions", ownerships.len());
         let mut claimed_ownerships = Vec::new();
         for ownership in ownerships {
-            let ownership = self.update_ownership(ownership)?;
-            if ownership.etag.is_some() {
-                claimed_ownerships.push(ownership);
+            // A lost claim is not a failure. Skip that partition and keep the
+            // claims this batch already made.
+            if let Some(claimed) = self.try_update_ownership(ownership)? {
+                claimed_ownerships.push(claimed);
             }
         }
         Ok(claimed_ownerships)

@@ -288,6 +288,7 @@ pub mod driver_options {
         pub fault_injection_rules: *const crate::fault_injection::CosmosFaultInjectionRule,
         pub fault_injection_rules_len: usize,
         pub fault_injection_rule_stride: usize,
+        pub resource_name_validation_enabled: i8,
     }
     pub struct DriverOptionsHandle {
     }

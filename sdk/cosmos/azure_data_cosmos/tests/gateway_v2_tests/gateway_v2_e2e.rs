@@ -12,10 +12,10 @@ use azure_data_cosmos::models::{
     ThroughputProperties,
 };
 use azure_data_cosmos::options::{
-    AvailabilityStrategy, BinaryEncodingOptions, ChangeFeedOptions, ChangeFeedStartFrom,
-    ConnectionPoolOptions, CreateContainerOptions, ExcludedRegions, ItemReadOptions,
-    ItemWriteOptions, MaxItemCountHint, OperationOptionsBuilder, PartitionFailoverOptions,
-    Precondition, QueryOptions, ReadConsistencyStrategy, Region,
+    AvailabilityStrategy, BatchOptions, BinaryEncodingOptions, ChangeFeedOptions,
+    ChangeFeedStartFrom, ConnectionPoolOptions, ContentResponseOnWrite, CreateContainerOptions,
+    ExcludedRegions, ItemReadOptions, ItemWriteOptions, MaxItemCountHint, OperationOptionsBuilder,
+    PartitionFailoverOptions, Precondition, QueryOptions, ReadConsistencyStrategy, Region,
 };
 use azure_data_cosmos::{
     clients::DatabaseClient, feed::FeedRange, AccountEndpoint, AccountReference, CosmosClient,
@@ -355,6 +355,7 @@ async fn wait_for_container_data_plane_ready_in_regions(
     const READINESS_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
     const ATTEMPT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
     const MAX_BACKOFF: std::time::Duration = std::time::Duration::from_secs(5);
+    const REQUIRED_CONSECUTIVE_SUCCESSES: u32 = 2;
 
     let (_, readable_regions) = client
         .cached_account_regions_for_testing()
@@ -364,8 +365,8 @@ async fn wait_for_container_data_plane_ready_in_regions(
         return Err("Gateway 2.0 account must expose at least one readable region".into());
     }
 
-    let deadline = tokio::time::Instant::now() + READINESS_TIMEOUT;
     for target_region in &readable_regions {
+        let deadline = tokio::time::Instant::now() + READINESS_TIMEOUT;
         let excluded_regions = readable_regions
             .iter()
             .filter(|region| *region != target_region)
@@ -377,6 +378,7 @@ async fn wait_for_container_data_plane_ready_in_regions(
         let options = QueryOptions::default().with_operation_options(operation);
         let mut backoff = std::time::Duration::from_millis(100);
         let mut attempt = 1_u32;
+        let mut consecutive_successes = 0_u32;
 
         loop {
             let attempt_deadline = deadline.min(tokio::time::Instant::now() + ATTEMPT_TIMEOUT);
@@ -386,13 +388,20 @@ async fn wait_for_container_data_plane_ready_in_regions(
             )
             .await
             {
-                Ok(Ok(())) => break,
+                Ok(Ok(())) => {
+                    consecutive_successes += 1;
+                    if consecutive_successes >= REQUIRED_CONSECUTIVE_SUCCESSES {
+                        break;
+                    }
+                    backoff = std::time::Duration::from_millis(100);
+                }
                 Ok(Err(error))
                     if is_retryable_data_plane_readiness_failure(
                         &error.status(),
                         &error.to_string(),
                     ) && tokio::time::Instant::now() < deadline =>
                 {
+                    consecutive_successes = 0;
                     eprintln!(
                         "container data-plane readiness probe for region '{}' failed on attempt {attempt}; retrying after {backoff:?}: {error}",
                         target_region.as_str()
@@ -406,6 +415,7 @@ async fn wait_for_container_data_plane_ready_in_regions(
                     .into());
                 }
                 Err(_) if tokio::time::Instant::now() < deadline => {
+                    consecutive_successes = 0;
                     eprintln!(
                         "container data-plane readiness probe for region '{}' timed out on attempt {attempt}; retrying after {backoff:?}",
                         target_region.as_str()
@@ -887,12 +897,15 @@ pub async fn gateway_v2_incremental_change_feed() -> Result<(), Box<dyn std::err
 /// `AZURE_COSMOS_GW_V2_PREFIX_DATABASE`,
 /// `AZURE_COSMOS_GW_V2_PREFIX_CONTAINER`, and `AZURE_COSMOS_GW_V2_PREFIX_TENANT`.
 /// The existing MultiHash container must use `/tenant`, `/user`, `/device`, with
-/// the selected tenant already split across physical ranges and no concurrent
-/// writes to that tenant. Throughput-based container splits alone are insufficient.
-/// Run `cargo test -p azure_data_cosmos --all-features --test gateway_v2
-/// gateway_v2_prefix_change_feed_across_physical_ranges -- --ignored`.
+/// the selected tenant overlapping at least two physical ranges and no concurrent
+/// writes to that tenant. Multiple physical ranges alone are insufficient.
+/// The test reuses the existing topology without changing throughput or triggering
+/// a split. See `sdk/cosmos/eng/pipelines/README.md` for fixture setup and execution.
 #[tokio::test]
-#[ignore = "requires a pre-split hierarchical prefix on a live Gateway V2 account"]
+#[cfg_attr(
+    not(test_category = "gateway_v2_prefix"),
+    ignore = "requires test_category 'gateway_v2_prefix' and an existing multi-range prefix fixture"
+)]
 async fn gateway_v2_prefix_change_feed_across_physical_ranges(
 ) -> Result<(), Box<dyn std::error::Error>> {
     use azure_data_cosmos::feed::{ContinuationToken, FeedRange};
@@ -969,7 +982,7 @@ async fn gateway_v2_prefix_change_feed_across_physical_ranges(
         }
     }
     if items.len() != 2 {
-        return Err("1024 candidate keys did not span two physical ranges; choose a different pre-split tenant".into());
+        return Err("1024 candidate keys did not span two physical ranges; choose a tenant whose prefix spans physical ranges".into());
     }
     items.push(PrefixItem {
         id: format!("outside-{run}"),
@@ -1608,6 +1621,11 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
                 .create_container(ContainerProperties::new("batch", "/pk".into()), None)
                 .await?;
             let container = wait_for_container_ready(&client, &database, "batch").await?;
+            let batch_options = BatchOptions::default().with_operation_options(
+                OperationOptionsBuilder::new()
+                    .with_content_response_on_write(ContentResponseOnWrite::Enabled)
+                    .build(),
+            );
             let mut existing = GwV2TestItem {
                 id: "existing".into(),
                 pk: "A".into(),
@@ -1617,7 +1635,7 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
             let created = container
                 .execute_transactional_batch(
                     TransactionalBatch::new("A").create_item(&existing)?,
-                    None,
+                    Some(batch_options.clone()),
                 )
                 .await?;
             assert_transport_kind(&created.diagnostics(), TransportKind::GatewayV2);
@@ -1634,7 +1652,7 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
             let read_only = container
                 .execute_transactional_batch(
                     TransactionalBatch::new("A").read_item(existing.id.clone(), None),
-                    None,
+                    Some(batch_options.clone()),
                 )
                 .await?;
             assert_transport_kind(&read_only.diagnostics(), TransportKind::GatewayV2);
@@ -1662,7 +1680,7 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
                     TransactionalBatch::new("A")
                         .upsert_item(&existing, None)?
                         .read_item(existing.id.clone(), None),
-                    None,
+                    Some(batch_options.clone()),
                 )
                 .await?;
             assert_transport_kind(&updated.diagnostics(), TransportKind::GatewayV2);
@@ -1694,7 +1712,7 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
                     TransactionalBatch::new("A")
                         .create_item(&rolled_back)?
                         .read_item("missing", None),
-                    None,
+                    Some(batch_options.clone()),
                 )
                 .await?;
             assert_transport_kind(&failed.diagnostics(), TransportKind::GatewayV2);

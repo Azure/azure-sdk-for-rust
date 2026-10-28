@@ -66,10 +66,10 @@ for the full design.
 
 ## Building
 
-Version **0.2.0** is a breaking C ABI revision. Check `cosmos_version()` against
+Version **0.3.0** is a breaking C ABI revision. Check `cosmos_version()` against
 `AZURECOSMOSDRIVER_H_VERSION` before any layout-sensitive call, including options
 returned by value. Rebuild host bindings and vendor the generated header together
-with the matching library; do not mix 0.1.x headers and 0.2.x libraries.
+with the matching library; do not mix 0.2.x headers and 0.3.x libraries.
 
 ### Operation defaults and admission snapshots
 
@@ -286,10 +286,11 @@ operations and representable raw feed responses keep their existing behavior.
 
 ---
 
-## Fault injection
+## Versioned driver options and fault injection
 
-Native hosts can install the driver's existing fault-injection rules when they
-construct driver options. Existing callers keep using
+Native hosts can configure resource-name validation and install
+the driver's existing fault-injection rules when they construct driver options.
+Existing callers keep using
 `cosmos_driver_options_config_t` and `cosmos_driver_options_build`; the additive
 surface is `cosmos_driver_options_config_v2_t` plus
 `cosmos_driver_options_build_v2`.
@@ -315,6 +316,7 @@ rule.hit_limit = 1;
 
 cosmos_driver_options_config_v2_t config =
     cosmos_driver_options_config_v2_default();
+config.resource_name_validation_enabled = 1; /* disabled for compatibility */
 config.fault_injection_rules = &rule;
 config.fault_injection_rules_len = 1;
 config.fault_injection_rule_stride = sizeof(rule);
@@ -323,6 +325,14 @@ cosmos_driver_options_t *options = NULL;
 cosmos_status_code_t status =
     cosmos_driver_options_build_v2(account, &config, &options);
 ```
+
+`resource_name_validation_enabled` is a tri-state boolean: `0` leaves the
+driver default unchanged, `1` disables validation, and `2` enables validation.
+Validation is enabled by default. When enabled, the driver rejects unsafe
+user-defined names before request planning, including item names supplied to
+Create and Upsert so newly written items remain addressable by later point
+operations. It does not parse IDs from request bodies or transactional protocol
+fields.
 
 Condition fields match the operation/resource pair, region, container id, and
 Gateway/GatewayV2 transport. Results support the driver's predefined HTTP and
