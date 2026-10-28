@@ -707,6 +707,10 @@ pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "vnext emulator does not implement request units needed for throughput-driven partitioning: https://learn.microsoft.com/en-us/azure/cosmos-db/emulator-linux#feature-support"
+)]
 pub async fn feed_range_scoped_query_honors_range() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |_, db_client| {
