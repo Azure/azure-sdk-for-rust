@@ -404,6 +404,10 @@ pub async fn hpk_item_patch_full_key() -> Result<(), Box<dyn Error>> {
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "vnext emulator rejects partial-key point reads without substatus 1001: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/377"
+)]
 pub async fn hpk_item_partial_key_point_op_fails() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
