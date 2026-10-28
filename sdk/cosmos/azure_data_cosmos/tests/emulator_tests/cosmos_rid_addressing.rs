@@ -55,6 +55,10 @@ async fn collect_items(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "vnext emulator returns container RIDs with invalid length and parent prefix: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/382"
+)]
 pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
