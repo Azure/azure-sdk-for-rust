@@ -538,6 +538,10 @@ pub async fn unordered_distinct_refuses_a_continuation_token() -> Result<(), Box
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 #[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "vnext emulator returns index metrics that are not valid base64: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/380"
+)]
+#[cfg_attr(
     test_category = "emulator_inmemory",
     ignore = "hosted in-memory emulator does not yet carry query and index metrics request flags"
 )]
