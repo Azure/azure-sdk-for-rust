@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Data-locality tests: the SDK's automatic layout-aware routing of managed downloads, the
-//! caller-controlled `layout_endpoint` override, and both combined with session authentication.
+//! Data-locality tests: the SDK's automatic layout-aware routing of managed downloads,
+//! including routing combined with session authentication.
 //!
 //! The file has three sections: routing against a mock transport, sessions with routing
 //! against a mock transport, and live tests.
@@ -23,11 +23,11 @@ use azure_core::{
 use azure_core_test::{credentials::MockCredential, http::MockHttpClient, recorded};
 use azure_identity::DeveloperToolsCredential;
 use azure_storage_blob::{
-    models::{BlobClientDownloadOptions, BlobLayout, EncryptionAlgorithmType, LayoutAwareRouting},
+    models::{BlobClientDownloadOptions, EncryptionAlgorithmType, LayoutAwareRouting},
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, SessionMode,
     SessionOptions,
 };
-use futures::{FutureExt as _, TryStreamExt};
+use futures::FutureExt as _;
 use std::{
     collections::HashMap,
     error::Error,
@@ -186,24 +186,6 @@ fn blob_client_with(transport: Transport, url: &str) -> Result<BlobClient, Box<d
             ..Default::default()
         }),
     )?)
-}
-
-/// Mirrors the work a caller does with the pages returned by `get_layout()`: find the
-/// endpoint whose layout range covers `offset`.
-fn endpoint_for_offset(layout: &BlobLayout, offset: i64) -> Option<String> {
-    let endpoints = layout.endpoints.as_ref()?.endpoint.as_ref()?;
-    let index = layout
-        .ranges
-        .range
-        .iter()
-        .find(|range| {
-            range.start.unwrap_or_default() <= offset && offset <= range.end.unwrap_or_default()
-        })?
-        .endpoint_index?;
-    endpoints
-        .iter()
-        .find(|endpoint| endpoint.index == Some(index))
-        .and_then(|endpoint| endpoint.value.clone())
 }
 
 #[tokio::test]
@@ -574,73 +556,8 @@ async fn test_download_layout_aware_routing_scopes_layout_request_to_download(
     Ok(())
 }
 
-/// A caller can fetch the layout themselves and pin a download to the endpoint serving
-/// the range they want, without the SDK looking up the layout on their behalf.
 #[tokio::test]
-async fn test_download_layout_endpoint_selected_by_caller() -> Result<(), Box<dyn Error>> {
-    let seen = Arc::new(Mutex::new(Vec::<ObservedRequest>::new()));
-    // No layout hint, so nothing but the caller's endpoint can cause a rewrite.
-    let transport = layout_mock_transport(seen.clone(), LAYOUT, LayoutHint::Absent);
-    let blob_client = blob_client_with(
-        transport,
-        "https://acct.blob.core.windows.net/container/blob",
-    )?;
-
-    let mut pages = blob_client.get_layout(None)?;
-    let layout = pages
-        .try_next()
-        .await?
-        .expect("a layout page")
-        .into_model()?;
-    let endpoint = endpoint_for_offset(&layout, 4).expect("an endpoint covering offset 4");
-    assert_eq!(endpoint, "epb.blob.core.windows.net:443");
-
-    let body = blob_client
-        .download(Some(BlobClientDownloadOptions {
-            layout_endpoint: Some(endpoint),
-            range: Some((4u64..8).into()),
-            partition_size: Some(NonZero::new(4).unwrap()),
-            ..Default::default()
-        }))
-        .await?
-        .body
-        .collect()
-        .await?;
-
-    assert_eq!(&body[..], &BLOB_DATA[4..8]);
-    let seen = seen.lock().unwrap();
-    let layout_requests: Vec<&ObservedRequest> =
-        seen.iter().filter(|request| request.is_layout).collect();
-    let data_requests: Vec<&ObservedRequest> =
-        seen.iter().filter(|request| !request.is_layout).collect();
-
-    assert_eq!(
-        layout_requests.len(),
-        1,
-        "only the caller's own get_layout call should be issued"
-    );
-    assert_eq!(layout_requests[0].url.host_str(), Some(ACCOUNT_HOST));
-
-    assert_eq!(data_requests.len(), 1);
-    assert_eq!(data_requests[0].range.as_deref(), Some("bytes=4-7"));
-    assert_eq!(
-        data_requests[0].url.host_str(),
-        Some("epb.blob.core.windows.net"),
-        "the download should be sent to the caller's endpoint"
-    );
-    assert_eq!(
-        data_requests[0].original_host.as_deref(),
-        Some(ACCOUNT_HOST),
-        "the account authority should be preserved as the Host header"
-    );
-    Ok(())
-}
-
-/// A caller-supplied endpoint takes precedence over automatic routing: the layout is
-/// never fetched and every request the download issues is pinned, including the first.
-#[tokio::test]
-async fn test_download_layout_endpoint_overrides_layout_aware_routing() -> Result<(), Box<dyn Error>>
-{
+async fn download_into_layout_aware_routing_routes_chunks() -> Result<(), Box<dyn Error>> {
     let seen = Arc::new(Mutex::new(Vec::<ObservedRequest>::new()));
     let transport = layout_mock_transport(seen.clone(), LAYOUT, LayoutHint::Advertised);
     let blob_client = blob_client_with(
@@ -648,34 +565,43 @@ async fn test_download_layout_endpoint_overrides_layout_aware_routing() -> Resul
         "https://acct.blob.core.windows.net/container/blob",
     )?;
 
-    let body = blob_client
-        .download(Some(BlobClientDownloadOptions {
-            layout_endpoint: Some("epa.blob.core.windows.net:443".into()),
-            // Enabled so the hint would trigger a layout fetch if the explicit endpoint did not win.
-            layout_aware_routing: LayoutAwareRouting::Enabled,
-            partition_size: Some(NonZero::new(4).unwrap()),
-            parallel: Some(NonZero::new(2).unwrap()),
-            ..Default::default()
-        }))
-        .await?
-        .body
-        .collect()
+    let mut buffer = vec![0; BLOB_DATA.len()];
+    blob_client
+        .download_into(
+            &mut buffer,
+            Some(BlobClientDownloadOptions {
+                layout_aware_routing: LayoutAwareRouting::Enabled,
+                partition_size: Some(NonZero::new(4).unwrap()),
+                parallel: Some(NonZero::new(2).unwrap()),
+                ..Default::default()
+            }),
+        )
         .await?;
 
-    assert_eq!(&body[..], &BLOB_DATA[..]);
+    assert_eq!(&buffer[..], &BLOB_DATA[..]);
     let seen = seen.lock().unwrap();
-    assert!(
-        !seen.iter().any(|request| request.is_layout),
-        "an explicit endpoint should suppress the automatic layout lookup"
-    );
-    assert_eq!(seen.len(), 3);
-    for request in seen.iter() {
-        assert_eq!(
-            request.url.host_str(),
-            Some("epa.blob.core.windows.net"),
-            "every request, including the first, should be pinned"
-        );
-        assert_eq!(request.original_host.as_deref(), Some(ACCOUNT_HOST));
+    let layout_requests: Vec<_> = seen.iter().filter(|request| request.is_layout).collect();
+    assert_eq!(layout_requests.len(), 1);
+    assert_eq!(layout_requests[0].url.host_str(), Some(ACCOUNT_HOST));
+    let data_requests: Vec<_> = seen.iter().filter(|request| !request.is_layout).collect();
+    assert_eq!(data_requests.len(), 3);
+    for request in data_requests {
+        match request.range.as_deref() {
+            Some("bytes=0-3") => {
+                assert_eq!(request.url.host_str(), Some(ACCOUNT_HOST));
+                assert_eq!(request.original_host, None);
+            }
+            Some("bytes=4-7") | Some("bytes=8-11") => {
+                let expected = if request.range.as_deref() == Some("bytes=4-7") {
+                    "epb.blob.core.windows.net"
+                } else {
+                    "epc.blob.core.windows.net"
+                };
+                assert_eq!(request.url.host_str(), Some(expected));
+                assert_eq!(request.original_host.as_deref(), Some(ACCOUNT_HOST));
+            }
+            other => panic!("unexpected data range: {other:?}"),
+        }
     }
     Ok(())
 }
@@ -911,12 +837,10 @@ async fn session_mock_download(
     client: &BlobClient,
     partition_size: usize,
     parallel: usize,
-    layout_endpoint: Option<&str>,
 ) -> azure_core::Result<Bytes> {
     client
         .download(Some(BlobClientDownloadOptions {
             layout_aware_routing: LayoutAwareRouting::Enabled,
-            layout_endpoint: layout_endpoint.map(str::to_owned),
             partition_size: Some(NonZero::new(partition_size).unwrap()),
             parallel: Some(NonZero::new(parallel).unwrap()),
             ..Default::default()
@@ -942,11 +866,9 @@ fn count_kind(seen: &[SessionMockRequest], kind: RequestKind) -> usize {
     seen.iter().filter(|r| r.kind == kind).count()
 }
 
-/// A caller-chosen endpoint routes every chunk, the first included, but the Create Session
-/// it triggers still goes to the account endpoint.
+/// Automatic routing keeps Create Session and Get Blob Layout on the account endpoint.
 #[tokio::test]
-async fn test_session_routing_caller_endpoint_keeps_create_session_on_account(
-) -> Result<(), Box<dyn Error>> {
+async fn session_routing_keeps_control_requests_on_account() -> Result<(), Box<dyn Error>> {
     let seen = Arc::new(Mutex::new(Vec::new()));
     let transport = session_mock_transport(
         seen.clone(),
@@ -959,16 +881,27 @@ async fn test_session_routing_caller_endpoint_keeps_create_session_on_account(
         "https://acct.blob.core.windows.net/container/blob",
     )?;
 
-    let body = session_mock_download(&client, 4, 2, Some("epb.blob.core.windows.net:443")).await?;
+    let body = session_mock_download(&client, 4, 2).await?;
 
     assert_eq!(&body[..], &session_mock_data()[..]);
     let seen = seen.lock().unwrap();
     assert_control_requests_not_routed(&seen, ACCOUNT_HOST);
     assert_eq!(count_kind(&seen, RequestKind::CreateSession), 1);
-    assert_eq!(count_kind(&seen, RequestKind::Layout), 0);
+    assert_eq!(count_kind(&seen, RequestKind::Layout), 1);
     for request in seen.iter().filter(|r| r.kind == RequestKind::Data) {
-        assert_eq!(request.host, "epb.blob.core.windows.net");
-        assert_eq!(request.host_header.as_deref(), Some(ACCOUNT_HOST));
+        let (start, _) = parse_bytes_range(request.range.as_deref().unwrap());
+        if start == 0 {
+            assert_eq!(request.host, ACCOUNT_HOST);
+            assert_eq!(request.host_header, None);
+        } else {
+            let expected = if start < 16 {
+                "epa.blob.core.windows.net"
+            } else {
+                "epb.blob.core.windows.net"
+            };
+            assert_eq!(request.host, expected);
+            assert_eq!(request.host_header.as_deref(), Some(ACCOUNT_HOST));
+        }
         assert_eq!(request.session_token(), Some("token-1"));
     }
     Ok(())
@@ -994,7 +927,7 @@ async fn test_session_routing_unauthorized_routed_chunk_is_resent_with_bearer_to
         "https://acct.blob.core.windows.net/container/blob",
     )?;
 
-    let body = session_mock_download(&client, 4, 1, None).await?;
+    let body = session_mock_download(&client, 4, 1).await?;
 
     assert_eq!(&body[..], &session_mock_data()[..]);
     let seen = seen.lock().unwrap();
@@ -1041,7 +974,7 @@ async fn test_session_routing_concurrent_unauthorized_mints_one_new_session(
         "https://acct.blob.core.windows.net/container/blob",
     )?;
 
-    let body = session_mock_download(&client, 2, 8, None).await?;
+    let body = session_mock_download(&client, 2, 8).await?;
 
     assert_eq!(&body[..], &session_mock_data()[..]);
     let seen = seen.lock().unwrap();
@@ -1092,7 +1025,7 @@ async fn test_session_routing_retry_stays_on_node_with_session() -> Result<(), B
         "https://acct.blob.core.windows.net/container/blob",
     )?;
 
-    let body = session_mock_download(&client, 4, 1, None).await?;
+    let body = session_mock_download(&client, 4, 1).await?;
 
     assert_eq!(&body[..], &session_mock_data()[..]);
     let seen = seen.lock().unwrap();
@@ -1133,7 +1066,7 @@ async fn test_session_routing_unreachable_node_retries_on_node_then_fails(
         "https://acct.blob.core.windows.net/container/blob",
     )?;
 
-    let result = session_mock_download(&client, 4, 1, None).await;
+    let result = session_mock_download(&client, 4, 1).await;
 
     assert!(
         result.is_err(),
@@ -1175,7 +1108,7 @@ async fn test_session_routing_create_session_failure_routes_with_bearer(
         "https://acct.blob.core.windows.net/container/blob",
     )?;
 
-    let body = session_mock_download(&client, 4, 2, None).await?;
+    let body = session_mock_download(&client, 4, 2).await?;
 
     assert_eq!(&body[..], &session_mock_data()[..]);
     let seen = seen.lock().unwrap();
@@ -1212,7 +1145,7 @@ async fn test_session_routing_layout_server_error_continues_with_session(
         "https://acct.blob.core.windows.net/container/blob",
     )?;
 
-    let body = session_mock_download(&client, 4, 2, None).await?;
+    let body = session_mock_download(&client, 4, 2).await?;
 
     assert_eq!(&body[..], &session_mock_data()[..]);
     let seen = seen.lock().unwrap();

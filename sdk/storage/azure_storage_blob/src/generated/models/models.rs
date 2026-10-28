@@ -203,78 +203,78 @@ pub struct BlobItem {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "BlobLayout")]
-pub struct BlobLayout {
+pub(crate) struct BlobLayout {
     /// The endpoints that serve the ranges of the blob.
     #[serde(rename = "Endpoints", skip_serializing_if = "Option::is_none")]
-    pub endpoints: Option<BlobLayoutEndpoints>,
+    pub(crate) endpoints: Option<BlobLayoutEndpoints>,
 
     /// The continuation marker used for this request.
     #[serde(rename = "Marker", skip_serializing_if = "Option::is_none")]
-    pub marker: Option<String>,
+    pub(crate) marker: Option<String>,
 
     /// The maximum number of ranges to return per request.
     #[serde(rename = "MaxResults", skip_serializing_if = "Option::is_none")]
-    pub max_results: Option<i32>,
+    pub(crate) max_results: Option<i32>,
 
     /// If the number of ranges exceeds MaxResults, a NextMarker is returned for use in subsequent requests to continue listing.
     #[serde(rename = "NextMarker", skip_serializing_if = "Option::is_none")]
-    pub next_marker: Option<String>,
+    pub(crate) next_marker: Option<String>,
 
     /// The ranges that make up the blob.
-    #[serde(default, rename = "Ranges")]
-    pub ranges: BlobLayoutRanges,
+    #[serde(rename = "Ranges")]
+    pub(crate) ranges: BlobLayoutRanges,
 }
 
 /// An endpoint that serves ranges of a blob.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "Endpoint")]
-pub struct BlobLayoutEndpoint {
+pub(crate) struct BlobLayoutEndpoint {
     /// The index of the endpoint, referenced by Range elements.
     #[serde(rename = "@Index", skip_serializing_if = "Option::is_none")]
-    pub index: Option<i32>,
+    pub(crate) index: Option<i32>,
 
     /// The host:port of the endpoint.
     #[serde(rename = "@Value", skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
+    pub(crate) value: Option<String>,
 }
 
 /// The endpoints that serve the ranges of a blob.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "Endpoints")]
-pub struct BlobLayoutEndpoints {
+pub(crate) struct BlobLayoutEndpoints {
     /// The list of endpoints.
     #[serde(rename = "Endpoint", skip_serializing_if = "Option::is_none")]
-    pub endpoint: Option<Vec<BlobLayoutEndpoint>>,
+    pub(crate) endpoint: Option<Vec<BlobLayoutEndpoint>>,
 }
 
 /// A range of a blob, and the endpoint that serves it.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "Range")]
-pub struct BlobLayoutRange {
+pub(crate) struct BlobLayoutRange {
     /// The end byte offset of the range.
     #[serde(rename = "@End", skip_serializing_if = "Option::is_none")]
-    pub end: Option<i64>,
+    pub(crate) end: Option<i64>,
 
     /// Index into the Endpoints array indicating which endpoint serves this range.
     #[serde(rename = "@EndpointIndex", skip_serializing_if = "Option::is_none")]
-    pub endpoint_index: Option<i32>,
+    pub(crate) endpoint_index: Option<i32>,
 
     /// The start byte offset of the range.
     #[serde(rename = "@Start", skip_serializing_if = "Option::is_none")]
-    pub start: Option<i64>,
+    pub(crate) start: Option<i64>,
 }
 
 /// The ranges that make up a blob.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "Ranges")]
-pub struct BlobLayoutRanges {
+pub(crate) struct BlobLayoutRanges {
     /// The list of ranges.
-    #[serde(default, rename = "Range")]
-    pub range: Vec<BlobLayoutRange>,
+    #[serde(rename = "Range")]
+    pub(crate) range: Vec<BlobLayoutRange>,
 }
 
 /// Represents a blob name.

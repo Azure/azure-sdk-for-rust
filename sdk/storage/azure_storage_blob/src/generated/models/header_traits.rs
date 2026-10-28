@@ -1891,7 +1891,7 @@ impl BlobContainerClientRenewLeaseResultHeaders
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```ignore
 /// use azure_core::{Result, http::{Response, XmlFormat}};
 /// use azure_storage_blob::models::{BlobLayout, BlobLayoutHeaders};
 /// async fn example() -> Result<()> {
@@ -1909,7 +1909,7 @@ impl BlobContainerClientRenewLeaseResultHeaders
 ///     Ok(())
 /// }
 /// ```
-pub trait BlobLayoutHeaders: private::Sealed {
+pub(crate) trait BlobLayoutHeaders: private::Sealed {
     fn cache_control(&self) -> Result<Option<String>>;
     fn content_disposition(&self) -> Result<Option<String>>;
     fn content_encoding(&self) -> Result<Option<String>>;

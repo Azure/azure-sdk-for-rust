@@ -13,6 +13,7 @@ use std::{collections::HashMap, sync::Arc};
 use async_trait::async_trait;
 use azure_core::{
     error::ErrorKind,
+    fmt::SafeDebug,
     http::{
         policies::{Policy, PolicyResult},
         Context, Request, StatusCode, Url,
@@ -21,14 +22,32 @@ use azure_core::{
     Error, Result,
 };
 use futures::StreamExt as _;
+use serde::Deserialize;
 
 use crate::{
     cache::{AcquireFn, AutoRefreshingCache, RefreshableValue},
     generated::{
         clients::BlobClient,
-        models::{BlobClientGetLayoutOptions, BlobLayout},
+        models::{BlobClientGetLayoutOptions, BlobLayoutEndpoints, BlobLayoutRange},
     },
 };
+
+// Temporary until generated internal layout models preserve defaults for missing XML elements.
+#[derive(Default, Deserialize, SafeDebug)]
+#[serde(rename = "BlobLayout")]
+pub(crate) struct InternalBlobLayout {
+    #[serde(rename = "Endpoints")]
+    endpoints: Option<BlobLayoutEndpoints>,
+    #[serde(default, rename = "Ranges")]
+    ranges: InternalBlobLayoutRanges,
+}
+
+#[derive(Default, Deserialize, SafeDebug)]
+#[serde(rename = "Ranges")]
+pub(crate) struct InternalBlobLayoutRanges {
+    #[serde(default, rename = "Range")]
+    range: Vec<BlobLayoutRange>,
+}
 
 /// A contiguous byte range of a blob and the endpoint that serves it.
 ///
@@ -62,7 +81,7 @@ impl Layout {
     ///
     /// Endpoint indices are scoped to their page, so each page's `Endpoints` are
     /// mapped independently before its `Ranges` are resolved and appended.
-    pub fn extend_from_page(&mut self, page: &BlobLayout) {
+    pub fn extend_from_page(&mut self, page: &InternalBlobLayout) {
         let ranges = &page.ranges.range;
         if ranges.is_empty() {
             return;
@@ -240,7 +259,7 @@ pub(crate) async fn fetch_layout(
             Ok(response) => response,
             Err(err) => return classify_layout_error(err),
         };
-        let page = response.into_model()?;
+        let page = response.into_body().xml::<InternalBlobLayout>()?;
         layout.extend_from_page(&page);
     }
 
@@ -338,12 +357,7 @@ pub(crate) fn build_layout_cache(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        generated::models::{
-            BlobLayoutEndpoint, BlobLayoutEndpoints, BlobLayoutRange, BlobLayoutRanges,
-        },
-        BlobClientOptions,
-    };
+    use crate::{generated::models::BlobLayoutEndpoint, BlobClientOptions};
     use azure_core::{
         http::{
             headers::Headers, AsyncRawResponse, ClientOptions, Etag, FixedRetryOptions, HttpClient,
@@ -382,13 +396,15 @@ mod tests {
         }
     }
 
-    fn page(endpoints: Vec<BlobLayoutEndpoint>, ranges: Vec<BlobLayoutRange>) -> BlobLayout {
-        BlobLayout {
+    fn page(
+        endpoints: Vec<BlobLayoutEndpoint>,
+        ranges: Vec<BlobLayoutRange>,
+    ) -> InternalBlobLayout {
+        InternalBlobLayout {
             endpoints: Some(BlobLayoutEndpoints {
                 endpoint: Some(endpoints),
             }),
-            ranges: BlobLayoutRanges { range: ranges },
-            ..Default::default()
+            ranges: InternalBlobLayoutRanges { range: ranges },
         }
     }
 
