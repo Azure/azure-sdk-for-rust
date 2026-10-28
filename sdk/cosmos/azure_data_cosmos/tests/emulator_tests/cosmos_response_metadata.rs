@@ -106,6 +106,10 @@ pub async fn response_metadata_on_missing_read() -> Result<(), Box<dyn Error>> {
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "vnext emulator point reads do not expose item LSN: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/381"
+)]
 pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
 ) -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
