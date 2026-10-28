@@ -20,7 +20,7 @@
 - `reqwest_deflate`
 - `reqwest_gzip`
 - `reqwest_rustls`
-- `resourcemanager`
+- `resource_manager`
 - `tokio`
 - `xml`
 
@@ -1366,8 +1366,8 @@ pub mod http {
             fn status(&self) -> PollerStatus;
         }
         pub type PollerResultFuture<M, F> = std::pin::Pin<Box<dyn Future<Output = crate::Result<super::PollerResult<M, F>>> + Send + 'static>>;
-        #[cfg(feature = "resourcemanager")]
-        pub mod resourcemanager {
+        #[cfg(feature = "resource_manager")]
+        pub mod resource_manager {
             pub fn new_poller<'a, M>(pipeline: crate::http::Pipeline, request: crate::http::Request, final_state_via: Option<FinalStateVia<M>>, options: Option<PollerOptions<'a>>) -> crate::http::Poller<M> where M: StatusMonitor + DeserializeOwned + Send + 'static, <M as >::Output: DeserializeOwned + Send + 'static, <M as >::Format: Send + 'static;
             #[derive(Clone, Debug)]
             pub struct PollerOptions<'a> {

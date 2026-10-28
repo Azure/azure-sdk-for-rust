@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Poller helpers for Azure Resource Manager (ARM) long-running operations (LRO).
+//! Poller helpers for Azure Resource Manager long-running operations (LRO).
 //!
-//! Azure Resource Manager (ARM) polling is experimental and may change in future releases.
+//! Azure Resource Manager polling is experimental and may change in future releases.
 
 use crate::{
     error::{error_from_response, ErrorKind},
@@ -126,7 +126,7 @@ pub enum FinalStateVia<M: StatusMonitor> {
     /// use azure_core::{
     ///     http::{
     ///         headers::Headers,
-    ///         poller::{resourcemanager::FinalStateVia, PollerStatus, StatusMonitor},
+    ///         poller::{resource_manager::FinalStateVia, PollerStatus, StatusMonitor},
     ///         JsonFormat, RawResponse, Response, StatusCode,
     ///     },
     ///     Bytes,

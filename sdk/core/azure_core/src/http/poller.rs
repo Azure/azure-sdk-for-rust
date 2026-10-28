@@ -3,8 +3,8 @@
 
 //! Types and methods for long-running operations (LROs).
 
-#[cfg(feature = "resourcemanager")]
-pub mod resourcemanager;
+#[cfg(feature = "resource_manager")]
+pub mod resource_manager;
 
 use crate::{
     error::{ErrorKind, ErrorResponse},

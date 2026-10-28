@@ -45,4 +45,5 @@ These rules apply in addition to the repository root [AGENTS.md](../../AGENTS.md
 ## Resource Manager functionality
 
 - Put Resource Manager (ARM)-specific functionality in existing `azure_core` modules where appropriate.
-- When names collide, use a `resourcemanager` submodule gated by the `resourcemanager` feature, such as `azure_core::http::poller::resourcemanager`; do not re-export its items from parent modules.
+- Use `resource_manager` in module, field, function, method, and feature names; retain `azure_resourcemanager_*` crate names.
+- When names collide, prefer a `resource_manager` submodule gated by the `resource_manager` feature, such as `azure_core::http::poller::resource_manager`, over `ResourceManager` type or variant prefixes; do not re-export its items from parent modules.
