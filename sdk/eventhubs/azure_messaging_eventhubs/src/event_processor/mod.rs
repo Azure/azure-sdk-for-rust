@@ -17,24 +17,35 @@ use models::{Checkpoint, Ownership};
 /// listing ownerships, and updating checkpoints.
 #[async_trait::async_trait]
 pub trait CheckpointStore: Send + Sync {
-    /// Claims ownership of the specified partitions.
+    /// Claims, renews, or releases ownership of the specified partitions.
     ///
-    /// This method is used to claim ownership of partitions in an Event Hub
+    /// An [`Ownership`] with [`owner_id`](Ownership::owner_id) set to `Some`
+    /// claims or renews the partition for that owner. Setting `owner_id` to
+    /// `None` releases the partition. Implementations must persist the released
+    /// record with no owner, so another processor can claim the partition
+    /// immediately without waiting for ownership expiration.
+    ///
+    /// Updates to existing records, including releases, must match the stored
+    /// [`etag`](Ownership::etag). A stale ETag must not overwrite the current
+    /// ownership. Callers must use the latest record returned by this method or
+    /// [`list_ownerships()`](Self::list_ownerships) when releasing ownership.
     ///
     /// # Arguments
-    /// * `ownerships` - A vector of `Ownership` objects representing the partitions to claim.
+    /// * `ownerships` - The ownership records to claim, renew, or release.
     ///
     /// # Returns
-    /// A vector of the `Ownership` objects that the caller claimed. Each record
-    /// carries the new ETag for the next claim. The vector holds fewer records
-    /// than the `ownerships` argument when another owner holds a partition.
+    /// The successfully updated [`Ownership`] records, including releases, with
+    /// new ETags and updated modification times. The vector holds fewer records
+    /// than the `ownerships` argument when a claim, renewal, or release loses
+    /// an ETag conflict.
     ///
     /// # Errors
     /// Returns an error when the store fails, for example an authentication
     /// failure or a missing container. Returns an error when an `Ownership`
     /// argument is invalid, for example an empty required field. A lost claim
-    /// is not an error. The implementation must omit that partition from the
-    /// returned vector and continue with the other partitions.
+    /// is not an error. The implementation must leave the stored ownership
+    /// unchanged, omit that partition from the returned vector, and continue
+    /// with the other partitions.
     ///
     async fn claim_ownership(&self, ownerships: &[Ownership]) -> Result<Vec<Ownership>>;
 
@@ -63,6 +74,8 @@ pub trait CheckpointStore: Send + Sync {
     /// Lists the ownerships for the specified Event Hub and consumer group.
     ///
     /// This method retrieves the ownerships for a specific Event Hub and consumer group.
+    /// Include released records whose [`owner_id`](Ownership::owner_id) is
+    /// `None`, with their current ETags, so a processor can claim them again.
     ///
     /// # Arguments
     /// * `namespace` - The fully qualified namespace of the Event Hub.
