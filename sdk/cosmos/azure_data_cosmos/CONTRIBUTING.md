@@ -4,6 +4,25 @@
 
 First, review the Azure Core SDK Contributing guide: [CONTRIBUTING.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md)
 
+## Live PPAF Fault Testing
+
+Use the [Cosmos DB agent kit](https://github.com/AzureCosmosDB/cosmosdb-agent-kit)
+for the cross-SDK `cosmosdb-ppaf-fault-testing` skill and its guide at
+`skills/cosmosdb-ppaf-fault-testing/README.md`. Follow the kit's installation
+instructions to make the skill available to your agent.
+
+Per-Partition Automatic Failover (PPAF) must first be enabled through the account's
+**Features** tab in the Azure portal, subject to account eligibility. Service-side
+fault tests require explicit target and workload approval, bounded execution,
+and verified cleanup; production accounts require explicit acknowledgment of
+production impact. Playback tests and SDK-local fault injection do not exercise
+this service behavior.
+
+Include baseline and verification requests in the approved request-unit (RU)
+budget, not just requests made during the fault. Follow the canonical guide for
+pending operations, baseline eligibility, recovery, and cleanup evidence; an
+accepted control-plane request does not establish application failover.
+
 ## Running Integration Tests
 
 Our integration tests are designed to run against either the Cosmos DB Emulator, or an actual Azure Cosmos DB account.
