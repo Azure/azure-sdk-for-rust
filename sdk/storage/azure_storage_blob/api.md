@@ -123,7 +123,6 @@ pub mod clients {
         pub async fn delete(&self, options: Option<BlobClientDeleteOptions<'_>>) -> Result<Response<(), NoFormat>>;
         pub async fn delete_immutability_policy(&self, options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>) -> Result<Response<(), NoFormat>>;
         pub async fn get_account_info(&self, options: Option<BlobClientGetAccountInfoOptions<'_>>) -> Result<Response<BlobClientGetAccountInfoResult, NoFormat>>;
-        pub fn get_layout(&self, options: Option<BlobClientGetLayoutOptions<'_>>) -> Result<PageIterator<Response<BlobLayout, XmlFormat>>>;
         pub async fn get_properties(&self, options: Option<BlobClientGetPropertiesOptions<'_>>) -> Result<Response<BlobClientGetPropertiesResult, NoFormat>>;
         pub async fn get_tags(&self, options: Option<BlobClientGetTagsOptions<'_>>) -> Result<Response<BlobTags, XmlFormat>>;
         pub async fn release_lease(&self, lease_id: String, options: Option<BlobClientReleaseLeaseOptions<'_>>) -> Result<Response<BlobClientReleaseLeaseResult, NoFormat>>;
@@ -483,7 +482,6 @@ pub mod models {
         pub if_unmodified_since: Option<time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub layout_aware_routing: LayoutAwareRouting,
-        pub layout_endpoint: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub parallel: Option<std::num::NonZero<usize>>,
         pub partition_size: Option<std::num::NonZero<usize>>,
@@ -507,28 +505,6 @@ pub mod models {
     }
     #[derive(Debug)]
     pub struct BlobClientGetAccountInfoResult;
-    #[derive(Clone, Debug, Default)]
-    pub struct BlobClientGetLayoutOptions<'a> {
-        pub encryption_algorithm: Option<super::EncryptionAlgorithmType>,
-        pub encryption_key: Option<String>,
-        pub encryption_key_sha256: Option<String>,
-        pub if_match: Option<azure_core::http::Etag>,
-        pub if_modified_since: Option<azure_core::time::OffsetDateTime>,
-        pub if_none_match: Option<azure_core::http::Etag>,
-        pub if_tags: Option<String>,
-        pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
-        pub lease_id: Option<String>,
-        pub marker: Option<String>,
-        pub maxresults: Option<i32>,
-        pub method_options: azure_core::http::pager::PagerOptions<'a>,
-        pub range: Option<crate::models::HttpRange>,
-        pub snapshot: Option<String>,
-        pub timeout: Option<i32>,
-        pub version_id: Option<String>,
-    }
-    impl BlobClientGetLayoutOptions<'_> {
-        pub fn into_owned(self) -> BlobClientGetLayoutOptions<'static>;
-    }
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientGetPropertiesOptions<'a> {
         pub encryption_algorithm: Option<super::EncryptionAlgorithmType>,
@@ -903,55 +879,6 @@ pub mod models {
         pub snapshot: Option<String>,
         #[serde(rename = "VersionId", skip_serializing_if = "Option::is_none")]
         pub version_id: Option<String>,
-    }
-    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
-    #[non_exhaustive]
-    #[serde(rename = "BlobLayout")]
-    pub struct BlobLayout {
-        #[serde(rename = "Endpoints", skip_serializing_if = "Option::is_none")]
-        pub endpoints: Option<BlobLayoutEndpoints>,
-        #[serde(rename = "Marker", skip_serializing_if = "Option::is_none")]
-        pub marker: Option<String>,
-        #[serde(rename = "MaxResults", skip_serializing_if = "Option::is_none")]
-        pub max_results: Option<i32>,
-        #[serde(rename = "NextMarker", skip_serializing_if = "Option::is_none")]
-        pub next_marker: Option<String>,
-        #[serde(default, rename = "Ranges")]
-        pub ranges: BlobLayoutRanges,
-    }
-    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
-    #[non_exhaustive]
-    #[serde(rename = "Endpoint")]
-    pub struct BlobLayoutEndpoint {
-        #[serde(rename = "@Index", skip_serializing_if = "Option::is_none")]
-        pub index: Option<i32>,
-        #[serde(rename = "@Value", skip_serializing_if = "Option::is_none")]
-        pub value: Option<String>,
-    }
-    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
-    #[non_exhaustive]
-    #[serde(rename = "Endpoints")]
-    pub struct BlobLayoutEndpoints {
-        #[serde(rename = "Endpoint", skip_serializing_if = "Option::is_none")]
-        pub endpoint: Option<Vec<BlobLayoutEndpoint>>,
-    }
-    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
-    #[non_exhaustive]
-    #[serde(rename = "Range")]
-    pub struct BlobLayoutRange {
-        #[serde(rename = "@End", skip_serializing_if = "Option::is_none")]
-        pub end: Option<i64>,
-        #[serde(rename = "@EndpointIndex", skip_serializing_if = "Option::is_none")]
-        pub endpoint_index: Option<i32>,
-        #[serde(rename = "@Start", skip_serializing_if = "Option::is_none")]
-        pub start: Option<i64>,
-    }
-    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
-    #[non_exhaustive]
-    #[serde(rename = "Ranges")]
-    pub struct BlobLayoutRanges {
-        #[serde(default, rename = "Range")]
-        pub range: Vec<BlobLayoutRange>,
     }
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
@@ -2778,57 +2705,6 @@ pub mod models {
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
         fn lease_id(&self) -> Result<Option<String>>;
-    }
-    pub trait BlobLayoutHeaders: private::Sealed {
-        fn access_tier(&self) -> Result<Option<String>>;
-        fn access_tier_change_time(&self) -> Result<Option<OffsetDateTime>>;
-        fn access_tier_inferred(&self) -> Result<Option<bool>>;
-        fn archive_status(&self) -> Result<Option<ArchiveStatus>>;
-        fn blob_committed_block_count(&self) -> Result<Option<i32>>;
-        fn blob_content_encoding(&self) -> Result<Option<String>>;
-        fn blob_content_length(&self) -> Result<Option<i64>>;
-        fn blob_content_md5(&self) -> Result<Option<Vec<u8>>>;
-        fn blob_content_type(&self) -> Result<Option<String>>;
-        fn blob_creation_time(&self) -> Result<Option<OffsetDateTime>>;
-        fn blob_sequence_number(&self) -> Result<Option<i64>>;
-        fn blob_type(&self) -> Result<Option<BlobType>>;
-        fn cache_control(&self) -> Result<Option<String>>;
-        fn content_disposition(&self) -> Result<Option<String>>;
-        fn content_encoding(&self) -> Result<Option<String>>;
-        fn content_language(&self) -> Result<Option<String>>;
-        fn content_length(&self) -> Result<Option<u64>>;
-        fn content_md5(&self) -> Result<Option<Vec<u8>>>;
-        fn copy_completion_time(&self) -> Result<Option<OffsetDateTime>>;
-        fn copy_id(&self) -> Result<Option<String>>;
-        fn copy_progress(&self) -> Result<Option<String>>;
-        fn copy_source(&self) -> Result<Option<String>>;
-        fn copy_status(&self) -> Result<Option<CopyStatus>>;
-        fn copy_status_description(&self) -> Result<Option<String>>;
-        fn creation_time(&self) -> Result<Option<OffsetDateTime>>;
-        fn destination_snapshot(&self) -> Result<Option<String>>;
-        fn duration(&self) -> Result<Option<LeaseDuration>>;
-        fn encryption_key_sha256(&self) -> Result<Option<String>>;
-        fn encryption_scope(&self) -> Result<Option<String>>;
-        fn etag(&self) -> Result<Option<Etag>>;
-        fn expires_on(&self) -> Result<Option<OffsetDateTime>>;
-        fn immutability_policy_expires_on(&self) -> Result<Option<OffsetDateTime>>;
-        fn immutability_policy_mode(&self) -> Result<Option<ImmutabilityPolicyMode>>;
-        fn is_current_version(&self) -> Result<Option<bool>>;
-        fn is_incremental_copy(&self) -> Result<Option<bool>>;
-        fn is_sealed(&self) -> Result<Option<bool>>;
-        fn is_server_encrypted(&self) -> Result<Option<bool>>;
-        fn last_accessed(&self) -> Result<Option<OffsetDateTime>>;
-        fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
-        fn lease_state(&self) -> Result<Option<LeaseState>>;
-        fn lease_status(&self) -> Result<Option<LeaseStatus>>;
-        fn legal_hold(&self) -> Result<Option<bool>>;
-        fn metadata(&self) -> Result<HashMap<String, String>>;
-        fn object_replication_policy_id(&self) -> Result<Option<String>>;
-        fn object_replication_rules(&self) -> Result<HashMap<String, String>>;
-        fn rehydrate_priority(&self) -> Result<Option<RehydratePriority>>;
-        fn smart_access_tier(&self) -> Result<Option<String>>;
-        fn tag_count(&self) -> Result<Option<i64>>;
-        fn version_id(&self) -> Result<Option<String>>;
     }
     pub trait BlobServiceClientGetAccountInfoResultHeaders: private::Sealed {
         fn account_kind(&self) -> Result<Option<AccountKind>>;
