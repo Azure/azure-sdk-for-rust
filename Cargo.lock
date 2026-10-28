@@ -730,8 +730,10 @@ dependencies = [
  "clap",
  "console-subscriber",
  "futures",
+ "h2",
  "hdrhistogram",
  "hostname",
+ "http",
  "rand 0.10.2",
  "reqwest",
  "serde",
@@ -740,6 +742,7 @@ dependencies = [
  "time",
  "tokio",
  "tokio-metrics",
+ "tracing",
  "tracing-subscriber",
  "uuid",
 ]
