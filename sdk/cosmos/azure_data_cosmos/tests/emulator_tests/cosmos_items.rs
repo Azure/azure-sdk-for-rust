@@ -1052,6 +1052,10 @@ struct ExplicitPkItem {
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 #[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "vnext emulator returns an undefined-key item for a null-key read: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/378"
+)]
+#[cfg_attr(
     test_category = "emulator_inmemory",
     ignore = "hosted in-memory emulator does not yet model the undefined partition-key sentinel"
 )]
