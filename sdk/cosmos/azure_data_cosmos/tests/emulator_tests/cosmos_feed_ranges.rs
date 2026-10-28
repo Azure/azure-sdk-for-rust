@@ -478,6 +478,10 @@ async fn drain_ids(
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "vnext emulator returns items outside the requested EPK range: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/376"
+)]
 pub async fn feed_range_scope_restricts_cross_partition_query() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
