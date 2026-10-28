@@ -11,7 +11,7 @@ use crate::generated::clients::{
     KeyVaultSecretsClient, KeyVaultVaultsClient,
 };
 use azure_core::{
-    cloud::resourcemanager::CloudConfigurationExt as _,
+    cloud::resource_manager::CloudConfigurationExt as _,
     credentials::TokenCredential,
     error::ErrorKind,
     fmt::SafeDebug,
@@ -53,7 +53,8 @@ impl KeyVaultClient {
     ///
     /// Public cloud is used when no cloud configuration is supplied. For a custom cloud,
     /// set [`CustomConfiguration::endpoint`](azure_core::cloud::CustomConfiguration::endpoint)
-    /// and register its authentication audience using the shared [`Audience`] marker.
+    /// and register its authentication audience using the shared
+    /// [`Audience`](azure_core::cloud::resource_manager::Audience) marker.
     /// Configure the credential's cloud separately to use its identity authority.
     ///
     /// # Errors

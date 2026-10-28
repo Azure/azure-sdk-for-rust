@@ -3,11 +3,11 @@
 
 use super::{models, KeyVaultClient, KeyVaultClientOptions};
 use azure_core::{
-    cloud::{resourcemanager::Audience, Audiences, CloudConfiguration, CustomConfiguration},
+    cloud::{resource_manager::Audience, Audiences, CloudConfiguration, CustomConfiguration},
     error::ErrorResponse,
     http::{
         headers::{HeaderName, Headers, ACCEPT, AUTHORIZATION, CONTENT_TYPE},
-        poller::resourcemanager::PollerOptions,
+        poller::resource_manager::PollerOptions,
         request::{options::ClientRequestId, Body},
         AsyncRawResponse, ClientOptions, Context, Method, RetryOptions, StatusCode, Transport,
     },

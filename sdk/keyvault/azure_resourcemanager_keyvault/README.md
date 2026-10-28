@@ -51,13 +51,13 @@ async fn main() -> azure_core::Result<()> {
 
 Custom cloud configuration is passed through `KeyVaultClientOptions.client_options.cloud`.
 Set the management endpoint separately from the authentication audience. Use
-`azure_core::cloud::resourcemanager::Audience`, which is shared by all Resource
+`azure_core::cloud::resource_manager::Audience`, which is shared by all Resource
 Manager clients. Configure your developer tool for the custom cloud and sign in
 before using `DeveloperToolsCredential`.
 
 ```rust no_run create_custom_cloud_client
 use azure_core::{
-    cloud::{resourcemanager::Audience, Audiences, CustomConfiguration},
+    cloud::{resource_manager::Audience, Audiences, CustomConfiguration},
     http::ClientOptions,
 };
 use azure_identity::DeveloperToolsCredential;

@@ -119,7 +119,7 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
 ### Resource Manager polling
 
 - [ ] Detect Resource Manager operations from TypeSpec/client metadata and emit
-  `azure_core::http::poller::resourcemanager::new_poller` instead of duplicating polling
+  `azure_core::http::poller::resource_manager::new_poller` instead of duplicating polling
   state machines or introducing a separate poller type. Keep returning the
   existing `Poller<OperationStatus>` and preserve lazy initial-request execution.
 - [ ] Migrate every applicable operation, including these eight prototype cases:
@@ -136,7 +136,7 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   and headers and extract the original JSON bytes without serializing the
   complete model again. No Key Vault operation currently exercises this callback.
 - [ ] Generate Resource Manager `PollerOptions` in long-running method options
-  from `azure_core::http::poller::resourcemanager`, along with `FinalStateVia`
+  from `azure_core::http::poller::resource_manager`, along with `FinalStateVia`
   in clients, and preserve caller context and polling frequency. Leave ordinary
   method and pager options unchanged.
 - [ ] Generate `StatusMonitor::Output = ()` with `StatusMonitor::Format = NoFormat`
@@ -161,7 +161,7 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   Emit the prototype's borrowed-default pattern:
 
   ```rust
-  use azure_core::cloud::resourcemanager::CloudConfigurationExt as _;
+  use azure_core::cloud::resource_manager::CloudConfigurationExt as _;
 
   let options = options.unwrap_or_default();
   let cloud = options.client_options.cloud.as_deref().unwrap_or_default();
@@ -173,15 +173,15 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   ```
 
   Keep `options.client_options` available to move into `Pipeline::new`.
-  Import `azure_core::cloud::resourcemanager::CloudConfigurationExt as _` in
+  Import `azure_core::cloud::resource_manager::CloudConfigurationExt as _` in
   generated and hand-written constructors. Resolve the management endpoint with
   `cloud.endpoint()` and the token scope with `cloud.default_scope()`. These
   trait methods take no audience type parameter; core uses the shared
-  `azure_core::cloud::resourcemanager::Audience` marker internally.
+  `azure_core::cloud::resource_manager::Audience` marker internally.
 - [ ] For every crate whose name starts with `azure_resourcemanager_`, do not
   define or re-export a per-crate `Audience`. Continue generating per-crate
   audience markers for data-plane crates without that prefix.
-  Use `azure_core::cloud::resourcemanager::Audience` to register custom audiences
+  Use `azure_core::cloud::resource_manager::Audience` to register custom audiences
   in examples and tests; constructors import `CloudConfigurationExt` instead.
   A single custom audience entry must work across Resource Manager crates.
 - [ ] Parse the returned endpoint with `Url::parse`, return an explicit
@@ -202,14 +202,18 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
 - [ ] Generate accurate constructor documentation for the default cloud,
   custom-cloud endpoint and audience requirements, and configuration/URL errors.
   Fully qualify the shared audience link as
-  ``[`Audience`](azure_core::cloud::resourcemanager::Audience)``; importing only
+  ``[`Audience`](azure_core::cloud::resource_manager::Audience)``; importing only
   `CloudConfigurationExt as _` does not bring `Audience` into rustdoc scope.
   Remove the obsolete unsupported-cloud panic documentation.
-  Use "Resource Manager" in public documentation; use `resourcemanager` for
-  modules and features.
+  Use "Resource Manager" in public documentation and `resource_manager` in
+  module, field, function, method, and feature names. Retain the
+  `azure_resourcemanager_*` crate prefix. Prefer nested `resource_manager`
+  modules over `ResourceManager` type or variant prefixes when disambiguating
+  from data-plane APIs; retain short names such as `PollerOptions` and `Audience`
+  within those modules.
 - [ ] Generate two client-construction examples in each Resource Manager README:
   the normal default-cloud case first, then a custom-cloud case using the shared
-  `azure_core::cloud::resourcemanager::Audience`. Configure
+  `azure_core::cloud::resource_manager::Audience`. Configure
   `CustomConfiguration::authority_host` and `endpoint`, register the audience,
   and pass the same cloud to a cloud-aware credential and the service client.
   `DeveloperToolsCredential` uses the developer tools' cloud settings and has
@@ -219,10 +223,10 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   Caller examples do not need `CloudConfigurationExt`: configuring
   `CloudConfiguration`, `CustomConfiguration`, and `Audiences` is unchanged.
   Keep the shared `Audience` import for custom audience registration.
-- [ ] Generate a manifest dependency enabling `azure_core`'s `resourcemanager`
+- [ ] Generate a manifest dependency enabling `azure_core`'s `resource_manager`
   feature, preserve `default-features = false`, and forward default transport
   features consistently. Require a core version containing both the polling
-  helper and `cloud::resourcemanager::CloudConfigurationExt` and `Audience`,
+  helper and `cloud::resource_manager::CloudConfigurationExt` and `Audience`,
   which are all gated by that feature.
   The prototype temporarily uses local `azure_core` path plus version
   `1.2.0-beta.2`; do not hard-code local paths into published service generation.
@@ -239,7 +243,9 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   `cloud.as_deref().unwrap_or_default()` rather than cloning the configured
   cloud, allocating a default `Arc`, or hard-coding `AzurePublic`.
   Verify that ARM crates do not emit an `Audience` declaration and import
-  `azure_core::cloud::resourcemanager::CloudConfigurationExt as _` in constructors.
+  `azure_core::cloud::resource_manager::CloudConfigurationExt as _` in constructors.
+  Verify that generated imports, rustdoc links, and manifest features use
+  `resource_manager`, while the crate name remains `azure_resourcemanager_keyvault`.
   Call `endpoint()`, `audience()`, and `default_scope()` without audience type
   parameters rather than emitting inline cloud mappings, custom audience
   lookups, or scope construction.

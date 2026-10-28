@@ -44,7 +44,7 @@ These rules apply in addition to the repository root [AGENTS.md](../../AGENTS.md
 
 ## Resource Manager
 
-- Use "Resource Manager", not "ARM", in public documentation. "ARM" is acceptable in code; name modules and features `resourcemanager`.
+- Use "Resource Manager", not "ARM", in public documentation. "ARM" is acceptable in code.
 - Put Resource Manager (ARM)-specific functionality in existing `azure_core` modules where appropriate.
 - Use `resource_manager` in module, field, function, method, and feature names; retain `azure_resourcemanager_*` crate names.
 - When names collide, prefer a `resource_manager` submodule gated by the `resource_manager` feature, such as `azure_core::http::poller::resource_manager`, over `ResourceManager` type or variant prefixes; do not re-export its items from parent modules.

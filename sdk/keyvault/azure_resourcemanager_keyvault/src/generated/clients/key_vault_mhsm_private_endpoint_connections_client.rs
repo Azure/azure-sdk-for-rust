@@ -15,7 +15,7 @@ use azure_core::{
     error::CheckSuccessOptions,
     http::{
         pager::{PagerContinuation, PagerResult, PagerState},
-        poller::resourcemanager::{new_poller, FinalStateVia},
+        poller::resource_manager::{new_poller, FinalStateVia},
         Method, Pager, Pipeline, PipelineSendOptions, Poller, RawResponse, Request, RequestContent,
         Response, Url, UrlExt,
     },
