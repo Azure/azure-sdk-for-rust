@@ -742,6 +742,10 @@ struct Scenario {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "vnext emulator partition-scoped query pages do not expose LSN metadata: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/385"
+)]
 async fn query_results_plans_and_resume_paths_match() -> Result<(), Box<dyn Error>> {
     let harness = QueryComparisonHarness::setup().await?;
     let db_name = harness.database_name();
