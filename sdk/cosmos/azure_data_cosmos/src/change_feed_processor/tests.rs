@@ -1,10 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{
-    AllVersionsAndDeletes, ChangeFeedProcessorBuilder, ChangeFeedProcessorContext,
-    ChangeFeedProcessorMode, LatestVersion, ProcessorStartFrom,
-};
+use super::{ChangeFeedProcessorBuilder, ChangeFeedProcessorContext, ProcessorStartFrom};
 use crate::{
     feed::ContinuationToken,
     models::ChangeFeedItem,
@@ -21,16 +18,11 @@ use azure_data_cosmos_driver::in_memory_emulator::{
 use std::{error::Error, num::NonZeroU32, sync::Arc, time::Duration};
 use time::OffsetDateTime;
 
-#[test]
-fn modes_remain_dyn_compatible() {
-    let modes: [&dyn ChangeFeedProcessorMode; 2] = [&LatestVersion, &AllVersionsAndDeletes];
-    assert_eq!(
-        modes.map(|mode| mode.mode()),
-        [
-            ChangeFeedMode::LatestVersion,
-            ChangeFeedMode::AllVersionsAndDeletes
-        ],
-    );
+async fn on_changes(
+    _context: ChangeFeedProcessorContext,
+    _changes: Vec<ChangeFeedItem<String>>,
+) -> crate::Result<()> {
+    Ok(())
 }
 
 async fn containers() -> Result<(ContainerClient, ContainerClient), Box<dyn Error>> {
@@ -72,9 +64,7 @@ async fn containers() -> Result<(ContainerClient, ContainerClient), Box<dyn Erro
     ))
 }
 
-fn assert_defaults<M: ChangeFeedProcessorMode, T, H>(
-    builder: &ChangeFeedProcessorBuilder<M, T, H>,
-) {
+fn assert_defaults<T, H>(builder: &ChangeFeedProcessorBuilder<T, H>) {
     assert!(matches!(builder.start_from, ProcessorStartFrom::Now));
     assert_eq!(
         builder.max_item_count,
@@ -86,9 +76,7 @@ fn assert_defaults<M: ChangeFeedProcessorMode, T, H>(
     assert!(!builder.lease_verification_on_restart_enabled);
 }
 
-fn configure<M: ChangeFeedProcessorMode, T, H>(
-    builder: ChangeFeedProcessorBuilder<M, T, H>,
-) -> ChangeFeedProcessorBuilder<M, T, H> {
+fn configure<T, H>(builder: ChangeFeedProcessorBuilder<T, H>) -> ChangeFeedProcessorBuilder<T, H> {
     builder
         .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(237).unwrap()))
         .with_feed_poll_delay(Duration::from_millis(1234))
@@ -98,9 +86,17 @@ fn configure<M: ChangeFeedProcessorMode, T, H>(
         .with_lease_verification_enabled_on_restart(true)
 }
 
-async fn configuration_round_trip<M: ChangeFeedProcessorMode + Copy>(
-    mode: M,
-) -> Result<(), Box<dyn Error>> {
+async fn configuration_round_trip(mode: ChangeFeedMode) -> Result<(), Box<dyn Error>> {
+    async fn on_changes(
+        context: ChangeFeedProcessorContext,
+        changes: Vec<ChangeFeedItem<String>>,
+    ) -> crate::Result<()> {
+        assert_eq!(context.lease_token(), "lease-token");
+        assert_eq!(changes.len(), 1);
+        assert_eq!(changes[0].current().map(String::as_str), Some("order-42"));
+        Ok(())
+    }
+
     let (monitored, leases) = containers().await?;
     for register_first in [false, true] {
         let builder = ChangeFeedProcessorBuilder::new(
@@ -111,24 +107,12 @@ async fn configuration_round_trip<M: ChangeFeedProcessorMode + Copy>(
             "worker-01",
         );
         assert_defaults(&builder);
-        let captured = String::from("callback-state");
-        let callback = move |context: ChangeFeedProcessorContext,
-                             changes: Vec<ChangeFeedItem<String>>| {
-            let captured = captured.clone();
-            async move {
-                assert_eq!(captured, "callback-state");
-                assert_eq!(context.lease_token(), "lease-token");
-                assert_eq!(changes.len(), 1);
-                assert_eq!(changes[0].current().map(String::as_str), Some("order-42"));
-                Ok(())
-            }
-        };
         let builder = if register_first {
-            let builder = builder.handle_change_feed(callback);
+            let builder = builder.handle_change_feed(on_changes);
             assert_defaults(&builder);
             configure(builder)
         } else {
-            configure(builder).handle_change_feed(callback)
+            configure(builder).handle_change_feed(on_changes)
         };
         let processor = builder.build()?;
         // Exhaustive destructuring makes added configuration fields visible to this test.
@@ -147,7 +131,7 @@ async fn configuration_round_trip<M: ChangeFeedProcessorMode + Copy>(
             handler,
             item: _,
         } = processor.configuration;
-        let _: M = stored_mode;
+        assert_eq!(stored_mode, mode);
 
         assert_eq!(
             monitored_container.read(None).await?.into_model()?.id,
@@ -184,12 +168,12 @@ async fn configuration_round_trip<M: ChangeFeedProcessorMode + Copy>(
 
 #[tokio::test]
 async fn latest_version_configuration_round_trip() -> Result<(), Box<dyn Error>> {
-    configuration_round_trip(LatestVersion).await
+    configuration_round_trip(ChangeFeedMode::LatestVersion).await
 }
 
 #[tokio::test]
 async fn all_versions_and_deletes_configuration_round_trip() -> Result<(), Box<dyn Error>> {
-    configuration_round_trip(AllVersionsAndDeletes).await
+    configuration_round_trip(ChangeFeedMode::AllVersionsAndDeletes).await
 }
 
 #[tokio::test]
@@ -203,7 +187,7 @@ async fn latest_version_start_positions_round_trip() -> Result<(), Box<dyn Error
         ProcessorStartFrom::Continuation(ContinuationToken::from_string("initial-position".into())),
     ] {
         let builder = ChangeFeedProcessorBuilder::new(
-            LatestVersion,
+            ChangeFeedMode::LatestVersion,
             monitored.clone(),
             leases.clone(),
             "orders",
@@ -218,9 +202,7 @@ async fn latest_version_start_positions_round_trip() -> Result<(), Box<dyn Error
                 .with_start_from_beginning()
                 .with_start_continuation(token.clone()),
         };
-        let processor = builder
-            .handle_change_feed(|_, _: Vec<ChangeFeedItem<String>>| async { Ok(()) })
-            .build()?;
+        let processor = builder.handle_change_feed(on_changes).build()?;
         match (expected, processor.configuration.start_from) {
             (ProcessorStartFrom::Now, ProcessorStartFrom::Now)
             | (ProcessorStartFrom::Beginning, ProcessorStartFrom::Beginning) => {}
@@ -242,9 +224,7 @@ async fn latest_version_start_positions_round_trip() -> Result<(), Box<dyn Error
     Ok(())
 }
 
-async fn build_validation<M: ChangeFeedProcessorMode + Copy>(
-    mode: M,
-) -> Result<(), Box<dyn Error>> {
+async fn build_validation(mode: ChangeFeedMode) -> Result<(), Box<dyn Error>> {
     let (monitored, leases) = containers().await?;
     let cases = [
         ("orders", "worker", 0, 0, None, None),
@@ -321,7 +301,7 @@ async fn build_validation<M: ChangeFeedProcessorMode + Copy>(
             builder = builder.with_start_continuation(ContinuationToken::from_string(token.into()));
         }
         let result = builder
-            .handle_change_feed(|_, _: Vec<ChangeFeedItem<String>>| async { Ok(()) })
+            .handle_change_feed(on_changes)
             .with_max_scale_count(maximum)
             .with_max_item_count(MaxItemCountHint::ServerDecides)
             .with_feed_poll_delay(Duration::ZERO)
@@ -363,10 +343,100 @@ async fn build_validation<M: ChangeFeedProcessorMode + Copy>(
 
 #[tokio::test]
 async fn latest_version_build_validates_configuration() -> Result<(), Box<dyn Error>> {
-    build_validation(LatestVersion).await
+    build_validation(ChangeFeedMode::LatestVersion).await
 }
 
 #[tokio::test]
 async fn all_versions_and_deletes_build_validates_configuration() -> Result<(), Box<dyn Error>> {
-    build_validation(AllVersionsAndDeletes).await
+    build_validation(ChangeFeedMode::AllVersionsAndDeletes).await
+}
+
+#[tokio::test]
+async fn mode_start_validation_before_and_after_handler_registration() -> Result<(), Box<dyn Error>>
+{
+    fn select_start<T, H>(
+        builder: ChangeFeedProcessorBuilder<T, H>,
+        start: u8,
+    ) -> ChangeFeedProcessorBuilder<T, H> {
+        match start {
+            0 => builder.with_start_from_now(),
+            1 => builder.with_start_from_beginning(),
+            2 => builder.with_start_time(OffsetDateTime::UNIX_EPOCH),
+            _ => builder
+                .with_start_continuation(ContinuationToken::from_string("saved-position".into())),
+        }
+    }
+
+    let (monitored, leases) = containers().await?;
+    for mode in [
+        ChangeFeedMode::LatestVersion,
+        ChangeFeedMode::AllVersionsAndDeletes,
+    ] {
+        for register_first in [false, true] {
+            for start in 0..4 {
+                let builder = ChangeFeedProcessorBuilder::new(
+                    mode,
+                    monitored.clone(),
+                    leases.clone(),
+                    "orders",
+                    "worker",
+                );
+                let builder = if register_first {
+                    select_start(builder.handle_change_feed(on_changes), start)
+                } else {
+                    select_start(builder, start).handle_change_feed(on_changes)
+                };
+                let result = builder.build();
+                if mode == ChangeFeedMode::AllVersionsAndDeletes && matches!(start, 1 | 2) {
+                    let error = result.err().expect("unsupported start must be rejected");
+                    assert_eq!(error.status().status_code(), StatusCode::BadRequest);
+                    assert!(error.response().is_none());
+                    assert!(error.to_string().contains(
+                        "AllVersionsAndDeletes mode does not support beginning or time-based starts."
+                    ));
+                } else {
+                    let processor = result?;
+                    assert_eq!(processor.configuration.mode, mode);
+                    assert!(!processor.is_started());
+                    for error in [
+                        processor.start().await.unwrap_err(),
+                        processor.stop().await.unwrap_err(),
+                        processor.current_state().await.unwrap_err(),
+                    ] {
+                        assert_eq!(error.status().status_code(), StatusCode::NotImplemented);
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn all_versions_and_deletes_validates_final_start_position() -> Result<(), Box<dyn Error>> {
+    let (monitored, leases) = containers().await?;
+    for use_continuation in [false, true] {
+        let builder = ChangeFeedProcessorBuilder::new(
+            ChangeFeedMode::AllVersionsAndDeletes,
+            monitored.clone(),
+            leases.clone(),
+            "orders",
+            "worker",
+        )
+        .with_start_from_beginning()
+        .handle_change_feed(on_changes)
+        .with_start_time(OffsetDateTime::UNIX_EPOCH);
+        let builder = if use_continuation {
+            builder.with_start_continuation(ContinuationToken::from_string("resume".into()))
+        } else {
+            builder.with_start_from_now()
+        };
+        let processor = builder.build()?;
+        match (&processor.configuration.start_from, use_continuation) {
+            (ProcessorStartFrom::Now, false) => {}
+            (ProcessorStartFrom::Continuation(token), true) => assert_eq!(token.as_str(), "resume"),
+            _ => panic!("the final start position was not preserved"),
+        }
+    }
+    Ok(())
 }
