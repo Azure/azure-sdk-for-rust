@@ -197,7 +197,7 @@ The `tsp-client init` command should generate a fully functional Rust package fo
 
 For `azure_resourcemanager_*` crates, also follow the
 [Resource Manager generation guide](https://github.com/Azure/azure-sdk-for-rust/blob/main/doc/dev/resourcemanager-generation.md#cloud-configuration-and-shared-audience).
-These clients use the shared `azure_core::cloud::resourcemanager::Audience`
+These clients use the shared `azure_core::cloud::resource_manager::Audience`
 instead of a generated per-crate marker, and delegate endpoint and scope
 resolution to core. This exception does not change data-plane audience generation.
 

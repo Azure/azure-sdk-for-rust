@@ -29,6 +29,7 @@ In addition to the standard tooling covered in the base guide, keep these points
     ```
 
 - **Naming** – Follow the `azure_resourcemanager_<service>` crate pattern and mirror the service folder layout used by other languages (`sdk/<service>/<crate-name>`). For example, the Key Vault management library is `sdk/keyvault/azure_resourcemanager_keyvault`, distinct from the data-plane `azure_security_keyvault_*` crates.
+- **Rust identifiers** – Use `resource_manager` in module, field, function, method, and feature names. When disambiguating from data-plane APIs, prefer a nested `resource_manager` module over `ResourceManager` type or variant prefixes. Keep short type names such as `PollerOptions` and `Audience` inside those modules; do not add a module when disambiguation is unnecessary.
 - **Spec changes** – Capture the `azure-rest-api-specs` commit SHA (or PR branch commit) that contains the TypeSpec updates; you will reference it from `tsp-location.yaml`.
 
 ### Client names
@@ -80,7 +81,7 @@ Most polish items match the data-plane flow, but a few deserve special emphasis 
   ```
 
 - **Credential surface** – Accept `Arc<dyn azure_core::credentials::TokenCredential>` so callers can use `azure_identity` or another credential implementation. Preserve the subscription arguments defined by TypeSpec.
-- **Core dependency** – Enable `azure_core`'s `resourcemanager` feature. Require a core version containing the shared cloud configuration and polling APIs used by the generated code; preserve the usual transport feature forwarding.
+- **Core dependency** – Enable `azure_core`'s `resource_manager` feature. Require a core version containing the shared cloud configuration and polling APIs used by the generated code; preserve the usual transport feature forwarding.
 - **Integration tests** – Provision test resources with `eng/common/TestResources/New-TestResources.ps1 -ServiceDirectory <service>` and record with `#[recorded::test]`. Management plane tests frequently require role assignments, so verify the Bicep template grants the test application proper `Microsoft.Authorization/roleAssignments` permissions.
 
 After these tweaks, run the usual validation commands (`cargo fmt`, `cargo clippy`, `cargo test`) as instructed in the base guide. When long-running operations are generated, add a `cargo check -p <crate> --all-features` run to ensure every poller compiles.
@@ -88,10 +89,10 @@ After these tweaks, run the usual validation commands (`cargo fmt`, `cargo clipp
 ### Cloud configuration and shared audience
 
 All `azure_resourcemanager_*` crates use
-`azure_core::cloud::resourcemanager::Audience` for custom audience registration.
+`azure_core::cloud::resource_manager::Audience` for custom audience registration.
 The marker and `CloudConfigurationExt` trait are gated by `azure_core`'s
-`resourcemanager` feature. Generated and hand-written constructors must import
-`azure_core::cloud::resourcemanager::CloudConfigurationExt as _` for endpoint,
+`resource_manager` feature. Generated and hand-written constructors must import
+`azure_core::cloud::resource_manager::CloudConfigurationExt as _` for endpoint,
 audience, and scope resolution without audience type parameters. Core uses the
 shared marker internally; do not generate or re-export a service-specific
 `Audience`. Audience entries are keyed by Rust
@@ -103,7 +104,7 @@ Constructors read `options.client_options.cloud`, borrowing the configured cloud
 or the default without cloning it or allocating a default `Arc`:
 
 ```rust ignore
-use azure_core::cloud::resourcemanager::CloudConfigurationExt as _;
+use azure_core::cloud::resource_manager::CloudConfigurationExt as _;
 
 let options = options.unwrap_or_default();
 let cloud = options.client_options.cloud.as_deref().unwrap_or_default();
@@ -153,13 +154,13 @@ mistaken service-specific marker fails lookup.
 
 ### Long-running operation generation
 
-Generate calls to `azure_core::http::poller::resourcemanager::new_poller` and
+Generate calls to `azure_core::http::poller::resource_manager::new_poller` and
 method options using that module's `PollerOptions`. Continue returning the
 existing `Poller<OperationStatus>`; do not introduce a service-specific poller or
 generate a competing polling state machine.
 
 Resource Manager polling is experimental and may change in future releases.
-See the [core polling helper](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/src/http/poller/resourcemanager.rs)
+See the [core polling helper](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/src/http/poller/resource_manager.rs)
 for the current API and protocol behavior.
 
 Pass final-state metadata as `Option<FinalStateVia<_>>` to the helper. Omitted
