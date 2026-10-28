@@ -53,13 +53,16 @@ their existing configuration.
    commands):
    - `AZURE_COSMOS_CONNECTION_STRING` (secret - masked in logs)
    - `AZURE_COSMOS_SECONDARY_KEY` (secret, only if the account defines one)
-   - `ACCOUNT_HOST`, `DATABASE_NAME`, `AZURE_COSMOS_DEFAULT_CONSISTENCY`,
-     `COSMOS_RUSTFLAGS`
+   - `ACCOUNT_HOST`, `DATABASE_NAME`, `AZURE_COSMOS_DEFAULT_CONSISTENCY`, `COSMOS_RUSTFLAGS`
+   - `AZURE_COSMOS_E2E_BACKEND`, `AZURE_COSMOS_ACCOUNT_WRITE_MODE`, `AZURE_COSMOS_ACCOUNT_MULTI_REGION`, `AZURE_COSMOS_ACCOUNT_REGIONS`, and `AZURE_COSMOS_ACCOUNT_FULL_FIDELITY_CHANGE_FEED`
 
-   These are exactly the environment variables that
+   The first group matches the environment variables that
    `sdk/cosmos/test-resources.bicep` used to produce as ARM deployment
-   outputs, so the test frameworks
-   (`azure_data_cosmos`/`azure_data_cosmos_driver`) need no changes.
+   outputs. The second group lets catalog-driven E2E setup validate that a
+   selected fixed account satisfies its profile before any required scenario
+   starts. The Rust client also compares the live account-properties response
+   with the selected profile, so stale secret metadata cannot mask consistency,
+   write-mode, or topology drift.
 6. `resolve-test-account-steps.yml` is a
    reusable ADO step template that invokes the resolver script with the
    current job's `$(AccountSelector)` matrix variable.

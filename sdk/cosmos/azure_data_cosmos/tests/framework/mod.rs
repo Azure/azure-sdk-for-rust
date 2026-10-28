@@ -28,10 +28,11 @@ pub use resource_manager::{
 pub use test_client::{
     assert_local_retry_attempted_on_region, assert_region_contacted_with_retry,
     assert_region_not_contacted, build_aad_client_from_env, get_effective_hub_endpoint,
-    get_global_endpoint, probe_data_plane_ready, read_item_with_readiness_retry,
-    resolve_connection_string, targets_emulator, TestClient, TestOptions, TestRunContext,
-    ACCOUNT_HOST_ENV_VAR, AUTH_MODE_ENV_VAR, CONNECTION_STRING_ENV_VAR, DEFAULT_TEST_TIMEOUT,
-    EMULATOR_CONNECTION_STRING, HUB_REGION, SATELLITE_REGION,
+    get_global_endpoint, probe_data_plane_ready, probe_data_plane_ready_with_partition_key,
+    read_item_with_readiness_retry, resolve_connection_string, targets_emulator, TestClient,
+    TestOptions, TestRunContext, ACCOUNT_HOST_ENV_VAR, AUTH_MODE_ENV_VAR,
+    CONNECTION_STRING_ENV_VAR, DEFAULT_TEST_TIMEOUT, EMULATOR_CONNECTION_STRING, HUB_REGION,
+    SATELLITE_REGION,
 };
 
 use serde::{Deserialize, Serialize};

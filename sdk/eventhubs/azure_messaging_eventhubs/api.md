@@ -297,6 +297,7 @@ pub mod error {
         SendRejected(Option<azure_core_amqp::AmqpDescribedError>),
         AzureCore(azure_core::Error),
         InvalidBatchSize { requested: u64, max_allowed: u64 },
+        MessageSizeExceeded { requested: u64, max_allowed: u64 },
         AmqpError(azure_core_amqp::AmqpError),
         SendNotAccepted(std::borrow::Cow<'static, str>),
         ConsumerDisconnected(Option<azure_core_amqp::AmqpDescribedError>),

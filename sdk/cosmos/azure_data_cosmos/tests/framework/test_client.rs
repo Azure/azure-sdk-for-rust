@@ -136,6 +136,7 @@ const CONTAINER_READINESS_RETRY_DELAY: Duration = Duration::from_secs(1);
 const CHANGE_FEED_READINESS_RESPONSE_TIMEOUT: Duration = Duration::from_secs(2);
 const SETUP_DNS_TIMEOUT: Duration = Duration::from_secs(30);
 const SETUP_DNS_RETRY_DELAY: Duration = Duration::from_secs(1);
+const FAULT_CLIENT_INITIALIZATION_TIMEOUT: Duration = Duration::from_secs(90);
 const FAULT_INJECTION_READINESS_MAX_ATTEMPTS: usize = 20;
 #[cfg(test_category = "multi_write")]
 const SATELLITE_READINESS_MAX_ATTEMPTS: usize = 8;
@@ -193,6 +194,10 @@ fn setup_dns_failure(error: &CosmosError) -> bool {
     false
 }
 
+fn setup_connectivity_failure(error: &CosmosError) -> bool {
+    setup_dns_failure(error) || error.status() == status_codes::TRANSPORT_CONNECTION_FAILED
+}
+
 /// Retries resource setup/cleanup for 30 seconds after the first DNS failure, preserving the error.
 /// Never use this to replay a test body or an assertion.
 async fn retry_setup_dns<T, F, Fut>(phase: &str, mut operation: F) -> azure_data_cosmos::Result<T>
@@ -207,6 +212,51 @@ where
     let deadline = tokio::time::Instant::now() + SETUP_DNS_TIMEOUT;
     while setup_dns_failure(&error) {
         eprintln!("waiting for DNS during {phase}: {error}");
+        tokio::time::sleep_until(
+            (tokio::time::Instant::now() + SETUP_DNS_RETRY_DELAY).min(deadline),
+        )
+        .await;
+        if tokio::time::Instant::now() >= deadline {
+            break;
+        }
+        match tokio::time::timeout_at(deadline, operation()).await {
+            Ok(Ok(value)) => return Ok(value),
+            Ok(Err(next_error)) => error = next_error,
+            Err(_) => break,
+        }
+    }
+    Err(error)
+}
+
+/// Retries unrelated connectivity failures while constructing a fault client.
+///
+/// A configured rule may intentionally target account discovery. Once any rule
+/// records a hit, its error is part of the test contract and must not be retried.
+/// Client construction performs read-only account discovery; this helper never
+/// replays the test body or resource mutations.
+async fn retry_fault_client_initialization<T, F, Fut, H>(
+    mut operation: F,
+    fault_hit_count: H,
+) -> azure_data_cosmos::Result<T>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = azure_data_cosmos::Result<T>>,
+    H: Fn() -> u64,
+{
+    let initial_fault_hits = fault_hit_count();
+    let deadline = tokio::time::Instant::now() + FAULT_CLIENT_INITIALIZATION_TIMEOUT;
+    let mut error = match tokio::time::timeout_at(deadline, operation()).await {
+        Ok(Ok(value)) => return Ok(value),
+        Ok(Err(error)) => error,
+        Err(_) => {
+            return Err(CosmosError::builder()
+                .with_status(status_codes::TRANSPORT_CONNECTION_FAILED)
+                .with_message("fault client initialization timed out")
+                .build())
+        }
+    };
+    while setup_connectivity_failure(&error) && fault_hit_count() == initial_fault_hits {
+        eprintln!("waiting for connectivity during fault client initialization: {error}");
         tokio::time::sleep_until(
             (tokio::time::Instant::now() + SETUP_DNS_RETRY_DELAY).min(deadline),
         )
@@ -326,6 +376,14 @@ fn transient_data_plane_readiness_error(error: &CosmosError) -> bool {
         || rbac_name_based_data_not_ready(error)
 }
 
+fn data_plane_probe_should_retry(error: &CosmosError) -> bool {
+    transient_data_plane_readiness_error(error)
+        || matches!(
+            error.status().status_code(),
+            StatusCode::TooManyRequests | StatusCode::ServiceUnavailable | StatusCode::Gone
+        )
+}
+
 /// A plain "that item does not exist" 404 — the success signal for the
 /// satellite write-path probe.
 ///
@@ -363,15 +421,16 @@ fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosErr
         .build()
 }
 
-/// Data-plane readiness probe used after container creation on AAD legs.
+/// Data-plane readiness probe used after container creation on live legs.
 ///
 /// A `container.read(...)` on both clients confirms the collection is
 /// metadata-visible, but Cosmos authorizes metadata (5301) and name-based data
 /// (5302) on separate RBAC paths — so the first data-plane request on a fresh
 /// container can race and return `403/5302 RbacUnauthorizedNameBasedDataRequest`
 /// before the name→RID mapping is cached on that client's data-plane
-/// connection. Under key auth this is invisible because the master key bypasses
-/// RBAC entirely.
+/// connection. Under key auth the RBAC race is invisible, but the service can
+/// still return `404/1013 CollectionCreateInProgress` until the new container
+/// reaches the selected data-plane region.
 ///
 /// The probe verifies item, query, and change-feed authorization because Cosmos
 /// can propagate those RBAC actions independently. It tolerates expected AAD
@@ -381,15 +440,26 @@ pub async fn probe_data_plane_ready(
     container: &ContainerClient,
     partition_key_component_count: usize,
 ) -> azure_data_cosmos::Result<()> {
-    const MAX_ATTEMPTS: usize = 20;
+    let partition_key_value = format!("data-plane-readiness-probe-{}", Uuid::new_v4());
+    let partition_key = PartitionKey::try_from(
+        (0..partition_key_component_count)
+            .map(|_| PartitionKeyValue::from(partition_key_value.clone()))
+            .collect::<Vec<_>>(),
+    )?;
+    probe_data_plane_ready_with_partition_key(label, container, partition_key).await
+}
+
+/// Probes data-plane readiness using a partition key that matches the target
+/// container's partition-key definition.
+pub async fn probe_data_plane_ready_with_partition_key(
+    label: &str,
+    container: &ContainerClient,
+    partition_key: PartitionKey,
+) -> azure_data_cosmos::Result<()> {
+    const MAX_ATTEMPTS: usize = 120;
     const RETRY_DELAY: Duration = Duration::from_millis(500);
 
     let probe_id = format!("data-plane-readiness-probe-{}", Uuid::new_v4());
-    let partition_key = PartitionKey::try_from(
-        (0..partition_key_component_count)
-            .map(|_| PartitionKeyValue::from(probe_id.clone()))
-            .collect::<Vec<_>>(),
-    )?;
     for attempt in 1..=MAX_ATTEMPTS {
         let outcome = container
             .delete_item(partition_key.clone(), probe_id.as_str(), None)
@@ -411,7 +481,7 @@ pub async fn probe_data_plane_ready(
             break;
         }
 
-        let retryable = transient_data_plane_readiness_error(&error);
+        let retryable = data_plane_probe_should_retry(&error);
         if !retryable || attempt == MAX_ATTEMPTS {
             return Err(error);
         }
@@ -435,7 +505,7 @@ pub async fn probe_data_plane_ready(
         .await;
         match outcome {
             Ok(_) => break,
-            Err(error) if transient_data_plane_readiness_error(&error) => {
+            Err(error) if data_plane_probe_should_retry(&error) => {
                 if attempt == MAX_ATTEMPTS {
                     return Err(error);
                 }
@@ -469,7 +539,7 @@ pub async fn probe_data_plane_ready(
         .await;
         match outcome {
             Ok(()) => return Ok(()),
-            Err(error) if transient_data_plane_readiness_error(&error) => {
+            Err(error) if data_plane_probe_should_retry(&error) => {
                 if attempt == MAX_ATTEMPTS {
                     return Err(error);
                 }
@@ -974,7 +1044,13 @@ impl TestClient {
         let cosmos_client = if fault_rules.is_empty() {
             retry_setup_dns("key client initialization", build).await
         } else {
-            build().await
+            retry_fault_client_initialization(build, || {
+                fault_rules
+                    .iter()
+                    .map(|rule| u64::from(rule.hit_count()))
+                    .sum()
+            })
+            .await
         }?;
 
         Ok(TestClient {
@@ -2465,7 +2541,13 @@ pub async fn build_aad_client_from_env(
     let client = if fault_rules.is_empty() {
         retry_setup_dns("AAD client initialization", build).await
     } else {
-        build().await
+        retry_fault_client_initialization(build, || {
+            fault_rules
+                .iter()
+                .map(|rule| u64::from(rule.hit_count()))
+                .sum()
+        })
+        .await
     }?;
     Ok((client, recorder))
 }
@@ -2473,13 +2555,14 @@ pub async fn build_aad_client_from_env(
 #[cfg(test)]
 mod tests {
     use super::{
-        aad_token_invalid_issuer, combine_test_and_cleanup_results, effective_binary_encoding,
-        from_resource_throughput, item_not_found, rbac_name_based_data_not_ready,
-        read_replication_pending, resolve_test_timeout, retry_container_readiness, retry_setup_dns,
+        aad_token_invalid_issuer, combine_test_and_cleanup_results, data_plane_probe_should_retry,
+        effective_binary_encoding, from_resource_throughput, item_not_found,
+        rbac_name_based_data_not_ready, read_replication_pending, resolve_test_timeout,
+        retry_container_readiness, retry_fault_client_initialization, retry_setup_dns,
         satellite_probe_should_retry, setup_dns_failure, to_management_container_resource,
-        transient_data_plane_readiness_error, transient_satellite_readiness_error, AuthMode,
-        BinaryEncodingOptions, ResourceThroughput, DEFAULT_RESOURCE_TEST_TIMEOUT,
-        DEFAULT_TEST_TIMEOUT, SETUP_DNS_TIMEOUT,
+        transient_satellite_readiness_error, AuthMode, BinaryEncodingOptions, ResourceThroughput,
+        DEFAULT_RESOURCE_TEST_TIMEOUT, DEFAULT_TEST_TIMEOUT, FAULT_CLIENT_INITIALIZATION_TIMEOUT,
+        SETUP_DNS_TIMEOUT,
     };
     use azure_core::http::StatusCode;
     use azure_data_cosmos::{
@@ -2684,6 +2767,12 @@ mod tests {
             .build()
     }
 
+    fn connection_error() -> CosmosError {
+        CosmosError::builder()
+            .with_status(status_codes::TRANSPORT_CONNECTION_FAILED)
+            .build()
+    }
+
     struct UnavailableDns;
 
     impl reqwest::dns::Resolve for UnavailableDns {
@@ -2863,6 +2952,108 @@ mod tests {
         assert!(setup_dns_failure(&error));
     }
 
+    #[tokio::test(start_paused = true)]
+    async fn fault_client_initialization_recovers_from_unrelated_connection_failure() {
+        let attempts = Cell::new(0);
+        let start = tokio::time::Instant::now();
+        let value = retry_fault_client_initialization(
+            || async {
+                attempts.set(attempts.get() + 1);
+                if attempts.get() < 3 {
+                    Err(connection_error())
+                } else {
+                    Ok(42)
+                }
+            },
+            || 0,
+        )
+        .await
+        .unwrap();
+        assert_eq!(value, 42);
+        assert_eq!(attempts.get(), 3);
+        assert_eq!(start.elapsed(), Duration::from_secs(2));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn fault_client_initialization_does_not_retry_injected_failure() {
+        let attempts = Cell::new(0);
+        let fault_hits = Cell::new(0u64);
+        let error = retry_fault_client_initialization::<(), _, _, _>(
+            || async {
+                attempts.set(attempts.get() + 1);
+                fault_hits.set(fault_hits.get() + 1);
+                Err(connection_error())
+            },
+            || fault_hits.get(),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(error.status(), status_codes::TRANSPORT_CONNECTION_FAILED);
+        assert_eq!(attempts.get(), 1);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn fault_client_initialization_does_not_retry_service_failure() {
+        let attempts = Cell::new(0);
+        let error = retry_fault_client_initialization::<(), _, _, _>(
+            || async {
+                attempts.set(attempts.get() + 1);
+                Err(CosmosError::builder()
+                    .with_status(CosmosStatus::new(StatusCode::ServiceUnavailable))
+                    .build())
+            },
+            || 0,
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(error.status().status_code(), StatusCode::ServiceUnavailable);
+        assert_eq!(attempts.get(), 1);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn fault_client_initialization_bounds_hanging_retry() {
+        let attempts = Cell::new(0);
+        let start = tokio::time::Instant::now();
+        let error = retry_fault_client_initialization::<(), _, _, _>(
+            || async {
+                attempts.set(attempts.get() + 1);
+                if attempts.get() == 1 {
+                    Err(connection_error())
+                } else {
+                    pending().await
+                }
+            },
+            || 0,
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(error.status(), status_codes::TRANSPORT_CONNECTION_FAILED);
+        assert_eq!(attempts.get(), 2);
+        assert_eq!(start.elapsed(), FAULT_CLIENT_INITIALIZATION_TIMEOUT);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn fault_client_initialization_bounds_hanging_initial_attempt() {
+        let attempts = Cell::new(0);
+        let start = tokio::time::Instant::now();
+        let error = retry_fault_client_initialization::<(), _, _, _>(
+            || async {
+                attempts.set(attempts.get() + 1);
+                pending().await
+            },
+            || 0,
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(error.status(), status_codes::TRANSPORT_CONNECTION_FAILED);
+        assert_eq!(
+            error.to_string(),
+            "503/20010: fault client initialization timed out"
+        );
+        assert_eq!(attempts.get(), 1);
+        assert_eq!(start.elapsed(), FAULT_CLIENT_INITIALIZATION_TIMEOUT);
+    }
+
     #[test]
     #[cfg(test_category = "emulator_vnext")]
     fn vnext_disables_binary_encoding_by_default() {
@@ -2918,15 +3109,19 @@ mod tests {
 
     #[test]
     fn data_plane_readiness_retries_aad_propagation_without_global_auth_mode() {
-        assert!(transient_data_plane_readiness_error(&error_with_status(
+        assert!(data_plane_probe_should_retry(&error_with_status(
             StatusCode::Unauthorized,
             SubStatusCode::new(5007),
         )));
-        assert!(transient_data_plane_readiness_error(&error_with_status(
+        assert!(data_plane_probe_should_retry(&error_with_status(
             StatusCode::Forbidden,
             SubStatusCode::new(5302),
         )));
-        assert!(!transient_data_plane_readiness_error(&error_with_status(
+        assert!(data_plane_probe_should_retry(&error_with_status(
+            StatusCode::ServiceUnavailable,
+            SubStatusCode::new(0),
+        )));
+        assert!(!data_plane_probe_should_retry(&error_with_status(
             StatusCode::Forbidden,
             SubStatusCode::new(5301),
         )));

@@ -33,8 +33,8 @@ const RESOURCE_API_VERSION: &str = "2026-03-15";
 const PARTITION_MERGE_API_VERSION: &str = "2026-04-01-preview";
 const POLL_INTERVAL: Duration = Duration::from_secs(2);
 const OPERATION_TIMEOUT: Duration = Duration::from_secs(60 * 60);
-const LOCK_RETRY_INTERVAL: Duration = Duration::from_secs(15);
-const LOCK_RETRY_TIMEOUT: Duration = Duration::from_secs(15 * 60);
+const RESOURCE_OPERATION_RETRY_INTERVAL: Duration = Duration::from_secs(15);
+const RESOURCE_OPERATION_RETRY_TIMEOUT: Duration = Duration::from_secs(15 * 60);
 
 const SUBSCRIPTION_ID_ENV_VAR: &str = "COSMOS_SUBSCRIPTION_ID";
 const RESOURCE_GROUP_ENV_VAR: &str = "COSMOS_RESOURCE_GROUP";
@@ -147,6 +147,20 @@ impl ResourceManagerError {
             || output.contains("operation is in progress")
             || output.contains("another operation")
     }
+
+    fn is_transient_arm_failure(&self) -> bool {
+        matches!(
+            debug_response_status(self.output()),
+            Some(429 | 500 | 502 | 503 | 504)
+        )
+    }
+
+    fn retry_after(&self) -> Duration {
+        debug_response_header(self.output(), "retry-after")
+            .and_then(|value| value.parse::<u64>().ok())
+            .map(Duration::from_secs)
+            .unwrap_or(RESOURCE_OPERATION_RETRY_INTERVAL)
+    }
 }
 
 impl Display for ResourceManagerError {
@@ -246,6 +260,34 @@ impl AzCliResourceManager {
         url: &str,
         body: Option<&serde_json::Value>,
     ) -> Result<AzRestResponse> {
+        let retry_deadline = tokio::time::Instant::now() + RESOURCE_OPERATION_RETRY_TIMEOUT;
+        loop {
+            match self.rest_url_once(method, url, body).await {
+                Ok(response) => return Ok(response),
+                Err(error)
+                    if is_idempotent_arm_method(method)
+                        && error.is_transient_arm_failure()
+                        && tokio::time::Instant::now() < retry_deadline =>
+                {
+                    let remaining =
+                        retry_deadline.saturating_duration_since(tokio::time::Instant::now());
+                    let delay = error.retry_after();
+                    if delay >= remaining {
+                        return Err(error);
+                    }
+                    tokio::time::sleep(delay).await;
+                }
+                Err(error) => return Err(error),
+            }
+        }
+    }
+
+    async fn rest_url_once(
+        &self,
+        method: &str,
+        url: &str,
+        body: Option<&serde_json::Value>,
+    ) -> Result<AzRestResponse> {
         let scope = format!("{}.default", self.config.endpoint);
         let token = self.credential.get_token(&[&scope], None).await?;
         let headers = AuthorizationHeaderFile::new(token.token.secret())?;
@@ -295,7 +337,7 @@ impl AzCliResourceManager {
         api_version: &str,
         body: Option<&serde_json::Value>,
     ) -> Result<()> {
-        let retry_deadline = tokio::time::Instant::now() + LOCK_RETRY_TIMEOUT;
+        let retry_deadline = tokio::time::Instant::now() + RESOURCE_OPERATION_RETRY_TIMEOUT;
         let operation_deadline = tokio::time::Instant::now() + OPERATION_TIMEOUT;
         loop {
             match self.rest(method, path, api_version, body).await {
@@ -311,7 +353,7 @@ impl AzCliResourceManager {
                             if is_retryable_operation_failure(&body)
                                 && tokio::time::Instant::now() < retry_deadline =>
                         {
-                            tokio::time::sleep(LOCK_RETRY_INTERVAL).await;
+                            tokio::time::sleep(RESOURCE_OPERATION_RETRY_INTERVAL).await;
                         }
                         OperationCompletion::Failed(body) => {
                             return Err(ResourceManagerError::new(format!(
@@ -322,7 +364,7 @@ impl AzCliResourceManager {
                 }
                 Err(error) if method == "delete" && error.is_not_found() => return Ok(()),
                 Err(error) if error.is_locked() && tokio::time::Instant::now() < retry_deadline => {
-                    tokio::time::sleep(LOCK_RETRY_INTERVAL).await;
+                    tokio::time::sleep(RESOURCE_OPERATION_RETRY_INTERVAL).await;
                 }
                 Err(error) => return Err(error),
             }
@@ -732,6 +774,12 @@ fn debug_response_header(debug_output: &str, name: &str) -> Option<String> {
     None
 }
 
+fn is_idempotent_arm_method(method: &str) -> bool {
+    method.eq_ignore_ascii_case("get")
+        || method.eq_ignore_ascii_case("put")
+        || method.eq_ignore_ascii_case("delete")
+}
+
 fn operation_status(body: &serde_json::Value) -> Option<String> {
     body.get("status")
         .and_then(serde_json::Value::as_str)
@@ -999,7 +1047,7 @@ mod tests {
         create_update_options, debug_response_header, debug_response_status, normalize_endpoint,
         resource_failed, resource_ready, throughput_matches, throughput_settings_resource,
         AzCliResourceManager, AzCommandRunner, CommandOutput, CosmosResourceManager,
-        ResourceManagerConfig, ResourceThroughput, Result,
+        ResourceManagerConfig, ResourceManagerError, ResourceThroughput, Result,
     };
     use async_trait::async_trait;
     use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
@@ -1078,6 +1126,14 @@ mod tests {
             stdout: stdout.to_string(),
             stderr,
         })
+    }
+
+    fn command_error(status: u16, headers: &[(&str, &str)]) -> Result<CommandOutput> {
+        let output = output(status, headers, "").unwrap();
+        Err(ResourceManagerError::command(
+            "Azure CLI command failed",
+            output.stderr,
+        ))
     }
 
     fn config() -> ResourceManagerConfig {
@@ -1258,5 +1314,51 @@ mod tests {
             .to_string()
             .contains("Azure Resource Manager operation failed"));
         assert!(error.to_string().contains("BadRequest"));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn database_creation_retries_transient_arm_failure() {
+        let runner = Arc::new(MockRunner::new([
+            command_error(503, &[]),
+            output(200, &[], "{}"),
+            output(
+                200,
+                &[],
+                r#"{"properties":{"provisioningState":"Succeeded"}}"#,
+            ),
+        ]));
+        let manager = AzCliResourceManager::new(config(), Arc::new(MockCredential), runner.clone());
+
+        manager.create_database("database").await.unwrap();
+
+        assert_eq!(runner.calls().len(), 3);
+    }
+
+    #[tokio::test]
+    async fn partition_merge_does_not_retry_transient_post_failure() {
+        let runner = Arc::new(MockRunner::new([command_error(503, &[])]));
+        let manager = AzCliResourceManager::new(config(), Arc::new(MockCredential), runner.clone());
+
+        let error = manager
+            .merge_partitions("database", "container")
+            .await
+            .unwrap_err();
+
+        assert!(error.is_transient_arm_failure());
+        assert_eq!(runner.calls().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn transient_failure_is_not_retried_past_deadline() {
+        let runner = Arc::new(MockRunner::new([command_error(
+            503,
+            &[("Retry-After", "901")],
+        )]));
+        let manager = AzCliResourceManager::new(config(), Arc::new(MockCredential), runner.clone());
+
+        let error = manager.create_database("database").await.unwrap_err();
+
+        assert!(error.is_transient_arm_failure());
+        assert_eq!(runner.calls().len(), 1);
     }
 }

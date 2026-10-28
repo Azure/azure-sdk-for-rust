@@ -238,6 +238,47 @@ foreach ($acct in $definition.accounts) {
         Write-Info "Cosmos account '$accountName' already exists (selector=$selector) with required capabilities"
     }
 
+    $requiresFullFidelity = $acct.PSObject.Properties.Name -contains 'requireFullFidelityChangeFeed' -and
+        [bool]$acct.requireFullFidelityChangeFeed
+    if ($WhatIfPreference) {
+        $observedConsistency = [string]$acct.defaultConsistencyLevel
+        $observedMultiWrite = $multiWrite
+        $observedRegions = [string[]]$regionList
+        $fullFidelityChangeFeed = $requiresFullFidelity
+    }
+    else {
+        $resourcePath = "/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroupName/providers/Microsoft.DocumentDB/databaseAccounts/$accountName"
+        $armResponse = Invoke-AzRestMethod -Method GET -Path "${resourcePath}?api-version=2026-04-01-preview"
+        if ($armResponse.StatusCode -ge 300) {
+            throw "Failed to read current ARM configuration for Cosmos account '$accountName' (HTTP $($armResponse.StatusCode)): $($armResponse.Content)"
+        }
+        $observed = ($armResponse.Content | ConvertFrom-Json).properties
+        $observedConsistency = [string]$observed.consistencyPolicy.defaultConsistencyLevel
+        $observedMultiWrite = [bool]$observed.enableMultipleWriteLocations
+        $observedRegions = [string[]]@($observed.locations |
+                Sort-Object { [int]$_.failoverPriority } |
+                ForEach-Object { [string]$_.locationName })
+        $fullFidelityProperty = $observed.PSObject.Properties['enableAllVersionsAndDeletesChangeFeed']
+        if ($null -ne $fullFidelityProperty -and $fullFidelityProperty.Value -isnot [bool]) {
+            throw "Cosmos account '$accountName' (selector=$selector) returned a non-Boolean enableAllVersionsAndDeletesChangeFeed value."
+        }
+        $fullFidelityChangeFeed = $null -ne $fullFidelityProperty -and [bool]$fullFidelityProperty.Value
+
+        $normalizeRegions = {
+            param([string[]] $regions)
+            @($regions | ForEach-Object { ($_ -replace '\s', '').ToLowerInvariant() }) -join ';'
+        }
+
+        if ($observedConsistency -ne [string]$acct.defaultConsistencyLevel -or
+            $observedMultiWrite -ne $multiWrite -or
+            (& $normalizeRegions $observedRegions) -cne (& $normalizeRegions ([string[]]$regionList))) {
+            throw "Cosmos account '$accountName' (selector=$selector) does not match its declared consistency, write mode, or ordered regions. Reconcile or recreate the account before refreshing the test secret."
+        }
+        if ($requiresFullFidelity -and -not $fullFidelityChangeFeed) {
+            throw "Cosmos account '$accountName' (selector=$selector) requires enableAllVersionsAndDeletesChangeFeed=true. Enable the allowlisted account property out of band, then re-run this script."
+        }
+    }
+
     # Ensure the shared test database exists (mirrors the `database` resource that
     # sdk/cosmos/test-resources.bicep used to create per-run).
     if (-not $WhatIfPreference) {
@@ -269,15 +310,16 @@ foreach ($acct in $definition.accounts) {
         endpoint     = $endpoint
         key          = $primary
         database     = $databaseName
-        consistency  = $acct.defaultConsistencyLevel
+        consistency  = $observedConsistency
         testCategory = $acct.testCategory
-        multiWrite   = $multiWrite
-        multiRegion  = $multiRegion
+        multiWrite   = $observedMultiWrite
+        multiRegion  = ($observedRegions.Count -gt 1)
+        fullFidelityChangeFeed = $fullFidelityChangeFeed
     }
     if ($acct.PSObject.Properties.Name -contains 'includeSecondaryKey' -and $acct.includeSecondaryKey) {
         $entry['secondaryKey'] = $secondary
     }
-    $entry['regions'] = [string[]]$regionList
+    $entry['regions'] = $observedRegions
 
     $secret.accounts[$selector] = $entry
 }

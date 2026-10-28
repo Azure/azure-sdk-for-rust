@@ -659,7 +659,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos_driver_native"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "azure_core 1.1.0",

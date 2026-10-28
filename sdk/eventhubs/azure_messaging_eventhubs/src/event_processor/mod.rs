@@ -25,10 +25,16 @@ pub trait CheckpointStore: Send + Sync {
     /// * `ownerships` - A vector of `Ownership` objects representing the partitions to claim.
     ///
     /// # Returns
-    /// A vector of claimed `Ownership` objects.
+    /// A vector of the `Ownership` objects that the caller claimed. Each record
+    /// carries the new ETag for the next claim. The vector holds fewer records
+    /// than the `ownerships` argument when another owner holds a partition.
     ///
     /// # Errors
-    /// Returns an error if the ownership claim fails.
+    /// Returns an error when the store fails, for example an authentication
+    /// failure or a missing container. Returns an error when an `Ownership`
+    /// argument is invalid, for example an empty required field. A lost claim
+    /// is not an error. The implementation must omit that partition from the
+    /// returned vector and continue with the other partitions.
     ///
     async fn claim_ownership(&self, ownerships: &[Ownership]) -> Result<Vec<Ownership>>;
 

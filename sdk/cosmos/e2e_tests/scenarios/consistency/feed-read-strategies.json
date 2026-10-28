@@ -4,7 +4,7 @@
   "id": "consistency.feed-read-strategies",
   "title": "Feed reads honor account and operation consistency",
   "requirement": "Query and change-feed reads honor account consistency and explicit read-consistency strategies, and GlobalStrong is rejected before transport on non-Strong accounts.",
-  "maturity": "candidate",
+  "maturity": "stable",
   "precedents": [
     {
       "sdk": "rust",

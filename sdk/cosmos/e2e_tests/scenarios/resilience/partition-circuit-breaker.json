@@ -4,7 +4,7 @@
     "id": "resilience.partition-circuit-breaker",
     "title": "Partition failover avoids and probes unhealthy regions",
     "requirement": "Two partition-scoped failures accumulate to trip the circuit breaker, route subsequent reads to a healthy region, and allow bounded recovery to the preferred region.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "rust",
