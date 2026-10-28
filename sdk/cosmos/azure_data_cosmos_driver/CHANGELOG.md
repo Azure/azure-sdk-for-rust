@@ -10,6 +10,7 @@
 
 ### Bugs Fixed
 
+- Honor the emulator certificate-validation policy in Gateway V2 connectivity probes so self-signed emulator certificates do not prevent Gateway V2 connectivity when validation is disabled for emulator hosts. ([#5484](https://github.com/Azure/azure-sdk-for-rust/pull/5484))
 - Preserve Gateway 2.0 batch atomicity and continue-on-error controls, preventing partial commits in failed transactional batches. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 - Correct partition-local session-token scoping across classic Gateway and Gateway 2.0, including explicit compound tokens with automatic capture disabled, while retaining safe fallback for missing or stale topology. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 - Preserve query and feed EPK filters and avoid conflicting hierarchical partition-key selectors across gateways, regional retries, and continuation requests. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
