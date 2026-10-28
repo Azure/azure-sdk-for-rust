@@ -318,10 +318,6 @@ pub async fn batch_fails_when_exceeding_max_operations() -> Result<(), Box<dyn E
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn batch_fails_when_exceeding_max_payload_size() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {

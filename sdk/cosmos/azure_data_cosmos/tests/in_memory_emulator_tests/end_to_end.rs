@@ -683,10 +683,6 @@ async fn sdk_create_database_and_container_through_driver() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
-)]
 async fn sdk_query_metadata_databases_and_containers() {
     let (backend, db_name, _emu_container, _real_container) = setup_with_container().await;
 
@@ -754,10 +750,6 @@ async fn sdk_query_metadata_databases_and_containers() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
-)]
 async fn sdk_container_throughput_read_and_replace() {
     let backend = SdkDualBackend::setup().await.unwrap();
     let db_name = backend.unique_db_name();
@@ -830,10 +822,6 @@ async fn sdk_container_throughput_read_and_replace() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
-)]
 async fn sdk_create_and_read_item() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -896,10 +884,6 @@ async fn sdk_create_and_read_item() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
-)]
 async fn sdk_replace_item() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -989,10 +973,6 @@ async fn sdk_replace_item() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
-)]
 async fn sdk_upsert_item() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -1082,10 +1062,6 @@ async fn sdk_upsert_item() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
-)]
 async fn sdk_delete_item() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -1141,10 +1117,6 @@ async fn sdk_delete_item() {
     backend.cleanup_real_database(&db_name).await;
 }
 #[tokio::test]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
-)]
 async fn sdk_session_token_advances_on_create_replace_delete() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -1157,10 +1129,6 @@ async fn sdk_session_token_advances_on_create_replace_delete() {
     backend.cleanup_real_database(&db_name).await;
 }
 #[tokio::test]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
-)]
 async fn sdk_create_multiple_items_and_read_back() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -1204,10 +1172,6 @@ async fn sdk_create_multiple_items_and_read_back() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
-)]
 async fn sdk_query_items_with_filter_and_projection() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -1266,10 +1230,6 @@ async fn sdk_query_items_with_filter_and_projection() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
-)]
 async fn sdk_transactional_batch_create_read_and_rollback() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 

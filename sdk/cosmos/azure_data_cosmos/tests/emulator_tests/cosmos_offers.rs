@@ -19,10 +19,6 @@ use framework::{TestClient, TestOptions};
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -78,10 +74,6 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
         test_category = "emulator_inmemory"
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
-)]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 #[cfg_attr(
     test_category = "emulator_inmemory",

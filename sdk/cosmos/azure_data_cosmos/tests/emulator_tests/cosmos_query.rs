@@ -343,10 +343,6 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn cross_partition_query_with_order_by() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |_, db_client| {
@@ -390,10 +386,6 @@ pub async fn cross_partition_query_with_order_by() -> Result<(), Box<dyn Error>>
         test_category = "emulator_inmemory"
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
-)]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn cross_partition_query_with_unordered_distinct() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -457,10 +449,6 @@ pub async fn cross_partition_query_with_unordered_distinct() -> Result<(), Box<d
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn cross_partition_query_with_ordered_distinct_resumes() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |_, db_client| {
@@ -501,10 +489,6 @@ pub async fn cross_partition_query_with_ordered_distinct_resumes() -> Result<(),
         test_category = "emulator_inmemory"
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
-)]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn unordered_distinct_refuses_a_continuation_token() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -552,10 +536,6 @@ pub async fn unordered_distinct_refuses_a_continuation_token() -> Result<(), Box
         test_category = "emulator_inmemory"
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
-)]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 #[cfg_attr(
     test_category = "emulator_inmemory",
@@ -726,10 +706,6 @@ pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
-)]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn feed_range_scoped_query_honors_range() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -1098,10 +1074,6 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn distinct_projection_shapes() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |_, db_client| {
@@ -1210,10 +1182,6 @@ pub async fn distinct_projection_shapes() -> Result<(), Box<dyn Error>> {
         test_category = "emulator_inmemory"
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
-)]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn distinct_combined_with_unsupported_stages_is_rejected() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(

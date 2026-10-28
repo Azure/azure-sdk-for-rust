@@ -404,12 +404,6 @@ pub async fn hpk_item_patch_full_key() -> Result<(), Box<dyn Error>> {
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: 400 BadRequest is returned for a partial-key point \
-              read, but without the x-ms-substatus 1001 PartitionKeyMismatch header (behavioral \
-              divergence)"
-)]
 pub async fn hpk_item_partial_key_point_op_fails() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -823,10 +817,6 @@ pub async fn hpk_query_single_partition_order_by_servable() -> Result<(), Box<dy
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -909,10 +899,6 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
-)]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn hpk_query_cross_partition_offset_limit_top_servable() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
