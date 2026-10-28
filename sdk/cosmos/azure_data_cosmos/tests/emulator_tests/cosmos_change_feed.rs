@@ -446,6 +446,10 @@ pub async fn change_feed_continuation_token_resume() -> Result<(), Box<dyn Error
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "vnext emulator returns historical items when starting change feed from Now: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/374"
+)]
 pub async fn change_feed_now_resume_does_not_replay_history() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |_, db_client| {
