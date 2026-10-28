@@ -202,6 +202,10 @@ async fn create_and_read_item_through_driver() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "vnext emulator metadata-create response bodies differ under return-minimal options: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/384"
+)]
 async fn create_database_and_container_through_driver() {
     let backend = DualBackend::setup().await.unwrap();
     let db_name = format!("dual-cp-{}", backend.run_id);
