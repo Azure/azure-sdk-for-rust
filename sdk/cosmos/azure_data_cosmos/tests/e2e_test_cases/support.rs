@@ -88,7 +88,13 @@ pub(super) async fn wait_for_item_replication_in_region(
     }
     operation.excluded_regions = Some(excluded);
     let options = ItemReadOptions::default().with_operation_options(operation);
-    let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(5);
+    let replication_timeout =
+        if std::env::var("AZURE_COSMOS_E2E_BACKEND").as_deref() == Ok("azureLive") {
+            std::time::Duration::from_secs(30)
+        } else {
+            std::time::Duration::from_secs(5)
+        };
+    let deadline = tokio::time::Instant::now() + replication_timeout;
     loop {
         if tokio::time::Instant::now() >= deadline {
             return Err(format!("item '{item_id}' did not replicate before the deadline").into());
@@ -100,6 +106,14 @@ pub(super) async fn wait_for_item_replication_in_region(
         .await
         {
             Ok(Ok(response)) => {
+                verify_replication_region(
+                    &target_region,
+                    response
+                        .diagnostics()
+                        .requests()
+                        .iter()
+                        .map(|request| (request.status().status_code(), request.region())),
+                )?;
                 let actual = response.into_model::<Item>()?;
                 if &actual == expected {
                     return Ok(());
@@ -118,6 +132,30 @@ pub(super) async fn wait_for_item_replication_in_region(
         )
         .await;
     }
+}
+
+fn verify_replication_region<'a>(
+    target: &Region,
+    requests: impl IntoIterator<Item = (StatusCode, Option<&'a Region>)>,
+) -> TestResult {
+    let mut served_target = false;
+    for (status, region) in requests {
+        if status == StatusCode::Ok {
+            if region != Some(target) {
+                return Err(format!(
+                    "replication probe succeeded in {region:?}, expected target {target:?}"
+                )
+                .into());
+            }
+            served_target = true;
+        }
+    }
+    if !served_target {
+        return Err(
+            format!("replication probe has no successful request in target {target:?}").into(),
+        );
+    }
+    Ok(())
 }
 
 pub(super) async fn should_run(scenario_id: &str) -> TestResult<bool> {
@@ -165,6 +203,9 @@ pub(super) async fn selected_scenario_profile(scenario_id: &str) -> TestResult<O
         eprintln!("SKIP {scenario_id}: profile '{selected}' does not select it");
         return Ok(None);
     };
+    if std::env::var("AZURE_COSMOS_E2E_BACKEND").as_deref() == Ok("azureLive") {
+        profile.selected_account()?.effective_regions()?;
+    }
     enforce_required_capabilities(scenario_id).await?;
     Ok(Some(profile))
 }
@@ -179,14 +220,24 @@ fn init_test_tracing() {
 }
 
 async fn enforce_required_capabilities(scenario_id: &str) -> TestResult {
+    if std::env::var("AZURE_COSMOS_E2E_BACKEND").as_deref() == Ok("azureLive") {
+        let requirements = required_capabilities_for(scenario_id, "azureLive")?;
+        if requirements.contains(&Capability::FullFidelityChangeFeed)
+            && std::env::var("AZURE_COSMOS_ACCOUNT_FULL_FIDELITY_CHANGE_FEED").as_deref()
+                != Ok("true")
+        {
+            return Err(format!(
+                "scenario '{scenario_id}' requires an account with full-fidelity change feed enabled"
+            )
+            .into());
+        }
+        return Ok(());
+    }
     let management_endpoint = match std::env::var("AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT") {
         Ok(endpoint) => endpoint,
         Err(std::env::VarError::NotPresent)
             if std::env::var_os("AZURE_COSMOS_EMULATOR_FLAVOR").is_none() =>
         {
-            // Azure Live has no emulator management plane. Account/profile
-            // suitability is owned by live pipeline selection, so only hosted
-            // emulator runs perform capability-document validation here.
             return Ok(());
         }
         Err(error) => {
@@ -234,6 +285,7 @@ async fn enforce_required_capabilities(scenario_id: &str) -> TestResult {
             Capability::ChangeFeed => capabilities.data_plane_contains("changeFeed"),
             Capability::Container => capabilities.data_plane_contains("container"),
             Capability::Database => capabilities.data_plane_contains("database"),
+            Capability::FullFidelityChangeFeed => capabilities.data_plane_contains("changeFeed"),
             Capability::Item => capabilities.data_plane_contains("item"),
             Capability::Patch => capabilities.data_plane_contains("patch"),
             Capability::PartitionMerge => capabilities.management_contains("partitionMerge"),
@@ -399,21 +451,23 @@ pub(super) struct HostedWireCounts {
     pub(super) binary_negotiated_requests: u64,
     pub(super) binary_payload_requests: u64,
     pub(super) binary_response_payloads: u64,
-    default_consistency_requests: u64,
-    eventual_consistency_requests: u64,
-    session_consistency_requests: u64,
-    latest_committed_consistency_requests: u64,
-    global_strong_consistency_requests: u64,
+    wire_default_consistency_requests: u64,
+    wire_eventual_consistency_requests: u64,
+    wire_session_consistency_requests: u64,
+    wire_latest_committed_consistency_requests: u64,
+    wire_global_strong_consistency_requests: u64,
 }
 
 impl HostedWireCounts {
     pub(super) fn consistency_requests(self, strategy: ReadConsistencyStrategy) -> u64 {
         match strategy {
-            ReadConsistencyStrategy::Default => self.default_consistency_requests,
-            ReadConsistencyStrategy::Eventual => self.eventual_consistency_requests,
-            ReadConsistencyStrategy::Session => self.session_consistency_requests,
-            ReadConsistencyStrategy::LatestCommitted => self.latest_committed_consistency_requests,
-            ReadConsistencyStrategy::GlobalStrong => self.global_strong_consistency_requests,
+            ReadConsistencyStrategy::Default => self.wire_default_consistency_requests,
+            ReadConsistencyStrategy::Eventual => self.wire_eventual_consistency_requests,
+            ReadConsistencyStrategy::Session => self.wire_session_consistency_requests,
+            ReadConsistencyStrategy::LatestCommitted => {
+                self.wire_latest_committed_consistency_requests
+            }
+            ReadConsistencyStrategy::GlobalStrong => self.wire_global_strong_consistency_requests,
             _ => 0,
         }
     }
@@ -485,5 +539,38 @@ where
             }
             std::panic::resume_unwind(panic)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{verify_replication_region, Region, StatusCode};
+
+    #[test]
+    fn replication_requires_success_in_the_target_region() {
+        let target = Region::WEST_US;
+        assert!(verify_replication_region(&target, [(StatusCode::Ok, Some(&target))]).is_ok());
+        assert!(
+            verify_replication_region(&target, [(StatusCode::Ok, Some(&Region::EAST_US))]).is_err()
+        );
+        assert!(verify_replication_region(&target, [(StatusCode::Ok, None)]).is_err());
+        assert!(verify_replication_region(&target, []).is_err());
+    }
+
+    #[test]
+    fn contacting_the_target_before_fallback_does_not_prove_replication() {
+        assert!(verify_replication_region(
+            &Region::WEST_US,
+            [
+                (StatusCode::NotFound, Some(&Region::WEST_US)),
+                (StatusCode::Ok, Some(&Region::EAST_US)),
+            ]
+        )
+        .is_err());
+        assert!(verify_replication_region(
+            &Region::WEST_US,
+            [(StatusCode::NotFound, Some(&Region::WEST_US)),]
+        )
+        .is_err());
     }
 }

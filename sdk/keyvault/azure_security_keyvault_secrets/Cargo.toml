@@ -1,6 +1,6 @@
 [package]
 name = "azure_security_keyvault_secrets"
-version = "1.1.0-beta.1"
+version = "1.1.0-beta.2"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Key Vault Secrets"
 readme = "README.md"
 authors.workspace = true
@@ -20,18 +20,17 @@ default = ["azure_core/default"]
 [dependencies]
 async-lock = { workspace = true }
 async-trait = { workspace = true }
-azure_core.workspace = true
-clap = { workspace = true, features = ["derive"] }
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.2", default-features = false }
 futures = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 time = { workspace = true }
 
 [dev-dependencies]
-azure_core_test = { workspace = true, features = [
+azure_core_test = { path = "../../core/azure_core_test", features = [
   "tracing",
 ] }
-azure_identity.workspace = true
+azure_identity = { path = "../../identity/azure_identity", version = "1.1.0-beta.2" }
 azure_security_keyvault_test = { path = "../azure_security_keyvault_test" }
 include-file.workspace = true
 rand.workspace = true
@@ -43,8 +42,3 @@ rustc_version.workspace = true
 
 [lints]
 workspace = true
-
-[[bench]]
-name = "perf"
-path = "perf/get_secret.rs"
-harness = false

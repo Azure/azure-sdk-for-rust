@@ -4,7 +4,7 @@
     "id": "item.not-found-wrong-partition-key",
     "title": "Missing identity and wrong partition key return not found",
     "requirement": "Point reads do not leak an item across partition-key identities and return 404 without mutation.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "rust",
@@ -33,7 +33,7 @@
             ]
         },
         "azureLive": {
-            "applicability": "supported",
+            "applicability": "required",
             "fidelity": "full"
         }
     }

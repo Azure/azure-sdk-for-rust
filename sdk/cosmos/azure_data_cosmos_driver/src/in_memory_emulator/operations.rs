@@ -39,7 +39,7 @@ use super::system_properties::{
     inject_system_properties, offer_to_json, pkranges_to_json,
 };
 use crate::driver::pipeline::patch_eval::apply_patch_ops;
-use crate::models::PatchInstructions;
+use crate::models::{effective_partition_key::prefix_range_end_bytes, PatchInstructions};
 use crate::models::{PartitionKeyDefinition, MAX_SERVER_SIDE_PATCH_OPERATIONS};
 use crate::options::ReadConsistencyStrategy;
 use crate::query::ast::{
@@ -701,6 +701,9 @@ pub(crate) async fn handle_operation(
             partition_key_range_id: None,
             start_epk: None,
             end_epk: None,
+            routing_start_epk: None,
+            routing_end_epk: None,
+            effective_partition_key: None,
             is_query_plan: false,
             is_batch: false,
             binary_response: false,
@@ -1519,6 +1522,9 @@ pub(crate) async fn handle_operation(
             partition_key_range_id: None,
             start_epk: None,
             end_epk: None,
+            routing_start_epk: None,
+            routing_end_epk: None,
+            effective_partition_key: None,
             is_query_plan: false,
             is_batch: false,
             binary_response: false,
@@ -3444,6 +3450,16 @@ fn collect_item_documents(
             .map_err(|error| bad_partition_key_response(error, start))?;
         let end_epk = parsed.end_epk.as_deref().map(Epk::try_from).transpose()
             .map_err(|error| bad_partition_key_response(error, start))?;
+        let routing_start_epk = parsed.routing_start_epk.as_deref().map(Epk::try_from).transpose()
+            .map_err(|error| bad_partition_key_response(error, start))?;
+        let routing_end_epk = parsed.routing_end_epk.as_deref().map(Epk::try_from).transpose()
+            .map_err(|error| bad_partition_key_response(error, start))?;
+        let effective_scope = parsed.effective_partition_key.as_deref().map(Epk::try_from).transpose()
+            .map_err(|error| bad_partition_key_response(error, start))?
+            .map(|min| {
+                let max = Epk::from_bytes(prefix_range_end_bytes(min.as_bytes()));
+                min..max
+            });
         // A query that pins an explicit physical partition key range id must fail
         // with 410/1002 (PartitionKeyRangeGone) when that range no longer exists
         // (e.g. it was split away). Real Cosmos surfaces PartitionKeyRangeGone here
@@ -3474,6 +3490,16 @@ fn collect_item_documents(
         let mut selected_partition: Option<(u32, String)> = None;
         let mut multiple_partitions = false;
         for partition in &state.physical_partitions {
+            if effective_scope.as_ref().is_some_and(|scope|
+                partition.epk_max <= scope.start || partition.epk_min >= scope.end
+            ) {
+                continue;
+            }
+            if routing_start_epk.as_ref().is_some_and(|min| partition.epk_max <= *min)
+                || routing_end_epk.as_ref().is_some_and(|max| partition.epk_min >= *max)
+            {
+                continue;
+            }
             if parsed
                 .partition_key_range_id
                 .as_deref()
@@ -3540,6 +3566,9 @@ fn collect_item_documents(
             ));
             let stored = partition.documents.read().unwrap();
             for (epk, logical) in stored.iter() {
+                if effective_scope.as_ref().is_some_and(|scope| !scope.contains(epk)) {
+                    continue;
+                }
                 if requested_epk
                     .as_ref()
                     .is_some_and(|requested| requested != epk)

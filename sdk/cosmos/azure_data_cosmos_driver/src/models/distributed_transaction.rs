@@ -18,8 +18,8 @@ use uuid::Uuid;
 
 use crate::diagnostics::DiagnosticsContext;
 use crate::models::{
-    ActivityId, ContainerReference, CosmosResponseHeaders, PartitionKey, Precondition,
-    RequestCharge, SessionToken,
+    ActivityId, ContainerReference, CosmosResourceReference, CosmosResponseHeaders, ItemReference,
+    PartitionKey, Precondition, RequestCharge, SessionToken,
 };
 
 /// The coordinator behavior requested for a distributed transaction.
@@ -222,6 +222,23 @@ impl DistributedTransactionRequest {
                 .with_source(error)
                 .build()
         })
+    }
+
+    pub(crate) fn validate_resource_names(&self, enabled: bool) -> crate::error::Result<()> {
+        if !enabled {
+            return Ok(());
+        }
+
+        for operation in &self.operations {
+            let item = ItemReference::from_name(
+                &operation.target.container,
+                operation.target.partition_key.clone(),
+                operation.target.id.clone(),
+            );
+            CosmosResourceReference::from(item).validate_resource_names()?;
+        }
+
+        Ok(())
     }
 
     fn validate(&self) -> crate::error::Result<()> {
@@ -950,17 +967,28 @@ mod tests {
     use url::Url;
 
     fn container() -> ContainerReference {
+        container_with_names("db", "coll")
+    }
+
+    fn container_with_names(database_name: &str, container_name: &str) -> ContainerReference {
         let account = AccountReference::with_account_key(
             Url::parse("https://example.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
         let pk_def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
         let properties = ContainerProperties {
-            id: "coll".into(),
+            id: container_name.to_owned().into(),
             partition_key: pk_def,
             system_properties: SystemProperties::default(),
         };
-        ContainerReference::new(account, "db", "db_rid", "coll", "coll_rid", &properties)
+        ContainerReference::new(
+            account,
+            database_name.to_owned(),
+            "db_rid",
+            container_name.to_owned(),
+            "coll_rid",
+            &properties,
+        )
     }
 
     fn rid_container() -> ContainerReference {
@@ -979,6 +1007,24 @@ mod tests {
 
     fn target(id: &str) -> DistributedTransactionTarget {
         DistributedTransactionTarget::new(container(), PartitionKey::from("pk1"), id.to_owned())
+    }
+
+    fn create_request(
+        container: ContainerReference,
+        item_id: &str,
+    ) -> DistributedTransactionRequest {
+        let operation = DistributedTransactionOperation::new(
+            DistributedTransactionOperationKind::Create,
+            DistributedTransactionTarget::new(
+                container,
+                PartitionKey::from("pk1"),
+                item_id.to_owned(),
+            ),
+        )
+        .with_resource_body(
+            serde_json::to_vec(&serde_json::json!({ "id": item_id, "pk": "pk1" })).unwrap(),
+        );
+        DistributedTransactionRequest::new(DistributedTransactionType::Write, vec![operation])
     }
 
     /// A distributed transaction addresses a single item, so an empty partition
@@ -1039,6 +1085,42 @@ mod tests {
         assert_eq!(op["operationType"], "Create");
         assert_eq!(op["resourceType"], "Document");
         assert!(json.get("operationType").is_none());
+    }
+
+    #[test]
+    fn resource_name_validation_rejects_unsafe_distributed_transaction_names() {
+        for request in [
+            create_request(container(), "../other-container"),
+            create_request(container_with_names("../other-db", "coll"), "item1"),
+            create_request(container_with_names("db", "other/container"), "item1"),
+        ] {
+            let error = request
+                .validate_resource_names(true)
+                .expect_err("unsafe distributed transaction names must be rejected");
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST
+            );
+        }
+    }
+
+    #[test]
+    fn resource_name_validation_can_be_disabled_for_distributed_transactions() {
+        let unsafe_item = DistributedTransactionOperation::new(
+            DistributedTransactionOperationKind::Create,
+            target("../other-container"),
+        )
+        .with_resource_body(Bytes::from_static(
+            br#"{"id":"../other-container","pk":"pk1"}"#,
+        ));
+        let request = DistributedTransactionRequest::new(
+            DistributedTransactionType::Write,
+            vec![unsafe_item],
+        );
+
+        request
+            .validate_resource_names(false)
+            .expect("the compatibility option must allow unsafe distributed transaction names");
     }
 
     #[test]
