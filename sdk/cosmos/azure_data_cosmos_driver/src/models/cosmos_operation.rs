@@ -4,11 +4,12 @@
 //! Cosmos DB operation representation.
 
 use crate::models::{
-    AccountReference, ContainerReference, CosmosRequestHeaders, CosmosResourceReference,
-    DatabaseReference, FeedRange, ItemReference, OperationType, PartitionKey, Precondition,
-    ResourceType,
+    cosmos_resource_reference::validate_resource_name, AccountReference, ContainerReference,
+    CosmosRequestHeaders, CosmosResourceReference, DatabaseReference, FeedRange, ItemReference,
+    OperationType, PartitionKey, Precondition, ResourceType,
 };
 use crate::options::Utf8DecodingMode;
+use crate::read_many::ReadManySelection;
 use azure_core::http::Etag;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, time::Instant};
@@ -348,15 +349,35 @@ impl CosmosOperation {
         }
     }
 
-    /// Validates that this operation does not mix name and RID addressing.
+    /// Validates name/RID addressing consistency and, when enabled, user-defined
+    /// resource names.
     ///
-    /// Delegates to
-    /// [`CosmosResourceReference::validate_addressing`], telling it whether the
-    /// leaf id will appear in the request path so that feed-style operations
-    /// (Create/Upsert) are correctly exempted from the leaf check.
-    pub(crate) fn validate_addressing(&self) -> crate::error::Result<()> {
+    /// Create and Upsert keep their mixed-addressing exemption because their
+    /// item id is not in the request path, but name validation still checks that
+    /// id so the created item remains addressable by later point operations.
+    /// Batch validation reads only item IDs from the service-defined envelope;
+    /// all other document fields remain schema-agnostic.
+    /// Read-many validates selected IDs before planning point reads or queries.
+    pub(crate) fn validate_addressing(
+        &self,
+        validate_resource_names: bool,
+    ) -> crate::error::Result<()> {
         self.resource_reference
-            .validate_addressing(!self.uses_feed_paths())
+            .validate_addressing(!self.uses_feed_paths())?;
+        if validate_resource_names {
+            self.resource_reference.validate_resource_names()?;
+            if self.operation_type == OperationType::Batch {
+                super::transactional_batch::validate_resource_names(self.body())?;
+            }
+            if let Some(request) = &self.read_many {
+                if let ReadManySelection::Items(items) = &request.selection {
+                    for (_, id) in items {
+                        validate_resource_name("item", id)?;
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 
     /// Returns the container for this operation, if applicable.
@@ -430,6 +451,9 @@ impl CosmosOperation {
     }
 
     /// Sets the session token request header for the operation.
+    ///
+    /// Caller tokens take precedence over cached state. See
+    /// [`SessionToken`](crate::models::SessionToken) for per-attempt transport scoping.
     pub fn with_session_token(
         mut self,
         session_token: impl Into<crate::models::SessionToken>,
@@ -1595,12 +1619,99 @@ mod tests {
             ItemReference::from_name(&test_container_by_rid(), PartitionKey::from("pk1"), "doc1");
         let op = CosmosOperation::create_item(item_ref);
         assert!(op.uses_feed_paths());
-        op.validate_addressing()
+        op.validate_addressing(true)
             .expect("create on a RID container may carry a name id");
         assert_eq!(
             op.compute_resource_paths().request_path(),
             "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=/docs"
         );
+    }
+
+    #[test]
+    fn create_and_upsert_reject_unsafe_item_names_when_validation_is_enabled() {
+        for operation in [
+            CosmosOperation::create_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "../other-container",
+            )),
+            CosmosOperation::upsert_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "item?query",
+            )),
+        ] {
+            let error = operation
+                .validate_addressing(true)
+                .expect_err("unsafe item names must be rejected before creation");
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST
+            );
+        }
+    }
+
+    #[test]
+    fn create_and_upsert_allow_unsafe_item_names_when_validation_is_disabled() {
+        for operation in [
+            CosmosOperation::create_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "../other-container",
+            )),
+            CosmosOperation::upsert_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "item?query",
+            )),
+        ] {
+            operation
+                .validate_addressing(false)
+                .expect("the compatibility option must disable creation-time name validation");
+        }
+    }
+
+    #[test]
+    fn read_many_validates_selected_names_with_compatibility_opt_out() {
+        for id in ["..", "a/b", "item?query", "item#fragment", "item\nname"] {
+            for ids in [vec![id], vec!["safe-item", id]] {
+                let operation = CosmosOperation::read_many(
+                    test_container(),
+                    ReadManySelection::Items(
+                        ids.into_iter()
+                            .map(|id| (PartitionKey::from("pk1"), id.to_owned()))
+                            .collect(),
+                    ),
+                    None,
+                );
+                let error = operation
+                    .validate_addressing(true)
+                    .expect_err("unsafe selected IDs must be rejected before planning");
+                assert_eq!(
+                    error.status(),
+                    crate::error::status_codes::CLIENT_BAD_REQUEST
+                );
+                operation
+                    .validate_addressing(false)
+                    .expect("the compatibility option must disable selected ID validation");
+            }
+        }
+    }
+
+    #[test]
+    fn read_many_accepts_safe_names_and_partition_scopes() {
+        for selection in [
+            ReadManySelection::Items(vec![
+                (PartitionKey::from("pk1"), "item with spaces".into()),
+                (PartitionKey::from("pk2"), "item+value=1".into()),
+            ]),
+            ReadManySelection::Partitions(vec![PartitionKey::from("a/b")]),
+            ReadManySelection::Items(Vec::new()),
+        ] {
+            CosmosOperation::read_many(test_container(), selection, None)
+                .validate_addressing(true)
+                .expect("safe selections must pass name validation");
+        }
     }
 
     #[test]
@@ -1613,7 +1724,7 @@ mod tests {
         let op = CosmosOperation::read_item(item_ref);
         assert!(!op.uses_feed_paths());
         let err = op
-            .validate_addressing()
+            .validate_addressing(false)
             .expect_err("a name leaf under a RID parent must be rejected");
         assert_eq!(
             err.status(),
@@ -1631,7 +1742,7 @@ mod tests {
             "Lx1BALxJyZ8BAAAAAAAAAA==",
         );
         let op = CosmosOperation::read_item(item_ref);
-        op.validate_addressing()
+        op.validate_addressing(false)
             .expect("a RID leaf under a RID parent is consistent");
 
         let paths = op.compute_resource_paths();

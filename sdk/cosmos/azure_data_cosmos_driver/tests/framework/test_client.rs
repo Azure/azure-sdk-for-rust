@@ -8,8 +8,6 @@ use azure_core::http::StatusCode;
 use azure_data_cosmos_driver::fault_injection::FaultInjectionRule;
 #[cfg(feature = "unstable_patch")]
 use azure_data_cosmos_driver::options::PatchStrategy;
-#[cfg(feature = "__internal_testing")]
-use azure_data_cosmos_driver::CosmosDriver;
 use azure_data_cosmos_driver::{
     diagnostics::{DiagnosticsContext, PipelineKind, TransportSecurity},
     driver::CosmosDriverRuntime,
@@ -23,9 +21,10 @@ use azure_data_cosmos_driver::{
         OperationOptions, OperationOptionsBuilder, PartitionFailoverOptions, Region,
         ServerCertificateValidation,
     },
-    SubStatusCode,
+    CosmosDriver, SubStatusCode,
 };
 use std::{error::Error, future::Future, sync::Arc, time::Duration};
+use tokio::sync::OnceCell;
 use tracing_subscriber::EnvFilter;
 use uuid::Uuid;
 
@@ -127,8 +126,7 @@ fn test_env_filter() -> EnvFilter {
 pub struct DriverTestClient {
     runtime: Arc<CosmosDriverRuntime>,
     account: AccountReference,
-    /// Driver-level preferred regions applied to every driver created by the
-    /// per-operation helpers (`create_database`, `read_item`, …). Empty by
+    /// Driver-level preferred regions applied to the context's drivers. Empty by
     /// default; populated by [`run_with_unique_db_and_hedging`] for the
     /// hedging path, which requires application-preferred regions to be set
     /// per Spec 0009: Cross-region hedging, §5.2.
@@ -137,7 +135,7 @@ pub struct DriverTestClient {
     /// the per-operation helpers. Empty by default; populated by the
     /// fault-injection entry points (`from_env_with_fault_injection`,
     /// `run_with_fault_injection`, etc.) so that FI rules are configured on
-    /// each per-operation driver rather than on the shared runtime.
+    /// each driver rather than on the shared runtime.
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Vec<Arc<FaultInjectionRule>>,
     /// Driver-level partition-failover / PPCB options applied to every driver
@@ -657,6 +655,7 @@ impl DriverTestClient {
 #[derive(Clone)]
 pub struct DriverTestRunContext {
     client: Arc<DriverTestClient>,
+    driver: Arc<OnceCell<Arc<CosmosDriver>>>,
     run_id: String,
 }
 
@@ -664,6 +663,7 @@ impl DriverTestRunContext {
     fn new(client: DriverTestClient) -> Self {
         Self {
             client: Arc::new(client),
+            driver: Arc::new(OnceCell::new()),
             // v7 (not v4) so a cleanup sweep can decode the creation time straight from the
             // name; kept un-truncated (unlike unique_container_name) because v7's timestamp
             // occupies the leading hex digits - truncating there would drop all randomness
@@ -693,7 +693,7 @@ impl DriverTestRunContext {
         format!("test-container-{}", &uuid_str[..8])
     }
 
-    /// Builds the per-operation [`DriverOptions`] used by the helpers in
+    /// Builds the [`DriverOptions`] used by the shared driver in
     /// this context. Carries the client's account, any `preferred_regions`
     /// configured by the hedging entry point, and any fault-injection rules
     /// configured by the FI entry points, so that every driver created by
@@ -716,6 +716,20 @@ impl DriverTestRunContext {
                 builder.with_fault_injection_rules(self.client.fault_injection_rules.clone())?;
         }
         Ok(builder.build())
+    }
+
+    async fn driver(&self) -> Result<Arc<CosmosDriver>, Box<dyn Error>> {
+        let driver = self
+            .driver
+            .get_or_try_init(|| async {
+                self.client
+                    .runtime
+                    .create_driver(self.driver_options()?)
+                    .await
+                    .map_err(Box::<dyn Error>::from)
+            })
+            .await?;
+        Ok(Arc::clone(driver))
     }
 
     fn is_transport_generated_503(error: &(dyn Error + 'static)) -> bool {
@@ -784,11 +798,7 @@ impl DriverTestRunContext {
         &self,
         db_name: &str,
     ) -> Result<DatabaseReference, Box<dyn Error>> {
-        let driver = self
-            .client
-            .runtime
-            .create_driver(self.driver_options()?)
-            .await?;
+        let driver = self.driver().await?;
 
         let body = format!(r#"{{"id": "{}"}}"#, db_name);
         let operation = CosmosOperation::create_database(self.client.account.clone())
@@ -825,11 +835,7 @@ impl DriverTestRunContext {
         &self,
         database: &DatabaseReference,
     ) -> Result<(), Box<dyn Error>> {
-        let driver = self
-            .client
-            .runtime
-            .create_driver(self.driver_options()?)
-            .await?;
+        let driver = self.driver().await?;
 
         let operation = CosmosOperation::delete_database(database.clone());
 
@@ -877,11 +883,7 @@ impl DriverTestRunContext {
             !partition_key_paths.is_empty(),
             "container requires at least one partition-key path"
         );
-        let driver = self
-            .client
-            .runtime
-            .create_driver(self.driver_options()?)
-            .await?;
+        let driver = self.driver().await?;
 
         let paths_json = partition_key_paths
             .iter()
@@ -1024,11 +1026,7 @@ impl DriverTestRunContext {
         body: &[u8],
         options: OperationOptions,
     ) -> Result<CosmosResponse, Box<dyn Error>> {
-        let driver = self
-            .client
-            .runtime
-            .create_driver(self.driver_options()?)
-            .await?;
+        let driver = self.driver().await?;
 
         let pk = partition_key.into();
         let item_ref = ItemReference::from_name(container, pk, item_id.to_owned());
@@ -1158,11 +1156,7 @@ impl DriverTestRunContext {
         partition_key: impl Into<PartitionKey>,
         options: OperationOptions,
     ) -> Result<CosmosResponse, Box<dyn Error>> {
-        let driver = self
-            .client
-            .runtime
-            .create_driver(self.driver_options()?)
-            .await?;
+        let driver = self.driver().await?;
 
         let pk = partition_key.into();
         let item_ref = ItemReference::from_name(container, pk, item_id.to_owned());
@@ -1196,11 +1190,7 @@ impl DriverTestRunContext {
         patch: &azure_data_cosmos_driver::models::PatchInstructions,
         max_attempts: Option<std::num::NonZeroU8>,
     ) -> Result<CosmosResponse, Box<dyn Error>> {
-        let driver = self
-            .client
-            .runtime
-            .create_driver(self.driver_options()?)
-            .await?;
+        let driver = self.driver().await?;
 
         let pk = partition_key.into();
         let item_ref = ItemReference::from_name(container, pk, item_id.to_owned());
@@ -1233,24 +1223,13 @@ impl DriverTestRunContext {
         Option<Vec<azure_data_cosmos_driver::models::partition_key_range::PartitionKeyRange>>,
         Box<dyn Error>,
     > {
-        let driver = self
-            .client
-            .runtime
-            .create_driver(self.driver_options()?)
-            .await?;
+        let driver = self.driver().await?;
         Ok(driver
             .resolve_all_partition_key_ranges(container, force_refresh)
             .await?)
     }
 
-    /// Creates a single long-lived driver that the caller holds for the
-    /// duration of a test.
-    ///
-    /// Unlike the per-operation helpers — each of which builds a throwaway
-    /// driver — every operation issued through this driver shares its
-    /// in-memory routing and hub-region cache state. This is required for
-    /// tests that assert on cross-operation cache behavior, where state
-    /// populated by one read must be observed by a later read.
+    /// Creates a driver with cache state independent of the shared operation helpers.
     #[cfg(feature = "__internal_testing")]
     pub async fn create_persistent_driver(&self) -> Result<Arc<CosmosDriver>, Box<dyn Error>> {
         Ok(self
@@ -1263,7 +1242,7 @@ impl DriverTestRunContext {
     /// Reads an item on a caller-provided persistent driver so the driver's
     /// in-memory cache state persists across reads. Mirrors
     /// [`read_item`](Self::read_item) but reuses the given driver instead of
-    /// creating a fresh one per call.
+    /// using the context's shared driver.
     #[cfg(feature = "__internal_testing")]
     pub async fn read_item_on(
         &self,
@@ -1374,30 +1353,139 @@ mod tests {
         is_regional_readiness_error, runtime_operation_options, status_codes,
         wait_for_region_readiness,
     };
+    #[cfg(any(
+        feature = "__internal_mocking",
+        all(feature = "fault_injection", feature = "__internal_in_memory_emulator")
+    ))]
+    use super::{DriverTestClient, DriverTestRunContext};
+    #[cfg(feature = "__internal_mocking")]
+    use async_trait::async_trait;
     use azure_core::http::StatusCode;
+    #[cfg(any(
+        feature = "__internal_mocking",
+        all(feature = "fault_injection", feature = "__internal_in_memory_emulator")
+    ))]
+    use azure_core::http::Url;
+    #[cfg(feature = "__internal_mocking")]
+    use azure_core::http::{headers::Headers, Method};
+    #[cfg(any(
+        feature = "__internal_mocking",
+        all(feature = "fault_injection", feature = "__internal_in_memory_emulator")
+    ))]
+    use azure_data_cosmos_driver::models::AccountReference;
     use azure_data_cosmos_driver::{
         error::{CosmosError, CosmosStatus},
         options::{BinaryEncodingOptions, OperationOptions, Region},
     };
+    #[cfg(feature = "__internal_mocking")]
+    use azure_data_cosmos_driver::{
+        options::ConnectionPoolOptions,
+        test::{
+            HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse, TransportClient,
+            TransportError,
+        },
+        CosmosDriverRuntime,
+    };
+    #[cfg(feature = "__internal_mocking")]
+    use std::sync::atomic::{AtomicU32, Ordering};
+    #[cfg(any(
+        feature = "__internal_mocking",
+        all(feature = "fault_injection", feature = "__internal_in_memory_emulator")
+    ))]
+    use std::sync::Arc;
     use std::{future::pending, time::Duration};
 
     #[cfg(all(feature = "fault_injection", feature = "__internal_in_memory_emulator"))]
-    use {
-        super::{DriverTestClient, DriverTestRunContext},
-        azure_core::http::Url,
-        azure_data_cosmos_driver::{
-            fault_injection::{
-                FaultInjectionConditionBuilder, FaultInjectionErrorType,
-                FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
-            },
-            in_memory_emulator::{
-                ConsistencyLevel, InMemoryEmulatorHttpClient, ReplicationConfig,
-                VirtualAccountConfig, VirtualRegion, WriteMode,
-            },
-            models::AccountReference,
+    use azure_data_cosmos_driver::{
+        fault_injection::{
+            FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+            FaultInjectionRuleBuilder, FaultOperationType,
         },
-        std::sync::Arc,
+        in_memory_emulator::{
+            ConsistencyLevel, InMemoryEmulatorHttpClient, ReplicationConfig, VirtualAccountConfig,
+            VirtualRegion, WriteMode,
+        },
     };
+
+    #[cfg(feature = "__internal_mocking")]
+    #[derive(Debug, Default)]
+    struct AccountTransport {
+        requests: Arc<AtomicU32>,
+    }
+
+    #[cfg(feature = "__internal_mocking")]
+    impl HttpClientFactory for AccountTransport {
+        fn build(
+            &self,
+            _pool: &ConnectionPoolOptions,
+            _config: HttpClientConfig,
+        ) -> azure_data_cosmos_driver::Result<Arc<dyn TransportClient>> {
+            Ok(Arc::new(Self {
+                requests: Arc::clone(&self.requests),
+            }))
+        }
+    }
+
+    #[cfg(feature = "__internal_mocking")]
+    #[async_trait]
+    impl TransportClient for AccountTransport {
+        async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            assert_eq!(request.method, Method::Get);
+            self.requests.fetch_add(1, Ordering::SeqCst);
+            Ok(HttpResponse {
+                status: 200,
+                headers: Headers::new(),
+                body: serde_json::to_vec(&serde_json::json!({
+                    "_self": "/", "_dbs": "//dbs/", "_rid": "AAAAAA==", "id": "context",
+                    "writableLocations": [{
+                        "name": "West US 2", "databaseAccountEndpoint": "https://context-westus2.documents.azure.com/"
+                    }],
+                    "readableLocations": [{
+                        "name": "West US 2", "databaseAccountEndpoint": "https://context-westus2.documents.azure.com/"
+                    }],
+                    "enableMultipleWriteLocations": false,
+                    "userConsistencyPolicy": {"defaultConsistencyLevel": "Session"},
+                    "userReplicationPolicy": {"minReplicaSetSize": 3, "maxReplicasetSize": 4},
+                    "systemReplicationPolicy": {"minReplicaSetSize": 3, "maxReplicasetSize": 4},
+                    "readPolicy": {"primaryReadCoefficient": 1, "secondaryReadCoefficient": 1},
+                    "queryEngineConfiguration": "{}"
+                })).unwrap(),
+            })
+        }
+    }
+
+    #[cfg(feature = "__internal_mocking")]
+    #[tokio::test]
+    async fn context_clones_share_driver_initialization() {
+        let transport = Arc::new(AccountTransport::default());
+        let runtime = CosmosDriverRuntime::builder()
+            .with_mock_http_client_factory(transport.clone())
+            .build()
+            .await
+            .unwrap();
+        let context = DriverTestRunContext::new(DriverTestClient {
+            runtime,
+            account: AccountReference::with_account_key(
+                Url::parse("https://context.documents.azure.com/").unwrap(),
+                "a2V5",
+            ),
+            preferred_regions: Vec::new(),
+            #[cfg(feature = "fault_injection")]
+            fault_injection_rules: Vec::new(),
+            partition_failover_options: None,
+        });
+        let other = context.clone();
+        let (first, second) = tokio::join!(context.driver(), other.driver());
+        let first = first.unwrap();
+        assert!(Arc::ptr_eq(&first, &second.unwrap()));
+        let requests = transport.requests.load(Ordering::SeqCst);
+        assert!(
+            requests > 0,
+            "initialization must actually retrieve metadata"
+        );
+        assert!(Arc::ptr_eq(&first, &context.driver().await.unwrap()));
+        assert_eq!(transport.requests.load(Ordering::SeqCst), requests);
+    }
 
     fn readiness_error(status: StatusCode, message: &'static str) -> CosmosError {
         CosmosError::builder()

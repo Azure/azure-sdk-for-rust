@@ -18,11 +18,13 @@
 #include <stddef.h>
 
 _Static_assert(sizeof(((cosmos_operation_options_t *)0)->max_failover_retry_count) == 8,
-               "ABI 0.2 carries the complete uint32 retry domain");
+               "ABI 0.3 carries the complete uint32 retry domain");
 #if UINTPTR_MAX == UINT64_MAX
-_Static_assert(sizeof(cosmos_operation_options_t) == 136, "ABI 0.2 options layout");
-_Static_assert(sizeof(cosmos_operation_request_t) == 232, "ABI 0.2 request layout");
-_Static_assert(sizeof(cosmos_runtime_options_t) == 72, "ABI 0.2 runtime layout");
+_Static_assert(sizeof(cosmos_operation_options_t) == 136, "ABI 0.3 options layout");
+_Static_assert(sizeof(cosmos_operation_request_t) == 232, "ABI 0.3 request layout");
+_Static_assert(sizeof(cosmos_runtime_options_t) == 72, "ABI 0.3 runtime layout");
+_Static_assert(sizeof(cosmos_driver_options_config_v2_t) == 72,
+               "ABI 0.3 driver options v2 layout");
 _Static_assert(offsetof(cosmos_operation_request_t, options_snapshot) == 224, "snapshot offset");
 #endif
 
@@ -36,7 +38,7 @@ static int test_options_default_is_all_unset(void)
        cosmos_operation_options_t opts = cosmos_operation_options_default();
        ASSERT(strcmp(cosmos_version(), AZURECOSMOSDRIVER_H_VERSION) == 0,
               "loaded library matches generated header");
-       ASSERT(strcmp(AZURECOSMOSDRIVER_H_VERSION, "0.2.0") == 0, "expected breaking ABI version");
+       ASSERT(strcmp(AZURECOSMOSDRIVER_H_VERSION, "0.3.0") == 0, "expected breaking ABI version");
        ASSERT(opts.throughput_bucket == -1 && opts.priority_level == 0, "throughput inherits");
        ASSERT(opts.max_throttle_retry_count == -1 &&
               opts.max_throttle_retry_wait_time_ms == -1, "throttling inherits");

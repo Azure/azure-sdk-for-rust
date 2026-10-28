@@ -1328,6 +1328,11 @@ impl ContainerClient {
     /// All operations in the batch are executed atomically within the same partition key.
     /// If any operation fails, the entire batch is rolled back.
     ///
+    /// # Errors
+    ///
+    /// Returns an error if the batch can't be serialized, resource-name validation rejects an
+    /// item ID, or the driver or service rejects the request.
+    ///
     /// # Arguments
     /// * `batch` - The [`TransactionalBatch`] containing the operations to execute.
     /// * `options` - Optional parameters for the request.

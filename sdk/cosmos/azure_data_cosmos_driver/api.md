@@ -2697,6 +2697,7 @@ pub mod options {
         pub fn operation_options(&self) -> &Arc<OperationOptions>;
         pub fn partition_failover_options(&self) -> &PartitionFailoverOptions;
         pub fn preferred_regions(&self) -> &[Region];
+        pub fn resource_name_validation_enabled(&self) -> bool;
         pub fn user_agent_suffix(&self) -> Option<&UserAgentSuffix>;
     }
     #[derive(Clone, Debug)]
@@ -2712,6 +2713,7 @@ pub mod options {
         pub fn with_operation_options(self, options: OperationOptions) -> Self;
         pub fn with_partition_failover_options(self, options: PartitionFailoverOptions) -> Self;
         pub fn with_preferred_regions(self, regions: Vec<Region>) -> Self;
+        pub fn with_resource_name_validation(self, enabled: bool) -> Self;
         pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]

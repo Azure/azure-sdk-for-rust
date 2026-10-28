@@ -4,7 +4,7 @@
     "id": "query.pagination-resume",
     "title": "A query resumes from a persisted continuation",
     "requirement": "A paged query can resume in a new iterator without losing or duplicating ordered results.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "rust",
@@ -37,7 +37,7 @@
             ]
         },
         "azureLive": {
-            "applicability": "supported",
+            "applicability": "required",
             "fidelity": "full"
         }
     }

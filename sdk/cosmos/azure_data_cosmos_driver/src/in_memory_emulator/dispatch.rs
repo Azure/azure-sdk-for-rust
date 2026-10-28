@@ -8,7 +8,7 @@ use azure_core::http::headers::HeaderName;
 use azure_core::http::Request;
 use percent_encoding::percent_decode_str;
 
-use crate::options::ReadConsistencyStrategy;
+use crate::{models::cosmos_headers::request_header_names, options::ReadConsistencyStrategy};
 
 /// The type of operation resolved from an HTTP request.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -98,6 +98,11 @@ pub(crate) struct ParsedRequest {
     pub start_epk: Option<String>,
     #[allow(dead_code)]
     pub end_epk: Option<String>,
+    /// Logical point/prefix scope, independent of explicit range filters.
+    pub effective_partition_key: Option<String>,
+    /// Routing bounds select physical partitions, never individual documents.
+    pub routing_start_epk: Option<String>,
+    pub routing_end_epk: Option<String>,
     #[allow(dead_code)]
     pub is_query_plan: bool,
     #[allow(dead_code)]
@@ -142,6 +147,8 @@ static PARTITION_KEY_RANGE_ID: HeaderName =
     HeaderName::from_static("x-ms-documentdb-partitionkeyrangeid");
 static START_EPK: HeaderName = HeaderName::from_static("x-ms-start-epk");
 static END_EPK: HeaderName = HeaderName::from_static("x-ms-end-epk");
+pub(super) const EFFECTIVE_PARTITION_KEY: HeaderName =
+    HeaderName::from_static("x-ms-effective-partition-key");
 static READ_FEED_KEY_TYPE: HeaderName = HeaderName::from_static("x-ms-read-key-type");
 static IS_BATCH_REQUEST: HeaderName = HeaderName::from_static("x-ms-cosmos-is-batch-request");
 static OFFER_THROUGHPUT: HeaderName = HeaderName::from_static("x-ms-offer-throughput");
@@ -208,6 +215,19 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         .map(|s| s.to_string());
     let start_epk = headers.get_optional_str(&START_EPK).map(|s| s.to_string());
     let end_epk = headers.get_optional_str(&END_EPK).map(|s| s.to_string());
+    let effective_partition_key = headers
+        .get_optional_str(&EFFECTIVE_PARTITION_KEY)
+        .map(str::to_owned);
+    let routing_start_epk = headers
+        .get_optional_str(&HeaderName::from_static(
+            request_header_names::THINCLIENT_PKRANGE_MIN,
+        ))
+        .map(str::to_owned);
+    let routing_end_epk = headers
+        .get_optional_str(&HeaderName::from_static(
+            request_header_names::THINCLIENT_PKRANGE_MAX,
+        ))
+        .map(str::to_owned);
     let read_key_type = headers
         .get_optional_str(&READ_FEED_KEY_TYPE)
         .map(|s| s.to_string());
@@ -323,6 +343,9 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         partition_key_range_id,
         start_epk,
         end_epk,
+        effective_partition_key,
+        routing_start_epk,
+        routing_end_epk,
         is_query_plan,
         is_batch,
         is_upsert,

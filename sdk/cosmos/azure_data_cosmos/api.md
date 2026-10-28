@@ -353,6 +353,7 @@ pub mod clients {
         #[cfg(feature = "fault_injection")]
         pub fn with_fault_injection_rules(self, rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>) -> crate::Result<Self>;
         pub fn with_partition_failover_options(self, options: PartitionFailoverOptions) -> Self;
+        pub fn with_resource_name_validation(self, enabled: bool) -> Self;
         pub fn with_runtime(self, runtime: CosmosRuntime) -> Self;
         pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
     }

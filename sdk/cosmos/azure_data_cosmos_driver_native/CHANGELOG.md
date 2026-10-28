@@ -1,12 +1,15 @@
 # Release History
 
-## Unreleased
+## 0.3.0 (Unreleased)
 
 ### Features Added
 
 - Added `cosmos_read_many_request_init` and `cosmos_read_many_open_submit` with versioned request records for key/id or partition selections, including hierarchical prefixes and optional parameterized filters, returning paged results through the existing native cursor APIs without durable checkpoint/resume support. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
+- Added a driver option for disabling default-on resource-name validation, including item names supplied to Create and Upsert, when compatibility requires it. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
 
 ### Breaking Changes
+
+- Expanded `cosmos_driver_options_config_v2_t`; native hosts must rebuild against the 0.3.0 header and library. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
 
 ### Bugs Fixed
 
