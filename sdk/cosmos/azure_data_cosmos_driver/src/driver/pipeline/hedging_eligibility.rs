@@ -56,6 +56,13 @@ const METADATA_HEDGE_THRESHOLD: Duration = Duration::from_millis(1500);
 ///
 /// Current members:
 /// * `(Document, Read)` — data-plane point reads (Phase 1).
+/// * `(Document, Query)` — data-plane query pages, narrowed to
+///   **single-partition** queries by the `is_trivial()` guard in
+///   [`should_hedge`]. The table keys on `(resource, operation)` and cannot
+///   express that narrowing itself. `SqlQuery` is deliberately absent: no
+///   `CosmosOperation` is built with it today, and `is_trivial()` does not
+///   narrow it, so admitting the pair would silently hedge a cross-partition
+///   query if one were ever constructed.
 /// * `(DocumentCollection, Read)` — `Collection` `Read` metadata cache read.
 /// * `(PartitionKeyRange, ReadFeed)` — `PartitionKeyRange` `ReadFeed` metadata
 ///   cache read. Only the cold first change-feed page is hedged; if the hedge
@@ -65,6 +72,7 @@ const METADATA_HEDGE_THRESHOLD: Duration = Duration::from_millis(1500);
 /// See Spec 0009: Cross-region hedging.
 const HEDGEABLE_PAIRS: &[(ResourceType, OperationType)] = &[
     (ResourceType::Document, OperationType::Read),
+    (ResourceType::Document, OperationType::Query),
     (ResourceType::DocumentCollection, OperationType::Read),
     (ResourceType::PartitionKeyRange, OperationType::ReadFeed),
 ];
@@ -95,6 +103,16 @@ pub(crate) fn should_hedge(
 
     let pair = (operation.resource_type(), operation.operation_type());
     if !HEDGEABLE_PAIRS.contains(&pair) {
+        return false;
+    }
+
+    // One leaf of a cross-partition fan-out carries the same `(Document, Query)`
+    // pair as a single-partition query, but is its own pipeline invocation —
+    // hedging every leaf would spawn one alternate per partition, and data-plane
+    // hedging has no admission budget yet. `is_trivial()` is `true` for every
+    // other member of the table, so scope the guard to queries rather than
+    // applying it unconditionally.
+    if operation.operation_type() == OperationType::Query && !operation.is_trivial() {
         return false;
     }
 
@@ -431,6 +449,22 @@ mod tests {
         CosmosOperation::read_all_partition_key_ranges(fake_container_reference())
     }
 
+    fn single_partition_query_operation() -> CosmosOperation {
+        let container = fake_container_reference();
+        let definition = container.partition_key_definition().clone();
+        let target = crate::models::FeedRange::for_partition(PartitionKey::from("pk"), &definition);
+        CosmosOperation::query_items(container, Some(target))
+    }
+
+    fn cross_partition_query_operation() -> CosmosOperation {
+        // Full-range target, matching how the planner builds a fan-out query.
+        // `None` would trip the partitioned-operation debug assert.
+        CosmosOperation::query_items(
+            fake_container_reference(),
+            Some(crate::models::FeedRange::full()),
+        )
+    }
+
     fn enabled_strategy() -> HedgingStrategy {
         HedgingStrategy::new(HedgeThreshold::new(Duration::from_millis(500)).unwrap())
     }
@@ -524,6 +558,50 @@ mod tests {
     }
 
     #[test]
+    fn should_hedge_single_partition_query() {
+        // A query pinned to one complete logical partition key is a single
+        // request per page — the same shape as a point read.
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = single_partition_query_operation();
+        assert!(op.is_trivial(), "fixture must be a single-partition query");
+        assert!(should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    #[test]
+    fn should_hedge_cross_partition_query_not_yet() {
+        // Same `(Document, Query)` pair, but each fan-out leaf would hedge
+        // independently and data-plane hedging is unbudgeted. Held back until
+        // the budget lands.
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = cross_partition_query_operation();
+        assert!(!op.is_trivial(), "fixture must be a cross-partition query");
+        assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    #[test]
+    fn trivial_guard_does_not_narrow_non_query_pairs() {
+        // The guard is scoped to `Query` because every other member of the
+        // table must stay eligible. `read_all_partition_key_ranges` is the
+        // one to watch: it is a `ReadFeed`, and `is_trivial()` demands a
+        // partition key for change feeds. It is only spared because
+        // `is_change_feed` is an explicit flag that this constructor leaves
+        // unset — if that ever becomes header-inferred, pkrange hedging dies
+        // silently.
+        for op in [
+            read_item_operation(),
+            read_container_operation(),
+            read_pk_ranges_operation(),
+        ] {
+            assert!(
+                op.is_trivial(),
+                "{:?}/{:?} must stay trivial or the hedge guard will silently drop it",
+                op.resource_type(),
+                op.operation_type(),
+            );
+        }
+    }
+
+    #[test]
     fn hedgeable_pairs_excludes_stray_and_write_pairs() {
         // Pair gating (not a cartesian resource×op gate) must keep these OUT even
         // though each element appears in some in-scope pair. `(Document, ReadFeed)`
@@ -536,6 +614,10 @@ mod tests {
             (ResourceType::Database, OperationType::Read),
             (ResourceType::Offer, OperationType::Read),
             (ResourceType::Document, OperationType::Create),
+            // `is_trivial()` only narrows `OperationType::Query`; it returns
+            // `true` for `SqlQuery` regardless of partition key, so admitting
+            // this pair would bypass the single-partition guard entirely.
+            (ResourceType::Document, OperationType::SqlQuery),
         ] {
             assert!(
                 !HEDGEABLE_PAIRS.contains(&stray),

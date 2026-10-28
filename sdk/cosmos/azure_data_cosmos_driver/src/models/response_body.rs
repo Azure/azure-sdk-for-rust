@@ -174,33 +174,70 @@ impl ResponseBody {
     /// # Errors
     ///
     /// Returns an error if a binary payload is malformed.
+    #[cfg(test)]
     pub(crate) fn transcode_to_text(self) -> crate::error::Result<Self> {
-        fn convert(bytes: &Bytes) -> crate::error::Result<Bytes> {
+        self.transcode_to_text_with_utf8_mode(crate::options::Utf8DecodingMode::Strict)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn transcode_to_text_with_utf8_mode(
+        self,
+        utf8_decoding_mode: crate::options::Utf8DecodingMode,
+    ) -> crate::error::Result<Self> {
+        self.transcode_to_text_with_utf8_mode_and_recovery(utf8_decoding_mode)
+            .map(|(body, _)| body)
+    }
+
+    pub(crate) fn transcode_to_text_with_utf8_mode_and_recovery(
+        self,
+        utf8_decoding_mode: crate::options::Utf8DecodingMode,
+    ) -> crate::error::Result<(Self, bool)> {
+        fn convert(
+            bytes: &Bytes,
+            utf8_decoding_mode: crate::options::Utf8DecodingMode,
+        ) -> crate::error::Result<(Bytes, bool)> {
             // Already-text payloads are left unchanged: return a cheap refcount
             // clone instead of round-tripping through `transcode_to_text` (which
             // would copy the buffer into a fresh `Vec<u8>`).
-            if !crate::binary_json::is_binary(bytes) {
-                return Ok(bytes.clone());
+            if !crate::binary_json::is_binary(bytes)
+                && utf8_decoding_mode == crate::options::Utf8DecodingMode::Strict
+            {
+                return Ok((bytes.clone(), false));
             }
-            let text = crate::binary_json::transcode_to_text(bytes).map_err(|e| {
-                crate::error::CosmosError::builder()
-                    .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
-                    .with_message(format!("failed to transcode binary response to text: {e}"))
-                    .with_source(e)
-                    .build()
-            })?;
-            Ok(Bytes::from(text))
+            let (text, invalid_utf8_was_recovered) =
+                crate::binary_json::transcode_to_text_with_utf8_mode_and_recovery(
+                    bytes,
+                    utf8_decoding_mode,
+                )
+                .map_err(|e| {
+                    crate::error::CosmosError::builder()
+                        .with_status(
+                            crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID,
+                        )
+                        .with_message(format!("failed to transcode response body to text: {e}"))
+                        .with_source(e)
+                        .build()
+                })?;
+            Ok((Bytes::from(text), invalid_utf8_was_recovered))
         }
 
         match self {
-            Self::NoPayload => Ok(Self::NoPayload),
-            Self::Bytes(b) => Ok(Self::Bytes(convert(&b)?)),
+            Self::NoPayload => Ok((Self::NoPayload, false)),
+            Self::Bytes(b) => {
+                let (body, was_recovered) = convert(&b, utf8_decoding_mode)?;
+                Ok((Self::Bytes(body), was_recovered))
+            }
             Self::Items(items) => {
+                let mut was_recovered = false;
                 let converted = items
                     .into_iter()
-                    .map(|b| convert(&b))
+                    .map(|b| {
+                        let (body, item_was_recovered) = convert(&b, utf8_decoding_mode)?;
+                        was_recovered |= item_was_recovered;
+                        Ok(body)
+                    })
                     .collect::<crate::error::Result<Vec<_>>>()?;
-                Ok(Self::Items(converted))
+                Ok((Self::Items(converted), was_recovered))
             }
         }
     }
@@ -705,5 +742,60 @@ mod tests {
     fn transcode_malformed_binary_errors() {
         let body = ResponseBody::Bytes(Bytes::from_static(&[PREAMBLE]));
         assert!(body.transcode_to_text().is_err());
+    }
+
+    #[test]
+    fn lossy_transcode_recovers_invalid_utf8_inside_text_string() {
+        let body = ResponseBody::Bytes(Bytes::from(vec![
+            b'{', b'"', b'n', b'a', b'm', b'e', b'"', b':', b'"', b'a', 0xFF, b'b', b'"', b'}',
+        ]));
+
+        let (text, invalid_utf8_was_recovered) = body
+            .transcode_to_text_with_utf8_mode_and_recovery(crate::options::Utf8DecodingMode::Lossy)
+            .unwrap();
+        let value: serde_json::Value = text.into_single().unwrap();
+        assert_eq!(value["name"], "a\u{FFFD}b");
+        assert!(invalid_utf8_was_recovered);
+    }
+
+    #[test]
+    fn lossy_transcode_does_not_repair_malformed_json_structure() {
+        let body = ResponseBody::Bytes(Bytes::from(vec![b'{', 0xFF, b'}']));
+
+        let (text, invalid_utf8_was_recovered) = body
+            .transcode_to_text_with_utf8_mode_and_recovery(crate::options::Utf8DecodingMode::Lossy)
+            .unwrap();
+        let result: crate::error::Result<serde_json::Value> = text.into_single();
+        assert!(result.is_err());
+        assert!(invalid_utf8_was_recovered);
+    }
+
+    #[test]
+    fn lossy_transcode_recovers_invalid_utf8_in_binary_string() {
+        let body = ResponseBody::Bytes(Bytes::from_static(&[
+            PREAMBLE,
+            crate::binary_json::markers::STR_L1,
+            1,
+            0xFF,
+        ]));
+
+        let (text, invalid_utf8_was_recovered) = body
+            .transcode_to_text_with_utf8_mode_and_recovery(crate::options::Utf8DecodingMode::Lossy)
+            .unwrap();
+        let value: serde_json::Value = text.into_single().unwrap();
+        assert_eq!(value, "\u{FFFD}");
+        assert!(invalid_utf8_was_recovered);
+    }
+
+    #[test]
+    fn lossy_transcode_does_not_count_valid_replacement_character() {
+        let body = ResponseBody::Bytes(Bytes::from_static(&[b'"', 0xEF, 0xBF, 0xBD, b'"']));
+
+        let (text, invalid_utf8_was_recovered) = body
+            .transcode_to_text_with_utf8_mode_and_recovery(crate::options::Utf8DecodingMode::Lossy)
+            .unwrap();
+        let value: serde_json::Value = text.into_single().unwrap();
+        assert_eq!(value, "\u{FFFD}");
+        assert!(!invalid_utf8_was_recovered);
     }
 }

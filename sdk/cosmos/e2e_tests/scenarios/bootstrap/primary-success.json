@@ -4,7 +4,7 @@
     "id": "bootstrap.primary-success",
     "title": "A reachable primary endpoint initializes the client",
     "requirement": "Building a client with a reachable account endpoint succeeds and permits a first data operation.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "rust",
@@ -32,7 +32,7 @@
             ]
         },
         "azureLive": {
-            "applicability": "supported",
+            "applicability": "required",
             "fidelity": "full"
         }
     }

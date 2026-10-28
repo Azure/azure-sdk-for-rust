@@ -686,3 +686,65 @@ async fn create_batch_rejects_size_above_link_maximum(
 
     Ok(())
 }
+
+/// An event larger than the sender link allows must be refused, not sent.
+///
+/// Both public entry points must refuse it, and the link must stay usable.
+#[recorded::test(live)]
+async fn send_event_rejects_message_above_link_maximum(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    use azure_messaging_eventhubs::models::{AmqpMessage, EventData};
+
+    // The size the live reproduction of issue #5101 used, against an Event Hubs
+    // link maximum of 1048576 bytes.
+    const TOO_LARGE_BODY: usize = 2 * 1024 * 1024;
+
+    let recording = ctx.recording();
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
+
+    let client = ProducerClient::builder()
+        .with_application_id("send_event_rejects_message_above_link_maximum".to_string())
+        .open(host.as_str(), eventhub.as_str(), recording.credential())
+        .await?;
+
+    let error = client
+        .send_event(
+            EventData::builder()
+                .with_body(vec![b'x'; TOO_LARGE_BODY])
+                .build(),
+            None,
+        )
+        .await
+        .err()
+        .expect("an event above the link maximum must be refused");
+    assert!(
+        matches!(error.kind, ErrorKind::MessageSizeExceeded { .. }),
+        "send_event must report the message size kind, got: {error:?}"
+    );
+    info!("send_event refused the large event: {error}");
+
+    let error = client
+        .send_message(
+            AmqpMessage::builder()
+                .with_body(vec![vec![b'x'; TOO_LARGE_BODY]])
+                .build(),
+            None,
+        )
+        .await
+        .err()
+        .expect("a message above the link maximum must be refused");
+    assert!(
+        matches!(error.kind, ErrorKind::MessageSizeExceeded { .. }),
+        "send_message must report the message size kind, got: {error:?}"
+    );
+
+    // The refusal applies to the one large message. A normal event on the same
+    // client must still go, which also shows the link is still up.
+    client.send_event("Hello, Event Hub!", None).await?;
+
+    client.close().await?;
+
+    Ok(())
+}

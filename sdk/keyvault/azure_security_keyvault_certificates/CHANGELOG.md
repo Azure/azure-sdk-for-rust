@@ -1,10 +1,8 @@
 # Release History
 
-## 1.1.0-beta.2 (Unreleased)
+## 1.1.0-beta.3 (Unreleased)
 
 ### Features Added
-
-- Upgraded to API service version `2026-03-01-preview`.
 
 ### Breaking Changes
 
@@ -12,7 +10,26 @@
 
 ### Other Changes
 
+## 1.1.0-beta.2 (2026-10-21)
+
+### Features Added
+
+- Upgraded to API service version `2026-03-01-preview`.
+
+### Bugs Fixed
+
+- Fixed challenge authentication to cache challenge scopes only after challenge resource verification succeeds, preventing
+  rejected challenges from being reused by later requests.
+
+### Other Changes
+
 - Avoided double-deserializing pager responses by using borrowed `nextLink` parsing in Key Vault certificates list operations.
+
+## 1.0.1 (2026-10-21)
+
+### Bugs Fixed
+
+- Fixed the challenge authentication policy to cache the challenge scope only after the challenge resource is verified, so that a rejected challenge is not cached and reused by subsequent requests.
 
 ## 1.1.0-beta.1 (2026-06-08)
 

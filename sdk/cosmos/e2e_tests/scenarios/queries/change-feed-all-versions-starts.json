@@ -4,7 +4,7 @@
     "id": "changefeed.all-versions-start-validation",
     "title": "All-versions change feed rejects unsupported start positions",
     "requirement": "AllVersionsAndDeletes rejects Beginning and PointInTime starts with BadRequest while preserving the public SDK error contract.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "rust",
@@ -43,7 +43,7 @@
             ]
         },
         "azureLive": {
-            "applicability": "supported",
+            "applicability": "required",
             "fidelity": "full"
         }
     }

@@ -145,11 +145,4 @@ mod tests {
             ChangeFeedMode::LatestVersion
         );
     }
-
-    #[test]
-    fn options_builder_chain() {
-        let opts = ChangeFeedOptions::default().with_mode(ChangeFeedMode::LatestVersion);
-
-        assert_eq!(opts.mode, ChangeFeedMode::LatestVersion);
-    }
 }
