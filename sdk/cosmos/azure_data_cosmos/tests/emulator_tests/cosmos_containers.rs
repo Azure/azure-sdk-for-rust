@@ -30,6 +30,10 @@ use framework::{TestClient, TestOptions};
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 #[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "vnext emulator exposes an unexpected _ts included index path: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/375"
+)]
+#[cfg_attr(
     test_category = "emulator_inmemory",
     ignore = "hosted in-memory emulator does not yet support replacing container properties"
 )]
