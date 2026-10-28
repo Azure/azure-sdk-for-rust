@@ -12,9 +12,9 @@
 //! # Token format
 //!
 //! SDK-issued tokens start with a version prefix `c<N>.` followed by a
-//! base64url-no-pad encoded JSON document. Query tokens use `c1.`; new
-//! change-feed checkpoints use `c2.`. Legacy `c1.` change-feed checkpoints
-//! remain readable, but SDKs that only support `c1.` reject `c2.` checkpoints.
+//! base64url-no-pad encoded JSON document. New query and change-feed checkpoints
+//! use `c2.`. Supported legacy `c1.` checkpoints remain readable, but SDKs that
+//! only support `c1.` reject `c2.` checkpoints.
 //! Unsupported versions are rejected with a clear error.
 //!
 //! Tokens without a `c<N>.` prefix are treated as opaque server-issued
@@ -56,7 +56,7 @@ impl ContinuationToken {
         &self.0
     }
 
-    /// Encodes query state as `c1.` and change-feed state as `c2.`.
+    /// Encodes query or change-feed state as `c2.`.
     pub(crate) fn encode(
         operation: &CosmosOperation,
         root_state: &PipelineNodeState,
@@ -108,11 +108,7 @@ impl ContinuationToken {
                 .build()
         })?;
         let body = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(json);
-        let prefix = if operation.is_change_feed() {
-            SDK_V2_PREFIX
-        } else {
-            SDK_V1_PREFIX
-        };
+        let prefix = SDK_V2_PREFIX;
         let mut out = String::with_capacity(prefix.len() + body.len());
         out.push_str(prefix);
         out.push_str(&body);
@@ -145,14 +141,6 @@ impl ContinuationToken {
                     .with_source(e)
                     .build()
             })?;
-            if self.0.starts_with(SDK_V2_PREFIX) && state.operation != TokenOperation::ChangeFeed {
-                return Err(crate::error::CosmosError::builder()
-                    .with_status(
-                        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
-                    )
-                    .with_message("c2. continuation tokens are only valid for change feeds")
-                    .build());
-            }
             if let Some(next) = state.next_change_feed_range.take() {
                 match &mut state.root {
                     PipelineNodeState::UnorderedMerge {
@@ -433,7 +421,7 @@ mod tests {
 
     /// Decodes the base64url-no-pad payload of an SDK-prefixed token into
     /// its raw JSON bytes for inspection.
-    fn decode_v1_payload(token: &ContinuationToken) -> String {
+    fn decode_payload(token: &ContinuationToken) -> String {
         let body = token
             .as_str()
             .strip_prefix(SDK_V1_PREFIX)
@@ -454,16 +442,16 @@ mod tests {
     // ── Serialization ───────────────────────────────────────────────────
 
     #[test]
-    fn encode_v1_drained_state() {
+    fn encode_v2_drained_state() {
         let token = ContinuationToken::encode(&query_op(), &PipelineNodeState::Drained).unwrap();
         assert_eq!(
-            decode_v1_payload(&token),
+            decode_payload(&token),
             r#"{"op":"Query","rid":"coll_rid","root":{"kind":"drained"}}"#,
         );
     }
 
     #[test]
-    fn encode_v1_request_state_omits_absent_server_continuation() {
+    fn encode_v2_request_state_omits_absent_server_continuation() {
         let token = ContinuationToken::encode(
             &query_op(),
             &PipelineNodeState::Request {
@@ -472,13 +460,13 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            decode_v1_payload(&token),
+            decode_payload(&token),
             r#"{"op":"Query","rid":"coll_rid","root":{"kind":"request"}}"#,
         );
     }
 
     #[test]
-    fn encode_v1_request_state_includes_server_continuation() {
+    fn encode_v2_request_state_includes_server_continuation() {
         let token = ContinuationToken::encode(
             &query_op(),
             &PipelineNodeState::Request {
@@ -487,13 +475,13 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            decode_v1_payload(&token),
+            decode_payload(&token),
             r#"{"op":"Query","rid":"coll_rid","root":{"kind":"request","server_continuation":"server-token-1"}}"#,
         );
     }
 
     #[test]
-    fn encode_v1_sequential_drain_state() {
+    fn encode_v2_sequential_drain_state() {
         let token = ContinuationToken::encode(
             &query_op(),
             &PipelineNodeState::SequentialDrain {
@@ -507,13 +495,13 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            decode_v1_payload(&token),
+            decode_payload(&token),
             r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","left_most_undrained_epk":"3F","active_tokens":[{"min_epk":"3F","max_epk":"7F","server_continuation":"srv"}]}}"#,
         );
     }
 
     #[test]
-    fn encode_v1_sequential_drain_state_omits_empty_active_tokens() {
+    fn encode_v2_sequential_drain_state_omits_empty_active_tokens() {
         // Common fast-path: every range below the cursor is drained and
         // no range above it owes a server continuation. The wire form
         // must omit `active_tokens` entirely (sparse encoding) so the
@@ -527,13 +515,13 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            decode_v1_payload(&token),
+            decode_payload(&token),
             r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","left_most_undrained_epk":"80"}}"#,
         );
     }
 
     #[test]
-    fn encode_v1_includes_rid_regardless_of_query_body() {
+    fn encode_v2_includes_rid_regardless_of_query_body() {
         // The token only identifies the container by rid; the query text
         // itself is not hashed into the token.
         let token = ContinuationToken::encode(
@@ -542,20 +530,20 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            decode_v1_payload(&token),
+            decode_payload(&token),
             r#"{"op":"Query","rid":"coll_rid","root":{"kind":"drained"}}"#,
         );
     }
 
     #[test]
-    fn encode_v1_rejects_non_query_operation() {
+    fn encode_v2_rejects_non_query_operation() {
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let read = CosmosOperation::read_item(item);
         let _err = ContinuationToken::encode(&read, &PipelineNodeState::Drained).unwrap_err();
     }
 
     #[test]
-    fn encode_v1_change_feed_operation_round_trips() {
+    fn encode_v2_change_feed_operation_round_trips() {
         // A change feed iterator captures its position as an SDK-issued `c2.`
         // token; the resume request restores the server ETag via If-None-Match,
         // never `x-ms-continuation`. Guards against the regression where
@@ -568,7 +556,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            decode_v1_payload(&token),
+            decode_payload(&token),
             r#"{"op":"ChangeFeed","rid":"coll_rid","root":{"kind":"request","server_continuation":"\"etag-1\""},"cfs":{"kind":"beginning"}}"#,
         );
 
@@ -709,7 +697,7 @@ mod tests {
         };
         let token = ContinuationToken::encode(&query_op(), &request).unwrap();
         assert_eq!(
-            decode_v1_payload(&token),
+            decode_payload(&token),
             r#"{"op":"Query","rid":"coll_rid","root":{"kind":"request"}}"#
         );
     }
@@ -739,7 +727,7 @@ mod tests {
         };
         let token = ContinuationToken::encode(&operation, &root).unwrap();
         assert!(token.as_str().starts_with(SDK_V2_PREFIX));
-        let payload: serde_json::Value = serde_json::from_str(&decode_v1_payload(&token)).unwrap();
+        let payload: serde_json::Value = serde_json::from_str(&decode_payload(&token)).unwrap();
         assert_eq!(
             payload,
             serde_json::json!({
@@ -787,17 +775,32 @@ mod tests {
     }
 
     #[test]
-    fn query_payload_cannot_use_change_feed_version() {
-        let token = ContinuationToken::from_string(
-            encode_v1_payload(r#"{"op":"Query","rid":"coll_rid","root":{"kind":"request"}}"#)
-                .as_str()
-                .replace(SDK_V1_PREFIX, SDK_V2_PREFIX),
-        );
-        let error = token.resolve().unwrap_err();
-        assert_eq!(
-            error.status(),
-            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH
-        );
+    fn legacy_query_checkpoints_reemit_as_v2_without_changing_payloads() {
+        let operation = query_op();
+        for json in [
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"drained"}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"request"}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"request","server_continuation":"server-token"}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","left_most_undrained_epk":"80","active_tokens":[{"min_epk":"80","max_epk":"FF","server_continuation":"server-token"}]}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"skip_take","remaining_skip":2,"remaining_take":5,"child":{"kind":"request","server_continuation":"server-token"}}}"#,
+        ] {
+            let legacy = encode_v1_payload(json);
+            let ResolvedToken::Client(legacy_state) = legacy.resolve().unwrap() else {
+                panic!("legacy query checkpoint");
+            };
+            legacy_state.is_valid_for_operation(&operation).unwrap();
+            let current = ContinuationToken::encode(&operation, &legacy_state.root).unwrap();
+            assert!(current.as_str().starts_with(SDK_V2_PREFIX));
+            assert_eq!(decode_payload(&current), json);
+            let ResolvedToken::Client(current_state) = current.resolve().unwrap() else {
+                panic!("current query checkpoint");
+            };
+            assert_eq!(current_state, legacy_state);
+            current_state.is_valid_for_operation(&operation).unwrap();
+            assert!(current_state
+                .is_valid_for_operation(&change_feed_op())
+                .is_err());
+        }
     }
 
     #[test]
@@ -874,17 +877,17 @@ mod tests {
     }
 
     #[test]
-    fn encode_v1_records_all_versions_and_deletes_mode() {
+    fn encode_v2_records_all_versions_and_deletes_mode() {
         let token =
             ContinuationToken::encode(&change_feed_avad_op(), &PipelineNodeState::Drained).unwrap();
-        assert!(decode_v1_payload(&token).contains(r#""cfm":true"#));
+        assert!(decode_payload(&token).contains(r#""cfm":true"#));
     }
 
     #[test]
-    fn encode_v1_omits_mode_marker_for_latest_version() {
+    fn encode_v2_omits_mode_marker_for_latest_version() {
         let token =
             ContinuationToken::encode(&change_feed_op(), &PipelineNodeState::Drained).unwrap();
-        assert!(!decode_v1_payload(&token).contains("cfm"));
+        assert!(!decode_payload(&token).contains("cfm"));
     }
 
     // ── Deserialization ─────────────────────────────────────────────────

@@ -256,9 +256,10 @@ checkpoint-owned state. Unpolled LatestVersion `Now` is evaluated at request tim
 not at Open or Checkpoint.
 
 A feed-range handle created from an incomplete hierarchical key selects its
-prefix and fans out across every overlapping physical range. New change-feed
-checkpoints use `c2.`; older drivers reject them rather than discard resume state.
-Query checkpoints remain `c1.`. Legacy change-feed checkpoints remain readable
+prefix and fans out across every overlapping physical range. New query and
+change-feed checkpoints use `c2.`; drivers that only support `c1.` reject them.
+Query checkpoint payloads are unchanged, and legacy `c1.` query checkpoints
+remain readable. Legacy change-feed checkpoints remain readable
 with the following limitations. Older unpolled single-request checkpoints require
 the original start because it wasn't recorded; older prefix checkpoints with a
 single saved ETag are rejected rather than guessing missing per-range positions.

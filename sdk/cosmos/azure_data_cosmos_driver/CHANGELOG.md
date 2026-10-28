@@ -20,7 +20,7 @@
 
 ### Other Changes
 
-- New change-feed checkpoints use `c2.` and cannot be read by older SDKs; query checkpoints remain `c1.`. Supported legacy `c1.` change-feed checkpoints remain readable. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- New query and change-feed checkpoints use `c2.` and cannot be read by SDKs that only support `c1.`. Query checkpoint payloads are unchanged, and supported legacy `c1.` checkpoints remain readable. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 
 ## 1.1.0-beta.1 (2026-10-22)
