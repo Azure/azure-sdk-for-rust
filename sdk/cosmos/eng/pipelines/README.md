@@ -132,6 +132,80 @@ without changing the existing suites. Ordinary emulator, vnext, in-memory,
 and codec-fuzz jobs do not use that resolver and do not enable the live gate.
 Legacy ARM/AAD jobs retain their existing categories.
 
+## vNext emulator conformance
+
+`Cosmos_vnext_emulator` is a Build-only, blocking Linux matrix. It never
+provisions an Azure account or uses live-account credentials. Its independent
+axes are `AZURE_COSMOS_VNEXT_GATEWAY` (`v1`, `v2`) and
+`AZURE_COSMOS_VNEXT_ENCODING` (`text`, `binary`).
+
+The setup helper pins the EN20261008 manifest digest, uses HTTPS, and publishes
+the gateway (8081), readiness (8080), and thin-client (10250) ports on loopback.
+Readiness failure, conflicting credentials, and unowned or mismatched existing
+containers fail setup. One owned container is reused across crates. The final
+CI step prints its identity and logs and removes it even after test failure.
+Local callers must finalize in the same PowerShell process that ran setup.
+
+V1 cells select the existing `emulator_vnext` suite and explicitly disable V2.
+V2 cells select `emulator_vnext_gateway_v2`, which runs focused conformance
+instead of the live-account V2 suite. Binary cells additionally select
+`emulator_vnext_binary`. Both test frameworks honor the selected encoding
+default while preserving explicit test overrides. The original flat/HPK binary
+write regression is active in binary cells.
+
+The SDK `vnext` target requires a local HTTPS endpoint and required test mode.
+It checks actual completed-request transport, point and query response encoding,
+CRUD, patch, hierarchical keys, query results/continuations, and batch
+atomicity. Missing configuration or V1 fallback in a V2 cell fails rather than
+reporting a skipped test as passing. Other emulator, live, and scheduled fuzz
+matrices are unchanged.
+
+Run from the repository root in PowerShell 7:
+
+```powershell
+. ./sdk/cosmos/eng/scripts/CosmosVNext.ps1
+try {
+    Start-CosmosVNext -Gateway v1 -Encoding binary
+    cargo test -p azure_data_cosmos --all-features --test vnext -- --test-threads=1
+    if ($LASTEXITCODE) { throw "vNext conformance failed: $LASTEXITCODE" }
+}
+finally {
+    Complete-CosmosVNext
+}
+```
+
+Change the two arguments to select another cell. Use a fresh shell or clear
+the helper's `RUSTFLAGS` before selecting another cell. For the V1 regression
+suite, run `cargo test -p azure_data_cosmos_driver --all-features --test emulator`
+and the equivalent `azure_data_cosmos` command before finalization. The helper
+uses the standard public emulator key and emulator-only certificate handling;
+do not supply cloud credentials.
+
+Run the setup tests without Docker:
+
+```powershell
+Invoke-Pester -Path sdk/cosmos/eng/scripts/tests/CosmosVNext.Tests.ps1 -CI
+```
+
+### Release compatibility gate
+
+The pinned image is a reproducible baseline, not a claim that these gates are
+green. On ARM64, its HTTPS/HTTP2 thin-client listener returns 400 for an empty
+`POST /connectivity-probe`, including when the `ConnectivityProbe` operation
+header is supplied. Rust therefore correctly falls back to V1; the V2 tests
+must remain red until a compatible image is available. Do not bypass the probe
+or weaken the transport assertion.
+
+The same image returns all four matching rows without a continuation for an
+ordered query with a page-size hint of two. The separate ordered-pagination
+gate exposes that missing coverage. Unordered continuation/resume, batch
+atomicity (with content responses enabled), and point/query encoding checks
+pass in both V1 encoding cells.
+
+Before merging, update the pinned digest to a verified release if needed and
+obtain green results for every cell on the CI platform. Keep limitations
+documented instead of turning a required scenario into a silent skip.
+
 ## Adding or rotating an account
 
 See `account-provisioning/README.md`.

@@ -115,6 +115,7 @@ extends:
       # deploy Azure resources, or replace live-test credentials with local
       # endpoints.
       - Name: Cosmos_vnext_emulator
+        # Four blocking transport/encoding cells; V2 requires real proxy traffic.
         Path: sdk/cosmos/vnext-emulator-matrix.json
         Selection: all
         GenerateVMJobs: true
