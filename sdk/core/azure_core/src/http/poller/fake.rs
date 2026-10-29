@@ -32,7 +32,7 @@ mod tests {
     use super::with_state;
     use crate::{
         http::{
-            fake::json_response,
+            fake::ResponseExt as _,
             headers::Headers,
             poller::{
                 PollerContinuation, PollerOptions, PollerResult, PollerState, PollerStatus,
@@ -60,16 +60,13 @@ mod tests {
     }
 
     async fn response(status: &str) -> Result<Response<Monitor>> {
-        Ok(json_response(
+        Response::fake_with_model(
             StatusCode::Ok,
             Headers::new(),
-            &Monitor {
+            Monitor {
                 status: status.into(),
             },
-        )?
-        .try_into_raw_response()
-        .await?
-        .into())
+        )
     }
 
     #[tokio::test]

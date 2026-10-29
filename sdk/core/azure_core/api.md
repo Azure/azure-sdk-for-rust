@@ -1006,11 +1006,25 @@ pub mod http {
     pub static DEFAULT_ALLOWED_QUERY_PARAMETERS: std::sync::LazyLock<std::collections::HashSet<std::borrow::Cow<'static, str>>> = _;
     #[cfg(feature = "test")]
     pub mod fake {
-        pub fn json_response<T: Serialize>(status: crate::http::StatusCode, headers: crate::http::headers::Headers, model: &T) -> crate::Result<crate::http::AsyncRawResponse>;
         #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-        pub struct ApiName(pub String);
+        pub struct ApiName(/* private fields */);
         impl AsRef<str> for ApiName {
             fn as_ref(&self) -> &str;
+        }
+        impl From<String> for ApiName {
+            fn from(value: String) -> Self;
+        }
+        impl FromStr for ApiName {
+            type Err = Infallible;
+            fn from_str(value: &str) -> std::result::Result<Self, <Self as >::Err>;
+        }
+        pub trait AsyncResponseExt: ResponseExt {
+            fn fake_with_stream(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self;
+        }
+        pub trait ResponseExt: Sized {
+            fn fake_with_bytes<impl Into<Bytes>: Into<Bytes>>(status: StatusCode, headers: Headers, bytes: impl Into<Bytes>) -> Self;
+            fn fake_with_error(status: StatusCode, headers: Headers, code: &str, message: &str) -> Result<Self>;
+            fn fake_with_model<T: Serialize>(status: StatusCode, headers: Headers, model: T) -> Result<Self>;
         }
     }
     pub mod headers {

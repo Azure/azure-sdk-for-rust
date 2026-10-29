@@ -205,6 +205,9 @@ while let Some(secret) = pager.try_next().await? {
 Enable the crate `test` feature in your test dependencies:
 
 ```toml
+[dependencies]
+azure_security_keyvault_secrets = "1"
+
 [dev-dependencies]
 azure_core = { version = "1", features = ["test"] }
 azure_security_keyvault_secrets = { version = "1", features = ["test"] }
@@ -216,7 +219,7 @@ Then implement just the fake server operations your test needs:
 
 ```rust ignore testing_with_fakes
 use azure_core::{
-    http::{fake::json_response, headers::Headers, AsyncRawResponse, StatusCode},
+    http::{fake::ResponseExt as _, headers::Headers, AsyncRawResponse, StatusCode},
     Result,
 };
 use azure_security_keyvault_secrets::{
@@ -239,11 +242,11 @@ impl SecretServer for FakeSecretServer {
         assert_eq!(secret_name, "my-secret");
         let mut secret = Secret::default();
         secret.value = Some("fake value".to_string());
-        json_response(StatusCode::Ok, Headers::new(), &secret)
+        AsyncRawResponse::fake_with_model(StatusCode::Ok, Headers::new(), secret)
     }
 }
 
-let client = SecretClient::new_fake(
+let client = SecretClient::with_fake(
     "https://my-vault.vault.azure.net",
     Arc::new(FakeSecretServer),
     None,
@@ -253,7 +256,7 @@ assert_eq!(secret.value.as_deref(), Some("fake value"));
 ```
 
 For fields marked read-only in generated models, serialization may omit them (`skip_serializing`).
-Use `AsyncRawResponse::from_bytes` with raw JSON if a test must return those fields.
+Use `AsyncRawResponse::fake_with_bytes()` with raw JSON if a test must return those fields.
 
 ## Troubleshooting
 

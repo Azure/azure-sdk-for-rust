@@ -64,12 +64,12 @@ pub mod clients {
             pub fn list_secret_properties(&self, options: Option<SecretClientListSecretPropertiesOptions<'_>>) -> Result<Pager<ListSecretPropertiesResult>>;
             pub fn list_secret_properties_versions(&self, secret_name: &str, options: Option<SecretClientListSecretPropertiesVersionsOptions<'_>>) -> Result<Pager<ListSecretPropertiesResult>>;
             pub fn new(endpoint: &str, credential: Arc<dyn azure_core::credentials::TokenCredential>, options: Option<SecretClientOptions>) -> Result<Self>;
-            pub fn new_fake<T>(endpoint: &str, server: Arc<T>, options: Option<SecretClientOptions>) -> Result<Self> where T: SecretServer + ?Sized + 'static;
             pub async fn purge_deleted_secret(&self, secret_name: &str, options: Option<SecretClientPurgeDeletedSecretOptions<'_>>) -> Result<Response<(), NoFormat>>;
             pub async fn recover_deleted_secret(&self, secret_name: &str, options: Option<SecretClientRecoverDeletedSecretOptions<'_>>) -> Result<Response<Secret>>;
             pub async fn restore_secret(&self, parameters: RequestContent<RestoreSecretParameters>, options: Option<SecretClientRestoreSecretOptions<'_>>) -> Result<Response<Secret>>;
             pub async fn set_secret(&self, secret_name: &str, parameters: RequestContent<SetSecretParameters>, options: Option<SecretClientSetSecretOptions<'_>>) -> Result<Response<Secret>>;
             pub async fn update_secret_properties(&self, secret_name: &str, parameters: RequestContent<UpdateSecretPropertiesParameters>, options: Option<SecretClientUpdateSecretPropertiesOptions<'_>>) -> Result<Response<Secret>>;
+            pub fn with_fake<T>(endpoint: &str, server: Arc<T>, options: Option<SecretClientOptions>) -> Result<Self> where T: SecretServer + ?Sized + 'static;
         }
         pub struct SecretServerTransport<T: SecretServer + ?Sized> {
         }
