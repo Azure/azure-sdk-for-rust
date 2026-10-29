@@ -11,6 +11,8 @@
 - Added `http::poller::resource_manager::{new_poller, PollerOptions, FinalStateVia}` behind the `resource_manager` feature for Resource Manager polling with optional final-state selection, method- and response-based fallbacks, and a callback for inline operation-location results.
 - `Error` now captures a `std::backtrace::Backtrace` at construction time and includes it in `Debug` output (e.g., `{:?}`) when `RUST_BACKTRACE=1` is set.
 
+- Added `test`-gated fake response helpers and pager/poller state propagation for testing client libraries without network requests.
+
 ### Breaking Changes
 
 ### Bugs Fixed

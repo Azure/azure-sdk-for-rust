@@ -58,6 +58,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 - `reqwest_gzip` (default): enables gzip compression for `reqwest`.
 - `reqwest_rustls` (default): enables `reqwest`'s `rustls` feature, which uses `aws-lc-rs`.
 - `resource_manager`: enables features specific to Azure Resource Manager.
+- `test`: enables fake server helpers for testing client libraries without calling Azure.
 - `tokio` (default): enables and sets `tokio` as the default async runtime.
 - `xml`: enables XML support.
 
@@ -541,6 +542,71 @@ set_async_runtime(Arc::new(CustomRuntime)).expect("failed to set async runtime")
 ```
 
 There can only be one async runtime set in a given process, so attempts to set the async runtime multiple times will fail.
+
+### Testing with fakes
+
+Client libraries that provide a `clients::fake` module let you test application code without credentials or network requests.
+Enable the client library's `test` feature in your test dependencies. This also enables `azure_core/test`:
+
+```toml
+[dev-dependencies]
+azure_core = { version = "1", features = ["test"] }
+azure_security_keyvault_secrets = { version = "1", features = ["test"] }
+async-trait = "0.1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+```
+
+Implement only the server operations your test calls. Other operations panic with `unimplemented!()` by default.
+For example, return a model from a fake Key Vault secrets server:
+
+```rust ignore fakes
+use azure_core::{
+    http::{fake::json_response, headers::Headers, AsyncRawResponse, StatusCode},
+    Result,
+};
+use azure_security_keyvault_secrets::{
+    clients::fake::SecretServer,
+    models::{Secret, SecretClientGetSecretOptions},
+    SecretClient,
+};
+use std::sync::Arc;
+
+#[derive(Debug)]
+struct MySecretServer;
+
+#[async_trait::async_trait]
+impl SecretServer for MySecretServer {
+    async fn get_secret(
+        &self,
+        secret_name: &str,
+        _options: Option<SecretClientGetSecretOptions<'_>>,
+    ) -> Result<AsyncRawResponse> {
+        assert_eq!(secret_name, "my-secret");
+        let secret = Secret {
+            value: Some("fake value".into()),
+            ..Default::default()
+        };
+        json_response(StatusCode::Ok, Headers::new(), &secret)
+    }
+}
+
+# async fn example() -> Result<()> {
+let client = SecretClient::new_fake(
+    "https://my-vault.vault.azure.net",
+    Arc::new(MySecretServer),
+    None,
+)?;
+let secret = client.get_secret("my-secret", None).await?.into_model()?;
+assert_eq!(secret.value.as_deref(), Some("fake value"));
+# Ok(())
+# }
+```
+
+Server methods return `AsyncRawResponse`, so tests can also return raw bytes with
+`AsyncRawResponse::from_bytes()` or a stream with `AsyncRawResponse::new()`.
+Use these constructors to test error responses or payloads that can't be represented by a model.
+Fake pageable operations receive `PagerState` so they can return different responses for the initial page and continuation requests.
+Polling callbacks likewise pass `PollerState` through the request context, including continuation information.
 
 ## Troubleshooting
 

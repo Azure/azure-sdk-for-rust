@@ -1004,6 +1004,15 @@ pub mod http {
     pub const REDACTED_PATTERN: &str = "REDACTED";
     pub static DEFAULT_ALLOWED_HEADER_NAMES: std::sync::LazyLock<std::collections::HashSet<std::borrow::Cow<'static, str>>> = _;
     pub static DEFAULT_ALLOWED_QUERY_PARAMETERS: std::sync::LazyLock<std::collections::HashSet<std::borrow::Cow<'static, str>>> = _;
+    #[cfg(feature = "test")]
+    pub mod fake {
+        pub fn json_response<T: Serialize>(status: crate::http::StatusCode, headers: crate::http::headers::Headers, model: &T) -> crate::Result<crate::http::AsyncRawResponse>;
+        #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+        pub struct ApiName(pub String);
+        impl AsRef<str> for ApiName {
+            fn as_ref(&self) -> &str;
+        }
+    }
     pub mod headers {
         #[derive(Clone, Debug, Eq, Ord, PartialOrd)]
         pub struct HeaderName {
@@ -1208,6 +1217,10 @@ pub mod http {
         }
         pub type Pager<P, F = crate::http::JsonFormat> = ItemIterator<crate::http::response::Response<P, F>>;
         pub type PagerResultFuture<P> = std::pin::Pin<Box<dyn Future<Output = crate::Result<PagerResult<P>>> + Send + 'static>>;
+        #[cfg(feature = "test")]
+        pub mod fake {
+            pub fn with_state<P, F>(make_request: F) -> impl Fn(crate::http::pager::PagerState, crate::http::pager::PagerOptions<'static>) -> crate::http::pager::PagerResultFuture<P> + Send + 'static where F: Fn(crate::http::pager::PagerState, crate::http::pager::PagerOptions<'static>) -> crate::http::pager::PagerResultFuture<P> + Send + 'static;
+        }
     }
     pub mod policies {
         pub fn create_public_api_span(ctx: &crate::http::Context<'_>, tracer: Option<std::sync::Arc<dyn Tracer>>, public_api_instrumentation: Option<PublicApiInstrumentationInformation>) -> Option<std::sync::Arc<dyn Span>>;
@@ -1386,6 +1399,10 @@ pub mod http {
             fn status(&self) -> PollerStatus;
         }
         pub type PollerResultFuture<M, F> = std::pin::Pin<Box<dyn Future<Output = crate::Result<super::PollerResult<M, F>>> + Send + 'static>>;
+        #[cfg(feature = "test")]
+        pub mod fake {
+            pub fn with_state<M, F, C>(make_request: C) -> impl Fn(crate::http::poller::PollerState, crate::http::poller::PollerOptions<'static>) -> crate::http::poller::PollerResultFuture<M, F> + Send + 'static where M: StatusMonitor, F: Format, C: Fn(crate::http::poller::PollerState, crate::http::poller::PollerOptions<'static>) -> crate::http::poller::PollerResultFuture<M, F> + Send + 'static;
+        }
         #[cfg(feature = "resource_manager")]
         pub mod resource_manager {
             pub fn new_poller<'a, M>(pipeline: crate::http::Pipeline, request: crate::http::Request, final_state_via: Option<FinalStateVia<M>>, options: Option<PollerOptions<'a>>) -> crate::http::Poller<M> where M: StatusMonitor + DeserializeOwned + Send + 'static, <M as >::Output: DeserializeOwned + Send + 'static, <M as >::Format: Send + 'static;
