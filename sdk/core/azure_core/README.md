@@ -60,6 +60,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 - `resource_manager`: enables features specific to Azure Resource Manager.
 - `test`: enables fake server helpers for testing client libraries without calling Azure.
 - `tokio` (default): enables and sets `tokio` as the default async runtime.
+- `unstable_fake`: enables experimental fake server helpers and the `test` feature. These APIs are subject to change.
 - `xml`: enables XML support.
 
 ### Enabling dependencies' features
@@ -546,15 +547,17 @@ There can only be one async runtime set in a given process, so attempts to set t
 ### Testing with fakes
 
 Client libraries that provide a `clients::fake` module let you test application code without credentials or network requests.
-Enable the client library's `test` feature in your test dependencies. This also enables `azure_core/test`:
+Enable the client library's `test` and `unstable_fake` features in your test dependencies.
+`unstable_fake` enables `test` automatically, but both are shown explicitly below.
+The fake APIs are experimental and subject to change:
 
 ```toml
 [dependencies]
 azure_security_keyvault_secrets = "1"
 
 [dev-dependencies]
-azure_core = { version = "1", features = ["test"] }
-azure_security_keyvault_secrets = { version = "1", features = ["test"] }
+azure_core = { version = "1", features = ["test", "unstable_fake"] }
+azure_security_keyvault_secrets = { version = "1", features = ["test", "unstable_fake"] }
 async-trait = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
@@ -585,12 +588,11 @@ impl SecretServer for MySecretServer {
         _options: Option<SecretClientGetSecretOptions<'_>>,
     ) -> Result<AsyncRawResponse> {
         if secret_name != "my-secret" {
-            return AsyncRawResponse::fake_with_error(
+            return Ok(AsyncRawResponse::fake_with_bytes(
                 StatusCode::NotFound,
                 Headers::new(),
-                "SecretNotFound",
-                "The secret was not found.",
-            );
+                r#"{"error":{"code":"SecretNotFound","message":"The secret was not found."}}"#,
+            ));
         }
         let mut secret = Secret::default();
         secret.value = Some("fake value".into());
@@ -617,11 +619,13 @@ Use `new()` with credentials for Azure, or `with_fake()` with a fake server for 
 `with_fake()` returns an error if the supplied client options already specify a transport.
 
 Import `azure_core::http::fake::ResponseExt` to create responses with
-`fake_with_model()`, `fake_with_bytes()`, or `fake_with_error()`.
+`fake_with_model()` or `fake_with_bytes()`.
 These methods extend `Response`, `RawResponse`, `AsyncResponse`, and `AsyncRawResponse`.
 For streamed bodies, import `azure_core::http::fake::AsyncResponseExt` and use
 `AsyncRawResponse::fake_with_stream()` or `AsyncResponse::fake_with_stream()`.
 Use raw bytes or streams for payloads that can't be represented by a model.
+For Azure error responses, supply an error status and a JSON `error` object containing
+`code` and `message`, as shown above.
 Fake pageable operations receive `PagerState` so they can return different responses for the initial page and continuation requests.
 Polling callbacks likewise pass `PollerState` through the request context, including continuation information.
 

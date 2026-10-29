@@ -34,6 +34,11 @@
 pub use bytes::Bytes;
 pub use uuid::Uuid;
 pub use serde_json::value::Value;
+#[cfg(all(feature = "test", feature = "unstable_fake"))]
+#[macro_export]
+macro_rules! operation_name {
+    ($name:expr, $options:expr $(,)?) => { ... };
+}
 #[macro_export]
 macro_rules! request_header {
     ($(#[$outer:meta])* $name:ident, $header:ident) => { ... };
@@ -407,6 +412,7 @@ pub mod http {
     pub use azure_core::http::poller::Poller;
     pub use url::Url;
     pub use azure_core::error::error_response::check_success;
+    pub use azure_core::operation_name;
     #[cfg_attr(not(feature = "reqwest"), allow(unused_variables))]
     pub fn new_http_client(options: Option<HttpClientOptions>) -> std::sync::Arc<dyn HttpClient>;
     #[derive(Debug)]
@@ -1004,26 +1010,22 @@ pub mod http {
     pub const REDACTED_PATTERN: &str = "REDACTED";
     pub static DEFAULT_ALLOWED_HEADER_NAMES: std::sync::LazyLock<std::collections::HashSet<std::borrow::Cow<'static, str>>> = _;
     pub static DEFAULT_ALLOWED_QUERY_PARAMETERS: std::sync::LazyLock<std::collections::HashSet<std::borrow::Cow<'static, str>>> = _;
-    #[cfg(feature = "test")]
+    #[cfg(all(feature = "test", feature = "unstable_fake"))]
     pub mod fake {
-        #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+        pub fn operation_name(name: &'static str, context: &mut crate::http::Context<'_>);
+        #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
         pub struct ApiName(/* private fields */);
         impl AsRef<str> for ApiName {
             fn as_ref(&self) -> &str;
         }
-        impl From<String> for ApiName {
-            fn from(value: String) -> Self;
-        }
-        impl FromStr for ApiName {
-            type Err = Infallible;
-            fn from_str(value: &str) -> std::result::Result<Self, <Self as >::Err>;
+        impl From<&'static str> for ApiName {
+            fn from(value: &'static str) -> Self;
         }
         pub trait AsyncResponseExt: ResponseExt {
             fn fake_with_stream(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self;
         }
         pub trait ResponseExt: Sized {
             fn fake_with_bytes<impl Into<Bytes>: Into<Bytes>>(status: StatusCode, headers: Headers, bytes: impl Into<Bytes>) -> Self;
-            fn fake_with_error(status: StatusCode, headers: Headers, code: &str, message: &str) -> Result<Self>;
             fn fake_with_model<T: Serialize>(status: StatusCode, headers: Headers, model: T) -> Result<Self>;
         }
     }
@@ -1231,7 +1233,7 @@ pub mod http {
         }
         pub type Pager<P, F = crate::http::JsonFormat> = ItemIterator<crate::http::response::Response<P, F>>;
         pub type PagerResultFuture<P> = std::pin::Pin<Box<dyn Future<Output = crate::Result<PagerResult<P>>> + Send + 'static>>;
-        #[cfg(feature = "test")]
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
         pub mod fake {
             pub fn with_state<P, F>(make_request: F) -> impl Fn(crate::http::pager::PagerState, crate::http::pager::PagerOptions<'static>) -> crate::http::pager::PagerResultFuture<P> + Send + 'static where F: Fn(crate::http::pager::PagerState, crate::http::pager::PagerOptions<'static>) -> crate::http::pager::PagerResultFuture<P> + Send + 'static;
         }
@@ -1413,7 +1415,7 @@ pub mod http {
             fn status(&self) -> PollerStatus;
         }
         pub type PollerResultFuture<M, F> = std::pin::Pin<Box<dyn Future<Output = crate::Result<super::PollerResult<M, F>>> + Send + 'static>>;
-        #[cfg(feature = "test")]
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
         pub mod fake {
             pub fn with_state<M, F, C>(make_request: C) -> impl Fn(crate::http::poller::PollerState, crate::http::poller::PollerOptions<'static>) -> crate::http::poller::PollerResultFuture<M, F> + Send + 'static where M: StatusMonitor, F: Format, C: Fn(crate::http::poller::PollerState, crate::http::poller::PollerOptions<'static>) -> crate::http::poller::PollerResultFuture<M, F> + Send + 'static;
         }

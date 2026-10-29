@@ -16,7 +16,8 @@ exclude.workspace = true
 
 [features]
 default = ["azure_core/default"]
-test = ["azure_core/test", "dep:percent-encoding"]
+test = ["azure_core/test"]
+unstable_fake = ["test", "azure_core/unstable_fake", "dep:percent-encoding"]
 
 [dependencies]
 async-lock = { workspace = true }

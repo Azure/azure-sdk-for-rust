@@ -6,7 +6,7 @@
 #[cfg(feature = "resource_manager")]
 pub mod resource_manager;
 
-#[cfg(feature = "test")]
+#[cfg(all(feature = "test", feature = "unstable_fake"))]
 pub mod fake;
 
 use crate::{
@@ -477,7 +477,7 @@ where
         Fun: Fn(PollerState, PollerOptions<'static>) -> PollerResultFuture<M, F> + Send + 'static,
     {
         let options = options.unwrap_or_default();
-        #[cfg(feature = "test")]
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
         let make_request = fake::with_state(make_request);
         let (stream, target) = create_poller_stream(make_request, options);
         Self {

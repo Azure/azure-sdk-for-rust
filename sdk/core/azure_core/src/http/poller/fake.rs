@@ -11,7 +11,7 @@ use crate::http::{
 /// Wraps a polling callback to include its state in the request context.
 ///
 /// [`Poller::new()`](crate::http::Poller::new) applies this automatically when the
-/// `test` feature is enabled. A fake server can read the current [`PollerState`]
+/// `test` and `unstable_fake` features are enabled. A fake server can read the current [`PollerState`]
 /// from the context and return a raw response for each polling request.
 pub fn with_state<M, F, C>(
     make_request: C,

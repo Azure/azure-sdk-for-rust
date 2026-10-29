@@ -59,7 +59,7 @@ async fn reqwest_hang() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[cfg(feature = "test")]
+#[cfg(all(feature = "test", feature = "unstable_fake"))]
 mod fakes {
     use include_file::include_markdown;
 

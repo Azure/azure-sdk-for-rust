@@ -3,48 +3,48 @@
 
 //! Helpers for testing client libraries with fake servers.
 //!
-//! Enable the client library's `test` feature to use its `clients::fake` module.
+//! Enable the client library's `test` and `unstable_fake` features to use its
+//! experimental `clients::fake` module.
 //! Fake servers return an [`AsyncRawResponse`], allowing tests to control the status,
 //! headers, and body. Import [`ResponseExt`] to create responses from models or
 //! bytes, and [`AsyncResponseExt`] to create responses from streams.
 
 use crate::{
     http::{
-        headers::{Headers, CONTENT_TYPE, ERROR_CODE},
+        headers::{Headers, CONTENT_TYPE},
         response::PinnedStream,
-        AsyncRawResponse, AsyncResponse, RawResponse, Response, StatusCode,
+        AsyncRawResponse, AsyncResponse, Context, RawResponse, Response, StatusCode,
     },
     json, Bytes, Result,
 };
 use serde::Serialize;
-use std::{convert::Infallible, str::FromStr};
 
 /// Identifies the client operation being sent through the HTTP pipeline.
 ///
 /// Client libraries insert the TypeSpec operation name into the request
-/// [`Context`](crate::http::Context) when their `test` feature is enabled.
+/// [`Context`] when their `test` and `unstable_fake` features are enabled.
 /// Fake servers use this value for routing independently of tracing.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct ApiName(String);
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct ApiName(&'static str);
 
-impl From<String> for ApiName {
-    fn from(value: String) -> Self {
+impl From<&'static str> for ApiName {
+    fn from(value: &'static str) -> Self {
         Self(value)
-    }
-}
-
-impl FromStr for ApiName {
-    type Err = Infallible;
-
-    fn from_str(value: &str) -> std::result::Result<Self, Self::Err> {
-        Ok(Self(value.to_owned()))
     }
 }
 
 impl AsRef<str> for ApiName {
     fn as_ref(&self) -> &str {
-        &self.0
+        self.0
     }
+}
+
+/// Adds an operation name to the request context for fake server routing.
+///
+/// Prefer [`operation_name!`](crate::http::operation_name) when writing client
+/// operations so the call is a no-op unless fake support is enabled.
+pub fn operation_name(name: &'static str, context: &mut Context<'_>) {
+    context.insert(ApiName::from(name));
 }
 
 /// Extension methods for creating fake HTTP responses.
@@ -75,28 +75,6 @@ pub trait ResponseExt: Sized {
             headers.insert(CONTENT_TYPE, "application/json");
         }
         Ok(Self::fake_with_bytes(status, headers, body))
-    }
-
-    /// Creates a fake Azure error response with an error code and message.
-    ///
-    /// Sets `x-ms-error-code` to `code` and serializes the code and message inside
-    /// a JSON `error` object. Adds `content-type: application/json` if absent.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the error body cannot be serialized as JSON.
-    fn fake_with_error(
-        status: StatusCode,
-        mut headers: Headers,
-        code: &str,
-        message: &str,
-    ) -> Result<Self> {
-        headers.insert(ERROR_CODE, code.to_owned());
-        Self::fake_with_model(
-            status,
-            headers,
-            serde_json::json!({"error": {"code": code, "message": message}}),
-        )
     }
 }
 
@@ -151,7 +129,9 @@ mod tests {
         error::{check_success, ErrorKind, ErrorResponse},
         http::{
             headers::{HeaderName, Headers, CONTENT_TYPE, ERROR_CODE},
-            AsyncRawResponse, AsyncResponse, Context, RawResponse, Response, StatusCode,
+            pager::PagerOptions,
+            AsyncRawResponse, AsyncResponse, ClientMethodOptions, Context, RawResponse, Response,
+            StatusCode,
         },
         json, Bytes, Error, Result,
     };
@@ -160,12 +140,30 @@ mod tests {
 
     #[test]
     fn api_name_in_context() {
-        let name = ApiName::from("KeyVault.getSecret".to_owned());
-        assert_eq!("KeyVault.getSecret".parse::<ApiName>().unwrap(), name);
-        let context = Context::new().with_value(name.clone());
+        let name = ApiName::from("KeyVault.getSecret");
+        let context = Context::new().with_value(name);
         assert_eq!(context.value::<ApiName>(), Some(&name));
         assert_eq!(name.as_ref(), "KeyVault.getSecret");
-        assert!(HashSet::from([name.clone()]).contains(&name));
+        assert!(HashSet::from([name]).contains(&name));
+    }
+
+    #[test]
+    fn operation_name_supports_method_and_pager_options() {
+        let mut options = ClientMethodOptions {
+            context: Context::new().with_value(42u32),
+        };
+        crate::http::operation_name!("KeyVault.getSecret", &mut options);
+        assert_eq!(
+            options.context.value::<ApiName>(),
+            Some(&ApiName::from("KeyVault.getSecret"))
+        );
+        assert_eq!(options.context.value::<u32>(), Some(&42));
+        let mut options = PagerOptions::default();
+        crate::http::operation_name!("KeyVault.getSecrets", &mut options);
+        assert_eq!(
+            options.context.value::<ApiName>(),
+            Some(&ApiName::from("KeyVault.getSecrets"))
+        );
     }
 
     #[tokio::test]
@@ -248,12 +246,11 @@ mod tests {
         let message = "A \"secret\" was not found.\nTry another name.";
         let mut headers = Headers::new();
         headers.insert("x-test", "example");
-        headers.insert(ERROR_CODE, "replaced");
-        let response = AsyncRawResponse::fake_with_error(
+        headers.insert(ERROR_CODE, "SecretNotFound");
+        let response = AsyncRawResponse::fake_with_model(
             StatusCode::NotFound,
             headers,
-            "SecretNotFound",
-            message,
+            serde_json::json!({"error": {"code": "SecretNotFound", "message": message}}),
         )?;
         assert_eq!(response.headers().get_str(&ERROR_CODE)?, "SecretNotFound");
         assert_eq!(

@@ -3,7 +3,7 @@
 
 //! Types and methods for pageable responses.
 
-#[cfg(feature = "test")]
+#[cfg(all(feature = "test", feature = "unstable_fake"))]
 pub mod fake;
 
 use crate::{
@@ -743,9 +743,9 @@ where
             .map_or_else(|| State::Init, |_| State::More);
 
         Self {
-            #[cfg(feature = "test")]
+            #[cfg(all(feature = "test", feature = "unstable_fake"))]
             make_request: Box::new(fake::with_state(make_request)),
-            #[cfg(not(feature = "test"))]
+            #[cfg(not(all(feature = "test", feature = "unstable_fake")))]
             make_request: Box::new(make_request),
             options,
             state,
