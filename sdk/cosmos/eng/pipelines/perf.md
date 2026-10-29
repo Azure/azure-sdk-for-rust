@@ -17,11 +17,15 @@ resources. The initial
 measurements until a reviewed baseline is configured, without reporting a
 performance-gate pass. Confirm these prerequisites:
 
-1. Verify the existing Gateway V2 account referenced by
-   `thinclient-test-endpoint` / `thinclient-test-key` in
+1. Verify the dedicated Gateway V2 perf account referenced by
+   `cosmos-rust-perf-endpoint` / `cosmos-rust-perf-key` in
    `Test Secrets for Cosmos Live Tests - user administered`. These are the only
    Azure credentials needed. Do not use the unrelated `rust-ci` fixed-account
-   catalog or create another account. Single- and multi-region accounts are
+   catalog or repoint the functional `thinclient-test-*` credentials.
+   Both perf secrets must exist in `TestSecrets-Cosmos` and be selected in the
+   Key Vault mapping for variable group **96**; creating secrets alone does not
+   add them to the group. A variable-group administrator must add that mapping.
+   Single- and multi-region accounts are
    supported, provided the agent's region is advertised for both reads and writes.
 2. Authorize the pipeline to use the existing Linux perf pool.
    `PerfPool` defaults to `azsdk-pool-mms-ubuntu-2204-perf`, using its
@@ -29,7 +33,9 @@ performance-gate pass. Confirm these prerequisites:
    profile's VM SKU; preflight fails on a mismatch instead of accepting noisy
    or cross-region measurements. An alternate existing pool can be supplied
    through `PerfPool` only if it satisfies the same checks.
-   The initial profile proposes `Standard_D8s_v5`, Session consistency, three
+   The profile pins `Standard_D4ads_v5`, matching the perf pool's configured SKU
+   override; IMDS still verifies the actual agent SKU before the run.
+   It uses Session consistency, three
    containers at 10,000 RU/s each, 1,000 reference documents, 1,024-byte payload
    fields, and four workers per operation. These are calibration inputs, not
    established production baselines. Review capacity/cost and adjust the profile
@@ -56,6 +62,25 @@ performance-gate pass. Confirm these prerequisites:
 Onboarding checks and approvals are external ADO/Azure configuration, not YAML
 settings that can be validated locally. Do not claim the gate is operational
 until a real run has demonstrated them.
+
+### Dedicated account and credential rotation
+
+The initial dedicated account is `f380-rust-perf-tc-session`, in resource group
+`sdk-ci`, subscription `47838f41-2d71-40a5-b179-b72bfd3ba801`, ephemeral tenant
+`f380f97b-b881-4503-9280-1e1418e4991e`. It has Session consistency and one
+read/write region, West US, colocated with the existing SDK perf pool.
+
+Its endpoint is `https://f380-rust-perf-tc-session.documents.azure.com:443/`.
+Authenticated discovery must advertise West US in both `thinClientReadableLocations`
+and `thinClientWritableLocations`; the workload's point-read probe additionally
+verifies actual Gateway V2 transport. DNS or ARM provisioning status alone is
+not sufficient proof of readiness.
+
+When rotating this account, update only `cosmos-rust-perf-endpoint` and
+`cosmos-rust-perf-key` in `TestSecrets-Cosmos` with the verified replacement.
+Never put the account key in this repository or reuse the functional-test secret
+names. Each perf invocation continues to create and remove only its own database
+and containers, not the dedicated account.
 
 ## Calibration and execution
 

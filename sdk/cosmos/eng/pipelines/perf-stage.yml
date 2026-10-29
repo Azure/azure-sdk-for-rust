@@ -58,8 +58,8 @@ stages:
         COSMOS_PERF_BASELINE_COMMIT: $(cosmos-perf-baseline-commit)
         COSMOS_PERF_CALIBRATE: ${{ parameters.Calibrate }}
         COSMOS_PERF_WEEKLY: ${{ parameters.Weekly }}
-        AZURE_COSMOS_ENDPOINT: $(thinclient-test-endpoint)
-        AZURE_COSMOS_KEY: $(thinclient-test-key)
+        AZURE_COSMOS_ENDPOINT: $(cosmos-rust-perf-endpoint)
+        AZURE_COSMOS_KEY: $(cosmos-rust-perf-key)
     - pwsh: |
         . ./eng/common/scripts/common.ps1
         . ./eng/scripts/shared/common.ps1
@@ -72,8 +72,8 @@ stages:
         filePath: sdk/cosmos/eng/pipelines/run-cosmos-perf.ps1
       env:
         COSMOS_PERF_OUTPUT: $(PerfOutput)
-        AZURE_COSMOS_ENDPOINT: $(thinclient-test-endpoint)
-        AZURE_COSMOS_KEY: $(thinclient-test-key)
+        AZURE_COSMOS_ENDPOINT: $(cosmos-rust-perf-endpoint)
+        AZURE_COSMOS_KEY: $(cosmos-rust-perf-key)
     - task: PowerShell@2
       displayName: Clean up this run's benchmark database
       condition: always()
@@ -82,8 +82,8 @@ stages:
         filePath: sdk/cosmos/eng/pipelines/cleanup-cosmos-perf.ps1
       env:
         COSMOS_PERF_OUTPUT: $(PerfOutput)
-        AZURE_COSMOS_ENDPOINT: $(thinclient-test-endpoint)
-        AZURE_COSMOS_KEY: $(thinclient-test-key)
+        AZURE_COSMOS_ENDPOINT: $(cosmos-rust-perf-endpoint)
+        AZURE_COSMOS_KEY: $(cosmos-rust-perf-key)
     - task: 1ES.PublishPipelineArtifact@1
       displayName: Publish performance evidence
       condition: always()

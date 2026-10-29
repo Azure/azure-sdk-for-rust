@@ -151,8 +151,9 @@ baseline is configured, it collects calibration results and reports
 the pinned baseline automatically. Unrelated build or live-test failures do not
 skip performance measurements, but missing runner/account prerequisites still fail.
 
-The job uses the existing SDK Linux perf pool and existing Gateway V2 account
-key; no Azure management-plane service connection is required. Each run creates
+The job uses the existing SDK Linux perf pool and a dedicated Gateway V2 perf
+account through `cosmos-rust-perf-endpoint` / `cosmos-rust-perf-key`; functional-test
+credentials are unchanged. No Azure management-plane service connection is required. Each run creates
 and cleans up a fresh database containing isolated workload containers, never
 the fixed account itself. Preflight verifies the allocated agent's region and
 VM SKU rather than assuming the shared pool is colocated. Multi-region accounts

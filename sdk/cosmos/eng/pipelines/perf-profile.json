@@ -8,7 +8,7 @@
   "payload_bytes": 1024,
   "throughput_per_container": 10000,
   "max_pages": 4,
-  "vm_size": "Standard_D8s_v5",
+  "vm_size": "Standard_D4ads_v5",
   "consistency": "Session",
   "operations": [
     { "operation": "ReadItem", "workers": 4 },

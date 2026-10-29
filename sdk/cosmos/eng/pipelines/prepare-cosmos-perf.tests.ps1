@@ -78,6 +78,27 @@ foreach ($file in $files) {
 }
 Write-Host 'PASS: all performance scripts parse'
 
+$stageYaml = Get-Content -Raw ([System.IO.Path]::Combine($PSScriptRoot, 'perf-stage.yml'))
+foreach ($mapping in @(
+    'AZURE_COSMOS_ENDPOINT: $(cosmos-rust-perf-endpoint)',
+    'AZURE_COSMOS_KEY: $(cosmos-rust-perf-key)'
+)) {
+    if ([regex]::Matches($stageYaml, [regex]::Escape($mapping)).Count -ne 3) {
+        throw "Preflight, workload, and cleanup must all use the dedicated perf mapping: $mapping"
+    }
+}
+if ($stageYaml.Contains('$(thinclient-test-')) {
+    throw 'The perf stage must not consume functional-test account credentials.'
+}
+$ciYaml = Get-Content -Raw ([System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'ci.yml'))
+foreach ($mapping in @(
+    'AZURE_COSMOS_GW_V2_ENDPOINT: $(thinclient-test-endpoint)',
+    'AZURE_COSMOS_GW_V2_KEY: $(thinclient-test-key)'
+)) {
+    if (-not $ciYaml.Contains($mapping)) { throw 'Functional-test credentials must remain unchanged.' }
+}
+Write-Host 'PASS: dedicated perf credentials are consistent across all steps and separate from functional tests'
+
 $initialBaseline = '{"version":1,"approved":false,"profile":null,"thresholds":[]}' | ConvertFrom-Json
 $approvedBaseline = '{"version":1,"approved":true,"profile":null,"thresholds":[]}' | ConvertFrom-Json
 $modes = @(
@@ -215,6 +236,9 @@ try {
     $env:COSMOS_PERF_WEEKLY = 'False'
     $env:BUILD_SOURCEVERSION = (& git rev-parse HEAD)
     if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve the test checkout commit.' }
+    $sourceProfileJson = & git show "$($env:BUILD_SOURCEVERSION):sdk/cosmos/eng/pipelines/perf-profile.json"
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve the source workload profile.' }
+    $sourceProfile = ($sourceProfileJson -join "`n") | ConvertFrom-Json
     $env:BUILD_SOURCEBRANCH = 'refs/pull/5469/head'
     $http.Requests = @()
     $multiRegion = (New-Fixture).Account
@@ -222,6 +246,7 @@ try {
     $multiRegion.writableLocations = @(@{ name = 'West US 3' }, @{ name = 'East US 2' })
     $http.Response = @{ StatusCode = 200; Content = ($multiRegion | ConvertTo-Json -Depth 5) }
     $http.Vm = (New-Fixture).Vm
+    $http.Vm.vmSize = $sourceProfile.vm_size
     $http.MetadataCalls = 0
     # PowerShell@2 dot-sources filePath scripts; this must execute preflight, not only load functions.
     . ([System.IO.Path]::Combine($PSScriptRoot, 'prepare-cosmos-perf.ps1'))
