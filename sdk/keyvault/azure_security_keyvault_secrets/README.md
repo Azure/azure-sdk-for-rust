@@ -77,6 +77,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+## Features
+
+- `test`: enables test support.
+- `unstable_fake`: enables experimental fake server transports and the `test` feature. These APIs are subject to change.
+
 ## Key concepts
 
 ### Secret
@@ -202,15 +207,17 @@ while let Some(secret) = pager.try_next().await? {
 
 ## Testing with fakes
 
-Enable the crate `test` feature in your test dependencies:
+Enable the crate's `test` and `unstable_fake` features in your test dependencies.
+`unstable_fake` enables `test` automatically, but both are shown explicitly below.
+The fake APIs are experimental and subject to change:
 
 ```toml
 [dependencies]
 azure_security_keyvault_secrets = "1"
 
 [dev-dependencies]
-azure_core = { version = "1", features = ["test"] }
-azure_security_keyvault_secrets = { version = "1", features = ["test"] }
+azure_core = { version = "1", features = ["test", "unstable_fake"] }
+azure_security_keyvault_secrets = { version = "1", features = ["test", "unstable_fake"] }
 async-trait = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```

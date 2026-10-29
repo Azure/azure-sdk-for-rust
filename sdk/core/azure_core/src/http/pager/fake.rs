@@ -8,7 +8,7 @@ use crate::http::pager::{PagerOptions, PagerResultFuture, PagerState};
 /// Wraps a page callback to include its state in the request context.
 ///
 /// [`PageIterator::new()`](crate::http::PageIterator::new) applies this automatically
-/// when the `test` feature is enabled. A fake server can read the current
+/// when the `test` and `unstable_fake` features are enabled. A fake server can read the current
 /// [`PagerState`] from the context without interpreting continuation URLs or tokens.
 pub fn with_state<P, F>(
     make_request: F,

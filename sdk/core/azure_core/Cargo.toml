@@ -75,6 +75,7 @@ reqwest_rustls = ["reqwest", "typespec_client_core/reqwest_rustls"]
 resource_manager = []
 test = ["typespec_client_core/test"]
 tokio = ["dep:tokio", "typespec_client_core/tokio"]
+unstable_fake = ["test"]
 xml = ["typespec_client_core/xml"]
 
 [lints]

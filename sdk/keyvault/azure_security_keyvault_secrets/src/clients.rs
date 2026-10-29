@@ -4,10 +4,10 @@
 //! Clients used to communicate with the service.
 use crate::authorizer::KeyVaultAuthorizer;
 use crate::generated::clients::DEFAULT_API_VERSION;
-#[cfg(feature = "test")]
-#[cfg_attr(docsrs, doc(cfg(feature = "test")))]
+#[cfg(all(feature = "test", feature = "unstable_fake"))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "test", feature = "unstable_fake"))))]
 pub mod fake;
-#[cfg(not(feature = "test"))]
+#[cfg(not(all(feature = "test", feature = "unstable_fake")))]
 pub use crate::generated::clients::SecretClient;
 use azure_core::{
     credentials::TokenCredential,
@@ -18,7 +18,7 @@ use azure_core::{
     },
     tracing, Result,
 };
-#[cfg(feature = "test")]
+#[cfg(all(feature = "test", feature = "unstable_fake"))]
 pub use fake::SecretClient;
 use std::sync::Arc;
 

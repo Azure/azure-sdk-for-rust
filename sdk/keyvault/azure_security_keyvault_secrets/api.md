@@ -9,6 +9,7 @@
 - `default`
   - `azure_core/default`
 - `test`
+- `unstable_fake`
 
 ```rust
 #![crate_name = "azure_security_keyvault_secrets"]
@@ -39,7 +40,7 @@ pub trait ResourceExt {
     fn resource_id(&self) -> Result<ResourceId>;
 }
 pub mod clients {
-    #[cfg(feature = "test")]
+    #[cfg(all(feature = "test", feature = "unstable_fake"))]
     pub use azure_security_keyvault_secrets::clients::fake::SecretClient;
     #[derive(Clone, Debug)]
     pub struct SecretClientOptions {
@@ -50,7 +51,7 @@ pub mod clients {
     impl Default for SecretClientOptions {
         fn default() -> Self;
     }
-    #[cfg(feature = "test")]
+    #[cfg(all(feature = "test", feature = "unstable_fake"))]
     pub mod fake {
         pub struct SecretClient {
         }

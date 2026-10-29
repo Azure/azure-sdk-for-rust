@@ -812,7 +812,7 @@ impl SecretClient {
 }
 
 fn insert_api_name(context: &mut Context<'_>, api_name: &'static str) {
-    context.insert(ApiName::from(api_name.to_string()));
+    azure_core::http::fake::operation_name(api_name, context);
 }
 
 fn method_options(ctx: &Context<'_>) -> ClientMethodOptions<'static> {
@@ -1575,11 +1575,10 @@ mod tests {
             _secret_name: &str,
             _options: Option<SecretClientGetSecretOptions<'_>>,
         ) -> Result<AsyncRawResponse> {
-            AsyncRawResponse::fake_with_error(
+            AsyncRawResponse::fake_with_model(
                 StatusCode::BadRequest,
                 Headers::new(),
-                "BadRequest",
-                "nope",
+                json!({"error": {"code": "BadRequest", "message": "nope"}}),
             )
         }
     }
@@ -1628,7 +1627,7 @@ mod tests {
             .expect_err("expected missing ApiName error");
         assert!(err.to_string().contains("missing ApiName"));
 
-        let context = Context::new().with_value(ApiName::from("KeyVault.unknown".to_string()));
+        let context = Context::new().with_value(ApiName::from("KeyVault.unknown"));
         let err = transport
             .send(&context, &mut request, &[])
             .await
@@ -1641,7 +1640,7 @@ mod tests {
     async fn errors_for_method_or_query_mismatch() -> Result<()> {
         let transport = SecretServerTransport::new(Arc::new(NoopServer));
 
-        let context = Context::new().with_value(ApiName::from(API_GET_SECRET.to_string()));
+        let context = Context::new().with_value(ApiName::from(API_GET_SECRET));
         let mut wrong_method = Request::new(
             "https://example.vault.azure.net/secrets/my-secret?api-version=2026-03-01-preview"
                 .parse()?,
