@@ -97,6 +97,12 @@ Conditional writes validate an acquisition-specific incarnation as well as the
 owner, rejecting late acknowledgments even after the same instance name reacquires
 the lease. Renewal and checkpoint mutations are serialized per lease.
 
+Acquisition, renewal, checkpoint writes, and release share a read-modify-replace
+cycle that validates workload and acquisition identity before an ETag-conditional
+write. Acquisition attempts once; owned mutations make up to five attempts on
+conditional-write conflicts, rereading current state each time. Ownership loss,
+read failures, and other write errors are returned without retrying this cycle.
+
 Balancing and renewal run independently of application callbacks. The progress
 watchdog abandons a lease after 25 renewal intervals without a successful feed
 response, including callback wait time. Lease/feed failures are logged and isolated;
@@ -105,7 +111,18 @@ topology repair remain in the existing driver pipelines. A 304 is local idleness
 not processor completion; changed idle continuations can be saved without
 an application callback.
 
+Each acquisition has a single-slot mailbox keyed by lease identity and incarnation.
+A local distributor queues ready session identities, not response payloads, and
+selects them in round-robin order through the existing `next_batch()` API.
+Retiring a session removes its pending delivery without closing other mailboxes.
+An empty session set waits for future acquisitions; only processor shutdown ends
+the delivery stream. Reacquisitions use new mailboxes, and stale session handles
+cannot publish to or retire their replacements.
+
 There is one outstanding batch per active lease session, without read-ahead.
+Taking a batch from a mailbox does not acknowledge it: the producer still waits
+for successful checkpoint persistence before reading again. The distributor does
+not acquire leases, implement topology transitions, or spawn callback tasks.
 Memory therefore scales with owned leases; page-size hints are not byte limits.
 Foreign callers may retain completed payloads beyond acknowledgment and must
 manage that memory themselves. Stealing cannot cancel external application
