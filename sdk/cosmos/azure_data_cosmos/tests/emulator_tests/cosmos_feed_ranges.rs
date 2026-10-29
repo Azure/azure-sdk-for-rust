@@ -6,6 +6,7 @@ use super::framework;
 use std::borrow::Cow;
 use std::collections::BTreeSet;
 use std::error::Error;
+use std::time::{Duration, Instant};
 
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::feed::{FeedRange, FeedScope};
@@ -13,7 +14,7 @@ use azure_data_cosmos::models::{
     ContainerProperties, EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyValue,
     ThroughputProperties,
 };
-use azure_data_cosmos::options::CreateContainerOptions;
+use azure_data_cosmos::options::{CreateContainerOptions, DiagnosticsVerbosity};
 use azure_data_cosmos::{PartitionKey, Query};
 use base64::Engine;
 use futures::StreamExt;
@@ -435,6 +436,46 @@ fn pk_definition() -> PartitionKeyDefinition {
     PartitionKeyDefinition::new(vec![Cow::Borrowed("/pk")])
 }
 
+fn scope_test_documents() -> Vec<Doc> {
+    (0..DOC_COUNT)
+        .map(|i| {
+            let id = format!("doc-{i:03}");
+            Doc { pk: id.clone(), id }
+        })
+        .collect()
+}
+
+fn scope_test_points(docs: &[Doc]) -> Vec<(String, FeedRange)> {
+    let pk_def = pk_definition();
+    let mut points: Vec<_> = docs
+        .iter()
+        .map(|doc| {
+            (
+                doc.id.clone(),
+                FeedRange::for_partition(PartitionKey::from(doc.pk.clone()), &pk_def),
+            )
+        })
+        .collect();
+    points.sort_by(|a, b| a.1.min_inclusive().cmp(b.1.min_inclusive()));
+    points
+}
+
+fn gap_window(
+    points: &[(String, FeedRange)],
+    mid: usize,
+    suffix: &str,
+) -> Result<FeedRange, Box<dyn Error>> {
+    let previous = points[mid].1.min_inclusive();
+    let next = points[mid + 1].1.min_inclusive();
+    let lower = EffectivePartitionKey::try_from(format!("{}{suffix}", previous.to_hex()))?;
+    // Keep variable-width bounds intact, and independently validate the fixture's expectation.
+    assert!(previous < &lower && &lower < next);
+    assert!(points
+        .iter()
+        .all(|(_, point)| { point.min_inclusive() < &lower || point.min_inclusive() >= next }));
+    Ok(FeedRange::new(lower, next.clone())?)
+}
+
 /// Runs a feed-range-scoped `SELECT *` and returns the set of returned ids.
 ///
 /// Drains the result set page-by-page (via [`into_pages`]) rather than
@@ -442,15 +483,37 @@ fn pk_definition() -> PartitionKeyDefinition {
 /// `clippy::large-futures`, which the item-level stream would otherwise trip.
 async fn drain_ids(
     container: &ContainerClient,
-    scope: FeedScope,
+    range: FeedRange,
+    label: &str,
 ) -> Result<BTreeSet<String>, Box<dyn Error>> {
+    // These are caller-requested bounds, not a capture of the outgoing wire headers.
+    eprintln!(
+        "EPK query {label}: requested_min={} requested_max={} min_bytes={} max_bytes={}",
+        range.min_inclusive().to_hex(),
+        range.max_exclusive().to_hex(),
+        range.min_inclusive().to_hex().len() / 2,
+        range.max_exclusive().to_hex().len() / 2,
+    );
     let mut pages = container
-        .query_items::<Doc>(Query::from("SELECT * FROM c"), scope, None)
+        .query_items::<Doc>(
+            Query::from("SELECT * FROM c"),
+            FeedScope::range(range),
+            None,
+        )
         .await?
-        .into_pages();
+        .into_pages()
+        .enumerate();
     let mut got = BTreeSet::new();
-    while let Some(page) = pages.next().await {
-        for doc in page?.into_items() {
+    while let Some((page_index, page)) = pages.next().await {
+        let page = page?;
+        eprintln!(
+            "EPK query {label} page={page_index}: ids={:?} headers={:?} diagnostics={}",
+            page.items().iter().map(|doc| &doc.id).collect::<Vec<_>>(),
+            page.headers(),
+            page.diagnostics()
+                .to_json_string(Some(DiagnosticsVerbosity::Detailed)),
+        );
+        for doc in page.into_items() {
             got.insert(doc.id);
         }
     }
@@ -487,6 +550,32 @@ async fn drain_ids(
     ignore = "vnext emulator returns items outside the requested EPK range: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/376"
 )]
 pub async fn feed_range_scope_restricts_cross_partition_query() -> Result<(), Box<dyn Error>> {
+    check_scope_windows(1, &["80"], framework::DEFAULT_TEST_TIMEOUT).await
+}
+
+// Opt in with an exact test filter and --ignored --nocapture. This deliberately
+// keeps querying after a mismatch to measure intermittency, but NEVER turns a
+// later successful query into a pass for an earlier failed assertion.
+#[tokio::test]
+#[ignore = "manual variable-width EPK repro; requires a configured Cosmos account"]
+async fn feed_range_variable_width_gap_repeated() -> Result<(), Box<dyn Error>> {
+    assert!(
+        framework::resolve_connection_string().is_some(),
+        "configure AZURE_COSMOS_CONNECTION_STRING before running the EPK repro"
+    );
+    assert!(
+        !std::env::var(framework::test_client::TEST_MODE_ENV_VAR)
+            .is_ok_and(|mode| mode.eq_ignore_ascii_case("skipped")),
+        "AZURE_COSMOS_TEST_MODE must not be 'skipped' for the EPK repro"
+    );
+    check_scope_windows(100, &["80", "8000", "80000000"], Duration::from_secs(600)).await
+}
+
+async fn check_scope_windows(
+    repetitions: u32,
+    suffixes: &[&str],
+    timeout: Duration,
+) -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             let properties = ContainerProperties::new("ScopeBugContainer", pk_definition());
@@ -495,35 +584,34 @@ pub async fn feed_range_scope_restricts_cross_partition_query() -> Result<(), Bo
                 .await?;
 
             // Seed DOC_COUNT documents, each on its own partition key.
-            let mut docs: Vec<Doc> = Vec::with_capacity(DOC_COUNT);
-            for i in 0..DOC_COUNT {
-                let id = format!("doc-{i:03}");
-                let doc = Doc {
-                    id: id.clone(),
-                    pk: id.clone(),
-                };
+            let docs = scope_test_documents();
+            for doc in &docs {
                 container
-                    .create_item(PartitionKey::from(doc.pk.clone()), &id, doc.clone(), None)
+                    .create_item(
+                        PartitionKey::from(doc.pk.clone()),
+                        &doc.id,
+                        doc.clone(),
+                        None,
+                    )
                     .await?;
-                docs.push(doc);
             }
+            let last_write = Instant::now();
 
             // Compute each document's effective partition key locally (same hash
             // the service uses), then sort ascending by EPK.
-            let pk_def = pk_definition();
-            let mut points: Vec<(String, FeedRange)> = docs
-                .iter()
-                .map(|d| {
-                    let fr = FeedRange::for_partition(PartitionKey::from(d.pk.clone()), &pk_def);
-                    (d.id.clone(), fr)
-                })
-                .collect();
-            points.sort_by(|a, b| a.1.min_inclusive().cmp(b.1.min_inclusive()));
+            let points = scope_test_points(&docs);
+            for (id, point) in &points {
+                eprintln!(
+                    "EPK fixture: id={id} epk={}",
+                    point.min_inclusive().to_hex()
+                );
+            }
             let k = points.len();
 
             // Control: a full-container scan must return every seeded document.
             let all: BTreeSet<String> = points.iter().map(|(id, _)| id.clone()).collect();
-            let control = drain_ids(&container, FeedScope::full_container()).await?;
+            let control =
+                drain_ids(&container, FeedRange::full(), "full-container control").await?;
             assert_eq!(
                 control, all,
                 "control full-container scan should return all {DOC_COUNT} docs"
@@ -537,7 +625,7 @@ pub async fn feed_range_scope_restricts_cross_partition_query() -> Result<(), Bo
             )?;
             let expected_b: BTreeSet<String> =
                 points[1..k - 1].iter().map(|(id, _)| id.clone()).collect();
-            let got_b = drain_ids(&container, FeedScope::range(window_b)).await?;
+            let got_b = drain_ids(&container, window_b, "wide window").await?;
             assert_eq!(
                 got_b,
                 expected_b,
@@ -557,7 +645,7 @@ pub async fn feed_range_scope_restricts_cross_partition_query() -> Result<(), Bo
                 points[mid + 1].1.min_inclusive().clone(),
             )?;
             let expected_c: BTreeSet<String> = std::iter::once(points[mid].0.clone()).collect();
-            let got_c = drain_ids(&container, FeedScope::range(window_c)).await?;
+            let got_c = drain_ids(&container, window_c, "tight window").await?;
             assert_eq!(
                 got_c,
                 expected_c,
@@ -575,23 +663,74 @@ pub async fn feed_range_scope_restricts_cross_partition_query() -> Result<(), Bo
             // `X_{mid+1}`. So `[X_mid || 0x80, X_{mid+1})` contains no doc's EPK.
             // A full byte is required for valid hexadecimal. This guards against an off-by-one
             // where the lower bound is treated as inclusive of `X_mid`.
-            let gap_start = EffectivePartitionKey::try_from(format!(
-                "{}80",
-                points[mid].1.min_inclusive().to_hex()
-            ))?;
-            let window_d = FeedRange::new(gap_start, points[mid + 1].1.min_inclusive().clone())?;
-            let got_d = drain_ids(&container, FeedScope::range(window_d)).await?;
+            // The ordinary regression retains its exact 17-byte lower bound.
+            // The opt-in repro also tests equivalent longer representations,
+            // alternating widths on the same container without any new writes.
+            let mut mismatches = Vec::new();
+            for repetition in 0..repetitions {
+                for suffix in suffixes {
+                    let window_d = gap_window(&points, mid, suffix)?;
+                    let label = format!("gap repetition={repetition} suffix={suffix}");
+                    eprintln!(
+                        "EPK query {label}: since_last_write_ms={}",
+                        last_write.elapsed().as_millis()
+                    );
+                    let got_d = drain_ids(&container, window_d, &label).await?;
+                    if !got_d.is_empty() {
+                        let mismatch = format!("{label}: unexpected={got_d:?}");
+                        eprintln!("SCOPE BUG (empty gap window): {mismatch}");
+                        mismatches.push(mismatch);
+                    }
+                }
+            }
+            eprintln!(
+                "EPK gap summary: repetitions={repetitions} suffixes={suffixes:?} mismatches={}",
+                mismatches.len()
+            );
+            if !mismatches.is_empty() {
+                // Fetch topology only after the observations, so it cannot hide
+                // a timing-sensitive first-query failure by delaying that query.
+                eprintln!(
+                    "EPK physical ranges after failure: {:?}",
+                    container.read_feed_ranges(None).await
+                );
+            }
             assert!(
-                got_d.is_empty(),
-                "SCOPE BUG (empty gap window): a window between adjacent EPKs \
-                 returned {} docs, expected 0. unexpected={:?}",
-                got_d.len(),
-                got_d.iter().collect::<Vec<_>>()
+                mismatches.is_empty(),
+                "SCOPE BUG (empty gap window): expected no documents on EVERY query: {mismatches:?}"
             );
 
             Ok(())
         },
-        Some(TestOptions::for_emulator()),
+        Some(TestOptions::for_emulator().with_timeout(timeout)),
     )
     .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{gap_window, scope_test_documents, scope_test_points};
+
+    #[test]
+    fn variable_width_gap_preserves_the_ci_fixture() {
+        let points = scope_test_points(&scope_test_documents());
+        let mid = points.len() / 2;
+        assert_eq!(points[mid].0, "doc-021");
+        assert_eq!(points[mid + 1].0, "doc-011");
+        assert_eq!(
+            points[mid].1.min_inclusive().to_hex(),
+            "23C57507EE92D198A6A61C0C7A22BBC2"
+        );
+        for suffix in ["80", "8000", "80000000"] {
+            let window = gap_window(&points, mid, suffix).unwrap();
+            assert_eq!(
+                window.min_inclusive().to_hex(),
+                format!("23C57507EE92D198A6A61C0C7A22BBC2{suffix}")
+            );
+            assert_eq!(
+                window.max_exclusive().to_hex(),
+                "249276B4FCD3D34EBDD1935F84E985D7"
+            );
+        }
+    }
 }
