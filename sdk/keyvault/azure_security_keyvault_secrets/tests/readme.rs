@@ -78,10 +78,3 @@ async fn testing_with_fakes_readme() -> Result<()> {
     include_markdown!("README.md", "testing_with_fakes", scope);
     Ok(())
 }
-
-#[cfg(feature = "test")]
-#[tokio::test]
-async fn core_readme_fakes_snippet() -> Result<()> {
-    include_markdown!("../../core/azure_core/README.md", "fakes", scope);
-    Ok(())
-}

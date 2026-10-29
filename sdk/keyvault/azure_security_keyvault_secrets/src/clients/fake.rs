@@ -24,7 +24,6 @@ use crate::{
 };
 use async_trait::async_trait;
 use azure_core::{
-    credentials::{AccessToken, TokenCredential, TokenRequestOptions},
     error::ErrorKind,
     http::{
         fake::ApiName,
@@ -33,9 +32,7 @@ use azure_core::{
         AsyncRawResponse, Body, ClientMethodOptions, Context, Method, NoFormat, Pipeline, Request,
         RequestContent, Response, Transport, Url,
     },
-    json,
-    time::{Duration, OffsetDateTime},
-    Error, Result,
+    json, Error, Result,
 };
 use futures::io::AsyncReadExt as _;
 use percent_encoding::percent_decode_str;
@@ -71,7 +68,7 @@ struct ListSecretPropertiesVersionsContext {
     maxresults: Option<i32>,
 }
 
-/// Fake Key Vault secrets server API used by [`SecretClient::new_fake`].
+/// Fake Key Vault secrets server API used by [`SecretClient::with_fake()`].
 ///
 /// Implement only the operations your test exercises.
 ///
@@ -563,8 +560,16 @@ impl SecretClient {
         })
     }
 
-    /// Creates a new `SecretClient` backed by a fake server.
-    pub fn new_fake<T>(
+    /// Creates a credential-free client backed by a fake server.
+    ///
+    /// The server replaces the HTTP transport. Other client options, including
+    /// policies and the API version, are preserved.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error with [`ErrorKind::Other`] if `options` specifies a transport
+    /// or `endpoint` doesn't use HTTP(S). Returns an error if `endpoint` is invalid.
+    pub fn with_fake<T>(
         endpoint: &str,
         server: Arc<T>,
         options: Option<SecretClientOptions>,
@@ -573,9 +578,20 @@ impl SecretClient {
         T: SecretServer + ?Sized + 'static,
     {
         let options = options.unwrap_or_default();
+        if options.client_options.transport.is_some() {
+            return Err(Error::with_message(
+                ErrorKind::Other,
+                "a transport cannot be specified when using a fake server",
+            ));
+        }
         let endpoint_base_path = parse_endpoint_base_path(endpoint)?;
-        let generated_client =
-            GeneratedSecretClient::new(endpoint, Arc::new(FakeCredential), Some(options.clone()))?;
+        let endpoint = Url::parse(endpoint)?;
+        if !matches!(endpoint.scheme(), "http" | "https") {
+            return Err(Error::with_message(
+                ErrorKind::Other,
+                format!("{endpoint} must use http(s)"),
+            ));
+        }
 
         let mut client_options = options.client_options;
         client_options.transport = Some(Transport::with_policy(Arc::new(
@@ -584,7 +600,19 @@ impl SecretClient {
 
         Ok(Self {
             inner: GeneratedSecretClient {
+                endpoint,
                 api_version: options.api_version,
+                tracer: client_options
+                    .instrumentation
+                    .tracer_provider
+                    .as_ref()
+                    .map(|provider| {
+                        provider.get_tracer(
+                            Some("KeyVault"),
+                            env!("CARGO_PKG_NAME"),
+                            option_env!("CARGO_PKG_VERSION"),
+                        )
+                    }),
                 pipeline: Pipeline::new(
                     option_env!("CARGO_PKG_NAME"),
                     option_env!("CARGO_PKG_VERSION"),
@@ -593,7 +621,6 @@ impl SecretClient {
                     Vec::new(),
                     None,
                 ),
-                ..generated_client
             },
         })
     }
@@ -785,7 +812,7 @@ impl SecretClient {
 }
 
 fn insert_api_name(context: &mut Context<'_>, api_name: &'static str) {
-    context.insert(ApiName(api_name.to_string()));
+    context.insert(ApiName::from(api_name.to_string()));
 }
 
 fn method_options(ctx: &Context<'_>) -> ClientMethodOptions<'static> {
@@ -829,13 +856,6 @@ async fn body_bytes(request: &Request, operation: &'static str) -> Result<azure_
         Body::Bytes(bytes) => Ok(bytes.clone()),
         Body::SeekableStream(stream) => {
             let mut stream = stream.clone();
-            stream.reset().await.map_err(|err| {
-                Error::with_error(
-                    ErrorKind::Io,
-                    err,
-                    format!("{operation}: failed to reset stream body"),
-                )
-            })?;
             let mut bytes = Vec::new();
             stream.read_to_end(&mut bytes).await.map_err(|err| {
                 Error::with_error(
@@ -1102,30 +1122,15 @@ fn fake_error(operation: &'static str, message: impl Into<String>) -> Error {
     Error::with_message(ErrorKind::Other, format!("{operation}: {}", message.into()))
 }
 
-#[derive(Debug)]
-struct FakeCredential;
-
-#[async_trait]
-impl TokenCredential for FakeCredential {
-    async fn get_token(
-        &self,
-        _scopes: &[&str],
-        _options: Option<TokenRequestOptions<'_>>,
-    ) -> Result<AccessToken> {
-        Ok(AccessToken::new(
-            "fake_token",
-            OffsetDateTime::now_utc() + Duration::hours(1),
-        ))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use azure_core::http::{
-        fake::json_response, headers::Headers, pager::PagerContinuation, StatusCode,
+        fake::ResponseExt as _, headers::Headers, pager::PagerContinuation, ClientOptions,
+        StatusCode,
     };
     use futures::TryStreamExt;
+    use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
     use serde_json::json;
     use std::sync::{Arc, Mutex};
 
@@ -1149,10 +1154,10 @@ mod tests {
                 .lock()
                 .expect("context lock")
                 .push(options.method_options.context.to_owned());
-            json_response(
+            AsyncRawResponse::fake_with_model(
                 StatusCode::Ok,
                 Headers::new(),
-                &Secret {
+                Secret {
                     value: Some("fake value".to_string()),
                     ..Default::default()
                 },
@@ -1161,10 +1166,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn new_fake_routes_get_secret_and_preserves_context() -> Result<()> {
+    async fn with_fake_routes_get_secret_and_preserves_context() -> Result<()> {
         let server = Arc::new(GetSecretServer::default());
         let client =
-            SecretClient::new_fake("https://example.vault.azure.net", server.clone(), None)?;
+            SecretClient::with_fake("https://example.vault.azure.net", server.clone(), None)?;
         let options = SecretClientGetSecretOptions {
             method_options: ClientMethodOptions {
                 context: Context::new().with_value(42u32),
@@ -1188,15 +1193,92 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn new_fake_routes_get_secret_with_endpoint_prefix() -> Result<()> {
+    async fn with_fake_routes_get_secret_with_endpoint_prefix() -> Result<()> {
         let server = Arc::new(GetSecretServer::default());
-        let client = SecretClient::new_fake(
+        let client = SecretClient::with_fake(
             "https://example.vault.azure.net/prefix",
             server.clone(),
             None,
         )?;
         let secret = client.get_secret("my-secret", None).await?.into_model()?;
         assert_eq!(secret.value.as_deref(), Some("fake value"));
+        Ok(())
+    }
+
+    #[test]
+    fn with_fake_rejects_transport() {
+        let options = SecretClientOptions {
+            client_options: ClientOptions {
+                transport: Some(Transport::with_policy(Arc::new(
+                    SecretServerTransport::new(Arc::new(GetSecretServer::default())),
+                ))),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let result = SecretClient::with_fake(
+            "https://example.vault.azure.net",
+            Arc::new(GetSecretServer::default()),
+            Some(options),
+        );
+        assert!(matches!(result, Err(err) if matches!(err.kind(), ErrorKind::Other)));
+    }
+
+    #[test]
+    fn with_fake_rejects_invalid_endpoints() {
+        for endpoint in [
+            "not a URL",
+            "ftp://example.com",
+            "https-custom://example.com",
+        ] {
+            assert!(
+                SecretClient::with_fake(endpoint, Arc::new(GetSecretServer::default()), None,)
+                    .is_err()
+            );
+        }
+    }
+
+    #[derive(Debug)]
+    struct CheckApiVersion;
+
+    #[async_trait]
+    impl Policy for CheckApiVersion {
+        async fn send(
+            &self,
+            ctx: &Context,
+            request: &mut Request,
+            next: &[Arc<dyn Policy>],
+        ) -> PolicyResult {
+            assert!(request
+                .url()
+                .query_pairs()
+                .any(|(name, value)| { name == "api-version" && value == "custom-version" }));
+            let mut ctx = ctx.to_owned();
+            ctx.insert(42u32);
+            next[0].send(&ctx, request, &next[1..]).await
+        }
+    }
+
+    #[tokio::test]
+    async fn with_fake_preserves_client_options() -> Result<()> {
+        let server = Arc::new(GetSecretServer::default());
+        let client = SecretClient::with_fake(
+            "https://example.vault.azure.net",
+            server.clone() as Arc<dyn SecretServer>,
+            Some(SecretClientOptions {
+                api_version: "custom-version".to_owned(),
+                client_options: ClientOptions {
+                    per_call_policies: vec![Arc::new(CheckApiVersion)],
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
+        )?;
+        let _ = client.get_secret("my-secret", None).await?;
+        assert_eq!(
+            server.contexts.lock().expect("context lock")[0].value::<u32>(),
+            Some(&42)
+        );
         Ok(())
     }
 
@@ -1217,10 +1299,10 @@ mod tests {
                 .lock()
                 .expect("calls lock")
                 .push((secret_name.to_owned(), options.secret_version.clone()));
-            json_response(
+            AsyncRawResponse::fake_with_model(
                 StatusCode::Ok,
                 Headers::new(),
-                &Secret {
+                Secret {
                     value: Some("fake value".to_string()),
                     ..Default::default()
                 },
@@ -1232,16 +1314,19 @@ mod tests {
     async fn decodes_percent_encoded_secret_name_and_version() -> Result<()> {
         let server = Arc::new(EncodedSecretPathServer::default());
         let client =
-            SecretClient::new_fake("https://example.vault.azure.net", server.clone(), None)?;
+            SecretClient::with_fake("https://example.vault.azure.net", server.clone(), None)?;
 
         let secret_name = "folder/secret name+plus";
         let secret_version = "ver/1 +";
         let options = SecretClientGetSecretOptions {
-            secret_version: Some(secret_version.to_string()),
+            secret_version: Some(utf8_percent_encode(secret_version, NON_ALPHANUMERIC).to_string()),
             ..Default::default()
         };
         let _ = client
-            .get_secret(secret_name, Some(options))
+            .get_secret(
+                &utf8_percent_encode(secret_name, NON_ALPHANUMERIC).to_string(),
+                Some(options),
+            )
             .await?
             .into_model()?;
 
@@ -1270,10 +1355,10 @@ mod tests {
             };
             let model: SetSecretParameters = json::from_json(&body)?;
             assert_eq!(model.value.as_deref(), Some("body-value"));
-            json_response(
+            AsyncRawResponse::fake_with_model(
                 StatusCode::Ok,
                 Headers::new(),
-                &Secret {
+                Secret {
                     value: model.value,
                     ..Default::default()
                 },
@@ -1283,7 +1368,7 @@ mod tests {
 
     #[tokio::test]
     async fn parses_set_secret_body_back_to_request_content() -> Result<()> {
-        let client = SecretClient::new_fake(
+        let client = SecretClient::with_fake(
             "https://example.vault.azure.net",
             Arc::new(SetSecretServer),
             None,
@@ -1302,21 +1387,28 @@ mod tests {
 
     #[tokio::test]
     async fn parses_set_secret_stream_body_back_to_request_content() -> Result<()> {
-        let client = SecretClient::new_fake(
+        let client = SecretClient::with_fake(
             "https://example.vault.azure.net",
             Arc::new(SetSecretServer),
             None,
         )?;
         let data = br#"{"value":"body-value"}"#.to_vec();
-        let content = RequestContent::from_reader(
-            futures::io::Cursor::new(data.clone()),
-            Some(data.len() as u64),
-        );
-        let secret = client
-            .set_secret("serialized", content, None)
-            .await?
-            .into_model()?;
-        assert_eq!(secret.value.as_deref(), Some("body-value"));
+        for content in [
+            RequestContent::from_reader(
+                futures::io::Cursor::new(data.clone()),
+                Some(data.len() as u64),
+            ),
+            RequestContent::from_seekable_reader(
+                futures::io::Cursor::new(data.clone()),
+                Some(data.len() as u64),
+            ),
+        ] {
+            let secret = client
+                .set_secret("serialized", content, None)
+                .await?
+                .into_model()?;
+            assert_eq!(secret.value.as_deref(), Some("body-value"));
+        }
         Ok(())
     }
 
@@ -1347,17 +1439,19 @@ mod tests {
             );
             self.states.lock().expect("state lock").push(state.clone());
             match state {
-                PagerState::Initial => json_response(
+                PagerState::Initial => AsyncRawResponse::fake_with_model(
                     StatusCode::Ok,
                     Headers::new(),
-                    &json!({
+                    json!({
                         "nextLink": "/opaque-next-page?cursor=page-2",
                         "value": [],
                     }),
                 ),
-                PagerState::More(PagerContinuation::Link(_)) => {
-                    json_response(StatusCode::Ok, Headers::new(), &json!({ "value": [] }))
-                }
+                PagerState::More(PagerContinuation::Link(_)) => AsyncRawResponse::fake_with_model(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    json!({ "value": [] }),
+                ),
                 other => panic!("unexpected state: {other:?}"),
             }
         }
@@ -1367,7 +1461,7 @@ mod tests {
     async fn propagates_pager_state_for_fake_server_callbacks() -> Result<()> {
         let server = Arc::new(ListSecretsServer::default());
         let client =
-            SecretClient::new_fake("https://example.vault.azure.net", server.clone(), None)?;
+            SecretClient::with_fake("https://example.vault.azure.net", server.clone(), None)?;
 
         let mut pages = client.list_secret_properties(None)?.into_pages();
         let page = pages.try_next().await?.expect("expected first page");
@@ -1418,17 +1512,19 @@ mod tests {
             ));
 
             match state {
-                PagerState::Initial => json_response(
+                PagerState::Initial => AsyncRawResponse::fake_with_model(
                     StatusCode::Ok,
                     Headers::new(),
-                    &json!({
+                    json!({
                         "nextLink": "/opaque-next-page?cursor=ver-2",
                         "value": [],
                     }),
                 ),
-                PagerState::More(PagerContinuation::Link(_)) => {
-                    json_response(StatusCode::Ok, Headers::new(), &json!({ "value": [] }))
-                }
+                PagerState::More(PagerContinuation::Link(_)) => AsyncRawResponse::fake_with_model(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    json!({ "value": [] }),
+                ),
                 other => panic!("unexpected state: {other:?}"),
             }
         }
@@ -1438,7 +1534,7 @@ mod tests {
     async fn preserves_versions_parameters_for_opaque_next_links() -> Result<()> {
         let server = Arc::new(ListSecretVersionsServer::default());
         let client =
-            SecretClient::new_fake("https://example.vault.azure.net", server.clone(), None)?;
+            SecretClient::with_fake("https://example.vault.azure.net", server.clone(), None)?;
 
         let options = SecretClientListSecretPropertiesVersionsOptions {
             maxresults: Some(7),
@@ -1479,19 +1575,18 @@ mod tests {
             _secret_name: &str,
             _options: Option<SecretClientGetSecretOptions<'_>>,
         ) -> Result<AsyncRawResponse> {
-            Ok(AsyncRawResponse::from_bytes(
+            AsyncRawResponse::fake_with_error(
                 StatusCode::BadRequest,
                 Headers::new(),
-                azure_core::Bytes::from_static(
-                    br#"{"error":{"code":"BadRequest","message":"nope"}}"#,
-                ),
-            ))
+                "BadRequest",
+                "nope",
+            )
         }
     }
 
     #[tokio::test]
     async fn preserves_raw_error_responses_from_fake_server() -> Result<()> {
-        let client = SecretClient::new_fake(
+        let client = SecretClient::with_fake(
             "https://example.vault.azure.net",
             Arc::new(ErrorServer),
             None,
@@ -1501,6 +1596,14 @@ mod tests {
             .await
             .expect_err("expected HTTP error");
         assert_eq!(err.http_status(), Some(StatusCode::BadRequest));
+        assert!(matches!(
+            err.kind(),
+            ErrorKind::HttpResponse { error_code: Some(code), .. } if code == "BadRequest"
+        ));
+        let details = azure_core::error::ErrorResponse::try_from(err)?
+            .error
+            .expect("error details");
+        assert_eq!(details.message.as_deref(), Some("nope"));
         Ok(())
     }
 
@@ -1525,7 +1628,7 @@ mod tests {
             .expect_err("expected missing ApiName error");
         assert!(err.to_string().contains("missing ApiName"));
 
-        let context = Context::new().with_value(ApiName("KeyVault.unknown".to_string()));
+        let context = Context::new().with_value(ApiName::from("KeyVault.unknown".to_string()));
         let err = transport
             .send(&context, &mut request, &[])
             .await
@@ -1538,7 +1641,7 @@ mod tests {
     async fn errors_for_method_or_query_mismatch() -> Result<()> {
         let transport = SecretServerTransport::new(Arc::new(NoopServer));
 
-        let context = Context::new().with_value(ApiName(API_GET_SECRET.to_string()));
+        let context = Context::new().with_value(ApiName::from(API_GET_SECRET.to_string()));
         let mut wrong_method = Request::new(
             "https://example.vault.azure.net/secrets/my-secret?api-version=2026-03-01-preview"
                 .parse()?,

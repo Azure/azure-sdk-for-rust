@@ -549,6 +549,9 @@ Client libraries that provide a `clients::fake` module let you test application 
 Enable the client library's `test` feature in your test dependencies. This also enables `azure_core/test`:
 
 ```toml
+[dependencies]
+azure_security_keyvault_secrets = "1"
+
 [dev-dependencies]
 azure_core = { version = "1", features = ["test"] }
 azure_security_keyvault_secrets = { version = "1", features = ["test"] }
@@ -561,7 +564,7 @@ For example, return a model from a fake Key Vault secrets server:
 
 ```rust ignore fakes
 use azure_core::{
-    http::{fake::json_response, headers::Headers, AsyncRawResponse, StatusCode},
+    http::{fake::ResponseExt as _, headers::Headers, AsyncRawResponse, StatusCode},
     Result,
 };
 use azure_security_keyvault_secrets::{
@@ -581,25 +584,44 @@ impl SecretServer for MySecretServer {
         secret_name: &str,
         _options: Option<SecretClientGetSecretOptions<'_>>,
     ) -> Result<AsyncRawResponse> {
-        assert_eq!(secret_name, "my-secret");
+        if secret_name != "my-secret" {
+            return AsyncRawResponse::fake_with_error(
+                StatusCode::NotFound,
+                Headers::new(),
+                "SecretNotFound",
+                "The secret was not found.",
+            );
+        }
         let mut secret = Secret::default();
         secret.value = Some("fake value".into());
-        json_response(StatusCode::Ok, Headers::new(), &secret)
+        AsyncRawResponse::fake_with_model(StatusCode::Ok, Headers::new(), secret)
     }
 }
 
-let client = SecretClient::new_fake(
+let client = SecretClient::with_fake(
     "https://my-vault.vault.azure.net",
     Arc::new(MySecretServer),
     None,
 )?;
 let secret = client.get_secret("my-secret", None).await?.into_model()?;
 assert_eq!(secret.value.as_deref(), Some("fake value"));
+
+let err = client.get_secret("missing-secret", None).await.unwrap_err();
+assert_eq!(err.http_status(), Some(StatusCode::NotFound));
+let details = azure_core::error::ErrorResponse::try_from(err)?.error.unwrap();
+assert_eq!(details.code.as_deref(), Some("SecretNotFound"));
 ```
 
-Server methods return `AsyncRawResponse`, so tests can also return raw bytes with
-`AsyncRawResponse::from_bytes()` or a stream with `AsyncRawResponse::new()`.
-Use these constructors to test error responses or payloads that can't be represented by a model.
+`SecretClient::new()` and `SecretClient::with_fake()` return the same client type.
+Use `new()` with credentials for Azure, or `with_fake()` with a fake server for tests.
+`with_fake()` returns an error if the supplied client options already specify a transport.
+
+Import `azure_core::http::fake::ResponseExt` to create responses with
+`fake_with_model()`, `fake_with_bytes()`, or `fake_with_error()`.
+These methods extend `Response`, `RawResponse`, `AsyncResponse`, and `AsyncRawResponse`.
+For streamed bodies, import `azure_core::http::fake::AsyncResponseExt` and use
+`AsyncRawResponse::fake_with_stream()` or `AsyncResponse::fake_with_stream()`.
+Use raw bytes or streams for payloads that can't be represented by a model.
 Fake pageable operations receive `PagerState` so they can return different responses for the initial page and continuation requests.
 Polling callbacks likewise pass `PollerState` through the request context, including continuation information.
 
