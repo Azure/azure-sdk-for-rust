@@ -2,54 +2,73 @@
 // Licensed under the MIT License.
 
 use super::{
-    balancing, bootstrap, namespace, now_millis, BootstrapOptions, ChangeFeedBatch,
-    ChangeFeedProcessorMode, Context, Identity, Lease, ProcessingLease, Processor,
-    ProcessorOptions, Update, SCHEMA_VERSION,
+    balancing, bootstrap, namespace, now_millis, ChangeFeedBatch, ChangeFeedFactoryMode, Context,
+    Identity, Lease, ProcessingLease, Processor, ProcessorOptions, Update, SCHEMA_VERSION,
+};
+#[cfg(feature = "fault_injection")]
+use crate::fault_injection::{
+    CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionResultBuilder,
+    FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType,
 };
 use crate::{
-    change_feed_processor::bootstrap::Record,
+    change_feed_processor::bootstrap::{
+        ChangeFeedProcessorBootstrapRangePlan as RangePlan,
+        ChangeFeedProcessorBootstrapRecord as Record,
+    },
+    driver::CosmosDriverRuntimeBuilder,
     in_memory_emulator::{
         ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion,
     },
     models::{
-        AccountReference, ChangeFeedStartFrom, CosmosOperation, FeedRange, ItemReference,
-        MaxItemCountHint, PartitionKey,
+        AccountReference, ChangeFeedStartFrom, ContinuationToken, CosmosOperation, FeedRange,
+        ItemReference, MaxItemCountHint, PartitionKey,
     },
     options::{DriverOptions, OperationOptions},
     Result,
 };
+use azure_core::http::StatusCode;
 use std::{num::NonZeroU32, sync::Arc, time::Duration};
 
 mod topology;
 
+const ENDPOINT: &str = "https://eastus.emulator.local";
+
 fn options(worker: &str) -> ProcessorOptions {
-    let mut options = ProcessorOptions::new(BootstrapOptions::new(
-        ChangeFeedProcessorMode::LatestVersion,
-        "workload",
-        worker,
-    ))
-    .with_start(ChangeFeedStartFrom::Beginning);
+    let mut options = ProcessorOptions::new(ChangeFeedFactoryMode::Incremental, "workload", worker)
+        .with_start(ChangeFeedStartFrom::Beginning);
     options.acquire_interval = Duration::from_millis(20);
     options.poll_delay = Duration::from_millis(10);
     options
 }
 
 async fn fixture() -> Result<Arc<Context>> {
-    Ok(
-        fixture_with_emulator(ChangeFeedProcessorMode::LatestVersion, 3)
-            .await?
-            .0,
-    )
+    Ok(fixture_with_emulator(ChangeFeedFactoryMode::Incremental, 3)
+        .await?
+        .0)
 }
 
 async fn fixture_with_emulator(
-    mode: ChangeFeedProcessorMode,
+    mode: ChangeFeedFactoryMode,
     partitions: u32,
 ) -> Result<(Arc<Context>, Arc<InMemoryEmulatorHttpClient>)> {
-    let endpoint = "https://eastus.emulator.local";
-    let emulator = Arc::new(InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(
-        vec![VirtualRegion::new("East US", endpoint.parse()?)],
-    )?));
+    let emulator = emulator()?;
+    let context =
+        fixture_with_runtime(&emulator, emulator.runtime_builder(), mode, partitions).await?;
+    Ok((context, emulator))
+}
+
+fn emulator() -> Result<Arc<InMemoryEmulatorHttpClient>> {
+    Ok(Arc::new(InMemoryEmulatorHttpClient::new(
+        VirtualAccountConfig::new(vec![VirtualRegion::new("East US", ENDPOINT.parse()?)])?,
+    )))
+}
+
+async fn fixture_with_runtime(
+    emulator: &InMemoryEmulatorHttpClient,
+    runtime: CosmosDriverRuntimeBuilder,
+    mode: ChangeFeedFactoryMode,
+    partitions: u32,
+) -> Result<Arc<Context>> {
     let store = emulator.store();
     store.create_database("polling");
     let pk =
@@ -67,13 +86,12 @@ async fn fixture_with_emulator(
         ContainerConfig::default(),
         serde_json::from_value(serde_json::json!({"defaultTtl":-1}))?,
     );
-    let driver = emulator
-        .runtime_builder()
+    let driver = runtime
         .build()
         .await?
         .create_driver(
             DriverOptions::builder(AccountReference::with_account_key(
-                endpoint.parse()?,
+                ENDPOINT.parse()?,
                 "dGVzdGtleQ==",
             ))
             .build(),
@@ -86,11 +104,20 @@ async fn fixture_with_emulator(
         .resolve_container("polling", "leases", OperationOptions::default())
         .await?;
     let mut options = options("first");
-    options.bootstrap.mode = mode;
-    if mode == ChangeFeedProcessorMode::AllVersionsAndDeletes {
+    options.mode = mode;
+    if mode == ChangeFeedFactoryMode::FullFidelity {
         options.start = ChangeFeedStartFrom::Now;
     }
-    bootstrap(&driver, &source, &driver, &leases, &options.bootstrap).await?;
+    bootstrap(
+        &driver,
+        &source,
+        &driver,
+        &leases,
+        options.mode,
+        &options.processor_name,
+        &options.instance_name,
+    )
+    .await?;
     let identity = Identity {
         version: SCHEMA_VERSION,
         account: source.account().endpoint().origin().ascii_serialization(),
@@ -98,18 +125,52 @@ async fn fixture_with_emulator(
         processor_name: "workload".into(),
         mode,
     };
-    Ok((
-        Arc::new(Context {
-            source_driver: driver.clone(),
-            source,
-            lease_driver: driver,
-            leases,
-            namespace: namespace(&identity)?,
-            identity,
-            options,
-        }),
-        emulator,
-    ))
+    Ok(Arc::new(Context {
+        source_driver: driver.clone(),
+        source,
+        lease_driver: driver,
+        leases,
+        namespace: namespace(&identity)?,
+        identity,
+        options,
+    }))
+}
+
+#[cfg(feature = "fault_injection")]
+async fn fault_fixture(
+    operation: FaultOperationType,
+    status: StatusCode,
+    hit_limit: u32,
+) -> Result<(Arc<Context>, Arc<FaultInjectionRule>)> {
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new(
+            "lease-mutation",
+            FaultInjectionResultBuilder::new()
+                .with_custom_response(
+                    CustomResponseBuilder::new(status)
+                        .with_body(br#"{"message":"injected lease failure"}"#.to_vec())
+                        .build(),
+                )
+                .build(),
+        )
+        .with_condition(
+            FaultInjectionConditionBuilder::new()
+                .with_operation_type(operation)
+                .build(),
+        )
+        .with_hit_limit(hit_limit)
+        .build(),
+    );
+    rule.disable();
+    let emulator = emulator()?;
+    let context = fixture_with_runtime(
+        &emulator,
+        emulator.runtime_builder_with_fault_rules(vec![rule.clone()]),
+        ChangeFeedFactoryMode::Incremental,
+        3,
+    )
+    .await?;
+    Ok((context, rule))
 }
 
 async fn start(context: &Context, options: ProcessorOptions) -> Result<Processor> {
@@ -148,6 +209,68 @@ async fn next(processor: &Processor) -> ChangeFeedBatch {
         .expect("processor stopped")
 }
 
+#[tokio::test]
+async fn concurrent_restart_verification_preserves_existing_progress() -> Result<()> {
+    let context = fixture().await?;
+    let before = context.list().await?;
+    let kept_id = &before[0].base.record.id;
+    let missing_id = &before[1].base.record.id;
+    let store = context.store();
+    let mut kept = store.read::<Lease>(kept_id).await?.unwrap();
+    kept.value.base.owner = Some("existing-worker".into());
+    kept.value.base.continuation = Some(ContinuationToken::from_string("saved-position".into()));
+    let kept = store.replace(kept_id, &kept.value, kept.etag).await?;
+    store
+        .execute(CosmosOperation::delete_item(ItemReference::from_name(
+            &context.leases,
+            PartitionKey::from(missing_id.clone()),
+            missing_id.clone(),
+        )))
+        .await?;
+    assert!(context.list().await.err().unwrap().status().is_not_found());
+    let (left, right) = futures::join!(context.read_leases(true), context.read_leases(true));
+    for leases in [left?, right?] {
+        assert_eq!(leases.len(), before.len());
+        assert_eq!(
+            serde_json::to_value(
+                leases
+                    .iter()
+                    .find(|lease| &lease.base.record.id == kept_id)
+                    .unwrap()
+            )?,
+            serde_json::to_value(&kept.value)?,
+        );
+        assert_eq!(
+            serde_json::to_value(
+                leases
+                    .iter()
+                    .find(|lease| &lease.base.record.id == missing_id)
+                    .unwrap()
+            )?,
+            serde_json::to_value(&before[1])?,
+        );
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn restart_verification_rejects_incomplete_range_plan() -> Result<()> {
+    let context = fixture().await?;
+    let id = format!("{}.plan", context.namespace);
+    let store = context.store();
+    let mut plan = store.read::<RangePlan>(&id).await?.unwrap();
+    plan.value.ranges.pop();
+    store.replace(&id, &plan.value, plan.etag).await?;
+    assert!(context
+        .read_leases(true)
+        .await
+        .err()
+        .unwrap()
+        .status()
+        .is_conflict());
+    Ok(())
+}
+
 fn leases(owners: &[Option<&str>]) -> Vec<Lease> {
     owners
         .iter()
@@ -161,7 +284,7 @@ fn leases(owners: &[Option<&str>]) -> Vec<Lease> {
                         account: "account".into(),
                         container_rid: "rid".into(),
                         processor_name: "workload".into(),
-                        mode: ChangeFeedProcessorMode::LatestVersion,
+                        mode: ChangeFeedFactoryMode::Incremental,
                     },
                     ttl: -1,
                 },
@@ -259,28 +382,299 @@ async fn stealing_fences_old_renewal_and_checkpoint() -> Result<()> {
         options: options("second"),
     };
     let second = second_context.acquire(&observed).await?;
-    assert!(context
-        .update(&mut first, Update::Renew)
-        .await
-        .unwrap_err()
-        .status()
-        .is_precondition_failed());
-    assert!(context
-        .update(&mut first, Update::Release)
-        .await
-        .unwrap_err()
-        .status()
-        .is_precondition_failed());
+    let checkpoint = ContinuationToken::from_string("stale-checkpoint".into());
+    let original = serde_json::to_value(&first.value)?;
+    let original_etag = first.etag.clone();
+    for update in [
+        Update::Renew,
+        Update::Checkpoint(&checkpoint),
+        Update::Release,
+    ] {
+        assert!(context
+            .update(&mut first, update)
+            .await
+            .unwrap_err()
+            .status()
+            .is_precondition_failed());
+    }
+    let stored = context
+        .store()
+        .read::<Lease>(&observed.base.record.id)
+        .await?
+        .unwrap();
+    assert_eq!(stored.etag, second.etag);
+    assert_eq!(
+        serde_json::to_value(&stored.value)?,
+        serde_json::to_value(&second.value)?
+    );
     // Reacquiring under the old instance name must not revive the old receipt.
-    second_context.options.bootstrap.instance_name = "first".into();
+    second_context.options.instance_name = "first".into();
     let third = second_context.acquire(&second.value).await?;
     assert_ne!(first.value.incarnation, third.value.incarnation);
-    assert!(context
-        .update(&mut first, Update::Renew)
-        .await
-        .unwrap_err()
-        .status()
-        .is_precondition_failed());
+    for update in [
+        Update::Renew,
+        Update::Checkpoint(&checkpoint),
+        Update::Release,
+    ] {
+        assert!(context
+            .update(&mut first, update)
+            .await
+            .unwrap_err()
+            .status()
+            .is_precondition_failed());
+    }
+    assert_eq!(first.etag, original_etag);
+    assert_eq!(serde_json::to_value(&first.value)?, original);
+    let stored = context
+        .store()
+        .read::<Lease>(&observed.base.record.id)
+        .await?
+        .unwrap();
+    assert_eq!(stored.etag, third.etag);
+    assert_eq!(
+        serde_json::to_value(&stored.value)?,
+        serde_json::to_value(&third.value)?
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn lease_mutations_preserve_fresh_progress() -> Result<()> {
+    let context = fixture().await?;
+    let observed = context.list().await?.remove(0);
+    let id = &observed.base.record.id;
+    let store = context.store();
+    let mut stored = store.read::<Lease>(id).await?.unwrap();
+    stored.value.base.continuation = Some(ContinuationToken::from_string("saved".into()));
+    let saved = store.replace(id, &stored.value, stored.etag).await?;
+    let mut owned = context.acquire(&observed).await?;
+    assert_ne!(owned.etag, saved.etag);
+    assert_eq!(
+        owned.value.base.continuation.as_ref().unwrap().as_str(),
+        "saved"
+    );
+
+    let mut concurrent = owned.value.clone();
+    concurrent.base.continuation = Some(ContinuationToken::from_string("newer".into()));
+    let concurrent = store.replace(id, &concurrent, owned.etag.clone()).await?;
+    context.update(&mut owned, Update::Renew).await?;
+    assert_ne!(owned.etag, concurrent.etag);
+    let mut expected = concurrent.value;
+    expected.renewed_at = owned.value.renewed_at;
+    assert_eq!(
+        serde_json::to_value(&owned.value)?,
+        serde_json::to_value(&expected)?
+    );
+
+    let checkpoint = ContinuationToken::from_string("processed".into());
+    context
+        .update(&mut owned, Update::Checkpoint(&checkpoint))
+        .await?;
+    expected.base.continuation = Some(checkpoint);
+    expected.renewed_at = owned.value.renewed_at;
+    assert_eq!(
+        serde_json::to_value(&owned.value)?,
+        serde_json::to_value(&expected)?
+    );
+
+    context.update(&mut owned, Update::Release).await?;
+    expected.base.owner = None;
+    expected.renewed_at = owned.value.renewed_at;
+    assert_eq!(
+        serde_json::to_value(&owned.value)?,
+        serde_json::to_value(&expected)?
+    );
+    let persisted = store.read::<Lease>(id).await?.unwrap();
+    assert_eq!(persisted.etag, owned.etag);
+    assert_eq!(
+        serde_json::to_value(&persisted.value)?,
+        serde_json::to_value(&expected)?
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn lease_mutations_reject_incompatible_records() -> Result<()> {
+    for invalid_ttl in [false, true] {
+        let context = fixture().await?;
+        let observed = context.list().await?.remove(0);
+        let mut owned = context.acquire(&observed).await?;
+        let original = serde_json::to_value(&owned.value)?;
+        let original_etag = owned.etag.clone();
+        let mut invalid = owned.value.clone();
+        if invalid_ttl {
+            invalid.base.record.ttl = 30;
+        } else {
+            invalid.base.record.workload.processor_name = "another-workload".into();
+        }
+        let stored = context
+            .store()
+            .replace(&invalid.base.record.id, &invalid, owned.etag.clone())
+            .await?;
+        assert_eq!(
+            context
+                .acquire(&owned.value)
+                .await
+                .err()
+                .unwrap()
+                .status()
+                .status_code(),
+            StatusCode::Conflict
+        );
+        let checkpoint = ContinuationToken::from_string("rejected".into());
+        for update in [
+            Update::Renew,
+            Update::Checkpoint(&checkpoint),
+            Update::Release,
+        ] {
+            assert_eq!(
+                context
+                    .update(&mut owned, update)
+                    .await
+                    .unwrap_err()
+                    .status()
+                    .status_code(),
+                StatusCode::Conflict
+            );
+        }
+        assert_eq!(owned.etag, original_etag);
+        assert_eq!(serde_json::to_value(&owned.value)?, original);
+        let persisted = context
+            .store()
+            .read::<Lease>(&invalid.base.record.id)
+            .await?
+            .unwrap();
+        assert_eq!(persisted.etag, stored.etag);
+        assert_eq!(
+            serde_json::to_value(&persisted.value)?,
+            serde_json::to_value(&invalid)?
+        );
+    }
+    Ok(())
+}
+
+#[cfg(feature = "fault_injection")]
+#[tokio::test]
+async fn acquisition_does_not_retry_write_conflicts() -> Result<()> {
+    let (context, rule) = fault_fixture(
+        FaultOperationType::ReplaceItem,
+        StatusCode::PreconditionFailed,
+        10,
+    )
+    .await?;
+    let observed = context.list().await?.remove(0);
+    let before = context
+        .store()
+        .read::<Lease>(&observed.base.record.id)
+        .await?
+        .unwrap();
+    rule.enable();
+    let error = context.acquire(&observed).await.err().unwrap();
+    rule.disable();
+    assert_eq!(error.status().status_code(), StatusCode::PreconditionFailed);
+    assert!(error.to_string().contains("injected lease failure"));
+    assert_eq!(rule.hit_count(), 1);
+    let after = context
+        .store()
+        .read::<Lease>(&observed.base.record.id)
+        .await?
+        .unwrap();
+    assert_eq!(after.etag, before.etag);
+    assert_eq!(
+        serde_json::to_value(&after.value)?,
+        serde_json::to_value(&before.value)?
+    );
+    Ok(())
+}
+
+#[cfg(feature = "fault_injection")]
+#[tokio::test]
+async fn owned_mutations_retry_only_conditional_write_conflicts() -> Result<()> {
+    let checkpoint = ContinuationToken::from_string("processed".into());
+    for (operation, status, limit, hits, succeeds) in [
+        (
+            FaultOperationType::ReplaceItem,
+            StatusCode::PreconditionFailed,
+            4,
+            4,
+            true,
+        ),
+        (
+            FaultOperationType::ReplaceItem,
+            StatusCode::PreconditionFailed,
+            10,
+            5,
+            false,
+        ),
+        (
+            FaultOperationType::ReadItem,
+            StatusCode::PreconditionFailed,
+            10,
+            1,
+            false,
+        ),
+        (
+            FaultOperationType::ReplaceItem,
+            StatusCode::BadRequest,
+            10,
+            1,
+            false,
+        ),
+    ] {
+        for update in [
+            Update::Renew,
+            Update::Checkpoint(&checkpoint),
+            Update::Release,
+        ] {
+            let (context, rule) = fault_fixture(operation, status, limit).await?;
+            let observed = context.list().await?.remove(0);
+            let mut owned = context.acquire(&observed).await?;
+            let before = serde_json::to_value(&owned.value)?;
+            let before_etag = owned.etag.clone();
+            let mut expected = owned.value.clone();
+            match update {
+                Update::Checkpoint(token) => expected.base.continuation = Some(token.clone()),
+                Update::Release => expected.base.owner = None,
+                Update::Renew => {}
+                Update::Acquire | Update::Split(_) => unreachable!(),
+            }
+            rule.enable();
+            let result = context.update(&mut owned, update).await;
+            rule.disable();
+            assert_eq!(rule.hit_count(), hits);
+            if succeeds {
+                result?;
+                assert_ne!(owned.etag, before_etag);
+                expected.renewed_at = owned.value.renewed_at;
+                assert_eq!(
+                    serde_json::to_value(&owned.value)?,
+                    serde_json::to_value(&expected)?
+                );
+            } else {
+                let error = result.unwrap_err();
+                assert_eq!(error.status().status_code(), status);
+                if hits == 5 {
+                    assert!(error
+                        .to_string()
+                        .contains("Lease update conflicts exhausted the retry budget."));
+                } else {
+                    assert!(error.to_string().contains("injected lease failure"));
+                }
+                assert_eq!(owned.etag, before_etag);
+                assert_eq!(serde_json::to_value(&owned.value)?, before);
+            }
+            let persisted = context
+                .store()
+                .read::<Lease>(&owned.value.base.record.id)
+                .await?
+                .unwrap();
+            assert_eq!(persisted.etag, owned.etag);
+            assert_eq!(
+                serde_json::to_value(&persisted.value)?,
+                serde_json::to_value(&owned.value)?
+            );
+        }
+    }
     Ok(())
 }
 

@@ -1,22 +1,33 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.1.0-beta.2 (Unreleased)
 
 ### Features Added
 
-- Added a standalone mode-typed `ChangeFeedProcessorBuilder` requiring a typed mode, clients, names, and an async batch callback registered with `handle_change_feed()` before `build()`; mode-specific start configuration is enforced at compile time.
-- Added processor builder configuration for page-size hints, feed polling delay, initial continuation, minimum and maximum leases per host, and lease verification on restart; the required processor name supplies the workload's lease prefix.
-- Added callback lease identity through `ChangeFeedProcessorContext`, local `is_started()` inspection, and a `current_state()` monitoring scaffold that still returns a not-implemented error.
-- `ChangeFeedProcessorBuilder::build()` now returns a result and rejects blank processor/instance names, inconsistent bounded lease counts, and blank initial continuation tokens without network validation.
 - `ChangeFeedProcessor::start()` bootstraps the workload and starts driver-owned lease balancing, renewal, and polling; a checkpoint follows each successful callback before the next batch for that lease, and `stop()` waits for local shutdown.
+- The bootstrap stage of `ChangeFeedProcessor::start()` initializes incomplete workloads through the shared driver without inspecting completed lease inventories. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Opt-in restart verification recreates missing initial leases in the processing runtime while preserving existing owners and checkpoints. ([#5474](https://github.com/Azure/azure-sdk-for-rust/pull/5474))
+- Compatible concurrent processor starts sharing the same drivers now await one bootstrap outcome; cancelling one waiter does not cancel the others. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Added a change feed processor API reusing `ChangeFeedMode`, with required async function-pointer callbacks, feed and lease options, local configuration and mode/start validation, lease context, and monitoring types; monitoring remains unimplemented.
 
 ### Breaking Changes
 
 ### Bugs Fixed
 
-- Keep CPU sampling active for long-lived clients and preserve diagnostics through partition split recovery, including `500/20206` errors. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
+- Retry coalesced bootstrap failures within each processor start's own budget without resetting deadlines or retrying permanent validation errors. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Allow processor bootstrap to use multi-write-region lease accounts. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 
 ### Other Changes
+
+## 1.1.0-beta.1 (2026-10-22)
+
+### Features Added
+
+- Added `OperationOptions::utf8_decoding_mode` for opt-in lossy recovery of invalid UTF-8 in response JSON strings. ([#5367](https://github.com/Azure/azure-sdk-for-rust/issues/5367))
+
+### Bugs Fixed
+
+- Keep CPU sampling active for long-lived clients and preserve diagnostics through partition split recovery, including `500/20206` errors. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
 
 ## 1.0.0 (2026-10-08)
 

@@ -2,11 +2,14 @@
 // Licensed under the MIT License.
 
 use super::{
-    bootstrap, fixture_with_emulator, next, start, ChangeFeedBatch, ChangeFeedProcessorMode,
-    Context, Lease, Processor, ProcessorOptions, Update,
+    bootstrap, fixture_with_emulator, next, start, ChangeFeedBatch, ChangeFeedFactoryMode, Context,
+    Lease, Processor, ProcessorOptions, Update,
 };
 use crate::{
-    change_feed_processor::bootstrap::{lease_id, store::Stored, RangePlan},
+    change_feed_processor::bootstrap::{
+        lease_id, store::ChangeFeedProcessorBootstrapStoredRecord as Stored,
+        ChangeFeedProcessorBootstrapRangePlan as RangePlan,
+    },
     driver::dataflow::{PipelineNodeState, RangedToken},
     in_memory_emulator::Epk,
     models::{
@@ -36,9 +39,9 @@ fn config(context: &Context, worker: &str, limit: u32) -> ProcessorOptions {
         .clone()
         .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()))
         .with_lease_counts(0, limit);
-    options.bootstrap.instance_name = worker.into();
+    options.instance_name = worker.into();
     options.renew_interval = Duration::from_millis(20);
-    options.bootstrap.verify_leases_on_restart = true;
+    options.verify_leases_on_restart = true;
     options
 }
 
@@ -193,8 +196,8 @@ fn token(context: &Context, scope: &FeedRange, value: &str) -> ContinuationToken
 #[tokio::test]
 async fn split_with_pending_batch_preserves_coverage_and_rebalances_children() -> Result<()> {
     for mode in [
-        ChangeFeedProcessorMode::LatestVersion,
-        ChangeFeedProcessorMode::AllVersionsAndDeletes,
+        ChangeFeedFactoryMode::Incremental,
+        ChangeFeedFactoryMode::FullFidelity,
     ] {
         let (context, emulator) = fixture_with_emulator(mode, 1).await?;
         let children = vec![range("", "20"), range("20", "FF")];
@@ -278,8 +281,7 @@ async fn split_with_pending_batch_preserves_coverage_and_rebalances_children() -
 
 #[tokio::test]
 async fn split_during_pending_batch_replays_after_shutdown_and_restart() -> Result<()> {
-    let (context, emulator) =
-        fixture_with_emulator(ChangeFeedProcessorMode::LatestVersion, 1).await?;
+    let (context, emulator) = fixture_with_emulator(ChangeFeedFactoryMode::Incremental, 1).await?;
     let mut expected = BTreeMap::new();
     let keys = keys(&[range("", "20"), range("20", "FF")]);
     publish(&context, &keys, 0..4, &mut expected).await?;
@@ -314,15 +316,15 @@ async fn split_during_pending_batch_replays_after_shutdown_and_restart() -> Resu
 async fn merge_retains_uneven_predecessor_checkpoints_across_pending_batches_and_restart(
 ) -> Result<()> {
     for mode in [
-        ChangeFeedProcessorMode::LatestVersion,
-        ChangeFeedProcessorMode::AllVersionsAndDeletes,
+        ChangeFeedFactoryMode::Incremental,
+        ChangeFeedFactoryMode::FullFidelity,
     ] {
         exercise_merge(mode).await?;
     }
     Ok(())
 }
 
-async fn exercise_merge(mode: ChangeFeedProcessorMode) -> Result<()> {
+async fn exercise_merge(mode: ChangeFeedFactoryMode) -> Result<()> {
     let (context, emulator) = fixture_with_emulator(mode, 2).await?;
     let initial = context.list().await?;
     let initial_ids: BTreeSet<_> = initial
@@ -432,7 +434,7 @@ async fn exercise_merge(mode: ChangeFeedProcessorMode) -> Result<()> {
 async fn frozen_parent_recovers_partial_creation_without_resetting_a_competing_child() -> Result<()>
 {
     for partial in [false, true] {
-        let (context, _) = fixture_with_emulator(ChangeFeedProcessorMode::LatestVersion, 1).await?;
+        let (context, _) = fixture_with_emulator(ChangeFeedFactoryMode::Incremental, 1).await?;
         let root = context.list().await?.remove(0);
         let mut owned = context.acquire(&root).await?;
         let checkpoint = token(&context, &root.base.range, "parent-acknowledged");
@@ -478,16 +480,17 @@ async fn frozen_parent_recovers_partial_creation_without_resetting_a_competing_c
             Some(context.checkpoint(&owned.value, &children[1])?)
         );
         let before = stored(&context, &root.base.record.id).await;
-        let mut options = context.options.bootstrap.clone();
-        options.verify_leases_on_restart = true;
         bootstrap(
             &context.source_driver,
             &context.source,
             &context.lease_driver,
             &context.leases,
-            &options,
+            context.options.mode,
+            &context.options.processor_name,
+            &context.options.instance_name,
         )
         .await?;
+        context.read_leases(true).await?;
         let after = stored(&context, &root.base.record.id).await;
         assert_eq!(after.etag, before.etag);
         assert_eq!(
@@ -507,7 +510,7 @@ async fn frozen_parent_recovers_partial_creation_without_resetting_a_competing_c
 
 #[tokio::test]
 async fn stale_owner_cannot_retire_parent_or_advance_after_takeover() -> Result<()> {
-    let (context, _) = fixture_with_emulator(ChangeFeedProcessorMode::LatestVersion, 1).await?;
+    let (context, _) = fixture_with_emulator(ChangeFeedFactoryMode::Incremental, 1).await?;
     let root = context.list().await?.remove(0);
     let mut old = context.acquire(&root).await?;
     let mut new = context.acquire(&old.value).await?;
@@ -546,8 +549,7 @@ async fn stale_owner_cannot_retire_parent_or_advance_after_takeover() -> Result<
 
 #[tokio::test]
 async fn descendant_split_projects_saved_state_and_keeps_disjoint_coverage() -> Result<()> {
-    let (context, _) =
-        fixture_with_emulator(ChangeFeedProcessorMode::AllVersionsAndDeletes, 1).await?;
+    let (context, _) = fixture_with_emulator(ChangeFeedFactoryMode::FullFidelity, 1).await?;
     let root = context.list().await?.remove(0);
     let mut parent = context.acquire(&root).await?;
     let checkpoint = token(&context, &root.base.range, "pinned");
@@ -608,8 +610,7 @@ async fn descendant_split_projects_saved_state_and_keeps_disjoint_coverage() -> 
 
 #[tokio::test]
 async fn unfinished_split_surfaces_1007_without_retiring_a_lease() -> Result<()> {
-    let (context, emulator) =
-        fixture_with_emulator(ChangeFeedProcessorMode::LatestVersion, 1).await?;
+    let (context, emulator) = fixture_with_emulator(ChangeFeedFactoryMode::Incremental, 1).await?;
     let root = context.list().await?.remove(0);
     let owned = Arc::new(Mutex::new(context.acquire(&root).await?));
     let mut plan = context
@@ -654,7 +655,7 @@ async fn unfinished_split_surfaces_1007_without_retiring_a_lease() -> Result<()>
 
 #[tokio::test]
 async fn concurrent_retirement_has_one_winner_and_cannot_replace_its_checkpoint() -> Result<()> {
-    let (context, _) = fixture_with_emulator(ChangeFeedProcessorMode::LatestVersion, 1).await?;
+    let (context, _) = fixture_with_emulator(ChangeFeedFactoryMode::Incremental, 1).await?;
     let root = context.list().await?.remove(0);
     let mut first = context.acquire(&root).await?;
     let checkpoint = token(&context, &root.base.range, "acknowledged");
@@ -686,7 +687,7 @@ async fn concurrent_retirement_has_one_winner_and_cannot_replace_its_checkpoint(
 
 #[tokio::test]
 async fn retirement_rejects_gaps_overlaps_and_non_splits_without_mutation() -> Result<()> {
-    let (context, _) = fixture_with_emulator(ChangeFeedProcessorMode::LatestVersion, 1).await?;
+    let (context, _) = fixture_with_emulator(ChangeFeedFactoryMode::Incremental, 1).await?;
     let root = context.list().await?.remove(0);
     let mut owned = context.acquire(&root).await?;
     let before = owned.etag.clone();

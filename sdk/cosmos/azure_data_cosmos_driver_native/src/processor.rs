@@ -21,11 +21,11 @@ use crate::{
     string::{optional_text, required_text, CosmosStringView},
 };
 use azure_data_cosmos_driver::{
-    change_feed_processor::{
-        BatchReceipt, BootstrapOptions, ChangeFeedBatch, ChangeFeedProcessorMode, Processor,
-        ProcessorOptions,
+    change_feed_processor::{BatchReceipt, ChangeFeedBatch, Processor, ProcessorOptions},
+    models::{
+        ChangeFeedFactoryMode, ChangeFeedStartFrom, ContinuationToken, MaxItemCountHint,
+        ResponseBody,
     },
-    models::{ChangeFeedStartFrom, ContinuationToken, MaxItemCountHint, ResponseBody},
     CosmosError,
 };
 use futures::FutureExt;
@@ -68,7 +68,7 @@ pub struct CosmosProcessorRequest {
     pub min_leases: u32,
     /// Maximum target lease count, or zero for uncapped.
     pub max_leases: u32,
-    /// 0: fast bootstrap restart; 1: verify initial leases.
+    /// 0: fast restart; 1: verify initial leases in the processing runtime.
     pub verify_on_restart: u32,
     /// Must be zero.
     pub reserved: [u32; 4],
@@ -404,8 +404,8 @@ unsafe fn options(
         )
     };
     let mode = match request.mode {
-        1 => ChangeFeedProcessorMode::LatestVersion,
-        2 => ChangeFeedProcessorMode::AllVersionsAndDeletes,
+        1 => ChangeFeedFactoryMode::Incremental,
+        2 => ChangeFeedFactoryMode::FullFidelity,
         _ => return Err(invalid),
     };
     let start = match (request.start_from, timestamp) {
@@ -423,14 +423,12 @@ unsafe fn options(
         }
         _ => return Err(invalid),
     };
-    let mut options = ProcessorOptions::new(
-        BootstrapOptions::new(mode, name, instance)
-            .with_lease_verification_enabled_on_restart(request.verify_on_restart == 1),
-    )
-    .with_start(start)
-    .with_max_item_count(hint)
-    .with_poll_delay(Duration::from_millis(request.poll_delay_ms))
-    .with_lease_counts(request.min_leases, request.max_leases);
+    let mut options = ProcessorOptions::new(mode, name, instance)
+        .with_lease_verification_enabled_on_restart(request.verify_on_restart == 1)
+        .with_start(start)
+        .with_max_item_count(hint)
+        .with_poll_delay(Duration::from_millis(request.poll_delay_ms))
+        .with_lease_counts(request.min_leases, request.max_leases);
     if let Some(token) = continuation {
         options = options.with_continuation(ContinuationToken::from_string(token));
     }

@@ -19,9 +19,7 @@ pub(super) fn select(leases: &[Lease], options: &ProcessorOptions, now: i64) -> 
             _ => available.push(index),
         }
     }
-    let mine = *owners
-        .entry(options.bootstrap.instance_name.as_str())
-        .or_insert(0);
+    let mine = *owners.entry(options.instance_name.as_str()).or_insert(0);
     if leases.is_empty() {
         return Vec::new();
     }

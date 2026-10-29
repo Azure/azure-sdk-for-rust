@@ -4,7 +4,7 @@
     "id": "item.create-conflict",
     "title": "Creating a duplicate identity returns conflict",
     "requirement": "A duplicate create returns 409 and leaves the original document unchanged.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "python",
@@ -33,7 +33,7 @@
             ]
         },
         "azureLive": {
-            "applicability": "supported",
+            "applicability": "required",
             "fidelity": "full"
         }
     }

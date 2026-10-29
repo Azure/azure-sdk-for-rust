@@ -15,7 +15,7 @@ use azure_storage_blob::models::{
 use azure_storage_blob::{format_filter_expression, BlobServiceClient, BlobServiceClientOptions};
 use common::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
-    get_container_name, poll_until, recorded_test_setup, StorageAccount,
+    get_container_name, recorded_test_setup, StorageAccount,
 };
 use futures::{StreamExt, TryStreamExt};
 use std::{collections::HashMap, error::Error};
@@ -179,7 +179,7 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
+#[recorded::test(playback)]
 async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -220,30 +220,16 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     .await?;
 
     // Find "hello world" blob by its tag {"foo": "bar"}.
-    // In live mode, poll until tags are indexed (up to 60s total timeout).
-    // In record mode, use a fixed 15s sleep.
-    poll_until(ctx.recording(), || async {
-        let blobs: Vec<_> = service_client
-            .find_blobs_by_tags("\"foo\"='bar'", None)?
-            .try_collect()
-            .await?;
-        Ok(blobs
+    let blobs: Vec<_> = service_client
+        .find_blobs_by_tags("\"foo\"='bar'", None)?
+        .try_collect()
+        .await?;
+    assert!(
+        blobs
             .iter()
-            .any(|blob| blob.name.as_deref() == Some(blob3_name.as_str())))
-    })
-    .await?;
-    {
-        let blobs: Vec<_> = service_client
-            .find_blobs_by_tags("\"foo\"='bar'", None)?
-            .try_collect()
-            .await?;
-        assert!(
-            blobs
-                .iter()
-                .any(|blob| blob.name.as_deref() == Some(blob3_name.as_str())),
-            "Failed to find \"{blob3_name}\" in filtered blob results."
-        );
-    }
+            .any(|blob| blob.name.as_deref() == Some(blob3_name.as_str())),
+        "Failed to find \"{blob3_name}\" in filtered blob results."
+    );
 
     // Find "ferris the crab" blob by its tag {"fizz": "buzz"}
     let blobs: Vec<_> = service_client

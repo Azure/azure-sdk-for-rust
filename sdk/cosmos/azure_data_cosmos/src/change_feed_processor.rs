@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 
 use crate::{
-    feed::ContinuationToken, models::ChangeFeedItem, options::MaxItemCountHint, ContainerClient,
-    CosmosError, CosmosStatus,
+    feed::ContinuationToken,
+    models::ChangeFeedItem,
+    options::{ChangeFeedMode, MaxItemCountHint},
+    ContainerClient, CosmosError, CosmosStatus,
 };
 use azure_core::{fmt::SafeDebug, http::StatusCode};
 use serde::de::DeserializeOwned;
@@ -21,28 +23,7 @@ use time::OffsetDateTime;
 
 mod execution;
 
-/// Latest-version mode for a [`ChangeFeedProcessorBuilder`].
-///
-/// Pass this value to [`ChangeFeedProcessorBuilder::new()`].
-#[derive(Clone, Copy, Debug)]
-pub struct LatestVersion;
-
-/// All-versions-and-deletes mode for a [`ChangeFeedProcessorBuilder`].
-///
-/// Pass this value to [`ChangeFeedProcessorBuilder::new()`].
-/// This mode does not expose beginning or time-based start configuration.
-#[derive(Clone, Copy, Debug)]
-pub struct AllVersionsAndDeletes;
-
-/// A supported change feed processor mode.
-///
-/// This trait is sealed and cannot be implemented by applications.
-/// Select [`LatestVersion`] or [`AllVersionsAndDeletes`] when constructing a
-/// [`ChangeFeedProcessorBuilder`].
-pub trait ChangeFeedProcessorMode: private::Sealed {}
-
-impl ChangeFeedProcessorMode for LatestVersion {}
-impl ChangeFeedProcessorMode for AllVersionsAndDeletes {}
+type ChangeFeedHandler<T, Fut> = fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut;
 
 /// Context identifying the lease associated with a callback batch.
 ///
@@ -107,29 +88,6 @@ impl ChangeFeedProcessorState {
     }
 }
 
-mod private {
-    use crate::{
-        change_feed_processor::{AllVersionsAndDeletes, LatestVersion},
-        options::ChangeFeedMode,
-    };
-
-    pub trait Sealed {
-        fn mode(&self) -> ChangeFeedMode;
-    }
-
-    impl Sealed for LatestVersion {
-        fn mode(&self) -> ChangeFeedMode {
-            ChangeFeedMode::LatestVersion
-        }
-    }
-
-    impl Sealed for AllVersionsAndDeletes {
-        fn mode(&self) -> ChangeFeedMode {
-            ChangeFeedMode::AllVersionsAndDeletes
-        }
-    }
-}
-
 enum ProcessorStartFrom {
     Now,
     Beginning,
@@ -140,7 +98,7 @@ enum ProcessorStartFrom {
 /// Builder for configuring a change feed processor.
 ///
 /// Owns the monitored and lease container clients and the processor and instance names.
-/// Pass [`LatestVersion`] or [`AllVersionsAndDeletes`] to [`new()`](Self::new)
+/// Pass a [`ChangeFeedMode`] to [`new()`](Self::new)
 /// to select a mode explicitly. There is no mode-free constructor or
 /// mode-changing setter.
 ///
@@ -150,21 +108,21 @@ enum ProcessorStartFrom {
 /// configuration applies to initialization without saved progress; it does not
 /// configure a reset of existing checkpoints.
 ///
-/// `M` identifies the mode, `T` the deserialized item type, and `H` the callback
+/// `T` identifies the deserialized item type and `H` the callback
 /// type. Before registration, `T` and `H` default to `()`. Registering a callback
 /// infers both types and makes [`build()`](Self::build) available.
 ///
 /// # Examples
 ///
 /// ```
-/// use azure_data_cosmos::{ChangeFeedProcessorBuilder, ContainerClient, LatestVersion};
+/// use azure_data_cosmos::{options::ChangeFeedMode, ChangeFeedProcessorBuilder, ContainerClient};
 ///
 /// fn configure(
 ///     monitored_container: ContainerClient,
 ///     lease_container: ContainerClient,
-/// ) -> ChangeFeedProcessorBuilder<LatestVersion> {
+/// ) -> ChangeFeedProcessorBuilder {
 ///     ChangeFeedProcessorBuilder::new(
-///         LatestVersion,
+///         ChangeFeedMode::LatestVersion,
 ///         monitored_container,
 ///         lease_container,
 ///         "order-projection",
@@ -178,15 +136,15 @@ enum ProcessorStartFrom {
 ///
 /// ```
 /// use azure_data_cosmos::{
-///     AllVersionsAndDeletes, ChangeFeedProcessorBuilder, ContainerClient,
+///     options::ChangeFeedMode, ChangeFeedProcessorBuilder, ContainerClient,
 /// };
 ///
 /// fn configure(
 ///     monitored_container: ContainerClient,
 ///     lease_container: ContainerClient,
-/// ) -> ChangeFeedProcessorBuilder<AllVersionsAndDeletes> {
+/// ) -> ChangeFeedProcessorBuilder {
 ///     ChangeFeedProcessorBuilder::new(
-///         AllVersionsAndDeletes,
+///         ChangeFeedMode::AllVersionsAndDeletes,
 ///         monitored_container,
 ///         lease_container,
 ///         "order-audit",
@@ -195,80 +153,36 @@ enum ProcessorStartFrom {
 /// }
 /// ```
 ///
-/// Beginning-based starts are unavailable in all-versions-and-deletes mode:
-///
-/// ```compile_fail,E0599
-/// use azure_data_cosmos::{AllVersionsAndDeletes, ChangeFeedProcessorBuilder};
-///
-/// fn configure(builder: ChangeFeedProcessorBuilder<AllVersionsAndDeletes>) {
-///     builder.with_start_from_beginning();
-/// }
-/// ```
-///
-/// Time-based starts are also unavailable in that mode:
-///
-/// ```compile_fail,E0599
-/// use azure_data_cosmos::{AllVersionsAndDeletes, ChangeFeedProcessorBuilder};
-/// use time::OffsetDateTime;
-///
-/// fn configure(builder: ChangeFeedProcessorBuilder<AllVersionsAndDeletes>) {
-///     builder.with_start_time(OffsetDateTime::UNIX_EPOCH);
-/// }
-/// ```
+/// Beginning and time-based starts are rejected by [`build()`](Self::build)
+/// in all-versions-and-deletes mode.
 ///
 /// Construction requires both clients and both names:
 ///
 /// ```compile_fail,E0061
-/// use azure_data_cosmos::{ChangeFeedProcessorBuilder, LatestVersion};
+/// use azure_data_cosmos::{options::ChangeFeedMode, ChangeFeedProcessorBuilder};
 ///
-/// let _builder = ChangeFeedProcessorBuilder::new(LatestVersion);
+/// let _builder = ChangeFeedProcessorBuilder::new(ChangeFeedMode::LatestVersion);
 /// ```
 ///
 /// Construction without selecting a mode is unavailable:
 ///
 /// ```compile_fail,E0061
-/// use azure_data_cosmos::{ChangeFeedProcessorBuilder, ContainerClient, LatestVersion};
+/// use azure_data_cosmos::{ChangeFeedProcessorBuilder, ContainerClient};
 ///
 /// fn configure(monitored_container: ContainerClient, lease_container: ContainerClient) {
-///     let _builder = ChangeFeedProcessorBuilder::<LatestVersion>::new(
+///     let _builder = ChangeFeedProcessorBuilder::new(
 ///         monitored_container, lease_container, "orders", "worker-01",
 ///     );
 /// }
 /// ```
 ///
-/// Applications cannot construct builders for their own mode types:
-///
-/// ```compile_fail,E0277
-/// use azure_data_cosmos::ChangeFeedProcessorMode;
-///
-/// struct CustomMode;
-///
-/// impl ChangeFeedProcessorMode for CustomMode {}
-/// ```
-///
-/// The runtime mode enum cannot replace the typed mode argument:
-///
-/// ```compile_fail,E0277
-/// use azure_data_cosmos::{ChangeFeedProcessorBuilder, ContainerClient};
-/// use azure_data_cosmos::options::ChangeFeedMode;
-///
-/// fn configure(monitored_container: ContainerClient, lease_container: ContainerClient) {
-///     let _builder = ChangeFeedProcessorBuilder::new(
-///         ChangeFeedMode::LatestVersion,
-///         monitored_container,
-///         lease_container,
-///         "orders",
-///         "worker-01",
-///     );
-/// }
-/// ```
 #[must_use]
-pub struct ChangeFeedProcessorBuilder<M: ChangeFeedProcessorMode, T = (), H = ()> {
+pub struct ChangeFeedProcessorBuilder<T = (), H = ()> {
     monitored_container: ContainerClient,
     lease_container: ContainerClient,
     processor_name: String,
     instance_name: String,
-    mode: M,
+    mode: ChangeFeedMode,
     start_from: ProcessorStartFrom,
     max_item_count: MaxItemCountHint,
     feed_poll_delay: Duration,
@@ -279,10 +193,10 @@ pub struct ChangeFeedProcessorBuilder<M: ChangeFeedProcessorMode, T = (), H = ()
     item: PhantomData<fn() -> T>,
 }
 
-impl<M: ChangeFeedProcessorMode> ChangeFeedProcessorBuilder<M> {
+impl ChangeFeedProcessorBuilder {
     /// Creates a builder with an explicit mode and the required clients and names.
     ///
-    /// Pass [`LatestVersion`] or [`AllVersionsAndDeletes`] as `mode`.
+    /// Uses the same [`ChangeFeedMode`] as the pull change feed API.
     ///
     /// `monitored_container` identifies the source of changes, and `lease_container`
     /// identifies storage for leases and checkpoints. `processor_name` supplies
@@ -294,10 +208,10 @@ impl<M: ChangeFeedProcessorMode> ChangeFeedProcessorBuilder<M> {
     /// Takes ownership of both clients. Clone a client before passing it here if
     /// it is needed elsewhere. This method does not validate the names, perform
     /// network I/O, or start background work. The initial start position is now.
-    /// Only latest-version builders expose beginning and time-based start configuration.
+    /// Beginning and time-based starts are validated against the mode by [`build()`](Self::build).
     /// Lease identifiers are constructed when the processor starts.
     pub fn new(
-        mode: M,
+        mode: ChangeFeedMode,
         monitored_container: ContainerClient,
         lease_container: ContainerClient,
         processor_name: impl Into<String>,
@@ -320,15 +234,13 @@ impl<M: ChangeFeedProcessorMode> ChangeFeedProcessorBuilder<M> {
         }
     }
 
-    /// Registers an async callback that receives owned context and a batch of changes.
+    /// Registers an async function that receives owned context and a batch of changes.
     ///
     /// The first argument is [`ChangeFeedProcessorContext`], identifying the batch's
     /// lease. The second is an owned vector of [`ChangeFeedItem<T>`] envelopes in
-    /// either mode. The callback returns a
-    /// future resolving to [`crate::Result<()>`]. It must support repeated calls
-    /// through a shared reference, be [`Send`] and [`Sync`], and own its captures
-    /// or borrow only `'static` data. Each returned future must also be [`Send`]
-    /// and own its state or borrow only `'static` data.
+    /// either mode. The function returns a future resolving to [`crate::Result<()>`].
+    /// Each returned future must be [`Send`] and cannot borrow short-lived data.
+    /// The callback is stored as a function pointer; capturing closures are not accepted.
     ///
     /// Consumes the builder and makes [`build()`](Self::build) available. A
     /// callback can be registered only once. Callbacks for different leases can
@@ -341,7 +253,6 @@ impl<M: ChangeFeedProcessorMode> ChangeFeedProcessorBuilder<M> {
     /// ```
     /// use azure_data_cosmos::{
     ///     models::ChangeFeedItem, ChangeFeedProcessorBuilder, ChangeFeedProcessorContext,
-    ///     LatestVersion,
     /// };
     /// use serde::Deserialize;
     ///
@@ -350,18 +261,21 @@ impl<M: ChangeFeedProcessorMode> ChangeFeedProcessorBuilder<M> {
     ///     id: String,
     /// }
     ///
-    /// fn configure(builder: ChangeFeedProcessorBuilder<LatestVersion>) -> azure_data_cosmos::Result<()> {
-    ///     let _processor = builder
-    ///         .handle_change_feed(|context: ChangeFeedProcessorContext, changes: Vec<ChangeFeedItem<Order>>| async move {
-    ///             println!("Lease: {}", context.lease_token());
-    ///             for change in changes {
-    ///                 if let Some(order) = change.current() {
-    ///                     println!("Changed order: {}", order.id);
-    ///                 }
-    ///             }
-    ///             Ok(())
-    ///         })
-    ///         .build()?;
+    /// async fn on_changes(
+    ///     context: ChangeFeedProcessorContext,
+    ///     changes: Vec<ChangeFeedItem<Order>>,
+    /// ) -> azure_data_cosmos::Result<()> {
+    ///     println!("Lease: {}", context.lease_token());
+    ///     for change in changes {
+    ///         if let Some(order) = change.current() {
+    ///             println!("Changed order: {}", order.id);
+    ///         }
+    ///     }
+    ///     Ok(())
+    /// }
+    ///
+    /// fn configure(builder: ChangeFeedProcessorBuilder) -> azure_data_cosmos::Result<()> {
+    ///     let _processor = builder.handle_change_feed(on_changes).build()?;
     ///     Ok(())
     /// }
     /// ```
@@ -369,9 +283,9 @@ impl<M: ChangeFeedProcessorMode> ChangeFeedProcessorBuilder<M> {
     /// A synchronous callback is not accepted:
     ///
     /// ```compile_fail,E0277
-    /// use azure_data_cosmos::{models::ChangeFeedItem, ChangeFeedProcessorBuilder, LatestVersion};
+    /// use azure_data_cosmos::{models::ChangeFeedItem, ChangeFeedProcessorBuilder};
     ///
-    /// fn configure(builder: ChangeFeedProcessorBuilder<LatestVersion>) {
+    /// fn configure(builder: ChangeFeedProcessorBuilder) {
     ///     let _builder = builder.handle_change_feed(|_context, _: Vec<ChangeFeedItem<String>>| {
     ///         Ok::<(), azure_data_cosmos::CosmosError>(())
     ///     });
@@ -381,9 +295,9 @@ impl<M: ChangeFeedProcessorMode> ChangeFeedProcessorBuilder<M> {
     /// The callback's future must return a result:
     ///
     /// ```compile_fail,E0271
-    /// use azure_data_cosmos::{models::ChangeFeedItem, ChangeFeedProcessorBuilder, LatestVersion};
+    /// use azure_data_cosmos::{models::ChangeFeedItem, ChangeFeedProcessorBuilder};
     ///
-    /// fn configure(builder: ChangeFeedProcessorBuilder<LatestVersion>) {
+    /// fn configure(builder: ChangeFeedProcessorBuilder) {
     ///     let _builder = builder.handle_change_feed(|_context, _: Vec<ChangeFeedItem<String>>| async {});
     /// }
     /// ```
@@ -391,59 +305,63 @@ impl<M: ChangeFeedProcessorMode> ChangeFeedProcessorBuilder<M> {
     /// Item types must support deserialization:
     ///
     /// ```compile_fail,E0277
-    /// use azure_data_cosmos::{models::ChangeFeedItem, ChangeFeedProcessorBuilder, LatestVersion};
+    /// use azure_data_cosmos::{models::ChangeFeedItem, ChangeFeedProcessorBuilder};
     ///
     /// struct NotDeserializable;
     ///
-    /// fn configure(builder: ChangeFeedProcessorBuilder<LatestVersion>) {
+    /// fn configure(builder: ChangeFeedProcessorBuilder) {
     ///     let _builder = builder
     ///         .handle_change_feed(|_context, _: Vec<ChangeFeedItem<NotDeserializable>>| async { Ok(()) });
     /// }
     /// ```
     ///
-    /// Registration does not enable beginning-based starts in all-versions-and-deletes mode:
-    ///
-    /// ```compile_fail,E0599
-    /// use azure_data_cosmos::{
-    ///     models::ChangeFeedItem, AllVersionsAndDeletes, ChangeFeedProcessorBuilder,
-    /// };
-    ///
-    /// fn configure(builder: ChangeFeedProcessorBuilder<AllVersionsAndDeletes>) {
-    ///     let _builder = builder
-    ///         .handle_change_feed(|_context, _: Vec<ChangeFeedItem<String>>| async { Ok(()) })
-    ///         .with_start_from_beginning();
-    /// }
-    /// ```
-    ///
-    /// Time-based starts also remain unavailable in that mode:
-    ///
-    /// ```compile_fail,E0599
-    /// use azure_data_cosmos::{
-    ///     models::ChangeFeedItem, AllVersionsAndDeletes, ChangeFeedProcessorBuilder,
-    /// };
-    /// use time::OffsetDateTime;
-    ///
-    /// fn configure(builder: ChangeFeedProcessorBuilder<AllVersionsAndDeletes>) {
-    ///     let _builder = builder
-    ///         .handle_change_feed(|_context, _: Vec<ChangeFeedItem<String>>| async { Ok(()) })
-    ///         .with_start_time(OffsetDateTime::UNIX_EPOCH);
-    /// }
-    /// ```
-    ///
     /// The callback must accept both the context and the batch:
     ///
-    /// ```compile_fail,E0593
-    /// use azure_data_cosmos::{models::ChangeFeedItem, ChangeFeedProcessorBuilder, LatestVersion};
+    /// ```compile_fail,E0593,E0308
+    /// use azure_data_cosmos::{models::ChangeFeedItem, ChangeFeedProcessorBuilder};
     ///
-    /// fn configure(builder: ChangeFeedProcessorBuilder<LatestVersion>) {
+    /// fn configure(builder: ChangeFeedProcessorBuilder) {
     ///     let _builder = builder
     ///         .handle_change_feed(|_: Vec<ChangeFeedItem<String>>| async { Ok(()) });
     /// }
     /// ```
-    pub fn handle_change_feed<T, H, Fut>(self, handler: H) -> ChangeFeedProcessorBuilder<M, T, H>
+    ///
+    /// A callback cannot be registered twice:
+    ///
+    /// ```compile_fail,E0599
+    /// use azure_data_cosmos::{models::ChangeFeedItem, ChangeFeedProcessorBuilder};
+    ///
+    /// fn configure(builder: ChangeFeedProcessorBuilder) {
+    ///     let _builder = builder
+    ///         .handle_change_feed(|_, _: Vec<ChangeFeedItem<String>>| async { Ok(()) })
+    ///         .handle_change_feed(|_, _: Vec<ChangeFeedItem<String>>| async { Ok(()) });
+    /// }
+    /// ```
+    ///
+    /// A callback cannot capture application state:
+    ///
+    /// ```compile_fail,E0308
+    /// use azure_data_cosmos::{models::ChangeFeedItem, ChangeFeedProcessorBuilder};
+    ///
+    /// fn configure(builder: ChangeFeedProcessorBuilder) {
+    ///     let label = String::from("orders");
+    ///     let _builder = builder.handle_change_feed(
+    ///         move |_, _: Vec<ChangeFeedItem<String>>| {
+    ///             let label = label.clone();
+    ///             async move {
+    ///                 println!("{label}");
+    ///                 Ok(())
+    ///             }
+    ///         },
+    ///     );
+    /// }
+    /// ```
+    pub fn handle_change_feed<T, Fut>(
+        self,
+        handler: ChangeFeedHandler<T, Fut>,
+    ) -> ChangeFeedProcessorBuilder<T, ChangeFeedHandler<T, Fut>>
     where
         T: DeserializeOwned + Send + 'static,
-        H: Fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut + Send + Sync + 'static,
         Fut: Future<Output = crate::Result<()>> + Send + 'static,
     {
         ChangeFeedProcessorBuilder {
@@ -464,7 +382,7 @@ impl<M: ChangeFeedProcessorMode> ChangeFeedProcessorBuilder<M> {
     }
 }
 
-impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessorBuilder<M, T, H> {
+impl<T, H> ChangeFeedProcessorBuilder<T, H> {
     /// Sets the requested maximum number of items per change feed page.
     ///
     /// Defaults to 100. This is a service hint, not a hard limit on callback batch
@@ -480,12 +398,19 @@ impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessorBuilder<M, T, H> {
     ///     feed::ContinuationToken,
     ///     models::ChangeFeedItem,
     ///     options::MaxItemCountHint,
-    ///     ChangeFeedProcessorBuilder, ChangeFeedProcessorMode,
+    ///     ChangeFeedProcessorBuilder, ChangeFeedProcessorContext,
     /// };
     /// use std::{num::NonZeroU32, time::Duration};
     ///
-    /// fn configure<M: ChangeFeedProcessorMode>(
-    ///     builder: ChangeFeedProcessorBuilder<M>,
+    /// async fn on_changes(
+    ///     _context: ChangeFeedProcessorContext,
+    ///     _changes: Vec<ChangeFeedItem<String>>,
+    /// ) -> azure_data_cosmos::Result<()> {
+    ///     Ok(())
+    /// }
+    ///
+    /// fn configure(
+    ///     builder: ChangeFeedProcessorBuilder,
     ///     initial_continuation: ContinuationToken,
     /// ) -> azure_data_cosmos::Result<()> {
     ///     let _processor = builder
@@ -495,7 +420,7 @@ impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessorBuilder<M, T, H> {
     ///         .with_min_scale_count(1)
     ///         .with_max_scale_count(4)
     ///         .with_lease_verification_enabled_on_restart(true)
-    ///         .handle_change_feed(|_context, _: Vec<ChangeFeedItem<String>>| async { Ok(()) })
+    ///         .handle_change_feed(on_changes)
     ///         .with_feed_poll_delay(Duration::from_secs(3))
     ///         .build()?;
     ///     Ok(())
@@ -517,8 +442,8 @@ impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessorBuilder<M, T, H> {
 
     /// Sets the initial change feed continuation when no saved lease progress exists.
     ///
-    /// Replaces any previously configured initial start position. In latest-version
-    /// mode, a subsequent start-position setter replaces this token in turn.
+    /// Replaces any previously configured initial start position.
+    /// A subsequent start-position setter replaces this token in turn.
     /// This setting does not reset existing lease checkpoints.
     ///
     /// [`build()`](Self::build) rejects an empty or whitespace-only token.
@@ -553,21 +478,20 @@ impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessorBuilder<M, T, H> {
         self
     }
 
-    /// Configures whether to check for missing leases when the processor restarts.
+    /// Configures checking for missing initial leases when the processor starts.
     ///
-    /// Disabled by default. This is a safeguard for externally modified lease
-    /// records. Existing owners and continuations are preserved.
+    /// Disabled by default. After bootstrap, the processing runtime recreates
+    /// missing leases from the persisted initial range plan without replacing
+    /// existing owners or checkpoints. This does not discover topology changes.
     pub fn with_lease_verification_enabled_on_restart(mut self, enabled: bool) -> Self {
         self.lease_verification_on_restart_enabled = enabled;
         self
     }
 }
 
-impl<M, T, H, Fut> ChangeFeedProcessorBuilder<M, T, H>
+impl<T, Fut> ChangeFeedProcessorBuilder<T, ChangeFeedHandler<T, Fut>>
 where
-    M: ChangeFeedProcessorMode,
     T: DeserializeOwned + Send + 'static,
-    H: Fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut + Send + Sync + 'static,
     Fut: Future<Output = crate::Result<()>> + Send + 'static,
 {
     /// Validates local configuration and returns a processor with its callback.
@@ -588,15 +512,25 @@ where
     /// - The processor or instance name is empty or contains only whitespace.
     /// - The minimum lease count exceeds a nonzero maximum lease count.
     /// - The selected initial continuation is empty or contains only whitespace.
+    /// - All-versions-and-deletes mode is combined with a beginning or time-based start.
     ///
     /// # Examples
     ///
     /// ```
-    /// use azure_data_cosmos::{models::ChangeFeedItem, ChangeFeedProcessorBuilder, LatestVersion};
+    /// use azure_data_cosmos::{
+    ///     models::ChangeFeedItem, ChangeFeedProcessorBuilder, ChangeFeedProcessorContext,
+    /// };
     ///
-    /// fn create(builder: ChangeFeedProcessorBuilder<LatestVersion>) -> azure_data_cosmos::Result<()> {
+    /// async fn on_changes(
+    ///     _context: ChangeFeedProcessorContext,
+    ///     _changes: Vec<ChangeFeedItem<String>>,
+    /// ) -> azure_data_cosmos::Result<()> {
+    ///     Ok(())
+    /// }
+    ///
+    /// fn create(builder: ChangeFeedProcessorBuilder) -> azure_data_cosmos::Result<()> {
     ///     let _processor = builder
-    ///         .handle_change_feed(|_context, _: Vec<ChangeFeedItem<String>>| async { Ok(()) })
+    ///         .handle_change_feed(on_changes)
     ///         .with_start_from_now()
     ///         .build()?;
     ///     Ok(())
@@ -606,9 +540,9 @@ where
     /// A callback is required before building:
     ///
     /// ```compile_fail,E0599
-    /// use azure_data_cosmos::{ChangeFeedProcessorBuilder, LatestVersion};
+    /// use azure_data_cosmos::ChangeFeedProcessorBuilder;
     ///
-    /// fn create(builder: ChangeFeedProcessorBuilder<LatestVersion>) {
+    /// fn create(builder: ChangeFeedProcessorBuilder) {
     ///     let _processor = builder
     ///         .with_feed_poll_delay(std::time::Duration::from_secs(2))
     ///         .with_max_scale_count(4)
@@ -619,16 +553,16 @@ where
     /// Building consumes the builder, so it cannot be reused:
     ///
     /// ```compile_fail,E0382
-    /// use azure_data_cosmos::{models::ChangeFeedItem, ChangeFeedProcessorBuilder, LatestVersion};
+    /// use azure_data_cosmos::{models::ChangeFeedItem, ChangeFeedProcessorBuilder};
     ///
-    /// fn create(builder: ChangeFeedProcessorBuilder<LatestVersion>) {
+    /// fn create(builder: ChangeFeedProcessorBuilder) {
     ///     let builder = builder
     ///         .handle_change_feed(|_context, _: Vec<ChangeFeedItem<String>>| async { Ok(()) });
     ///     let _processor = builder.build();
     ///     let _another = builder.build();
     /// }
     /// ```
-    pub fn build(self) -> crate::Result<ChangeFeedProcessor<M, T, H>> {
+    pub fn build(self) -> crate::Result<ChangeFeedProcessor<T, ChangeFeedHandler<T, Fut>>> {
         for (name, value) in [
             ("processor_name", self.processor_name.as_str()),
             ("instance_name", self.instance_name.as_str()),
@@ -653,6 +587,19 @@ where
                 .with_message("start_continuation must not be blank.")
                 .build());
         }
+        if self.mode == ChangeFeedMode::AllVersionsAndDeletes
+            && matches!(
+                &self.start_from,
+                ProcessorStartFrom::Beginning | ProcessorStartFrom::PointInTime(_)
+            )
+        {
+            return Err(CosmosError::builder()
+                .with_status(CosmosStatus::new(StatusCode::BadRequest))
+                .with_message(
+                    "AllVersionsAndDeletes mode does not support beginning or time-based starts.",
+                )
+                .build());
+        }
         Ok(ChangeFeedProcessor {
             configuration: self,
             running: async_lock::Mutex::new(None),
@@ -661,8 +608,11 @@ where
     }
 }
 
-impl<T, H> ChangeFeedProcessorBuilder<LatestVersion, T, H> {
+impl<T, H> ChangeFeedProcessorBuilder<T, H> {
     /// Configures reading from the beginning when no saved progress exists.
+    ///
+    /// Supported only in [`ChangeFeedMode::LatestVersion`].
+    /// [`build()`](Self::build) rejects this start in all-versions-and-deletes mode.
     ///
     /// Replaces any previously configured start position.
     pub fn with_start_from_beginning(mut self) -> Self {
@@ -671,6 +621,9 @@ impl<T, H> ChangeFeedProcessorBuilder<LatestVersion, T, H> {
     }
 
     /// Configures reading after `start_time` when no saved progress exists.
+    ///
+    /// Supported only in [`ChangeFeedMode::LatestVersion`].
+    /// [`build()`](Self::build) rejects this start in all-versions-and-deletes mode.
     ///
     /// Replaces any previously configured start position.
     pub fn with_start_time(mut self, start_time: OffsetDateTime) -> Self {
@@ -698,13 +651,13 @@ impl<T, H> ChangeFeedProcessorBuilder<LatestVersion, T, H> {
 /// for shutdown. Monitoring through [`current_state()`](Self::current_state)
 /// is not yet implemented.
 #[must_use]
-pub struct ChangeFeedProcessor<M: ChangeFeedProcessorMode, T, H> {
-    configuration: ChangeFeedProcessorBuilder<M, T, H>,
+pub struct ChangeFeedProcessor<T, H> {
+    configuration: ChangeFeedProcessorBuilder<T, H>,
     running: async_lock::Mutex<Option<execution::Running>>,
     started: Arc<AtomicBool>,
 }
 
-impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessor<M, T, H> {
+impl<T, H> ChangeFeedProcessor<T, H> {
     /// Returns whether this processor instance is running.
     ///
     /// This reports local coordination, not proof of lease ownership or current
@@ -727,10 +680,10 @@ impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessor<M, T, H> {
     /// # Examples
     ///
     /// ```
-    /// use azure_data_cosmos::{ChangeFeedProcessor, ChangeFeedProcessorMode};
+    /// use azure_data_cosmos::ChangeFeedProcessor;
     ///
-    /// async fn inspect<M: ChangeFeedProcessorMode, T, H>(
-    ///     processor: &ChangeFeedProcessor<M, T, H>,
+    /// async fn inspect<T, H>(
+    ///     processor: &ChangeFeedProcessor<T, H>,
     /// ) -> azure_data_cosmos::Result<()> {
     ///     println!("Running: {}", processor.is_started());
     ///     // Currently returns a not-implemented error.
@@ -756,7 +709,13 @@ impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessor<M, T, H> {
     /// Performs network I/O to validate the workload's mode, coordinate
     /// initialization, and create missing initial leases without continuations.
     /// Existing checkpoints are preserved. The lease container must use `/id`
-    /// partitioning and a default TTL of `-1` in a single-write-region account.
+    /// partitioning and a default TTL of `-1`. Single-write and multi-write
+    /// lease accounts are supported. Bootstrap leaves completed workloads untouched;
+    /// optional restart verification runs afterward in the processing runtime.
+    ///
+    /// Compatible concurrent calls sharing the source and lease drivers await
+    /// the same bootstrap attempts. Each caller retains its own two-minute
+    /// budget; cancelling one waiter does not cancel the others.
     ///
     /// Starts background balancing, renewal, polling, and callback dispatch after
     /// bootstrap succeeds. Initial read settings apply only without saved progress.
@@ -766,8 +725,9 @@ impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessor<M, T, H> {
     /// # Errors
     ///
     /// Propagates bootstrap failures, including incompatible modes, invalid
-    /// lease-container configuration, and service errors. After successful
-    /// bootstrap, starts coordination; later per-lease failures are logged and
+    /// lease-container configuration, and service errors. Opt-in restart
+    /// verification can also fail for invalid range plans or lease records.
+    /// After startup, later per-lease failures are logged and
     /// recovered independently. Starting an already-running instance returns
     /// [`StatusCode::Conflict`].
     pub async fn start<Fut>(&self) -> crate::Result<()>

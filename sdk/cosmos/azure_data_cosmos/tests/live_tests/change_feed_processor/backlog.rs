@@ -4,9 +4,10 @@
 use super::{live_containers, records, TestResult};
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
-    models::ChangeFeedItem, options::MaxItemCountHint, ChangeFeedProcessor,
-    ChangeFeedProcessorBuilder, ChangeFeedProcessorContext, ContainerClient, CosmosError,
-    CosmosStatus, FeedScope, LatestVersion, TransactionalBatch,
+    models::ChangeFeedItem,
+    options::{ChangeFeedMode, MaxItemCountHint},
+    ChangeFeedProcessor, ChangeFeedProcessorBuilder, ChangeFeedProcessorContext, ContainerClient,
+    CosmosError, CosmosStatus, FeedScope, TransactionalBatch,
 };
 use futures::{
     channel::{mpsc, oneshot},
@@ -29,15 +30,26 @@ const CONTROL_WAIT: Duration = Duration::from_secs(120);
 const DRAIN_WAIT: Duration = Duration::from_secs(240);
 const INTERVAL: Duration = Duration::from_millis(100);
 
-type Handler = Box<
-    dyn Fn(
-            ChangeFeedProcessorContext,
-            Vec<ChangeFeedItem<Value>>,
-        ) -> BoxFuture<'static, azure_data_cosmos::Result<()>>
-        + Send
-        + Sync,
->;
-type Processor = ChangeFeedProcessor<LatestVersion, Value, Handler>;
+type Handler = fn(
+    ChangeFeedProcessorContext,
+    Vec<ChangeFeedItem<Value>>,
+) -> BoxFuture<'static, azure_data_cosmos::Result<()>>;
+type Processor = ChangeFeedProcessor<Value, Handler>;
+
+type RegisteredCallback = Option<(String, Arc<Sink>)>;
+static CALLBACKS: Mutex<[RegisteredCallback; 2]> = Mutex::new([None, None]);
+static CALLBACK_SERIAL: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+fn handle_changes<const SLOT: usize>(
+    context: ChangeFeedProcessorContext,
+    changes: Vec<ChangeFeedItem<Value>>,
+) -> BoxFuture<'static, azure_data_cosmos::Result<()>> {
+    let (worker, sink) = CALLBACKS.lock().unwrap()[SLOT]
+        .as_ref()
+        .expect("callback registered")
+        .clone();
+    sink.callback(worker, context, changes).boxed()
+}
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 struct Document {
@@ -505,7 +517,7 @@ impl Sink {
     }
 }
 
-fn processor(
+fn processor<const SLOT: usize>(
     source: &ContainerClient,
     leases: &ContainerClient,
     sink: &Arc<Sink>,
@@ -513,16 +525,9 @@ fn processor(
     hint: u32,
     resume_with_now: bool,
 ) -> TestResult<Processor> {
-    let name = worker.to_owned();
-    let handler_sink = sink.clone();
-    let handler: Handler = Box::new(move |context, changes| {
-        handler_sink
-            .clone()
-            .callback(name.clone(), context, changes)
-            .boxed()
-    });
+    CALLBACKS.lock().unwrap()[SLOT] = Some((worker.to_owned(), sink.clone()));
     let builder = ChangeFeedProcessorBuilder::new(
-        LatestVersion,
+        ChangeFeedMode::LatestVersion,
         source.clone(),
         leases.clone(),
         &sink.workload.name,
@@ -538,7 +543,7 @@ fn processor(
             NonZeroU32::new(hint).ok_or("Invalid page hint.")?,
         ))
         .with_feed_poll_delay(INTERVAL)
-        .handle_change_feed(handler)
+        .handle_change_feed(handle_changes::<SLOT>)
         .build()?)
 }
 
@@ -701,6 +706,7 @@ async fn exercise(
     leases: ContainerClient,
     scenario: Scenario,
 ) -> TestResult {
+    let _serial = CALLBACK_SERIAL.lock().await;
     let groups = if matches!(scenario, Scenario::Scale) {
         GROUPS * 2
     } else {
@@ -742,8 +748,8 @@ async fn exercise(
         Scenario::Restart => 2,
         Scenario::Scale => 4,
     };
-    let first = processor(&source, &leases, &sink, &a, hint, false)?;
-    let second = processor(
+    let first = processor::<0>(&source, &leases, &sink, &a, hint, false)?;
+    let second = processor::<1>(
         &source,
         &leases,
         &sink,
@@ -822,6 +828,7 @@ async fn exercise(
         if let Err(error) = worker.stop().await {
             failures.push(format!("Stop failed: {error}"));
         }
+        *CALLBACKS.lock().unwrap() = [None, None];
     }
     if let Err(error) = workload.cleanup(&source, &leases).await {
         failures.push(error.to_string());

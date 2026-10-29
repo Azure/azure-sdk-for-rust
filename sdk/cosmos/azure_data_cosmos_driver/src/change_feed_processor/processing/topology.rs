@@ -3,17 +3,17 @@
 
 use super::{Context, Lease, Update};
 use crate::{
-    change_feed_processor::{
-        bootstrap::{
-            error, lease_id, store::Stored, validate_ranges, ProcessingLease, RangePlan, Record,
-        },
-        ChangeFeedProcessorMode,
+    change_feed_processor::bootstrap::{
+        error, lease_id, store::ChangeFeedProcessorBootstrapStoredRecord as Stored,
+        validate_ranges, ChangeFeedProcessorBootstrapProcessingLease as ProcessingLease,
+        ChangeFeedProcessorBootstrapRangePlan as RangePlan,
+        ChangeFeedProcessorBootstrapRecord as Record,
     },
     driver::dataflow::{
         intersect_feed_ranges, planner::project_change_feed_state, validate_exact_coverage,
         PipelineNodeState,
     },
-    models::{ContinuationToken, CosmosOperation, FeedRange, ResolvedToken},
+    models::{ChangeFeedFactoryMode, ContinuationToken, CosmosOperation, FeedRange, ResolvedToken},
     Result,
 };
 use async_lock::Mutex;
@@ -40,10 +40,10 @@ pub(super) fn validate_children(parent: &FeedRange, children: &[FeedRange]) -> R
 impl Context {
     pub(super) fn operation(&self, range: &FeedRange) -> CosmosOperation {
         let operation = match self.identity.mode {
-            ChangeFeedProcessorMode::LatestVersion => {
+            ChangeFeedFactoryMode::Incremental => {
                 CosmosOperation::change_feed(self.source.clone(), Some(range.clone()))
             }
-            ChangeFeedProcessorMode::AllVersionsAndDeletes => {
+            ChangeFeedFactoryMode::FullFidelity => {
                 CosmosOperation::change_feed_all_versions_and_deletes(
                     self.source.clone(),
                     Some(range.clone()),
@@ -88,12 +88,20 @@ impl Context {
     }
 
     pub(super) async fn list(&self) -> Result<Vec<Lease>> {
+        self.read_leases(false).await
+    }
+
+    pub(super) async fn read_leases(&self, repair_missing: bool) -> Result<Vec<Lease>> {
+        let plan_id = format!("{}.plan", self.namespace);
         let plan = self
             .store()
-            .read::<RangePlan>(&format!("{}.plan", self.namespace))
+            .read::<RangePlan>(&plan_id)
             .await?
             .ok_or_else(|| error(StatusCode::NotFound, "Bootstrap range plan is missing."))?;
-        if plan.value.record.workload != self.identity || plan.value.record.ttl != -1 {
+        if plan.value.record.workload != self.identity
+            || plan.value.record.id != plan_id
+            || plan.value.record.ttl != -1
+        {
             return Err(error(
                 StatusCode::Conflict,
                 "Incompatible bootstrap range plan.",
@@ -119,9 +127,12 @@ impl Context {
             let stored = match self.store().read::<Lease>(&id).await? {
                 Some(stored) => stored,
                 None => {
-                    let continuation = seed.ok_or_else(|| {
-                        error(StatusCode::NotFound, "Initial processing lease is missing.")
-                    })?;
+                    if seed.is_none() && !repair_missing {
+                        return Err(error(
+                            StatusCode::NotFound,
+                            "Initial processing lease is missing.",
+                        ));
+                    }
                     let child = Lease {
                         base: ProcessingLease {
                             record: Record {
@@ -131,7 +142,7 @@ impl Context {
                             },
                             range: range.clone(),
                             owner: None,
-                            continuation: Some(continuation),
+                            continuation: seed,
                         },
                         incarnation: None,
                         renewed_at: None,

@@ -54,7 +54,7 @@ pub use cosmos_headers::{
     AutoscaleAutoUpgradePolicy, AutoscaleThroughputPolicy, CosmosRequestHeaders,
     CosmosResponseHeaders, MaxItemCountHint, OfferAutoscaleSettings,
 };
-pub use cosmos_operation::{ChangeFeedStartFrom, CosmosOperation};
+pub use cosmos_operation::{ChangeFeedFactoryMode, ChangeFeedStartFrom, CosmosOperation};
 pub use cosmos_resource_reference::CosmosResourceReference;
 pub(crate) use cosmos_resource_reference::ResourcePaths;
 pub use cosmos_response::CosmosResponse;
@@ -785,6 +785,11 @@ impl AsRef<str> for OperationType {
 ///
 /// Session tokens track the logical sequence number of operations, enabling
 /// read-your-writes consistency within a session.
+///
+/// Explicit tokens take precedence over cached state. Gateway V2 may send a
+/// topology-scoped copy of a compound token without modifying this value. When
+/// the scope cannot be established safely, classic Gateway receives the original.
+/// This normalization is independent of automatic session capture.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct SessionToken(Cow<'static, str>);
 

@@ -1,6 +1,8 @@
 {
   "recommendations": [
     "editorconfig.editorconfig",
+    "github.vscode-pull-request-github",
+    "heaths.azure-api-review",
     "rust-lang.rust-analyzer",
     "streetsidesoftware.code-spell-checker",
     "tamasfe.even-better-toml",
