@@ -8,9 +8,7 @@ use crate::{
     ContainerClient, CosmosError, CosmosStatus,
 };
 use azure_core::{fmt::SafeDebug, http::StatusCode};
-use azure_data_cosmos_driver::change_feed_processor::{
-    BootstrapOptions, ChangeFeedProcessorMode as DriverMode,
-};
+use azure_data_cosmos_driver::models::ChangeFeedFactoryMode as DriverMode;
 use serde::de::DeserializeOwned;
 use std::{future::Future, marker::PhantomData, num::NonZeroU32, time::Duration};
 use time::OffsetDateTime;
@@ -700,7 +698,15 @@ impl<T, H> ChangeFeedProcessor<T, H> {
     ///
     /// Performs driver-owned bootstrap I/O without reading feed pages or invoking
     /// callbacks. Compatible initialized workloads preserve existing progress.
-    /// Lease storage must use `/id`, default TTL `-1`, and a single-write-region account.
+    /// Completed workloads do not inspect or recreate processing leases.
+    /// Compatible concurrent calls sharing the source and lease drivers await the
+    /// same bootstrap attempts. Each call retains its own two-minute budget and
+    /// automatically re-registers after retryable attempt failures. Joining never
+    /// extends an existing attempt's deadline. Cancelling or timing out one waiter
+    /// does not cancel the others. Repeated failures exhaust the call's budget;
+    /// permanent validation errors are returned without retrying.
+    /// Lease storage must use `/id` and default TTL `-1`. Single-write and multi-write
+    /// lease accounts are supported.
     /// Bootstrap alone does not set [`is_started()`](Self::is_started) to `true`.
     ///
     /// # Errors
@@ -710,16 +716,17 @@ impl<T, H> ChangeFeedProcessor<T, H> {
     pub async fn start(&self) -> crate::Result<()> {
         let config = &self.configuration;
         let mode = match config.mode {
-            ChangeFeedMode::LatestVersion => DriverMode::LatestVersion,
-            ChangeFeedMode::AllVersionsAndDeletes => DriverMode::AllVersionsAndDeletes,
+            ChangeFeedMode::LatestVersion => DriverMode::Incremental,
+            ChangeFeedMode::AllVersionsAndDeletes => DriverMode::FullFidelity,
         };
-        let options = BootstrapOptions::new(mode, &config.processor_name, &config.instance_name)
-            .with_lease_verification_enabled_on_restart(
-                config.lease_verification_on_restart_enabled,
-            );
         config
             .monitored_container
-            .bootstrap_change_feed_processor(&config.lease_container, &options)
+            .bootstrap_change_feed_processor(
+                &config.lease_container,
+                mode,
+                &config.processor_name,
+                &config.instance_name,
+            )
             .await?;
         Err(CosmosError::builder()
             .with_status(CosmosStatus::new(StatusCode::NotImplemented))

@@ -17,7 +17,8 @@ use crate::{
 use crate::{models::PatchInstructions, options::PatchItemOptions};
 
 use azure_data_cosmos_driver::models::{
-    ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
+    ChangeFeedFactoryMode as DriverMode, ContainerReference, CosmosOperation, ItemReference,
+    PartitionKeyKind,
 };
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -44,14 +45,18 @@ impl ContainerClient {
     pub(crate) async fn bootstrap_change_feed_processor(
         &self,
         lease_container: &Self,
-        options: &azure_data_cosmos_driver::change_feed_processor::BootstrapOptions,
+        mode: DriverMode,
+        processor_name: &str,
+        instance_name: &str,
     ) -> crate::Result<()> {
         azure_data_cosmos_driver::change_feed_processor::bootstrap(
             &self.context.driver,
             &self.container_ref,
             &lease_container.context.driver,
             &lease_container.container_ref,
-            options,
+            mode,
+            processor_name,
+            instance_name,
         )
         .await
     }

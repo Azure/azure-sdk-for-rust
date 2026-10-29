@@ -171,22 +171,7 @@ pub mod binary_json {
     }
 }
 pub mod change_feed_processor {
-    pub async fn bootstrap(source_driver: &crate::CosmosDriver, source: &crate::models::ContainerReference, lease_driver: &crate::CosmosDriver, leases: &crate::models::ContainerReference, options: &crate::change_feed_processor::BootstrapOptions) -> crate::Result<()>;
-    #[derive(Clone, Debug)]
-    pub struct BootstrapOptions {
-    }
-    impl BootstrapOptions {
-        pub fn new<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(mode: ChangeFeedProcessorMode, processor_name: impl Into<String>, instance_name: impl Into<String>) -> Self;
-        pub fn with_lease_verification_enabled_on_restart(self, enabled: bool) -> Self;
-        pub fn with_timeout(self, timeout: Duration) -> Self;
-    }
-    #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
-    #[non_exhaustive]
-    #[serde(rename_all = "camelCase")]
-    pub enum ChangeFeedProcessorMode {
-        LatestVersion,
-        AllVersionsAndDeletes,
-    }
+    pub async fn bootstrap(source_driver: &crate::CosmosDriver, source: &crate::models::ContainerReference, lease_driver: &crate::CosmosDriver, leases: &crate::models::ContainerReference, mode: crate::models::ChangeFeedFactoryMode, processor_name: &str, instance_name: &str) -> crate::Result<()>;
 }
 pub mod diagnostics {
     #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
@@ -2218,6 +2203,12 @@ pub mod models {
     }
     impl Display for UserAgent {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+    }
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum ChangeFeedFactoryMode {
+        Incremental,
+        FullFidelity,
     }
     #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]

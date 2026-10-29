@@ -539,6 +539,50 @@ async fn all_versions_start_bootstraps_only() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+async fn start_does_not_repair_completed_workloads() -> Result<(), Box<dyn Error>> {
+    let (source, leases) = containers().await?;
+    let first = ChangeFeedProcessorBuilder::new(
+        ChangeFeedMode::LatestVersion,
+        source.clone(),
+        leases.clone(),
+        "orders",
+        "first",
+    )
+    .handle_change_feed(on_changes)
+    .build()?;
+    assert_eq!(
+        first.start().await.unwrap_err().status().status_code(),
+        StatusCode::NotImplemented
+    );
+    let mut remaining = lease_records(&leases).await?;
+    let index = remaining
+        .iter()
+        .position(|record| record.get("range").is_some())
+        .unwrap();
+    let removed = remaining.remove(index);
+    let id = removed["id"].as_str().unwrap();
+    leases.delete_item(id.to_owned(), id, None).await?;
+
+    let later = ChangeFeedProcessorBuilder::new(
+        ChangeFeedMode::LatestVersion,
+        source,
+        leases.clone(),
+        "orders",
+        "later",
+    )
+    .with_lease_verification_enabled_on_restart(true)
+    .handle_change_feed(on_changes)
+    .build()?;
+    assert_eq!(
+        later.start().await.unwrap_err().status().status_code(),
+        StatusCode::NotImplemented
+    );
+    assert_eq!(lease_records(&leases).await?, remaining);
+    assert!(!later.is_started());
+    Ok(())
+}
+
+#[tokio::test]
 async fn start_propagates_bootstrap_mode_conflict() -> Result<(), Box<dyn Error>> {
     let (source, leases) = containers().await?;
     let first = ChangeFeedProcessorBuilder::new(

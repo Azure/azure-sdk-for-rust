@@ -4,12 +4,16 @@
 
 ### Features Added
 
-- `ChangeFeedProcessor::start()` now delegates workload bootstrap to the shared driver, preserving existing progress; consumption remains unavailable after initialization. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- `ChangeFeedProcessor::start()` now delegates incomplete workload bootstrap to the shared driver, preserving progress and leaving completed lease inventories untouched; consumption remains unavailable after initialization. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Compatible concurrent processor starts sharing the same drivers now await one bootstrap outcome; cancelling one waiter does not cancel the others. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 - Added a change feed processor API scaffold reusing `ChangeFeedMode`, with required async function-pointer callbacks, feed and lease options, local configuration and mode/start validation, lease context, and monitoring types; execution and monitoring return not-implemented errors.
 
 ### Breaking Changes
 
 ### Bugs Fixed
+
+- Retry coalesced bootstrap failures within each processor start's own budget without resetting deadlines or retrying permanent validation errors. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Allow processor bootstrap to use multi-write-region lease accounts. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 
 ### Other Changes
 

@@ -10,6 +10,7 @@ mod query_planning;
 mod session_scope_live_tests;
 
 use crate::{
+    change_feed_processor::ChangeFeedProcessorBootstrapCoalescer,
     diagnostics::{
         DiagnosticsContextBuilder, ExecutionContext, PipelineKind, RequestSentStatus,
         TransportHttpVersion, TransportSecurity,
@@ -57,7 +58,7 @@ use futures::future::{select, BoxFuture, Either};
 use query_planning::ResolvedQueryPlan;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock, Weak};
 use std::time::{Duration, Instant};
 use url::Url;
 use uuid::Uuid;
@@ -378,6 +379,10 @@ impl std::fmt::Debug for TestEndpointProbeFn {
 #[non_exhaustive]
 #[derive(Debug)]
 pub struct CosmosDriver {
+    /// Driver-local in-flight change feed initialization.
+    bootstrap_coalescer: OnceLock<Arc<ChangeFeedProcessorBootstrapCoalescer>>,
+    /// Weak link to factory ownership for internal bootstrap lifetime retention.
+    bootstrap_owner: OnceLock<Weak<CosmosDriver>>,
     /// Reference to the parent runtime.
     runtime: Arc<CosmosDriverRuntime>,
     /// Driver-level options including account reference.
@@ -1891,6 +1896,8 @@ impl CosmosDriver {
         let pk_range_cache = PartitionKeyRangeCache::new();
 
         Ok(Self {
+            bootstrap_coalescer: OnceLock::new(),
+            bootstrap_owner: OnceLock::new(),
             runtime,
             options,
             transport,
@@ -1920,11 +1927,17 @@ impl CosmosDriver {
         self.options.account()
     }
 
-    pub(crate) fn has_multiple_write_locations(&self) -> bool {
-        self.location_state_store
-            .snapshot()
-            .account
-            .multiple_write_locations_enabled
+    pub(crate) fn register_bootstrap_owner(self: &Arc<Self>) {
+        self.bootstrap_owner.get_or_init(|| Arc::downgrade(self));
+    }
+
+    pub(crate) fn retain_for_bootstrap(&self) -> Option<Arc<Self>> {
+        self.bootstrap_owner.get().and_then(Weak::upgrade)
+    }
+
+    pub(crate) fn bootstrap_coalescer(&self) -> &Arc<ChangeFeedProcessorBootstrapCoalescer> {
+        self.bootstrap_coalescer
+            .get_or_init(|| Arc::new(ChangeFeedProcessorBootstrapCoalescer::default()))
     }
 
     /// **Internal test hook -- not part of the public API.**

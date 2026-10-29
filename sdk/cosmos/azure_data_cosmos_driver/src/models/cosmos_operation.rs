@@ -14,16 +14,17 @@ use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, time::Instant};
 use time::OffsetDateTime;
 
-/// Which change feed mode a factory should configure.
+/// Selects the change feed mode for read operations and workload initialization.
 ///
-/// Private helper shared by [`CosmosOperation::change_feed`] and
-/// [`CosmosOperation::change_feed_all_versions_and_deletes`]; the only
-/// difference between the two is the `A-IM` header value they emit.
-#[derive(Clone, Copy)]
-enum ChangeFeedFactoryMode {
-    /// LatestVersion: `A-IM: Incremental Feed`.
+/// [`CosmosOperation::change_feed()`] uses [`Incremental`](Self::Incremental);
+/// [`CosmosOperation::change_feed_all_versions_and_deletes()`] uses
+/// [`FullFidelity`](Self::FullFidelity).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum ChangeFeedFactoryMode {
+    /// Returns the latest version of changed items (`A-IM: Incremental Feed`).
     Incremental,
-    /// AllVersionsAndDeletes: `A-IM: Full-Fidelity Feed`.
+    /// Returns all versions and deletes (`A-IM: Full-Fidelity Feed`).
     FullFidelity,
 }
 

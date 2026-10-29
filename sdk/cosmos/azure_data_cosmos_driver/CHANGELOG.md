@@ -4,12 +4,18 @@
 
 ### Features Added
 
-- Added driver-owned change feed workload bootstrap with mode binding, create-only range leases, bounded initialization claims, and optional restart verification. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Added driver-owned change feed workload bootstrap with mode binding, create-only initial lease coverage, bounded initialization claims, and progress-preserving recovery of incomplete workloads. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Coalesce compatible overlapping bootstrap calls on shared drivers without coupling waiter cancellation or caching completed outcomes. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 
 ### Breaking Changes
 
+- Removed public `BootstrapOptions`; bootstrap accepts mode and workload/worker names directly, keeps timing policy internal, and never repairs completed workloads. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Replaced bootstrap's `ChangeFeedProcessorMode` with `models::ChangeFeedFactoryMode`, preserving existing stored workload mode values. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+
 ### Bugs Fixed
 
+- Re-register failed bootstrap attempts within each caller's original budget, preserving late joiners' deadlines and attempting conditional claim cleanup after initialization panics. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Allow change feed workload bootstrap on multi-write-region lease accounts using the driver's existing request routing. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 - Preserve Gateway 2.0 batch atomicity and continue-on-error controls, preventing partial commits in failed transactional batches. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 - Correct partition-local session-token scoping across classic Gateway and Gateway 2.0, including explicit compound tokens with automatic capture disabled, while retaining safe fallback for missing or stale topology. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 - Preserve query and feed EPK filters and avoid conflicting hierarchical partition-key selectors across gateways, regional retries, and continuation requests. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
