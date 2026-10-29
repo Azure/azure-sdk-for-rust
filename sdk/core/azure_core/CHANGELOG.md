@@ -12,6 +12,8 @@
 - `Error` now captures a `std::backtrace::Backtrace` at construction time and includes it in `Debug` output (e.g., `{:?}`) when `RUST_BACKTRACE=1` is set.
 - Added bearer-token authorization options and `ClientOptions::allow_insecure_connections` to opt in to authenticated HTTP connections to `localhost` or `127.0.0.1` when the `test` feature is enabled.
 
+- Added `test`-gated fake response helpers and pager/poller state propagation for testing client libraries without network requests.
+
 ### Breaking Changes
 
 ### Bugs Fixed
