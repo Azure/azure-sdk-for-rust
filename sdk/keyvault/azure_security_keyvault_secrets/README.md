@@ -18,9 +18,9 @@ cargo add azure_security_keyvault_secrets
 
 ### Prerequisites
 
-* An [Azure subscription].
-* An existing Azure Key Vault. If you need to create an Azure Key Vault, you can use the Azure Portal or [Azure CLI].
-* Authorization to an existing Azure Key Vault using either [RBAC] (recommended) or [access control].
+- An [Azure subscription].
+- An existing Azure Key Vault. If you need to create an Azure Key Vault, you can use the Azure Portal or [Azure CLI].
+- Authorization to an existing Azure Key Vault using either [RBAC] (recommended) or [access control].
 
 If you use the Azure CLI, replace `<your-resource-group-name>` and `<your-key-vault-name>` with your own, unique names:
 
@@ -95,11 +95,11 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 The following section provides several code snippets using a `SecretClient` like we [instantiated above](#instantiate-a-client):
 
-* [Create a secret](#create-a-secret)
-* [Retrieve a secret](#retrieve-a-secret)
-* [Update an existing secret](#update-an-existing-secret)
-* [Delete a secret](#delete-a-secret)
-* [List secrets](#list-secrets)
+- [Create a secret](#create-a-secret)
+- [Retrieve a secret](#retrieve-a-secret)
+- [Update an existing secret](#update-an-existing-secret)
+- [Delete a secret](#delete-a-secret)
+- [List secrets](#list-secrets)
 
 ### Create a secret
 
@@ -199,6 +199,61 @@ while let Some(secret) = pager.try_next().await? {
     println!("Found Secret with Name: {}", name);
 }
 ```
+
+## Testing with fakes
+
+Enable the crate `test` feature in your test dependencies:
+
+```toml
+[dev-dependencies]
+azure_core = { version = "1", features = ["test"] }
+azure_security_keyvault_secrets = { version = "1", features = ["test"] }
+async-trait = "0.1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+```
+
+Then implement just the fake server operations your test needs:
+
+```rust ignore testing_with_fakes
+use azure_core::{
+    http::{fake::json_response, headers::Headers, AsyncRawResponse, StatusCode},
+    Result,
+};
+use azure_security_keyvault_secrets::{
+    clients::fake::SecretServer,
+    models::{Secret, SecretClientGetSecretOptions},
+    SecretClient,
+};
+use std::sync::Arc;
+
+#[derive(Debug)]
+struct FakeSecretServer;
+
+#[async_trait::async_trait]
+impl SecretServer for FakeSecretServer {
+    async fn get_secret(
+        &self,
+        secret_name: &str,
+        _options: Option<SecretClientGetSecretOptions<'_>>,
+    ) -> Result<AsyncRawResponse> {
+        assert_eq!(secret_name, "my-secret");
+        let mut secret = Secret::default();
+        secret.value = Some("fake value".to_string());
+        json_response(StatusCode::Ok, Headers::new(), &secret)
+    }
+}
+
+let client = SecretClient::new_fake(
+    "https://my-vault.vault.azure.net",
+    Arc::new(FakeSecretServer),
+    None,
+)?;
+let secret = client.get_secret("my-secret", None).await?.into_model()?;
+assert_eq!(secret.value.as_deref(), Some("fake value"));
+```
+
+For fields marked read-only in generated models, serialization may omit them (`skip_serializing`).
+Use `AsyncRawResponse::from_bytes` with raw JSON if a test must return those fields.
 
 ## Troubleshooting
 

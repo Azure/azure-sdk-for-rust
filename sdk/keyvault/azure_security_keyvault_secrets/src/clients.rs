@@ -3,7 +3,12 @@
 
 //! Clients used to communicate with the service.
 use crate::authorizer::KeyVaultAuthorizer;
-pub use crate::generated::clients::*;
+use crate::generated::clients::DEFAULT_API_VERSION;
+#[cfg(feature = "test")]
+#[cfg_attr(docsrs, doc(cfg(feature = "test")))]
+pub mod fake;
+#[cfg(not(feature = "test"))]
+pub use crate::generated::clients::SecretClient;
 use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
@@ -13,6 +18,8 @@ use azure_core::{
     },
     tracing, Result,
 };
+#[cfg(feature = "test")]
+pub use fake::SecretClient;
 use std::sync::Arc;
 
 /// Options used when creating a [`SecretClient`]
@@ -37,7 +44,7 @@ impl Default for SecretClientOptions {
     }
 }
 
-impl SecretClient {
+impl crate::generated::clients::SecretClient {
     /// Creates a new SecretClient, using Entra ID authentication.
     ///
     /// # Arguments

@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added an off-by-default `test` feature with `clients::fake` to build credential-free Key Vault secret client tests backed by fake server transports.
+
 ### Breaking Changes
 
 ### Bugs Fixed

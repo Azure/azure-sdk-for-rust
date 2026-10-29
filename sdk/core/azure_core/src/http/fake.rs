@@ -36,6 +36,9 @@ impl AsRef<str> for ApiName {
 /// Preserves the supplied status and headers, adding `content-type: application/json`
 /// only if the caller hasn't specified a content type.
 ///
+/// Serialization uses the model's [`Serialize`] implementation. To include
+/// response-only fields marked `skip_serializing`, use a JSON value or raw bytes instead.
+///
 /// # Errors
 ///
 /// Returns an error if `model` cannot be serialized as JSON.
@@ -125,11 +128,11 @@ mod tests {
             StatusCode::Ok,
             Headers::new(),
             Box::pin(stream::iter([
-                Ok(Bytes::from_static(b"first")),
+                Ok(Bytes::from_static(b"first ")),
                 Ok(Bytes::from_static(b"second")),
             ])),
         );
-        assert_eq!(response.into_body().collect().await?, "firstsecond");
+        assert_eq!(response.into_body().collect().await?, "first second");
         Ok(())
     }
 }
