@@ -159,6 +159,8 @@ struct Lease {
     renewed_at: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     children: Option<Vec<FeedRange>>,
+    #[serde(default)]
+    split_complete: bool,
 }
 
 struct Context {
@@ -182,6 +184,12 @@ impl Context {
 
     fn validate(&self, lease: &Lease) -> Result<()> {
         bootstrap::validate_lease(&lease.base, &self.identity, &self.namespace)?;
+        if lease.split_complete && lease.children.is_none() {
+            return Err(error(
+                StatusCode::Conflict,
+                "Completed split has no children.",
+            ));
+        }
         if let Some(children) = &lease.children {
             if lease.base.owner.is_some()
                 || lease.incarnation.is_some()
@@ -215,7 +223,7 @@ impl Context {
         for _ in 0..attempts {
             let mut current = self.store().read::<Lease>(id).await?.ok_or_else(lost)?;
             self.validate(&current.value)?;
-            if current.value.children.is_some()
+            if (current.value.children.is_some() && !matches!(update, Update::CompleteSplit))
                 || current.value.base.owner != observed.base.owner
                 || current.value.incarnation != observed.incarnation
             {
@@ -236,6 +244,18 @@ impl Context {
                     current.value.base.owner = None;
                     current.value.incarnation = None;
                     current.value.children = Some(children.to_vec());
+                }
+                Update::CompleteSplit => {
+                    if current.value.children.is_none() {
+                        return Err(error(
+                            StatusCode::Conflict,
+                            "Processing lease is not retired.",
+                        ));
+                    }
+                    if current.value.split_complete {
+                        return Ok(current);
+                    }
+                    current.value.split_complete = true;
                 }
             }
             current.value.renewed_at = Some(now_millis());
@@ -258,6 +278,7 @@ enum Update<'a> {
     Checkpoint(&'a ContinuationToken),
     Release,
     Split(&'a [FeedRange]),
+    CompleteSplit,
 }
 
 fn now_millis() -> i64 {
@@ -463,7 +484,7 @@ impl Processor {
             options,
         });
         if context.options.verify_leases_on_restart {
-            context.read_leases(true).await?;
+            context.verify_leases().await?;
         }
         let distributor = Arc::new(BatchDistributor::default());
         let (stop, stopping) = signal();
@@ -568,14 +589,32 @@ async fn balance(
 ) -> Vec<Stored<Lease>> {
     sleep(delay).await;
     let result = async {
-        let all = context.list().await?;
-        let selected = balancing::select(&all, &context.options, now_millis());
+        let (pending, active): (Vec<_>, Vec<_>) = context
+            .list()
+            .await?
+            .into_iter()
+            .partition(|lease| lease.children.is_some());
         let mut acquired = Vec::new();
-        for index in selected {
-            if owned.contains(&all[index].base.record.id) {
+        for parent in pending {
+            let id = &parent.base.record.id;
+            if owned.contains(id) {
                 continue;
             }
-            match context.acquire(&all[index]).await {
+            match context.store().read::<Lease>(id).await {
+                Ok(Some(parent)) if !parent.value.split_complete => acquired.push(parent),
+                Ok(Some(_)) => {}
+                Ok(None) => tracing::warn!(lease = %id, "Unfinished split parent is missing"),
+                Err(err) => {
+                    tracing::warn!(lease = %id, error = %err, "Failed to read unfinished split")
+                }
+            }
+        }
+        let selected = balancing::select(&active, &context.options, now_millis());
+        for index in selected {
+            if owned.contains(&active[index].base.record.id) {
+                continue;
+            }
+            match context.acquire(&active[index]).await {
                 Ok(lease) => acquired.push(lease),
                 Err(err) if err.status().is_precondition_failed() => {
                     tracing::debug!(error = %err, "Lease acquisition lost a race");
@@ -598,9 +637,22 @@ async fn balance(
 async fn supervise(
     context: Arc<Context>,
     distributor: Arc<BatchDistributor>,
-    lease: Stored<Lease>,
+    mut lease: Stored<Lease>,
     stop: Signal,
 ) {
+    if lease.value.children.is_some() {
+        let repair = context.ensure_children(&mut lease).fuse();
+        futures::pin_mut!(repair);
+        futures::select! {
+            result = repair => {
+                if let Err(err) = result {
+                    tracing::warn!(error = %err, "Child lease creation failed; retrying on the next cycle");
+                }
+            },
+            _ = stop.fuse() => {},
+        }
+        return;
+    }
     let token = lease.value.base.record.id.clone();
     let session = distributor.register(token.clone(), lease.value.incarnation.clone());
     let lease = Arc::new(Mutex::new(lease));

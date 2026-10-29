@@ -227,8 +227,8 @@ async fn concurrent_restart_verification_preserves_existing_progress() -> Result
             missing_id.clone(),
         )))
         .await?;
-    assert!(context.list().await.err().unwrap().status().is_not_found());
-    let (left, right) = futures::join!(context.read_leases(true), context.read_leases(true));
+    assert_eq!(context.list().await?.len(), before.len() - 1);
+    let (left, right) = futures::join!(context.verify_leases(), context.verify_leases());
     for leases in [left?, right?] {
         assert_eq!(leases.len(), before.len());
         assert_eq!(
@@ -262,7 +262,7 @@ async fn restart_verification_rejects_incomplete_range_plan() -> Result<()> {
     plan.value.ranges.pop();
     store.replace(&id, &plan.value, plan.etag).await?;
     assert!(context
-        .read_leases(true)
+        .verify_leases()
         .await
         .err()
         .unwrap()
@@ -295,6 +295,7 @@ fn leases(owners: &[Option<&str>]) -> Vec<Lease> {
             incarnation: Some(index.to_string()),
             renewed_at: Some(1000),
             children: None,
+            split_complete: false,
         })
         .collect()
 }
@@ -636,7 +637,7 @@ async fn owned_mutations_retry_only_conditional_write_conflicts() -> Result<()> 
                 Update::Checkpoint(token) => expected.base.continuation = Some(token.clone()),
                 Update::Release => expected.base.owner = None,
                 Update::Renew => {}
-                Update::Acquire | Update::Split(_) => unreachable!(),
+                Update::Acquire | Update::Split(_) | Update::CompleteSplit => unreachable!(),
             }
             rule.enable();
             let result = context.update(&mut owned, update).await;

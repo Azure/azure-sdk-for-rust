@@ -127,8 +127,9 @@ Processor reads opt out of transparent topology repair. A processor plan that
 already spans multiple physical partitions returns `410/1002`, and request-time
 `410/1002`, `410/1007`, and `410/1008` responses reach lease coordination without
 automatic reader replacement. Ordinary pull-reader behavior is unchanged.
-The coordinator refreshes topology and validates that the intersected ranges
-exactly cover the lease before treating the event as a split. A merge or an
+The request's recovery handler refreshes the overlapping ranges through the
+same topology provider used by pull readers and validates that they exactly
+cover the affected lease before treating the event as a split. A merge or an
 unfinished transition retains the lease and retries through normal acquisition.
 
 Each lease permits one outstanding batch. A topology transition cannot advance
@@ -140,13 +141,15 @@ an ETag is an error, not a usable checkpoint.
 Splits use the existing lease container and conditional writes:
 
 1. Re-read the parent and validate its owner and acquisition incarnation.
-2. Conditionally replace the parent with an immutable retirement record. It
+2. Conditionally replace the parent with a retirement record. It
    retains the latest durable continuation, records the ordered child EPK
    ranges, and clears ownership. This write is the transition's commit point.
-3. Discover descendants through that record, creating missing child documents
+3. In the same range-local recovery handler, create the immediate child leases
    with deterministic range IDs and projected continuations. Existing children
    are validated but never reset. Children start unowned and are acquired
    through normal count balancing, including the configured maximum.
+4. Conditionally mark the retired parent `split_complete` after all immediate
+   children have been confirmed. Its child ranges and checkpoint remain frozen.
 
 The parent record is the authority to create and acquire descendants. A crash
 before retirement leaves the original lease active; a crash after retirement
@@ -155,10 +158,17 @@ creation can delay coverage but cannot discard the missing child's starting
 position. Strictly smaller child ranges and retained parent records make repeated
 splits acyclic. Retired parent documents must not be deleted.
 
-Bootstrap's immutable initial range plan remains the root inventory. Restart
-verification validates those original records without replacing retired parents.
-Ongoing processing discovers and repairs their descendant leases; it does not
-replace bootstrap's plan with the current physical topology.
+Balancing queries the workload's active leases and unfinished split records,
+not the complete historical lineage. Enumeration itself does not create leases.
+An unfinished split is scheduled as independent range-local recovery work so
+child-creation failures do not block processing or acquisition on other ranges.
+Completed retired parents are excluded from the query. The completion marker
+defaults to false on older records, allowing their children to be checked once.
+
+Bootstrap's immutable initial range plan remains the startup verification
+inventory. Opt-in restart verification checks and repairs only those original
+records without replacing retired parents. Normal balancing does not read or
+rewrite the initial range plan.
 
 On a physical merge, independent EPK-slice leases retain their own continuations
 and route to the merged partition with EPK bounds. No min/max continuation is

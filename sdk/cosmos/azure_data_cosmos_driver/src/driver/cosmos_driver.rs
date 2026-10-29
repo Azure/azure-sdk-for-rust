@@ -4617,6 +4617,30 @@ impl CosmosDriver {
         Ok(Some(ranges.to_vec()))
     }
 
+    pub(crate) async fn resolve_partition_key_ranges_for_feed_range(
+        &self,
+        container: &ContainerReference,
+        range: &FeedRange,
+        force_refresh: bool,
+    ) -> crate::error::Result<Vec<FeedRange>> {
+        let mut topology = CachedTopologyProvider::new(
+            &self.pk_range_cache,
+            container.clone(),
+            self.pk_range_page_fetcher(OperationOptions::default(), None),
+        );
+        let refresh = if force_refresh {
+            PartitionRoutingRefresh::ForceRefresh
+        } else {
+            PartitionRoutingRefresh::UseCached
+        };
+        Ok(topology
+            .resolve_ranges(range, refresh)
+            .await?
+            .into_iter()
+            .map(|resolved| resolved.range)
+            .collect())
+    }
+
     /// Returns the partition key ranges covering the given partition key.
     ///
     /// Handles both full keys (single range via point lookup) and prefix keys
