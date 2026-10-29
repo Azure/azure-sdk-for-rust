@@ -71,7 +71,7 @@ cargo run -p azure_data_cosmos_perf -- \
 ### Options
 
 | Flag | Default | Description |
-|------|---------|-------------|
+| ------ | --------- | ------------- |
 | `--endpoint` | *required* | Cosmos DB account endpoint URL |
 | `--database` | `perfdb` | Database name |
 | `--container` | `perfcontainer` | Container name (partition key path must be `/partition_key`) |
@@ -136,6 +136,47 @@ cargo run -p azure_data_cosmos_perf -- \
   --application-region "East US 2" \
   --concurrency 200 --seed-count 5000
 ```
+
+## Weekly performance gate
+
+Build with `--features weekly-gate` to enable `--perf-profile`, `--thresholds`,
+`--perf-environment`, and `--perf-output`. This opt-in mode uses fixed workers
+per operation in one process and a shared SDK client. Existing CLI workloads
+and Cosmos result publishing are unchanged when `--perf-profile` is omitted.
+The feature enables the SDK's opt-in patch API.
+
+The internal weekly pipeline runs this workload automatically. Until a reviewed
+baseline is configured, it collects calibration results and reports
+`SucceededWithIssues`, not a threshold pass. After approval, weekly runs enforce
+the pinned baseline automatically. Unrelated build or live-test failures do not
+skip performance measurements, but missing runner/account prerequisites still fail.
+
+The job uses the existing SDK Linux perf pool and a dedicated Gateway V2 perf
+account through `cosmos-rust-perf-endpoint` / `cosmos-rust-perf-key`; functional-test
+credentials are unchanged. No Azure management-plane service connection is required. Each run creates
+and cleans up a fresh database containing isolated workload containers, never
+the fixed account itself. Preflight verifies the allocated agent's region and
+VM SKU rather than assuming the shared pool is colocated. Multi-region accounts
+are supported when the agent's region accepts both reads and writes; all other
+advertised regions are excluded from workload routing.
+
+The weekly workload runs for 45 minutes after setup, excluding the first
+5 minutes from every gated metric. It checks successful operations/second,
+p99 latency, and error rate separately for every operation. Thresholds are
+fixed, reviewed baseline values, not automatically learned from the candidate.
+All performance evidence is written locally; it does not add result-publishing
+traffic to the account under test.
+
+The full profile includes point read/create/upsert/replace/patch/delete,
+single-partition and feed-range queries, cross-partition scans and ORDER BY,
+a single-partition aggregate, bounded cross-partition DISTINCT, change feed,
+and a five-operation transactional batch. Cross-partition aggregates are not
+currently supported by the SDK. DISTINCT uses a finite `TOP 100` window.
+Management operations, preview distributed transactions, and read-many are
+not included.
+
+See the [weekly performance pipeline runbook](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/eng/pipelines/perf.md)
+for setup, calibration, exact-commit execution, and measurement semantics.
 
 ## Output
 
@@ -231,7 +272,7 @@ processes, and forwards `Ctrl+C` to all children for graceful shutdown.
 The launcher supports these additional flags:
 
 | Flag | Default | Description |
-|------|---------|-------------|
+| ------ | --------- | ------------- |
 | `--processes N` | `1` | Number of OS processes to spawn |
 | `--cosmos-commit REF` | — | Build against a specific SDK commit/branch/tag |
 | `--poll-branch BRANCH` | — | Continuously poll a remote branch for new commits |

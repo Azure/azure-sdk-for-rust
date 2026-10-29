@@ -10,6 +10,8 @@ mod seed;
 mod setup;
 mod stats;
 mod ua_suffix;
+#[cfg(feature = "weekly-gate")]
+mod weekly;
 
 fn diagnostics_logging_filter() -> tracing_subscriber::filter::Targets {
     use tracing_subscriber::filter::LevelFilter;
@@ -76,6 +78,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use clap::Parser;
 
     let config = config::Config::parse();
+
+    #[cfg(feature = "weekly-gate")]
+    if config.perf_profile.is_some() {
+        return Box::pin(weekly::run(&config)).await;
+    }
 
     // Initialize tokio-console subscriber when the feature is enabled.
     // This must happen before any tokio tasks are spawned.
