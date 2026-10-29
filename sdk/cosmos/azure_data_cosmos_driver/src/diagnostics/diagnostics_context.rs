@@ -3262,7 +3262,11 @@ impl DiagnosticsContext {
         }
     }
 
-    pub(crate) fn clone_with_status(&self, status: CosmosStatus) -> Self {
+    /// Returns a copy with the specified operation-level status.
+    ///
+    /// Preserves request statuses, charges, and timing without changing this context.
+    /// Use this when processing a successful response fails after the request completes.
+    pub fn clone_with_status(&self, status: CosmosStatus) -> Self {
         let mut context = self.clone_with_operation_name(self.operation_name.clone());
         context.status = Some(status);
         context

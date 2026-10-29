@@ -718,6 +718,13 @@ async fn read_many_decode_error_keeps_failing_page_diagnostics() {
         let diagnostics = error
             .diagnostics()
             .expect("all completed pages must retain diagnostics");
+        assert!(diagnostics.is_failure());
+        assert_eq!(diagnostics.status(), Some(&error.status()));
+        assert_eq!(diagnostics.effective_status(), Some(error.status()));
+        assert!(diagnostics
+            .requests()
+            .iter()
+            .all(|request| request.status().status_code().is_success()));
         assert_eq!(diagnostics.request_count(), requests);
         assert!(diagnostics.total_request_charge().value() > 0.0);
     }

@@ -102,8 +102,9 @@ impl<T: DeserializeOwned> QueryFeedPage<T> {
         // the cross-partition pipeline) or as a raw `{"Documents":[...]}`
         // envelope (a single-partition page); `into_items` decodes both.
         let items: Vec<T> = response.into_body().into_items().map_err(|error| {
+            let diagnostics = Arc::new(diagnostics.clone_with_status(error.status()));
             azure_data_cosmos_driver::CosmosErrorBuilder::from_error(error)
-                .with_diagnostics(diagnostics.clone())
+                .with_diagnostics(diagnostics)
                 .build()
         })?;
 
@@ -127,6 +128,89 @@ impl<T> QueryFeedPage<T> {
             page: FeedPage::new(items, headers, diagnostics),
             index_metrics: None,
             query_metrics: None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{CosmosResponse, DiagnosticsContext, QueryFeedPage, ResponseHeaders};
+    use azure_core::{http::StatusCode, Bytes};
+    use azure_data_cosmos_driver::{
+        diagnostics::RequestDiagnostics,
+        models::{ActivityId, CosmosStatus, RequestCharge, ResponseBody},
+        options::DiagnosticsVerbosity,
+    };
+    use serde_json::Value;
+    use std::{
+        sync::Arc,
+        time::{Duration, Instant},
+    };
+
+    #[test]
+    fn decode_failure_updates_operation_status_without_changing_request_diagnostics() {
+        let success = CosmosStatus::new(StatusCode::Ok);
+        let now = Instant::now();
+        let diagnostics = Arc::new(DiagnosticsContext::for_testing_with_requests(
+            ActivityId::new_uuid(),
+            Duration::from_millis(5),
+            Some(success),
+            Some("query_items"),
+            vec![RequestDiagnostics::for_testing(
+                "https://test.documents.azure.com",
+                None,
+                success,
+                RequestCharge::new(3.5),
+                now,
+                now,
+            )],
+        ));
+        let cached: Vec<Value> = [
+            DiagnosticsVerbosity::Detailed,
+            DiagnosticsVerbosity::Summary,
+        ]
+        .into_iter()
+        .map(|verbosity| serde_json::from_str(diagnostics.to_json_string(Some(verbosity))).unwrap())
+        .collect();
+        for body in [
+            ResponseBody::from_bytes(br#"{"Documents":["not a number"]}"#.to_vec()),
+            ResponseBody::from_items(vec![Bytes::from_static(br#""not a number""#)]),
+        ] {
+            let response = CosmosResponse::from_driver_parts(
+                body.into(),
+                ResponseHeaders::default(),
+                success,
+                Arc::clone(&diagnostics),
+            );
+            let error = QueryFeedPage::<u64>::from_response(response).unwrap_err();
+            let failed = error.diagnostics().unwrap();
+            assert!(failed.is_failure());
+            assert_eq!(failed.status(), Some(&error.status()));
+            assert_eq!(failed.effective_status(), Some(error.status()));
+            assert_eq!(failed.requests()[0].status(), &success);
+            assert_eq!(failed.request_count(), 1);
+            assert_eq!(failed.total_request_charge().value(), 3.5);
+            assert_eq!(diagnostics.status(), Some(&success));
+            assert!(!diagnostics.is_failure());
+            for (verbosity, original) in [
+                DiagnosticsVerbosity::Detailed,
+                DiagnosticsVerbosity::Summary,
+            ]
+            .into_iter()
+            .zip(&cached)
+            {
+                let mut expected = original.clone();
+                expected["status"] = error.status().to_string().into();
+                assert_eq!(
+                    serde_json::from_str::<Value>(failed.to_json_string(Some(verbosity))).unwrap(),
+                    expected
+                );
+                assert_eq!(
+                    serde_json::from_str::<Value>(diagnostics.to_json_string(Some(verbosity)))
+                        .unwrap(),
+                    *original
+                );
+            }
         }
     }
 }
