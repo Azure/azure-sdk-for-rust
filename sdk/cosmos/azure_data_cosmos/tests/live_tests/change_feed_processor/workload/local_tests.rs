@@ -10,8 +10,10 @@ use azure_core::{
     http::{headers::HeaderName, Request},
 };
 use azure_data_cosmos::{
-    models::ChangeFeedItem, options::Region, AccountReference, ChangeFeedProcessorBuilder,
-    ContainerClient, CosmosClientBuilder, CosmosRuntimeBuilder, LatestVersion, RoutingStrategy,
+    models::ChangeFeedItem,
+    options::{ChangeFeedMode, Region},
+    AccountReference, ChangeFeedProcessorBuilder, ContainerClient, CosmosClientBuilder,
+    CosmosRuntimeBuilder, RoutingStrategy,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
     ContainerConfig, InMemoryEmulatorHttpClient, RequestObserver, VirtualAccountConfig,
@@ -137,19 +139,23 @@ async fn processor_forwards_time_start_header() -> TestResult {
     source
         .create_item("time-probe", "time-probe", item, None)
         .await?;
-    let calls = Arc::new(AtomicUsize::new(0));
-    let received = calls.clone();
-    let processor =
-        ChangeFeedProcessorBuilder::new(LatestVersion, source, leases, "time-start", "worker")
-            .with_start_time(OffsetDateTime::from_unix_timestamp(1_700_000_000)?)
-            .handle_change_feed(move |_, changes: Vec<ChangeFeedItem<Document>>| {
-                received.fetch_add(changes.len(), Ordering::SeqCst);
-                async { Ok(()) }
-            })
-            .build()?;
+    static CALLS: AtomicUsize = AtomicUsize::new(0);
+    let processor = ChangeFeedProcessorBuilder::new(
+        ChangeFeedMode::LatestVersion,
+        source,
+        leases,
+        "time-start",
+        "worker",
+    )
+    .with_start_time(OffsetDateTime::from_unix_timestamp(1_700_000_000)?)
+    .handle_change_feed(|_, changes: Vec<ChangeFeedItem<Document>>| {
+        CALLS.fetch_add(changes.len(), Ordering::SeqCst);
+        async { Ok(()) }
+    })
+    .build()?;
     processor.start().await?;
     let result = tokio::time::timeout(Duration::from_secs(5), async {
-        while calls.load(Ordering::SeqCst) == 0 {
+        while CALLS.load(Ordering::SeqCst) == 0 {
             tokio::task::yield_now().await;
         }
     })

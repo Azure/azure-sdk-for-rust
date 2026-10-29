@@ -30,7 +30,7 @@ async fn query_resumes_without_loss_or_duplication() -> TestResult {
         let partition_keys: Vec<_> = (0..6).map(|value| format!("partition-{value}")).collect();
 
         for value in 0..ITEM_COUNT {
-            let id = format!("item-{value}");
+            let id = format!("item-{value:02}");
             let partition_key = &partition_keys[(value as usize) % partition_keys.len()];
             fixture
                 .container
@@ -43,7 +43,7 @@ async fn query_resumes_without_loss_or_duplication() -> TestResult {
                 .await?;
         }
 
-        let query = Query::from("SELECT * FROM c ORDER BY c.value ASC");
+        let query = Query::from("SELECT * FROM c ORDER BY c.id ASC");
         let page_size = MaxItemCountHint::Limit(NonZeroU32::new(2).unwrap());
         let mut first_iterator = fixture
             .container

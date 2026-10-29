@@ -245,29 +245,53 @@ needed; it does not disable automatic session management.
 
 ## 4. Request path — token resolution
 
-Resolution happens in the operation pipeline just before the transport request is
-built (`driver/pipeline/operation_pipeline.rs`, "STAGE 3"), and only when session
-consistency is effective for that attempt.
+Token preparation happens before each transport attempt. Automatic resolution
+requires effective session consistency and automatic session management enabled.
+Explicit tokens are prepared independently of those gates.
 
-`SessionManager::resolve_session_token` applies a strict precedence:
+The shared attempt resolver applies this precedence for both sequential and
+hedged requests:
 
-1. **Caller-supplied token wins verbatim.** A token set through options is used
-   as-is with no merge against the cache. This is what makes an externally
-   carried session authoritative.
+1. **Caller-supplied progress wins.** No cached session state is merged into an
+   explicit token. Classic Gateway and non-compound tokens retain their existing
+   passthrough behavior. Gateway V2 scopes compound tokens using the attempt's
+   physical range and an initialized routing snapshot, merging required parent
+   and target vectors with the shared version-aware rules. The original token is
+   retained for subsequent retries, hedge legs, and pages.
 2. **Partition-scoped token**, when the attempt has a resolved partition key
-   range ID *and* the attempt is on the Gateway V2 / thin-client path: emit only
-   `<pkRangeId>:<value>` for that range. The RNTBD backend rejects a multi-range
-   composite token on a partition-scoped request
-   (`"Session token specified is invalid."`), so scoping is required for
-   correctness there. If that range has no cached token, the request goes out
-   without one.
-3. **Composite collection token** otherwise — every cached range for the
-   container, sorted by range ID for deterministic output. Classic gateway
-   accepts the composite and maps parent to child across splits, so sending the
-   full token there stays read-your-writes safe.
+   range ID: use that range's cached token, or merge its known parent vectors
+   and re-key them to the target range. Classic Gateway additionally requires
+   an initialized topology snapshot in which the target is active and every
+   cached session range is either active or a known ancestor. Its parent
+   vectors come from that snapshot. Gateway V2 uses parent hints only when
+   they belong to the attempt's resolved identity.
+3. **Classic Gateway fallback** when identity or trusted topology is unavailable,
+   or no scoped token can be resolved: retain the container-wide composite,
+   sorted by range ID. The service can interpret ancestor tokens after topology
+   changes; do not discard cached progress merely to permit forwarding to the proxy.
 
-Operations with no container reference (account- and database-level metadata)
-never resolve a token.
+When an explicit compound token cannot be scoped safely, use classic Gateway
+with the entire original token. Missing or inactive targets, unknown range IDs,
+unresolved older ancestry, malformed or duplicate segments, and incompatible
+parent token formats take this fallback; never omit required caller progress.
+Scoping reads no session cache and performs no topology fetch, including when
+`session_capturing_disabled` is true or topology loading is lazy. Each hedge leg
+and sequential retry makes its own decision using the original caller token.
+The selected consistency strategy and automatic capture gates remain unchanged.
+
+Gateway V2 retains its existing automatic-token behavior for logical-partition
+requests: without a resolved range or an available range/parent token, no
+automatic token is emitted. The automatic lazy-topology session guard is unchanged.
+
+Classic topology validation and token selection share one session-cache read
+lock. A new child token therefore prevents scoping to an old parent snapshot,
+even if a concurrent failed topology refresh restores that snapshot. Until
+topology accounts for the observed ranges, preserve the composite rather than
+discarding the newer child progress. Once normal topology refresh supplies a
+usable map, range-local resolution resumes. This check does not fetch topology,
+wait for an in-flight refresh, invalidate routing maps, or clear session tokens.
+
+Operations with no container reference never resolve an automatic token.
 
 The resolved value is stamped as `x-ms-session-token` on HTTP requests and as
 RNTBD token `0x0005` on the thin-client path.
@@ -317,20 +341,20 @@ and requests are *per region*. Three interactions follow:
 - **Partition scoping.** The attempt's partition key range ID comes first from
   PK-range pre-resolution (see 0007 (`0007-partition-key-range-cache.md`)) and
   otherwise from the first response's `x-ms-documentdb-partitionkeyrangeid`
-  header. It drives both Gateway V2 token scoping (§4) and partition-level
+  header. It drives both transports' token scoping (§4) and partition-level
   routing overrides.
 - **Region progress inside the token.** V2 tokens carry per-region LSNs, so a
   token gathered in one region is meaningful in another. Failing over to a
   region that has not yet replicated those LSNs is exactly the `1002` case in §7.
-- **Transport mode.** Classic gateway receives the composite token; Gateway V2 /
-  RNTBD receives a single-range token. This is the only place transport mode
-  changes session semantics on the request path.
+- **Transport mode.** Both gateways use a range-local automatic token when one
+  can be resolved. Classic Gateway retains a composite fallback when scoping
+  is unavailable; Gateway V2 never uses that fallback for a logical target.
 
 Session tokens are **never cleared** by routing decisions. Failover, hedging, and
 session retries all preserve the cache; discarding tokens to "make the read
 succeed" would silently downgrade the customer's chosen guarantee.
 
-Cross-region hedging races preserve the same token on both arms, and a `1002`
+Cross-region hedging resolves the token for each arm's range and transport, and a `1002`
 observed on either arm propagates into the surrounding retry state (see
 0009 (`0009-cross-region-hedging.md`)).
 
@@ -498,11 +522,10 @@ formatting of driver state.
 
 ## 13. Known limitations and open questions
 
-1. **No parent-range walk on the non-DTX resolve path.** After a split, a request
-   scoped to a fresh child range finds no cached token and is sent without one,
-   until the first capture for that child. The DTX path already walks parents
-   through the PK-range cache; unifying the two is tracked by
-   `TODO(partition-key-range-parents)` in `session_manager.rs`.
+1. **Classic Gateway scoping depends on trustworthy cached topology.** Missing
+   topology or an unrecognized cached range retains the composite token until
+   normal metadata refresh accounts for that progress. Resolving a session token
+   does not fetch topology. Known children can inherit merged parent progress.
 2. **Container recreation is only detected by name → RID mismatch.** A session
    retry does not itself re-validate RIDs; deterministic RID comparison on the
    retry path is noted as future work in the pipeline.

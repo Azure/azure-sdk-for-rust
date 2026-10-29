@@ -14,18 +14,18 @@ use azure_core::http::{Etag, StatusCode};
 use serde::{de::DeserializeOwned, Serialize};
 use std::time::Instant;
 
-pub(in crate::change_feed_processor) struct Stored<T> {
+pub(in crate::change_feed_processor) struct ChangeFeedProcessorBootstrapStoredRecord<T> {
     pub value: T,
     pub etag: Etag,
 }
 
-pub(in crate::change_feed_processor) struct Store<'a> {
+pub(in crate::change_feed_processor) struct ChangeFeedProcessorBootstrapStore<'a> {
     pub driver: &'a CosmosDriver,
     pub container: &'a ContainerReference,
     pub deadline: Instant,
 }
 
-impl Store<'_> {
+impl ChangeFeedProcessorBootstrapStore<'_> {
     fn item(&self, id: &str) -> Result<ItemReference> {
         if id.len() > 1023 {
             return Err(error(
@@ -55,7 +55,7 @@ impl Store<'_> {
     pub(in crate::change_feed_processor) async fn read<T: DeserializeOwned>(
         &self,
         id: &str,
-    ) -> Result<Option<Stored<T>>> {
+    ) -> Result<Option<ChangeFeedProcessorBootstrapStoredRecord<T>>> {
         match self
             .execute(CosmosOperation::read_item(self.item(id)?))
             .await
@@ -67,7 +67,7 @@ impl Store<'_> {
                         "Bootstrap item response has no ETag.",
                     )
                 })?;
-                Ok(Some(Stored {
+                Ok(Some(ChangeFeedProcessorBootstrapStoredRecord {
                     etag,
                     value: response.into_body().into_single()?,
                 }))
@@ -77,7 +77,11 @@ impl Store<'_> {
         }
     }
 
-    pub(super) async fn create<T: Serialize>(&self, id: &str, value: &T) -> Result<bool> {
+    pub(in crate::change_feed_processor) async fn create<T: Serialize>(
+        &self,
+        id: &str,
+        value: &T,
+    ) -> Result<bool> {
         let operation =
             CosmosOperation::create_item(self.item(id)?).with_body(serde_json::to_vec(value)?);
         match self.execute(operation).await {
@@ -92,7 +96,7 @@ impl Store<'_> {
         id: &str,
         value: &T,
         etag: Etag,
-    ) -> Result<Stored<T>> {
+    ) -> Result<ChangeFeedProcessorBootstrapStoredRecord<T>> {
         let response = self
             .execute(
                 CosmosOperation::replace_item(self.item(id)?)
@@ -106,7 +110,7 @@ impl Store<'_> {
                 "Lease response has no ETag.",
             )
         })?;
-        Ok(Stored {
+        Ok(ChangeFeedProcessorBootstrapStoredRecord {
             etag,
             value: value.clone(),
         })

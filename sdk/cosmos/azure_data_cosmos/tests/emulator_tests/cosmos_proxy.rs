@@ -1,211 +1,249 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Integration tests verifying proxy configuration behavior.
-//! These tests run against the Cosmos DB emulator.
+//! Offline proxy checks with process-isolated environment variables and loopback listeners.
 
-use super::framework;
-
-use framework::{
-    TestClient, TestOptions, AUTH_MODE_ENV_VAR, CONNECTION_STRING_ENV_VAR,
-    EMULATOR_CONNECTION_STRING,
+use azure_core::credentials::Secret;
+use azure_data_cosmos::{
+    options::{ConnectionPoolOptions, Region},
+    AccountReference, CosmosClient, CosmosRuntime, RoutingStrategy,
 };
-use std::error::Error;
-use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::Arc;
-use tokio::net::TcpListener;
+use std::{
+    error::Error,
+    io::{self, ErrorKind, Read},
+    net::TcpListener,
+    process::{Command, Stdio},
+    time::{Duration, Instant},
+};
 
-/// Returns `true` when the suite is running under AAD auth mode.
-///
-/// The proxy tests manipulate the global `HTTPS_PROXY` environment variable to
-/// verify transport behavior. Under AAD mode the credential's own token
-/// acquisition honors `HTTPS_PROXY` and fails against the fake local proxy, so
-/// these transport-focused tests are skipped — proxy routing is orthogonal to
-/// the authentication method.
-fn is_aad_auth_mode() -> bool {
-    std::env::var(AUTH_MODE_ENV_VAR)
-        .map(|v| v.eq_ignore_ascii_case("aad"))
-        .unwrap_or(false)
+const CHILD_TEST: &str = "COSMOS_PROXY_TEST_CHILD";
+const TARGET_ENDPOINT: &str = "COSMOS_PROXY_TEST_ENDPOINT";
+const MAX_CHILD_OUTPUT_BYTES: usize = 64 * 1024;
+const TRUNCATED_OUTPUT: &str = "\n[child output truncated]";
+
+fn capture_child_output(mut reader: impl Read) -> io::Result<String> {
+    let mut output = Vec::new();
+    let mut buffer = [0_u8; 4096];
+    let mut truncated = false;
+    loop {
+        let count = match reader.read(&mut buffer) {
+            Ok(0) => break,
+            Ok(count) => count,
+            Err(error) if error.kind() == ErrorKind::Interrupted => continue,
+            Err(error) => return Err(error),
+        };
+        let retained = count.min(MAX_CHILD_OUTPUT_BYTES - output.len());
+        output.extend_from_slice(&buffer[..retained]);
+        truncated |= retained < count;
+    }
+    let mut output = String::from_utf8_lossy(&output).into_owned();
+    if truncated {
+        output.push_str(TRUNCATED_OUTPUT);
+    }
+    Ok(output)
 }
 
-/// Verifies that a client built with default settings does not route
-/// requests through an HTTP proxy, even when `HTTPS_PROXY` is set.
-#[tokio::test]
-pub async fn proxy_disabled_by_default_ignores_env() -> Result<(), Box<dyn Error>> {
-    if is_aad_auth_mode() {
-        eprintln!("Skipping proxy_disabled test under AAD auth mode.");
-        return Ok(());
-    }
-
-    let listener = TcpListener::bind("127.0.0.1:0").await?;
-    let port = listener.local_addr()?.port();
-    let connect_count = Arc::new(AtomicU32::new(0));
-    let counter = Arc::clone(&connect_count);
-
-    let accept_handle = tokio::spawn(async move {
-        while let Ok((_stream, _addr)) = listener.accept().await {
-            counter.fetch_add(1, Ordering::SeqCst);
-        }
-    });
-
-    let proxy_key = "HTTPS_PROXY";
-    let prev = std::env::var(proxy_key).ok();
-    std::env::set_var(proxy_key, format!("http://127.0.0.1:{port}"));
-
-    // Run a real emulator test with proxy disabled (default).
-    // TestClient::run uses the default CosmosClientBuilder which has no_proxy().
-    let result = TestClient::run_with_options(
-        async |run_context| {
-            let client = run_context.client();
-            let _ = client.database_client("nonexistent").read(None).await;
-            Ok(())
-        },
-        TestOptions::for_emulator(),
-    )
-    .await;
-
-    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-
-    match prev {
-        Some(v) => std::env::set_var(proxy_key, v),
-        None => std::env::remove_var(proxy_key),
-    }
-
-    accept_handle.abort();
-
-    result?;
-    assert_eq!(
-        connect_count.load(Ordering::SeqCst),
-        0,
-        "Default builder should not route through proxy"
-    );
-
-    Ok(())
+#[derive(Clone, Copy)]
+enum ProxyMode {
+    Default,
+    Enabled,
+    Bypassed,
 }
 
-/// Verifies that a client built with `with_proxy_allowed(true)`
-/// routes requests through the proxy specified by `HTTP_PROXY`/`HTTPS_PROXY`.
-#[tokio::test]
-#[cfg_attr(
-    test_category = "emulator_inmemory_gateway_v2",
-    ignore = "h2c prior-knowledge transport is incompatible with this HTTP/1 proxy harness"
-)]
-pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> {
-    if is_aad_auth_mode() {
-        eprintln!("Skipping proxy_enabled test under AAD auth mode.");
-        return Ok(());
-    }
-    // Skip on the vnext (Linux) emulator pipeline: the vnext gateway does
-    // not honor an outbound proxy in the same way the legacy emulator does
-    // and the test consistently fails there. Keep enabled for the legacy
-    // emulator and for any non-emulator backend.
-    if std::env::var("AZURE_COSMOS_EMULATOR_FLAVOR").as_deref() == Ok("vnext") {
-        eprintln!("Skipping proxy_enabled test on vnext emulator.");
-        return Ok(());
-    }
-    // Skip when test mode is "skipped" or no connection string is available.
-    let test_mode = std::env::var("AZURE_COSMOS_TEST_MODE").unwrap_or_default();
-    let conn_string_available = std::env::var(CONNECTION_STRING_ENV_VAR).is_ok();
-    if test_mode == "skipped" || (!conn_string_available && test_mode != "required") {
-        eprintln!("Skipping proxy_enabled test: no emulator connection available.");
-        return Ok(());
-    }
-
-    let listener = TcpListener::bind("127.0.0.1:0").await?;
-    let port = listener.local_addr()?.port();
-    let connected = Arc::new(tokio::sync::Notify::new());
-    let connected_signal = Arc::clone(&connected);
-
-    let accept_handle = tokio::spawn(async move {
-        if let Ok((_stream, _addr)) = listener.accept().await {
-            connected_signal.notify_one();
-        }
-    });
-
-    // Set both `HTTP_PROXY` and `HTTPS_PROXY`: which one governs the request
-    // depends on the account endpoint's scheme, which varies by backend (the
-    // hosted in-memory emulator advertises a plain `http://127.0.0.1` account
-    // endpoint, while real accounts and the legacy/vnext emulators use
-    // `https://`). Setting only `HTTPS_PROXY` silently fails to proxy an
-    // `http://` target, since that env var is scheme-specific.
-    let proxy_keys = ["HTTP_PROXY", "HTTPS_PROXY"];
-    let proxy_url = format!("http://127.0.0.1:{port}");
-    let prev_values: Vec<Option<String>> = proxy_keys
-        .iter()
-        .map(|key| {
-            let prev = std::env::var(key).ok();
-            std::env::set_var(key, &proxy_url);
-            prev
-        })
-        .collect();
-
-    // Build a client manually with proxy enabled.
-    let env_val = std::env::var(CONNECTION_STRING_ENV_VAR)
-        .unwrap_or_else(|_| EMULATOR_CONNECTION_STRING.to_string());
-    let conn_str = if env_val == "emulator" {
-        EMULATOR_CONNECTION_STRING.to_string()
-    } else {
-        env_val
-    };
-    let parsed: azure_data_cosmos_driver::models::ConnectionString = conn_str.parse()?;
-
-    let pool_builder = azure_data_cosmos::options::ConnectionPoolOptions::builder()
-        .with_proxy_allowed(true)
-        .with_server_certificate_validation(
-            azure_data_cosmos::options::ServerCertificateValidation::RequiredUnlessEmulator,
-        );
-
-    let runtime = azure_data_cosmos::CosmosRuntime::builder()
-        .with_connection_pool(pool_builder.build()?)
-        .build()
-        .await?;
-
-    let builder = azure_data_cosmos::CosmosClient::builder().with_runtime(runtime);
-
-    let endpoint: azure_data_cosmos::AccountEndpoint = parsed.account_endpoint().parse()?;
-
-    // Spawn the build + request so we can wait on the proxy signal instead.
-    // The driver probes the endpoint during build(), which will go through the
-    // proxy. The probe will fail (our fake proxy doesn't implement CONNECT),
-    // but the connection attempt itself proves proxy routing works.
-    let request_handle = tokio::spawn(async move {
-        let client = builder
-            .build(
-                azure_data_cosmos::AccountReference::with_authentication_key(
-                    endpoint,
-                    parsed.account_key().clone(),
-                ),
-                azure_data_cosmos::RoutingStrategy::ProximityTo(
-                    azure_data_cosmos::options::Region::EAST_US,
-                ),
+fn run_proxy_test(name: &str, mode: ProxyMode) -> Result<(), Box<dyn Error>> {
+    if std::env::var(CHILD_TEST).as_deref() == Ok(name) {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()?;
+        return runtime.block_on(async {
+            let mut pool = ConnectionPoolOptions::builder()
+                .with_max_connect_timeout(Duration::from_secs(1))
+                .with_max_metadata_request_timeout(Duration::from_secs(1));
+            if !matches!(mode, ProxyMode::Default) {
+                pool = pool.with_proxy_allowed(true);
+            }
+            let runtime = CosmosRuntime::builder()
+                .with_connection_pool(pool.build()?)
+                .build()
+                .await?;
+            let endpoint = std::env::var(TARGET_ENDPOINT)?.parse()?;
+            let account = AccountReference::with_authentication_key(endpoint, Secret::from("a2V5"));
+            let result = tokio::time::timeout(
+                Duration::from_secs(10),
+                CosmosClient::builder()
+                    .with_runtime(runtime)
+                    .build(account, RoutingStrategy::ProximityTo(Region::EAST_US)),
             )
-            .await;
-        // Ignore the result — the driver's init probe will fail through the fake proxy,
-        // but we only care that the proxy was contacted.
-        if let Ok(client) = client {
-            let _ = client.database_client("nonexistent").read(None).await;
+            .await?;
+            assert!(
+                result.is_err(),
+                "the fake listeners never serve account metadata"
+            );
+            Ok(())
+        });
+    }
+
+    let target = TcpListener::bind("127.0.0.1:0")?;
+    let proxy = TcpListener::bind("127.0.0.1:0")?;
+    target.set_nonblocking(true)?;
+    proxy.set_nonblocking(true)?;
+    let authority = target.local_addr()?.to_string();
+    let proxy_url = format!("http://{}", proxy.local_addr()?);
+    let mut command = Command::new(std::env::current_exe()?);
+    command
+        .args(["--exact", name, "--nocapture", "--test-threads=1"])
+        .env(CHILD_TEST, name)
+        .env(TARGET_ENDPOINT, format!("https://{authority}/"))
+        .env("COSMOS_DISABLE_IMDS", "true")
+        .env("HTTP_PROXY", &proxy_url)
+        .env("HTTPS_PROXY", &proxy_url)
+        .env("http_proxy", &proxy_url)
+        .env("https_proxy", &proxy_url)
+        .env_remove("ALL_PROXY")
+        .env_remove("all_proxy")
+        .env_remove("NO_PROXY")
+        .env_remove("no_proxy")
+        .env_remove("REQUEST_METHOD")
+        .env_remove("AZURE_COSMOS_CONNECTION_POOL_IS_PROXY_ALLOWED")
+        .env("RUST_LOG", "off")
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    if matches!(mode, ProxyMode::Bypassed) {
+        command.env("NO_PROXY", "127.0.0.1");
+    }
+    let mut child = command.spawn()?;
+    let stdout = child.stdout.take().expect("child stdout is piped");
+    let stderr = child.stderr.take().expect("child stderr is piped");
+    // Drain both streams without forwarding child output into libtest's JSON stream.
+    let stdout = std::thread::spawn(move || capture_child_output(stdout));
+    let stderr = std::thread::spawn(move || capture_child_output(stderr));
+    let result = (|| {
+        let deadline = Instant::now() + Duration::from_secs(20);
+        let mut proxy_connections = 0_u32;
+        let mut target_connections = 0_u32;
+        loop {
+            match proxy.accept() {
+                Ok((mut stream, _)) => {
+                    stream.set_read_timeout(Some(Duration::from_secs(2)))?;
+                    let mut first_line = Vec::new();
+                    loop {
+                        let mut byte = [0_u8];
+                        if stream.read(&mut byte)? == 0 {
+                            return Err("proxy connection closed before its request line".into());
+                        }
+                        first_line.push(byte[0]);
+                        if byte[0] == b'\n' {
+                            break;
+                        }
+                        if first_line.len() >= 4096 {
+                            return Err("proxy request line exceeded its bound".into());
+                        }
+                    }
+                    let expected = format!("CONNECT {authority} HTTP/1.1\r\n");
+                    if first_line != expected.as_bytes() {
+                        return Err("proxy received traffic for a target other than Cosmos".into());
+                    }
+                    proxy_connections += 1;
+                }
+                Err(error) if error.kind() == ErrorKind::WouldBlock => {}
+                Err(error) => return Err(error.into()),
+            }
+            match target.accept() {
+                Ok((_stream, _)) => target_connections += 1,
+                Err(error) if error.kind() == ErrorKind::WouldBlock => {}
+                Err(error) => return Err(error.into()),
+            }
+            if let Some(status) = child.try_wait()? {
+                if !status.success() {
+                    return Err(format!("proxy test child failed: {status}").into());
+                }
+                let expected_proxy = matches!(mode, ProxyMode::Enabled);
+                if (proxy_connections > 0) != expected_proxy
+                    || (target_connections > 0) == expected_proxy
+                {
+                    return Err(format!(
+                        "unexpected route: proxy={proxy_connections}, target={target_connections}"
+                    )
+                    .into());
+                }
+                return Ok(());
+            }
+            if Instant::now() >= deadline {
+                return Err("proxy test child exceeded its deadline".into());
+            }
+            std::thread::sleep(Duration::from_millis(10));
         }
-    });
+    })();
+    if child.try_wait()?.is_none() {
+        child.kill()?;
+    }
+    child.wait()?;
+    let stdout = stdout.join();
+    let stderr = stderr.join();
+    let stdout = stdout.map_err(|_| "proxy child stdout reader panicked")??;
+    let stderr = stderr.map_err(|_| "proxy child stderr reader panicked")??;
+    result.map_err(|error: Box<dyn Error>| {
+        format!("{error}\nchild stdout:\n{stdout}\nchild stderr:\n{stderr}").into()
+    })
+}
 
-    // Wait for the proxy listener to accept a connection, with a timeout fallback.
-    let proxy_hit = tokio::time::timeout(std::time::Duration::from_secs(5), connected.notified())
-        .await
-        .is_ok();
+#[test]
+fn proxy_disabled_by_default_ignores_env() -> Result<(), Box<dyn Error>> {
+    run_proxy_test(
+        "emulator_tests::cosmos_proxy::proxy_disabled_by_default_ignores_env",
+        ProxyMode::Default,
+    )
+}
 
-    for (key, prev) in proxy_keys.iter().zip(prev_values) {
-        match prev {
-            Some(v) => std::env::set_var(key, v),
-            None => std::env::remove_var(key),
+#[test]
+fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> {
+    run_proxy_test(
+        "emulator_tests::cosmos_proxy::proxy_enabled_routes_through_proxy",
+        ProxyMode::Enabled,
+    )
+}
+
+#[test]
+fn proxy_exclusion_routes_directly() -> Result<(), Box<dyn Error>> {
+    run_proxy_test(
+        "emulator_tests::cosmos_proxy::proxy_exclusion_routes_directly",
+        ProxyMode::Bypassed,
+    )
+}
+
+#[test]
+fn child_output_drains_beyond_capture_limit() {
+    let input = vec![b'x'; MAX_CHILD_OUTPUT_BYTES * 3];
+    let expected_position = u64::try_from(input.len()).unwrap();
+    let mut reader = io::Cursor::new(input);
+    let output = capture_child_output(&mut reader).unwrap();
+    assert_eq!(reader.position(), expected_position);
+    assert_eq!(
+        output,
+        format!("{}{TRUNCATED_OUTPUT}", "x".repeat(MAX_CHILD_OUTPUT_BYTES))
+    );
+}
+
+#[test]
+fn child_output_retries_interrupted_reads_and_reports_other_errors() {
+    struct InterruptedThenFailed(bool);
+
+    impl Read for InterruptedThenFailed {
+        fn read(&mut self, _buffer: &mut [u8]) -> io::Result<usize> {
+            if self.0 {
+                Err(io::Error::new(
+                    ErrorKind::BrokenPipe,
+                    "injected read failure",
+                ))
+            } else {
+                self.0 = true;
+                Err(ErrorKind::Interrupted.into())
+            }
         }
     }
 
-    request_handle.abort();
-    accept_handle.abort();
-
-    assert!(
-        proxy_hit,
-        "Proxy-enabled builder should route through proxy, but no connection was received"
-    );
-
-    Ok(())
+    let error = capture_child_output(InterruptedThenFailed(false)).unwrap_err();
+    assert_eq!(error.kind(), ErrorKind::BrokenPipe);
+    assert_eq!(error.to_string(), "injected read failure");
 }

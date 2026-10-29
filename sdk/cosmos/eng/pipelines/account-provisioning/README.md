@@ -33,10 +33,12 @@ mechanism this supports).
 ```
 
 The script is idempotent: accounts that already exist are validated
-all-or-nothing against the required capabilities (nothing is reconciled in
-place - a drifted account fails the run with instructions to delete and
-recreate it), but the shared test database is created if missing, and
-endpoint/keys are always re-read so the emitted JSON is current.
+all-or-nothing against the required capabilities and their current ARM
+consistency, write mode, ordered regions, and full-fidelity change-feed flag
+(nothing is reconciled in place - a drifted account fails the run with
+instructions to delete and recreate it). The shared test database is created
+if missing, and endpoint, keys, and observed account metadata are always
+re-read so the emitted JSON is current.
 
 ## Updating the secret
 
@@ -72,9 +74,9 @@ version directly).
 
 ## Cleaning up stale test databases
 
-Live tests create per-run databases named `test-db-<run-id>` (see
-`azure_data_cosmos_driver/tests/framework/test_client.rs`) and normally
-delete them at the end of the run. A cancelled or crashed run skips that
+Live tests, including the catalog-driven E2E shards, create per-run databases
+under the `test-db-` prefix and normally delete them at the end of the run. A
+cancelled or crashed run skips that
 in-process cleanup, so databases can accumulate on the fixed accounts over
 time. Run `Remove-StaleCosmosTestDatabases.ps1` periodically (manually, or
 from a scheduled job once a service connection for the `sdk-ci` subscription

@@ -10,14 +10,19 @@ use crate::{
         bootstrap,
         bootstrap::{
             error, namespace,
-            store::{Store, Stored},
-            Identity, ProcessingLease, RangePlan, SCHEMA_VERSION,
+            store::{
+                ChangeFeedProcessorBootstrapStore as Store,
+                ChangeFeedProcessorBootstrapStoredRecord as Stored,
+            },
+            validate_ranges, ChangeFeedProcessorBootstrapIdentity as Identity,
+            ChangeFeedProcessorBootstrapProcessingLease as ProcessingLease,
+            ChangeFeedProcessorBootstrapRangePlan as RangePlan,
+            ChangeFeedProcessorBootstrapRecord as Record, SCHEMA_VERSION,
         },
-        BootstrapOptions, ChangeFeedProcessorMode,
     },
     models::{
-        ChangeFeedStartFrom, ContainerReference, ContinuationToken, CosmosOperation,
-        CosmosResponse, MaxItemCountHint,
+        ChangeFeedFactoryMode, ChangeFeedStartFrom, ContainerReference, ContinuationToken,
+        CosmosOperation, CosmosResponse, MaxItemCountHint,
     },
     options::{OperationOptions, PlanOptions},
     CosmosDriver, Result,
@@ -52,7 +57,10 @@ type Signal = Shared<BoxFuture<'static, ()>>;
 /// acknowledge it after processing, or drop its receipt to abandon the lease.
 #[derive(Clone, SafeDebug)]
 pub struct ProcessorOptions {
-    bootstrap: BootstrapOptions,
+    mode: ChangeFeedFactoryMode,
+    processor_name: String,
+    instance_name: String,
+    verify_leases_on_restart: bool,
     start: ChangeFeedStartFrom,
     continuation: Option<ContinuationToken>,
     page_size: MaxItemCountHint,
@@ -71,9 +79,19 @@ impl ProcessorOptions {
     /// expire after 60 seconds. The progress watchdog is 25 renewal intervals.
     /// Fresh feeds start from now, request 100 items, and wait five seconds
     /// after idle responses. Lease counts are uncapped.
-    pub fn new(bootstrap: BootstrapOptions) -> Self {
+    ///
+    /// Workers sharing the source, lease storage, and `processor_name` cooperate.
+    /// `instance_name` identifies the worker. Names are validated during bootstrap.
+    pub fn new(
+        mode: ChangeFeedFactoryMode,
+        processor_name: impl Into<String>,
+        instance_name: impl Into<String>,
+    ) -> Self {
         Self {
-            bootstrap,
+            mode,
+            processor_name: processor_name.into(),
+            instance_name: instance_name.into(),
+            verify_leases_on_restart: false,
             start: ChangeFeedStartFrom::Now,
             continuation: None,
             page_size: MaxItemCountHint::Limit(std::num::NonZeroU32::new(100).unwrap()),
@@ -124,6 +142,15 @@ impl ProcessorOptions {
         self.max_leases = maximum;
         self
     }
+
+    /// Checks the persisted initial range plan and recreates missing leases on start.
+    ///
+    /// Disabled by default. Existing owners and checkpoints are never replaced.
+    /// This does not discover topology changes or modify bootstrap completion.
+    pub fn with_lease_verification_enabled_on_restart(mut self, enabled: bool) -> Self {
+        self.verify_leases_on_restart = enabled;
+        self
+    }
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -166,17 +193,26 @@ impl Context {
     }
 
     async fn list(&self) -> Result<Vec<Lease>> {
-        let plan = self
-            .store()
-            .read::<RangePlan>(&format!("{}.plan", self.namespace))
+        self.read_leases(false).await
+    }
+
+    async fn read_leases(&self, repair_missing: bool) -> Result<Vec<Lease>> {
+        let store = self.store();
+        let plan_id = format!("{}.plan", self.namespace);
+        let plan = store
+            .read::<RangePlan>(&plan_id)
             .await?
             .ok_or_else(|| error(StatusCode::NotFound, "Bootstrap range plan is missing."))?;
-        if plan.value.record.workload != self.identity {
+        if plan.value.record.workload != self.identity
+            || plan.value.record.id != plan_id
+            || plan.value.record.ttl != -1
+        {
             return Err(error(
                 StatusCode::Conflict,
                 "Incompatible bootstrap range plan.",
             ));
         }
+        validate_ranges(&plan.value.ranges)?;
         let mut leases = Vec::with_capacity(plan.value.ranges.len());
         for range in plan.value.ranges {
             let id = format!(
@@ -185,10 +221,22 @@ impl Context {
                 range.min_inclusive(),
                 range.max_exclusive()
             );
-            let stored = self
-                .store()
-                .read::<Lease>(&id)
-                .await?
+            let mut stored = store.read::<Lease>(&id).await?;
+            if stored.is_none() && repair_missing {
+                let expected = ProcessingLease {
+                    record: Record {
+                        id: id.clone(),
+                        workload: self.identity.clone(),
+                        ttl: -1,
+                    },
+                    range: range.clone(),
+                    owner: None,
+                    continuation: None,
+                };
+                store.create(&id, &expected).await?;
+                stored = store.read::<Lease>(&id).await?;
+            }
+            let stored = stored
                 .ok_or_else(|| error(StatusCode::NotFound, "Processing lease is missing."))?;
             self.validate(&stored.value)?;
             if stored.value.base.record.id != id || stored.value.base.range != range {
@@ -211,7 +259,7 @@ impl Context {
         {
             return Err(lost());
         }
-        current.value.base.owner = Some(self.options.bootstrap.instance_name.clone());
+        current.value.base.owner = Some(self.options.instance_name.clone());
         current.value.incarnation = Some(Uuid::new_v4().to_string());
         current.value.renewed_at = Some(now_millis());
         self.store().replace(id, &current.value, current.etag).await
@@ -387,15 +435,16 @@ impl Processor {
     ///
     /// # Errors
     ///
-    /// Returns configuration and bootstrap errors before starting background
-    /// work. All-versions-and-deletes mode requires a now start or continuation.
+    /// Returns configuration, bootstrap, and restart-verification errors before
+    /// starting background work. All-versions-and-deletes mode requires a now
+    /// start or continuation.
     ///
     /// # Examples
     ///
     /// ```no_run
     /// use azure_data_cosmos_driver::{
-    ///     change_feed_processor::{BootstrapOptions, ChangeFeedProcessorMode, Processor, ProcessorOptions},
-    ///     models::{ContainerReference, CosmosResponse}, CosmosDriver, Result,
+    ///     change_feed_processor::{Processor, ProcessorOptions},
+    ///     models::{ChangeFeedFactoryMode, ContainerReference, CosmosResponse}, CosmosDriver, Result,
     /// };
     /// use futures::future::BoxFuture;
     /// use std::sync::Arc;
@@ -406,9 +455,9 @@ impl Processor {
     ///     leases: ContainerReference,
     ///     process: fn(CosmosResponse) -> BoxFuture<'static, Result<()>>,
     /// ) -> azure_data_cosmos_driver::Result<()> {
-    ///     let options = ProcessorOptions::new(BootstrapOptions::new(
-    ///         ChangeFeedProcessorMode::LatestVersion, "orders", "worker-01",
-    ///     ));
+    ///     let options = ProcessorOptions::new(
+    ///         ChangeFeedFactoryMode::Incremental, "orders", "worker-01",
+    ///     );
     ///     let processor = Processor::start(driver.clone(), source, driver, leases, options).await?;
     ///     if let Some(batch) = processor.next_batch().await {
     ///         let (_lease, response, receipt) = batch.into_parts();
@@ -427,7 +476,7 @@ impl Processor {
         options: ProcessorOptions,
     ) -> Result<Self> {
         if (options.max_leases > 0 && options.min_leases > options.max_leases)
-            || (options.bootstrap.mode == ChangeFeedProcessorMode::AllVersionsAndDeletes
+            || (options.mode == ChangeFeedFactoryMode::FullFidelity
                 && options.continuation.is_none()
                 && !matches!(options.start, ChangeFeedStartFrom::Now))
             || options
@@ -447,15 +496,17 @@ impl Processor {
             &source,
             &lease_driver,
             &leases,
-            &options.bootstrap,
+            options.mode,
+            &options.processor_name,
+            &options.instance_name,
         )
         .await?;
         let identity = Identity {
             version: SCHEMA_VERSION,
             account: source.account().endpoint().origin().ascii_serialization(),
             container_rid: source.rid().to_owned(),
-            processor_name: options.bootstrap.processor_name.clone(),
-            mode: options.bootstrap.mode,
+            processor_name: options.processor_name.clone(),
+            mode: options.mode,
         };
         let context = Arc::new(Context {
             namespace: namespace(&identity)?,
@@ -466,6 +517,9 @@ impl Processor {
             leases,
             options,
         });
+        if context.options.verify_leases_on_restart {
+            context.read_leases(true).await?;
+        }
         let state = Arc::new(SharedState {
             ready: StdMutex::new(VecDeque::new()),
             waker: AtomicWaker::new(),
@@ -696,11 +750,11 @@ async fn poll(
     cancelled: Signal,
 ) -> Result<()> {
     let initial = lease.lock().await.value.clone();
-    let operation = match context.options.bootstrap.mode {
-        ChangeFeedProcessorMode::LatestVersion => {
+    let operation = match context.options.mode {
+        ChangeFeedFactoryMode::Incremental => {
             CosmosOperation::change_feed(context.source.clone(), Some(initial.base.range.clone()))
         }
-        ChangeFeedProcessorMode::AllVersionsAndDeletes => {
+        ChangeFeedFactoryMode::FullFidelity => {
             CosmosOperation::change_feed_all_versions_and_deletes(
                 context.source.clone(),
                 Some(initial.base.range.clone()),

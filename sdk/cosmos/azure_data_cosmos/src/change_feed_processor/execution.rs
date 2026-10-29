@@ -1,9 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{
-    ChangeFeedProcessor, ChangeFeedProcessorContext, ChangeFeedProcessorMode, ProcessorStartFrom,
-};
+use super::{ChangeFeedProcessor, ChangeFeedProcessorContext, ProcessorStartFrom};
 use crate::{
     models::ChangeFeedItem, options::ChangeFeedMode, ContainerClient, CosmosError, CosmosStatus,
 };
@@ -12,11 +10,8 @@ use azure_core::{
     http::StatusCode,
 };
 use azure_data_cosmos_driver::{
-    change_feed_processor::{
-        BootstrapOptions, ChangeFeedBatch, ChangeFeedProcessorMode as DriverMode, Processor,
-        ProcessorOptions,
-    },
-    models::ChangeFeedStartFrom,
+    change_feed_processor::{ChangeFeedBatch, Processor, ProcessorOptions},
+    models::{ChangeFeedFactoryMode as DriverMode, ChangeFeedStartFrom},
 };
 use futures::{future::BoxFuture, stream::FuturesUnordered, FutureExt, StreamExt};
 use serde::de::DeserializeOwned;
@@ -37,11 +32,8 @@ impl Drop for Running {
     }
 }
 
-pub(super) async fn start<M, T, H, Fut>(
-    processor: &ChangeFeedProcessor<M, T, H>,
-) -> crate::Result<()>
+pub(super) async fn start<T, H, Fut>(processor: &ChangeFeedProcessor<T, H>) -> crate::Result<()>
 where
-    M: ChangeFeedProcessorMode,
     T: DeserializeOwned + Send + 'static,
     H: Fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut + Send + Sync + 'static,
     Fut: Future<Output = crate::Result<()>> + Send + 'static,
@@ -54,19 +46,15 @@ where
             .build());
     }
     let config = &processor.configuration;
-    let mode = match config.mode.mode() {
-        ChangeFeedMode::LatestVersion => DriverMode::LatestVersion,
-        ChangeFeedMode::AllVersionsAndDeletes => DriverMode::AllVersionsAndDeletes,
+    let mode = match config.mode {
+        ChangeFeedMode::LatestVersion => DriverMode::Incremental,
+        ChangeFeedMode::AllVersionsAndDeletes => DriverMode::FullFidelity,
     };
-    let mut options = ProcessorOptions::new(
-        BootstrapOptions::new(mode, &config.processor_name, &config.instance_name)
-            .with_lease_verification_enabled_on_restart(
-                config.lease_verification_on_restart_enabled,
-            ),
-    )
-    .with_max_item_count(config.max_item_count)
-    .with_poll_delay(config.feed_poll_delay)
-    .with_lease_counts(config.min_scale_count, config.max_scale_count);
+    let mut options = ProcessorOptions::new(mode, &config.processor_name, &config.instance_name)
+        .with_lease_verification_enabled_on_restart(config.lease_verification_on_restart_enabled)
+        .with_max_item_count(config.max_item_count)
+        .with_poll_delay(config.feed_poll_delay)
+        .with_lease_counts(config.min_scale_count, config.max_scale_count);
     options = match &config.start_from {
         ProcessorStartFrom::Now => options.with_start(ChangeFeedStartFrom::Now),
         ProcessorStartFrom::Beginning => options.with_start(ChangeFeedStartFrom::Beginning),
@@ -155,9 +143,7 @@ where
     }
 }
 
-pub(super) async fn stop<M: ChangeFeedProcessorMode, T, H>(
-    processor: &ChangeFeedProcessor<M, T, H>,
-) -> crate::Result<()> {
+pub(super) async fn stop<T, H>(processor: &ChangeFeedProcessor<T, H>) -> crate::Result<()> {
     let mut running = processor.running.lock().await;
     if let Some(mut running) = running.take() {
         running.driver.stop().await;

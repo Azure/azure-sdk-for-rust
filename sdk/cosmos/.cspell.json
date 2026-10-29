@@ -79,6 +79,7 @@
     "chokepoint",
     "canonicalizer",
     "cloneable",
+    "coalescer",
     "codepoint",
     "codepoints",
     "codegen",

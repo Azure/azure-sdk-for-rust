@@ -6,19 +6,17 @@ use azure_core::{
     http::{StatusCode, Url},
 };
 use azure_data_cosmos::{
-    models::ChangeFeedItem, options::Region, AccountReference, AllVersionsAndDeletes,
-    ChangeFeedProcessorBuilder, ChangeFeedProcessorMode, ContainerClient, CosmosClientBuilder,
-    FeedScope, LatestVersion, RoutingStrategy,
+    models::ChangeFeedItem,
+    options::{ChangeFeedMode, Region},
+    AccountReference, ChangeFeedProcessorBuilder, ContainerClient, CosmosClientBuilder, FeedScope,
+    RoutingStrategy,
 };
 use futures::TryStreamExt;
 use serde_json::Value;
 use std::{
     error::Error,
     io,
-    sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc,
-    },
+    sync::atomic::{AtomicUsize, Ordering},
 };
 
 type TestResult<T = ()> = Result<T, Box<dyn Error>>;
@@ -38,16 +36,16 @@ async fn records(leases: &ContainerClient, processor: &str) -> TestResult<Vec<Va
     Ok(records)
 }
 
-async fn exercise_start<M: ChangeFeedProcessorMode, N: ChangeFeedProcessorMode>(
+async fn exercise_start(
     source: &ContainerClient,
     leases: &ContainerClient,
     processor_name: &str,
-    mode: M,
-    incompatible: N,
+    mode: ChangeFeedMode,
+    incompatible: ChangeFeedMode,
     expected_mode: &str,
 ) -> TestResult {
-    let calls = Arc::new(AtomicUsize::new(0));
-    let callback_calls = Arc::clone(&calls);
+    static CALLS: AtomicUsize = AtomicUsize::new(0);
+    CALLS.store(0, Ordering::SeqCst);
     let processor = ChangeFeedProcessorBuilder::new(
         mode,
         source.clone(),
@@ -55,8 +53,8 @@ async fn exercise_start<M: ChangeFeedProcessorMode, N: ChangeFeedProcessorMode>(
         processor_name,
         "sdk-initializer",
     )
-    .handle_change_feed(move |_, _: Vec<ChangeFeedItem<Value>>| {
-        callback_calls.fetch_add(1, Ordering::SeqCst);
+    .handle_change_feed(|_, _: Vec<ChangeFeedItem<Value>>| {
+        CALLS.fetch_add(1, Ordering::SeqCst);
         async { Ok(()) }
     })
     .build()?;
@@ -113,7 +111,7 @@ async fn exercise_start<M: ChangeFeedProcessorMode, N: ChangeFeedProcessorMode>(
     );
     assert!(!other.is_started());
     assert_eq!(records(leases, processor_name).await?, before);
-    assert_eq!(calls.load(Ordering::SeqCst), 0);
+    assert_eq!(CALLS.load(Ordering::SeqCst), 0);
     Ok(())
 }
 
@@ -160,8 +158,8 @@ async fn cfp_start_bootstraps_workloads() -> TestResult {
         &source,
         &leases,
         "sdk-latest",
-        LatestVersion,
-        AllVersionsAndDeletes,
+        ChangeFeedMode::LatestVersion,
+        ChangeFeedMode::AllVersionsAndDeletes,
         "latestVersion",
     )
     .await?;
@@ -169,8 +167,8 @@ async fn cfp_start_bootstraps_workloads() -> TestResult {
         &source,
         &leases,
         "sdk-all-versions",
-        AllVersionsAndDeletes,
-        LatestVersion,
+        ChangeFeedMode::AllVersionsAndDeletes,
+        ChangeFeedMode::LatestVersion,
         "allVersionsAndDeletes",
     )
     .await?;

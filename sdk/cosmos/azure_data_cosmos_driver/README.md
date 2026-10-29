@@ -22,30 +22,56 @@ Any driver APIs which are re-exported through the public SDK (e.g., `azure_data_
 
 ### Change feed workload bootstrap
 
-The `change_feed_processor::bootstrap` function initializes a logical workload
-without starting change consumption. It binds the change feed mode to the source
-account endpoint origin, container RID, and processor name within the lease store.
-The lease container must use `/id` partitioning and `defaultTtl: -1`; configure it
-before calling bootstrap. Multi-write-region lease accounts are rejected.
+`change_feed_processor::bootstrap` initializes a workload without consuming changes.
+It binds mode to the monitored account origin, container RID, and processor name
+within the lease container. Lease storage requires `/id` and default TTL `-1`.
+Single-write and multi-write accounts use the lease driver's normal routing.
 
-The versioned namespace contains a durable mode definition, a create-only initial
-range plan, an initialization marker, and per-range processing leases. A separate
-30-second TTL lock elects an initializer. Attempts are bounded to 25 seconds and
-the default total timeout is two minutes. Lock expiry permits recovery after a
-crash but does not fence every delayed write; retries validate existing records
-and never replace processing leases. Persisted records use a driver-owned format,
-not the Java or .NET lease format.
+Mode and workload/worker names are passed directly to the driver. Timeout and
+retry policy remain internal rather than exposing separate bootstrap options.
+Bootstrap reuses `models::ChangeFeedFactoryMode`, while the SDK retains its own
+`ChangeFeedMode` and converts at the boundary. Persisted workload modes remain
+`latestVersion` and `allVersionsAndDeletes`.
 
-New leases have no owner or continuation. Bootstrap does not read change feed
-pages or interpret `Now`, start times, or initial continuations. Readers retain
-those settings and apply them only when saved lease progress is absent. Completed
-workloads normally take a read-only path; optional restart verification recreates
-missing initial leases without changing existing progress. Topology repair,
-processing ownership, checkpoint writes, and callbacks are separate layers.
+Overlapping compatible calls on the same factory-created source and lease
+drivers share in-flight bootstrap attempts, not their entire retry lifetimes.
+Each caller has its own two-minute budget, including retry delays. A shared
+attempt retains its originating caller's deadline; joining never extends it.
+After a retryable failure, callers with remaining time automatically re-register
+without resetting their budgets. Permanent validation errors fail promptly.
+Instance names do not split that work. Cancelling one waiter does not cancel the others;
+cancelling all waiters drops local work. Completed results are not cached, so a
+later call checks the durable completion marker again. Explicitly unwrapped
+driver values keep the existing inline execution path.
+
+Unwinding panics are logged and retried as failed attempts. A caught initialization
+panic still attempts ETag-conditional claim release before retrying. Cancellation,
+process termination, or failed cleanup can leave a claim for TTL expiration.
+Repeated failures end at the caller's deadline; this is not a supervisor for
+arbitrary threads or a recovery mechanism for a blocked executor.
+
+The driver persists a workload definition, a create-only initial range plan,
+unowned range leases, and a durable completion marker. A 30-second TTL claim
+coordinates initializers; each attempt is limited to 25 seconds within a default
+two-minute budget. Delayed initializers may overlap after expiration, so creation
+is idempotent and conflicts are validated without replacing existing progress.
+The claim is not globally fenced across write regions; visibility and conflict
+resolution follow the lease account's consistency and conflict resolution policies.
+
+A compatible completion marker ends bootstrap without inspecting the initial
+range plan or processing leases. Interrupted initialization fills gaps in the
+persisted plan without replacing existing leases. After completion, stale ranges
+and retired leases belong to the processing runtime, not bootstrap.
+No initial read token or start time is interpreted by bootstrap.
 
 The Rust SDK's `ChangeFeedProcessor::start()` delegates bootstrap to this driver
 before starting coordination. Bootstrap alone does not mark the SDK processor as
 started or invoke its callback.
+
+Opt-in restart verification runs in `Processor::start()` after bootstrap. It
+validates the persisted initial range plan and recreates missing leases with
+create-only writes, preserving existing owners and checkpoints. It does not
+discover topology changes or alter bootstrap completion.
 
 ### Change feed processing
 
@@ -198,6 +224,31 @@ run without Azure credentials:
 ```powershell
 cargo test -p azure_data_cosmos --all-features --test live change_feed_processor::backlog
 ```
+
+The hosted parent test reads `COSMOS_BOOTSTRAP_TEST_ENDPOINT` for the local hosted
+emulator. The live parent test requires `COSMOS_BOOTSTRAP_ALLOW_LIVE=true`,
+`COSMOS_BOOTSTRAP_LIVE_ENDPOINT`, and `COSMOS_BOOTSTRAP_LIVE_KEY`. Load credentials
+securely into the test process environment; do not put them in configuration files.
+No database needs to be provisioned or supplied by the caller.
+
+Each parent creates a fresh `cfp-bootstrap-<unique suffix>` database with `source`
+and `leases` containers, then deletes that database after success, errors, or
+unwinding assertion failures. Service throughput defaults apply. Cleanup only
+starts after database creation succeeds; it never adopts an existing database.
+Cleanup errors are reported and fail an otherwise successful test. A killed
+parent process, an uncertain create outcome, or a failed cleanup can leave the
+printed database name for manual inspection.
+
+Run the live parent explicitly from the repository root:
+
+```powershell
+cargo test -p azure_data_cosmos_driver --all-features --lib `
+  change_feed_processor::bootstrap::process_tests::live_concurrent_processes_and_ttl_recovery `
+  -- --ignored --exact --nocapture
+```
+
+The parent supplies the generated database to its ignored worker helpers; do not
+invoke the helpers directly.
 
 ### Schema-Agnostic Data Plane
 

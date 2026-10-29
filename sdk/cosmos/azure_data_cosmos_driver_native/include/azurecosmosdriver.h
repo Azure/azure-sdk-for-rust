@@ -2165,7 +2165,7 @@ typedef struct cosmos_processor_request_t {
    */
   uint32_t max_leases;
   /**
-   * 0: fast bootstrap restart; 1: verify initial leases.
+   * 0: fast restart; 1: verify initial leases in the processing runtime.
    */
   uint32_t verify_on_restart;
   /**

@@ -2,18 +2,18 @@
 // Licensed under the MIT License.
 
 use super::{
-    balancing, bootstrap, namespace, now_millis, BootstrapOptions, ChangeFeedBatch,
-    ChangeFeedProcessorMode, Context, Identity, Lease, ProcessingLease, Processor,
-    ProcessorOptions, Update, SCHEMA_VERSION,
+    balancing, bootstrap, namespace, now_millis, ChangeFeedBatch, ChangeFeedFactoryMode, Context,
+    Identity, Lease, ProcessingLease, Processor, ProcessorOptions, RangePlan, Update,
+    SCHEMA_VERSION,
 };
 use crate::{
-    change_feed_processor::bootstrap::Record,
+    change_feed_processor::bootstrap::ChangeFeedProcessorBootstrapRecord as Record,
     in_memory_emulator::{
         ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion,
     },
     models::{
-        AccountReference, ChangeFeedStartFrom, CosmosOperation, FeedRange, ItemReference,
-        MaxItemCountHint, PartitionKey,
+        AccountReference, ChangeFeedStartFrom, ContinuationToken, CosmosOperation, FeedRange,
+        ItemReference, MaxItemCountHint, PartitionKey,
     },
     options::{DriverOptions, OperationOptions},
     Result,
@@ -21,12 +21,8 @@ use crate::{
 use std::{num::NonZeroU32, sync::Arc, time::Duration};
 
 fn options(worker: &str) -> ProcessorOptions {
-    let mut options = ProcessorOptions::new(BootstrapOptions::new(
-        ChangeFeedProcessorMode::LatestVersion,
-        "workload",
-        worker,
-    ))
-    .with_start(ChangeFeedStartFrom::Beginning);
+    let mut options = ProcessorOptions::new(ChangeFeedFactoryMode::Incremental, "workload", worker)
+        .with_start(ChangeFeedStartFrom::Beginning);
     options.acquire_interval = Duration::from_millis(20);
     options.poll_delay = Duration::from_millis(10);
     options
@@ -73,13 +69,22 @@ async fn fixture() -> Result<Arc<Context>> {
         .resolve_container("polling", "leases", OperationOptions::default())
         .await?;
     let options = options("first");
-    bootstrap(&driver, &source, &driver, &leases, &options.bootstrap).await?;
+    bootstrap(
+        &driver,
+        &source,
+        &driver,
+        &leases,
+        options.mode,
+        &options.processor_name,
+        &options.instance_name,
+    )
+    .await?;
     let identity = Identity {
         version: SCHEMA_VERSION,
         account: source.account().endpoint().origin().ascii_serialization(),
         container_rid: source.rid().into(),
         processor_name: "workload".into(),
-        mode: ChangeFeedProcessorMode::LatestVersion,
+        mode: ChangeFeedFactoryMode::Incremental,
     };
     Ok(Arc::new(Context {
         source_driver: driver.clone(),
@@ -128,6 +133,68 @@ async fn next(processor: &Processor) -> ChangeFeedBatch {
         .expect("processor stopped")
 }
 
+#[tokio::test]
+async fn concurrent_restart_verification_preserves_existing_progress() -> Result<()> {
+    let context = fixture().await?;
+    let before = context.list().await?;
+    let kept_id = &before[0].base.record.id;
+    let missing_id = &before[1].base.record.id;
+    let store = context.store();
+    let mut kept = store.read::<Lease>(kept_id).await?.unwrap();
+    kept.value.base.owner = Some("existing-worker".into());
+    kept.value.base.continuation = Some(ContinuationToken::from_string("saved-position".into()));
+    let kept = store.replace(kept_id, &kept.value, kept.etag).await?;
+    store
+        .execute(CosmosOperation::delete_item(ItemReference::from_name(
+            &context.leases,
+            PartitionKey::from(missing_id.clone()),
+            missing_id.clone(),
+        )))
+        .await?;
+    assert!(context.list().await.err().unwrap().status().is_not_found());
+    let (left, right) = futures::join!(context.read_leases(true), context.read_leases(true));
+    for leases in [left?, right?] {
+        assert_eq!(leases.len(), before.len());
+        assert_eq!(
+            serde_json::to_value(
+                leases
+                    .iter()
+                    .find(|lease| &lease.base.record.id == kept_id)
+                    .unwrap()
+            )?,
+            serde_json::to_value(&kept.value)?,
+        );
+        assert_eq!(
+            serde_json::to_value(
+                leases
+                    .iter()
+                    .find(|lease| &lease.base.record.id == missing_id)
+                    .unwrap()
+            )?,
+            serde_json::to_value(&before[1])?,
+        );
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn restart_verification_rejects_incomplete_range_plan() -> Result<()> {
+    let context = fixture().await?;
+    let id = format!("{}.plan", context.namespace);
+    let store = context.store();
+    let mut plan = store.read::<RangePlan>(&id).await?.unwrap();
+    plan.value.ranges.pop();
+    store.replace(&id, &plan.value, plan.etag).await?;
+    assert!(context
+        .read_leases(true)
+        .await
+        .err()
+        .unwrap()
+        .status()
+        .is_conflict());
+    Ok(())
+}
+
 fn leases(owners: &[Option<&str>]) -> Vec<Lease> {
     owners
         .iter()
@@ -141,7 +208,7 @@ fn leases(owners: &[Option<&str>]) -> Vec<Lease> {
                         account: "account".into(),
                         container_rid: "rid".into(),
                         processor_name: "workload".into(),
-                        mode: ChangeFeedProcessorMode::LatestVersion,
+                        mode: ChangeFeedFactoryMode::Incremental,
                     },
                     ttl: -1,
                 },
@@ -251,7 +318,7 @@ async fn stealing_fences_old_renewal_and_checkpoint() -> Result<()> {
         .status()
         .is_precondition_failed());
     // Reacquiring under the old instance name must not revive the old receipt.
-    second_context.options.bootstrap.instance_name = "first".into();
+    second_context.options.instance_name = "first".into();
     let third = second_context.acquire(&second.value).await?;
     assert_ne!(first.value.incarnation, third.value.incarnation);
     assert!(context
