@@ -922,6 +922,7 @@ dependencies = [
  "azure_security_keyvault_test",
  "futures",
  "include-file",
+ "percent-encoding",
  "rand 0.10.2",
  "rustc_version",
  "serde",

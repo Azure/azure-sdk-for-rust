@@ -582,15 +582,12 @@ impl SecretServer for MySecretServer {
         _options: Option<SecretClientGetSecretOptions<'_>>,
     ) -> Result<AsyncRawResponse> {
         assert_eq!(secret_name, "my-secret");
-        let secret = Secret {
-            value: Some("fake value".into()),
-            ..Default::default()
-        };
+        let mut secret = Secret::default();
+        secret.value = Some("fake value".into());
         json_response(StatusCode::Ok, Headers::new(), &secret)
     }
 }
 
-# async fn example() -> Result<()> {
 let client = SecretClient::new_fake(
     "https://my-vault.vault.azure.net",
     Arc::new(MySecretServer),
@@ -598,8 +595,6 @@ let client = SecretClient::new_fake(
 )?;
 let secret = client.get_secret("my-secret", None).await?.into_model()?;
 assert_eq!(secret.value.as_deref(), Some("fake value"));
-# Ok(())
-# }
 ```
 
 Server methods return `AsyncRawResponse`, so tests can also return raw bytes with
