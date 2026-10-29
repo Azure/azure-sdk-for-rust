@@ -1669,10 +1669,19 @@ if __name__ == "__main__":
    operation-level status (`is_completed`, `is_failure`),
    the `iter_regions_contacted` / `iter_attempts` visitors (per-attempt
    endpoint, region, status + sub-status, latency, and RU), and a borrowed
-   JSON snapshot via `to_json` (which takes a verbosity selector). Under a
-   retry storm the per-attempt list can be a compacted subset — `is_compacted`
-   / `retained_request_count` report that, while `request_count` and
-   `total_request_charge` stay exact.
+   JSON snapshot via `to_json` (which takes a verbosity selector).
+   `get_info_v2` and `iter_attempts_v2` add size/version-prefixed structured
+   records for operation/activity identity, execution and pipeline
+   classification, transport security/kind/HTTP version, attempt activity ID
+   and session token, send/timeout state, local transport retries, and error
+   text. Their counted strings are borrowed and valid only until completion
+   free (or, for attempt records, until the callback returns). Unknown integer
+   classifications are zero. Under a retry storm the per-attempt list can be a
+   compacted subset — `is_compacted` / `retained_request_count` report that,
+   while `request_count` and `total_request_charge` stay exact. Detailed JSON
+   remains the canonical surface for nested events, shard histories, topology
+   recovery, system usage, fault-injection evaluations, and other fields not
+   yet projected structurally.
 7. **Shared runtime caches.** Every construction creates a fresh driver, but
    container references, account metadata and runtime transport resources are
    shared. Cached container references can reuse another same-account client's

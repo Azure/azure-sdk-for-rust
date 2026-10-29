@@ -56,6 +56,33 @@
 // Version of the size-prefixed native fault-injection records.
 #define COSMOS_FAULT_INJECTION_ABI_VERSION_1 1
 
+// Version and stable integer classifications for structured diagnostics.
+// Zero is reserved for unknown values so future Rust variants can be
+// projected without changing an existing C discriminant.
+#define COSMOS_DIAGNOSTICS_ABI_VERSION_2 2
+#define COSMOS_DIAGNOSTICS_EXECUTION_CONTEXT_UNKNOWN 0
+#define COSMOS_DIAGNOSTICS_EXECUTION_CONTEXT_INITIAL 1
+#define COSMOS_DIAGNOSTICS_EXECUTION_CONTEXT_OPERATION_RETRY 2
+#define COSMOS_DIAGNOSTICS_EXECUTION_CONTEXT_TRANSPORT_RETRY 3
+#define COSMOS_DIAGNOSTICS_EXECUTION_CONTEXT_HEDGING 4
+#define COSMOS_DIAGNOSTICS_EXECUTION_CONTEXT_REGION_FAILOVER 5
+#define COSMOS_DIAGNOSTICS_EXECUTION_CONTEXT_CIRCUIT_BREAKER_PROBE 6
+#define COSMOS_DIAGNOSTICS_PIPELINE_UNKNOWN 0
+#define COSMOS_DIAGNOSTICS_PIPELINE_METADATA 1
+#define COSMOS_DIAGNOSTICS_PIPELINE_DATA_PLANE 2
+#define COSMOS_DIAGNOSTICS_TRANSPORT_SECURITY_UNKNOWN 0
+#define COSMOS_DIAGNOSTICS_TRANSPORT_SECURITY_SECURE 1
+#define COSMOS_DIAGNOSTICS_TRANSPORT_SECURITY_EMULATOR_INSECURE 2
+#define COSMOS_DIAGNOSTICS_TRANSPORT_KIND_UNKNOWN 0
+#define COSMOS_DIAGNOSTICS_TRANSPORT_KIND_GATEWAY 1
+#define COSMOS_DIAGNOSTICS_TRANSPORT_KIND_GATEWAY_V2 2
+#define COSMOS_DIAGNOSTICS_HTTP_VERSION_UNKNOWN 0
+#define COSMOS_DIAGNOSTICS_HTTP_VERSION_1_1 1
+#define COSMOS_DIAGNOSTICS_HTTP_VERSION_2 2
+#define COSMOS_DIAGNOSTICS_REQUEST_SENT_UNKNOWN 0
+#define COSMOS_DIAGNOSTICS_REQUEST_SENT 1
+#define COSMOS_DIAGNOSTICS_REQUEST_NOT_SENT 2
+
 /**
  * Per spec section 3.6.1, every completion has exactly one of these outcomes.
  *
@@ -1926,6 +1953,182 @@ typedef struct cosmos_cursor_completion_t {
 } cosmos_cursor_completion_t;
 
 /**
+ * Borrowed counted UTF-8 output.
+ *
+ * `data` is NULL only when an optional value is unavailable. Otherwise it
+ * points to `len` UTF-8 bytes, which may be empty and are not NUL-terminated.
+ * The view is valid only for the lifetime documented by the accessor that
+ * returned it and must never be freed by the caller.
+ */
+typedef struct cosmos_borrowed_string_view_t {
+  /**
+   * Borrowed UTF-8 bytes, or NULL when the optional value is unavailable.
+   */
+  const uint8_t *data;
+  /**
+   * Number of readable bytes.
+   */
+  uintptr_t len;
+} cosmos_borrowed_string_view_t;
+
+/**
+ * Versioned operation-level structured diagnostics.
+ *
+ * Initialize no fields: [`cosmos_diagnostics_get_info_v2`] writes the complete
+ * record. String views borrow the diagnostics handle and remain valid until
+ * the owning completion is freed.
+ */
+typedef struct cosmos_diagnostics_info_v2_t {
+  /**
+   * Size of this record in bytes.
+   */
+  uint32_t struct_size_bytes;
+  /**
+   * [`COSMOS_DIAGNOSTICS_ABI_VERSION_2`].
+   */
+  uint32_t schema_version;
+  /**
+   * Operation activity ID.
+   */
+  struct cosmos_borrowed_string_view_t activity_id;
+  /**
+   * Canonical `db.operation.name`, or NULL/0 when unknown.
+   */
+  struct cosmos_borrowed_string_view_t operation_name;
+  /**
+   * Final HTTP status, or 0 when no final status is available.
+   */
+  uint16_t status_code;
+  /**
+   * Reserved for alignment; always zero.
+   */
+  uint16_t reserved_status;
+  /**
+   * Final Cosmos sub-status, or -1 when unavailable.
+   */
+  int32_t sub_status;
+  /**
+   * Reserved for future schema-compatible additions; always zero.
+   */
+  uint32_t reserved[4];
+} cosmos_diagnostics_info_v2_t;
+
+/**
+ * Versioned structured diagnostics for one retained request attempt.
+ *
+ * The record and every string view it contains are valid only during the
+ * [`cosmos_diagnostics_iter_attempts_v2`] callback. Integer classifications
+ * use the `COSMOS_DIAGNOSTICS_*` constants emitted in the C header; zero is
+ * always the stable unknown value.
+ */
+typedef struct cosmos_diagnostics_attempt_v2_t {
+  /**
+   * Size of this record in bytes.
+   */
+  uint32_t struct_size_bytes;
+  /**
+   * [`COSMOS_DIAGNOSTICS_ABI_VERSION_2`].
+   */
+  uint32_t schema_version;
+  /**
+   * Zero-based position in the retained attempt sequence.
+   */
+  uint32_t retained_index;
+  /**
+   * Why this request was dispatched.
+   */
+  int32_t execution_context;
+  /**
+   * Metadata or data-plane pipeline.
+   */
+  int32_t pipeline_type;
+  /**
+   * Transport certificate-validation mode.
+   */
+  int32_t transport_security;
+  /**
+   * Concrete transport implementation.
+   */
+  int32_t transport_kind;
+  /**
+   * HTTP protocol version selected by the transport.
+   */
+  int32_t transport_http_version;
+  /**
+   * Tri-state indication of whether bytes reached the wire.
+   */
+  int32_t request_sent;
+  /**
+   * Number of transport-local shard retries within this request.
+   */
+  uint32_t local_shard_retry_count;
+  /**
+   * HTTP status for this request, or 0 before completion.
+   */
+  uint16_t status_code;
+  /**
+   * One when the request has reached any terminal state.
+   */
+  uint8_t is_completed;
+  /**
+   * One when the request ended in a client-side timeout.
+   */
+  uint8_t timed_out;
+  /**
+   * One when `server_duration_ms` was reported by the service.
+   */
+  uint8_t has_server_duration;
+  /**
+   * Reserved alignment bytes; always zero.
+   */
+  uint8_t reserved_flags[3];
+  /**
+   * Cosmos sub-status, or -1 when unavailable.
+   */
+  int32_t sub_status;
+  /**
+   * End-to-end request duration in milliseconds.
+   */
+  uint64_t duration_ms;
+  /**
+   * Request charge for this attempt.
+   */
+  double request_charge;
+  /**
+   * Service-reported duration, meaningful only when `has_server_duration` is 1.
+   */
+  double server_duration_ms;
+  /**
+   * Endpoint contacted.
+   */
+  struct cosmos_borrowed_string_view_t endpoint;
+  /**
+   * Region contacted, or NULL/0 when unresolved.
+   */
+  struct cosmos_borrowed_string_view_t region;
+  /**
+   * Per-request operation name, or NULL/0 when it matches the parent.
+   */
+  struct cosmos_borrowed_string_view_t operation_name;
+  /**
+   * Response activity ID, or NULL/0 when unavailable.
+   */
+  struct cosmos_borrowed_string_view_t activity_id;
+  /**
+   * Response session token, or NULL/0 when unavailable.
+   */
+  struct cosmos_borrowed_string_view_t session_token;
+  /**
+   * Transport or pipeline error text, or NULL/0 when unavailable.
+   */
+  struct cosmos_borrowed_string_view_t error;
+  /**
+   * Reserved for future schema-compatible additions; always zero.
+   */
+  uint32_t reserved[4];
+} cosmos_diagnostics_attempt_v2_t;
+
+/**
  * Verbosity selector for [`cosmos_diagnostics_to_json`].
  *
  * A newtype over the wire integer (rather than a Rust `enum`) so an
@@ -2533,6 +2736,16 @@ cosmos_status_code_t cosmos_database_ref_create(const struct cosmos_account_ref_
 void cosmos_database_ref_free(struct cosmos_database_ref_t *database);
 
 /**
+ * Writes operation-level structured diagnostics into `out_info`.
+ *
+ * Returns a NULL-argument error without writing when either pointer is NULL.
+ * On success, string views borrow `d` and remain valid until the owning
+ * completion is freed.
+ */
+cosmos_status_code_t cosmos_diagnostics_get_info_v2(const struct cosmos_diagnostics_t *d,
+                                                    struct cosmos_diagnostics_info_v2_t *out_info);
+
+/**
  * Total request charge (RU) aggregated across every attempt. Returns `0.0`
  * when `d` is NULL.
  */
@@ -2620,6 +2833,21 @@ void cosmos_diagnostics_iter_attempts(const struct cosmos_diagnostics_t *d,
                                                       double request_charge,
                                                       double server_duration_ms),
                                       void *user_data);
+
+/**
+ * Invokes `visitor` once per retained request attempt, in execution order.
+ *
+ * The callback receives a versioned record containing the legacy attempt
+ * fields plus execution, pipeline, transport, activity, session, send-state,
+ * timeout, and error details. The record and its borrowed string views are
+ * valid only for that callback invocation. When
+ * [`cosmos_diagnostics_is_compacted`] is `true`, iteration covers only the
+ * retained head/tail subset. Does nothing when `d` or `visitor` is NULL.
+ */
+void cosmos_diagnostics_iter_attempts_v2(const struct cosmos_diagnostics_t *d,
+                                         void (*visitor)(void *user_data,
+                                                         const struct cosmos_diagnostics_attempt_v2_t *attempt),
+                                         void *user_data);
 
 /**
  * Writes a borrowed, read-only JSON rendering of the diagnostics at the
