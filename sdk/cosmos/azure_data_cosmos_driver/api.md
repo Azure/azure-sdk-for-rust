@@ -171,20 +171,12 @@ pub mod binary_json {
     }
 }
 pub mod change_feed_processor {
-    pub async fn bootstrap(source_driver: &crate::CosmosDriver, source: &crate::models::ContainerReference, lease_driver: &crate::CosmosDriver, leases: &crate::models::ContainerReference, options: &crate::change_feed_processor::BootstrapOptions) -> crate::Result<()>;
+    pub async fn bootstrap(source_driver: &crate::CosmosDriver, source: &crate::models::ContainerReference, lease_driver: &crate::CosmosDriver, leases: &crate::models::ContainerReference, mode: crate::models::ChangeFeedFactoryMode, processor_name: &str, instance_name: &str) -> crate::Result<()>;
     pub struct BatchReceipt {
     }
     impl BatchReceipt {
         pub async fn cancelled(&self);
         pub async fn checkpoint(self) -> Result<()>;
-    }
-    #[derive(Clone, Debug)]
-    pub struct BootstrapOptions {
-    }
-    impl BootstrapOptions {
-        pub fn new<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(mode: ChangeFeedProcessorMode, processor_name: impl Into<String>, instance_name: impl Into<String>) -> Self;
-        pub fn with_lease_verification_enabled_on_restart(self, enabled: bool) -> Self;
-        pub fn with_timeout(self, timeout: Duration) -> Self;
     }
     pub struct ChangeFeedBatch {
     }
@@ -206,19 +198,13 @@ pub mod change_feed_processor {
     pub struct ProcessorOptions {
     }
     impl ProcessorOptions {
-        pub fn new(bootstrap: BootstrapOptions) -> Self;
+        pub fn new<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(mode: ChangeFeedFactoryMode, processor_name: impl Into<String>, instance_name: impl Into<String>) -> Self;
         pub fn with_continuation(self, continuation: ContinuationToken) -> Self;
         pub fn with_lease_counts(self, minimum: u32, maximum: u32) -> Self;
+        pub fn with_lease_verification_enabled_on_restart(self, enabled: bool) -> Self;
         pub fn with_max_item_count(self, hint: MaxItemCountHint) -> Self;
         pub fn with_poll_delay(self, delay: Duration) -> Self;
         pub fn with_start(self, start: ChangeFeedStartFrom) -> Self;
-    }
-    #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
-    #[non_exhaustive]
-    #[serde(rename_all = "camelCase")]
-    pub enum ChangeFeedProcessorMode {
-        LatestVersion,
-        AllVersionsAndDeletes,
     }
 }
 pub mod diagnostics {
@@ -263,6 +249,7 @@ pub mod diagnostics {
         pub fn fault_injection_enabled(&self) -> bool;
         pub fn hedge_diagnostics(&self) -> Option<&HedgeDiagnostics>;
         pub fn hedging_started(&self) -> bool;
+        pub fn invalid_utf8_was_recovered(&self) -> bool;
         pub fn is_completed(&self) -> bool;
         pub fn is_failure(&self) -> bool;
         pub fn is_threshold_violated(&self, thresholds: &DiagnosticsThresholds) -> bool;
@@ -2251,6 +2238,12 @@ pub mod models {
     impl Display for UserAgent {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
     }
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum ChangeFeedFactoryMode {
+        Incremental,
+        FullFidelity,
+    }
     #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
     #[serde(tag = "kind", content = "value", rename_all = "snake_case")]
@@ -2838,6 +2831,7 @@ pub mod options {
         pub availability_strategy: Option<crate::options::AvailabilityStrategy>,
         pub custom_headers: Option<std::collections::HashMap<azure_core::http::headers::HeaderName, azure_core::http::headers::HeaderValue>>,
         pub binary_encoding: Option<crate::options::BinaryEncodingOptions>,
+        pub utf8_decoding_mode: Option<crate::options::Utf8DecodingMode>,
     }
     #[automatically_derived]
     impl OperationOptions {
@@ -2868,6 +2862,7 @@ pub mod options {
         pub fn with_session_capturing_disabled(self, value: bool) -> Self;
         pub fn with_throttling_retry_options(self, value: ThrottlingRetryOptions) -> Self;
         pub fn with_throughput_control(self, value: ThroughputControlOptions) -> Self;
+        pub fn with_utf8_decoding_mode(self, value: Utf8DecodingMode) -> Self;
     }
     #[automatically_derived]
     pub struct OperationOptionsView<'a> {
@@ -2892,6 +2887,7 @@ pub mod options {
         pub fn session_capturing_disabled(&self) -> Option<&bool>;
         pub fn throttling_retry_options(&self) -> ThrottlingRetryOptionsView<'_>;
         pub fn throughput_control(&self) -> ThroughputControlOptionsView<'_>;
+        pub fn utf8_decoding_mode(&self) -> Option<&Utf8DecodingMode>;
     }
     #[derive(Clone, Debug)]
     #[non_exhaustive]
@@ -3325,6 +3321,13 @@ pub mod options {
     pub enum TlsBackend {
         #[default]
         Rustls,
+    }
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum Utf8DecodingMode {
+        #[default]
+        Strict,
+        Lossy,
     }
     pub const DEFAULT_MAX_BUFFERED_QUERY_WINDOW: u64 = 1000;
     pub const DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS: usize = 32;

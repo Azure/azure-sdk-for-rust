@@ -4,7 +4,7 @@
   "id": "resilience.deadline",
   "title": "End-to-end deadlines bound delayed operations",
   "requirement": "An operation deadline terminates a delayed read before the injected response completes and diagnostics retain the failed attempt history.",
-  "maturity": "candidate",
+  "maturity": "stable",
   "precedents": [
     {
       "sdk": "rust",

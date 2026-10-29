@@ -3,24 +3,28 @@
 
 use super::{Context, Lease, Update};
 use crate::{
-    change_feed_processor::{
-        bootstrap::{
-            error, lease_id, store::Stored, validate_ranges, ProcessingLease, RangePlan, Record,
-        },
-        ChangeFeedProcessorMode,
+    change_feed_processor::bootstrap::{
+        error, lease_id, store::ChangeFeedProcessorBootstrapStoredRecord as Stored,
+        validate_ranges, ChangeFeedProcessorBootstrapProcessingLease as ProcessingLease,
+        ChangeFeedProcessorBootstrapRangePlan as RangePlan,
+        ChangeFeedProcessorBootstrapRecord as Record,
     },
     driver::dataflow::{
-        intersect_feed_ranges, planner::project_change_feed_state, validate_exact_coverage,
-        PipelineNodeState,
+        intersect_feed_ranges, planner::project_change_feed_state, split_feed_envelope,
+        validate_exact_coverage, PipelineNodeState,
     },
-    models::{ContinuationToken, CosmosOperation, FeedRange, ResolvedToken},
+    models::{
+        ChangeFeedFactoryMode, ContinuationToken, CosmosOperation, FeedRange, ResolvedToken,
+        ResponseBody,
+    },
+    options::{OperationOptions, PlanOptions},
     Result,
 };
 use async_lock::Mutex;
 use azure_core::http::StatusCode;
 use std::{
-    collections::{HashSet, VecDeque},
     sync::Arc,
+    time::{Duration, Instant},
 };
 
 pub(super) fn validate_children(parent: &FeedRange, children: &[FeedRange]) -> Result<()> {
@@ -40,10 +44,10 @@ pub(super) fn validate_children(parent: &FeedRange, children: &[FeedRange]) -> R
 impl Context {
     pub(super) fn operation(&self, range: &FeedRange) -> CosmosOperation {
         let operation = match self.identity.mode {
-            ChangeFeedProcessorMode::LatestVersion => {
+            ChangeFeedFactoryMode::Incremental => {
                 CosmosOperation::change_feed(self.source.clone(), Some(range.clone()))
             }
-            ChangeFeedProcessorMode::AllVersionsAndDeletes => {
+            ChangeFeedFactoryMode::FullFidelity => {
                 CosmosOperation::change_feed_all_versions_and_deletes(
                     self.source.clone(),
                     Some(range.clone()),
@@ -88,40 +92,126 @@ impl Context {
     }
 
     pub(super) async fn list(&self) -> Result<Vec<Lease>> {
+        let operation = CosmosOperation::query_items(self.leases.clone(), Some(FeedRange::full()))
+            .with_body(serde_json::to_vec(&serde_json::json!({
+                "query": "SELECT * FROM c WHERE STARTSWITH(c.id, @prefix) AND IS_DEFINED(c.range) AND (NOT IS_DEFINED(c.children) OR NOT IS_DEFINED(c.split_complete) OR c.split_complete = false)",
+                "parameters": [{"name": "@prefix", "value": format!("{}.lease.", self.namespace)}]
+            }))?)
+            .with_absolute_deadline(Some(Instant::now() + Duration::from_secs(25)));
+        let mut plan = self
+            .lease_driver
+            .plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            )
+            .await?;
+        let mut leases = Vec::new();
+        while let Some(response) = self
+            .lease_driver
+            .execute_plan(
+                &mut plan,
+                Some(self.leases.clone()),
+                OperationOptions::default(),
+            )
+            .await?
+        {
+            let body = match response.into_body() {
+                ResponseBody::Bytes(bytes) => {
+                    ResponseBody::from_items(split_feed_envelope(&bytes)?)
+                }
+                body => body,
+            };
+            for lease in body.into_items::<Lease>()? {
+                self.validate(&lease)?;
+                leases.push(lease);
+            }
+        }
+        leases.sort_by(|left, right| {
+            left.base
+                .range
+                .min_inclusive()
+                .cmp(right.base.range.min_inclusive())
+        });
+        Ok(leases)
+    }
+
+    pub(super) async fn verify_leases(&self) -> Result<Vec<Lease>> {
+        let plan_id = format!("{}.plan", self.namespace);
         let plan = self
             .store()
-            .read::<RangePlan>(&format!("{}.plan", self.namespace))
+            .read::<RangePlan>(&plan_id)
             .await?
             .ok_or_else(|| error(StatusCode::NotFound, "Bootstrap range plan is missing."))?;
-        if plan.value.record.workload != self.identity || plan.value.record.ttl != -1 {
+        if plan.value.record.workload != self.identity
+            || plan.value.record.id != plan_id
+            || plan.value.record.ttl != -1
+        {
             return Err(error(
                 StatusCode::Conflict,
                 "Incompatible bootstrap range plan.",
             ));
         }
         validate_ranges(&plan.value.ranges)?;
-        let mut pending: VecDeque<_> = plan
-            .value
-            .ranges
-            .into_iter()
-            .map(|range| (range, None))
-            .collect();
-        let mut visited = HashSet::new();
-        let mut leaves = Vec::new();
-        while let Some((range, seed)) = pending.pop_front() {
+        for range in plan.value.ranges {
             let id = lease_id(&self.namespace, &range);
-            if !visited.insert(id.clone()) {
-                return Err(error(
-                    StatusCode::Conflict,
-                    "Processing lease lineage overlaps.",
-                ));
-            }
             let stored = match self.store().read::<Lease>(&id).await? {
                 Some(stored) => stored,
                 None => {
-                    let continuation = seed.ok_or_else(|| {
-                        error(StatusCode::NotFound, "Initial processing lease is missing.")
-                    })?;
+                    let lease = Lease {
+                        base: ProcessingLease {
+                            record: Record {
+                                id: id.clone(),
+                                workload: self.identity.clone(),
+                                ttl: -1,
+                            },
+                            range: range.clone(),
+                            owner: None,
+                            continuation: None,
+                        },
+                        incarnation: None,
+                        renewed_at: None,
+                        children: None,
+                        split_complete: false,
+                        renewed: None,
+                    };
+                    self.store().create(&id, &lease).await?;
+                    self.store().read::<Lease>(&id).await?.ok_or_else(|| {
+                        error(
+                            StatusCode::ServiceUnavailable,
+                            "Created initial lease is not yet readable.",
+                        )
+                    })?
+                }
+            };
+            self.validate(&stored.value)?;
+            if stored.value.base.range != range {
+                return Err(error(
+                    StatusCode::Conflict,
+                    "Processing lease range does not match its initial plan.",
+                ));
+            }
+        }
+        self.list().await
+    }
+
+    pub(super) async fn ensure_children(&self, parent: &mut Stored<Lease>) -> Result<()> {
+        self.validate(&parent.value)?;
+        let children = parent
+            .value
+            .children
+            .as_ref()
+            .ok_or_else(|| error(StatusCode::Conflict, "Processing lease is not retired."))?;
+        if parent.value.split_complete {
+            return Ok(());
+        }
+        for range in children {
+            let id = lease_id(&self.namespace, range);
+            let continuation = self.checkpoint(&parent.value, range)?;
+            let stored = match self.store().read::<Lease>(&id).await? {
+                Some(stored) => stored,
+                None => {
                     let child = Lease {
                         base: ProcessingLease {
                             record: Record {
@@ -137,6 +227,7 @@ impl Context {
                         renewed_at: None,
                         children: None,
                         renewed: None,
+                        split_complete: false,
                     };
                     self.store().create(&id, &child).await?;
                     self.store().read::<Lease>(&id).await?.ok_or_else(|| {
@@ -148,51 +239,25 @@ impl Context {
                 }
             };
             self.validate(&stored.value)?;
-            if stored.value.base.range != range {
+            if stored.value.base.range != *range {
                 return Err(error(
                     StatusCode::Conflict,
-                    "Processing lease range does not match its lineage.",
+                    "Child lease range does not match its parent.",
                 ));
             }
-            if let Some(children) = &stored.value.children {
-                for child in children {
-                    pending
-                        .push_back((child.clone(), Some(self.checkpoint(&stored.value, child)?)));
-                }
-            } else {
-                leaves.push(stored.value);
-            }
         }
-        leaves.sort_by(|left, right| {
-            left.base
-                .range
-                .min_inclusive()
-                .cmp(right.base.range.min_inclusive())
-        });
-        validate_ranges(
-            &leaves
-                .iter()
-                .map(|lease| lease.base.range.clone())
-                .collect::<Vec<_>>(),
-        )?;
-        Ok(leaves)
+        self.update(parent, Update::CompleteSplit).await
     }
 
     pub(super) async fn recover(&self, lease: Arc<Mutex<Stored<Lease>>>) -> Result<bool> {
         let scope = lease.lock().await.value.base.range.clone();
         let topology = self
             .source_driver
-            .resolve_all_partition_key_ranges(&self.source, true)
-            .await?
-            .ok_or_else(|| {
-                error(
-                    StatusCode::ServiceUnavailable,
-                    "Source partition topology is unavailable.",
-                )
-            })?;
+            .resolve_partition_key_ranges_for_feed_range(&self.source, &scope, true)
+            .await?;
         let mut children = Vec::new();
         for physical in topology.iter() {
-            if let Some(range) = intersect_feed_ranges(&scope, &FeedRange::try_from(physical)?) {
+            if let Some(range) = intersect_feed_ranges(&scope, physical) {
                 children.push(range);
             }
         }
@@ -203,7 +268,8 @@ impl Context {
         }
         let mut lease = lease.lock().await;
         self.update(&mut lease, Update::Split(&children)).await?;
-        tracing::info!(lease = %lease.value.base.record.id, children = children.len(), "Retired split lease; child leases are available for recovery and balancing");
+        self.ensure_children(&mut lease).await?;
+        tracing::info!(lease = %lease.value.base.record.id, children = children.len(), "Created child leases for the retired split range");
         Ok(true)
     }
 }

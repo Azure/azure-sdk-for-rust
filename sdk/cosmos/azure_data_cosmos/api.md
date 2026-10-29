@@ -66,14 +66,10 @@ impl AccountReference {
     pub fn with_authentication_key<impl Into<Secret>: Into<Secret>>(endpoint: AccountEndpoint, key: impl Into<Secret>) -> Self;
     pub fn with_credential(endpoint: AccountEndpoint, credential: Arc<dyn TokenCredential>) -> Self;
 }
-#[derive(Clone, Copy, Debug)]
-pub struct AllVersionsAndDeletes;
-impl ChangeFeedProcessorMode for AllVersionsAndDeletes {
-}
 #[must_use]
-pub struct ChangeFeedProcessor<M: ChangeFeedProcessorMode, T, H> {
+pub struct ChangeFeedProcessor<T, H> {
 }
-impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessor<M, T, H> {
+impl<T, H> ChangeFeedProcessor<T, H> {
     pub async fn abort(&self) -> crate::Result<()>;
     pub async fn current_state(&self) -> crate::Result<Vec<ChangeFeedProcessorState>>;
     pub fn is_started(&self) -> bool;
@@ -81,16 +77,13 @@ impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessor<M, T, H> {
     pub async fn stop(&self) -> crate::Result<()>;
 }
 #[must_use]
-pub struct ChangeFeedProcessorBuilder<M: ChangeFeedProcessorMode, T = (), H = ()> {
+pub struct ChangeFeedProcessorBuilder<T = (), H = ()> {
 }
-impl<M: ChangeFeedProcessorMode> ChangeFeedProcessorBuilder<M> {
-    pub fn handle_change_feed<T, H, Fut>(self, handler: H) -> ChangeFeedProcessorBuilder<M, T, H> where T: DeserializeOwned + Send + 'static, H: Fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut + Send + Sync + 'static, Fut: Future<Output = crate::Result<()>> + Send + 'static;
-    pub fn new<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(mode: M, monitored_container: ContainerClient, lease_container: ContainerClient, processor_name: impl Into<String>, instance_name: impl Into<String>) -> Self;
+impl ChangeFeedProcessorBuilder {
+    pub fn handle_change_feed<T, Fut>(self, handler: fn(ChangeFeedProcessorContext, Vec<crate::models::ChangeFeedItem<T>>) -> Fut) -> ChangeFeedProcessorBuilder<T, fn(ChangeFeedProcessorContext, Vec<crate::models::ChangeFeedItem<T>>) -> Fut> where T: DeserializeOwned + Send + 'static, Fut: Future<Output = crate::Result<()>> + Send + 'static;
+    pub fn new<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(mode: ChangeFeedMode, monitored_container: ContainerClient, lease_container: ContainerClient, processor_name: impl Into<String>, instance_name: impl Into<String>) -> Self;
 }
-impl<M, T, H, Fut> ChangeFeedProcessorBuilder<M, T, H> where M: ChangeFeedProcessorMode, T: DeserializeOwned + Send + 'static, H: Fn(ChangeFeedProcessorContext, Vec<crate::models::ChangeFeedItem<T>>) -> Fut + Send + Sync + 'static, Fut: Future<Output = crate::Result<()>> + Send + 'static {
-    pub fn build(self) -> crate::Result<ChangeFeedProcessor<M, T, H>>;
-}
-impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessorBuilder<M, T, H> {
+impl<T, H> ChangeFeedProcessorBuilder<T, H> {
     pub fn with_feed_poll_delay(self, feed_poll_delay: Duration) -> Self;
     pub fn with_lease_verification_enabled_on_restart(self, enabled: bool) -> Self;
     pub fn with_max_item_count(self, max_item_count: MaxItemCountHint) -> Self;
@@ -98,10 +91,13 @@ impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessorBuilder<M, T, H> {
     pub fn with_min_scale_count(self, min_scale_count: u32) -> Self;
     pub fn with_start_continuation(self, continuation: ContinuationToken) -> Self;
 }
-impl<T, H> ChangeFeedProcessorBuilder<LatestVersion, T, H> {
+impl<T, H> ChangeFeedProcessorBuilder<T, H> {
     pub fn with_start_from_beginning(self) -> Self;
     pub fn with_start_from_now(self) -> Self;
     pub fn with_start_time(self, start_time: OffsetDateTime) -> Self;
+}
+impl<T, Fut> ChangeFeedProcessorBuilder<T, fn(ChangeFeedProcessorContext, Vec<crate::models::ChangeFeedItem<T>>) -> Fut> where T: DeserializeOwned + Send + 'static, Fut: Future<Output = crate::Result<()>> + Send + 'static {
+    pub fn build(self) -> crate::Result<ChangeFeedProcessor<T, fn(ChangeFeedProcessorContext, Vec<crate::models::ChangeFeedItem<T>>) -> Fut>>;
 }
 #[derive(Clone, Debug)]
 pub struct ChangeFeedProcessorContext {
@@ -217,10 +213,6 @@ impl PartialEq<StatusCode> for CosmosStatus {
 }
 impl Serialize for CosmosStatus {
     fn serialize<S>(&self, serializer: S) -> Result<<S as >::Ok, <S as >::Error> where S: serde::Serializer;
-}
-#[derive(Clone, Copy, Debug)]
-pub struct LatestVersion;
-impl ChangeFeedProcessorMode for LatestVersion {
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
@@ -350,8 +342,6 @@ impl From<&str> for ResourceIdentity {
 }
 impl From<String> for ResourceIdentity {
     fn from(name: String) -> Self;
-}
-pub trait ChangeFeedProcessorMode: private::Sealed {
 }
 pub mod clients {
     #[derive(Clone)]
@@ -639,6 +629,7 @@ pub mod diagnostics {
         pub fn fault_injection_enabled(&self) -> bool;
         pub fn hedge_diagnostics(&self) -> Option<&HedgeDiagnostics>;
         pub fn hedging_started(&self) -> bool;
+        pub fn invalid_utf8_was_recovered(&self) -> bool;
         pub fn is_completed(&self) -> bool;
         pub fn is_failure(&self) -> bool;
         pub fn is_threshold_violated(&self, thresholds: &DiagnosticsThresholds) -> bool;
@@ -2687,6 +2678,7 @@ pub mod options {
         pub availability_strategy: Option<crate::options::AvailabilityStrategy>,
         pub custom_headers: Option<std::collections::HashMap<azure_core::http::headers::HeaderName, azure_core::http::headers::HeaderValue>>,
         pub binary_encoding: Option<crate::options::BinaryEncodingOptions>,
+        pub utf8_decoding_mode: Option<crate::options::Utf8DecodingMode>,
     }
     #[doc(inline)]
     #[automatically_derived]
@@ -2720,6 +2712,7 @@ pub mod options {
         pub fn with_session_capturing_disabled(self, value: bool) -> Self;
         pub fn with_throttling_retry_options(self, value: ThrottlingRetryOptions) -> Self;
         pub fn with_throughput_control(self, value: ThroughputControlOptions) -> Self;
+        pub fn with_utf8_decoding_mode(self, value: Utf8DecodingMode) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug)]
@@ -3332,6 +3325,14 @@ pub mod options {
     pub enum TlsBackend {
         #[default]
         Rustls,
+    }
+    #[doc(inline)]
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum Utf8DecodingMode {
+        #[default]
+        Strict,
+        Lossy,
     }
 }
 ```

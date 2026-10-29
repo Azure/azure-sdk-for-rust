@@ -12,9 +12,11 @@ use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     feed::FeedRange,
     models::{ChangeFeedItem, ContainerProperties, ThroughputProperties, TimeToLive},
-    options::{CreateContainerOptions, MaxItemCountHint, ReadFeedRangesOptions, Region},
+    options::{
+        ChangeFeedMode, CreateContainerOptions, MaxItemCountHint, ReadFeedRangesOptions, Region,
+    },
     ChangeFeedProcessor, ChangeFeedProcessorBuilder, ChangeFeedProcessorContext, ContainerClient,
-    CosmosError, CosmosStatus, FeedScope, LatestVersion,
+    CosmosError, CosmosStatus, FeedScope,
 };
 use futures::{
     channel::{mpsc, oneshot},
@@ -41,15 +43,14 @@ const BASELINE_GROUPS: u32 = 4;
 const CONTROL_WAIT: Duration = Duration::from_secs(180);
 const INTERVAL: Duration = Duration::from_millis(100);
 type TestResult<T = ()> = Result<T, Box<dyn Error>>;
-type Handler = Box<
-    dyn Fn(
-            ChangeFeedProcessorContext,
-            Vec<ChangeFeedItem<Item>>,
-        ) -> BoxFuture<'static, azure_data_cosmos::Result<()>>
-        + Send
-        + Sync,
->;
-type Processor = ChangeFeedProcessor<LatestVersion, Item, Handler>;
+type Handler = fn(
+    ChangeFeedProcessorContext,
+    Vec<ChangeFeedItem<Item>>,
+) -> BoxFuture<'static, azure_data_cosmos::Result<()>>;
+type Processor = ChangeFeedProcessor<Item, Handler>;
+
+static CALLBACK: Mutex<Option<Arc<Sink>>> = Mutex::new(None);
+static CALLBACK_SERIAL: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 struct Item {
@@ -196,29 +197,53 @@ impl Sink {
     }
 }
 
+fn callback(
+    worker: &str,
+    context: ChangeFeedProcessorContext,
+    changes: Vec<ChangeFeedItem<Item>>,
+) -> BoxFuture<'static, azure_data_cosmos::Result<()>> {
+    let sink = CALLBACK
+        .lock()
+        .unwrap()
+        .as_ref()
+        .expect("callback registered")
+        .clone();
+    sink.callback(worker.to_owned(), context, changes).boxed()
+}
+
+fn host_a(
+    context: ChangeFeedProcessorContext,
+    changes: Vec<ChangeFeedItem<Item>>,
+) -> BoxFuture<'static, azure_data_cosmos::Result<()>> {
+    callback("host-a", context, changes)
+}
+
+fn host_b(
+    context: ChangeFeedProcessorContext,
+    changes: Vec<ChangeFeedItem<Item>>,
+) -> BoxFuture<'static, azure_data_cosmos::Result<()>> {
+    callback("host-b", context, changes)
+}
+
 fn processor(
     source: &ContainerClient,
     leases: &ContainerClient,
-    sink: &Arc<Sink>,
     worker: &str,
+    handler: Handler,
 ) -> TestResult<Processor> {
-    let worker = worker.to_owned();
-    let name = worker.clone();
-    let sink = sink.clone();
-    let handler: Handler = Box::new(move |context, changes| {
-        sink.clone()
-            .callback(worker.clone(), context, changes)
-            .boxed()
-    });
-    Ok(
-        ChangeFeedProcessorBuilder::new(LatestVersion, source.clone(), leases.clone(), NAME, name)
-            .with_start_from_beginning()
-            .with_max_scale_count(1)
-            .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(4).unwrap()))
-            .with_feed_poll_delay(INTERVAL)
-            .handle_change_feed(handler)
-            .build()?,
+    Ok(ChangeFeedProcessorBuilder::new(
+        ChangeFeedMode::LatestVersion,
+        source.clone(),
+        leases.clone(),
+        NAME,
+        worker,
     )
+    .with_start_from_beginning()
+    .with_max_scale_count(1)
+    .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(4).unwrap()))
+    .with_feed_poll_delay(INTERVAL)
+    .handle_change_feed(handler)
+    .build()?)
 }
 
 fn ensure(condition: bool, message: &str) -> TestResult {
@@ -282,6 +307,7 @@ async fn publish_group(source: &ContainerClient, sequence: u32, fence: bool) -> 
 }
 
 async fn exercise(source: &ContainerClient, leases: &ContainerClient) -> TestResult {
+    let _serial = CALLBACK_SERIAL.lock().await;
     let before = source.read_feed_ranges(None).await?;
     ensure(
         before.len() == 1,
@@ -289,9 +315,10 @@ async fn exercise(source: &ContainerClient, leases: &ContainerClient) -> TestRes
     )?;
     let (sink, mut gates) = Sink::new();
     let workers = [
-        processor(source, leases, &sink, "host-a")?,
-        processor(source, leases, &sink, "host-b")?,
+        processor(source, leases, "host-a", host_a)?,
+        processor(source, leases, "host-b", host_b)?,
     ];
+    *CALLBACK.lock().unwrap() = Some(sink.clone());
     let result = async {
         for worker in &workers { worker.start().await?; }
         let initial = wait_for(&sink, "initial lease checkpoint", async || {
@@ -410,6 +437,7 @@ async fn exercise(source: &ContainerClient, leases: &ContainerClient) -> TestRes
             }
         }
     }
+    *CALLBACK.lock().unwrap() = None;
     outcome
 }
 

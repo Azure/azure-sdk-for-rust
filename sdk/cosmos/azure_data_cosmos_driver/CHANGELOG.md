@@ -1,29 +1,52 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.1.0-beta.2 (Unreleased)
 
 ### Features Added
 
-- Added driver-owned change feed workload bootstrap with RID-based identity, persisted mode checks, TTL initialization claims, bounded retries, and create-only range leases without initial continuations.
 - Added `change_feed_processor::Processor` with equal lease balancing, renewal, and schema-agnostic batch receipts that gate durable checkpoints and subsequent polls.
-- Added automatic online processor split recovery with fenced parent retirement, recoverable child leases, independent merge checkpoints, and balanced child acquisition. ([#5476](https://github.com/Azure/azure-sdk-for-rust/pull/5476))
+- Added automatic online processor split recovery with range-local child creation, fenced parent retirement, resumable incomplete transitions, independent merge checkpoints, and balanced child acquisition. ([#5476](https://github.com/Azure/azure-sdk-for-rust/pull/5476))
+- Added driver-owned change feed workload bootstrap with mode binding, create-only initial lease coverage, bounded initialization claims, and progress-preserving recovery of incomplete workloads. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Coalesce compatible overlapping bootstrap calls on shared drivers without coupling waiter cancellation or caching completed outcomes. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 
 ### Breaking Changes
 
 - Renamed `change_feed_processor::Batch` to `change_feed_processor::ChangeFeedBatch` to distinguish processor deliveries from transactional batches.
 - `Processor::stop()` now drains issued receipts and returns shutdown errors; use `abort()` or `request_stop()` for forced cancellation. ([#5477](https://github.com/Azure/azure-sdk-for-rust/pull/5477))
+- Updated `ProcessorOptions::new()` to accept `ChangeFeedFactoryMode` and workload/worker names directly. ([#5474](https://github.com/Azure/azure-sdk-for-rust/pull/5474))
+- Moved opt-in restart lease verification to `ProcessorOptions`, preserving missing-lease recovery without changing completed bootstrap workloads. ([#5474](https://github.com/Azure/azure-sdk-for-rust/pull/5474))
+- Removed public `BootstrapOptions`; bootstrap accepts mode and workload/worker names directly, keeps timing policy internal, and never repairs completed workloads. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Replaced bootstrap's `ChangeFeedProcessorMode` with `models::ChangeFeedFactoryMode`, preserving existing stored workload mode values. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 
 ### Bugs Fixed
 
+- Re-register failed bootstrap attempts within each caller's original budget, preserving late joiners' deadlines and attempting conditional claim cleanup after initialization panics. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Allow change feed workload bootstrap on multi-write-region lease accounts using the driver's existing request routing. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Preserve Gateway 2.0 batch atomicity and continue-on-error controls, preventing partial commits in failed transactional batches. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
+- Correct partition-local session-token scoping across classic Gateway and Gateway 2.0, including explicit compound tokens with automatic capture disabled, while retaining safe fallback for missing or stale topology. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
+- Preserve query and feed EPK filters and avoid conflicting hierarchical partition-key selectors across gateways, regional retries, and continuation requests. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
+- Retry transient account-discovery I/O failures within a bounded budget, including uncertain send outcomes. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
+
+### Other Changes
+
+- Derive processor renewal and acquisition schedules from the lease expiration budget, reuse checkpoint writes for renewal, and remove the implicit callback progress timeout. ([#5477](https://github.com/Azure/azure-sdk-for-rust/pull/5477))
+
+## 1.1.0-beta.1 (2026-10-22)
+
+### Features Added
+
+- Single-partition queries are now eligible for cross-region hedging, bounding tail latency on a degraded region at the cost of a second request on pages that exceed the hedge threshold. Cross-partition queries are not yet hedged. ([#5452](https://github.com/Azure/azure-sdk-for-rust/pull/5452))
+- Added layered `OperationOptions::utf8_decoding_mode` for opt-in lossy recovery of invalid UTF-8 in response JSON strings, with strict decoding by default and a recovery indicator in `DiagnosticsContext`. ([#5367](https://github.com/Azure/azure-sdk-for-rust/issues/5367))
+
+### Bugs Fixed
+
+- Route the retry after a failed cross-region hedge race that observed `404/1002` to the write region on single-write accounts, instead of another read region that rejects the hub-only request with `403/3`. ([#5466](https://github.com/Azure/azure-sdk-for-rust/pull/5466))
+- Cache the partition's hub region when a hedged read that sent the hub-only header succeeds, so later hub-only reads of that partition skip hub discovery. ([#5466](https://github.com/Azure/azure-sdk-for-rust/pull/5466))
 - Avoid unnecessary routing-state copies for hedge feedback and unchanged partition transitions, and skip hedge feedback when the effective partition circuit breaker is disabled without disabling transport hedging. ([#5438](https://github.com/Azure/azure-sdk-for-rust/pull/5438))
 - Share immutable partition routing state across snapshot refreshes instead of copying its maps, while preserving older snapshots for active readers. ([#5438](https://github.com/Azure/azure-sdk-for-rust/pull/5438))
 - Avoid loading partition topology for lazy-mode logical-key operations unless partition-level failover or Gateway 2.0 session-token scoping requires it. ([#5431](https://github.com/Azure/azure-sdk-for-rust/pull/5431))
 - Keep CPU sampling active while runtime or diagnostics handles remain alive. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
 - Preserve bounded diagnostic history through partition split recovery, query buffering, and terminal `500/20206` errors. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
-
-### Other Changes
-
-- Derive processor renewal and acquisition schedules from the lease expiration budget, reuse checkpoint writes for renewal, and remove the implicit callback progress timeout. ([#5477](https://github.com/Azure/azure-sdk-for-rust/pull/5477))
 
 ## 1.0.0 (2026-10-08)
 

@@ -7,15 +7,10 @@ use std::io::Cursor;
 #[test]
 fn builds_primary_and_state_output_paths() {
     let output_dir = Path::new("sdk/keyvault/azure_security_keyvault_keys");
-    let working_dir = Path::new("target/generate_api/azure_security_keyvault_keys");
 
     assert_eq!(
         output_path(output_dir, OutputFormat::Markdown),
         output_dir.join("api.md")
-    );
-    assert_eq!(
-        state_file_path(working_dir, "version.txt"),
-        working_dir.join("state/version.txt")
     );
 }
 
@@ -49,13 +44,20 @@ fn sha256_ignores_legacy_mac_line_endings() {
 
 #[test]
 fn renders_markdown_metadata_with_line_ending_normalized_hash() {
-    let metadata =
-        render_markdown_metadata("one\r\ntwo\r\n", "1.2.3", "2.2.0", "rustc 1.99.0").unwrap();
+    let metadata = render_markdown_metadata(
+        "one\r\ntwo\r\n",
+        "1.2.3",
+        "sdk/core/azure_core",
+        "2.2.0",
+        "rustc 1.99.0",
+    )
+    .unwrap();
 
     assert_eq!(
         metadata,
-        "apiMdSha256: c3f9c8c283a2b1f2f1896f27a01cbe3cddc0c9d93f752e4639035a0f5b36f6e8\n\
+        "apiHash: c3f9c8c283a2b1f2f1896f27a01cbe3cddc0c9d93f752e4639035a0f5b36f6e8\n\
          packageVersion: 1.2.3\n\
+         packageRelativePath: sdk/core/azure_core\n\
          parserVersion: 2.2.0\n\
          rustVersion: rustc 1.99.0\n"
     );
@@ -63,9 +65,11 @@ fn renders_markdown_metadata_with_line_ending_normalized_hash() {
 
 #[test]
 fn quotes_yaml_values_only_when_needed() {
-    let metadata = render_markdown_metadata("api\n", "1.2.3", "value: detail", "true").unwrap();
+    let metadata =
+        render_markdown_metadata("api\n", "1.2.3", "sdk/demo", "value: detail", "true").unwrap();
 
     assert!(metadata.contains("packageVersion: 1.2.3\n"));
+    assert!(metadata.contains("packageRelativePath: sdk/demo\n"));
     assert!(metadata.contains("parserVersion: 'value: detail'\n"));
     assert!(metadata.contains("rustVersion: 'true'\n"));
 }

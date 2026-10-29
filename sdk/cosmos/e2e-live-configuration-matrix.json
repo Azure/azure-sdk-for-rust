@@ -1,0 +1,35 @@
+{
+  "displayNames": {
+    "liveConfiguration": "live_configuration",
+    "sessionTwoRegions": "session_two_regions",
+    "sdkDefault": "sdk_default"
+  },
+  "matrix": {
+    "Agent": {
+      "ubuntu": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      }
+    },
+    "RustToolchainName": [
+      "nightly"
+    ],
+    "Account Settings": {
+      "Session MultiRegion SingleWrite": {
+        "AccountSelector": "session-mr-failover"
+      }
+    },
+    "AZURE_COSMOS_E2E_PROFILE": [
+      "liveConfiguration"
+    ],
+    "AZURE_COSMOS_E2E_ACCOUNT": [
+      "sessionTwoRegions"
+    ],
+    "AZURE_COSMOS_E2E_RUNTIME": [
+      "sdkDefault"
+    ],
+    "AZURE_COSMOS_E2E_CLIENT": [
+      "sdkDefault"
+    ]
+  }
+}

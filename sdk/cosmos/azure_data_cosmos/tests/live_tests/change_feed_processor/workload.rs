@@ -6,9 +6,8 @@ use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     models::{ChangeFeedItem, ChangeFeedOperationType},
     options::{ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom, MaxItemCountHint},
-    AllVersionsAndDeletes, ChangeFeedProcessorBuilder, ChangeFeedProcessorContext,
-    ChangeFeedProcessorMode, ContainerClient, CosmosError, CosmosStatus, FeedScope, LatestVersion,
-    TransactionalBatch,
+    ChangeFeedProcessorBuilder, ChangeFeedProcessorContext, ContainerClient, CosmosError,
+    CosmosStatus, FeedScope, TransactionalBatch,
 };
 use futures::{
     channel::{mpsc, oneshot},
@@ -16,7 +15,13 @@ use futures::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::{collections::BTreeSet, io, num::NonZeroU32, sync::Arc, time::Duration};
+use std::{
+    collections::BTreeSet,
+    io,
+    num::NonZeroU32,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
@@ -419,56 +424,72 @@ fn callback_error(message: &'static str) -> CosmosError {
         .build()
 }
 
-async fn exercise<M: ChangeFeedProcessorMode>(
+struct CallbackObserver {
+    sender: mpsc::UnboundedSender<CallbackBatch>,
+    gate: async_lock::Mutex<Option<oneshot::Receiver<()>>>,
+    prefix: String,
+    fence_id: String,
+}
+
+static CALLBACK: Mutex<Option<Arc<CallbackObserver>>> = Mutex::new(None);
+static CALLBACK_SERIAL: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+async fn observe_changes(
+    context: ChangeFeedProcessorContext,
+    mut changes: Vec<ChangeFeedItem<Document>>,
+) -> azure_data_cosmos::Result<()> {
+    let observer = CALLBACK
+        .lock()
+        .unwrap()
+        .as_ref()
+        .expect("callback registered")
+        .clone();
+    changes.retain(|change| item_id(change).is_none_or(|id| id.starts_with(&observer.prefix)));
+    let contains_fence = changes
+        .iter()
+        .any(|change| item_id(change) == Some(observer.fence_id.as_str()));
+    if !changes.is_empty() {
+        observer
+            .sender
+            .unbounded_send(CallbackBatch {
+                lease: context.lease_token().to_owned(),
+                changes,
+            })
+            .map_err(|_| callback_error("Workload observer stopped receiving changes."))?;
+    }
+    if contains_fence {
+        let wait = observer.gate.lock().await.take();
+        if let Some(wait) = wait {
+            wait.await
+                .map_err(|_| callback_error("Workload checkpoint gate was abandoned."))?;
+        }
+    }
+    Ok(())
+}
+
+async fn exercise(
     source: &ContainerClient,
     leases: &ContainerClient,
     workload: &Workload,
-    builder: ChangeFeedProcessorBuilder<M>,
+    builder: ChangeFeedProcessorBuilder,
     page_size: u32,
     initial: &[Event],
 ) -> TestResult {
+    let _serial = CALLBACK_SERIAL.lock().await;
     let (sender, mut receiver) = mpsc::unbounded();
     let (release, wait) = oneshot::channel::<()>();
-    let gate = Arc::new(async_lock::Mutex::new(Some(wait)));
-    let prefix = format!("{}-", workload.name);
-    let fence_id = workload.id("fence");
+    *CALLBACK.lock().unwrap() = Some(Arc::new(CallbackObserver {
+        sender,
+        gate: async_lock::Mutex::new(Some(wait)),
+        prefix: format!("{}-", workload.name),
+        fence_id: workload.id("fence"),
+    }));
     let processor = builder
         .with_max_item_count(MaxItemCountHint::Limit(
             NonZeroU32::new(page_size).ok_or("Page hint must be positive.")?,
         ))
         .with_feed_poll_delay(Duration::from_millis(100))
-        .handle_change_feed(
-            move |context: ChangeFeedProcessorContext,
-                  mut changes: Vec<ChangeFeedItem<Document>>| {
-                let sender = sender.clone();
-                let gate = gate.clone();
-                changes.retain(|change| item_id(change).is_none_or(|id| id.starts_with(&prefix)));
-                let contains_fence = changes
-                    .iter()
-                    .any(|change| item_id(change) == Some(fence_id.as_str()));
-                async move {
-                    if !changes.is_empty() {
-                        sender
-                            .unbounded_send(CallbackBatch {
-                                lease: context.lease_token().to_owned(),
-                                changes,
-                            })
-                            .map_err(|_| {
-                                callback_error("Workload observer stopped receiving changes.")
-                            })?;
-                    }
-                    if contains_fence {
-                        let wait = gate.lock().await.take();
-                        if let Some(wait) = wait {
-                            wait.await.map_err(|_| {
-                                callback_error("Workload checkpoint gate was abandoned.")
-                            })?;
-                        }
-                    }
-                    Ok(())
-                }
-            },
-        )
+        .handle_change_feed(observe_changes)
         .build()?;
     let result = async {
         processor.start().await?;
@@ -597,7 +618,9 @@ async fn exercise<M: ChangeFeedProcessorMode>(
     } else {
         processor.abort().await
     };
-    combine(result, cleanup.map_err(Into::into))
+    let result = combine(result, cleanup.map_err(Into::into));
+    CALLBACK.lock().unwrap().take();
+    result
 }
 
 async fn verify_source(source: &ContainerClient, workload: &Workload) -> TestResult {
@@ -640,7 +663,7 @@ async fn latest_case(
     let result = async {
         let (time, initial) = seed_source(&source, &workload, start).await?;
         let builder = ChangeFeedProcessorBuilder::new(
-            LatestVersion,
+            ChangeFeedMode::LatestVersion,
             source.clone(),
             leases.clone(),
             &workload.name,
@@ -684,7 +707,7 @@ async fn all_versions_case(
             );
         }
         let builder = ChangeFeedProcessorBuilder::new(
-            AllVersionsAndDeletes,
+            ChangeFeedMode::AllVersionsAndDeletes,
             source.clone(),
             leases.clone(),
             &workload.name,

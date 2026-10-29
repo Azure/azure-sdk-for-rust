@@ -2,18 +2,16 @@
 // Licensed under the MIT License.
 
 use super::{
-    balancing, fixture_with_emulator, insert, leases, next, options, start,
-    ChangeFeedProcessorMode, Context, Lease, Update,
+    balancing, fixture_with_emulator, insert, leases, next, options, start, ChangeFeedFactoryMode,
+    Context, Lease, Update,
 };
 use crate::Result;
 use std::{sync::Arc, time::Duration};
 
 async fn fixture() -> Result<Arc<Context>> {
-    Ok(
-        fixture_with_emulator(ChangeFeedProcessorMode::LatestVersion, 1)
-            .await?
-            .0,
-    )
+    Ok(fixture_with_emulator(ChangeFeedFactoryMode::Incremental, 1)
+        .await?
+        .0)
 }
 
 async fn record(context: &Context, id: &str) -> Lease {
@@ -206,7 +204,7 @@ fn expiration_boundary_and_maintenance_are_independent_of_poll_delay() {
 mod faults {
     use super::super::super::{run, signal, SharedState};
     use super::{
-        fixture_with_emulator, insert, next, record, start, ChangeFeedProcessorMode, Context,
+        fixture_with_emulator, insert, next, record, start, ChangeFeedFactoryMode, Context,
     };
     use crate::{
         fault_injection::{
@@ -218,18 +216,14 @@ mod faults {
         Result,
     };
     use azure_core::http::StatusCode;
-    use futures::task::AtomicWaker;
-    use std::{
-        sync::{atomic::AtomicBool, Arc},
-        time::Duration,
-    };
+    use std::{sync::Arc, time::Duration};
 
     async fn fixture(
         hit_limit: Option<u32>,
         after_service: bool,
     ) -> Result<(Arc<Context>, Arc<FaultInjectionRule>)> {
         let (mut context, emulator) =
-            fixture_with_emulator(ChangeFeedProcessorMode::LatestVersion, 1).await?;
+            fixture_with_emulator(ChangeFeedFactoryMode::Incremental, 1).await?;
         let result = if after_service {
             FaultInjectionResultBuilder::new()
                 .with_error(FaultInjectionErrorType::ResponseTimeoutAfterService)
@@ -350,15 +344,7 @@ mod faults {
         let (context, rule) = fixture(Some(1), true).await?;
         let lease = context.list().await?.remove(0);
         let id = lease.base.record.id.clone();
-        let state = Arc::new(SharedState {
-            ready: Default::default(),
-            waker: AtomicWaker::new(),
-            running: AtomicBool::new(true),
-            stopping: AtomicBool::new(false),
-            forced: AtomicBool::new(false),
-            failure: Default::default(),
-            unreleased: Default::default(),
-        });
+        let state = Arc::new(SharedState::default());
         rule.enable();
         assert!(context.acquire_tracked(&lease, Some(&state)).await.is_err());
         assert_eq!(rule.hit_count(), 1);

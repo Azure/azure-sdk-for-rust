@@ -438,6 +438,7 @@ impl CosmosDriverRuntime {
     ) -> crate::error::Result<Arc<CosmosDriver>> {
         tracing::trace!("creating new driver");
         let driver = Arc::new(CosmosDriver::new(Arc::clone(self), driver_options)?);
+        driver.register_bootstrap_owner();
         driver.initialize().await?;
         Ok(driver)
     }

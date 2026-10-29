@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 
 use super::{
-    bootstrap, namespace, BootstrapContext, BootstrapOptions, ChangeFeedProcessorMode, Identity,
-    LockRecord, RangePlan, Record, Store, LOCK_TTL_SECONDS, SCHEMA_VERSION,
+    bootstrap, namespace, ChangeFeedFactoryMode, ChangeFeedProcessorBootstrapContext,
+    ChangeFeedProcessorBootstrapIdentity, ChangeFeedProcessorBootstrapLockRecord,
+    ChangeFeedProcessorBootstrapRangePlan, ChangeFeedProcessorBootstrapRecord,
+    ChangeFeedProcessorBootstrapStore, LOCK_TTL_SECONDS, SCHEMA_VERSION,
 };
 use crate::{
     models::{
@@ -14,9 +16,12 @@ use crate::{
     CosmosDriver, CosmosDriverRuntime,
 };
 use azure_core::http::StatusCode;
+use futures::FutureExt;
 use std::{
     error::Error,
+    future::Future,
     io,
+    panic::{resume_unwind, AssertUnwindSafe},
     process::{Child, Command},
     sync::Arc,
     thread,
@@ -62,9 +67,6 @@ async fn driver() -> TestResult<Arc<CosmosDriver>> {
 }
 
 fn live_database() -> TestResult<String> {
-    if std::env::var(LIVE_ALLOWED_ENV)? != "true" {
-        return Err(io::Error::other("Live bootstrap tests require explicit opt-in.").into());
-    }
     let database = std::env::var(LIVE_DATABASE_ENV)?;
     if !database.starts_with("cfp-bootstrap-") {
         return Err(io::Error::other(
@@ -76,7 +78,9 @@ fn live_database() -> TestResult<String> {
 }
 
 async fn live_driver() -> TestResult<Arc<CosmosDriver>> {
-    live_database()?;
+    if std::env::var(LIVE_ALLOWED_ENV)? != "true" {
+        return Err(io::Error::other("Live bootstrap tests require explicit opt-in.").into());
+    }
     let endpoint: Url = std::env::var(LIVE_ENDPOINT_ENV)?.parse()?;
     if endpoint.scheme() != "https"
         || !endpoint
@@ -114,6 +118,7 @@ impl Workers {
                 Command::new(std::env::current_exe()?)
                     .args(["--ignored", "--exact", worker_test, "--nocapture"])
                     .env(DATABASE_ENV, database)
+                    .env(LIVE_DATABASE_ENV, database)
                     .env(PROCESSOR_ENV, processor)
                     .env(MODE_ENV, mode)
                     .env(CONFLICT_ENV, expect_conflict.to_string())
@@ -194,8 +199,8 @@ async fn live_worker() -> TestResult {
 async fn run_worker(driver: Arc<CosmosDriver>, timeout: Duration) -> TestResult {
     let database = std::env::var(DATABASE_ENV)?;
     let mode = match std::env::var(MODE_ENV)?.as_str() {
-        "latest" => ChangeFeedProcessorMode::LatestVersion,
-        "all" => ChangeFeedProcessorMode::AllVersionsAndDeletes,
+        "latest" => ChangeFeedFactoryMode::Incremental,
+        "all" => ChangeFeedFactoryMode::FullFidelity,
         _ => return Err(io::Error::other("Invalid bootstrap test mode.").into()),
     };
     let expect_conflict: bool = std::env::var(CONFLICT_ENV)?.parse()?;
@@ -205,13 +210,21 @@ async fn run_worker(driver: Arc<CosmosDriver>, timeout: Duration) -> TestResult 
     let leases = driver
         .resolve_container(&database, "leases", OperationOptions::default())
         .await?;
-    let options = BootstrapOptions::new(
-        mode,
-        std::env::var(PROCESSOR_ENV)?,
-        format!("process-{}", std::process::id()),
+    let processor_name = std::env::var(PROCESSOR_ENV)?;
+    let instance_name = format!("process-{}", std::process::id());
+    let result = tokio::time::timeout(
+        timeout,
+        bootstrap(
+            &driver,
+            &source,
+            &driver,
+            &leases,
+            mode,
+            &processor_name,
+            &instance_name,
+        ),
     )
-    .with_timeout(timeout);
-    let result = bootstrap(&driver, &source, &driver, &leases, &options).await;
+    .await?;
     if expect_conflict {
         assert_eq!(
             result.unwrap_err().status().status_code(),
@@ -227,8 +240,30 @@ async fn run_worker(driver: Arc<CosmosDriver>, timeout: Duration) -> TestResult 
 #[ignore = "Requires COSMOS_BOOTSTRAP_TEST_ENDPOINT pointing at the local hosted emulator."]
 async fn hosted_concurrent_processes() -> TestResult {
     let driver = driver().await?;
-    let database = format!("bootstrap-{}", Uuid::new_v4().simple());
-    let database_ref = DatabaseReference::from_name(driver.account().clone(), database.clone());
+    let database = test_database_name();
+    with_database(&driver, &database, || {
+        exercise_workers(
+            &driver,
+            &database,
+            "process-workers",
+            ChangeFeedFactoryMode::Incremental,
+            WORKER_TEST,
+        )
+    })
+    .await
+}
+
+fn test_database_name() -> String {
+    format!("cfp-bootstrap-{}", Uuid::new_v4().simple())
+}
+
+async fn with_database<F, Fut>(driver: &CosmosDriver, database: &str, scenario: F) -> TestResult
+where
+    F: FnOnce() -> Fut,
+    Fut: Future<Output = TestResult>,
+{
+    let database_ref = DatabaseReference::from_name(driver.account().clone(), database.to_owned());
+    println!("Creating isolated bootstrap test database {database}.");
     driver
         .execute_singleton_operation(
             CosmosOperation::create_database(driver.account().clone())
@@ -236,41 +271,47 @@ async fn hosted_concurrent_processes() -> TestResult {
             OperationOptions::default(),
         )
         .await?;
-    for name in ["source", "leases"] {
-        driver.execute_singleton_operation(
-            CosmosOperation::create_container(database_ref.clone()).with_body(serde_json::to_vec(
-                &serde_json::json!({
-                    "id": name, "partitionKey": {"paths": ["/id"], "kind": "Hash", "version": 2},
-                    "defaultTtl": -1
-                }),
-            )?),
-            OperationOptions::default(),
-        ).await?;
-    }
-
-    exercise_workers(
-        &driver,
-        &database,
-        "process-workers",
-        ChangeFeedProcessorMode::LatestVersion,
-        WORKER_TEST,
-    )
-    .await?;
-    driver
+    println!("Created isolated bootstrap test database {database}.");
+    let outcome = AssertUnwindSafe(async {
+        for name in ["source", "leases"] {
+            driver.execute_singleton_operation(
+                CosmosOperation::create_container(database_ref.clone()).with_body(serde_json::to_vec(
+                    &serde_json::json!({
+                        "id": name, "partitionKey": {"paths": ["/id"], "kind": "Hash", "version": 2},
+                        "defaultTtl": -1
+                    }),
+                )?),
+                OperationOptions::default(),
+            ).await?;
+        }
+        scenario().await
+    })
+    .catch_unwind()
+    .await;
+    let cleanup = driver
         .execute_singleton_operation(
-            CosmosOperation::delete_database(database_ref),
+            CosmosOperation::delete_database(database_ref)
+                .with_absolute_deadline(Some(Instant::now() + Duration::from_secs(60))),
             OperationOptions::default(),
         )
-        .await?;
-    Ok(())
+        .await;
+    match &cleanup {
+        Ok(_) => println!("Deleted isolated bootstrap test database {database}."),
+        Err(error) => eprintln!("Failed to delete bootstrap test database {database}: {error}"),
+    }
+    match outcome {
+        Ok(Ok(())) => cleanup.map(|_| ()).map_err(Into::into),
+        Ok(Err(error)) => Err(error),
+        Err(panic) => resume_unwind(panic),
+    }
 }
 
 fn identity(
     source: &ContainerReference,
     processor: &str,
-    mode: ChangeFeedProcessorMode,
-) -> Identity {
-    Identity {
+    mode: ChangeFeedFactoryMode,
+) -> ChangeFeedProcessorBootstrapIdentity {
+    ChangeFeedProcessorBootstrapIdentity {
         version: SCHEMA_VERSION,
         account: source.account().endpoint().origin().ascii_serialization(),
         container_rid: source.rid().to_owned(),
@@ -283,12 +324,12 @@ async fn exercise_workers(
     driver: &CosmosDriver,
     database: &str,
     processor: &str,
-    mode: ChangeFeedProcessorMode,
+    mode: ChangeFeedFactoryMode,
     worker_test: &'static str,
 ) -> TestResult {
     let (mode_name, other_mode) = match mode {
-        ChangeFeedProcessorMode::LatestVersion => ("latest", "all"),
-        ChangeFeedProcessorMode::AllVersionsAndDeletes => ("all", "latest"),
+        ChangeFeedFactoryMode::Incremental => ("latest", "all"),
+        ChangeFeedFactoryMode::FullFidelity => ("all", "latest"),
     };
     Workers::spawn(worker_test, database, processor, mode_name, false, 4)?.wait()?;
     let source = driver
@@ -299,13 +340,13 @@ async fn exercise_workers(
         .await?;
     let identity = identity(&source, processor, mode);
     let prefix = namespace(&identity)?;
-    let store = Store {
+    let store = ChangeFeedProcessorBootstrapStore {
         driver,
         container: &leases,
         deadline: Instant::now() + Duration::from_secs(60),
     };
     let plan = store
-        .read::<RangePlan>(&format!("{prefix}.plan"))
+        .read::<ChangeFeedProcessorBootstrapRangePlan>(&format!("{prefix}.plan"))
         .await?
         .unwrap()
         .value;
@@ -360,22 +401,26 @@ async fn exercise_workers(
 }
 
 #[tokio::test]
-#[ignore = "Requires explicit live opt-in, account key, and an isolated pre-provisioned database."]
+#[ignore = "Requires explicit live opt-in, endpoint, and an account key; creates and deletes test resources."]
 async fn live_concurrent_processes_and_ttl_recovery() -> TestResult {
-    let database = live_database()?;
     let driver = live_driver().await?;
+    let database = test_database_name();
+    with_database(&driver, &database, || {
+        exercise_live_workers(&driver, &database)
+    })
+    .await
+}
+
+async fn exercise_live_workers(driver: &CosmosDriver, database: &str) -> TestResult {
     for (processor, mode) in [
-        ("live-latest", ChangeFeedProcessorMode::LatestVersion),
-        (
-            "live-all-versions",
-            ChangeFeedProcessorMode::AllVersionsAndDeletes,
-        ),
+        ("live-latest", ChangeFeedFactoryMode::Incremental),
+        ("live-all-versions", ChangeFeedFactoryMode::FullFidelity),
     ] {
-        exercise_workers(&driver, &database, processor, mode, LIVE_WORKER_TEST).await?;
+        exercise_workers(driver, database, processor, mode, LIVE_WORKER_TEST).await?;
     }
     Workers::spawn(
         CRASHED_WORKER_TEST,
-        &database,
+        database,
         "ttl-recovery",
         "latest",
         false,
@@ -383,31 +428,27 @@ async fn live_concurrent_processes_and_ttl_recovery() -> TestResult {
     )?
     .wait()?;
     let source = driver
-        .resolve_container(&database, "source", OperationOptions::default())
+        .resolve_container(database, "source", OperationOptions::default())
         .await?;
     let leases = driver
-        .resolve_container(&database, "leases", OperationOptions::default())
+        .resolve_container(database, "leases", OperationOptions::default())
         .await?;
-    let identity = identity(
-        &source,
-        "ttl-recovery",
-        ChangeFeedProcessorMode::LatestVersion,
-    );
+    let identity = identity(&source, "ttl-recovery", ChangeFeedFactoryMode::Incremental);
     let prefix = namespace(&identity)?;
-    let store = Store {
-        driver: &driver,
+    let store = ChangeFeedProcessorBootstrapStore {
+        driver,
         container: &leases,
         deadline: Instant::now() + Duration::from_secs(180),
     };
     let abandoned = store
-        .read::<LockRecord>(&format!("{prefix}.lock"))
+        .read::<ChangeFeedProcessorBootstrapLockRecord>(&format!("{prefix}.lock"))
         .await?
         .unwrap();
     assert_eq!(abandoned.value.record.ttl, LOCK_TTL_SECONDS);
     let started = Instant::now();
     Workers::spawn(
         LIVE_WORKER_TEST,
-        &database,
+        database,
         "ttl-recovery",
         "latest",
         false,
@@ -419,19 +460,19 @@ async fn live_concurrent_processes_and_ttl_recovery() -> TestResult {
         started.elapsed().as_secs_f64()
     );
     assert!(store
-        .read::<LockRecord>(&format!("{prefix}.lock"))
+        .read::<ChangeFeedProcessorBootstrapLockRecord>(&format!("{prefix}.lock"))
         .await?
         .is_none());
     for suffix in ["definition", "plan", "info"] {
         let record = store
-            .read::<Record>(&format!("{prefix}.{suffix}"))
+            .read::<ChangeFeedProcessorBootstrapRecord>(&format!("{prefix}.{suffix}"))
             .await?
             .unwrap();
         assert_eq!(record.value.workload, identity);
         assert_eq!(record.value.ttl, -1);
     }
     let plan = store
-        .read::<RangePlan>(&format!("{prefix}.plan"))
+        .read::<ChangeFeedProcessorBootstrapRangePlan>(&format!("{prefix}.plan"))
         .await?
         .unwrap()
         .value;
@@ -460,30 +501,160 @@ async fn live_crashed_initializer() -> TestResult {
     let leases = driver
         .resolve_container(&database, "leases", OperationOptions::default())
         .await?;
-    let options = BootstrapOptions::new(
-        ChangeFeedProcessorMode::LatestVersion,
-        std::env::var(PROCESSOR_ENV)?,
-        format!("crashing-process-{}", std::process::id()),
-    );
-    let identity = identity(&source, &options.processor_name, options.mode);
-    let context = BootstrapContext {
-        source_driver: &driver,
-        source: &source,
-        store: Store {
-            driver: &driver,
-            container: &leases,
-            deadline: Instant::now() + Duration::from_secs(120),
-        },
-        namespace: namespace(&identity)?,
-        identity,
-        options: &options,
-    };
+    let context = ChangeFeedProcessorBootstrapContext::new(
+        &driver,
+        &source,
+        &driver,
+        &leases,
+        ChangeFeedFactoryMode::Incremental,
+        &std::env::var(PROCESSOR_ENV)?,
+        &format!("crashing-process-{}", std::process::id()),
+    )?;
     context.ensure_record(&context.record("definition")).await?;
     let claim = context
         .try_claim()
         .await?
         .expect("fresh workload must grant its first claim");
-    context.plan(&claim).await?;
+    context
+        .plan(&claim)
+        .await?
+        .expect("fresh workload must persist its initial plan");
     // Exit without running cleanup so only the service's TTL can release the claim.
     std::process::exit(0);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{test_database_name, with_database, TestResult};
+    use crate::{
+        in_memory_emulator::{InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion},
+        models::{AccountReference, CosmosOperation, DatabaseReference},
+        options::{DriverOptions, OperationOptions},
+        CosmosDriver, CosmosError,
+    };
+    use azure_core::http::StatusCode;
+    use futures::FutureExt;
+    use std::{io, panic::AssertUnwindSafe, sync::Arc};
+
+    async fn memory_driver() -> TestResult<Arc<CosmosDriver>> {
+        let endpoint = "https://eastus.emulator.local".parse()?;
+        let emulator = Arc::new(InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(
+            vec![VirtualRegion::new("East US", endpoint)],
+        )?));
+        let runtime = emulator.runtime_builder().build().await?;
+        Ok(runtime
+            .create_driver(
+                DriverOptions::builder(AccountReference::with_account_key(
+                    "https://eastus.emulator.local".parse()?,
+                    "dGVzdGtleQ==",
+                ))
+                .build(),
+            )
+            .await?)
+    }
+
+    async fn assert_database_missing(driver: &CosmosDriver, database: &str) {
+        let error = driver
+            .execute_singleton_operation(
+                CosmosOperation::read_database(DatabaseReference::from_name(
+                    driver.account().clone(),
+                    database.to_owned(),
+                )),
+                OperationOptions::default(),
+            )
+            .await
+            .unwrap_err();
+        assert_eq!(error.status().status_code(), StatusCode::NotFound);
+    }
+
+    #[tokio::test]
+    async fn database_fixture_cleans_up_after_success() -> TestResult {
+        let driver = memory_driver().await?;
+        let database = test_database_name();
+        with_database(&driver, &database, || async {
+            for name in ["source", "leases"] {
+                let container = driver
+                    .resolve_container(&database, name, OperationOptions::default())
+                    .await?;
+                let response = driver
+                    .execute_singleton_operation(
+                        CosmosOperation::read_container(container),
+                        OperationOptions::default(),
+                    )
+                    .await?;
+                let properties: serde_json::Value = response.into_body().into_single()?;
+                assert_eq!(
+                    properties["partitionKey"]["paths"],
+                    serde_json::json!(["/id"])
+                );
+                assert_eq!(properties["defaultTtl"], -1);
+            }
+            Ok(())
+        })
+        .await?;
+        assert_database_missing(&driver, &database).await;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn database_fixture_cleans_up_after_error() -> TestResult {
+        let driver = memory_driver().await?;
+        let database = test_database_name();
+        let error = with_database(&driver, &database, || async {
+            Err(io::Error::other("scenario failure").into())
+        })
+        .await
+        .unwrap_err();
+        assert_eq!(error.to_string(), "scenario failure");
+        assert_database_missing(&driver, &database).await;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn database_fixture_cleans_up_before_resuming_panic() -> TestResult {
+        let driver = memory_driver().await?;
+        let database = test_database_name();
+        let panic = AssertUnwindSafe(with_database(&driver, &database, || async {
+            panic!("scenario assertion failure");
+        }))
+        .catch_unwind()
+        .await
+        .unwrap_err();
+        assert_eq!(
+            panic.downcast_ref::<&str>(),
+            Some(&"scenario assertion failure")
+        );
+        assert_database_missing(&driver, &database).await;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn database_fixture_does_not_adopt_or_delete_existing_database() -> TestResult {
+        let driver = memory_driver().await?;
+        let database = test_database_name();
+        with_database(&driver, &database, || async {
+            let error = with_database(&driver, &database, || async {
+                panic!("an existing database must not run the scenario");
+            })
+            .await
+            .unwrap_err();
+            assert_eq!(
+                error
+                    .downcast_ref::<CosmosError>()
+                    .unwrap()
+                    .status()
+                    .status_code(),
+                StatusCode::Conflict
+            );
+            for name in ["source", "leases"] {
+                driver
+                    .resolve_container(&database, name, OperationOptions::default())
+                    .await?;
+            }
+            Ok(())
+        })
+        .await?;
+        assert_database_missing(&driver, &database).await;
+        Ok(())
+    }
 }

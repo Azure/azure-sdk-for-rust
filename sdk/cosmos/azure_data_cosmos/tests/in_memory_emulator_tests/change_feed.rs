@@ -291,9 +291,10 @@ mod processor_lifecycle_tests {
     };
     use azure_core::http::StatusCode;
     use azure_data_cosmos::{
-        models::ChangeFeedItem, options::MaxItemCountHint, AllVersionsAndDeletes,
+        models::ChangeFeedItem,
+        options::{ChangeFeedMode, MaxItemCountHint},
         ChangeFeedProcessor, ChangeFeedProcessorBuilder, ChangeFeedProcessorContext,
-        ChangeFeedProcessorMode, ContainerClient, FeedScope, LatestVersion,
+        ContainerClient, FeedScope,
     };
     use azure_data_cosmos_driver::{
         models::{AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference},
@@ -306,7 +307,7 @@ mod processor_lifecycle_tests {
         num::NonZeroU32,
         sync::{
             atomic::{AtomicUsize, Ordering},
-            Arc, Mutex,
+            Mutex,
         },
         time::Duration,
     };
@@ -353,19 +354,25 @@ mod processor_lifecycle_tests {
         Ok(records)
     }
 
-    async fn assert_bootstrap_and_processing<M: ChangeFeedProcessorMode>(
-        mode: M,
+    async fn assert_bootstrap_and_processing(
+        mode: ChangeFeedMode,
         expected_mode: &str,
     ) -> Result<(), Box<dyn Error>> {
         let (container, leases) = setup_processor().await?;
         let expected_range_count = container.read_feed_ranges(None).await?.len();
-        let calls = Arc::new(AtomicUsize::new(0));
-        let callback_calls = Arc::clone(&calls);
+        static SERIAL: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+        static CALLS: AtomicUsize = AtomicUsize::new(0);
+        static OBSERVED: Mutex<Vec<(String, Vec<String>)>> = Mutex::new(Vec::new());
+        static RELEASED: tokio::sync::Mutex<Option<futures::channel::oneshot::Receiver<()>>> =
+            tokio::sync::Mutex::const_new(None);
+        let _serial = SERIAL.lock().await;
+        CALLS.store(0, Ordering::SeqCst);
+        OBSERVED.lock().unwrap().clear();
+        let calls = &CALLS;
+        let observed = &OBSERVED;
         let (release, released) = futures::channel::oneshot::channel::<()>();
-        let released = Arc::new(async_lock::Mutex::new(Some(released)));
-        let observed = Arc::new(std::sync::Mutex::new(Vec::new()));
-        let callback_observed = observed.clone();
-        let processor: ChangeFeedProcessor<M, TestItem, _> = ChangeFeedProcessorBuilder::new(
+        *RELEASED.lock().await = Some(released);
+        let processor: ChangeFeedProcessor<TestItem, _> = ChangeFeedProcessorBuilder::new(
             mode,
             container.clone(),
             leases.clone(),
@@ -378,24 +385,19 @@ mod processor_lifecycle_tests {
         .with_max_scale_count(4)
         .with_lease_verification_enabled_on_restart(true)
         .handle_change_feed(
-            move |context: ChangeFeedProcessorContext, items: Vec<ChangeFeedItem<TestItem>>| {
-                let released = released.clone();
-                let observed = callback_observed.clone();
-                let calls = callback_calls.clone();
-                async move {
-                    observed.lock().unwrap().push((
-                        context.lease_token().to_owned(),
-                        items
-                            .iter()
-                            .map(|item| item.current().unwrap().id.clone())
-                            .collect::<Vec<_>>(),
-                    ));
-                    calls.fetch_add(1, Ordering::SeqCst);
-                    if let Some(released) = released.lock().await.take() {
-                        released.await.unwrap();
-                    }
-                    Ok(())
+            |context: ChangeFeedProcessorContext, items: Vec<ChangeFeedItem<TestItem>>| async move {
+                OBSERVED.lock().unwrap().push((
+                    context.lease_token().to_owned(),
+                    items
+                        .iter()
+                        .map(|item| item.current().unwrap().id.clone())
+                        .collect::<Vec<_>>(),
+                ));
+                CALLS.fetch_add(1, Ordering::SeqCst);
+                if let Some(released) = RELEASED.lock().await.take() {
+                    released.await.unwrap();
                 }
+                Ok(())
             },
         )
         .with_max_item_count(MaxItemCountHint::ServerDecides)
@@ -417,11 +419,6 @@ mod processor_lifecycle_tests {
             .to_string()
             .contains("Change feed processor monitoring is not implemented."));
         assert!(!processor.is_started());
-        assert_eq!(
-            Arc::strong_count(&calls),
-            2,
-            "processor must retain the callback"
-        );
         processor.stop().await?;
         processor.start().await?;
         assert!(processor.is_started());
@@ -507,29 +504,28 @@ mod processor_lifecycle_tests {
         processor.stop().await?;
         assert_eq!(calls.load(Ordering::SeqCst), 1);
         drop(processor);
-        assert_eq!(
-            Arc::strong_count(&calls),
-            1,
-            "dropping the processor must release the callback"
-        );
         Ok(())
     }
 
     #[tokio::test]
     async fn latest_version_bootstraps_and_checkpoints_after_callback() -> Result<(), Box<dyn Error>>
     {
-        assert_bootstrap_and_processing(LatestVersion, "latestVersion").await
+        assert_bootstrap_and_processing(ChangeFeedMode::LatestVersion, "latestVersion").await
     }
 
     #[tokio::test]
     async fn all_versions_and_deletes_bootstraps_and_checkpoints_after_callback(
     ) -> Result<(), Box<dyn Error>> {
-        assert_bootstrap_and_processing(AllVersionsAndDeletes, "allVersionsAndDeletes").await
+        assert_bootstrap_and_processing(
+            ChangeFeedMode::AllVersionsAndDeletes,
+            "allVersionsAndDeletes",
+        )
+        .await
     }
 
-    async fn assert_mode_conflict<M: ChangeFeedProcessorMode, N: ChangeFeedProcessorMode>(
-        initial: M,
-        incompatible: N,
+    async fn assert_mode_conflict(
+        initial: ChangeFeedMode,
+        incompatible: ChangeFeedMode,
     ) -> Result<(), Box<dyn Error>> {
         let (source, leases) = setup_processor().await?;
         let first = ChangeFeedProcessorBuilder::new(
@@ -564,15 +560,23 @@ mod processor_lifecycle_tests {
 
     #[tokio::test]
     async fn start_propagates_mode_conflicts_in_both_directions() -> Result<(), Box<dyn Error>> {
-        assert_mode_conflict(LatestVersion, AllVersionsAndDeletes).await?;
-        assert_mode_conflict(AllVersionsAndDeletes, LatestVersion).await
+        assert_mode_conflict(
+            ChangeFeedMode::LatestVersion,
+            ChangeFeedMode::AllVersionsAndDeletes,
+        )
+        .await?;
+        assert_mode_conflict(
+            ChangeFeedMode::AllVersionsAndDeletes,
+            ChangeFeedMode::LatestVersion,
+        )
+        .await
     }
 
     #[tokio::test]
     async fn start_propagates_invalid_lease_container() -> Result<(), Box<dyn Error>> {
         let source = setup().await?;
         let processor = ChangeFeedProcessorBuilder::new(
-            LatestVersion,
+            ChangeFeedMode::LatestVersion,
             source.clone(),
             source,
             "orders",
@@ -588,10 +592,10 @@ mod processor_lifecycle_tests {
     }
 
     #[tokio::test]
-    async fn start_forwards_restart_verification() -> Result<(), Box<dyn Error>> {
+    async fn start_forwards_restart_verification_to_processing() -> Result<(), Box<dyn Error>> {
         let (source, leases) = setup_processor().await?;
         let first = ChangeFeedProcessorBuilder::new(
-            LatestVersion,
+            ChangeFeedMode::LatestVersion,
             source.clone(),
             leases.clone(),
             "orders",
@@ -615,7 +619,7 @@ mod processor_lifecycle_tests {
         first.stop().await?;
         assert_eq!(records(&leases).await?, without);
         let verifying = ChangeFeedProcessorBuilder::new(
-            LatestVersion,
+            ChangeFeedMode::LatestVersion,
             source,
             leases.clone(),
             "orders",
@@ -642,12 +646,12 @@ mod processor_lifecycle_tests {
         source
             .create_item(PARTITION_KEY, "replay", TestItem::new("replay", 1), None)
             .await?;
-        let calls = Arc::new(AtomicUsize::new(0));
-        let callback_calls = calls.clone();
-        let lease_token = Arc::new(std::sync::Mutex::new(String::new()));
-        let callback_lease = lease_token.clone();
+        static CALLS: AtomicUsize = AtomicUsize::new(0);
+        static LEASE_TOKEN: Mutex<String> = Mutex::new(String::new());
+        let calls = &CALLS;
+        let lease_token = &LEASE_TOKEN;
         let processor = ChangeFeedProcessorBuilder::new(
-            LatestVersion,
+            ChangeFeedMode::LatestVersion,
             source,
             leases.clone(),
             "orders",
@@ -655,11 +659,11 @@ mod processor_lifecycle_tests {
         )
         .with_start_from_beginning()
         .handle_change_feed(
-            move |context: ChangeFeedProcessorContext, items: Vec<ChangeFeedItem<TestItem>>| {
+            |context: ChangeFeedProcessorContext, items: Vec<ChangeFeedItem<TestItem>>| {
                 assert_eq!(items.len(), 1);
                 assert_eq!(items[0].current().unwrap().id, "replay");
-                *callback_lease.lock().unwrap() = context.lease_token().to_owned();
-                let fail = callback_calls.fetch_add(1, Ordering::SeqCst) == 0;
+                *LEASE_TOKEN.lock().unwrap() = context.lease_token().to_owned();
+                let fail = CALLS.fetch_add(1, Ordering::SeqCst) == 0;
                 async move {
                     if fail {
                         Err(azure_data_cosmos::CosmosError::builder()
@@ -727,12 +731,12 @@ mod processor_lifecycle_tests {
         source
             .create_item(PARTITION_KEY, "pending", TestItem::new("pending", 1), None)
             .await?;
-        let calls = Arc::new(AtomicUsize::new(0));
-        let callback_calls = calls.clone();
-        let lease_token = Arc::new(std::sync::Mutex::new(String::new()));
-        let callback_lease = lease_token.clone();
+        static CALLS: AtomicUsize = AtomicUsize::new(0);
+        static LEASE_TOKEN: Mutex<String> = Mutex::new(String::new());
+        let calls = &CALLS;
+        let lease_token = &LEASE_TOKEN;
         let processor = ChangeFeedProcessorBuilder::new(
-            LatestVersion,
+            ChangeFeedMode::LatestVersion,
             source,
             leases.clone(),
             "orders",
@@ -740,9 +744,9 @@ mod processor_lifecycle_tests {
         )
         .with_start_from_beginning()
         .handle_change_feed(
-            move |context: ChangeFeedProcessorContext, _: Vec<ChangeFeedItem<TestItem>>| {
-                *callback_lease.lock().unwrap() = context.lease_token().to_owned();
-                callback_calls.fetch_add(1, Ordering::SeqCst);
+            |context: ChangeFeedProcessorContext, _: Vec<ChangeFeedItem<TestItem>>| {
+                *LEASE_TOKEN.lock().unwrap() = context.lease_token().to_owned();
+                CALLS.fetch_add(1, Ordering::SeqCst);
                 futures::future::pending::<azure_data_cosmos::Result<()>>()
             },
         )
@@ -772,6 +776,14 @@ mod processor_lifecycle_tests {
     }
 
     async fn exercise_graceful_stop(fail: bool) -> Result<(), Box<dyn Error>> {
+        struct DrainCallback {
+            entered: oneshot::Sender<String>,
+            released: oneshot::Receiver<()>,
+            fail: bool,
+        }
+        static SERIAL: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+        static CALLBACK: Mutex<Option<DrainCallback>> = Mutex::new(None);
+        let _serial = SERIAL.lock().await;
         let (source, leases) = setup_processor().await?;
         source
             .create_item(
@@ -783,10 +795,13 @@ mod processor_lifecycle_tests {
             .await?;
         let (entered, entered_rx) = oneshot::channel();
         let (release, released) = oneshot::channel();
-        let entered = Mutex::new(Some(entered));
-        let released = Mutex::new(Some(released));
+        *CALLBACK.lock().unwrap() = Some(DrainCallback {
+            entered,
+            released,
+            fail,
+        });
         let processor = ChangeFeedProcessorBuilder::new(
-            LatestVersion,
+            ChangeFeedMode::LatestVersion,
             source,
             leases.clone(),
             "drain",
@@ -794,9 +809,12 @@ mod processor_lifecycle_tests {
         )
         .with_start_from_beginning()
         .handle_change_feed(
-            move |context: ChangeFeedProcessorContext, _: Vec<ChangeFeedItem<TestItem>>| {
-                let entered = entered.lock().unwrap().take().expect("one callback");
-                let released = released.lock().unwrap().take().expect("one callback");
+            |context: ChangeFeedProcessorContext, _: Vec<ChangeFeedItem<TestItem>>| {
+                let DrainCallback {
+                    entered,
+                    released,
+                    fail,
+                } = CALLBACK.lock().unwrap().take().expect("one callback");
                 async move {
                     entered.send(context.lease_token().to_owned()).unwrap();
                     released.await.unwrap();
@@ -861,17 +879,17 @@ mod processor_lifecycle_tests {
                 None,
             )
             .await?;
-        let calls = Arc::new(AtomicUsize::new(0));
-        let callback_calls = calls.clone();
+        static CALLS: AtomicUsize = AtomicUsize::new(0);
+        let calls = &CALLS;
         let processor = ChangeFeedProcessorBuilder::new(
-            LatestVersion,
+            ChangeFeedMode::LatestVersion,
             source,
             leases.clone(),
             "orders",
             "worker",
         )
         .with_start_time(time::OffsetDateTime::from_unix_timestamp(1_700_000_000)?)
-        .handle_change_feed(move |_, items: Vec<ChangeFeedItem<TestItem>>| {
+        .handle_change_feed(|_, items: Vec<ChangeFeedItem<TestItem>>| {
             assert_eq!(
                 items
                     .iter()
@@ -879,7 +897,7 @@ mod processor_lifecycle_tests {
                     .collect::<Vec<_>>(),
                 vec!["after-time"]
             );
-            callback_calls.fetch_add(1, Ordering::SeqCst);
+            CALLS.fetch_add(1, Ordering::SeqCst);
             async { Ok(()) }
         })
         .build()?;

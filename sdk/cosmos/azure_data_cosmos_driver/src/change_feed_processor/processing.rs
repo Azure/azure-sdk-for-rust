@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 mod balancing;
+mod distribution;
 #[cfg(all(test, feature = "__internal_in_memory_emulator"))]
 mod tests;
 mod topology;
@@ -11,14 +12,18 @@ use crate::{
         bootstrap,
         bootstrap::{
             error, namespace,
-            store::{Store, Stored},
-            Identity, ProcessingLease, SCHEMA_VERSION,
+            store::{
+                ChangeFeedProcessorBootstrapStore as Store,
+                ChangeFeedProcessorBootstrapStoredRecord as Stored,
+            },
+            ChangeFeedProcessorBootstrapIdentity as Identity,
+            ChangeFeedProcessorBootstrapProcessingLease as ProcessingLease, SCHEMA_VERSION,
         },
-        BootstrapOptions, ChangeFeedProcessorMode,
+        processing::distribution::{BatchDistributor, LeaseSession},
     },
     models::{
-        ChangeFeedStartFrom, ContainerReference, ContinuationToken, CosmosResponse, FeedRange,
-        MaxItemCountHint,
+        ChangeFeedFactoryMode, ChangeFeedStartFrom, ContainerReference, ContinuationToken,
+        CosmosResponse, FeedRange, MaxItemCountHint,
     },
     options::{OperationOptions, PlanOptions},
     CosmosDriver, Result,
@@ -29,18 +34,16 @@ use futures::{
     channel::oneshot,
     future::{BoxFuture, Shared},
     stream::FuturesUnordered,
-    task::AtomicWaker,
     FutureExt, StreamExt,
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{HashMap, HashSet, VecDeque},
+    collections::{HashMap, HashSet},
     panic::AssertUnwindSafe,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc, Mutex as StdMutex,
     },
-    task::Poll,
     time::{Duration, Instant},
 };
 use time::OffsetDateTime;
@@ -54,7 +57,10 @@ type Signal = Shared<BoxFuture<'static, ()>>;
 /// acknowledge it after processing, or drop its receipt to abandon the lease.
 #[derive(Clone, SafeDebug)]
 pub struct ProcessorOptions {
-    bootstrap: BootstrapOptions,
+    mode: ChangeFeedFactoryMode,
+    processor_name: String,
+    instance_name: String,
+    verify_leases_on_restart: bool,
     start: ChangeFeedStartFrom,
     continuation: Option<ContinuationToken>,
     page_size: MaxItemCountHint,
@@ -72,9 +78,19 @@ impl ProcessorOptions {
     /// These schedules are independent of feed polling and callback duration.
     /// Fresh feeds start from now, request 100 items, and wait five seconds
     /// after idle responses. Lease counts are uncapped.
-    pub fn new(bootstrap: BootstrapOptions) -> Self {
+    ///
+    /// Workers sharing the source, lease storage, and `processor_name` cooperate.
+    /// `instance_name` identifies the worker. Names are validated during bootstrap.
+    pub fn new(
+        mode: ChangeFeedFactoryMode,
+        processor_name: impl Into<String>,
+        instance_name: impl Into<String>,
+    ) -> Self {
         Self {
-            bootstrap,
+            mode,
+            processor_name: processor_name.into(),
+            instance_name: instance_name.into(),
+            verify_leases_on_restart: false,
             start: ChangeFeedStartFrom::Now,
             continuation: None,
             page_size: MaxItemCountHint::Limit(std::num::NonZeroU32::new(100).unwrap()),
@@ -124,6 +140,15 @@ impl ProcessorOptions {
         self
     }
 
+    /// Checks the persisted initial range plan and recreates missing leases on start.
+    ///
+    /// Disabled by default. Existing owners and checkpoints are never replaced.
+    /// This does not discover topology changes or modify bootstrap completion.
+    pub fn with_lease_verification_enabled_on_restart(mut self, enabled: bool) -> Self {
+        self.verify_leases_on_restart = enabled;
+        self
+    }
+
     fn renew_interval(&self) -> Duration {
         self.expiration / 3
     }
@@ -145,6 +170,8 @@ struct Lease {
     children: Option<Vec<FeedRange>>,
     #[serde(skip)]
     renewed: Option<Instant>,
+    #[serde(default)]
+    split_complete: bool,
 }
 
 struct Context {
@@ -168,6 +195,12 @@ impl Context {
 
     fn validate(&self, lease: &Lease) -> Result<()> {
         bootstrap::validate_lease(&lease.base, &self.identity, &self.namespace)?;
+        if lease.split_complete && lease.children.is_none() {
+            return Err(error(
+                StatusCode::Conflict,
+                "Completed split has no children.",
+            ));
+        }
         if let Some(children) = &lease.children {
             if lease.base.owner.is_some()
                 || lease.incarnation.is_some()
@@ -193,52 +226,39 @@ impl Context {
         observed: &Lease,
         state: Option<&SharedState>,
     ) -> Result<Stored<Lease>> {
-        let id = &observed.base.record.id;
-        let mut current = self.store().read::<Lease>(id).await?.ok_or_else(lost)?;
-        self.validate(&current.value)?;
-        if current.value.children.is_some()
-            || current.value.base.owner != observed.base.owner
-            || current.value.incarnation != observed.incarnation
-        {
-            return Err(lost());
-        }
-        current.value.base.owner = Some(self.options.bootstrap.instance_name.clone());
-        current.value.incarnation = Some(Uuid::new_v4().to_string());
-        current.value.renewed_at = Some(now_millis());
-        current.value.renewed = Some(Instant::now());
-        let key = (id.clone(), current.value.incarnation.clone());
-        if let Some(state) = state {
-            state
-                .unreleased
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .insert(key.clone(), current.value.clone());
-        }
-        let result = self.store().replace(id, &current.value, current.etag).await;
-        if result.is_ok() {
-            if let Some(state) = state {
-                state
-                    .unreleased
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner())
-                    .remove(&key);
-            }
-        }
-        result
+        self.modify_lease(observed, Update::Acquire, state).await
     }
 
     async fn update(&self, lease: &mut Stored<Lease>, update: Update<'_>) -> Result<()> {
-        let id = lease.value.base.record.id.clone();
-        for _ in 0..5 {
-            let mut current = self.store().read::<Lease>(&id).await?.ok_or_else(lost)?;
+        *lease = self.modify_lease(&lease.value, update, None).await?;
+        Ok(())
+    }
+
+    /// Applies a mutation to fresh state while preserving the observed acquisition.
+    /// Acquisition races fail immediately; owned mutations retry only write conflicts.
+    async fn modify_lease(
+        &self,
+        observed: &Lease,
+        update: Update<'_>,
+        acquisition_state: Option<&SharedState>,
+    ) -> Result<Stored<Lease>> {
+        let id = &observed.base.record.id;
+        let retry_conflicts = !matches!(update, Update::Acquire);
+        let attempts = if retry_conflicts { 5 } else { 1 };
+        for _ in 0..attempts {
+            let mut current = self.store().read::<Lease>(id).await?.ok_or_else(lost)?;
             self.validate(&current.value)?;
-            if current.value.children.is_some()
-                || current.value.base.owner != lease.value.base.owner
-                || current.value.incarnation != lease.value.incarnation
+            if (current.value.children.is_some() && !matches!(update, Update::CompleteSplit))
+                || current.value.base.owner != observed.base.owner
+                || current.value.incarnation != observed.incarnation
             {
                 return Err(lost());
             }
             match update {
+                Update::Acquire => {
+                    current.value.base.owner = Some(self.options.instance_name.clone());
+                    current.value.incarnation = Some(Uuid::new_v4().to_string());
+                }
                 Update::Renew => {}
                 Update::Checkpoint(token) => current.value.base.continuation = Some(token.clone()),
                 Update::Release => current.value.base.owner = None,
@@ -250,19 +270,41 @@ impl Context {
                     current.value.incarnation = None;
                     current.value.children = Some(children.to_vec());
                 }
+                Update::CompleteSplit => {
+                    if current.value.children.is_none() {
+                        return Err(error(
+                            StatusCode::Conflict,
+                            "Processing lease is not retired.",
+                        ));
+                    }
+                    if current.value.split_complete {
+                        return Ok(current);
+                    }
+                    current.value.split_complete = true;
+                }
             }
             current.value.renewed_at = Some(now_millis());
             current.value.renewed = Some(Instant::now());
-            match self
-                .store()
-                .replace(&id, &current.value, current.etag)
-                .await
-            {
+            let key = (id.clone(), current.value.incarnation.clone());
+            if let Some(state) = acquisition_state {
+                state
+                    .unreleased
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .insert(key.clone(), current.value.clone());
+            }
+            match self.store().replace(id, &current.value, current.etag).await {
                 Ok(updated) => {
-                    *lease = updated;
-                    return Ok(());
+                    if let Some(state) = acquisition_state {
+                        state
+                            .unreleased
+                            .lock()
+                            .unwrap_or_else(|e| e.into_inner())
+                            .remove(&key);
+                    }
+                    return Ok(updated);
                 }
-                Err(err) if err.status().is_precondition_failed() => continue,
+                Err(err) if retry_conflicts && err.status().is_precondition_failed() => continue,
                 Err(err) => return Err(err),
             }
         }
@@ -274,10 +316,12 @@ impl Context {
 }
 
 enum Update<'a> {
+    Acquire,
     Renew,
     Checkpoint(&'a ContinuationToken),
     Release,
     Split(&'a [FeedRange]),
+    CompleteSplit,
 }
 
 fn now_millis() -> i64 {
@@ -368,10 +412,9 @@ impl ChangeFeedBatch {
     }
 }
 
+#[derive(Default)]
 struct SharedState {
-    ready: StdMutex<VecDeque<ChangeFeedBatch>>,
-    waker: AtomicWaker,
-    running: AtomicBool,
+    distributor: Arc<BatchDistributor>,
     stopping: AtomicBool,
     forced: AtomicBool,
     failure: StdMutex<Option<crate::CosmosError>>,
@@ -379,26 +422,12 @@ struct SharedState {
 }
 
 impl SharedState {
-    fn deliver(&self, batch: ChangeFeedBatch) -> bool {
-        let mut queue = self.ready.lock().unwrap_or_else(|e| e.into_inner());
-        if self.stopping.load(Ordering::Acquire) {
-            return false;
-        }
-        queue.retain(|batch| !batch.receipt.sender.is_canceled());
-        queue.push_back(batch);
-        drop(queue);
-        self.waker.wake();
-        true
-    }
-
     fn close(&self, force: bool) {
-        let mut queue = self.ready.lock().unwrap_or_else(|e| e.into_inner());
         self.stopping.store(true, Ordering::Release);
         if force {
             self.forced.store(true, Ordering::Release);
-            queue.clear();
         }
-        self.waker.wake();
+        self.distributor.stop_delivery(force);
     }
 
     fn failed(&self, err: crate::CosmosError) {
@@ -451,15 +480,16 @@ impl Processor {
     ///
     /// # Errors
     ///
-    /// Returns configuration and bootstrap errors before starting background
-    /// work. All-versions-and-deletes mode requires a now start or continuation.
+    /// Returns configuration, bootstrap, and restart-verification errors before
+    /// starting background work. All-versions-and-deletes mode requires a now
+    /// start or continuation.
     ///
     /// # Examples
     ///
     /// ```no_run
     /// use azure_data_cosmos_driver::{
-    ///     change_feed_processor::{BootstrapOptions, ChangeFeedProcessorMode, Processor, ProcessorOptions},
-    ///     models::{ContainerReference, CosmosResponse}, CosmosDriver, Result,
+    ///     change_feed_processor::{Processor, ProcessorOptions},
+    ///     models::{ChangeFeedFactoryMode, ContainerReference, CosmosResponse}, CosmosDriver, Result,
     /// };
     /// use futures::future::BoxFuture;
     /// use std::sync::Arc;
@@ -470,9 +500,9 @@ impl Processor {
     ///     leases: ContainerReference,
     ///     process: fn(CosmosResponse) -> BoxFuture<'static, Result<()>>,
     /// ) -> azure_data_cosmos_driver::Result<()> {
-    ///     let options = ProcessorOptions::new(BootstrapOptions::new(
-    ///         ChangeFeedProcessorMode::LatestVersion, "orders", "worker-01",
-    ///     ));
+    ///     let options = ProcessorOptions::new(
+    ///         ChangeFeedFactoryMode::Incremental, "orders", "worker-01",
+    ///     );
     ///     let processor = Processor::start(driver.clone(), source, driver, leases, options).await?;
     ///     if let Some(batch) = processor.next_batch().await {
     ///         let (_lease, response, receipt) = batch.into_parts();
@@ -491,7 +521,7 @@ impl Processor {
         options: ProcessorOptions,
     ) -> Result<Self> {
         if (options.max_leases > 0 && options.min_leases > options.max_leases)
-            || (options.bootstrap.mode == ChangeFeedProcessorMode::AllVersionsAndDeletes
+            || (options.mode == ChangeFeedFactoryMode::FullFidelity
                 && options.continuation.is_none()
                 && !matches!(options.start, ChangeFeedStartFrom::Now))
             || options
@@ -511,15 +541,17 @@ impl Processor {
             &source,
             &lease_driver,
             &leases,
-            &options.bootstrap,
+            options.mode,
+            &options.processor_name,
+            &options.instance_name,
         )
         .await?;
         let identity = Identity {
             version: SCHEMA_VERSION,
             account: source.account().endpoint().origin().ascii_serialization(),
             container_rid: source.rid().to_owned(),
-            processor_name: options.bootstrap.processor_name.clone(),
-            mode: options.bootstrap.mode,
+            processor_name: options.processor_name.clone(),
+            mode: options.mode,
         };
         let context = Arc::new(Context {
             namespace: namespace(&identity)?,
@@ -530,15 +562,10 @@ impl Processor {
             leases,
             options,
         });
-        let state = Arc::new(SharedState {
-            ready: StdMutex::new(VecDeque::new()),
-            waker: AtomicWaker::new(),
-            running: AtomicBool::new(true),
-            stopping: AtomicBool::new(false),
-            forced: AtomicBool::new(false),
-            failure: StdMutex::new(None),
-            unreleased: StdMutex::new(HashMap::new()),
-        });
+        if context.options.verify_leases_on_restart {
+            context.verify_leases().await?;
+        }
+        let state = Arc::new(SharedState::default());
         let (stop, stopping) = signal();
         let (force, forced) = signal();
         let (done, stopped) = oneshot::channel();
@@ -557,7 +584,7 @@ impl Processor {
             .shared(),
             state: state.clone(),
         });
-        // The task holds state, not Owner, so the last public handle closes stop.
+        // The task holds shared state, not Owner, so the last handle closes stop.
         let task = azure_core::async_runtime::get_async_runtime().spawn(Box::pin(async move {
             let result = AssertUnwindSafe(run(context, state.clone(), stopping, forced))
                 .catch_unwind()
@@ -568,13 +595,7 @@ impl Processor {
                         "Processor task panicked.",
                     ))
                 });
-            state.running.store(false, Ordering::Release);
-            state
-                .ready
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .clear();
-            state.waker.wake();
+            state.distributor.close();
             let _ = done.send(result);
         }));
         drop(task);
@@ -583,36 +604,20 @@ impl Processor {
 
     /// Reports whether background coordination is running.
     pub fn is_running(&self) -> bool {
-        self.owner.state.running.load(Ordering::Acquire)
+        self.owner.state.distributor.is_running()
     }
 
     /// Waits for an owned batch, or returns `None` when delivery has drained.
     ///
     /// Canceling this wait does not consume a batch. Progress from 304 responses
     /// is saved internally without invoking application callbacks.
+    /// Ready lease sessions take turns supplying batches; an empty set of owned
+    /// leases waits for future acquisitions rather than ending the stream.
+    ///
     /// During graceful shutdown, continue consuming already-issued batches and
     /// completing their receipts. `None` does not mean all receipts are settled.
     pub async fn next_batch(&self) -> Option<ChangeFeedBatch> {
-        futures::future::poll_fn(|cx| {
-            self.owner.state.waker.register(cx.waker());
-            let mut ready = self
-                .owner
-                .state
-                .ready
-                .lock()
-                .unwrap_or_else(|e| e.into_inner());
-            while let Some(batch) = ready.pop_front() {
-                if !batch.receipt.sender.is_canceled() {
-                    return Poll::Ready(Some(batch));
-                }
-            }
-            if self.is_running() && !self.owner.state.stopping.load(Ordering::Acquire) {
-                Poll::Pending
-            } else {
-                Poll::Ready(None)
-            }
-        })
-        .await
+        self.owner.state.distributor.next_batch().await
     }
 
     /// Drains issued batches, saves acknowledged progress, and releases owned leases.
@@ -794,17 +799,38 @@ async fn balance(
         return Vec::new();
     }
     let result = async {
-        let all = context.list().await?;
-        let selected = balancing::select(&all, &context.options, now_millis());
+        let (pending, active): (Vec<_>, Vec<_>) = context
+            .list()
+            .await?
+            .into_iter()
+            .partition(|lease| lease.children.is_some());
         let mut acquired = Vec::new();
+        for parent in pending {
+            if state.stopping.load(Ordering::Acquire) {
+                break;
+            }
+            let id = &parent.base.record.id;
+            if owned.contains(id) {
+                continue;
+            }
+            match context.store().read::<Lease>(id).await {
+                Ok(Some(parent)) if !parent.value.split_complete => acquired.push(parent),
+                Ok(Some(_)) => {}
+                Ok(None) => tracing::warn!(lease = %id, "Unfinished split parent is missing"),
+                Err(err) => {
+                    tracing::warn!(lease = %id, error = %err, "Failed to read unfinished split")
+                }
+            }
+        }
+        let selected = balancing::select(&active, &context.options, now_millis());
         for index in selected {
             if state.stopping.load(Ordering::Acquire) {
                 break;
             }
-            if owned.contains(&all[index].base.record.id) {
+            if owned.contains(&active[index].base.record.id) {
                 continue;
             }
-            match context.acquire_tracked(&all[index], Some(&state)).await {
+            match context.acquire_tracked(&active[index], Some(&state)).await {
                 Ok(lease) => acquired.push(lease),
                 Err(err) if err.status().is_precondition_failed() => {
                     tracing::debug!(error = %err, "Lease acquisition lost a race");
@@ -827,38 +853,63 @@ async fn balance(
 async fn supervise(
     context: Arc<Context>,
     state: Arc<SharedState>,
-    lease: Stored<Lease>,
+    mut lease: Stored<Lease>,
     stop: Signal,
     force: Signal,
 ) {
+    if lease.value.children.is_some() {
+        if state.stopping.load(Ordering::Acquire) {
+            return;
+        }
+        let repair = context.ensure_children(&mut lease).fuse();
+        futures::pin_mut!(repair);
+        futures::select! {
+            result = repair => {
+                if let Err(err) = result {
+                    tracing::warn!(error = %err, "Child lease creation failed; retrying on the next cycle");
+                }
+            },
+            _ = stop.fuse() => {},
+            _ = force.fuse() => {},
+        }
+        return;
+    }
     let token = lease.value.base.record.id.clone();
+    let session = state
+        .distributor
+        .register(token.clone(), lease.value.incarnation.clone());
     let lease = Arc::new(Mutex::new(lease));
     let (cancel, cancelled) = signal();
     let mut cancel = Some(cancel);
-    let result = {
-        let processing = poll(
-            context.clone(),
-            state.clone(),
-            lease.clone(),
-            cancelled.clone(),
-            stop,
-            force,
-        )
-        .fuse();
-        let renewing = renew(context.clone(), lease.clone(), cancelled).fuse();
-        futures::pin_mut!(processing, renewing);
-        futures::select! {
-            result = processing => {
-                drop(cancel.take());
-                let renewed = renewing.await;
-                result.and(renewed)
-            },
-            result = renewing => {
-                drop(cancel.take());
-                let processed = processing.await;
-                result.and(processed)
-            },
+    let result = match session {
+        Ok(session) => {
+            let processing = poll(
+                context.clone(),
+                state.clone(),
+                &session,
+                lease.clone(),
+                cancelled.clone(),
+                stop,
+                force,
+            )
+            .boxed()
+            .fuse();
+            let renewing = renew(context.clone(), lease.clone(), cancelled).fuse();
+            futures::pin_mut!(processing, renewing);
+            futures::select! {
+                result = processing => {
+                    drop(cancel.take());
+                    let renewed = renewing.await;
+                    result.and(renewed)
+                },
+                result = renewing => {
+                    drop(cancel.take());
+                    let processed = processing.await;
+                    result.and(processed)
+                },
+            }
         }
+        Err(err) => Err(err),
     };
     drop(cancel);
     if let Err(err) = result {
@@ -942,6 +993,7 @@ async fn renew(
 async fn poll(
     context: Arc<Context>,
     state: Arc<SharedState>,
+    session: &LeaseSession,
     lease: Arc<Mutex<Stored<Lease>>>,
     cancelled: Signal,
     stop: Signal,
@@ -950,6 +1002,7 @@ async fn poll(
     let result = poll_feed(
         context.clone(),
         state.clone(),
+        session,
         lease.clone(),
         cancelled,
         stop,
@@ -975,6 +1028,7 @@ async fn poll(
 async fn poll_feed(
     context: Arc<Context>,
     state: Arc<SharedState>,
+    session: &LeaseSession,
     lease: Arc<Mutex<Stored<Lease>>>,
     cancelled: Signal,
     stop: Signal,
@@ -1057,14 +1111,13 @@ async fn poll_feed(
             continue;
         }
         let (sender, received) = oneshot::channel();
-        if !state.deliver(ChangeFeedBatch {
-            lease_token: initial.base.record.id.clone(),
+        if !session.deliver(
             response,
-            receipt: BatchReceipt {
+            BatchReceipt {
                 sender,
                 cancelled: cancelled.clone(),
             },
-        }) {
+        )? {
             return Ok(());
         }
         let acknowledgment = futures::select_biased! {
