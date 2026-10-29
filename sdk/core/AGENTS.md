@@ -41,3 +41,9 @@ These rules apply in addition to the repository root [AGENTS.md](../../AGENTS.md
 - Organize identity stubs in `azure_core_examples::identity` per credential module, mirroring `azure_identity` where practical, and re-export them from `identity/mod.rs`.
 - For markdown compile tests, alias helper modules to the public crate names used in docs (for example `use azure_core_examples::identity as azure_identity;`).
 - If a compile-only test needs just one or two service types and would otherwise mix published and local `azure_core` graphs, prefer a tiny local stub in that test module over broad dependency rewiring.
+
+## Resource Manager functionality
+
+- Put Resource Manager (ARM)-specific functionality in existing `azure_core` modules where appropriate.
+- Use `resource_manager` in module, field, function, method, and feature names; retain `azure_resourcemanager_*` crate names.
+- When names collide, prefer a `resource_manager` submodule gated by the `resource_manager` feature, such as `azure_core::http::poller::resource_manager`, over `ResourceManager` type or variant prefixes; do not re-export its items from parent modules.
