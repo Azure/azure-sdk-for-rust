@@ -716,8 +716,8 @@ mod tests {
     #[test]
     fn recognizes_cfg_attr_with_only_one_doc_attribute() {
         for attribute in [
-            r#"#[cfg_attr(feature = "resourcemanager", doc = "Conditional docs.")]"#,
-            r#"#[cfg_attr(not(feature = "resourcemanager"), doc = "Fallback docs.")]"#,
+            r#"#[cfg_attr(feature = "resource_manager", doc = "Conditional docs.")]"#,
+            r#"#[cfg_attr(not(feature = "resource_manager"), doc = "Fallback docs.")]"#,
             r#"#![cfg_attr(all(doc, feature = "http"), doc = "Crate docs.")]"#,
             r#"#[<cfg_attr>(docsrs, doc(cfg(feature = "http")))]"#,
             r#"#[cfg_attr(docsrs, doc = "Conditional docs.")]"#,
