@@ -253,7 +253,7 @@ fn json_type_name(v: &serde_json::Value) -> &'static str {
 ///
 /// Built from a [`RawQueryPlan`] via [`RawQueryPlan::resolve`] on both the
 /// Gateway and native QueryPlanInterop paths.
-#[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq)]
 #[serde(default)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct QueryPlan {
@@ -273,7 +273,7 @@ pub(crate) struct QueryPlan {
 }
 
 /// Information about a hybrid search query.
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[allow(dead_code)] // Wire-format fields; hybrid search isn't fully wired yet.
 pub(crate) struct HybridSearchQueryInfo {
@@ -313,7 +313,7 @@ pub(crate) enum DistinctType {
 }
 
 /// Detailed query plan information.
-#[derive(Debug, Deserialize, Default, Serialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Default, Serialize, PartialEq)]
 #[serde(default)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct QueryInfo {
@@ -349,6 +349,9 @@ pub(crate) struct QueryInfo {
     #[serde(default)]
     pub group_by_alias_to_aggregate_type: HashMap<String, serde_json::Value>,
 
+    /// Distinct-count result shape, when the plan counts a DISTINCT subquery.
+    pub d_count_info: Option<DCountInfo>,
+
     /// Rewritten form of the query for single-partition sub-queries.
     ///
     /// When non-empty, this should be used instead of the original query text
@@ -363,6 +366,27 @@ pub(crate) struct QueryInfo {
     /// Whether the query contains a non-streaming `ORDER BY`.
     #[serde(deserialize_with = "bool_from_int_or_bool")]
     pub has_non_streaming_order_by: bool,
+}
+
+/// Projection metadata for a distinct-count query.
+#[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq)]
+#[serde(default, rename_all = "camelCase")]
+pub(crate) struct DCountInfo {
+    pub d_count_alias: Option<String>,
+}
+
+impl QueryInfo {
+    pub(crate) fn has_aggregates(&self) -> bool {
+        !self.aggregates.is_empty()
+            || self
+                .group_by_alias_to_aggregate_type
+                .values()
+                .any(|value| !value.is_null() && !value.as_str().is_some_and(str::is_empty))
+    }
+
+    pub(crate) fn has_group_by(&self) -> bool {
+        !self.group_by_expressions.is_empty()
+    }
 }
 
 /// Sort order for an `ORDER BY` expression.
@@ -380,7 +404,7 @@ pub(crate) enum SortOrder {
 /// (arrays); `string_or_json` flattens those to the JSON text. Both paths
 /// additionally run each `RawQueryRange` through
 /// [`RawQueryPlan::resolve`] to hash structured PK values into proper EPK hex.
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[allow(dead_code)] // Inclusivity flags are wire-format; planner treats ranges uniformly.
 pub(crate) struct QueryRange {
@@ -439,6 +463,34 @@ mod tests {
         assert_eq!(plan.query_ranges[0].max, "FF");
         assert!(plan.query_ranges[0].is_min_inclusive);
         assert!(!plan.query_ranges[0].is_max_inclusive);
+    }
+
+    #[test]
+    fn deserializes_distinct_count_aliases() {
+        for alias in [
+            serde_json::Value::Null,
+            serde_json::json!(""),
+            serde_json::json!("total"),
+        ] {
+            let info: QueryInfo = serde_json::from_value(serde_json::json!({
+                "dCountInfo": {"dCountAlias": alias}
+            }))
+            .unwrap();
+            assert_eq!(
+                info.d_count_info.unwrap().d_count_alias,
+                alias.as_str().map(str::to_owned)
+            );
+        }
+        assert!(serde_json::from_value::<QueryInfo>(serde_json::json!({
+            "dCountInfo": {"dCountAlias": 1}
+        }))
+        .is_err());
+        assert!(serde_json::from_value::<QueryInfo>(serde_json::json!({
+            "dCountInfo": null
+        }))
+        .unwrap()
+        .d_count_info
+        .is_none());
     }
 
     #[test]
