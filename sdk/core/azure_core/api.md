@@ -162,6 +162,8 @@ pub mod cloud {
     pub struct CustomConfiguration {
         pub authority_host: String,
         pub audiences: Audiences,
+        #[cfg(feature = "resource_manager")]
+        pub endpoint: Option<String>,
     }
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     #[non_exhaustive]
@@ -172,8 +174,26 @@ pub mod cloud {
         AzureChina,
         Custom(CustomConfiguration),
     }
+    impl CloudConfigurationExt for super::CloudConfiguration {
+        fn audience(&self) -> crate::Result<&str>;
+        fn default_scope(&self) -> crate::Result<Cow<'static, str>>;
+        fn endpoint(&self) -> Option<&str>;
+    }
+    impl Default for &CloudConfiguration {
+        fn default() -> Self;
+    }
     impl From<CustomConfiguration> for CloudConfiguration {
         fn from(config: CustomConfiguration) -> Self;
+    }
+    #[cfg(feature = "resource_manager")]
+    pub mod resource_manager {
+        #[allow(missing_debug_implementations)]
+        pub struct Audience;
+        pub trait CloudConfigurationExt: crate::private::Sealed {
+            fn audience(&self) -> crate::Result<&str>;
+            fn default_scope(&self) -> crate::Result<Cow<'static, str>>;
+            fn endpoint(&self) -> Option<&str>;
+        }
     }
 }
 pub mod credentials {
