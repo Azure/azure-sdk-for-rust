@@ -41,6 +41,152 @@ fn header<'a>(request: &'a HttpRequest, name: &'static str) -> Option<&'a str> {
         .get_optional_str(&HeaderName::from_static(name))
 }
 
+#[derive(Clone, Copy)]
+enum QueryScenario {
+    Aggregate(&'static str),
+    Aliases,
+    GroupBy,
+    DistinctCount,
+}
+
+fn query_scenario(sql: &str) -> Option<QueryScenario> {
+    if sql.contains("FROM (SELECT DISTINCT VALUE c.category FROM c") {
+        Some(QueryScenario::DistinctCount)
+    } else if sql.contains("GROUP BY c.category") {
+        Some(QueryScenario::GroupBy)
+    } else if sql.starts_with("SELECT COUNT(1) AS count, SUM(c.amount) AS total") {
+        Some(QueryScenario::Aliases)
+    } else {
+        [
+            ("COUNT(1)", "Count"),
+            ("SUM(c.amount)", "Sum"),
+            ("MIN(c.amount)", "Min"),
+            ("MAX(c.amount)", "Max"),
+            ("AVG(c.amount)", "Average"),
+        ]
+        .into_iter()
+        .find_map(|(expression, operator)| {
+            sql.starts_with(&format!("SELECT VALUE {expression} FROM c"))
+                .then_some(QueryScenario::Aggregate(operator))
+        })
+        .or_else(|| {
+            sql.starts_with("SELECT DISTINCT VALUE c.category FROM c")
+                .then_some(QueryScenario::DistinctCount)
+        })
+    }
+}
+
+fn query_info(scenario: QueryScenario, sql: &str) -> serde_json::Value {
+    match scenario {
+        QueryScenario::Aggregate(operator) => serde_json::json!({
+            "aggregates":[operator], "hasSelectValue":true, "rewrittenQuery":sql
+        }),
+        QueryScenario::Aliases => serde_json::json!({
+            "groupByAliases":["count","total","min","max","avg"],
+            "groupByAliasToAggregateType":{
+                "count":"Count","total":"Sum","min":"Min","max":"Max","avg":"Average"
+            },
+            "rewrittenQuery":sql
+        }),
+        QueryScenario::GroupBy => serde_json::json!({
+            "groupByExpressions":["c.category"],
+            "groupByAliases":["category","count","total","min","max","avg"],
+            "groupByAliasToAggregateType":{
+                "category":null,"count":"Count","total":"Sum","min":"Min","max":"Max","avg":"Average"
+            },
+            "rewrittenQuery":sql
+        }),
+        QueryScenario::DistinctCount => serde_json::json!({
+            "dCountInfo":{"dCountAlias":null}, "distinctType":"Unordered",
+            "hasSelectValue":true,
+            "rewrittenQuery": if sql.contains("WHERE false") {
+                "SELECT DISTINCT VALUE c.category FROM c WHERE false"
+            } else {
+                "SELECT DISTINCT VALUE c.category FROM c"
+            }
+        }),
+    }
+}
+
+fn query_documents(
+    scenario: QueryScenario,
+    first_range: bool,
+    empty: bool,
+) -> Vec<serde_json::Value> {
+    if empty {
+        return match scenario {
+            QueryScenario::Aggregate("Count") => vec![serde_json::json!([{"item":0}])],
+            _ => Vec::new(),
+        };
+    }
+    let partials = if first_range {
+        [(2, 30, 10, 20), (1, 30, 30, 30)]
+    } else {
+        [(1, 5, 5, 5), (2, 115, 15, 100)]
+    };
+    match scenario {
+        QueryScenario::Aggregate(operator) => partials
+            .into_iter()
+            .map(|(count, sum, min, max)| {
+                let value = match operator {
+                    "Count" => serde_json::json!(count),
+                    "Sum" => serde_json::json!(sum),
+                    "Min" => serde_json::json!(min),
+                    "Max" => serde_json::json!(max),
+                    "Average" => serde_json::json!({"sum":sum,"count":count}),
+                    _ => unreachable!(),
+                };
+                serde_json::json!([{"item":value}])
+            })
+            .collect(),
+        QueryScenario::Aliases => partials
+            .into_iter()
+            .map(|(count, sum, min, max)| {
+                serde_json::json!({"payload":{
+                    "count":{"item":count}, "total":{"item":sum},
+                    "min":{"item":min}, "max":{"item":max},
+                    "avg":{"item":{"sum":sum,"count":count}}
+                }})
+            })
+            .collect(),
+        QueryScenario::GroupBy => {
+            let groups = if first_range {
+                vec![("a", 2, 30, 10, 20), ("b", 1, 5, 5, 5)]
+            } else {
+                vec![
+                    ("a", 1, 30, 30, 30),
+                    ("b", 1, 15, 15, 15),
+                    ("c", 1, 100, 100, 100),
+                ]
+            };
+            groups
+                .into_iter()
+                .map(|(category, count, sum, min, max)| {
+                    serde_json::json!({
+                        "groupByItems":[{"item":category}],
+                        "payload":{
+                            "category":category,"count":{"item":count},"total":{"item":sum},
+                            "min":{"item":min},"max":{"item":max},
+                            "avg":{"item":{"sum":sum,"count":count}}
+                        }
+                    })
+                })
+                .collect()
+        }
+        QueryScenario::DistinctCount => {
+            let categories = if first_range {
+                ["a", "b", "a"]
+            } else {
+                ["a", "c", "b"]
+            };
+            categories
+                .into_iter()
+                .map(|category| serde_json::json!(category))
+                .collect()
+        }
+    }
+}
+
 #[async_trait]
 impl TransportClient for ScriptedTransport {
     async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
@@ -91,14 +237,29 @@ impl TransportClient for ScriptedTransport {
                 ],"_count":2})
             }
             path if path.ends_with("/docs") => {
+                let query: serde_json::Value = request
+                    .body
+                    .as_ref()
+                    .and_then(|body| serde_json::from_slice(body).ok())
+                    .unwrap_or_default();
+                let sql = query["query"].as_str().unwrap_or_default();
+                let scenario = query_scenario(sql);
                 if header(request, "x-ms-cosmos-is-query-plan-request") == Some("True")
                     || header(request, "x-ms-cosmos-is-query-plan-request") == Some("true")
                 {
-                    serde_json::json!({
-                        "partitionedQueryExecutionInfoVersion":1,
-                        "queryInfo":{"hasNonStreamingOrderBy":true,"orderBy":["Ascending"],"orderByExpressions":["c.rank"],"top":6,"rewrittenQuery":"SELECT TOP 6 * FROM c ORDER BY c.rank"},
-                        "queryRanges":[{"min":"","max":"FF","isMinInclusive":true,"isMaxInclusive":false}]
-                    })
+                    if let Some(scenario) = scenario {
+                        serde_json::json!({
+                            "partitionedQueryExecutionInfoVersion":1,
+                            "queryInfo":query_info(scenario, sql),
+                            "queryRanges":[{"min":"","max":"FF","isMinInclusive":true,"isMaxInclusive":false}]
+                        })
+                    } else {
+                        serde_json::json!({
+                            "partitionedQueryExecutionInfoVersion":1,
+                            "queryInfo":{"hasNonStreamingOrderBy":true,"orderBy":["Ascending"],"orderByExpressions":["c.rank"],"top":6,"rewrittenQuery":"SELECT TOP 6 * FROM c ORDER BY c.rank"},
+                            "queryRanges":[{"min":"","max":"FF","isMinInclusive":true,"isMaxInclusive":false}]
+                        })
+                    }
                 } else if let Some(mode) = header(request, "a-im") {
                     let continuation = header(request, "if-none-match");
                     if mode == "Full-Fidelity Feed"
@@ -128,6 +289,24 @@ impl TransportClient for ScriptedTransport {
                         }).collect();
                         serde_json::json!({"Documents":docs,"_count":2})
                     }
+                } else if let Some(scenario) = scenario {
+                    let docs = query_documents(
+                        scenario,
+                        header(request, "x-ms-documentdb-partitionkeyrangeid") == Some("0"),
+                        sql.contains("WHERE false"),
+                    );
+                    let start: usize = header(request, "x-ms-continuation")
+                        .unwrap_or("0")
+                        .parse()
+                        .unwrap();
+                    let count: usize = header(request, "x-ms-max-item-count")
+                        .and_then(|value| value.parse().ok())
+                        .unwrap_or(docs.len());
+                    let end = start.saturating_add(count).min(docs.len());
+                    if end < docs.len() {
+                        headers.insert("x-ms-continuation", end.to_string());
+                    }
+                    serde_json::json!({"Documents":docs[start..end],"_count":end-start})
                 } else {
                     let ranks =
                         if header(request, "x-ms-documentdb-partitionkeyrangeid") == Some("0") {

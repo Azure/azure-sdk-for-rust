@@ -16,12 +16,14 @@ use super::framework;
 
 use std::collections::HashMap;
 use std::error::Error;
+use std::num::NonZeroU32;
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
     feed::FeedScope,
     models::ContainerProperties,
+    options::{MaxItemCountHint, QueryOptions},
     Query,
 };
 use framework::{TestClient, TestOptions};
@@ -328,6 +330,203 @@ pub async fn single_partition_group_by() -> Result<(), Box<dyn Error>> {
                 (1, 100),
                 "unexpected rollup for category c"
             );
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+async fn seed_cross_partition_container(
+    db: &DatabaseClient,
+) -> azure_data_cosmos::Result<ContainerClient> {
+    let properties = ContainerProperties::new(
+        "CrossPartitionQueryFeaturesContainer",
+        "/partitionKey".into(),
+    );
+    loop {
+        match db.create_container(properties.clone(), None).await {
+            Ok(_) => break,
+            Err(error) if error.status().status_code() == StatusCode::TooManyRequests => {
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    let container = db
+        .container_client("CrossPartitionQueryFeaturesContainer", None)
+        .await?;
+    for (index, mut record) in sales_records().into_iter().enumerate() {
+        // Unequal partition populations make an unweighted average incorrect.
+        record.partition_key = format!("tenant-{}", index % 4);
+        container
+            .create_item(record.partition_key.clone(), &record.id, &record, None)
+            .await?;
+    }
+    Ok(container)
+}
+
+async fn run_cross_partition_query<T>(
+    container: &ContainerClient,
+    query: impl Into<Query>,
+) -> Result<Vec<T>, Box<dyn Error>>
+where
+    T: DeserializeOwned + Send + 'static,
+{
+    let options = QueryOptions::default()
+        .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));
+    let mut pages = container
+        .query_items::<T>(query, FeedScope::full_container(), Some(options))
+        .await?
+        .into_pages();
+    let mut items = Vec::new();
+    while let Some(page) = pages.next().await {
+        items.extend(page?.into_items());
+    }
+    Ok(items)
+}
+
+#[derive(Deserialize, Debug, PartialEq)]
+struct AggregateRollup {
+    count: u64,
+    total: f64,
+    min: f64,
+    max: f64,
+    avg: f64,
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn cross_partition_value_and_aliased_aggregates() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            let container = seed_cross_partition_container(db_client).await?;
+            for (expression, expected) in [
+                ("COUNT(1)", 6.0),
+                ("SUM(c.amount)", 180.0),
+                ("MIN(c.amount)", 5.0),
+                ("MAX(c.amount)", 100.0),
+                ("AVG(c.amount)", 30.0),
+            ] {
+                let values: Vec<f64> = run_cross_partition_query(
+                    &container,
+                    format!("SELECT VALUE {expression} FROM c"),
+                )
+                .await?;
+                assert_eq!(values, vec![expected], "{expression}");
+            }
+            let rollups: Vec<AggregateRollup> = run_cross_partition_query(
+                &container,
+                "SELECT COUNT(1) AS count, SUM(c.amount) AS total, MIN(c.amount) AS min, \
+                 MAX(c.amount) AS max, AVG(c.amount) AS avg FROM c",
+            )
+            .await?;
+            assert_eq!(
+                rollups,
+                vec![AggregateRollup {
+                    count: 6,
+                    total: 180.0,
+                    min: 5.0,
+                    max: 100.0,
+                    avg: 30.0,
+                }]
+            );
+            let empty: Vec<u64> =
+                run_cross_partition_query(&container, "SELECT VALUE COUNT(1) FROM c WHERE false")
+                    .await?;
+            assert_eq!(empty, vec![0]);
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+#[derive(Deserialize, Debug, PartialEq)]
+struct CrossPartitionCategoryRollup {
+    category: String,
+    count: u64,
+    total: f64,
+    min: f64,
+    max: f64,
+    avg: f64,
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn cross_partition_group_by_merges_repeated_categories() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            let container = seed_cross_partition_container(db_client).await?;
+            let mut groups: Vec<CrossPartitionCategoryRollup> = run_cross_partition_query(
+                &container,
+                "SELECT c.category AS category, COUNT(1) AS count, SUM(c.amount) AS total, \
+                 MIN(c.amount) AS min, MAX(c.amount) AS max, AVG(c.amount) AS avg \
+                 FROM c GROUP BY c.category",
+            )
+            .await?;
+            groups.sort_by(|left, right| left.category.cmp(&right.category));
+            let expected = [
+                ("a", 3, 60.0, 10.0, 30.0, 20.0),
+                ("b", 2, 20.0, 5.0, 15.0, 10.0),
+                ("c", 1, 100.0, 100.0, 100.0, 100.0),
+            ]
+            .into_iter()
+            .map(
+                |(category, count, total, min, max, avg)| CrossPartitionCategoryRollup {
+                    category: category.to_string(),
+                    count,
+                    total,
+                    min,
+                    max,
+                    avg,
+                },
+            )
+            .collect::<Vec<_>>();
+            assert_eq!(groups, expected);
+            let empty: Vec<CrossPartitionCategoryRollup> = run_cross_partition_query(
+                &container,
+                "SELECT c.category AS category, COUNT(1) AS count, SUM(c.amount) AS total, \
+                 MIN(c.amount) AS min, MAX(c.amount) AS max, AVG(c.amount) AS avg \
+                 FROM c WHERE false GROUP BY c.category",
+            )
+            .await?;
+            assert!(empty.is_empty());
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn cross_partition_distinct_count_deduplicates_before_counting(
+) -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            let container = seed_cross_partition_container(db_client).await?;
+            let count: Vec<u64> = run_cross_partition_query(
+                &container,
+                "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.category FROM c) AS t",
+            )
+            .await?;
+            assert_eq!(count, vec![3]);
+            let empty: Vec<u64> = run_cross_partition_query(
+                &container,
+                "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.category FROM c WHERE false) AS t",
+            )
+            .await?;
+            assert_eq!(empty, vec![0]);
             Ok(())
         },
         Some(TestOptions::for_emulator()),

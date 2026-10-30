@@ -185,6 +185,7 @@ fn production_query_info_to_dataflow(
         group_by_aliases: Vec::new(),
         aggregates: Vec::new(),
         group_by_alias_to_aggregate_type: std::collections::HashMap::new(),
+        d_count_info: None,
         rewritten_query,
         has_select_value: info.has_select_value,
         has_non_streaming_order_by: false,
@@ -231,6 +232,7 @@ pub(crate) fn emulator_query_info_to_dataflow(
             .map(|a| format!("{a:?}"))
             .collect(),
         group_by_alias_to_aggregate_type: std::collections::HashMap::new(),
+        d_count_info: None,
         rewritten_query,
         has_select_value: info.has_select_value,
         has_non_streaming_order_by: false,
@@ -619,7 +621,7 @@ fn has_unresolvable_pk_values(filter: &PartitionKeyFilter) -> bool {
 /// Checks whether the local plan's query info is eligible for production
 /// execution without Gateway-only metadata.
 ///
-/// Rejects features without a production dataflow stage. ORDER BY,
+/// Rejects features requiring native or Gateway rewrites. ORDER BY,
 /// OFFSET/LIMIT, DISTINCT, TOP, JOIN, subqueries, and UDFs are executable by
 /// the current driver and remain eligible.
 fn check_production_eligibility(
@@ -974,6 +976,15 @@ mod tests {
     #[test]
     fn aggregate_count_rejected() {
         let body = br#"{"query": "SELECT COUNT(1) FROM c"}"#;
+        assert_eq!(
+            try_local_plan(Some(body), &single_pk_def()).unwrap_err(),
+            LocalPlanFallbackReason::Aggregates
+        );
+    }
+
+    #[test]
+    fn count_over_distinct_subquery_requires_service_rewrite() {
+        let body = br#"{"query": "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.category FROM c) AS t"}"#;
         assert_eq!(
             try_local_plan(Some(body), &single_pk_def()).unwrap_err(),
             LocalPlanFallbackReason::Aggregates

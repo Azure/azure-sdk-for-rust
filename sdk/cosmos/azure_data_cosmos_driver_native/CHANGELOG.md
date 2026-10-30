@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added cross-partition aggregate, `GROUP BY`, and distinct-count queries to live query cursors; aggregate and grouped cursors reject external checkpoints until drained.
 - Added a driver option for disabling default-on resource-name validation, including item names supplied to Create and Upsert, when compatibility requires it. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
 
 ### Breaking Changes

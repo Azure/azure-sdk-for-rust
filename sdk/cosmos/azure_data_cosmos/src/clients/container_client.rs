@@ -899,7 +899,8 @@ impl ContainerClient {
     /// When `scope` spans multiple partitions, the SDK obtains a query plan and composes the
     /// client-side pipeline needed to execute it. Supported features include ordinary projections
     /// and filters, `TOP`, `OFFSET`/`LIMIT`, streaming single- and multiple-column `ORDER BY`, and
-    /// ordered or unordered `DISTINCT`.
+    /// ordered or unordered `DISTINCT`, `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, `GROUP BY`,
+    /// and distinct counts expressed as `COUNT` over a `DISTINCT` subquery.
     ///
     /// Cross-partition vector ordering supports pure `ORDER BY VectorDistance(...)` queries with a
     /// finite `TOP N` or `OFFSET x LIMIT y` window. The SDK buffers that result window before
@@ -907,9 +908,15 @@ impl ContainerClient {
     /// for the memory available to the application.
     ///
     /// The buffered result can be iterated in pages, but it does not support continuation tokens
-    /// for resuming in another process. Aggregates, `GROUP BY`, and hybrid/full-text ranking remain
-    /// unsupported when their query plans require client-side stages that have not been
-    /// implemented.
+    /// for resuming in another process. Cross-partition aggregates and `GROUP BY` also do not
+    /// support external continuation tokens. They drain their input before returning results;
+    /// `GROUP BY` can then return those results in multiple pages on the same live iterator.
+    /// Distinct-count queries drain their deduplicated input and return one terminal count.
+    /// Group and distinct-count state grows with input cardinality and is not bounded by
+    /// [`QueryOptions::max_buffered_query_window`].
+    ///
+    /// Hybrid/full-text ranking remains unsupported when its query plan requires
+    /// client-side stages that have not been implemented.
     ///
     /// # Examples
     ///

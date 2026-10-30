@@ -148,10 +148,10 @@ Since this initial milestone, change feed (`UnorderedMerge`, §2) and cross-part
 
 ### The Driver Does NOT
 
-- Deserialize item bodies. It returns raw bytes per item; the SDK handles deserialization.
+- Deserialize user models. It parses advanced query envelopes as needed and returns raw bytes per result; the SDK deserializes the caller's target type.
 - Create telemetry spans. It returns structured diagnostics data; the SDK creates OpenTelemetry spans.
 - Own the iteration lifetime for multi-page feeds. It executes one page per call; the SDK loops.
-- Fetch or interpret backend query plans (for the current SELECT/WHERE scope).
+- Fetch a backend query plan for passthrough SELECT/WHERE queries. More advanced shapes use the local, native, or Gateway plan provider.
 
 ### Item Body Opacity
 
@@ -182,6 +182,50 @@ The driver executes whatever `distinctType` the plan reports and never upgrades 
 A live split is safe in both modes: the fan-out node absorbs `SplitRequired` internally and `Distinct` is never rebuilt, so an emitted value cannot be resurrected — and `last_hash` is a value rather than a position, so re-resolving ranges does not invalidate it. Resumed tokens are validated against the plan: a `distinct_type` mismatch, a `Distinct` token for a plan that no longer deduplicates, and a pre-`DISTINCT` token for one that does are all rejected rather than reinterpreted.
 
 Pages whose rows are all duplicates are suppressed rather than surfaced as empty pages, but their request charge and diagnostics fold into the next emitted page (or flush as a final empty page if the child drains first), so a redundant `DISTINCT` query never under-reports its cost.
+
+### Cross-Partition Aggregates, GROUP BY, and Distinct Counts
+
+Ordinary aggregates (`COUNT`, `SUM`, `AVG`, `MIN`, and `MAX`) combine the
+service's rewritten partial results above the split-aware source pipeline.
+They drain the source before emitting a final value or projection. AVG combines
+partial sums and counts rather than averaging partition averages. Undefined
+results are distinct from JSON null: an undefined VALUE result emits no row,
+and an undefined projected alias is omitted.
+
+GROUP BY uses the service's `groupByItems` tuple as the group identity and
+maintains one aggregate projection per group. Numeric identity agrees with
+DISTINCT (`5` and `5.0` identify the same key); undefined and null identify
+different keys. Hash collisions must not combine unequal keys. After draining
+all input, the live iterator pages the completed groups. OFFSET/LIMIT/TOP apply
+to the final groups, not to the partition-local partials.
+
+Distinct counts use the service's `dCountInfo`, not a sum of partition-local
+counts. The canonical SQL is
+`SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.category FROM c) AS t`.
+The pipeline globally deduplicates the projected values, then counts that
+stream, emitting one terminal result (zero for empty input). For example,
+partition values `{red, blue}` and `{red, green}` yield three, not four.
+
+These stages use native or Gateway rewrites; the local provider continues to
+decline aggregate, GROUP BY, and distinct-count shapes. The composition order
+from source to output is merge/ORDER BY, ordinary aggregate (unless grouped),
+DISTINCT, GROUP BY, OFFSET/LIMIT/TOP, then distinct count. Caller parameters and
+the requested output encoding are preserved. Buffered pages accumulate request
+charge, session tokens, and diagnostics with the existing response aggregator.
+Complete typed query/index metric aggregation is a separate follow-up.
+
+Ordinary aggregate and GROUP BY external continuation tokens are unsupported.
+A failed checkpoint does not invalidate the live iterator. Distinct count
+follows Java/.NET's drain-to-terminal model: supported source continuations can
+initialize a fresh stage, but it never emits a partial-count continuation.
+Unordered DISTINCT state is never serialized or truncated to make a token.
+
+GROUP BY retains one entry per group and an unordered distinct count retains
+one identity per distinct value. They intentionally have no new runtime
+retained-state cap. `max_buffered_query_window` continues to gate standalone
+unordered DISTINCT and non-streaming ORDER BY; it is not a memory budget for
+these aggregate shapes. Finite TOP/LIMIT above GROUP BY does not bound the
+number of groups accumulated before emission.
 
 ### The Driver DOES
 
