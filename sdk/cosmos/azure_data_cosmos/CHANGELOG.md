@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added cross-partition `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, `GROUP BY`, and distinct-count queries using `COUNT` over a `DISTINCT` subquery; grouped results support live paging, but aggregates and groups do not support external continuation tokens.
+- Added cross-partition `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, `GROUP BY`, and distinct-count queries using `COUNT` over a `DISTINCT` subquery; grouped results support live paging, but aggregates and groups do not support external continuation tokens. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 
 ### Breaking Changes
 

@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added client-side merging of cross-partition aggregates, `GROUP BY`, and distinct counts from native or Gateway query plans, preserving live iteration and split recovery without introducing a retained-state memory cap.
+- Added client-side merging of cross-partition aggregates, `GROUP BY`, and distinct counts from native or Gateway query plans, preserving live iteration and split recovery without introducing a retained-state memory cap. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 
 ### Breaking Changes
 
