@@ -4,7 +4,8 @@
 
 The client sends `x-ms-cosmos-refresh-reason` on metadata refresh requests so the
 backend can attribute refresh traffic to its cause and aggregate metrics by reason
-prefix. The same reason is retained in request diagnostics.
+prefix. For request-driven refreshes, the same reason is retained in the initiating
+operation's diagnostics.
 
 This specification defines shared refresh-reason values across Cosmos DB SDKs for
 both Gateway mode and Direct mode, normalizing the vocabulary in the
@@ -18,6 +19,10 @@ change existing refresh or retry policies.
 ```http
 x-ms-cosmos-refresh-reason: server.topology.completing_split
 ```
+
+These rules govern SDK-generated headers. Caller-supplied Cosmos headers are
+unsupported and outside these guarantees; Rust's compatibility handling is
+specified in the implementation outline.
 
 - Send exactly one unquoted, case-sensitive ASCII value. Do not send a list,
   whitespace within the value, parameters, or encoded substrings.
@@ -163,13 +168,14 @@ so SDK callers do not lose their more specific cause at these Boolean boundaries
 
 ### Diagnostics context
 
-Add these fields to the existing canonical diagnostics model, not a separate log:
+For request-driven refreshes, add these fields to the existing canonical
+diagnostics model, not a separate log:
 
 | Location | Field | Meaning |
 | --- | --- | --- |
 | `RequestDiagnostics` | `refresh_reason: Option<RefreshReason>` | Reason assigned before signing/sending this metadata attempt, including attempts that fail before transmission. |
 | `RequestDiagnostics` | `refresh_target: Option<RefreshTarget>` | Cache being refreshed; set together with `refresh_reason`. |
-| `DiagnosticsContextBuilder` and `DiagnosticsContext` | `refresh_reason_counts: Vec<RefreshReasonCount>` | Counts keyed by `(reason, target)`, accumulated before compaction. Each entry contains `reason`, `target`, and `attempt_count: u64`. Count attempts, not logical refresh decisions or presumed backend receipts. |
+| `DiagnosticsContextBuilder` and `DiagnosticsContext` | `refresh_reason_counts: Vec<RefreshReasonCount>` | Counts keyed by `(reason, target)`, accumulated before compaction. Each entry contains `reason`, `target`, and `attempt_count: u64`. Count fetch attempts attributed to the initiating operation, not logical refresh decisions or presumed backend receipts. |
 
 Expose read-only accessors and serialize the reason as its wire string. Preserve
 the fields in detailed JSON, request summaries, deduplicated groups, compaction
@@ -178,17 +184,26 @@ reason-count summary in summary/truncated output so compaction cannot erase all
 evidence of a refresh cause. Existing sent-status, status, endpoint, and timing
 fields describe the attempt's outcome.
 
-Return metadata diagnostics with successful and failed fetches instead of losing
-them when extracting metadata. Merge them into the initiating operation's
-`DiagnosticsContext`, including failed refreshes when recovery ultimately returns
-the original error. Preserve them across PATCH helpers, hedges, plan rebuilding,
-and dataflow node replacement. Aggregate a shared fetch's context only once per
-parent operation, using its existing context identity; joining a refresh or being
-rate-limited must not fabricate another wire attempt. Timer-driven refreshes retain
-their own context rather than attaching to an unrelated request. Keep collection
-independent of SDK emission settings; expose the additions through existing SDK
-diagnostics handlers and native diagnostics JSON without changing the existing
-native attempt-callback ABI.
+Attribute a fetch only to the operation whose fetch factory starts the network
+work. The single-flight result shared with waiters contains metadata, not fetch
+diagnostics. Return successful and failed fetch diagnostics through the owning
+operation's path, including failed refreshes when recovery returns the original
+error. Waiters do not include that fetch's attempts, charges, or reason counts.
+Cancellation of the initiating operation does not transfer ownership to a waiter.
+
+Merge the contribution once into the initiating operation's `DiagnosticsContext`.
+Preserve one owning path through PATCH helpers, hedges, plan rebuilding, and
+dataflow node replacement; do not copy the contribution into sibling contexts.
+Nested aggregation and compaction must preserve the owner's totals without
+duplicating them. This requires neither a new fetch identifier nor cross-operation
+deduplication. Being rate-limited must not fabricate a fetch attempt.
+
+Timer-driven refreshes still send the header, but retention or delivery of their
+diagnostics is outside this specification. Do not attach them to a user operation,
+including one that joins a timer-initiated fetch. For request-driven refreshes,
+keep collection independent of SDK emission settings and expose the additions
+through existing SDK diagnostics handlers and native diagnostics JSON without
+changing the existing native attempt-callback ABI.
 
 ### Driver pipeline changes
 
@@ -197,13 +212,13 @@ Paths below are relative to `azure_data_cosmos_driver/src` unless qualified.
 | Area | Planned change |
 | --- | --- |
 | `driver/pipeline/retry_evaluation.rs`, `driver/routing/location_effects.rs`, `driver/routing/location_state_store.rs` | Carry the classified reason in `RefreshAccountProperties`, including hedge-leg evaluation. Pass the descriptor through effect application, rate limiting, and the account-refresh callback; create a periodic descriptor in the background loop. Keep it local to each invocation, not in shared routing state. |
-| `driver/cosmos_driver.rs` account-fetch helpers | Pass the descriptor through the off-pipeline account fetch, local retries, alternate HTTP-version fallback, and regional fallback. Apply the header and diagnostics fields on every attempt. Initial discovery and HTTP/2 recovery probes whose metadata result is discarded remain untagged. Preserve diagnostics on successful fallback as well as terminal failure. |
+| `driver/cosmos_driver.rs` account-fetch helpers | Pass the descriptor through the off-pipeline account fetch, local retries, alternate HTTP-version fallback, and regional fallback. Apply the header on every attempt. For request-driven refreshes, return diagnostics to the initiating operation on successful fallback as well as terminal failure. Initial discovery and HTTP/2 recovery probes whose metadata result is discarded remain untagged. |
 | `driver/dataflow/{context,request,topology}.rs` and `driver/cache/partition_key_range_cache.rs` | Replace internal reasonless `ForceRefresh`/Boolean flow with a reason-bearing refresh request. Classify the original 410 before consuming the error. Carry it through `CachedTopologyProvider`, cache fetch closures, every change-feed page, and the three local cache-repair branches in the shared-mode table. Preserve metadata diagnostics through logical-key retry and split replacement nodes. `DriverRequestExecutor` currently ignores its refresh argument; keep refresh ownership in topology resolution and do not copy it onto the retried data request or cause a second refresh. |
 | `driver/pipeline/operation_pipeline.rs`, `driver/cosmos_driver.rs`, `driver/cache/container_cache.rs`, SDK `clients/offers_client.rs` | Pass the triggering status's reason into container recreation recovery from sequential, hedged, and plan-rebuild paths. Pass the offer-miss reason from the SDK seam. Carry it into the name-based metadata read and any directly dependent routing reload, retaining generation checks and single-flight behavior. |
 | SDK `clients/container_client.rs` and driver partition-range resolution entry points | Distinguish the caller's force-refresh option from the automatic retry after a missing/empty lookup. Pass `CLIENT_ROUTING_LOOKUP_MISS` through a reason-bearing internal seam for the latter, and retain refresh diagnostics for SDK dispatch. |
-| `driver/pipeline/operation_pipeline.rs`, `driver/pipeline/components.rs`, `driver/transport/transport_pipeline.rs`, `models/cosmos_headers.rs` | Carry the descriptor through internal operation overrides and `TransportRequest`. Add the canonical header-name constant and one shared emission helper, also used by off-pipeline account requests. Populate diagnostics from the same descriptor. Reserve the header for driver use; reject caller-supplied values through existing typed invalid-input errors, rather than letting custom headers override or spoof it. |
+| `driver/pipeline/operation_pipeline.rs`, `driver/pipeline/components.rs`, `driver/transport/transport_pipeline.rs`, `models/cosmos_headers.rs` | Carry the descriptor through internal operation overrides and `TransportRequest`. Add the canonical header-name constant and one shared emission helper, also used by off-pipeline account requests. Apply the driver's reason after custom headers so it takes precedence on refresh requests. Without a descriptor, preserve existing custom-header handling; do not introduce runtime rejection or a header denylist. Populate refresh diagnostics only from the typed descriptor, not caller-supplied text. |
 | `driver/transport/gateway_v2_dispatch.rs` and `driver/transport/rntbd/` | Preserve the HTTP field if refresh-bearing operations become eligible. Add binary encoding only after resolving the RNTBD open question. Do not change current Gateway 2.0 eligibility as part of this feature. |
-| `diagnostics/{diagnostics_context,compaction}.rs` and metadata result plumbing | Add the fields and aggregation described above. Surface successful metadata contexts currently discarded by fetch helpers, and retain refresh context across the existing split-path diagnostics aggregation gap. |
+| `diagnostics/{diagnostics_context,compaction}.rs` and metadata result plumbing | Add the fields and initiating-operation ownership described above. Surface successful metadata contexts currently discarded by fetch helpers through the owner-only path, without embedding diagnostics in shared cache results. Retain the owner's contribution across the existing split-path diagnostics aggregation gap. |
 
 **Reason lifetime and precedence.** The site that starts a refresh selects its
 reason. An explicit local repair decision (invalid snapshot, failed incremental
@@ -211,9 +226,10 @@ merge, or failed pinned chain) starts a new refresh with its own code; ordinary
 pagination, throttling, transport retry, protocol fallback, and regional fallback
 retain the current code. Dependent metadata reads inherit it unless they encounter
 a new refresh trigger. Previous diagnostics remain immutable. A single-flight
-fetch uses its initiating caller's reason; joiners cannot overwrite it. Do not
-store a mutable "last reason" on the driver, cache entry, or shared operation
-state, where concurrent requests or hedges could exchange reasons.
+fetch uses its initiating caller's reason and diagnostics ownership; joiners
+cannot overwrite either. Do not store a mutable "last reason" on the driver,
+cache entry, or shared operation state, where concurrent requests or hedges could
+exchange reasons.
 
 **Transport classification.** Where a transport failure actually selects a
 refresh, classify its typed source before status flattening. A transport-synthesized
@@ -227,8 +243,13 @@ emission sites requires preserving typed stage information through
 from error-message text or `RequestSentStatus` alone.
 
 Implementation coverage must assert every registered constant's exact value and
-grammar, each Rust trigger's expected header and diagnostics, and absence on
-ordinary requests. Cover pagination, local cache-repair precedence, retries and
-fallback, background refreshes, competing/joined refreshes, hedges, failed recovery,
-split-node diagnostics, compaction, and custom-header rejection. No retry or cache
-policy changes are required.
+grammar, each Rust trigger's expected header, and request-driven refresh
+diagnostics. Verify absence on ordinary requests without a caller-supplied header.
+Cover pagination, local cache-repair precedence, retries and fallback, periodic
+header emission, competing/joined refreshes, hedges, and failed recovery. Assert
+that only the initiating operation includes fetch attempts, charges, and reason
+counts, exactly once across split-node replacement, nested aggregation, and
+compaction; waiters include none, even if the initiator is cancelled or is a
+background task. Verify custom-header pass-through without a descriptor and
+driver precedence with one, without parsing custom values into refresh
+diagnostics. No retry or cache policy changes are required.
