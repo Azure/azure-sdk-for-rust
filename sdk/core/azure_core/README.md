@@ -619,7 +619,7 @@ Use `new()` with credentials for Azure, or `with_fake()` with a fake server for 
 `with_fake()` returns an error if the supplied client options already specify a transport.
 
 The example returns a model with `fake_with_model()` and an Azure error response
-with `fake_with_error()`. See [`ResponseExt`][response-ext] documentation for more
+with `fake_with_error()`. See `ResponseExt` documentation for more
 options to create responses.
 
 Fake pageable operations receive `PagerState` so they can return different responses for the initial page and continuation requests.
@@ -713,5 +713,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 [`reqwest`]: https://docs.rs/reqwest
 [`tokio`]: https://docs.rs/tokio
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/core/azure_core/src
-[response-ext]: https://docs.rs/azure_core/latest/azure_core/http/fake/trait.ResponseExt.html
 [rustup-init]: https://rust-lang.org/tools/install

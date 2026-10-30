@@ -54,7 +54,7 @@ impl Arguments {
         };
         let path = segments(request.url().path());
         let mut prefix = segments(strip_prefix.unwrap_or_default());
-        while prefix.last().is_some_and(String::is_empty) {
+        if prefix.last().is_some_and(String::is_empty) {
             prefix.pop();
         }
         let path = path
