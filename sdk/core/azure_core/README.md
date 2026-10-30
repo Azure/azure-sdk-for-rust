@@ -548,8 +548,7 @@ There can only be one async runtime set in a given process, so attempts to set t
 
 Client libraries that provide a `clients::fake` module let you test application code without credentials or network requests.
 Enable the client library's `test` and `unstable_fake` features in your test dependencies.
-`unstable_fake` enables `test` automatically, but both are shown explicitly below.
-The fake APIs are experimental and subject to change:
+The `unstable_fake` APIs are experimental and subject to change:
 
 ```toml
 [dependencies]
@@ -588,11 +587,12 @@ impl SecretServer for MySecretServer {
         _options: Option<SecretClientGetSecretOptions<'_>>,
     ) -> Result<AsyncRawResponse> {
         if secret_name != "my-secret" {
-            return Ok(AsyncRawResponse::fake_with_bytes(
+            return AsyncRawResponse::fake_with_error(
                 StatusCode::NotFound,
                 Headers::new(),
-                r#"{"error":{"code":"SecretNotFound","message":"The secret was not found."}}"#,
-            ));
+                "SecretNotFound",
+                "The secret was not found.",
+            );
         }
         let mut secret = Secret::default();
         secret.value = Some("fake value".into());
@@ -618,15 +618,12 @@ assert_eq!(details.code.as_deref(), Some("SecretNotFound"));
 Use `new()` with credentials for Azure, or `with_fake()` with a fake server for tests.
 `with_fake()` returns an error if the supplied client options already specify a transport.
 
-Import `azure_core::http::fake::ResponseExt` to create responses with
-`fake_with_model()` or `fake_with_bytes()`.
-These methods extend `Response`, `RawResponse`, `AsyncResponse`, and `AsyncRawResponse`.
-For streamed bodies, import `azure_core::http::fake::AsyncResponseExt` and use
-`AsyncRawResponse::fake_with_stream()` or `AsyncResponse::fake_with_stream()`.
-Use raw bytes or streams for payloads that can't be represented by a model.
-For Azure error responses, supply an error status and a JSON `error` object containing
-`code` and `message`, as shown above.
+The example returns a model with `fake_with_model()` and an Azure error response
+with `fake_with_error()`. See [`ResponseExt`][response-ext] documentation for more
+options to create responses.
+
 Fake pageable operations receive `PagerState` so they can return different responses for the initial page and continuation requests.
+
 Polling callbacks likewise pass `PollerState` through the request context, including continuation information.
 
 ## Troubleshooting
@@ -716,4 +713,5 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 [`reqwest`]: https://docs.rs/reqwest
 [`tokio`]: https://docs.rs/tokio
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/core/azure_core/src
+[response-ext]: https://docs.rs/azure_core/latest/azure_core/http/fake/trait.ResponseExt.html
 [rustup-init]: https://rust-lang.org/tools/install

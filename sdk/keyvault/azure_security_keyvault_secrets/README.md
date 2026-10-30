@@ -105,6 +105,7 @@ The following section provides several code snippets using a `SecretClient` like
 - [Update an existing secret](#update-an-existing-secret)
 - [Delete a secret](#delete-a-secret)
 - [List secrets](#list-secrets)
+- [Fake service responses](#fake-service-responses)
 
 ### Create a secret
 
@@ -265,6 +266,17 @@ assert_eq!(secret.value.as_deref(), Some("fake value"));
 For fields marked read-only in generated models, serialization may omit them (`skip_serializing`).
 Use `AsyncRawResponse::fake_with_bytes()` with raw JSON if a test must return those fields.
 
+### Fake service responses
+
+The experimental [fake server example] lists two secrets,
+retrieves their values, and simulates a service error without credentials or network access.
+Implement only the `SecretServer` operations your application needs; the client uses its
+normal response and error handling.
+
+```sh
+cargo run -p azure_security_keyvault_secrets --example secret_client_fake --features test,unstable_fake
+```
+
 ## Troubleshooting
 
 ### General
@@ -321,3 +333,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
 [access control]: https://learn.microsoft.com/azure/key-vault/general/assign-access-policy
 [RBAC]: https://learn.microsoft.com/azure/key-vault/general/rbac-guide
+[fake server example]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_secrets/examples/secret_client_fake.rs

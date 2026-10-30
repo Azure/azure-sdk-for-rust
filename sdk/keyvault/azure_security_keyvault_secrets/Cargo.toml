@@ -17,14 +17,13 @@ exclude.workspace = true
 [features]
 default = ["azure_core/default"]
 test = ["azure_core/test"]
-unstable_fake = ["test", "azure_core/unstable_fake", "dep:percent-encoding"]
+unstable_fake = ["test", "azure_core/unstable_fake"]
 
 [dependencies]
 async-lock = { workspace = true }
 async-trait = { workspace = true }
 azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.2", default-features = false }
 futures = { workspace = true }
-percent-encoding = { workspace = true, optional = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 time = { workspace = true }
@@ -45,3 +44,7 @@ rustc_version.workspace = true
 
 [lints]
 workspace = true
+
+[[example]]
+name = "secret_client_fake"
+required-features = ["test", "unstable_fake"]

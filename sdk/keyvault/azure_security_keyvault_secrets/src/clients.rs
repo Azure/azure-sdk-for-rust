@@ -3,12 +3,10 @@
 
 //! Clients used to communicate with the service.
 use crate::authorizer::KeyVaultAuthorizer;
-use crate::generated::clients::DEFAULT_API_VERSION;
 #[cfg(all(feature = "test", feature = "unstable_fake"))]
-#[cfg_attr(docsrs, doc(cfg(all(feature = "test", feature = "unstable_fake"))))]
-pub mod fake;
-#[cfg(not(all(feature = "test", feature = "unstable_fake")))]
+pub use crate::generated::clients::fake;
 pub use crate::generated::clients::SecretClient;
+use crate::generated::clients::DEFAULT_API_VERSION;
 use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
@@ -18,8 +16,6 @@ use azure_core::{
     },
     tracing, Result,
 };
-#[cfg(all(feature = "test", feature = "unstable_fake"))]
-pub use fake::SecretClient;
 use std::sync::Arc;
 
 /// Options used when creating a [`SecretClient`]
@@ -90,9 +86,13 @@ impl crate::generated::clients::SecretClient {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Arc, Result, SecretClient, SecretClientOptions};
+    use crate::models::SecretClientListSecretPropertiesOptions;
     use azure_core::{
-        http::{headers::Headers, AsyncRawResponse, ClientOptions, StatusCode, Transport},
+        http::{
+            headers::Headers, pager::PagerOptions, AsyncRawResponse, ClientOptions, StatusCode,
+            Transport,
+        },
         Bytes,
     };
     use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
@@ -135,6 +135,7 @@ mod tests {
             pager.continuation().map(AsRef::as_ref),
             Some("https://example.vault.azure.net/secrets?api-version=2025-07-01&skiptoken=page-2")
         );
+        let continuation = pager.continuation().cloned();
 
         let page = page.into_model()?;
         assert_eq!(
@@ -142,6 +143,18 @@ mod tests {
             Some("/secrets?api-version=2025-07-01&skiptoken=page-2")
         );
         assert!(page.value.is_empty());
+        assert!(pager.try_next().await?.is_some());
+
+        let mut resumed = client
+            .list_secret_properties(Some(SecretClientListSecretPropertiesOptions {
+                method_options: PagerOptions {
+                    continuation,
+                    ..Default::default()
+                },
+                ..Default::default()
+            }))?
+            .into_pages();
+        assert!(resumed.try_next().await?.is_some());
 
         Ok(())
     }

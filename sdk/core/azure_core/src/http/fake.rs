@@ -10,41 +10,130 @@
 //! bytes, and [`AsyncResponseExt`] to create responses from streams.
 
 use crate::{
+    error::ErrorKind,
+    fmt::SafeDebug,
     http::{
         headers::{Headers, CONTENT_TYPE},
         response::PinnedStream,
-        AsyncRawResponse, AsyncResponse, Context, RawResponse, Response, StatusCode,
+        AsyncRawResponse, AsyncResponse, Body, Context, RawResponse, Request, RequestContent,
+        Response, StatusCode,
     },
-    json, Bytes, Result,
+    json,
+    tracing::PublicApiInstrumentationInformation,
+    Bytes, Error, Result,
 };
-use serde::Serialize;
+use futures::io::AsyncReadExt as _;
+use percent_encoding::percent_decode_str;
+use serde::{de::DeserializeOwned, Serialize};
+use std::collections::BTreeMap;
 
-/// Identifies the client operation being sent through the HTTP pipeline.
-///
-/// Client libraries insert the TypeSpec operation name into the request
-/// [`Context`] when their `test` and `unstable_fake` features are enabled.
-/// Fake servers use this value for routing independently of tracing.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct ApiName(&'static str);
+/// Decoded arguments from a fake HTTP request.
+#[derive(SafeDebug)]
+pub struct Arguments {
+    path: Vec<String>,
+    query: Query,
+}
 
-impl From<&'static str> for ApiName {
-    fn from(value: &'static str) -> Self {
-        Self(value)
+impl Arguments {
+    /// Extracts arguments, optionally stripping an encoded endpoint path prefix.
+    ///
+    /// Prefixes are stripped at segment boundaries. Path segments are decoded
+    /// individually, preserving encoded slashes within a segment.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the prefix does not match or a path segment is not valid UTF-8.
+    pub fn from_request(request: &Request, strip_prefix: Option<&str>) -> Self {
+        let segments = |path: &str| -> Vec<String> {
+            let path = path.trim_start_matches('/');
+            if path.is_empty() {
+                Vec::new()
+            } else {
+                path.split('/').map(str::to_owned).collect()
+            }
+        };
+        let path = segments(request.url().path());
+        let mut prefix = segments(strip_prefix.unwrap_or_default());
+        while prefix.last().is_some_and(String::is_empty) {
+            prefix.pop();
+        }
+        let path = path
+            .strip_prefix(prefix.as_slice())
+            .expect("fake request path must start with the endpoint prefix")
+            .iter()
+            .map(|segment| {
+                percent_decode_str(segment)
+                    .decode_utf8()
+                    .expect("fake request path segment must be valid UTF-8")
+                    .into_owned()
+            })
+            .collect();
+        let mut query = BTreeMap::<String, Vec<String>>::new();
+        for (name, value) in request.url().query_pairs() {
+            query
+                .entry(name.into_owned())
+                .or_default()
+                .push(value.into_owned());
+        }
+        Self {
+            path,
+            query: Query(query),
+        }
+    }
+
+    /// Returns decoded relative path segments, including empty trailing segments.
+    pub fn path_segments(&self) -> impl Iterator<Item = &str> {
+        self.path.iter().map(String::as_str)
+    }
+
+    /// Returns the decoded query parameters.
+    pub fn query(&self) -> &Query {
+        &self.query
     }
 }
 
-impl AsRef<str> for ApiName {
-    fn as_ref(&self) -> &str {
-        self.0
+/// Case-sensitive, decoded query parameters, including repeated values.
+///
+/// Values for each name retain their order in the request URL. URL form decoding
+/// treats `+` as a space.
+#[derive(SafeDebug)]
+pub struct Query(BTreeMap<String, Vec<String>>);
+
+impl Query {
+    /// Returns all decoded values for `name`, or an empty iterator if absent.
+    pub fn get(&self, name: &str) -> impl Iterator<Item = &str> {
+        self.0.get(name).into_iter().flatten().map(String::as_str)
     }
 }
 
-/// Adds an operation name to the request context for fake server routing.
+/// Reads and validates a fake request's JSON body as request content.
 ///
-/// Prefer [`operation_name!`](crate::http::operation_name) when writing client
-/// operations so the call is a no-op unless fake support is enabled.
-pub fn operation_name(name: &'static str, context: &mut Context<'_>) {
-    context.insert(ApiName::from(name));
+/// Reads streams from their current position without resetting them.
+///
+/// # Errors
+///
+/// Returns an error if reading the body or deserializing it as `T` fails.
+pub async fn request_content<T: DeserializeOwned>(request: &Request) -> Result<RequestContent<T>> {
+    let bytes = match request.body() {
+        Body::Bytes(bytes) => bytes.clone(),
+        Body::SeekableStream(stream) => {
+            let mut stream = stream.clone();
+            let mut bytes = Vec::new();
+            stream.read_to_end(&mut bytes).await.map_err(|err| {
+                Error::with_error(ErrorKind::Io, err, "failed to read fake request body")
+            })?;
+            bytes.into()
+        }
+    };
+    json::from_json::<_, T>(&bytes)?;
+    Ok(RequestContent::from(bytes.to_vec()))
+}
+
+/// Returns the borrowed API name from the context, or `None` if absent.
+pub fn get_api_name<'a>(context: &'a Context<'_>) -> Option<&'a str> {
+    context
+        .value::<PublicApiInstrumentationInformation>()
+        .map(PublicApiInstrumentationInformation::api_name)
 }
 
 /// Extension methods for creating fake HTTP responses.
@@ -52,6 +141,29 @@ pub fn operation_name(name: &'static str, context: &mut Context<'_>) {
 /// Implemented for [`Response`], [`RawResponse`], [`AsyncResponse`], and [`AsyncRawResponse`].
 /// These methods preserve the supplied status without checking whether it indicates success.
 pub trait ResponseExt: Sized {
+    /// Creates a JSON error response containing a service error code and message.
+    ///
+    /// Preserves the supplied status and headers. Adds `content-type:
+    /// application/json` only if no content type is specified.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if serializing the error body fails.
+    fn fake_with_error(
+        status: StatusCode,
+        headers: Headers,
+        code: &str,
+        message: &str,
+    ) -> Result<Self> {
+        Self::fake_with_model(
+            status,
+            headers,
+            serde_json::json!({
+                "error": { "code": code, "message": message },
+            }),
+        )
+    }
+
     /// Creates a fake response from bytes without changing the status or headers.
     fn fake_with_bytes(status: StatusCode, headers: Headers, bytes: impl Into<Bytes>) -> Self;
 
@@ -123,161 +235,4 @@ impl<T> AsyncResponseExt for AsyncResponse<T> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{ApiName, AsyncResponseExt as _, ResponseExt as _};
-    use crate::{
-        error::{check_success, ErrorKind, ErrorResponse},
-        http::{
-            headers::{HeaderName, Headers, CONTENT_TYPE, ERROR_CODE},
-            pager::PagerOptions,
-            AsyncRawResponse, AsyncResponse, ClientMethodOptions, Context, RawResponse, Response,
-            StatusCode,
-        },
-        json, Bytes, Error, Result,
-    };
-    use futures::stream;
-    use std::collections::{HashMap, HashSet};
-
-    #[test]
-    fn api_name_in_context() {
-        let name = ApiName::from("KeyVault.getSecret");
-        let context = Context::new().with_value(name);
-        assert_eq!(context.value::<ApiName>(), Some(&name));
-        assert_eq!(name.as_ref(), "KeyVault.getSecret");
-        assert!(HashSet::from([name]).contains(&name));
-    }
-
-    #[test]
-    fn operation_name_supports_method_and_pager_options() {
-        let mut options = ClientMethodOptions {
-            context: Context::new().with_value(42u32),
-        };
-        crate::http::operation_name!("KeyVault.getSecret", &mut options);
-        assert_eq!(
-            options.context.value::<ApiName>(),
-            Some(&ApiName::from("KeyVault.getSecret"))
-        );
-        assert_eq!(options.context.value::<u32>(), Some(&42));
-        let mut options = PagerOptions::default();
-        crate::http::operation_name!("KeyVault.getSecrets", &mut options);
-        assert_eq!(
-            options.context.value::<ApiName>(),
-            Some(&ApiName::from("KeyVault.getSecrets"))
-        );
-    }
-
-    #[tokio::test]
-    async fn model_response() -> Result<()> {
-        let mut headers = Headers::new();
-        headers.insert("x-test", "example");
-        let model = HashMap::from([("value", "fake secret")]);
-        let response = AsyncRawResponse::fake_with_model(StatusCode::Created, headers, &model)?
-            .try_into_raw_response()
-            .await?;
-        assert_eq!(response.status(), StatusCode::Created);
-        assert_eq!(
-            response.headers().get_str(&CONTENT_TYPE)?,
-            "application/json"
-        );
-        assert_eq!(
-            response
-                .headers()
-                .get_str(&HeaderName::from_static("x-test"))?,
-            "example"
-        );
-        let actual: HashMap<String, String> = json::from_json(response.body())?;
-        assert_eq!(actual.get("value").map(String::as_str), Some("fake secret"));
-        Ok(())
-    }
-
-    #[test]
-    fn preserves_content_type_and_serialization_errors() -> Result<()> {
-        let mut headers = Headers::new();
-        headers.insert(CONTENT_TYPE, "application/problem+json");
-        let response = RawResponse::fake_with_model(StatusCode::BadRequest, headers, "example")?;
-        assert_eq!(
-            response.headers().get_str(&CONTENT_TYPE)?,
-            "application/problem+json"
-        );
-        let invalid = HashMap::from([(vec![1, 2], "invalid JSON key")]);
-        assert!(RawResponse::fake_with_model(StatusCode::Ok, Headers::new(), &invalid).is_err());
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn raw_and_streamed_responses() -> Result<()> {
-        let response = AsyncRawResponse::fake_with_bytes(
-            StatusCode::NotFound,
-            Headers::new(),
-            Bytes::from_static(b"not JSON"),
-        );
-        assert_eq!(response.status(), StatusCode::NotFound);
-        assert_eq!(response.into_body().collect().await?, "not JSON");
-
-        let response = AsyncResponse::<()>::fake_with_stream(
-            StatusCode::Ok,
-            Headers::new(),
-            Box::pin(stream::iter([
-                Ok(Bytes::from_static(b"first ")),
-                Ok(Bytes::from_static(b"second")),
-            ])),
-        );
-        assert_eq!(response.into_body().collect().await?, "first second");
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn typed_responses() -> Result<()> {
-        let model = HashMap::from([("value".to_owned(), "fake secret".to_owned())]);
-        let response: Response<HashMap<String, String>> =
-            Response::fake_with_model(StatusCode::Ok, Headers::new(), &model)?;
-        assert_eq!(response.into_model()?, model);
-
-        let response: AsyncResponse =
-            AsyncResponse::fake_with_model(StatusCode::Ok, Headers::new(), &model)?;
-        let actual: HashMap<String, String> =
-            json::from_json(response.into_body().collect().await?)?;
-        assert_eq!(actual, model);
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn azure_error_response() -> Result<()> {
-        let message = "A \"secret\" was not found.\nTry another name.";
-        let mut headers = Headers::new();
-        headers.insert("x-test", "example");
-        headers.insert(ERROR_CODE, "SecretNotFound");
-        let response = AsyncRawResponse::fake_with_model(
-            StatusCode::NotFound,
-            headers,
-            serde_json::json!({"error": {"code": "SecretNotFound", "message": message}}),
-        )?;
-        assert_eq!(response.headers().get_str(&ERROR_CODE)?, "SecretNotFound");
-        assert_eq!(
-            response
-                .headers()
-                .get_str(&HeaderName::from_static("x-test"))?,
-            "example"
-        );
-        let err = check_success(response, None).await.unwrap_err();
-        assert_eq!(err.http_status(), Some(StatusCode::NotFound));
-        assert!(matches!(
-            err.kind(),
-            ErrorKind::HttpResponse { error_code: Some(code), .. } if code == "SecretNotFound"
-        ));
-        let detail = ErrorResponse::try_from(err)?.error.unwrap();
-        assert_eq!(detail.message.as_deref(), Some(message));
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn stream_errors() {
-        let response = AsyncRawResponse::fake_with_stream(
-            StatusCode::Ok,
-            Headers::new(),
-            Box::pin(stream::once(async { Err(Error::from(ErrorKind::Io)) })),
-        );
-        let err = response.into_body().collect().await.unwrap_err();
-        assert!(matches!(err.kind(), ErrorKind::Io));
-    }
-}
+mod tests;

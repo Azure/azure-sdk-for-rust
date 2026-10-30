@@ -61,6 +61,12 @@ impl PublicApiInstrumentationInformation {
             attributes,
         }
     }
+
+    /// Gets the name of the API being instrumented.
+    #[cfg(all(feature = "test", feature = "unstable_fake"))]
+    pub(crate) fn api_name(&self) -> &str {
+        &self.api_name
+    }
 }
 
 /// Sets distributed tracing information for HTTP requests.
