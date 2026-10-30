@@ -466,6 +466,11 @@ pub mod http {
         pub instrumentation: InstrumentationOptions,
         pub logging: LoggingOptions,
         pub cloud: Option<std::sync::Arc<crate::cloud::CloudConfiguration>>,
+        #[cfg(feature = "test")]
+        pub allow_insecure_connections: bool,
+    }
+    impl From<&ClientOptions> for BearerTokenAuthorizationOptions {
+        fn from(_options: &ClientOptions) -> Self;
     }
     #[derive(Clone, Debug)]
     pub struct Context<'a> {
@@ -1277,6 +1282,14 @@ pub mod http {
         }
         pub type PolicyResult = typespec::error::Result<crate::http::AsyncRawResponse>;
         pub mod auth {
+            #[derive(Clone, Debug, Default)]
+            pub struct BearerTokenAuthorizationOptions {
+                #[cfg(feature = "test")]
+                pub allow_insecure_connections: bool,
+            }
+            impl From<&ClientOptions> for BearerTokenAuthorizationOptions {
+                fn from(_options: &ClientOptions) -> Self;
+            }
             #[derive(Clone, Debug)]
             pub struct BearerTokenAuthorizationPolicy {
             }
@@ -1284,6 +1297,7 @@ pub mod http {
                 pub fn new<A, B>(credential: Arc<dyn TokenCredential>, scopes: A) -> Self where A: IntoIterator<Item = B>, B: Into<String>;
                 pub fn with_on_challenge(self, on_challenge: Arc<dyn OnChallenge>) -> Self;
                 pub fn with_on_request(self, on_request: Arc<dyn OnRequest>) -> Self;
+                pub fn with_options(self, _options: BearerTokenAuthorizationOptions) -> Self;
             }
             #[async_trait]
             impl Policy for BearerTokenAuthorizationPolicy {

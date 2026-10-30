@@ -58,6 +58,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 - `reqwest_gzip` (default): enables gzip compression for `reqwest`.
 - `reqwest_rustls` (default): enables `reqwest`'s `rustls` feature, which uses `aws-lc-rs`.
 - `resource_manager`: enables features specific to Azure Resource Manager.
+- `test`: enables extra tracing that may contain PII as well as other test facilities for testing client libraries.
 - `tokio` (default): enables and sets `tokio` as the default async runtime.
 - `xml`: enables XML support.
 
