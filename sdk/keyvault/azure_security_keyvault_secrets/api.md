@@ -8,6 +8,8 @@
 
 - `default`
   - `azure_core/default`
+- `test`
+- `unstable_fake`
 
 ```rust
 #![crate_name = "azure_security_keyvault_secrets"]
@@ -41,9 +43,6 @@ pub mod clients {
     pub struct SecretClient {
     }
     impl SecretClient {
-        pub fn new(endpoint: &str, credential: Arc<dyn TokenCredential>, options: Option<SecretClientOptions>) -> Result<Self>;
-    }
-    impl SecretClient {
         pub async fn backup_secret(&self, secret_name: &str, options: Option<SecretClientBackupSecretOptions<'_>>) -> Result<Response<BackupSecretResult>>;
         pub async fn delete_secret(&self, secret_name: &str, options: Option<SecretClientDeleteSecretOptions<'_>>) -> Result<Response<DeletedSecret>>;
         pub fn endpoint(&self) -> &Url;
@@ -58,6 +57,13 @@ pub mod clients {
         pub async fn set_secret(&self, secret_name: &str, parameters: RequestContent<SetSecretParameters>, options: Option<SecretClientSetSecretOptions<'_>>) -> Result<Response<Secret>>;
         pub async fn update_secret_properties(&self, secret_name: &str, parameters: RequestContent<UpdateSecretPropertiesParameters>, options: Option<SecretClientUpdateSecretPropertiesOptions<'_>>) -> Result<Response<Secret>>;
     }
+    impl crate::generated::clients::SecretClient {
+        pub fn new(endpoint: &str, credential: Arc<dyn TokenCredential>, options: Option<SecretClientOptions>) -> Result<Self>;
+    }
+    impl crate::generated::clients::SecretClient {
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        pub fn with_fake<T>(endpoint: &str, server: Arc<T>, options: Option<SecretClientOptions>) -> Result<Self> where T: SecretServer + ?Sized + 'static;
+    }
     #[derive(Clone, Debug)]
     pub struct SecretClientOptions {
         pub api_version: String,
@@ -66,6 +72,24 @@ pub mod clients {
     }
     impl Default for SecretClientOptions {
         fn default() -> Self;
+    }
+    #[cfg(all(feature = "test", feature = "unstable_fake"))]
+    pub mod fake {
+        #[async_trait]
+        pub trait SecretServer: Send + Sync {
+            async fn backup_secret(&self, _secret_name: &str, _options: Option<SecretClientBackupSecretOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn delete_secret(&self, _secret_name: &str, _options: Option<SecretClientDeleteSecretOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get_deleted_secret(&self, _secret_name: &str, _options: Option<SecretClientGetDeletedSecretOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get_secret(&self, _secret_name: &str, _options: Option<SecretClientGetSecretOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list_deleted_secret_properties(&self, _state: PagerState, _options: Option<SecretClientListDeletedSecretPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list_secret_properties(&self, _state: PagerState, _options: Option<SecretClientListSecretPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list_secret_properties_versions(&self, _secret_name: &str, _state: PagerState, _options: Option<SecretClientListSecretPropertiesVersionsOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn purge_deleted_secret(&self, _secret_name: &str, _options: Option<SecretClientPurgeDeletedSecretOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn recover_deleted_secret(&self, _secret_name: &str, _options: Option<SecretClientRecoverDeletedSecretOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn restore_secret(&self, _parameters: RequestContent<RestoreSecretParameters>, _options: Option<SecretClientRestoreSecretOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn set_secret(&self, _secret_name: &str, _parameters: RequestContent<SetSecretParameters>, _options: Option<SecretClientSetSecretOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn update_secret_properties(&self, _secret_name: &str, _parameters: RequestContent<UpdateSecretPropertiesParameters>, _options: Option<SecretClientUpdateSecretPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
+        }
     }
 }
 pub mod models {

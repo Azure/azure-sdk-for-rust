@@ -3,6 +3,8 @@
 
 //! Types and functions for building HTTP clients.
 
+#[cfg(all(feature = "test", feature = "unstable_fake"))]
+pub mod fake;
 pub mod headers;
 mod models;
 mod options;

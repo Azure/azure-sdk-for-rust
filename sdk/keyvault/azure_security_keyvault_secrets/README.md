@@ -18,9 +18,9 @@ cargo add azure_security_keyvault_secrets
 
 ### Prerequisites
 
-* An [Azure subscription].
-* An existing Azure Key Vault. If you need to create an Azure Key Vault, you can use the Azure Portal or [Azure CLI].
-* Authorization to an existing Azure Key Vault using either [RBAC] (recommended) or [access control].
+- An [Azure subscription].
+- An existing Azure Key Vault. If you need to create an Azure Key Vault, you can use the Azure Portal or [Azure CLI].
+- Authorization to an existing Azure Key Vault using either [RBAC] (recommended) or [access control].
 
 If you use the Azure CLI, replace `<your-resource-group-name>` and `<your-key-vault-name>` with your own, unique names:
 
@@ -77,6 +77,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+## Features
+
+- `test`: enables test support.
+- `unstable_fake`: enables experimental fake server transports and the `test` feature. These APIs are subject to change.
+
 ## Key concepts
 
 ### Secret
@@ -95,11 +100,12 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 The following section provides several code snippets using a `SecretClient` like we [instantiated above](#instantiate-a-client):
 
-* [Create a secret](#create-a-secret)
-* [Retrieve a secret](#retrieve-a-secret)
-* [Update an existing secret](#update-an-existing-secret)
-* [Delete a secret](#delete-a-secret)
-* [List secrets](#list-secrets)
+- [Create a secret](#create-a-secret)
+- [Retrieve a secret](#retrieve-a-secret)
+- [Update an existing secret](#update-an-existing-secret)
+- [Delete a secret](#delete-a-secret)
+- [List secrets](#list-secrets)
+- [Fake service responses](#fake-service-responses)
 
 ### Create a secret
 
@@ -200,6 +206,77 @@ while let Some(secret) = pager.try_next().await? {
 }
 ```
 
+## Testing with fakes
+
+Enable the crate's `test` and `unstable_fake` features in your test dependencies.
+`unstable_fake` enables `test` automatically, but both are shown explicitly below.
+The fake APIs are experimental and subject to change:
+
+```toml
+[dependencies]
+azure_security_keyvault_secrets = "1"
+
+[dev-dependencies]
+azure_core = { version = "1", features = ["test", "unstable_fake"] }
+azure_security_keyvault_secrets = { version = "1", features = ["test", "unstable_fake"] }
+async-trait = "0.1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+```
+
+Then implement just the fake server operations your test needs:
+
+```rust ignore testing_with_fakes
+use azure_core::{
+    http::{fake::ResponseExt as _, headers::Headers, AsyncRawResponse, StatusCode},
+    Result,
+};
+use azure_security_keyvault_secrets::{
+    clients::fake::SecretServer,
+    models::{Secret, SecretClientGetSecretOptions},
+    SecretClient,
+};
+use std::sync::Arc;
+
+#[derive(Debug)]
+struct FakeSecretServer;
+
+#[async_trait::async_trait]
+impl SecretServer for FakeSecretServer {
+    async fn get_secret(
+        &self,
+        secret_name: &str,
+        _options: Option<SecretClientGetSecretOptions<'_>>,
+    ) -> Result<AsyncRawResponse> {
+        assert_eq!(secret_name, "my-secret");
+        let mut secret = Secret::default();
+        secret.value = Some("fake value".to_string());
+        AsyncRawResponse::fake_with_model(StatusCode::Ok, Headers::new(), secret)
+    }
+}
+
+let client = SecretClient::with_fake(
+    "https://my-vault.vault.azure.net",
+    Arc::new(FakeSecretServer),
+    None,
+)?;
+let secret = client.get_secret("my-secret", None).await?.into_model()?;
+assert_eq!(secret.value.as_deref(), Some("fake value"));
+```
+
+For fields marked read-only in generated models, serialization may omit them (`skip_serializing`).
+Use `AsyncRawResponse::fake_with_bytes()` with raw JSON if a test must return those fields.
+
+### Fake service responses
+
+The experimental [fake server example] lists two secrets,
+retrieves their values, and simulates a service error without credentials or network access.
+Implement only the `SecretServer` operations your application needs; the client uses its
+normal response and error handling.
+
+```sh
+cargo run -p azure_security_keyvault_secrets --example secret_client_fake --features test,unstable_fake
+```
+
 ## Troubleshooting
 
 ### General
@@ -256,3 +333,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
 [access control]: https://learn.microsoft.com/azure/key-vault/general/assign-access-policy
 [RBAC]: https://learn.microsoft.com/azure/key-vault/general/rbac-guide
+[fake server example]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_secrets/examples/secret_client_fake.rs

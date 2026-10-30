@@ -388,6 +388,7 @@ dependencies = [
  "include-file",
  "json-patch",
  "openssl",
+ "percent-encoding",
  "pin-project",
  "reqwest",
  "rustc_version",
