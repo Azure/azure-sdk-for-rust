@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added ranked full-text and weighted text/vector hybrid search, with per-query `FullTextScoreScope` and bounded buffered results. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
+
 ### Breaking Changes
 
 - Resource-name validation is now enabled by default for request paths and item names supplied to Create, Upsert, transactional batch, and distributed transaction operations; use `CosmosClientBuilder::with_resource_name_validation(false)` only when compatibility requires service-accepted names that are unsafe for point addressing. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))

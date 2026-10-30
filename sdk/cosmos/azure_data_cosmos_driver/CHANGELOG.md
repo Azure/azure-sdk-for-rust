@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `FullTextScoreScope` and client-side ranked full-text and weighted hybrid query execution with bounded result windows. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
+
 ### Breaking Changes
 
 - Resource-name validation is now enabled by default for request paths and item names supplied to Create, Upsert, transactional batch, and distributed transaction operations; use `DriverOptionsBuilder::with_resource_name_validation(false)` only when compatibility requires service-accepted names that are unsafe for point addressing. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
