@@ -22,6 +22,7 @@
 - `reqwest_rustls`
 - `resource_manager`
 - `tokio`
+- `unstable_fake`
 - `xml`
 
 ```rust

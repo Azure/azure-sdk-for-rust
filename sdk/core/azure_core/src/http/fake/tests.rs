@@ -536,6 +536,23 @@ fn decodes_arguments_relative_to_endpoint() -> Result<()> {
 }
 
 #[test]
+fn preserves_empty_endpoint_segments() -> Result<()> {
+    for path in ["/base", "/base/", "/base//", "/base///"] {
+        let mut endpoint: Url = format!("https://example.com{path}").parse()?;
+        let prefix = endpoint.path().to_owned();
+        endpoint.append_path("/secrets/name/");
+        let request = Request::new(endpoint, Method::Get);
+        let arguments = Arguments::from_request(&request, Some(&prefix));
+        assert_eq!(
+            arguments.path_segments().collect::<Vec<_>>(),
+            ["secrets", "name", ""],
+            "endpoint prefix: {prefix}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
 fn preserves_root_trailing_segments_and_decoded_duplicate_names() -> Result<()> {
     let request = Request::new(
         "https://example.com/secrets/?value=1&%76alue=2".parse()?,

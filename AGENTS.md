@@ -146,6 +146,7 @@ You are an expert Rust programmer. You write safe, efficient, maintainable, and 
 - Document all public APIs using a concise summary, followed by a blank line, then concise details about the API.
 - Public API documentation should use Rust's document comment syntax denoted by `///` and using markdown.
 - In README markdown files, use ` ```rust no_run` for examples with placeholders.
+- For publishable crates under `sdk/`, add `[package.metadata.docs.rs]` with `all-features = true`, especially when there are multiple features. Skip `publish = false` crates and preserve existing explicit docs.rs feature selections.
 
 ### Dependencies
 
