@@ -3340,8 +3340,14 @@ mod tests {
 
     #[tokio::test]
     async fn aggregate_pipeline_merges_value_and_alias_only_plans() -> crate::error::Result<()> {
-        for value_projection in [true, false] {
+        for (value_projection, distinct_type) in [
+            (true, DistinctType::None),
+            (false, DistinctType::None),
+            (true, DistinctType::Unordered),
+            (false, DistinctType::Unordered),
+        ] {
             let mut info = QueryInfo {
+                distinct_type,
                 has_select_value: value_projection,
                 rewritten_query: Some("SELECT VALUE [{\"item\": COUNT(1)}] FROM c".into()),
                 ..Default::default()
@@ -3366,6 +3372,7 @@ mod tests {
                 query_info: Some(info),
                 ..plan_with_ranges(vec![qr("", "FF")])
             };
+            validate_buffered_query(&plan, 0)?;
             let operation = Arc::new(
                 CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
                     .with_body(
@@ -3474,43 +3481,46 @@ mod tests {
     #[tokio::test]
     async fn group_by_pipeline_applies_top_after_combining_partition_partials(
     ) -> crate::error::Result<()> {
-        let plan = QueryPlan {
-            query_info: Some(QueryInfo {
-                top: Some(1),
-                group_by_expressions: vec!["c.kind".into()],
-                group_by_aliases: vec!["kind".into(), "total".into()],
-                aggregates: vec!["Count".into()],
-                group_by_alias_to_aggregate_type: [
-                    ("kind".into(), serde_json::Value::Null),
-                    ("total".into(), serde_json::json!("Count")),
-                ]
-                .into(),
-                rewritten_query: Some("SELECT c.kind, COUNT(1) FROM c GROUP BY c.kind".into()),
-                ..Default::default()
-            }),
-            ..plan_with_ranges(vec![qr("", "FF")])
-        };
-        let operation = Arc::new(cross_partition_query_operation());
-        let mut topology =
-            MockTopologyProvider::new(vec![Ok(vec![rr("", "80", "0")?, rr("80", "FF", "1")?])]);
-        let mut pipeline =
-            build_advanced_query_pipeline(&plan, &mut topology, &operation, None).await?;
-        let mut executor = MockRequestExecutor::new(vec![
+        for distinct_type in [DistinctType::None, DistinctType::Unordered] {
+            let plan = QueryPlan {
+                query_info: Some(QueryInfo {
+                    distinct_type,
+                    top: Some(1),
+                    group_by_expressions: vec!["c.kind".into()],
+                    group_by_aliases: vec!["kind".into(), "total".into()],
+                    aggregates: vec!["Count".into()],
+                    group_by_alias_to_aggregate_type: [
+                        ("kind".into(), serde_json::Value::Null),
+                        ("total".into(), serde_json::json!("Count")),
+                    ]
+                    .into(),
+                    rewritten_query: Some("SELECT c.kind, COUNT(1) FROM c GROUP BY c.kind".into()),
+                    ..Default::default()
+                }),
+                ..plan_with_ranges(vec![qr("", "FF")])
+            };
+            let operation = Arc::new(cross_partition_query_operation());
+            let mut topology =
+                MockTopologyProvider::new(vec![Ok(vec![rr("", "80", "0")?, rr("80", "FF", "1")?])]);
+            let mut pipeline =
+                build_advanced_query_pipeline(&plan, &mut topology, &operation, None).await?;
+            let mut executor = MockRequestExecutor::new(vec![
             Ok(response(br#"{"Documents":[{"groupByItems":[{"item":"a"}],"payload":{"kind":"a","total":{"item":1}}}]}"#)),
             Ok(response(br#"{"Documents":[{"groupByItems":[{"item":"a"}],"payload":{"kind":"a","total":{"item":2}}},{"groupByItems":[{"item":"b"}],"payload":{"kind":"b","total":{"item":4}}}]}"#)),
         ]);
-        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
-        let page = pipeline.next_page(&mut context).await?.unwrap();
-        let ResponseBody::Items(items) = page.body() else {
-            panic!("expected reduced items");
-        };
-        assert_eq!(items.len(), 1);
-        assert_eq!(
-            serde_json::from_slice::<serde_json::Value>(&items[0]).unwrap(),
-            serde_json::json!({"kind":"a","total":3})
-        );
-        assert!(pipeline.next_page(&mut context).await?.is_none());
-        assert_eq!(executor.query_bodies.len(), 2);
+            let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+            let page = pipeline.next_page(&mut context).await?.unwrap();
+            let ResponseBody::Items(items) = page.body() else {
+                panic!("expected reduced items");
+            };
+            assert_eq!(items.len(), 1);
+            assert_eq!(
+                serde_json::from_slice::<serde_json::Value>(&items[0]).unwrap(),
+                serde_json::json!({"kind":"a","total":3})
+            );
+            assert!(pipeline.next_page(&mut context).await?.is_none());
+            assert_eq!(executor.query_bodies.len(), 2);
+        }
         Ok(())
     }
 
