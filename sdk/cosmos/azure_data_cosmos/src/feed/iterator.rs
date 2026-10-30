@@ -321,6 +321,9 @@ impl<T: Send + DeserializeOwned + 'static> QueryPageIterator<T> {
     ///
     /// Returns an error if a page fetch is currently in flight (the plan
     /// state is being mutated and cannot be safely snapshotted).
+    /// Also returns an error when the query's current client-side stage cannot be
+    /// resumed, including aggregates, GROUP BY, and buffered unordered DISTINCT.
+    /// The iterator remains usable in process after a snapshot fails.
     pub fn to_continuation_token(&self) -> crate::Result<ContinuationToken> {
         match &self.source {
             PageSource::Live(state) => state.to_continuation_token(),

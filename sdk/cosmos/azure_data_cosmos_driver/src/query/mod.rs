@@ -28,9 +28,8 @@ pub(crate) use parser::parse;
 /// advertises to the Cosmos DB Gateway via
 /// `x-ms-cosmos-supported-query-features`.
 ///
-/// Advertises `Distinct,MultipleOrderBy,NonStreamingOrderBy,OffsetAndLimit,OrderBy,Top`.
-/// The production
-/// pipeline supports streaming single- and multi-column `ORDER BY` rewrites
+/// The production pipeline supports ordinary aggregate and GROUP BY partials,
+/// globally deduplicated distinct counts, streaming single- and multi-column `ORDER BY` rewrites
 /// (`OrderBy,MultipleOrderBy`) and the result-window rewrite shapes
 /// `OffsetAndLimit,Top` through [`driver::dataflow::SkipTake`]. Advertising
 /// these lets the Gateway return the per-partition rewritten query the
@@ -38,8 +37,7 @@ pub(crate) use parser::parse;
 /// and `ORDER BY … TOP` queries. `NonStreamingOrderBy` enables finite-window
 /// plans that require the fully buffered ordered merge pipeline.
 ///
-/// Other advanced rewrite shapes (Aggregate, CompositeAggregate, CountIf,
-/// DCount, GroupBy, HybridSearch, MultipleAggregates, NonValueAggregate,
+/// Other advanced rewrite shapes (CompositeAggregate, CountIf, HybridSearch,
 /// WeightedRankFusion) remain
 /// unadvertised until their corresponding pipeline stages are implemented;
 /// advertising one prematurely would cause the Gateway to return a plan we
@@ -53,7 +51,7 @@ pub(crate) use parser::parse;
 /// Java/.NET advertise) so plan-shape parity against the live Gateway is
 /// validated end-to-end across the full feature surface.
 pub(crate) const SUPPORTED_QUERY_FEATURES: &str =
-    "Distinct,MultipleOrderBy,NonStreamingOrderBy,OffsetAndLimit,OrderBy,Top";
+    "Aggregate,DCount,Distinct,GroupBy,MultipleAggregates,MultipleOrderBy,NonStreamingOrderBy,NonValueAggregate,OffsetAndLimit,OrderBy,Top";
 
 /// Broad supported-features list used by cross-crate gateway-comparison
 /// tests. Matches what the Java and .NET SDKs send today so the Gateway

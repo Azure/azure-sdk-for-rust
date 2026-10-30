@@ -331,8 +331,7 @@ impl OrderByItem {
 }
 
 /// Compares two defined JSON values using the production Cosmos `ORDER BY`
-/// relation shared by the streaming merge and the in-memory query oracle.
-#[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+/// relation shared by query reducers and the in-memory query oracle.
 pub(crate) fn compare_json_values(left: &serde_json::Value, right: &serde_json::Value) -> Ordering {
     OrderByItem::from_json(left).cmp(&OrderByItem::from_json(right))
 }
@@ -365,7 +364,7 @@ impl Ord for OrderByItem {
             (Self::String(a), Self::String(b)) => compare_strings(a, b),
             // Unreachable from the streaming merge — `parse_order_by_items`
             // rejects complex sort keys. Only the in-memory query oracle
-            // gets here, so a deterministic structural order is enough: the
+            // and GROUP BY key equality get here, so a structural order is enough: the
             // backend's own array/object order is a structural hash we
             // deliberately no longer reproduce.
             (Self::Array(a), Self::Array(b)) => a.cmp(b),
