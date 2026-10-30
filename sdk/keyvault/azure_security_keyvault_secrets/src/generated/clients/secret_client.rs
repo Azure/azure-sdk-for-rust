@@ -250,6 +250,15 @@ impl SecretClient {
         options: Option<SecretClientListDeletedSecretPropertiesOptions<'_>>,
     ) -> Result<Pager<ListDeletedSecretPropertiesResult>> {
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::with_list_deleted_secret_properties_context(
+                &mut options.method_options.context,
+                options.maxresults,
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         first_url.append_path("/deletedsecrets");
@@ -331,6 +340,15 @@ impl SecretClient {
         options: Option<SecretClientListSecretPropertiesOptions<'_>>,
     ) -> Result<Pager<ListSecretPropertiesResult>> {
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::with_list_secret_properties_context(
+                &mut options.method_options.context,
+                options.maxresults,
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         first_url.append_path("/secrets");
@@ -418,6 +436,16 @@ impl SecretClient {
             ));
         }
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::with_list_secret_properties_versions_context(
+                &mut options.method_options.context,
+                secret_name,
+                options.maxresults,
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         let mut path = String::from("/secrets/{secret-name}/versions");

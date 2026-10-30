@@ -23,6 +23,7 @@ futures.workspace = true
 hmac = { workspace = true, optional = true }
 openssl = { workspace = true, optional = true }
 pin-project.workspace = true
+percent-encoding = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
 sha2 = { workspace = true, optional = true }
@@ -75,7 +76,7 @@ reqwest_rustls = ["reqwest", "typespec_client_core/reqwest_rustls"]
 resource_manager = []
 test = ["typespec_client_core/test"]
 tokio = ["dep:tokio", "typespec_client_core/tokio"]
-unstable_fake = ["test"]
+unstable_fake = ["test", "dep:percent-encoding"]
 xml = ["typespec_client_core/xml"]
 
 [lints]

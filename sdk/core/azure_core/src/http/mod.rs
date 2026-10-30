@@ -4,7 +4,6 @@
 //! Types and functions for building HTTP clients.
 
 #[cfg(all(feature = "test", feature = "unstable_fake"))]
-#[cfg_attr(docsrs, doc(cfg(all(feature = "test", feature = "unstable_fake"))))]
 pub mod fake;
 pub mod headers;
 mod models;
@@ -33,39 +32,3 @@ pub use typespec_client_core::http::{
 pub use crate::error::check_success;
 #[cfg(feature = "xml")]
 pub use typespec_client_core::http::XmlFormat;
-
-/// Adds a static operation name to method options for fake server routing.
-///
-/// Pass the operation name and a mutable reference to method options with a
-/// `context` field, such as [`ClientMethodOptions`] or [`pager::PagerOptions`].
-/// Does nothing, without evaluating either argument, unless both the `test` and
-/// `unstable_fake` features are enabled in `azure_core`.
-#[cfg(all(feature = "test", feature = "unstable_fake"))]
-#[macro_export]
-macro_rules! operation_name {
-    ($name:expr, $options:expr $(,)?) => {
-        $crate::http::fake::operation_name($name, &mut ($options).context)
-    };
-}
-
-/// Adds a static operation name to method options for fake server routing.
-///
-/// Does nothing, without evaluating either argument, unless both the `test` and
-/// `unstable_fake` features are enabled in `azure_core`.
-#[cfg(not(all(feature = "test", feature = "unstable_fake")))]
-#[macro_export]
-macro_rules! operation_name {
-    ($name:expr, $options:expr $(,)?) => {};
-}
-
-pub use crate::operation_name;
-
-#[cfg(test)]
-mod tests {
-    #[cfg(not(all(feature = "test", feature = "unstable_fake")))]
-    #[test]
-    fn operation_name_is_a_noop() {
-        super::operation_name!(undefined_name, undefined_options);
-        super::operation_name!(panic!("must not evaluate"), panic!("must not evaluate"));
-    }
-}
