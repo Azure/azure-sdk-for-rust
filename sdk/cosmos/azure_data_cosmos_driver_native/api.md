@@ -222,6 +222,8 @@ pub mod database_ref {
 }
 pub mod diagnostics {
     #[no_mangle]
+    pub extern "C" fn cosmos_diagnostics_get_info_v2(d: *const CosmosDiagnostics, out_info: *mut CosmosDiagnosticsInfoV2) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
     pub extern "C" fn cosmos_diagnostics_is_compacted(d: *const CosmosDiagnostics) -> bool;
     #[no_mangle]
     pub extern "C" fn cosmos_diagnostics_is_completed(d: *const CosmosDiagnostics) -> bool;
@@ -229,6 +231,8 @@ pub mod diagnostics {
     pub extern "C" fn cosmos_diagnostics_is_failure(d: *const CosmosDiagnostics) -> bool;
     #[no_mangle]
     pub extern "C" fn cosmos_diagnostics_iter_attempts(d: *const CosmosDiagnostics, visitor: Option<extern "C" fn(*mut std::ffi::c_void, *const std::ffi::c_char, *const std::ffi::c_char, u16, i32, u64, f64, f64)>, user_data: *mut std::ffi::c_void);
+    #[no_mangle]
+    pub extern "C" fn cosmos_diagnostics_iter_attempts_v2(d: *const CosmosDiagnostics, visitor: Option<extern "C" fn(*mut std::ffi::c_void, *const CosmosDiagnosticsAttemptV2)>, user_data: *mut std::ffi::c_void);
     #[no_mangle]
     pub extern "C" fn cosmos_diagnostics_iter_regions_contacted(d: *const CosmosDiagnostics, visitor: Option<extern "C" fn(*mut std::ffi::c_void, *const std::ffi::c_char)>, user_data: *mut std::ffi::c_void);
     #[no_mangle]
@@ -241,7 +245,55 @@ pub mod diagnostics {
     pub extern "C" fn cosmos_diagnostics_total_elapsed_micros(d: *const CosmosDiagnostics) -> u64;
     #[no_mangle]
     pub extern "C" fn cosmos_diagnostics_total_request_charge(d: *const CosmosDiagnostics) -> f64;
+    #[derive(Clone, Copy, Debug, Default)]
+    #[repr(C)]
+    pub struct CosmosBorrowedStringView {
+        pub data: *const u8,
+        pub len: usize,
+    }
     pub struct CosmosDiagnostics {
+    }
+    #[derive(Clone, Copy, Debug)]
+    #[repr(C)]
+    pub struct CosmosDiagnosticsAttemptV2 {
+        pub struct_size_bytes: u32,
+        pub schema_version: u32,
+        pub retained_index: u32,
+        pub execution_context: i32,
+        pub pipeline_type: i32,
+        pub transport_security: i32,
+        pub transport_kind: i32,
+        pub transport_http_version: i32,
+        pub request_sent: i32,
+        pub local_shard_retry_count: u32,
+        pub status_code: u16,
+        pub is_completed: u8,
+        pub timed_out: u8,
+        pub has_server_duration: u8,
+        pub reserved_flags: [u8; 3],
+        pub sub_status: i32,
+        pub duration_ms: u64,
+        pub request_charge: f64,
+        pub server_duration_ms: f64,
+        pub endpoint: CosmosBorrowedStringView,
+        pub region: CosmosBorrowedStringView,
+        pub operation_name: CosmosBorrowedStringView,
+        pub activity_id: CosmosBorrowedStringView,
+        pub session_token: CosmosBorrowedStringView,
+        pub error: CosmosBorrowedStringView,
+        pub reserved: [u32; 4],
+    }
+    #[derive(Clone, Copy, Debug)]
+    #[repr(C)]
+    pub struct CosmosDiagnosticsInfoV2 {
+        pub struct_size_bytes: u32,
+        pub schema_version: u32,
+        pub activity_id: CosmosBorrowedStringView,
+        pub operation_name: CosmosBorrowedStringView,
+        pub status_code: u16,
+        pub reserved_status: u16,
+        pub sub_status: i32,
+        pub reserved: [u32; 4],
     }
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(transparent)]
@@ -251,6 +303,7 @@ pub mod diagnostics {
         const DETAILED: Self = _;
         const SUMMARY: Self = _;
     }
+    pub const COSMOS_DIAGNOSTICS_ABI_VERSION_2: u32 = 2;
 }
 pub mod driver {
     #[no_mangle]

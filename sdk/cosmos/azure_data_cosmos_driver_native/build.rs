@@ -88,7 +88,34 @@ fn generate_c_header() {
          #define COSMOS_QUERY_PLAN_MODE_GATEWAY_ONLY    2\n\
          \n\
          // Version of the size-prefixed native fault-injection records.\n\
-         #define COSMOS_FAULT_INJECTION_ABI_VERSION_1 1",
+         #define COSMOS_FAULT_INJECTION_ABI_VERSION_1 1\n\
+         \n\
+         // Version and stable integer classifications for structured diagnostics.\n\
+         // Zero is reserved for unknown values so future Rust variants can be\n\
+         // projected without changing an existing C discriminant.\n\
+         #define COSMOS_DIAGNOSTICS_ABI_VERSION_2 2\n\
+         #define COSMOS_DIAGNOSTICS_EXECUTION_CONTEXT_UNKNOWN 0\n\
+         #define COSMOS_DIAGNOSTICS_EXECUTION_CONTEXT_INITIAL 1\n\
+         #define COSMOS_DIAGNOSTICS_EXECUTION_CONTEXT_OPERATION_RETRY 2\n\
+         #define COSMOS_DIAGNOSTICS_EXECUTION_CONTEXT_TRANSPORT_RETRY 3\n\
+         #define COSMOS_DIAGNOSTICS_EXECUTION_CONTEXT_HEDGING 4\n\
+         #define COSMOS_DIAGNOSTICS_EXECUTION_CONTEXT_REGION_FAILOVER 5\n\
+         #define COSMOS_DIAGNOSTICS_EXECUTION_CONTEXT_CIRCUIT_BREAKER_PROBE 6\n\
+         #define COSMOS_DIAGNOSTICS_PIPELINE_UNKNOWN 0\n\
+         #define COSMOS_DIAGNOSTICS_PIPELINE_METADATA 1\n\
+         #define COSMOS_DIAGNOSTICS_PIPELINE_DATA_PLANE 2\n\
+         #define COSMOS_DIAGNOSTICS_TRANSPORT_SECURITY_UNKNOWN 0\n\
+         #define COSMOS_DIAGNOSTICS_TRANSPORT_SECURITY_SECURE 1\n\
+         #define COSMOS_DIAGNOSTICS_TRANSPORT_SECURITY_EMULATOR_INSECURE 2\n\
+         #define COSMOS_DIAGNOSTICS_TRANSPORT_KIND_UNKNOWN 0\n\
+         #define COSMOS_DIAGNOSTICS_TRANSPORT_KIND_GATEWAY 1\n\
+         #define COSMOS_DIAGNOSTICS_TRANSPORT_KIND_GATEWAY_V2 2\n\
+         #define COSMOS_DIAGNOSTICS_HTTP_VERSION_UNKNOWN 0\n\
+         #define COSMOS_DIAGNOSTICS_HTTP_VERSION_1_1 1\n\
+         #define COSMOS_DIAGNOSTICS_HTTP_VERSION_2 2\n\
+         #define COSMOS_DIAGNOSTICS_REQUEST_SENT_UNKNOWN 0\n\
+         #define COSMOS_DIAGNOSTICS_REQUEST_SENT 1\n\
+         #define COSMOS_DIAGNOSTICS_REQUEST_NOT_SENT 2",
         env!("CARGO_PKG_VERSION")
     );
 
@@ -151,6 +178,18 @@ fn generate_c_header() {
         (
             "CosmosDiagnosticsVerbosity".into(),
             "diagnostics_verbosity_t".into(),
+        ),
+        (
+            "CosmosBorrowedStringView".into(),
+            "borrowed_string_view_t".into(),
+        ),
+        (
+            "CosmosDiagnosticsInfoV2".into(),
+            "diagnostics_info_v2_t".into(),
+        ),
+        (
+            "CosmosDiagnosticsAttemptV2".into(),
+            "diagnostics_attempt_v2_t".into(),
         ),
         ("CompletionQueue".into(), "completion_queue_t".into()),
         (
@@ -339,6 +378,7 @@ fn generate_c_header() {
                 "__test_only_create_fault_injection_fixture".into(),
                 "COSMOS_STATUS_SUCCESS".into(),
                 "COSMOS_FAULT_INJECTION_ABI_VERSION_1".into(),
+                "COSMOS_DIAGNOSTICS_ABI_VERSION_2".into(),
             ],
             rename,
             ..Default::default()
