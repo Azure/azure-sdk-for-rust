@@ -1,0 +1,40 @@
+[package]
+name = "azure_resourcemanager_keyvault"
+version = "0.1.0"
+description = "Azure Resource Manager client library for Azure Key Vault"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_resourcemanager_keyvault"
+keywords = ["sdk", "cloud", "mgmt"]
+categories = ["api-bindings"]
+exclude.workspace = true
+
+[features]
+default = ["azure_core/default"]
+
+[dependencies]
+async-trait = { workspace = true }
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.2", default-features = false, features = [
+  "resource_manager",
+] }
+serde = { workspace = true }
+
+[dev-dependencies]
+azure_core_test = { path = "../../core/azure_core_test", features = ["tracing"] }
+azure_identity = { path = "../../identity/azure_identity" }
+azure_security_keyvault_test = { path = "../azure_security_keyvault_test" }
+futures.workspace = true
+include-file.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+
+[lints]
+workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
