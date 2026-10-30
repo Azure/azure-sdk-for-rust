@@ -2191,7 +2191,8 @@ typedef struct cosmos_processor_completion_t {
    */
   struct cosmos_completion_t common;
   /**
-   * 0: error; 1: started; 2: batch; 3: checkpoint saved; 4: stopped; 5: end.
+   * 0: error; 1: started; 2: batch; 3: checkpoint saved; 4: stopped; 5: end;
+   * 6: batch acknowledged (not necessarily persisted).
    */
   uint32_t result_kind;
   /**
@@ -2215,7 +2216,7 @@ typedef struct cosmos_processor_completion_t {
    */
   struct cosmos_processor_t *processor;
   /**
-   * Batch receipt; detach once, then checkpoint after successful processing.
+   * Batch receipt; detach once, then acknowledge after successful processing.
    */
   struct cosmos_processor_receipt_t *receipt;
   /**
@@ -3086,6 +3087,29 @@ struct cosmos_operation_handle_t *cosmos_processor_start_submit(const struct cos
                                                                 cosmos_status_code_t *out_pre_error);
 
 /**
+ * Starts a processor with an explicit checkpoint policy.
+ *
+ * `checkpoint_policy` is 0 for every batch (interval must be zero), or 1 for
+ * coalescing (interval must be positive). `checkpoint_interval_ms` bounds the
+ * delay before attempting persistence; observed lease-idle flushes earlier.
+ * Coalescing can replay multiple successfully acknowledged batches.
+ *
+ * All handles and request allocations must remain readable for this call.
+ * Inputs are copied before returning. Use `cosmos_processor_acknowledge_submit`
+ * for policy-controlled acknowledgment; checkpoint submission always persists.
+ */
+struct cosmos_operation_handle_t *cosmos_processor_start_with_policy_submit(const struct cosmos_driver_t *source_driver,
+                                                                            const struct cosmos_container_ref_t *source,
+                                                                            const struct cosmos_driver_t *lease_driver,
+                                                                            const struct cosmos_container_ref_t *leases,
+                                                                            const struct cosmos_processor_request_t *request,
+                                                                            uint32_t checkpoint_policy,
+                                                                            uint64_t checkpoint_interval_ms,
+                                                                            struct cosmos_processor_queue_t *queue,
+                                                                            intptr_t user_data,
+                                                                            cosmos_status_code_t *out_pre_error);
+
+/**
  * Requests the next batch. Only one undelivered next request is allowed per processor.
  *
  * After transfer, request further batches to process other leases concurrently.
@@ -3128,6 +3152,18 @@ struct cosmos_operation_handle_t *cosmos_processor_abort_submit(const struct cos
 struct cosmos_operation_handle_t *cosmos_processor_checkpoint_submit(const struct cosmos_processor_receipt_t *receipt,
                                                                      intptr_t user_data,
                                                                      cosmos_status_code_t *out);
+
+/**
+ * Acknowledges successful processing according to the processor's policy.
+ *
+ * An acknowledged result (kind 6) can mean only in-memory acceptance. It does
+ * not claim durable persistence. Use `cosmos_processor_checkpoint_submit` for
+ * a durable barrier. Receipt consumption, handle cleanup, and control admission
+ * are identical to checkpoint submission.
+ */
+struct cosmos_operation_handle_t *cosmos_processor_acknowledge_submit(const struct cosmos_processor_receipt_t *receipt,
+                                                                      intptr_t user_data,
+                                                                      cosmos_status_code_t *out);
 
 /**
  * Transfers up to `max` owned completion pointers. Timeout/empty is success with zero results.

@@ -175,6 +175,7 @@ pub mod change_feed_processor {
     pub struct BatchReceipt {
     }
     impl BatchReceipt {
+        pub async fn acknowledge(self) -> Result<()>;
         pub async fn cancelled(&self);
         pub async fn checkpoint(self) -> Result<()>;
     }
@@ -199,12 +200,20 @@ pub mod change_feed_processor {
     }
     impl ProcessorOptions {
         pub fn new<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(mode: ChangeFeedFactoryMode, processor_name: impl Into<String>, instance_name: impl Into<String>) -> Self;
+        pub fn with_checkpoint_policy(self, policy: CheckpointPolicy) -> Self;
         pub fn with_continuation(self, continuation: ContinuationToken) -> Self;
         pub fn with_lease_counts(self, minimum: u32, maximum: u32) -> Self;
         pub fn with_lease_verification_enabled_on_restart(self, enabled: bool) -> Self;
         pub fn with_max_item_count(self, hint: MaxItemCountHint) -> Self;
         pub fn with_poll_delay(self, delay: Duration) -> Self;
         pub fn with_start(self, start: ChangeFeedStartFrom) -> Self;
+    }
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum CheckpointPolicy {
+        #[default]
+        EveryBatch,
+        Coalesced { max_interval: std::time::Duration },
     }
 }
 pub mod diagnostics {

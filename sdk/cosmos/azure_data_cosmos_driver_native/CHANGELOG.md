@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `cosmos_processor_start_with_policy_submit` and `cosmos_processor_acknowledge_submit` for opt-in checkpoint coalescing, with distinct acknowledged and durably saved completion results.
 - Added `cosmos_processor_*` completion-queue APIs for driver-owned change feed processing and explicit post-callback checkpoint acknowledgments.
 
 ### Breaking Changes

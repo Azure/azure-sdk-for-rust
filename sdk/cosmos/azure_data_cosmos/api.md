@@ -84,6 +84,7 @@ impl ChangeFeedProcessorBuilder {
     pub fn new<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(mode: ChangeFeedMode, monitored_container: ContainerClient, lease_container: ContainerClient, processor_name: impl Into<String>, instance_name: impl Into<String>) -> Self;
 }
 impl<T, H> ChangeFeedProcessorBuilder<T, H> {
+    pub fn with_checkpoint_policy(self, policy: ChangeFeedCheckpointPolicy) -> Self;
     pub fn with_feed_poll_delay(self, feed_poll_delay: Duration) -> Self;
     pub fn with_lease_verification_enabled_on_restart(self, enabled: bool) -> Self;
     pub fn with_max_item_count(self, max_item_count: MaxItemCountHint) -> Self;
@@ -307,6 +308,13 @@ impl From<SubStatusCode> for u16 {
 }
 impl From<u16> for SubStatusCode {
     fn from(value: u16) -> Self;
+}
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum ChangeFeedCheckpointPolicy {
+    #[default]
+    EveryBatch,
+    Coalesced { max_interval: std::time::Duration },
 }
 #[derive(Clone, Debug)]
 #[non_exhaustive]

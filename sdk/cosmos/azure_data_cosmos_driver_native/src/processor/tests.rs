@@ -2,13 +2,14 @@
 // Licensed under the MIT License.
 
 use super::{
-    cosmos_processor_abort_submit, cosmos_processor_checkpoint_submit,
-    cosmos_processor_completion_free, cosmos_processor_completion_take_processor,
-    cosmos_processor_completion_take_receipt, cosmos_processor_free, cosmos_processor_next_submit,
-    cosmos_processor_queue_create, cosmos_processor_queue_free, cosmos_processor_queue_wait,
-    cosmos_processor_receipt_free, cosmos_processor_request_init, cosmos_processor_start_submit,
-    cosmos_processor_stop_submit, CosmosProcessorCompletion, CosmosProcessorRequest,
-    ProcessorHandle, ProcessorQueue,
+    cosmos_processor_abort_submit, cosmos_processor_acknowledge_submit,
+    cosmos_processor_checkpoint_submit, cosmos_processor_completion_free,
+    cosmos_processor_completion_take_processor, cosmos_processor_completion_take_receipt,
+    cosmos_processor_free, cosmos_processor_next_submit, cosmos_processor_queue_create,
+    cosmos_processor_queue_free, cosmos_processor_queue_wait, cosmos_processor_receipt_free,
+    cosmos_processor_request_init, cosmos_processor_start_submit,
+    cosmos_processor_start_with_policy_submit, cosmos_processor_stop_submit,
+    CosmosProcessorCompletion, CosmosProcessorRequest, ProcessorHandle, ProcessorQueue,
 };
 use crate::{
     completion::{
@@ -121,7 +122,26 @@ impl Fixture {
     }
 
     fn start(&self) -> *mut ProcessorHandle {
-        let operation = self.submit_start(&self.request(), ptr::null_mut());
+        self.start_policy(false)
+    }
+
+    fn start_policy(&self, coalesced: bool) -> *mut ProcessorHandle {
+        let operation = if coalesced {
+            cosmos_processor_start_with_policy_submit(
+                self.driver,
+                self.source,
+                self.driver,
+                self.leases,
+                &self.request(),
+                1,
+                60_000,
+                self.queue,
+                1,
+                ptr::null_mut(),
+            )
+        } else {
+            self.submit_start(&self.request(), ptr::null_mut())
+        };
         self.drive(operation);
         let completion = self.receive();
         // SAFETY: completion is live until free below.
@@ -263,6 +283,137 @@ fn stale_receipt_cannot_checkpoint_after_shutdown() {
 }
 
 #[test]
+fn coalesced_acknowledgment_is_not_a_durable_completion() {
+    let fixture = Fixture::new();
+    let runtime = RuntimeContext::inner_arc(fixture.runtime).unwrap();
+    let driver = DriverHandle::inner_arc(fixture.driver).unwrap();
+    let source = ContainerRefHandle::from_ptr(fixture.source).unwrap();
+    runtime.tokio.block_on(async {
+        for rank in 0..6 {
+            let id = format!("extra-{rank}");
+            let pk = format!("pk-{rank}");
+            driver
+                .inner
+                .execute_singleton_operation(
+                    CosmosOperation::create_item(ItemReference::from_name(
+                        &source.inner,
+                        PartitionKey::from(pk.clone()),
+                        id.clone(),
+                    ))
+                    .with_body(serde_json::to_vec(&serde_json::json!({"id":id,"pk":pk})).unwrap()),
+                    OperationOptions::default(),
+                )
+                .await
+                .unwrap();
+        }
+    });
+    let mut request = fixture.request();
+    request.max_leases = 1;
+    let start = cosmos_processor_start_with_policy_submit(
+        fixture.driver,
+        fixture.source,
+        fixture.driver,
+        fixture.leases,
+        &request,
+        1,
+        60_000,
+        fixture.queue,
+        0,
+        ptr::null_mut(),
+    );
+    fixture.drive(start);
+    let started = fixture.receive();
+    let processor = cosmos_processor_completion_take_processor(started);
+    cosmos_processor_completion_free(started);
+    cosmos_operation_handle_free(start);
+    let first = cosmos_processor_next_submit(processor, 1, ptr::null_mut());
+    fixture.drive(first);
+    let batch = fixture.receive();
+    // SAFETY: batch owns these views until it is freed below.
+    let (id, original) = unsafe {
+        let token = (*batch).lease_token;
+        (
+            std::str::from_utf8(std::slice::from_raw_parts(token.data, token.len))
+                .unwrap()
+                .to_owned(),
+            std::slice::from_raw_parts((*batch).common.body, (*batch).common.body_len).to_vec(),
+        )
+    };
+    let receipt = cosmos_processor_completion_take_receipt(batch);
+    let next = cosmos_processor_next_submit(processor, 2, ptr::null_mut());
+    let ack = cosmos_processor_acknowledge_submit(receipt, 3, ptr::null_mut());
+    assert!(!ack.is_null());
+    assert!(cosmos_processor_acknowledge_submit(receipt, 4, ptr::null_mut()).is_null());
+    cosmos_processor_receipt_free(receipt);
+    fixture.drive(ack);
+    fixture.drive(next);
+    let mut next_batch = ptr::null_mut();
+    for completion in [fixture.receive(), fixture.receive()] {
+        // SAFETY: each completion is still owned by this test.
+        match unsafe { (*completion).result_kind } {
+            2 => next_batch = completion,
+            6 => cosmos_processor_completion_free(completion),
+            kind => panic!("unexpected result {kind}"),
+        }
+    }
+    assert!(!next_batch.is_null());
+    assert!(fixture.lease(&id).get("continuation").is_none());
+    // SAFETY: the first batch has not been freed or transferred.
+    assert_eq!(
+        unsafe { std::slice::from_raw_parts((*batch).common.body, (*batch).common.body_len) },
+        original
+    );
+    let receipt = cosmos_processor_completion_take_receipt(next_batch);
+    let checkpoint = cosmos_processor_checkpoint_submit(receipt, 5, ptr::null_mut());
+    cosmos_processor_receipt_free(receipt);
+    fixture.drive(checkpoint);
+    let saved = fixture.receive();
+    // SAFETY: saved is live until free below.
+    assert_eq!(unsafe { (*saved).result_kind }, 3);
+    assert!(fixture.lease(&id).get("continuation").is_some());
+    let abort = cosmos_processor_abort_submit(processor, 6, ptr::null_mut());
+    fixture.drive(abort);
+    for completion in [batch, next_batch, saved, fixture.receive()] {
+        cosmos_processor_completion_free(completion);
+    }
+    for operation in [first, next, ack, checkpoint, abort] {
+        cosmos_operation_handle_free(operation);
+    }
+    cosmos_processor_free(processor);
+}
+
+#[test]
+fn invalid_checkpoint_policy_does_not_reserve_queue_capacity() {
+    let fixture = Fixture::new();
+    for (policy, interval) in [(0, 1), (1, 0), (2, 1)] {
+        let mut error = COSMOS_STATUS_SUCCESS;
+        let operation = cosmos_processor_start_with_policy_submit(
+            fixture.driver,
+            fixture.source,
+            fixture.driver,
+            fixture.leases,
+            &fixture.request(),
+            policy,
+            interval,
+            fixture.queue,
+            0,
+            &mut error,
+        );
+        assert!(operation.is_null());
+        assert_eq!(
+            error,
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
+        );
+    }
+    let processor = fixture.start();
+    let abort = cosmos_processor_abort_submit(processor, 1, ptr::null_mut());
+    fixture.drive(abort);
+    cosmos_processor_completion_free(fixture.receive());
+    cosmos_operation_handle_free(abort);
+    cosmos_processor_free(processor);
+}
+
+#[test]
 fn queue_abandonment_finishes_outstanding_next() {
     let mut fixture = Fixture::new();
     let mut request = fixture.request();
@@ -302,8 +453,17 @@ fn malformed_request_does_not_reserve_delivery_capacity() {
 
 #[test]
 fn concurrent_stops_keep_data_and_checkpoint_admission_open_until_drained() {
+    exercise_concurrent_stops(false);
+}
+
+#[test]
+fn coalesced_acknowledgments_drain_with_full_control_admission() {
+    exercise_concurrent_stops(true);
+}
+
+fn exercise_concurrent_stops(coalesced: bool) {
     let fixture = Fixture::new();
-    let processor = fixture.start();
+    let processor = fixture.start_policy(coalesced);
     let next = cosmos_processor_next_submit(processor, 1, ptr::null_mut());
     fixture.drive(next);
     let batch = fixture.receive();
@@ -350,12 +510,19 @@ fn concurrent_stops_keep_data_and_checkpoint_admission_open_until_drained() {
         );
         drained_leases.push(lease);
         let receipt = cosmos_processor_completion_take_receipt(delivery);
-        let checkpoint = cosmos_processor_checkpoint_submit(receipt, 6, ptr::null_mut());
+        let checkpoint = if coalesced {
+            cosmos_processor_acknowledge_submit(receipt, 6, ptr::null_mut())
+        } else {
+            cosmos_processor_checkpoint_submit(receipt, 6, ptr::null_mut())
+        };
         cosmos_processor_receipt_free(receipt);
         fixture.drive(checkpoint);
         let saved = fixture.receive();
         // SAFETY: the checkpoint completion is still owned by this test.
-        assert_eq!(unsafe { (*saved).result_kind }, 3);
+        assert_eq!(
+            unsafe { (*saved).result_kind },
+            if coalesced { 6 } else { 3 }
+        );
         cosmos_processor_completion_free(saved);
         cosmos_processor_completion_free(delivery);
         cosmos_operation_handle_free(checkpoint);
@@ -366,7 +533,11 @@ fn concurrent_stops_keep_data_and_checkpoint_admission_open_until_drained() {
         CosmosOperationHandleState::CosmosOperationHandleStateInFlight
     );
     assert_eq!(fixture.lease(&id)["continuation"], before["continuation"]);
-    let checkpoint = cosmos_processor_checkpoint_submit(receipt, 5, ptr::null_mut());
+    let checkpoint = if coalesced {
+        cosmos_processor_acknowledge_submit(receipt, 5, ptr::null_mut())
+    } else {
+        cosmos_processor_checkpoint_submit(receipt, 5, ptr::null_mut())
+    };
     cosmos_processor_receipt_free(receipt);
     fixture.drive(checkpoint);
     fixture.drive(stop);
@@ -380,7 +551,7 @@ fn concurrent_stops_keep_data_and_checkpoint_admission_open_until_drained() {
         }
     });
     kinds.sort_unstable();
-    assert_eq!(kinds, [3, 4, 4]);
+    assert_eq!(kinds, if coalesced { [4, 4, 6] } else { [3, 4, 4] });
     for id in drained_leases {
         let saved = fixture.lease(&id);
         assert!(saved.get("owner").is_none());

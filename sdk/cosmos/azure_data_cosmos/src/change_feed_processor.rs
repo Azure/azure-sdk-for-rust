@@ -25,6 +25,27 @@ mod execution;
 
 type ChangeFeedHandler<T, Fut> = fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut;
 
+/// Controls when successful change feed callback progress is persisted.
+///
+/// Callback page sizes, ordering, and lease renewal are independent of this policy.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum ChangeFeedCheckpointPolicy {
+    /// Persists each successful callback before reading its lease's next batch.
+    #[default]
+    EveryBatch,
+    /// Coalesces successful callbacks until the lease is observed idle or the
+    /// interval since its first unpersisted success elapses.
+    ///
+    /// Successful callbacks can replay after a crash or ownership loss. Graceful
+    /// shutdown and topology recovery flush without waiting for the interval.
+    /// The interval schedules a write, not a storage-availability guarantee.
+    Coalesced {
+        /// Positive maximum interval for deferring persistence of successful progress.
+        max_interval: Duration,
+    },
+}
+
 /// Context identifying the lease associated with a callback batch.
 ///
 /// Passed by value to the callback registered with
@@ -186,6 +207,7 @@ pub struct ChangeFeedProcessorBuilder<T = (), H = ()> {
     start_from: ProcessorStartFrom,
     max_item_count: MaxItemCountHint,
     feed_poll_delay: Duration,
+    checkpoint_policy: ChangeFeedCheckpointPolicy,
     min_scale_count: u32,
     max_scale_count: u32,
     lease_verification_on_restart_enabled: bool,
@@ -226,6 +248,7 @@ impl ChangeFeedProcessorBuilder {
             start_from: ProcessorStartFrom::Now,
             max_item_count: MaxItemCountHint::Limit(NonZeroU32::new(100).expect("100 is nonzero")),
             feed_poll_delay: Duration::from_secs(5),
+            checkpoint_policy: ChangeFeedCheckpointPolicy::default(),
             min_scale_count: 0,
             max_scale_count: 0,
             lease_verification_on_restart_enabled: false,
@@ -244,8 +267,9 @@ impl ChangeFeedProcessorBuilder {
     ///
     /// Consumes the builder and makes [`build()`](Self::build) available. A
     /// callback can be registered only once. Callbacks for different leases can
-    /// overlap. For each lease, a successful callback is followed by a durable
-    /// checkpoint before the next batch is read. Failures can cause replay;
+    /// overlap. For each lease, successful callback progress is saved before the
+    /// next batch by default. [`with_checkpoint_policy()`](Self::with_checkpoint_policy)
+    /// can defer persistence across callbacks. Failures can cause replay;
     /// callbacks should make their external effects idempotent.
     ///
     /// # Examples
@@ -373,6 +397,7 @@ impl ChangeFeedProcessorBuilder {
             start_from: self.start_from,
             max_item_count: self.max_item_count,
             feed_poll_delay: self.feed_poll_delay,
+            checkpoint_policy: self.checkpoint_policy,
             min_scale_count: self.min_scale_count,
             max_scale_count: self.max_scale_count,
             lease_verification_on_restart_enabled: self.lease_verification_on_restart_enabled,
@@ -383,6 +408,35 @@ impl ChangeFeedProcessorBuilder {
 }
 
 impl<T, H> ChangeFeedProcessorBuilder<T, H> {
+    /// Sets the persistence policy for successfully handled change feed batches.
+    ///
+    /// Defaults to [`ChangeFeedCheckpointPolicy::EveryBatch`]. Coalescing retains
+    /// progress, not callback payloads, in memory and can replay multiple successful
+    /// callbacks after failure. It does not change the service page-size hint.
+    /// Invalid intervals are rejected by [`build()`](Self::build).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use azure_data_cosmos::{
+    ///     ChangeFeedCheckpointPolicy, ChangeFeedProcessorBuilder,
+    /// };
+    /// use std::time::Duration;
+    ///
+    /// fn configure(
+    ///     builder: ChangeFeedProcessorBuilder,
+    ///     replay_interval: Duration,
+    /// ) -> ChangeFeedProcessorBuilder {
+    ///     builder.with_checkpoint_policy(ChangeFeedCheckpointPolicy::Coalesced {
+    ///         max_interval: replay_interval,
+    ///     })
+    /// }
+    /// ```
+    pub fn with_checkpoint_policy(mut self, policy: ChangeFeedCheckpointPolicy) -> Self {
+        self.checkpoint_policy = policy;
+        self
+    }
+
     /// Sets the requested maximum number of items per change feed page.
     ///
     /// Defaults to 100. This is a service hint, not a hard limit on callback batch
@@ -513,6 +567,7 @@ where
     /// - The minimum lease count exceeds a nonzero maximum lease count.
     /// - The selected initial continuation is empty or contains only whitespace.
     /// - All-versions-and-deletes mode is combined with a beginning or time-based start.
+    /// - A coalesced checkpoint interval is zero or unrepresentable.
     ///
     /// # Examples
     ///
@@ -563,6 +618,19 @@ where
     /// }
     /// ```
     pub fn build(self) -> crate::Result<ChangeFeedProcessor<T, ChangeFeedHandler<T, Fut>>> {
+        if let ChangeFeedCheckpointPolicy::Coalesced { max_interval } = self.checkpoint_policy {
+            if max_interval.is_zero()
+                || std::time::Instant::now()
+                    .checked_add(max_interval)
+                    .is_none()
+                || azure_core::time::Duration::try_from(max_interval).is_err()
+            {
+                return Err(CosmosError::builder()
+                    .with_status(CosmosStatus::new(StatusCode::BadRequest))
+                    .with_message("Invalid checkpoint interval.")
+                    .build());
+            }
+        }
         for (name, value) in [
             ("processor_name", self.processor_name.as_str()),
             ("instance_name", self.instance_name.as_str()),
@@ -644,8 +712,9 @@ impl<T, H> ChangeFeedProcessorBuilder<T, H> {
 ///
 /// Created by [`ChangeFeedProcessorBuilder::build()`]. Starting bootstraps the
 /// workload and coordinates leases through the shared driver. Each lease has
-/// at most one outstanding callback batch. Checkpoints follow successful callbacks;
-/// replay remains possible after failures or ownership changes.
+/// at most one outstanding callback batch. The checkpoint policy controls when
+/// successful callbacks become durable; replay remains possible after failures
+/// or ownership changes.
 ///
 /// Dropping the processor requests shutdown. Use [`stop()`](Self::stop) to wait
 /// for shutdown. Monitoring through [`current_state()`](Self::current_state)

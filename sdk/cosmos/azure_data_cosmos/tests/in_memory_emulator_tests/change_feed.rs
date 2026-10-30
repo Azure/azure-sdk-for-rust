@@ -293,14 +293,17 @@ mod processor_lifecycle_tests {
     use azure_data_cosmos::{
         models::ChangeFeedItem,
         options::{ChangeFeedMode, MaxItemCountHint},
-        ChangeFeedProcessor, ChangeFeedProcessorBuilder, ChangeFeedProcessorContext,
-        ContainerClient, FeedScope,
+        ChangeFeedCheckpointPolicy, ChangeFeedProcessor, ChangeFeedProcessorBuilder,
+        ChangeFeedProcessorContext, ContainerClient, FeedScope,
     };
     use azure_data_cosmos_driver::{
         models::{AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference},
         options::{DriverOptions, OperationOptions},
     };
-    use futures::{channel::oneshot, TryStreamExt};
+    use futures::{
+        channel::{mpsc, oneshot},
+        StreamExt, TryStreamExt,
+    };
     use serde_json::Value;
     use std::{
         error::Error,
@@ -352,6 +355,104 @@ mod processor_lifecycle_tests {
         let mut records = Box::pin(query).try_collect::<Vec<_>>().await?;
         records.sort_by(|left, right| left["id"].as_str().cmp(&right["id"].as_str()));
         Ok(records)
+    }
+
+    #[tokio::test]
+    async fn coalesced_callbacks_advance_without_persistence_and_flush_on_stop(
+    ) -> Result<(), Box<dyn Error>> {
+        exercise_coalesced(ChangeFeedMode::LatestVersion).await?;
+        exercise_coalesced(ChangeFeedMode::AllVersionsAndDeletes).await
+    }
+
+    async fn exercise_coalesced(mode: ChangeFeedMode) -> Result<(), Box<dyn Error>> {
+        type Delivery = (String, Vec<String>, oneshot::Sender<()>);
+        static ENTERED: Mutex<Option<mpsc::UnboundedSender<Delivery>>> = Mutex::new(None);
+        let (source, leases) = setup_processor().await?;
+        let (entered, mut callbacks) = mpsc::unbounded();
+        *ENTERED.lock().unwrap() = Some(entered);
+        let processor = ChangeFeedProcessorBuilder::new(
+            mode,
+            source.clone(),
+            leases.clone(),
+            "coalesced",
+            "worker",
+        )
+        .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()))
+        .with_feed_poll_delay(Duration::from_millis(1))
+        .with_checkpoint_policy(ChangeFeedCheckpointPolicy::Coalesced {
+            max_interval: Duration::from_secs(60),
+        })
+        .handle_change_feed(
+            |context: ChangeFeedProcessorContext, changes: Vec<ChangeFeedItem<TestItem>>| {
+                let entered = ENTERED.lock().unwrap().as_ref().unwrap().clone();
+                async move {
+                    let (release, released) = oneshot::channel();
+                    let ids: Vec<_> = changes
+                        .iter()
+                        .map(|c| c.current().unwrap().id.clone())
+                        .collect();
+                    entered
+                        .unbounded_send((context.lease_token().to_owned(), ids, release))
+                        .unwrap();
+                    released.await.unwrap();
+                    Ok(())
+                }
+            },
+        )
+        .build()?;
+        processor.start().await?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                let all = records(&leases).await.unwrap();
+                let ranges: Vec<_> = all.iter().filter(|r| r.get("range").is_some()).collect();
+                if !ranges.is_empty() && ranges.iter().all(|r| r.get("continuation").is_some()) {
+                    break;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await?;
+        for id in ["one", "two"] {
+            source
+                .create_item(PARTITION_KEY, id, TestItem::new(id, 1), None)
+                .await?;
+        }
+        let (id, items, release) = tokio::time::timeout(Duration::from_secs(5), callbacks.next())
+            .await?
+            .unwrap();
+        assert_eq!(items, ["one"]);
+        let before = records(&leases)
+            .await?
+            .into_iter()
+            .find(|r| r["id"] == id)
+            .unwrap();
+        release.send(()).unwrap();
+        let (second_id, items, release) =
+            tokio::time::timeout(Duration::from_secs(5), callbacks.next())
+                .await?
+                .unwrap();
+        assert_eq!(second_id, id);
+        assert_eq!(items, ["two"]);
+        let pending = records(&leases)
+            .await?
+            .into_iter()
+            .find(|r| r["id"] == id)
+            .unwrap();
+        assert_eq!(pending["continuation"], before["continuation"]);
+        let mut stopping = Box::pin(processor.stop());
+        assert!(futures::poll!(stopping.as_mut()).is_pending());
+        release.send(()).unwrap();
+        tokio::time::timeout(Duration::from_secs(5), stopping).await??;
+        let saved = records(&leases)
+            .await?
+            .into_iter()
+            .find(|r| r["id"] == id)
+            .unwrap();
+        assert_ne!(saved["continuation"], before["continuation"]);
+        assert!(saved.get("owner").is_none());
+        assert!(!processor.is_started());
+        *ENTERED.lock().unwrap() = None;
+        Ok(())
     }
 
     async fn assert_bootstrap_and_processing(

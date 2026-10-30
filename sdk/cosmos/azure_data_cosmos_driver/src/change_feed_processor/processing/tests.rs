@@ -17,7 +17,8 @@ use crate::{
     },
     driver::CosmosDriverRuntimeBuilder,
     in_memory_emulator::{
-        ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion,
+        ContainerConfig, InMemoryEmulatorHttpClient, RequestObserver, VirtualAccountConfig,
+        VirtualRegion,
     },
     models::{
         AccountReference, ChangeFeedStartFrom, ContinuationToken, CosmosOperation, FeedRange,
@@ -29,6 +30,7 @@ use crate::{
 use azure_core::http::StatusCode;
 use std::{num::NonZeroU32, sync::Arc, time::Duration};
 
+mod checkpoints;
 mod shutdown;
 mod topology;
 
@@ -52,16 +54,32 @@ async fn fixture_with_emulator(
     mode: ChangeFeedFactoryMode,
     partitions: u32,
 ) -> Result<(Arc<Context>, Arc<InMemoryEmulatorHttpClient>)> {
-    let emulator = emulator()?;
-    let context =
-        fixture_with_runtime(&emulator, emulator.runtime_builder(), mode, partitions).await?;
-    Ok((context, emulator))
+    fixture_with_observer(mode, partitions, None).await
 }
 
 fn emulator() -> Result<Arc<InMemoryEmulatorHttpClient>> {
     Ok(Arc::new(InMemoryEmulatorHttpClient::new(
         VirtualAccountConfig::new(vec![VirtualRegion::new("East US", ENDPOINT.parse()?)])?,
     )))
+}
+
+async fn fixture_with_observer(
+    mode: ChangeFeedFactoryMode,
+    partitions: u32,
+    observer: Option<Arc<dyn RequestObserver>>,
+) -> Result<(Arc<Context>, Arc<InMemoryEmulatorHttpClient>)> {
+    let mut emulator =
+        InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(vec![VirtualRegion::new(
+            "East US",
+            ENDPOINT.parse()?,
+        )])?);
+    if let Some(observer) = observer {
+        emulator = emulator.with_request_observer(observer);
+    }
+    let emulator = Arc::new(emulator);
+    let context =
+        fixture_with_runtime(&emulator, emulator.runtime_builder(), mode, partitions).await?;
+    Ok((context, emulator))
 }
 
 async fn fixture_with_runtime(
@@ -298,6 +316,7 @@ fn leases(owners: &[Option<&str>]) -> Vec<Lease> {
             children: None,
             renewed: None,
             split_complete: false,
+            pending: None,
         })
         .collect()
 }

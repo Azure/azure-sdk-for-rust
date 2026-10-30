@@ -133,7 +133,8 @@ cover the affected lease before treating the event as a split. A merge or an
 unfinished transition retains the lease and retries through normal acquisition.
 
 Each lease permits one outstanding batch. A topology transition cannot advance
-past that batch until its receipt saves the checkpoint. Full-fidelity processor
+past that batch until it is successfully acknowledged and its checkpoint is
+persisted. Coalesced progress is flushed before topology recovery. Full-fidelity processor
 reads expose the initial `304` before fetching data, allowing its starting ETag
 to be persisted independently of the first application batch. A response without
 an ETag is an error, not a usable checkpoint.
@@ -242,6 +243,65 @@ may leave an owner in the lease document; surviving workers acquire it after
 expiration and resume its durable checkpoint. Conditional writes and acquisition
 incarnations fence stale owners and receipts. None of these paths promises
 exactly-once external side effects.
+
+### Processor checkpoint coalescing
+
+Checkpoint policy is independent of feed mode, service page size, and lease
+renewal. `EveryBatch` remains the default. Opt-in `Coalesced { max_interval }`
+acknowledges each successful callback in memory, permitting the next page for
+that lease without waiting for a lease-storage write. It retains one latest
+contiguous successful continuation, a handled-change count, and the time of the
+first unpersisted acknowledgment. It does not retain completed payloads, combine
+leases, or expose a caller-supplied continuation setter.
+
+The driver owns the policy for every language. Rust's builder translates its
+policy into driver configuration; the SDK still deserializes and dispatches each
+original page. Counts reflect actual change envelopes, not unique documents,
+requested page size, or all source writes in latest-version mode. Count is
+tracked for checkpoint diagnostics, not used as an implicit threshold.
+
+Flush occurs at observed lease-idle or the deadline, whichever is first. A
+processor plan disables transparent topology repair, so consecutive idle
+responses covering its stable round-robin leaf set establish temporary lease
+idleness. Neither a single leaf's `304` nor an empty host queue proves global
+completion. Initial `Now` positioning is persisted independently before data
+processing. Repeated unchanged idle positions do not cause writes.
+
+The interval must be positive and representable. Later acknowledgments and
+renewals do not reset its clock. The deadline is driven while awaiting feed I/O,
+callback acknowledgment, or poll delay; a slow callback cannot indefinitely
+defer previously successful progress. It schedules an attempted write, not
+guaranteed completion during a storage outage. Existing operation/retry budgets
+and serialized lease mutations still apply.
+
+`BatchReceipt::checkpoint()` remains a durable barrier.
+`BatchReceipt::acknowledge()` follows the configured policy and can return before
+persistence. Native hosts select the policy through the additive
+`cosmos_processor_start_with_policy_submit` and acknowledge through
+`cosmos_processor_acknowledge_submit`. Acknowledged completions use kind `6`;
+durably saved checkpoints retain kind `3`. Existing request layouts and start
+entry points are unchanged. Both acknowledgment paths use control admission,
+consume receipts only on accepted submission, and retain existing handle cleanup.
+
+Graceful shutdown closes delivery admission, drains issued batches, flushes
+dirty successful progress immediately, and only then releases. Callback failure
+can flush the earlier successful prefix but never the failed batch, and an
+incomplete drain still fails. Forced cancellation does not initiate a final
+flush; in-flight writes can settle. Ownership loss fences all writes, including
+final flushes. A failed flush ends the lease session without marking progress
+durable or resetting the dirty clock. A timed-out write can have committed, so
+recovery still permits replay. Split retirement requires durable progress;
+merged EPK-slice leases keep independent checkpoints.
+
+Each successful checkpoint write also refreshes the lease renewal timestamp.
+Fewer checkpoints can therefore require more renewal-only writes; coalescing
+does not suppress renewal or extend expiration. Local A/B tests count checkpoint,
+renewal, acquisition, release, creation, and split write requests separately.
+They assert identical ordered create-only coverage in both modes and fewer
+checkpoint writes, alongside deadline, multi-slice idle, failure, shutdown,
+ownership, topology, SDK, and native receipt tests. Full historical
+all-versions-and-deletes correctness still requires separately authorized
+real-service validation.
 
 Lease maintenance uses a single 60-second expiration budget, independent of
 feed poll delay. Renewal targets one third of that budget since the last

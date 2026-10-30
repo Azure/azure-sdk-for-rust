@@ -21,9 +21,10 @@ use crate::{
         },
         processing::distribution::{BatchDistributor, LeaseSession},
     },
+    driver::dataflow::split_feed_envelope,
     models::{
         ChangeFeedFactoryMode, ChangeFeedStartFrom, ContainerReference, ContinuationToken,
-        CosmosResponse, FeedRange, MaxItemCountHint,
+        CosmosResponse, FeedRange, MaxItemCountHint, ResponseBody,
     },
     options::{OperationOptions, PlanOptions},
     CosmosDriver, Result,
@@ -39,6 +40,7 @@ use futures::{
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, HashSet},
+    future::Future,
     panic::AssertUnwindSafe,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -50,6 +52,45 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 type Signal = Shared<BoxFuture<'static, ()>>;
+
+/// Controls persistence of successfully acknowledged change feed batches.
+///
+/// This policy does not change callback page sizes or lease renewal schedules.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum CheckpointPolicy {
+    /// Persists each successful acknowledgment before polling the next batch.
+    #[default]
+    EveryBatch,
+    /// Retains acknowledged progress in memory until the lease is observed idle
+    /// or the interval since its first unpersisted acknowledgment elapses.
+    ///
+    /// The interval must be positive and representable by the runtime clock.
+    /// It schedules persistence, but cannot guarantee storage availability.
+    /// Graceful shutdown and topology recovery flush without waiting for it.
+    /// A crash can replay multiple successfully handled batches.
+    Coalesced {
+        /// Maximum time to defer attempting persistence of acknowledged progress.
+        max_interval: Duration,
+    },
+}
+
+impl CheckpointPolicy {
+    fn validate(self) -> Result<()> {
+        if let Self::Coalesced { max_interval } = self {
+            if max_interval.is_zero()
+                || Instant::now().checked_add(max_interval).is_none()
+                || azure_core::time::Duration::try_from(max_interval).is_err()
+            {
+                return Err(error(
+                    StatusCode::BadRequest,
+                    "Invalid checkpoint interval.",
+                ));
+            }
+        }
+        Ok(())
+    }
+}
 
 /// Configuration for driver-owned lease coordination and feed polling.
 ///
@@ -68,6 +109,7 @@ pub struct ProcessorOptions {
     min_leases: u32,
     max_leases: u32,
     expiration: Duration,
+    checkpoint_policy: CheckpointPolicy,
 }
 
 impl ProcessorOptions {
@@ -98,6 +140,7 @@ impl ProcessorOptions {
             min_leases: 0,
             max_leases: 0,
             expiration: Duration::from_secs(60),
+            checkpoint_policy: CheckpointPolicy::default(),
         }
     }
 
@@ -122,6 +165,16 @@ impl ProcessorOptions {
     /// Sets the service page-size hint, not a hard payload or memory bound.
     pub fn with_max_item_count(mut self, hint: MaxItemCountHint) -> Self {
         self.page_size = hint;
+        self
+    }
+
+    /// Sets how [`BatchReceipt::acknowledge()`] persists successful progress.
+    ///
+    /// Defaults to [`CheckpointPolicy::EveryBatch`]. Explicit
+    /// [`BatchReceipt::checkpoint()`] calls always wait for durable persistence.
+    /// Invalid intervals are rejected by [`Processor::start()`] before I/O.
+    pub fn with_checkpoint_policy(mut self, policy: CheckpointPolicy) -> Self {
+        self.checkpoint_policy = policy;
         self
     }
 
@@ -172,6 +225,41 @@ struct Lease {
     renewed: Option<Instant>,
     #[serde(default)]
     split_complete: bool,
+    #[serde(skip)]
+    pending: Option<PendingCheckpoint>,
+}
+
+#[derive(Clone)]
+struct PendingCheckpoint {
+    token: ContinuationToken,
+    since: Instant,
+    handled_changes: u64,
+    failed: bool,
+}
+
+impl Lease {
+    fn acknowledge(&mut self, token: ContinuationToken, handled_changes: u64) {
+        if let Some(pending) = &mut self.pending {
+            pending.token = token;
+            pending.handled_changes = pending.handled_changes.saturating_add(handled_changes);
+        } else {
+            self.pending = Some(PendingCheckpoint {
+                token,
+                since: Instant::now(),
+                handled_changes,
+                failed: false,
+            });
+        }
+    }
+
+    fn checkpoint_delay(&self, policy: CheckpointPolicy, now: Instant) -> Option<Duration> {
+        match (policy, &self.pending) {
+            (CheckpointPolicy::Coalesced { max_interval }, Some(pending)) => {
+                Some(max_interval.saturating_sub(now.saturating_duration_since(pending.since)))
+            }
+            _ => None,
+        }
+    }
 }
 
 struct Context {
@@ -254,15 +342,28 @@ impl Context {
             {
                 return Err(lost());
             }
+            current.value.pending = observed.pending.clone();
             match update {
                 Update::Acquire => {
                     current.value.base.owner = Some(self.options.instance_name.clone());
                     current.value.incarnation = Some(Uuid::new_v4().to_string());
                 }
                 Update::Renew => {}
-                Update::Checkpoint(token) => current.value.base.continuation = Some(token.clone()),
-                Update::Release => current.value.base.owner = None,
+                Update::Checkpoint(token) => {
+                    current.value.base.continuation = Some(token.clone());
+                    current.value.pending = None;
+                }
+                Update::Release => {
+                    current.value.base.owner = None;
+                    current.value.pending = None;
+                }
                 Update::Split(children) => {
+                    if current.value.pending.is_some() {
+                        return Err(error(
+                            StatusCode::Conflict,
+                            "Split requires durable progress.",
+                        ));
+                    }
                     topology::validate_children(&current.value.base.range, children)?;
                     let checkpoint = self.checkpoint(&current.value, &current.value.base.range)?;
                     current.value.base.continuation = Some(checkpoint);
@@ -313,6 +414,69 @@ impl Context {
             "Lease update conflicts exhausted the retry budget.",
         ))
     }
+
+    async fn flush(&self, lease: &mut Stored<Lease>) -> Result<()> {
+        if let Some(pending) = lease.value.pending.clone() {
+            if let Err(err) = self.update(lease, Update::Checkpoint(&pending.token)).await {
+                if let Some(pending) = &mut lease.value.pending {
+                    pending.failed = true;
+                }
+                return Err(err);
+            }
+            if matches!(
+                self.options.checkpoint_policy,
+                CheckpointPolicy::Coalesced { .. }
+            ) {
+                tracing::debug!(
+                    handled_changes = pending.handled_changes,
+                    elapsed_ms = pending.since.elapsed().as_millis() as u64,
+                    "Persisted coalesced checkpoint"
+                );
+            }
+        }
+        Ok(())
+    }
+
+    async fn wait_with_checkpoint<T>(
+        &self,
+        lease: &Mutex<Stored<Lease>>,
+        cancelled: &Signal,
+        force: &Signal,
+        work: impl Future<Output = Result<T>>,
+    ) -> Result<Option<T>> {
+        let work = work.fuse();
+        futures::pin_mut!(work);
+        loop {
+            let delay = lease
+                .lock()
+                .await
+                .value
+                .checkpoint_delay(self.options.checkpoint_policy, Instant::now());
+            let deadline = async {
+                match delay {
+                    Some(delay) => sleep(delay).await,
+                    None => futures::future::pending().await,
+                }
+            }
+            .fuse();
+            futures::pin_mut!(deadline);
+            futures::select_biased! {
+                _ = force.clone().fuse() => return Ok(None),
+                _ = cancelled.clone().fuse() => return Err(lost()),
+                _ = deadline => {
+                    let mut lease = lease.lock().await;
+                    if force.clone().now_or_never().is_some() {
+                        return Ok(None);
+                    }
+                    if cancelled.clone().now_or_never().is_some() {
+                        return Err(lost());
+                    }
+                    self.flush(&mut lease).await?;
+                },
+                result = work => return result.map(Some),
+            }
+        }
+    }
 }
 
 enum Update<'a> {
@@ -356,12 +520,13 @@ fn signal() -> (oneshot::Sender<()>, Signal) {
 
 struct Acknowledgment {
     result: oneshot::Sender<Result<()>>,
+    durable: bool,
 }
 
 /// A delivery receipt tied to one batch and one acquisition of its lease.
 ///
-/// Dropping this receipt without saving a checkpoint abandons the lease without
-/// advancing its durable position. It cannot authorize arbitrary continuations.
+/// Dropping this receipt without acknowledging it abandons the lease without
+/// acknowledging this batch. It cannot authorize arbitrary continuations.
 pub struct BatchReceipt {
     sender: oneshot::Sender<Acknowledgment>,
     cancelled: Signal,
@@ -379,9 +544,30 @@ impl BatchReceipt {
     /// Returns an error for lost ownership, shutdown, or a failed checkpoint.
     /// An error does not prove that a timed-out service write was not committed.
     pub async fn checkpoint(self) -> Result<()> {
+        self.complete(true).await
+    }
+
+    /// Acknowledges successful processing according to the checkpoint policy.
+    ///
+    /// Consumes the receipt and permits the next batch after acknowledgment.
+    /// With [`CheckpointPolicy::Coalesced`], success can mean only in-memory
+    /// acceptance, not persistence. Multiple successful batches may replay.
+    /// Use [`checkpoint()`](Self::checkpoint) to require durable persistence.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the lease session ends or a required checkpoint fails.
+    pub async fn acknowledge(self) -> Result<()> {
+        self.complete(false).await
+    }
+
+    async fn complete(self, durable: bool) -> Result<()> {
         let (tx, rx) = oneshot::channel();
         self.sender
-            .send(Acknowledgment { result: tx })
+            .send(Acknowledgment {
+                result: tx,
+                durable,
+            })
             .map_err(|_| lost())?;
         rx.await.map_err(|_| lost())?
     }
@@ -395,7 +581,7 @@ impl BatchReceipt {
     }
 }
 
-/// An owned change feed response and its processing receipt.
+/// An owned, lease-scoped batch of change feed results and its processing receipt.
 ///
 /// The body preserves the driver's wire envelopes and encoding. No application
 /// item deserialization happens in the driver.
@@ -536,6 +722,7 @@ impl Processor {
         }
         azure_core::time::Duration::try_from(options.poll_delay)
             .map_err(|_| error(StatusCode::BadRequest, "Poll delay is not representable."))?;
+        options.checkpoint_policy.validate()?;
         bootstrap(
             &source_driver,
             &source,
@@ -610,7 +797,7 @@ impl Processor {
     /// Waits for an owned batch, or returns `None` when delivery has drained.
     ///
     /// Canceling this wait does not consume a batch. Progress from 304 responses
-    /// is saved internally without invoking application callbacks.
+    /// is handled internally without invoking application callbacks.
     /// Ready lease sessions take turns supplying batches; an empty set of owned
     /// leases waits for future acquisitions rather than ending the stream.
     ///
@@ -720,10 +907,7 @@ async fn run(
                         let state = state.clone();
                         let stop = stop.clone();
                         let force = force.clone();
-                        workers.push(async move {
-                            supervise(context, state, lease, stop, force).await;
-                            id
-                        }.boxed());
+                        workers.push(supervise(context, state, lease, stop, force).map(move |()| id).boxed());
                     }
                 }
                 balancing = balance(context.clone(), state.clone(), owned.clone(), context.options.acquire_interval(), stop.clone(), force.clone()).boxed();
@@ -736,13 +920,11 @@ async fn run(
         let state = state.clone();
         let stop = stop.clone();
         let force = force.clone();
+        let id = lease.value.base.record.id.clone();
         workers.push(
-            async move {
-                let id = lease.value.base.record.id.clone();
-                supervise(context, state, lease, stop, force).await;
-                id
-            }
-            .boxed(),
+            supervise(context, state, lease, stop, force)
+                .map(move |()| id)
+                .boxed(),
         );
     }
     while workers.next().await.is_some() {}
@@ -1004,11 +1186,26 @@ async fn poll(
         state.clone(),
         session,
         lease.clone(),
-        cancelled,
+        cancelled.clone(),
         stop,
         force,
     )
     .await;
+    if !state.forced.load(Ordering::Acquire) {
+        let mut lease = lease.lock().await;
+        if !state.forced.load(Ordering::Acquire)
+            && !lease
+                .value
+                .pending
+                .as_ref()
+                .is_some_and(|pending| pending.failed)
+        {
+            if cancelled.clone().now_or_never().is_some() {
+                return Err(lost());
+            }
+            context.flush(&mut lease).await?;
+        }
+    }
     match result {
         Err(err) if err.status().is_partition_topology_change() => {
             if state.stopping.load(Ordering::Acquire) {
@@ -1055,6 +1252,7 @@ async fn poll_feed(
             &plan_options,
         )
         .await?;
+    let mut idle_responses = 0usize;
     loop {
         if cancelled.clone().now_or_never().is_some() {
             return Err(lost());
@@ -1063,19 +1261,26 @@ async fn poll_feed(
             return Ok(());
         }
         let response = context
-            .source_driver
-            .execute_plan(
-                &mut plan,
-                Some(context.source.clone()),
-                OperationOptions::default(),
+            .wait_with_checkpoint(
+                &lease,
+                &cancelled,
+                &force,
+                context.source_driver.execute_plan(
+                    &mut plan,
+                    Some(context.source.clone()),
+                    OperationOptions::default(),
+                ),
             )
-            .await?
-            .ok_or_else(|| {
-                error(
-                    StatusCode::InternalServerError,
-                    "Change feed unexpectedly drained.",
-                )
-            })?;
+            .await?;
+        let Some(response) = response else {
+            return Ok(());
+        };
+        let response = response.ok_or_else(|| {
+            error(
+                StatusCode::InternalServerError,
+                "Change feed unexpectedly drained.",
+            )
+        })?;
         if state.stopping.load(Ordering::Acquire) {
             return Ok(());
         }
@@ -1088,8 +1293,11 @@ async fn poll_feed(
         let idle = response.status().status_code() == StatusCode::NotModified;
         let token = plan.to_continuation_token()?;
         if idle {
-            let mut lease = lease.lock().await;
-            if lease
+            // Processor plans disable repair, so a full round covers a stable set of leaves.
+            idle_responses = idle_responses.saturating_add(1);
+            let lease_idle = idle_responses >= plan.pipeline.fan_out_width();
+            let mut stored = lease.lock().await;
+            if stored
                 .value
                 .base
                 .continuation
@@ -1097,19 +1305,42 @@ async fn poll_feed(
                 .map(ContinuationToken::as_str)
                 != Some(token.as_str())
             {
-                context
-                    .update(&mut lease, Update::Checkpoint(&token))
-                    .await?;
+                let initial =
+                    stored.value.base.continuation.is_none() && stored.value.pending.is_none();
+                stored.value.acknowledge(token, 0);
+                if initial
+                    || lease_idle
+                    || context.options.checkpoint_policy == CheckpointPolicy::EveryBatch
+                {
+                    context.flush(&mut stored).await?;
+                }
             }
-            drop(lease);
-            futures::select! {
+            drop(stored);
+            let waiting = async {
+                futures::select! {
                 _ = sleep(context.options.poll_delay).fuse() => {},
-                _ = force.clone().fuse() => return Ok(()),
-                _ = stop.clone().fuse() => return Ok(()),
-                _ = cancelled.clone().fuse() => return Err(lost()),
+                _ = stop.clone().fuse() => {},
+                }
+                Ok(())
+            };
+            if context
+                .wait_with_checkpoint(&lease, &cancelled, &force, waiting)
+                .await?
+                .is_none()
+            {
+                return Ok(());
             }
             continue;
         }
+        idle_responses = 0;
+        let handled_changes = match context.options.checkpoint_policy {
+            CheckpointPolicy::EveryBatch => 0,
+            CheckpointPolicy::Coalesced { .. } => match response.body() {
+                ResponseBody::NoPayload => 0,
+                ResponseBody::Items(items) => items.len() as u64,
+                ResponseBody::Bytes(body) => split_feed_envelope(body)?.len() as u64,
+            },
+        };
         let (sender, received) = oneshot::channel();
         if !session.deliver(
             response,
@@ -1120,25 +1351,31 @@ async fn poll_feed(
         )? {
             return Ok(());
         }
-        let acknowledgment = futures::select_biased! {
-            _ = force.clone().fuse() => return Ok(()),
-            _ = cancelled.clone().fuse() => return Err(lost()),
-            result = received.fuse() => result,
-        };
-        if acknowledgment.is_err() && state.forced.load(Ordering::Acquire) {
+        let acknowledgment = context
+            .wait_with_checkpoint(&lease, &cancelled, &force, async {
+                received.await.map_err(|_| {
+                    error(
+                        StatusCode::Conflict,
+                        "Batch was abandoned without successful processing.",
+                    )
+                })
+            })
+            .await?;
+        let Some(acknowledgment) = acknowledgment else {
             return Ok(());
-        }
-        let acknowledgment: Acknowledgment = acknowledgment.map_err(|_| {
-            error(
-                StatusCode::Conflict,
-                "Batch was abandoned without successful processing.",
-            )
-        })?;
+        };
         let mut lease = lease.lock().await;
-        if cancelled.clone().now_or_never().is_some() {
+        if cancelled.clone().now_or_never().is_some() || state.forced.load(Ordering::Acquire) {
             return Err(lost());
         }
-        let result = context.update(&mut lease, Update::Checkpoint(&token)).await;
+        lease.value.acknowledge(token, handled_changes);
+        let result = if acknowledgment.durable
+            || context.options.checkpoint_policy == CheckpointPolicy::EveryBatch
+        {
+            context.flush(&mut lease).await
+        } else {
+            Ok(())
+        };
         let failed = result.is_err();
         let _ = acknowledgment.result.send(result);
         if failed {

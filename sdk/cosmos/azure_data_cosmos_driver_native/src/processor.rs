@@ -21,7 +21,9 @@ use crate::{
     string::{optional_text, required_text, CosmosStringView},
 };
 use azure_data_cosmos_driver::{
-    change_feed_processor::{BatchReceipt, ChangeFeedBatch, Processor, ProcessorOptions},
+    change_feed_processor::{
+        BatchReceipt, ChangeFeedBatch, CheckpointPolicy, Processor, ProcessorOptions,
+    },
     models::{
         ChangeFeedFactoryMode, ChangeFeedStartFrom, ContinuationToken, MaxItemCountHint,
         ResponseBody,
@@ -128,7 +130,8 @@ pub struct CosmosProcessorCompletion {
     pub abi_version: u32,
     /// Common status, error, diagnostics, correlation, headers, and raw body.
     pub common: CosmosCompletion,
-    /// 0: error; 1: started; 2: batch; 3: checkpoint saved; 4: stopped; 5: end.
+    /// 0: error; 1: started; 2: batch; 3: checkpoint saved; 4: stopped; 5: end;
+    /// 6: batch acknowledged (not necessarily persisted).
     pub result_kind: u32,
     /// 0: no payload; 1: common raw bytes; 2: ordered item buffers.
     pub body_kind: u32,
@@ -140,7 +143,7 @@ pub struct CosmosProcessorCompletion {
     pub lease_token: CosmosStringView,
     /// Started processor; detach once before freeing this completion.
     pub processor: *mut ProcessorHandle,
-    /// Batch receipt; detach once, then checkpoint after successful processing.
+    /// Batch receipt; detach once, then acknowledge after successful processing.
     pub receipt: *mut ProcessorReceipt,
     /// Private allocation owner.
     pub backing: *mut ProcessorCompletionBacking,
@@ -156,6 +159,7 @@ enum ResultData {
     Started(Arc<ProcessorInner>),
     Batch(Box<ChangeFeedBatch>),
     CheckpointSaved,
+    Acknowledged,
     Stopped,
     End,
 }
@@ -253,6 +257,7 @@ impl Delivery {
                         response = Some(page);
                     }
                     ResultData::CheckpointSaved => kind = 3,
+                    ResultData::Acknowledged => kind = 6,
                     ResultData::Stopped => kind = 4,
                     ResultData::End => kind = 5,
                 }
@@ -474,7 +479,59 @@ pub extern "C" fn cosmos_processor_start_submit(
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
+    cosmos_processor_start_with_policy_submit(
+        source_driver,
+        source,
+        lease_driver,
+        leases,
+        request,
+        0,
+        0,
+        queue,
+        user_data,
+        out_pre_error,
+    )
+}
+
+/// Starts a processor with an explicit checkpoint policy.
+///
+/// `checkpoint_policy` is 0 for every batch (interval must be zero), or 1 for
+/// coalescing (interval must be positive). `checkpoint_interval_ms` bounds the
+/// delay before attempting persistence; observed lease-idle flushes earlier.
+/// Coalescing can replay multiple successfully acknowledged batches.
+///
+/// All handles and request allocations must remain readable for this call.
+/// Inputs are copied before returning. Use `cosmos_processor_acknowledge_submit`
+/// for policy-controlled acknowledgment; checkpoint submission always persists.
+#[no_mangle]
+pub extern "C" fn cosmos_processor_start_with_policy_submit(
+    source_driver: *const DriverHandle,
+    source: *const ContainerRefHandle,
+    lease_driver: *const DriverHandle,
+    leases: *const ContainerRefHandle,
+    request: *const CosmosProcessorRequest,
+    checkpoint_policy: u32,
+    checkpoint_interval_ms: u64,
+    queue: *mut ProcessorQueue,
+    user_data: isize,
+    out_pre_error: *mut CosmosStatusCode,
+) -> *mut OperationHandle {
     let prepare = || {
+        let policy = match (checkpoint_policy, checkpoint_interval_ms) {
+            (0, 0) => CheckpointPolicy::EveryBatch,
+            (1, millis) if millis > 0 => {
+                let max_interval = Duration::from_millis(millis);
+                if std::time::Instant::now()
+                    .checked_add(max_interval)
+                    .is_none()
+                    || azure_core::time::Duration::try_from(max_interval).is_err()
+                {
+                    return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
+                }
+                CheckpointPolicy::Coalesced { max_interval }
+            }
+            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
+        };
         // SAFETY: caller keeps handles and input readable for this call.
         let queue = unsafe { queue.as_ref() }
             .ok_or(CosmosErrorCode::CosmosErrorCodeInvalidArgument)?
@@ -493,7 +550,7 @@ pub extern "C" fn cosmos_processor_start_submit(
             .inner
             .clone();
         // SAFETY: request follows the size-prefix and counted-string contracts.
-        let options = unsafe { options(request)? };
+        let options = unsafe { options(request)? }.with_checkpoint_policy(policy);
         queue.deliveries.reserve()?;
         Ok::<_, CosmosErrorCode>((queue, source_driver, source, lease_driver, leases, options))
     };
@@ -655,6 +712,30 @@ pub extern "C" fn cosmos_processor_checkpoint_submit(
     user_data: isize,
     out: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
+    submit_acknowledgment(receipt, user_data, out, true)
+}
+
+/// Acknowledges successful processing according to the processor's policy.
+///
+/// An acknowledged result (kind 6) can mean only in-memory acceptance. It does
+/// not claim durable persistence. Use `cosmos_processor_checkpoint_submit` for
+/// a durable barrier. Receipt consumption, handle cleanup, and control admission
+/// are identical to checkpoint submission.
+#[no_mangle]
+pub extern "C" fn cosmos_processor_acknowledge_submit(
+    receipt: *const ProcessorReceipt,
+    user_data: isize,
+    out: *mut CosmosStatusCode,
+) -> *mut OperationHandle {
+    submit_acknowledgment(receipt, user_data, out, false)
+}
+
+fn submit_acknowledgment(
+    receipt: *const ProcessorReceipt,
+    user_data: isize,
+    out: *mut CosmosStatusCode,
+    durable: bool,
+) -> *mut OperationHandle {
     // SAFETY: caller keeps the receipt handle live during this call.
     let Some(receipt) = (unsafe { receipt.as_ref() }) else {
         pre_error(
@@ -684,8 +765,13 @@ pub extern "C" fn cosmos_processor_checkpoint_submit(
     };
     pre_error(out, COSMOS_STATUS_SUCCESS);
     launch(queue, user_data, None, true, async move {
-        receipt.checkpoint().await?;
-        Ok(ResultData::CheckpointSaved)
+        if durable {
+            receipt.checkpoint().await?;
+            Ok(ResultData::CheckpointSaved)
+        } else {
+            receipt.acknowledge().await?;
+            Ok(ResultData::Acknowledged)
+        }
     })
 }
 

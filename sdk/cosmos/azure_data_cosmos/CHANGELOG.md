@@ -4,7 +4,8 @@
 
 ### Features Added
 
-- `ChangeFeedProcessor::start()` bootstraps the workload and starts driver-owned lease balancing, renewal, and polling; a checkpoint follows each successful callback before the next batch for that lease, and `stop()` waits for local shutdown.
+- Added opt-in `ChangeFeedCheckpointPolicy::Coalesced` to reduce checkpoint writes across successful callbacks, flushing at lease-idle, the configured interval, graceful shutdown, or topology recovery; durable-per-batch remains the default.
+- `ChangeFeedProcessor::start()` bootstraps the workload and starts driver-owned lease balancing, renewal, and polling; by default, a checkpoint follows each successful callback before the next batch for that lease, and `stop()` waits for local shutdown.
 - The bootstrap stage of `ChangeFeedProcessor::start()` initializes incomplete workloads through the shared driver without inspecting completed lease inventories. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 - Opt-in restart verification recreates missing initial leases in the processing runtime while preserving existing owners and checkpoints. ([#5474](https://github.com/Azure/azure-sdk-for-rust/pull/5474))
 - Compatible concurrent processor starts sharing the same drivers now await one bootstrap outcome; cancelling one waiter does not cancel the others. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))

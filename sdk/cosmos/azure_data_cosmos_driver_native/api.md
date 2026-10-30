@@ -682,6 +682,8 @@ pub mod processor {
     #[no_mangle]
     pub extern "C" fn cosmos_processor_abort_submit(processor: *const ProcessorHandle, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
     #[no_mangle]
+    pub extern "C" fn cosmos_processor_acknowledge_submit(receipt: *const ProcessorReceipt, user_data: isize, out: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+    #[no_mangle]
     pub extern "C" fn cosmos_processor_checkpoint_submit(receipt: *const ProcessorReceipt, user_data: isize, out: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
     #[no_mangle]
     pub extern "C" fn cosmos_processor_completion_free(completion: *mut CosmosProcessorCompletion);
@@ -707,6 +709,8 @@ pub mod processor {
     pub extern "C" fn cosmos_processor_request_init(out: *mut CosmosProcessorRequest);
     #[no_mangle]
     pub extern "C" fn cosmos_processor_start_submit(source_driver: *const crate::driver::DriverHandle, source: *const crate::container_ref::ContainerRefHandle, lease_driver: *const crate::driver::DriverHandle, leases: *const crate::container_ref::ContainerRefHandle, request: *const CosmosProcessorRequest, queue: *mut ProcessorQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+    #[no_mangle]
+    pub extern "C" fn cosmos_processor_start_with_policy_submit(source_driver: *const crate::driver::DriverHandle, source: *const crate::container_ref::ContainerRefHandle, lease_driver: *const crate::driver::DriverHandle, leases: *const crate::container_ref::ContainerRefHandle, request: *const CosmosProcessorRequest, checkpoint_policy: u32, checkpoint_interval_ms: u64, queue: *mut ProcessorQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
     #[no_mangle]
     pub extern "C" fn cosmos_processor_stop_submit(processor: *const ProcessorHandle, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
     #[repr(C)]

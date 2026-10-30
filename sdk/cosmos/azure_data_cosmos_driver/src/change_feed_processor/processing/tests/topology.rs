@@ -204,11 +204,27 @@ fn token(context: &Context, scope: &FeedRange, value: &str) -> ContinuationToken
 
 #[tokio::test]
 async fn split_with_pending_batch_preserves_coverage_and_rebalances_children() -> Result<()> {
+    exercise_split(super::super::CheckpointPolicy::EveryBatch).await
+}
+
+#[tokio::test]
+async fn split_flushes_coalesced_progress_before_retiring_the_parent() -> Result<()> {
+    exercise_split(super::super::CheckpointPolicy::Coalesced {
+        max_interval: Duration::from_secs(60),
+    })
+    .await
+}
+
+async fn exercise_split(policy: super::super::CheckpointPolicy) -> Result<()> {
     for mode in [
         ChangeFeedFactoryMode::Incremental,
         ChangeFeedFactoryMode::FullFidelity,
     ] {
-        let (context, emulator) = fixture_with_emulator(mode, 1).await?;
+        let (mut context, emulator) = fixture_with_emulator(mode, 1).await?;
+        Arc::get_mut(&mut context)
+            .unwrap()
+            .options
+            .checkpoint_policy = policy;
         let children = vec![range("", "20"), range("20", "FF")];
         let keys = keys(&children);
         let first = start(&context, config(&context, "first", 1)).await?;
@@ -237,7 +253,7 @@ async fn split_with_pending_batch_preserves_coverage_and_rebalances_children() -
                 .await
                 .is_err()
         );
-        receipt.checkpoint().await?;
+        receipt.acknowledge().await?;
         let active = wait_for(&context, |leases| {
             leases.len() == 2
                 && leases
@@ -256,6 +272,7 @@ async fn split_with_pending_batch_preserves_coverage_and_rebalances_children() -
             children
         );
         let retired = stored(&context, &parent_id).await.value;
+        assert_ne!(retired.base.continuation, before);
         assert_eq!(retired.children, Some(children));
         assert!(retired.base.owner.is_none());
         assert_eq!(retired.base.record.workload, context.identity);
@@ -365,13 +382,37 @@ async fn merge_retains_uneven_predecessor_checkpoints_across_pending_batches_and
         ChangeFeedFactoryMode::Incremental,
         ChangeFeedFactoryMode::FullFidelity,
     ] {
-        exercise_merge(mode).await?;
+        exercise_merge(mode, super::super::CheckpointPolicy::EveryBatch).await?;
     }
     Ok(())
 }
 
-async fn exercise_merge(mode: ChangeFeedFactoryMode) -> Result<()> {
-    let (context, emulator) = fixture_with_emulator(mode, 2).await?;
+#[tokio::test]
+async fn coalesced_merge_recovery_keeps_independent_lease_positions() -> Result<()> {
+    for mode in [
+        ChangeFeedFactoryMode::Incremental,
+        ChangeFeedFactoryMode::FullFidelity,
+    ] {
+        exercise_merge(
+            mode,
+            super::super::CheckpointPolicy::Coalesced {
+                max_interval: Duration::from_secs(60),
+            },
+        )
+        .await?;
+    }
+    Ok(())
+}
+
+async fn exercise_merge(
+    mode: ChangeFeedFactoryMode,
+    policy: super::super::CheckpointPolicy,
+) -> Result<()> {
+    let (mut context, emulator) = fixture_with_emulator(mode, 2).await?;
+    Arc::get_mut(&mut context)
+        .unwrap()
+        .options
+        .checkpoint_policy = policy;
     let initial = context.list().await?;
     let initial_ids: BTreeSet<_> = initial
         .iter()
@@ -417,7 +458,7 @@ async fn exercise_merge(mode: ChangeFeedFactoryMode) -> Result<()> {
         stored(&context, &other_id).await.value.base.continuation,
         other_checkpoint
     );
-    other_receipt.checkpoint().await?;
+    other_receipt.acknowledge().await?;
     first.abort().await?;
     second.abort().await?;
     assert!(held_receipt.checkpoint().await.is_err());

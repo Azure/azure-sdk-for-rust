@@ -77,6 +77,10 @@ fn assert_defaults<T, H>(builder: &ChangeFeedProcessorBuilder<T, H>) {
         MaxItemCountHint::Limit(NonZeroU32::new(100).unwrap())
     );
     assert_eq!(builder.feed_poll_delay, Duration::from_secs(5));
+    assert_eq!(
+        builder.checkpoint_policy,
+        super::ChangeFeedCheckpointPolicy::EveryBatch
+    );
     assert_eq!(builder.min_scale_count, 0);
     assert_eq!(builder.max_scale_count, 0);
     assert!(!builder.lease_verification_on_restart_enabled);
@@ -86,6 +90,9 @@ fn configure<T, H>(builder: ChangeFeedProcessorBuilder<T, H>) -> ChangeFeedProce
     builder
         .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(237).unwrap()))
         .with_feed_poll_delay(Duration::from_millis(1234))
+        .with_checkpoint_policy(super::ChangeFeedCheckpointPolicy::Coalesced {
+            max_interval: Duration::from_secs(7),
+        })
         .with_start_continuation(ContinuationToken::from_string("saved-position".into()))
         .with_min_scale_count(2)
         .with_max_scale_count(7)
@@ -131,6 +138,7 @@ async fn configuration_round_trip(mode: ChangeFeedMode) -> Result<(), Box<dyn Er
             start_from,
             max_item_count,
             feed_poll_delay,
+            checkpoint_policy,
             min_scale_count,
             max_scale_count,
             lease_verification_on_restart_enabled,
@@ -151,6 +159,12 @@ async fn configuration_round_trip(mode: ChangeFeedMode) -> Result<(), Box<dyn Er
             MaxItemCountHint::Limit(NonZeroU32::new(237).unwrap())
         );
         assert_eq!(feed_poll_delay, Duration::from_millis(1234));
+        assert_eq!(
+            checkpoint_policy,
+            super::ChangeFeedCheckpointPolicy::Coalesced {
+                max_interval: Duration::from_secs(7),
+            }
+        );
         assert_eq!(min_scale_count, 2);
         assert_eq!(max_scale_count, 7);
         assert!(lease_verification_on_restart_enabled);
@@ -232,6 +246,22 @@ async fn latest_version_start_positions_round_trip() -> Result<(), Box<dyn Error
 
 async fn build_validation(mode: ChangeFeedMode) -> Result<(), Box<dyn Error>> {
     let (monitored, leases) = containers().await?;
+    for max_interval in [Duration::ZERO, Duration::MAX] {
+        let result = ChangeFeedProcessorBuilder::new(
+            mode,
+            monitored.clone(),
+            leases.clone(),
+            "orders",
+            "worker",
+        )
+        .with_checkpoint_policy(super::ChangeFeedCheckpointPolicy::Coalesced { max_interval })
+        .handle_change_feed(|_, _: Vec<ChangeFeedItem<String>>| async { Ok(()) })
+        .build();
+        assert_eq!(
+            result.err().unwrap().status().status_code(),
+            StatusCode::BadRequest
+        );
+    }
     let cases = [
         ("orders", "worker", 0, 0, None, None),
         ("orders", "worker", 2, 2, None, None),

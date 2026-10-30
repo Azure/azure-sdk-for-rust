@@ -175,6 +175,7 @@ impl Context {
                         children: None,
                         split_complete: false,
                         renewed: None,
+                        pending: None,
                     };
                     self.store().create(&id, &lease).await?;
                     self.store().read::<Lease>(&id).await?.ok_or_else(|| {
@@ -228,6 +229,7 @@ impl Context {
                         children: None,
                         renewed: None,
                         split_complete: false,
+                        pending: None,
                     };
                     self.store().create(&id, &child).await?;
                     self.store().read::<Lease>(&id).await?.ok_or_else(|| {

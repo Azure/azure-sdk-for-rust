@@ -1,13 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{ChangeFeedProcessor, ChangeFeedProcessorContext, ProcessorStartFrom};
+use super::{
+    ChangeFeedCheckpointPolicy, ChangeFeedProcessor, ChangeFeedProcessorContext, ProcessorStartFrom,
+};
 use crate::{
     models::ChangeFeedItem, options::ChangeFeedMode, ContainerClient, CosmosError, CosmosStatus,
 };
 use azure_core::{async_runtime::get_async_runtime, http::StatusCode};
 use azure_data_cosmos_driver::{
-    change_feed_processor::{ChangeFeedBatch, Processor, ProcessorOptions},
+    change_feed_processor::{ChangeFeedBatch, CheckpointPolicy, Processor, ProcessorOptions},
     models::{ChangeFeedFactoryMode as DriverMode, ChangeFeedStartFrom},
 };
 use futures::{
@@ -54,6 +56,12 @@ where
     };
     let mut options = ProcessorOptions::new(mode, &config.processor_name, &config.instance_name)
         .with_lease_verification_enabled_on_restart(config.lease_verification_on_restart_enabled)
+        .with_checkpoint_policy(match config.checkpoint_policy {
+            ChangeFeedCheckpointPolicy::EveryBatch => CheckpointPolicy::EveryBatch,
+            ChangeFeedCheckpointPolicy::Coalesced { max_interval } => {
+                CheckpointPolicy::Coalesced { max_interval }
+            }
+        })
         .with_max_item_count(config.max_item_count)
         .with_poll_delay(config.feed_poll_delay)
         .with_lease_counts(config.min_scale_count, config.max_scale_count);
@@ -153,8 +161,8 @@ where
     };
     match result {
         Some(Ok(Ok(()))) => {
-            if let Err(err) = receipt.checkpoint().await {
-                tracing::warn!(lease = %lease_token, error = %err, "Callback succeeded but checkpoint failed");
+            if let Err(err) = receipt.acknowledge().await {
+                tracing::warn!(lease = %lease_token, error = %err, "Callback succeeded but acknowledgment failed");
             }
         }
         Some(Ok(Err(err))) => {

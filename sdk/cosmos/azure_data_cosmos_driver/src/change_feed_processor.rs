@@ -12,4 +12,6 @@ mod processing;
 
 pub use bootstrap::bootstrap;
 pub(crate) use bootstrap::ChangeFeedProcessorBootstrapCoalescer;
-pub use processing::{BatchReceipt, ChangeFeedBatch, Processor, ProcessorOptions};
+pub use processing::{
+    BatchReceipt, ChangeFeedBatch, CheckpointPolicy, Processor, ProcessorOptions,
+};

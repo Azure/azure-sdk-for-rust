@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added coalesced checkpoint policies and `BatchReceipt::acknowledge()` for deferred persistence of successful batches; `checkpoint()` remains a durable barrier and renewal schedules are unchanged.
 - Added `change_feed_processor::Processor` with equal lease balancing, renewal, and schema-agnostic batch receipts that gate durable checkpoints and subsequent polls.
 - Added automatic online processor split recovery with range-local child creation, fenced parent retirement, resumable incomplete transitions, independent merge checkpoints, and balanced child acquisition. ([#5476](https://github.com/Azure/azure-sdk-for-rust/pull/5476))
 - Added driver-owned change feed workload bootstrap with mode binding, create-only initial lease coverage, bounded initialization claims, and progress-preserving recovery of incomplete workloads. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))

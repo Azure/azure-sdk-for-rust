@@ -202,7 +202,7 @@ fn expiration_boundary_and_maintenance_are_independent_of_poll_delay() {
 
 #[cfg(feature = "fault_injection")]
 mod faults {
-    use super::super::super::{run, signal, SharedState};
+    use super::super::super::{run, signal, CheckpointPolicy, SharedState};
     use super::{
         fixture_with_emulator, insert, next, record, start, ChangeFeedFactoryMode, Context,
     };
@@ -281,6 +281,69 @@ mod faults {
         let saved = record(&context, &id).await;
         assert!(saved.base.continuation.is_none());
         assert!(saved.base.owner.is_none());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn coalesced_final_flush_failure_is_an_incomplete_drain() -> Result<()> {
+        let (context, rule) = fixture(Some(1), false).await?;
+        insert(&context, "one").await?;
+        let options = context
+            .options
+            .clone()
+            .with_checkpoint_policy(CheckpointPolicy::Coalesced {
+                max_interval: Duration::from_secs(60),
+            });
+        let processor = start(&context, options).await?;
+        let (id, _, receipt) = next(&processor).await.into_parts();
+        let mut stopping = Box::pin(processor.stop());
+        assert!(futures::poll!(stopping.as_mut()).is_pending());
+        rule.enable();
+        receipt.acknowledge().await?;
+        assert!(stopping.await.is_err());
+        assert_eq!(rule.hit_count(), 1);
+        let saved = record(&context, &id).await;
+        assert!(saved.base.continuation.is_none());
+        assert!(saved.base.owner.is_none());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn deferred_flush_failure_keeps_dirty_progress_and_ends_the_wait() -> Result<()> {
+        let (mut context, rule) = fixture(Some(1), false).await?;
+        Arc::get_mut(&mut context)
+            .unwrap()
+            .options
+            .checkpoint_policy = CheckpointPolicy::Coalesced {
+            max_interval: Duration::from_secs(60),
+        };
+        let mut owned = context.acquire(&context.list().await?.remove(0)).await?;
+        owned.value.acknowledge(
+            crate::models::ContinuationToken::from_string("handled".into()),
+            2,
+        );
+        owned.value.pending.as_mut().unwrap().since =
+            std::time::Instant::now() - Duration::from_secs(60);
+        let id = owned.value.base.record.id.clone();
+        let lease = async_lock::Mutex::new(owned);
+        let (_cancel, cancelled) = signal();
+        let (_force, forced) = signal();
+        rule.enable();
+        let result = context
+            .wait_with_checkpoint(
+                &lease,
+                &cancelled,
+                &forced,
+                futures::future::pending::<Result<()>>(),
+            )
+            .await;
+        assert_eq!(
+            result.unwrap_err().status().status_code(),
+            StatusCode::BadRequest
+        );
+        assert!(lease.lock().await.value.pending.is_some());
+        assert!(record(&context, &id).await.base.continuation.is_none());
+        assert_eq!(rule.hit_count(), 1);
         Ok(())
     }
 

@@ -99,11 +99,26 @@ the host SDK owns deserialization and callback execution.
 Only one undelivered Next is admitted per processor. After transferring it, the
 host may request other leases' batches while callbacks run concurrently. Each
 active lease session still has one outstanding batch; it cannot advance until
-checkpoint success. Receipts are one-use and tied to the acquisition incarnation.
-Late acknowledgments after ownership loss, watchdog expiration, or stop fail.
+acknowledgment succeeds. By default acknowledgment waits for durable persistence.
+Receipts are one-use and tied to the acquisition incarnation. Receipts from ended
+sessions cannot authorize later checkpoints.
+
+To coalesce checkpoints, start with `cosmos_processor_start_with_policy_submit`,
+policy `1`, and a positive interval in milliseconds. Use
+`cosmos_processor_acknowledge_submit` after each successful callback. Its result
+kind `6` means acknowledgment, not necessarily persistence; the existing
+`cosmos_processor_checkpoint_submit` always persists and returns kind `3`.
+The original start function and request layout remain unchanged.
+
+Coalescing stores only the latest successfully handled continuation and counters,
+not past payloads. It flushes at observed lease-idle or the interval since the
+first unpersisted acknowledgment, whichever occurs first. A local `304` is not
+enough to establish idleness for a multi-slice lease. A deadline can flush earlier
+successes while another callback runs, but never includes that unfinished batch.
+Crashes and forced cancellation can replay multiple successful callbacks.
 
 Queue capacity bounds admitted Start/Next results, including in-flight requests.
-Checkpoint and Stop use control admission independently of that data capacity:
+Acknowledgment, Checkpoint, and Stop use control admission independently of that data capacity:
 otherwise a pending Next could occupy the slot needed by the acknowledgment
 that enables its next page. Renewal never waits on queue space. This does not
 bound payloads retained by the host or all active leases by a global byte limit.
@@ -113,6 +128,13 @@ stops admission and requests processor shutdown while admitted results drain.
 Queue free abandons results and marks their operation handles as delivery-lost.
 Neither shutdown nor checkpoint writes can roll back callback side effects; consumers
 must tolerate at-least-once delivery.
+
+Graceful Stop drains issued receipts and flushes all successfully acknowledged
+progress before release, without waiting for the coalescing interval. Continue
+receiving batches and acknowledging them while waiting; keep the queue and
+runtime alive. Incomplete drain or failed persistence/release produces an error.
+Abort and disposal instead request forced cancellation. Already-started writes
+may still complete; foreign callbacks remain the host's responsibility.
 
 ### Operation defaults and admission snapshots
 
