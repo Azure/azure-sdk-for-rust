@@ -2446,8 +2446,8 @@
       "expectedError": null
     },
     {
-      "id": "unsupported_combination_group_by",
-      "description": "DISTINCT combined with GROUP BY is not yet supported and must fail with a typed unsupported-feature error rather than silently dropping one of the two stages.",
+      "id": "group_by_missing_service_rewrite",
+      "description": "DISTINCT combined with GROUP BY requires a service rewrite. The in-memory emulator does not generate it, so planning must reject the incomplete plan rather than silently dropping either stage. Supported composition is covered by the planner tests with rewritten partials.",
       "sources": [
         {
           "sdk": "dotnet",
@@ -2485,8 +2485,8 @@
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": {
-        "category": "clientUnsupportedQueryFeature",
-        "messageFragment": "GROUP BY"
+        "category": "serializationResponseBodyInvalid",
+        "messageFragment": "advanced query plan did not supply a non-empty rewrittenQuery"
       }
     },
     {
@@ -2555,8 +2555,8 @@
       "expectedError": null
     },
     {
-      "id": "unsupported_combination_aggregate",
-      "description": "DISTINCT combined with an aggregate is not yet supported; aggregates compose below DISTINCT and need their own stage first.",
+      "id": "aggregate_missing_service_rewrite",
+      "description": "DISTINCT combined with an aggregate requires a service rewrite. The in-memory emulator does not generate it, so planning must reject the incomplete plan rather than aggregate already-final partition results. Supported composition is covered by the planner tests with rewritten partials.",
       "sources": [
         {
           "sdk": "dotnet",
@@ -2599,8 +2599,8 @@
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": {
-        "category": "clientUnsupportedQueryFeature",
-        "messageFragment": "aggregates"
+        "category": "serializationResponseBodyInvalid",
+        "messageFragment": "advanced query plan did not supply a non-empty rewrittenQuery"
       }
     },
     {
