@@ -132,6 +132,54 @@ without changing the existing suites. Ordinary emulator, vnext, in-memory,
 and codec-fuzz jobs do not use that resolver and do not enable the live gate.
 Legacy ARM/AAD jobs retain their existing categories.
 
+### Gateway V2 multi-range prefix change feed
+
+The `gateway_v2_prefix_change_feed_across_physical_ranges` test exercises
+hierarchical-prefix fan-out and checkpoint/resume on an **existing** topology.
+It does not change throughput, seed a large dataset, or trigger a partition
+split. Split-during-read recovery remains covered by the separate `split` suite.
+
+Use an existing Gateway V2 container with MultiHash V2 partition key paths
+`/tenant`, `/user`, `/device`. The selected tenant prefix must overlap at least
+two physical ranges; a container having multiple ranges is not sufficient.
+The test checks the actual range map and dynamically chooses two complete keys
+for that tenant on distinct ranges. Missing configuration or an unsuitable
+fixture fails explicitly.
+
+Set `AZURE_COSMOS_GW_V2_ENDPOINT` and `AZURE_COSMOS_GW_V2_KEY` securely, then run
+from the repository root:
+
+```powershell
+$env:AZURE_COSMOS_GW_V2_PREFIX_DATABASE = '<existing-database>'
+$env:AZURE_COSMOS_GW_V2_PREFIX_CONTAINER = '<existing-container>'
+$env:AZURE_COSMOS_GW_V2_PREFIX_TENANT = '<tenant-spanning-physical-ranges>'
+$env:RUSTFLAGS = '--cfg=test_category="gateway_v2_prefix"'
+cargo test -p azure_data_cosmos --all-features --test gateway_v2 gateway_v2_prefix_change_feed_across_physical_ranges
+```
+
+This explicit category enables the test without `--ignored`. Ordinary builds
+and the general Gateway V2 categories leave it ignored because credentials
+alone do not establish the required fixture. Automated execution still needs
+the fixture variables and category configured in the live-test job.
+
+Run serially for each selected tenant: no other writer or concurrent test may
+use that prefix. The test starts from Now, pins every leaf before writing,
+and creates two in-prefix items and an outside-prefix sentinel. It recreates
+the reader from a serialized checkpoint after every page, checks exact
+membership and no duplicates, verifies actual Gateway V2 transport, and deletes
+only its own three items. It does not delete the fixture database or container.
+
+For one-time fixture preparation, a live experiment reproduced a suitable
+topology by creating a one-range container at 1,000 RU/s, inserting 1,024 small
+items with tenant `prefix-control`, user `user-{i % 256}`, and device
+`device-{i % 1024}` for `i = 0..1023`, then raising throughput to 13,000 RU/s.
+Each item had a unique ID and 4,096 characters of padding excluded from
+indexing, totaling about 4 MB. A boundary inside that tenant appeared after
+approximately 5.5-6 minutes. Split timing and placement are not guaranteed:
+always verify the actual prefix overlap before retaining a reusable fixture.
+Provisioning is separate from routine test execution; scale down or delete
+temporary fixtures when they are no longer needed.
+
 ## Adding or rotating an account
 
 See `account-provisioning/README.md`.

@@ -846,9 +846,9 @@ pub async fn query_rejects_newer_sdk_continuation_token() -> Result<(), Box<dyn 
             let container_client =
                 test_data::create_container_with_items(db_client, items, None).await?;
 
-            // A `c2.` prefix indicates the token was issued by a future
+            // A `c3.` prefix indicates the token was issued by a future
             // SDK version this client does not understand.
-            let token = ContinuationToken::from_string("c2.something".to_string());
+            let token = ContinuationToken::from_string("c3.something".to_string());
             let options = QueryOptions::default().with_continuation_token(token);
 
             let Err(err) = container_client
@@ -941,7 +941,7 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
             let scope = FeedScope::partition("partition0");
 
             // --- Round 1: fetch the first page through the SDK and pull
-            // the SDK-issued `c1.` token. ---
+            // the SDK-issued `c2.` token. ---
             let mut pages = container_client
                 .query_items::<MockItem>(
                     "select * from c",
@@ -964,27 +964,27 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
             drop(pages);
 
             assert!(
-                raw.starts_with("c1."),
-                "expected SDK to emit a c1.-prefixed token, got: {raw}"
+                raw.starts_with("c2."),
+                "expected SDK to emit a c2.-prefixed token, got: {raw}"
             );
 
             // Crack the SDK token open. We deliberately couple this test
             // to the on-the-wire format so we can recover the underlying
             // server continuation without exposing extra public APIs.
             //
-            // Format: `c1.` + base64url-no-pad(JSON envelope). The envelope
+            // Format: `c2.` + base64url-no-pad(JSON envelope). The envelope
             // is shaped like `{"op":"Query","rid":"<rid>","root":<node>}`,
             // and for a trivial single-partition query the `root` node is
             // `{"kind":"request","server_continuation":"<token>"}`.
-            let payload = raw.strip_prefix("c1.").unwrap();
+            let payload = raw.strip_prefix("c2.").unwrap();
             let json_bytes = URL_SAFE_NO_PAD
                 .decode(payload)
-                .expect("c1. payload must be valid base64url-no-pad");
+                .expect("c2. payload must be valid base64url-no-pad");
             let envelope: serde_json::Value = serde_json::from_slice(&json_bytes)
-                .expect("decoded c1. payload must be valid JSON");
+                .expect("decoded c2. payload must be valid JSON");
             let snapshot = envelope
                 .get("root")
-                .expect("c1. envelope must contain a `root` node");
+                .expect("c2. envelope must contain a `root` node");
             assert_eq!(
                 snapshot.get("kind").and_then(|v| v.as_str()),
                 Some("request"),
@@ -1005,7 +1005,7 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
             );
 
             // --- Round 2: drain the rest of the query using the raw
-            // server token directly (no `c1.` prefix). The SDK accepts
+            // server token directly (no SDK prefix). The SDK accepts
             // un-prefixed tokens as an opaque server fallback for trivial
             // single-partition queries. ---
             let mut continuation = Some(ContinuationToken::from_string(server_token));
@@ -1036,18 +1036,18 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
                 let raw_next = next_token.as_str().to_owned();
                 drop(pages);
 
-                // Subsequent SDK-issued tokens must still be `c1.`-prefixed.
+                // Subsequent SDK-issued tokens must still be `c2.`-prefixed.
                 assert!(
-                    raw_next.starts_with("c1."),
-                    "follow-up token must remain c1.-prefixed, got: {raw_next}"
+                    raw_next.starts_with("c2."),
+                    "follow-up token must remain c2.-prefixed, got: {raw_next}"
                 );
 
                 // Decode again to detect end-of-stream: when the inner
                 // snapshot is `{"kind":"drained"}` we are done.
-                let payload = raw_next.strip_prefix("c1.").unwrap();
+                let payload = raw_next.strip_prefix("c2.").unwrap();
                 let json_bytes = URL_SAFE_NO_PAD
                     .decode(payload)
-                    .expect("c1. payload must be valid base64url-no-pad");
+                    .expect("c2. payload must be valid base64url-no-pad");
                 let envelope: serde_json::Value =
                     serde_json::from_slice(&json_bytes).expect("payload must be valid JSON");
                 let kind = envelope
