@@ -43,8 +43,7 @@ use azure_data_cosmos::models::{
     ThroughputProperties,
 };
 use azure_data_cosmos::options::{
-    ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom, CreateContainerOptions,
-    MaxItemCountHint,
+    ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom, MaxItemCountHint,
 };
 use framework::{test_data, MockItem, TestClient, TestOptions, TestRunContext};
 use futures::StreamExt;
@@ -148,7 +147,7 @@ fn currents(envelopes: Vec<ChangeFeedItem<MockItem>>) -> Vec<MockItem> {
 )]
 pub async fn change_feed_from_beginning_single_partition() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 10);
             let mut expected: Vec<MockItem> = items
                 .iter()
@@ -157,7 +156,8 @@ pub async fn change_feed_from_beginning_single_partition() -> Result<(), Box<dyn
                 .collect();
             sort_by_id(&mut expected);
 
-            let container = test_data::create_container_with_items(db_client, items, None).await?;
+            let container =
+                test_data::create_container_with_items(run_context, db_client, items, None).await?;
 
             let mut iterator = container
                 .query_change_feed::<MockItem>(
@@ -197,7 +197,7 @@ pub async fn change_feed_from_beginning_single_partition() -> Result<(), Box<dyn
 )]
 pub async fn change_feed_from_beginning_full_container() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 10);
             let mut expected = items.clone();
             sort_by_id(&mut expected);
@@ -205,6 +205,7 @@ pub async fn change_feed_from_beginning_full_container() -> Result<(), Box<dyn E
             // 11000 RU/s forces the service to create at least 2 physical
             // partitions, so the full-container read must fan out.
             let container = test_data::create_container_with_items(
+                run_context,
                 db_client,
                 items,
                 Some(ThroughputProperties::manual(11000)),
@@ -247,11 +248,12 @@ pub async fn change_feed_from_beginning_full_container() -> Result<(), Box<dyn E
 )]
 pub async fn change_feed_start_from_now_returns_only_new_changes() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             // Baseline items exist before the iterator is created.
             let baseline = test_data::generate_mock_items(10, 5);
             let container =
-                test_data::create_container_with_items(db_client, baseline, None).await?;
+                test_data::create_container_with_items(run_context, db_client, baseline, None)
+                    .await?;
 
             let mut iterator = container
                 .query_change_feed::<MockItem>(
@@ -314,10 +316,11 @@ pub async fn change_feed_start_from_now_returns_only_new_changes() -> Result<(),
 )]
 pub async fn change_feed_no_changes_returns_empty_page() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             // Empty container — there are no changes to report.
             let container =
-                test_data::create_container_with_items(db_client, Vec::new(), None).await?;
+                test_data::create_container_with_items(run_context, db_client, Vec::new(), None)
+                    .await?;
 
             let mut iterator = container
                 .query_change_feed::<MockItem>(
@@ -366,7 +369,7 @@ pub async fn change_feed_no_changes_returns_empty_page() -> Result<(), Box<dyn E
 )]
 pub async fn change_feed_continuation_token_resume() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let baseline = test_data::generate_mock_items(10, 5);
             let mut expected_baseline: Vec<MockItem> = baseline
                 .iter()
@@ -376,7 +379,8 @@ pub async fn change_feed_continuation_token_resume() -> Result<(), Box<dyn Error
             sort_by_id(&mut expected_baseline);
 
             let container =
-                test_data::create_container_with_items(db_client, baseline, None).await?;
+                test_data::create_container_with_items(run_context, db_client, baseline, None)
+                    .await?;
 
             // Drain the baseline, then capture a resume token.
             let mut iterator = container
@@ -457,13 +461,14 @@ pub async fn change_feed_continuation_token_resume() -> Result<(), Box<dyn Error
 )]
 pub async fn change_feed_now_resume_does_not_replay_history() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let baseline = test_data::generate_mock_items(10, 10);
 
             // 11000 RU/s forces at least 2 physical partitions so a single poll
             // leaves at least one partition unpolled (and thus without a saved
             // token) at checkpoint time.
             let container = test_data::create_container_with_items(
+                run_context,
                 db_client,
                 baseline,
                 Some(ThroughputProperties::manual(11000)),
@@ -546,11 +551,12 @@ pub async fn change_feed_now_resume_does_not_replay_history() -> Result<(), Box<
 )]
 pub async fn change_feed_point_in_time_excludes_earlier_changes() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             // Baseline items written before the point-in-time marker.
             let baseline = test_data::generate_mock_items(10, 5);
             let container =
-                test_data::create_container_with_items(db_client, baseline, None).await?;
+                test_data::create_container_with_items(run_context, db_client, baseline, None)
+                    .await?;
 
             // Guard band on each side of the captured marker so second-level
             // granularity cannot blur the baseline and the new writes together.
@@ -617,7 +623,7 @@ pub async fn change_feed_max_item_count_pages_backlog() -> Result<(), Box<dyn Er
     const PAGE_LIMIT: u32 = 10;
 
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             // 25 items in a single logical partition; at a page limit of 10 the
             // backlog must span multiple pages.
             let items: Vec<MockItem> = (0..25)
@@ -631,7 +637,7 @@ pub async fn change_feed_max_item_count_pages_backlog() -> Result<(), Box<dyn Er
             sort_by_id(&mut expected);
 
             let container =
-                test_data::create_container_with_items(db_client, items, None).await?;
+                test_data::create_container_with_items(run_context, db_client, items, None).await?;
 
             let mut iterator = container
                 .query_change_feed::<MockItem>(
@@ -739,17 +745,17 @@ async fn create_avad_container(
     name: &str,
     retention: Duration,
     throughput: Option<ThroughputProperties>,
-) -> azure_data_cosmos::Result<ContainerClient> {
+) -> Result<ContainerClient, Box<dyn Error>> {
     let mut properties = ContainerProperties::new(name.to_string(), "/partitionKey".into());
     if framework::targets_emulator() {
         properties = properties.with_change_feed_policy(
             ChangeFeedPolicy::default().with_retention_duration(retention),
         );
     }
-    let options = throughput.map(|t| CreateContainerOptions::default().with_throughput(t));
     run_context
-        .create_container(db_client, properties, options)
+        .create_container(db_client, properties, throughput)
         .await
+        .map_err(Into::into)
 }
 
 /// Polls an AVAD change feed, accumulating every envelope seen, until

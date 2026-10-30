@@ -22,24 +22,16 @@ use futures::TryStreamExt;
 pub async fn database_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_options(
         async |run_context| {
-            // This test exercises database management (create/read/query/
-            // throughput/delete), which is control-plane and not expressible as
-            // a Cosmos data-plane RBAC action. Use the management client so the
-            // test also works on the AAD live leg (where the primary client is
-            // AAD-authenticated). In key mode this is the same client.
-            let cosmos_client = run_context.management_client();
+            let cosmos_client = run_context.client();
 
             let test_db_id = run_context.db_name();
 
-            // Create a database
-            let properties = cosmos_client
-                .create_database(&test_db_id, None)
-                .await?
-                .into_model()?;
+            run_context.create_database(&test_db_id).await?;
+            let db_client = cosmos_client.database_client(&test_db_id);
+            let properties = db_client.read(None).await?.into_model()?;
 
             assert_eq!(Some(test_db_id.as_str()), properties.id.as_deref());
 
-            let db_client = cosmos_client.database_client(&test_db_id);
             let read_properties = db_client.read(None).await?.into_model()?;
 
             assert_eq!(Some(test_db_id.as_str()), read_properties.id.as_deref());
@@ -53,11 +45,11 @@ pub async fn database_crud() -> Result<(), Box<dyn Error>> {
             }
             assert_eq!(vec![Some(test_db_id.clone())], ids);
 
-            let current_throughput = db_client.read_throughput(None).await?;
+            let current_throughput = run_context.read_database_throughput(&db_client).await?;
             assert!(current_throughput.is_none());
 
             // We're testing delete, so we want to manually delete the DB rather than letting the clean-up process do it.
-            db_client.delete(None).await?;
+            run_context.delete_database(&test_db_id).await?;
 
             let mut pager = cosmos_client.query_databases(query, None).await?;
             let mut ids = Vec::new();
