@@ -6,8 +6,8 @@ use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     models::{ChangeFeedItem, ChangeFeedOperationType},
     options::{ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom, MaxItemCountHint},
-    ChangeFeedProcessorBuilder, ChangeFeedProcessorContext, ContainerClient, CosmosError,
-    CosmosStatus, FeedScope, TransactionalBatch,
+    ChangeFeedCheckpointPolicy, ChangeFeedProcessorBuilder, ChangeFeedProcessorContext,
+    ContainerClient, CosmosError, CosmosStatus, FeedScope, TransactionalBatch,
 };
 use futures::{
     channel::{mpsc, oneshot},
@@ -717,6 +717,214 @@ async fn all_versions_case(
     }
     .await;
     combine(result, workload.cleanup(&source, &leases).await)
+}
+
+async fn drain_restart_stage(
+    leases: &ContainerClient,
+    workload: &Workload,
+    builder: ChangeFeedProcessorBuilder,
+    expected: &[&str],
+) -> TestResult {
+    let processor = builder
+        .with_start_from_beginning()
+        .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()))
+        .with_feed_poll_delay(INTERVAL)
+        .handle_change_feed(observe_changes)
+        .build()?;
+    let (sender, mut receiver) = mpsc::unbounded();
+    *CALLBACK.lock().unwrap() = Some(Arc::new(CallbackObserver {
+        sender,
+        gate: async_lock::Mutex::new(None),
+        prefix: format!("{}-", workload.name),
+        fence_id: workload.id("fence"),
+    }));
+    let mut batches = Vec::new();
+    let result = async {
+        processor.start().await?;
+        tokio::time::timeout(WAIT, async {
+            let mut count = 0;
+            while count < expected.len() {
+                let batch = receiver
+                    .next()
+                    .await
+                    .ok_or("Restart callback stream ended before the expected backlog arrived.")?;
+                count += batch.changes.len();
+                batches.push(batch);
+            }
+            Ok::<_, Box<dyn std::error::Error>>(())
+        })
+        .await
+        .map_err(|_| io::Error::other("Timed out draining the restart workload."))?
+    }
+    .await;
+    let cleanup = if result.is_ok() {
+        processor.stop().await
+    } else {
+        processor.abort().await
+    };
+    CALLBACK.lock().unwrap().take();
+    combine(result, cleanup.map_err(Into::into))?;
+    receiver.close();
+    while let Some(batch) = receiver.next().await {
+        batches.push(batch);
+    }
+    let mut actual = Vec::new();
+    for batch in batches {
+        checkpoint(leases, &batch.lease).await?;
+        for change in batch.changes {
+            actual.push(
+                workload
+                    .observe(&change)?
+                    .ok_or("Restart callback contained an unrelated item.")?,
+            );
+        }
+    }
+    actual.sort();
+    let mut expected: Vec<_> = expected
+        .iter()
+        .map(|name| workload.event(name, 1, Operation::Create))
+        .collect();
+    expected.sort();
+    if actual != expected {
+        return Err(format!(
+            "Restart delivery differs, including duplicates: {actual:?}; expected {expected:?}."
+        )
+        .into());
+    }
+    Ok(())
+}
+
+async fn restart_case(
+    source: ContainerClient,
+    leases: ContainerClient,
+    new_workload: bool,
+    policy: ChangeFeedCheckpointPolicy,
+) -> TestResult {
+    let _serial = CALLBACK_SERIAL.lock().await;
+    validate_source(&source).await?;
+    let workload = Workload::new(Semantics::Latest);
+    let fresh = new_workload.then(|| Workload::new(Semantics::Latest));
+    let result = async {
+        for name in ["created", "upserted"] {
+            source
+                .create_item(
+                    workload.name.clone(),
+                    &workload.id(name),
+                    workload.document(name, 1),
+                    None,
+                )
+                .await?;
+        }
+        let builder = |name: &str, worker: &str| {
+            ChangeFeedProcessorBuilder::new(
+                ChangeFeedMode::LatestVersion,
+                source.clone(),
+                leases.clone(),
+                name,
+                worker,
+            )
+            .with_checkpoint_policy(policy)
+        };
+        drain_restart_stage(
+            &leases,
+            &workload,
+            builder(&workload.name, "original-worker"),
+            &["created", "upserted"],
+        )
+        .await?;
+        let before = records(&leases, &workload.name).await?;
+        if !before.iter().any(|record| record.get("range").is_some())
+            || before.iter().any(|record| record["owner"].is_string())
+        {
+            return Err("Graceful stop did not preserve and release the workload leases.".into());
+        }
+        source
+            .create_item(
+                workload.name.clone(),
+                &workload.id("fence"),
+                workload.document("fence", 1),
+                None,
+            )
+            .await?;
+        let name = fresh.as_ref().unwrap_or(&workload).name.as_str();
+        let expected: &[&str] = if new_workload {
+            &["created", "upserted", "fence"]
+        } else {
+            &["fence"]
+        };
+        drain_restart_stage(
+            &leases,
+            &workload,
+            builder(name, "replacement-worker"),
+            expected,
+        )
+        .await?;
+        let after = records(&leases, name).await?;
+        let ids = |stored: &[Value]| {
+            stored
+                .iter()
+                .map(|record| record["id"].clone())
+                .collect::<Vec<_>>()
+        };
+        let before_ids = ids(&before);
+        let after_ids = ids(&after);
+        if after.iter().any(|record| record["owner"].is_string()) {
+            return Err("Replacement processor left owned leases after graceful stop.".into());
+        }
+        if new_workload {
+            if records(&leases, &workload.name).await? != before
+                || after_ids.iter().any(|id| before_ids.contains(id))
+            {
+                return Err(
+                    "Fresh workload changed or reused the original lease namespace.".into(),
+                );
+            }
+        } else if after_ids != before_ids
+            || !after
+                .iter()
+                .zip(&before)
+                .any(|(current, previous)| current["continuation"] != previous["continuation"])
+        {
+            return Err("Restart did not advance the existing durable lease set.".into());
+        }
+        Ok(())
+    }
+    .await;
+    let mut result = combine(result, workload.cleanup(&source, &leases).await);
+    if let Some(fresh) = fresh {
+        result = combine(result, fresh.cleanup(&source, &leases).await);
+    }
+    result
+}
+
+#[tokio::test]
+#[ignore = "Requires explicit live opt-in; source /pk, leases /id with defaultTtl -1."]
+async fn cfp_live_new_instance_resumes_existing_workload() -> TestResult {
+    for policy in [
+        ChangeFeedCheckpointPolicy::EveryBatch,
+        ChangeFeedCheckpointPolicy::Coalesced {
+            max_interval: Duration::from_secs(60),
+        },
+    ] {
+        let (source, leases) = live_containers().await?;
+        restart_case(source, leases, false, policy).await?;
+    }
+    Ok(())
+}
+
+#[tokio::test]
+#[ignore = "Requires explicit live opt-in; source /pk, leases /id with defaultTtl -1."]
+async fn cfp_live_new_workload_replays_without_changing_existing_leases() -> TestResult {
+    for policy in [
+        ChangeFeedCheckpointPolicy::EveryBatch,
+        ChangeFeedCheckpointPolicy::Coalesced {
+            max_interval: Duration::from_secs(60),
+        },
+    ] {
+        let (source, leases) = live_containers().await?;
+        restart_case(source, leases, true, policy).await?;
+    }
+    Ok(())
 }
 
 #[tokio::test]

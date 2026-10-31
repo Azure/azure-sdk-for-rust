@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 use super::{
-    latest_case, CallbackBatch, Document, Event, Observations, Operation, Semantics, Start,
-    TestResult, Workload,
+    latest_case, restart_case, CallbackBatch, Document, Event, Observations, Operation, Semantics,
+    Start, TestResult, Workload,
 };
 use azure_core::{
     credentials::Secret,
@@ -12,8 +12,8 @@ use azure_core::{
 use azure_data_cosmos::{
     models::ChangeFeedItem,
     options::{ChangeFeedMode, Region},
-    AccountReference, ChangeFeedProcessorBuilder, ContainerClient, CosmosClientBuilder,
-    CosmosRuntimeBuilder, RoutingStrategy,
+    AccountReference, ChangeFeedCheckpointPolicy, ChangeFeedProcessorBuilder, ContainerClient,
+    CosmosClientBuilder, CosmosRuntimeBuilder, RoutingStrategy,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
     ContainerConfig, InMemoryEmulatorHttpClient, RequestObserver, VirtualAccountConfig,
@@ -125,6 +125,52 @@ async fn mixed_latest_now_larger_pages() -> TestResult {
 async fn mixed_latest_beginning() -> TestResult {
     let (source, leases) = containers(None).await?;
     latest_case(source, leases, Start::Beginning, 2).await
+}
+
+#[tokio::test]
+async fn new_instance_resumes_existing_workload_every_batch() -> TestResult {
+    let (source, leases) = containers(None).await?;
+    restart_case(
+        source,
+        leases,
+        false,
+        ChangeFeedCheckpointPolicy::EveryBatch,
+    )
+    .await
+}
+
+#[tokio::test]
+async fn new_instance_resumes_existing_workload_coalesced() -> TestResult {
+    let (source, leases) = containers(None).await?;
+    restart_case(
+        source,
+        leases,
+        false,
+        ChangeFeedCheckpointPolicy::Coalesced {
+            max_interval: Duration::from_secs(60),
+        },
+    )
+    .await
+}
+
+#[tokio::test]
+async fn new_workload_replays_without_changing_existing_leases_every_batch() -> TestResult {
+    let (source, leases) = containers(None).await?;
+    restart_case(source, leases, true, ChangeFeedCheckpointPolicy::EveryBatch).await
+}
+
+#[tokio::test]
+async fn new_workload_replays_without_changing_existing_leases_coalesced() -> TestResult {
+    let (source, leases) = containers(None).await?;
+    restart_case(
+        source,
+        leases,
+        true,
+        ChangeFeedCheckpointPolicy::Coalesced {
+            max_interval: Duration::from_secs(60),
+        },
+    )
+    .await
 }
 
 #[tokio::test]

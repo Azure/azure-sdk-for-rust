@@ -311,6 +311,24 @@ owner eligible for takeover, whereas a long callback with healthy renewal does
 not imply worker death. These fractions reserve retry headroom and bound routine
 lease-discovery delay; they are scheduling policies, not callback deadlines.
 
+### Processor workload restart coverage
+
+Shared local and opt-in live scenarios adapt the Java
+[customer CFP workflows](https://github.com/Azure/azure-sdk-for-java/blob/903b47a8b4e6c547a003b48e2a9eb8419ebd1b5f/sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/workflows/customer/CustomerWorkflowChangeFeedProcessorTest.java).
+Rust's processor name provides the isolation tested by Java's lease prefix.
+A newly constructed worker with the same name resumes durable progress even
+when configured to start from the beginning. A different name replays the
+source backlog through an independent lease set without changing the first
+workload's records.
+
+Both scenarios cover `EveryBatch` and `Coalesced`, inspect stored checkpoints
+after graceful stop, and compare exact callback events, including duplicates.
+They use latest-version mode; they do not establish full-fidelity history,
+process-crash recovery, or admission fairness. Local versions use the in-memory
+emulator. The live versions remain ignored unless explicitly selected and
+require the existing isolated source/lease container opt-ins. Compiling these
+tests is not evidence of a real-service run.
+
 ### Running a real-account processor split test
 
 The `split` test target uses the service directly, not recordings. Use a disposable
