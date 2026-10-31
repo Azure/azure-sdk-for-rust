@@ -54,7 +54,7 @@ fn config(context: &Context, worker: &str, limit: u32) -> ProcessorOptions {
     options
 }
 
-fn keys(ranges: &[FeedRange]) -> Vec<String> {
+pub(super) fn keys(ranges: &[FeedRange]) -> Vec<String> {
     let mut grouped = vec![Vec::new(); ranges.len()];
     for candidate in 0..4096 {
         let key = format!("key-{candidate}");
@@ -77,7 +77,7 @@ fn keys(ranges: &[FeedRange]) -> Vec<String> {
     panic!("could not select keys in every target slice")
 }
 
-async fn publish(
+pub(super) async fn publish(
     context: &Context,
     keys: &[String],
     groups: std::ops::Range<u64>,

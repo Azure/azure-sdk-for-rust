@@ -88,6 +88,7 @@ impl<T, H> ChangeFeedProcessorBuilder<T, H> {
     pub fn with_feed_poll_delay(self, feed_poll_delay: Duration) -> Self;
     pub fn with_lease_verification_enabled_on_restart(self, enabled: bool) -> Self;
     pub fn with_max_item_count(self, max_item_count: MaxItemCountHint) -> Self;
+    pub fn with_max_outstanding_batches(self, maximum: u32) -> Self;
     pub fn with_max_scale_count(self, max_scale_count: u32) -> Self;
     pub fn with_min_scale_count(self, min_scale_count: u32) -> Self;
     pub fn with_start_continuation(self, continuation: ContinuationToken) -> Self;

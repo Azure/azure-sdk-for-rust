@@ -358,6 +358,125 @@ mod processor_lifecycle_tests {
     }
 
     #[tokio::test]
+    async fn processor_admission_is_shared_and_released_after_success_failure_or_abort(
+    ) -> Result<(), Box<dyn Error>> {
+        type Entered = (String, oneshot::Sender<bool>);
+        static ENTERED: Mutex<Option<mpsc::UnboundedSender<Entered>>> = Mutex::new(None);
+        for policy in [
+            ChangeFeedCheckpointPolicy::EveryBatch,
+            ChangeFeedCheckpointPolicy::Coalesced {
+                max_interval: Duration::from_secs(60),
+            },
+        ] {
+            for outcome in ["success", "failure", "abort"] {
+                let (source, leases) = setup_processor().await?;
+                source
+                    .create_item(PARTITION_KEY, "one", TestItem::new("one", 1), None)
+                    .await?;
+                let (entered, mut callbacks) = mpsc::unbounded();
+                *ENTERED.lock().unwrap() = Some(entered);
+                let build = |name| {
+                    ChangeFeedProcessorBuilder::new(
+                        ChangeFeedMode::LatestVersion,
+                        source.clone(),
+                        leases.clone(),
+                        name,
+                        "worker",
+                    )
+                    .with_start_from_beginning()
+                    .with_max_outstanding_batches(1)
+                    .with_feed_poll_delay(Duration::from_millis(1))
+                    .with_checkpoint_policy(policy)
+                    .handle_change_feed(
+                        |context, changes: Vec<ChangeFeedItem<TestItem>>| async move {
+                            let (release, released) = oneshot::channel();
+                            ENTERED
+                                .lock()
+                                .unwrap()
+                                .as_ref()
+                                .unwrap()
+                                .unbounded_send((context.lease_token().to_owned(), release))
+                                .unwrap();
+                            let success = released.await.unwrap();
+                            drop(changes);
+                            if success {
+                                Ok(())
+                            } else {
+                                Err(azure_data_cosmos::CosmosError::builder()
+                                    .with_status(azure_data_cosmos::CosmosStatus::new(
+                                        StatusCode::BadRequest,
+                                    ))
+                                    .with_message("Application rejected the batch.")
+                                    .build())
+                            }
+                        },
+                    )
+                    .build()
+                };
+                let first = build("first")?;
+                let second = build("second")?;
+                first.start().await?;
+                let (first_id, release) =
+                    tokio::time::timeout(Duration::from_secs(5), callbacks.next())
+                        .await
+                        .expect("first callback")
+                        .unwrap();
+                second.start().await?;
+                tokio::time::timeout(Duration::from_secs(5), async {
+                    loop {
+                        let ranges = records(&leases)
+                            .await
+                            .unwrap()
+                            .into_iter()
+                            .filter(|r| r.get("range").is_some())
+                            .collect::<Vec<_>>();
+                        if ranges.iter().all(|r| r.get("owner").is_some())
+                            && ranges
+                                .iter()
+                                .any(|r| r["workload"]["processorName"] == "second")
+                        {
+                            break;
+                        }
+                        tokio::task::yield_now().await;
+                    }
+                })
+                .await
+                .expect("both workers acquire leases");
+                assert!(
+                    tokio::time::timeout(Duration::from_millis(30), callbacks.next())
+                        .await
+                        .is_err()
+                );
+                if outcome == "abort" {
+                    first.abort().await?;
+                    assert!(release.is_canceled());
+                } else {
+                    release.send(outcome == "success").unwrap();
+                }
+                let (second_id, release) =
+                    tokio::time::timeout(Duration::from_secs(5), callbacks.next())
+                        .await
+                        .expect("second callback after capacity release")
+                        .unwrap();
+                assert_ne!(first_id, second_id);
+                assert_eq!(
+                    records(&leases)
+                        .await?
+                        .iter()
+                        .find(|record| record["id"] == second_id)
+                        .unwrap()["workload"]["processorName"],
+                    "second"
+                );
+                first.abort().await?;
+                second.abort().await?;
+                assert!(release.is_canceled());
+                *ENTERED.lock().unwrap() = None;
+            }
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn coalesced_callbacks_advance_without_persistence_and_flush_on_stop(
     ) -> Result<(), Box<dyn Error>> {
         exercise_coalesced(ChangeFeedMode::LatestVersion).await?;
@@ -379,6 +498,7 @@ mod processor_lifecycle_tests {
         )
         .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()))
         .with_feed_poll_delay(Duration::from_millis(1))
+        .with_max_outstanding_batches(1)
         .with_checkpoint_policy(ChangeFeedCheckpointPolicy::Coalesced {
             max_interval: Duration::from_secs(60),
         })
@@ -909,6 +1029,7 @@ mod processor_lifecycle_tests {
             "worker",
         )
         .with_start_from_beginning()
+        .with_max_outstanding_batches(1)
         .handle_change_feed(
             |context: ChangeFeedProcessorContext, _: Vec<ChangeFeedItem<TestItem>>| {
                 let DrainCallback {

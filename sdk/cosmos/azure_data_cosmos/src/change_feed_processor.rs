@@ -208,6 +208,7 @@ pub struct ChangeFeedProcessorBuilder<T = (), H = ()> {
     max_item_count: MaxItemCountHint,
     feed_poll_delay: Duration,
     checkpoint_policy: ChangeFeedCheckpointPolicy,
+    max_outstanding_batches: u32,
     min_scale_count: u32,
     max_scale_count: u32,
     lease_verification_on_restart_enabled: bool,
@@ -249,6 +250,7 @@ impl ChangeFeedProcessorBuilder {
             max_item_count: MaxItemCountHint::Limit(NonZeroU32::new(100).expect("100 is nonzero")),
             feed_poll_delay: Duration::from_secs(5),
             checkpoint_policy: ChangeFeedCheckpointPolicy::default(),
+            max_outstanding_batches: 100,
             min_scale_count: 0,
             max_scale_count: 0,
             lease_verification_on_restart_enabled: false,
@@ -398,6 +400,7 @@ impl ChangeFeedProcessorBuilder {
             max_item_count: self.max_item_count,
             feed_poll_delay: self.feed_poll_delay,
             checkpoint_policy: self.checkpoint_policy,
+            max_outstanding_batches: self.max_outstanding_batches,
             min_scale_count: self.min_scale_count,
             max_scale_count: self.max_scale_count,
             lease_verification_on_restart_enabled: self.lease_verification_on_restart_enabled,
@@ -408,6 +411,35 @@ impl ChangeFeedProcessorBuilder {
 }
 
 impl<T, H> ChangeFeedProcessorBuilder<T, H> {
+    /// Sets this worker's contribution to the shared outstanding-batch limit.
+    ///
+    /// Defaults to 100. Workers sharing the monitored client's underlying driver
+    /// share the largest worker limit seen during that driver's lifetime, not
+    /// their sum. This is not a per-worker quota or a limit on owned leases.
+    ///
+    /// Fetch reservations, queued batches, and running callbacks count until
+    /// processing finishes or the batch is discarded. Checkpoint metadata and
+    /// application-retained data do not count. This is not a byte or heap limit.
+    /// Eligible leases take one page turn before rejoining behind waiting peers.
+    ///
+    /// Both checkpoint policies use this limit. Stopping a worker or starting
+    /// one with a smaller limit does not reduce the shared limit.
+    /// Zero is rejected by [`build()`](Self::build).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use azure_data_cosmos::ChangeFeedProcessorBuilder;
+    ///
+    /// fn configure(builder: ChangeFeedProcessorBuilder) -> ChangeFeedProcessorBuilder {
+    ///     builder.with_max_outstanding_batches(32)
+    /// }
+    /// ```
+    pub fn with_max_outstanding_batches(mut self, maximum: u32) -> Self {
+        self.max_outstanding_batches = maximum;
+        self
+    }
+
     /// Sets the persistence policy for successfully handled change feed batches.
     ///
     /// Defaults to [`ChangeFeedCheckpointPolicy::EveryBatch`]. Coalescing retains
@@ -618,6 +650,12 @@ where
     /// }
     /// ```
     pub fn build(self) -> crate::Result<ChangeFeedProcessor<T, ChangeFeedHandler<T, Fut>>> {
+        if self.max_outstanding_batches == 0 {
+            return Err(CosmosError::builder()
+                .with_status(CosmosStatus::new(StatusCode::BadRequest))
+                .with_message("max_outstanding_batches must be positive.")
+                .build());
+        }
         if let ChangeFeedCheckpointPolicy::Coalesced { max_interval } = self.checkpoint_policy {
             if max_interval.is_zero()
                 || std::time::Instant::now()

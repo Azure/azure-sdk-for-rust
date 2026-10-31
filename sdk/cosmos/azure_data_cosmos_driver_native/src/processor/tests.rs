@@ -8,8 +8,9 @@ use super::{
     cosmos_processor_free, cosmos_processor_next_submit, cosmos_processor_queue_create,
     cosmos_processor_queue_free, cosmos_processor_queue_wait, cosmos_processor_receipt_free,
     cosmos_processor_request_init, cosmos_processor_start_submit,
-    cosmos_processor_start_with_policy_submit, cosmos_processor_stop_submit,
-    CosmosProcessorCompletion, CosmosProcessorRequest, ProcessorHandle, ProcessorQueue,
+    cosmos_processor_start_with_admission_submit, cosmos_processor_start_with_policy_submit,
+    cosmos_processor_stop_submit, CosmosProcessorCompletion, CosmosProcessorRequest,
+    ProcessorHandle, ProcessorQueue,
 };
 use crate::{
     completion::{
@@ -142,6 +143,10 @@ impl Fixture {
         } else {
             self.submit_start(&self.request(), ptr::null_mut())
         };
+        self.finish_start(operation)
+    }
+
+    fn finish_start(&self, operation: *mut OperationHandle) -> *mut ProcessorHandle {
         self.drive(operation);
         let completion = self.receive();
         // SAFETY: completion is live until free below.
@@ -178,6 +183,100 @@ impl Fixture {
                 .into_single()
                 .unwrap()
         })
+    }
+}
+
+#[test]
+fn zero_batch_limit_is_rejected_without_consuming_queue_capacity() {
+    let fixture = Fixture::new();
+    let mut error = COSMOS_STATUS_SUCCESS;
+    let operation = cosmos_processor_start_with_admission_submit(
+        fixture.driver,
+        fixture.source,
+        fixture.driver,
+        fixture.leases,
+        &fixture.request(),
+        0,
+        0,
+        0,
+        fixture.queue,
+        1,
+        &mut error,
+    );
+    assert!(operation.is_null());
+    assert_eq!(
+        error,
+        CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
+    );
+    let processor = fixture.start();
+    let stop = cosmos_processor_abort_submit(processor, 2, ptr::null_mut());
+    fixture.drive(stop);
+    cosmos_processor_completion_free(fixture.receive());
+    cosmos_operation_handle_free(stop);
+    cosmos_processor_free(processor);
+}
+
+#[test]
+fn shared_batch_limit_survives_transfer_and_control_unblocks_other_workers() {
+    for coalesced in [false, true] {
+        let fixture = Fixture::new();
+        let start = |name| {
+            let mut request = fixture.request();
+            request.processor_name = view(name);
+            request.max_leases = 1;
+            fixture.finish_start(cosmos_processor_start_with_admission_submit(
+                fixture.driver,
+                fixture.source,
+                fixture.driver,
+                fixture.leases,
+                &request,
+                u32::from(coalesced),
+                if coalesced { 60_000 } else { 0 },
+                1,
+                fixture.queue,
+                1,
+                ptr::null_mut(),
+            ))
+        };
+        let first = start(b"first");
+        let operation = cosmos_processor_next_submit(first, 2, ptr::null_mut());
+        fixture.drive(operation);
+        let batch = fixture.receive();
+        let receipt = cosmos_processor_completion_take_receipt(batch);
+        let second = start(b"second");
+        let next = cosmos_processor_next_submit(second, 3, ptr::null_mut());
+        RuntimeContext::inner_arc(fixture.runtime)
+            .unwrap()
+            .tokio
+            .block_on(async {
+                tokio::time::sleep(Duration::from_millis(30)).await;
+            });
+        assert_eq!(
+            cosmos_operation_handle_state(next),
+            CosmosOperationHandleState::CosmosOperationHandleStateInFlight
+        );
+        let acknowledged = cosmos_processor_acknowledge_submit(receipt, 4, ptr::null_mut());
+        fixture.drive(acknowledged);
+        fixture.drive(next);
+        let results = [fixture.receive(), fixture.receive()];
+        let mut kinds = results.map(|result| unsafe { (*result).result_kind });
+        kinds.sort_unstable();
+        assert_eq!(kinds, [2, 6]);
+        for result in results {
+            cosmos_processor_completion_free(result);
+        }
+        cosmos_processor_receipt_free(receipt);
+        cosmos_processor_completion_free(batch);
+        for operation in [operation, next, acknowledged] {
+            cosmos_operation_handle_free(operation);
+        }
+        for processor in [first, second] {
+            let stop = cosmos_processor_abort_submit(processor, 5, ptr::null_mut());
+            fixture.drive(stop);
+            cosmos_processor_completion_free(fixture.receive());
+            cosmos_operation_handle_free(stop);
+            cosmos_processor_free(processor);
+        }
     }
 }
 

@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `ProcessorOptions::with_max_outstanding_batches` (default 100) with the driver retaining the largest worker limit seen during its lifetime, FIFO page turns, and maintenance independent of saturated batch admission.
+
 - Added coalesced checkpoint policies and `BatchReceipt::acknowledge()` for deferred persistence of successful batches; `checkpoint()` remains a durable barrier and renewal schedules are unchanged.
 - Added `change_feed_processor::Processor` with equal lease balancing, renewal, and schema-agnostic batch receipts that gate durable checkpoints and subsequent polls.
 - Added automatic online processor split recovery with range-local child creation, fenced parent retirement, resumable incomplete transitions, independent merge checkpoints, and balanced child acquisition. ([#5476](https://github.com/Azure/azure-sdk-for-rust/pull/5476))
@@ -29,6 +31,8 @@
 - Retry transient account-discovery I/O failures within a bounded budget, including uncertain send outcomes. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 
 ### Other Changes
+
+- Identify change feed processor bootstrap, polling, lease maintenance, and topology requests with `ChangeFeedProcessor` in the user agent without changing ordinary requests.
 
 - Derive processor renewal and acquisition schedules from the lease expiration budget, reuse checkpoint writes for renewal, and remove the implicit callback progress timeout. ([#5477](https://github.com/Azure/azure-sdk-for-rust/pull/5477))
 

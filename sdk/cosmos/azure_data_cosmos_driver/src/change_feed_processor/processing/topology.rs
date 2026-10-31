@@ -9,6 +9,7 @@ use crate::{
         ChangeFeedProcessorBootstrapRangePlan as RangePlan,
         ChangeFeedProcessorBootstrapRecord as Record,
     },
+    change_feed_processor::operation_options,
     driver::dataflow::{
         intersect_feed_ranges, planner::project_change_feed_state, split_feed_envelope,
         validate_exact_coverage, PipelineNodeState,
@@ -17,7 +18,7 @@ use crate::{
         ChangeFeedFactoryMode, ContinuationToken, CosmosOperation, FeedRange, ResolvedToken,
         ResponseBody,
     },
-    options::{OperationOptions, PlanOptions},
+    options::PlanOptions,
     Result,
 };
 use async_lock::Mutex;
@@ -102,7 +103,7 @@ impl Context {
             .lease_driver
             .plan_operation(
                 operation,
-                &OperationOptions::default(),
+                &operation_options(),
                 None,
                 &PlanOptions::default(),
             )
@@ -110,11 +111,7 @@ impl Context {
         let mut leases = Vec::new();
         while let Some(response) = self
             .lease_driver
-            .execute_plan(
-                &mut plan,
-                Some(self.leases.clone()),
-                OperationOptions::default(),
-            )
+            .execute_plan(&mut plan, Some(self.leases.clone()), operation_options())
             .await?
         {
             let body = match response.into_body() {
@@ -255,7 +252,12 @@ impl Context {
         let scope = lease.lock().await.value.base.range.clone();
         let topology = self
             .source_driver
-            .resolve_partition_key_ranges_for_feed_range(&self.source, &scope, true)
+            .resolve_partition_key_ranges_for_feed_range(
+                &self.source,
+                &scope,
+                true,
+                operation_options(),
+            )
             .await?;
         let mut children = Vec::new();
         for physical in topology.iter() {

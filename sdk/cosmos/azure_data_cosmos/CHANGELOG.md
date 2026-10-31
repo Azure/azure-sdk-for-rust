@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added CFP `with_max_outstanding_batches` (default 100) with fair pre-fetch admission shared by source driver using the largest worker limit seen during its lifetime, independently of checkpoint policy.
+
 - Added opt-in `ChangeFeedCheckpointPolicy::Coalesced` to reduce checkpoint writes across successful callbacks, flushing at lease-idle, the configured interval, graceful shutdown, or topology recovery; durable-per-batch remains the default.
 - `ChangeFeedProcessor::start()` bootstraps the workload and starts driver-owned lease balancing, renewal, and polling; by default, a checkpoint follows each successful callback before the next batch for that lease, and `stop()` waits for local shutdown.
 - The bootstrap stage of `ChangeFeedProcessor::start()` initializes incomplete workloads through the shared driver without inspecting completed lease inventories. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))

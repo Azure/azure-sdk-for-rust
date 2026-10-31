@@ -7,7 +7,9 @@ pub(super) mod store;
 pub(crate) use coalescing::ChangeFeedProcessorBootstrapCoalescer;
 
 use crate::{
-    change_feed_processor::bootstrap::coalescing::ChangeFeedProcessorBootstrapCoalescingKey,
+    change_feed_processor::{
+        bootstrap::coalescing::ChangeFeedProcessorBootstrapCoalescingKey, operation_options,
+    },
     models::{
         effective_partition_key::EffectivePartitionKey, ChangeFeedFactoryMode, ContainerReference,
         ContinuationToken, CosmosOperation, FeedRange,
@@ -494,7 +496,7 @@ impl<'a> ChangeFeedProcessorBootstrapContext<'a> {
         }
         let topology = self
             .source_driver
-            .resolve_all_partition_key_ranges(self.source, true)
+            .resolve_all_partition_key_ranges_with_options(self.source, true, operation_options())
             .await?
             .ok_or_else(|| {
                 error(

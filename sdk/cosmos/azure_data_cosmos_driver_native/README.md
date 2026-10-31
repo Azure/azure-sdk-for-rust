@@ -110,6 +110,18 @@ kind `6` means acknowledgment, not necessarily persistence; the existing
 `cosmos_processor_checkpoint_submit` always persists and returns kind `3`.
 The original start function and request layout remain unchanged.
 
+Use `cosmos_processor_start_with_admission_submit` to supply a positive
+`max_outstanding_batches` alongside either checkpoint policy. Existing start
+functions contribute 100. Workers sharing a source driver share the largest
+worker limit seen during that driver's lifetime, not the sum or separate worker
+quotas. Capacity is reserved before fetching and stays occupied through queuing
+and processing. Acknowledgment
+or receipt disposal releases it without waiting for checkpoint persistence.
+Stopping a worker or starting one with a smaller limit does not reduce the
+shared limit. Eligible leases take one page turn and rejoin behind waiting
+peers. Parked leases still renew and flush due checkpoints. Host-retained
+completed payloads are excluded; the count is not a byte or heap guarantee.
+
 Coalescing stores only the latest successfully handled continuation and counters,
 not past payloads. It flushes at observed lease-idle or the interval since the
 first unpersisted acknowledgment, whichever occurs first. A local `304` is not

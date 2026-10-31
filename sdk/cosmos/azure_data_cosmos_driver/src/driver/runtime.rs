@@ -377,12 +377,12 @@ impl CosmosDriverRuntime {
     /// the runtime's suffix source.
     pub(crate) fn user_agent_with_suffix(
         &self,
-        suffix: &UserAgentSuffix,
+        suffix: &str,
         feature_flags: UserAgentFeatureFlags,
     ) -> UserAgent {
         compute_user_agent_with_suffix(
             self.wrapping_sdk_identifier.as_deref(),
-            Some(suffix.as_str().to_owned()),
+            Some(suffix.to_owned()),
             feature_flags,
             &self.user_agent_properties,
         )

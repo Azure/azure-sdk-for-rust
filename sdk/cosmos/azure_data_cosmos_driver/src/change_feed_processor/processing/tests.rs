@@ -30,9 +30,11 @@ use crate::{
 use azure_core::http::StatusCode;
 use std::{num::NonZeroU32, sync::Arc, time::Duration};
 
+mod admission;
 mod checkpoints;
 mod shutdown;
 mod topology;
+mod user_agent;
 
 const ENDPOINT: &str = "https://eastus.emulator.local";
 

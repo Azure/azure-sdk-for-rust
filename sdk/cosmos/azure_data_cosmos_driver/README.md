@@ -76,6 +76,9 @@ discover topology changes or alter bootstrap completion.
 ### Change feed processing
 
 `change_feed_processor::Processor` consumes the existing bootstrap range leases.
+Processor bootstrap, lease maintenance, feed polling, and topology requests append
+`ChangeFeedProcessor` to the normal user agent. The marker fits within the
+255-byte limit and does not change ordinary operations sharing the same driver.
 It uses Java's default equal-balancing strategy: target the ceiling of leases
 divided by observed active owners, apply configured min/max counts, prefer
 unowned or expired leases, and steal at most one lease per balancing cycle.
@@ -121,9 +124,21 @@ cannot publish to or retire their replacements.
 
 There is one outstanding batch per active lease session, without read-ahead.
 Taking a batch from a mailbox does not acknowledge it: the producer still waits
-for successful checkpoint persistence before reading again. The distributor does
+for successful acknowledgment under the selected checkpoint policy before reading again. The distributor does
 not acquire leases, implement topology transitions, or spawn callback tasks.
-Memory therefore scales with owned leases; page-size hints are not byte limits.
+`ProcessorOptions::with_max_outstanding_batches` defaults to 100. All workers
+sharing a source driver share the largest worker limit seen during that driver's
+lifetime, not the sum or a separate quota per worker. Zero is rejected before startup. A permit is
+reserved before fetching and held across queuing and processing; completing or
+discarding the batch releases it before checkpoint persistence finishes.
+Per-batch durability still gates the original lease's next read. Coalesced
+progress is metadata and does not occupy a batch slot.
+
+Eligible leases join a FIFO queue for one page turn and rejoin at the tail.
+Renewal, checkpoint deadlines, and shutdown continue while admission is blocked.
+Stopping a worker or starting one with a smaller limit does not reduce the shared
+limit. Lease metadata still scales with owned leases; neither the batch limit nor
+page-size hints are byte limits.
 Foreign callers may retain completed payloads beyond acknowledgment and must
 manage that memory themselves. Stealing cannot cancel external application
 effects. A crash between callback success and checkpoint persistence can cause
