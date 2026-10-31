@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{env::Env, TokenCache, UserAssignedId};
+use crate::{cache::ManagedIdentityTokenCache, env::Env, UserAssignedId};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind},
@@ -56,7 +56,7 @@ pub(crate) struct ImdsManagedIdentityCredential {
     secret_header: HeaderName,
     secret_env: String,
     id: ImdsId,
-    cache: TokenCache,
+    cache: ManagedIdentityTokenCache,
     env: Env,
 }
 
@@ -71,6 +71,7 @@ impl fmt::Debug for ImdsManagedIdentityCredential {
 impl ImdsManagedIdentityCredential {
     #[allow(clippy::too_many_arguments, reason = "private API")]
     pub fn new(
+        source: &'static str,
         endpoint: Url,
         api_version: &str,
         secret_header: HeaderName,
@@ -80,6 +81,7 @@ impl ImdsManagedIdentityCredential {
         pipeline_options: Option<PipelineOptions>,
         env: Env,
     ) -> Self {
+        let cache = ManagedIdentityTokenCache::new(source, &client_options);
         let pipeline = Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -95,7 +97,7 @@ impl ImdsManagedIdentityCredential {
             secret_header: secret_header.to_owned(),
             secret_env: secret_env.to_owned(),
             id,
-            cache: TokenCache::new(),
+            cache,
             env,
         }
     }
@@ -122,15 +124,36 @@ impl ImdsManagedIdentityCredential {
         let mut url = self.endpoint.clone();
         url.query_pairs_mut().extend_pairs(query_items);
 
+        let msi_secret = self.env.var(&self.secret_env).ok();
+        let cache = self.cache.get(
+            &url,
+            msi_secret
+                .as_deref()
+                .map(|value| (self.secret_header.as_str(), value)),
+        );
         let mut req = Request::new(url, Method::Get);
 
         req.insert_header("metadata", "true");
 
-        let msi_secret = self.env.var(&self.secret_env);
-        if let Ok(val) = msi_secret {
+        if let Some(val) = msi_secret {
             req.insert_header(self.secret_header.clone(), val);
         };
 
+        if let Some(cache) = cache {
+            return cache
+                .get_token(scopes, options, |_, options| {
+                    self.request_token(req, options)
+                })
+                .await;
+        }
+        self.request_token(req, options).await
+    }
+
+    async fn request_token(
+        &self,
+        mut req: Request,
+        options: Option<TokenRequestOptions<'_>>,
+    ) -> azure_core::Result<AccessToken> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let rsp = self
@@ -185,6 +208,7 @@ impl TokenCredential for ImdsManagedIdentityCredential {
         options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         self.cache
+            .local
             .get_token(scopes, options, |s, o| self.get_token(s, o))
             .await
     }

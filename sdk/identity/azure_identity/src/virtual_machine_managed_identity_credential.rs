@@ -68,6 +68,7 @@ impl VirtualMachineManagedIdentityCredential {
         };
         Ok(Arc::new(Self {
             credential: ImdsManagedIdentityCredential::new(
+                type_name::<Self>(),
                 endpoint,
                 API_VERSION,
                 SECRET_HEADER,
