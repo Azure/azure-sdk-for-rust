@@ -11,7 +11,7 @@ use crate::options::QueryPlanMode;
 /// rejected unless the caller raises [`PlanOptions::max_fan_out`].
 pub const DEFAULT_MAX_FAN_OUT: u32 = 100;
 
-/// Default maximum global OFFSET plus take for client-buffered queries.
+/// Default maximum global OFFSET plus take for window-gated buffered queries.
 pub const DEFAULT_MAX_BUFFERED_QUERY_WINDOW: u64 = 1000;
 
 /// Options that shape how an operation is planned into a dataflow pipeline.
@@ -23,10 +23,13 @@ pub const DEFAULT_MAX_BUFFERED_QUERY_WINDOW: u64 = 1000;
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct PlanOptions {
-    /// Maximum global OFFSET plus effective take for client-buffered queries.
+    /// Maximum global OFFSET plus effective take for non-streaming ORDER BY and standalone unordered DISTINCT queries.
     ///
     /// Requires a finite TOP or LIMIT; when both exist, the smaller is used.
     /// Defaults to [`DEFAULT_MAX_BUFFERED_QUERY_WINDOW`]. Zero is a valid limit.
+    ///
+    /// This is not a byte-level memory budget. GROUP BY and distinct-count queries
+    /// retain state for every group or distinct value and are not bounded by this setting.
     pub max_buffered_query_window: u64,
 
     /// Query-plan provider selection for this query.

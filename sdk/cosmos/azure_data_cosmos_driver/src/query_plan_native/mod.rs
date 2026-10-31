@@ -202,6 +202,7 @@ fn query_plan_options(partition_kind: native::PartitionKind) -> provider::QueryP
         // consume the formattable ORDER BY rewrite.
         require_formattable_order_by_query: true,
         is_continuation_expected: false,
+        allow_dcount: true,
         ..provider::QueryPlanOptions::default()
     }
 }
@@ -219,6 +220,7 @@ mod tests {
             let options = query_plan_options(partition_kind);
             assert!(options.require_formattable_order_by_query);
             assert!(!options.is_continuation_expected);
+            assert!(options.allow_dcount);
             assert_eq!(options.partition_kind, partition_kind);
         }
     }

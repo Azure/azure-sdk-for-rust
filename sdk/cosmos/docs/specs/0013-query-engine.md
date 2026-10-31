@@ -216,6 +216,15 @@ TOP, with partial DISTINCT results kept below the global window. It declines
 aggregates, GROUP BY, DCOUNT, non-streaming ORDER BY, hybrid search, and any
 projection whose required rewrite cannot be generated safely.
 
+Declining local generation does not mean these shapes are unsupported by the
+production driver. Native and Gateway plans supply the rewritten partials and
+metadata for cross-partition ordinary aggregates, GROUP BY, and distinct counts.
+The driver combines those partials; it does not evaluate their SQL locally.
+COUNT over a DISTINCT subquery must continue to fall back rather than being
+misclassified as an ordinary locally executable aggregate. See
+`specs/0012-feed-operations-and-dataflow.md` for execution, retained-state, and
+continuation behavior.
+
 Local equality and `IN` filters are converted to canonical EPK ranges with the
 container's partition-key definition. This includes hierarchical partition-key
 prefix ranges. Unconstrained queries use the full EPK range; contradictory
@@ -252,7 +261,7 @@ a future PR can close the gap without re-discovering it from scratch.
 | Index plans / physical plans                 | Backend-only concern                                                     |
 | Distributed query coordination               | Gateway's responsibility                                                 |
 | KQL / JavaScript query support               | Not needed                                                               |
-| Full ORDER BY / GROUP BY in plan routing     | Plan generation detects these features; execution is server-side         |
+| Local aggregate / GROUP BY / DCOUNT rewrites | Production execution uses rewrites from native or Gateway query plans    |
 
 ## Alternatives considered
 

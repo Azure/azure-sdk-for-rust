@@ -18,6 +18,8 @@
 //!   children round-robin without evicting them, suitable for change feed.
 //!   [`StreamingOrderedMerge`] k-way merges globally-ordered `ORDER BY`
 //!   results across children, each executing a Gateway-rewritten query.
+//!   Aggregate and GROUP BY stages combine rewritten partials; distinct-count
+//!   stages count the globally deduplicated stream.
 //! - Planner: [`planner::build_trivial_pipeline`] handles point reads and
 //!   single-partition operations; [`planner::build_sequential_drain`] handles
 //!   natural-order cross-partition queries; [`planner::build_streaming_ordered_merge`]
@@ -33,12 +35,16 @@
 //! The design follows Spec 0012: Feed operations and dataflow, including paged
 //! operations, split recovery, continuation tokens, and cross-partition strategies.
 
+mod aggregate;
+mod aggregate_values;
 mod binary_heap;
 mod context;
+mod dcount;
 mod distinct;
 pub(crate) mod distinct_hash;
 mod drain;
 mod drained;
+mod group_by;
 #[cfg(test)]
 mod integration_tests;
 #[cfg(test)]

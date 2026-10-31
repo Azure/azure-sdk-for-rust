@@ -24,7 +24,10 @@ use crate::{
 };
 
 use super::{
+    aggregate::Aggregate,
+    dcount::DCount,
     distinct_hash::Hash128,
+    group_by::GroupBy,
     intersect_feed_ranges,
     query_plan::{QueryInfo, QueryPlan, SortOrder},
     query_response,
@@ -402,12 +405,145 @@ pub(crate) fn validate_buffered_query(
     };
     let shape = if is_non_streaming_order_by(info) {
         "non-streaming ORDER BY (including buffered vector search)"
-    } else if info.distinct_type == DistinctType::Unordered {
+    } else if info.distinct_type == DistinctType::Unordered
+        && !info.has_aggregates()
+        && !info.has_group_by()
+        && info.d_count_info.is_none()
+    {
         "unordered DISTINCT"
     } else {
         return Ok(());
     };
     buffered_query_window(info, max_buffered_query_window, shape).map(|_| ())
+}
+
+/// Composes aggregate, grouped, and distinct-count execution above the merge source.
+pub(crate) async fn build_advanced_query_pipeline(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    resume: Option<PipelineNodeState>,
+) -> crate::error::Result<Pipeline> {
+    let info = query_plan
+        .query_info
+        .as_ref()
+        .ok_or_else(|| unsupported_feature("advanced query execution requires queryInfo"))?;
+    if query_plan.hybrid_search_query_info.is_some() {
+        return Err(unsupported_feature("hybrid search queries"));
+    }
+    if matches!(resume, Some(PipelineNodeState::Drained)) {
+        return Ok(Pipeline::new(Box::new(DrainedLeaf)));
+    }
+    if resume.is_some()
+        && (info.has_group_by() || (info.has_aggregates() && info.d_count_info.is_none()))
+    {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(
+                crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED,
+            )
+            .with_message("cross-partition aggregate and GROUP BY queries cannot be resumed from a continuation token")
+            .build());
+    }
+    if info.rewritten_query.as_deref().is_none_or(str::is_empty) {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message("advanced query plan did not supply a non-empty rewrittenQuery")
+            .build());
+    }
+    if is_non_streaming_order_by(info) {
+        return Err(unsupported_feature(
+            "aggregates, GROUP BY, or distinct counts combined with non-streaming ORDER BY",
+        ));
+    }
+
+    let mut skip = info.offset.unwrap_or(0);
+    let mut take = combine_take(info);
+    let source_resume = match resume {
+        Some(PipelineNodeState::SkipTake {
+            remaining_skip,
+            remaining_take,
+            child,
+        }) => {
+            if skip == 0 && take.is_none() {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
+                    )
+                    .with_message("continuation token carries a window but the query has none")
+                    .build());
+            }
+            skip = remaining_skip;
+            take = remaining_take;
+            Some(*child)
+        }
+        other => other,
+    };
+    let (source_resume, last_hash) = peel_distinct_resume(source_resume, info.distinct_type)?;
+
+    let mut source_plan = query_plan.clone();
+    let source_info = source_plan
+        .query_info
+        .as_mut()
+        .expect("queryInfo was validated");
+    source_info.aggregates.clear();
+    source_info.group_by_alias_to_aggregate_type.clear();
+    source_info.group_by_aliases.clear();
+    source_info.group_by_expressions.clear();
+    source_info.d_count_info = None;
+    source_info.distinct_type = DistinctType::None;
+    source_info.top = None;
+    source_info.offset = None;
+    source_info.limit = None;
+
+    let source = if is_streaming_order_by(source_info) {
+        build_streaming_ordered_merge(&source_plan, topology_provider, operation, source_resume)
+            .await?
+    } else {
+        build_sequential_drain(&source_plan, topology_provider, operation, source_resume).await?
+    };
+    let root = source.into_root();
+    let root: Box<dyn PipelineNode> = if info.has_aggregates() && !info.has_group_by() {
+        Box::new(Aggregate::new(
+            root,
+            info,
+            operation.emits_binary_payload(),
+        )?)
+    } else {
+        root
+    };
+    let root = apply_distinct(
+        root,
+        info.distinct_type,
+        last_hash,
+        false,
+        operation.emits_binary_payload(),
+    );
+    let root: Box<dyn PipelineNode> = if info.has_group_by() {
+        Box::new(GroupBy::new(
+            root,
+            info,
+            operation.request_headers().max_item_count,
+            operation.emits_binary_payload(),
+        )?)
+    } else {
+        root
+    };
+    let root = if skip > 0 || take.is_some() {
+        Box::new(SkipTake::new(
+            root,
+            skip,
+            take,
+            operation.emits_binary_payload(),
+        )) as Box<dyn PipelineNode>
+    } else {
+        root
+    };
+    let root: Box<dyn PipelineNode> = if let Some(dcount) = &info.d_count_info {
+        Box::new(DCount::new(root, dcount, operation.emits_binary_payload()))
+    } else {
+        root
+    };
+    Ok(Pipeline::new(root))
 }
 
 fn buffered_query_window(info: &QueryInfo, maximum: u64, shape: &str) -> crate::error::Result<u64> {
@@ -468,7 +604,7 @@ pub(crate) async fn build_non_streaming_ordered_merge(
             "DISTINCT combined with non-streaming ORDER BY",
         ));
     }
-    if !info.aggregates.is_empty() {
+    if info.has_aggregates() {
         return Err(unsupported_feature(
             "aggregates combined with non-streaming ORDER BY",
         ));
@@ -1772,7 +1908,7 @@ fn validate_query_info(info: &QueryInfo) -> crate::error::Result<()> {
     if !info.order_by.is_empty() {
         return Err(unsupported_feature("ORDER BY in cross-partition queries"));
     }
-    if !info.aggregates.is_empty() {
+    if info.has_aggregates() {
         return Err(unsupported_feature("aggregates in cross-partition queries"));
     }
     if !info.group_by_expressions.is_empty() {
@@ -1879,7 +2015,7 @@ fn validate_query_plan_for_streaming_order_by(plan: &QueryPlan) -> crate::error:
     // `TOP` and `OFFSET`/`LIMIT` are supported combined with streaming ORDER BY:
     // the ordered merge streams the globally-sorted rows and a `SkipTake` root
     // (composed in `build_streaming_ordered_merge`) applies the window on top.
-    if !info.aggregates.is_empty() {
+    if info.has_aggregates() {
         return Err(unsupported_feature(
             "aggregates combined with ORDER BY in cross-partition queries",
         ));
@@ -3200,6 +3336,261 @@ mod tests {
             rendered.ends_with("unsupported query feature: aggregates in cross-partition queries"),
             "unexpected: {rendered}"
         );
+    }
+
+    #[tokio::test]
+    async fn aggregate_pipeline_merges_value_and_alias_only_plans() -> crate::error::Result<()> {
+        for (value_projection, distinct_type) in [
+            (true, DistinctType::None),
+            (false, DistinctType::None),
+            (true, DistinctType::Unordered),
+            (false, DistinctType::Unordered),
+        ] {
+            let mut info = QueryInfo {
+                distinct_type,
+                has_select_value: value_projection,
+                rewritten_query: Some("SELECT VALUE [{\"item\": COUNT(1)}] FROM c".into()),
+                ..Default::default()
+            };
+            let pages = if value_projection {
+                info.aggregates = vec!["Count".into()];
+                vec![
+                    response(br#"{"Documents":[[{"item":2}]]}"#),
+                    response(br#"{"Documents":[[{"item":3}]]}"#),
+                ]
+            } else {
+                info.group_by_aliases = vec!["total".into()];
+                info.group_by_alias_to_aggregate_type
+                    .insert("total".into(), serde_json::json!("Count"));
+                vec![
+                    response(br#"{"Documents":[{"payload":{"total":{"item":2}}}]}"#),
+                    response(br#"{"Documents":[{"payload":{"total":{"item":3}}}]}"#),
+                ]
+            };
+            assert!(info.has_aggregates());
+            let plan = QueryPlan {
+                query_info: Some(info),
+                ..plan_with_ranges(vec![qr("", "FF")])
+            };
+            validate_buffered_query(&plan, 0)?;
+            let operation = Arc::new(
+                CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+                    .with_body(
+                        br#"{"query":"SELECT VALUE COUNT(1) FROM c","parameters":[{"name":"@x","value":7}]}"#.to_vec(),
+                    ),
+            );
+            let mut topology =
+                MockTopologyProvider::new(vec![Ok(vec![rr("", "80", "0")?, rr("80", "FF", "1")?])]);
+            let mut pipeline =
+                build_advanced_query_pipeline(&plan, &mut topology, &operation, None).await?;
+            let mut executor = MockRequestExecutor::new(pages.into_iter().map(Ok).collect());
+            let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+            let page = pipeline
+                .next_page(&mut context)
+                .await?
+                .expect("aggregate page");
+            let ResponseBody::Items(items) = page.body() else {
+                panic!("aggregate output must contain public payload items");
+            };
+            assert_eq!(items.len(), 1);
+            let expected = if value_projection {
+                serde_json::json!(5)
+            } else {
+                serde_json::json!({"total":5})
+            };
+            assert_eq!(
+                serde_json::from_slice::<serde_json::Value>(&items[0]).unwrap(),
+                expected
+            );
+            assert!(pipeline.next_page(&mut context).await?.is_none());
+            for body in &executor.query_bodies {
+                let body: serde_json::Value =
+                    serde_json::from_slice(body.as_deref().expect("query body")).unwrap();
+                assert_eq!(body["query"], "SELECT VALUE [{\"item\": COUNT(1)}] FROM c");
+                assert_eq!(
+                    body["parameters"],
+                    serde_json::json!([{"name":"@x","value":7}])
+                );
+            }
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn aggregate_pipeline_rejects_resume_and_missing_rewrite_before_topology() {
+        let mut plan = QueryPlan {
+            query_info: Some(QueryInfo {
+                aggregates: vec!["Count".into()],
+                has_select_value: true,
+                ..Default::default()
+            }),
+            ..plan_with_ranges(vec![qr("", "FF")])
+        };
+        let operation = Arc::new(cross_partition_query_operation());
+        let error =
+            build_advanced_query_pipeline(&plan, &mut NoopTopologyProvider, &operation, None)
+                .await
+                .unwrap_err();
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
+        );
+        plan.query_info.as_mut().unwrap().rewritten_query =
+            Some("SELECT VALUE [{\"item\":COUNT(1)}] FROM c".into());
+        let error = build_advanced_query_pipeline(
+            &plan,
+            &mut NoopTopologyProvider,
+            &operation,
+            Some(PipelineNodeState::Request {
+                server_continuation: Some("partial".into()),
+            }),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
+        );
+    }
+
+    #[test]
+    fn aggregate_shapes_do_not_inherit_the_standalone_distinct_window_gate() {
+        let mut info = QueryInfo {
+            distinct_type: DistinctType::Unordered,
+            ..Default::default()
+        };
+        for shape in 0..3 {
+            info.aggregates.clear();
+            info.group_by_expressions.clear();
+            info.d_count_info = None;
+            match shape {
+                0 => info.aggregates.push("Count".into()),
+                1 => info.group_by_expressions.push("c.category".into()),
+                _ => info.d_count_info = Some(Default::default()),
+            }
+            let mut plan = QueryPlan {
+                query_info: Some(info.clone()),
+                ..Default::default()
+            };
+            assert!(validate_buffered_query(&plan, 0).is_ok());
+            plan.query_info.as_mut().unwrap().has_non_streaming_order_by = true;
+            assert!(validate_buffered_query(&plan, 0).is_err());
+        }
+    }
+
+    #[tokio::test]
+    async fn group_by_pipeline_applies_top_after_combining_partition_partials(
+    ) -> crate::error::Result<()> {
+        for distinct_type in [DistinctType::None, DistinctType::Unordered] {
+            let plan = QueryPlan {
+                query_info: Some(QueryInfo {
+                    distinct_type,
+                    top: Some(1),
+                    group_by_expressions: vec!["c.kind".into()],
+                    group_by_aliases: vec!["kind".into(), "total".into()],
+                    aggregates: vec!["Count".into()],
+                    group_by_alias_to_aggregate_type: [
+                        ("kind".into(), serde_json::Value::Null),
+                        ("total".into(), serde_json::json!("Count")),
+                    ]
+                    .into(),
+                    rewritten_query: Some("SELECT c.kind, COUNT(1) FROM c GROUP BY c.kind".into()),
+                    ..Default::default()
+                }),
+                ..plan_with_ranges(vec![qr("", "FF")])
+            };
+            let operation = Arc::new(cross_partition_query_operation());
+            let mut topology =
+                MockTopologyProvider::new(vec![Ok(vec![rr("", "80", "0")?, rr("80", "FF", "1")?])]);
+            let mut pipeline =
+                build_advanced_query_pipeline(&plan, &mut topology, &operation, None).await?;
+            let mut executor = MockRequestExecutor::new(vec![
+            Ok(response(br#"{"Documents":[{"groupByItems":[{"item":"a"}],"payload":{"kind":"a","total":{"item":1}}}]}"#)),
+            Ok(response(br#"{"Documents":[{"groupByItems":[{"item":"a"}],"payload":{"kind":"a","total":{"item":2}}},{"groupByItems":[{"item":"b"}],"payload":{"kind":"b","total":{"item":4}}}]}"#)),
+        ]);
+            let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+            let page = pipeline.next_page(&mut context).await?.unwrap();
+            let ResponseBody::Items(items) = page.body() else {
+                panic!("expected reduced items");
+            };
+            assert_eq!(items.len(), 1);
+            assert_eq!(
+                serde_json::from_slice::<serde_json::Value>(&items[0]).unwrap(),
+                serde_json::json!({"kind":"a","total":3})
+            );
+            assert!(pipeline.next_page(&mut context).await?.is_none());
+            assert_eq!(executor.query_bodies.len(), 2);
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn ordered_distinct_count_preserves_source_resume_validation_and_terminal_state(
+    ) -> crate::error::Result<()> {
+        let plan = QueryPlan {
+            query_info: Some(QueryInfo {
+                distinct_type: DistinctType::Ordered,
+                order_by: vec![SortOrder::Ascending],
+                order_by_expressions: vec!["c.category".into()],
+                has_select_value: true,
+                d_count_info: Some(Default::default()),
+                rewritten_query: Some("SELECT c._rid, [{\"item\":c.category}] AS orderByItems, c.category AS payload FROM c ORDER BY c.category".into()),
+                ..Default::default()
+            }),
+            ..plan_with_ranges(vec![qr("", "FF")])
+        };
+        let operation = Arc::new(
+            cross_partition_query_operation().with_body(
+                br#"{"query":"SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.category FROM c ORDER BY c.category) AS t","parameters":[{"name":"@x","value":7}]}"#.to_vec(),
+            ),
+        );
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "0")?])]);
+        let fresh = build_advanced_query_pipeline(&plan, &mut topology, &operation, None).await?;
+        let snapshot = fresh.snapshot_state()?;
+        assert!(matches!(snapshot, PipelineNodeState::Distinct { .. }));
+        let changed_operation = Arc::new((*operation).clone().with_body(
+            br#"{"query":"SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.other FROM c ORDER BY c.other) AS t"}"#.to_vec(),
+        ));
+        let error = build_advanced_query_pipeline(
+            &plan,
+            &mut NoopTopologyProvider,
+            &changed_operation,
+            Some(snapshot.clone()),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID
+        );
+        assert!(error.to_string().contains("different query"));
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "0")?])]);
+        let mut resumed =
+            build_advanced_query_pipeline(&plan, &mut topology, &operation, Some(snapshot)).await?;
+        let mut executor = MockRequestExecutor::new(vec![Ok(response(
+            br#"{"Documents":[{"_rid":"AQIDBAUGBwg0=","orderByItems":[{"item":"a"}],"payload":"a"},{"_rid":"AQIDBAUGBwg1=","orderByItems":[{"item":"a"}],"payload":"a"},{"_rid":"AQIDBAUGBwg2=","orderByItems":[{"item":"b"}],"payload":"b"}]}"#,
+        ))]);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        let page = resumed.next_page(&mut context).await?.unwrap();
+        let ResponseBody::Items(items) = page.body() else {
+            panic!("expected reduced items");
+        };
+        assert_eq!(items.len(), 1);
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&items[0]).unwrap(),
+            serde_json::json!(2)
+        );
+        let completed = resumed.snapshot_state()?;
+        assert_eq!(completed, PipelineNodeState::Drained);
+        let mut terminal = build_advanced_query_pipeline(
+            &plan,
+            &mut NoopTopologyProvider,
+            &operation,
+            Some(completed),
+        )
+        .await?;
+        assert!(terminal.next_page(&mut context).await?.is_none());
+        Ok(())
     }
 
     #[tokio::test]
