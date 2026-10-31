@@ -4,14 +4,21 @@
 
 ### Features Added
 
+- Added the `ErrorKind::MessageSizeExceeded { requested, max_allowed }` error variant. `send_event` and `send_message` report it when the encoded message is larger than the maximum the sender link allows, so a caller can branch on the kind instead of the message. This matches the `EventHubsException` with `FailureReason.MessageSizeExceeded` that .NET reports for the same message.
 - Added `ConsumerClientBuilder::with_idle_timeout` and `ProducerClientBuilder::with_idle_timeout` to configure the AMQP connection idle timeout and enable peer heartbeat negotiation.
 
 ### Bugs Fixed
 
+- `InMemoryCheckpointStore::claim_ownership` now treats a stale ETag as a lost claim instead of an error, the same way `BlobCheckpointStore` does. It skips that partition, returns the partitions it did claim, and logs the conflict at the debug level. A single lost claim used to return an error that reached `EventProcessor::run`, which stopped every partition the instance owned and discarded the new ETag for each partition that the same batch had already renewed. ([#5095](https://github.com/Azure/azure-sdk-for-rust/issues/5095))
+- `send_event` and `send_message` now reject a message larger than the maximum the sender link allows, and they do not transfer it. The AMQP library treats that maximum as a split boundary and fragmented an oversized message across transfer frames, so a 2 MiB event reached the partition. The batch path already enforced the same limit. ([#5101](https://github.com/Azure/azure-sdk-for-rust/issues/5101))
 - Producer sends and sender metadata waits now enforce `RetryOptions::max_total_elapsed` while preparation, transport I/O, recovery, or backoff is pending; expiry returns an I/O timeout and retires the captured connection.
 - Connection recovery and client close now terminate failed transports without waiting for graceful shutdown, and cancelled recovery leaves generation state usable.
 - Sends waiting for settlement now retry when a peer invalidates their connection, session, or link. These retries use the configured limits and backoff. A lost acknowledgement can cause duplicate events.
 - A receive no longer charges its wait for an event to the recovery budget. `RetryOptions::max_total_elapsed` now counts only recovery work for a receive, so a partition that waited longer than the limit before a recoverable error, such as a dropped session, now recovers instead of returning the error. A receive link that fails after a healthy wait of at least 10 seconds now starts a new recovery with a new retry count, like an empty receive in the .NET SDK. The terminal recovery warning now reports the stop reason, the retry count and elapsed time with their limits, the receive wait, and the connection and partition IDs.
+
+### Breaking Changes
+
+- The checkpoint and ownership blob key that `Checkpoint::get_checkpoint_blob_prefix_name`, `Checkpoint::get_checkpoint_blob_name`, `Ownership::get_ownership_prefix_name`, and `Ownership::get_ownership_name` build now folds the fully qualified namespace, the event hub name, and the consumer group to lowercase ASCII. The partition id keeps its case, so `NS.ServiceBus.Windows.Net/My-Hub/$Default/checkpoint/0` becomes `ns.servicebus.windows.net/my-hub/$default/checkpoint/0`, and the ownership key changes in the same way. Event Hubs treats the consumer group as case insensitive, so a deployment that spelled the group `$Default` on one run and `$default` on the next built two disjoint key sets and reprocessed events. Records that an older Rust client wrote stay at the old key and become unreachable. The change adds no dual read and no fallback lookup, and a processor that starts against an existing container resumes from its configured start position. ([#5099](https://github.com/Azure/azure-sdk-for-rust/issues/5099))
 
 ## 0.17.0 (2026-09-14)
 

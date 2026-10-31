@@ -4,7 +4,7 @@
     "id": "topology.partition-split-merge",
     "title": "Partition split and merge preserve item state",
     "requirement": "Manually phased split and merge operations expose their transition windows and preserve point-operation state across replacement partition ranges.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "rust",

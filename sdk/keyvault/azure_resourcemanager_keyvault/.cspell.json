@@ -1,0 +1,22 @@
+{
+  "import": [
+    "../.cspell.json"
+  ],
+  "ignoreWords": [
+    "byok",
+    "deletesas",
+    "getrotationpolicy",
+    "getsas",
+    "listissuers",
+    "listsas",
+    "mhsm",
+    "mhsmip",
+    "preprovisioning",
+    "regeneratekey",
+    "setrotationpolicy",
+    "setsas",
+    "subid",
+    "vnet",
+    "westus"
+  ]
+}

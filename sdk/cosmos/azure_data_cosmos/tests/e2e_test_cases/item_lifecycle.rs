@@ -829,7 +829,7 @@ fn record_request_statuses(
 
 fn lifecycle_read_region(profile: &Profile) -> TestResult<Region> {
     match profile.id.as_str() {
-        "smokeTests" => Ok(Region::EAST_US),
+        "smokeTests" => Ok(profile.selected_account()?.effective_regions()?.remove(0)),
         "lifecycleConsistencyMatrix" | "readConsistencyOverrideMatrix" => Ok(Region::WEST_US),
         profile => {
             Err(format!("item.lifecycle does not define a read region for '{profile}'").into())
