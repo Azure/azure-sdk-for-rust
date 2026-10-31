@@ -23,6 +23,7 @@
 //! the consuming SDK in its native language.
 
 pub mod binary_json;
+pub mod change_feed_processor;
 pub mod diagnostics;
 pub mod driver;
 pub mod error;
