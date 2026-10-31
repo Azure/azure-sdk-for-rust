@@ -3,10 +3,11 @@
 
 //! [`Pipeline`] (driver-internal) and [`OperationPlan`] (driver-public).
 
+use crate::driver::dataflow::PipelineResponse;
 use std::{sync::Arc, time::Instant};
 
 use crate::{
-    models::{ContinuationToken, CosmosOperation, CosmosResponse},
+    models::{ContinuationToken, CosmosOperation},
     options::PlanOptions,
 };
 
@@ -54,7 +55,7 @@ impl Pipeline {
     pub(crate) async fn next_page(
         &mut self,
         context: &mut PipelineContext<'_>,
-    ) -> crate::error::Result<Option<CosmosResponse>> {
+    ) -> crate::error::Result<Option<PipelineResponse>> {
         match self.root.next_page(context).await? {
             PageResult::Page { response, .. } => Ok(Some(response)),
             PageResult::Drained => Ok(None),
@@ -211,7 +212,8 @@ impl OperationPlan {
     /// correctly.
     ///
     /// The same applies when a page was produced but could not be delivered to
-    /// the caller — a binary response body that failed to transcode to text.
+    /// the caller — a binary response body that failed standalone materialization
+    /// or text conversion.
     /// Reported as
     /// [`CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE`](crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE).
     /// That failure also stops the plan being executed again — see
