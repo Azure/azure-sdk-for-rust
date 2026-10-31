@@ -62,6 +62,7 @@ directly by Rust source remain with their crates.
 | 0027 | Hosted emulator (`specs/0027-hosted-emulator.md`) |
 | 0028 | Functional E2E testing (`specs/0028-functional-e2e-testing.md`) |
 | 0029 | Generic native feed cursor (`specs/0029-native-feed-cursor.md`) |
+| 0030 | Refresh reason header (`specs/0030-refresh-reason-header.md`) |
 
 ## Architecture decision records
 
