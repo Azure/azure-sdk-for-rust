@@ -19,10 +19,6 @@ use framework::{TestClient, TestOptions};
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -81,7 +77,7 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
+    ignore = "vnext emulator's Offers endpoint is a no-op and collection performance operations are not implemented: https://learn.microsoft.com/en-us/azure/cosmos-db/emulator-linux#feature-support"
 )]
 #[cfg_attr(
     test_category = "emulator_inmemory",

@@ -57,7 +57,7 @@ async fn collect_items(
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: RID addressing not verified"
+    ignore = "vnext emulator returns container RIDs with invalid length and parent prefix: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/382"
 )]
 pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -216,10 +216,6 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: RID addressing not verified"
-)]
 pub async fn mixed_name_and_rid_addressing_is_rejected() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -265,10 +261,6 @@ pub async fn mixed_name_and_rid_addressing_is_rejected() -> Result<(), Box<dyn E
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
-)]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: RID addressing not verified"
 )]
 pub async fn container_rid_from_another_database_is_rejected() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(

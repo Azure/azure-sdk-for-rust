@@ -31,7 +31,7 @@ use framework::{TestClient, TestOptions};
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
+    ignore = "vnext emulator exposes an unexpected _ts included index path: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/375"
 )]
 #[cfg_attr(
     test_category = "emulator_inmemory",
@@ -170,10 +170,6 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
         test_category = "emulator_inmemory"
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
-)]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(

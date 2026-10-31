@@ -32,7 +32,7 @@ use framework::{TestClient, TestOptions};
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
+    ignore = "vnext emulator does not implement request units needed for throughput-driven partitioning: https://learn.microsoft.com/en-us/azure/cosmos-db/emulator-linux#feature-support"
 )]
 pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -484,7 +484,7 @@ async fn drain_ids(
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
+    ignore = "vnext emulator returns items outside the requested EPK range: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/376"
 )]
 pub async fn feed_range_scope_restricts_cross_partition_query() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
