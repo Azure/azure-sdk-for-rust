@@ -20,6 +20,7 @@ use crate::{
             ChangeFeedProcessorBootstrapIdentity as Identity,
             ChangeFeedProcessorBootstrapProcessingLease as ProcessingLease, SCHEMA_VERSION,
         },
+        operation_options,
         processing::distribution::{BatchDistributor, LeaseSession},
     },
     driver::dataflow::split_feed_envelope,
@@ -27,7 +28,7 @@ use crate::{
         ChangeFeedFactoryMode, ChangeFeedStartFrom, ContainerReference, ContinuationToken,
         CosmosResponse, FeedRange, MaxItemCountHint, ResponseBody,
     },
-    options::{OperationOptions, PlanOptions},
+    options::PlanOptions,
     CosmosDriver, Result,
 };
 use async_lock::Mutex;
@@ -1303,7 +1304,7 @@ async fn poll_feed(
                     &force,
                     context.source_driver.plan_operation(
                         operation.clone(),
-                        &OperationOptions::default(),
+                        &operation_options(),
                         Some(&checkpoint),
                         &plan_options,
                     ),
@@ -1325,7 +1326,7 @@ async fn poll_feed(
                 context.source_driver.execute_plan(
                     plan,
                     Some(context.source.clone()),
-                    OperationOptions::default(),
+                    operation_options(),
                 ),
             )
             .await?;

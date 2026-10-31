@@ -76,6 +76,9 @@ discover topology changes or alter bootstrap completion.
 ### Change feed processing
 
 `change_feed_processor::Processor` consumes the existing bootstrap range leases.
+Processor bootstrap, lease maintenance, feed polling, and topology requests append
+`ChangeFeedProcessor` to the normal user agent. The marker fits within the
+255-byte limit and does not change ordinary operations sharing the same driver.
 It uses Java's default equal-balancing strategy: target the ceiling of leases
 divided by observed active owners, apply configured min/max counts, prefer
 unowned or expired leases, and steal at most one lease per balancing cycle.

@@ -32,6 +32,8 @@
 
 ### Other Changes
 
+- Identify change feed processor bootstrap, polling, lease maintenance, and topology requests with `ChangeFeedProcessor` in the user agent without changing ordinary requests.
+
 - Derive processor renewal and acquisition schedules from the lease expiration budget, reuse checkpoint writes for renewal, and remove the implicit callback progress timeout. ([#5477](https://github.com/Azure/azure-sdk-for-rust/pull/5477))
 
 ## 1.1.0-beta.1 (2026-10-22)

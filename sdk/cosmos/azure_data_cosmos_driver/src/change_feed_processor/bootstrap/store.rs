@@ -2,12 +2,11 @@
 // Licensed under the MIT License.
 
 use crate::{
-    change_feed_processor::bootstrap::error,
+    change_feed_processor::{bootstrap::error, operation_options},
     models::{
         ContainerReference, CosmosOperation, CosmosResponse, ItemReference, PartitionKey,
         Precondition,
     },
-    options::OperationOptions,
     CosmosDriver, Result,
 };
 use azure_core::http::{Etag, StatusCode};
@@ -47,7 +46,7 @@ impl ChangeFeedProcessorBootstrapStore<'_> {
         self.driver
             .execute_singleton_operation(
                 operation.with_absolute_deadline(Some(self.deadline)),
-                OperationOptions::default(),
+                operation_options(),
             )
             .await
     }

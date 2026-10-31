@@ -34,6 +34,7 @@ mod admission;
 mod checkpoints;
 mod shutdown;
 mod topology;
+mod user_agent;
 
 const ENDPOINT: &str = "https://eastus.emulator.local";
 
