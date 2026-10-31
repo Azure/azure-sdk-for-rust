@@ -77,6 +77,7 @@ fn assert_defaults<T, H>(builder: &ChangeFeedProcessorBuilder<T, H>) {
         MaxItemCountHint::Limit(NonZeroU32::new(100).unwrap())
     );
     assert_eq!(builder.feed_poll_delay, Duration::from_secs(5));
+    assert_eq!(builder.max_outstanding_batches, 100);
     assert_eq!(
         builder.checkpoint_policy,
         super::ChangeFeedCheckpointPolicy::EveryBatch
@@ -90,6 +91,7 @@ fn configure<T, H>(builder: ChangeFeedProcessorBuilder<T, H>) -> ChangeFeedProce
     builder
         .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(237).unwrap()))
         .with_feed_poll_delay(Duration::from_millis(1234))
+        .with_max_outstanding_batches(17)
         .with_checkpoint_policy(super::ChangeFeedCheckpointPolicy::Coalesced {
             max_interval: Duration::from_secs(7),
         })
@@ -139,6 +141,7 @@ async fn configuration_round_trip(mode: ChangeFeedMode) -> Result<(), Box<dyn Er
             max_item_count,
             feed_poll_delay,
             checkpoint_policy,
+            max_outstanding_batches,
             min_scale_count,
             max_scale_count,
             lease_verification_on_restart_enabled,
@@ -159,6 +162,7 @@ async fn configuration_round_trip(mode: ChangeFeedMode) -> Result<(), Box<dyn Er
             MaxItemCountHint::Limit(NonZeroU32::new(237).unwrap())
         );
         assert_eq!(feed_poll_delay, Duration::from_millis(1234));
+        assert_eq!(max_outstanding_batches, 17);
         assert_eq!(
             checkpoint_policy,
             super::ChangeFeedCheckpointPolicy::Coalesced {
@@ -246,6 +250,20 @@ async fn latest_version_start_positions_round_trip() -> Result<(), Box<dyn Error
 
 async fn build_validation(mode: ChangeFeedMode) -> Result<(), Box<dyn Error>> {
     let (monitored, leases) = containers().await?;
+    let result = ChangeFeedProcessorBuilder::new(
+        mode,
+        monitored.clone(),
+        leases.clone(),
+        "orders",
+        "worker",
+    )
+    .with_max_outstanding_batches(0)
+    .handle_change_feed(on_changes)
+    .build();
+    assert_eq!(
+        result.err().unwrap().status().status_code(),
+        StatusCode::BadRequest
+    );
     for max_interval in [Duration::ZERO, Duration::MAX] {
         let result = ChangeFeedProcessorBuilder::new(
             mode,

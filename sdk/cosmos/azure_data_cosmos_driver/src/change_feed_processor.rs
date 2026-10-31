@@ -7,9 +7,11 @@
 //! delivers schema-agnostic batches; consumers acknowledge successful processing
 //! explicitly before the driver saves progress.
 
+mod admission;
 mod bootstrap;
 mod processing;
 
+pub(crate) use admission::BatchAdmission;
 pub use bootstrap::bootstrap;
 pub(crate) use bootstrap::ChangeFeedProcessorBootstrapCoalescer;
 pub use processing::{

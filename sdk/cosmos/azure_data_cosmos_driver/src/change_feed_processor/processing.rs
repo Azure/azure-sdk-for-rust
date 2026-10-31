@@ -9,6 +9,7 @@ mod topology;
 
 use crate::{
     change_feed_processor::{
+        admission::BatchPermit,
         bootstrap,
         bootstrap::{
             error, namespace,
@@ -110,6 +111,7 @@ pub struct ProcessorOptions {
     max_leases: u32,
     expiration: Duration,
     checkpoint_policy: CheckpointPolicy,
+    max_outstanding_batches: u32,
 }
 
 impl ProcessorOptions {
@@ -141,6 +143,7 @@ impl ProcessorOptions {
             max_leases: 0,
             expiration: Duration::from_secs(60),
             checkpoint_policy: CheckpointPolicy::default(),
+            max_outstanding_batches: 100,
         }
     }
 
@@ -165,6 +168,23 @@ impl ProcessorOptions {
     /// Sets the service page-size hint, not a hard payload or memory bound.
     pub fn with_max_item_count(mut self, hint: MaxItemCountHint) -> Self {
         self.page_size = hint;
+        self
+    }
+
+    /// Sets this worker's contribution to the shared batch limit.
+    ///
+    /// Defaults to 100. Processors sharing a source driver share the largest
+    /// worker limit seen during that driver's lifetime, not the sum or a per-worker quota.
+    /// The limit counts fetch reservations, queued batches, and processing
+    /// batches. Completed payloads retained by consumers and checkpoint metadata
+    /// are excluded; this is not a byte or heap limit.
+    ///
+    /// Eligible leases take one page turn and rejoin behind waiting peers.
+    /// Stopping a worker or starting one with a smaller limit does not reduce
+    /// the shared limit. Both checkpoint policies
+    /// use the same admission control. Zero is rejected by [`Processor::start()`].
+    pub fn with_max_outstanding_batches(mut self, maximum: u32) -> Self {
+        self.max_outstanding_batches = maximum;
         self
     }
 
@@ -530,6 +550,7 @@ struct Acknowledgment {
 pub struct BatchReceipt {
     sender: oneshot::Sender<Acknowledgment>,
     cancelled: Signal,
+    permit: Option<BatchPermit>,
 }
 
 impl BatchReceipt {
@@ -562,6 +583,8 @@ impl BatchReceipt {
     }
 
     async fn complete(self, durable: bool) -> Result<()> {
+        // Processing is over; persistence must not hold data capacity.
+        drop(self.permit);
         let (tx, rx) = oneshot::channel();
         self.sender
             .send(Acknowledgment {
@@ -706,7 +729,8 @@ impl Processor {
         leases: ContainerReference,
         options: ProcessorOptions,
     ) -> Result<Self> {
-        if (options.max_leases > 0 && options.min_leases > options.max_leases)
+        if options.max_outstanding_batches == 0
+            || (options.max_leases > 0 && options.min_leases > options.max_leases)
             || (options.mode == ChangeFeedFactoryMode::FullFidelity
                 && options.continuation.is_none()
                 && !matches!(options.start, ChangeFeedStartFrom::Now))
@@ -717,7 +741,7 @@ impl Processor {
         {
             return Err(error(
                 StatusCode::BadRequest,
-                "Invalid processor start or lease-count configuration.",
+                "Invalid processor start, lease-count, or batch-limit configuration.",
             ));
         }
         azure_core::time::Duration::try_from(options.poll_delay)
@@ -753,6 +777,10 @@ impl Processor {
             context.verify_leases().await?;
         }
         let state = Arc::new(SharedState::default());
+        context
+            .source_driver
+            .batch_admission()
+            .observe_limit(context.options.max_outstanding_batches);
         let (stop, stopping) = signal();
         let (force, forced) = signal();
         let (done, stopped) = oneshot::channel();
@@ -1243,15 +1271,7 @@ async fn poll_feed(
         change_feed_processor: true,
         ..Default::default()
     };
-    let mut plan = context
-        .source_driver
-        .plan_operation(
-            operation,
-            &OperationOptions::default(),
-            Some(&checkpoint),
-            &plan_options,
-        )
-        .await?;
+    let mut plan = None;
     let mut idle_responses = 0usize;
     loop {
         if cancelled.clone().now_or_never().is_some() {
@@ -1260,13 +1280,50 @@ async fn poll_feed(
         if state.stopping.load(Ordering::Acquire) {
             return Ok(());
         }
+        let admission = async {
+            futures::select_biased! {
+                _ = stop.clone().fuse() => Ok(None),
+                permit = context.source_driver.batch_admission().acquire().fuse() => Ok(Some(permit)),
+            }
+        };
+        let Some(Some(permit)) = context
+            .wait_with_checkpoint(&lease, &cancelled, &force, admission)
+            .await?
+        else {
+            return Ok(());
+        };
+        if state.stopping.load(Ordering::Acquire) {
+            return Ok(());
+        }
+        if plan.is_none() {
+            plan = context
+                .wait_with_checkpoint(
+                    &lease,
+                    &cancelled,
+                    &force,
+                    context.source_driver.plan_operation(
+                        operation.clone(),
+                        &OperationOptions::default(),
+                        Some(&checkpoint),
+                        &plan_options,
+                    ),
+                )
+                .await?;
+            if plan.is_none() {
+                return Ok(());
+            }
+        }
+        if state.stopping.load(Ordering::Acquire) {
+            return Ok(());
+        }
+        let plan = plan.as_mut().expect("plan initialized after admission");
         let response = context
             .wait_with_checkpoint(
                 &lease,
                 &cancelled,
                 &force,
                 context.source_driver.execute_plan(
-                    &mut plan,
+                    plan,
                     Some(context.source.clone()),
                     OperationOptions::default(),
                 ),
@@ -1293,6 +1350,8 @@ async fn poll_feed(
         let idle = response.status().status_code() == StatusCode::NotModified;
         let token = plan.to_continuation_token()?;
         if idle {
+            drop(response);
+            drop(permit);
             // Processor plans disable repair, so a full round covers a stable set of leaves.
             idle_responses = idle_responses.saturating_add(1);
             let lease_idle = idle_responses >= plan.pipeline.fan_out_width();
@@ -1347,6 +1406,7 @@ async fn poll_feed(
             BatchReceipt {
                 sender,
                 cancelled: cancelled.clone(),
+                permit: Some(permit),
             },
         )? {
             return Ok(());

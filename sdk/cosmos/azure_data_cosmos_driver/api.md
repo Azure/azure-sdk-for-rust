@@ -205,6 +205,7 @@ pub mod change_feed_processor {
         pub fn with_lease_counts(self, minimum: u32, maximum: u32) -> Self;
         pub fn with_lease_verification_enabled_on_restart(self, enabled: bool) -> Self;
         pub fn with_max_item_count(self, hint: MaxItemCountHint) -> Self;
+        pub fn with_max_outstanding_batches(self, maximum: u32) -> Self;
         pub fn with_poll_delay(self, delay: Duration) -> Self;
         pub fn with_start(self, start: ChangeFeedStartFrom) -> Self;
     }
