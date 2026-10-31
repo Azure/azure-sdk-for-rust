@@ -4,6 +4,9 @@
 
 ### Features Added
 
+- Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
+- Added non-resumable read-many plans with key/id or partition selections, including hierarchical prefixes, parameterized filters, bounded query batches, and shared execution deadlines. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
+
 ### Breaking Changes
 
 - Resource-name validation is now enabled by default for request paths and item names supplied to Create, Upsert, transactional batch, and distributed transaction operations; use `DriverOptionsBuilder::with_resource_name_validation(false)` only when compatibility requires service-accepted names that are unsafe for point addressing. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))

@@ -506,6 +506,9 @@ impl<'a> Lexer<'a> {
     fn scan_quoted_identifier(&mut self, start: usize) -> Token<'a> {
         self.pos += 1; // skip opening "
         while self.pos < self.bytes.len() && self.bytes[self.pos] != b'"' {
+            if self.bytes[self.pos] == b'\\' && self.pos + 1 < self.bytes.len() {
+                self.pos += 1;
+            }
             self.pos += 1;
         }
         if self.pos < self.bytes.len() {

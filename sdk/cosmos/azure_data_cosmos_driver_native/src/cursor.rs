@@ -404,6 +404,19 @@ pub extern "C" fn cosmos_cursor_open_submit(
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
+    open_cursor(driver, queue, user_data, out_pre_error, || {
+        // SAFETY: forwarded cursor request allocation contract.
+        unsafe { build_cursor_request(request) }
+    })
+}
+
+pub(crate) fn open_cursor(
+    driver: *const DriverHandle,
+    queue: *mut CompletionQueue,
+    user_data: isize,
+    out_pre_error: *mut CosmosStatusCode,
+    build: impl FnOnce() -> Result<crate::op_request::BuiltRequest, CosmosErrorCode>,
+) -> *mut OperationHandle {
     let prepare = || {
         let queue = CompletionQueue::inner_arc(queue)
             .ok_or(CosmosErrorCode::CosmosErrorCodeInvalidArgument)?;
@@ -413,8 +426,7 @@ pub extern "C" fn cosmos_cursor_open_submit(
             .ok_or(CosmosErrorCode::CosmosErrorCodeQueueFormat)?;
         let driver = DriverHandle::inner_arc(driver)
             .ok_or(CosmosErrorCode::CosmosErrorCodeInvalidArgument)?;
-        // SAFETY: request follows the versioned prefix and counted input contracts.
-        let built = unsafe { build_cursor_request(request)? };
+        let built = build()?;
         if built
             .snapshot
             .as_ref()
