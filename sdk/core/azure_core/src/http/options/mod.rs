@@ -46,6 +46,15 @@ pub struct ClientOptions {
 
     /// Cloud configuration for the client. If None, the client will default to Azure Public Cloud.
     pub cloud: Option<Arc<CloudConfiguration>>,
+
+    /// Allows authenticated HTTP connections to `localhost` or `127.0.0.1` for testing.
+    ///
+    /// Defaults to `false`. Any port is allowed.
+    ///
+    /// Supported by [`BearerTokenAuthorizationPolicy`](crate::http::policies::auth::BearerTokenAuthorizationPolicy).
+    /// Client libraries may also validate endpoint URLs during construction.
+    #[cfg(feature = "test")]
+    pub allow_insecure_connections: bool,
 }
 
 pub(crate) struct CoreClientOptions {

@@ -7,7 +7,7 @@ use crate::{
     http::{
         headers::{Headers, AUTHORIZATION, WWW_AUTHENTICATE},
         policies::{Policy, PolicyResult, ERROR_TYPE_ATTRIBUTE},
-        ClientMethodOptions, Context, Request, StatusCode,
+        ClientMethodOptions, ClientOptions, Context, Request, StatusCode,
     },
     time::{Duration, OffsetDateTime},
     tracing::Span,
@@ -23,6 +23,18 @@ pub struct BearerTokenAuthorizationPolicy {
     authorizer: Arc<BearerTokenAuthorizer>,
     on_request: Arc<dyn OnRequest>,
     on_challenge: Option<Arc<dyn OnChallenge>>,
+    #[cfg(feature = "test")]
+    allow_insecure_connections: bool,
+}
+
+/// Additional options for creating a [`BearerTokenAuthorizationPolicy`].
+#[derive(Debug, Default, Clone)]
+pub struct BearerTokenAuthorizationOptions {
+    /// Allows authenticated HTTP connections to `localhost` or `127.0.0.1` for testing.
+    ///
+    /// Defaults to `false`. Any port is allowed.
+    #[cfg(feature = "test")]
+    pub allow_insecure_connections: bool,
 }
 
 impl BearerTokenAuthorizationPolicy {
@@ -37,6 +49,8 @@ impl BearerTokenAuthorizationPolicy {
             authorizer: Arc::new(BearerTokenAuthorizer::new(credential)),
             on_request: Arc::new(DefaultOnRequest { scopes }),
             on_challenge: None,
+            #[cfg(feature = "test")]
+            allow_insecure_connections: false,
         }
     }
 
@@ -57,6 +71,40 @@ impl BearerTokenAuthorizationPolicy {
         self.on_challenge = Some(on_challenge);
         self
     }
+
+    /// Sets additional options for this policy.
+    pub fn with_options(self, _options: BearerTokenAuthorizationOptions) -> Self {
+        Self {
+            #[cfg(feature = "test")]
+            allow_insecure_connections: _options.allow_insecure_connections,
+            ..self
+        }
+    }
+
+    #[inline]
+    fn allowed(&self, url: &crate::http::Url) -> bool {
+        if url.scheme() == "https" {
+            return true;
+        }
+
+        #[cfg(feature = "test")]
+        if self.allow_insecure_connections && url.scheme() == "http" {
+            if matches!(url.host_str(), Some(host) if host == "localhost" || host == "127.0.0.1") {
+                return true;
+            }
+        }
+
+        false
+    }
+}
+
+impl From<&ClientOptions> for BearerTokenAuthorizationOptions {
+    fn from(_options: &ClientOptions) -> Self {
+        Self {
+            #[cfg(feature = "test")]
+            allow_insecure_connections: _options.allow_insecure_connections,
+        }
+    }
 }
 
 #[async_trait]
@@ -67,7 +115,7 @@ impl Policy for BearerTokenAuthorizationPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        if request.url().scheme() != "https" {
+        if !self.allowed(request.url()) {
             return Err(Error::with_message(
                 ErrorKind::Other,
                 "authorized requests are not permitted for non-TLS protected endpoints",
@@ -395,6 +443,115 @@ mod tests {
 
         assert_eq!(err.kind(), &ErrorKind::Other);
         assert!(err.to_string().contains("TLS"));
+    }
+
+    #[tokio::test]
+    async fn insecure_connections_rejected_by_default() {
+        for options in [None, Some(BearerTokenAuthorizationOptions::default())] {
+            let credential = Arc::new(MockCredential::new(&[]));
+            let mut policy = BearerTokenAuthorizationPolicy::new(credential.clone(), ["scope"]);
+            if let Some(options) = options {
+                policy = policy.with_options(options);
+            }
+            let client = MockHttpClient::new(|_| panic!("transport should not be reached"));
+            let transport: Arc<dyn Policy> =
+                Arc::new(TransportPolicy::new(Transport::new(Arc::new(client))));
+
+            for url in [
+                "http://localhost",
+                "http://localhost:10000",
+                "http://127.0.0.1",
+                "http://127.0.0.1:10000",
+                "http://example.com",
+            ] {
+                let mut request = Request::new(url.parse().unwrap(), Method::Get);
+                let err = policy
+                    .send(
+                        &Context::default(),
+                        &mut request,
+                        std::slice::from_ref(&transport),
+                    )
+                    .await
+                    .expect_err(url);
+
+                assert_eq!(err.kind(), &ErrorKind::Other, "{url}: {err:?}");
+                assert!(err.to_string().contains("TLS"), "{url}: {err:?}");
+                assert_eq!(credential.get_token_calls(), 0, "{url}");
+            }
+        }
+    }
+
+    #[cfg(feature = "test")]
+    #[tokio::test]
+    async fn insecure_connections_restricted_to_loopback() {
+        for (url, allowed) in [
+            ("http://localhost", true),
+            ("http://localhost:10000", true),
+            ("http://127.0.0.1", true),
+            ("http://127.0.0.1:10000", true),
+            ("http://example.com", false),
+            ("http://localhost.example.com", false),
+            ("http://example.com@localhost.example.com", false),
+            ("http://localhost@example.com", false),
+            ("http://127.0.0.1.example.com", false),
+            ("http://127.0.0.2", false),
+            ("http://[::1]", false),
+            ("ftp://localhost", false),
+            ("https://example.com", true),
+        ] {
+            let token = AccessToken {
+                token: Secret::new("fake".to_string()),
+                expires_on: OffsetDateTime::now_utc() + Duration::hours(1),
+            };
+            let credential = Arc::new(MockCredential::new(if allowed {
+                std::slice::from_ref(&token)
+            } else {
+                &[]
+            }));
+            let policy = BearerTokenAuthorizationPolicy::new(credential.clone(), ["scope"])
+                .with_options(BearerTokenAuthorizationOptions {
+                    allow_insecure_connections: true,
+                });
+            let calls = Arc::new(AtomicUsize::new(0));
+            let transport_calls = calls.clone();
+            let client = MockHttpClient::new(move |request| {
+                assert!(allowed, "transport should not be reached");
+                assert_eq!(
+                    request.headers().get_str(&AUTHORIZATION).unwrap(),
+                    "Bearer fake"
+                );
+                transport_calls.fetch_add(1, Ordering::SeqCst);
+                async {
+                    Ok(AsyncRawResponse::from_bytes(
+                        StatusCode::Ok,
+                        Headers::new(),
+                        Bytes::new(),
+                    ))
+                }
+                .boxed()
+            });
+            let transport: Arc<dyn Policy> =
+                Arc::new(TransportPolicy::new(Transport::new(Arc::new(client))));
+            let mut request = Request::new(url.parse().unwrap(), Method::Get);
+            let result = policy
+                .send(
+                    &Context::default(),
+                    &mut request,
+                    std::slice::from_ref(&transport),
+                )
+                .await;
+
+            if allowed {
+                assert_eq!(result.expect(url).status(), StatusCode::Ok, "{url}");
+            } else {
+                let err = result.expect_err(url);
+                assert_eq!(err.kind(), &ErrorKind::Other, "{url}: {err:?}");
+                assert!(err.to_string().contains("TLS"), "{url}: {err:?}");
+            }
+            let expected_calls = usize::from(allowed);
+            assert_eq!(credential.get_token_calls(), expected_calls, "{url}");
+            assert_eq!(calls.load(Ordering::SeqCst), expected_calls, "{url}");
+        }
     }
 
     async fn run_test(tokens: &[AccessToken]) {
@@ -751,6 +908,7 @@ mod tests {
 
         assert_eq!(1, called.load(Ordering::SeqCst));
     }
+
     #[tokio::test]
     async fn on_request_error() {
         let calls = Arc::new(AtomicUsize::new(0));
