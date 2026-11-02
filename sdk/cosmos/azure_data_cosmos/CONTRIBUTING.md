@@ -7,8 +7,8 @@ First, review the Azure Core SDK Contributing guide: [CONTRIBUTING.md](https://g
 ## Live PPAF Fault Testing
 
 Use the [Cosmos DB agent kit](https://github.com/AzureCosmosDB/cosmosdb-agent-kit)
-for the cross-SDK `cosmosdb-ppaf-fault-testing` skill and its guide at
-`skills/cosmosdb-ppaf-fault-testing/README.md`. Follow the kit's installation
+for the cross-SDK `cosmosdb-fault-testing` skill and its agent entrypoint at
+`skills/cosmosdb-fault-testing/SKILL.md`. Follow the kit's installation
 instructions to make the skill available to your agent.
 
 Per-Partition Automatic Failover (PPAF) must first be enabled through the account's

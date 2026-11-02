@@ -33,8 +33,8 @@ directly by Rust source remain with their crates.
 
 For service-side Per-Partition Automatic Failover (PPAF) exercises, use the
 [Cosmos DB agent kit](https://github.com/AzureCosmosDB/cosmosdb-agent-kit).
-The cross-SDK skill is `cosmosdb-ppaf-fault-testing`; its canonical guide lives at
-`skills/cosmosdb-ppaf-fault-testing/README.md` in that repository. Use the kit's
+The cross-SDK skill is `cosmosdb-fault-testing`; its agent entrypoint lives at
+`skills/cosmosdb-fault-testing/SKILL.md` in that repository. Use the kit's
 installation instructions to make the skill available to your agent.
 
 Enable PPAF through the account's **Features** tab in the Azure portal, subject
