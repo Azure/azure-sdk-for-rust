@@ -214,6 +214,23 @@ fn prepare_session_token_for_attempt(
         }
         return AttemptSessionToken::Resolved(Some(token.clone()));
     }
+    if automatic_resolution_active
+        && transport_mode == TransportMode::GatewayV2
+        && operation.change_feed_partition_key_range_id().is_some()
+    {
+        if let Some(token) = session_manager.resolve_session_token(operation, None, None) {
+            // A caller-supplied range ID cannot establish ancestry. Preserve all
+            // cached progress until trusted topology can scope it to this attempt.
+            return match SessionManager::scope_explicit_token(
+                &token,
+                partition_key_range_id.map(PartitionKeyRangeId::as_str),
+                overrides.session_token_routing_map.as_deref(),
+            ) {
+                Some(scoped) => AttemptSessionToken::Resolved(Some(scoped)),
+                None => AttemptSessionToken::RequiresClassic(token),
+            };
+        }
+    }
     AttemptSessionToken::Resolved(
         automatic_resolution_active
             .then(|| {
@@ -5559,6 +5576,151 @@ mod tests {
                 )),
                 Some(original)
             );
+        }
+    }
+
+    #[test]
+    fn hinted_change_feed_preserves_cached_parent_without_topology() {
+        let manager = SessionManager::new();
+        let operation = CosmosOperation::change_feed(test_container(), Some(FeedRange::full()))
+            .with_change_feed_partition_key_range_id("1")
+            .unwrap();
+        let original = "0:1#100#1=90";
+        capture_session_token(&manager, &operation, original);
+        let id = PartitionKeyRangeId::from("1".to_owned());
+        let overrides = OperationOverrides::default();
+
+        let AttemptSessionToken::RequiresClassic(token) = prepare_session_token_for_attempt(
+            &manager,
+            &operation,
+            TransportMode::GatewayV2,
+            Some(&id),
+            &overrides,
+            true,
+        ) else {
+            panic!("unknown ancestry must preserve cached progress through classic Gateway");
+        };
+        assert_eq!(token.as_str(), original);
+        assert!(matches!(
+            prepare_session_token_for_attempt(
+                &manager,
+                &operation,
+                TransportMode::GatewayV2,
+                Some(&id),
+                &overrides,
+                false,
+            ),
+            AttemptSessionToken::Resolved(None)
+        ));
+    }
+
+    #[test]
+    fn hinted_change_feed_preserves_cached_progress_unknown_to_warm_topology() {
+        let manager = SessionManager::new();
+        let operation = CosmosOperation::change_feed(test_container(), Some(FeedRange::full()))
+            .with_change_feed_partition_key_range_id("1")
+            .unwrap();
+        let original = "0:1#100#1=90,1:1#120#1=60,9:1#130#1=70";
+        capture_session_token(&manager, &operation, original);
+        let id = PartitionKeyRangeId::from("1".to_owned());
+        let overrides = OperationOverrides {
+            session_token_routing_map: Some(test_session_topology(serde_json::json!([
+                {"id":"0","minInclusive":"","maxExclusive":"80"},
+                {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+            ]))),
+            ..Default::default()
+        };
+
+        let AttemptSessionToken::RequiresClassic(token) = prepare_session_token_for_attempt(
+            &manager,
+            &operation,
+            TransportMode::GatewayV2,
+            Some(&id),
+            &overrides,
+            true,
+        ) else {
+            panic!("unrecognized cached ranges must retain the complete session token");
+        };
+        assert_eq!(token.as_str(), original);
+    }
+
+    #[test]
+    fn hinted_change_feed_scopes_cached_parent_and_child_to_attempt_identity() {
+        let manager = SessionManager::new();
+        let operation = CosmosOperation::change_feed(test_container(), Some(FeedRange::full()))
+            .with_change_feed_partition_key_range_id("0")
+            .unwrap();
+        let original = "0:1#100#1=90,1:1#120#1=60,2:1#130#1=70";
+        capture_session_token(&manager, &operation, original);
+        let id = PartitionKeyRangeId::from("1".to_owned());
+        let overrides = OperationOverrides {
+            session_token_routing_map: Some(test_session_topology(serde_json::json!([
+                {"id":"1","minInclusive":"","maxExclusive":"80","parents":["0"]},
+                {"id":"2","minInclusive":"80","maxExclusive":"FF","parents":["0"]}
+            ]))),
+            ..Default::default()
+        };
+
+        let AttemptSessionToken::Resolved(Some(token)) = prepare_session_token_for_attempt(
+            &manager,
+            &operation,
+            TransportMode::GatewayV2,
+            Some(&id),
+            &overrides,
+            true,
+        ) else {
+            panic!("trusted topology must scope all required parent and child progress");
+        };
+        assert_eq!(token.as_str(), "1:1#120#1=90");
+        assert_eq!(
+            manager
+                .resolve_session_token(&operation, None, None)
+                .unwrap()
+                .as_str(),
+            original
+        );
+    }
+
+    #[test]
+    fn change_feed_without_hint_keeps_existing_automatic_session_resolution() {
+        let manager = SessionManager::new();
+        let operation = CosmosOperation::change_feed(test_container(), Some(FeedRange::full()));
+        capture_session_token(&manager, &operation, "0:1#100#1=90");
+        let id = PartitionKeyRangeId::from("1".to_owned());
+        assert!(matches!(
+            prepare_session_token_for_attempt(
+                &manager,
+                &operation,
+                TransportMode::GatewayV2,
+                Some(&id),
+                &OperationOverrides::default(),
+                true,
+            ),
+            AttemptSessionToken::Resolved(None)
+        ));
+    }
+
+    #[test]
+    fn hinted_change_feed_keeps_explicit_session_progress_authoritative() {
+        let manager = SessionManager::new();
+        let operation = CosmosOperation::change_feed(test_container(), Some(FeedRange::full()))
+            .with_change_feed_partition_key_range_id("1")
+            .unwrap()
+            .with_session_token("1:1#10#1=9");
+        capture_session_token(&manager, &operation, "0:1#100#1=90");
+        let id = PartitionKeyRangeId::from("1".to_owned());
+        for automatic in [false, true] {
+            let AttemptSessionToken::Resolved(Some(token)) = prepare_session_token_for_attempt(
+                &manager,
+                &operation,
+                TransportMode::GatewayV2,
+                Some(&id),
+                &OperationOverrides::default(),
+                automatic,
+            ) else {
+                panic!("explicit session progress must not be replaced with cached progress");
+            };
+            assert_eq!(token.as_str(), "1:1#10#1=9");
         }
     }
 

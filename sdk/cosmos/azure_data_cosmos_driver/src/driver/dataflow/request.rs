@@ -514,12 +514,17 @@ impl Request {
                     ))
                 })?;
 
-                let target = RequestTarget::effective_partition_key_range_with_parents(
-                    owned_range,
+                let mut target = RequestTarget::effective_partition_key_range_with_parents(
+                    owned_range.clone(),
                     partition_key_range_id,
                     parents,
                     resolved_range,
                 );
+                if self.operation.change_feed_partition_key_range_id().is_some() {
+                    if let RequestTarget::EffectivePartitionKeyRange { range, .. } = &mut target {
+                        *range = Some(owned_range);
+                    }
+                }
 
                 Ok(Box::new(Request::new(
                     self.operation.clone(),

@@ -30,10 +30,10 @@ use azure_core::http::{Etag, StatusCode};
 use futures::future::BoxFuture;
 
 use super::super::{
-    mocks::{MockRequestExecutor, MockTopologyProvider, NoopTopologyProvider},
+    mocks::{gone_error, MockRequestExecutor, MockTopologyProvider, NoopTopologyProvider},
     planner::build_unordered_merge,
-    PartitionRoutingRefresh, Pipeline, PipelineContext, PipelineNodeState, RequestExecutor,
-    RequestTarget, ResolvedRange,
+    PartitionRoutingRefresh, Pipeline, PipelineContext, PipelineNodeState, RangedToken,
+    RequestExecutor, RequestTarget, ResolvedRange,
 };
 use crate::{
     diagnostics::DiagnosticsContextBuilder,
@@ -263,7 +263,371 @@ fn assert_now_resume_inputs(executor: &StartRecordingExecutor) {
     );
 }
 
+fn hinted_change_feed_operation(
+    range: FeedRange,
+    start_from: Option<ChangeFeedStartFrom>,
+) -> crate::error::Result<Arc<CosmosOperation>> {
+    let mut op = CosmosOperation::change_feed(test_container(), Some(range))
+        .with_change_feed_partition_key_range_id("pk-hint")?;
+    if let Some(marker) = start_from {
+        op = op.with_change_feed_start(marker);
+    }
+    Ok(Arc::new(op))
+}
+
+fn hinted_target(range: FeedRange, scope: FeedRange) -> RequestTarget {
+    RequestTarget::EffectivePartitionKeyRange {
+        range: Some(range),
+        partition_key_range_id: "pk-hint".to_owned(),
+        partition_key_range_parents: Vec::new(),
+        partition_key_range: scope,
+    }
+}
+
 // ── Tests ────────────────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn hinted_change_feed_roundtrips_without_resolving_topology() -> crate::error::Result<()> {
+    for scope in [FeedRange::full(), fr("20", "C0")?] {
+        for marker in [
+            ChangeFeedStartFrom::Now,
+            ChangeFeedStartFrom::PointInTime(time::macros::datetime!(2026-08-21 12:34:56 UTC)),
+        ] {
+            let op = hinted_change_feed_operation(scope.clone(), Some(marker.clone()))?;
+            let mut topology = NoopTopologyProvider;
+            let mut executor = StartRecordingExecutor::new(vec![Ok(cf_page(b"first", "lsn-1"))]);
+            let mut pipeline = build_unordered_merge(&scope, &mut topology, &op, None).await?;
+            assert_eq!(
+                drain_pages(&mut pipeline, &mut executor, 1).await,
+                vec![b"first".to_vec()],
+            );
+            let target = hinted_target(scope.clone(), scope.clone());
+            assert_eq!(executor.inner.target_calls, vec![target.clone()]);
+            assert_eq!(executor.inner.continuation_calls, vec![None]);
+            assert_eq!(executor.start_calls, vec![Some(marker.clone())]);
+
+            let state = pipeline.snapshot_state()?;
+            assert_unordered_snapshot(
+                &state,
+                Some(marker.clone()),
+                &[(
+                    &scope.min_inclusive().to_hex(),
+                    &scope.max_exclusive().to_hex(),
+                    "lsn-1",
+                )],
+            );
+            let resume_op = hinted_change_feed_operation(scope.clone(), None)?;
+            let resumed = round_trip_state(state, &resume_op);
+            let mut resumed_pipeline =
+                build_unordered_merge(&scope, &mut topology, &resume_op, Some(resumed)).await?;
+            let mut resumed_executor =
+                StartRecordingExecutor::new(vec![Ok(cf_page(b"second", "lsn-2"))]);
+            assert_eq!(
+                drain_pages(&mut resumed_pipeline, &mut resumed_executor, 1).await,
+                vec![b"second".to_vec()],
+            );
+            assert_eq!(resumed_executor.inner.target_calls, vec![target]);
+            assert_eq!(
+                resumed_executor.inner.continuation_calls,
+                vec![Some("lsn-1".to_owned())],
+            );
+            assert_eq!(resumed_executor.start_calls, vec![Some(marker)]);
+        }
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn hinted_resume_keeps_distinct_tokens_and_start_marker_for_gaps() -> crate::error::Result<()>
+{
+    let scope = FeedRange::full();
+    let op = hinted_change_feed_operation(scope.clone(), None)?;
+    let state = PipelineNodeState::UnorderedMerge {
+        active_tokens: vec![
+            RangedToken {
+                min_epk: String::new(),
+                max_epk: "40".to_owned(),
+                server_continuation: "lsn-left".to_owned(),
+            },
+            RangedToken {
+                min_epk: "80".to_owned(),
+                max_epk: "FF".to_owned(),
+                server_continuation: "lsn-right".to_owned(),
+            },
+        ],
+        start_from: Some(ChangeFeedStartFrom::Now),
+    };
+    let resumed = round_trip_state(state, &op);
+    let mut topology = NoopTopologyProvider;
+    let mut pipeline = build_unordered_merge(&scope, &mut topology, &op, Some(resumed)).await?;
+    let mut executor = StartRecordingExecutor::new(vec![
+        Ok(cf_page(b"left", "lsn-left-2")),
+        Ok(cf_page(b"gap", "lsn-gap-1")),
+        Ok(cf_page(b"right", "lsn-right-2")),
+    ]);
+    assert_eq!(
+        drain_pages(&mut pipeline, &mut executor, 3).await,
+        vec![b"left".to_vec(), b"gap".to_vec(), b"right".to_vec()],
+    );
+    assert_eq!(
+        executor.inner.target_calls,
+        vec![
+            hinted_target(fr("", "40")?, scope.clone()),
+            hinted_target(fr("40", "80")?, scope.clone()),
+            hinted_target(fr("80", "FF")?, scope),
+        ],
+    );
+    assert_eq!(
+        executor.inner.continuation_calls,
+        vec![
+            Some("lsn-left".to_owned()),
+            None,
+            Some("lsn-right".to_owned())
+        ],
+    );
+    assert_eq!(
+        executor.start_calls,
+        vec![Some(ChangeFeedStartFrom::Now); 3]
+    );
+    assert_eq!(
+        executor.precondition_calls,
+        vec![Some(Precondition::if_none_match(Etag::from("*"))); 3],
+    );
+    assert_unordered_snapshot(
+        &pipeline.snapshot_state()?,
+        Some(ChangeFeedStartFrom::Now),
+        &[
+            ("", "40", "lsn-left-2"),
+            ("40", "80", "lsn-gap-1"),
+            ("80", "FF", "lsn-right-2"),
+        ],
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn stale_change_feed_hint_recovers_split_with_bounded_continuations(
+) -> crate::error::Result<()> {
+    for (scope, min, max) in [(FeedRange::full(), "", "FF"), (fr("20", "C0")?, "20", "C0")] {
+        let op = hinted_change_feed_operation(scope.clone(), None)?;
+        let state = PipelineNodeState::UnorderedMerge {
+            active_tokens: vec![RangedToken {
+                min_epk: min.to_owned(),
+                max_epk: max.to_owned(),
+                server_continuation: "lsn-parent".to_owned(),
+            }],
+            start_from: Some(ChangeFeedStartFrom::Now),
+        };
+        let mut no_topology = NoopTopologyProvider;
+        let mut pipeline = build_unordered_merge(
+            &scope,
+            &mut no_topology,
+            &op,
+            Some(round_trip_state(state, &op)),
+        )
+        .await?;
+        let mut left = resolved("", "80", "pk-left")?;
+        left.parents = vec!["pk-hint".to_owned()];
+        let mut right = resolved("80", "FF", "pk-right")?;
+        right.parents = vec!["pk-hint".to_owned()];
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![left, right])]);
+        let mut executor = StartRecordingExecutor::new(vec![
+            Err(gone_error()),
+            Ok(cf_page(b"left", "lsn-left")),
+            Ok(cf_page(b"right", "lsn-right")),
+        ]);
+        let mut pages = Vec::new();
+        for _ in 0..2 {
+            let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+            pages.push(
+                pipeline
+                    .next_page(&mut context)
+                    .await?
+                    .unwrap()
+                    .body_bytes()
+                    .to_vec(),
+            );
+        }
+        assert_eq!(pages, vec![b"left".to_vec(), b"right".to_vec()]);
+        assert_eq!(topology.range_calls, vec![scope.clone()]);
+        assert_eq!(
+            topology.refresh_calls,
+            vec![PartitionRoutingRefresh::ForceRefresh]
+        );
+        assert_eq!(
+            executor.inner.target_calls,
+            vec![
+                hinted_target(scope.clone(), scope),
+                RequestTarget::EffectivePartitionKeyRange {
+                    range: Some(fr(min, "80")?),
+                    partition_key_range_id: "pk-left".to_owned(),
+                    partition_key_range_parents: vec!["pk-hint".to_owned()],
+                    partition_key_range: fr("", "80")?,
+                },
+                RequestTarget::EffectivePartitionKeyRange {
+                    range: Some(fr("80", max)?),
+                    partition_key_range_id: "pk-right".to_owned(),
+                    partition_key_range_parents: vec!["pk-hint".to_owned()],
+                    partition_key_range: fr("80", "FF")?,
+                },
+            ],
+        );
+        assert_eq!(
+            executor.inner.continuation_calls,
+            vec![Some("lsn-parent".to_owned()); 3]
+        );
+        assert_eq!(
+            executor.start_calls,
+            vec![Some(ChangeFeedStartFrom::Now); 3]
+        );
+        assert_unordered_snapshot(
+            &pipeline.snapshot_state()?,
+            Some(ChangeFeedStartFrom::Now),
+            &[(min, "80", "lsn-left"), ("80", max, "lsn-right")],
+        );
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn stale_change_feed_hint_recovers_merge_without_expanding_scope() -> crate::error::Result<()>
+{
+    let scope = fr("20", "80")?;
+    let op = hinted_change_feed_operation(scope.clone(), None)?;
+    let mut no_topology = NoopTopologyProvider;
+    let mut pipeline = build_unordered_merge(&scope, &mut no_topology, &op, None).await?;
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(cf_page(b"before", "lsn-before")),
+        Err(gone_error()),
+        Ok(cf_page(b"after", "lsn-after")),
+    ]);
+    assert_eq!(
+        drain_pages(&mut pipeline, &mut executor, 1).await,
+        vec![b"before".to_vec()]
+    );
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-merged")?])]);
+    let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+    assert_eq!(
+        pipeline
+            .next_page(&mut context)
+            .await?
+            .unwrap()
+            .body_bytes(),
+        b"after"
+    );
+    assert_eq!(topology.range_calls, vec![scope.clone()]);
+    assert_eq!(
+        topology.refresh_calls,
+        vec![PartitionRoutingRefresh::ForceRefresh]
+    );
+    assert_eq!(
+        executor.target_calls,
+        vec![
+            hinted_target(scope.clone(), scope.clone()),
+            hinted_target(scope.clone(), scope.clone()),
+            RequestTarget::effective_partition_key_range(
+                scope,
+                "pk-merged".to_owned(),
+                FeedRange::full()
+            ),
+        ],
+    );
+    assert_eq!(
+        executor.continuation_calls,
+        vec![
+            None,
+            Some("lsn-before".to_owned()),
+            Some("lsn-before".to_owned())
+        ]
+    );
+    assert_unordered_snapshot(
+        &pipeline.snapshot_state()?,
+        None,
+        &[("20", "80", "lsn-after")],
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn hinted_full_fidelity_feed_preserves_priming_and_resume_without_topology(
+) -> crate::error::Result<()> {
+    for checkpoint_before_poll in [false, true] {
+        let scope = fr("20", "C0")?;
+        let op = Arc::new(
+            CosmosOperation::change_feed_all_versions_and_deletes(
+                test_container(),
+                Some(scope.clone()),
+            )
+            .with_change_feed_start(ChangeFeedStartFrom::Now)
+            .with_change_feed_partition_key_range_id("pk-hint")?,
+        );
+        let mut topology = NoopTopologyProvider;
+        let mut pipeline = build_unordered_merge(&scope, &mut topology, &op, None).await?;
+        let resume_op = Arc::new(
+            CosmosOperation::change_feed_all_versions_and_deletes(
+                test_container(),
+                Some(scope.clone()),
+            )
+            .with_change_feed_partition_key_range_id("pk-hint")?,
+        );
+        if checkpoint_before_poll {
+            let state = pipeline.snapshot_state()?;
+            assert_unordered_snapshot(&state, Some(ChangeFeedStartFrom::Now), &[]);
+            pipeline = build_unordered_merge(
+                &scope,
+                &mut topology,
+                &resume_op,
+                Some(round_trip_state(state, &resume_op)),
+            )
+            .await?;
+        }
+        let mut executor = StartRecordingExecutor::new(vec![
+            Ok(cf_page(b"", "lsn-prime")),
+            Ok(cf_page(b"first", "lsn-1")),
+        ]);
+        assert_eq!(
+            drain_pages(&mut pipeline, &mut executor, 1).await,
+            vec![b"first".to_vec()]
+        );
+        let target = hinted_target(scope.clone(), scope.clone());
+        assert_eq!(executor.inner.target_calls, vec![target.clone(); 2]);
+        assert_eq!(
+            executor.inner.continuation_calls,
+            vec![None, Some("lsn-prime".to_owned())]
+        );
+        assert_now_resume_inputs(&executor);
+        let state = pipeline.snapshot_state()?;
+        assert_unordered_snapshot(
+            &state,
+            Some(ChangeFeedStartFrom::Now),
+            &[("20", "C0", "lsn-1")],
+        );
+
+        let mut resumed_pipeline = build_unordered_merge(
+            &scope,
+            &mut topology,
+            &resume_op,
+            Some(round_trip_state(state, &resume_op)),
+        )
+        .await?;
+        let mut resumed_executor =
+            StartRecordingExecutor::new(vec![Ok(cf_page(b"second", "lsn-2"))]);
+        assert_eq!(
+            drain_pages(&mut resumed_pipeline, &mut resumed_executor, 1).await,
+            vec![b"second".to_vec()]
+        );
+        assert_eq!(resumed_executor.inner.target_calls, vec![target]);
+        assert_eq!(
+            resumed_executor.inner.continuation_calls,
+            vec![Some("lsn-1".to_owned())]
+        );
+        assert_eq!(
+            resumed_executor.start_calls,
+            vec![Some(ChangeFeedStartFrom::Now)]
+        );
+    }
+    Ok(())
+}
 
 /// Baseline: a single-partition change feed that polls once, serializes,
 /// resumes, and polls again. No topology change. Sanity-checks the end-to-end
