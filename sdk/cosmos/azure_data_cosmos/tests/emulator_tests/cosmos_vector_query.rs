@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 //! Live single- and cross-partition vector query coverage.
+//! Includes container metadata and exact search results for every vector data type.
 //!
 //! Vector search is unavailable on the classic, vnext, and in-memory emulators,
 //! so this module skips those targets at runtime. Live accounts use the default
@@ -204,7 +205,12 @@ fn precomputed_vector_fixture() -> PrecomputedVectorFixture {
     fixture
 }
 
-fn vector_documents() -> [VectorDocument; 7] {
+fn vector_documents(data_type: &VectorDataType) -> [VectorDocument; 7] {
+    // Keep the cross-partition distractors valid for integer embedding policies.
+    let (other_origin, other_near) = match data_type {
+        VectorDataType::Int8 | VectorDataType::Uint8 => (1.0, 2.0),
+        _ => (0.5, 1.5),
+    };
     [
         VectorDocument {
             id: "origin",
@@ -240,13 +246,13 @@ fn vector_documents() -> [VectorDocument; 7] {
             id: "other-partition-origin",
             partition_key: OTHER_PARTITION,
             active: true,
-            embedding: [0.5, 0.0],
+            embedding: [other_origin, 0.0],
         },
         VectorDocument {
             id: "other-partition-near",
             partition_key: OTHER_PARTITION,
             active: true,
-            embedding: [1.5, 0.0],
+            embedding: [other_near, 0.0],
         },
     ]
 }
@@ -255,6 +261,7 @@ async fn seed_vector_container(
     run_context: &framework::TestRunContext,
     db_client: &azure_data_cosmos::clients::DatabaseClient,
     throughput: Option<u64>,
+    data_type: VectorDataType,
 ) -> azure_data_cosmos::Result<ContainerClient> {
     let mut indexing_policy = IndexingPolicy::default()
         .with_indexing_mode(IndexingMode::Consistent)
@@ -263,16 +270,19 @@ async fn seed_vector_container(
         .with_vector_index(VectorIndex::new("/embedding", VectorIndexType::Flat));
     indexing_policy.automatic = true;
 
-    let properties = ContainerProperties::new("VectorQueryContainer", "/partitionKey".into())
-        .with_vector_embedding_policy(VectorEmbeddingPolicy::default().with_embedding(
-            VectorEmbedding::new(
-                "/embedding",
-                VectorDataType::Float32,
-                2,
-                VectorDistanceFunction::Euclidean,
-            ),
-        ))
-        .with_indexing_policy(indexing_policy);
+    let properties = ContainerProperties::new(
+        format!("VectorQueryContainer{data_type:?}"),
+        "/partitionKey".into(),
+    )
+    .with_vector_embedding_policy(VectorEmbeddingPolicy::default().with_embedding(
+        VectorEmbedding::new(
+            "/embedding",
+            data_type.clone(),
+            2,
+            VectorDistanceFunction::Euclidean,
+        ),
+    ))
+    .with_indexing_policy(indexing_policy);
 
     let options = throughput.map(|throughput| {
         CreateContainerOptions::default().with_throughput(ThroughputProperties::manual(throughput))
@@ -280,7 +290,21 @@ async fn seed_vector_container(
     let container = run_context
         .create_container(db_client, properties, options)
         .await?;
-    for document in vector_documents() {
+    let persisted = container.read(None).await?.into_model()?;
+    let policy = persisted
+        .vector_embedding_policy
+        .expect("container must persist the vector embedding policy");
+    assert_eq!(policy.embeddings.len(), 1);
+    let embedding = &policy.embeddings[0];
+    assert_eq!(embedding.path, "/embedding");
+    assert_eq!(embedding.data_type, data_type);
+    assert_eq!(embedding.dimensions, 2);
+    assert_eq!(
+        embedding.distance_function,
+        VectorDistanceFunction::Euclidean
+    );
+
+    for document in vector_documents(&data_type) {
         container
             .create_item(document.partition_key, document.id, &document, None)
             .await?;
@@ -464,15 +488,15 @@ fn vector_query(is_brute_force: bool) -> azure_data_cosmos::Result<Query> {
     Query::from(text).with_parameter("@queryVector", QUERY_VECTOR.as_slice())
 }
 
-fn assert_vector_matches(matches: &[VectorMatch]) {
+fn assert_vector_matches(matches: &[VectorMatch], data_type: &VectorDataType) {
     let ids: Vec<&str> = matches.iter().map(|item| item.id.as_str()).collect();
-    assert_eq!(ids, ["origin", "near", "far", "farthest"]);
+    assert_eq!(ids, ["origin", "near", "far", "farthest"], "{data_type:?}");
 
     let expected_scores = [0.0, 1.0, 2.0, 3.0];
     for (item, expected) in matches.iter().zip(expected_scores) {
         assert!(
             (item.score - expected).abs() <= 1e-6,
-            "unexpected score for {}: expected {expected}, got {}",
+            "{data_type:?}: unexpected score for {}: expected {expected}, got {}",
             item.id,
             item.score
         );
@@ -548,46 +572,54 @@ pub async fn single_partition_vector_search() -> Result<(), Box<dyn Error>> {
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
-            let container = seed_vector_container(run_context, db_client, None).await?;
-            let options = QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
-                NonZeroU32::new(1).expect("page size is non-zero"),
-            ));
-            let mut pages = container
-                .query_items::<VectorMatch>(
-                    vector_query(false)?,
-                    FeedScope::partition(SEARCH_PARTITION),
-                    Some(options),
-                )
-                .await?
-                .into_pages();
+            for data_type in [
+                VectorDataType::Float16,
+                VectorDataType::Float32,
+                VectorDataType::Int8,
+                VectorDataType::Uint8,
+            ] {
+                let container =
+                    seed_vector_container(run_context, db_client, None, data_type.clone()).await?;
+                let options = QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
+                    NonZeroU32::new(1).expect("page size is non-zero"),
+                ));
+                let mut pages = container
+                    .query_items::<VectorMatch>(
+                        vector_query(false)?,
+                        FeedScope::partition(SEARCH_PARTITION),
+                        Some(options),
+                    )
+                    .await?
+                    .into_pages();
 
-            let mut indexed_matches = Vec::new();
-            let mut seen_ids = HashSet::new();
-            while let Some(page) = pages.next().await {
-                for item in page?.into_items() {
-                    assert!(
-                        seen_ids.insert(item.id.clone()),
-                        "vector query returned duplicate item {}",
-                        item.id
-                    );
-                    indexed_matches.push(item);
+                let mut indexed_matches = Vec::new();
+                let mut seen_ids = HashSet::new();
+                while let Some(page) = pages.next().await {
+                    for item in page?.into_items() {
+                        assert!(
+                            seen_ids.insert(item.id.clone()),
+                            "vector query returned duplicate item {}",
+                            item.id
+                        );
+                        indexed_matches.push(item);
+                    }
                 }
-            }
-            assert_vector_matches(&indexed_matches);
+                assert_vector_matches(&indexed_matches, &data_type);
 
-            let mut brute_force_pages = container
-                .query_items::<VectorMatch>(
-                    vector_query(true)?,
-                    FeedScope::partition(SEARCH_PARTITION),
-                    None,
-                )
-                .await?
-                .into_pages();
-            let mut brute_force_matches = Vec::new();
-            while let Some(page) = brute_force_pages.next().await {
-                brute_force_matches.extend(page?.into_items());
+                let mut brute_force_pages = container
+                    .query_items::<VectorMatch>(
+                        vector_query(true)?,
+                        FeedScope::partition(SEARCH_PARTITION),
+                        None,
+                    )
+                    .await?
+                    .into_pages();
+                let mut brute_force_matches = Vec::new();
+                while let Some(page) = brute_force_pages.next().await {
+                    brute_force_matches.extend(page?.into_items());
+                }
+                assert_vector_matches(&brute_force_matches, &data_type);
             }
-            assert_vector_matches(&brute_force_matches);
 
             Ok(())
         },
@@ -616,10 +648,18 @@ pub async fn cross_partition_vector_search() -> Result<(), Box<dyn Error>> {
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
-            let container =
-                seed_vector_container(run_context, db_client, Some(CROSS_PARTITION_THROUGHPUT))
-                    .await?;
-            assert_seeded_across_physical_partitions(&container, vector_documents().len()).await?;
+            let container = seed_vector_container(
+                run_context,
+                db_client,
+                Some(CROSS_PARTITION_THROUGHPUT),
+                VectorDataType::Float32,
+            )
+            .await?;
+            assert_seeded_across_physical_partitions(
+                &container,
+                vector_documents(&VectorDataType::Float32).len(),
+            )
+            .await?;
             for (is_brute_force, offset_limit) in [(false, false), (true, false), (false, true)] {
                 let options = QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
                     NonZeroU32::new(2).expect("page size is non-zero"),
@@ -678,10 +718,18 @@ pub async fn finite_vector_query_admission_and_execution() -> Result<(), Box<dyn
     }
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
-            let container =
-                seed_vector_container(run_context, db_client, Some(CROSS_PARTITION_THROUGHPUT))
-                    .await?;
-            assert_seeded_across_physical_partitions(&container, vector_documents().len()).await?;
+            let container = seed_vector_container(
+                run_context,
+                db_client,
+                Some(CROSS_PARTITION_THROUGHPUT),
+                VectorDataType::Float32,
+            )
+            .await?;
+            assert_seeded_across_physical_partitions(
+                &container,
+                vector_documents(&VectorDataType::Float32).len(),
+            )
+            .await?;
             let query = Query::from(
                 "SELECT c.id, VectorDistance(c.embedding, @queryVector, true) AS score \
                  FROM c WHERE c.active = true \
