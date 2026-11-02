@@ -40,16 +40,17 @@
 //!            -> calls CreateServiceProvider(config)
 //!         -> provider.get_partition_key_ranges(query, pk_paths, options)
 //!            -> calls GetPartitionKeyRangesFromQuery4(...)
-//!            -> deserialize JSON -> QueryPlan
+//!            -> deserialize JSON -> RawQueryPlan
+//!      -> resolve partition bounds -> QueryPlan
 //!   -> if Err: fall through to gateway_query_plan()
 //! ```
 //!
 //! # Reusing the driver's `QueryPlan` model
 //!
 //! The native DLL outputs the same JSON format as the Cosmos DB Gateway's
-//! query plan endpoint. The provider deserializes the DLL's output directly
-//! into `crate::driver::dataflow::query_plan::QueryPlan`, avoiding type
-//! duplication.
+//! query plan endpoint. Both providers deserialize into `RawQueryPlan` and
+//! resolve structured partition bounds using the container's partition key
+//! definition before returning a planner-ready `QueryPlan`.
 //!
 //! The following deserialization differences between Gateway JSON and native
 //! DLL JSON are handled in `query_plan.rs`:
@@ -59,7 +60,7 @@
 //! | `hasSelectValue`, `hasNonStreamingOrderBy`, `requiresGlobalStatistics`, `isMinInclusive`, `isMaxInclusive` | `true`/`false` | `0`/`1` integer | `bool_from_int_or_bool` custom deserializer |
 //! | `rewrittenQuery` | `"SELECT ..."` | `null` when absent | Changed from `String` to `Option<String>` |
 //! | `groupByAliasToAggregateType` values | `"Average"` | `""`, `null`, or `"Average"` | Changed from `HashMap<String, String>` to `HashMap<String, serde_json::Value>` |
-//! | `queryRanges[].min/max` | hex EPK strings (`"05C1..."`) | structured JSON values (arrays/objects) | `string_or_json` custom deserializer (converts non-strings to JSON text at deserialization time) |
+//! | `queryRanges[].min/max` | hex EPK strings (`"05C1..."`) | structured JSON values (arrays/objects) | `RawQueryPlan::resolve` converts sentinels and hashes concrete keys using the container's key kind and version |
 //! | `partitionedQueryExecutionInfoVersion` | always present | omitted by native DLL | Added `#[serde(default)]` on `QueryPlan` struct |
 //! | `aggregates` (non-VALUE queries) | populated | empty (info in `groupByAliasToAggregateType` instead) | Tests use `has_aggregates()` helper that checks both fields |
 //!
@@ -112,7 +113,7 @@ mod native_dll_tests;
 // Re-export the driver's query plan model types for use by integration tests.
 #[cfg(test)]
 pub(crate) use crate::driver::dataflow::query_plan::{
-    DistinctType, QueryInfo, QueryPlan, SortOrder,
+    DistinctType, QueryInfo, RawQueryPlan, SortOrder,
 };
 
 /// High-level entry point for native query plan generation.
@@ -158,8 +159,7 @@ impl NativeQueryPlanProvider {
     pub fn get_query_plan(
         &self,
         query_spec_json: &str,
-        partition_key_paths: &[&str],
-        partition_key_kind: crate::models::PartitionKeyKind,
+        partition_key_definition: &crate::models::PartitionKeyDefinition,
         query_engine_config: &str,
     ) -> Result<crate::driver::dataflow::query_plan::QueryPlan, error::QueryPlanError> {
         let provider = self
@@ -183,14 +183,22 @@ impl NativeQueryPlanProvider {
             }
         }
 
-        let partition_kind = match partition_key_kind {
+        let partition_kind = match partition_key_definition.kind() {
             crate::models::PartitionKeyKind::MultiHash => native::PartitionKind::MultiHash,
             _ => native::PartitionKind::Hash,
         };
 
         let options = query_plan_options(partition_kind);
+        let paths: Vec<&str> = partition_key_definition
+            .paths()
+            .iter()
+            .map(|path| path.as_ref())
+            .collect();
 
-        provider.get_partition_key_ranges(query_spec_json, partition_key_paths, &options, None)
+        provider
+            .get_partition_key_ranges(query_spec_json, &paths, &options, None)?
+            .resolve(partition_key_definition)
+            .map_err(|source| error::QueryPlanError::RangeResolution { source })
     }
 }
 
@@ -202,6 +210,7 @@ fn query_plan_options(partition_kind: native::PartitionKind) -> provider::QueryP
         // consume the formattable ORDER BY rewrite.
         require_formattable_order_by_query: true,
         is_continuation_expected: false,
+        allow_non_value_aggregate_query: true,
         allow_dcount: true,
         ..provider::QueryPlanOptions::default()
     }
@@ -220,6 +229,7 @@ mod tests {
             let options = query_plan_options(partition_kind);
             assert!(options.require_formattable_order_by_query);
             assert!(!options.is_continuation_expected);
+            assert!(options.allow_non_value_aggregate_query);
             assert!(options.allow_dcount);
             assert_eq!(options.partition_kind, partition_kind);
         }

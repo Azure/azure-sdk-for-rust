@@ -28,6 +28,9 @@ pub enum QueryPlanError {
     /// into the expected Rust model.
     Deserialization { source: serde_json::Error },
 
+    /// The native plan's partition bounds could not be resolved.
+    RangeResolution { source: crate::error::CosmosError },
+
     /// The native library could not be loaded (DLL/so not found on PATH).
     LibraryNotAvailable {
         /// The loading error message.
@@ -56,6 +59,9 @@ impl std::fmt::Display for QueryPlanError {
             Self::Deserialization { source } => {
                 write!(f, "failed to deserialize query plan: {source}")
             }
+            Self::RangeResolution { source } => {
+                write!(f, "failed to resolve native query plan ranges: {source}")
+            }
             Self::LibraryNotAvailable { message } => {
                 write!(f, "native query plan library not available: {message}")
             }
@@ -73,6 +79,7 @@ impl std::error::Error for QueryPlanError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Deserialization { source } => Some(source),
+            Self::RangeResolution { source } => Some(source),
             _ => None,
         }
     }
@@ -91,6 +98,7 @@ impl QueryPlanError {
             Self::Unexpected { .. } => "unexpected_hresult",
             Self::Expected { .. } => "expected_query_error",
             Self::Deserialization { .. } => "deserialization",
+            Self::RangeResolution { .. } => "range_resolution",
             Self::LibraryNotAvailable { .. } => "library_not_available",
             Self::ConfigContainsNull => "config_contains_null",
             Self::InvalidUtf8 { .. } => "invalid_utf8",
@@ -158,5 +166,18 @@ mod tests {
         assert_eq!(err.diagnostic_code(), "expected_query_error");
         assert_eq!(err.hresult(), Some(u32::MAX));
         assert!(!err.diagnostic_code().contains("secret"));
+    }
+
+    #[test]
+    fn range_resolution_preserves_source_without_logging_partition_values() {
+        let source = crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message("private partition value")
+            .build();
+        let error = QueryPlanError::RangeResolution { source };
+        assert_eq!(error.diagnostic_code(), "range_resolution");
+        assert_eq!(error.hresult(), None);
+        assert!(std::error::Error::source(&error).is_some());
+        assert!(!error.diagnostic_code().contains("private"));
     }
 }

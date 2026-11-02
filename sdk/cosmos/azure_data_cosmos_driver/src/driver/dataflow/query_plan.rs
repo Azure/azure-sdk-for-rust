@@ -70,12 +70,12 @@ where
 ///
 /// The standard Gateway returns each `queryRanges[].min` / `max` as a hex EPK
 /// string (`""`, `"FF"`, or a specific hash hex). The Gateway V2 thin-client
-/// proxy returns the raw `PartitionKeyInternal` JSON shape — an array of
-/// component values or the special sentinels `[]` (MIN) and
+/// proxy and native QueryPlanInterop return the raw `PartitionKeyInternal`
+/// JSON shape — an array of component values or the special sentinels `[]` (MIN) and
 /// `[{"type":"Infinity"}]` (MAX). To accept both shapes we keep the bounds
 /// as opaque `serde_json::Value` here and resolve them to canonical EPK hex
 /// strings via [`RawQueryPlan::resolve`].
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
 #[serde(default)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RawQueryPlan {
@@ -92,8 +92,8 @@ pub(crate) struct RawQueryPlan {
 }
 
 /// A raw query range as deserialized off the wire, with `min` / `max` still
-/// in proxy or Gateway form. See [`RawQueryPlan`] for the resolution path.
-#[derive(Debug, Deserialize)]
+/// in proxy, Gateway, or native form. See [`RawQueryPlan`] for the resolution path.
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RawQueryRange {
     pub min: serde_json::Value,
@@ -237,11 +237,8 @@ fn json_type_name(v: &serde_json::Value) -> &'static str {
 
 /// The resolved query plan the planner consumes.
 ///
-/// Built from a [`RawQueryPlan`] via [`RawQueryPlan::resolve`] on the Gateway
-/// path. The native QueryPlanInterop path deserializes JSON directly into
-/// this type (it does not need the EPK-hashing step the Gateway path needs,
-/// because the native DLL emits ranges in a form `string_or_json` can flatten
-/// in place).
+/// Built from a [`RawQueryPlan`] via [`RawQueryPlan::resolve`] for both Gateway
+/// and native QueryPlanInterop providers.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq)]
 #[serde(default)]
 #[serde(rename_all = "camelCase")]
@@ -387,12 +384,9 @@ pub(crate) enum SortOrder {
 
 /// An EPK range covered by the query.
 ///
-/// On the Gateway path, ranges arrive in canonical hex EPK form (`""`, `"FF"`,
-/// or a hash hex). On the native QueryPlanInterop path and the Gateway V2
-/// thin-client proxy path, ranges arrive as `PartitionKeyInternal` JSON values
-/// (arrays); `string_or_json` flattens those to the JSON text. The Gateway
-/// path additionally runs each `RawQueryRange` through
-/// [`RawQueryPlan::resolve`] to hash structured PK values into proper EPK hex.
+/// Provider wire bounds are normalized by [`RawQueryPlan::resolve`] before
+/// reaching the planner, including structured partition keys from native
+/// QueryPlanInterop and Gateway V2.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[allow(dead_code)] // Inclusivity flags are wire-format; planner treats ranges uniformly.

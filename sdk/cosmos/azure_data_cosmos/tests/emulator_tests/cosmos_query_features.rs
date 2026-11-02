@@ -1,15 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Single-partition query feature coverage.
+//! Single- and cross-partition query feature coverage.
 //!
-//! These tests exercise the query language features that are *servable within a
-//! single logical partition* — aggregates, `DISTINCT`, `TOP`, `OFFSET`/`LIMIT`,
-//! and `GROUP BY`. Scoping every query to one partition (`FeedScope::partition`)
-//! makes it a "trivial" operation that the backend serves directly, without the
-//! client-side cross-partition merge that the SDK's gateway pager does not
-//! implement for these features. This mirrors the aggregate, distinct, order-by,
-//! and group-by suites that the Python and .NET SDKs maintain.
+//! Single-partition cases exercise backend evaluation directly. Cross-partition
+//! cases exercise the driver's aggregate, GROUP BY, and distinct-count stages
+//! with both plan-provider modes and text/binary output. Live containers have
+//! enough throughput for multiple physical partitions.
 
 // Use the shared test framework declared in `tests/emulator_tests/mod.rs`.
 use super::framework;
@@ -17,23 +14,28 @@ use super::framework;
 use std::collections::HashMap;
 use std::error::Error;
 use std::num::NonZeroU32;
+use std::time::Duration;
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
-    feed::FeedScope,
-    models::ContainerProperties,
-    options::{MaxItemCountHint, QueryOptions},
+    feed::{FeedRange, FeedScope},
+    models::{ContainerProperties, PartitionKeyDefinition, ThroughputProperties},
+    options::{
+        BinaryEncodingOptions, CreateContainerOptions, MaxItemCountHint, OperationOptions,
+        QueryOptions, QueryPlanMode,
+    },
     Query,
 };
-use framework::{TestClient, TestOptions};
+use framework::{
+    test_client::{probe_data_plane_ready, AuthMode},
+    TestClient, TestOptions, TestRunContext,
+};
 use futures::StreamExt;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
-/// The single logical partition every record in these tests lives in. Keeping
-/// all records in one partition is what makes the advanced query features
-/// (aggregates, `GROUP BY`, ...) servable by the backend.
+/// The logical partition used by the single-partition backend evaluation tests.
 const PARTITION: &str = "tenant-1";
 
 /// A record with a repeated grouping key (`category`) and a numeric measure
@@ -338,30 +340,81 @@ pub async fn single_partition_group_by() -> Result<(), Box<dyn Error>> {
 }
 
 async fn seed_cross_partition_container(
+    run_context: &TestRunContext,
     db: &DatabaseClient,
 ) -> azure_data_cosmos::Result<ContainerClient> {
-    let properties = ContainerProperties::new(
-        "CrossPartitionQueryFeaturesContainer",
-        "/partitionKey".into(),
-    );
-    loop {
-        match db.create_container(properties.clone(), None).await {
-            Ok(_) => break,
-            Err(error) if error.status().status_code() == StatusCode::TooManyRequests => {
-                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-            }
-            Err(error) => return Err(error),
+    let definition = PartitionKeyDefinition::from("/partitionKey");
+    let properties =
+        ContainerProperties::new("CrossPartitionQueryFeaturesContainer", definition.clone());
+    let options = (!framework::targets_emulator()).then(|| {
+        CreateContainerOptions::default().with_throughput(ThroughputProperties::manual(11000))
+    });
+    let management_db = run_context.management_client().database_client(db.id());
+    run_context
+        .create_container(&management_db, properties, options)
+        .await?;
+    let container =
+        TestRunContext::wait_for_container_ready(db, "CrossPartitionQueryFeaturesContainer")
+            .await?;
+    if AuthMode::from_env() == AuthMode::Aad {
+        probe_data_plane_ready("aggregate validation", &container).await?;
+    }
+    let ranges = container.read_feed_ranges(None).await?;
+    let mut partition_keys = (0..4).map(|i| format!("tenant-{i}")).collect::<Vec<_>>();
+    if !framework::targets_emulator() {
+        assert!(
+            ranges.len() > 1,
+            "live aggregate coverage must span multiple physical partitions"
+        );
+        partition_keys.clear();
+        for range in ranges.iter().take(2) {
+            let keys = (0..1024)
+                .map(|i| format!("tenant-{i}"))
+                .filter(|key| {
+                    let point = FeedRange::for_partition(key.clone().into(), &definition);
+                    range.min_inclusive() <= point.min_inclusive()
+                        && point.min_inclusive() < range.max_exclusive()
+                })
+                .take(2)
+                .collect::<Vec<_>>();
+            assert_eq!(
+                keys.len(),
+                2,
+                "must find two logical keys per physical range"
+            );
+            partition_keys.extend(keys);
         }
     }
-    let container = db
-        .container_client("CrossPartitionQueryFeaturesContainer", None)
-        .await?;
     for (index, mut record) in sales_records().into_iter().enumerate() {
-        // Unequal partition populations make an unweighted average incorrect.
-        record.partition_key = format!("tenant-{}", index % 4);
+        // Four rows in one physical partition and two in another expose unweighted AVG.
+        record.partition_key = partition_keys[index % partition_keys.len()].clone();
         container
             .create_item(record.partition_key.clone(), &record.id, &record, None)
             .await?;
+    }
+    if !framework::targets_emulator() {
+        let mut counts = Vec::new();
+        for range in ranges.iter().take(2) {
+            let mut pages = container
+                .query_items::<String>(
+                    "SELECT VALUE c.id FROM c",
+                    FeedScope::range(range.clone()),
+                    Some(QueryOptions::default().with_query_plan_mode(QueryPlanMode::GatewayOnly)),
+                )
+                .await?
+                .into_pages();
+            let mut count = 0;
+            while let Some(page) = pages.next().await {
+                count += page?.into_items().len();
+            }
+            counts.push(count);
+        }
+        counts.sort();
+        assert_eq!(
+            counts,
+            vec![2, 4],
+            "both physical partitions must contain data"
+        );
     }
     Ok(container)
 }
@@ -371,22 +424,47 @@ async fn run_cross_partition_query<T>(
     query: impl Into<Query>,
 ) -> Result<Vec<T>, Box<dyn Error>>
 where
-    T: DeserializeOwned + Send + 'static,
+    T: DeserializeOwned + Serialize + Send + 'static,
 {
-    let options = QueryOptions::default()
-        .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));
-    let mut pages = container
-        .query_items::<T>(query, FeedScope::full_container(), Some(options))
-        .await?
-        .into_pages();
-    let mut items = Vec::new();
-    while let Some(page) = pages.next().await {
-        items.extend(page?.into_items());
+    let query = query.into();
+    let mut baseline = None;
+    for mode in [QueryPlanMode::LocalPreferred, QueryPlanMode::GatewayOnly] {
+        for binary in [false, true] {
+            let mut operation = OperationOptions::default();
+            operation.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(binary));
+            let options = QueryOptions::default()
+                .with_query_plan_mode(mode)
+                .with_operation_options(operation)
+                .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));
+            let mut pages = container
+                .query_items::<T>(query.clone(), FeedScope::full_container(), Some(options))
+                .await?
+                .into_pages();
+            let mut items = Vec::new();
+            while let Some(page) = pages.next().await {
+                items.extend(page?.into_items());
+            }
+            let mut normalized = items
+                .iter()
+                .map(serde_json::to_string)
+                .collect::<Result<Vec<_>, _>>()?;
+            normalized.sort();
+            if let Some((_, expected)) = &baseline {
+                assert_eq!(
+                    &normalized, expected,
+                    "query results differ for mode={mode:?}, binary={binary}"
+                );
+            } else {
+                baseline = Some((items, normalized));
+            }
+        }
     }
-    Ok(items)
+    Ok(baseline
+        .expect("the provider/encoding matrix is nonempty")
+        .0)
 }
 
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Serialize, Debug, PartialEq)]
 struct AggregateRollup {
     count: u64,
     total: f64,
@@ -402,8 +480,9 @@ struct AggregateRollup {
 )]
 pub async fn cross_partition_value_and_aliased_aggregates() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
-            let container = seed_cross_partition_container(db_client).await?;
+        async |run_context, db_client| {
+            println!("Aggregate validation database: {}", run_context.db_name());
+            let container = seed_cross_partition_container(run_context, db_client).await?;
             for (expression, expected) in [
                 ("COUNT(1)", 6.0),
                 ("SUM(c.amount)", 180.0),
@@ -440,12 +519,12 @@ pub async fn cross_partition_value_and_aliased_aggregates() -> Result<(), Box<dy
             assert_eq!(empty, vec![0]);
             Ok(())
         },
-        Some(TestOptions::for_emulator()),
+        Some(TestOptions::for_emulator().with_timeout(Duration::from_secs(300))),
     )
     .await
 }
 
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Serialize, Debug, PartialEq)]
 struct CrossPartitionCategoryRollup {
     category: String,
     count: u64,
@@ -462,8 +541,9 @@ struct CrossPartitionCategoryRollup {
 )]
 pub async fn cross_partition_group_by_merges_repeated_categories() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
-            let container = seed_cross_partition_container(db_client).await?;
+        async |run_context, db_client| {
+            println!("Aggregate validation database: {}", run_context.db_name());
+            let container = seed_cross_partition_container(run_context, db_client).await?;
             let mut groups: Vec<CrossPartitionCategoryRollup> = run_cross_partition_query(
                 &container,
                 "SELECT c.category AS category, COUNT(1) AS count, SUM(c.amount) AS total, \
@@ -500,7 +580,7 @@ pub async fn cross_partition_group_by_merges_repeated_categories() -> Result<(),
             assert!(empty.is_empty());
             Ok(())
         },
-        Some(TestOptions::for_emulator()),
+        Some(TestOptions::for_emulator().with_timeout(Duration::from_secs(300))),
     )
     .await
 }
@@ -513,14 +593,29 @@ pub async fn cross_partition_group_by_merges_repeated_categories() -> Result<(),
 pub async fn cross_partition_distinct_count_deduplicates_before_counting(
 ) -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
-            let container = seed_cross_partition_container(db_client).await?;
+        async |run_context, db_client| {
+            println!("Aggregate validation database: {}", run_context.db_name());
+            let container = seed_cross_partition_container(run_context, db_client).await?;
             let count: Vec<u64> = run_cross_partition_query(
                 &container,
                 "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.category FROM c) AS t",
             )
             .await?;
             assert_eq!(count, vec![3]);
+            for (query, expected) in [
+                (
+                    "SELECT COUNT(1) AS count FROM (SELECT DISTINCT VALUE c.category FROM c) AS t",
+                    serde_json::json!({"count": 3}),
+                ),
+                (
+                    "SELECT COUNT(1) FROM (SELECT DISTINCT VALUE c.category FROM c) AS t",
+                    serde_json::json!({"$1": 3}),
+                ),
+            ] {
+                let values: Vec<serde_json::Value> =
+                    run_cross_partition_query(&container, query).await?;
+                assert_eq!(values, vec![expected]);
+            }
             let empty: Vec<u64> = run_cross_partition_query(
                 &container,
                 "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.category FROM c WHERE false) AS t",
@@ -529,7 +624,7 @@ pub async fn cross_partition_distinct_count_deduplicates_before_counting(
             assert_eq!(empty, vec![0]);
             Ok(())
         },
-        Some(TestOptions::for_emulator()),
+        Some(TestOptions::for_emulator().with_timeout(Duration::from_secs(300))),
     )
     .await
 }
