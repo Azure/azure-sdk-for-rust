@@ -282,6 +282,7 @@ Additional specialized instructions for specific workflows can be found in:
   - `lint-markdown` - Check and fix formatting in markdown files using markdownlint-cli2
 - Before changing GitHub Agentic Workflows, run `gh extension upgrade aw`. For repository-wide upgrades, run `gh aw upgrade`; after any workflow change, run `gh aw compile` to update all workflow lock files.
 - Keep local AGENTS terse: add only deltas, use short imperative bullets, and link instead of repeating detail.
+- Use the [document-crates skill](https://github.com/Azure/azure-sdk-for-rust/blob/main/.github/skills/document-crates/SKILL.md) before planning or editing any `README.md` or `CONTRIBUTING.md`.
 
 ## Cross-References
 
