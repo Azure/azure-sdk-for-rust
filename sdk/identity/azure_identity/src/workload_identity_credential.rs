@@ -66,7 +66,8 @@ pub struct WorkloadIdentityCredentialOptions {
 
     /// HTTP client factory for the AKS identity binding token proxy.
     ///
-    /// When unset, the built-in client enabled by the `reqwest` feature is used.
+    /// When unset, the built-in client enabled by the `reqwest_rustls` feature (enabled by default) is used.
+    /// Without that feature, provide a custom [`TokenProxyClient`] when the proxy endpoint is configured.
     pub proxy_client: Option<Arc<dyn TokenProxyClient>>,
 
     #[cfg(test)]

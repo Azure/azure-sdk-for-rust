@@ -138,6 +138,7 @@ pub struct TokenProxyClientOptions<'a> {
 /// Constructs HTTP clients for the AKS identity binding token proxy.
 ///
 /// Implement this trait to use an HTTP stack other than the built-in `reqwest` client.
+/// The built-in client requires the `reqwest_rustls` feature, which is enabled by default.
 pub trait TokenProxyClient: Debug + Send + Sync {
     /// Creates an HTTP client with the supplied TLS and name resolution options.
     fn create(
@@ -276,7 +277,7 @@ fn build_client(
         })
 }
 
-#[cfg(feature = "reqwest")]
+#[cfg(feature = "reqwest_rustls")]
 impl TokenProxyClient for reqwest::Client {
     fn create(
         &self,
@@ -316,16 +317,16 @@ impl TokenProxyClient for reqwest::Client {
     }
 }
 
-#[cfg(feature = "reqwest")]
+#[cfg(feature = "reqwest_rustls")]
 fn default_token_proxy_client() -> azure_core::Result<Arc<dyn TokenProxyClient>> {
     Ok(Arc::new(reqwest::Client::new()))
 }
 
-#[cfg(not(feature = "reqwest"))]
+#[cfg(not(feature = "reqwest_rustls"))]
 fn default_token_proxy_client() -> azure_core::Result<Arc<dyn TokenProxyClient>> {
     Err(Error::with_message(
         ErrorKind::Credential,
-        "the `reqwest` feature is required to use the default token proxy client; enable `reqwest` or provide a custom `TokenProxyClient` implementation",
+        "the `reqwest_rustls` feature is required to use the default token proxy client; enable `reqwest_rustls` or provide a custom `TokenProxyClient` implementation",
     ))
 }
 
@@ -415,9 +416,9 @@ fn invalid_configuration(name: &'static str, message: impl Into<String>) -> Erro
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "reqwest_rustls")]
     use futures::future::join_all;
-    #[cfg(all(feature = "reqwest", feature = "client_certificate"))]
+    #[cfg(all(feature = "reqwest_rustls", feature = "client_certificate"))]
     use openssl::{
         asn1::{Asn1Integer, Asn1Time},
         bn::{BigNum, MsbOption},
@@ -431,17 +432,17 @@ mod tests {
             X509NameBuilder, X509,
         },
     };
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "reqwest_rustls")]
     use std::{
         env,
         fs::File,
         io::Write,
         sync::atomic::{AtomicUsize, Ordering},
     };
-    #[cfg(all(feature = "reqwest", feature = "client_certificate"))]
+    #[cfg(all(feature = "reqwest_rustls", feature = "client_certificate"))]
     use std::{io::Read, net::TcpListener, sync::mpsc, thread};
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "reqwest_rustls")]
     const TEST_CA: &str = "-----BEGIN CERTIFICATE-----\n\
 MIIDZzCCAk+gAwIBAgIUPXdgRBlS4T18QnYJ/+yPV70GOEEwDQYJKoZIhvcNAQEL\n\
 BQAwFDESMBAGA1UEAwwJbG9jYWxob3N0MB4XDTI2MDcyMTIwNTYxOVoXDTI3MDcy\n\
@@ -464,15 +465,15 @@ CesVElsCj5WckSkJ23gnTkzIAAeWjNnf+sOwaMgfsqh/XtKzYluV8MtbBljuOz0G\n\
 uaZPC0VV2qRwbAE=\n\
 -----END CERTIFICATE-----\n";
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "reqwest_rustls")]
     static TEMP_FILE_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "reqwest_rustls")]
     struct TempFile {
         path: PathBuf,
     }
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "reqwest_rustls")]
     impl TempFile {
         fn new(content: &str) -> Self {
             let id = TEMP_FILE_COUNTER.fetch_add(1, Ordering::SeqCst);
@@ -496,7 +497,7 @@ uaZPC0VV2qRwbAE=\n\
         }
     }
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "reqwest_rustls")]
     impl Drop for TempFile {
         fn drop(&mut self) {
             let _ = fs::remove_file(&self.path);
@@ -527,6 +528,31 @@ uaZPC0VV2qRwbAE=\n\
             Some("https://kubernetes.default.svc/proxy")
         );
         assert!(config.ca.is_none());
+    }
+
+    #[cfg(feature = "reqwest_rustls")]
+    #[test]
+    fn configures_default_client() {
+        let mut options = ClientOptions::default();
+        config(&[(AZURE_KUBERNETES_TOKEN_PROXY, "https://proxy.example.com")])
+            .expect("valid proxy configuration")
+            .configure(&mut options, None)
+            .expect("default proxy client is available");
+        assert!(options.transport.is_some());
+    }
+
+    #[cfg(not(feature = "reqwest_rustls"))]
+    #[test]
+    fn requires_rustls_for_default_client() {
+        let mut options = ClientOptions::default();
+        let error = config(&[(AZURE_KUBERNETES_TOKEN_PROXY, "https://proxy.example.com")])
+            .expect("valid proxy configuration")
+            .configure(&mut options, None)
+            .expect_err("default proxy client requires rustls");
+        assert_eq!(error.kind(), &ErrorKind::Credential);
+        assert!(error.to_string().contains("enable `reqwest_rustls`"));
+        assert!(error.to_string().contains("custom `TokenProxyClient`"));
+        assert!(options.transport.is_none());
     }
 
     #[test]
@@ -596,7 +622,7 @@ uaZPC0VV2qRwbAE=\n\
         }
     }
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "reqwest_rustls")]
     #[test]
     fn rejects_missing_and_invalid_ca_files() {
         for path in ["/file/does/not/exist", file!()] {
@@ -611,7 +637,7 @@ uaZPC0VV2qRwbAE=\n\
         }
     }
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "reqwest_rustls")]
     #[test]
     fn rejects_invalid_inline_ca_without_exposing_data() {
         let ca_data = "not a certificate";
@@ -626,7 +652,7 @@ uaZPC0VV2qRwbAE=\n\
         assert!(!error.to_string().contains(ca_data));
     }
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "reqwest_rustls")]
     #[test]
     fn accepts_inline_and_file_ca() {
         CustomTokenProxy::new(
@@ -647,7 +673,7 @@ uaZPC0VV2qRwbAE=\n\
         .expect("valid file CA");
     }
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "reqwest_rustls")]
     #[tokio::test]
     async fn reuses_and_rotates_file_ca_client() {
         let file = TempFile::new(TEST_CA);
@@ -673,7 +699,7 @@ uaZPC0VV2qRwbAE=\n\
         assert!(!Arc::ptr_eq(&original, &rotated));
     }
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "reqwest_rustls")]
     #[tokio::test]
     async fn serializes_concurrent_file_ca_refresh() {
         let file = TempFile::new(TEST_CA);
@@ -692,7 +718,7 @@ uaZPC0VV2qRwbAE=\n\
         }
     }
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "reqwest_rustls")]
     #[tokio::test]
     async fn surfaces_file_ca_refresh_errors_without_replacing_client() {
         let file = TempFile::new(TEST_CA);
@@ -727,7 +753,7 @@ uaZPC0VV2qRwbAE=\n\
         assert_eq!(resolved_addrs, vec!["127.0.0.1:8443".parse().unwrap()]);
     }
 
-    #[cfg(all(feature = "reqwest", feature = "client_certificate"))]
+    #[cfg(all(feature = "reqwest_rustls", feature = "client_certificate"))]
     #[tokio::test]
     async fn sends_requests_with_custom_ca_and_sni() {
         const SNI_NAME: &str = "cluster.example.com";
@@ -808,7 +834,7 @@ uaZPC0VV2qRwbAE=\n\
         }
     }
 
-    #[cfg(all(feature = "reqwest", feature = "client_certificate"))]
+    #[cfg(all(feature = "reqwest_rustls", feature = "client_certificate"))]
     fn test_server_certificate(name: &str) -> (X509, PKey<openssl::pkey::Private>, X509) {
         let ca_key =
             PKey::from_rsa(Rsa::generate(2048).expect("CA RSA key")).expect("CA private key");
