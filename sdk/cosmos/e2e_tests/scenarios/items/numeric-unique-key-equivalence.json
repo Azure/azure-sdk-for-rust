@@ -4,7 +4,7 @@
     "id": "item.numeric-unique-key-equivalence",
     "title": "Numeric unique keys use service number equivalence",
     "requirement": "Unique-key comparison treats wide JSON integers according to the Cosmos DB service number model within one logical partition.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "service",
@@ -40,7 +40,7 @@
             ]
         },
         "azureLive": {
-            "applicability": "supported",
+            "applicability": "required",
             "fidelity": "full"
         }
     }

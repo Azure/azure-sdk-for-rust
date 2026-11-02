@@ -4,7 +4,7 @@
     "id": "item.upsert-create-update",
     "title": "Upsert creates then updates one identity",
     "requirement": "Upsert returns 201 for a missing identity and 200 when replacing it, without creating a duplicate.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "dotnet",
@@ -32,7 +32,7 @@
             ]
         },
         "azureLive": {
-            "applicability": "supported",
+            "applicability": "required",
             "fidelity": "full"
         }
     }

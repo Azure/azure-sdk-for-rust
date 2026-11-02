@@ -8,6 +8,7 @@ use crate::models::{
     DatabaseReference, FeedRange, ItemReference, OperationType, PartitionKey, Precondition,
     ResourceType,
 };
+use crate::options::Utf8DecodingMode;
 use azure_core::http::Etag;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, time::Instant};
@@ -176,6 +177,8 @@ pub struct CosmosOperation {
     /// *emitted* format — see
     /// [`emits_binary_payload`](Self::emits_binary_payload).
     transcodes_response_to_text: bool,
+    /// Resolved handling for invalid UTF-8 in response JSON strings.
+    resolved_utf8_decoding_mode: Utf8DecodingMode,
     /// Internal routing constraint for reads whose correctness depends on
     /// observing the write region rather than the nearest read replica.
     internal_read_routing: InternalReadRouting,
@@ -341,15 +344,27 @@ impl CosmosOperation {
         }
     }
 
-    /// Validates that this operation does not mix name and RID addressing.
+    /// Validates name/RID addressing consistency and, when enabled, user-defined
+    /// resource names.
     ///
-    /// Delegates to
-    /// [`CosmosResourceReference::validate_addressing`], telling it whether the
-    /// leaf id will appear in the request path so that feed-style operations
-    /// (Create/Upsert) are correctly exempted from the leaf check.
-    pub(crate) fn validate_addressing(&self) -> crate::error::Result<()> {
+    /// Create and Upsert keep their mixed-addressing exemption because their
+    /// item id is not in the request path, but name validation still checks that
+    /// id so the created item remains addressable by later point operations.
+    /// Batch validation reads only item IDs from the service-defined envelope;
+    /// all other document fields remain schema-agnostic.
+    pub(crate) fn validate_addressing(
+        &self,
+        validate_resource_names: bool,
+    ) -> crate::error::Result<()> {
         self.resource_reference
-            .validate_addressing(!self.uses_feed_paths())
+            .validate_addressing(!self.uses_feed_paths())?;
+        if validate_resource_names {
+            self.resource_reference.validate_resource_names()?;
+            if self.operation_type == OperationType::Batch {
+                super::transactional_batch::validate_resource_names(self.body())?;
+            }
+        }
+        Ok(())
     }
 
     /// Returns the container for this operation, if applicable.
@@ -423,6 +438,9 @@ impl CosmosOperation {
     }
 
     /// Sets the session token request header for the operation.
+    ///
+    /// Caller tokens take precedence over cached state. See
+    /// [`SessionToken`](crate::models::SessionToken) for per-attempt transport scoping.
     pub fn with_session_token(
         mut self,
         session_token: impl Into<crate::models::SessionToken>,
@@ -482,8 +500,8 @@ impl CosmosOperation {
             })
     }
 
-    /// Records that the driver will transcode this operation's response back to
-    /// text before returning it to the caller.
+    /// Records that binary response options require this operation's response
+    /// to be transcoded back to text before returning it to the caller.
     pub(crate) fn transcoding_response_to_text(mut self) -> Self {
         self.transcodes_response_to_text = true;
         self
@@ -497,6 +515,21 @@ impl CosmosOperation {
     /// encoding from what the pipeline nodes were built to produce.
     pub(crate) fn transcodes_response_to_text(&self) -> bool {
         self.transcodes_response_to_text
+            || self.resolved_utf8_decoding_mode == Utf8DecodingMode::Lossy
+    }
+
+    /// Stores the resolved handling for invalid UTF-8 in this operation's response.
+    ///
+    /// [`Utf8DecodingMode::Lossy`] preserves binary response negotiation but
+    /// returns recovered text JSON so typed deserialization remains strict.
+    pub(crate) fn with_resolved_utf8_decoding_mode(mut self, mode: Utf8DecodingMode) -> Self {
+        self.resolved_utf8_decoding_mode = mode;
+        self
+    }
+
+    /// Returns the resolved handling for invalid UTF-8 in this operation's response.
+    pub(crate) fn resolved_utf8_decoding_mode(&self) -> Utf8DecodingMode {
+        self.resolved_utf8_decoding_mode
     }
 
     /// Whether pipeline nodes that synthesize a page should emit **binary**
@@ -508,7 +541,7 @@ impl CosmosOperation {
     /// while the driver transcodes on the way out, so a node emitting binary
     /// would re-encode every item only for `execute_plan` to decode it again.
     pub(crate) fn emits_binary_payload(&self) -> bool {
-        self.negotiates_binary_response() && !self.transcodes_response_to_text
+        self.negotiates_binary_response() && !self.transcodes_response_to_text()
     }
 
     /// Sets the maximum number of items the server should return per page
@@ -735,6 +768,7 @@ impl CosmosOperation {
             is_patch_sub_operation: false,
             patch_retry_safe: None,
             transcodes_response_to_text: false,
+            resolved_utf8_decoding_mode: Utf8DecodingMode::Strict,
             internal_read_routing: InternalReadRouting::Default,
             absolute_deadline: None,
         }
@@ -1426,6 +1460,63 @@ mod tests {
         )
     }
 
+    #[test]
+    fn utf8_decoding_is_strict_by_default() {
+        let operation =
+            CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()));
+
+        assert_eq!(
+            operation.resolved_utf8_decoding_mode(),
+            Utf8DecodingMode::Strict
+        );
+        assert!(!operation.transcodes_response_to_text());
+    }
+
+    #[test]
+    fn lossy_utf8_requests_text_output_without_disabling_binary_negotiation() {
+        let operation =
+            CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()))
+                .with_supported_serialization_formats("JsonText,CosmosBinary")
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Lossy);
+
+        assert!(operation.negotiates_binary_response());
+        assert!(operation.transcodes_response_to_text());
+        assert!(!operation.emits_binary_payload());
+    }
+
+    #[test]
+    fn resolved_utf8_decoding_mode_is_reversible() {
+        let operation =
+            CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()))
+                .with_supported_serialization_formats("JsonText,CosmosBinary")
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Lossy)
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Strict);
+
+        assert_eq!(
+            operation.resolved_utf8_decoding_mode(),
+            Utf8DecodingMode::Strict
+        );
+        assert!(!operation.transcodes_response_to_text());
+        assert!(operation.emits_binary_payload());
+    }
+
+    #[test]
+    fn strict_utf8_preserves_independent_text_transcoding() {
+        let operation =
+            CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()))
+                .with_supported_serialization_formats("JsonText,CosmosBinary")
+                .transcoding_response_to_text()
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Lossy)
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Strict);
+
+        assert_eq!(
+            operation.resolved_utf8_decoding_mode(),
+            Utf8DecodingMode::Strict
+        );
+        assert!(operation.transcodes_response_to_text());
+        assert!(!operation.emits_binary_payload());
+    }
+
     /// A container addressed purely by RID (no name-based path available).
     fn test_container_by_rid() -> ContainerReference {
         ContainerReference::new_by_rid(
@@ -1492,12 +1583,56 @@ mod tests {
             ItemReference::from_name(&test_container_by_rid(), PartitionKey::from("pk1"), "doc1");
         let op = CosmosOperation::create_item(item_ref);
         assert!(op.uses_feed_paths());
-        op.validate_addressing()
+        op.validate_addressing(true)
             .expect("create on a RID container may carry a name id");
         assert_eq!(
             op.compute_resource_paths().request_path(),
             "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=/docs"
         );
+    }
+
+    #[test]
+    fn create_and_upsert_reject_unsafe_item_names_when_validation_is_enabled() {
+        for operation in [
+            CosmosOperation::create_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "../other-container",
+            )),
+            CosmosOperation::upsert_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "item?query",
+            )),
+        ] {
+            let error = operation
+                .validate_addressing(true)
+                .expect_err("unsafe item names must be rejected before creation");
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST
+            );
+        }
+    }
+
+    #[test]
+    fn create_and_upsert_allow_unsafe_item_names_when_validation_is_disabled() {
+        for operation in [
+            CosmosOperation::create_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "../other-container",
+            )),
+            CosmosOperation::upsert_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "item?query",
+            )),
+        ] {
+            operation
+                .validate_addressing(false)
+                .expect("the compatibility option must disable creation-time name validation");
+        }
     }
 
     #[test]
@@ -1510,7 +1645,7 @@ mod tests {
         let op = CosmosOperation::read_item(item_ref);
         assert!(!op.uses_feed_paths());
         let err = op
-            .validate_addressing()
+            .validate_addressing(false)
             .expect_err("a name leaf under a RID parent must be rejected");
         assert_eq!(
             err.status(),
@@ -1528,7 +1663,7 @@ mod tests {
             "Lx1BALxJyZ8BAAAAAAAAAA==",
         );
         let op = CosmosOperation::read_item(item_ref);
-        op.validate_addressing()
+        op.validate_addressing(false)
             .expect("a RID leaf under a RID parent is consistent");
 
         let paths = op.compute_resource_paths();

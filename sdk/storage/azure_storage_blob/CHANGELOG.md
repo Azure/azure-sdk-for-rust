@@ -16,6 +16,8 @@
 - Added `access_tier`, `access_tier_changed_on`, and `access_tier_inferred` to `BlobDownloadProperties` and marked the struct as non-exhaustive.
 - Added `BlobClient::start_copy_from_url()` and `BlobClient::abort_copy()` for asynchronous blob copy operations.
 
+- Applied client options to bearer-token authorization policies.
+
 ## 1.1.0 (2026-09-08)
 
 ### Features Added

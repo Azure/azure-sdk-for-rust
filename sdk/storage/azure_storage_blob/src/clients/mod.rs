@@ -124,10 +124,10 @@ fn build_auth_policies(
         ));
     }
 
-    let bearer: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
-        credential.clone(),
-        vec![STORAGE_SCOPE],
-    ));
+    let bearer: Arc<dyn Policy> = Arc::new(
+        BearerTokenAuthorizationPolicy::new(credential.clone(), vec![STORAGE_SCOPE])
+            .with_options(client_options.into()),
+    );
 
     // Use the existing bearer-only path when sessions are disabled.
     let Some(session_options) = session_options.filter(|options| options.is_enabled()) else {
@@ -332,6 +332,64 @@ mod tests {
             .cloned()
             .flatten();
         auth
+    }
+
+    #[test]
+    fn pipeline_applies_shared_defaults() {
+        let mut options = ClientOptions::default();
+
+        build_pipeline(&endpoint(), None, None, &mut options, "2026-02-06").unwrap();
+
+        assert!(options.transport.is_some());
+        assert_eq!(options.per_call_policies.len(), 1);
+        assert!(options
+            .logging
+            .additional_allowed_header_names
+            .iter()
+            .any(|name| name == "x-ms-version"));
+    }
+
+    #[tokio::test]
+    async fn pipeline_preserves_custom_transport() {
+        let mut options = options_with_create_session_mock();
+
+        let pipeline = build_pipeline(&endpoint(), None, None, &mut options, "2026-02-06").unwrap();
+        let response = pipeline
+            .send(&Context::new(), &mut download_request(), None)
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::Created);
+        assert_eq!(response.body().as_ref(), SESSION_XML);
+    }
+
+    #[tokio::test]
+    async fn bearer_policy_uses_client_options() {
+        let credential: Arc<dyn TokenCredential> = MockCredential::new().unwrap();
+        let options = ClientOptions {
+            allow_insecure_connections: true,
+            ..Default::default()
+        };
+        let policies =
+            build_auth_policies(&endpoint(), Some(credential), None, &options, "2026-02-06")
+                .unwrap();
+        let transport = Arc::new(CapturingTransport {
+            seen_auth: Mutex::new(Vec::new()),
+        });
+        let mut request = Request::new(
+            Url::parse("http://localhost/mycontainer/myblob").unwrap(),
+            Method::Get,
+        );
+
+        policies[0]
+            .send(&Context::new(), &mut request, &[transport.clone()])
+            .await
+            .unwrap();
+
+        assert!(transport.seen_auth.lock().unwrap()[0]
+            .as_ref()
+            .unwrap()
+            .starts_with("Bearer "));
     }
 
     #[test]
