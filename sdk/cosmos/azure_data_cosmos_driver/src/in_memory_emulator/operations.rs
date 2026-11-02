@@ -2579,6 +2579,18 @@ fn success_feed_response(
         Ok(v) => v,
         Err(response) => return response,
     };
+    feed_page_response(envelope_name, rid, page, next, feed_headers, format, start)
+}
+
+fn feed_page_response(
+    envelope_name: &str,
+    rid: impl Into<String>,
+    page: Vec<serde_json::Value>,
+    next: Option<String>,
+    feed_headers: FeedResponseHeaders,
+    format: ResponseFormat,
+    start: Instant,
+) -> AsyncRawResponse {
     let item_count = page.len() as u32;
     let body = feed_to_json(envelope_name, page, rid);
     let mut builder = success_response_with_format(
@@ -2894,6 +2906,27 @@ fn execute_document_query_feed(
         Ok(v) => v,
         Err(response) => return response,
     };
+    let program = match crate::query::parse(&query) {
+        Ok(program) => program,
+        Err(error) => {
+            return invalid_continuation_response(&format!("failed to parse query: {error}"), start)
+        }
+    };
+    if supports_partial_cursor(&program.query) {
+        let rid = rid.into();
+        return match query_partial_page(&query, &parameters, &documents, &rid, parsed, start) {
+            Ok((page, next)) => feed_page_response(
+                envelope_name,
+                rid,
+                page,
+                next,
+                feed_headers,
+                ResponseFormat::from(parsed.binary_response),
+                start,
+            ),
+            Err(response) => response,
+        };
+    }
     match query_document_feed_items(&query, &parameters, &documents) {
         Ok(Some(results)) => success_document_feed_response(
             envelope_name,
@@ -2969,13 +3002,14 @@ fn query_document_feed_items(
                 .with_message(e.to_string())
                 .build()
         })? {
-            let body =
-                crate::query::eval::project(&document.body, query, parameters).map_err(|e| {
+            let body = crate::query::eval::project_defined(&document.body, query, parameters)
+                .map_err(|e| {
                     crate::error::CosmosError::builder()
                         .with_status(crate::error::CosmosStatus::new(StatusCode::BadRequest))
                         .with_message(e.to_string())
                         .build()
                 })?;
+            let Some(body) = body else { continue };
             results.push(DocumentFeedItem {
                 body,
                 cursor: document.cursor.clone(),
@@ -2984,6 +3018,112 @@ fn query_document_feed_items(
         }
     }
     Ok(Some(results))
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct PartialQueryCursor {
+    kind: String,
+    rid: String,
+    query_hash: crate::driver::dataflow::distinct_hash::Hash128,
+    epk: String,
+    id: String,
+}
+
+const PARTIAL_QUERY_CURSOR_KIND: &str = "partial_query_cursor_v1";
+
+fn supports_partial_cursor(query: &SqlQuery) -> bool {
+    is_plain_root_from(query)
+        && query.order_by.is_none()
+        && query.select.top.is_none()
+        && query.offset_limit.is_none()
+        && (query.group_by.is_some()
+            || query.select.distinct
+            || match &query.select.spec {
+                SqlSelectSpec::Value(value) => contains_aggregate_expression(value),
+                SqlSelectSpec::List(items) => items
+                    .iter()
+                    .any(|item| contains_aggregate_expression(&item.expression)),
+                SqlSelectSpec::Star => false,
+            })
+}
+
+fn query_partial_page(
+    query: &str,
+    parameters: &[(String, serde_json::Value)],
+    documents: &[DocumentFeedItem],
+    rid: &str,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> Result<(Vec<serde_json::Value>, Option<String>), AsyncRawResponse> {
+    let query_hash = crate::driver::dataflow::distinct_hash::hash_value(
+        &serde_json::json!({"query": query, "parameters": parameters}),
+    )
+    .map_err(|error| invalid_continuation_response(&error.to_string(), start))?;
+    let offset = match &parsed.continuation {
+        Some(token) => {
+            let cursor: PartialQueryCursor = serde_json::from_str(token).map_err(|_| {
+                invalid_continuation_response("Invalid partial-query continuation", start)
+            })?;
+            if cursor.kind != PARTIAL_QUERY_CURSOR_KIND
+                || cursor.rid != rid
+                || cursor.query_hash != query_hash
+            {
+                return Err(invalid_continuation_response(
+                    "Partial-query continuation does not match this query or container",
+                    start,
+                ));
+            }
+            let cursor = DocumentFeedCursor {
+                epk: Epk::try_from(cursor.epk).map_err(|_| {
+                    invalid_continuation_response("Invalid partial-query continuation EPK", start)
+                })?,
+                id: cursor.id,
+            };
+            documents.partition_point(|document| document.cursor <= cursor)
+        }
+        None => 0,
+    };
+    // A source slice is completely consumed before advancing its cursor.
+    // Grouped/root DISTINCT rows cannot outnumber the documents in the slice.
+    let limit = parsed
+        .max_item_count
+        .filter(|limit| *limit > 0)
+        .map_or(100, |limit| limit as usize);
+    let end = offset.saturating_add(limit).min(documents.len());
+    let values: Vec<_> = documents[offset..end]
+        .iter()
+        .map(|document| document.body.clone())
+        .collect();
+    let page = crate::query::eval::query_documents(query, parameters, &values)
+        .map_err(|error| invalid_continuation_response(&error.to_string(), start))?;
+    let next = if end < documents.len() {
+        let cursor = &documents[end - 1].cursor;
+        Some(
+            serde_json::to_string(&PartialQueryCursor {
+                kind: PARTIAL_QUERY_CURSOR_KIND.into(),
+                rid: rid.into(),
+                query_hash,
+                epk: cursor.epk.to_hex(),
+                id: cursor.id.clone(),
+            })
+            .map_err(|error| {
+                error_response(
+                    StatusCode::InternalServerError,
+                    None,
+                    "InternalError",
+                    &format!("failed to serialize partial-query cursor: {error}"),
+                    0.0,
+                    "",
+                    start,
+                )
+                .build()
+            })?,
+        )
+    } else {
+        None
+    };
+    Ok((page, next))
 }
 
 fn supports_document_cursor_continuation(query: &SqlQuery) -> bool {
@@ -3780,13 +3920,6 @@ fn handle_query_items(
     }
 }
 
-fn local_query_info_to_dataflow(
-    info: crate::query::plan::LocalQueryInfo,
-    original_query: &str,
-) -> crate::driver::dataflow::query_plan::QueryInfo {
-    crate::query::local_plan_adapter::emulator_query_info_to_dataflow(info, original_query)
-}
-
 #[cfg(test)]
 fn synthesize_offset_limit_rewritten_query(
     original_query: &str,
@@ -3858,17 +3991,11 @@ fn handle_query_plan(
             .build();
         }
     };
-    let pk_paths: Vec<&str> = container
-        .metadata
-        .partition_key
-        .paths()
-        .iter()
-        .map(|p| p.as_ref())
-        .collect();
-    let local_plan = match crate::query::plan::generate_query_plan_with_parameters(
+    let plan = match crate::query::emulator_plan::generate(
         &program.query,
-        &pk_paths,
+        &query,
         &parameters,
+        &container.metadata.partition_key,
     ) {
         Ok(plan) => plan,
         Err(e) => {
@@ -3885,32 +4012,7 @@ fn handle_query_plan(
         }
     };
 
-    let query_ranges = match crate::query::local_plan_adapter::query_ranges_from_pk_filter(
-        &local_plan.pk_filters,
-        &container.metadata.partition_key,
-    ) {
-        Ok(ranges) => ranges,
-        Err(e) => {
-            return error_response(
-                e.status().status_code(),
-                e.status().sub_status().map(|s| u32::from(s.value())),
-                "BadRequest",
-                &e.to_string(),
-                0.0,
-                "",
-                start,
-            )
-            .build();
-        }
-    };
-
-    let plan = crate::driver::dataflow::query_plan::QueryPlan {
-        partitioned_query_execution_info_version: 2,
-        query_info: Some(local_query_info_to_dataflow(local_plan.query_info, &query)),
-        query_ranges,
-        hybrid_search_query_info: None,
-    };
-    let mut body = match serde_json::to_value(plan) {
+    let body = match serde_json::to_value(plan) {
         Ok(body) => body,
         Err(e) => {
             return error_response(
@@ -3925,9 +4027,6 @@ fn handle_query_plan(
             .build();
         }
     };
-    if let Some(query_info) = body.get_mut("queryInfo").and_then(|v| v.as_object_mut()) {
-        query_info.insert("dCountInfo".to_owned(), serde_json::Value::Null);
-    }
     success_response(StatusCode::Ok, &body, 1.0, "", start)
         .with_item_count(1)
         .build()

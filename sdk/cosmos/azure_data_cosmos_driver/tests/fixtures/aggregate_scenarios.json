@@ -1,0 +1,72 @@
+{
+  "source": {
+    "repository": "Azure/azure-cosmos-dotnet-v3",
+    "commit": "52ff1383daf7a1a0e8f2d77da0ce819c8ea2f2c8",
+    "baselines": [
+      "QueryPlanBaselineTests.Aggregates.xml",
+      "QueryPlanBaselineTests.GroupBy.xml",
+      "AggregateQueryTests.AggregateMixedTypes_baseline.xml"
+    ]
+  },
+  "scenarios": [
+    {
+      "query": "SELECT VALUE COUNT(1) FROM c WHERE c.kind = 'a''b'",
+      "documents": [{"kind": "a'b"}, {"kind": "other"}],
+      "rows": [[{"item": 1}]]
+    },
+    {
+      "query": "SELECT SUM(c.v) 'sum\"name' FROM c",
+      "documents": [{"v": 1}, {"v": 2}],
+      "rows": [{"payload": {"sum\"name": {"item": 3}}}]
+    },
+    {
+      "query": "SELECT VALUE COUNT(c.v) FROM c",
+      "documents": [{"v": 2}, {"v": null}, {}],
+      "rows": [[{"item": 2}]]
+    },
+    {
+      "query": "SELECT VALUE SUM(c.v) FROM c",
+      "documents": [{}, {}],
+      "rows": [[{"item": 0}]]
+    },
+    {
+      "query": "SELECT VALUE SUM(c.v) FROM c",
+      "documents": [{"v": 2}, {"v": null}],
+      "rows": [[{}]]
+    },
+    {
+      "query": "SELECT VALUE AVG(c.v) FROM c",
+      "documents": [{"v": 10}, {"v": 20}, {}],
+      "rows": [[{"item": {"sum": 30, "count": 2}}]]
+    },
+    {
+      "query": "SELECT VALUE AVG(c.v) FROM c",
+      "documents": [],
+      "rows": [[{"item": {"sum": 0, "count": 0}}]]
+    },
+    {
+      "query": "SELECT VALUE MIN(c.v) FROM c",
+      "documents": [],
+      "rows": [[{"item2": {"count": 0}}]]
+    },
+    {
+      "query": "SELECT VALUE MAX(c.v) FROM c",
+      "documents": [{"v": null}],
+      "rows": [[{"item": null, "item2": {"max": null, "count": 1}}]]
+    },
+    {
+      "query": "SELECT COUNT(1), AVG(c.v) AS mean FROM c",
+      "documents": [{"v": 10}, {"v": 20}],
+      "rows": [{"payload": {"$1": {"item": 2}, "mean": {"item": {"sum": 30, "count": 2}}}}]
+    },
+    {
+      "query": "SELECT c.key, SUM(c.v) AS total FROM c GROUP BY c.key",
+      "documents": [{"key": 1, "v": 2}, {"key": 1.0, "v": 3}, {"key": null, "v": 4}, {"v": 5}],
+      "rows": [
+        {"groupByItems": [{"item": 1}], "payload": {"key": 1, "total": {"item": 5}}},
+        {"groupByItems": [{"item": null}], "payload": {"key": null, "total": {"item": 4}}},
+        {"groupByItems": [{}], "payload": {"total": {"item": 5}}}
+      ]
+    }
+  ]
+}

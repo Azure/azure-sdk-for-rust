@@ -229,7 +229,10 @@ pub(crate) fn emulator_query_info_to_dataflow(
         aggregates: info
             .aggregates
             .into_iter()
-            .map(|a| format!("{a:?}"))
+            .map(|a| match a {
+                plan::AggregateKind::Avg => "Average".to_owned(),
+                other => format!("{other:?}"),
+            })
             .collect(),
         group_by_alias_to_aggregate_type: std::collections::HashMap::new(),
         d_count_info: None,

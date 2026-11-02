@@ -2446,8 +2446,8 @@
       "expectedError": null
     },
     {
-      "id": "group_by_missing_service_rewrite",
-      "description": "DISTINCT combined with GROUP BY requires a service rewrite. The in-memory emulator does not generate it, so planning must reject the incomplete plan rather than silently dropping either stage. Supported composition is covered by the planner tests with rewritten partials.",
+      "id": "group_by_service_rewrite",
+      "description": "DISTINCT combined with GROUP BY consumes emulator-generated service rewrites and combines partition-local key projections successfully.",
       "sources": [
         {
           "sdk": "dotnet",
@@ -2481,12 +2481,67 @@
         10
       ],
       "expectedIds": [],
+      "expectedValues": [{"city": "Seattle"}, {"city": "Boston"}],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "composite_aggregate_rejected",
+      "description": "Compositions of aggregate results and scalar functions remain unsupported rather than treating an already-finalized partition projection as a mergeable partial.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos/tests/Microsoft.Azure.Cosmos.Tests/BaselineTest/TestBaseline/QueryPlanBaselineTests.GroupBy.xml",
+          "test": "non simple aggregate"
+        }
+      ],
+      "layers": ["inMemoryEmulator"],
+      "query": {
+        "text": "SELECT DISTINCT VALUE ABS(MAX(c.rank)) FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [{"id": "d1", "pk": "pk-a", "rank": 1}],
+      "mock": null,
+      "pageSizes": [1],
+      "expectedIds": [],
       "expectedValues": [],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": {
-        "category": "serializationResponseBodyInvalid",
-        "messageFragment": "advanced query plan did not supply a non-empty rewrittenQuery"
+        "category": "badRequest",
+        "messageFragment": "composite aggregates are unsupported"
+      }
+    },
+    {
+      "id": "distinct_grouping_projection_incomplete_rejected",
+      "description": "DISTINCT before GROUP BY cannot deduplicate final projections that omit grouping keys. Reject the unsupported composition rather than emit duplicate final values.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos/src/Query/Core/Pipeline/PipelineFactory.cs",
+          "test": "MonadicCreate (GROUP BY composes above DISTINCT)"
+        }
+      ],
+      "layers": ["inMemoryEmulator"],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c GROUP BY c.city, c.rank",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [{"id": "d1", "pk": "pk-a", "city": "Seattle", "rank": 1}],
+      "mock": null,
+      "pageSizes": [1],
+      "expectedIds": [],
+      "expectedValues": [],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "badRequest",
+        "messageFragment": "requires complete keys and no aggregates"
       }
     },
     {
@@ -2555,8 +2610,8 @@
       "expectedError": null
     },
     {
-      "id": "aggregate_missing_service_rewrite",
-      "description": "DISTINCT combined with an aggregate requires a service rewrite. The in-memory emulator does not generate it, so planning must reject the incomplete plan rather than aggregate already-final partition results. Supported composition is covered by the planner tests with rewritten partials.",
+      "id": "aggregate_service_rewrite",
+      "description": "DISTINCT combined with MAX consumes emulator-generated partial cells and returns the global maximum rather than independently finalized partition results.",
       "sources": [
         {
           "sdk": "dotnet",
@@ -2595,13 +2650,10 @@
         10
       ],
       "expectedIds": [],
-      "expectedValues": [],
+      "expectedValues": [2],
       "checkpoint": null,
       "expectedContinuation": null,
-      "expectedError": {
-        "category": "serializationResponseBodyInvalid",
-        "messageFragment": "advanced query plan did not supply a non-empty rewrittenQuery"
-      }
+      "expectedError": null
     },
     {
       "id": "ordered_offset_limit_applies_after_distinct",

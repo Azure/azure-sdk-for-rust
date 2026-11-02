@@ -714,6 +714,9 @@ async fn catalog_emulator_error_scenarios_fail_as_expected() {
         seed(&driver, &container, &scenario.documents).await;
 
         let expected_status = match expected.category.as_str() {
+            "badRequest" => azure_data_cosmos_driver::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ),
             "serializationResponseBodyInvalid" => status_codes::SERIALIZATION_RESPONSE_BODY_INVALID,
             "clientDistinctContinuationUnsupported" => {
                 status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
@@ -724,12 +727,12 @@ async fn catalog_emulator_error_scenarios_fail_as_expected() {
             ),
         };
         let outcome = match expected.category.as_str() {
-            // The emulator cannot produce service aggregate/GROUP BY rewrites.
-            "serializationResponseBodyInvalid" => Box::pin(driver.plan_operation(
+            // Invalid emulator query shapes fail while fetching the Gateway plan.
+            "serializationResponseBodyInvalid" | "badRequest" => Box::pin(driver.plan_operation(
                 query_operation(&container, &scenario.query, 10),
                 &OperationOptions::default(),
                 None,
-                &PlanOptions::default(),
+                &PlanOptions::default().with_query_plan_mode(QueryPlanMode::GatewayOnly),
             ))
             .await
             .err(),
