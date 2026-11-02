@@ -225,6 +225,13 @@ misclassified as an ordinary locally executable aggregate. See
 `specs/0012-feed-operations-and-dataflow.md` for execution, retained-state, and
 continuation behavior.
 
+The in-memory emulator separately synthesizes service-style aggregate/GROUP BY
+rewrites and canonical COUNT-over-DISTINCT metadata. Its backend evaluates
+partition-local partials, including AVG sum/count state, so tests exercise these
+production stages without an account. This does not make those shapes eligible
+for production local planning. Emulator partial paging and limitations are
+documented in `specs/0021-in-memory-emulator.md`.
+
 Local equality and `IN` filters are converted to canonical EPK ranges with the
 container's partition-key definition. This includes hierarchical partition-key
 prefix ranges. Unconstrained queries use the full EPK range; contradictory
@@ -261,7 +268,7 @@ a future PR can close the gap without re-discovering it from scratch.
 | Index plans / physical plans                 | Backend-only concern                                                     |
 | Distributed query coordination               | Gateway's responsibility                                                 |
 | KQL / JavaScript query support               | Not needed                                                               |
-| Local aggregate / GROUP BY / DCOUNT rewrites | Production execution uses rewrites from native or Gateway query plans    |
+| Production local aggregate rewrites          | Native/Gateway production plans; separate emulator test rewrites         |
 
 ## Alternatives considered
 
