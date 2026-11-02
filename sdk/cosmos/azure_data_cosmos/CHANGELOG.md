@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `ChangeFeedOptions::partition_key_range_id` to read an explicit EPK range through a known physical partition without initial topology resolution; use lazy topology initialization to avoid cold-cache loading.
+- Added `ChangeFeedOptions::partition_key_range_id` to read an explicit EPK range through a known physical partition without initial topology resolution; use lazy topology initialization to avoid cold-cache loading. ([#5547](https://github.com/Azure/azure-sdk-for-rust/pull/5547))
 
 ### Breaking Changes
 
