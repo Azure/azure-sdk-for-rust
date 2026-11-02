@@ -376,13 +376,14 @@ mod tests {
         let transport = Arc::new(CapturingTransport {
             seen_auth: Mutex::new(Vec::new()),
         });
+        let next: [Arc<dyn Policy>; 1] = [transport.clone()];
         let mut request = Request::new(
             Url::parse("http://localhost/mycontainer/myblob").unwrap(),
             Method::Get,
         );
 
         policies[0]
-            .send(&Context::new(), &mut request, &[transport.clone()])
+            .send(&Context::new(), &mut request, &next)
             .await
             .unwrap();
 
