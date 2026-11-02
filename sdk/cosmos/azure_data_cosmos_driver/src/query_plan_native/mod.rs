@@ -226,6 +226,7 @@ fn query_plan_options() -> provider::QueryPlanOptions {
         // consume the formattable ORDER BY rewrite.
         require_formattable_order_by_query: true,
         is_continuation_expected: false,
+        allow_non_value_aggregate_query: true,
         allow_dcount: true,
         ..provider::QueryPlanOptions::default()
     }
@@ -241,6 +242,7 @@ mod tests {
         assert!(options.require_formattable_order_by_query);
         assert!(!options.is_continuation_expected);
         assert!(options.allow_dcount);
+        assert!(options.allow_non_value_aggregate_query);
     }
 
     #[test]
