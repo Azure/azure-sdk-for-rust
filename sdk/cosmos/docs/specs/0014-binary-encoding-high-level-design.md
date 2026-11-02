@@ -645,6 +645,11 @@ non-binary work · **N/A** out of scope by design.
 
 #### Binary-aware `ORDER BY` envelopes
 
+The detailed flow diagrams, private/public boundary, failure handling, and design
+alternatives are in `specs/0030-binary-order-by-envelopes.md` (relative to
+`sdk/cosmos/docs`). The binary-view path below applies to strict UTF-8 decoding;
+opt-in lossy recovery transcodes child pages to text before envelope parsing.
+
 Previously, an `ORDER BY` binary page was converted to text, parsed again as
 JSON, and its selected payloads re-encoded. The binary cursor now scans the
 entire page to validate structure, reads only `_rid` and `orderByItems` into
