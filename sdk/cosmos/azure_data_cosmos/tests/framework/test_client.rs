@@ -1461,6 +1461,50 @@ impl TestRunContext {
         Self::create_client_with_preferred_region(HUB_REGION, self.gateway_v2_disabled).await
     }
 
+    /// Recreates a container without refreshing the primary client's metadata caches.
+    pub async fn recreate_container_without_cache_refresh(
+        &self,
+        db_client: &DatabaseClient,
+        properties: azure_data_cosmos::models::ContainerProperties,
+        throughput: Option<ThroughputProperties>,
+    ) -> Result<ContainerClient, BoxError> {
+        let database_name = database_name(db_client)?;
+        if let Some(resource_manager) = self.resource_manager() {
+            resource_manager
+                .delete_container(database_name, properties.id.as_ref())
+                .await?;
+            let resource = to_management_container_resource(&properties)?;
+            resource_manager
+                .create_or_update_container(
+                    database_name,
+                    properties.id.as_ref(),
+                    &resource,
+                    throughput
+                        .as_ref()
+                        .map(to_resource_throughput)
+                        .transpose()?,
+                )
+                .await?;
+        } else {
+            let management = self.fresh_management_client().await?;
+            let management_db = management.database_client(database_name);
+            management_db
+                .container_client(properties.id.as_ref(), None)
+                .await?
+                .delete(None)
+                .await?;
+            let options = throughput
+                .map(|throughput| CreateContainerOptions::default().with_throughput(throughput));
+            management_db
+                .create_container(properties.clone(), options)
+                .await?;
+        }
+
+        let readiness = self.fresh_management_client().await?;
+        let readiness_db = readiness.database_client(database_name);
+        Ok(Self::wait_for_container_ready(&readiness_db, properties.id.as_ref()).await?)
+    }
+
     /// Gets the fault injection [`CosmosClient`], if configured.
     ///
     /// Returns `Some(&CosmosClient)` if `TestOptions::with_fault_injection_rules()` or

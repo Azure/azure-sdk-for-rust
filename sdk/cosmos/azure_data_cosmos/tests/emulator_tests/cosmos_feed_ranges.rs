@@ -454,6 +454,29 @@ async fn drain_ids(
     Ok(got)
 }
 
+fn epk_successor(epk: &EffectivePartitionKey) -> Result<EffectivePartitionKey, Box<dyn Error>> {
+    let mut hex = epk.to_hex().into_bytes();
+    for digit in hex.iter_mut().rev() {
+        *digit = match *digit {
+            b'0'..=b'8' | b'A'..=b'E' => *digit + 1,
+            b'9' => b'A',
+            b'F' => b'0',
+            _ => return Err("EPK contains a non-hexadecimal digit".into()),
+        };
+        if *digit != b'0' {
+            return Ok(EffectivePartitionKey::try_from(String::from_utf8(hex)?)?);
+        }
+    }
+    Err("EPK has no representable successor at its current width".into())
+}
+
+#[test]
+fn epk_successor_preserves_width() -> Result<(), Box<dyn Error>> {
+    let epk = EffectivePartitionKey::try_from("3A00FF")?;
+    assert_eq!(epk_successor(&epk)?.to_hex(), "3A0100");
+    Ok(())
+}
+
 /// End-to-end regression test for the cross-partition query **scope bug**: the
 /// planner used to ignore the caller's `FeedScope::range(..)` feed range.
 ///
@@ -564,19 +587,17 @@ pub async fn feed_range_scope_restricts_cross_partition_query() -> Result<(), Bo
                 got_c.difference(&expected_c).collect::<Vec<_>>()
             );
 
-            // Test D: a window that lies ENTIRELY in the gap between two adjacent
-            // EPKs must return zero documents. Appending a whole byte (`80`) to
-            // `X_mid`'s hex keeps `X_mid` as a byte prefix, so the result is
-            // strictly greater than `X_mid` and — because adjacent single-hash
-            // EPKs differ within their leading bytes — strictly less than
-            // `X_{mid+1}`. So `[X_mid || 0x80, X_{mid+1})` contains no doc's EPK.
-            // A full byte is required for valid hexadecimal. This guards against an off-by-one
-            // where the lower bound is treated as inclusive of `X_mid`.
-            let gap_start = EffectivePartitionKey::try_from(format!(
-                "{}80",
-                points[mid].1.min_inclusive().to_hex()
-            ))?;
-            let window_d = FeedRange::new(gap_start, points[mid + 1].1.min_inclusive().clone())?;
+            // Test D: a valid fixed-width window entirely between adjacent EPKs
+            // must not include the document at its lower neighbor.
+            let (gap_start, gap_end) = points
+                .windows(2)
+                .find_map(|pair| {
+                    let start = epk_successor(pair[0].1.min_inclusive()).ok()?;
+                    (start < *pair[1].1.min_inclusive())
+                        .then(|| (start, pair[1].1.min_inclusive().clone()))
+                })
+                .ok_or("seeded EPKs did not contain a representable gap")?;
+            let window_d = FeedRange::new(gap_start, gap_end)?;
             let got_d = drain_ids(&container, FeedScope::range(window_d)).await?;
             assert!(
                 got_d.is_empty(),

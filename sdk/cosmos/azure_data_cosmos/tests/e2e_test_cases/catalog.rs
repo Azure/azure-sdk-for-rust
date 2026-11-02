@@ -1200,6 +1200,11 @@ mod tests {
                 "AAD live-test role must include '{action}'"
             );
         }
+        assert!(
+            !TEST_RESOURCES_BICEP
+                .contains("Microsoft.DocumentDB/databaseAccounts/throughputSettings/write"),
+            "AAD data-plane role must not grant control-plane throughput writes"
+        );
     }
 
     #[test]
