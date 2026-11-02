@@ -1479,6 +1479,7 @@ pub mod models {
         pub fn body(&self) -> Option<&[u8]>;
         pub fn change_feed(container: ContainerReference, target: Option<FeedRange>) -> Self;
         pub fn change_feed_all_versions_and_deletes(container: ContainerReference, target: Option<FeedRange>) -> Self;
+        pub fn change_feed_partition_key_range_id(&self) -> Option<&str>;
         pub fn change_feed_start(&self) -> Option<&ChangeFeedStartFrom>;
         pub fn container(&self) -> Option<&ContainerReference>;
         pub fn create_container(database: DatabaseReference) -> Self;
@@ -1527,6 +1528,7 @@ pub mod models {
         pub fn upsert_item(item: ItemReference) -> Self;
         pub fn with_activity_id(self, activity_id: crate::models::ActivityId) -> Self;
         pub fn with_body(self, body: Vec<u8>) -> Self;
+        pub fn with_change_feed_partition_key_range_id<impl Into<String>: Into<String>>(self, id: impl Into<String>) -> crate::error::Result<Self>;
         pub fn with_change_feed_start(self, start_from: ChangeFeedStartFrom) -> Self;
         pub fn with_if_modified_since(self, value: String) -> Self;
         pub fn with_max_item_count(self, max_item_count: crate::models::MaxItemCountHint) -> Self;
