@@ -835,7 +835,7 @@ impl BlobClient {
     /// The returned [`Response`](azure_core::http::Response) implements the [`BlobLayoutHeaders`] trait, which provides
     /// access to response headers. For example:
     ///
-    /// ```no_run
+    /// ```ignore
     /// use azure_core::{Result, http::{Response, XmlFormat}};
     /// use azure_storage_blob::models::{BlobLayout, BlobLayoutHeaders};
     /// async fn example() -> Result<()> {
@@ -907,7 +907,7 @@ impl BlobClient {
     ///
     /// [`BlobLayoutHeaders`]: crate::generated::models::BlobLayoutHeaders
     #[tracing::function("Storage.Blob.BlobClient.getLayout")]
-    pub fn get_layout(
+    pub(crate) fn get_layout(
         &self,
         options: Option<BlobClientGetLayoutOptions<'_>>,
     ) -> Result<PageIterator<Response<BlobLayout, XmlFormat>>> {

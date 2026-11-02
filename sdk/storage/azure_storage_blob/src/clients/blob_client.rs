@@ -213,12 +213,10 @@ impl BlobClient {
         };
         let range = options.range.clone();
         let layout_aware_routing = options.layout_aware_routing;
-        let layout_endpoint = options.layout_endpoint.clone();
         let behavior = BlobClientDownloadBehavior::new(
             inner_client,
             options.into(),
             layout_aware_routing,
-            layout_endpoint,
             range.clone(),
         );
         let response =
@@ -265,12 +263,10 @@ impl BlobClient {
         };
         let range = options.range.clone();
         let layout_aware_routing = options.layout_aware_routing;
-        let layout_endpoint = options.layout_endpoint.clone();
         let behavior = BlobClientDownloadBehavior::new(
             inner_client,
             options.into(),
             layout_aware_routing,
-            layout_endpoint,
             range.clone(),
         );
         let (_, headers, len) = partitioned_transfer::download_into(
@@ -332,8 +328,6 @@ struct BlobClientDownloadBehavior<'a> {
     client: Arc<GeneratedBlobClient>,
     options: BlobClientDownloadInternalOptions<'a>,
     layout_aware_routing: LayoutAwareRouting,
-    /// Caller-supplied endpoint that pins every request this download issues.
-    layout_endpoint: Option<String>,
     /// The caller-requested range, which `options.range` does not retain because it is rewritten for each partition.
     requested_range: Option<HttpRange>,
     layout_cache: OnceLock<AutoRefreshingCache<(), CachedLayout>>,
@@ -344,28 +338,19 @@ impl<'a> BlobClientDownloadBehavior<'a> {
         client: GeneratedBlobClient,
         options: BlobClientDownloadInternalOptions<'a>,
         layout_aware_routing: LayoutAwareRouting,
-        layout_endpoint: Option<String>,
         requested_range: Option<HttpRange>,
     ) -> Self {
         Self {
             client: Arc::new(client),
             options,
             layout_aware_routing,
-            layout_endpoint,
             requested_range,
             layout_cache: OnceLock::new(),
         }
     }
 
-    /// Resolves the endpoint a request covering `range` should be sent to, preferring a
-    /// caller-supplied endpoint over the fetched layout.
-    ///
-    /// A caller-supplied endpoint applies to every request, including the initial one,
-    /// because it pins the whole call rather than following the blob's layout.
+    /// Resolves the endpoint serving `range` from the fetched layout.
     async fn resolve_endpoint(&self, range: Option<&Range<usize>>) -> Result<Option<String>> {
-        if let Some(endpoint) = self.layout_endpoint.as_ref() {
-            return Ok(Some(endpoint.clone()));
-        }
         let (Some(cache), Some(range)) = (self.layout_cache.get(), range) else {
             return Ok(None);
         };
@@ -426,9 +411,7 @@ impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
     }
 
     async fn prepare(&self, initial_headers: &Headers, etag_lock: Option<&Etag>) -> Result<()> {
-        if self.layout_endpoint.is_some()
-            || self.layout_aware_routing != LayoutAwareRouting::Enabled
-        {
+        if self.layout_aware_routing != LayoutAwareRouting::Enabled {
             return Ok(());
         }
         if initial_headers.get_optional_str(&"x-ms-download-hint".into()) != Some("layout") {
