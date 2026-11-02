@@ -73,12 +73,12 @@ where
 ///
 /// The standard Gateway returns each `queryRanges[].min` / `max` as a hex EPK
 /// string (`""`, `"FF"`, or a specific hash hex). The Gateway V2 thin-client
-/// proxy returns the raw `PartitionKeyInternal` JSON shape — an array of
-/// component values or the special sentinels `[]` (MIN) and
+/// proxy and native QueryPlanInterop return the raw `PartitionKeyInternal`
+/// JSON shape — an array of component values or the special sentinels `[]` (MIN) and
 /// `[{"type":"Infinity"}]` (MAX). To accept both shapes we keep the bounds
 /// as opaque `serde_json::Value` here and resolve them to canonical EPK hex
 /// strings via [`RawQueryPlan::resolve`].
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
 #[serde(default)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RawQueryPlan {
@@ -95,8 +95,8 @@ pub(crate) struct RawQueryPlan {
 }
 
 /// A raw query range as deserialized off the wire, with `min` / `max` still
-/// in proxy or Gateway form. See [`RawQueryPlan`] for the resolution path.
-#[derive(Debug, Deserialize)]
+/// in proxy, Gateway, or native form. See [`RawQueryPlan`] for the resolution path.
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RawQueryRange {
     pub min: serde_json::Value,
