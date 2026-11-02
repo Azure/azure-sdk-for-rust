@@ -25,8 +25,9 @@ use std::sync::Arc;
 ///
 /// This policy occupies the authentication slot in the pipeline and wraps the
 /// bearer token policy it delegates to. When sessions are enabled and a request
-/// is eligible, it signs the request with a session token; otherwise, or when a
-/// session cannot be used, it delegates to the wrapped bearer token policy.
+/// uses HTTPS and is eligible, it signs the request with a session token;
+/// otherwise, or when a session cannot be used, it delegates to the wrapped
+/// bearer token policy.
 #[derive(Debug)]
 pub(crate) struct SessionAuthenticationPolicy {
     provider: Arc<dyn SessionProvider>,
@@ -72,8 +73,8 @@ impl Policy for SessionAuthenticationPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        // Ineligible requests use bearer authentication.
-        if !self.provider.is_request_eligible(request) {
+        // Bearer authentication enforces TLS, including explicit local test exceptions.
+        if request.url().scheme() != "https" || !self.provider.is_request_eligible(request) {
             return self.fallback.send(ctx, request, next).await;
         }
 
@@ -110,10 +111,13 @@ fn clear_session_headers(request: &mut Request) {
 mod tests {
     use super::*;
     use crate::{clients::STORAGE_SCOPE, session::provider::StubSessionProvider};
-    use azure_core::credentials::TokenCredential;
-    use azure_core::http::policies::auth::BearerTokenAuthorizationPolicy;
     use azure_core::{
-        http::{headers::Headers, AsyncRawResponse, Method, Url},
+        credentials::TokenCredential,
+        http::{
+            headers::Headers,
+            policies::auth::{BearerTokenAuthorizationOptions, BearerTokenAuthorizationPolicy},
+            AsyncRawResponse, ClientOptions, Method, Pipeline, Url,
+        },
         Bytes,
     };
     use azure_core_test::credentials::MockCredential;
@@ -150,6 +154,22 @@ mod tests {
                 .map(str::to_string);
             self.seen_auth.lock().unwrap().push(auth);
             Ok(self.responses.lock().unwrap().remove(0))
+        }
+    }
+
+    #[derive(Debug)]
+    struct DowngradeToHttp;
+
+    #[async_trait]
+    impl Policy for DowngradeToHttp {
+        async fn send(
+            &self,
+            ctx: &Context,
+            request: &mut Request,
+            next: &[Arc<dyn Policy>],
+        ) -> PolicyResult {
+            request.url_mut().set_scheme("http").unwrap();
+            next[0].send(ctx, request, &next[1..]).await
         }
     }
 
@@ -213,6 +233,75 @@ mod tests {
         let auth = seen[0].as_deref().unwrap();
         assert!(auth.starts_with("Session token-abc:"), "got: {auth}");
         assert_eq!(invalidated, 0);
+    }
+
+    #[tokio::test]
+    async fn per_call_http_downgrade_is_rejected_before_session_acquisition() {
+        let provider = Arc::new(StubSessionProvider::new(valid_session(), true));
+        let transport = CapturingTransport::new(vec![response(StatusCode::Ok)]);
+        let policy = Arc::new(SessionAuthenticationPolicy::new(
+            provider.clone(),
+            bearer_policy(),
+            "myaccount".to_string(),
+        ));
+        let pipeline = Pipeline::new(
+            None,
+            None,
+            ClientOptions {
+                per_call_policies: vec![Arc::new(DowngradeToHttp)],
+                ..Default::default()
+            },
+            Vec::new(),
+            vec![policy, transport.clone()],
+            None,
+        );
+        let mut request = request();
+
+        let error = pipeline
+            .send(&Context::new(), &mut request, None)
+            .await
+            .expect_err("HTTP downloads must not bypass bearer TLS protection");
+
+        assert_eq!(request.url().scheme(), "http");
+        assert_eq!(error.kind(), &ErrorKind::Other);
+        assert!(error.get_ref().unwrap().to_string().contains("TLS"));
+        assert_eq!(provider.get_calls(), 0);
+        assert!(transport.seen_auth.lock().unwrap().is_empty());
+        assert!(request.headers().get_optional_str(&AUTHORIZATION).is_none());
+        assert!(request.headers().get_optional_str(&MS_DATE).is_none());
+    }
+
+    #[tokio::test]
+    async fn explicitly_allowed_local_http_uses_bearer_without_acquiring_session() {
+        let provider = Arc::new(StubSessionProvider::new(valid_session(), true));
+        let transport = CapturingTransport::new(vec![response(StatusCode::Ok)]);
+        let credential: Arc<dyn TokenCredential> = MockCredential::new().unwrap();
+        let bearer = Arc::new(
+            BearerTokenAuthorizationPolicy::new(credential, vec![STORAGE_SCOPE]).with_options(
+                BearerTokenAuthorizationOptions {
+                    allow_insecure_connections: true,
+                },
+            ),
+        );
+        let policy =
+            SessionAuthenticationPolicy::new(provider.clone(), bearer, "myaccount".to_string());
+        let next: [Arc<dyn Policy>; 1] = [transport.clone()];
+        let mut request = Request::new(
+            Url::parse("http://localhost/mycontainer/myblob").unwrap(),
+            Method::Get,
+        );
+
+        let response = policy
+            .send(&Context::new(), &mut request, &next)
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::Ok);
+        assert_eq!(provider.get_calls(), 0);
+        let seen = transport.seen_auth.lock().unwrap();
+        assert_eq!(seen.len(), 1);
+        assert!(seen[0].as_deref().unwrap().starts_with("Bearer "));
+        assert!(request.headers().get_optional_str(&MS_DATE).is_none());
     }
 
     #[tokio::test]

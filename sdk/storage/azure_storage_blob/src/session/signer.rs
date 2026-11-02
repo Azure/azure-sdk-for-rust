@@ -152,10 +152,35 @@ fn canonicalized_resource(request: &Request, account: &str) -> String {
     resource
 }
 
-/// Collapses folding whitespace in a header value to a single space and trims
-/// the ends, matching the Shared Key canonicalization rules.
+/// Collapses folding whitespace outside quoted strings to a single space and
+/// trims the ends, preserving quoted contents and escapes.
 fn unfold(value: &str) -> String {
-    value.split_whitespace().collect::<Vec<_>>().join(" ")
+    let mut result = String::with_capacity(value.len());
+    let mut quoted = false;
+    let mut escaped = false;
+    let mut pending_space = false;
+
+    for ch in value.chars() {
+        if !quoted && matches!(ch, ' ' | '\t' | '\r' | '\n') {
+            pending_space = !result.is_empty();
+            continue;
+        }
+        if pending_space {
+            result.push(' ');
+            pending_space = false;
+        }
+        result.push(ch);
+
+        if quoted && escaped {
+            escaped = false;
+        } else if quoted && ch == '\\' {
+            escaped = true;
+        } else if ch == '"' {
+            quoted = !quoted;
+        }
+    }
+
+    result
 }
 
 #[cfg(test)]
@@ -221,6 +246,50 @@ mod tests {
             "x-ms-version:2026-02-06\n",
         );
         assert_eq!(canonicalized_headers(&req), expected);
+    }
+
+    #[test]
+    fn unfold_preserves_quoted_whitespace() {
+        for (value, expected) in [
+            (" \talpha\r\n beta\t ", "alpha beta"),
+            (" \t\r\n ", ""),
+            (r#""tag  name"   =   'v'"#, r#""tag  name" = 'v'"#),
+            ("\"  quoted\tvalue  \"  next", "\"  quoted\tvalue  \" next"),
+            (r#""tag\"  name"   = 'v'"#, r#""tag\"  name" = 'v'"#),
+            (r#""tag\\"   =   'v'"#, r#""tag\\" = 'v'"#),
+            ("alpha\u{00a0}beta", "alpha\u{00a0}beta"),
+        ] {
+            assert_eq!(unfold(value), expected, "header value: {value:?}");
+        }
+    }
+
+    #[test]
+    fn sign_preserves_spaces_in_quoted_tag_name() {
+        let mut req = request(
+            "https://myaccount.blob.core.windows.net/mycontainer/myblob",
+            Method::Get,
+        );
+        req.insert_header("x-ms-date", "Fri, 01 Jan 2027 00:00:00 GMT");
+        req.insert_header("x-ms-version", "2026-02-06");
+        req.insert_header("x-ms-if-tags", r#""tag  name" = 'v'"#);
+
+        let expected = concat!(
+            "GET\n\n\n\n\n\n\n\n\n\n\n\n",
+            "x-ms-date:Fri, 01 Jan 2027 00:00:00 GMT\n",
+            "x-ms-if-tags:\"tag  name\" = 'v'\n",
+            "x-ms-version:2026-02-06\n",
+            "/myaccount/mycontainer/myblob",
+        );
+        assert_eq!(string_to_sign(&req, "myaccount"), expected);
+        assert_eq!(
+            sign(&req, "myaccount", "c2Vzc2lvbi1rZXk=").unwrap(),
+            "PuOnFYny6h4qEHkNKQkF4HCWE9jCkXmeldCaKQyls+Y="
+        );
+        assert_eq!(
+            req.headers()
+                .get_optional_str(&HeaderName::from_static("x-ms-if-tags")),
+            Some(r#""tag  name" = 'v'"#)
+        );
     }
 
     #[test]
