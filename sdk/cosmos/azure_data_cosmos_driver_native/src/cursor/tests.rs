@@ -428,6 +428,7 @@ impl Fixture {
         );
         assert_eq!(count, 1);
         cosmos_operation_handle_free(op);
+        assert!(!completion.is_null());
         completion
     }
 
