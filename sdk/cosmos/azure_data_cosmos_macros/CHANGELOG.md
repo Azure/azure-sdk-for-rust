@@ -1,14 +1,10 @@
 # Release History
 
-## 1.1.0-beta.2 (Unreleased)
-
-### Features Added
-
-### Breaking Changes
-
-### Bugs Fixed
+## 1.1.0-beta.2 (2026-11-03)
 
 ### Other Changes
+
+- Version aligned with the Cosmos DB driver; no public API changes. ([#5555](https://github.com/Azure/azure-sdk-for-rust/pull/5555))
 
 ## 1.1.0-beta.1 (2026-10-22)
 
