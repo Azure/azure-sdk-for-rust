@@ -10,6 +10,8 @@
 
 ### Other Changes
 
+- Applied client options to bearer-token authorization so tests can opt in to authenticated HTTP connections with `ClientOptions::allow_insecure_connections`.
+
 ## 1.1.0-beta.2 (2026-10-21)
 
 ### Features Added
