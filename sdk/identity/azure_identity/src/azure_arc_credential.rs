@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{env::Env, ImdsId, TokenCache};
+use crate::{cache::ManagedIdentityTokenCache, env::Env, ImdsId};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind},
@@ -37,8 +37,7 @@ pub(crate) struct AzureArcCredential {
     endpoint: Url,
     pipeline: Pipeline,
     id: ImdsId,
-    cache: TokenCache,
-    #[allow(dead_code)] // this is used in windows through a #[cfg(windows)] directive
+    cache: ManagedIdentityTokenCache,
     env: Env,
 }
 
@@ -98,6 +97,7 @@ impl AzureArcCredential {
             ..client_options
         };
 
+        let cache = ManagedIdentityTokenCache::new(type_name::<Self>(), &client_options);
         let pipeline = Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -110,7 +110,7 @@ impl AzureArcCredential {
             endpoint: token_url,
             pipeline,
             id,
-            cache: TokenCache::new(),
+            cache,
             env,
         }))
     }
@@ -134,10 +134,34 @@ impl AzureArcCredential {
         let mut url = self.endpoint.clone();
         url.query_pairs_mut().extend_pairs(query_items);
 
+        let program_data = self.env.var("PROGRAMDATA");
+        let cache = self.cache.get(
+            &url,
+            program_data
+                .as_deref()
+                .ok()
+                .map(|value| ("PROGRAMDATA", value)),
+        );
         let mut req = Request::new(url, Method::Get);
 
         req.insert_header("metadata", "true");
 
+        if let Some(cache) = cache {
+            return cache
+                .get_token(scopes, options, |_, options| {
+                    self.request_token(req, options, program_data)
+                })
+                .await;
+        }
+        self.request_token(req, options, program_data).await
+    }
+
+    async fn request_token(
+        &self,
+        mut req: Request,
+        options: Option<TokenRequestOptions<'_>>,
+        program_data: azure_core::Result<String>,
+    ) -> azure_core::Result<AccessToken> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut rsp = self
@@ -161,7 +185,7 @@ impl AzureArcCredential {
                     .map(|(_, location)| location.trim())
                 {
                     let challenge_response =
-                        self.retrieve_challenge_response(challenge_location)?;
+                        Self::retrieve_challenge_response(challenge_location, program_data)?;
                     req.insert_header(AUTHORIZATION, format!("Basic {challenge_response}"));
 
                     // try the request again with the challenge response header. Then, drop through to the usual error handling and token extraction
@@ -212,12 +236,17 @@ impl AzureArcCredential {
     }
 
     // This is used for Arc for server's flavour of IMDS, where a challenge-response protocol is implemented.
-    fn retrieve_challenge_response(&self, challenge: &str) -> Result<String, Error> {
+    fn retrieve_challenge_response(
+        challenge: &str,
+        program_data: azure_core::Result<String>,
+    ) -> Result<String, Error> {
         let challenge_path = Path::new(challenge).canonicalize()?;
 
         #[cfg(all(windows, not(test)))]
-        fn get_expected_challenge_base(e: &Env) -> Result<PathBuf, Error> {
-            let program_data_dir = e.var("PROGRAMDATA").map_err(|err| {
+        fn get_expected_challenge_base(
+            program_data: azure_core::Result<String>,
+        ) -> Result<PathBuf, Error> {
+            let program_data_dir = program_data.map_err(|err| {
                 Error::with_error(ErrorKind::Io, err, "Could not find program data directory")
             })?;
             Path::new(&program_data_dir)
@@ -233,7 +262,7 @@ impl AzureArcCredential {
         }
 
         #[cfg(all(not(windows), not(test)))]
-        fn get_expected_challenge_base(_: &Env) -> Result<PathBuf, Error> {
+        fn get_expected_challenge_base(_: azure_core::Result<String>) -> Result<PathBuf, Error> {
             Path::new("/var/opt/azcmagent/tokens/")
                 .to_path_buf()
                 .canonicalize()
@@ -247,14 +276,14 @@ impl AzureArcCredential {
         }
 
         #[cfg(test)]
-        fn get_expected_challenge_base(_: &Env) -> Result<PathBuf, Error> {
+        fn get_expected_challenge_base(_: azure_core::Result<String>) -> Result<PathBuf, Error> {
             // the tests will be using temp for storing test token files
             std::env::temp_dir().canonicalize().map_err(|err| {
                 Error::with_error(ErrorKind::Io, err, "Could not find temp directory")
             })
         }
 
-        let expected_challenge_base = get_expected_challenge_base(&self.env)?;
+        let expected_challenge_base = get_expected_challenge_base(program_data)?;
 
         if !(challenge_path
             .parent()
@@ -294,6 +323,7 @@ impl TokenCredential for AzureArcCredential {
         options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         self.cache
+            .local
             .get_token(scopes, options, |s, o| self.get_token(s, o))
             .await
     }

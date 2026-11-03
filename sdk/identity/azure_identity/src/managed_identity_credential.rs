@@ -24,6 +24,14 @@ pub enum UserAssignedId {
 }
 
 /// Authenticates a managed identity from Azure App Service, Azure Virtual Machine, or Azure Arc.
+///
+/// Tokens are cached in memory across credential instances in the same process. Entries are
+/// isolated by identity, resource, authentication endpoint, and authentication context.
+/// The shared cache is bounded, so entries may be evicted before token expiration.
+///
+/// Credentials configured with a custom transport or custom policies in
+/// [`ManagedIdentityCredentialOptions::client_options`] use an instance-local cache instead.
+/// Reuse credential instances to avoid rebuilding their HTTP pipelines.
 pub struct ManagedIdentityCredential {
     credential: Arc<dyn TokenCredential>,
 }
@@ -196,21 +204,25 @@ mod tests {
     use crate::{
         env::Env,
         tests::{LIVE_TEST_RESOURCE, LIVE_TEST_SCOPES},
+        ImdsManagedIdentityCredential,
     };
     use azure_core::http::{
-        headers::HeaderValue, AsyncRawResponse, Method, RawResponse, Request, StatusCode,
-        Transport, Url,
+        headers::{HeaderName, HeaderValue},
+        AsyncRawResponse, Method, RawResponse, Request, RetryOptions, StatusCode, Transport, Url,
     };
     use azure_core::time::OffsetDateTime;
     use azure_core::Bytes;
     use azure_core::{error::ErrorKind, http::headers::Headers};
     use azure_core_test::{http::MockHttpClient, recorded};
     use futures::FutureExt;
-    use std::time::{SystemTime, UNIX_EPOCH};
-    use std::{env, fs::File, io::Write};
     use std::{
-        fs,
+        env,
+        fs::{self, File},
+        io::{BufRead, BufReader, ErrorKind as IoErrorKind, Write},
+        net::TcpListener,
         sync::atomic::{AtomicUsize, Ordering},
+        thread::{self, JoinHandle},
+        time::{Duration as StdDuration, Instant, SystemTime, UNIX_EPOCH},
     };
 
     const EXPIRES_ON: &str = "EXPIRES_ON";
@@ -832,5 +844,188 @@ mod tests {
             ),
             ManagedIdentitySource::ServiceFabric,
         );
+    }
+
+    fn start_token_endpoint(responses: usize) -> (String, JoinHandle<Vec<String>>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let endpoint = format!(
+            "http://{}/metadata/identity/oauth2/token",
+            listener.local_addr().unwrap()
+        );
+        let server = thread::spawn(move || {
+            (0..responses)
+                .map(|index| {
+                    let deadline = Instant::now() + StdDuration::from_secs(10);
+                    let mut stream = loop {
+                        match listener.accept() {
+                            Ok((stream, _)) => break stream,
+                            Err(err)
+                                if err.kind() == IoErrorKind::WouldBlock
+                                    && Instant::now() < deadline =>
+                            {
+                                thread::sleep(StdDuration::from_millis(1));
+                            }
+                            Err(err) => panic!("token endpoint did not receive request: {err}"),
+                        }
+                    };
+                    stream.set_nonblocking(false).unwrap();
+                    stream
+                        .set_read_timeout(Some(StdDuration::from_secs(10)))
+                        .unwrap();
+                    stream
+                        .set_write_timeout(Some(StdDuration::from_secs(10)))
+                        .unwrap();
+                    let mut request = String::new();
+                    {
+                        let mut reader = BufReader::new(&mut stream);
+                        loop {
+                            let mut line = String::new();
+                            assert!(reader.read_line(&mut line).unwrap() > 0);
+                            if line == "\r\n" {
+                                break;
+                            }
+                            request.push_str(&line);
+                        }
+                    }
+                    let response = serde_json::json!({
+                        "access_token": format!("cached-token-{index}"),
+                        "expires_on": (OffsetDateTime::now_utc() + time::Duration::hours(1))
+                            .unix_timestamp()
+                            .to_string(),
+                        "token_type": "Bearer",
+                        "resource": LIVE_TEST_RESOURCE,
+                    })
+                    .to_string();
+                    write!(
+                        stream,
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                        response.len(),
+                        response
+                    )
+                    .unwrap();
+                    request
+                })
+                .collect()
+        });
+        (endpoint, server)
+    }
+
+    fn local_managed_identity(
+        source: ManagedIdentitySource,
+        endpoint: &str,
+        id: Option<UserAssignedId>,
+        secret: &str,
+    ) -> Arc<dyn TokenCredential> {
+        let client_options = ClientOptions {
+            retry: RetryOptions::none(),
+            ..Default::default()
+        };
+        match source {
+            ManagedIdentitySource::Imds => Arc::new(ImdsManagedIdentityCredential::new(
+                type_name::<VirtualMachineManagedIdentityCredential>(),
+                endpoint.parse().unwrap(),
+                "2019-08-01",
+                HeaderName::from_static("x-identity-header"),
+                IDENTITY_HEADER,
+                id.map(Into::into).unwrap_or(ImdsId::SystemAssigned),
+                client_options,
+                None,
+                Env::from(&[(IDENTITY_HEADER, secret)][..]),
+            )),
+            ManagedIdentitySource::AppService | ManagedIdentitySource::AzureArc => {
+                let source_variable = match source {
+                    ManagedIdentitySource::AppService => IDENTITY_HEADER,
+                    _ => IMDS_ENDPOINT,
+                };
+                ManagedIdentityCredential::new(Some(ManagedIdentityCredentialOptions {
+                    user_assigned_id: id,
+                    client_options,
+                    env: Env::from(&[(IDENTITY_ENDPOINT, endpoint), (source_variable, secret)][..]),
+                }))
+                .unwrap()
+            }
+            _ => panic!("unexpected managed identity source"),
+        }
+    }
+
+    #[tokio::test]
+    async fn managed_identity_sources_share_tokens_across_instances() -> azure_core::Result<()> {
+        let cases = [
+            (ManagedIdentitySource::Imds, None, "first", LIVE_TEST_SCOPES),
+            (
+                ManagedIdentitySource::Imds,
+                Some(UserAssignedId::ClientId("same-id".to_owned())),
+                "first",
+                LIVE_TEST_SCOPES,
+            ),
+            (
+                ManagedIdentitySource::Imds,
+                Some(UserAssignedId::ObjectId("same-id".to_owned())),
+                "first",
+                LIVE_TEST_SCOPES,
+            ),
+            (
+                ManagedIdentitySource::Imds,
+                Some(UserAssignedId::ResourceId("same-id".to_owned())),
+                "first",
+                LIVE_TEST_SCOPES,
+            ),
+            (
+                ManagedIdentitySource::Imds,
+                Some(UserAssignedId::ClientId("other-id".to_owned())),
+                "first",
+                LIVE_TEST_SCOPES,
+            ),
+            (
+                ManagedIdentitySource::AppService,
+                None,
+                "first",
+                LIVE_TEST_SCOPES,
+            ),
+            (
+                ManagedIdentitySource::AppService,
+                None,
+                "second",
+                LIVE_TEST_SCOPES,
+            ),
+            (
+                ManagedIdentitySource::AzureArc,
+                None,
+                "first",
+                LIVE_TEST_SCOPES,
+            ),
+            (
+                ManagedIdentitySource::Imds,
+                None,
+                "first",
+                &["https://other-resource.example/.default"],
+            ),
+        ];
+        let (endpoint, server) = start_token_endpoint(cases.len());
+        for (index, (source, id, secret, scopes)) in cases.iter().enumerate() {
+            let credential = local_managed_identity(*source, &endpoint, id.clone(), secret);
+            let token = tokio::time::timeout(
+                StdDuration::from_secs(5),
+                credential.get_token(scopes, None),
+            )
+            .await
+            .expect("first acquisition timed out")?;
+            assert_eq!(token.token.secret(), format!("cached-token-{index}"));
+        }
+        assert_eq!(server.join().unwrap().len(), cases.len());
+
+        // The endpoint is now closed and every credential that acquired a token has been dropped.
+        for (index, (source, id, secret, scopes)) in cases.iter().enumerate() {
+            let credential = local_managed_identity(*source, &endpoint, id.clone(), secret);
+            let token = tokio::time::timeout(
+                StdDuration::from_secs(5),
+                credential.get_token(scopes, None),
+            )
+            .await
+            .expect("cached acquisition must not contact the closed endpoint")?;
+            assert_eq!(token.token.secret(), format!("cached-token-{index}"));
+        }
+        Ok(())
     }
 }

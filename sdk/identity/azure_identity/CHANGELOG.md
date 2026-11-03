@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- `ManagedIdentityCredential` now shares a bounded, in-memory token cache across instances using standard HTTP pipelines.
+
 ### Breaking Changes
 
 ### Bugs Fixed

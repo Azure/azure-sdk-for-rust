@@ -36,6 +36,12 @@ The Azure Identity library supports authenticating through developer tools to si
 
 A credential is a struct that can acquire access tokens for Azure resources. The Azure Identity library offers various credentials for use by Azure SDK service clients. See the [Credential structures](#credential-structures "Credential structures") section for a list of this library's credentials.
 
+### Token caching
+
+`ManagedIdentityCredential` shares a bounded, in-memory token cache across instances in the same process. The cache separates identities, resources, authentication endpoints, and authentication contexts. Credentials configured with custom HTTP transports or policies keep instance-local caches. Other credential types don't use this shared cache.
+
+Reuse credential and service-client instances when possible. Shared token caching avoids repeated authentication requests, but constructing a credential still creates its HTTP pipeline.
+
 ## Examples
 
 ### Authenticate with `DeveloperToolsCredential`
