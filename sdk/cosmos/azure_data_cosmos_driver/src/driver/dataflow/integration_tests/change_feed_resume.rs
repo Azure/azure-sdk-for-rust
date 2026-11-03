@@ -24,6 +24,7 @@
 //!    so the tests drive an exact number of pages rather than draining to the
 //!    end.
 
+use crate::driver::dataflow::PipelineResponse;
 use std::sync::Arc;
 
 use azure_core::http::{Etag, StatusCode};
@@ -40,8 +41,8 @@ use crate::{
     models::{
         effective_partition_key::EffectivePartitionKey, AccountReference, ActivityId,
         ChangeFeedStartFrom, ContainerProperties, ContainerReference, ContinuationToken,
-        CosmosOperation, CosmosResponse, CosmosResponseHeaders, CosmosStatus, FeedRange,
-        Precondition, ResolvedToken, SystemProperties,
+        CosmosOperation, CosmosResponseHeaders, CosmosStatus, FeedRange, Precondition,
+        ResolvedToken, SystemProperties,
     },
     options::DiagnosticsOptions,
 };
@@ -114,10 +115,10 @@ fn fr(min: &str, max: &str) -> crate::error::Result<FeedRange> {
     )
 }
 
-/// Builds a change feed `CosmosResponse` carrying its continuation in the
+/// Builds a change feed `PipelineResponse` carrying its continuation in the
 /// **ETag** header (the change feed wire contract), plus a body the test can
 /// collect to verify which pages were emitted.
-fn cf_page(body: &[u8], etag: &str) -> CosmosResponse {
+fn cf_page(body: &[u8], etag: &str) -> PipelineResponse {
     let mut diagnostics = DiagnosticsContextBuilder::new(
         ActivityId::new_uuid(),
         Arc::new(DiagnosticsOptions::default()),
@@ -125,7 +126,7 @@ fn cf_page(body: &[u8], etag: &str) -> CosmosResponse {
     diagnostics.set_operation_status(StatusCode::Ok, None);
     let mut headers = CosmosResponseHeaders::new();
     headers.etag = Some(Etag::from(etag.to_owned()));
-    CosmosResponse::new(
+    PipelineResponse::new(
         body.to_vec(),
         headers,
         CosmosStatus::new(StatusCode::Ok),
@@ -140,7 +141,7 @@ struct StartRecordingExecutor {
 }
 
 impl StartRecordingExecutor {
-    fn new(responses: Vec<crate::error::Result<CosmosResponse>>) -> Self {
+    fn new(responses: Vec<crate::error::Result<PipelineResponse>>) -> Self {
         Self {
             inner: MockRequestExecutor::new(responses),
             start_calls: Vec::new(),
@@ -156,7 +157,7 @@ impl RequestExecutor for StartRecordingExecutor {
         target: RequestTarget,
         partition_routing_refresh: PartitionRoutingRefresh,
         continuation: Option<String>,
-    ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
+    ) -> BoxFuture<'a, crate::error::Result<PipelineResponse>> {
         self.start_calls
             .push(operation.change_feed_start().cloned());
         self.precondition_calls

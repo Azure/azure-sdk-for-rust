@@ -14,6 +14,8 @@
 - Preserve query and feed EPK filters and avoid conflicting hierarchical partition-key selectors across gateways, regional retries, and continuation requests. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 - Retry transient account-discovery I/O failures within a bounded budget, including uncertain send outcomes. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 
+- Preserve binary `ORDER BY` source pages internally through merges, DISTINCT, and pagination windows, materializing only final output items into the existing standalone response buffers. ([#5409](https://github.com/Azure/azure-sdk-for-rust/pull/5409))
+
 ## 1.1.0-beta.1 (2026-10-22)
 
 ### Features Added

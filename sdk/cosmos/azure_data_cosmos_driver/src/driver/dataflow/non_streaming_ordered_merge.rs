@@ -7,16 +7,17 @@ use super::{
     binary_heap,
     order_by::compare_key_tuples,
     query_plan::SortOrder,
-    query_response::{parse_envelope_page, EnvelopeRow, PageAggregator},
+    query_response::{parse_envelope_page, EnvelopePayload, EnvelopeRow, PageAggregator},
     recovery_diagnostics::RecoveryDiagnostics,
     PageResult, PipelineContext, PipelineNode, PipelineNodeState,
 };
+#[cfg(test)]
+use crate::driver::dataflow::PipelineBody;
 use crate::{
     error::CosmosError,
     models::{FeedRange, MaxItemCountHint, SessionToken},
 };
 use async_trait::async_trait;
-use serde_json::value::RawValue;
 use std::{cmp::Ordering, collections::VecDeque, mem, sync::Arc};
 
 const DEFAULT_PAGE_SIZE: usize = 100;
@@ -37,7 +38,7 @@ pub(crate) struct NonStreamingOrderedMerge {
     emit_binary: bool,
     retained: Vec<RetainedRow>,
     next_ordinal: u64,
-    results: VecDeque<Box<RawValue>>,
+    results: VecDeque<EnvelopePayload>,
     aggregator: Option<PageAggregator>,
     session_token: Option<SessionToken>,
     buffering_complete: bool,
@@ -275,15 +276,13 @@ impl PipelineNode for NonStreamingOrderedMerge {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        driver::dataflow::{
-            mocks::{response_with_charge, MockLeaf, NoopRequestExecutor, NoopTopologyProvider},
-            order_by::{OrderByItem, OrderByNumber},
-            PipelineContext,
-        },
-        models::ResponseBody,
+    use crate::driver::dataflow::{
+        mocks::{response_with_charge, MockLeaf, NoopRequestExecutor, NoopTopologyProvider},
+        order_by::{OrderByItem, OrderByNumber},
+        PipelineContext,
     };
     use serde_json::json;
+    use serde_json::value::RawValue;
 
     fn envelope(rows: &[(&str, f64, &str)]) -> Vec<u8> {
         serde_json::to_vec(&json!({
@@ -322,8 +321,8 @@ mod tests {
         )
     }
 
-    fn ids(response: &crate::models::CosmosResponse) -> Vec<String> {
-        let ResponseBody::Items(items) = response.body() else {
+    fn ids(response: &crate::driver::dataflow::PipelineResponse) -> Vec<String> {
+        let PipelineBody::Items(items) = response.body() else {
             panic!("expected items response");
         };
         items
@@ -484,13 +483,74 @@ mod tests {
         let PageResult::Page { response, .. } = node.next_page(&mut context).await.unwrap() else {
             panic!("expected page");
         };
-        let ResponseBody::Items(items) = response.body() else {
+        let PipelineBody::Items(items) = response.body() else {
             panic!("expected items response");
         };
         assert_eq!(items.len(), 1);
         assert!(crate::binary_json::is_binary(&items[0]));
         let item: serde_json::Value = crate::binary_json::from_slice(&items[0]).unwrap();
         assert_eq!(item["id"], "a");
+    }
+
+    #[tokio::test]
+    async fn retained_window_keeps_reference_pages_after_merge_drop() {
+        let first =
+            crate::binary_json::test_support::reference_rows(&[("e", 4), ("a", 0)], "first");
+        let second = crate::binary_json::test_support::reference_rows(
+            &[("d", 3), ("b", 1), ("c", 2)],
+            "second",
+        );
+        let snapshot = second.to_vec();
+        let pages = vec![
+            Ok(PageResult::Page {
+                response: response_with_charge(&first, 1.0),
+                is_terminal: false,
+            }),
+            Ok(PageResult::Page {
+                response: response_with_charge(&second, 2.0),
+                is_terminal: true,
+            }),
+        ];
+        let mut node = NonStreamingOrderedMerge::new(
+            Box::new(MockLeaf::with_pages(pages)),
+            vec![SortOrder::Ascending],
+            3,
+            1,
+            2,
+            Some(MaxItemCountHint::Limit(
+                std::num::NonZeroU32::new(1).unwrap(),
+            )),
+            true,
+        );
+        drop(first);
+        drop(second);
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = context(&mut executor, &mut topology);
+        let mut retained = Vec::new();
+        for _ in 0..2 {
+            let PageResult::Page { response, .. } = node.next_page(&mut context).await.unwrap()
+            else {
+                panic!("page")
+            };
+            let PipelineBody::ContextualItems(items) = response.into_body() else {
+                panic!("contextual")
+            };
+            retained.extend(items);
+        }
+        drop(node);
+        assert_eq!(retained.len(), 2);
+        for (item, id) in retained.iter().zip(["b", "c"]) {
+            assert_eq!(item.source_page(), snapshot);
+            assert_eq!(
+                item.source_page().as_ptr(),
+                retained[0].source_page().as_ptr()
+            );
+            assert_eq!(
+                item.deserialize::<serde_json::Value>().unwrap(),
+                json!({"id": id, "shared": "second"})
+            );
+        }
     }
 
     #[tokio::test]
@@ -598,7 +658,7 @@ mod tests {
                     assert!(!terminal);
                     terminal = is_terminal;
                     charge += response.headers().request_charge.unwrap().value();
-                    let ResponseBody::Items(items) = response.body() else {
+                    let PipelineBody::Items(items) = response.body() else {
                         panic!("expected items");
                     };
                     assert!(items.len() <= 2);
@@ -671,7 +731,7 @@ mod tests {
                     OrderByItem::String("a".to_owned()),
                 ],
                 rid: "left".to_owned(),
-                payload: RawValue::from_string("{}".to_owned()).unwrap(),
+                payload: EnvelopePayload::Text(RawValue::from_string("{}".to_owned()).unwrap()),
             },
             ordinal: 0,
         };
@@ -682,7 +742,7 @@ mod tests {
                     OrderByItem::String("b".to_owned()),
                 ],
                 rid: "right".to_owned(),
-                payload: RawValue::from_string("{}".to_owned()).unwrap(),
+                payload: EnvelopePayload::Text(RawValue::from_string("{}".to_owned()).unwrap()),
             },
             ordinal: 1,
         };

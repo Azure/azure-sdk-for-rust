@@ -6,6 +6,8 @@
 
 - Resource-name validation is now enabled by default for request paths and item names supplied to Create, Upsert, transactional batch, and distributed transaction operations; use `CosmosClientBuilder::with_resource_name_validation(false)` only when compatibility requires service-accepted names that are unsafe for point addressing. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
 
+- Binary cross-partition `ORDER BY` avoids intermediate document transcoding during sorting and filtering; final raw item buffers remain independently decodable without changing the response-body API. ([#5409](https://github.com/Azure/azure-sdk-for-rust/pull/5409))
+
 ## 1.1.0-beta.1 (2026-10-22)
 
 ### Features Added

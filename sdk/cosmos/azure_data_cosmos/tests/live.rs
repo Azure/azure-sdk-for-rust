@@ -4,6 +4,8 @@
 // Integration tests compose large Cosmos operation futures on tokio test threads.
 #![allow(clippy::large_futures)]
 
+#[path = "live_tests/binary_order_by.rs"]
+mod binary_order_by;
 #[path = "live_tests/cosmos_query.rs"]
 mod cosmos_query;
 mod framework;
