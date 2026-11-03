@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{get_api_name, request_content, Arguments, AsyncResponseExt as _, ResponseExt as _};
+use super::{get_api_name, AsyncResponseExt as _, ResponseExt as _};
 use crate as azure_core;
 use crate::{
     error::{check_success, ErrorKind, ErrorResponse},
@@ -10,15 +10,18 @@ use crate::{
         pager::{PagerContinuation, PagerOptions, PagerResult, PagerState},
         policies::{Policy, PolicyResult},
         AsyncRawResponse, AsyncResponse, Body, ClientMethodOptions, ClientOptions, Context, Method,
-        PageIterator, Pipeline, RawResponse, Request, RequestContent, Response, RetryOptions,
-        StatusCode, Transport, Url, UrlExt as _,
+        NoFormat, PageIterator, Pipeline, RawResponse, Request, RequestContent, Response,
+        RetryOptions, StatusCode, Transport, Url, UrlExt as _,
     },
     json,
     tracing::{self, PublicApiInstrumentationInformation, Span, Tracer},
     Bytes, Error, Result,
 };
 use async_trait::async_trait;
-use futures::{io::AsyncSeekExt as _, stream, TryStreamExt as _};
+use futures::{
+    io::{AsyncReadExt as _, AsyncSeekExt as _},
+    stream, TryStreamExt as _,
+};
 use serde::{Deserialize, Serialize};
 use std::{
     borrow::Cow,
@@ -35,7 +38,18 @@ struct Model {
 #[derive(Default)]
 struct Options<'a> {
     method_options: ClientMethodOptions<'a>,
+    query_name: Option<Vec<String>>,
+    header_name: Option<String>,
 }
+
+struct GetArguments {
+    path_name: String,
+    version: Option<String>,
+    query_name: Option<Vec<String>>,
+    header_name: Option<String>,
+}
+
+struct OpaqueBody;
 
 #[derive(Default)]
 struct ListOptions<'a> {
@@ -68,10 +82,7 @@ impl TestClient {
             ));
         }
         let endpoint = Url::parse(endpoint)?;
-        options.transport = Some(Transport::with_policy(Arc::new(ServerTransport {
-            server,
-            prefix: endpoint.path().to_owned(),
-        })));
+        options.transport = Some(Transport::with_policy(Arc::new(ServerTransport { server })));
         Ok(Self {
             endpoint,
             pipeline: Pipeline::new(None, None, options, Vec::new(), Vec::new(), None),
@@ -86,13 +97,27 @@ impl TestClient {
         version: Option<&str>,
         options: Option<Options<'_>>,
     ) -> Result<Response<Model>> {
-        let options = options.unwrap_or_default();
+        let mut options = options.unwrap_or_default();
+        options.method_options.context.insert(GetArguments {
+            path_name: name.to_owned(),
+            version: version.map(str::to_owned),
+            query_name: options.query_name.clone(),
+            header_name: options.header_name.clone(),
+        });
         let mut url = self.endpoint.clone();
         url.append_path(&format!("/items/{name}"));
         if let Some(version) = version {
             url.query_pairs_mut().append_pair("version", version);
         }
+        if let Some(names) = &options.query_name {
+            for name in names {
+                url.query_pairs_mut().append_pair("name", name);
+            }
+        }
         let mut request = Request::new(url, Method::Get);
+        if let Some(name) = options.header_name {
+            request.insert_header("name", name);
+        }
         Ok(self
             .pipeline
             .send(&options.method_options.context, &mut request, None)
@@ -103,7 +128,7 @@ impl TestClient {
     #[tracing::function("Test.put")]
     pub async fn put(
         &self,
-        content: RequestContent<Model>,
+        content: RequestContent<OpaqueBody, NoFormat>,
         options: Option<Options<'_>>,
     ) -> Result<Response<Model>> {
         let options = options.unwrap_or_default();
@@ -170,7 +195,10 @@ trait Server: Send + Sync {
         unimplemented!()
     }
 
-    async fn put(&self, _content: RequestContent<Model>) -> Result<AsyncRawResponse> {
+    async fn put(
+        &self,
+        _content: RequestContent<OpaqueBody, NoFormat>,
+    ) -> Result<AsyncRawResponse> {
         unimplemented!()
     }
 
@@ -186,7 +214,6 @@ trait Server: Send + Sync {
 
 struct ServerTransport {
     server: Arc<dyn Server>,
-    prefix: String,
 }
 
 impl std::fmt::Debug for ServerTransport {
@@ -205,15 +232,24 @@ impl Policy for ServerTransport {
     ) -> PolicyResult {
         match get_api_name(context) {
             Some("Test.get") => {
-                let arguments = Arguments::from_request(request, Some(&self.prefix));
-                let name = arguments.path_segments().nth(1).expect("item name");
-                let version = arguments.query().get("version").next();
-                self.server.get(name, version, context).await
+                let arguments = context.value::<GetArguments>().ok_or_else(|| {
+                    Error::with_message(ErrorKind::Other, "Test.get: missing operation arguments")
+                })?;
+                self.server
+                    .get(&arguments.path_name, arguments.version.as_deref(), context)
+                    .await
             }
-            Some("Test.put") => self.server.put(request_content(request).await?).await,
+            Some("Test.put") => self.server.put(request.body().clone().into()).await,
             Some("Test.list") => {
-                let arguments = context.value::<ListArguments>().expect("list arguments");
-                let state = context.value::<PagerState>().expect("pager state").clone();
+                let arguments = context.value::<ListArguments>().ok_or_else(|| {
+                    Error::with_message(ErrorKind::Other, "Test.list: missing operation arguments")
+                })?;
+                let state = context
+                    .value::<PagerState>()
+                    .ok_or_else(|| {
+                        Error::with_message(ErrorKind::Other, "Test.list: missing pager state")
+                    })?
+                    .clone();
                 self.server.list(arguments, state, context).await
             }
             _ => Err(Error::with_message(
@@ -273,9 +309,15 @@ impl Server for TestServer {
         }
     }
 
-    async fn put(&self, content: RequestContent<Model>) -> Result<AsyncRawResponse> {
-        let Body::Bytes(bytes) = content.body() else {
-            panic!("expected buffered content")
+    async fn put(&self, content: RequestContent<OpaqueBody, NoFormat>) -> Result<AsyncRawResponse> {
+        let bytes = match content.body() {
+            Body::Bytes(bytes) => bytes.to_vec(),
+            Body::SeekableStream(stream) => {
+                let mut stream = stream.clone();
+                let mut bytes = Vec::new();
+                stream.read_to_end(&mut bytes).await?;
+                bytes
+            }
         };
         let model: Model = json::from_json(bytes)?;
         AsyncRawResponse::fake_with_model(StatusCode::Ok, Headers::new(), model)
@@ -323,7 +365,7 @@ impl Policy for AddContext {
 }
 
 #[tokio::test]
-async fn client_routes_decoded_arguments_and_preserves_policies_without_tracing() -> Result<()> {
+async fn client_routes_original_arguments_and_preserves_policies_without_tracing() -> Result<()> {
     let server = Arc::new(TestServer::default());
     let client = TestClient::with_fake(
         "ftp://example.com/prefix",
@@ -337,7 +379,7 @@ async fn client_routes_decoded_arguments_and_preserves_policies_without_tracing(
         .get("folder%2Fname%20%2B", Some("version/1 +"), None)
         .await?
         .into_model()?;
-    assert_eq!(response.value, "folder/name +:version/1 +");
+    assert_eq!(response.value, "folder%2Fname%20%2B:version/1 +");
     let contexts = server.contexts.lock().expect("context lock");
     assert_eq!(contexts[0].value::<u32>(), Some(&42));
     Ok(())
@@ -450,14 +492,18 @@ async fn client_pagers_preserve_arguments_when_interleaved_and_resumed() -> Resu
 #[tokio::test]
 async fn router_uses_api_name_instead_of_validating_the_request() -> Result<()> {
     let server = Arc::new(TestServer::default());
-    let transport = ServerTransport {
-        server,
-        prefix: String::new(),
-    };
-    let context = Context::new().with_value(PublicApiInstrumentationInformation::new(
-        "Test.get",
-        Vec::new(),
-    ));
+    let transport = ServerTransport { server };
+    let context = Context::new()
+        .with_value(PublicApiInstrumentationInformation::new(
+            "Test.get",
+            Vec::new(),
+        ))
+        .with_value(GetArguments {
+            path_name: "name".to_owned(),
+            version: None,
+            query_name: None,
+            header_name: None,
+        });
     let mut request = Request::new(
         "https://example.com/anything/name?extra=1&extra=2".parse()?,
         Method::Post,
@@ -480,11 +526,9 @@ async fn router_uses_api_name_instead_of_validating_the_request() -> Result<()> 
 }
 
 #[tokio::test]
-#[should_panic(expected = "item name")]
-async fn missing_required_argument_panics_in_fake_router() {
+async fn missing_required_arguments_return_errors() -> Result<()> {
     let transport = ServerTransport {
         server: Arc::new(TestServer::default()),
-        prefix: String::new(),
     };
     let context = Context::new().with_value(PublicApiInstrumentationInformation::new(
         "Test.get",
@@ -494,114 +538,120 @@ async fn missing_required_argument_panics_in_fake_router() {
         "https://example.com/items".parse().expect("URL"),
         Method::Get,
     );
-    let _ = transport.send(&context, &mut request, &[]).await;
-}
-
-#[test]
-fn decodes_arguments_relative_to_endpoint() -> Result<()> {
-    let request = Request::new(
-        "https://example.com/base/secrets/a%2Fb+%20c?count=7&count=11&value=a%2Bb+c&Value=other&empty=".parse()?,
-        Method::Get,
-    );
-    let arguments = Arguments::from_request(&request, Some("/base/"));
-    assert_eq!(
-        arguments.path_segments().collect::<Vec<_>>(),
-        ["secrets", "a/b+ c"]
-    );
-    assert_eq!(arguments.path_segments().nth(1), Some("a/b+ c"));
-    assert_eq!(
-        arguments.query().get("value").collect::<Vec<_>>(),
-        ["a+b c"]
-    );
-    assert_eq!(arguments.query().get("Value").next(), Some("other"));
-    assert_eq!(arguments.query().get("missing").next(), None);
-    assert_eq!(arguments.query().get("empty").next(), Some(""));
-    assert_eq!(
-        arguments
-            .query()
-            .get("count")
-            .map(|value| value.parse::<i32>().expect("integer"))
-            .collect::<Vec<_>>(),
-        [7, 11]
-    );
-    assert_eq!(
-        arguments
-            .query()
-            .get("count")
-            .next()
-            .map(|value| value.parse::<i32>().expect("integer")),
-        Some(7)
-    );
+    let error = transport
+        .send(&context, &mut request, &[])
+        .await
+        .expect_err("missing arguments");
+    assert!(matches!(error.kind(), ErrorKind::Other));
+    assert!(error
+        .to_string()
+        .contains("Test.get: missing operation arguments"));
     Ok(())
-}
-
-#[test]
-fn preserves_empty_endpoint_segments() -> Result<()> {
-    for path in ["/base", "/base/", "/base//", "/base///"] {
-        let mut endpoint: Url = format!("https://example.com{path}").parse()?;
-        let prefix = endpoint.path().to_owned();
-        endpoint.append_path("/secrets/name/");
-        let request = Request::new(endpoint, Method::Get);
-        let arguments = Arguments::from_request(&request, Some(&prefix));
-        assert_eq!(
-            arguments.path_segments().collect::<Vec<_>>(),
-            ["secrets", "name", ""],
-            "endpoint prefix: {prefix}"
-        );
-    }
-    Ok(())
-}
-
-#[test]
-fn preserves_root_trailing_segments_and_decoded_duplicate_names() -> Result<()> {
-    let request = Request::new(
-        "https://example.com/secrets/?value=1&%76alue=2".parse()?,
-        Method::Get,
-    );
-    let arguments = Arguments::from_request(&request, None);
-    assert_eq!(
-        arguments.path_segments().collect::<Vec<_>>(),
-        ["secrets", ""]
-    );
-    assert_eq!(
-        arguments.query().get("value").collect::<Vec<_>>(),
-        ["1", "2"]
-    );
-    let request = Request::new("https://example.com/".parse()?, Method::Get);
-    assert!(Arguments::from_request(&request, None)
-        .path_segments()
-        .next()
-        .is_none());
-    Ok(())
-}
-
-#[test]
-#[should_panic(expected = "fake request path segment must be valid UTF-8")]
-fn invalid_path_encoding_panics() {
-    let request = Request::new("https://example.com/%FF".parse().expect("URL"), Method::Get);
-    Arguments::from_request(&request, None);
-}
-
-#[test]
-#[should_panic(expected = "fake request path must start with the endpoint prefix")]
-fn mismatched_prefix_panics() {
-    let request = Request::new(
-        "https://example.com/base/secrets".parse().expect("URL"),
-        Method::Get,
-    );
-    Arguments::from_request(&request, Some("/bas"));
 }
 
 #[tokio::test]
-async fn validates_request_content() -> Result<()> {
+async fn preserves_arguments_independently_of_endpoint_segments() -> Result<()> {
+    for path in ["/base", "/base/", "/base//", "/base///"] {
+        let client = TestClient::with_fake(
+            &format!("https://example.com{path}"),
+            Arc::new(TestServer::default()),
+            ClientOptions::default(),
+        )?;
+        for name in ["100%25", "%FF", "a/b", "a b", "a+b", "\u{00e9}", ""] {
+            let response = client.get(name, Some(""), None).await?.into_model()?;
+            assert_eq!(response.value, format!("{name}:"));
+        }
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn preserves_query_arrays_and_header_arguments_without_name_collisions() -> Result<()> {
+    let server = Arc::new(TestServer::default());
+    let client = TestClient::with_fake(
+        "https://example.com",
+        server.clone(),
+        ClientOptions::default(),
+    )?;
+    for query_name in [
+        None,
+        Some(Vec::new()),
+        Some(vec![
+            "".to_owned(),
+            "100%25".to_owned(),
+            "100%25".to_owned(),
+        ]),
+    ] {
+        client
+            .get(
+                "path",
+                None,
+                Some(Options {
+                    query_name: query_name.clone(),
+                    header_name: Some("header".to_owned()),
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        let contexts = server.contexts.lock().expect("context lock");
+        let arguments = contexts
+            .last()
+            .expect("request context")
+            .value::<GetArguments>()
+            .expect("arguments");
+        assert_eq!(arguments.path_name, "path");
+        assert_eq!(arguments.query_name, query_name);
+        assert_eq!(arguments.header_name.as_deref(), Some("header"));
+    }
+    Ok(())
+}
+
+#[test]
+fn wraps_request_content_without_serde_or_validation() -> Result<()> {
     let mut request = Request::new("https://example.com".parse()?, Method::Post);
-    request.set_body(RequestContent::<String>::from(br#""value""#.to_vec()));
-    let content = request_content::<String>(&request).await?;
+    request.set_body(Bytes::from_static(&[0, 255, b'x']));
+    let content: RequestContent<OpaqueBody, NoFormat> = request.body().clone().into();
     match content.body() {
-        Body::Bytes(bytes) => assert_eq!(bytes.as_ref(), br#""value""#),
+        Body::Bytes(bytes) => assert_eq!(bytes.as_ref(), &[0, 255, b'x']),
         _ => panic!("expected buffered content"),
     }
-    assert!(request_content::<Vec<String>>(&request).await.is_err());
+    Ok(())
+}
+
+#[tokio::test]
+async fn forwards_stream_handles_without_buffering_or_resetting() -> Result<()> {
+    for len in [None, Some(3)] {
+        let mut positioned =
+            futures::io::Cursor::new([b"skip".as_slice(), &[0, 255, b'x']].concat());
+        positioned.seek(SeekFrom::Start(4)).await?;
+        for content in [
+            RequestContent::<OpaqueBody, NoFormat>::from_reader(positioned.clone(), len),
+            RequestContent::from_seekable_reader(positioned.clone(), len),
+        ] {
+            let mut request = Request::new("https://example.com".parse()?, Method::Put);
+            request.set_body(content);
+            let content: RequestContent<OpaqueBody, NoFormat> = request.body().clone().into();
+            assert_eq!(content.body().len(), len);
+            let Body::SeekableStream(mut reader) = Body::from(content) else {
+                panic!("stream must not be buffered")
+            };
+            let mut bytes = Vec::new();
+            reader.read_to_end(&mut bytes).await?;
+            assert_eq!(bytes, [0, 255, b'x']);
+        }
+    }
+    let failing = stream::iter([Err::<Bytes, _>(std::io::Error::other("body read failed"))])
+        .into_async_read();
+    let mut request = Request::new("https://example.com".parse()?, Method::Put);
+    request.set_body(RequestContent::<OpaqueBody, NoFormat>::from_reader(
+        failing, None,
+    ));
+    let content: RequestContent<OpaqueBody, NoFormat> = request.body().clone().into();
+    let Body::SeekableStream(mut reader) = Body::from(content) else {
+        panic!("stream must not be read eagerly")
+    };
+    let error = reader.read_to_end(&mut Vec::new()).await.unwrap_err();
+    assert_eq!(error.to_string(), "body read failed");
     Ok(())
 }
 

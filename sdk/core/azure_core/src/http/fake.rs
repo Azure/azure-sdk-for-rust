@@ -10,124 +10,16 @@
 //! bytes, and [`AsyncResponseExt`] to create responses from streams.
 
 use crate::{
-    error::ErrorKind,
-    fmt::SafeDebug,
     http::{
         headers::{Headers, CONTENT_TYPE},
         response::PinnedStream,
-        AsyncRawResponse, AsyncResponse, Body, Context, RawResponse, Request, RequestContent,
-        Response, StatusCode,
+        AsyncRawResponse, AsyncResponse, Context, RawResponse, Response, StatusCode,
     },
     json,
     tracing::PublicApiInstrumentationInformation,
-    Bytes, Error, Result,
+    Bytes, Result,
 };
-use futures::io::AsyncReadExt as _;
-use percent_encoding::percent_decode_str;
-use serde::{de::DeserializeOwned, Serialize};
-use std::collections::BTreeMap;
-
-/// Decoded arguments from a fake HTTP request.
-#[derive(SafeDebug)]
-pub struct Arguments {
-    path: Vec<String>,
-    query: Query,
-}
-
-impl Arguments {
-    /// Extracts arguments, optionally stripping an encoded endpoint path prefix.
-    ///
-    /// Prefixes are stripped at segment boundaries. Path segments are decoded
-    /// individually, preserving encoded slashes within a segment.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the prefix does not match or a path segment is not valid UTF-8.
-    pub fn from_request(request: &Request, strip_prefix: Option<&str>) -> Self {
-        let segments = |path: &str| -> Vec<String> {
-            let path = path.trim_start_matches('/');
-            if path.is_empty() {
-                Vec::new()
-            } else {
-                path.split('/').map(str::to_owned).collect()
-            }
-        };
-        let path = segments(request.url().path());
-        let mut prefix = segments(strip_prefix.unwrap_or_default());
-        if prefix.last().is_some_and(String::is_empty) {
-            prefix.pop();
-        }
-        let path = path
-            .strip_prefix(prefix.as_slice())
-            .expect("fake request path must start with the endpoint prefix")
-            .iter()
-            .map(|segment| {
-                percent_decode_str(segment)
-                    .decode_utf8()
-                    .expect("fake request path segment must be valid UTF-8")
-                    .into_owned()
-            })
-            .collect();
-        let mut query = BTreeMap::<String, Vec<String>>::new();
-        for (name, value) in request.url().query_pairs() {
-            query
-                .entry(name.into_owned())
-                .or_default()
-                .push(value.into_owned());
-        }
-        Self {
-            path,
-            query: Query(query),
-        }
-    }
-
-    /// Returns decoded relative path segments, including empty trailing segments.
-    pub fn path_segments(&self) -> impl Iterator<Item = &str> {
-        self.path.iter().map(String::as_str)
-    }
-
-    /// Returns the decoded query parameters.
-    pub fn query(&self) -> &Query {
-        &self.query
-    }
-}
-
-/// Case-sensitive, decoded query parameters, including repeated values.
-///
-/// Values for each name retain their order in the request URL. URL form decoding
-/// treats `+` as a space.
-#[derive(SafeDebug)]
-pub struct Query(BTreeMap<String, Vec<String>>);
-
-impl Query {
-    /// Returns all decoded values for `name`, or an empty iterator if absent.
-    pub fn get(&self, name: &str) -> impl Iterator<Item = &str> {
-        self.0.get(name).into_iter().flatten().map(String::as_str)
-    }
-}
-
-/// Reads and validates a fake request's JSON body as request content.
-///
-/// Reads streams from their current position without resetting them.
-///
-/// # Errors
-///
-/// Returns an error if reading the body or deserializing it as `T` fails.
-pub async fn request_content<T: DeserializeOwned>(request: &Request) -> Result<RequestContent<T>> {
-    let bytes = match request.body() {
-        Body::Bytes(bytes) => bytes.clone(),
-        Body::SeekableStream(stream) => {
-            let mut stream = stream.clone();
-            let mut bytes = Vec::new();
-            stream.read_to_end(&mut bytes).await.map_err(|err| {
-                Error::with_error(ErrorKind::Io, err, "failed to read fake request body")
-            })?;
-            bytes.into()
-        }
-    };
-    json::from_json::<_, T>(&bytes)?;
-    Ok(RequestContent::from(bytes.to_vec()))
-}
+use serde::Serialize;
 
 /// Returns the borrowed API name from the context, or `None` if absent.
 pub fn get_api_name<'a>(context: &'a Context<'_>) -> Option<&'a str> {
@@ -171,8 +63,10 @@ pub trait ResponseExt: Sized {
     ///
     /// Adds `content-type: application/json` only if a content type isn't specified.
     /// Serialization uses the model's [`Serialize`] implementation, regardless of the
-    /// response's format marker. For response-only fields marked `skip_serializing`,
-    /// pass a JSON value or use [`fake_with_bytes()`](Self::fake_with_bytes) instead.
+    /// response's format marker. Client libraries with fake support enable serialization
+    /// of read-only model fields when their `test` and `unstable_fake` features are enabled.
+    /// For other models whose serializer omits fields, pass a JSON value or use
+    /// [`fake_with_bytes()`](Self::fake_with_bytes).
     ///
     /// # Errors
     ///

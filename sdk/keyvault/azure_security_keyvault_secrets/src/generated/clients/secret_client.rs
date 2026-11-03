@@ -61,6 +61,12 @@ impl SecretClient {
         }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let ctx = {
+            let mut ctx = ctx;
+            crate::clients::fake::with_backup_secret_context(&mut ctx, secret_name);
+            ctx
+        };
         let mut url = self.endpoint.clone();
         let mut path = String::from("/secrets/{secret-name}/backup");
         path = path.replace("{secret-name}", secret_name);
@@ -109,6 +115,12 @@ impl SecretClient {
         }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let ctx = {
+            let mut ctx = ctx;
+            crate::clients::fake::with_delete_secret_context(&mut ctx, secret_name);
+            ctx
+        };
         let mut url = self.endpoint.clone();
         let mut path = String::from("/secrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
@@ -157,6 +169,12 @@ impl SecretClient {
         }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let ctx = {
+            let mut ctx = ctx;
+            crate::clients::fake::with_get_deleted_secret_context(&mut ctx, secret_name);
+            ctx
+        };
         let mut url = self.endpoint.clone();
         let mut path = String::from("/deletedsecrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
@@ -204,6 +222,17 @@ impl SecretClient {
         }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let ctx = {
+            let mut ctx = ctx;
+            crate::clients::fake::with_get_secret_context(
+                &mut ctx,
+                secret_name,
+                options.secret_version.as_deref(),
+                options.out_content_type.as_ref(),
+            );
+            ctx
+        };
         let mut url = self.endpoint.clone();
         let mut path = String::from("/secrets/{secret-name}/{secret-version}");
         path = path.replace("{secret-name}", secret_name);
@@ -537,6 +566,12 @@ impl SecretClient {
         }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let ctx = {
+            let mut ctx = ctx;
+            crate::clients::fake::with_purge_deleted_secret_context(&mut ctx, secret_name);
+            ctx
+        };
         let mut url = self.endpoint.clone();
         let mut path = String::from("/deletedsecrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
@@ -584,6 +619,12 @@ impl SecretClient {
         }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let ctx = {
+            let mut ctx = ctx;
+            crate::clients::fake::with_recover_deleted_secret_context(&mut ctx, secret_name);
+            ctx
+        };
         let mut url = self.endpoint.clone();
         let mut path = String::from("/deletedsecrets/{secret-name}/recover");
         path = path.replace("{secret-name}", secret_name);
@@ -676,6 +717,12 @@ impl SecretClient {
         }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let ctx = {
+            let mut ctx = ctx;
+            crate::clients::fake::with_set_secret_context(&mut ctx, secret_name);
+            ctx
+        };
         let mut url = self.endpoint.clone();
         let mut path = String::from("/secrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
@@ -728,6 +775,16 @@ impl SecretClient {
         }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let ctx = {
+            let mut ctx = ctx;
+            crate::clients::fake::with_update_secret_properties_context(
+                &mut ctx,
+                secret_name,
+                options.secret_version.as_deref(),
+            );
+            ctx
+        };
         let mut url = self.endpoint.clone();
         let mut path = String::from("/secrets/{secret-name}/{secret-version}");
         path = path.replace("{secret-name}", secret_name);

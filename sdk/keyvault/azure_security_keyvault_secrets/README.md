@@ -263,9 +263,6 @@ let secret = client.get_secret("my-secret", None).await?.into_model()?;
 assert_eq!(secret.value.as_deref(), Some("fake value"));
 ```
 
-For fields marked read-only in generated models, serialization may omit them (`skip_serializing`).
-Use `AsyncRawResponse::fake_with_bytes()` with raw JSON if a test must return those fields.
-
 ### Fake service responses
 
 The experimental [fake server example] lists two secrets,

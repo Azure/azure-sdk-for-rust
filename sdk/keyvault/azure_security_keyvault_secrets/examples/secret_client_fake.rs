@@ -10,11 +10,13 @@ use azure_core::{
 };
 use azure_security_keyvault_secrets::{
     clients::fake::SecretServer,
-    models::{SecretClientGetSecretOptions, SecretClientListSecretPropertiesOptions},
+    models::{
+        ListSecretPropertiesResult, Secret, SecretClientGetSecretOptions,
+        SecretClientListSecretPropertiesOptions, SecretProperties,
+    },
     ResourceExt as _, SecretClient,
 };
 use futures::TryStreamExt as _;
-use serde_json::json;
 use std::sync::Arc;
 
 const ENDPOINT: &str = "https://example.vault.azure.net";
@@ -31,15 +33,17 @@ impl SecretServer for FakeSecrets {
         _options: Option<SecretClientListSecretPropertiesOptions<'_>>,
     ) -> Result<AsyncRawResponse> {
         // Listing returns metadata, not values. Omitting nextLink ends the pager after this page.
-        let secrets: Vec<_> = SECRETS
+        let secrets = SECRETS
             .iter()
-            .map(|(name, _)| json!({ "id": format!("{ENDPOINT}/secrets/{name}") }))
+            .map(|(name, _)| {
+                let mut properties = SecretProperties::default();
+                properties.id = Some(format!("{ENDPOINT}/secrets/{name}"));
+                properties
+            })
             .collect();
-        AsyncRawResponse::fake_with_model(
-            StatusCode::Ok,
-            Headers::new(),
-            json!({ "value": secrets }),
-        )
+        let mut result = ListSecretPropertiesResult::default();
+        result.value = secrets;
+        AsyncRawResponse::fake_with_model(StatusCode::Ok, Headers::new(), result)
     }
 
     async fn get_secret(
@@ -48,11 +52,12 @@ impl SecretServer for FakeSecrets {
         _options: Option<SecretClientGetSecretOptions<'_>>,
     ) -> Result<AsyncRawResponse> {
         match SECRETS.iter().find(|(name, _)| *name == secret_name) {
-            Some((name, value)) => AsyncRawResponse::fake_with_model(
-                StatusCode::Ok,
-                Headers::new(),
-                json!({ "id": format!("{ENDPOINT}/secrets/{name}"), "value": value }),
-            ),
+            Some((name, value)) => {
+                let mut secret = Secret::default();
+                secret.id = Some(format!("{ENDPOINT}/secrets/{name}"));
+                secret.value = Some((*value).to_owned());
+                AsyncRawResponse::fake_with_model(StatusCode::Ok, Headers::new(), secret)
+            }
             // Return an HTTP response so the client applies its normal service-error handling.
             None => AsyncRawResponse::fake_with_error(
                 StatusCode::NotFound,

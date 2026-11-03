@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added optional `test` and `unstable_fake` features with experimental `clients::fake::SecretServer` and `SecretClient::with_fake()` APIs to build credential-free tests using the existing client.
+- Generated models serialize read-only fields when both `test` and `unstable_fake` features are enabled so fake servers can return typed response models.
 
 ### Breaking Changes
 

@@ -1013,20 +1013,6 @@ pub mod http {
     #[cfg(all(feature = "test", feature = "unstable_fake"))]
     pub mod fake {
         pub fn get_api_name<'a>(context: &'a crate::http::Context<'_>) -> Option<&'a str>;
-        pub async fn request_content<T: DeserializeOwned>(request: &crate::http::Request) -> crate::Result<crate::http::RequestContent<T>>;
-        #[derive(Debug)]
-        pub struct Arguments {
-        }
-        impl Arguments {
-            pub fn from_request(request: &Request, strip_prefix: Option<&str>) -> Self;
-            pub fn path_segments(&self) -> impl Iterator<Item = &str>;
-            pub fn query(&self) -> &Query;
-        }
-        #[derive(Debug)]
-        pub struct Query(/* private fields */);
-        impl Query {
-            pub fn get(&self, name: &str) -> impl Iterator<Item = &str>;
-        }
         pub trait AsyncResponseExt: ResponseExt {
             fn fake_with_stream(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self;
         }

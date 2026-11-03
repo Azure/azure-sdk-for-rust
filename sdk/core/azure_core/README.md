@@ -620,7 +620,10 @@ Use `new()` with credentials for Azure, or `with_fake()` with a fake server for 
 
 The example returns a model with `fake_with_model()` and an Azure error response
 with `fake_with_error()`. See `ResponseExt` documentation for more
-options to create responses.
+response helpers, including `fake_with_bytes()` and `fake_with_stream()` for non-JSON responses.
+
+With both fake features enabled, generated models serialize read-only fields,
+including when shared models are used in outgoing requests.
 
 Fake pageable operations receive `PagerState` so they can return different responses for the initial page and continuation requests.
 

@@ -7,26 +7,23 @@
 // cspell:ignore skiptoken
 
 use crate::{
-    generated::{
-        clients::SecretClient,
-        models::{
-            RestoreSecretParameters, SecretClientBackupSecretOptions,
-            SecretClientDeleteSecretOptions, SecretClientGetDeletedSecretOptions,
-            SecretClientGetSecretOptions, SecretClientListDeletedSecretPropertiesOptions,
-            SecretClientListSecretPropertiesOptions,
-            SecretClientListSecretPropertiesVersionsOptions, SecretClientPurgeDeletedSecretOptions,
-            SecretClientRecoverDeletedSecretOptions, SecretClientRestoreSecretOptions,
-            SecretClientSetSecretOptions, SecretClientUpdateSecretPropertiesOptions,
-            SetSecretParameters, UpdateSecretPropertiesParameters,
-        },
+    generated::models::{
+        ContentType, RestoreSecretParameters, SecretClientBackupSecretOptions,
+        SecretClientDeleteSecretOptions, SecretClientGetDeletedSecretOptions,
+        SecretClientGetSecretOptions, SecretClientListDeletedSecretPropertiesOptions,
+        SecretClientListSecretPropertiesOptions, SecretClientListSecretPropertiesVersionsOptions,
+        SecretClientPurgeDeletedSecretOptions, SecretClientRecoverDeletedSecretOptions,
+        SecretClientRestoreSecretOptions, SecretClientSetSecretOptions,
+        SecretClientUpdateSecretPropertiesOptions, SetSecretParameters,
+        UpdateSecretPropertiesParameters,
     },
-    SecretClientOptions,
+    SecretClient, SecretClientOptions,
 };
 use async_trait::async_trait;
 use azure_core::{
     error::ErrorKind,
     http::{
-        fake::{self, get_api_name, Arguments},
+        fake::get_api_name,
         pager::{PagerOptions, PagerState},
         policies::{Policy, PolicyResult},
         AsyncRawResponse, ClientMethodOptions, Context, Pipeline, Request, RequestContent,
@@ -49,20 +46,112 @@ const API_RESTORE_SECRET: &str = "KeyVault.restoreSecret";
 const API_SET_SECRET: &str = "KeyVault.setSecret";
 const API_UPDATE_SECRET_PROPERTIES: &str = "KeyVault.updateSecret";
 
-#[derive(Clone, Debug)]
 struct ListDeletedSecretPropertiesContext {
     maxresults: Option<i32>,
 }
 
-#[derive(Clone, Debug)]
 struct ListSecretPropertiesContext {
     maxresults: Option<i32>,
 }
 
-#[derive(Clone, Debug)]
 struct ListSecretPropertiesVersionsContext {
     secret_name: String,
     maxresults: Option<i32>,
+}
+
+struct BackupSecretContext {
+    secret_name: String,
+}
+
+struct DeleteSecretContext {
+    secret_name: String,
+}
+
+struct GetDeletedSecretContext {
+    secret_name: String,
+}
+
+struct GetSecretContext {
+    secret_name: String,
+    secret_version: Option<String>,
+    out_content_type: Option<ContentType>,
+}
+
+struct PurgeDeletedSecretContext {
+    secret_name: String,
+}
+
+struct RecoverDeletedSecretContext {
+    secret_name: String,
+}
+
+struct SetSecretContext {
+    secret_name: String,
+}
+
+struct UpdateSecretPropertiesContext {
+    secret_name: String,
+    secret_version: Option<String>,
+}
+
+pub(crate) fn with_backup_secret_context(context: &mut Context<'_>, secret_name: &str) {
+    context.insert(BackupSecretContext {
+        secret_name: secret_name.to_owned(),
+    });
+}
+
+pub(crate) fn with_delete_secret_context(context: &mut Context<'_>, secret_name: &str) {
+    context.insert(DeleteSecretContext {
+        secret_name: secret_name.to_owned(),
+    });
+}
+
+pub(crate) fn with_get_deleted_secret_context(context: &mut Context<'_>, secret_name: &str) {
+    context.insert(GetDeletedSecretContext {
+        secret_name: secret_name.to_owned(),
+    });
+}
+
+pub(crate) fn with_get_secret_context(
+    context: &mut Context<'_>,
+    secret_name: &str,
+    secret_version: Option<&str>,
+    out_content_type: Option<&ContentType>,
+) {
+    context.insert(GetSecretContext {
+        secret_name: secret_name.to_owned(),
+        secret_version: secret_version.map(str::to_owned),
+        out_content_type: out_content_type.cloned(),
+    });
+}
+
+pub(crate) fn with_purge_deleted_secret_context(context: &mut Context<'_>, secret_name: &str) {
+    context.insert(PurgeDeletedSecretContext {
+        secret_name: secret_name.to_owned(),
+    });
+}
+
+pub(crate) fn with_recover_deleted_secret_context(context: &mut Context<'_>, secret_name: &str) {
+    context.insert(RecoverDeletedSecretContext {
+        secret_name: secret_name.to_owned(),
+    });
+}
+
+pub(crate) fn with_set_secret_context(context: &mut Context<'_>, secret_name: &str) {
+    context.insert(SetSecretContext {
+        secret_name: secret_name.to_owned(),
+    });
+}
+
+pub(crate) fn with_update_secret_properties_context(
+    context: &mut Context<'_>,
+    secret_name: &str,
+    secret_version: Option<&str>,
+) {
+    context.insert(UpdateSecretPropertiesContext {
+        secret_name: secret_name.to_owned(),
+        secret_version: secret_version.map(str::to_owned),
+    });
 }
 
 pub(crate) fn with_list_deleted_secret_properties_context(
@@ -213,16 +302,6 @@ pub trait SecretServer: Send + Sync {
 
 struct SecretServerTransport<T: SecretServer + ?Sized> {
     server: Arc<T>,
-    endpoint: String,
-}
-
-impl<T: SecretServer + ?Sized> SecretServerTransport<T> {
-    fn with_endpoint_base_path(server: Arc<T>, endpoint_base_path: String) -> Self {
-        Self {
-            server,
-            endpoint: endpoint_base_path,
-        }
-    }
 }
 
 impl<T: SecretServer + ?Sized> fmt::Debug for SecretServerTransport<T> {
@@ -245,15 +324,10 @@ impl<T: SecretServer + ?Sized> Policy for SecretServerTransport<T> {
 
         match api_name {
             API_BACKUP_SECRET => {
-                let arguments = Arguments::from_request(request, Some(&self.endpoint));
-                let secret_name = arguments
-                    .path_segments()
-                    .nth(1)
-                    .expect("fake request must contain a secret name")
-                    .to_owned();
+                let arguments = arguments::<BackupSecretContext>(ctx, api_name)?;
                 self.server
                     .backup_secret(
-                        &secret_name,
+                        &arguments.secret_name,
                         Some(SecretClientBackupSecretOptions {
                             method_options: method_options(ctx),
                         }),
@@ -261,15 +335,10 @@ impl<T: SecretServer + ?Sized> Policy for SecretServerTransport<T> {
                     .await
             }
             API_DELETE_SECRET => {
-                let arguments = Arguments::from_request(request, Some(&self.endpoint));
-                let secret_name = arguments
-                    .path_segments()
-                    .nth(1)
-                    .expect("fake request must contain a secret name")
-                    .to_owned();
+                let arguments = arguments::<DeleteSecretContext>(ctx, api_name)?;
                 self.server
                     .delete_secret(
-                        &secret_name,
+                        &arguments.secret_name,
                         Some(SecretClientDeleteSecretOptions {
                             method_options: method_options(ctx),
                         }),
@@ -277,15 +346,10 @@ impl<T: SecretServer + ?Sized> Policy for SecretServerTransport<T> {
                     .await
             }
             API_GET_DELETED_SECRET => {
-                let arguments = Arguments::from_request(request, Some(&self.endpoint));
-                let secret_name = arguments
-                    .path_segments()
-                    .nth(1)
-                    .expect("fake request must contain a secret name")
-                    .to_owned();
+                let arguments = arguments::<GetDeletedSecretContext>(ctx, api_name)?;
                 self.server
                     .get_deleted_secret(
-                        &secret_name,
+                        &arguments.secret_name,
                         Some(SecretClientGetDeletedSecretOptions {
                             method_options: method_options(ctx),
                         }),
@@ -293,54 +357,26 @@ impl<T: SecretServer + ?Sized> Policy for SecretServerTransport<T> {
                     .await
             }
             API_GET_SECRET => {
-                let arguments = Arguments::from_request(request, Some(&self.endpoint));
-                let mut path = arguments.path_segments();
-                let secret_name = path
-                    .nth(1)
-                    .expect("fake request must contain a secret name")
-                    .to_owned();
-                let secret_version = path
-                    .next()
-                    .filter(|value| !value.is_empty())
-                    .map(str::to_owned);
-                let out_content_type = arguments
-                    .query()
-                    .get("outContentType")
-                    .next()
-                    .map(|value| value.parse().expect("fake outContentType must be valid"));
+                let arguments = arguments::<GetSecretContext>(ctx, api_name)?;
                 self.server
                     .get_secret(
-                        &secret_name,
+                        &arguments.secret_name,
                         Some(SecretClientGetSecretOptions {
                             method_options: method_options(ctx),
-                            out_content_type,
-                            secret_version,
+                            out_content_type: arguments.out_content_type.clone(),
+                            secret_version: arguments.secret_version.clone(),
                         }),
                     )
                     .await
             }
             API_LIST_DELETED_SECRET_PROPERTIES => {
                 let state = pager_state(ctx, API_LIST_DELETED_SECRET_PROPERTIES)?;
-                let maxresults = match &state {
-                    PagerState::Initial => {
-                        let arguments = Arguments::from_request(request, Some(&self.endpoint));
-                        let maxresults = arguments.query().get("maxresults").next().map(|value| {
-                            value
-                                .parse::<i32>()
-                                .expect("fake maxresults must be an integer")
-                        });
-                        maxresults
-                    }
-                    PagerState::More(_) => ctx
-                        .value::<ListDeletedSecretPropertiesContext>()
-                        .map(|value| value.maxresults)
-                        .unwrap_or_default(),
-                };
+                let arguments = arguments::<ListDeletedSecretPropertiesContext>(ctx, api_name)?;
                 self.server
                     .list_deleted_secret_properties(
                         state.clone(),
                         Some(SecretClientListDeletedSecretPropertiesOptions {
-                            maxresults,
+                            maxresults: arguments.maxresults,
                             method_options: pager_options(ctx, &state),
                         }),
                     )
@@ -348,26 +384,12 @@ impl<T: SecretServer + ?Sized> Policy for SecretServerTransport<T> {
             }
             API_LIST_SECRET_PROPERTIES => {
                 let state = pager_state(ctx, API_LIST_SECRET_PROPERTIES)?;
-                let maxresults = match &state {
-                    PagerState::Initial => {
-                        let arguments = Arguments::from_request(request, Some(&self.endpoint));
-                        let maxresults = arguments.query().get("maxresults").next().map(|value| {
-                            value
-                                .parse::<i32>()
-                                .expect("fake maxresults must be an integer")
-                        });
-                        maxresults
-                    }
-                    PagerState::More(_) => ctx
-                        .value::<ListSecretPropertiesContext>()
-                        .map(|value| value.maxresults)
-                        .unwrap_or_default(),
-                };
+                let arguments = arguments::<ListSecretPropertiesContext>(ctx, api_name)?;
                 self.server
                     .list_secret_properties(
                         state.clone(),
                         Some(SecretClientListSecretPropertiesOptions {
-                            maxresults,
+                            maxresults: arguments.maxresults,
                             method_options: pager_options(ctx, &state),
                         }),
                     )
@@ -375,51 +397,23 @@ impl<T: SecretServer + ?Sized> Policy for SecretServerTransport<T> {
             }
             API_LIST_SECRET_PROPERTIES_VERSIONS => {
                 let state = pager_state(ctx, API_LIST_SECRET_PROPERTIES_VERSIONS)?;
-                let (secret_name, maxresults) = match &state {
-                    PagerState::Initial => {
-                        let arguments = Arguments::from_request(request, Some(&self.endpoint));
-                        let secret_name = arguments
-                            .path_segments()
-                            .nth(1)
-                            .expect("fake request must contain a secret name")
-                            .to_owned();
-                        let maxresults = arguments.query().get("maxresults").next().map(|value| {
-                            value
-                                .parse::<i32>()
-                                .expect("fake maxresults must be an integer")
-                        });
-                        (secret_name, maxresults)
-                    }
-                    PagerState::More(_) => {
-                        let context = ctx
-                            .value::<ListSecretPropertiesVersionsContext>()
-                            .ok_or_else(|| {
-                                Error::with_message(ErrorKind::Other, format!("{}: missing list secret versions context in request context", API_LIST_SECRET_PROPERTIES_VERSIONS))
-                            })?;
-                        (context.secret_name.clone(), context.maxresults)
-                    }
-                };
+                let arguments = arguments::<ListSecretPropertiesVersionsContext>(ctx, api_name)?;
                 self.server
                     .list_secret_properties_versions(
-                        &secret_name,
+                        &arguments.secret_name,
                         state.clone(),
                         Some(SecretClientListSecretPropertiesVersionsOptions {
-                            maxresults,
+                            maxresults: arguments.maxresults,
                             method_options: pager_options(ctx, &state),
                         }),
                     )
                     .await
             }
             API_PURGE_DELETED_SECRET => {
-                let arguments = Arguments::from_request(request, Some(&self.endpoint));
-                let secret_name = arguments
-                    .path_segments()
-                    .nth(1)
-                    .expect("fake request must contain a secret name")
-                    .to_owned();
+                let arguments = arguments::<PurgeDeletedSecretContext>(ctx, api_name)?;
                 self.server
                     .purge_deleted_secret(
-                        &secret_name,
+                        &arguments.secret_name,
                         Some(SecretClientPurgeDeletedSecretOptions {
                             method_options: method_options(ctx),
                         }),
@@ -427,15 +421,10 @@ impl<T: SecretServer + ?Sized> Policy for SecretServerTransport<T> {
                     .await
             }
             API_RECOVER_DELETED_SECRET => {
-                let arguments = Arguments::from_request(request, Some(&self.endpoint));
-                let secret_name = arguments
-                    .path_segments()
-                    .nth(1)
-                    .expect("fake request must contain a secret name")
-                    .to_owned();
+                let arguments = arguments::<RecoverDeletedSecretContext>(ctx, api_name)?;
                 self.server
                     .recover_deleted_secret(
-                        &secret_name,
+                        &arguments.secret_name,
                         Some(SecretClientRecoverDeletedSecretOptions {
                             method_options: method_options(ctx),
                         }),
@@ -443,7 +432,8 @@ impl<T: SecretServer + ?Sized> Policy for SecretServerTransport<T> {
                     .await
             }
             API_RESTORE_SECRET => {
-                let parameters = fake::request_content::<RestoreSecretParameters>(request).await?;
+                let parameters: RequestContent<RestoreSecretParameters> =
+                    request.body().clone().into();
                 self.server
                     .restore_secret(
                         parameters,
@@ -454,16 +444,11 @@ impl<T: SecretServer + ?Sized> Policy for SecretServerTransport<T> {
                     .await
             }
             API_SET_SECRET => {
-                let arguments = Arguments::from_request(request, Some(&self.endpoint));
-                let secret_name = arguments
-                    .path_segments()
-                    .nth(1)
-                    .expect("fake request must contain a secret name")
-                    .to_owned();
-                let parameters = fake::request_content::<SetSecretParameters>(request).await?;
+                let arguments = arguments::<SetSecretContext>(ctx, api_name)?;
+                let parameters: RequestContent<SetSecretParameters> = request.body().clone().into();
                 self.server
                     .set_secret(
-                        &secret_name,
+                        &arguments.secret_name,
                         parameters,
                         Some(SecretClientSetSecretOptions {
                             method_options: method_options(ctx),
@@ -472,25 +457,16 @@ impl<T: SecretServer + ?Sized> Policy for SecretServerTransport<T> {
                     .await
             }
             API_UPDATE_SECRET_PROPERTIES => {
-                let arguments = Arguments::from_request(request, Some(&self.endpoint));
-                let mut path = arguments.path_segments();
-                let secret_name = path
-                    .nth(1)
-                    .expect("fake request must contain a secret name")
-                    .to_owned();
-                let secret_version = path
-                    .next()
-                    .filter(|value| !value.is_empty())
-                    .map(str::to_owned);
-                let parameters =
-                    fake::request_content::<UpdateSecretPropertiesParameters>(request).await?;
+                let arguments = arguments::<UpdateSecretPropertiesContext>(ctx, api_name)?;
+                let parameters: RequestContent<UpdateSecretPropertiesParameters> =
+                    request.body().clone().into();
                 self.server
                     .update_secret_properties(
-                        &secret_name,
+                        &arguments.secret_name,
                         parameters,
                         Some(SecretClientUpdateSecretPropertiesOptions {
                             method_options: method_options(ctx),
-                            secret_version,
+                            secret_version: arguments.secret_version.clone(),
                         }),
                     )
                     .await
@@ -532,9 +508,9 @@ impl SecretClient {
         let endpoint = Url::parse(endpoint)?;
 
         let mut client_options = options.client_options;
-        client_options.transport = Some(Transport::with_policy(Arc::new(
-            SecretServerTransport::with_endpoint_base_path(server, endpoint.path().to_owned()),
-        )));
+        client_options.transport = Some(Transport::with_policy(Arc::new(SecretServerTransport {
+            server,
+        })));
 
         Ok(Self {
             endpoint,
@@ -560,6 +536,15 @@ impl SecretClient {
             ),
         })
     }
+}
+
+fn arguments<'a, T: Send + Sync + 'static>(ctx: &'a Context<'_>, api_name: &str) -> Result<&'a T> {
+    ctx.value::<T>().ok_or_else(|| {
+        Error::with_message(
+            ErrorKind::Other,
+            format!("{api_name}: missing operation arguments in request context"),
+        )
+    })
 }
 
 fn method_options(ctx: &Context<'_>) -> ClientMethodOptions<'static> {

@@ -40,7 +40,7 @@ impl Default for SecretClientOptions {
     }
 }
 
-impl crate::generated::clients::SecretClient {
+impl SecretClient {
     /// Creates a new SecretClient, using Entra ID authentication.
     ///
     /// # Arguments
