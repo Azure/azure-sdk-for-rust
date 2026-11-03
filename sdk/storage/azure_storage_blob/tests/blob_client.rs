@@ -22,9 +22,9 @@ use azure_storage_blob::{
         BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
         BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlobClientStartCopyFromUrlResultHeaders, BlobTags, BlockBlobClientUploadOptions,
-        CopyStatus, ImmutabilityPolicyMode, KeyInfo, LeaseState, RehydratePriority,
-        StorageErrorCode,
+        BlobClientStartCopyFromUrlResultHeaders, BlobDownloadProperties, BlobTags,
+        BlockBlobClientUploadOptions, CopyStatus, ImmutabilityPolicyMode, KeyInfo, LeaseState,
+        RehydratePriority, StorageErrorCode,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, StorageError,
 };
@@ -49,6 +49,53 @@ use std::{
     time::Duration,
 };
 use tokio::time;
+
+#[test]
+fn download_properties_supports_external_struct_literals() {
+    let properties = BlobDownloadProperties {
+        etag: None,
+        last_modified: None,
+        created_on: None,
+        last_accessed: None,
+        content_length: None,
+        content_type: None,
+        cache_control: None,
+        content_disposition: None,
+        content_encoding: None,
+        content_language: None,
+        content_md5: None,
+        content_crc64: None,
+        blob_content_md5: None,
+        blob_type: None,
+        blob_sequence_number: None,
+        blob_committed_block_count: None,
+        is_sealed: None,
+        metadata: HashMap::new(),
+        version_id: None,
+        lease_state: None,
+        lease_status: None,
+        lease_duration: None,
+        legal_hold: None,
+        immutability_policy_mode: None,
+        immutability_policy_expires_on: None,
+        copy_completed_on: None,
+        copy_id: None,
+        copy_progress: None,
+        copy_source: None,
+        copy_status: None,
+        copy_status_description: None,
+        object_replication_policy_id: None,
+        object_replication_rules: HashMap::new(),
+        tag_count: None,
+        encryption_scope: None,
+        encryption_key_sha256: None,
+        access_tier: None,
+        access_tier_changed_on: None,
+        access_tier_inferred: None,
+    };
+
+    assert!(properties.content_length.is_none());
+}
 
 #[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -482,6 +529,61 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(17, response.properties.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(b"hello rusty world".as_ref(), &body_data[..]);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_download_blob_ranged_checksums(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let data = b"hello rusty world";
+
+    blob_client
+        .upload(RequestContent::from(data.to_vec()), None)
+        .await?;
+
+    // Range Download with CRC64 Scenario
+    let response = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            range: Some((0..17u64).into()),
+            range_get_content_crc64: Some(true),
+            ..Default::default()
+        }))
+        .await?;
+    assert!(response.properties.content_crc64.is_some());
+    assert!(response.properties.content_md5.is_none());
+    let body_data = response.body.collect().await?;
+    assert_eq!(data.as_ref(), &body_data[..]);
+
+    // Range Download with MD5 Scenario
+    let response = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            range: Some((0..17u64).into()),
+            range_get_content_md5: Some(true),
+            ..Default::default()
+        }))
+        .await?;
+    assert!(response.properties.content_md5.is_some());
+    assert!(response.properties.content_crc64.is_none());
+    let body_data = response.body.collect().await?;
+    assert_eq!(data.as_ref(), &body_data[..]);
+
+    // Range Download without Checksum Scenario (neither requested, partial range)
+    let response = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            range: Some((0..10u64).into()),
+            ..Default::default()
+        }))
+        .await?;
+    assert!(response.properties.content_crc64.is_none());
+    assert!(response.properties.content_md5.is_none());
+    let body_data = response.body.collect().await?;
+    assert_eq!(&data[..10], &body_data[..]);
 
     container_client.delete(None).await?;
     Ok(())
