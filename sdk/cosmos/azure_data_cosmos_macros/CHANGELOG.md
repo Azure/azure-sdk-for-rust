@@ -4,7 +4,7 @@
 
 ### Other Changes
 
-- Version aligned with the Cosmos DB driver; no public API changes.
+- Version aligned with the Cosmos DB driver; no public API changes. ([#5555](https://github.com/Azure/azure-sdk-for-rust/pull/5555))
 
 ## 1.1.0-beta.1 (2026-10-22)
 
