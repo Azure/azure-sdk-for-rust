@@ -16,7 +16,7 @@
 
 ### Breaking Changes
 
-- `BlobContainerClient::list_blobs()` now returns `Result<Pager<ListBlobsResponse, AutoFormat>>` instead of `Result<Pager<ListBlobsResponse, XmlFormat>>`. It requests Apache Arrow with XML fallback when the `arrow` feature is enabled and XML only otherwise.
+- `BlobContainerClient::list_blobs()` now returns `Result<Pager<ListBlobsResponse, AutoFormat>>` instead of `Result<Pager<ListBlobsResponse, XmlFormat>>`. It requests Apache Arrow with XML fallback when the `arrow` feature is enabled and XML only otherwise. Callers relying on type inference need no code changes unless their code requires the previous `XmlFormat` return type.
 
 ## 1.1.0 (2026-09-08)
 
