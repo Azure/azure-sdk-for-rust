@@ -10,6 +10,8 @@
 
 ### Other Changes
 
+- Applied client options to bearer-token authorization policies.
+
 ## 1.1.0 (2026-09-08)
 
 ### Features Added

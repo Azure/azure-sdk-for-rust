@@ -432,6 +432,16 @@ fn pk_definition() -> PartitionKeyDefinition {
     PartitionKeyDefinition::new(vec![Cow::Borrowed("/pk")])
 }
 
+fn hash_v2_successor(epk: &EffectivePartitionKey) -> Result<EffectivePartitionKey, Box<dyn Error>> {
+    let hex = epk.to_hex();
+    assert_eq!(hex.len(), 32, "expected a full-width Hash V2 EPK");
+    let value = u128::from_str_radix(&hex, 16)?;
+    let successor = value.checked_add(1).expect("Hash V2 EPK cannot overflow");
+    Ok(EffectivePartitionKey::try_from(format!(
+        "{successor:032X}"
+    ))?)
+}
+
 /// Runs a feed-range-scoped `SELECT *` and returns the set of returned ids.
 ///
 /// Drains the result set page-by-page (via [`into_pages`]) rather than
@@ -452,29 +462,6 @@ async fn drain_ids(
         }
     }
     Ok(got)
-}
-
-fn epk_successor(epk: &EffectivePartitionKey) -> Result<EffectivePartitionKey, Box<dyn Error>> {
-    let mut hex = epk.to_hex().into_bytes();
-    for digit in hex.iter_mut().rev() {
-        *digit = match *digit {
-            b'0'..=b'8' | b'A'..=b'E' => *digit + 1,
-            b'9' => b'A',
-            b'F' => b'0',
-            _ => return Err("EPK contains a non-hexadecimal digit".into()),
-        };
-        if *digit != b'0' {
-            return Ok(EffectivePartitionKey::try_from(String::from_utf8(hex)?)?);
-        }
-    }
-    Err("EPK has no representable successor at its current width".into())
-}
-
-#[test]
-fn epk_successor_preserves_width() -> Result<(), Box<dyn Error>> {
-    let epk = EffectivePartitionKey::try_from("3A00FF")?;
-    assert_eq!(epk_successor(&epk)?.to_hex(), "3A0100");
-    Ok(())
 }
 
 /// End-to-end regression test for the cross-partition query **scope bug**: the
@@ -587,17 +574,12 @@ pub async fn feed_range_scope_restricts_cross_partition_query() -> Result<(), Bo
                 got_c.difference(&expected_c).collect::<Vec<_>>()
             );
 
-            // Test D: a valid fixed-width window entirely between adjacent EPKs
-            // must not include the document at its lower neighbor.
-            let (gap_start, gap_end) = points
-                .windows(2)
-                .find_map(|pair| {
-                    let start = epk_successor(pair[0].1.min_inclusive()).ok()?;
-                    (start < *pair[1].1.min_inclusive())
-                        .then(|| (start, pair[1].1.min_inclusive().clone()))
-                })
-                .ok_or("seeded EPKs did not contain a representable gap")?;
-            let window_d = FeedRange::new(gap_start, gap_end)?;
+            // Test D: [successor(X_mid), X_{mid+1}) contains no seeded EPK.
+            // Keep the 16-byte Hash V2 width; appending a byte produces an over-width bound.
+            let gap_start = hash_v2_successor(points[mid].1.min_inclusive())?;
+            assert!(gap_start > *points[mid].1.min_inclusive());
+            assert!(gap_start < *points[mid + 1].1.min_inclusive());
+            let window_d = FeedRange::new(gap_start, points[mid + 1].1.min_inclusive().clone())?;
             let got_d = drain_ids(&container, FeedScope::range(window_d)).await?;
             assert!(
                 got_d.is_empty(),
@@ -612,4 +594,60 @@ pub async fn feed_range_scope_restricts_cross_partition_query() -> Result<(), Bo
         Some(TestOptions::for_emulator()),
     )
     .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        hash_v2_successor, pk_definition, EffectivePartitionKey, FeedRange, PartitionKey, DOC_COUNT,
+    };
+
+    #[test]
+    fn hash_v2_successor_preserves_width_and_carries() -> Result<(), Box<dyn std::error::Error>> {
+        for (input, expected) in [
+            (
+                "00000000000000000000000000000000",
+                "00000000000000000000000000000001",
+            ),
+            (
+                "23C57507EE92D198A6A61C0C7A22BBC2",
+                "23C57507EE92D198A6A61C0C7A22BBC3",
+            ),
+            (
+                "23C57507EE92D198A6A61C0C7A22BBFF",
+                "23C57507EE92D198A6A61C0C7A22BC00",
+            ),
+            (
+                "23C57507EE92D198FFFFFFFFFFFFFFFF",
+                "23C57507EE92D1990000000000000000",
+            ),
+        ] {
+            let epk = EffectivePartitionKey::try_from(input)?;
+            let successor = hash_v2_successor(&epk)?;
+            assert_eq!(successor.to_hex(), expected);
+            assert!(successor > epk);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn seeded_gap_is_nonempty_and_excludes_all_documents() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let definition = pk_definition();
+        let mut points: Vec<_> = (0..DOC_COUNT)
+            .map(|i| {
+                FeedRange::for_partition(PartitionKey::from(format!("doc-{i:03}")), &definition)
+            })
+            .collect();
+        points.sort_by(|a, b| a.min_inclusive().cmp(b.min_inclusive()));
+        let mid = points.len() / 2;
+        let start = hash_v2_successor(points[mid].min_inclusive())?;
+        let end = points[mid + 1].min_inclusive();
+        assert!(start > *points[mid].min_inclusive());
+        assert!(start < *end);
+        assert!(points
+            .iter()
+            .all(|point| { point.min_inclusive() < &start || point.min_inclusive() >= end }));
+        Ok(())
+    }
 }
