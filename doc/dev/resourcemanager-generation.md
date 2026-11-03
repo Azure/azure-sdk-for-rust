@@ -199,13 +199,10 @@ rather than reimplementing these protocol rules in emitter fixtures.
 
 Follow the base guide's [enum wire-contract testing](https://github.com/Azure/azure-sdk-for-rust/blob/main/doc/dev/typespec-based-generation.md#enum-wire-contract-tests)
 for both offline serialization checks and recorded service responses. Group live
-scenarios by related operations, not by enum declaration: RSA keys, EC curves,
-rotation policy, secrets, network rules, access policies, and vault recovery can
-be separate subjects. Reuse one test-owned vault for related cases, such as
-multiple EC curves, rather than creating a vault per enum value.
+scenarios by related operations, not by enum declaration. Several enums may be
+used in a single operation. Focus on as few operations as necessary to test enums.
 
-Keep standard vault and managed HSM scenarios in separate test files. Document
-resource counts, provisioning cycles, cleanup, and any dedicated or activated
+Document resource counts, provisioning cycles, cleanup, and any dedicated or activated
 fixtures in the crate's `CONTRIBUTING.md`. Leave scenarios requiring unavailable
 provisioning explicitly ignored with a reason; an ignored scenario is not live
 coverage.
