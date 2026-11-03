@@ -1,13 +1,12 @@
 # Release History
 
-## 1.1.0-beta.2 (Unreleased)
+## 1.1.0-beta.3 (Unreleased)
 
 ### Features Added
 
 ### Breaking Changes
 
 - Consumed legacy single-request prefix checkpoints cannot safely resume across physical ranges and are rejected; start a new feed with an explicit start position. Older unpolled single-request checkpoints require the original start on resume. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
-- Resource-name validation is now enabled by default for request paths and item names supplied to Create, Upsert, transactional batch, and distributed transaction operations; use `CosmosClientBuilder::with_resource_name_validation(false)` only when compatibility requires service-accepted names that are unsafe for point addressing. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
 
 ### Bugs Fixed
 
@@ -18,6 +17,12 @@
 
 - New query and change-feed checkpoints use `c2.` and cannot be read by SDKs that only support `c1.`. Query checkpoint payloads are unchanged, and supported legacy `c1.` checkpoints remain readable. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+
+## 1.1.0-beta.2 (2026-11-03)
+
+### Breaking Changes
+
+- Resource-name validation is now enabled by default for request paths and item names supplied to Create, Upsert, transactional batch, and distributed transaction operations; use `CosmosClientBuilder::with_resource_name_validation(false)` only when compatibility requires service-accepted names that are unsafe for point addressing. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
 
 ## 1.1.0-beta.1 (2026-10-22)
 
