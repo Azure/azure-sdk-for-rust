@@ -1807,6 +1807,12 @@ pub mod json {
     pub fn from_json<S, T>(body: S) -> crate::error::Result<T> where S: AsRef<[u8]>, T: DeserializeOwned;
     pub fn to_json<T>(value: &T) -> crate::error::Result<bytes::Bytes> where T: ?Sized + Serialize;
 }
+pub mod serde {
+    pub fn skip_serializing_read_only<T: ?Sized>(_value: &T) -> bool;
+    pub mod option {
+        pub fn skip_serializing_read_only<T>(value: &Option<T>) -> bool;
+    }
+}
 pub mod sleep {
     pub async fn sleep(duration: crate::time::Duration);
 }

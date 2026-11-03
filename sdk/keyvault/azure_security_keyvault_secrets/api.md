@@ -97,8 +97,7 @@ pub mod models {
     #[non_exhaustive]
     pub struct BackupSecretResult {
         #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", serialize_with = "base64::option::serialize_url_safe")]
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub value: Option<Vec<u8>>,
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
@@ -109,24 +108,20 @@ pub mod models {
         #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
         pub content_type: Option<String>,
         #[serde(default, rename = "deletedDate", with = "azure_core::time::unix_time::option")]
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub deleted_date: Option<azure_core::time::OffsetDateTime>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub id: Option<String>,
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub kid: Option<String>,
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub managed: Option<bool>,
         #[serde(rename = "previousVersion", skip_serializing_if = "Option::is_none")]
         pub previous_version: Option<String>,
         #[serde(rename = "recoveryId", skip_serializing_if = "Option::is_none")]
         pub recovery_id: Option<String>,
         #[serde(default, rename = "scheduledPurgeDate", with = "azure_core::time::unix_time::option")]
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub scheduled_purge_date: Option<azure_core::time::OffsetDateTime>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tags: Option<std::collections::HashMap<String, String>>,
@@ -141,51 +136,43 @@ pub mod models {
         #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
         pub content_type: Option<String>,
         #[serde(default, rename = "deletedDate", with = "azure_core::time::unix_time::option")]
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub deleted_date: Option<azure_core::time::OffsetDateTime>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub id: Option<String>,
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub managed: Option<bool>,
         #[serde(rename = "recoveryId", skip_serializing_if = "Option::is_none")]
         pub recovery_id: Option<String>,
         #[serde(default, rename = "scheduledPurgeDate", with = "azure_core::time::unix_time::option")]
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub scheduled_purge_date: Option<azure_core::time::OffsetDateTime>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tags: Option<std::collections::HashMap<String, String>>,
     }
     #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
     pub struct KeyVaultError {
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub error: Option<KeyVaultErrorError>,
     }
     #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
     pub struct KeyVaultErrorError {
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub code: Option<String>,
         #[serde(rename = "innererror")]
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub inner_error: Option<Box<KeyVaultErrorError>>,
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub message: Option<String>,
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
     pub struct ListDeletedSecretPropertiesResult {
         #[serde(rename = "nextLink")]
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub next_link: Option<String>,
         #[serde(default)]
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
+        #[serde(skip_serializing_if = "skip_serializing_read_only")]
         pub value: Vec<DeletedSecretProperties>,
     }
     #[async_trait]
@@ -198,11 +185,10 @@ pub mod models {
     #[non_exhaustive]
     pub struct ListSecretPropertiesResult {
         #[serde(rename = "nextLink")]
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub next_link: Option<String>,
         #[serde(default)]
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
+        #[serde(skip_serializing_if = "skip_serializing_read_only")]
         pub value: Vec<SecretProperties>,
     }
     #[async_trait]
@@ -229,11 +215,9 @@ pub mod models {
         pub content_type: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub id: Option<String>,
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub kid: Option<String>,
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub managed: Option<bool>,
         #[serde(rename = "previousVersion", skip_serializing_if = "Option::is_none")]
         pub previous_version: Option<String>,
@@ -245,8 +229,7 @@ pub mod models {
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     pub struct SecretAttributes {
         #[serde(default, with = "azure_core::time::unix_time::option")]
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub created: Option<azure_core::time::OffsetDateTime>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub enabled: Option<bool>,
@@ -255,16 +238,13 @@ pub mod models {
         #[serde(default, rename = "nbf", skip_serializing_if = "Option::is_none", with = "azure_core::time::unix_time::option")]
         pub not_before: Option<azure_core::time::OffsetDateTime>,
         #[serde(rename = "recoverableDays")]
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub recoverable_days: Option<i32>,
         #[serde(rename = "recoveryLevel")]
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub recovery_level: Option<super::DeletionRecoveryLevel>,
         #[serde(default, with = "azure_core::time::unix_time::option")]
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub updated: Option<azure_core::time::OffsetDateTime>,
     }
     #[derive(Clone, Debug, Default)]
@@ -339,8 +319,7 @@ pub mod models {
         pub content_type: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub id: Option<String>,
-        #[cfg_attr(not(all(feature = "test", feature = "unstable_fake")), serde(skip_serializing))]
-        #[cfg_attr(all(feature = "test", feature = "unstable_fake"), serde(skip_serializing_if = "Option::is_none"))]
+        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
         pub managed: Option<bool>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tags: Option<std::collections::HashMap<String, String>>,

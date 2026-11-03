@@ -93,14 +93,19 @@ Server implementations decide whether and how to decode content.
 
 ## Serialize read-only response fields for fakes
 
-Make read-only-field `serde(skip_serializing)` conditional on
-`not(all(feature = "test", feature = "unstable_fake"))`. With both features enabled,
-serialize populated read-only fields and use `skip_serializing_if = "Option::is_none"`
-for optional fields. Preserve wire names, defaults, base64url and timestamp
-codecs, nested models, and other visibility rules.
+Replace read-only-field `serde(skip_serializing)` with
+`#[serde(skip_serializing_if = "option::skip_serializing_read_only")]`,
+importing `azure_core::serde::option`. For non-optional fields, including list
+values, import `azure_core::serde::skip_serializing_read_only` and use
+`#[serde(skip_serializing_if = "skip_serializing_read_only")]`.
+Do not generate conditional serde attributes. Preserve wire names, defaults,
+base64url and timestamp codecs, nested models, and other visibility rules.
+Empty non-optional lists still serialize as arrays with fake support enabled;
+absent optional fields remain omitted.
 
 Use the `test` feature, not `cfg(test)`: SDK dependencies in customer tests,
 integration tests, examples, and documentation tests are not compiled with `cfg(test)`.
+The helpers check core's features, not the generated crate's features.
 `unstable_fake` already enables the same-crate `test` feature.
 
 This opt-in behavior also affects shared models serialized in outgoing requests

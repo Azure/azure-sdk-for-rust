@@ -14,6 +14,7 @@
 - Added experimental `http::fake` response extension traits and pager/poller state propagation behind the `test` and `unstable_fake` features for testing client libraries without network requests.
 - Added `http::fake::get_api_name()` to borrow operation names from request context without requiring a tracer provider or listener.
 - Added `http::fake::ResponseExt::fake_with_error()` to create JSON service error responses.
+- Added `serde` module with serialization/deserialization helpers that support fakes.
 
 ### Breaking Changes
 
