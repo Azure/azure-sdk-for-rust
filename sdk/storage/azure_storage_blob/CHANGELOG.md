@@ -1,14 +1,6 @@
 # Release History
 
-## 1.2.0-beta.1 (Unreleased)
-
-### Breaking Changes
-
-- `BlobContainerClient::list_blobs()` now returns `Result<Pager<ListBlobsResponse, AutoFormat>>` instead of `Result<Pager<ListBlobsResponse, XmlFormat>>`. It requests Apache Arrow with XML fallback when the `arrow` feature is enabled and XML only otherwise.
-- Added `session_options` to `AppendBlobClientOptions`, `BlobClientOptions`, `BlobContainerClientOptions`, `BlobServiceClientOptions`, `BlockBlobClientOptions`, and `PageBlobClientOptions`, breaking exhaustive struct literals and patterns.
-- Added `layout_aware_routing` to `BlobClientDownloadOptions`, breaking exhaustive struct literals and patterns.
-- Added `end_before` to `BlobContainerClientListBlobsOptions` when the default-enabled `arrow` feature is enabled, breaking exhaustive struct literals and patterns.
-- Added `access_tier`, `access_tier_changed_on`, and `access_tier_inferred` to `BlobDownloadProperties`, breaking exhaustive struct literals and patterns.
+## 1.2.0-beta.1 (2026-11-03)
 
 ### Features Added
 
@@ -22,7 +14,9 @@
 - Added opt-in session authentication for blob downloads through `SessionOptions`, with session-cache sharing through `ContainerSessionProvider`.
 - Added `BlobClientDownloadOptions::layout_aware_routing` to enable locality-aware range requests for `download()` and `download_into()`. Disabled by default.
 
-- Applied client options to bearer-token authorization policies.
+### Breaking Changes
+
+- `BlobContainerClient::list_blobs()` now returns `Result<Pager<ListBlobsResponse, AutoFormat>>` instead of `Result<Pager<ListBlobsResponse, XmlFormat>>`. It requests Apache Arrow with XML fallback when the `arrow` feature is enabled and XML only otherwise.
 
 ## 1.1.0 (2026-09-08)
 

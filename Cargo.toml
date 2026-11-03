@@ -98,9 +98,9 @@ version = "1.0.0"
 
 [workspace.dependencies]
 arbitrary = "1.4"
-arrow-array = "59.1.0"
-arrow-ipc = "59.1.0"
-arrow-schema = "59.1.0"
+arrow-array = "59.3.2"
+arrow-ipc = "59.3.2"
+arrow-schema = "59.3.2"
 async-lock = "3.4"
 async-stream = { version = "0.3.6" }
 async-trait = "0.1"
@@ -206,3 +206,4 @@ bare_urls = "allow"
 # `#[allow(clippy::needless_update)]` on that initializer when needed, so new optional
 # fields do not force call sites to spell out every field.
 constructible_struct_adds_field = "allow"
+enum_variant_added = "allow"

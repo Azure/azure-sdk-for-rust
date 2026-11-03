@@ -9,7 +9,6 @@ use std::sync::Arc;
 
 /// Determines whether blob operations use session token authentication.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-#[non_exhaustive]
 pub enum SessionMode {
     /// Always use bearer token authentication; never use session tokens.
     #[default]

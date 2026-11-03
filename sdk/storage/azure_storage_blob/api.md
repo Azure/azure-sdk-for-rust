@@ -64,7 +64,6 @@ impl TryFrom<Error> for StorageError {
     fn try_from(error: azure_core::Error) -> std::result::Result<Self, <Self as >::Error>;
 }
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum SessionMode {
     #[default]
     Disabled,
