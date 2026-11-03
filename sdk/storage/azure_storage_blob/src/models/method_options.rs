@@ -25,7 +25,6 @@ use crate::models::{
 /// to the endpoint that serves it, falling back to the client's configured endpoint when no
 /// layout is available.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-#[non_exhaustive]
 pub enum LayoutAwareRouting {
     /// Never route range requests based on the blob's layout. All requests are sent
     /// to the client's configured endpoint.

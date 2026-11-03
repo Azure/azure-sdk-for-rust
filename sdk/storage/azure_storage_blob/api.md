@@ -2140,7 +2140,6 @@ pub mod models {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
     #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-    #[non_exhaustive]
     pub enum LayoutAwareRouting {
         #[default]
         Disabled,
