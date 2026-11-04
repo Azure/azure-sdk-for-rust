@@ -141,7 +141,9 @@ impl BlobCheckpointStore {
 
 #[async_trait::async_trait]
 impl CheckpointStore for BlobCheckpointStore {
-    /// Claims ownership of the specified partitions.
+    /// Claims, renews, or releases ownership of the specified partitions.
+    ///
+    /// See [`CheckpointStore::claim_ownership()`] for the ownership and ETag contract.
     #[tracing::instrument(level = "debug", skip_all, fields(partition_count = ownerships.len()), err)]
     async fn claim_ownership(&self, ownerships: &[Ownership]) -> Result<Vec<Ownership>> {
         debug!("Claiming ownership for {} partitions", ownerships.len());
@@ -411,6 +413,190 @@ impl CheckpointStore for BlobCheckpointStore {
             );
             return Err(e);
         }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{BlobCheckpointStore, CheckpointStore, Ownership};
+    use azure_core::{
+        http::{
+            headers::{HeaderName, Headers, IF_MATCH},
+            AsyncRawResponse, ClientOptions, Method, StatusCode, Transport, Url,
+        },
+        Bytes, Result,
+    };
+    use azure_core_test::http::MockHttpClient;
+    use azure_storage_blob::{BlobContainerClient, BlobContainerClientOptions};
+    use futures::FutureExt;
+    use std::sync::Arc;
+
+    #[tokio::test]
+    async fn claim_ownership_releases_and_reclaims_without_expiration() -> Result<()> {
+        const MODIFIED: &str = "Wed, 01 Apr 2026 00:00:00 GMT";
+        const BLOB_NAME: &str =
+            "example.servicebus.windows.net/eventhub/consumer-group/ownership/0";
+        let mut request_count = 0;
+        let mock_client = Arc::new(MockHttpClient::new(move |request| {
+            request_count += 1;
+            let mut headers = Headers::new();
+            headers.insert("last-modified", MODIFIED);
+            let owner_header = HeaderName::from_static("x-ms-meta-ownerid");
+            let response = match request_count {
+                1 => {
+                    assert_eq!(request.method(), Method::Put);
+                    assert_eq!(
+                        request.url().path(),
+                        format!("/container/{}", BLOB_NAME.replace('/', "%2F"))
+                    );
+                    assert_eq!(
+                        request
+                            .headers()
+                            .get_optional_str(&HeaderName::from_static("if-none-match")),
+                        Some("*")
+                    );
+                    assert_eq!(
+                        request.headers().get_optional_str(&owner_header),
+                        Some("first-owner")
+                    );
+                    headers.insert("etag", "first-etag");
+                    AsyncRawResponse::from_bytes(StatusCode::Created, headers, Bytes::new())
+                }
+                2 | 4 | 5 => {
+                    assert_eq!(request.method(), Method::Put);
+                    assert_eq!(
+                        request.url().path(),
+                        format!("/container/{}", BLOB_NAME.replace('/', "%2F"))
+                    );
+                    assert_eq!(request.url().query(), Some("comp=metadata"));
+                    let (etag, owner) = if request_count == 4 {
+                        ("released-etag", Some("second-owner"))
+                    } else {
+                        ("first-etag", None)
+                    };
+                    assert_eq!(request.headers().get_optional_str(&IF_MATCH), Some(etag));
+                    assert_eq!(request.headers().get_optional_str(&owner_header), owner);
+                    if request_count == 5 {
+                        // The service rejects a release carrying the previous owner's ETag.
+                        headers.insert("x-ms-error-code", "ConditionNotMet");
+                        AsyncRawResponse::from_bytes(
+                            StatusCode::PreconditionFailed,
+                            headers,
+                            Bytes::new(),
+                        )
+                    } else {
+                        headers.insert(
+                            "etag",
+                            if request_count == 2 {
+                                "released-etag"
+                            } else {
+                                "reclaimed-etag"
+                            },
+                        );
+                        AsyncRawResponse::from_bytes(StatusCode::Ok, headers, Bytes::new())
+                    }
+                }
+                3 | 6 => {
+                    assert_eq!(request.method(), Method::Get);
+                    assert_eq!(request.url().path(), "/container");
+                    let query: std::collections::HashMap<_, _> =
+                        request.url().query_pairs().collect();
+                    assert_eq!(query.get("comp").map(|v| v.as_ref()), Some("list"));
+                    assert_eq!(query.get("include").map(|v| v.as_ref()), Some("metadata"));
+                    assert_eq!(
+                        query.get("prefix").map(|v| v.as_ref()),
+                        Some("example.servicebus.windows.net/eventhub/consumer-group/ownership/")
+                    );
+                    let (etag, metadata) = if request_count == 3 {
+                        ("released-etag", "<Metadata />")
+                    } else {
+                        (
+                            "reclaimed-etag",
+                            "<Metadata><ownerid>second-owner</ownerid></Metadata>",
+                        )
+                    };
+                    let body = format!(
+                        r#"<EnumerationResults ServiceEndpoint="https://example.blob.core.windows.net/" ContainerName="container">
+<Blobs><Blob><Name>{BLOB_NAME}</Name><Properties>
+<Etag>{etag}</Etag><Last-Modified>{MODIFIED}</Last-Modified><BlobType>BlockBlob</BlobType>
+</Properties>{metadata}</Blob></Blobs><NextMarker /></EnumerationResults>"#
+                    );
+                    AsyncRawResponse::from_bytes(StatusCode::Ok, headers, Bytes::from(body))
+                }
+                _ => panic!("unexpected request {request_count}"),
+            };
+            async move { Ok(response) }.boxed()
+        }));
+        let container_client = BlobContainerClient::new(
+            Url::parse("https://example.blob.core.windows.net/container")?,
+            None,
+            Some(BlobContainerClientOptions {
+                client_options: ClientOptions {
+                    transport: Some(Transport::new(mock_client)),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
+        )?;
+        let store = BlobCheckpointStore::new(container_client);
+        let ownership = Ownership {
+            fully_qualified_namespace: "example.servicebus.windows.net".to_string(),
+            event_hub_name: "eventhub".to_string(),
+            consumer_group: "consumer-group".to_string(),
+            partition_id: "0".to_string(),
+            owner_id: Some("first-owner".to_string()),
+            ..Default::default()
+        };
+        let first = store.claim_ownership(&[ownership]).await?;
+        assert_eq!(first.len(), 1);
+        let mut release = first[0].clone();
+        release.owner_id = None;
+
+        let released = store
+            .claim_ownership(std::slice::from_ref(&release))
+            .await?;
+        assert_eq!(released.len(), 1);
+        assert_eq!(released[0].owner_id, None);
+        assert_eq!(
+            released[0].etag.as_ref().map(|etag| etag.as_ref()),
+            Some("released-etag")
+        );
+        assert!(released[0].last_modified_time.is_some());
+
+        let listed = store
+            .list_ownerships(
+                &release.fully_qualified_namespace,
+                &release.event_hub_name,
+                &release.consumer_group,
+            )
+            .await?;
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].owner_id, None);
+        assert_eq!(listed[0].etag, released[0].etag);
+
+        // Reclaim immediately using the released record's ETag, with no expiration wait.
+        let mut reclaim = listed[0].clone();
+        reclaim.owner_id = Some("second-owner".to_string());
+        let reclaimed = store.claim_ownership(&[reclaim]).await?;
+        assert_eq!(reclaimed.len(), 1);
+        assert_eq!(reclaimed[0].owner_id.as_deref(), Some("second-owner"));
+        assert_ne!(reclaimed[0].etag, released[0].etag);
+
+        let stale_release = store
+            .claim_ownership(std::slice::from_ref(&release))
+            .await?;
+        assert!(stale_release.is_empty());
+        let listed = store
+            .list_ownerships(
+                &release.fully_qualified_namespace,
+                &release.event_hub_name,
+                &release.consumer_group,
+            )
+            .await?;
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].owner_id.as_deref(), Some("second-owner"));
+        assert_eq!(listed[0].etag, reclaimed[0].etag);
         Ok(())
     }
 }
