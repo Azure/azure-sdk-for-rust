@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added server-side PATCH filter predicate support through the standard `condition` request envelope, with explicit rejection when execution resolves to client-side read-modify-write.
+
 ### Breaking Changes
 
 - Resource-name validation is now enabled by default for request paths and item names supplied to Create, Upsert, transactional batch, and distributed transaction operations; use `DriverOptionsBuilder::with_resource_name_validation(false)` only when compatibility requires service-accepted names that are unsafe for point addressing. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))

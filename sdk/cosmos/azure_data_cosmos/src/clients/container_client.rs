@@ -569,6 +569,26 @@ impl ContainerClient {
     /// and resolves multi-write conflicts at document granularity. Select an
     /// explicit strategy when those differences matter.
     ///
+    /// # Filter predicates
+    ///
+    /// [`PatchItemOptions::with_filter_predicate()`] adds a nonempty SQL
+    /// FROM/WHERE clause that Cosmos DB evaluates atomically before a
+    /// server-side PATCH. A false predicate returns HTTP 412 with sub-status
+    /// 1110 and leaves the item unchanged. Predicates aren't supported when
+    /// strategy resolution selects client-side execution; that combination
+    /// returns HTTP 400 before I/O.
+    /// Select [`PatchStrategy::ServerSide`](crate::options::PatchStrategy::ServerSide)
+    /// when a predicate must accompany operations that `Auto` would otherwise
+    /// execute client-side.
+    ///
+    /// # Errors
+    ///
+    /// Returns HTTP 412 with sub-status 1110 when a server-side predicate is
+    /// false. An empty predicate returns client-generated HTTP 400 before I/O;
+    /// other invalid predicates return service HTTP 400. If execution resolves
+    /// to client-side, the predicate is rejected before I/O with HTTP 400, no
+    /// sub-status, no request diagnostics, and no PATCH tracking ID.
+    ///
     /// # Retry Semantics
     ///
     /// [`PatchStrategy::Auto`](crate::options::PatchStrategy::Auto) is the
@@ -620,7 +640,7 @@ impl ContainerClient {
         options: Option<PatchItemOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serde_json::to_vec(&patch).map_err(crate::error::convert_json_encode_error)?;
+        let body = serialize_patch_body(&patch, options.filter_predicate.as_deref())?;
 
         let item_ref = ItemReference::from_name(
             &self.container_ref,
@@ -1593,6 +1613,23 @@ fn apply_patch_options(
 }
 
 #[cfg(feature = "unstable_patch")]
+fn serialize_patch_body(
+    patch: &PatchInstructions,
+    filter_predicate: Option<&str>,
+) -> crate::Result<Vec<u8>> {
+    let mut body = serde_json::to_value(patch).map_err(crate::error::convert_json_encode_error)?;
+    if let Some(predicate) = filter_predicate {
+        body.as_object_mut()
+            .expect("PatchInstructions serializes as a JSON object")
+            .insert(
+                "condition".to_owned(),
+                serde_json::Value::String(predicate.to_owned()),
+            );
+    }
+    serde_json::to_vec(&body).map_err(crate::error::convert_json_encode_error)
+}
+
+#[cfg(feature = "unstable_patch")]
 fn apply_patch_operation_options(
     mut operation_options: OperationOptions,
     strategy: Option<crate::options::PatchStrategy>,
@@ -1683,6 +1720,40 @@ mod tests {
             operation_options.patch_strategy,
             Some(crate::options::PatchStrategy::ClientSide)
         );
+    }
+
+    #[cfg(feature = "unstable_patch")]
+    #[test]
+    fn patch_body_serializes_filter_predicate_as_condition() {
+        let patch = PatchInstructions::from(vec![crate::models::PatchOperation::set(
+            "/status",
+            serde_json::json!("done"),
+        )]);
+
+        let body = serialize_patch_body(&patch, Some("from c where c.status = 'pending'")).unwrap();
+        let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+        assert_eq!(body["condition"], "from c where c.status = 'pending'");
+        assert_eq!(body["operations"].as_array().unwrap().len(), 1);
+    }
+
+    #[cfg(feature = "unstable_patch")]
+    #[test]
+    fn patch_body_preserves_explicit_filter_predicate() {
+        let patch = PatchInstructions::from(vec![crate::models::PatchOperation::set(
+            "/status",
+            serde_json::json!("done"),
+        )]);
+
+        for predicate in [Some(""), Some("   ")] {
+            let body = serialize_patch_body(&patch, predicate).unwrap();
+            let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+            assert_eq!(body["condition"], predicate.unwrap());
+        }
+
+        let body = serialize_patch_body(&patch, None).unwrap();
+        let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert!(body.get("condition").is_none());
     }
 
     #[test]

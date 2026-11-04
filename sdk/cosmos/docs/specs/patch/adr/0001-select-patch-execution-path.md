@@ -36,6 +36,14 @@ The strategy participates in normal environment, runtime, account, and
 operation option resolution. The Rust SDK also exposes a per-request strategy
 on `PatchItemOptions` while PATCH remains a preview feature.
 
+A SQL filter predicate does not influence strategy resolution. It is serialized
+as the top-level `condition` property in the PATCH envelope and is supported
+only when the resolved execution is server-side. If `Auto` resolves an unsafe
+or over-limit list to client-side RMW, or the caller selects `ClientSide`, the
+driver returns a client-generated HTTP 400 before dispatch. Callers that need a
+predicate with a list that `Auto` would run client-side must select
+`ServerSide`, accepting its operation-count and ambiguous-outcome semantics.
+
 Both paths report `patch_item` as the logical OpenTelemetry operation. The
 client-side network helpers report `patch_read_item` and
 `patch_replace_item`; local tracking-marker work does not create a synthetic
@@ -49,6 +57,11 @@ client-side duplicate suppression; retry-safe over-limit requests use
 client-side RMW without a marker. Explicit `ServerSide` lets callers avoid the
 tracking property, but they accept at-most-once behavior for unsafe lists and a
 hard failure above 10 instructions.
+
+Conditional PATCH remains atomic on the server path: a false predicate returns
+HTTP 412 with sub-status 1110 and applies no operation. The client-side path
+does not reuse the in-memory emulator's SQL evaluator because that evaluator is
+feature-gated test infrastructure rather than a production service contract.
 
 The driver and in-memory emulator must keep the service limit, wire content
 type, Gateway 2.0 opcode, path-selection rules, and telemetry names covered by
