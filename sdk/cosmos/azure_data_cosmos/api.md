@@ -3129,6 +3129,7 @@ pub mod options {
         type Err = String;
         fn from_str(s: &str) -> Result<Self, <Self as >::Err>;
     }
+    #[doc(inline)]
     #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
     #[non_exhaustive]
     pub enum FullTextScoreScope {

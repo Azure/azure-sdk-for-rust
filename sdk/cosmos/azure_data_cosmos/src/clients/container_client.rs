@@ -894,27 +894,27 @@ impl ContainerClient {
     /// * `scope` - The [`FeedScope`] specifying the scope of the query.
     /// * `options` - Optional parameters for the request.
     ///
-    /// # Cross Partition Queries
+    /// # Cross-partition queries
     ///
-    /// When `scope` spans multiple partitions, the SDK obtains a query plan and composes the
-    /// client-side pipeline needed to execute it. Supported features include ordinary projections
-    /// and filters, `TOP`, `OFFSET`/`LIMIT`, streaming single- and multiple-column `ORDER BY`, and
-    /// ordered or unordered `DISTINCT`.
+    /// Supported features:
     ///
-    /// Cross-partition vector ordering supports pure `ORDER BY VectorDistance(...)` queries, and
-    /// ranked full-text queries support `ORDER BY RANK FullTextScore(...)`, including weighted
-    /// `RRF(...)` of full-text and vector components. These queries require a finite `TOP N` or
-    /// `OFFSET x LIMIT y` window. The SDK buffers candidates from every targeted partition before
-    /// returning the first page, so use narrow projections and a window appropriate for the
-    /// available memory.
-    /// By default, ranked full-text scoring gathers statistics across the whole container;
-    /// [`QueryOptions::with_full_text_score_scope`] can restrict statistics to the requested scope.
-    /// [`QueryOptions::with_max_buffered_query_window`] bounds the global OFFSET plus take.
+    /// - Projections and filters.
+    /// - `TOP` and `OFFSET`/`LIMIT`.
+    /// - Single- and multiple-column `ORDER BY`.
+    /// - Ordered and unordered `DISTINCT`.
+    /// - Vector ordering with `ORDER BY VectorDistance(...)`.
+    /// - Ranked full-text search with `ORDER BY RANK FullTextScore(...)`.
+    /// - Weighted full-text and vector hybrid search with `RRF(...)`.
     ///
-    /// The buffered result can be iterated in pages, but it does not support continuation tokens
-    /// for resuming in another process. The same restriction applies to buffered ranked full-text
-    /// and hybrid queries. Aggregates and `GROUP BY` remain unsupported when their query plans
-    /// require client-side stages that have not been implemented.
+    /// Unsupported features:
+    ///
+    /// - Aggregates and `GROUP BY` that require client-side aggregation.
+    /// - Continuation tokens for buffered queries, including vector ordering, ranked full-text,
+    ///   and hybrid search.
+    ///
+    /// Vector ordering, ranked full-text, and hybrid queries buffer candidates before returning
+    /// the first page. They require a finite `TOP` or `OFFSET`/`LIMIT` within
+    /// [`QueryOptions::max_buffered_query_window`].
     ///
     /// # Examples
     ///

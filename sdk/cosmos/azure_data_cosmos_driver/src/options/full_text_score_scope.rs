@@ -2,6 +2,9 @@
 // Licensed under the MIT License.
 
 /// Selects the partitions used to calculate full-text ranking statistics.
+///
+/// This option applies to ranked full-text and hybrid queries. It does not
+/// change which partitions return matching documents.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum FullTextScoreScope {

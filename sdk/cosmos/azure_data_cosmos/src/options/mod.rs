@@ -17,11 +17,11 @@ pub use azure_data_cosmos_driver::options::{
     AvailabilityStrategy, BinaryEncodingOptions, ConnectionPoolOptions,
     ConnectionPoolOptionsBuilder, ContentResponseOnWrite, DiagnosticsOptions,
     DiagnosticsOptionsBuilder, DiagnosticsVerbosity, EndToEndOperationLatencyPolicy,
-    ExcludedRegions, HedgeThreshold, HedgingStrategy, OperationOptions, OperationOptionsBuilder,
-    PartitionFailoverOptions, PartitionFailoverOptionsBuilder, PartitionTopologyCacheMode,
-    PriorityLevel, QueryPlanMode, ReadConsistencyStrategy, Region, ServerCertificateValidation,
-    ThrottlingRetryOptions, ThrottlingRetryOptionsBuilder, ThroughputControlOptions,
-    ThroughputControlOptionsBuilder, TlsBackend, UserAgentSuffix,
+    ExcludedRegions, FullTextScoreScope, HedgeThreshold, HedgingStrategy, OperationOptions,
+    OperationOptionsBuilder, PartitionFailoverOptions, PartitionFailoverOptionsBuilder,
+    PartitionTopologyCacheMode, PriorityLevel, QueryPlanMode, ReadConsistencyStrategy, Region,
+    ServerCertificateValidation, ThrottlingRetryOptions, ThrottlingRetryOptionsBuilder,
+    ThroughputControlOptions, ThroughputControlOptionsBuilder, TlsBackend, UserAgentSuffix,
 };
 pub use batch::{
     BatchDeleteOptions, BatchOptions, BatchReadOptions, BatchReplaceOptions, BatchUpsertOptions,
@@ -39,7 +39,6 @@ pub use database::{
 };
 pub use feed::{FeedOptions, QueryOptions};
 pub use feed_ranges::ReadFeedRangesOptions;
-pub use full_text_score_scope::FullTextScoreScope;
 #[cfg(feature = "unstable_patch")]
 pub use item::PatchItemOptions;
 pub use item::{ItemReadOptions, ItemWriteOptions};
@@ -59,7 +58,6 @@ mod container;
 mod database;
 mod feed;
 mod feed_ranges;
-mod full_text_score_scope;
 mod item;
 mod routing_strategy;
 #[cfg(feature = "control_plane")]

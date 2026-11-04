@@ -248,27 +248,17 @@ impl QueryOptions {
     }
 
     pub(crate) fn to_plan_options(&self) -> PlanOptions {
-        let scope = match self.full_text_score_scope {
-            FullTextScoreScope::Global => {
-                azure_data_cosmos_driver::options::FullTextScoreScope::Global
-            }
-            FullTextScoreScope::Local => {
-                azure_data_cosmos_driver::options::FullTextScoreScope::Local
-            }
-        };
         self.feed
             .to_plan_options()
             .with_max_buffered_query_window(self.max_buffered_query_window)
             .with_query_plan_mode(self.query_plan_mode)
-            .with_full_text_score_scope(scope)
+            .with_full_text_score_scope(self.full_text_score_scope)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        FeedOptions, FullTextScoreScope, QueryOptions, QueryPlanMode, DEFAULT_MAX_FAN_OUT,
-    };
+    use super::{FeedOptions, QueryOptions, QueryPlanMode, DEFAULT_MAX_FAN_OUT};
 
     #[test]
     fn query_plan_options_preserve_defaults() {
@@ -307,12 +297,14 @@ mod tests {
 
     #[test]
     fn full_text_scope_is_forwarded_to_the_driver() {
-        let options = QueryOptions::default().with_full_text_score_scope(FullTextScoreScope::Local);
-        assert_eq!(options.full_text_score_scope, FullTextScoreScope::Local);
-        assert_eq!(
-            options.to_plan_options().full_text_score_scope,
-            azure_data_cosmos_driver::options::FullTextScoreScope::Local
-        );
+        for scope in [
+            azure_data_cosmos_driver::options::FullTextScoreScope::Global,
+            azure_data_cosmos_driver::options::FullTextScoreScope::Local,
+        ] {
+            let options = QueryOptions::default().with_full_text_score_scope(scope);
+            assert_eq!(options.full_text_score_scope, scope);
+            assert_eq!(options.to_plan_options().full_text_score_scope, scope);
+        }
     }
 
     #[test]

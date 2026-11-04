@@ -69,7 +69,9 @@ pub(super) fn hybrid_window(
             CosmosError::builder()
                 .with_status(status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW)
                 .with_message(format!(
-                    "cross-partition ranked full-text and hybrid queries require a finite global TOP or LIMIT and OFFSET plus take at most max_buffered_query_window ({maximum})"
+                    "cross-partition ranked full-text and hybrid queries require a finite TOP or \
+                     OFFSET/LIMIT, with OFFSET plus the requested result count at most {maximum}. \
+                     Configure this limit using max_buffered_query_window"
                 ))
                 .build()
         })?;
@@ -1637,13 +1639,39 @@ mod tests {
         let mut info = plan();
         for (take, skip, maximum, valid) in [
             (Some(2), Some(1), 3, true),
+            (Some(3), None, 3, true),
+            (Some(0), None, 0, true),
             (Some(2), Some(2), 3, false),
             (None, None, u64::MAX, false),
             (Some(u64::MAX), Some(1), u64::MAX, false),
         ] {
             info.take = take;
             info.skip = skip;
-            assert_eq!(hybrid_window(&info, maximum).is_ok(), valid);
+            let result = hybrid_window(&info, maximum);
+            if valid {
+                assert_eq!(
+                    result.unwrap(),
+                    (
+                        usize::try_from(skip.unwrap_or(0)).unwrap(),
+                        usize::try_from(take.unwrap()).unwrap()
+                    )
+                );
+            } else {
+                let error = result.unwrap_err();
+                assert_eq!(
+                    error.status(),
+                    status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+                );
+                assert_eq!(
+                    error.to_string(),
+                    format!(
+                        "{}: cross-partition ranked full-text and hybrid queries require a finite \
+                         TOP or OFFSET/LIMIT, with OFFSET plus the requested result count at most \
+                         {maximum}. Configure this limit using max_buffered_query_window",
+                        error.status()
+                    )
+                );
+            }
         }
         assert_eq!(
             parse_result(
