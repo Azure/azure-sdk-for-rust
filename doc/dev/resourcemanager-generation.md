@@ -29,7 +29,7 @@ In addition to the standard tooling covered in the base guide, keep these points
     ```
 
 - **Naming** – Follow the `azure_resourcemanager_<service>` crate pattern and mirror the service folder layout used by other languages (`sdk/<service>/<crate-name>`). For example, the Key Vault management library is `sdk/keyvault/azure_resourcemanager_keyvault`, distinct from the data-plane `azure_security_keyvault_*` crates.
-- **Rust identifiers** – Use `resource_manager` in module, field, function, method, and feature names. When disambiguating from data-plane APIs, prefer a nested `resource_manager` module over `ResourceManager` type or variant prefixes. Keep short type names such as `PollerOptions` and `Audience` inside those modules; do not add a module when disambiguation is unnecessary.
+- **Rust identifiers** – Use `resource_manager` in module, field, function, and method names, and `unstable_resource_manager` for the Cargo feature. When disambiguating from data-plane APIs, prefer a nested `resource_manager` module over `ResourceManager` type or variant prefixes. Keep short type names such as `PollerOptions` and `Audience` inside those modules; do not add a module when disambiguation is unnecessary.
 - **Spec changes** – Capture the `azure-rest-api-specs` commit SHA (or PR branch commit) that contains the TypeSpec updates; you will reference it from `tsp-location.yaml`.
 
 ### Client names
@@ -81,7 +81,7 @@ Most polish items match the data-plane flow, but a few deserve special emphasis 
   ```
 
 - **Credential surface** – Accept `Arc<dyn azure_core::credentials::TokenCredential>` so callers can use `azure_identity` or another credential implementation. Preserve the subscription arguments defined by TypeSpec.
-- **Core dependency** – Enable `azure_core`'s `resource_manager` feature. Require a core version containing the shared cloud configuration and polling APIs used by the generated code; preserve the usual transport feature forwarding.
+- **Core dependency** – Enable `azure_core`'s `unstable_resource_manager` feature. Require a core version containing the shared cloud configuration and polling APIs used by the generated code; preserve the usual transport feature forwarding.
 - **Integration tests** – Provision test resources with `eng/common/TestResources/New-TestResources.ps1 -ServiceDirectory <service>` and record with `#[recorded::test]`. Management plane tests frequently require role assignments, so verify the Bicep template grants the test application proper `Microsoft.Authorization/roleAssignments` permissions.
 
 After these tweaks, run the usual validation commands (`cargo fmt`, `cargo clippy`, `cargo test`) as instructed in the base guide. When long-running operations are generated, add a `cargo check -p <crate> --all-features` run to ensure every poller compiles.
@@ -91,7 +91,7 @@ After these tweaks, run the usual validation commands (`cargo fmt`, `cargo clipp
 All `azure_resourcemanager_*` crates use
 `azure_core::cloud::resource_manager::Audience` for custom audience registration.
 The marker and `CloudConfigurationExt` trait are gated by `azure_core`'s
-`resource_manager` feature. Generated and hand-written constructors must import
+`unstable_resource_manager` feature. Generated and hand-written constructors must import
 `azure_core::cloud::resource_manager::CloudConfigurationExt as _` for endpoint,
 audience, and scope resolution without audience type parameters. Core uses the
 shared marker internally; do not generate or re-export a service-specific
