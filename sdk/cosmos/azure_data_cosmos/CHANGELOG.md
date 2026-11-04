@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added a mode-typed change feed processor API scaffold with required async callbacks, feed and lease options, local configuration validation, lease context, and monitoring types; execution and monitoring return not-implemented errors.
+
 ### Breaking Changes
 
 ### Bugs Fixed
