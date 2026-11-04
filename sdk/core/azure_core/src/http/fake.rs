@@ -6,8 +6,8 @@
 //! Enable the client library's `test` and `unstable_fake` features to use its
 //! experimental `clients::fake` module.
 //! Fake servers return an [`AsyncRawResponse`], allowing tests to control the status,
-//! headers, and body. Import [`ResponseExt`] to create responses from models or
-//! bytes, and [`AsyncResponseExt`] to create responses from streams.
+//! headers, and body. Import [`ResponseExt`] to create responses from bytes,
+//! and [`AsyncResponseExt`] to create responses from streams.
 
 use crate::{
     http::{
@@ -19,7 +19,6 @@ use crate::{
     tracing::PublicApiInstrumentationInformation,
     Bytes, Result,
 };
-use serde::Serialize;
 
 /// Returns the borrowed API name from the context, or `None` if absent.
 pub fn get_api_name<'a>(context: &'a Context<'_>) -> Option<&'a str> {
@@ -43,45 +42,24 @@ pub trait ResponseExt: Sized {
     /// Returns an error if serializing the error body fails.
     fn fake_with_error(
         status: StatusCode,
-        headers: Headers,
+        mut headers: Headers,
         code: &str,
         message: &str,
     ) -> Result<Self> {
-        Self::fake_with_model(
-            status,
-            headers,
-            serde_json::json!({
-                "error": { "code": code, "message": message },
-            }),
-        )
-    }
-
-    /// Creates a fake response from bytes without changing the status or headers.
-    fn fake_with_bytes(status: StatusCode, headers: Headers, bytes: impl Into<Bytes>) -> Self;
-
-    /// Creates a fake response by serializing a model as JSON.
-    ///
-    /// Adds `content-type: application/json` only if a content type isn't specified.
-    /// Serialization uses the model's [`Serialize`] implementation, regardless of the
-    /// response's format marker. Client libraries with fake support enable serialization
-    /// of read-only model fields when their `test` and `unstable_fake` features are enabled.
-    /// For other models whose serializer omits fields, pass a JSON value or use
-    /// [`fake_with_bytes()`](Self::fake_with_bytes).
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if `model` cannot be serialized as JSON.
-    fn fake_with_model<T: Serialize>(
-        status: StatusCode,
-        mut headers: Headers,
-        model: T,
-    ) -> Result<Self> {
-        let body = json::to_json(&model)?;
+        let body = json::to_json(&serde_json::json!({
+            "error": { "code": code, "message": message },
+        }))?;
         if headers.get_optional_str(&CONTENT_TYPE).is_none() {
             headers.insert(CONTENT_TYPE, "application/json");
         }
         Ok(Self::fake_with_bytes(status, headers, body))
     }
+
+    /// Creates a fake response from bytes without changing the status or headers.
+    ///
+    /// For JSON responses, pass a JSON string or the string representation of a
+    /// [`serde_json::json!`] value.
+    fn fake_with_bytes(status: StatusCode, headers: Headers, bytes: impl Into<Bytes>) -> Self;
 }
 
 impl ResponseExt for RawResponse {

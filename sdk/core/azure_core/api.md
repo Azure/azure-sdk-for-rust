@@ -1019,7 +1019,6 @@ pub mod http {
         pub trait ResponseExt: Sized {
             fn fake_with_bytes<impl Into<Bytes>: Into<Bytes>>(status: StatusCode, headers: Headers, bytes: impl Into<Bytes>) -> Self;
             fn fake_with_error(status: StatusCode, headers: Headers, code: &str, message: &str) -> Result<Self>;
-            fn fake_with_model<T: Serialize>(status: StatusCode, headers: Headers, model: T) -> Result<Self>;
         }
     }
     pub mod headers {
@@ -1806,12 +1805,6 @@ pub mod http {
 pub mod json {
     pub fn from_json<S, T>(body: S) -> crate::error::Result<T> where S: AsRef<[u8]>, T: DeserializeOwned;
     pub fn to_json<T>(value: &T) -> crate::error::Result<bytes::Bytes> where T: ?Sized + Serialize;
-}
-pub mod serde {
-    pub fn skip_serializing_read_only<T: ?Sized>(_value: &T) -> bool;
-    pub mod option {
-        pub fn skip_serializing_read_only<T>(value: &Option<T>) -> bool;
-    }
 }
 pub mod sleep {
     pub async fn sleep(duration: crate::time::Duration);

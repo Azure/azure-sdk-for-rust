@@ -232,7 +232,7 @@ use azure_core::{
 };
 use azure_security_keyvault_secrets::{
     clients::fake::SecretServer,
-    models::{Secret, SecretClientGetSecretOptions},
+    models::SecretClientGetSecretOptions,
     SecretClient,
 };
 use std::sync::Arc;
@@ -248,9 +248,11 @@ impl SecretServer for FakeSecretServer {
         _options: Option<SecretClientGetSecretOptions<'_>>,
     ) -> Result<AsyncRawResponse> {
         assert_eq!(secret_name, "my-secret");
-        let mut secret = Secret::default();
-        secret.value = Some("fake value".to_string());
-        AsyncRawResponse::fake_with_model(StatusCode::Ok, Headers::new(), secret)
+        Ok(AsyncRawResponse::fake_with_bytes(
+            StatusCode::Ok,
+            Headers::new(),
+            r#"{"value":"fake value"}"#,
+        ))
     }
 }
 

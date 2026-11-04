@@ -562,7 +562,7 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
 Implement only the server operations your test calls. Other operations panic with `unimplemented!()` by default.
-For example, return a model from a fake Key Vault secrets server:
+For example, return JSON from a fake Key Vault secrets server:
 
 ```rust ignore fakes
 use azure_core::{
@@ -571,7 +571,7 @@ use azure_core::{
 };
 use azure_security_keyvault_secrets::{
     clients::fake::SecretServer,
-    models::{Secret, SecretClientGetSecretOptions},
+    models::SecretClientGetSecretOptions,
     SecretClient,
 };
 use std::sync::Arc;
@@ -594,9 +594,11 @@ impl SecretServer for MySecretServer {
                 "The secret was not found.",
             );
         }
-        let mut secret = Secret::default();
-        secret.value = Some("fake value".into());
-        AsyncRawResponse::fake_with_model(StatusCode::Ok, Headers::new(), secret)
+        Ok(AsyncRawResponse::fake_with_bytes(
+            StatusCode::Ok,
+            Headers::new(),
+            r#"{"value":"fake value"}"#,
+        ))
     }
 }
 
@@ -618,12 +620,10 @@ assert_eq!(details.code.as_deref(), Some("SecretNotFound"));
 Use `new()` with credentials for Azure, or `with_fake()` with a fake server for tests.
 `with_fake()` returns an error if the supplied client options already specify a transport.
 
-The example returns a model with `fake_with_model()` and an Azure error response
-with `fake_with_error()`. See `ResponseExt` documentation for more
-response helpers, including `fake_with_bytes()` and `fake_with_stream()` for non-JSON responses.
-
-With both fake features enabled, generated models serialize read-only fields,
-including when shared models are used in outgoing requests.
+Pass a JSON string to `fake_with_bytes()`, or build a response body with
+[`serde_json::json!()`](https://docs.rs/serde_json/latest/serde_json/macro.json.html)
+and call `.to_string()`. Use `fake_with_error()` for Azure errors and
+`fake_with_stream()` for streaming responses.
 
 Fake pageable operations receive `PagerState` so they can return different responses for the initial page and continuation requests.
 

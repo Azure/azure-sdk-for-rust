@@ -91,28 +91,6 @@ buffer streams, reset readers, or serialize content again in the transport. Byte
 non-JSON formats, binary content, streams, and empty bodies must all work.
 Server implementations decide whether and how to decode content.
 
-## Serialize read-only response fields for fakes
-
-Replace read-only-field `serde(skip_serializing)` with
-`#[serde(skip_serializing_if = "option::skip_serializing_read_only")]`,
-importing `azure_core::serde::option`. For non-optional fields, including list
-values, import `azure_core::serde::skip_serializing_read_only` and use
-`#[serde(skip_serializing_if = "skip_serializing_read_only")]`.
-Do not generate conditional serde attributes. Preserve wire names, defaults,
-base64url and timestamp codecs, nested models, and other visibility rules.
-Empty non-optional lists still serialize as arrays with fake support enabled;
-absent optional fields remain omitted.
-
-Use the `test` feature, not `cfg(test)`: SDK dependencies in customer tests,
-integration tests, examples, and documentation tests are not compiled with `cfg(test)`.
-The helpers check core's features, not the generated crate's features.
-`unstable_fake` already enables the same-crate `test` feature.
-
-This opt-in behavior also affects shared models serialized in outgoing requests
-in the same build. Document that distinction; ordinary builds retain existing
-request serialization. `fake_with_model()` remains a JSON/serde convenience;
-byte and stream responses remain format-independent alternatives.
-
 ## Preserve public client paths and package metadata
 
 Extend the public `SecretClient` re-export with `impl SecretClient` and import
@@ -143,6 +121,6 @@ server. Cover exact argument preservation, query arrays and headers (including
 same-name values in different locations), missing-context errors, and opaque
 byte/stream bodies without serde.
 
-Run the typed-model service example to verify list/get wiring, two returned
+Run the service example to verify list/get wiring, two returned
 secrets, and a service error. Verify default, test-only, no-default-feature, and
 `unstable_fake`-alone configurations, including no-default feature combinations.

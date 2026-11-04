@@ -96,8 +96,7 @@ pub mod models {
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
     pub struct BackupSecretResult {
-        #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", serialize_with = "base64::option::serialize_url_safe")]
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", serialize_with = "base64::option::serialize_url_safe", skip_serializing)]
         pub value: Option<Vec<u8>>,
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
@@ -107,21 +106,19 @@ pub mod models {
         pub attributes: Option<SecretAttributes>,
         #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
         pub content_type: Option<String>,
-        #[serde(default, rename = "deletedDate", with = "azure_core::time::unix_time::option")]
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(default, rename = "deletedDate", skip_serializing, with = "azure_core::time::unix_time::option")]
         pub deleted_date: Option<azure_core::time::OffsetDateTime>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub id: Option<String>,
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(skip_serializing)]
         pub kid: Option<String>,
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(skip_serializing)]
         pub managed: Option<bool>,
         #[serde(rename = "previousVersion", skip_serializing_if = "Option::is_none")]
         pub previous_version: Option<String>,
         #[serde(rename = "recoveryId", skip_serializing_if = "Option::is_none")]
         pub recovery_id: Option<String>,
-        #[serde(default, rename = "scheduledPurgeDate", with = "azure_core::time::unix_time::option")]
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(default, rename = "scheduledPurgeDate", skip_serializing, with = "azure_core::time::unix_time::option")]
         pub scheduled_purge_date: Option<azure_core::time::OffsetDateTime>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tags: Option<std::collections::HashMap<String, String>>,
@@ -135,44 +132,39 @@ pub mod models {
         pub attributes: Option<SecretAttributes>,
         #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
         pub content_type: Option<String>,
-        #[serde(default, rename = "deletedDate", with = "azure_core::time::unix_time::option")]
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(default, rename = "deletedDate", skip_serializing, with = "azure_core::time::unix_time::option")]
         pub deleted_date: Option<azure_core::time::OffsetDateTime>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub id: Option<String>,
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(skip_serializing)]
         pub managed: Option<bool>,
         #[serde(rename = "recoveryId", skip_serializing_if = "Option::is_none")]
         pub recovery_id: Option<String>,
-        #[serde(default, rename = "scheduledPurgeDate", with = "azure_core::time::unix_time::option")]
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(default, rename = "scheduledPurgeDate", skip_serializing, with = "azure_core::time::unix_time::option")]
         pub scheduled_purge_date: Option<azure_core::time::OffsetDateTime>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tags: Option<std::collections::HashMap<String, String>>,
     }
     #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
     pub struct KeyVaultError {
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(skip_serializing)]
         pub error: Option<KeyVaultErrorError>,
     }
     #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
     pub struct KeyVaultErrorError {
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(skip_serializing)]
         pub code: Option<String>,
-        #[serde(rename = "innererror")]
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(rename = "innererror", skip_serializing)]
         pub inner_error: Option<Box<KeyVaultErrorError>>,
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(skip_serializing)]
         pub message: Option<String>,
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
     pub struct ListDeletedSecretPropertiesResult {
-        #[serde(rename = "nextLink")]
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(rename = "nextLink", skip_serializing)]
         pub next_link: Option<String>,
-        #[serde(default)]
-        #[serde(skip_serializing_if = "skip_serializing_read_only")]
+        #[serde(default, skip_serializing)]
         pub value: Vec<DeletedSecretProperties>,
     }
     #[async_trait]
@@ -184,11 +176,9 @@ pub mod models {
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
     pub struct ListSecretPropertiesResult {
-        #[serde(rename = "nextLink")]
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(rename = "nextLink", skip_serializing)]
         pub next_link: Option<String>,
-        #[serde(default)]
-        #[serde(skip_serializing_if = "skip_serializing_read_only")]
+        #[serde(default, skip_serializing)]
         pub value: Vec<SecretProperties>,
     }
     #[async_trait]
@@ -215,9 +205,9 @@ pub mod models {
         pub content_type: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub id: Option<String>,
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(skip_serializing)]
         pub kid: Option<String>,
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(skip_serializing)]
         pub managed: Option<bool>,
         #[serde(rename = "previousVersion", skip_serializing_if = "Option::is_none")]
         pub previous_version: Option<String>,
@@ -228,8 +218,7 @@ pub mod models {
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     pub struct SecretAttributes {
-        #[serde(default, with = "azure_core::time::unix_time::option")]
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(default, skip_serializing, with = "azure_core::time::unix_time::option")]
         pub created: Option<azure_core::time::OffsetDateTime>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub enabled: Option<bool>,
@@ -237,14 +226,11 @@ pub mod models {
         pub expires: Option<azure_core::time::OffsetDateTime>,
         #[serde(default, rename = "nbf", skip_serializing_if = "Option::is_none", with = "azure_core::time::unix_time::option")]
         pub not_before: Option<azure_core::time::OffsetDateTime>,
-        #[serde(rename = "recoverableDays")]
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(rename = "recoverableDays", skip_serializing)]
         pub recoverable_days: Option<i32>,
-        #[serde(rename = "recoveryLevel")]
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(rename = "recoveryLevel", skip_serializing)]
         pub recovery_level: Option<super::DeletionRecoveryLevel>,
-        #[serde(default, with = "azure_core::time::unix_time::option")]
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(default, skip_serializing, with = "azure_core::time::unix_time::option")]
         pub updated: Option<azure_core::time::OffsetDateTime>,
     }
     #[derive(Clone, Debug, Default)]
@@ -319,7 +305,7 @@ pub mod models {
         pub content_type: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub id: Option<String>,
-        #[serde(skip_serializing_if = "option::skip_serializing_read_only")]
+        #[serde(skip_serializing)]
         pub managed: Option<bool>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tags: Option<std::collections::HashMap<String, String>>,

@@ -22,7 +22,7 @@ use futures::{
     io::{AsyncReadExt as _, AsyncSeekExt as _},
     stream, TryStreamExt as _,
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::{
     borrow::Cow,
     collections::HashMap,
@@ -30,7 +30,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 struct Model {
     value: String,
 }
@@ -299,13 +299,14 @@ impl Server for TestServer {
                 "MissingItem",
                 "No such item",
             ),
-            _ => AsyncRawResponse::fake_with_model(
+            _ => Ok(AsyncRawResponse::fake_with_bytes(
                 StatusCode::Ok,
                 Headers::new(),
-                Model {
-                    value: format!("{name}:{}", version.unwrap_or_default()),
-                },
-            ),
+                format!(
+                    r#"{{"value":{}}}"#,
+                    serde_json::to_string(&format!("{name}:{}", version.unwrap_or_default()))?
+                ),
+            )),
         }
     }
 
@@ -320,7 +321,11 @@ impl Server for TestServer {
             }
         };
         let model: Model = json::from_json(bytes)?;
-        AsyncRawResponse::fake_with_model(StatusCode::Ok, Headers::new(), model)
+        Ok(AsyncRawResponse::fake_with_bytes(
+            StatusCode::Ok,
+            Headers::new(),
+            format!(r#"{{"value":{}}}"#, serde_json::to_string(&model.value)?),
+        ))
     }
 
     async fn list(
@@ -337,14 +342,14 @@ impl Server for TestServer {
             count: arguments.count,
             state: state.clone(),
         });
-        AsyncRawResponse::fake_with_model(
+        Ok(AsyncRawResponse::fake_with_bytes(
             StatusCode::Ok,
             Headers::new(),
             match state {
-                PagerState::Initial => serde_json::json!({"nextLink": "/opaque?cursor=next"}),
-                PagerState::More(_) => serde_json::json!({}),
+                PagerState::Initial => r#"{"nextLink":"/opaque?cursor=next"}"#,
+                PagerState::More(_) => "{}",
             },
-        )
+        ))
     }
 }
 
@@ -676,18 +681,18 @@ fn borrows_api_name_from_context() {
 }
 
 #[tokio::test]
-async fn model_response() -> Result<()> {
+async fn json_response() -> Result<()> {
     let mut headers = Headers::new();
     headers.insert("x-test", "example");
-    let model = HashMap::from([("value", "fake secret")]);
-    let response = AsyncRawResponse::fake_with_model(StatusCode::Created, headers, &model)?
-        .try_into_raw_response()
-        .await?;
+    let response = AsyncRawResponse::fake_with_bytes(
+        StatusCode::Created,
+        headers,
+        r#"{"value":"fake secret"}"#,
+    )
+    .try_into_raw_response()
+    .await?;
     assert_eq!(response.status(), StatusCode::Created);
-    assert_eq!(
-        response.headers().get_str(&CONTENT_TYPE)?,
-        "application/json"
-    );
+    assert!(response.headers().get_optional_str(&CONTENT_TYPE).is_none());
     assert_eq!(
         response
             .headers()
@@ -700,16 +705,15 @@ async fn model_response() -> Result<()> {
 }
 
 #[test]
-fn preserves_content_type_and_serialization_errors() -> Result<()> {
+fn preserves_content_type() -> Result<()> {
     let mut headers = Headers::new();
     headers.insert(CONTENT_TYPE, "application/problem+json");
-    let response = RawResponse::fake_with_model(StatusCode::BadRequest, headers, "example")?;
+    let response = RawResponse::fake_with_bytes(StatusCode::BadRequest, headers, "example");
     assert_eq!(
         response.headers().get_str(&CONTENT_TYPE)?,
         "application/problem+json"
     );
-    let invalid = HashMap::from([(vec![1, 2], "invalid JSON key")]);
-    assert!(RawResponse::fake_with_model(StatusCode::Ok, Headers::new(), &invalid).is_err());
+    assert_eq!(response.body().as_ref(), b"example");
     Ok(())
 }
 
@@ -739,11 +743,14 @@ async fn raw_and_streamed_responses() -> Result<()> {
 async fn typed_responses() -> Result<()> {
     let model = HashMap::from([("value".to_owned(), "fake secret".to_owned())]);
     let response: Response<HashMap<String, String>> =
-        Response::fake_with_model(StatusCode::Ok, Headers::new(), &model)?;
+        Response::fake_with_bytes(StatusCode::Ok, Headers::new(), r#"{"value":"fake secret"}"#);
     assert_eq!(response.into_model()?, model);
 
-    let response: AsyncResponse =
-        AsyncResponse::fake_with_model(StatusCode::Ok, Headers::new(), &model)?;
+    let response: AsyncResponse = AsyncResponse::fake_with_bytes(
+        StatusCode::Ok,
+        Headers::new(),
+        r#"{"value":"fake secret"}"#,
+    );
     let actual: HashMap<String, String> = json::from_json(response.into_body().collect().await?)?;
     assert_eq!(actual, model);
     Ok(())

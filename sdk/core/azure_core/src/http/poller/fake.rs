@@ -43,9 +43,9 @@ mod tests {
         time::Duration,
         Result,
     };
-    use serde::{Deserialize, Serialize};
+    use serde::Deserialize;
 
-    #[derive(Deserialize, Serialize)]
+    #[derive(Deserialize)]
     struct Monitor {
         status: String,
     }
@@ -60,13 +60,11 @@ mod tests {
     }
 
     async fn response(status: &str) -> Result<Response<Monitor>> {
-        Response::fake_with_model(
+        Ok(Response::fake_with_bytes(
             StatusCode::Ok,
             Headers::new(),
-            Monitor {
-                status: status.into(),
-            },
-        )
+            format!(r#"{{"status":{}}}"#, serde_json::to_string(status)?),
+        ))
     }
 
     #[tokio::test]
