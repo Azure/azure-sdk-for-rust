@@ -293,6 +293,10 @@ impl Fixture {
             COSMOS_STATUS_SUCCESS
         );
         assert_eq!(count, 1);
+        assert!(
+            !completion.is_null(),
+            "delivered completion must be non-null"
+        );
         cosmos_operation_handle_free(op);
         completion
     }
