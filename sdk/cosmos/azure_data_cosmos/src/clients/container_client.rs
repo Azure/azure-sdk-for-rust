@@ -1066,10 +1066,24 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `scope` - Determines which partitions to read changes from.
+    ///   A hierarchical partition-key prefix reads every overlapping physical
+    ///   range, with each request bounded to the prefix.
     /// * `start_from` - Where to begin reading when no continuation token is
-    ///   provided. Ignored when `options` carries a continuation token, since
-    ///   the token holds its own position.
+    ///   provided. A checkpoint's saved start takes precedence over this value,
+    ///   and saved per-range ETags take precedence over the start. Older
+    ///   single-request checkpoints don't record the original start; supply the
+    ///   same `start_from` when resuming those checkpoints before the first poll.
     /// * `options` - Optional parameters controlling mode, session token, and paging.
+    ///
+    /// In LatestVersion mode, [`ChangeFeedStartFrom::Now`] is evaluated at each
+    /// range's first request, including ranges first polled after resume.
+    /// Creating an iterator or saving its checkpoint doesn't anchor that time.
+    ///
+    /// Older prefix checkpoints that contain a single request's ETag cannot
+    /// safely reconstruct per-range positions and are rejected. Unpolled prefix
+    /// checkpoints can resume with the original `start_from`.
+    /// New query and change-feed checkpoints use `c2.` and are rejected by
+    /// older SDKs that only support `c1.`.
     ///
     /// # AllVersionsAndDeletes limitations
     ///
@@ -1082,8 +1096,9 @@ impl ContainerClient {
     /// * When starting from [`ChangeFeedStartFrom::Now`], every range is pinned
     ///   to its concrete starting position before the first page is returned, so
     ///   a range that is never served before a checkpoint still resumes from its
-    ///   true start rather than resume-time. No intermediate versions or deletes
-    ///   are dropped across a resume. `Now` is deliberately **not** rewritten to
+    ///   captured start rather than resume-time. A checkpoint taken before the
+    ///   first poll has no captured ETags; priming happens when that feed is
+    ///   polled, including after resume. `Now` is deliberately **not** rewritten to
     ///   a concrete [`ChangeFeedStartFrom::PointInTime`], which would change its
     ///   semantics; each range instead captures its own server continuation.
     /// * The feed mode is encoded in the continuation token, so a token issued in

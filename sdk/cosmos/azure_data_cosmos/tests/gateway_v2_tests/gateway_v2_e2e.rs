@@ -12,9 +12,9 @@ use azure_data_cosmos::models::{
     ThroughputProperties,
 };
 use azure_data_cosmos::options::{
-    AvailabilityStrategy, BatchOptions, BinaryEncodingOptions, ChangeFeedStartFrom,
-    ConnectionPoolOptions, ContentResponseOnWrite, CreateContainerOptions, ExcludedRegions,
-    ItemReadOptions, ItemWriteOptions, MaxItemCountHint, OperationOptionsBuilder,
+    AvailabilityStrategy, BatchOptions, BinaryEncodingOptions, ChangeFeedOptions,
+    ChangeFeedStartFrom, ConnectionPoolOptions, ContentResponseOnWrite, CreateContainerOptions,
+    ExcludedRegions, ItemReadOptions, ItemWriteOptions, MaxItemCountHint, OperationOptionsBuilder,
     PartitionFailoverOptions, Precondition, QueryOptions, ReadConsistencyStrategy, Region,
 };
 use azure_data_cosmos::{
@@ -29,7 +29,9 @@ use azure_data_cosmos_driver::{
 };
 use futures::{FutureExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use std::{future::Future, num::NonZeroU32, panic::AssertUnwindSafe, time::Duration};
+use std::{
+    collections::BTreeSet, future::Future, num::NonZeroU32, panic::AssertUnwindSafe, time::Duration,
+};
 
 fn read_env(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|v| !v.trim().is_empty())
@@ -887,6 +889,208 @@ pub async fn gateway_v2_incremental_change_feed() -> Result<(), Box<dyn std::err
         Ok(result) => result,
         Err(panic) => std::panic::resume_unwind(panic),
     }
+}
+
+/// Verifies prefix fan-out and checkpoint/resume over actual Gateway V2 requests.
+///
+/// Set `AZURE_COSMOS_GW_V2_ENDPOINT`, `AZURE_COSMOS_GW_V2_KEY`,
+/// `AZURE_COSMOS_GW_V2_PREFIX_DATABASE`,
+/// `AZURE_COSMOS_GW_V2_PREFIX_CONTAINER`, and `AZURE_COSMOS_GW_V2_PREFIX_TENANT`.
+/// The existing MultiHash container must use `/tenant`, `/user`, `/device`, with
+/// the selected tenant overlapping at least two physical ranges and no concurrent
+/// writes to that tenant. Multiple physical ranges alone are insufficient.
+/// The test reuses the existing topology without changing throughput or triggering
+/// a split. See `sdk/cosmos/eng/pipelines/README.md` for fixture setup and execution.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "gateway_v2_prefix"),
+    ignore = "requires test_category 'gateway_v2_prefix' and an existing multi-range prefix fixture"
+)]
+async fn gateway_v2_prefix_change_feed_across_physical_ranges(
+) -> Result<(), Box<dyn std::error::Error>> {
+    use azure_data_cosmos::feed::{ContinuationToken, FeedRange};
+
+    #[derive(Debug, Serialize, Deserialize)]
+    struct PrefixItem {
+        id: String,
+        tenant: String,
+        user: String,
+        device: String,
+    }
+
+    impl PrefixItem {
+        fn partition_key(&self) -> azure_data_cosmos::PartitionKey {
+            (&self.tenant, &self.user, &self.device).into()
+        }
+    }
+
+    let (endpoint, key) = live_credentials().ok_or("Gateway V2 credentials are required")?;
+    let database = read_env("AZURE_COSMOS_GW_V2_PREFIX_DATABASE")
+        .ok_or("AZURE_COSMOS_GW_V2_PREFIX_DATABASE is required")?;
+    let container_name = read_env("AZURE_COSMOS_GW_V2_PREFIX_CONTAINER")
+        .ok_or("AZURE_COSMOS_GW_V2_PREFIX_CONTAINER is required")?;
+    let tenant = read_env("AZURE_COSMOS_GW_V2_PREFIX_TENANT")
+        .ok_or("AZURE_COSMOS_GW_V2_PREFIX_TENANT is required")?;
+    let client = build_client(&endpoint, &key).await?;
+    let container = client
+        .database_client(database)
+        .container_client(container_name, None)
+        .await?;
+    let body = container.read(None).await?.into_body().single()?;
+    let properties: ContainerProperties = serde_json::from_slice(&body)?;
+    if properties.partition_key != PartitionKeyDefinition::from(("/tenant", "/user", "/device")) {
+        return Err("prefix fixture must use MultiHash V2 paths /tenant, /user, /device".into());
+    }
+    let prefix = FeedRange::for_partition(tenant.clone().into(), &properties.partition_key);
+    let ranges: Vec<_> = container
+        .read_feed_ranges(None)
+        .await?
+        .into_iter()
+        .filter(|range| range.overlaps(&prefix))
+        .collect();
+    if ranges.len() < 2 {
+        return Err(format!(
+            "prefix fixture must overlap at least two physical ranges; found {}",
+            ranges.len()
+        )
+        .into());
+    }
+
+    let run = azure_core::Uuid::new_v4();
+    let mut items = Vec::new();
+    let mut seeded_ranges = BTreeSet::new();
+    for candidate in 0..1024 {
+        let item = PrefixItem {
+            id: format!("prefix-{run}-{candidate}"),
+            tenant: tenant.clone(),
+            user: format!("user-{candidate}"),
+            device: "change-feed".into(),
+        };
+        let point = FeedRange::for_partition(item.partition_key(), &properties.partition_key);
+        let index = ranges
+            .iter()
+            .position(|range| {
+                range.min_inclusive() <= point.min_inclusive()
+                    && point.min_inclusive() < range.max_exclusive()
+            })
+            .ok_or("full key did not map to an overlapping physical range")?;
+        if seeded_ranges.insert(index) {
+            items.push(item);
+        }
+        if items.len() == 2 {
+            break;
+        }
+    }
+    if items.len() != 2 {
+        return Err("1024 candidate keys did not span two physical ranges; choose a tenant whose prefix spans physical ranges".into());
+    }
+    items.push(PrefixItem {
+        id: format!("outside-{run}"),
+        tenant: format!("outside-{run}"),
+        user: "outside".into(),
+        device: "change-feed".into(),
+    });
+    let scope = FeedScope::partition(tenant);
+    let options = ChangeFeedOptions::default()
+        .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));
+    let mut created = Vec::new();
+    let result = AssertUnwindSafe(tokio::time::timeout(
+        std::time::Duration::from_secs(180),
+        async {
+            let mut pages = container
+                .query_change_feed::<PrefixItem>(
+                    scope.clone(),
+                    ChangeFeedStartFrom::Now,
+                    Some(options.clone()),
+                )
+                .await?;
+            // Pin every leaf before seeding so earlier fixture history is excluded.
+            for _ in 0..ranges.len() {
+                let page = pages.next().await.ok_or("prefix change feed ended")??;
+                assert_transport_kind(&page.diagnostics(), TransportKind::GatewayV2);
+                if !page.items().is_empty() {
+                    return Err("prefix fixture received concurrent writes before seeding".into());
+                }
+            }
+            let mut token = pages.to_continuation_token()?;
+            drop(pages);
+            for (index, item) in items.iter().enumerate() {
+                create_seed_item(&container, item.partition_key(), &item.id, item).await?;
+                created.push(index);
+            }
+            let expected: BTreeSet<_> = items[..2].iter().map(|item| item.id.clone()).collect();
+            let mut received = BTreeSet::new();
+            let mut idle = 0;
+            for _ in 0..(ranges.len() * 2 + 100) {
+                let mut pages = container
+                    .query_change_feed::<PrefixItem>(
+                        scope.clone(),
+                        ChangeFeedStartFrom::Beginning,
+                        Some(options.clone().with_continuation_token(
+                            ContinuationToken::from_string(token.as_str().to_owned()),
+                        )),
+                    )
+                    .await?;
+                let page = pages.next().await.ok_or("prefix change feed ended")??;
+                assert_transport_kind(&page.diagnostics(), TransportKind::GatewayV2);
+                token = pages.to_continuation_token()?;
+                if page.items().is_empty() {
+                    idle += 1;
+                } else {
+                    idle = 0;
+                    for change in page.items() {
+                        let item = change.current().ok_or("create has no current item")?;
+                        if !expected.contains(&item.id) {
+                            return Err(format!(
+                                "prefix feed returned unexpected item {}",
+                                item.id
+                            )
+                            .into());
+                        }
+                        if !received.insert(item.id.clone()) {
+                            return Err(format!("prefix feed replayed item {}", item.id).into());
+                        }
+                    }
+                }
+                if idle >= ranges.len() * 2 {
+                    if received != expected {
+                        return Err(format!(
+                            "prefix feed expected {expected:?}, received {received:?}"
+                        )
+                        .into());
+                    }
+                    return Ok::<_, Box<dyn std::error::Error>>(());
+                }
+            }
+            Err("prefix feed did not reach a bounded idle state".into())
+        },
+    ))
+    .catch_unwind()
+    .await;
+
+    let mut cleanup_errors = Vec::new();
+    for index in created {
+        let item = &items[index];
+        if let Err(error) = container
+            .delete_item(item.partition_key(), &item.id, None)
+            .await
+        {
+            eprintln!("prefix fixture item cleanup failed: {error}");
+            cleanup_errors.push(error.to_string());
+        }
+    }
+    let outcome = match result {
+        Ok(Ok(outcome)) => outcome,
+        Ok(Err(error)) => Err(error.into()),
+        Err(panic) => std::panic::resume_unwind(panic),
+    };
+    if !cleanup_errors.is_empty() {
+        return Err(format!(
+            "prefix test outcome: {outcome:?}; cleanup errors: {cleanup_errors:?}"
+        )
+        .into());
+    }
+    outcome
 }
 
 /// Point CRUD round-trip (create → read → replace → read → delete) over Gateway
