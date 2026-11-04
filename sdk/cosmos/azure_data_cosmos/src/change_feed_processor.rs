@@ -6,6 +6,9 @@ use crate::{
     CosmosError, CosmosStatus,
 };
 use azure_core::{fmt::SafeDebug, http::StatusCode};
+use azure_data_cosmos_driver::change_feed_processor::{
+    BootstrapOptions, ChangeFeedProcessorMode as DriverMode,
+};
 use serde::de::DeserializeOwned;
 use std::{future::Future, marker::PhantomData, num::NonZeroU32, time::Duration};
 use time::OffsetDateTime;
@@ -686,14 +689,11 @@ impl<T, H> ChangeFeedProcessorBuilder<LatestVersion, T, H> {
 /// A change feed processor configured for a specific mode.
 ///
 /// Created by [`ChangeFeedProcessorBuilder::build()`]. This scaffold retains
-/// configuration and the callback. Execution and monitoring are not implemented:
-/// [`start()`](Self::start), [`stop()`](Self::stop), and
-/// [`current_state()`](Self::current_state) return local not-implemented errors.
+/// configuration and the callback. [`start()`](Self::start) bootstraps the workload
+/// and then returns a not-implemented error because consumption is not available.
+/// [`stop()`](Self::stop) and [`current_state()`](Self::current_state) also
+/// return local not-implemented errors.
 #[must_use]
-#[cfg_attr(
-    not(all(test, feature = "__internal_in_memory_emulator")),
-    expect(dead_code, reason = "Configuration is retained for future execution.")
-)]
 pub struct ChangeFeedProcessor<M: ChangeFeedProcessorMode, T, H> {
     configuration: ChangeFeedProcessorBuilder<M, T, H>,
 }
@@ -744,14 +744,33 @@ impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessor<M, T, H> {
             .build())
     }
 
-    /// Requests that change feed processing start.
+    /// Initializes the workload before change feed processing.
     ///
-    /// This scaffold performs no I/O and does not invoke the callback.
+    /// Performs driver-owned bootstrap I/O without reading feed pages or invoking
+    /// callbacks. Compatible initialized workloads preserve existing progress.
+    /// Lease storage must use `/id`, default TTL `-1`, and a single-write-region account.
+    /// Bootstrap alone does not set [`is_started()`](Self::is_started) to `true`.
     ///
     /// # Errors
     ///
-    /// Always returns a local error with [`StatusCode::NotImplemented`].
+    /// Propagates bootstrap errors. After successful bootstrap, returns a local
+    /// [`StatusCode::NotImplemented`] error because consumption is not implemented.
     pub async fn start(&self) -> crate::Result<()> {
+        let config = &self.configuration;
+        let mode = match config.mode.mode() {
+            crate::options::ChangeFeedMode::LatestVersion => DriverMode::LatestVersion,
+            crate::options::ChangeFeedMode::AllVersionsAndDeletes => {
+                DriverMode::AllVersionsAndDeletes
+            }
+        };
+        let options = BootstrapOptions::new(mode, &config.processor_name, &config.instance_name)
+            .with_lease_verification_enabled_on_restart(
+                config.lease_verification_on_restart_enabled,
+            );
+        config
+            .monitored_container
+            .bootstrap_change_feed_processor(&config.lease_container, &options)
+            .await?;
         Err(CosmosError::builder()
             .with_status(CosmosStatus::new(StatusCode::NotImplemented))
             .with_message("Change feed processor start is not implemented.")

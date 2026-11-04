@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added driver-owned change feed workload bootstrap with mode binding, create-only range leases, bounded initialization claims, and optional restart verification.
 ### Breaking Changes
 
 ### Bugs Fixed

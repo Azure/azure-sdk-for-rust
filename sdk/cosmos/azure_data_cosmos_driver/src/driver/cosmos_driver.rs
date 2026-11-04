@@ -1936,6 +1936,13 @@ impl CosmosDriver {
         self.options.account()
     }
 
+    pub(crate) fn has_multiple_write_locations(&self) -> bool {
+        self.location_state_store
+            .snapshot()
+            .account
+            .multiple_write_locations_enabled
+    }
+
     /// **Internal test hook -- not part of the public API.**
     ///
     /// Returns cached writable and readable account regions. Integration tests

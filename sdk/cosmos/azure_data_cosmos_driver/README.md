@@ -20,6 +20,27 @@ Any driver APIs which are re-exported through the public SDK (e.g., `azure_data_
 
 ## Key Features
 
+### Change feed workload bootstrap
+
+`change_feed_processor::bootstrap` initializes a workload without consuming changes.
+It binds mode to the monitored account origin, container RID, and processor name
+within the lease container. Lease storage requires `/id`, default TTL `-1`, and a
+single-write-region account.
+
+The driver persists a workload definition, a create-only initial range plan,
+unowned range leases, and a durable completion marker. A 30-second TTL claim
+coordinates initializers; each attempt is limited to 25 seconds within a default
+two-minute budget. Delayed initializers may overlap after expiration, so creation
+is idempotent and conflicts are validated without replacing existing progress.
+
+Completed compatible workloads take a read-only path unless restart verification
+is enabled. No initial read token or start time is interpreted by bootstrap.
+The Rust SDK invokes bootstrap from `ChangeFeedProcessor::start()`; at this layer,
+successful initialization is followed by a not-implemented consumption error.
+
+Unit tests run against the in-memory emulator. Hosted-process and live tests are
+explicitly ignored unless their required environments are provided.
+
 ### Schema-Agnostic Data Plane
 
 The driver is intentionally ignorant of document/item schemas. Data plane operations:
