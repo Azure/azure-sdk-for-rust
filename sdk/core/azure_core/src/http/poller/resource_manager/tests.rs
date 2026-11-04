@@ -3,8 +3,8 @@
 
 // cspell:ignore bodyless
 use super::{
-    new_poller, FinalStateVia, PollerOptions, PollingInfo, PollingMethod, AZURE_ASYNC_OPERATION,
-    LOCATION, OPERATION_LOCATION,
+    new_poller, FinalStateVia, PollerOptions, PollingInfo, AZURE_ASYNC_OPERATION, LOCATION,
+    OPERATION_LOCATION,
 };
 use crate::{
     error::{ErrorKind, ErrorResponse},
@@ -2264,6 +2264,14 @@ async fn final_request_accepts_xml_resource() {
 
 #[test]
 fn status_uses_the_polling_protocol_and_phase() {
+    #[derive(Clone, Copy)]
+    enum Protocol {
+        AzureAsyncOperation,
+        OperationLocation,
+        Location,
+        Body,
+    }
+
     const CONFLICTING: &str =
         r#"{"status":"Succeeded","properties":{"provisioningState":"Failed"}}"#;
     const RESOURCE_SUCCEEDED: &str =
@@ -2272,130 +2280,140 @@ fn status_uses_the_polling_protocol_and_phase() {
         r#"{"status":"Failed","properties":{"provisioningState":"Creating"}}"#;
     for (method, original_method, initial, body, expected) in [
         (
-            PollingMethod::AzureAsyncOperation,
+            Protocol::AzureAsyncOperation,
             Method::Put,
             true,
             CONFLICTING,
             PollerStatus::Failed,
         ),
         (
-            PollingMethod::AzureAsyncOperation,
+            Protocol::AzureAsyncOperation,
             Method::Patch,
             true,
             CONFLICTING,
             PollerStatus::Failed,
         ),
         (
-            PollingMethod::AzureAsyncOperation,
+            Protocol::AzureAsyncOperation,
             Method::Post,
             true,
             CONFLICTING,
             PollerStatus::InProgress,
         ),
         (
-            PollingMethod::AzureAsyncOperation,
+            Protocol::AzureAsyncOperation,
             Method::Post,
             false,
             CONFLICTING,
             PollerStatus::Succeeded,
         ),
         (
-            PollingMethod::OperationLocation,
+            Protocol::OperationLocation,
             Method::Post,
             true,
             CONFLICTING,
             PollerStatus::Succeeded,
         ),
         (
-            PollingMethod::OperationLocation,
+            Protocol::OperationLocation,
             Method::Put,
             true,
             CONFLICTING,
             PollerStatus::Succeeded,
         ),
         (
-            PollingMethod::OperationLocation,
+            Protocol::OperationLocation,
             Method::Post,
             false,
             CONFLICTING,
             PollerStatus::Succeeded,
         ),
         (
-            PollingMethod::Location,
+            Protocol::Location,
             Method::Delete,
             true,
             CONFLICTING,
             PollerStatus::Failed,
         ),
         (
-            PollingMethod::Location,
+            Protocol::Location,
             Method::Delete,
             false,
             CONFLICTING,
             PollerStatus::Failed,
         ),
         (
-            PollingMethod::Body,
+            Protocol::Body,
             Method::Put,
             true,
             CONFLICTING,
             PollerStatus::Failed,
         ),
         (
-            PollingMethod::Body,
+            Protocol::Body,
             Method::Patch,
             false,
             CONFLICTING,
             PollerStatus::Failed,
         ),
         (
-            PollingMethod::AzureAsyncOperation,
+            Protocol::AzureAsyncOperation,
             Method::Put,
             true,
             RESOURCE_SUCCEEDED,
             PollerStatus::Succeeded,
         ),
         (
-            PollingMethod::AzureAsyncOperation,
+            Protocol::AzureAsyncOperation,
             Method::Put,
             false,
             RESOURCE_SUCCEEDED,
             PollerStatus::InProgress,
         ),
         (
-            PollingMethod::OperationLocation,
+            Protocol::OperationLocation,
             Method::Post,
             true,
             RESOURCE_SUCCEEDED,
             PollerStatus::InProgress,
         ),
         (
-            PollingMethod::AzureAsyncOperation,
+            Protocol::AzureAsyncOperation,
             Method::Patch,
             true,
             RESOURCE_CREATING,
             PollerStatus::InProgress,
         ),
         (
-            PollingMethod::AzureAsyncOperation,
+            Protocol::AzureAsyncOperation,
             Method::Post,
             false,
             RESOURCE_CREATING,
             PollerStatus::Failed,
         ),
         (
-            PollingMethod::OperationLocation,
+            Protocol::OperationLocation,
             Method::Post,
             true,
             RESOURCE_CREATING,
             PollerStatus::Failed,
         ),
     ] {
-        let polling = PollingInfo {
-            method,
-            location: None,
-            operation_url: None,
-        };
+        let mut headers = Headers::new();
+        match method {
+            Protocol::AzureAsyncOperation => {
+                headers.insert(AZURE_ASYNC_OPERATION, POLLING_URL);
+            }
+            Protocol::OperationLocation => {
+                headers.insert(OPERATION_LOCATION, POLLING_URL);
+            }
+            Protocol::Location => {
+                headers.insert(LOCATION, POLLING_URL);
+            }
+            Protocol::Body => {}
+        }
+        let polling =
+            PollingInfo::new(&headers, &RESOURCE_URL.parse().unwrap(), original_method).unwrap();
         let response: Response<ArmOperationStatus> =
             RawResponse::from_bytes(StatusCode::Ok, Headers::new(), body).into();
         assert_eq!(

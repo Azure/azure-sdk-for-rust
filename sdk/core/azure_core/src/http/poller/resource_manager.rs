@@ -298,7 +298,7 @@ where
                         .lock()
                         .await
                         .as_ref()
-                        .is_some_and(|info| info.method == PollingMethod::Location);
+                        .is_some_and(PollingInfo::is_location);
                 let response = loop {
                     let response = pipeline
                         .send(
@@ -399,7 +399,7 @@ where
                                 let context = context.clone();
                                 Box::pin(async move {
                                     let Some(mut final_link) = final_link else {
-                                        if polling.method == PollingMethod::OperationLocation
+                                        if polling.is_operation_location()
                                             && terminal_response.status() != StatusCode::NoContent
                                         {
                                             if let Some(FinalStateVia::OperationLocation(extract)) =
@@ -438,24 +438,41 @@ where
     )
 }
 
-#[derive(Clone, Copy, PartialEq)]
-enum PollingMethod {
-    AzureAsyncOperation,
-    OperationLocation,
-    Location,
+#[derive(Clone)]
+enum PollingInfo {
+    AzureAsyncOperation(AzureAsyncOperation),
+    OperationLocation(OperationLocation),
+    Location(Location),
     Body,
     Nop,
 }
 
+#[derive(Clone, Copy, PartialEq)]
+enum ResourcePollingMode {
+    AzureAsyncOperation,
+    Location,
+    Body,
+}
+
 #[derive(Clone)]
-struct PollingInfo {
-    method: PollingMethod,
+struct AzureAsyncOperation {
     location: Option<Url>,
-    operation_url: Option<Url>,
+    operation_url: Url,
+}
+
+#[derive(Clone)]
+struct OperationLocation {
+    location: Option<Url>,
+    operation_url: Url,
+}
+
+#[derive(Clone)]
+struct Location {
+    url: Url,
 }
 
 impl PollingInfo {
-    fn new(headers: &Headers, request_url: &Url, method: Method) -> crate::Result<Self> {
+    fn new(headers: &Headers, request_url: &Url, request_method: Method) -> crate::Result<Self> {
         let async_url = get_header_url(headers, &AZURE_ASYNC_OPERATION, request_url)?;
         let operation_url = if async_url.is_none() {
             get_header_url(headers, &OPERATION_LOCATION, request_url)?
@@ -463,22 +480,31 @@ impl PollingInfo {
             None
         };
         let location = get_location(headers, request_url)?;
-        let method = if async_url.is_some() {
-            PollingMethod::AzureAsyncOperation
-        } else if operation_url.is_some() {
-            PollingMethod::OperationLocation
-        } else if location.is_some() {
-            PollingMethod::Location
-        } else if matches!(method, Method::Put | Method::Patch) {
-            PollingMethod::Body
+        Ok(if let Some(operation_url) = async_url {
+            Self::AzureAsyncOperation(AzureAsyncOperation {
+                location,
+                operation_url,
+            })
+        } else if let Some(operation_url) = operation_url {
+            Self::OperationLocation(OperationLocation {
+                location,
+                operation_url,
+            })
+        } else if let Some(url) = location {
+            Self::Location(Location { url })
+        } else if matches!(request_method, Method::Put | Method::Patch) {
+            Self::Body
         } else {
-            PollingMethod::Nop
-        };
-        Ok(Self {
-            method,
-            location,
-            operation_url: async_url.or(operation_url),
+            Self::Nop
         })
+    }
+
+    fn is_location(&self) -> bool {
+        matches!(self, Self::Location(_))
+    }
+
+    fn is_operation_location(&self) -> bool {
+        matches!(self, Self::OperationLocation(_))
     }
 
     fn status<M>(
@@ -487,94 +513,24 @@ impl PollingInfo {
         initial: bool,
         original_method: Method,
     ) -> crate::Result<PollerStatus> {
-        if self.method == PollingMethod::Nop {
-            return if response.status() == StatusCode::Accepted {
-                Err(crate::Error::new(
-                    ErrorKind::DataConversion,
-                    "Resource Manager long-running operation response is missing a polling URL",
-                ))
-            } else {
-                Ok(PollerStatus::Succeeded)
-            };
-        }
-        if response.status() == StatusCode::NoContent {
-            return Ok(PollerStatus::Succeeded);
-        }
-        // A POST action can return an existing resource whose provisioning state
-        // does not describe the action.
-        if initial
-            && self.method == PollingMethod::AzureAsyncOperation
-            && original_method == Method::Post
-        {
-            return Ok(PollerStatus::InProgress);
-        }
-
-        #[derive(serde::Deserialize)]
-        struct Monitor {
-            properties: Option<Properties>,
-        }
-        #[derive(serde::Deserialize)]
-        struct Properties {
-            #[serde(rename = "provisioningState")]
-            provisioning_state: Option<String>,
-        }
-
-        // Resource status is only properties.provisioningState. In particular,
-        // a resource's unrelated top-level status can have any JSON shape.
-        // Operation endpoints instead require top-level status:
-        // https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/async-operations#azure-asyncoperation-request-and-response
-        let operation_monitor = self.method == PollingMethod::OperationLocation
-            || (!initial && self.method == PollingMethod::AzureAsyncOperation);
-        let status = if response.body().is_empty() {
-            None
-        } else if operation_monitor {
-            #[derive(serde::Deserialize)]
-            struct OperationMonitor {
-                status: Option<String>,
+        match self {
+            Self::AzureAsyncOperation(strategy) => {
+                strategy.status(response, initial, original_method)
             }
-            let monitor: OperationMonitor = json::from_json(response.body())?;
-            monitor.status
-        } else {
-            let monitor: Monitor = json::from_json(response.body())?;
-            monitor.properties.and_then(|p| p.provisioning_state)
-        };
-        if let Some(status) = status.filter(|status| !status.is_empty()) {
-            return Ok(match PollerStatus::from(status.as_str()) {
-                PollerStatus::UnknownValue(_) => PollerStatus::InProgress,
-                status => status,
-            });
+            Self::OperationLocation(strategy) => strategy.status(response, initial),
+            Self::Location(strategy) => strategy.status(response, initial),
+            Self::Body => resource_status(response, initial, ResourcePollingMode::Body),
+            Self::Nop => {
+                if response.status() == StatusCode::Accepted {
+                    Err(crate::Error::new(
+                        ErrorKind::DataConversion,
+                        "Resource Manager long-running operation response is missing a polling URL",
+                    ))
+                } else {
+                    Ok(PollerStatus::Succeeded)
+                }
+            }
         }
-        if matches!(
-            self.method,
-            PollingMethod::AzureAsyncOperation | PollingMethod::OperationLocation
-        ) {
-            return if initial {
-                Ok(PollerStatus::InProgress)
-            } else {
-                Err(crate::Error::new(
-                    ErrorKind::DataConversion,
-                    "Resource Manager polling response is missing an operation status",
-                ))
-            };
-        }
-        if initial && self.method == PollingMethod::Location {
-            return Ok(PollerStatus::InProgress);
-        }
-        if self.method == PollingMethod::Body && !initial && response.body().is_empty() {
-            return Err(crate::Error::new(
-                ErrorKind::DataConversion,
-                "Resource Manager polling response has an empty body",
-            ));
-        }
-        // Missing provisioningState means success for a resource. Location
-        // responses additionally use HTTP 202 to indicate that polling must continue.
-        Ok(
-            if self.method == PollingMethod::Location && response.status() == StatusCode::Accepted {
-                PollerStatus::InProgress
-            } else {
-                PollerStatus::Succeeded
-            },
-        )
     }
 
     fn next_link(
@@ -584,18 +540,14 @@ impl PollingInfo {
         resource_url: &Url,
         previous_next_link: Option<&Url>,
     ) -> crate::Result<Url> {
-        if let Some(url) = &self.operation_url {
-            return Ok(url.clone());
-        }
-        if self.method == PollingMethod::Location {
-            if let Some(url) = get_location(headers, request_url)? {
-                return Ok(url);
+        match self {
+            Self::AzureAsyncOperation(strategy) => strategy.next_link(),
+            Self::OperationLocation(strategy) => strategy.next_link(),
+            Self::Location(strategy) => {
+                strategy.next_link(headers, request_url, previous_next_link)
             }
-            if let Some(url) = previous_next_link.or(self.location.as_ref()) {
-                return Ok(url.clone());
-            }
+            Self::Body | Self::Nop => Ok(resource_url.clone()),
         }
-        Ok(resource_url.clone())
     }
 
     fn final_link<M: StatusMonitor>(
@@ -606,27 +558,87 @@ impl PollingInfo {
         response: &Response<M>,
         response_url: &Url,
     ) -> crate::Result<Option<Url>> {
-        if response.status() == StatusCode::NoContent
-            || !matches!(
-                self.method,
-                PollingMethod::AzureAsyncOperation | PollingMethod::OperationLocation
-            )
-        {
+        if response.status() == StatusCode::NoContent {
             return Ok(None);
         }
 
-        if self.method == PollingMethod::AzureAsyncOperation {
-            return Ok(match original_method {
-                Method::Put | Method::Patch => Some(resource_url.clone()),
-                Method::Post => match final_state_via {
-                    Some(FinalStateVia::AzureAsyncOperation) => None,
-                    Some(FinalStateVia::OriginalUrl) => Some(resource_url.clone()),
-                    _ => self.location.clone(),
-                },
-                _ => None,
-            });
+        match self {
+            Self::AzureAsyncOperation(strategy) => {
+                strategy.final_link(final_state_via, original_method, resource_url)
+            }
+            Self::OperationLocation(strategy) => strategy.final_link(
+                final_state_via,
+                original_method,
+                resource_url,
+                response,
+                response_url,
+            ),
+            Self::Location(_) | Self::Body | Self::Nop => Ok(None),
         }
+    }
+}
 
+impl AzureAsyncOperation {
+    fn status<M>(
+        &self,
+        response: &Response<M>,
+        initial: bool,
+        original_method: Method,
+    ) -> crate::Result<PollerStatus> {
+        if response.status() == StatusCode::NoContent {
+            return Ok(PollerStatus::Succeeded);
+        }
+        // A POST action can return an existing resource whose provisioning state
+        // does not describe the action.
+        if initial && original_method == Method::Post {
+            return Ok(PollerStatus::InProgress);
+        }
+        if initial {
+            resource_status(response, true, ResourcePollingMode::AzureAsyncOperation)
+        } else {
+            operation_status(response, false)
+        }
+    }
+
+    fn next_link(&self) -> crate::Result<Url> {
+        Ok(self.operation_url.clone())
+    }
+
+    fn final_link<M: StatusMonitor>(
+        &self,
+        final_state_via: Option<FinalStateVia<M>>,
+        original_method: Method,
+        resource_url: &Url,
+    ) -> crate::Result<Option<Url>> {
+        Ok(match original_method {
+            Method::Put | Method::Patch => Some(resource_url.clone()),
+            Method::Post => match final_state_via {
+                Some(FinalStateVia::AzureAsyncOperation) => None,
+                Some(FinalStateVia::OriginalUrl) => Some(resource_url.clone()),
+                _ => self.location.clone(),
+            },
+            _ => None,
+        })
+    }
+}
+
+impl OperationLocation {
+    fn status<M>(&self, response: &Response<M>, initial: bool) -> crate::Result<PollerStatus> {
+        operation_status(response, initial)
+    }
+
+    fn next_link(&self) -> crate::Result<Url> {
+        Ok(self.operation_url.clone())
+    }
+
+    fn final_link<M: StatusMonitor>(
+        &self,
+        final_state_via: Option<FinalStateVia<M>>,
+        original_method: Method,
+        resource_url: &Url,
+        response: &Response<M>,
+        response_url: &Url,
+    ) -> crate::Result<Option<Url>> {
         if matches!(final_state_via, Some(FinalStateVia::Location)) && self.location.is_some() {
             return Ok(self.location.clone());
         }
@@ -656,6 +668,110 @@ impl PollingInfo {
             _ => None,
         })
     }
+}
+
+impl Location {
+    fn status<M>(&self, response: &Response<M>, initial: bool) -> crate::Result<PollerStatus> {
+        resource_status(response, initial, ResourcePollingMode::Location)
+    }
+
+    fn next_link(
+        &self,
+        headers: &Headers,
+        request_url: &Url,
+        previous_next_link: Option<&Url>,
+    ) -> crate::Result<Url> {
+        if let Some(url) = get_location(headers, request_url)? {
+            return Ok(url);
+        }
+        Ok(previous_next_link.unwrap_or(&self.url).clone())
+    }
+}
+
+fn operation_status<M>(response: &Response<M>, initial: bool) -> crate::Result<PollerStatus> {
+    if response.status() == StatusCode::NoContent {
+        return Ok(PollerStatus::Succeeded);
+    }
+    let status = if response.body().is_empty() {
+        None
+    } else {
+        #[derive(serde::Deserialize)]
+        struct OperationMonitor {
+            status: Option<String>,
+        }
+        let monitor: OperationMonitor = json::from_json(response.body())?;
+        monitor.status
+    };
+    if let Some(status) = status.filter(|status| !status.is_empty()) {
+        return Ok(match PollerStatus::from(status.as_str()) {
+            PollerStatus::UnknownValue(_) => PollerStatus::InProgress,
+            status => status,
+        });
+    }
+    if initial {
+        Ok(PollerStatus::InProgress)
+    } else {
+        Err(crate::Error::new(
+            ErrorKind::DataConversion,
+            "Resource Manager polling response is missing an operation status",
+        ))
+    }
+}
+
+// Resource responses only use properties.provisioningState; unrelated top-level
+// status fields can have any JSON shape.
+fn resource_status<M>(
+    response: &Response<M>,
+    initial: bool,
+    mode: ResourcePollingMode,
+) -> crate::Result<PollerStatus> {
+    if response.status() == StatusCode::NoContent {
+        return Ok(PollerStatus::Succeeded);
+    }
+    let status = if response.body().is_empty() {
+        None
+    } else {
+        #[derive(serde::Deserialize)]
+        struct Monitor {
+            properties: Option<Properties>,
+        }
+        #[derive(serde::Deserialize)]
+        struct Properties {
+            #[serde(rename = "provisioningState")]
+            provisioning_state: Option<String>,
+        }
+        let monitor: Monitor = json::from_json(response.body())?;
+        monitor.properties.and_then(|p| p.provisioning_state)
+    };
+    if let Some(status) = status.filter(|status| !status.is_empty()) {
+        return Ok(match PollerStatus::from(status.as_str()) {
+            PollerStatus::UnknownValue(_) => PollerStatus::InProgress,
+            status => status,
+        });
+    }
+    if initial
+        && matches!(
+            mode,
+            ResourcePollingMode::AzureAsyncOperation | ResourcePollingMode::Location
+        )
+    {
+        return Ok(PollerStatus::InProgress);
+    }
+    if !initial && mode == ResourcePollingMode::Body && response.body().is_empty() {
+        return Err(crate::Error::new(
+            ErrorKind::DataConversion,
+            "Resource Manager polling response has an empty body",
+        ));
+    }
+    // Missing provisioningState means success for a resource. Location responses
+    // additionally use HTTP 202 to indicate that polling must continue.
+    Ok(
+        if mode == ResourcePollingMode::Location && response.status() == StatusCode::Accepted {
+            PollerStatus::InProgress
+        } else {
+            PollerStatus::Succeeded
+        },
+    )
 }
 
 fn get_location(headers: &Headers, request_url: &Url) -> crate::Result<Option<Url>> {
