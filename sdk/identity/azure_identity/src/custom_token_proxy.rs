@@ -416,16 +416,28 @@ fn invalid_configuration(name: &'static str, message: impl Into<String>) -> Erro
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::{token_response, MockSts};
     #[cfg(feature = "reqwest_rustls")]
     use crate::{
         tests::LIVE_TEST_SCOPES, WorkloadIdentityCredential, WorkloadIdentityCredentialOptions,
     };
     #[cfg(feature = "reqwest_rustls")]
     use azure_core::credentials::TokenCredential;
-    use azure_core::http::{headers::HeaderName, Method, StatusCode};
     #[cfg(feature = "reqwest_rustls")]
     use futures::future::join_all;
+    #[cfg(all(feature = "reqwest_rustls", feature = "client_certificate"))]
+    use openssl::{
+        asn1::{Asn1Integer, Asn1Time},
+        bn::{BigNum, MsbOption},
+        hash::MessageDigest,
+        nid::Nid,
+        pkey::PKey,
+        rsa::Rsa,
+        ssl::{NameType, SslAcceptor, SslMethod},
+        x509::{
+            extension::{BasicConstraints, ExtendedKeyUsage, KeyUsage, SubjectAlternativeName},
+            X509NameBuilder, X509,
+        },
+    };
     #[cfg(feature = "reqwest_rustls")]
     use std::{
         env,
@@ -434,24 +446,8 @@ mod tests {
         sync::atomic::{AtomicUsize, Ordering},
         time::{Duration, SystemTime},
     };
-
-    #[derive(Debug)]
-    struct MockTokenProxyClient(Arc<dyn HttpClient>);
-
-    impl TokenProxyClient for MockTokenProxyClient {
-        fn create(
-            &self,
-            options: TokenProxyClientOptions<'_>,
-        ) -> azure_core::Result<Arc<dyn HttpClient>> {
-            assert_eq!(options.certificate_authority, Some(&b"test CA"[..]));
-            assert_eq!(options.server_name, "kubernetes.default.svc");
-            assert_eq!(
-                options.resolved_addresses,
-                &["127.0.0.1:8443".parse::<SocketAddr>().unwrap()]
-            );
-            Ok(self.0.clone())
-        }
-    }
+    #[cfg(all(feature = "reqwest_rustls", feature = "client_certificate"))]
+    use std::{io::Read, net::TcpListener, sync::mpsc, thread};
 
     #[cfg(feature = "reqwest_rustls")]
     const TEST_CA: &str = "-----BEGIN CERTIFICATE-----\n\
@@ -764,49 +760,85 @@ uaZPC0VV2qRwbAE=\n\
         assert_eq!(resolved_addrs, vec!["127.0.0.1:8443".parse().unwrap()]);
     }
 
+    #[cfg(all(feature = "reqwest_rustls", feature = "client_certificate"))]
     #[tokio::test]
-    async fn rewrites_request_with_custom_ca_and_sni() {
-        let mock = MockSts::new(
-            vec![token_response()],
-            Some(Arc::new(|request| {
-                assert_eq!(
-                    request.url().as_str(),
-                    "https://kubernetes.default.svc:8443/base/tenant/oauth2/v2.0/token?query=value"
-                );
-                assert_eq!(
-                    request
-                        .headers()
-                        .get_str(&HeaderName::from_static("host"))?,
-                    "127.0.0.1:8443"
-                );
-                Ok(())
-            })),
-        );
-        let proxy = CustomTokenProxy::new(
-            Url::parse("https://127.0.0.1:8443/base").expect("proxy URL"),
-            Some("kubernetes.default.svc".to_string()),
-            Some(CertificateAuthority::Data("test CA".to_string())),
-            Arc::new(MockTokenProxyClient(Arc::new(mock))),
+    async fn sends_requests_with_custom_ca_and_sni_over_local_tls() {
+        const SNI_NAME: &str = "cluster.example.com";
+        let (certificate, key, ca_certificate) = test_server_certificate(SNI_NAME);
+        let ca_data = String::from_utf8(ca_certificate.to_pem().expect("CA certificate PEM"))
+            .expect("PEM is UTF-8");
+        let mut acceptor =
+            SslAcceptor::mozilla_intermediate_v5(SslMethod::tls_server()).expect("TLS acceptor");
+        acceptor.set_certificate(&certificate).expect("certificate");
+        acceptor.set_private_key(&key).expect("private key");
+        acceptor.check_private_key().expect("matching private key");
+        let acceptor = acceptor.build();
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind HTTPS server");
+        let address = listener.local_addr().expect("server address");
+        let (sender, receiver) = mpsc::channel();
+        let server = thread::spawn(move || {
+            for _ in 0..2 {
+                let (stream, _) = listener.accept().expect("TLS connection");
+                let mut stream = acceptor.accept(stream).expect("TLS handshake");
+                let sni = stream
+                    .ssl()
+                    .servername(NameType::HOST_NAME)
+                    .map(str::to_string);
+                let mut request = Vec::new();
+                let mut buffer = [0_u8; 1024];
+                while !request.windows(4).any(|value| value == b"\r\n\r\n") {
+                    let read = stream.read(&mut buffer).expect("read request");
+                    assert_ne!(read, 0, "connection closed before request headers");
+                    request.extend_from_slice(&buffer[..read]);
+                }
+                stream
+                    .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n")
+                    .expect("write response");
+                sender
+                    .send((sni, String::from_utf8(request).expect("HTTP is UTF-8")))
+                    .expect("send captured request");
+            }
+        });
+
+        let proxy_url = Url::parse(&format!("https://{address}/base")).expect("proxy URL");
+        let inline_proxy = CustomTokenProxy::new(
+            proxy_url.clone(),
+            Some(SNI_NAME.to_string()),
+            Some(CertificateAuthority::Data(ca_data.clone())),
+            Arc::new(reqwest::Client::new()),
         )
-        .expect("mock proxy transport");
+        .expect("proxy transport");
         let request = Request::new(
-            Url::parse("https://login.microsoftonline.com/tenant/oauth2/v2.0/token?query=value")
-                .expect("request URL"),
-            Method::Post,
+            Url::parse("https://login.example.com/tenant/token?query=value").expect("request URL"),
+            azure_core::http::Method::Get,
         );
-        let response = proxy
+        let response = inline_proxy
             .execute_request(&request)
             .await
-            .expect("mock proxy response");
-        assert_eq!(response.status(), StatusCode::Ok);
-        assert_eq!(
-            request.url().as_str(),
-            "https://login.microsoftonline.com/tenant/oauth2/v2.0/token?query=value"
-        );
-        assert!(request
-            .headers()
-            .get_optional_str(&HeaderName::from_static("host"))
-            .is_none());
+            .expect("inline CA HTTPS response");
+        assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
+
+        let ca_file = TempFile::new(&ca_data);
+        let file_proxy = CustomTokenProxy::new(
+            proxy_url,
+            Some(SNI_NAME.to_string()),
+            Some(CertificateAuthority::File(ca_file.path.clone())),
+            Arc::new(reqwest::Client::new()),
+        )
+        .expect("proxy transport");
+        let response = file_proxy
+            .execute_request(&request)
+            .await
+            .expect("file CA HTTPS response");
+        assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
+
+        server.join().expect("HTTPS server");
+        for _ in 0..2 {
+            let (sni, request) = receiver.recv().expect("captured request");
+            assert_eq!(sni.as_deref(), Some(SNI_NAME));
+            assert!(request.starts_with("GET /base/tenant/token?query=value HTTP/1.1\r\n"));
+            assert!(request.contains(&format!("\r\nhost: {address}\r\n")));
+        }
     }
 
     // Run in an AKS identity-binding pod with AZURE_TENANT_ID, AZURE_CLIENT_ID,
@@ -864,5 +896,134 @@ uaZPC0VV2qRwbAE=\n\
             assert!(token.expires_on > SystemTime::now());
         }
         Ok(())
+    }
+
+    #[cfg(all(feature = "reqwest_rustls", feature = "client_certificate"))]
+    fn test_server_certificate(name: &str) -> (X509, PKey<openssl::pkey::Private>, X509) {
+        let ca_key =
+            PKey::from_rsa(Rsa::generate(2048).expect("CA RSA key")).expect("CA private key");
+        let mut ca_subject = X509NameBuilder::new().expect("CA subject");
+        ca_subject
+            .append_entry_by_nid(Nid::COMMONNAME, "test CA")
+            .expect("CA common name");
+        let ca_subject = ca_subject.build();
+        let mut serial = BigNum::new().expect("serial");
+        serial
+            .rand(128, MsbOption::MAYBE_ZERO, false)
+            .expect("serial");
+        let serial = Asn1Integer::from_bn(&serial).expect("ASN.1 serial");
+
+        let mut ca_certificate = X509::builder().expect("CA certificate builder");
+        ca_certificate
+            .set_version(2)
+            .expect("CA certificate version");
+        ca_certificate
+            .set_serial_number(&serial)
+            .expect("CA certificate serial");
+        ca_certificate
+            .set_subject_name(&ca_subject)
+            .expect("CA certificate subject");
+        ca_certificate
+            .set_issuer_name(&ca_subject)
+            .expect("CA certificate issuer");
+        ca_certificate
+            .set_pubkey(&ca_key)
+            .expect("CA certificate key");
+        ca_certificate
+            .set_not_before(&Asn1Time::days_from_now(0).expect("CA not before"))
+            .expect("CA not before");
+        ca_certificate
+            .set_not_after(&Asn1Time::days_from_now(1).expect("CA not after"))
+            .expect("CA not after");
+        ca_certificate
+            .append_extension(BasicConstraints::new().critical().ca().build().expect("CA"))
+            .expect("CA extension");
+        ca_certificate
+            .append_extension(
+                KeyUsage::new()
+                    .critical()
+                    .key_cert_sign()
+                    .crl_sign()
+                    .build()
+                    .expect("CA key usage"),
+            )
+            .expect("CA key usage extension");
+        ca_certificate
+            .sign(&ca_key, MessageDigest::sha256())
+            .expect("sign CA certificate");
+        let ca_certificate = ca_certificate.build();
+
+        let key = PKey::from_rsa(Rsa::generate(2048).expect("server RSA key"))
+            .expect("server private key");
+        let mut subject = X509NameBuilder::new().expect("server subject");
+        subject
+            .append_entry_by_nid(Nid::COMMONNAME, name)
+            .expect("server common name");
+        let subject = subject.build();
+        let mut serial = BigNum::new().expect("server serial");
+        serial
+            .rand(128, MsbOption::MAYBE_ZERO, false)
+            .expect("random server serial");
+        let serial = Asn1Integer::from_bn(&serial).expect("ASN.1 server serial");
+
+        let mut certificate = X509::builder().expect("server certificate builder");
+        certificate
+            .set_version(2)
+            .expect("server certificate version");
+        certificate
+            .set_serial_number(&serial)
+            .expect("server certificate serial");
+        certificate
+            .set_subject_name(&subject)
+            .expect("server certificate subject");
+        certificate
+            .set_issuer_name(ca_certificate.subject_name())
+            .expect("server certificate issuer");
+        certificate
+            .set_pubkey(&key)
+            .expect("server certificate key");
+        certificate
+            .set_not_before(&Asn1Time::days_from_now(0).expect("not before"))
+            .expect("not before");
+        certificate
+            .set_not_after(&Asn1Time::days_from_now(1).expect("not after"))
+            .expect("not after");
+        certificate
+            .append_extension(
+                BasicConstraints::new()
+                    .critical()
+                    .build()
+                    .expect("server constraints"),
+            )
+            .expect("server constraints extension");
+        certificate
+            .append_extension(
+                KeyUsage::new()
+                    .critical()
+                    .digital_signature()
+                    .key_encipherment()
+                    .build()
+                    .expect("server key usage"),
+            )
+            .expect("server key usage extension");
+        certificate
+            .append_extension(
+                ExtendedKeyUsage::new()
+                    .server_auth()
+                    .build()
+                    .expect("extended key usage"),
+            )
+            .expect("extended key usage extension");
+        let subject_alt_name = SubjectAlternativeName::new()
+            .dns(name)
+            .build(&certificate.x509v3_context(None, None))
+            .expect("subject alternative name");
+        certificate
+            .append_extension(subject_alt_name)
+            .expect("subject alternative name extension");
+        certificate
+            .sign(&ca_key, MessageDigest::sha256())
+            .expect("sign server certificate");
+        (certificate.build(), key, ca_certificate)
     }
 }
