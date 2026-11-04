@@ -25,7 +25,9 @@ use tracing::{debug, trace, warn, Instrument};
 ///
 /// `partition_id` and `source_url` are accepted purely for diagnostics so the
 /// silent failure path (link-stolen displacement and other receive errors) is
-/// logged with the partition/link context before the error propagates.
+/// logged with the partition/link context before the error propagates. Other
+/// errors log at debug only, because the receive recovery loop already logged
+/// the terminal warning with its stop reason.
 fn translate_receive_error(
     error: AmqpError,
     partition_id: &str,
@@ -46,14 +48,14 @@ fn translate_receive_error(
         return EventHubsError::from(ErrorKind::ConsumerDisconnected(Some(described.clone())));
     }
     if let AmqpErrorKind::AmqpDescribedError(described) = error.kind() {
-        warn!(
+        debug!(
             partition_id = %partition_id,
             source_url = %source_url,
             condition = ?described.condition,
             "Receive delivery failed with an AMQP error condition."
         );
     } else {
-        warn!(
+        debug!(
             partition_id = %partition_id,
             source_url = %source_url,
             err = ?error,
@@ -233,6 +235,7 @@ impl EventReceiver {
                 let receiver = self.connection.get_receiver(&self.source_url,
                     self.message_source.clone(),
                     self.receiver_options.clone(),
+                    &self.partition_id,
                     self.timeout
                 ).instrument(span.clone()).await
                     .map_err(|e| translate_attach_error(e, &self.partition_id, &self.source_url))?;

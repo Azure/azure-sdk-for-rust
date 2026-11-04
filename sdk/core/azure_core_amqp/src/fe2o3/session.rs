@@ -3,20 +3,95 @@
 
 use crate::{
     connection::AmqpConnection,
-    error::{AmqpErrorKind, Result},
+    error::{AmqpDescribedError, AmqpErrorKind, Result},
+    fe2o3::transport::{AbortOnDrop, Closed, Transport},
     session::{AmqpSessionApis, AmqpSessionOptions},
     AmqpError,
 };
 use std::{
     borrow::BorrowMut,
+    future::{poll_fn, Future},
+    io,
+    pin::pin,
     sync::{Arc, OnceLock},
 };
-use tokio::sync::Mutex;
+use tokio::{
+    net::TcpStream,
+    sync::{Mutex, Notify},
+};
 use tracing::{debug, trace};
 
 #[derive(Debug, Clone, Default)]
 pub(crate) struct Fe2o3AmqpSession {
     session: OnceLock<Arc<Mutex<fe2o3_amqp::session::SessionHandle<()>>>>,
+    monitor: OnceLock<Arc<SessionMonitor>>,
+}
+
+/// Shared closure state for an AMQP session and its connection.
+///
+/// Clones share closure notifications and the captured remote session error.
+/// [`Self::run()`] uses this state to stop pending operations when either closes.
+/// [`Self::guard()`] provides transport cleanup if preparation is cancelled.
+#[derive(Debug, Clone)]
+pub(crate) struct SessionClosed {
+    /// Signals that the underlying connection transport has closed.
+    connection: Arc<Closed>,
+    /// Signals that session completion has been observed.
+    session: Arc<Closed>,
+    /// Remote session error captured by the monitor or local shutdown.
+    error: Arc<OnceLock<AmqpDescribedError>>,
+    /// Transport retained for cancellation cleanup.
+    transport: Transport<TcpStream>,
+}
+
+impl SessionClosed {
+    pub fn guard(&self) -> AbortOnDrop<TcpStream> {
+        self.transport.guard()
+    }
+
+    pub async fn run<T>(&self, operation: impl Future<Output = Result<T>>) -> Result<T> {
+        tokio::select! {
+            biased;
+            result = operation => result,
+            _ = self.connection.wait() => Err(AmqpErrorKind::ConnectionDropped(Box::new(
+                io::Error::new(io::ErrorKind::ConnectionAborted, "AMQP connection closed"),
+            )).into()),
+            _ = self.session.wait() => Err(match self.error.get() {
+                Some(error) => AmqpErrorKind::AmqpDescribedError(error.clone()).into(),
+                None => AmqpErrorKind::SessionClosedByRemote(Box::new(
+                    io::Error::new(io::ErrorKind::ConnectionAborted, "AMQP session ended"),
+                )).into(),
+            }),
+        }
+    }
+}
+
+/// Owns the task that observes session completion and notifies waiters.
+///
+/// Local `end()` calls wake the task on exit so it can restore its completion
+/// waker after cancellation. Dropping the monitor aborts the task.
+#[derive(Debug)]
+struct SessionMonitor {
+    /// Shared closure notifications, remote session error, and transport.
+    closed: SessionClosed,
+    /// Background observer of the session's completion outcome.
+    task: tokio::task::JoinHandle<()>,
+    /// Requests another completion poll after a local `end()` call exits.
+    rearm: Arc<Notify>,
+}
+
+struct RearmMonitorOnDrop<'a>(&'a Notify);
+
+impl Drop for RearmMonitorOnDrop<'_> {
+    fn drop(&mut self) {
+        self.0.notify_one();
+    }
+}
+
+impl Drop for SessionMonitor {
+    fn drop(&mut self) {
+        self.task.abort();
+    }
 }
 
 impl Drop for Fe2o3AmqpSession {
@@ -29,6 +104,7 @@ impl Fe2o3AmqpSession {
     pub fn new() -> Self {
         Self {
             session: OnceLock::new(),
+            monitor: OnceLock::new(),
         }
     }
 
@@ -41,9 +117,13 @@ impl Fe2o3AmqpSession {
             .clone())
     }
 
-    fn session_already_attached() -> AmqpError {
-        AmqpError::with_message("AMQP Session is already attached")
+    pub fn closed(&self) -> Result<SessionClosed> {
+        self.monitor
+            .get()
+            .map(|monitor| monitor.closed.clone())
+            .ok_or_else(Self::session_not_set)
     }
+
     fn session_not_set() -> AmqpError {
         AmqpError::with_message("AMQP Session is not set")
     }
@@ -59,13 +139,10 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
         connection: &AmqpConnection,
         options: Option<AmqpSessionOptions>,
     ) -> Result<()> {
-        let mut connection = connection
-            .implementation
-            .get()
-            .get()
-            .ok_or_else(Self::session_already_attached)?
-            .lock()
-            .await;
+        let opened = connection.implementation.get()?;
+        let transport = opened.transport.clone();
+        let connection_closed = transport.closed.clone();
+        let mut connection = opened.handle.lock().await;
 
         let mut session_builder = fe2o3_amqp::session::Session::builder();
 
@@ -101,17 +178,77 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
                 session_builder = session_builder.buffer_size(buffer_size);
             }
         }
+        let guard = transport.guard();
         let session = session_builder
             .begin(connection.borrow_mut())
             .await
-            .map_err(AmqpError::from)?;
+            .map_err(AmqpError::from);
+        guard.disarm();
+        let session = session?;
+        let session = Arc::new(Mutex::new(session));
         self.session
-            .set(Arc::new(Mutex::new(session)))
+            .set(session.clone())
+            .map_err(|_| Self::could_not_set_session())?;
+        let closed = SessionClosed {
+            connection: connection_closed,
+            session: Arc::default(),
+            error: Arc::default(),
+            transport,
+        };
+        let notification = closed.session.clone();
+        let error = closed.error.clone();
+        let rearm = Arc::new(Notify::new());
+        let monitor_rearm = rearm.clone();
+        let task = tokio::spawn(async move {
+            let mut lock = Box::pin(session.clone().lock_owned());
+            // Register the outcome waker, then release the handle between polls.
+            // Keeping the mutex guard while waiting would prevent link attachment.
+            let result = loop {
+                tokio::select! {
+                    result = poll_fn(|cx| {
+                        let mut handle = std::task::ready!(lock.as_mut().poll(cx));
+                        let result = pin!(handle.on_end()).poll(cx);
+                        drop(handle);
+                        lock = Box::pin(session.clone().lock_owned());
+                        result
+                    }) => break result,
+                    // Local end() can replace the outcome waker. Poll it again
+                    // when that caller exits, including through cancellation.
+                    _ = monitor_rearm.notified() => {}
+                }
+            };
+            if let Err(fe2o3_amqp::session::Error::RemoteEndedWithError(reason)) = result {
+                // Preserve terminal protocol conditions for every waiter.
+                let _ = error.set(reason.into());
+            }
+            notification.close();
+        });
+        self.monitor
+            .set(Arc::new(SessionMonitor {
+                closed,
+                task,
+                rearm,
+            }))
             .map_err(|_| Self::could_not_set_session())?;
         Ok(())
     }
 
+    /// Ends the session and returns its shutdown result.
+    ///
+    /// Returns successfully if the session has already ended. Otherwise, signals
+    /// session closure when the shutdown await returns, whether it succeeds or fails.
+    /// Saves any remote session error before signaling closure so waiters can read it.
+    ///
+    /// Local shutdown can replace the monitor's completion waker. The
+    /// `RearmMonitorOnDrop` guard wakes the monitor when this call exits, including
+    /// when its future is dropped while awaiting. The guard is declared before the
+    /// session mutex guard so the mutex is released before the monitor is notified.
+    /// This lets the monitor resume observing session completion after cancellation.
     async fn end(&self) -> Result<()> {
+        let monitor = self.monitor.get().ok_or_else(Self::session_not_set)?;
+        // Declare before the mutex guard so cancellation unlocks the session
+        // before waking the monitor. notify_one also retains an early wake-up.
+        let _rearm = RearmMonitorOnDrop(&monitor.rearm);
         let mut session = self
             .session
             .get()
@@ -122,8 +259,13 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
             trace!("Session already ended, returning.");
             return Ok(());
         }
-        session.end().await.map_err(AmqpError::from)?;
-        Ok(())
+        let result = session.end().await;
+        if let Err(fe2o3_amqp::session::Error::RemoteEndedWithError(reason)) = &result {
+            // Local end consumes the outcome before the monitor can observe it.
+            let _ = monitor.closed.error.set(reason.clone().into());
+        }
+        monitor.closed.session.close();
+        result.map_err(AmqpError::from)
     }
 }
 

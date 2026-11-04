@@ -91,12 +91,22 @@ design review.
 | Operation type | Phase 1 | Phase 2 | Future |
 |---|:---:|:---:|:---:|
 | Document point reads (GetItem) | ✅ | ✅ | ✅ |
-| Queries (`QueryItems`) — page-level | ❌ | ✅ | ✅ |
+| Queries (`QueryItems`) — page-level | ❌ | 🟡 partial | ✅ |
 | `ReadMany` — page-level | ❌ | ✅ | ✅ |
 | Change feed — page-level | ❌ | ✅ | ✅ |
 | Metadata operations (Database / Container / Offer / Throughput) | ❌ | ✅ | ✅ |
 | Document writes (Create/Replace/Upsert/Delete/Patch) — any topology | ❌ | ❌ | ❌ |
 | Stored procedure execution (`ExecuteJavaScript`) | ❌ | ❌ | 🟡 candidate |
+
+> **🟡 Queries are partially landed.** `(Document, Query)` is a
+> `HEDGEABLE_PAIRS` member, but `should_hedge()` narrows it to
+> **single-partition** queries via `CosmosOperation::is_trivial()`.
+> Cross-partition fan-out is still excluded: each per-pkrange leaf is its own
+> pipeline invocation, so hedging every leaf would spawn one alternate per
+> partition, and data-plane hedging has no admission budget
+> ([#4916](https://github.com/Azure/azure-sdk-for-rust/issues/4916)). A
+> single-partition query is one request per page — the same shape as a point
+> read — so it adds no amplification beyond what Phase 1 already ships.
 
 > **Triggers and UDFs** are not standalone operations — they ride along
 > as request headers on document operations and are therefore hedged
@@ -1190,6 +1200,10 @@ fn is_final_result(status: &CosmosStatus) -> bool {
 > request against another region would, at best, duplicate the denial
 > and, at worst, double a security-sensitive signal that may itself
 > be rate-limited.
+>
+> **Exception:** a `403/3` on a hedge leg of a read that sent the
+> hub-region-processing-only header means "not the hub here", not a
+> denial, so the race treats it as transient (§9.6.9).
 
 ### 7.2.1 429 sub-status sensitivity (hedge-spawn eligibility)
 
@@ -1489,6 +1503,23 @@ partition is consistently slow on this access pattern. The
 `execute_hedged()` records each alternate-win via a callback into PPCB so
 the circuit breaker can transition the primary partition to a degraded
 state after a configurable number of consecutive wins.
+
+Feedback is recorded only while the effective PPCB flag is enabled. This gate
+does not disable transport hedging or its diagnostics. PPCB enablement changes
+clear accumulated hedge counters so disabling and re-enabling the feature cannot
+reuse stale failure history.
+
+A primary win with no counter to clear is an unchanged transition: it does not
+clone partition state, publish a replacement, retire state, or invalidate the
+routing snapshot cache. Partition transitions re-evaluate this decision after a
+failed CAS. Idle failback sweeps and unchanged partition enablement flags likewise
+avoid publication.
+
+Real counter updates still clone partition state before CAS publication.
+The store holds the published state in an Arc behind its epoch pointer, so a
+subsequent snapshot refresh shares that state rather than copying its maps again.
+Existing snapshots remain immutable and retain their state across later updates.
+Alternate-win bookkeeping continues to use the account-only snapshot accessor.
 
 **Mechanism (sketch — pending PPCB owner sign-off):**
 
@@ -1839,6 +1870,26 @@ non-consuming `evaluate_hedge_leg_effects` is the minimal mirror:
 same `(operation, endpoint, retry_state, result)` tuple, same
 LocationEffects, plus the new `observed_session_unavailable` signal —
 but no `OperationAction` and no consumption of the underlying error.
+
+#### 9.6.8 Hub-region cache on a hedged win
+
+A leg that sent the hub-region header and returned a success was served by
+the partition's hub, so the race caches that region exactly as the
+non-hedged `Complete` arm does (reads only, PPAF on, skipped when already
+cached). The leg records whether it sent the header when its request is
+built; the shared latch alone is not enough, because it can flip after a
+leg's request was already built without the header. Today only the
+secondary reads the latch, so only a secondary win can populate the cache.
+
+#### 9.6.9 Hub-only `403/3` on a hedge leg
+
+For a read leg that sent the hub-region header, `403/3` means the region is
+not the partition's hub. The race treats it as transient and evaluates the
+leg as hub discovery, judged by the header it sent rather than the snapshot,
+so it advances the hub entry instead of recording a PPAF write failover. A
+new hub entry tries the write region first: on a single-write account it is
+the hub unless PPAF moved it. The retry after the race routes to that entry.
+Other 403s, and `403/3` without the header, stay final.
 
 ---
 
@@ -2537,7 +2588,16 @@ operations, stored procedure execution, adaptive threshold tuning.
 
 **Operation rows from §1 covered (Phase 2 column):**
 
-- `QueryItems` — hedged **per page**.
+- `QueryItems` — hedged **per page**. **Partially landed:**
+  single-partition queries only (see the §1 note). Cross-partition fan-out
+  remains blocked on data-plane hedge admission control
+  ([#4916](https://github.com/Azure/azure-sdk-for-rust/issues/4916)).
+  Per-page continuation portability across regions relies on query
+  continuations resuming on globally stable document rids, unlike the
+  region-affine change-feed ETag. The live multi-region test
+  `query_continuation_minted_in_primary_resumes_in_alternate` covers it; a
+  lagging region surfaces as a transient 1002 that the other leg wins, so the
+  failure mode is availability, not correctness.
 - `ReadMany` — hedged **per page**.
 - Change feed (`ReadFeed`) — hedged **per page**.
 - Metadata operations: Database / Container / Offer / Throughput

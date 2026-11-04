@@ -85,13 +85,13 @@ use crate::partition_key::{CosmosPartitionKeyComponent, PartitionKeyHandle};
 /// pointers so the struct stays `#[repr(C)]`.
 pub struct OptOf;
 
-const TRISTATE_UNSET: i8 = 0;
+pub(crate) const TRISTATE_UNSET: i8 = 0;
 const TRISTATE_FALSE: i8 = 1;
 const TRISTATE_TRUE: i8 = 2;
 
 /// Decodes a tri-state bool. Returns `Err(INVALID_OPTION_VALUE)` for an
 /// out-of-range discriminant.
-fn decode_tristate_bool(v: i8) -> Result<Option<bool>, CosmosErrorCode> {
+pub(crate) fn decode_tristate_bool(v: i8) -> Result<Option<bool>, CosmosErrorCode> {
     match v {
         TRISTATE_UNSET => Ok(None),
         TRISTATE_FALSE => Ok(Some(false)),

@@ -2,5 +2,7 @@
 ignore = [
   "RUSTSEC-2026-0097", # https://github.com/Azure/azure-sdk-for-rust/issues/4183
   "RUSTSEC-2026-0235", # https://github.com/Azure/azure-sdk-for-rust/issues/4984
+  "RUSTSEC-2026-0368", # https://github.com/Azure/azure-sdk-for-rust/issues/5513
+  "RUSTSEC-2026-0369", # https://github.com/Azure/azure-sdk-for-rust/issues/5513
 ]
 severity_threshold = "critical"

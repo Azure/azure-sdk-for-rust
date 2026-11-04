@@ -7,6 +7,7 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
+exclude.workspace = true
 
 [dependencies]
 azure_canary_core = { path = "../azure_canary_core", version = "0.1.0" }

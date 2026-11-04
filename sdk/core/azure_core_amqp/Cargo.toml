@@ -16,6 +16,7 @@ keywords = ["sdk", "cloud", "rest", "iot"]
 categories = ["api-bindings"]
 
 edition.workspace = true
+exclude.workspace = true
 
 [dependencies]
 async-trait.workspace = true
@@ -37,7 +38,9 @@ typespec = { path = "../typespec", version = "1.2.0-beta.2" }
 typespec_macros.workspace = true
 
 [dev-dependencies]
+fe2o3-amqp = { workspace = true, features = ["acceptor"] }
 serde_json.workspace = true
+tokio = { workspace = true, features = ["test-util"] }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [features]

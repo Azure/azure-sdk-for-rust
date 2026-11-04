@@ -48,11 +48,19 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity {
     async fn attach(&self) -> Result<()> {
         let session = self.session.implementation.get()?;
         let mut session = session.lock().await;
-        let cbs_client = fe2o3_amqp_cbs::client::CbsClient::builder()
-            .client_node_addr("rust_amqp_cbs")
-            .attach(session.borrow_mut())
-            .await
-            .map_err(AmqpError::from)?;
+        let closed = self.session.implementation.closed()?;
+        let guard = closed.guard();
+        let cbs_client = closed
+            .run(async {
+                fe2o3_amqp_cbs::client::CbsClient::builder()
+                    .client_node_addr("rust_amqp_cbs")
+                    .attach(session.borrow_mut())
+                    .await
+                    .map_err(AmqpError::from)
+            })
+            .await;
+        guard.disarm();
+        let cbs_client = cbs_client?;
         self.cbs
             .set(Mutex::new(cbs_client))
             .map_err(|_| Self::cbs_already_attached())?;
@@ -91,15 +99,24 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity {
                     })?,
             )),
         );
-        self.cbs
+        let closed = self.session.implementation.closed()?;
+        let mut cbs = self
+            .cbs
             .get()
             .ok_or_else(Self::cbs_not_attached)?
             .lock()
-            .await
-            .borrow_mut()
-            .put_token(path, cbs_token)
-            .await
-            .map_err(AmqpError::from)?;
+            .await;
+        let guard = closed.guard();
+        let result = closed
+            .run(async {
+                cbs.borrow_mut()
+                    .put_token(path, cbs_token)
+                    .await
+                    .map_err(AmqpError::from)
+            })
+            .await;
+        guard.disarm();
+        result?;
         Ok(())
     }
 }

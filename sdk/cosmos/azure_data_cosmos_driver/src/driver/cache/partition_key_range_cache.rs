@@ -377,6 +377,18 @@ impl PartitionKeyRangeCache {
     pub async fn invalidate(&self, container: &ContainerReference) {
         self.cache.invalidate(container).await;
     }
+
+    /// Reads initialized topology without fetching or waiting for a pending refresh.
+    pub(crate) async fn cached_routing_map(
+        &self,
+        container: &ContainerReference,
+    ) -> crate::error::Result<Option<Arc<ContainerRoutingMap>>> {
+        self.cache
+            .get(container)
+            .await
+            .map(|cached| cached.as_ref().clone())
+            .transpose()
+    }
 }
 
 /// Returns `previous` with its change-feed continuation stripped.

@@ -35,6 +35,7 @@ mod query_plan_mode;
 mod read_consistency;
 mod region;
 mod throughput_control;
+mod utf8_decoding;
 
 pub use availability_strategy::{AvailabilityStrategy, HedgeThreshold, HedgingStrategy};
 pub use binary_encoding::BinaryEncodingOptions;
@@ -71,3 +72,4 @@ pub(crate) use read_consistency::resolve_effective_consistency;
 pub use read_consistency::ReadConsistencyStrategy;
 pub use region::Region;
 pub(crate) use throughput_control::ResolvedThroughputControl;
+pub use utf8_decoding::Utf8DecodingMode;

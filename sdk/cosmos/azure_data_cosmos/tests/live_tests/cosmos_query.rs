@@ -11,8 +11,8 @@ use azure_data_cosmos::{
         VectorEmbedding, VectorEmbeddingPolicy, VectorIndex, VectorIndexType,
     },
     options::{
-        BinaryEncodingOptions, CreateContainerOptions, FullTextScoreScope, MaxItemCountHint,
-        OperationOptions, QueryOptions, QueryPlanMode, Region,
+        BinaryEncodingOptions, FullTextScoreScope, MaxItemCountHint, OperationOptions,
+        QueryOptions, QueryPlanMode, Region,
     },
     AccountReference, CosmosClient, Query, RoutingStrategy,
 };
@@ -134,14 +134,7 @@ async fn live_ranked_search_with_python_dataset() -> Result<(), Box<dyn Error>> 
                 )
                 .with_indexing_policy(indexing);
             let container = run_context
-                .create_container(
-                    db,
-                    properties,
-                    Some(
-                        CreateContainerOptions::default()
-                            .with_throughput(ThroughputProperties::manual(11_000)),
-                    ),
-                )
+                .create_container(db, properties, Some(ThroughputProperties::manual(11_000)))
                 .await?;
             let ranges = container.read_feed_ranges(None).await?;
             assert!(
@@ -414,10 +407,7 @@ async fn live_ranked_full_text_and_hybrid_search() -> Result<(), Box<dyn Error>>
                 .create_container(
                     db,
                     properties,
-                    Some(
-                        CreateContainerOptions::default()
-                            .with_throughput(ThroughputProperties::manual(11_000)),
-                    ),
+                    Some(ThroughputProperties::manual(11_000)),
                 )
                 .await?;
             assert!(
@@ -557,6 +547,7 @@ async fn live_distinct_admission_and_per_query_options() -> Result<(), Box<dyn E
         async |run_context, db_client| {
             println!("Live DISTINCT test database: {}", run_context.db_name());
             test_data::create_container_with_items(
+                run_context,
                 db_client,
                 test_data::generate_mock_items(4, 3),
                 None,

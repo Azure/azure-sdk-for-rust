@@ -11,7 +11,7 @@
 
 // Specifies the version of azurecosmosdriver this header file was generated from.
 // This should match the version of libazurecosmosdriver you are linking against.
-#define AZURECOSMOSDRIVER_H_VERSION "0.2.0"
+#define AZURECOSMOSDRIVER_H_VERSION "0.3.0"
 
 // Packed-status helpers (see cosmos_status_code_t). Emitted as macros so
 // they keep the SCREAMING_SNAKE_CASE spelling shared with the
@@ -2086,6 +2086,14 @@ typedef struct cosmos_driver_options_config_v2_t {
   const struct cosmos_fault_injection_rule_t *fault_injection_rules;
   uintptr_t fault_injection_rules_len;
   uintptr_t fault_injection_rule_stride;
+  /**
+   * Whether to reject unsafe user-defined names before request planning,
+   * including item names supplied to Create and Upsert.
+   *
+   * Tri-state bool: `0` leaves the driver default unchanged, `1` disables
+   * validation, and `2` enables validation. The driver default is enabled.
+   */
+  int8_t resource_name_validation_enabled;
 } cosmos_driver_options_config_v2_t;
 
 /**

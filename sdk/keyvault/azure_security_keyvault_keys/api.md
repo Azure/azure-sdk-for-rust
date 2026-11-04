@@ -525,11 +525,11 @@ pub mod models {
         #[serde(default, skip_serializing)]
         pub value: Vec<DeletedKeyProperties>,
     }
+    #[async_trait]
     impl Page for super::ListDeletedKeyPropertiesResult {
         type IntoIter = <Vec<DeletedKeyProperties> as IntoIterator>::IntoIter;
         type Item = DeletedKeyProperties;
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn into_items(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<<Self as >::IntoIter>> + ::core::marker::Send>>;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -539,11 +539,11 @@ pub mod models {
         #[serde(default, skip_serializing)]
         pub value: Vec<KeyProperties>,
     }
+    #[async_trait]
     impl Page for super::ListKeyPropertiesResult {
         type IntoIter = <Vec<KeyProperties> as IntoIterator>::IntoIter;
         type Item = KeyProperties;
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn into_items(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<<Self as >::IntoIter>> + ::core::marker::Send>>;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]

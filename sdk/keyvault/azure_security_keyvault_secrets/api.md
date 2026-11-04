@@ -143,11 +143,11 @@ pub mod models {
         #[serde(default, skip_serializing)]
         pub value: Vec<DeletedSecretProperties>,
     }
+    #[async_trait]
     impl Page for super::ListDeletedSecretPropertiesResult {
         type IntoIter = <Vec<DeletedSecretProperties> as IntoIterator>::IntoIter;
         type Item = DeletedSecretProperties;
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn into_items(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<<Self as >::IntoIter>> + ::core::marker::Send>>;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -157,11 +157,11 @@ pub mod models {
         #[serde(default, skip_serializing)]
         pub value: Vec<SecretProperties>,
     }
+    #[async_trait]
     impl Page for super::ListSecretPropertiesResult {
         type IntoIter = <Vec<SecretProperties> as IntoIterator>::IntoIter;
         type Item = SecretProperties;
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn into_items(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<<Self as >::IntoIter>> + ::core::marker::Send>>;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     pub struct RestoreSecretParameters {

@@ -16,7 +16,9 @@ use crate::driver::{cache::AccountProperties, transport::is_emulator_host};
 use crate::options::{PartitionFailoverOptions, Region};
 
 use super::{
-    partition_endpoint_state::{HealthStatus, PartitionEndpointState, PartitionFailoverEntry},
+    partition_endpoint_state::{
+        HealthStatus, PartitionEndpointState, PartitionFailoverEntry, PartitionStateUpdate,
+    },
     partition_key_range_id::PartitionKeyRangeId,
     AccountEndpointState, CosmosEndpoint, UnavailablePartition, UnavailableReason,
 };
@@ -316,7 +318,7 @@ fn ppcb_failback_jitter(
     Duration::from_nanos(z % max_jitter_nanos)
 }
 
-/// Marks a partition as unavailable, producing a new `PartitionEndpointState`.
+/// Marks an eligible partition as unavailable, or leaves the state unchanged.
 ///
 /// This is a pure function: it takes the current state and produces a new one.
 /// The caller is responsible for the CAS swap.
@@ -325,13 +327,10 @@ pub(crate) fn mark_partition_unavailable(
     account_state: &AccountEndpointState,
     unavail: &UnavailablePartition,
     is_partitioned_resource: bool,
-) -> PartitionEndpointState {
-    let mut new_state = current_state.clone();
-    let now = Instant::now();
-
+) -> PartitionStateUpdate {
     // Caller (apply) guarantees partition_key_range_id is Some; guard defensively.
     let Some(pk_range_id) = &unavail.partition_key_range_id else {
-        return new_state;
+        return PartitionStateUpdate::Unchanged;
     };
 
     let is_read = unavail.is_read;
@@ -349,18 +348,30 @@ pub(crate) fn mark_partition_unavailable(
     };
 
     let Some(failed_endpoint) = failed_endpoint else {
-        return new_state;
+        return PartitionStateUpdate::Unchanged;
     };
 
     // Determine which mechanism applies and which endpoint list to use.
     let next_endpoints = &account_state.preferred_read_endpoints;
-
-    if is_eligible_for_ppcb(
+    let use_ppcb = is_eligible_for_ppcb(
         current_state,
         account_state,
         is_read,
         is_partitioned_resource,
-    ) {
+    );
+    let use_ppaf = is_eligible_for_ppaf(
+        current_state,
+        account_state,
+        is_read,
+        is_partitioned_resource,
+    );
+    if !use_ppcb && !use_ppaf {
+        return PartitionStateUpdate::Unchanged;
+    }
+    let mut new_state = current_state.clone();
+    let now = Instant::now();
+
+    if use_ppcb {
         let entry = new_state
             .circuit_breaker_overrides
             .entry(pk_range_id.clone())
@@ -398,7 +409,7 @@ pub(crate) fn mark_partition_unavailable(
                 current_state.config.partition_unavailability_duration(),
                 pk_range_id,
             );
-            return new_state;
+            return PartitionStateUpdate::Updated(new_state);
         }
 
         // Reset counters if the counter reset window has elapsed.
@@ -419,22 +430,23 @@ pub(crate) fn mark_partition_unavailable(
 
         // Check if threshold is exceeded; if not, return without moving endpoint.
         if !can_circuit_breaker_trigger_failover(entry, is_read, &current_state.config) {
-            return new_state;
+            return PartitionStateUpdate::Updated(new_state);
         }
 
         // Try to move to next endpoint.
         if !try_move_next_endpoint(entry, next_endpoints, &failed_endpoint) {
+            if !current_state
+                .circuit_breaker_overrides
+                .contains_key(pk_range_id)
+            {
+                return PartitionStateUpdate::Unchanged;
+            }
             // All endpoints exhausted — remove entry to restore default routing.
             new_state
                 .circuit_breaker_overrides
                 .remove(pk_range_id.as_str());
         }
-    } else if is_eligible_for_ppaf(
-        current_state,
-        account_state,
-        is_read,
-        is_partitioned_resource,
-    ) {
+    } else {
         let entry = new_state
             .failover_overrides
             .entry(pk_range_id.clone())
@@ -459,11 +471,14 @@ pub(crate) fn mark_partition_unavailable(
         // failback only applies to PPCB. PPAF overrides persist until the
         // backend signals a change organically.
         if !try_move_next_endpoint(entry, next_endpoints, &failed_endpoint) {
+            if !current_state.failover_overrides.contains_key(pk_range_id) {
+                return PartitionStateUpdate::Unchanged;
+            }
             new_state.failover_overrides.remove(pk_range_id.as_str());
         }
     }
 
-    new_state
+    PartitionStateUpdate::Updated(new_state)
 }
 
 /// Tries to advance a partition failover entry to the next available endpoint.
@@ -519,12 +534,19 @@ pub(crate) fn cache_hub_region(
     current_state: &PartitionEndpointState,
     pk_range_id: &PartitionKeyRangeId,
     hub_endpoint: &CosmosEndpoint,
-) -> PartitionEndpointState {
+) -> PartitionStateUpdate {
     if !current_state.per_partition_automatic_failover_enabled {
-        return current_state.clone();
+        return PartitionStateUpdate::Unchanged;
     }
     if hub_endpoint.region().is_none() {
-        return current_state.clone();
+        return PartitionStateUpdate::Unchanged;
+    }
+    if current_state
+        .failover_overrides
+        .get(pk_range_id)
+        .is_some_and(|entry| entry.current_endpoint == *hub_endpoint)
+    {
+        return PartitionStateUpdate::Unchanged;
     }
 
     let mut new_state = current_state.clone();
@@ -553,34 +575,45 @@ pub(crate) fn cache_hub_region(
             failback_jitter: Duration::ZERO,
         });
 
-    new_state
+    PartitionStateUpdate::Updated(new_state)
 }
 
 /// Advances the per-partition failover entry to the next preferred read
 /// endpoint after a `403/3 (WriteForbidden)` response on a hub-region
 /// discovery attempt.
 ///
-/// Creates a new entry if none exists (cold cache), or rotates the
-/// existing `current_endpoint` to the next un-tried preferred read
-/// endpoint (warm cache that found a stale hub). If all preferred reads
-/// have been exhausted, the entry is removed so the next attempt falls
-/// back to the default selection logic in `resolve_endpoint`.
+/// Creates a new entry if none exists (cold cache), trying the write region
+/// before the read regions, or rotates the existing `current_endpoint` to the
+/// next un-tried preferred read endpoint (warm cache that found a stale hub).
+/// If all preferred reads have been exhausted, the entry is removed so the
+/// next attempt falls back to the default selection logic in `resolve_endpoint`.
 ///
-/// Pure function: returns a new `PartitionEndpointState`. The caller is
-/// responsible for the CAS swap.
+/// Returns an explicit update decision; the caller is responsible for the CAS swap.
 pub(crate) fn advance_hub_region_discovery(
     current_state: &PartitionEndpointState,
     account_state: &AccountEndpointState,
     pk_range_id: &PartitionKeyRangeId,
     failed_endpoint: &CosmosEndpoint,
-) -> PartitionEndpointState {
+) -> PartitionStateUpdate {
     if !current_state.per_partition_automatic_failover_enabled {
-        return current_state.clone();
+        return PartitionStateUpdate::Unchanged;
     }
 
     let mut new_state = current_state.clone();
     let now = Instant::now();
     let next_endpoints = &account_state.preferred_read_endpoints;
+    let is_new_entry = !current_state.failover_overrides.contains_key(pk_range_id);
+    // A new entry tries the write region first: on single-write it is the hub unless PPAF moved it.
+    let write_endpoints: Vec<CosmosEndpoint> = if is_new_entry {
+        account_state
+            .preferred_write_endpoints
+            .iter()
+            .filter(|endpoint| endpoint.region().is_some())
+            .cloned()
+            .collect()
+    } else {
+        Vec::new()
+    };
 
     let entry = new_state
         .failover_overrides
@@ -597,16 +630,21 @@ pub(crate) fn advance_hub_region_discovery(
             failback_jitter: Duration::ZERO,
         });
 
-    if try_move_next_endpoint(entry, next_endpoints, failed_endpoint) {
+    if try_move_next_endpoint(entry, &write_endpoints, failed_endpoint)
+        || try_move_next_endpoint(entry, next_endpoints, failed_endpoint)
+    {
         entry.last_failure_time = now;
     } else {
+        if is_new_entry {
+            return PartitionStateUpdate::Unchanged;
+        }
         // All preferred-read endpoints exhausted — drop the entry so the next
         // attempt falls back to default selection, and the operation aborts via
         // the failover-budget guard once that budget is depleted.
         new_state.failover_overrides.remove(pk_range_id.as_str());
     }
 
-    new_state
+    PartitionStateUpdate::Updated(new_state)
 }
 
 /// Transitions expired partition entries from `Unhealthy` to `ProbeCandidate`,
@@ -622,14 +660,19 @@ pub(crate) fn expire_partition_overrides(
     state: &PartitionEndpointState,
     now: Instant,
     unavailability_duration: Duration,
-) -> PartitionEndpointState {
+) -> PartitionStateUpdate {
+    let is_due = |entry: &PartitionFailoverEntry| {
+        entry.health_status == HealthStatus::Unhealthy
+            && now.saturating_duration_since(entry.first_failure_time)
+                >= unavailability_duration + entry.failback_jitter
+    };
+    if !state.circuit_breaker_overrides.values().any(is_due) {
+        return PartitionStateUpdate::Unchanged;
+    }
     let mut new_state = state.clone();
 
     for entry in new_state.circuit_breaker_overrides.values_mut() {
-        if entry.health_status == HealthStatus::Unhealthy
-            && now.saturating_duration_since(entry.first_failure_time)
-                >= unavailability_duration + entry.failback_jitter
-        {
+        if is_due(entry) {
             entry.health_status = HealthStatus::ProbeCandidate;
         }
     }
@@ -639,7 +682,7 @@ pub(crate) fn expire_partition_overrides(
     // backend signals a change (e.g., a new 403/3 from the override region).
     // Only PPCB (circuit breaker) overrides use probe-based failback.
 
-    new_state
+    PartitionStateUpdate::Updated(new_state)
 }
 
 /// Removes a probe-successful entry from the circuit breaker overrides.
@@ -798,15 +841,14 @@ pub(crate) fn record_hedge_primary_win(
     state: &PartitionEndpointState,
     partition_key_range_id: &PartitionKeyRangeId,
     primary_region: Option<&Region>,
-) -> PartitionEndpointState {
+) -> PartitionStateUpdate {
     let key = (partition_key_range_id.clone(), primary_region.cloned());
     if !state.consecutive_hedge_wins.contains_key(&key) {
-        // Fast path: no counter for this pair, no clone needed.
-        return state.clone();
+        return PartitionStateUpdate::Unchanged;
     }
     let mut new_state = state.clone();
     new_state.consecutive_hedge_wins.remove(&key);
-    new_state
+    PartitionStateUpdate::Updated(new_state)
 }
 
 #[cfg(test)]
@@ -1368,7 +1410,7 @@ mod tests {
         let account = single_master_account();
         let unavail = unavailable_partition("pk-1", "eastus", false);
 
-        let result = mark_partition_unavailable(&ps, &account, &unavail, true);
+        let result = mark_partition_unavailable(&ps, &account, &unavail, true).apply(&ps);
 
         // PPAF should have an entry; PPCB should not
         assert_eq!(result.failover_overrides.len(), 1);
@@ -1388,7 +1430,7 @@ mod tests {
         let account = single_master_account();
         let unavail = unavailable_partition("pk-1", "eastus", true);
 
-        let result = mark_partition_unavailable(&ps, &account, &unavail, true);
+        let result = mark_partition_unavailable(&ps, &account, &unavail, true).apply(&ps);
 
         // PPCB entry should exist
         assert_eq!(result.circuit_breaker_overrides.len(), 1);
@@ -1420,7 +1462,7 @@ mod tests {
         );
         let unavail = unavailable_partition("pk-1", "eastus", true);
 
-        let result = mark_partition_unavailable(&ps, &account, &unavail, true);
+        let result = mark_partition_unavailable(&ps, &account, &unavail, true).apply(&ps);
 
         let entry = &result.circuit_breaker_overrides["pk-1"];
         // 10 failures >= default threshold of 10, so endpoint should have moved to westus
@@ -1451,7 +1493,7 @@ mod tests {
         );
         let unavail = unavailable_partition("pk-1", "eastus", false);
 
-        let result = mark_partition_unavailable(&ps, &account, &unavail, true);
+        let result = mark_partition_unavailable(&ps, &account, &unavail, true).apply(&ps);
 
         // Entry removed because all endpoints exhausted
         assert!(result.failover_overrides.is_empty());
@@ -1463,7 +1505,7 @@ mod tests {
         let account = single_master_account();
         let unavail = unavailable_partition("pk-1", "nonexistent", false);
 
-        let result = mark_partition_unavailable(&ps, &account, &unavail, true);
+        let result = mark_partition_unavailable(&ps, &account, &unavail, true).apply(&ps);
 
         assert!(result.failover_overrides.is_empty());
         assert!(result.circuit_breaker_overrides.is_empty());
@@ -1491,7 +1533,7 @@ mod tests {
         );
         let unavail = unavailable_partition("pk-1", "eastus", true);
 
-        let result = mark_partition_unavailable(&ps, &account, &unavail, true);
+        let result = mark_partition_unavailable(&ps, &account, &unavail, true).apply(&ps);
 
         let entry = &result.circuit_breaker_overrides["pk-1"];
         // Counters should have been reset, then incremented by 1
@@ -1550,7 +1592,8 @@ mod tests {
             },
         );
 
-        let expired = expire_partition_overrides(&state, Instant::now(), Duration::from_secs(30));
+        let expired = expire_partition_overrides(&state, Instant::now(), Duration::from_secs(30))
+            .apply(&state);
 
         // PPCB old entry transitioned to ProbeCandidate
         assert_eq!(expired.circuit_breaker_overrides.len(), 1);
@@ -1590,7 +1633,8 @@ mod tests {
             },
         );
 
-        let expired = expire_partition_overrides(&state, Instant::now(), Duration::from_secs(60));
+        let expired = expire_partition_overrides(&state, Instant::now(), Duration::from_secs(60))
+            .apply(&state);
 
         assert_eq!(expired.failover_overrides.len(), 1);
     }
@@ -1614,7 +1658,8 @@ mod tests {
             },
         );
 
-        let expired = expire_partition_overrides(&state, Instant::now(), Duration::from_secs(30));
+        let expired = expire_partition_overrides(&state, Instant::now(), Duration::from_secs(30))
+            .apply(&state);
 
         // Already ProbeCandidate, should remain ProbeCandidate (not re-transitioned)
         assert_eq!(
@@ -1715,7 +1760,8 @@ mod tests {
 
         // Sweep at exactly `first_failure + unavailability` — jitter not yet elapsed.
         let expired =
-            expire_partition_overrides(&state, first_failure + unavailability, unavailability);
+            expire_partition_overrides(&state, first_failure + unavailability, unavailability)
+                .apply(&state);
         assert_eq!(
             expired.circuit_breaker_overrides["jittered-pk"].health_status,
             HealthStatus::Unhealthy,
@@ -1727,7 +1773,8 @@ mod tests {
             &state,
             first_failure + unavailability + jitter,
             unavailability,
-        );
+        )
+        .apply(&state);
         assert_eq!(
             expired.circuit_breaker_overrides["jittered-pk"].health_status,
             HealthStatus::ProbeCandidate,
@@ -1744,7 +1791,7 @@ mod tests {
         let account = single_master_account();
         let unavail = unavailable_partition("pk-1", "eastus", true);
 
-        let result = mark_partition_unavailable(&ps, &account, &unavail, true);
+        let result = mark_partition_unavailable(&ps, &account, &unavail, true).apply(&ps);
         let entry = &result.circuit_breaker_overrides["pk-1"];
         let max = ps.config.partition_unavailability_duration() / 2;
         assert!(
@@ -1764,7 +1811,7 @@ mod tests {
         let account = single_master_account();
         let unavail = unavailable_partition("pk-1", "eastus", false);
 
-        let result = mark_partition_unavailable(&ps, &account, &unavail, true);
+        let result = mark_partition_unavailable(&ps, &account, &unavail, true).apply(&ps);
         let entry = &result.failover_overrides["pk-1"];
         assert_eq!(entry.failback_jitter, Duration::ZERO);
     }
@@ -1790,7 +1837,7 @@ mod tests {
         );
         let unavail = unavailable_partition("pk-1", "eastus", true);
 
-        let result = mark_partition_unavailable(&ps, &account, &unavail, true);
+        let result = mark_partition_unavailable(&ps, &account, &unavail, true).apply(&ps);
 
         let entry = &result.circuit_breaker_overrides["pk-1"];
         assert_eq!(entry.health_status, HealthStatus::Unhealthy);
@@ -1819,7 +1866,7 @@ mod tests {
 
         // Simulate (threshold + 1) failures to exceed the threshold.
         for _ in 0..=(threshold as usize) {
-            ps = mark_partition_unavailable(&ps, &account, &unavail, true);
+            ps = mark_partition_unavailable(&ps, &account, &unavail, true).apply(&ps);
         }
         let entry = &ps.circuit_breaker_overrides["pk-1"];
         assert_eq!(entry.read_failure_count, threshold + 1);
@@ -1830,14 +1877,15 @@ mod tests {
             &ps,
             Instant::now() + Duration::from_secs(60),
             Duration::from_secs(5),
-        );
+        )
+        .apply(&ps);
         assert_eq!(
             ps.circuit_breaker_overrides["pk-1"].health_status,
             HealthStatus::ProbeCandidate,
         );
 
         // ── Phase 3: Probe FAILS → entry resets ─────────────────────
-        ps = mark_partition_unavailable(&ps, &account, &unavail, true);
+        ps = mark_partition_unavailable(&ps, &account, &unavail, true).apply(&ps);
         let entry = &ps.circuit_breaker_overrides["pk-1"];
         assert_eq!(entry.health_status, HealthStatus::Unhealthy);
         // Critical: counters must be 0 so the threshold gates re-failover.
@@ -1850,14 +1898,14 @@ mod tests {
         // ── Phase 4: Re-failover must accumulate threshold failures ──
         // Failures 1..(threshold-1) stay below the threshold; endpoint must not move.
         for i in 1..threshold {
-            ps = mark_partition_unavailable(&ps, &account, &unavail, true);
+            ps = mark_partition_unavailable(&ps, &account, &unavail, true).apply(&ps);
             let entry = &ps.circuit_breaker_overrides["pk-1"];
             assert_eq!(entry.read_failure_count, i);
             assert_eq!(entry.current_endpoint, regional_endpoint("eastus"));
         }
 
         // The threshold-th failure meets the threshold → failover to westus.
-        ps = mark_partition_unavailable(&ps, &account, &unavail, true);
+        ps = mark_partition_unavailable(&ps, &account, &unavail, true).apply(&ps);
         let entry = &ps.circuit_breaker_overrides["pk-1"];
         assert_eq!(entry.read_failure_count, threshold);
         assert_eq!(entry.current_endpoint, regional_endpoint("westus"));
@@ -2083,7 +2131,7 @@ mod tests {
             },
         );
 
-        let result = cache_hub_region(&ps, &pk("0"), &new_hub);
+        let result = cache_hub_region(&ps, &pk("0"), &new_hub).apply(&ps);
         let entry = result.failover_overrides.get(&pk("0")).unwrap();
         // current_endpoint MUST flip to the new hub.
         assert_eq!(entry.current_endpoint, new_hub);
@@ -2112,7 +2160,7 @@ mod tests {
     #[test]
     fn cache_hub_region_skips_when_ppaf_disabled() {
         let ps = partition_state_ppaf_disabled();
-        let result = cache_hub_region(&ps, &pk("0"), &regional_endpoint("eastus"));
+        let result = cache_hub_region(&ps, &pk("0"), &regional_endpoint("eastus")).apply(&ps);
         assert!(
             result.failover_overrides.is_empty(),
             "hub-region cache must not populate when PPAF is disabled on the account",
@@ -2162,7 +2210,7 @@ mod tests {
         let non_regional = default_endpoint();
         assert!(non_regional.region().is_none());
 
-        let result = cache_hub_region(&ps, &pk("0"), &non_regional);
+        let result = cache_hub_region(&ps, &pk("0"), &non_regional).apply(&ps);
         assert!(result.failover_overrides.is_empty());
     }
 
@@ -2187,7 +2235,7 @@ mod tests {
             },
         );
 
-        let result = advance_hub_region_discovery(&ps, &account, &pk("0"), &eastus);
+        let result = advance_hub_region_discovery(&ps, &account, &pk("0"), &eastus).apply(&ps);
         let entry = result.failover_overrides.get(&pk("0")).unwrap();
         assert_eq!(entry.current_endpoint, westus);
     }
@@ -2220,8 +2268,10 @@ mod tests {
 
         // Rotation skips endpoints already in `failed_endpoints`, so each
         // failure advances to a genuinely untried region.
-        state = advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[0]);
-        state = advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[1]);
+        state =
+            advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[0]).apply(&state);
+        state =
+            advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[1]).apply(&state);
         assert_eq!(
             state.failover_overrides[&pk("0")].current_endpoint,
             endpoints[2]
@@ -2229,7 +2279,8 @@ mod tests {
 
         // If C also rejects the hub request, the remaining healthy hub D is
         // still reachable rather than losing a retry to already-failed B.
-        state = advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[2]);
+        state =
+            advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[2]).apply(&state);
         let entry = &state.failover_overrides[&pk("0")];
         assert_eq!(entry.current_endpoint, endpoints[3]);
         assert!(entry.failed_endpoints.contains(&endpoints[0]));
@@ -2268,7 +2319,8 @@ mod tests {
 
         // B fails while A is still current: the report is retained even though
         // it does not move the endpoint.
-        state = advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[1]);
+        state =
+            advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[1]).apply(&state);
         assert_eq!(
             state.failover_overrides[&pk("0")].current_endpoint,
             endpoints[0],
@@ -2276,7 +2328,8 @@ mod tests {
         );
 
         // A now fails too; rotation must skip the already-failed B.
-        state = advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[0]);
+        state =
+            advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[0]).apply(&state);
         let entry = &state.failover_overrides[&pk("0")];
         assert_eq!(
             entry.current_endpoint, endpoints[2],
@@ -2284,6 +2337,24 @@ mod tests {
         );
         assert!(entry.failed_endpoints.contains(&endpoints[0]));
         assert!(entry.failed_endpoints.contains(&endpoints[1]));
+    }
+
+    #[test]
+    fn advance_hub_region_discovery_new_entry_tries_write_region_first() {
+        let westus = regional_endpoint("westus");
+        let centralus = regional_endpoint("centralus");
+        let eastus = regional_endpoint("eastus");
+        let mut account = single_master_account();
+        account.preferred_read_endpoints =
+            vec![westus.clone(), centralus.clone(), eastus.clone()].into();
+        let state = partition_state_ppaf_enabled();
+
+        let result =
+            advance_hub_region_discovery(&state, &account, &pk("0"), &centralus).apply(&state);
+
+        let entry = &result.failover_overrides[&pk("0")];
+        assert_eq!(entry.current_endpoint, eastus);
+        assert!(entry.failed_endpoints.contains(&centralus));
     }
 
     #[test]
@@ -2312,7 +2383,7 @@ mod tests {
             },
         );
 
-        let result = advance_hub_region_discovery(&ps, &account, &pk("0"), &westus);
+        let result = advance_hub_region_discovery(&ps, &account, &pk("0"), &westus).apply(&ps);
         // Both endpoints have failed — entry is removed so default selection
         // applies on the next attempt.
         assert!(!result.failover_overrides.contains_key(&pk("0")));
@@ -2329,7 +2400,7 @@ mod tests {
         let account = single_master_account();
         let eastus = regional_endpoint("eastus");
 
-        let result = advance_hub_region_discovery(&ps, &account, &pk("0"), &eastus);
+        let result = advance_hub_region_discovery(&ps, &account, &pk("0"), &eastus).apply(&ps);
         assert!(
             result.failover_overrides.is_empty(),
             "advance_hub_region_discovery must not populate the cache when PPAF is disabled on the account",
@@ -2440,7 +2511,7 @@ mod tests {
         );
 
         // Primary win clears the counter.
-        let s3 = record_hedge_primary_win(&s2, &pk_range, Some(&primary));
+        let s3 = record_hedge_primary_win(&s2, &pk_range, Some(&primary)).apply(&s2);
         assert!(s3.consecutive_hedge_wins.is_empty());
         assert!(s3.circuit_breaker_overrides.is_empty());
 
@@ -2465,7 +2536,7 @@ mod tests {
             .circuit_breaker_overrides
             .contains_key(pk_range.as_str()));
 
-        let after = record_hedge_primary_win(&state, &pk_range, Some(&primary));
+        let after = record_hedge_primary_win(&state, &pk_range, Some(&primary)).apply(&state);
         assert!(
             after
                 .circuit_breaker_overrides

@@ -20,6 +20,7 @@
 - `reqwest_deflate`
 - `reqwest_gzip`
 - `reqwest_rustls`
+- `resource_manager`
 - `tokio`
 - `xml`
 
@@ -161,6 +162,8 @@ pub mod cloud {
     pub struct CustomConfiguration {
         pub authority_host: String,
         pub audiences: Audiences,
+        #[cfg(feature = "resource_manager")]
+        pub endpoint: Option<String>,
     }
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     #[non_exhaustive]
@@ -171,8 +174,26 @@ pub mod cloud {
         AzureChina,
         Custom(CustomConfiguration),
     }
+    impl CloudConfigurationExt for super::CloudConfiguration {
+        fn audience(&self) -> crate::Result<&str>;
+        fn default_scope(&self) -> crate::Result<Cow<'static, str>>;
+        fn endpoint(&self) -> Option<&str>;
+    }
+    impl Default for &CloudConfiguration {
+        fn default() -> Self;
+    }
     impl From<CustomConfiguration> for CloudConfiguration {
         fn from(config: CustomConfiguration) -> Self;
+    }
+    #[cfg(feature = "resource_manager")]
+    pub mod resource_manager {
+        #[allow(missing_debug_implementations)]
+        pub struct Audience;
+        pub trait CloudConfigurationExt: crate::private::Sealed {
+            fn audience(&self) -> crate::Result<&str>;
+            fn default_scope(&self) -> crate::Result<Cow<'static, str>>;
+            fn endpoint(&self) -> Option<&str>;
+        }
     }
 }
 pub mod credentials {
@@ -232,8 +253,7 @@ pub mod credentials {
     }
     #[async_trait]
     pub trait TokenCredential: Send + Sync + fmt::Debug {
-        #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-        fn get_token(&self, scopes: &[&str], options: Option<TokenRequestOptions<'_>>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = crate::Result<AccessToken>> + ::core::marker::Send>>;
+        async fn get_token(&self, scopes: &[&str], options: Option<TokenRequestOptions<'_>>) -> crate::Result<AccessToken>;
     }
 }
 pub mod error {
@@ -446,6 +466,11 @@ pub mod http {
         pub instrumentation: InstrumentationOptions,
         pub logging: LoggingOptions,
         pub cloud: Option<std::sync::Arc<crate::cloud::CloudConfiguration>>,
+        #[cfg(feature = "test")]
+        pub allow_insecure_connections: bool,
+    }
+    impl From<&ClientOptions> for BearerTokenAuthorizationOptions {
+        fn from(_options: &ClientOptions) -> Self;
     }
     #[derive(Clone, Debug)]
     pub struct Context<'a> {
@@ -972,8 +997,7 @@ pub mod http {
     }
     #[async_trait]
     pub trait HttpClient: Send + Sync + std::fmt::Debug {
-        #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-        fn execute_request(&self, request: &Request) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<AsyncRawResponse>> + ::core::marker::Send>>;
+        async fn execute_request(&self, request: &Request) -> Result<AsyncRawResponse>;
     }
     pub trait Sanitizer {
         fn sanitize(&self, allowed_patterns: &HashSet<Cow<'static, str>>) -> String;
@@ -1185,8 +1209,7 @@ pub mod http {
         pub trait Page {
             type IntoIter: Iterator<Item = <Self as >::Item>;
             type Item;
-            #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-            fn into_items(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = crate::Result<<Self as >::IntoIter>> + ::core::marker::Send>>;
+            async fn into_items(self) -> crate::Result<<Self as >::IntoIter>;
         }
         pub type Pager<P, F = crate::http::JsonFormat> = ItemIterator<crate::http::response::Response<P, F>>;
         pub type PagerResultFuture<P> = std::pin::Pin<Box<dyn Future<Output = crate::Result<PagerResult<P>>> + Send + 'static>>;
@@ -1206,9 +1229,9 @@ pub mod http {
         impl From<HeaderName> for ClientRequestIdPolicy {
             fn from(header_name: headers::HeaderName) -> Self;
         }
+        #[async_trait]
         impl Policy for ClientRequestIdPolicy {
-            #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-            fn send(&self, ctx: &Context<'_>, request: &mut Request, next: &[Arc<dyn Policy>]) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = PolicyResult> + ::core::marker::Send>>;
+            async fn send(&self, ctx: &Context<'_>, request: &mut Request, next: &[Arc<dyn Policy>]) -> PolicyResult;
         }
         #[derive(Clone, Debug)]
         pub struct PublicApiInstrumentationInformation {
@@ -1231,9 +1254,9 @@ pub mod http {
         impl TransportPolicy {
             pub fn new(transport: Transport) -> Self;
         }
+        #[async_trait]
         impl Policy for TransportPolicy {
-            #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-            fn send(&self, ctx: &Context<'_>, request: &mut Request, next: &[Arc<dyn Policy>]) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = PolicyResult> + ::core::marker::Send>>;
+            async fn send(&self, ctx: &Context<'_>, request: &mut Request, next: &[Arc<dyn Policy>]) -> PolicyResult;
         }
         #[derive(Clone, Debug)]
         pub struct UserAgentPolicy {
@@ -1241,14 +1264,13 @@ pub mod http {
         impl<'a> UserAgentPolicy {
             pub fn new(crate_name: Option<&'a str>, crate_version: Option<&'a str>, options: &UserAgentOptions) -> Self;
         }
+        #[async_trait]
         impl Policy for UserAgentPolicy {
-            #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-            fn send(&self, ctx: &Context<'_>, request: &mut Request, next: &[Arc<dyn Policy>]) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = PolicyResult> + ::core::marker::Send>>;
+            async fn send(&self, ctx: &Context<'_>, request: &mut Request, next: &[Arc<dyn Policy>]) -> PolicyResult;
         }
         #[async_trait]
         pub trait Policy: Send + Sync + std::fmt::Debug {
-            #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-            fn send(&self, ctx: &Context<'_>, request: &mut Request, next: &[Arc<dyn Policy>]) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = PolicyResult> + ::core::marker::Send>>;
+            async fn send(&self, ctx: &Context<'_>, request: &mut Request, next: &[Arc<dyn Policy>]) -> PolicyResult;
         }
         #[async_trait]
         pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
@@ -1256,11 +1278,18 @@ pub mod http {
             fn retry_headers(&self) -> Option<&RetryHeaders>;
             fn retry_status_codes(&self) -> &[StatusCode];
             fn sleep_duration(&self, retry_count: u32) -> Duration;
-            #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-            fn wait(&self, retry_count: u32, retry_after: Option<Duration>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = ()> + ::core::marker::Send>>;
+            async fn wait(&self, retry_count: u32, retry_after: Option<Duration>);
         }
         pub type PolicyResult = typespec::error::Result<crate::http::AsyncRawResponse>;
         pub mod auth {
+            #[derive(Clone, Debug, Default)]
+            pub struct BearerTokenAuthorizationOptions {
+                #[cfg(feature = "test")]
+                pub allow_insecure_connections: bool,
+            }
+            impl From<&ClientOptions> for BearerTokenAuthorizationOptions {
+                fn from(_options: &ClientOptions) -> Self;
+            }
             #[derive(Clone, Debug)]
             pub struct BearerTokenAuthorizationPolicy {
             }
@@ -1268,25 +1297,23 @@ pub mod http {
                 pub fn new<A, B>(credential: Arc<dyn TokenCredential>, scopes: A) -> Self where A: IntoIterator<Item = B>, B: Into<String>;
                 pub fn with_on_challenge(self, on_challenge: Arc<dyn OnChallenge>) -> Self;
                 pub fn with_on_request(self, on_request: Arc<dyn OnRequest>) -> Self;
+                pub fn with_options(self, _options: BearerTokenAuthorizationOptions) -> Self;
             }
+            #[async_trait]
             impl Policy for BearerTokenAuthorizationPolicy {
-                #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-                fn send(&self, ctx: &Context<'_>, request: &mut Request, next: &[Arc<dyn Policy>]) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = PolicyResult> + ::core::marker::Send>>;
+                async fn send(&self, ctx: &Context<'_>, request: &mut Request, next: &[Arc<dyn Policy>]) -> PolicyResult;
             }
             #[async_trait]
             pub trait Authorizer: crate::private::Sealed + std::fmt::Debug + Send + Sync {
-                #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-                fn authorize(&self, request: &mut Request, scopes: &[&str], options: TokenRequestOptions<'_>) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
+                async fn authorize(&self, request: &mut Request, scopes: &[&str], options: TokenRequestOptions<'_>) -> Result<()>;
             }
             #[async_trait]
             pub trait OnChallenge: std::fmt::Debug + Send + Sync {
-                #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-                fn on_challenge(&self, context: &Context<'_>, request: &mut Request, authorizer: &dyn Authorizer, headers: &Headers) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
+                async fn on_challenge(&self, context: &Context<'_>, request: &mut Request, authorizer: &dyn Authorizer, headers: &Headers) -> Result<()>;
             }
             #[async_trait]
             pub trait OnRequest: std::fmt::Debug + Send + Sync {
-                #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-                fn on_request(&self, context: &mut Context<'_>, request: &mut Request, authorizer: &dyn Authorizer) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
+                async fn on_request(&self, context: &mut Context<'_>, request: &mut Request, authorizer: &dyn Authorizer) -> Result<()>;
             }
         }
     }
@@ -1322,6 +1349,9 @@ pub mod http {
         }
         impl Default for PollerOptions<'_> {
             fn default() -> Self;
+        }
+        impl<'a> From<PollerOptions<'a>> for crate::http::poller::PollerOptions<'a> {
+            fn from(options: PollerOptions<'a>) -> Self;
         }
         #[derive(Clone, Debug, Eq, PartialEq)]
         #[non_exhaustive]
@@ -1370,6 +1400,38 @@ pub mod http {
             fn status(&self) -> PollerStatus;
         }
         pub type PollerResultFuture<M, F> = std::pin::Pin<Box<dyn Future<Output = crate::Result<super::PollerResult<M, F>>> + Send + 'static>>;
+        #[cfg(feature = "resource_manager")]
+        pub mod resource_manager {
+            pub fn new_poller<'a, M>(pipeline: crate::http::Pipeline, request: crate::http::Request, final_state_via: Option<FinalStateVia<M>>, options: Option<PollerOptions<'a>>) -> crate::http::Poller<M> where M: StatusMonitor + DeserializeOwned + Send + 'static, <M as >::Output: DeserializeOwned + Send + 'static, <M as >::Format: Send + 'static;
+            #[derive(Clone, Debug)]
+            pub struct PollerOptions<'a> {
+                pub context: crate::http::Context<'a>,
+                pub frequency: crate::time::Duration,
+            }
+            impl<'a> PollerOptions<'a> {
+                #[must_use]
+                pub fn into_owned(self) -> PollerOptions<'static>;
+            }
+            impl Default for PollerOptions<'_> {
+                fn default() -> Self;
+            }
+            impl<'a> From<PollerOptions<'a>> for crate::http::poller::PollerOptions<'a> {
+                fn from(options: PollerOptions<'a>) -> Self;
+            }
+            #[derive(Debug)]
+            pub enum FinalStateVia<M: StatusMonitor> {
+                AzureAsyncOperation,
+                Location,
+                OriginalUrl,
+                #[allow(clippy::type_complexity)]
+                OperationLocation(fn(crate::http::Response<M>) -> crate::Result<crate::http::Response<<M as >::Output, <M as >::Format>>),
+            }
+            impl<M: StatusMonitor> Clone for FinalStateVia<M> {
+                fn clone(&self) -> Self;
+            }
+            impl<M: StatusMonitor> Copy for FinalStateVia<M> {
+            }
+        }
     }
     pub mod request {
         #[derive(Clone)]
@@ -1747,10 +1809,10 @@ pub mod stream {
     impl From<BytesStream> for crate::http::Body {
         fn from(stream: BytesStream) -> Self;
     }
+    #[async_trait]
     impl SeekableStream for BytesStream {
         fn len(&self) -> Option<u64>;
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn reset(&mut self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = crate::Result<()>> + ::core::marker::Send>>;
+        async fn reset(&mut self) -> crate::Result<()>;
     }
     impl Stream for BytesStream {
         type Item = Result<Bytes, Error>;
@@ -1770,10 +1832,10 @@ pub mod stream {
     impl<R> Debug for ReadStream<R> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
     }
+    #[async_trait]
     impl<R> SeekableStream for ReadStream<R> where R: AsyncRead + Unpin + Send + Sync {
         fn len(&self) -> Option<u64>;
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn reset(&mut self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = crate::Result<()>> + ::core::marker::Send>>;
+        async fn reset(&mut self) -> crate::Result<()>;
     }
     pub struct SeekableReadStream<R> {
     }
@@ -1789,18 +1851,17 @@ pub mod stream {
     impl<R> Debug for SeekableReadStream<R> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
     }
+    #[async_trait]
     impl<R> SeekableStream for SeekableReadStream<R> where R: AsyncRead + AsyncSeek + Unpin + Send + Sync {
         fn len(&self) -> Option<u64>;
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn reset(&mut self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = crate::Result<()>> + ::core::marker::Send>>;
+        async fn reset(&mut self) -> crate::Result<()>;
     }
     #[async_trait]
     pub trait SeekableStream: AsyncRead + Unpin + std::fmt::Debug + Send + Sync + DynClone {
         fn buffer_size(&self) -> usize;
         fn is_empty(&self) -> Option<bool>;
         fn len(&self) -> Option<u64>;
-        #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-        fn reset(&mut self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send>>;
+        async fn reset(&mut self) -> Result<()>;
     }
     pub const DEFAULT_BUFFER_SIZE: usize = _;
 }
