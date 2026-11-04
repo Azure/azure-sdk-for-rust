@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added ranked full-text and weighted text/vector hybrid search, with per-query `FullTextScoreScope` and bounded buffered results. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
+
 ### Breaking Changes
 
 - Consumed legacy single-request prefix checkpoints cannot safely resume across physical ranges and are rejected; start a new feed with an explicit start position. Older unpolled single-request checkpoints require the original start on resume. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
