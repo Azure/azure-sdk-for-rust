@@ -209,7 +209,8 @@ partition values `{red, blue}` and `{red, green}` yield three, not four.
 These stages use native or Gateway rewrites; the local provider continues to
 decline aggregate, GROUP BY, and distinct-count shapes. The composition order
 from source to output is merge/ORDER BY, ordinary aggregate (unless grouped),
-DISTINCT, GROUP BY, OFFSET/LIMIT/TOP, then distinct count. Caller parameters and
+GROUP BY, DISTINCT, OFFSET/LIMIT/TOP, then distinct count. DISTINCT compares
+completed group projections, never partition-local aggregate partials. Caller parameters and
 the requested output encoding are preserved. Buffered pages accumulate request
 charge, session tokens, and diagnostics with the existing response aggregator.
 Complete typed query/index metric aggregation is a separate follow-up.
