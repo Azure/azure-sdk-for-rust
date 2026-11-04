@@ -339,6 +339,132 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn suppressed_distinct_and_window_pages_preserve_all_range_session_tokens() {
+        for distinct_type in [DistinctType::Unordered, DistinctType::Ordered] {
+            for skip in [0, 1] {
+                for emit_binary in [false, true] {
+                    let children: Vec<Box<dyn PipelineNode>> = [
+                        ("red", "0:-1#1", 1.0, 1),
+                        ("red", "1:-1#2", 2.0, 2),
+                        ("blue", "2:-1#3", 4.0, 3),
+                    ]
+                    .into_iter()
+                    .map(|(value, token, charge, attempts)| {
+                        Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
+                            response: feed(json!([value]), charge, attempts, Some(token)),
+                            is_terminal: true,
+                        })])) as Box<dyn PipelineNode>
+                    })
+                    .collect();
+                    let source = Box::new(SequentialDrain::new(children));
+                    let distinct = Box::new(Distinct::with_last_hash(
+                        source,
+                        distinct_type,
+                        None,
+                        emit_binary,
+                    ));
+                    let child: Box<dyn PipelineNode> = if skip == 0 {
+                        distinct
+                    } else {
+                        Box::new(SkipTake::new(distinct, skip, None, emit_binary))
+                    };
+                    let mut node = DCount::new(child, &info(None), emit_binary);
+                    let output = unwrap_page(pull(&mut node).await);
+                    assert_eq!(rows(&output), vec![json!(2 - skip)]);
+                    let expected = SessionToken::new("0:-1#1")
+                        .merge(&SessionToken::new("1:-1#2"))
+                        .unwrap()
+                        .merge(&SessionToken::new("2:-1#3"))
+                        .unwrap();
+                    assert_eq!(output.headers().session_token.as_ref(), Some(&expected));
+                    assert_eq!(
+                        output.headers().request_charge,
+                        Some(RequestCharge::new(7.0))
+                    );
+                    assert_eq!(output.diagnostics().request_count(), 6);
+                    assert!(output.headers().continuation.is_none());
+                }
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn suppressed_tails_preserve_session_tokens_with_or_without_a_terminal_page() {
+        for terminal in [false, true] {
+            for skip in [0, 10] {
+                let child = Box::new(MockLeaf::with_pages(
+                    [
+                        ("0:-1#1", false),
+                        ("1:-1#2", false),
+                        ("1:-1#5,2:-1#3", terminal),
+                    ]
+                    .into_iter()
+                    .map(|(token, is_terminal)| {
+                        Ok(PageResult::Page {
+                            response: feed(json!(["red"]), 1.0, 1, Some(token)),
+                            is_terminal,
+                        })
+                    })
+                    .chain([Ok(PageResult::Drained)])
+                    .collect(),
+                ));
+                let distinct = Box::new(Distinct::new(child, DistinctType::Unordered));
+                let window = Box::new(SkipTake::new(distinct, skip, None, false));
+                let mut node = DCount::new(window, &info(None), false);
+                let output = unwrap_page(pull(&mut node).await);
+                assert_eq!(rows(&output), vec![json!(if skip == 0 { 1 } else { 0 })]);
+                let expected = SessionToken::new("0:-1#1,1:-1#5,2:-1#3");
+                assert_eq!(output.headers().session_token.as_ref(), Some(&expected));
+                assert_eq!(
+                    output.headers().request_charge,
+                    Some(RequestCharge::new(3.0))
+                );
+                assert_eq!(output.diagnostics().request_count(), 3);
+                assert_drained(pull(&mut node).await);
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn suppressed_session_merge_errors_preserve_diagnostics_and_prevent_checkpoints() {
+        for window in [false, true] {
+            let source = Box::new(MockLeaf::with_pages(
+                [
+                    ("red", "0:-1#1", 1),
+                    ("red", "malformed", 2),
+                    ("blue", "2:-1#3", 3),
+                ]
+                .into_iter()
+                .map(|(value, token, attempts)| {
+                    Ok(PageResult::Page {
+                        response: feed(json!([value]), 1.0, attempts, Some(token)),
+                        is_terminal: false,
+                    })
+                })
+                .collect(),
+            ));
+            let child: Box<dyn PipelineNode> = if window {
+                Box::new(SkipTake::new(source, 10, None, false))
+            } else {
+                Box::new(Distinct::new(source, DistinctType::Unordered))
+            };
+            let mut node = DCount::new(child, &info(None), false);
+            let error = pull(&mut node).await.unwrap_err();
+            let expected = SessionToken::new("0:-1#1")
+                .merge(&SessionToken::new("malformed"))
+                .unwrap_err();
+            assert_eq!(error.status(), expected.status());
+            assert!(error.to_string().contains("invalid session token"));
+            assert_eq!(
+                error.diagnostics().unwrap().request_count(),
+                if window { 3 } else { 6 }
+            );
+            assert!(node.snapshot_state().is_err());
+            assert!(pull(&mut node).await.is_err());
+        }
+    }
+
+    #[tokio::test]
     async fn empty_input_and_alias_shapes_match_peer_projections() {
         for alias in [None, Some(""), Some("$1"), Some("total")] {
             for empty in [true, false] {

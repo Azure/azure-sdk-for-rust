@@ -13,6 +13,7 @@
 ### Bugs Fixed
 
 - Apply `DISTINCT` to completed `GROUP BY` projections before result windows, preserving identical partition-local aggregate contributions and deduplicating equal final projections. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
+- Preserve session tokens from query pages suppressed by `DISTINCT` or `OFFSET`, including terminal distinct-count results and empty-page flushes. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Normalize native query-plan partition bounds using the container's partition key kind and version, preventing malformed EPK errors during cross-partition queries. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Honor the emulator certificate-validation policy in Gateway V2 connectivity probes so self-signed emulator certificates do not prevent Gateway V2 connectivity when validation is disabled for emulator hosts. ([#5484](https://github.com/Azure/azure-sdk-for-rust/pull/5484))
 - Preserve Gateway 2.0 batch atomicity and continue-on-error controls, preventing partial commits in failed transactional batches. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))

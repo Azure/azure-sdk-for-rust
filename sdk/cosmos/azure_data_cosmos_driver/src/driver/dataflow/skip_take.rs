@@ -28,11 +28,11 @@ use async_trait::async_trait;
 use bytes::Bytes;
 
 use crate::diagnostics::DiagnosticsContext;
-use crate::models::{CosmosResponse, FeedRange, RequestCharge, ResponseBody};
+use crate::models::{CosmosResponse, FeedRange, RequestCharge, ResponseBody, SessionToken};
 
 use super::{
-    recovery_diagnostics::RecoveryDiagnostics, skip_take_page, PageResult, PipelineContext,
-    PipelineNode, PipelineNodeState,
+    query_response::merge_session_token, recovery_diagnostics::RecoveryDiagnostics, skip_take_page,
+    PageResult, PipelineContext, PipelineNode, PipelineNodeState,
 };
 
 /// Applies a global `OFFSET` (`remaining_skip`) then `LIMIT`/`TOP`
@@ -52,6 +52,8 @@ pub(crate) struct SkipTake {
     suppressed_charge: RequestCharge,
     /// Bounded diagnostics from suppressed pages, awaiting the next page or error.
     suppressed_diagnostics: RecoveryDiagnostics,
+    /// Session progress from every page consumed since the last emitted page.
+    pending_session_token: Option<SessionToken>,
     /// The most recently suppressed page, retained as a template so that if the
     /// child drains while `suppressed_diagnostics` is still non-empty (i.e. the
     /// skip consumed the very last backend page without a terminal marker) the
@@ -97,6 +99,7 @@ impl SkipTake {
             deferred_error: None,
             suppressed_charge: RequestCharge::default(),
             suppressed_diagnostics: RecoveryDiagnostics::default(),
+            pending_session_token: None,
             pending_flush: None,
             emit_binary,
             poisoned: false,
@@ -117,6 +120,7 @@ impl SkipTake {
     ) -> CosmosResponse {
         let mut headers = response.headers().clone();
         headers.item_count = Some(emitted as u32);
+        headers.session_token = self.pending_session_token.take();
         // Fold RUs charged by fully-skipped pages into this public page so the
         // billed total is not under-reported.
         if self.suppressed_charge != RequestCharge::default() {
@@ -150,6 +154,7 @@ impl SkipTake {
     fn clear_suppressed(&mut self) {
         self.suppressed_charge = RequestCharge::default();
         self.suppressed_diagnostics = RecoveryDiagnostics::default();
+        self.pending_session_token = None;
         self.pending_flush = None;
     }
 
@@ -177,6 +182,7 @@ impl SkipTake {
         let mut headers = template.headers().clone();
         headers.item_count = Some(0);
         headers.request_charge = Some(self.suppressed_charge);
+        headers.session_token = self.pending_session_token.take();
         // An empty ordered/unordered page is an empty item list, not an empty
         // re-serialized envelope.
         let response = CosmosResponse::new(
@@ -211,6 +217,10 @@ impl SkipTake {
         response: CosmosResponse,
         is_terminal: bool,
     ) -> crate::error::Result<Option<PageResult>> {
+        merge_session_token(
+            &mut self.pending_session_token,
+            response.headers().session_token.as_ref(),
+        )?;
         // Split the child's page into per-document slices. An ordered merge
         // hands us pre-split `Items`; a raw backend feed page arrives as
         // `Bytes` and is split as text, then re-encoded below.
@@ -260,19 +270,16 @@ impl SkipTake {
 
     /// The error a poisoned node returns from every subsequent call.
     ///
-    /// Deliberately the same status as the failure that caused it: the poison is
-    /// not an independent fault, it is that fault made durable. The cause is
-    /// deterministic — replaying the same child page fails the same way — so
-    /// the message points at the encoding rather than suggesting a retry.
+    /// The child's consumed position cannot safely be resumed after a payload
+    /// or metadata failure.
     fn poisoned_error() -> crate::error::CosmosError {
         crate::error::CosmosError::builder()
             .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message(
                 "skip/take node is unusable: a page was consumed from its child but could not be \
                  processed, so the offset/limit window and the child's resume position no longer \
-                 agree and no continuation token can be minted; the page holds a document the \
-                 negotiated encoding cannot represent, so retrying is futile — re-run the query \
-                 with a text response instead",
+                 agree and no continuation token can be minted; restart the query after \
+                 addressing the original page-processing error",
             )
             .build()
     }
