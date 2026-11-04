@@ -511,13 +511,6 @@ pub(crate) async fn build_advanced_query_pipeline(
     } else {
         root
     };
-    let root = apply_distinct(
-        root,
-        info.distinct_type,
-        last_hash,
-        false,
-        operation.emits_binary_payload(),
-    );
     let root: Box<dyn PipelineNode> = if info.has_group_by() {
         Box::new(GroupBy::new(
             root,
@@ -528,6 +521,13 @@ pub(crate) async fn build_advanced_query_pipeline(
     } else {
         root
     };
+    let root = apply_distinct(
+        root,
+        info.distinct_type,
+        last_hash,
+        false,
+        operation.emits_binary_payload(),
+    );
     let root = if skip > 0 || take.is_some() {
         Box::new(SkipTake::new(
             root,
@@ -3506,7 +3506,7 @@ mod tests {
                 build_advanced_query_pipeline(&plan, &mut topology, &operation, None).await?;
             let mut executor = MockRequestExecutor::new(vec![
             Ok(response(br#"{"Documents":[{"groupByItems":[{"item":"a"}],"payload":{"kind":"a","total":{"item":1}}}]}"#)),
-            Ok(response(br#"{"Documents":[{"groupByItems":[{"item":"a"}],"payload":{"kind":"a","total":{"item":2}}},{"groupByItems":[{"item":"b"}],"payload":{"kind":"b","total":{"item":4}}}]}"#)),
+            Ok(response(br#"{"Documents":[{"groupByItems":[{"item":"a"}],"payload":{"kind":"a","total":{"item":1}}},{"groupByItems":[{"item":"b"}],"payload":{"kind":"b","total":{"item":4}}}]}"#)),
         ]);
             let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
             let page = pipeline.next_page(&mut context).await?.unwrap();
@@ -3516,10 +3516,87 @@ mod tests {
             assert_eq!(items.len(), 1);
             assert_eq!(
                 serde_json::from_slice::<serde_json::Value>(&items[0]).unwrap(),
-                serde_json::json!({"kind":"a","total":3})
+                serde_json::json!({"kind":"a","total":2})
             );
             assert!(pipeline.next_page(&mut context).await?.is_none());
             assert_eq!(executor.query_bodies.len(), 2);
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn group_by_distinct_deduplicates_completed_projections_before_top(
+    ) -> crate::error::Result<()> {
+        for select_value in [false, true] {
+            for page_size in [1, 2] {
+                let info = QueryInfo {
+                    distinct_type: DistinctType::Unordered,
+                    has_select_value: select_value,
+                    top: Some(2),
+                    group_by_expressions: vec!["c.kind".into()],
+                    group_by_aliases: vec!["total".into()],
+                    aggregates: vec!["Count".into()],
+                    group_by_alias_to_aggregate_type: [(
+                        "total".into(),
+                        serde_json::json!("Count"),
+                    )]
+                    .into(),
+                    rewritten_query: Some("SELECT c.kind, COUNT(1) FROM c GROUP BY c.kind".into()),
+                    ..Default::default()
+                };
+                let plan = QueryPlan {
+                    query_info: Some(info),
+                    ..plan_with_ranges(vec![qr("", "FF")])
+                };
+                let operation =
+                    Arc::new(cross_partition_query_operation().with_max_item_count(
+                        MaxItemCountHint::Limit(page_size.try_into().unwrap()),
+                    ));
+                let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+                    rr("", "80", "0")?,
+                    rr("80", "FF", "1")?,
+                ])]);
+                let mut pipeline =
+                    build_advanced_query_pipeline(&plan, &mut topology, &operation, None).await?;
+                let partial = |key, count| {
+                    let cell = serde_json::json!({"item": count});
+                    let payload = if select_value {
+                        cell
+                    } else {
+                        serde_json::json!({"total": cell})
+                    };
+                    serde_json::json!({"groupByItems": [{"item": key}], "payload": payload})
+                };
+                let mut executor = MockRequestExecutor::new(
+                    [
+                        serde_json::json!([partial("a", 1), partial("b", 2)]),
+                        serde_json::json!([partial("a", 1), partial("c", 3)]),
+                    ]
+                    .into_iter()
+                    .map(|rows| {
+                        Ok(response(
+                            &serde_json::to_vec(&serde_json::json!({"Documents": rows})).unwrap(),
+                        ))
+                    })
+                    .collect(),
+                );
+                let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+                let mut actual = Vec::new();
+                while let Some(page) = pipeline.next_page(&mut context).await? {
+                    actual.extend(super::super::aggregate::parse_rows(page.body())?);
+                }
+                let expected = if select_value {
+                    serde_json::json!([2, 3])
+                } else {
+                    serde_json::json!([{"total": 2}, {"total": 3}])
+                };
+                assert_eq!(
+                    serde_json::Value::Array(actual),
+                    expected,
+                    "select_value={select_value}, page_size={page_size}"
+                );
+                assert_eq!(executor.query_bodies.len(), 2);
+            }
         }
         Ok(())
     }
