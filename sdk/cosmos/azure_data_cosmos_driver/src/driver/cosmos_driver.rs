@@ -4210,11 +4210,10 @@ impl CosmosDriver {
     /// `continuation` optionally provides resume state from a prior call. Two
     /// kinds of tokens are accepted:
     ///
-    /// - SDK-issued tokens (`c2.…` for new checkpoints, or supported legacy
-    ///   `c1.…` tokens) carry a serialized snapshot of the previous pipeline's
-    ///   state and can resume queries or change feeds. SDKs that only support
-    ///   `c1.…` reject new checkpoints.
-    /// - Opaque server-issued tokens (no `c<N>.` prefix) are accepted only
+    /// - SDK-issued tokens start with `cN.`, where `N` is a format version, and
+    ///   can resume queries or change feeds. Treat their contents as opaque
+    ///   and resume them with a compatible SDK version.
+    /// - Server-issued tokens (no `cN.` prefix) are accepted only
     ///   for trivial operations; passing one to a cross-partition query
     ///   returns a `Client`-shaped error.
     ///
