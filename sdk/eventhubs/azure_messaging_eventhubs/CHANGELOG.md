@@ -6,6 +6,7 @@
 
 - Added the `ErrorKind::MessageSizeExceeded { requested, max_allowed }` error variant. `send_event` and `send_message` report it when the encoded message is larger than the maximum the sender link allows, so a caller can branch on the kind instead of the message. This matches the `EventHubsException` with `FailureReason.MessageSizeExceeded` that .NET reports for the same message.
 - Added `ConsumerClientBuilder::with_idle_timeout` and `ProducerClientBuilder::with_idle_timeout` to configure the AMQP connection idle timeout and enable peer heartbeat negotiation.
+- Added `EventProcessorBuilder::with_receive_timeout`, which sets the `receive_timeout` of every partition receiver the processor opens. A partition client's `stream_events` then yields a `std::io::ErrorKind::TimedOut` error after that long with no event, and a new `stream_events` call continues on the same receiver. The default stays infinite.
 
 ### Bugs Fixed
 

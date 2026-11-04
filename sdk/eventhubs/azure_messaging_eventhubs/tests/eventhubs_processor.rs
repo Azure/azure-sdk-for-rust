@@ -538,3 +538,114 @@ async fn second_processor_displaces_first_with_consumer_disconnected(
 
     Ok(())
 }
+
+/// Walks the source chain of a stream error the way an application that
+/// branches on a receive timeout does.
+fn is_receive_timeout(error: &azure_messaging_eventhubs::EventHubsError) -> bool {
+    std::iter::successors(std::error::Error::source(error), |e| e.source())
+        .filter_map(|e| e.downcast_ref::<std::io::Error>())
+        .any(|e| e.kind() == std::io::ErrorKind::TimedOut)
+}
+
+/// A processor built with `with_receive_timeout` opens each partition receiver
+/// with that timeout. On a partition with nothing to receive, the stream yields
+/// the timeout error after that long; the receiver stays open, so a new stream
+/// on the same partition client delivers the next event.
+#[recorded::test(live)]
+async fn receive_timeout_yields_timed_out_and_the_stream_resumes(ctx: TestContext) -> Result<()> {
+    const RECEIVE_TIMEOUT: Duration = Duration::seconds(5);
+    // Bounds each stream poll; a poll that lasts this long is a hang, not a timeout.
+    const POLL_BOUND: std::time::Duration = std::time::Duration::from_secs(60);
+
+    let consumer_client = create_consumer_client(&ctx).await?;
+
+    // Start every partition at its end, so the first poll has nothing to receive.
+    let eh_info = consumer_client.get_eventhub_properties().await?;
+    let mut start_positions = HashMap::new();
+    for partition_id in eh_info.partition_ids.into_iter() {
+        let partition_info = consumer_client
+            .get_partition_properties(&partition_id)
+            .await?;
+        start_positions.insert(
+            partition_id,
+            StartPosition {
+                location: StartLocation::SequenceNumber(
+                    partition_info.last_enqueued_sequence_number,
+                ),
+                inclusive: false,
+            },
+        );
+    }
+
+    let processor = processor_builder(
+        ProcessorStrategy::Balanced,
+        Duration::seconds(20),
+        Duration::seconds(120),
+    )
+    .with_start_positions(StartPositions {
+        per_partition: start_positions,
+        ..Default::default()
+    })
+    .with_receive_timeout(RECEIVE_TIMEOUT)
+    .build(consumer_client, Arc::new(InMemoryCheckpointStore::new()))
+    .await?;
+
+    let running_processor = start_processor_running(&processor).await;
+    let partition_client = processor.next_partition_client().await?;
+    let partition_id = partition_client.get_partition_id().to_string();
+    info!("Received partition client for partition {partition_id}");
+
+    // Nothing to receive: the stream yields the timeout, not an event.
+    let first = tokio::time::timeout(POLL_BOUND, partition_client.stream_events().next())
+        .await
+        .unwrap_or_else(|_| panic!("the stream on partition {partition_id} yielded nothing"));
+    match first {
+        Some(Err(e)) if is_receive_timeout(&e) => {
+            info!("Stream on partition {partition_id} yielded the receive timeout");
+        }
+        other => panic!(
+            "expected the receive timeout on the empty partition {partition_id}, got {other:?}"
+        ),
+    }
+
+    // The receiver stays open: an event sent now reaches a new stream.
+    {
+        let producer_client = create_producer_client(&ctx).await?;
+        producer_client
+            .send_event(
+                "after the timeout",
+                Some(SendEventOptions {
+                    partition_id: Some(partition_id.clone()),
+                }),
+            )
+            .await?;
+        producer_client.close().await?;
+    }
+
+    let second = tokio::time::timeout(POLL_BOUND, partition_client.stream_events().next())
+        .await
+        .unwrap_or_else(|_| panic!("the stream on partition {partition_id} yielded nothing"));
+    match second {
+        Some(Ok(event)) => {
+            let body = event
+                .event_data()
+                .body()
+                .expect("the event has a body")
+                .to_vec();
+            assert_eq!(body, b"after the timeout");
+            info!("Stream on partition {partition_id} resumed and delivered the event");
+        }
+        other => panic!(
+            "expected the event sent after the timeout on partition {partition_id}, got {other:?}"
+        ),
+    }
+
+    drop(partition_client);
+    running_processor.abort();
+    let _ = running_processor.await;
+    if let Ok(processor) = Arc::try_unwrap(processor) {
+        processor.close().await?;
+    }
+
+    Ok(())
+}
