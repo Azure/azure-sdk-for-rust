@@ -1006,9 +1006,18 @@ pub(crate) async fn build_unordered_merge(
         _ => Arc::clone(operation),
     };
 
-    let resolved = topology_provider
-        .resolve_ranges(feed_range, PartitionRoutingRefresh::UseCached)
-        .await?;
+    let resolved = match operation.change_feed_partition_key_range_id() {
+        Some(id) => vec![ResolvedRange {
+            partition_key_range_id: id.to_owned(),
+            parents: Vec::new(),
+            range: feed_range.clone(),
+        }],
+        None => {
+            topology_provider
+                .resolve_ranges(feed_range, PartitionRoutingRefresh::UseCached)
+                .await?
+        }
+    };
 
     let mut request_nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
 
@@ -1087,9 +1096,8 @@ pub(crate) async fn build_unordered_merge(
 /// Pushes one change feed [`Request`] leaf scoped to `leaf_range` within the
 /// given physical partition, optionally resuming from `continuation`.
 ///
-/// When `leaf_range` covers the whole physical partition the EPK scoping
-/// collapses away (`x-ms-start/end-epk` are omitted); a narrower slice — as
-/// produced after a merge — carries explicit EPK bounds.
+/// Caller-supplied physical identities always retain explicit EPK bounds;
+/// topology-resolved identities can omit bounds for an entire partition.
 fn push_change_feed_leaf(
     request_nodes: &mut Vec<Box<dyn PipelineNode>>,
     operation: &Arc<CosmosOperation>,
@@ -1097,12 +1105,23 @@ fn push_change_feed_leaf(
     resolved_range: &ResolvedRange,
     continuation: Option<String>,
 ) {
-    let target = RequestTarget::effective_partition_key_range_with_parents(
-        leaf_range,
-        resolved_range.partition_key_range_id.clone(),
-        resolved_range.parents.clone(),
-        resolved_range.range.clone(),
-    );
+    let target = if operation.change_feed_partition_key_range_id().is_some() {
+        // The hint does not prove physical bounds. Keep the caller's filter even
+        // when it equals the synthetic planning range, without caching topology.
+        RequestTarget::EffectivePartitionKeyRange {
+            range: Some(leaf_range),
+            partition_key_range_id: resolved_range.partition_key_range_id.clone(),
+            partition_key_range_parents: Vec::new(),
+            partition_key_range: resolved_range.range.clone(),
+        }
+    } else {
+        RequestTarget::effective_partition_key_range_with_parents(
+            leaf_range,
+            resolved_range.partition_key_range_id.clone(),
+            resolved_range.parents.clone(),
+            resolved_range.range.clone(),
+        )
+    };
     request_nodes.push(Box::new(Request::new(
         Arc::clone(operation),
         target,

@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `CosmosOperation::with_change_feed_partition_key_range_id` for EPK-scoped change feeds that skip initial topology resolution while preserving continuations, session constraints, and topology recovery. ([#5547](https://github.com/Azure/azure-sdk-for-rust/pull/5547))
+
 ### Breaking Changes
 
 ### Bugs Fixed

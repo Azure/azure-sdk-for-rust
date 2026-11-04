@@ -1069,7 +1069,19 @@ impl ContainerClient {
     /// * `start_from` - Where to begin reading when no continuation token is
     ///   provided. Ignored when `options` carries a continuation token, since
     ///   the token holds its own position.
-    /// * `options` - Optional parameters controlling mode, session token, and paging.
+    /// * `options` - Optional parameters controlling mode, routing, session token, and paging.
+    ///
+    /// Set [`ChangeFeedOptions::partition_key_range_id`] when the physical
+    /// partition containing the entire EPK scope is already known. With lazy
+    /// topology initialization this avoids loading the routing map until recovery
+    /// requires it. The EPK scope and continuation progress remain enforced.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if a physical partition ID is empty or contains whitespace,
+    /// control, or non-ASCII bytes, or is used with a logical or point scope.
+    /// Incompatible continuations, container recreation with a physical hint,
+    /// and service or transport failures also return errors.
     ///
     /// # AllVersionsAndDeletes limitations
     ///
@@ -1195,6 +1207,9 @@ impl ContainerClient {
             }
         };
 
+        if let Some(id) = options.partition_key_range_id {
+            initial_operation = initial_operation.with_change_feed_partition_key_range_id(id)?;
+        }
         if let Some(token) = options.session_token {
             initial_operation = initial_operation.with_session_token(token);
         }

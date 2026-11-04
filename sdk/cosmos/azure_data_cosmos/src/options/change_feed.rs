@@ -86,9 +86,55 @@ pub struct ChangeFeedOptions {
 
     /// Which change feed mode to read. Defaults to [`ChangeFeedMode::LatestVersion`].
     pub mode: ChangeFeedMode,
+
+    /// Physical partition ID containing the entire explicit EPK scope.
+    ///
+    /// With this hint, change feed planning skips partition topology resolution
+    /// and always sends the scope's EPK bounds. Configure
+    /// [`PartitionTopologyCacheMode::Lazy`](crate::options::PartitionTopologyCacheMode::Lazy)
+    /// before constructing the container client to also avoid eager topology loading.
+    /// A stale ID can trigger normal topology refresh and split or merge recovery.
+    /// The ID must belong to the current container; container recreation returns
+    /// an error instead of reusing it. Session reads can use classic Gateway when
+    /// cached progress cannot be safely scoped without topology.
+    ///
+    /// Use with [`FeedScope::range()`](crate::feed::FeedScope::range) and a
+    /// nonempty EPK interval. Logical partition scopes and IDs containing
+    /// whitespace, control, or non-ASCII bytes are rejected when creating the feed.
+    /// `None` preserves normal topology resolution. Supply the hint again when
+    /// resuming a continuation to skip initial topology resolution.
+    pub partition_key_range_id: Option<String>,
 }
 
 impl ChangeFeedOptions {
+    /// Sets the known physical partition ID for the explicit EPK scope.
+    ///
+    /// See [`partition_key_range_id`](Self::partition_key_range_id) for scope,
+    /// initialization, and recovery requirements. Validation occurs in
+    /// [`ContainerClient::query_change_feed()`](crate::clients::ContainerClient::query_change_feed).
+    ///
+    /// # Examples
+    ///
+    /// Use a container client configured with lazy topology initialization and
+    /// an EPK range known to belong to physical partition `"0"`:
+    ///
+    /// ```rust,no_run
+    /// # use azure_data_cosmos::{clients::ContainerClient, feed::{FeedRange, FeedScope}, options::{ChangeFeedOptions, ChangeFeedStartFrom}};
+    /// # async fn read(container: &ContainerClient, known_range: FeedRange) -> azure_data_cosmos::Result<()> {
+    /// let pages = container.query_change_feed::<serde_json::Value>(
+    ///     FeedScope::range(known_range),
+    ///     ChangeFeedStartFrom::Beginning,
+    ///     Some(ChangeFeedOptions::default().with_partition_key_range_id("0")),
+    /// ).await?;
+    /// # let _ = pages;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn with_partition_key_range_id(mut self, id: impl Into<String>) -> Self {
+        self.partition_key_range_id = Some(id.into());
+        self
+    }
+
     /// Sets which change feed mode to read.
     pub fn with_mode(mut self, mode: ChangeFeedMode) -> Self {
         self.mode = mode;

@@ -2354,6 +2354,7 @@ pub mod options {
         pub feed: crate::options::FeedOptions,
         pub session_token: Option<azure_data_cosmos_driver::models::SessionToken>,
         pub mode: ChangeFeedMode,
+        pub partition_key_range_id: Option<String>,
     }
     impl ChangeFeedOptions {
         pub fn with_continuation_token(self, token: ContinuationToken) -> Self;
@@ -2361,6 +2362,7 @@ pub mod options {
         pub fn with_max_item_count(self, max_item_count: MaxItemCountHint) -> Self;
         pub fn with_mode(self, mode: ChangeFeedMode) -> Self;
         pub fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_partition_key_range_id<impl Into<String>: Into<String>>(self, id: impl Into<String>) -> Self;
         pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, token: impl Into<SessionToken>) -> Self;
     }
     #[doc(inline)]

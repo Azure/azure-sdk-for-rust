@@ -159,6 +159,8 @@ pub struct CosmosOperation {
     /// token so never-polled partitions can re-apply it on resume. `None` for
     /// non-change-feed operations.
     change_feed_start: Option<ChangeFeedStartFrom>,
+    /// Caller-supplied physical identity for initial change feed routing.
+    change_feed_partition_key_range_id: Option<String>,
     /// `true` when this operation is one of the internal sub-operations the
     /// PATCH handler's Read-Modify-Write loop dispatches, rather than an
     /// operation the caller requested directly. Set by
@@ -380,6 +382,15 @@ impl CosmosOperation {
         &mut self,
         replacement: ContainerReference,
     ) -> crate::error::Result<()> {
+        if self.change_feed_partition_key_range_id.is_some() {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+                .with_message(
+                    "a physical partition ID cannot be carried to a recreated container; \
+                     obtain a new partition ID and feed range from the replacement container",
+                )
+                .build());
+        }
         if self
             .target
             .as_ref()
@@ -419,6 +430,54 @@ impl CosmosOperation {
     /// request headers.
     pub fn is_change_feed(&self) -> bool {
         self.is_change_feed
+    }
+
+    /// Returns the caller-supplied physical partition ID for this change feed.
+    pub fn change_feed_partition_key_range_id(&self) -> Option<&str> {
+        self.change_feed_partition_key_range_id.as_deref()
+    }
+
+    /// Routes a change feed's explicit EPK range through a known physical partition.
+    ///
+    /// The caller must supply the partition that contains the entire target range
+    /// in this container. The EPK bounds remain enforced on every read. A stale
+    /// partition ID can trigger normal topology refresh and split or merge recovery.
+    /// To avoid loading topology during container resolution, configure
+    /// [`PartitionTopologyCacheMode::Lazy`](crate::options::PartitionTopologyCacheMode::Lazy).
+    /// Omit this hint to resolve physical partitions normally.
+    ///
+    /// Continuations retain their EPK-scoped progress; supply the hint again when
+    /// resuming to skip initial topology resolution. The hint cannot be carried to
+    /// a recreated container. Session reads can use classic Gateway when cached
+    /// progress cannot be safely scoped without topology.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for a non-change-feed operation, a missing explicit EPK
+    /// range, a logical or point range, or an empty ID or one containing
+    /// whitespace, control, or non-ASCII bytes.
+    pub fn with_change_feed_partition_key_range_id(
+        mut self,
+        id: impl Into<String>,
+    ) -> crate::error::Result<Self> {
+        let id = id.into();
+        if !self.is_change_feed
+            || self.target.as_ref().is_none_or(|range| {
+                range.is_logical_partition() || range.min_inclusive() >= range.max_exclusive()
+            })
+            || id.is_empty()
+            || !id.bytes().all(|byte| byte.is_ascii_graphic())
+        {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+                .with_message(
+                    "a physical partition ID requires a change feed with an explicit nonempty \
+                     EPK range and a nonempty ID containing only visible ASCII characters",
+                )
+                .build());
+        }
+        self.change_feed_partition_key_range_id = Some(id);
+        Ok(self)
     }
 
     /// Returns the request headers.
@@ -765,6 +824,7 @@ impl CosmosOperation {
             patch_tracking_retention_seconds: None,
             is_change_feed: false,
             change_feed_start: None,
+            change_feed_partition_key_range_id: None,
             is_patch_sub_operation: false,
             patch_retry_safe: None,
             transcodes_response_to_text: false,
@@ -1571,6 +1631,57 @@ mod tests {
         );
         assert_eq!(operation.container().unwrap().rid(), "testcontainer_rid");
         assert_eq!(operation.target(), Some(&range));
+        Ok(())
+    }
+
+    #[test]
+    fn change_feed_partition_hint_rejects_invalid_inputs() -> crate::error::Result<()> {
+        for id in ["", " ", "0 1", "0\r\nx-header: value", "\t0", "分区"] {
+            let error = CosmosOperation::change_feed(test_container(), Some(FeedRange::full()))
+                .with_change_feed_partition_key_range_id(id)
+                .unwrap_err();
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST
+            );
+        }
+        let point = EffectivePartitionKey::try_from("10")?;
+        let logical = FeedRange::for_partition(
+            PartitionKey::from("pk"),
+            test_container().partition_key_definition(),
+        );
+        for operation in [
+            CosmosOperation::query_items(test_container(), Some(FeedRange::full())),
+            CosmosOperation::change_feed(test_container(), Some(logical)),
+            CosmosOperation::change_feed(
+                test_container(),
+                Some(FeedRange::new(point.clone(), point)?),
+            ),
+        ] {
+            let error = operation
+                .with_change_feed_partition_key_range_id("0")
+                .unwrap_err();
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn retarget_rejects_physical_hint_even_for_full_range() -> crate::error::Result<()> {
+        let mut operation = CosmosOperation::change_feed(test_container(), Some(FeedRange::full()))
+            .with_change_feed_partition_key_range_id("0")?;
+        let error = operation
+            .retarget_container(replacement_container())
+            .unwrap_err();
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::CLIENT_BAD_REQUEST
+        );
+        assert_eq!(operation.container().unwrap().rid(), "testcontainer_rid");
+        assert_eq!(operation.change_feed_partition_key_range_id(), Some("0"));
         Ok(())
     }
 
