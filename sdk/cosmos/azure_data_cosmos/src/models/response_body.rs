@@ -37,10 +37,6 @@ impl ResponseBody {
     /// Returns standalone per-item raw buffers of a feed response, or wraps a
     /// single-payload body as a one-element vector. A no-payload body yields
     /// an empty `Vec`.
-    ///
-    /// Binary `ORDER BY` items are materialized by the driver after sorting
-    /// and filtering. Their bytes decode independently but may differ from
-    /// the original source encoding.
     pub fn items(self) -> crate::Result<Vec<Bytes>> {
         self.0.items()
     }

@@ -44,6 +44,22 @@ impl MockLeaf {
         }
     }
 
+    pub(crate) fn with_responses(
+        responses: impl IntoIterator<Item = (PipelineResponse, bool)>,
+    ) -> Self {
+        Self::with_pages(
+            responses
+                .into_iter()
+                .map(|(response, is_terminal)| {
+                    Ok(PageResult::Page {
+                        response,
+                        is_terminal,
+                    })
+                })
+                .collect(),
+        )
+    }
+
     /// Sets the feed range reported by [`PipelineNode::feed_range`].
     pub fn with_feed_range(mut self, range: FeedRange) -> Self {
         self.feed_range = Some(range);

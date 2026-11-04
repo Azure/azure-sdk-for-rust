@@ -306,6 +306,9 @@ impl ChildStream {
         aggregator: &mut PageAggregator,
         directions: &[SortOrder],
         recovery: &mut RecoveryDiagnostics,
+        // The merge supplies non-owning identities of its buffered/output pages.
+        // Including each fetched page here catches old/new page overlap before
+        // parsing can release it; this observes retained bytes, not a memory cap.
         #[cfg(test)] retention: Option<tests::RetentionSample>,
     ) -> crate::error::Result<FillOutcome> {
         loop {
@@ -1110,6 +1113,7 @@ mod tests {
     use crate::driver::dataflow::mocks::{self, MockLeaf};
     use crate::models::effective_partition_key::EffectivePartitionKey;
 
+    // Sampled unique backing-page bytes, not allocations or process memory.
     #[derive(Default)]
     pub(super) struct RetentionObserver {
         peak_bytes: Arc<AtomicUsize>,
@@ -1988,10 +1992,7 @@ mod tests {
                     };
                     ChildStream::fresh(
                         range(&min, &max).unwrap(),
-                        Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
-                            response: mocks::response(page),
-                            is_terminal: true,
-                        })])),
+                        Box::new(MockLeaf::with_responses([(mocks::response(page), true)])),
                     )
                 })
                 .collect();
@@ -2069,23 +2070,17 @@ mod tests {
         let children = vec![
             ChildStream::fresh(
                 range("", "80").unwrap(),
-                Box::new(MockLeaf::with_pages(vec![
-                    Ok(PageResult::Page {
-                        response: mocks::response(&first),
-                        is_terminal: false,
-                    }),
-                    Ok(PageResult::Page {
-                        response: mocks::response(&next),
-                        is_terminal: true,
-                    }),
+                Box::new(MockLeaf::with_responses([
+                    (mocks::response(&first), false),
+                    (mocks::response(&next), true),
                 ])),
             ),
             ChildStream::fresh(
                 range("80", "FF").unwrap(),
-                Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
-                    response: mocks::response(&sibling),
-                    is_terminal: true,
-                })])),
+                Box::new(MockLeaf::with_responses([(
+                    mocks::response(&sibling),
+                    true,
+                )])),
             ),
         ];
         let mut merge = StreamingOrderedMerge::new(
@@ -2119,10 +2114,7 @@ mod tests {
             .map(|(min, max)| {
                 ChildStream::fresh(
                     range(min, max).unwrap(),
-                    Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
-                        response: response.clone(),
-                        is_terminal: true,
-                    })])),
+                    Box::new(MockLeaf::with_responses([(response.clone(), true)])),
                 )
             })
             .collect();

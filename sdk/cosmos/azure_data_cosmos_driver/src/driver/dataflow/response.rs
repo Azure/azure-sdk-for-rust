@@ -22,6 +22,8 @@ use crate::{
 pub(crate) struct ItemView {
     source_page: Bytes,
     value_range: Range<usize>,
+    // A per-item probe follows clones to catch conversion before root selection.
+    // Correct output alone cannot reveal wasted conversions of discarded items.
     #[cfg(test)]
     materializations: Option<Arc<MaterializationCounts>>,
 }
@@ -354,7 +356,7 @@ mod tests {
 
     #[tokio::test]
     async fn only_root_survivors_are_materialized_and_public_items_release_source() {
-        for distinct in [false, true] {
+        for (distinct, skip, take) in [(false, 0, 2), (false, 1, 1), (true, 0, 1)] {
             for (emit_binary, text_response) in
                 [(false, false), (false, true), (true, false), (true, true)]
             {
@@ -384,16 +386,15 @@ mod tests {
                         item
                     })
                     .collect();
-                let leaf: Box<dyn PipelineNode> =
-                    Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
-                        response: PipelineResponse::new(
-                            PipelineBody::from_item_views(items),
-                            CosmosResponseHeaders::default(),
-                            CosmosStatus::new(azure_core::http::StatusCode::Ok),
-                            crate::driver::dataflow::mocks::response(b"").diagnostics(),
-                        ),
-                        is_terminal: true,
-                    })]));
+                let leaf: Box<dyn PipelineNode> = Box::new(MockLeaf::with_responses([(
+                    PipelineResponse::new(
+                        PipelineBody::from_item_views(items),
+                        CosmosResponseHeaders::default(),
+                        CosmosStatus::new(azure_core::http::StatusCode::Ok),
+                        crate::driver::dataflow::mocks::response(b"").diagnostics(),
+                    ),
+                    true,
+                )]));
                 drop(page);
                 let child = if distinct {
                     Box::new(Distinct::with_last_hash(
@@ -405,7 +406,7 @@ mod tests {
                 } else {
                     leaf
                 };
-                let mut root = SkipTake::new(child, u64::from(!distinct), Some(1), emit_binary);
+                let mut root = SkipTake::new(child, skip, Some(take), emit_binary);
                 let mut executor = NoopRequestExecutor;
                 let mut context = PipelineContext::new(&mut executor, None);
                 let PageResult::Page { response, .. } = root.next_page(&mut context).await.unwrap()
@@ -414,23 +415,29 @@ mod tests {
                 };
                 assert_eq!(count.total.load(Ordering::Relaxed), 0);
                 assert!(
-                    matches!(response.body(), PipelineBody::ContextualItems(items) if items.len() == 1)
+                    matches!(response.body(), PipelineBody::ContextualItems(items) if items.len() == take as usize)
                 );
                 let public = response
                     .into_response(text_response, emit_binary, Default::default())
                     .unwrap();
                 drop(root);
-                assert_eq!(count.total.load(Ordering::Relaxed), 1);
+                assert_eq!(count.total.load(Ordering::Relaxed), take as usize);
                 let binary = emit_binary && !text_response;
-                assert_eq!(count.binary.load(Ordering::Relaxed), usize::from(binary));
+                assert_eq!(
+                    count.binary.load(Ordering::Relaxed),
+                    if binary { take as usize } else { 0 }
+                );
                 assert!(released.load(Ordering::Relaxed));
                 let ResponseBody::Items(items) = public.into_body() else {
                     panic!("expected public standalone items");
                 };
-                assert_eq!(crate::binary_json::is_binary(&items[0]), binary);
+                assert_eq!(items.len(), take as usize);
+                for item in &items {
+                    assert_eq!(crate::binary_json::is_binary(item), binary);
+                }
                 assert_eq!(
                     ResponseBody::Items(items).into_items::<String>().unwrap(),
-                    ["foo"]
+                    vec!["foo"; take as usize]
                 );
             }
         }
@@ -477,52 +484,6 @@ mod tests {
         assert_eq!(
             response.into_body().into_items::<String>().unwrap(),
             ["\u{FFFD}", "\u{FFFD}"]
-        );
-    }
-
-    #[test]
-    fn materialization_preserves_absolute_references_and_releases_source_page() {
-        let page = Bytes::from(vec![
-            0x80,
-            markers::ARR_L1,
-            8,
-            0x83,
-            b'f',
-            b'o',
-            b'o',
-            markers::STR_R1,
-            3,
-            markers::STR_R1,
-            3,
-        ]);
-        let views = vec![
-            ItemView::from_binary_page(page.clone(), 7..9).unwrap(),
-            ItemView::from_binary_page(page.clone(), 9..11).unwrap(),
-        ];
-        for text_response in [false, true] {
-            let PipelineBody::ContextualItems(_) = PipelineBody::from_item_views(views.clone())
-            else {
-                panic!("expected private page views");
-            };
-            let ResponseBody::Items(items) = PipelineBody::from_item_views(views.clone())
-                .into_public(text_response, !text_response)
-                .unwrap()
-            else {
-                panic!("expected public standalone items");
-            };
-            for item in &items {
-                assert_ne!(item.as_ptr(), page.as_ptr());
-                assert_eq!(crate::binary_json::is_binary(item), !text_response);
-            }
-            drop(items);
-        }
-        let body = PipelineBody::from_item_views(views)
-            .into_public(false, true)
-            .unwrap();
-        drop(page);
-        assert_eq!(
-            body.into_items::<String>().unwrap(),
-            vec!["foo".to_owned(), "foo".to_owned()]
         );
     }
 }

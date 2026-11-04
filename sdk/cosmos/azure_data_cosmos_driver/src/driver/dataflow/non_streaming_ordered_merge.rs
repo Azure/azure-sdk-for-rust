@@ -501,18 +501,11 @@ mod tests {
             "second",
         );
         let snapshot = second.to_vec();
-        let pages = vec![
-            Ok(PageResult::Page {
-                response: response_with_charge(&first, 1.0),
-                is_terminal: false,
-            }),
-            Ok(PageResult::Page {
-                response: response_with_charge(&second, 2.0),
-                is_terminal: true,
-            }),
-        ];
         let mut node = NonStreamingOrderedMerge::new(
-            Box::new(MockLeaf::with_pages(pages)),
+            Box::new(MockLeaf::with_responses([
+                (response_with_charge(&first, 1.0), false),
+                (response_with_charge(&second, 2.0), true),
+            ])),
             vec![SortOrder::Ascending],
             3,
             1,
@@ -568,10 +561,10 @@ mod tests {
         }))
         .unwrap();
         let mut node = NonStreamingOrderedMerge::new(
-            Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
-                response: response_with_charge(&body, 1.0),
-                is_terminal: true,
-            })])),
+            Box::new(MockLeaf::with_responses([(
+                response_with_charge(&body, 1.0),
+                true,
+            )])),
             vec![SortOrder::Ascending],
             1,
             0,
