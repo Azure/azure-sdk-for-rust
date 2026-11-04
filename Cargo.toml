@@ -21,9 +21,11 @@ members = [
   "sdk/cosmos/azure_data_cosmos_macros",
   "sdk/cosmos/azure_data_cosmos_observability_harness",
   "sdk/cosmos/azure_data_cosmos_perf",
+  "sdk/cosmos/azure_data_cosmos_test",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
   "sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob",
+  "sdk/keyvault/azure_resourcemanager_keyvault",
   "sdk/keyvault/azure_security_keyvault_certificates",
   "sdk/keyvault/azure_security_keyvault_keys",
   "sdk/keyvault/azure_security_keyvault_secrets",
@@ -97,7 +99,9 @@ version = "1.0.0"
 
 [workspace.dependencies]
 arbitrary = "1.4"
-arrow = { version = "59.1.0", default-features = false }
+arrow-array = "59.3.2"
+arrow-ipc = "59.3.2"
+arrow-schema = "59.3.2"
 async-lock = "3.4"
 async-stream = { version = "0.3.6" }
 async-trait = "0.1"
@@ -203,3 +207,4 @@ bare_urls = "allow"
 # `#[allow(clippy::needless_update)]` on that initializer when needed, so new optional
 # fields do not force call sites to spell out every field.
 constructible_struct_adds_field = "allow"
+enum_variant_added = "allow"
