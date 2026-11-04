@@ -17,14 +17,13 @@ use super::framework;
 use std::collections::HashMap;
 use std::error::Error;
 
-use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
     feed::FeedScope,
     models::ContainerProperties,
     Query,
 };
-use framework::{TestClient, TestOptions};
+use framework::{TestClient, TestOptions, TestRunContext};
 use futures::StreamExt;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -75,22 +74,13 @@ fn sales_records() -> Vec<SalesRecord> {
 }
 
 /// Creates a single-partition container and seeds it with [`sales_records`].
-async fn seed_container(db: &DatabaseClient) -> azure_data_cosmos::Result<ContainerClient> {
+async fn seed_container(
+    run_context: &TestRunContext,
+    db: &DatabaseClient,
+) -> azure_data_cosmos::Result<ContainerClient> {
     let properties = ContainerProperties::new("QueryFeaturesContainer", "/partitionKey".into());
 
-    // Retry on 429 (throttling) and tolerate a pre-existing container.
-    loop {
-        match db.create_container(properties.clone(), None).await {
-            Ok(_) => break,
-            Err(e) if e.status().status_code() == StatusCode::TooManyRequests => {
-                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-            }
-            Err(e) if e.status().status_code() == StatusCode::Conflict => break,
-            Err(e) => return Err(e),
-        }
-    }
-
-    let container = db.container_client("QueryFeaturesContainer", None).await?;
+    let container = run_context.create_container(db, properties, None).await?;
     for record in sales_records() {
         container
             .create_item(record.partition_key.clone(), &record.id, &record, None)
@@ -143,8 +133,8 @@ where
 )]
 pub async fn single_partition_count_aggregate() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
-            let container = seed_container(db_client).await?;
+        async |run_context, db_client| {
+            let container = seed_container(run_context, db_client).await?;
             let count: i64 = run_scalar(&container, "SELECT VALUE COUNT(1) FROM c").await?;
             assert_eq!(count, 6, "expected COUNT(1) to match seeded record count");
             Ok(())
@@ -161,8 +151,8 @@ pub async fn single_partition_count_aggregate() -> Result<(), Box<dyn Error>> {
 )]
 pub async fn single_partition_sum_min_max_aggregates() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
-            let container = seed_container(db_client).await?;
+        async |run_context, db_client| {
+            let container = seed_container(run_context, db_client).await?;
 
             let sum: i64 = run_scalar(&container, "SELECT VALUE SUM(c.amount) FROM c").await?;
             assert_eq!(sum, 180, "unexpected SUM(c.amount)");
@@ -187,8 +177,8 @@ pub async fn single_partition_sum_min_max_aggregates() -> Result<(), Box<dyn Err
 )]
 pub async fn single_partition_avg_aggregate() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
-            let container = seed_container(db_client).await?;
+        async |run_context, db_client| {
+            let container = seed_container(run_context, db_client).await?;
             let avg: f64 = run_scalar(&container, "SELECT VALUE AVG(c.amount) FROM c").await?;
             assert!(
                 (avg - 30.0).abs() < f64::EPSILON,
@@ -208,8 +198,8 @@ pub async fn single_partition_avg_aggregate() -> Result<(), Box<dyn Error>> {
 )]
 pub async fn single_partition_distinct() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
-            let container = seed_container(db_client).await?;
+        async |run_context, db_client| {
+            let container = seed_container(run_context, db_client).await?;
             let mut categories: Vec<String> =
                 run_query(&container, "SELECT DISTINCT VALUE c.category FROM c").await?;
             categories.sort();
@@ -232,8 +222,8 @@ pub async fn single_partition_distinct() -> Result<(), Box<dyn Error>> {
 )]
 pub async fn single_partition_top_with_order_by() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
-            let container = seed_container(db_client).await?;
+        async |run_context, db_client| {
+            let container = seed_container(run_context, db_client).await?;
             let amounts: Vec<i64> = run_query(
                 &container,
                 "SELECT VALUE c.amount FROM c ORDER BY c.amount DESC OFFSET 0 LIMIT 2",
@@ -267,8 +257,8 @@ pub async fn single_partition_top_with_order_by() -> Result<(), Box<dyn Error>> 
 )]
 pub async fn single_partition_offset_limit() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
-            let container = seed_container(db_client).await?;
+        async |run_context, db_client| {
+            let container = seed_container(run_context, db_client).await?;
             // Sorted amounts: [5, 10, 15, 20, 30, 100]; skip 1, take 2 => [10, 15].
             let amounts: Vec<i64> = run_query(
                 &container,
@@ -298,8 +288,8 @@ struct CategoryRollup {
 )]
 pub async fn single_partition_group_by() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
-            let container = seed_container(db_client).await?;
+        async |run_context, db_client| {
+            let container = seed_container(run_context, db_client).await?;
             let groups: Vec<CategoryRollup> = run_query(
                 &container,
                 "SELECT c.category AS category, COUNT(1) AS count, SUM(c.amount) AS total \

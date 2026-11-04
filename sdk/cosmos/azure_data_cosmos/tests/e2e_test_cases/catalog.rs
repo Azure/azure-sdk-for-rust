@@ -1187,6 +1187,27 @@ mod tests {
     }
 
     #[test]
+    fn aad_live_role_includes_required_data_actions() {
+        for action in [
+            "Microsoft.DocumentDB/databaseAccounts/readMetadata",
+            "Microsoft.DocumentDB/databaseAccounts/throughputSettings/read",
+            "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/*",
+            "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/executeQuery",
+            "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/items/*",
+        ] {
+            assert!(
+                TEST_RESOURCES_BICEP.contains(action),
+                "AAD live-test role must include '{action}'"
+            );
+        }
+        assert!(
+            !TEST_RESOURCES_BICEP
+                .contains("Microsoft.DocumentDB/databaseAccounts/throughputSettings/write"),
+            "AAD data-plane role must not grant control-plane throughput writes"
+        );
+    }
+
+    #[test]
     fn observed_live_account_must_match_selected_profile() -> Result<(), String> {
         let profile = load_profiles()?
             .into_iter()
