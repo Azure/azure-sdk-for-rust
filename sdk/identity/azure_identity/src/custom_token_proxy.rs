@@ -545,7 +545,7 @@ uaZPC0VV2qRwbAE=\n\
     #[test]
     fn configures_default_client() {
         let mut options = ClientOptions::default();
-        config(&[(AZURE_KUBERNETES_TOKEN_PROXY, "https://proxy.example.com")])
+        config(&[(AZURE_KUBERNETES_TOKEN_PROXY, "https://proxy.contoso.com")])
             .expect("valid proxy configuration")
             .configure(&mut options, None)
             .expect("default proxy client is available");
@@ -556,7 +556,7 @@ uaZPC0VV2qRwbAE=\n\
     #[test]
     fn requires_rustls_for_default_client() {
         let mut options = ClientOptions::default();
-        let error = config(&[(AZURE_KUBERNETES_TOKEN_PROXY, "https://proxy.example.com")])
+        let error = config(&[(AZURE_KUBERNETES_TOKEN_PROXY, "https://proxy.contoso.com")])
             .expect("valid proxy configuration")
             .configure(&mut options, None)
             .expect_err("default proxy client requires rustls");
@@ -609,19 +609,19 @@ uaZPC0VV2qRwbAE=\n\
     fn rewrites_request_url() {
         for (proxy, request, expected) in [
             (
-                "https://proxy.example.com",
+                "https://proxy.contoso.com",
                 "https://login.example.com/tenant/oauth2/v2.0/token?a=1&b=2",
-                "https://proxy.example.com/tenant/oauth2/v2.0/token?a=1&b=2",
+                "https://proxy.contoso.com/tenant/oauth2/v2.0/token?a=1&b=2",
             ),
             (
-                "https://proxy.example.com/base/",
+                "https://proxy.contoso.com/base/",
                 "https://login.example.com/a%20b?q=1",
-                "https://proxy.example.com/base/a%20b?q=1",
+                "https://proxy.contoso.com/base/a%20b?q=1",
             ),
             (
-                "https://proxy.example.com/base",
+                "https://proxy.contoso.com/base",
                 "https://login.example.com",
-                "https://proxy.example.com/base/",
+                "https://proxy.contoso.com/base/",
             ),
         ] {
             let actual = rewrite_proxy_url(
@@ -638,7 +638,7 @@ uaZPC0VV2qRwbAE=\n\
     fn rejects_missing_and_invalid_ca_files() {
         for path in ["/file/does/not/exist", file!()] {
             let error = CustomTokenProxy::new(
-                Url::parse("https://proxy.example.com").expect("proxy URL"),
+                Url::parse("https://proxy.contoso.com").expect("proxy URL"),
                 None,
                 Some(CertificateAuthority::File(path.into())),
                 Arc::new(reqwest::Client::new()),
@@ -653,7 +653,7 @@ uaZPC0VV2qRwbAE=\n\
     fn rejects_invalid_inline_ca_without_exposing_data() {
         let ca_data = "not a certificate";
         let error = CustomTokenProxy::new(
-            Url::parse("https://proxy.example.com").expect("proxy URL"),
+            Url::parse("https://proxy.contoso.com").expect("proxy URL"),
             None,
             Some(CertificateAuthority::Data(ca_data.to_string())),
             Arc::new(reqwest::Client::new()),
@@ -667,7 +667,7 @@ uaZPC0VV2qRwbAE=\n\
     #[test]
     fn accepts_inline_and_file_ca() {
         CustomTokenProxy::new(
-            Url::parse("https://proxy.example.com").expect("proxy URL"),
+            Url::parse("https://proxy.contoso.com").expect("proxy URL"),
             None,
             Some(CertificateAuthority::Data(TEST_CA.to_string())),
             Arc::new(reqwest::Client::new()),
@@ -676,7 +676,7 @@ uaZPC0VV2qRwbAE=\n\
 
         let file = TempFile::new(TEST_CA);
         CustomTokenProxy::new(
-            Url::parse("https://proxy.example.com").expect("proxy URL"),
+            Url::parse("https://proxy.contoso.com").expect("proxy URL"),
             None,
             Some(CertificateAuthority::File(file.path.clone())),
             Arc::new(reqwest::Client::new()),
@@ -689,7 +689,7 @@ uaZPC0VV2qRwbAE=\n\
     async fn reuses_and_rotates_file_ca_client() {
         let file = TempFile::new(TEST_CA);
         let proxy = CustomTokenProxy::new(
-            Url::parse("https://proxy.example.com").expect("proxy URL"),
+            Url::parse("https://proxy.contoso.com").expect("proxy URL"),
             None,
             Some(CertificateAuthority::File(file.path.clone())),
             Arc::new(reqwest::Client::new()),
@@ -715,7 +715,7 @@ uaZPC0VV2qRwbAE=\n\
     async fn serializes_concurrent_file_ca_refresh() {
         let file = TempFile::new(TEST_CA);
         let proxy = CustomTokenProxy::new(
-            Url::parse("https://proxy.example.com").expect("proxy URL"),
+            Url::parse("https://proxy.contoso.com").expect("proxy URL"),
             None,
             Some(CertificateAuthority::File(file.path.clone())),
             Arc::new(reqwest::Client::new()),
@@ -734,7 +734,7 @@ uaZPC0VV2qRwbAE=\n\
     async fn surfaces_file_ca_refresh_errors_without_replacing_client() {
         let file = TempFile::new(TEST_CA);
         let proxy = CustomTokenProxy::new(
-            Url::parse("https://proxy.example.com").expect("proxy URL"),
+            Url::parse("https://proxy.contoso.com").expect("proxy URL"),
             None,
             Some(CertificateAuthority::File(file.path.clone())),
             Arc::new(reqwest::Client::new()),
