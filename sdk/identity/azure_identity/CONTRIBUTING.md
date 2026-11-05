@@ -30,6 +30,7 @@ With `AZURE_TEST_MODE` unset or set to `playback`, non-ignored tests do not requ
 Credential HTTP requests use mock transports, and CLI credentials use mock process executors.
 Token proxy tests verify request rewriting, custom CA configuration, SNI, address overrides, and CA rotation without connecting to a token service.
 CA plumbing and cache tests use synthetic non-certificate bytes and injected mock factories; they do not validate certificate trust or TLS handshakes.
+These custom `TokenProxyClient` tests also run with no default features and with only `reqwest` enabled; they do not require `reqwest_rustls`.
 Malformed-input tests construct real HTTP clients but do not need a valid CA or send requests.
 Real CA/TLS tests are explicitly ignored. Do not generate or check in test CAs.
 Host names such as `proxy.contoso.com` in these tests are fixtures, not provisioned endpoints.
@@ -44,13 +45,14 @@ The macro ignores them unless `AZURE_TEST_MODE=live` is set when compiling the t
 Do not force them to run with `--ignored` in playback or record mode.
 When switching modes, run `cargo clean -p azure_identity` before compiling again so the macro uses the new mode.
 Missing required environment variables fail the test rather than silently skipping it.
-Tests requiring real CA/TLS configuration or an IMDS host are explicitly ignored with reasons linking here, even when `AZURE_TEST_MODE=live`.
+Tests requiring real CA/TLS configuration are explicitly ignored with reasons linking here, even when `AZURE_TEST_MODE=live`.
+The IMDS live test runs only in live mode and returns without contacting IMDS when `IDENTITY_IMDS_AVAILABLE` is absent.
 
 | Test | Selection | Required environment |
 | --- | --- | --- |
 | `managed_identity_credential::tests::aci_user_assigned_live` | Live mode | Provisioned ACI test app, user-assigned identity, and storage account |
 | `workload_identity_credential::tests::live` | Live mode | Provisioned AKS test app with ordinary workload identity and storage access |
-| `managed_identity_credential::tests::imds_system_assigned_live` | Explicit `--ignored --exact` | Azure host with a system-assigned managed identity and reachable IMDS |
+| `managed_identity_credential::tests::imds_system_assigned_live` | Live mode, with `IDENTITY_IMDS_AVAILABLE` set | Azure host with a system-assigned managed identity and reachable IMDS |
 | `custom_token_proxy::tests::accepts_inline_and_file_ca` | Explicit `--ignored --exact` | Real CA configuration supplied by an AKS identity binding environment |
 | `custom_token_proxy::tests::sends_requests_with_custom_ca_and_sni` | Explicit `--ignored --exact` | AKS identity binding pod with a token proxy, custom CA, and SNI |
 
@@ -69,9 +71,14 @@ From the repository root, use the shared provisioning entry point, not the pre- 
 The [Bicep template](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/identity/test-resources.bicep) defaults `deployResources` to `false`.
 Enabling it creates two storage accounts, one user-assigned identity, one container registry, and one AKS cluster with a single node.
 The [post-provisioning script](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/identity/test-resources-post.ps1) builds and pushes the test app, creates an ACI instance, and deploys an AKS pod and public load balancer.
-It uses the template's `IDENTITY_DEPLOY_RESOURCES` output to honor the effective deployment setting, whether passed through `AdditionalParameters` or `ArmTemplateParameters`.
+It uses the template's existing `IDENTITY_ACR_NAME` output to detect the effective deployment setting, whether passed through `AdditionalParameters` or `ArmTemplateParameters`.
 Disabled deployments skip post-provisioning; enabled deployments require complete resource outputs.
 Before publishing endpoints, the script waits for addresses, pod readiness, and successful authentication and storage access through each deployed app.
+Pod and IP address readiness use `ReadinessTimeoutSeconds` (180 seconds by default).
+Authentication and storage access use a separate `EndpointReadinessTimeoutSeconds` budget (900 seconds by default) to allow for identity and role propagation.
+Each HTTP request waits at most 60 seconds or the remaining endpoint budget, whichever is shorter.
+Timeout errors retain the last HTTP error status and response body, when available.
+If AKS endpoint validation fails, the script collects pod logs, pod and service status, service endpoints, and recent pod and service events before cleaning up its temporary Kubernetes configuration.
 These resources incur charges until removed.
 
 Use the deployment outputs and post-provisioning output to set the environment variables in the shell running the tests.
@@ -96,13 +103,14 @@ AZURE_TEST_MODE=live cargo test -p azure_identity --all-features --lib \
 For IMDS, run on an Azure host with a system-assigned managed identity.
 Set `IDENTITY_IMDS_AVAILABLE=1` only on that host.
 Ensure other managed identity environment variables do not select a different credential source.
-The existing template does not provision this host, and selecting a matrix agent or setting `IDENTITY_IMDS_AVAILABLE` does not itself configure a managed identity.
-This test stays explicitly ignored until you provide an identity-enabled Azure host:
+The existing template does not provision this host, and setting `IDENTITY_IMDS_AVAILABLE` does not itself configure a managed identity.
+The weekly `msi_image` matrix supplies this opt-in for its identity-enabled host.
+Locally, run the test only on a host with a configured system-assigned identity:
 
 ```sh
 AZURE_TEST_MODE=live IDENTITY_IMDS_AVAILABLE=1 \
   cargo test -p azure_identity --all-features --lib \
-  managed_identity_credential::tests::imds_system_assigned_live -- --ignored --exact
+  managed_identity_credential::tests::imds_system_assigned_live -- --exact
 ```
 
 ### AKS identity binding token proxy
@@ -182,8 +190,9 @@ Do not delete an identity's automatically created federated credential while oth
 ## Troubleshooting
 
 - **Live test is ignored:** Set `AZURE_TEST_MODE=live` before compiling the tests; clean the package first if switching modes. Set the variables listed for that scenario before running it.
-- **CA/TLS or IMDS test stays ignored in live mode:** These tests require separate manual setup and explicit `--ignored --exact` selection as described above.
-- **Provisioning readiness times out:** Check the reported scenario, network access, pod status, and identity role assignments. The script does not publish an endpoint before its authentication/storage check succeeds.
+- **CA/TLS test stays ignored in live mode:** These tests require separate manual setup and explicit `--ignored --exact` selection as described above.
+- **IMDS live test returns without authenticating:** Set `IDENTITY_IMDS_AVAILABLE=1` only on an Azure host with a configured system-assigned managed identity.
+- **Provisioning readiness times out:** Check the reported scenario, last HTTP error, AKS diagnostics, network access, and identity role assignments. Endpoint validation allows 900 seconds by default; pod and IP readiness allow 180 seconds. The script does not publish an endpoint before its authentication/storage check succeeds.
 - **Token proxy settings are missing:** Ordinary workload identity is insufficient; recreate the pod with the identity binding annotation after configuring the binding and Kubernetes authorization.
 - **CA or SNI failures:** Use the webhook-provided values inside the pod, and configure exactly one CA source. HTTP recordings cannot diagnose the live TLS handshake.
 - **Storage authorization failures:** Check the test identity's role assignments and allow time for role propagation.

@@ -126,7 +126,6 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-06-01' = if (deplo
   }
 }
 
-output IDENTITY_DEPLOY_RESOURCES string = string(deployResources)
 output IDENTITY_ACR_LOGIN_SERVER string = deployResources ? containerRegistry.properties.loginServer : ''
 output IDENTITY_ACR_NAME string = deployResources ? containerRegistry.name : ''
 output IDENTITY_AKS_NAME string = deployResources ? aks.name : ''

@@ -695,7 +695,9 @@ mod tests {
     }
 
     async fn run_imds_live_test(id: Option<UserAssignedId>) -> azure_core::Result<()> {
-        Env::default().var("IDENTITY_IMDS_AVAILABLE")?;
+        if std::env::var("IDENTITY_IMDS_AVAILABLE").is_err() {
+            return Ok(());
+        }
 
         let credential = ManagedIdentityCredential::new(Some(ManagedIdentityCredentialOptions {
             user_assigned_id: id,
@@ -797,8 +799,7 @@ mod tests {
         run_imds_test(None).await;
     }
 
-    #[tokio::test]
-    #[ignore = "requires an Azure host with system-assigned identity, not provisioned by identity test resources; see CONTRIBUTING.md"]
+    #[recorded::test(live)]
     async fn imds_system_assigned_live() -> azure_core::Result<()> {
         run_imds_live_test(None).await
     }

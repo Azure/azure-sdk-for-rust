@@ -416,35 +416,30 @@ fn invalid_configuration(name: &'static str, message: impl Into<String>) -> Erro
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tests::{token_response, MockSts};
     #[cfg(feature = "reqwest_rustls")]
     use crate::{
-        tests::{token_response, MockSts, LIVE_TEST_SCOPES},
-        WorkloadIdentityCredential, WorkloadIdentityCredentialOptions,
+        tests::LIVE_TEST_SCOPES, WorkloadIdentityCredential, WorkloadIdentityCredentialOptions,
     };
     #[cfg(feature = "reqwest_rustls")]
-    use azure_core::{
-        credentials::TokenCredential,
-        http::{headers::HeaderName, Method, StatusCode},
-    };
-    #[cfg(feature = "reqwest_rustls")]
+    use azure_core::credentials::TokenCredential;
+    use azure_core::http::{headers::HeaderName, Method, StatusCode};
     use futures::future::join_all;
     #[cfg(feature = "reqwest_rustls")]
+    use std::time::{Duration, SystemTime};
     use std::{
         env,
         fs::File,
         io::Write,
         sync::atomic::{AtomicUsize, Ordering},
-        time::{Duration, SystemTime},
     };
 
-    #[cfg(feature = "reqwest_rustls")]
     #[derive(Debug)]
     struct MockTokenProxyClient {
         client: Arc<dyn HttpClient>,
         ca_data: Vec<u8>,
     }
 
-    #[cfg(feature = "reqwest_rustls")]
     impl TokenProxyClient for MockTokenProxyClient {
         fn create(
             &self,
@@ -460,19 +455,15 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "reqwest_rustls")]
     const MOCK_CA_DATA: &str = "mock CA data, not a certificate";
 
-    #[cfg(feature = "reqwest_rustls")]
     const ROTATED_MOCK_CA_DATA: &str = "rotated mock CA data, not a certificate";
 
-    #[cfg(feature = "reqwest_rustls")]
     #[derive(Debug, Default)]
     struct MockCaClient {
         calls: AtomicUsize,
     }
 
-    #[cfg(feature = "reqwest_rustls")]
     impl TokenProxyClient for MockCaClient {
         fn create(
             &self,
@@ -494,15 +485,12 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "reqwest_rustls")]
     static TEMP_FILE_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
-    #[cfg(feature = "reqwest_rustls")]
     struct TempFile {
         path: PathBuf,
     }
 
-    #[cfg(feature = "reqwest_rustls")]
     impl TempFile {
         fn new(content: &str) -> Self {
             let id = TEMP_FILE_COUNTER.fetch_add(1, Ordering::SeqCst);
@@ -526,7 +514,6 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "reqwest_rustls")]
     impl Drop for TempFile {
         fn drop(&mut self) {
             let _ = fs::remove_file(&self.path);
@@ -557,6 +544,21 @@ mod tests {
             Some("https://kubernetes.default.svc/proxy")
         );
         assert!(config.ca.is_none());
+    }
+
+    #[test]
+    fn configures_custom_client() {
+        let mut options = ClientOptions::default();
+        let factory = Arc::new(MockCaClient::default());
+        config(&[
+            (AZURE_KUBERNETES_TOKEN_PROXY, "https://proxy.contoso.com"),
+            (AZURE_KUBERNETES_CA_DATA, MOCK_CA_DATA),
+        ])
+        .expect("valid proxy configuration")
+        .configure(&mut options, Some(factory.clone()))
+        .expect("custom proxy client is available without the default client");
+        assert!(options.transport.is_some());
+        assert_eq!(factory.calls.load(Ordering::SeqCst), 1);
     }
 
     #[cfg(feature = "reqwest_rustls")]
@@ -706,7 +708,6 @@ mod tests {
         Ok(())
     }
 
-    #[cfg(feature = "reqwest_rustls")]
     #[tokio::test]
     async fn reuses_and_rotates_file_ca_client() {
         let file = TempFile::new(MOCK_CA_DATA);
@@ -734,7 +735,6 @@ mod tests {
         assert_eq!(factory.calls.load(Ordering::SeqCst), 2);
     }
 
-    #[cfg(feature = "reqwest_rustls")]
     #[tokio::test]
     async fn serializes_concurrent_file_ca_refresh() {
         let file = TempFile::new(MOCK_CA_DATA);
@@ -762,7 +762,6 @@ mod tests {
         assert_eq!(factory.calls.load(Ordering::SeqCst), 2);
     }
 
-    #[cfg(feature = "reqwest_rustls")]
     #[tokio::test]
     async fn surfaces_file_ca_refresh_errors_without_replacing_client() {
         let file = TempFile::new(MOCK_CA_DATA);
@@ -800,7 +799,6 @@ mod tests {
         assert_eq!(resolved_addrs, vec!["127.0.0.1:8443".parse().unwrap()]);
     }
 
-    #[cfg(feature = "reqwest_rustls")]
     #[tokio::test]
     async fn sends_requests_with_custom_ca_and_sni_using_mock_client() {
         let file = TempFile::new(MOCK_CA_DATA);

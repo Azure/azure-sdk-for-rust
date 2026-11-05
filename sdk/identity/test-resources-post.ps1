@@ -27,6 +27,9 @@ param (
   [ValidateRange(1, 1800)]
   [int] $ReadinessTimeoutSeconds = 180,
 
+  [ValidateRange(1, 1800)]
+  [int] $EndpointReadinessTimeoutSeconds = 900,
+
   # Captures any arguments from eng/New-TestResources.ps1 not declared here (no parameter errors).
   [Parameter(ValueFromRemainingArguments = $true)]
   $RemainingArguments
@@ -35,11 +38,10 @@ param (
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
 
-$deployed = $false
-if (![bool]::TryParse($DeploymentOutputs['IDENTITY_DEPLOY_RESOURCES'], [ref] $deployed)) {
-  throw 'Missing or invalid deployment output IDENTITY_DEPLOY_RESOURCES'
+if (!$DeploymentOutputs.ContainsKey('IDENTITY_ACR_NAME')) {
+  throw 'Missing deployment output IDENTITY_ACR_NAME'
 }
-if (!$deployed) {
+if ([string]::IsNullOrWhiteSpace($DeploymentOutputs['IDENTITY_ACR_NAME'])) {
   Write-Host "Skipping post-provisioning script because resources weren't deployed"
   return
 }
@@ -77,22 +79,57 @@ function Wait-IdentityAddress {
 function Wait-IdentityEndpoint {
   param([string] $Name, [uri] $Uri)
 
-  $deadline = (Get-Date).AddSeconds($ReadinessTimeoutSeconds)
+  $started = Get-Date
+  $deadline = $started.AddSeconds($EndpointReadinessTimeoutSeconds)
   $failure = 'no response'
-  do {
+  $lastHttpFailure = $null
+  while (($remaining = ($deadline - (Get-Date)).TotalSeconds) -ge 1) {
+    $requestTimeout = [int] [Math]::Min(60, [Math]::Floor($remaining))
     try {
-      $response = Invoke-WebRequest -Uri $Uri -TimeoutSec 10 -SkipHttpErrorCheck
+      $response = Invoke-WebRequest -Uri $Uri -TimeoutSec $requestTimeout -SkipHttpErrorCheck
       if ($response.StatusCode -eq 200) {
         return
       }
-      $failure = "HTTP $($response.StatusCode)"
+      $body = ([string] $response.Content).Trim()
+      if ($body.Length -gt 2048) {
+        $body = $body.Substring(0, 2048) + ' [truncated]'
+      }
+      $failure = "HTTP $($response.StatusCode): $body"
+      $lastHttpFailure = $failure
     }
-    catch [System.Net.Http.HttpRequestException], [System.Threading.Tasks.TaskCanceledException] {
+    catch [System.Net.Http.HttpRequestException], [System.Threading.Tasks.TaskCanceledException], [System.TimeoutException], [System.Net.WebException] {
       $failure = $_.Exception.Message
     }
-    Start-Sleep -Seconds 5
-  } while ((Get-Date) -lt $deadline)
-  throw "Timed out waiting for $Name authentication and storage access: $failure"
+    $remaining = ($deadline - (Get-Date)).TotalSeconds
+    if ($remaining -gt 0) {
+      Start-Sleep -Seconds ([Math]::Min(5, $remaining))
+    }
+  }
+  $elapsed = [Math]::Round(((Get-Date) - $started).TotalSeconds, 1)
+  $httpDetails = if ($lastHttpFailure -and $lastHttpFailure -ne $failure) { " Last HTTP failure: $lastHttpFailure" } else { '' }
+  throw "Timed out waiting for $Name authentication and storage access at $Uri after ${elapsed}s: $failure$httpDetails"
+}
+
+function Write-IdentityAksDiagnostics {
+  param([string] $Kubeconfig, [string] $PodName)
+
+  $serviceName = "$PodName-service"
+  foreach ($arguments in @(
+    @('get', 'pod', $PodName, '-o', 'wide'),
+    @('get', 'service', $serviceName, '-o', 'wide'),
+    @('get', 'endpointslices', '-l', "kubernetes.io/service-name=$serviceName", '-o', 'wide'),
+    @('logs', $PodName, '--tail=100'),
+    @('get', 'events', '--field-selector', "involvedObject.name=$PodName", '--sort-by=.metadata.creationTimestamp'),
+    @('get', 'events', '--field-selector', "involvedObject.name=$serviceName", '--sort-by=.metadata.creationTimestamp')
+  )) {
+    try {
+      Write-Host "AKS diagnostic: kubectl $($arguments -join ' ')"
+      kubectl --kubeconfig $Kubeconfig --namespace default --request-timeout=10s @arguments
+    }
+    catch {
+      Write-Warning "AKS diagnostic failed: $($_.Exception.Message)"
+    }
+  }
 }
 
 function Publish-IdentityVariable {
@@ -225,7 +262,13 @@ spec:
   $serviceIP = Wait-IdentityAddress -Name AKS -GetAddress {
     kubectl --kubeconfig $kubeconfig get service "$($containerName)-service" -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
   }
-  Wait-IdentityEndpoint -Name AKS -Uri "http://${serviceIP}:8080/api?test=workload-identity&storage-name=$storageName"
+  try {
+    Wait-IdentityEndpoint -Name AKS -Uri "http://${serviceIP}:8080/api?test=workload-identity&storage-name=$storageName"
+  }
+  catch {
+    Write-IdentityAksDiagnostics -Kubeconfig $kubeconfig -PodName $containerName
+    throw
+  }
   Publish-IdentityVariable -Name IDENTITY_AKS_IP -Value $serviceIP
   Write-Host "##[endgroup]"
 }
