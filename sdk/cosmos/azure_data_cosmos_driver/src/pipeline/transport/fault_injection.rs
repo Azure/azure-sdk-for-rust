@@ -4,8 +4,7 @@
 //! Collects fault-injection evaluations for individual transport attempts.
 
 use crate::{
-    diagnostics::{DiagnosticsContextBuilder, RequestHandle},
-    fault_injection::EvaluationCollector,
+    diagnostics::RequestDiagnosticsBuilder, fault_injection::EvaluationCollector,
     pipeline::transport::request::PreparedRequest,
 };
 
@@ -29,13 +28,12 @@ pub(super) fn attach_collector(
 /// Call after completion so the terminal record copied into the hedge journal stays unchanged.
 pub(super) fn record_evaluations(
     collector: Option<EvaluationCollector>,
-    handle: RequestHandle,
-    diagnostics: &mut DiagnosticsContextBuilder,
+    diagnostics: &mut RequestDiagnosticsBuilder<'_>,
 ) {
     if let Some(collector) = collector {
         let evaluations = collector.take();
         if !evaluations.is_empty() {
-            diagnostics.set_fault_injection_evaluations(handle, evaluations);
+            diagnostics.set_fault_injection_evaluations(evaluations);
         }
     }
 }

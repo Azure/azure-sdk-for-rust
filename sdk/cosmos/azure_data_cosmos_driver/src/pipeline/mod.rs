@@ -3,10 +3,7 @@
 
 //! Request execution pipelines.
 
-mod clock;
 pub(crate) mod transport;
-
-pub(crate) use clock::Clock;
 
 /// Whether a pipeline should retry its stage or return a terminal failure.
 pub(crate) enum RecoveryAction<T> {

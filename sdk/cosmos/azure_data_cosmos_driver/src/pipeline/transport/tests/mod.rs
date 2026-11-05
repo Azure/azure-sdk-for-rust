@@ -301,7 +301,7 @@ fn test_endpoint_key() -> EndpointKey {
         .unwrap()
 }
 
-fn test_request(deadline: Option<Instant>) -> TransportRequest {
+pub(super) fn test_request(deadline: Option<Instant>) -> TransportRequest {
     let endpoint =
         CosmosEndpoint::global(url::Url::parse("https://test.documents.azure.com:443/").unwrap());
     TransportRequest {

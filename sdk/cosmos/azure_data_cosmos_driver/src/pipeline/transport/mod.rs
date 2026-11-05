@@ -8,6 +8,7 @@
 //! Inline small pipeline-stage helpers; retain larger I/O and recovery functions for backtraces.
 
 use crate::{
+    clock::Clock,
     diagnostics::{DiagnosticsContextBuilder, PipelineKind, RequestSentStatus, TransportSecurity},
     models::Credential,
     pipeline::{
@@ -16,7 +17,7 @@ use crate::{
             recovery::{ThrottleRetryPolicy, TransportRetryProgress},
             types::{TransportRequest, TransportResult},
         },
-        Clock, RecoveryAction,
+        RecoveryAction,
     },
 };
 use azure_core::http::headers::HeaderValue;
@@ -86,7 +87,8 @@ pub(crate) async fn execute(
             return TransportResult::deadline_exceeded(RequestSentStatus::NotSent);
         }
 
-        let handle = diagnostics::start_attempt(&request, config, services, &progress, diagnostics);
+        let mut request_diagnostics =
+            diagnostics::start_attempt(&request, config, services, &progress, diagnostics);
         let prepared = match request::prepare(
             &request,
             config,
@@ -96,31 +98,32 @@ pub(crate) async fn execute(
         .await
         {
             Ok(prepared) => prepared,
-            Err(error) => match recovery::recover_prep_error(error, handle, diagnostics) {
-                RecoveryAction::Retry => continue,
-                RecoveryAction::Fail(result) => return result,
-            },
+            Err(error) => {
+                diagnostics::fail_preparation(&error, &mut request_diagnostics);
+                return error.into();
+            }
         };
-        diagnostics::start_transport(handle, diagnostics);
+        diagnostics::start_transport(&mut request_diagnostics);
 
         #[cfg(feature = "fault_injection")]
-        let (prepared, collector) =
-            fault_injection::attach_collector(prepared, diagnostics.fault_injection_enabled());
+        let (prepared, collector) = fault_injection::attach_collector(
+            prepared,
+            request_diagnostics.fault_injection_enabled(),
+        );
 
         let outcome = dispatch::send(
             &prepared,
             services.transport,
             progress.excluded_shard_id.take(),
             &config.endpoint_key,
-            handle,
-            diagnostics,
+            &mut request_diagnostics,
             services.clock.clone(),
         )
         .await;
-        diagnostics::complete_attempt(&outcome, handle, diagnostics);
+        diagnostics::complete_attempt(&outcome, &mut request_diagnostics);
 
         #[cfg(feature = "fault_injection")]
-        fault_injection::record_evaluations(collector, handle, diagnostics);
+        fault_injection::record_evaluations(collector, &mut request_diagnostics);
         let result = match &outcome {
             Ok(result) => result,
             Err(error) => error.result(),
@@ -129,7 +132,7 @@ pub(crate) async fn execute(
 
         match outcome {
             Ok(result) => return result,
-            Err(error) => match recovery::recover_dispatch_error(
+            Err(error) => match recovery::recover(
                 error,
                 &request,
                 config,

@@ -3,7 +3,7 @@
 
 //! Races a future against an injected clock's timer.
 
-use crate::pipeline::Clock;
+use crate::clock::Clock;
 use futures::{
     future::{self, Either},
     pin_mut,

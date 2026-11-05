@@ -12,10 +12,10 @@ use super::{
     TransportPipelineConfig,
 };
 use crate::{
+    clock::Clock,
     diagnostics::RequestSentStatus,
     error::{status_codes, CosmosError},
     models::{CosmosStatus, Credential},
-    pipeline::Clock,
 };
 use azure_core::http::headers::HeaderValue;
 use std::time::Duration;

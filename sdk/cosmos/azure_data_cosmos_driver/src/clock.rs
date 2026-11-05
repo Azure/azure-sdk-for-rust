@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Monotonic time and sleeps shared by pipeline stages.
+//! Monotonic time and sleeps with test-controlled clocks.
 
 #[cfg(test)]
 use std::sync::Arc;

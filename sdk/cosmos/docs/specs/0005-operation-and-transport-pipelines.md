@@ -394,13 +394,15 @@ fn evaluate_transport_result(
     session_state: &SessionState,
 ) -> (OperationAction, Vec<LocationEffect>);
 
-// SYSTEM: Evaluate a realized delay against the throttle budget.
-// The caller obtains jitter separately; this decision is deterministic.
-fn evaluate_throttle_budget(
-    realized_delay: Duration,
-    policy: &ThrottleRetryPolicy,
-    progress: ThrottleRetryProgress,
-) -> ThrottleDecision;
+// Select a service or jittered fallback delay and charge the ordinary retry budget.
+// Bootstrap shares this method without consuming a forced-final retry.
+impl ThrottleRetryProgress {
+    fn try_retry(
+        &mut self,
+        retry_after_ms: Option<u64>,
+        policy: &ThrottleRetryPolicy,
+    ) -> Option<Duration>;
+}
 
 // SYSTEM: Build the TransportRequest from operation + routing decision.
 fn build_transport_request(
@@ -413,7 +415,7 @@ fn build_transport_request(
 
 // SYSTEM: Execute a fixed-target transport invocation — build HTTP request,
 // apply headers, sign, send, retry 429s and connectivity errors.
-// This actor performs I/O and records diagnostics; its decisions are separate.
+// This actor performs I/O and records diagnostics; recovery returns loop control.
 async fn execute_transport_pipeline(
     request: TransportRequest,
     config: &TransportPipelineConfig<'_>,
@@ -484,16 +486,12 @@ pub(crate) enum LocationEffect {
     RefreshAccountProperties,
 }
 
-/// What the transport pipeline should do after a 429.
-pub(crate) enum ThrottleDecision {
-    /// Retry after a delay.
-    Retry {
-        delay: Duration,
-        next: ThrottleRetryProgress,
-    },
-    ForcedFinal { next: ThrottleRetryProgress },
-    /// Do not retry; propagate to operation pipeline.
-    Propagate,
+/// Loop control shared by pipeline recovery functions.
+pub(crate) enum RecoveryAction<T> {
+    /// Begin another attempt after recovery has updated progress and waited.
+    Retry,
+    /// End this invocation with the terminal result.
+    Fail(T),
 }
 ```
 
@@ -1390,7 +1388,7 @@ detection live in `src/background_task_manager.rs` and `src/emulator.rs`, respec
 The reusable future-versus-timer race lives in `src/timeout.rs`; it polls the supplied future
 first and drops the unfinished future when the timer wins.
 
-`pipeline::Clock` supplies monotonic time and sleeps. Its default real implementation is
+`clock::Clock` in `src/clock.rs` supplies monotonic time and sleeps. Its default real implementation is
 zero-sized in production. Under `cfg(test)`, `Clock::new_test()` creates an independent fake
 clock with `Arc`-shared state: clones see the same time and pending sleeps. `advance` moves
 that time forward and wakes sleepers; `pending_sleep_count` exposes registered waits. These
@@ -1399,24 +1397,25 @@ the clock explicitly, so tests can drive deadline and retry behavior without rea
 Backend housekeeping and diagnostic timestamps keep their existing clocks.
 
 One loop in `transport/mod.rs` checks the deadline, prepares a request, dispatches it,
-and returns successful responses directly. Recovery entrypoints appear only in failure
+and returns successful responses directly. The recovery entrypoint appears only in dispatch-failure
 branches and return the shared `pipeline::RecoveryAction<T>`: `Retry` for another attempt,
-or `Fail(T)` with the terminal result. Preparation errors currently always fail; connectivity recovery precedes
+or `Fail(T)` with the terminal result. Preparation errors are terminal; connectivity recovery precedes
 throttle recovery after dispatch. Each attempt follows these stages:
 
 1. Start its diagnostic record and attach routing-fallback and failed-shard history.
+   `diagnostics::start_attempt` returns a `RequestDiagnosticsBuilder` that pairs the request
+   handle with its mutable context; per-request helpers receive this bound builder.
 2. Call `request::prepare`: build the HTTP request, sample the timeout, apply headers,
    sign it, and wrap Gateway V2 requests. It returns `Result<PreparedRequest, PreparationError>`,
    identifying authorization or encoding errors.
-3. Pass preparation errors to `recovery::recover_prep_error`, which records the
-   unsent failure and returns it without dispatch.
+3. Record preparation errors as unsent and return them directly from the loop without dispatch.
 4. Record transport start, attach fault-injection collection, and dispatch.
 5. Within `dispatch::send`, record raw headers and shard observations before decoding.
    The same function classifies the response and returns `Result<TransportResult, DispatchError>`.
    `DispatchError` distinguishes HTTP, transport, response-decoding, and timeout errors.
 6. Complete diagnostics, then attach fault-injection evaluations. This preserves the
    terminal record's existing hedge-journal copy.
-7. Return success directly; otherwise call `recovery::recover_dispatch_error`.
+7. Return success directly; otherwise call `recovery::recover`.
 
 | Module | Responsibility |
 | --- | --- |
@@ -1424,7 +1423,7 @@ throttle recovery after dispatch. Each attempt follows these stages:
 | `mod.rs` | One execution loop, fixed configuration, and borrowed services |
 | `request.rs` | HTTP request construction, headers, signing, Gateway V2 wrapping, and preparation failures |
 | `dispatch.rs` | One send, timeout/cancellation, response decoding, and outcome classification |
-| `recovery.rs` | Failure-only entrypoints, retry decisions, pool/jitter observations, waits, and progress updates |
+| `recovery.rs` | Connectivity and throttle recovery, pool checks, jitter sampling, waits, and progress updates |
 | `deadline.rs` | `Deadline` newtype, explicit-time deadline checks, timeout floor, and bounded retry waits |
 | `diagnostics.rs` | Start, dispatch-observation, and completion recording |
 | `fault_injection.rs` | Feature-gated collector attachment and post-completion evaluation recording |
@@ -1433,9 +1432,13 @@ throttle recovery after dispatch. Each attempt follows these stages:
 `ThrottleRetryPolicy` holds fixed limits; `ThrottleRetryProgress` holds ordinary retry count,
 cumulative budgeted delay, and the forced-final-used flag. `TransportRetryProgress` also holds
 local connectivity retry count, a one-dispatch shard exclusion, and failed-shard history.
-Recovery owns pool checks, jitter sampling, waits, and progress changes. Its policy helpers
-return explicit delay, budget, and wait decisions from supplied data. Budgets are fresh for
-each invocation, including each hedge leg.
+Recovery owns pool checks, jitter sampling, waits, and progress changes. `try_connectivity_retry`
+updates failed-shard history, retry count, and the next dispatch's shard exclusion only when replay
+is allowed. Otherwise, `try_throttle_retry` handles the response. `ThrottleRetryProgress::try_retry`
+selects an ordinary retry delay and charges its budget in place; bootstrap shares this method
+without gaining forced-final retries. Recovery consistently mutates invocation-local progress
+and returns `RecoveryAction`, rather than passing intermediate decisions and replacement state
+between helpers. Budgets are fresh for each invocation, including each hedge leg.
 
 Callers qualify stage functions with their module names. Enum predicates and projections
 keep variant tests out of orchestration. Inlining is limited to pipeline-stage functions and
@@ -1464,16 +1467,17 @@ Timeout sampling occurs after request construction and before signing/wrapping. 
 `timeout` field remains `None`; dispatch races the send against the sampled duration, with a
 1 ms minimum. A pre-attempt expiration returns `NotSent` without a new diagnostic record;
 an in-flight expiration returns `Unknown`. Ordinary retry waits reserve a saturating 100 ms
-margin and check the deadline again after sleeping, returning `Sent` if it expired.
-Forced-final waits use half the remaining time, skip waits below 100 ms, and propagate the
-original response if already expired. Without a deadline, forced-final recovery is immediate.
+margin. Forced-final waits use half the remaining time and skip waits below 100 ms.
+Recovery only caps delays: an eligible retry returns `Retry` even if the deadline has expired.
+The next loop iteration detects expiration, returning `NotSent` without dispatching or creating
+another diagnostic record. An absent or expired deadline makes the forced-final wait immediate.
 
 ### 5.3 Policy Application (Bare Functions, Not a Chain)
 
 The transport pipeline uses functions for header application and request signing rather than
 a `Policy` chain. A single signing function generates authorization before changing either
 the date or authorization header. Preparation identifies signing and encoding failures;
-the preparation-recovery entrypoint records their diagnostics.
+the execution loop records their diagnostics and returns the failure directly.
 
 ```rust
 // Instead of:

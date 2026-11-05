@@ -13,13 +13,13 @@ use super::{
     EndpointKey,
 };
 use crate::{
+    clock::Clock,
     diagnostics::{
-        DiagnosticsContextBuilder, FailedTransportShardDiagnostics, RequestHandle,
-        RequestSentStatus, TransportShardDiagnostics,
+        FailedTransportShardDiagnostics, RequestDiagnosticsBuilder, RequestSentStatus,
+        TransportShardDiagnostics,
     },
     error::{status_codes, CosmosError},
     models::{CosmosResponseHeaders, CosmosStatus},
-    pipeline::Clock,
     timeout,
 };
 
@@ -112,8 +112,7 @@ pub(super) async fn send(
     transport: &AdaptiveTransport,
     excluded_shard_id: Option<u64>,
     endpoint_key: &EndpointKey,
-    handle: RequestHandle,
-    diagnostics: &mut DiagnosticsContextBuilder,
+    diagnostics: &mut RequestDiagnosticsBuilder<'_>,
     clock: Clock,
 ) -> Result<TransportResult, DispatchError> {
     let request = &prepared.http_request;
@@ -136,11 +135,13 @@ pub(super) async fn send(
             .send_with_dispatch(request, excluded_shard_id, endpoint_key, None)
             .await
     };
-    diagnostics::record_dispatch(&dispatch, handle, diagnostics);
+    diagnostics::record_dispatch(&dispatch, diagnostics);
     match dispatch.result {
         Ok(response) => match decode(response, prepared.mode) {
             Ok(response) => {
-                let result = response_result(response);
+                let headers = CosmosResponseHeaders::from_headers(&response.headers);
+                let status = CosmosStatus::from_parts(response.status.into(), headers.substatus);
+                let result = TransportResult::from_http_response(status, headers, response.body);
                 if result.outcome.is_successful() {
                     Ok(result)
                 } else {
@@ -208,24 +209,17 @@ fn decode(response: HttpResponse, mode: TransportMode) -> Result<HttpResponse, C
     }
 }
 
-/// Parses Cosmos response headers and combines them with the status and body into a transport result.
-// Inline result assembly; header parsing retains its call frame.
-#[inline]
-fn response_result(response: HttpResponse) -> TransportResult {
-    let headers = CosmosResponseHeaders::from_headers(&response.headers);
-    let status = CosmosStatus::from_parts(response.status.into(), headers.substatus);
-    TransportResult::from_http_response(status, headers, response.body)
-}
-
 #[cfg(test)]
 mod tests {
     use super::{
-        send, status_codes, AdaptiveTransport, CosmosError, DiagnosticsContextBuilder,
-        DispatchError, HttpResponse, PreparedRequest, RequestSentStatus, TransportMode,
+        send, status_codes, AdaptiveTransport, CosmosError, DispatchError, HttpResponse,
+        PreparedRequest, RequestDiagnosticsBuilder, RequestSentStatus, TransportMode,
         TransportOutcome, TransportResult,
     };
     use crate::{
-        diagnostics::{ExecutionContext, PipelineKind, TransportSecurity},
+        diagnostics::{
+            DiagnosticsContextBuilder, ExecutionContext, PipelineKind, TransportSecurity,
+        },
         driver::routing::CosmosEndpoint,
         models::ActivityId,
         options::DiagnosticsOptions,
@@ -293,8 +287,7 @@ mod tests {
             &transport,
             None,
             &endpoint.endpoint_key(),
-            handle,
-            &mut diagnostics,
+            &mut RequestDiagnosticsBuilder::new(handle, &mut diagnostics),
             Default::default(),
         )
         .await

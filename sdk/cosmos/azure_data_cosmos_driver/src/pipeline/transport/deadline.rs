@@ -50,20 +50,19 @@ impl Deadline {
 
     /// Returns half the time remaining at `now` for a forced-final wait, skipping waits below 100 ms.
     ///
-    /// No deadline means an immediate retry; an expired deadline returns `None`.
+    /// No deadline or an expired deadline means no wait; the execution loop checks expiration.
     // Inline the small wait selection.
     #[inline(always)]
-    pub fn forced_final_delay(self, now: Instant) -> Option<Duration> {
+    pub fn forced_final_delay(self, now: Instant) -> Duration {
         match self.remaining(now) {
-            None => Some(Duration::ZERO),
-            Some(remaining) if remaining.is_zero() => None,
+            None => Duration::ZERO,
             Some(remaining) => {
                 let half = remaining / 2;
-                Some(if half < DEADLINE_RETRY_SAFETY_MARGIN {
+                if half < DEADLINE_RETRY_SAFETY_MARGIN {
                     Duration::ZERO
                 } else {
                     half
-                })
+                }
             }
         }
     }
@@ -91,16 +90,16 @@ mod tests {
     #[test]
     fn forced_final_delay_boundaries() {
         let now = Instant::now();
+        assert_eq!(Deadline::default().forced_final_delay(now), Duration::ZERO);
         assert_eq!(
-            Deadline::default().forced_final_delay(now),
-            Some(Duration::ZERO)
+            Deadline::from(Some(now)).forced_final_delay(now),
+            Duration::ZERO
         );
-        assert_eq!(Deadline::from(Some(now)).forced_final_delay(now), None);
         for (remaining, expected) in [(50, 0), (150, 0), (199, 0), (200, 100), (400, 200)] {
             let deadline = Deadline::from(Some(now + Duration::from_millis(remaining)));
             assert_eq!(
                 deadline.forced_final_delay(now),
-                Some(Duration::from_millis(expected)),
+                Duration::from_millis(expected),
             );
         }
     }
@@ -133,7 +132,7 @@ mod tests {
             expired.cap_delay(Duration::from_secs(1), now),
             Duration::ZERO
         );
-        assert_eq!(expired.forced_final_delay(now), None);
+        assert_eq!(expired.forced_final_delay(now), Duration::ZERO);
         assert!(!Deadline::default().exceeded(now));
         assert_eq!(Deadline::default().remaining(now), None);
     }

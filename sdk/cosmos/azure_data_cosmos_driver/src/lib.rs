@@ -35,6 +35,7 @@ pub mod options;
 
 #[cfg(feature = "tokio")]
 pub(crate) mod background_task_manager;
+pub(crate) mod clock;
 pub(crate) mod emulator;
 pub(crate) mod pipeline;
 pub(crate) mod rntbd;

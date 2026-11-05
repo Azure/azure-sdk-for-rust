@@ -82,50 +82,53 @@ async fn ordinary_and_forced_final_retries_wait_on_the_injected_clock() {
 }
 
 #[tokio::test]
-async fn deadline_expiring_during_retry_wait_returns_sent_without_another_dispatch() {
-    let clock = Clock::new_test();
-    clock.advance(Duration::from_secs(3600));
-    let mut headers = azure_core::http::headers::Headers::new();
-    headers.insert("x-ms-retry-after-ms", "5000");
-    let mock = Arc::new(GatewayV2MockTransportClient::new(vec![HttpResponse {
-        status: 429,
-        headers,
-        body: Vec::new(),
-    }]));
-    let client = AdaptiveTransport::Gateway(mock.clone());
-    let request = test_request(Some(clock.now() + Duration::from_millis(250)));
-    let credential = Credential::from(azure_core::credentials::Secret::new("dGVzdA=="));
-    let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
-    let mut context = gateway_v2_context(
-        &client,
-        request.endpoint.endpoint_key(),
-        None,
-        &credential,
-        &user_agent,
-    );
-    context.clock = clock.clone();
-    let mut diagnostics = gateway_v2_diagnostics();
+async fn deadline_expiring_during_retry_wait_is_checked_before_the_next_attempt() {
+    for budget in [Duration::from_secs(30), Duration::from_millis(1)] {
+        let clock = Clock::new_test();
+        clock.advance(Duration::from_secs(3600));
+        let mut headers = azure_core::http::headers::Headers::new();
+        headers.insert("x-ms-retry-after-ms", "5000");
+        let mock = Arc::new(GatewayV2MockTransportClient::new(vec![HttpResponse {
+            status: 429,
+            headers,
+            body: Vec::new(),
+        }]));
+        let client = AdaptiveTransport::Gateway(mock.clone());
+        let request = test_request(Some(clock.now() + Duration::from_millis(250)));
+        let credential = Credential::from(azure_core::credentials::Secret::new("dGVzdA=="));
+        let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
+        let mut context = gateway_v2_context(
+            &client,
+            request.endpoint.endpoint_key(),
+            None,
+            &credential,
+            &user_agent,
+        );
+        context.clock = clock.clone();
+        context.max_throttle_wait_time = budget;
+        let mut diagnostics = gateway_v2_diagnostics();
 
-    let result = {
-        let mut execution = Box::pin(run_pipeline(request, &context, &mut diagnostics));
-        assert!(futures::poll!(execution.as_mut()).is_pending());
-        assert_eq!(clock.pending_sleep_count(), 1);
-        clock.advance(Duration::from_millis(250));
-        let Poll::Ready(result) = futures::poll!(execution.as_mut()) else {
-            panic!("the expired deadline must end recovery");
+        let result = {
+            let mut execution = Box::pin(run_pipeline(request, &context, &mut diagnostics));
+            assert!(futures::poll!(execution.as_mut()).is_pending());
+            assert_eq!(clock.pending_sleep_count(), 1);
+            clock.advance(Duration::from_millis(250));
+            let Poll::Ready(result) = futures::poll!(execution.as_mut()) else {
+                panic!("the next loop iteration must check the expired deadline");
+            };
+            result
         };
-        result
-    };
 
-    assert!(matches!(
-        result.outcome,
-        TransportOutcome::DeadlineExceeded {
-            request_sent: RequestSentStatus::Sent
-        }
-    ));
-    assert_eq!(mock.requests().len(), 1);
-    assert_eq!(clock.pending_sleep_count(), 0);
-    assert_eq!(diagnostics.complete().requests().len(), 1);
+        assert!(matches!(
+            result.outcome,
+            TransportOutcome::DeadlineExceeded {
+                request_sent: RequestSentStatus::NotSent
+            }
+        ));
+        assert_eq!(mock.requests().len(), 1);
+        assert_eq!(clock.pending_sleep_count(), 0);
+        assert_eq!(diagnostics.complete().requests().len(), 1);
+    }
 }
 
 #[tokio::test]

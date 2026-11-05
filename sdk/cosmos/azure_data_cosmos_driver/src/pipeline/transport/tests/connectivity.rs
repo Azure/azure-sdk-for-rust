@@ -10,6 +10,11 @@ use super::{
     TransportSecurity, MAX_LOCAL_CONNECTIVITY_RETRIES, METADATA_MAX_PER_RETRY_DELAY,
     TEST_CLIENT_ID,
 };
+use crate::pipeline::transport::{
+    dispatch::DispatchErrorDetails,
+    recovery::{self, ThrottleRetryPolicy, TransportRetryProgress},
+    TransportPipelineConfig,
+};
 use async_trait::async_trait;
 use std::collections::VecDeque;
 
@@ -68,6 +73,102 @@ fn possibly_sent_connectivity_failure_defers_to_caller_flag() {
 #[test]
 fn local_connectivity_retries_are_capped_at_one() {
     assert_eq!(MAX_LOCAL_CONNECTIVITY_RETRIES, 1);
+}
+
+#[tokio::test]
+async fn connectivity_retry_updates_progress_only_for_eligible_replays() {
+    let client = scripted_transport(
+        crate::error::status_codes::TRANSPORT_CONNECTION_FAILED,
+        "first shard failed",
+        crate::error::status_codes::TRANSPORT_CONNECTION_FAILED,
+        "second shard failed",
+    );
+    let endpoint_key = test_endpoint_key();
+    let request = HttpRequest {
+        method: azure_core::http::Method::Get,
+        url: url::Url::parse("https://test.documents.azure.com:443/dbs").unwrap(),
+        headers: Default::default(),
+        body: None,
+        timeout: None,
+        #[cfg(feature = "fault_injection")]
+        evaluation_collector: None,
+    };
+    let dispatch = client
+        .send_with_dispatch(&request, None, &endpoint_key, None)
+        .await;
+    let shard_id = dispatch
+        .shard_id
+        .expect("the first send must select a shard");
+    let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
+    let mut config = TransportPipelineConfig {
+        allow_sent_transport_retry: false,
+        user_agent: &user_agent,
+        client_id: &TEST_CLIENT_ID,
+        pipeline_type: PipelineKind::DataPlane,
+        transport_security: TransportSecurity::Secure,
+        endpoint_key,
+        account_name: None,
+        collection_rid: None,
+        throttle_policy: ThrottleRetryPolicy::with_limits(
+            9,
+            Duration::from_secs(30),
+            METADATA_MAX_PER_RETRY_DELAY,
+        ),
+    };
+
+    for request_sent in [
+        RequestSentStatus::NotSent,
+        RequestSentStatus::Sent,
+        RequestSentStatus::Unknown,
+    ] {
+        for allow_sent in [false, true] {
+            config.allow_sent_transport_retry = allow_sent;
+            for known_shard in [false, true] {
+                for retry_count in [0, MAX_LOCAL_CONNECTIVITY_RETRIES] {
+                    let details = DispatchErrorDetails {
+                        result: connectivity_failure(request_sent),
+                        shard_id: known_shard.then_some(shard_id),
+                        shard_diagnostics: dispatch.shard_diagnostics.clone(),
+                    };
+                    let mut progress = TransportRetryProgress {
+                        local_connectivity_retry_count: retry_count,
+                        ..Default::default()
+                    };
+                    let eligible = known_shard
+                        && retry_count == 0
+                        && (request_sent == RequestSentStatus::NotSent || allow_sent);
+                    let action =
+                        recovery::try_connectivity_retry(&details, &config, &client, &mut progress);
+                    assert_eq!(
+                        matches!(action, Some(crate::pipeline::RecoveryAction::Retry)),
+                        eligible
+                    );
+                    assert_eq!(
+                        progress.local_connectivity_retry_count,
+                        retry_count + u32::from(eligible)
+                    );
+                    assert_eq!(progress.excluded_shard_id, eligible.then_some(shard_id));
+                    assert_eq!(progress.failed_shards.len(), usize::from(eligible));
+                    assert_eq!(progress.throttle, Default::default());
+                }
+            }
+        }
+    }
+
+    let unsharded =
+        AdaptiveTransport::Gateway(Arc::new(super::GatewayV2MockTransportClient::new(vec![])));
+    let details = DispatchErrorDetails {
+        result: connectivity_failure(RequestSentStatus::NotSent),
+        shard_id: Some(shard_id),
+        shard_diagnostics: dispatch.shard_diagnostics,
+    };
+    let mut progress = TransportRetryProgress::default();
+    assert!(
+        recovery::try_connectivity_retry(&details, &config, &unsharded, &mut progress).is_none()
+    );
+    assert_eq!(progress.local_connectivity_retry_count, 0);
+    assert_eq!(progress.excluded_shard_id, None);
+    assert!(progress.failed_shards.is_empty());
 }
 
 #[tokio::test]
