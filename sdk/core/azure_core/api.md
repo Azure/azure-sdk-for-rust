@@ -20,9 +20,9 @@
 - `reqwest_deflate`
 - `reqwest_gzip`
 - `reqwest_rustls`
-- `resource_manager`
 - `tokio`
 - `unstable_fake`
+- `unstable_resource_manager`
 - `xml`
 
 ```rust
@@ -163,7 +163,7 @@ pub mod cloud {
     pub struct CustomConfiguration {
         pub authority_host: String,
         pub audiences: Audiences,
-        #[cfg(feature = "resource_manager")]
+        #[cfg(feature = "unstable_resource_manager")]
         pub endpoint: Option<String>,
     }
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -186,7 +186,7 @@ pub mod cloud {
     impl From<CustomConfiguration> for CloudConfiguration {
         fn from(config: CustomConfiguration) -> Self;
     }
-    #[cfg(feature = "resource_manager")]
+    #[cfg(feature = "unstable_resource_manager")]
     pub mod resource_manager {
         #[allow(missing_debug_implementations)]
         pub struct Audience;
@@ -1420,7 +1420,7 @@ pub mod http {
         pub mod fake {
             pub fn with_state<M, F, C>(make_request: C) -> impl Fn(crate::http::poller::PollerState, crate::http::poller::PollerOptions<'static>) -> crate::http::poller::PollerResultFuture<M, F> + Send + 'static where M: StatusMonitor, F: Format, C: Fn(crate::http::poller::PollerState, crate::http::poller::PollerOptions<'static>) -> crate::http::poller::PollerResultFuture<M, F> + Send + 'static;
         }
-        #[cfg(feature = "resource_manager")]
+        #[cfg(feature = "unstable_resource_manager")]
         pub mod resource_manager {
             pub fn new_poller<'a, M>(pipeline: crate::http::Pipeline, request: crate::http::Request, final_state_via: Option<FinalStateVia<M>>, options: Option<PollerOptions<'a>>) -> crate::http::Poller<M> where M: StatusMonitor + DeserializeOwned + Send + 'static, <M as >::Output: DeserializeOwned + Send + 'static, <M as >::Format: Send + 'static;
             #[derive(Clone, Debug)]

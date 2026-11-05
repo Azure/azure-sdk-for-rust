@@ -331,14 +331,18 @@ async fn claim_ownership_no_owner_id(ctx: TestContext) -> Result<()> {
         last_modified_time: None,
     };
 
-    let claimed_ownerships = checkpoint_store.claim_ownership(&[ownership]).await?;
-
-    // The behavior when owner_id is None may vary - it might still create a blob
-    // or handle it differently. We just verify it doesn't crash and returns a result.
-    trace!(
-        "Claimed ownerships with no owner_id: {:?}",
-        claimed_ownerships
-    );
+    let claimed_ownerships = checkpoint_store
+        .claim_ownership(std::slice::from_ref(&ownership))
+        .await?;
+    assert_eq!(claimed_ownerships.len(), 1);
+    let released = &claimed_ownerships[0];
+    assert_eq!(released.fully_qualified_namespace, namespace);
+    assert_eq!(released.event_hub_name, eventhub_name);
+    assert_eq!(released.consumer_group, consumer_group);
+    assert_eq!(released.partition_id, ownership.partition_id);
+    assert_eq!(released.owner_id, None);
+    assert!(released.etag.is_some());
+    assert!(released.last_modified_time.is_some());
 
     Ok(())
 }

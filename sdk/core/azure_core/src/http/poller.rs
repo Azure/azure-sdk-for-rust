@@ -3,7 +3,7 @@
 
 //! Types and methods for long-running operations (LROs).
 
-#[cfg(feature = "resource_manager")]
+#[cfg(feature = "unstable_resource_manager")]
 pub mod resource_manager;
 
 #[cfg(all(feature = "test", feature = "unstable_fake"))]
