@@ -6,9 +6,9 @@ use super::{
     effective_partition_key_v2_binary, epk, parse_supported_serialization_formats,
     parse_token_value, parse_wrapped_request, request_header_names, signed_request, take_u16,
     take_u32, take_u8, take_uuid, wrap_inputs, wrap_request_for_gateway_v2, AuthorizationContext,
-    Cow, DefaultConsistencyLevel, EffectivePartitionKey, HeaderName, Method, OperationType,
-    ParsedTokenValue, PartitionKey, PartitionKeyDefinition, PartitionKeyValue, PartitionKeyVersion,
-    ResourceType, RntbdRequestFrame, Uuid, WrapInputs, ACTIVITY_ID, GATEWAY_V2_RANGE_MAX,
+    Cow, DefaultConsistencyLevel, EffectivePartitionKey, GatewayV2Headers, HeaderName, Method,
+    OperationType, ParsedTokenValue, PartitionKey, PartitionKeyDefinition, PartitionKeyValue,
+    PartitionKeyVersion, ResourceType, RntbdRequestFrame, Uuid, ACTIVITY_ID, GATEWAY_V2_RANGE_MAX,
     GATEWAY_V2_RANGE_MIN, SUPPORTED_CAPABILITIES_BITS, X_MS_CONTINUATION,
 };
 
@@ -1278,7 +1278,7 @@ fn wrap_propagates_continuation_token_into_rntbd_metadata() {
 
     let wrapped = wrap_request_for_gateway_v2(
         request,
-        &WrapInputs {
+        &GatewayV2Headers {
             auth_context: &auth_context,
             operation_type: OperationType::Query,
             resource_type: ResourceType::Document,
@@ -1314,7 +1314,7 @@ fn wrap_omits_continuation_token_when_header_absent() {
 
     let wrapped = wrap_request_for_gateway_v2(
         request,
-        &WrapInputs {
+        &GatewayV2Headers {
             auth_context: &auth_context,
             operation_type: OperationType::Query,
             resource_type: ResourceType::Document,
@@ -1346,7 +1346,7 @@ fn wrap_emits_empty_continuation_token_when_header_value_empty() {
 
     let wrapped = wrap_request_for_gateway_v2(
         request,
-        &WrapInputs {
+        &GatewayV2Headers {
             auth_context: &auth_context,
             operation_type: OperationType::Query,
             resource_type: ResourceType::Document,

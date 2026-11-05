@@ -17,8 +17,9 @@ use super::super::{
 use crate::rntbd::{RntbdRequestFrame, Token};
 
 use super::{
-    WrapInputs, A_IM, CHANGE_FEED_WIRE_FORMAT_VERSION, IF_MATCH, IF_MODIFIED_SINCE, IF_NONE_MATCH,
-    X_MS_ACTIVITY_ID, X_MS_CONTINUATION, X_MS_DATE, X_MS_MAX_ITEM_COUNT, X_MS_SESSION_TOKEN,
+    GatewayV2Headers, A_IM, CHANGE_FEED_WIRE_FORMAT_VERSION, IF_MATCH, IF_MODIFIED_SINCE,
+    IF_NONE_MATCH, X_MS_ACTIVITY_ID, X_MS_CONTINUATION, X_MS_DATE, X_MS_MAX_ITEM_COUNT,
+    X_MS_SESSION_TOKEN,
 };
 pub(super) struct GatewayV2FrameData<'a> {
     pub frame: RntbdRequestFrame,
@@ -31,7 +32,7 @@ pub(super) struct GatewayV2FrameData<'a> {
 /// Validates required identity fields and returns facts also needed by the outer HTTP envelope.
 pub(super) fn build_request_frame<'a>(
     request: &HttpRequest,
-    inputs: &WrapInputs<'a>,
+    inputs: &GatewayV2Headers<'a>,
 ) -> azure_core::Result<GatewayV2FrameData<'a>> {
     let authorization = required_header(request, &AUTHORIZATION, "authorization")?;
     let date = required_header(request, &X_MS_DATE, "x-ms-date")?;
@@ -58,7 +59,7 @@ pub(super) fn build_request_frame<'a>(
     //   DatabaseName, CollectionName, CollectionRid, ResourceId, PayloadPresent,
     //   DocumentName, AuthorizationToken, Date.
     // We emit them first and in this sequence to match the reference client.
-    let emitted_point_epk = matches!(epk_payload.as_ref(), Some(EpkPayload::Point(_)));
+    let emitted_point_epk = epk_payload.is_some();
     if let Some(EpkPayload::Point(epk)) = epk_payload.as_ref() {
         metadata.push(Token::effective_partition_key(epk.clone()));
     }
@@ -397,6 +398,8 @@ fn append_pagination_and_condition_tokens(
 }
 
 /// Copies a required header value or returns a conversion error naming the missing header.
+// Inline the thin header adapter.
+#[inline(always)]
 fn required_header(
     request: &HttpRequest,
     header_name: &HeaderName,
@@ -420,7 +423,7 @@ enum EpkPayload {
 
 /// Copies a precomputed, nonempty logical partition key into its wire payload, or returns `None`.
 fn effective_partition_key_payload(
-    inputs: &WrapInputs<'_>,
+    inputs: &GatewayV2Headers<'_>,
 ) -> azure_core::Result<Option<EpkPayload>> {
     let Some(effective_partition_key) = inputs.effective_partition_key else {
         return Ok(None);
@@ -502,6 +505,8 @@ fn decode_epk_hex(hex: &str) -> Option<Vec<u8>> {
 }
 
 /// Converts one ASCII hexadecimal digit to its numeric value, rejecting other bytes.
+// Inline the small value conversion.
+#[inline(always)]
 fn hex_nibble(c: u8) -> Option<u8> {
     match c {
         b'0'..=b'9' => Some(c - b'0'),

@@ -93,6 +93,8 @@ pub struct TransportError {
 impl TransportError {
     /// Creates a new [`TransportError`] from anything convertible into the
     /// typed Cosmos [`crate::error::CosmosError`].
+    // Inline the small error constructor.
+    #[inline(always)]
     pub fn new(
         error: impl Into<crate::error::CosmosError>,
         request_sent: RequestSentStatus,
@@ -105,6 +107,8 @@ impl TransportError {
 }
 
 impl fmt::Debug for TransportError {
+    // Inline the thin formatting adapter.
+    #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("TransportError")
             .field("error", &self.error.to_string())
@@ -114,12 +118,16 @@ impl fmt::Debug for TransportError {
 }
 
 impl fmt::Display for TransportError {
+    // Inline the thin formatting adapter.
+    #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.error)
     }
 }
 
 impl std::error::Error for TransportError {
+    // Inline the thin error adapter.
+    #[inline(always)]
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         self.error.source()
     }

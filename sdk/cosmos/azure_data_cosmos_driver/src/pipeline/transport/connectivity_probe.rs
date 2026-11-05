@@ -81,6 +81,8 @@ pub(crate) enum ProbeFailure {
 }
 
 impl std::fmt::Display for ProbeFailure {
+    // Inline the thin formatting adapter.
+    #[inline(always)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ProbeFailure::Status(code) => write!(f, "status {code}"),
@@ -128,6 +130,8 @@ pub(crate) enum ProbeRole {
 }
 
 impl std::fmt::Display for ProbeRole {
+    // Inline the small enum projection.
+    #[inline(always)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ProbeRole::Read => f.write_str("read"),
@@ -151,6 +155,8 @@ pub(crate) struct Http2ConnectivityProbe {
 }
 
 impl std::fmt::Debug for Http2ConnectivityProbe {
+    // Inline the thin formatting adapter.
+    #[inline(always)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Http2ConnectivityProbe")
             .field("timeout", &self.timeout)
@@ -160,6 +166,8 @@ impl std::fmt::Debug for Http2ConnectivityProbe {
 
 impl Http2ConnectivityProbe {
     /// Creates a probe using the supplied client identity and the default per-request timeout.
+    // Inline the small probe constructor.
+    #[inline(always)]
     pub(crate) fn new(transport: Arc<dyn TransportClient>, client_id: HeaderValue) -> Self {
         Self {
             transport,

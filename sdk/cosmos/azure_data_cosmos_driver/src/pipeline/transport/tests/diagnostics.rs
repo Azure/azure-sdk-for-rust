@@ -118,6 +118,7 @@ async fn execute_transport_pipeline_preserves_client_unauthorized_in_diagnostics
         &crate::error::status_codes::CLIENT_GENERATED_401
     );
     assert_eq!(requests[0].request_sent(), RequestSentStatus::NotSent);
+    assert!(requests[0].events().is_empty());
 }
 
 #[test]

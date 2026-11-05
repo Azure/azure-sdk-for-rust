@@ -30,8 +30,8 @@ use crate::rntbd::RntbdRequestFrame;
 use super::request_tokens::parse_supported_serialization_formats;
 use super::{unwrap_response_for_gateway_v2, wrap_request_for_gateway_v2};
 use super::{
-    WrapInputs, GATEWAY_V2_RANGE_MAX, GATEWAY_V2_RANGE_MIN, X_MS_ACTIVITY_ID, X_MS_CONTINUATION,
-    X_MS_DATE, X_MS_GLOBAL_COMMITTED_LSN, X_MS_LSN,
+    GatewayV2Headers, GATEWAY_V2_RANGE_MAX, GATEWAY_V2_RANGE_MIN, X_MS_ACTIVITY_ID,
+    X_MS_CONTINUATION, X_MS_DATE, X_MS_GLOBAL_COMMITTED_LSN, X_MS_LSN,
 };
 use crate::models::effective_partition_key::{
     effective_partition_key_multi_hash_v2_binary, effective_partition_key_v1_binary,
@@ -89,8 +89,8 @@ fn wrap_inputs<'a>(
     auth_context: &'a AuthorizationContext,
     operation_type: OperationType,
     effective_partition_key: Option<&'a EffectivePartitionKey>,
-) -> WrapInputs<'a> {
-    WrapInputs {
+) -> GatewayV2Headers<'a> {
+    GatewayV2Headers {
         auth_context,
         operation_type,
         resource_type: ResourceType::Document,

@@ -5,13 +5,16 @@
 
 use super::{
     dispatch::DispatchOutcome,
-    execution::{TransportPipelineConfig, TransportPipelineServices},
     recovery::{self, TransportRetryProgress},
-    response::{CompletedTransportAttempt, CompletionKind},
+    request::PreparationFailure,
+    sharded_transport::TransportDispatch,
     types::{TransportOutcome, TransportRequest},
+    TransportPipelineConfig, TransportPipelineServices,
 };
 use crate::{
-    diagnostics::{DiagnosticsContextBuilder, RequestEvent, RequestEventType, RequestHandle},
+    diagnostics::{
+        DiagnosticsContextBuilder, RequestEvent, RequestEventType, RequestHandle, RequestSentStatus,
+    },
     driver,
 };
 
@@ -47,39 +50,54 @@ pub(super) fn start_attempt(
 }
 
 /// Adds the transport-start event after preparation succeeds and before dispatch.
-pub(super) fn record_transport_start(
-    handle: RequestHandle,
-    diagnostics: &mut DiagnosticsContextBuilder,
-) {
+// Inline the thin event adapter.
+#[inline(always)]
+pub(super) fn start_transport(handle: RequestHandle, diagnostics: &mut DiagnosticsContextBuilder) {
     diagnostics.add_event(handle, RequestEvent::new(RequestEventType::TransportStart));
 }
 
 /// Records a completed dispatch's shard and, for responses, its headers-received event before decoding.
-pub(super) fn record_dispatch_observation(
-    outcome: &DispatchOutcome,
+pub(super) fn record_dispatch(
+    dispatch: &TransportDispatch,
     handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) {
-    if let DispatchOutcome::Completed(dispatch) = outcome {
-        if dispatch.result.is_ok() {
-            diagnostics.add_event(
-                handle,
-                RequestEvent::new(RequestEventType::ResponseHeadersReceived),
-            );
-        }
-        if let Some(shard) = dispatch.shard_diagnostics.clone() {
-            diagnostics.set_transport_shard(handle, shard);
-        }
+    if dispatch.result.is_ok() {
+        diagnostics.add_event(
+            handle,
+            RequestEvent::new(RequestEventType::ResponseHeadersReceived),
+        );
     }
+    if let Some(shard) = dispatch.shard_diagnostics.clone() {
+        diagnostics.set_transport_shard(handle, shard);
+    }
+}
+
+/// Records a preparation failure as unsent, without adding transport events.
+pub(super) fn fail_preparation(
+    failure: &PreparationFailure,
+    handle: RequestHandle,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) {
+    let details = match failure {
+        PreparationFailure::Authorization(error) => error.to_string(),
+        PreparationFailure::Encoding(error) => driver::error_chain_summary(error),
+    };
+    diagnostics.fail_transport_request(
+        handle,
+        details,
+        RequestSentStatus::NotSent,
+        failure.status(),
+    );
 }
 
 /// Writes response headers or failure details into the attempt record and marks it terminal.
 pub(super) fn complete_attempt(
-    attempt: &CompletedTransportAttempt,
+    outcome: &DispatchOutcome,
     handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) {
-    match &attempt.result.outcome {
+    match &outcome.result().outcome {
         TransportOutcome::Success {
             status,
             cosmos_headers,
@@ -97,31 +115,17 @@ pub(super) fn complete_attempt(
             error,
             request_sent,
         } => {
-            let details = match attempt.completion {
-                CompletionKind::AuthorizationFailure => error.to_string(),
-                _ => driver::error_chain_summary(error),
-            };
-            if matches!(
-                attempt.completion,
-                CompletionKind::TransportFailure {
-                    headers_received: true
-                }
-            ) {
+            let details = driver::error_chain_summary(error);
+            if outcome.failed_after_headers() {
                 diagnostics.add_event(
                     handle,
                     RequestEvent::new(RequestEventType::ResponseHeadersReceived),
                 );
             }
-            if matches!(
-                attempt.completion,
-                CompletionKind::TransportFailure { .. } | CompletionKind::ResponseDecodingFailure
-            ) {
-                diagnostics.add_event(
-                    handle,
-                    RequestEvent::new(RequestEventType::TransportFailed)
-                        .with_details(details.clone()),
-                );
-            }
+            diagnostics.add_event(
+                handle,
+                RequestEvent::new(RequestEventType::TransportFailed).with_details(details.clone()),
+            );
             diagnostics.fail_transport_request(handle, details, *request_sent, *status);
         }
         TransportOutcome::DeadlineExceeded { .. } => {

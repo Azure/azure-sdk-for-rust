@@ -46,10 +46,9 @@ use crate::{
         ResolvedThroughputControl, ThrottlingRetryOptions,
     },
     pipeline::transport::{
-        execution::observe_throttle_retry,
         is_operation_supported_by_gateway_v2,
         recovery::{
-            ThrottleDecision, ThrottleRetryPolicy, ThrottleRetryProgress,
+            self, ThrottleDecision, ThrottleRetryPolicy, ThrottleRetryProgress,
             METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS,
             METADATA_MAX_THROTTLE_WAIT,
         },
@@ -1048,7 +1047,7 @@ impl CosmosDriver {
             // Retry 429s using the shared metadata throttle budget before
             // surfacing the error.
             if cosmos_status.is_throttled() {
-                if let ThrottleDecision::Retry { delay, next } = observe_throttle_retry(
+                if let ThrottleDecision::Retry { delay, next } = recovery::throttle_retry(
                     cosmos_headers.retry_after_ms,
                     &throttle_policy,
                     throttle,

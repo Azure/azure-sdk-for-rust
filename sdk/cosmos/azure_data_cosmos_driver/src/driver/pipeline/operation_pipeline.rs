@@ -42,17 +42,15 @@ use crate::{
         PartitionTopologyCacheMode, ReadConsistencyStrategy, Region, ResolvedThroughputControl,
     },
     pipeline::transport::{
-        execution::{
-            execute_transport_pipeline, TransportPipelineConfig, TransportPipelineServices,
-        },
-        is_operation_supported_by_gateway_v2,
+        self, is_operation_supported_by_gateway_v2,
         recovery::{
             ThrottleRetryPolicy, DATA_PLANE_MAX_PER_RETRY_DELAY, DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
             DATA_PLANE_MAX_THROTTLE_WAIT, METADATA_MAX_PER_RETRY_DELAY,
             METADATA_MAX_THROTTLE_ATTEMPTS, METADATA_MAX_THROTTLE_WAIT,
         },
         types::{TransportMode, TransportOutcome, TransportRequest, TransportResult},
-        AuthorizationContext, CosmosTransport, EndpointKey,
+        AuthorizationContext, CosmosTransport, EndpointKey, TransportPipelineConfig,
+        TransportPipelineServices,
     },
 };
 
@@ -587,7 +585,7 @@ pub(crate) async fn execute_operation_pipeline(
     // throttle retries.
     //
     // **Scope note**: each value is forwarded as a *per-transport-pipeline*
-    // budget — `execute_transport_pipeline` is invoked once per attempt that
+    // budget — `transport::execute` is invoked once per attempt that
     // this operation pipeline makes (e.g., per region during failover or per
     // leg during hedging), and each invocation starts with a fresh
     // throttle-retry budget. Total wall-clock cost across an operation is
@@ -1036,7 +1034,7 @@ pub(crate) async fn execute_operation_pipeline(
 
         // ── STAGE 4: Execute via transport pipeline ────────────────────
 
-        let result = execute_transport_pipeline(
+        let result = transport::execute(
             transport_request,
             &TransportPipelineConfig {
                 allow_sent_transport_retry: operation.allows_ambiguous_outcome_retry(),
@@ -3655,7 +3653,7 @@ async fn perform_single_attempt(
         .copied()
         .unwrap_or(default_wait);
 
-    let result = execute_transport_pipeline(
+    let result = transport::execute(
         transport_request,
         &TransportPipelineConfig {
             allow_sent_transport_retry: ctx.operation.allows_ambiguous_outcome_retry(),
@@ -5087,7 +5085,7 @@ mod tests {
         options::{PriorityLevel, ResolvedThroughputControl},
         pipeline::transport::{
             cosmos_transport_client::HttpRequest, types::TransportMode,
-            wrap_request_for_gateway_v2, EndpointKey, WrapInputs,
+            wrap_request_for_gateway_v2, EndpointKey, GatewayV2Headers,
         },
         rntbd::{
             tokens::{ReadFeedKeyType, RntbdRequestToken},
@@ -6524,7 +6522,7 @@ mod tests {
                 HeaderName::from_static("x-ms-date"),
                 "Wed, 21 Oct 2015 07:28:00 GMT",
             );
-            let inputs = WrapInputs {
+            let inputs = GatewayV2Headers {
                 auth_context: &request.auth_context,
                 operation_type: operation.operation_type(),
                 resource_type: operation.resource_type(),

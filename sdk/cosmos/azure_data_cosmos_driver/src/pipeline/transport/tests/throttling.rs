@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::super::{realize_retry_delay, RetryDelay};
 use super::{
     gateway_v2_context, gateway_v2_diagnostics, gateway_v2_transport_request, run_pipeline,
     test_endpoint_key, test_request, ActivityId, AdaptiveTransport, AlwaysThrottlesTransportClient,
@@ -11,28 +10,6 @@ use super::{
     TransportOutcome, TransportSecurity, METADATA_MAX_PER_RETRY_DELAY, TEST_CLIENT_ID,
     TEST_CLIENT_ID_HEADER,
 };
-
-#[test]
-fn delay_realization_preserves_jitter_bounds_and_disabled_cases() {
-    for millis in [5, 10, 160] {
-        let base = Duration::from_millis(millis);
-        assert_eq!(realize_retry_delay(RetryDelay::Service(base)), base);
-        assert_eq!(
-            realize_retry_delay(RetryDelay::Jittered { base, ratio: 0.0 }),
-            base
-        );
-        let jittered = realize_retry_delay(RetryDelay::Jittered { base, ratio: 0.25 });
-        assert!(jittered >= base.mul_f64(0.75));
-        assert!(jittered <= base.mul_f64(1.25));
-    }
-    assert_eq!(
-        realize_retry_delay(RetryDelay::Jittered {
-            base: Duration::ZERO,
-            ratio: 0.25
-        }),
-        Duration::ZERO,
-    );
-}
 
 #[tokio::test]
 async fn client_id_is_stable_across_retry_and_overrides_caller_header() {
@@ -86,7 +63,7 @@ async fn client_id_is_stable_across_retry_and_overrides_caller_header() {
 /// honoring the `MaxRetryAttemptsOnRateLimitedRequests = 0` .NET-parity
 /// contract.
 ///
-/// This test guards the full `execute_transport_pipeline` loop, including
+/// This test guards the full `transport::execute` loop, including
 /// the one-shot `forced_final_retry` safety net which is suppressed when
 /// the user has explicitly opted out of throttle retries.
 /// The pure count-limit test only covers the classifier; forced-final recovery follows
@@ -295,7 +272,7 @@ async fn execute_transport_pipeline_honors_configured_max_throttle_attempts() {
 
 /// End-to-end: the per-class *default* throttle budgets (data-plane 18 /
 /// metadata 9, from `default_throttle_budget`) drive the real
-/// `execute_transport_pipeline` loop to the expected number of wire
+/// `transport::execute` loop to the expected number of wire
 /// attempts, confirming the values wired in by the operation pipeline are
 /// the ones honored on the wire. Follows the same mock + `N + 1` accounting
 /// as `execute_transport_pipeline_honors_configured_max_throttle_attempts`;

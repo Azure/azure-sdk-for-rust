@@ -1,18 +1,26 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Same-endpoint recovery decisions. Time, jitter, and pool availability are inputs.
+//! Recovers failed attempts against the same endpoint, using explicit retry limits and progress.
 
-use std::time::Duration;
+use std::{ops::ControlFlow, time::Duration};
 
 use crate::{
-    diagnostics::{ExecutionContext, FailedTransportShardDiagnostics, RequestSentStatus},
+    diagnostics::{
+        DiagnosticsContextBuilder, ExecutionContext, FailedTransportShardDiagnostics,
+        RequestHandle, RequestSentStatus,
+    },
+    driver::jitter,
     error::{status_codes, CosmosError},
 };
 
 use super::{
-    deadline,
-    types::{TransportOutcome, TransportResult},
+    adaptive_transport::AdaptiveTransport,
+    deadline, diagnostics,
+    dispatch::DispatchFailure,
+    request::PreparationFailure,
+    types::{TransportOutcome, TransportRequest, TransportResult},
+    TransportPipelineConfig,
 };
 
 pub(crate) const METADATA_MAX_THROTTLE_ATTEMPTS: u32 = 9;
@@ -38,6 +46,8 @@ pub(crate) struct ThrottleRetryPolicy {
 
 impl ThrottleRetryPolicy {
     /// Combines the supplied limits with the default exponential backoff and jitter settings.
+    // Inline the small policy constructor.
+    #[inline(always)]
     pub(crate) fn with_limits(
         max_attempts: u32,
         max_wait_time: Duration,
@@ -76,6 +86,21 @@ pub(super) enum RetryDelay {
     Jittered { base: Duration, ratio: f64 },
 }
 
+impl RetryDelay {
+    /// Returns the service delay unchanged, or samples jitter around the fallback delay.
+    // Inline delay selection; jitter sampling stays in its helper.
+    #[inline(always)]
+    fn sample(self) -> Duration {
+        match self {
+            Self::Service(delay) => delay,
+            Self::Jittered { base, ratio } if ratio == 0.0 || base.is_zero() => base,
+            Self::Jittered { base, ratio } => {
+                Duration::from_secs_f64(jitter::with_jitter(base.as_secs_f64(), ratio))
+            }
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub(crate) enum ThrottleDecision {
     Retry {
@@ -89,10 +114,7 @@ pub(crate) enum ThrottleDecision {
 }
 
 #[derive(Debug, PartialEq)]
-pub(super) enum RecoveryDecision {
-    RetryDifferentShard {
-        failed_shard_id: u64,
-    },
+enum ThrottleWait {
     RetryThrottle {
         delay: Duration,
         next: ThrottleRetryProgress,
@@ -105,7 +127,115 @@ pub(super) enum RecoveryDecision {
     DeadlineExceeded,
 }
 
+impl ThrottleDecision {
+    /// Returns whether the throttle budget requires propagating the original result.
+    // Inline the small enum predicate.
+    #[inline(always)]
+    fn is_terminal(&self) -> bool {
+        matches!(self, Self::Propagate)
+    }
+}
+
+/// Records an authorization or encoding failure and ends the invocation without sending.
+// Inline the thin failure adapter; diagnostics retains its call frame.
+#[inline(always)]
+pub(super) fn recover_prep_failure(
+    failure: PreparationFailure,
+    handle: RequestHandle,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) -> ControlFlow<TransportResult> {
+    diagnostics::fail_preparation(&failure, handle, diagnostics);
+    ControlFlow::Break(failure.into())
+}
+
+/// Retries an eligible connectivity failure or 429 against the same endpoint, or returns its result.
+///
+/// Connectivity replay takes precedence. Ordinary throttle progress changes only after the wait
+/// and deadline check; a forced-final retry changes only its own flag.
+pub(super) async fn recover_dispatch_failure(
+    failure: DispatchFailure,
+    request: &TransportRequest,
+    config: &TransportPipelineConfig<'_>,
+    transport: &AdaptiveTransport,
+    progress: &mut TransportRetryProgress,
+) -> ControlFlow<TransportResult> {
+    if let Some(shard_id) = connectivity_retry_candidate(
+        &failure.result,
+        failure.shard_id,
+        progress.local_connectivity_retry_count,
+        config.allow_sent_transport_retry,
+    ) {
+        if transport.can_retry_on_different_shard(shard_id, &config.endpoint_key) {
+            if let Some(failed) = failure.failed_shard() {
+                progress.failed_shards.push(failed);
+            }
+            progress.local_connectivity_retry_count += 1;
+            progress.excluded_shard_id = Some(shard_id);
+            return ControlFlow::Continue(());
+        }
+    }
+
+    #[cfg(feature = "unstable_dtx")]
+    let is_dtx = request.resource_type == crate::models::ResourceType::DistributedTransactionBatch;
+    #[cfg(not(feature = "unstable_dtx"))]
+    let is_dtx = false;
+
+    let Some(source) = throttle_delay_source(
+        &failure.result,
+        &config.throttle_policy,
+        progress.throttle,
+        is_dtx,
+    ) else {
+        return ControlFlow::Break(failure.result);
+    };
+    let decision =
+        evaluate_throttle_budget(source.sample(), &config.throttle_policy, progress.throttle);
+    if decision.is_terminal() {
+        return ControlFlow::Break(failure.result);
+    }
+    match plan_throttle_wait(decision, deadline::remaining(request.deadline)) {
+        ThrottleWait::RetryThrottle { delay, next } => {
+            deadline::sleep(delay).await;
+            if deadline::exceeded(request.deadline) {
+                return ControlFlow::Break(TransportResult::deadline_exceeded(
+                    RequestSentStatus::Sent,
+                ));
+            }
+            progress.throttle = next;
+        }
+        ThrottleWait::ForceFinalThrottle { delay, next } => {
+            if !delay.is_zero() {
+                deadline::sleep(delay).await;
+            }
+            progress.throttle = next;
+        }
+        ThrottleWait::Propagate => return ControlFlow::Break(failure.result),
+        ThrottleWait::DeadlineExceeded => {
+            return ControlFlow::Break(TransportResult::deadline_exceeded(RequestSentStatus::Sent));
+        }
+    }
+    ControlFlow::Continue(())
+}
+
+/// Selects and samples a retry delay, then applies the throttle budget.
+///
+/// Bootstrap uses this shared policy without applying the transport loop's forced-final retry.
+// Inline the thin policy adapter; budget evaluation remains separate.
+#[inline(always)]
+pub(crate) fn throttle_retry(
+    retry_after_ms: Option<u64>,
+    policy: &ThrottleRetryPolicy,
+    progress: ThrottleRetryProgress,
+) -> ThrottleDecision {
+    match retry_delay_source(retry_after_ms, policy, progress) {
+        Some(source) => evaluate_throttle_budget(source.sample(), policy, progress),
+        None => ThrottleDecision::Propagate,
+    }
+}
+
 /// Chooses the attempt's diagnostic context, giving local shard retries precedence over throttling.
+// Inline the small context selection.
+#[inline(always)]
 pub(super) fn execution_context(
     initial: ExecutionContext,
     progress: &TransportRetryProgress,
@@ -120,6 +250,8 @@ pub(super) fn execution_context(
 }
 
 /// Returns the failed shard's ID when the error is safe to replay and the local retry is unused.
+// Inline the small eligibility adapter.
+#[inline(always)]
 pub(super) fn connectivity_retry_candidate(
     result: &TransportResult,
     shard_id: Option<u64>,
@@ -130,18 +262,6 @@ pub(super) fn connectivity_retry_candidate(
         retry_count < MAX_LOCAL_CONNECTIVITY_RETRIES
             && should_retry_connectivity_failure(result, allow_sent_transport_retry)
     })
-}
-
-/// Chooses a different-shard retry when the pool has an alternative; otherwise propagates the error.
-pub(super) fn resolve_connectivity_retry(
-    failed_shard_id: u64,
-    available: bool,
-) -> RecoveryDecision {
-    if available {
-        RecoveryDecision::RetryDifferentShard { failed_shard_id }
-    } else {
-        RecoveryDecision::Propagate
-    }
 }
 
 /// Checks for a synthetic connectivity failure whose sent status permits replay under caller policy.
@@ -186,12 +306,10 @@ pub(super) fn throttle_delay_source(
     progress: ThrottleRetryProgress,
     is_distributed_transaction_request: bool,
 ) -> Option<RetryDelay> {
-    let eligible = matches!(
-        &result.outcome,
-        TransportOutcome::HttpError { status, body, .. }
-            if status.is_throttled() && (!is_distributed_transaction_request || body.is_empty())
-    );
-    if !eligible {
+    if !result
+        .outcome
+        .is_retryable_throttle(is_distributed_transaction_request)
+    {
         return None;
     }
     retry_delay_source(
@@ -260,30 +378,24 @@ pub(super) fn evaluate_throttle_budget(
 /// Applies the remaining deadline to a throttle decision, returning a wait, timeout, or propagation.
 ///
 /// `None` means no deadline. The next progress retains the delay charged before deadline capping.
-pub(super) fn plan_throttle_wait(
-    decision: ThrottleDecision,
-    remaining: Option<Duration>,
-) -> RecoveryDecision {
+fn plan_throttle_wait(decision: ThrottleDecision, remaining: Option<Duration>) -> ThrottleWait {
     match decision {
         ThrottleDecision::Retry { delay, next } => {
             if remaining.is_some_and(|remaining| remaining.is_zero()) {
-                RecoveryDecision::DeadlineExceeded
+                ThrottleWait::DeadlineExceeded
             } else {
-                RecoveryDecision::RetryThrottle {
-                    delay: remaining.map_or(delay, |remaining| {
-                        deadline::deadline_capped_delay(delay, remaining)
-                    }),
+                ThrottleWait::RetryThrottle {
+                    delay: remaining
+                        .map_or(delay, |remaining| deadline::cap_delay(delay, remaining)),
                     next,
                 }
             }
         }
-        ThrottleDecision::ForcedFinal { next } => {
-            match deadline::forced_final_retry_delay(remaining) {
-                Some(delay) => RecoveryDecision::ForceFinalThrottle { delay, next },
-                None => RecoveryDecision::Propagate,
-            }
-        }
-        ThrottleDecision::Propagate => RecoveryDecision::Propagate,
+        ThrottleDecision::ForcedFinal { next } => match deadline::forced_final_delay(remaining) {
+            Some(delay) => ThrottleWait::ForceFinalThrottle { delay, next },
+            None => ThrottleWait::Propagate,
+        },
+        ThrottleDecision::Propagate => ThrottleWait::Propagate,
     }
 }
 
@@ -291,8 +403,8 @@ pub(super) fn plan_throttle_wait(
 mod tests {
     use super::{
         connectivity_retry_candidate, evaluate_throttle_budget, execution_context,
-        plan_throttle_wait, resolve_connectivity_retry, retry_delay_source, throttle_delay_source,
-        RecoveryDecision, RetryDelay, ThrottleDecision, ThrottleRetryPolicy, ThrottleRetryProgress,
+        plan_throttle_wait, retry_delay_source, throttle_delay_source, RetryDelay,
+        ThrottleDecision, ThrottleRetryPolicy, ThrottleRetryProgress, ThrottleWait,
         TransportRetryProgress, DATA_PLANE_MAX_PER_RETRY_DELAY, DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
         DATA_PLANE_MAX_THROTTLE_WAIT, METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS,
         METADATA_MAX_THROTTLE_WAIT,
@@ -304,6 +416,26 @@ mod tests {
         pipeline::transport::types::{TransportOutcome, TransportResult},
     };
     use std::time::Duration;
+
+    #[test]
+    fn delay_sampling_preserves_jitter_bounds_and_disabled_cases() {
+        for millis in [5, 10, 160] {
+            let base = Duration::from_millis(millis);
+            assert_eq!(RetryDelay::Service(base).sample(), base);
+            assert_eq!(RetryDelay::Jittered { base, ratio: 0.0 }.sample(), base);
+            let jittered = RetryDelay::Jittered { base, ratio: 0.25 }.sample();
+            assert!(jittered >= base.mul_f64(0.75));
+            assert!(jittered <= base.mul_f64(1.25));
+        }
+        assert_eq!(
+            RetryDelay::Jittered {
+                base: Duration::ZERO,
+                ratio: 0.25
+            }
+            .sample(),
+            Duration::ZERO,
+        );
+    }
 
     fn metadata_policy() -> ThrottleRetryPolicy {
         ThrottleRetryPolicy::with_limits(
@@ -476,7 +608,7 @@ mod tests {
             evaluate_throttle_budget(Duration::from_secs(5), &policy, Default::default());
         assert_eq!(
             plan_throttle_wait(decision, Some(Duration::from_millis(250))),
-            RecoveryDecision::RetryThrottle {
+            ThrottleWait::RetryThrottle {
                 delay: Duration::from_millis(150),
                 next: ThrottleRetryProgress {
                     attempt_count: 1,
@@ -498,11 +630,11 @@ mod tests {
                 },
                 Some(Duration::ZERO),
             ),
-            RecoveryDecision::DeadlineExceeded
+            ThrottleWait::DeadlineExceeded
         );
         assert_eq!(
             plan_throttle_wait(ThrottleDecision::ForcedFinal { next }, Some(Duration::ZERO),),
-            RecoveryDecision::Propagate
+            ThrottleWait::Propagate
         );
     }
 
@@ -537,14 +669,6 @@ mod tests {
                 );
             }
         }
-        assert_eq!(
-            resolve_connectivity_retry(7, false),
-            RecoveryDecision::Propagate
-        );
-        assert_eq!(
-            resolve_connectivity_retry(7, true),
-            RecoveryDecision::RetryDifferentShard { failed_shard_id: 7 }
-        );
         assert_eq!(
             connectivity_retry_candidate(
                 &TransportResult::deadline_exceeded(RequestSentStatus::Unknown),

@@ -25,13 +25,12 @@ use crate::{
         adaptive_transport::AdaptiveTransport,
         cosmos_headers::NO_RETRY_449,
         cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
-        dispatch::DispatchOutcome,
+        dispatch,
         http_client_factory::{HttpClientConfig, HttpClientFactory},
         recovery::{
             should_retry_connectivity_failure, ThrottleRetryPolicy, MAX_LOCAL_CONNECTIVITY_RETRIES,
             METADATA_MAX_PER_RETRY_DELAY,
         },
-        response::{classify_dispatch, CompletedTransportAttempt},
         sharded_transport::TransportDispatch,
         types::{TransportMode, TransportOutcome, TransportRequest, TransportResult},
         EndpointKey,
@@ -59,7 +58,7 @@ async fn run_pipeline(
     context: &PipelineTestContext<'_>,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
-    super::execute_transport_pipeline(
+    super::execute(
         request,
         &TransportPipelineConfig {
             allow_sent_transport_retry: context.allow_sent_transport_retry,
@@ -179,7 +178,7 @@ impl TransportClient for ClientIdRecordingRetryTransport {
 }
 
 /// Always returns an HTTP 429 response and counts how many times it was
-/// invoked. Used by the end-to-end `execute_transport_pipeline` tests that
+/// invoked. Used by the end-to-end `transport::execute` tests that
 /// need to drive the throttle-retry loop without standing up a real
 /// service.
 #[derive(Debug)]
@@ -360,9 +359,9 @@ fn gateway_v2_error_frame(http_status: u32, sub_status: u32) -> Vec<u8> {
 fn finalize_gateway_v2_response(
     status: azure_core::http::StatusCode,
     body: Vec<u8>,
-) -> CompletedTransportAttempt {
-    classify_dispatch(
-        DispatchOutcome::Completed(TransportDispatch {
+) -> TransportResult {
+    dispatch::classify(
+        TransportDispatch {
             result: Ok(HttpResponse {
                 status: status.into(),
                 headers: azure_core::http::headers::Headers::new(),
@@ -370,9 +369,10 @@ fn finalize_gateway_v2_response(
             }),
             shard_id: None,
             shard_diagnostics: None,
-        }),
+        },
         TransportMode::GatewayV2,
     )
+    .into()
 }
 
 #[derive(Debug)]

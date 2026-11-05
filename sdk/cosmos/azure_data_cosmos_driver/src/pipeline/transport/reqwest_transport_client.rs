@@ -28,6 +28,8 @@ pub(crate) struct ReqwestTransportClient {
 
 impl ReqwestTransportClient {
     /// Wraps an existing `reqwest::Client`.
+    // Inline the small client constructor.
+    #[inline(always)]
     pub fn new(client: reqwest::Client) -> Self {
         Self { client }
     }
@@ -102,6 +104,8 @@ impl TransportClient for ReqwestTransportClient {
 }
 
 /// Converts an SDK HTTP method to the equivalent reqwest method.
+// Inline the thin method adapter.
+#[inline(always)]
 fn to_reqwest_method(method: azure_core::http::Method) -> reqwest::Method {
     reqwest::Method::from_bytes(method.as_str().as_bytes())
         .expect("azure_core::http::Method should always be a valid HTTP method")

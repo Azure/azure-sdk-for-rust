@@ -6,17 +6,17 @@
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, RequestHandle},
     fault_injection::EvaluationCollector,
-    pipeline::transport::cosmos_transport_client::HttpRequest,
+    pipeline::transport::request::PreparedRequest,
 };
 
 /// Attaches a new collector when enabled and returns a handle for reading its evaluations.
 pub(super) fn attach_collector(
-    mut request: HttpRequest,
+    mut request: PreparedRequest,
     enabled: bool,
-) -> (HttpRequest, Option<EvaluationCollector>) {
+) -> (PreparedRequest, Option<EvaluationCollector>) {
     let collector = if enabled {
         let collector = EvaluationCollector::default();
-        request.evaluation_collector = Some(collector.clone());
+        request.http_request.evaluation_collector = Some(collector.clone());
         Some(collector)
     } else {
         None

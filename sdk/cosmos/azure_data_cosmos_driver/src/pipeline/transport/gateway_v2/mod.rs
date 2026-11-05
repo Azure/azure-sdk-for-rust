@@ -52,8 +52,8 @@ const GATEWAY_V2_RANGE_MAX: HeaderName =
 const GATEWAY_V2_DISCOVERY_OPT_IN: HeaderName =
     HeaderName::from_static(request_header_names::USE_THINCLIENT);
 
-/// Inputs resolved by the operation pipeline before a Gateway 2.0 dispatch.
-pub(crate) struct WrapInputs<'a> {
+/// Values encoded as RNTBD tokens or outer HTTP headers by Gateway V2 policy.
+pub(crate) struct GatewayV2Headers<'a> {
     pub(crate) auth_context: &'a AuthorizationContext,
     pub(crate) operation_type: OperationType,
     pub(crate) resource_type: ResourceType,
@@ -70,6 +70,8 @@ pub(crate) struct WrapInputs<'a> {
 }
 
 /// Creates the conversion error returned for invalid Gateway V2 request or response data.
+// Inline the thin error adapter.
+#[inline(always)]
 fn data_conversion_error(message: impl Into<String>) -> azure_core::Error {
     azure_core::Error::with_message(ErrorKind::DataConversion, message.into())
 }

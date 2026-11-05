@@ -1380,7 +1380,7 @@ The transport pipeline does **NOT** handle:
 ### 5.2 Transport Pipeline Flow
 
 The implementation lives in `src/pipeline/transport/`; the operation pipeline stays in
-`src/driver/pipeline/`. `execute_transport_pipeline` receives `TransportRequest`,
+`src/driver/pipeline/`. `transport::execute` receives `TransportRequest`,
 `TransportPipelineConfig`, borrowed `TransportPipelineServices` (`AdaptiveTransport` and
 `Credential`), and the mutable diagnostic builder. It does not receive routing stores or
 an operation that could select another region.
@@ -1390,26 +1390,34 @@ detection live in `src/background_task_manager.rs` and `src/emulator.rs`, respec
 The reusable future-versus-timer race lives in `src/timeout.rs`; it polls the supplied future
 first and drops the unfinished future when the timer wins.
 
-The outer loop checks the deadline, executes one attempt, obtains a recovery decision,
-and applies it. Preparation failures return immediately. Connectivity recovery precedes
-throttle recovery. Each attempt follows these stages:
+One loop in `transport/mod.rs` checks the deadline, prepares a request, dispatches it,
+and returns successful responses directly. Recovery entrypoints appear only in failure
+branches and return `ControlFlow`: continue for a same-target retry, or break with the final
+result. Preparation failures currently always break; connectivity recovery precedes
+throttle recovery after dispatch. Each attempt follows these stages:
 
 1. Start its diagnostic record and attach routing-fallback and failed-shard history.
-2. Build the HTTP request and sample the remaining timeout.
-3. Apply headers, obtain and apply authorization, and wrap Gateway V2 requests.
+2. Call `request::prepare`: build the HTTP request, sample the timeout, apply headers,
+   sign it, and wrap Gateway V2 requests. Its `PreparationOutcome` is a result containing
+   the prepared request or an authorization/encoding failure.
+3. Pass preparation failures to `recovery::recover_prep_failure`, which records the
+   unsent failure and returns it without dispatch.
 4. Record transport start, attach fault-injection collection, and dispatch.
-5. Record dispatch observations, classify the response, and complete diagnostics.
-6. Attach fault-injection evaluations before returning the completed attempt.
+5. Within `dispatch::send`, record raw headers and shard observations before decoding.
+   Return a `DispatchOutcome` identifying success, HTTP error, transport failure,
+   response-decoding failure, or timeout.
+6. Complete diagnostics, then attach fault-injection evaluations. This preserves the
+   terminal record's existing hedge-journal copy.
+7. Return success directly; otherwise call `recovery::recover_dispatch_failure`.
 
 | Module | Responsibility |
 | --- | --- |
 | `types.rs` | Request, transport mode, result, and outcome data |
-| `execution.rs` | Attempt orchestration, time/jitter/pool observations, and recovery actions |
-| `request_preparation.rs` | HTTP request construction, headers, signing, and Gateway V2 wrapping |
-| `dispatch.rs` | One send, optional timeout race, and cancellation |
-| `response.rs` | Response/error classification and completion facts, without builder mutation |
-| `recovery.rs` | Pure recovery decisions over policy, progress, and supplied observations |
-| `deadline.rs` | Pure timeout and wait arithmetic with explicit time inputs |
+| `mod.rs` | One execution loop, fixed configuration, and borrowed services |
+| `request.rs` | HTTP request construction, headers, signing, Gateway V2 wrapping, and preparation failures |
+| `dispatch.rs` | One send, timeout/cancellation, response decoding, and outcome classification |
+| `recovery.rs` | Failure-only entrypoints, retry decisions, pool/jitter observations, waits, and progress updates |
+| `deadline.rs` | Deadline checks, remaining time, timeout floor, and bounded retry waits |
 | `diagnostics.rs` | Start, dispatch-observation, and completion recording |
 | `fault_injection.rs` | Feature-gated collector attachment and post-completion evaluation recording |
 | `gateway_v2/` | HTTP-to-frame and frame-to-HTTP adaptation; not dispatch |
@@ -1417,9 +1425,14 @@ throttle recovery. Each attempt follows these stages:
 `ThrottleRetryPolicy` holds fixed limits; `ThrottleRetryProgress` holds ordinary retry count,
 cumulative budgeted delay, and the forced-final-used flag. `TransportRetryProgress` also holds
 local connectivity retry count, a one-dispatch shard exclusion, and failed-shard history.
-Decision functions return descriptive data; actors observe time, realize jitter, inspect pool
-availability, sleep, and commit progress. Budgets are fresh for each invocation, including
-each hedge leg.
+Recovery owns pool checks, jitter sampling, waits, and progress changes. Its policy helpers
+return explicit delay, budget, and wait decisions from supplied data. Budgets are fresh for
+each invocation, including each hedge leg.
+
+Callers qualify stage functions with their module names. Enum predicates and projections
+keep variant tests out of orchestration. Tiny adapters and projections use `#[inline(always)]`
+with a brief rationale; larger signing, dispatch, decoding, and recovery boundaries are left
+to the compiler so useful call frames are not deliberately removed.
 
 Connectivity recovery permits at most one replay on another shard of the same endpoint.
 It requires an eligible synthetic transport error, a known failed shard, and another
@@ -1445,8 +1458,9 @@ original response if already expired. Without a deadline, forced-final recovery 
 ### 5.3 Policy Application (Bare Functions, Not a Chain)
 
 The transport pipeline uses functions for header application and request signing rather than
-a `Policy` chain. Signing obtains authorization-header data and then applies it to the request.
-The attempt orchestrator remains responsible for recording failures.
+a `Policy` chain. A single signing function generates authorization before changing either
+the date or authorization header. Preparation identifies signing and encoding failures;
+the preparation-recovery entrypoint records their diagnostics.
 
 ```rust
 // Instead of:
@@ -2098,7 +2112,7 @@ Because faults hit at the `HttpClient` level, tests can validate:
    other shards while shard 0 is evicted.
 5. **Full pipeline integration**: Injected 429/503/transport errors still trigger the
    transport-level and operation-level retry/failover logic, since
-   `execute_transport_pipeline` sees the error responses from the sharded transport as usual.
+   `transport::execute` sees the error responses from the sharded transport as usual.
 
 The existing `FaultInjectionRule`, `FaultInjectionCondition`, and `FaultInjectionResult` types
 from `azure_data_cosmos` are moved into `azure_data_cosmos_driver` behind a `fault_injection`
@@ -2122,7 +2136,7 @@ just the structural refactoring with a plain `Arc<dyn HttpClient>`.
 | Sub-step | Work Item                                                                                                                                                                                                                                                                                                                                                                                                                            | Files                                                          |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
 | 1.1      | **State components** — Define ECS-style component types (`RoutingDecision`, `OperationRetryState`, `TransportRequest`, `TransportResult`, `ThrottleRetryState`, decision enums)                                                                                                                                                                                                                                                      | `driver/pipeline/components.rs`                                |
-| 1.2      | **Transport pipeline (slim)** — Implement `execute_transport_pipeline` function with `apply_cosmos_headers`, `sign_request`, and 429 throttle retry only. Uses a plain `Arc<dyn HttpClient>` (no `AdaptiveTransport` yet). Hard-coded retry limits + backoff.                                                                                                                                                                        | `pipeline/transport/execution.rs`                              |
+| 1.2      | **Transport pipeline (slim)** — Implement `transport::execute` function with `apply_cosmos_headers`, `sign_request`, and 429 throttle retry only. Uses a plain `Arc<dyn HttpClient>` (no `AdaptiveTransport` yet). Hard-coded retry limits + backoff.                                                                                                                                                                                | `pipeline/transport/mod.rs`                                    |
 | 1.3      | **Operation pipeline (slim)** — Implement `execute_operation_pipeline` core loop with single-region endpoint resolution. Include happy path plus minimal operation-level transport retries: retry `TransportError` only when request is definitely not sent or operation is idempotent and retry budget remains; propagate non-429 HTTP errors as abort (429 remains transport-level). No failover, no hedging. Hard-coded deadline. | `driver/pipeline/operation_pipeline.rs`, `retry_evaluation.rs` |
 | 1.4      | **Wire `execute_operation`** — Connect `CosmosDriver::execute_operation` to the new operation pipeline for all operations. The old pipeline code path remains but is no longer called.                                                                                                                                                                                                                                               | `driver/cosmos_driver.rs`                                      |
 | 1.5      | **Unit tests** — Tests for each pure function (`evaluate_transport_result` happy path + minimal transport-error retry semantics, `evaluate_transport_retry` for 429, `build_transport_request`).                                                                                                                                                                                                                                     | `tests/`                                                       |
@@ -2139,7 +2153,7 @@ Add cross-region failover, `AccountEndpointState` + routing systems, and the `Ac
 | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | 2.1      | **Routing state & systems** — Implement `AccountEndpointState`, the unified `LocationStateStore` (§4.6), and the system functions (`build_account_endpoint_state`, `mark_endpoint_unavailable`, `expire_unavailable_endpoints`). Wire to existing `AccountMetadataCache`.                      | `driver/routing/mod.rs`, `account_endpoint_state.rs`, `location_state_store.rs`, `routing_systems.rs` |
 | 2.2      | **Expand `evaluate_transport_result`** — Add 403.3 (WriteForbidden + cache refresh), 503, 404/1022, 429/3092, 500-for-reads. Return `(OperationAction, Vec<LocationEffect>)` tuples; add `FailoverRetry`, `SessionRetry` action handling and STAGE 6 effect application in the operation loop. | `driver/pipeline/retry_evaluation.rs`, `operation_pipeline.rs`                                        |
-| 2.3      | **Deadline enforcement** — Implement active deadline enforcement in transport pipeline (per-request timeout clamping, stream drop).                                                                                                                                                            | `pipeline/transport/execution.rs`                                                                     |
+| 2.3      | **Deadline enforcement** — Implement active deadline enforcement in transport pipeline (per-request timeout clamping, stream drop).                                                                                                                                                            | `pipeline/transport/mod.rs`                                                                           |
 | 2.4      | **Config surface (initial)** — Add basic retry and failover options to `RetryOptions` / `CosmosRuntimeOptions` / `CosmosClientOptions` (§9). Hard-coded defaults, environment variable overrides.                                                                                              | `options/retry.rs`, `options/availability.rs`                                                         |
 | 2.5      | **Tests** — Unit tests for each retry scenario in `evaluate_transport_result`, integration tests for multi-region failover.                                                                                                                                                                    | `tests/`                                                                                              |
 
@@ -2212,7 +2226,7 @@ minimum shard count.
 
 1. **7.1 Shard health checks**: Keep shard-local health state as atomic fields on `ClientShard` and evaluate eviction from consecutive failures, recent-success grace, and idle timeout. Files: `pipeline/transport/sharded_transport.rs`.
 2. **7.2 Background health sweep**: Use `BackgroundTaskManager` to run `health_sweep_loop` for unhealthy-shard eviction, idle reclaim, and paced single-probe replacement. Files: `pipeline/transport/sharded_transport.rs`.
-3. **7.3 Connectivity retry in transport**: Retry eligible connectivity failures once on a different shard before handing control back to operation-level failover. Files: `pipeline/transport/execution.rs`.
+3. **7.3 Connectivity retry in transport**: Retry eligible connectivity failures once on a different shard before handing control back to operation-level failover. Files: `pipeline/transport/mod.rs`.
 4. **7.4 TCP keepalive defaults**: Configure TCP keepalive on HTTP/1.1 transports with 1 s time / 1 s interval defaults, while preserving the optional retry-count knob. Files: `pipeline/transport/http_client_factory.rs`.
 5. **7.5 Tests**: Shard eviction, background reclaim, keepalive config, and connectivity retry on different shards. Files: `tests/`.
 

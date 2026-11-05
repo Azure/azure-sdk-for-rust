@@ -364,7 +364,7 @@ impl FaultClient {
         // preserves the original status all the way to the caller. Returning
         // them as `TransportError` instead would cause the transport layer to
         // tag the outer outcome with the synthetic `TRANSPORT_GENERATED_503`
-        // (see `classify_dispatch` in `pipeline/transport/response.rs`), which
+        // (see `classify` in `pipeline/transport/dispatch.rs`), which
         // would mask the injected status with a generic 503 — defeating the
         // purpose of HTTP-status fault injection.
         ApplyResult::Injected(Ok(HttpResponse {

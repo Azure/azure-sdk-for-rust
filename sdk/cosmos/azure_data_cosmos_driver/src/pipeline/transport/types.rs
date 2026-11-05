@@ -31,6 +31,15 @@ pub(crate) enum TransportMode {
     GatewayV2,
 }
 
+impl TransportMode {
+    /// Returns whether requests need Gateway V2 framing.
+    // Inline the small enum predicate.
+    #[inline(always)]
+    pub fn is_gateway_v2(self) -> bool {
+        matches!(self, Self::GatewayV2)
+    }
+}
+
 /// A fixed target and request data for one transport invocation.
 ///
 /// The operation pipeline supplies this data for each operation attempt or
@@ -92,6 +101,8 @@ pub(crate) struct TransportResult {
 
 impl TransportResult {
     /// Creates a timeout result when the end-to-end operation deadline is exceeded.
+    // Inline the small result constructor.
+    #[inline(always)]
     pub fn deadline_exceeded(request_sent: RequestSentStatus) -> Self {
         Self {
             outcome: TransportOutcome::DeadlineExceeded { request_sent },
@@ -102,6 +113,8 @@ impl TransportResult {
     ///
     /// Successful status codes are mapped to `Success`; non-success status codes
     /// are mapped to `HttpError` with `request_sent` set to `Sent`.
+    // Inline result assembly when useful; response decoding remains separate.
+    #[inline]
     pub fn from_http_response(
         status: CosmosStatus,
         cosmos_headers: CosmosResponseHeaders,
@@ -128,6 +141,8 @@ impl TransportResult {
     }
 
     /// Returns the parsed Cosmos response headers if this is an HTTP response.
+    // Inline the small enum projection.
+    #[inline(always)]
     pub fn cosmos_headers(&self) -> Option<&CosmosResponseHeaders> {
         match &self.outcome {
             TransportOutcome::Success { cosmos_headers, .. } => Some(cosmos_headers),
@@ -166,8 +181,30 @@ pub(crate) enum TransportOutcome {
     DeadlineExceeded { request_sent: RequestSentStatus },
 }
 
+impl TransportOutcome {
+    /// Returns whether the service returned a successful response.
+    // Inline the small enum predicate.
+    #[inline(always)]
+    pub fn is_successful(&self) -> bool {
+        matches!(self, Self::Success { .. })
+    }
+
+    /// Checks for a 429 eligible for transport retries rather than body-bearing DTX recovery.
+    // Inline the small enum predicate.
+    #[inline(always)]
+    pub fn is_retryable_throttle(&self, is_distributed_transaction: bool) -> bool {
+        matches!(
+            self,
+            Self::HttpError { status, body, .. }
+                if status.is_throttled() && (!is_distributed_transaction || body.is_empty())
+        )
+    }
+}
+
 /// Display implementation for logging the high-level outcome in a compact format
 impl std::fmt::Display for TransportOutcome {
+    // Inline the thin formatting adapter.
+    #[inline(always)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             TransportOutcome::Success { status, .. } => write!(f, "Success({})", status),

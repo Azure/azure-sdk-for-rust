@@ -18,7 +18,7 @@ fn finalize_unwraps_gateway_v2_error_envelope() {
         gateway_v2_error_frame(404, 1002),
     );
 
-    match executed.result.outcome {
+    match executed.outcome {
         TransportOutcome::HttpError { status, .. } => {
             assert_eq!(
                 status.status_code(),
@@ -45,7 +45,7 @@ fn finalize_falls_back_on_non_rntbd_gateway_v2_error_envelope() {
         b"unauthorized".to_vec(),
     );
 
-    match executed.result.outcome {
+    match executed.outcome {
         TransportOutcome::HttpError { status, .. } => {
             assert_eq!(
                 status.status_code(),

@@ -733,7 +733,7 @@ mod tests {
         },
         pipeline::transport::{
             cosmos_transport_client::HttpRequest, wrap_request_for_gateway_v2,
-            AuthorizationContext, WrapInputs,
+            AuthorizationContext, GatewayV2Headers,
         },
         rntbd::Token,
     };
@@ -825,7 +825,7 @@ mod tests {
                 #[cfg(feature = "fault_injection")]
                 evaluation_collector: None,
             },
-            &WrapInputs {
+            &GatewayV2Headers {
                 auth_context: &context,
                 operation_type: OperationType::Batch,
                 resource_type: ResourceType::Document,
@@ -1159,7 +1159,7 @@ mod tests {
         );
         let wrapped = wrap_request_for_gateway_v2(
             request,
-            &WrapInputs {
+            &GatewayV2Headers {
                 auth_context: &auth_context,
                 operation_type: OperationType::ReadFeed,
                 resource_type: ResourceType::Document,
@@ -1638,7 +1638,7 @@ mod tests {
                         );
                         let wrapped = wrap_request_for_gateway_v2(
                             request,
-                            &WrapInputs {
+                            &GatewayV2Headers {
                                 auth_context: &auth_context,
                                 operation_type: operation,
                                 resource_type: ResourceType::Document,

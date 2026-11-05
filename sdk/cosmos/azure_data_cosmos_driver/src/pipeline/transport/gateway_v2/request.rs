@@ -17,7 +17,7 @@ use crate::rntbd::tokens::RntbdRequestToken;
 
 use super::request_tokens::{self, GatewayV2FrameData};
 use super::{
-    WrapInputs, CACHE_CONTROL, GATEWAY_V2_DISCOVERY_OPT_IN, GATEWAY_V2_OPERATION_TYPE,
+    GatewayV2Headers, CACHE_CONTROL, GATEWAY_V2_DISCOVERY_OPT_IN, GATEWAY_V2_OPERATION_TYPE,
     GATEWAY_V2_RANGE_MAX, GATEWAY_V2_RANGE_MIN, GATEWAY_V2_RESOURCE_TYPE,
     GLOBAL_DATABASE_ACCOUNT_NAME, X_MS_ACTIVITY_ID, X_MS_DOCUMENTDB_COLLECTION_RID, X_MS_VERSION,
 };
@@ -25,7 +25,7 @@ use super::{
 /// Serializes a signed request as an RNTBD frame inside a Gateway V2 HTTP POST envelope.
 pub(crate) fn wrap_request_for_gateway_v2(
     mut request: HttpRequest,
-    inputs: &WrapInputs<'_>,
+    inputs: &GatewayV2Headers<'_>,
 ) -> azure_core::Result<HttpRequest> {
     let client_id = request.headers.remove(CLIENT_ID);
     let parts = request_tokens::build_request_frame(&request, inputs)?;
@@ -66,7 +66,7 @@ pub(crate) fn wrap_request_for_gateway_v2(
 /// Builds the proxy's outer headers from request identity, routing inputs, and frame metadata.
 fn build_outer_headers(
     request: &HttpRequest,
-    inputs: &WrapInputs<'_>,
+    inputs: &GatewayV2Headers<'_>,
     parts: &GatewayV2FrameData<'_>,
     client_id: Option<HeaderValue>,
 ) -> Headers {

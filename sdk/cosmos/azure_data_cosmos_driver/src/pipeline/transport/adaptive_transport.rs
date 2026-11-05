@@ -33,6 +33,8 @@ pub(crate) enum AdaptiveTransport {
 
 impl AdaptiveTransport {
     /// Builds an unsharded HTTP/1.1 client or a sharded HTTP/2 transport from the negotiated policy.
+    // Inline transport selection; client construction remains separate.
+    #[inline(always)]
     pub(crate) fn from_config(
         connection_pool: &ConnectionPoolOptions,
         client_factory: Arc<dyn HttpClientFactory>,
@@ -53,6 +55,8 @@ impl AdaptiveTransport {
     /// Used for lightweight one-shot transports (e.g., the bootstrap probe)
     /// where the overhead of sharding and background health sweeps is
     /// unnecessary.
+    // Inline the thin client adapter.
+    #[inline(always)]
     pub(crate) fn unsharded(
         connection_pool: &ConnectionPoolOptions,
         client_factory: Arc<dyn HttpClientFactory>,
@@ -64,6 +68,8 @@ impl AdaptiveTransport {
     }
 
     /// Creates a Gateway 2.0 transport (always HTTP/2 sharded).
+    // Inline the thin client adapter.
+    #[inline(always)]
     pub(crate) fn gateway_v2(
         connection_pool: &ConnectionPoolOptions,
         client_factory: Arc<dyn HttpClientFactory>,
@@ -77,6 +83,8 @@ impl AdaptiveTransport {
     }
 
     /// Returns the [`TransportKind`] for diagnostics reporting.
+    // Inline the small enum projection.
+    #[inline(always)]
     pub(crate) fn diagnostics_kind(&self) -> TransportKind {
         match self {
             Self::Gateway(_) | Self::ShardedGateway(_) => TransportKind::Gateway,
@@ -85,6 +93,8 @@ impl AdaptiveTransport {
     }
 
     /// Returns the HTTP protocol version used by this transport.
+    // Inline the small enum projection.
+    #[inline(always)]
     pub(crate) fn diagnostics_http_version(&self) -> TransportHttpVersion {
         match self {
             Self::Gateway(_) => TransportHttpVersion::Http11,
@@ -131,6 +141,8 @@ impl AdaptiveTransport {
     }
 
     /// Checks whether an HTTP/2 endpoint pool can select or create a shard other than the failed one.
+    // Inline the thin pool adapter.
+    #[inline(always)]
     pub(crate) fn can_retry_on_different_shard(
         &self,
         excluded_shard_id: u64,
@@ -148,6 +160,8 @@ impl AdaptiveTransport {
     ///
     /// Preselection may create pool capacity but does not reserve a stream. The
     /// eventual dispatch may use a different shard if load changes first.
+    // Inline the thin pool adapter.
+    #[inline(always)]
     pub(crate) fn pre_select_shard(
         &self,
         excluded_shard_id: Option<u64>,
@@ -163,6 +177,8 @@ impl AdaptiveTransport {
 }
 
 impl fmt::Debug for AdaptiveTransport {
+    // Inline the thin formatting adapter.
+    #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AdaptiveTransport")
             .field("kind", &self.diagnostics_kind().as_ref())

@@ -4,6 +4,21 @@
 //! Executes requests and transport-level retries against a fixed endpoint.
 //!
 //! The operation pipeline owns routing, failover, and session recovery.
+//!
+//! Inline small projections and adapters; retain larger I/O and recovery functions for backtraces.
+
+use crate::{
+    diagnostics::{DiagnosticsContextBuilder, PipelineKind, RequestSentStatus, TransportSecurity},
+    models::Credential,
+    pipeline::transport::{
+        adaptive_transport::AdaptiveTransport,
+        dispatch::DispatchOutcome,
+        recovery::{ThrottleRetryPolicy, TransportRetryProgress},
+        types::{TransportRequest, TransportResult},
+    },
+};
+use azure_core::http::headers::HeaderValue;
+use std::ops::ControlFlow;
 
 pub(crate) mod adaptive_transport;
 mod authorization;
@@ -14,17 +29,15 @@ pub(crate) mod cosmos_transport_client;
 mod deadline;
 mod diagnostics;
 mod dispatch;
-pub(crate) mod execution;
 #[cfg(feature = "fault_injection")]
 mod fault_injection;
 mod gateway_v2;
 pub(crate) mod http_client_factory;
 pub(crate) mod recovery;
-mod request_preparation;
+mod request;
 pub(crate) mod request_signing;
 #[cfg(feature = "reqwest")]
 pub(crate) mod reqwest_transport_client;
-mod response;
 mod sent_status;
 mod sharded_transport;
 pub(crate) mod types;
@@ -35,5 +48,93 @@ pub(crate) use gateway_v2::eligibility::is_operation_supported_by_gateway_v2;
 #[cfg(feature = "fault_injection")]
 pub(crate) use gateway_v2::unwrap_response_for_gateway_v2;
 #[cfg(test)]
-pub(crate) use gateway_v2::{wrap_request_for_gateway_v2, WrapInputs};
+pub(crate) use gateway_v2::{wrap_request_for_gateway_v2, GatewayV2Headers};
 pub(crate) use sharded_transport::EndpointKey;
+
+/// Fixed routing, identity, and retry limits for one transport invocation.
+pub(crate) struct TransportPipelineConfig<'a> {
+    pub allow_sent_transport_retry: bool,
+    pub user_agent: &'a HeaderValue,
+    pub client_id: &'a HeaderValue,
+    pub pipeline_type: PipelineKind,
+    pub transport_security: TransportSecurity,
+    pub endpoint_key: EndpointKey,
+    pub account_name: Option<String>,
+    pub collection_rid: Option<String>,
+    pub throttle_policy: ThrottleRetryPolicy,
+}
+
+/// I/O dependencies shared by the preparation, dispatch, and recovery stages.
+pub(crate) struct TransportPipelineServices<'a> {
+    pub transport: &'a AdaptiveTransport,
+    pub credential: &'a Credential,
+}
+
+/// Prepares and dispatches a request, recovering failures only against the same target.
+pub(crate) async fn execute(
+    request: TransportRequest,
+    config: &TransportPipelineConfig<'_>,
+    services: &TransportPipelineServices<'_>,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) -> TransportResult {
+    let mut progress = TransportRetryProgress::default();
+    loop {
+        if deadline::exceeded(request.deadline) {
+            tracing::trace!("transport pipeline: deadline exceeded before attempt");
+            return TransportResult::deadline_exceeded(RequestSentStatus::NotSent);
+        }
+
+        let handle = diagnostics::start_attempt(&request, config, services, &progress, diagnostics);
+        let prepared = match request::prepare(&request, config, services.credential).await {
+            Ok(prepared) => prepared,
+            Err(failure) => match recovery::recover_prep_failure(failure, handle, diagnostics) {
+                ControlFlow::Continue(()) => continue,
+                ControlFlow::Break(result) => return result,
+            },
+        };
+        diagnostics::start_transport(handle, diagnostics);
+
+        #[cfg(feature = "fault_injection")]
+        let (prepared, collector) =
+            fault_injection::attach_collector(prepared, diagnostics.fault_injection_enabled());
+
+        let outcome = dispatch::send(
+            &prepared,
+            services.transport,
+            progress.excluded_shard_id.take(),
+            &config.endpoint_key,
+            handle,
+            diagnostics,
+        )
+        .await;
+        diagnostics::complete_attempt(&outcome, handle, diagnostics);
+
+        #[cfg(feature = "fault_injection")]
+        fault_injection::record_evaluations(collector, handle, diagnostics);
+        tracing::debug!(outcome = ?outcome.result().outcome, "transport request complete");
+        drop(prepared);
+
+        let failure = match outcome {
+            DispatchOutcome::Success(result) => return result,
+            DispatchOutcome::HttpError(failure)
+            | DispatchOutcome::TransportFailure { failure, .. }
+            | DispatchOutcome::ResponseDecodingFailure(failure)
+            | DispatchOutcome::Timeout(failure) => failure,
+        };
+        match recovery::recover_dispatch_failure(
+            failure,
+            &request,
+            config,
+            services.transport,
+            &mut progress,
+        )
+        .await
+        {
+            ControlFlow::Continue(()) => continue,
+            ControlFlow::Break(result) => return result,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests;
