@@ -74,11 +74,9 @@ reqwest_gzip = ["reqwest", "typespec_client_core/reqwest_gzip"]
 reqwest_rustls = ["reqwest", "typespec_client_core/reqwest_rustls"]
 test = ["typespec_client_core/test"]
 tokio = ["dep:tokio", "typespec_client_core/tokio"]
+unstable_fake = ["test"]
 unstable_resource_manager = []
 xml = ["typespec_client_core/xml"]
-
-[lints]
-workspace = true
 
 [package.metadata.docs.rs]
 features = [
@@ -91,9 +89,13 @@ features = [
   "reqwest_gzip",
   "reqwest_rustls",
   "tokio",
+  "unstable_fake",
   "unstable_resource_manager",
   "xml",
 ]
+
+[lints]
+workspace = true
 
 [[bench]]
 name = "benchmarks"

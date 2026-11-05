@@ -728,6 +728,7 @@ uaZPC0VV2qRwbAE=\n\
     }
 
     #[cfg(all(feature = "reqwest", feature = "client_certificate"))]
+    #[ignore = "https://github.com/Azure/azure-sdk-for-rust/issues/5550"]
     #[tokio::test]
     async fn sends_requests_with_custom_ca_and_sni() {
         const SNI_NAME: &str = "cluster.example.com";

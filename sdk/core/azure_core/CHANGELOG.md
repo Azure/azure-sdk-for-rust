@@ -11,6 +11,9 @@
 - Added `http::poller::resource_manager::{new_poller, PollerOptions, FinalStateVia}` behind the `unstable_resource_manager` feature for Resource Manager polling with optional final-state selection, method- and response-based fallbacks, and a callback for inline operation-location results.
 - `Error` now captures a `std::backtrace::Backtrace` at construction time and includes it in `Debug` output (e.g., `{:?}`) when `RUST_BACKTRACE=1` is set.
 - Added bearer-token authorization options and `ClientOptions::allow_insecure_connections` to opt in to authenticated HTTP connections to `localhost` or `127.0.0.1` when the `test` feature is enabled.
+- Added experimental `http::fake` response extension traits and pager/poller state propagation behind the `test` and `unstable_fake` features for testing client libraries without network requests.
+- Added `http::fake::get_api_name()` to borrow operation names from request context without requiring a tracer provider or listener.
+- Added `http::fake::ResponseExt::fake_with_error()` to create JSON service error responses.
 
 ### Breaking Changes
 
