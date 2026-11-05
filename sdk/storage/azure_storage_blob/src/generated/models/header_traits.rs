@@ -6,24 +6,32 @@
 use super::{
     AccountKind, AppendBlobClientAppendBlockFromUrlResult, AppendBlobClientAppendBlockResult,
     AppendBlobClientCreateResult, AppendBlobClientSealResult, ArchiveStatus,
-    BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
-    BlobClientCreateSnapshotResult, BlobClientDownloadInternalResult,
-    BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult,
-    BlobClientRenewLeaseResult, BlobClientStartCopyFromUrlResult,
+    BlobClientAbortCopyResult, BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult,
+    BlobClientChangeLeaseResult, BlobClientCreateSnapshotResult,
+    BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteResult,
+    BlobClientDownloadInternalResult, BlobClientGetAccountInfoResult,
+    BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
+    BlobClientSetImmutabilityPolicyResult, BlobClientSetLegalHoldResult,
+    BlobClientSetMetadataResult, BlobClientSetPropertiesResult, BlobClientSetTagsResult,
+    BlobClientSetTierResult, BlobClientStartCopyFromUrlResult, BlobClientUndeleteResult,
     BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
-    BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
+    BlobContainerClientChangeLeaseResult, BlobContainerClientCreateResult,
+    BlobContainerClientDeleteResult, BlobContainerClientGetAccountInfoResult,
     BlobContainerClientGetPropertiesResult, BlobContainerClientListBlobsHierarchicalInternalResult,
     BlobContainerClientListBlobsInternalResult, BlobContainerClientReleaseLeaseResult,
-    BlobContainerClientRenewLeaseResult, BlobLayout, BlobServiceClientGetAccountInfoResult,
-    BlobType, BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
+    BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyResult,
+    BlobContainerClientSetMetadataResult, BlobLayout, BlobServiceClientGetAccountInfoResult,
+    BlobServiceClientSetPropertiesResult, BlobServiceProperties, BlobTags, BlobType,
+    BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
     BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
-    BlockBlobClientUploadInternalResult, BlockList, CopyStatus, DownloadHint,
-    ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus,
-    ListBlobsHierarchicalInternalResponseContentType, ListBlobsInternalResponseContentType,
+    BlockBlobClientUploadInternalResult, BlockList, CopyStatus, CreateSessionResponse,
+    DownloadHint, FilteredBlobResponse, ImmutabilityPolicyMode, LeaseDuration, LeaseState,
+    LeaseStatus, ListBlobsHierarchicalInternalResponseContentType, ListBlobsHierarchicalResponse,
+    ListBlobsInternalResponseContentType, ListBlobsResponse, ListContainersResponse,
     PageBlobClientClearPagesResult, PageBlobClientCreateResult, PageBlobClientResizeResult,
     PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
     PageBlobClientUploadPagesResult, PageList, PublicAccessType, RehydratePriority,
-    SignedIdentifiers, SkuName,
+    SignedIdentifiers, SkuName, StorageServiceStats,
 };
 use azure_core::{
     base64,
@@ -103,6 +111,7 @@ const META: &str = "x-ms-meta-";
 const OR: &str = "x-ms-or-";
 const OR_POLICY_ID: HeaderName = HeaderName::from_static("x-ms-or-policy-id");
 const REHYDRATE_PRIORITY: HeaderName = HeaderName::from_static("x-ms-rehydrate-priority");
+const REQUEST_PRIORITY: HeaderName = HeaderName::from_static("x-ms-request-priority");
 const REQUEST_SERVER_ENCRYPTED: HeaderName =
     HeaderName::from_static("x-ms-request-server-encrypted");
 const SERVER_ENCRYPTED: HeaderName = HeaderName::from_static("x-ms-server-encrypted");
@@ -143,6 +152,7 @@ pub trait AppendBlobClientAppendBlockFromUrlResultHeaders: private::Sealed {
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
 }
 
@@ -193,6 +203,11 @@ impl AppendBlobClientAppendBlockFromUrlResultHeaders
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+
     /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
@@ -230,6 +245,7 @@ pub trait AppendBlobClientAppendBlockResultHeaders: private::Sealed {
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
 }
 
@@ -280,6 +296,11 @@ impl AppendBlobClientAppendBlockResultHeaders
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+
     /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
@@ -314,6 +335,7 @@ pub trait AppendBlobClientCreateResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
@@ -344,6 +366,11 @@ impl AppendBlobClientCreateResultHeaders for Response<AppendBlobClientCreateResu
     /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 
     /// Indicates whether the contents of the request are successfully encrypted.
@@ -383,6 +410,7 @@ pub trait AppendBlobClientSealResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn is_sealed(&self) -> Result<Option<bool>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl AppendBlobClientSealResultHeaders for Response<AppendBlobClientSealResult, NoFormat> {
@@ -401,6 +429,38 @@ impl AppendBlobClientSealResultHeaders for Response<AppendBlobClientSealResult, 
     /// Whether the blob is sealed.
     fn is_sealed(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEALED)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobClient::abort_copy()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientAbortCopyResult, BlobClientAbortCopyResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientAbortCopyResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobClientAbortCopyResultHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl BlobClientAbortCopyResultHeaders for Response<BlobClientAbortCopyResult, NoFormat> {
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -430,6 +490,7 @@ pub trait BlobClientAcquireLeaseResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn lease_id(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl BlobClientAcquireLeaseResultHeaders for Response<BlobClientAcquireLeaseResult, NoFormat> {
@@ -448,6 +509,11 @@ impl BlobClientAcquireLeaseResultHeaders for Response<BlobClientAcquireLeaseResu
     /// Uniquely identifies a blob's lease.
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -477,6 +543,7 @@ pub trait BlobClientBreakLeaseResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn lease_time(&self) -> Result<Option<i32>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl BlobClientBreakLeaseResultHeaders for Response<BlobClientBreakLeaseResult, NoFormat> {
@@ -495,6 +562,11 @@ impl BlobClientBreakLeaseResultHeaders for Response<BlobClientBreakLeaseResult, 
     /// Approximate time remaining in the lease period, in seconds.
     fn lease_time(&self) -> Result<Option<i32>> {
         Headers::get_optional_as(self.headers(), &LEASE_TIME)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -524,6 +596,7 @@ pub trait BlobClientChangeLeaseResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn lease_id(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl BlobClientChangeLeaseResultHeaders for Response<BlobClientChangeLeaseResult, NoFormat> {
@@ -543,6 +616,11 @@ impl BlobClientChangeLeaseResultHeaders for Response<BlobClientChangeLeaseResult
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
     }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
 }
 
 /// Provides access to typed response headers for `BlobClient::create_snapshot()`
@@ -561,8 +639,8 @@ impl BlobClientChangeLeaseResultHeaders for Response<BlobClientChangeLeaseResult
 ///     if let Some(last_modified) = response.last_modified()? {
 ///         println!("last-modified: {:?}", last_modified);
 ///     }
-///     if let Some(is_server_encrypted) = response.is_server_encrypted()? {
-///         println!("x-ms-request-server-encrypted: {:?}", is_server_encrypted);
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
 ///     }
 ///     Ok(())
 /// }
@@ -570,6 +648,7 @@ impl BlobClientChangeLeaseResultHeaders for Response<BlobClientChangeLeaseResult
 pub trait BlobClientCreateSnapshotResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
     fn snapshot(&self) -> Result<Option<String>>;
     fn version_id(&self) -> Result<Option<String>>;
@@ -588,6 +667,11 @@ impl BlobClientCreateSnapshotResultHeaders for Response<BlobClientCreateSnapshot
         })
     }
 
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+
     /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
@@ -601,6 +685,62 @@ impl BlobClientCreateSnapshotResultHeaders for Response<BlobClientCreateSnapshot
     /// The version ID of the blob.
     fn version_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &VERSION_ID)
+    }
+}
+
+/// Provides access to typed response headers for `BlobClient::delete_immutability_policy()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteImmutabilityPolicyResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobClientDeleteImmutabilityPolicyResultHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl BlobClientDeleteImmutabilityPolicyResultHeaders
+    for Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat>
+{
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobClient::delete()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientDeleteResult, BlobClientDeleteResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientDeleteResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobClientDeleteResultHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl BlobClientDeleteResultHeaders for Response<BlobClientDeleteResult, NoFormat> {
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -666,6 +806,7 @@ pub(crate) trait BlobClientDownloadInternalResultHeaders: private::Sealed {
     fn metadata(&self) -> Result<HashMap<String, String>>;
     fn object_replication_rules(&self) -> Result<HashMap<String, String>>;
     fn object_replication_policy_id(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
     fn smart_access_tier(&self) -> Result<Option<String>>;
     fn tag_count(&self) -> Result<Option<i64>>;
@@ -899,6 +1040,11 @@ impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloa
         Headers::get_optional_as(self.headers(), &OR_POLICY_ID)
     }
 
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+
     /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &SERVER_ENCRYPTED)
@@ -936,8 +1082,8 @@ impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloa
 ///     if let Some(is_hierarchical_namespace_enabled) = response.is_hierarchical_namespace_enabled()? {
 ///         println!("x-ms-is-hns-enabled: {:?}", is_hierarchical_namespace_enabled);
 ///     }
-///     if let Some(sku_name) = response.sku_name()? {
-///         println!("x-ms-sku-name: {:?}", sku_name);
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
 ///     }
 ///     Ok(())
 /// }
@@ -945,6 +1091,7 @@ impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloa
 pub trait BlobClientGetAccountInfoResultHeaders: private::Sealed {
     fn account_kind(&self) -> Result<Option<AccountKind>>;
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn sku_name(&self) -> Result<Option<SkuName>>;
 }
 
@@ -957,6 +1104,11 @@ impl BlobClientGetAccountInfoResultHeaders for Response<BlobClientGetAccountInfo
     /// Indicates if the account has a hierarchical namespace enabled.
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &IS_HNS_ENABLED)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 
     /// The SKU name of the account.
@@ -1029,6 +1181,7 @@ pub trait BlobClientGetPropertiesResultHeaders: private::Sealed {
     fn object_replication_rules(&self) -> Result<HashMap<String, String>>;
     fn object_replication_policy_id(&self) -> Result<Option<String>>;
     fn rehydrate_priority(&self) -> Result<Option<RehydratePriority>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
     fn smart_access_tier(&self) -> Result<Option<String>>;
     fn tag_count(&self) -> Result<Option<i64>>;
@@ -1267,6 +1420,11 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
         Headers::get_optional_as(self.headers(), &REHYDRATE_PRIORITY)
     }
 
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+
     /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &SERVER_ENCRYPTED)
@@ -1304,12 +1462,16 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
 ///     if let Some(last_modified) = response.last_modified()? {
 ///         println!("last-modified: {:?}", last_modified);
 ///     }
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
 ///     Ok(())
 /// }
 /// ```
 pub trait BlobClientReleaseLeaseResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl BlobClientReleaseLeaseResultHeaders for Response<BlobClientReleaseLeaseResult, NoFormat> {
@@ -1323,6 +1485,11 @@ impl BlobClientReleaseLeaseResultHeaders for Response<BlobClientReleaseLeaseResu
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -1352,6 +1519,7 @@ pub trait BlobClientRenewLeaseResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn lease_id(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl BlobClientRenewLeaseResultHeaders for Response<BlobClientRenewLeaseResult, NoFormat> {
@@ -1370,6 +1538,175 @@ impl BlobClientRenewLeaseResultHeaders for Response<BlobClientRenewLeaseResult, 
     /// Uniquely identifies a blob's lease.
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobClient::set_immutability_policy()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientSetImmutabilityPolicyResult, BlobClientSetImmutabilityPolicyResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientSetImmutabilityPolicyResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobClientSetImmutabilityPolicyResultHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl BlobClientSetImmutabilityPolicyResultHeaders
+    for Response<BlobClientSetImmutabilityPolicyResult, NoFormat>
+{
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobClient::set_legal_hold()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientSetLegalHoldResult, BlobClientSetLegalHoldResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientSetLegalHoldResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobClientSetLegalHoldResultHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl BlobClientSetLegalHoldResultHeaders for Response<BlobClientSetLegalHoldResult, NoFormat> {
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobClient::set_metadata()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientSetMetadataResult, BlobClientSetMetadataResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientSetMetadataResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobClientSetMetadataResultHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl BlobClientSetMetadataResultHeaders for Response<BlobClientSetMetadataResult, NoFormat> {
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobClient::set_properties()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientSetPropertiesResult, BlobClientSetPropertiesResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientSetPropertiesResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobClientSetPropertiesResultHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl BlobClientSetPropertiesResultHeaders for Response<BlobClientSetPropertiesResult, NoFormat> {
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobClient::set_tags()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientSetTagsResult, BlobClientSetTagsResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientSetTagsResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobClientSetTagsResultHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl BlobClientSetTagsResultHeaders for Response<BlobClientSetTagsResult, NoFormat> {
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobClient::set_tier()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientSetTierResult, BlobClientSetTierResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientSetTierResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobClientSetTierResultHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl BlobClientSetTierResultHeaders for Response<BlobClientSetTierResult, NoFormat> {
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -1400,6 +1737,7 @@ pub trait BlobClientStartCopyFromUrlResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn copy_id(&self) -> Result<Option<String>>;
     fn copy_status(&self) -> Result<Option<CopyStatus>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
 
@@ -1428,9 +1766,41 @@ impl BlobClientStartCopyFromUrlResultHeaders
         Headers::get_optional_as(self.headers(), &COPY_STATUS)
     }
 
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+
     /// The version ID of the blob.
     fn version_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &VERSION_ID)
+    }
+}
+
+/// Provides access to typed response headers for `BlobClient::undelete()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientUndeleteResult, BlobClientUndeleteResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientUndeleteResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobClientUndeleteResultHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl BlobClientUndeleteResultHeaders for Response<BlobClientUndeleteResult, NoFormat> {
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -1460,6 +1830,7 @@ pub trait BlobContainerClientAcquireLeaseResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn lease_id(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl BlobContainerClientAcquireLeaseResultHeaders
@@ -1480,6 +1851,11 @@ impl BlobContainerClientAcquireLeaseResultHeaders
     /// Uniquely identifies a blob's lease.
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -1509,6 +1885,7 @@ pub trait BlobContainerClientBreakLeaseResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn lease_time(&self) -> Result<Option<i32>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl BlobContainerClientBreakLeaseResultHeaders
@@ -1529,6 +1906,11 @@ impl BlobContainerClientBreakLeaseResultHeaders
     /// Approximate time remaining in the lease period, in seconds.
     fn lease_time(&self) -> Result<Option<i32>> {
         Headers::get_optional_as(self.headers(), &LEASE_TIME)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -1558,6 +1940,7 @@ pub trait BlobContainerClientChangeLeaseResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn lease_id(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl BlobContainerClientChangeLeaseResultHeaders
@@ -1579,6 +1962,69 @@ impl BlobContainerClientChangeLeaseResultHeaders
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
     }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobContainerClient::create()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientCreateResult, BlobContainerClientCreateResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientCreateResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobContainerClientCreateResultHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl BlobContainerClientCreateResultHeaders
+    for Response<BlobContainerClientCreateResult, NoFormat>
+{
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobContainerClient::delete()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientDeleteResult, BlobContainerClientDeleteResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientDeleteResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobContainerClientDeleteResultHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl BlobContainerClientDeleteResultHeaders
+    for Response<BlobContainerClientDeleteResult, NoFormat>
+{
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::get_account_info()`
@@ -1597,8 +2043,8 @@ impl BlobContainerClientChangeLeaseResultHeaders
 ///     if let Some(is_hierarchical_namespace_enabled) = response.is_hierarchical_namespace_enabled()? {
 ///         println!("x-ms-is-hns-enabled: {:?}", is_hierarchical_namespace_enabled);
 ///     }
-///     if let Some(sku_name) = response.sku_name()? {
-///         println!("x-ms-sku-name: {:?}", sku_name);
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
 ///     }
 ///     Ok(())
 /// }
@@ -1606,6 +2052,7 @@ impl BlobContainerClientChangeLeaseResultHeaders
 pub trait BlobContainerClientGetAccountInfoResultHeaders: private::Sealed {
     fn account_kind(&self) -> Result<Option<AccountKind>>;
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn sku_name(&self) -> Result<Option<SkuName>>;
 }
 
@@ -1620,6 +2067,11 @@ impl BlobContainerClientGetAccountInfoResultHeaders
     /// Indicates if the account has a hierarchical namespace enabled.
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &IS_HNS_ENABLED)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 
     /// The SKU name of the account.
@@ -1663,6 +2115,7 @@ pub trait BlobContainerClientGetPropertiesResultHeaders: private::Sealed {
     fn lease_state(&self) -> Result<Option<LeaseState>>;
     fn lease_status(&self) -> Result<Option<LeaseStatus>>;
     fn metadata(&self) -> Result<HashMap<String, String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl BlobContainerClientGetPropertiesResultHeaders
@@ -1736,6 +2189,11 @@ impl BlobContainerClientGetPropertiesResultHeaders
         }
         Ok(values)
     }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::list_blobs_hierarchical_internal()`
@@ -1751,6 +2209,9 @@ impl BlobContainerClientGetPropertiesResultHeaders
 ///     if let Some(content_type) = response.content_type()? {
 ///         println!("content-type: {:?}", content_type);
 ///     }
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
 ///     Ok(())
 /// }
 /// ```
@@ -1758,6 +2219,7 @@ pub(crate) trait BlobContainerClientListBlobsHierarchicalInternalResultHeaders:
     private::Sealed
 {
     fn content_type(&self) -> Result<Option<ListBlobsHierarchicalInternalResponseContentType>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl BlobContainerClientListBlobsHierarchicalInternalResultHeaders
@@ -1766,6 +2228,11 @@ impl BlobContainerClientListBlobsHierarchicalInternalResultHeaders
     /// Content-Type header
     fn content_type(&self) -> Result<Option<ListBlobsHierarchicalInternalResponseContentType>> {
         Headers::get_optional_as(self.headers(), &CONTENT_TYPE)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -1782,11 +2249,15 @@ impl BlobContainerClientListBlobsHierarchicalInternalResultHeaders
 ///     if let Some(content_type) = response.content_type()? {
 ///         println!("content-type: {:?}", content_type);
 ///     }
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
 ///     Ok(())
 /// }
 /// ```
 pub(crate) trait BlobContainerClientListBlobsInternalResultHeaders: private::Sealed {
     fn content_type(&self) -> Result<Option<ListBlobsInternalResponseContentType>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl BlobContainerClientListBlobsInternalResultHeaders
@@ -1795,6 +2266,11 @@ impl BlobContainerClientListBlobsInternalResultHeaders
     /// Content-Type header
     fn content_type(&self) -> Result<Option<ListBlobsInternalResponseContentType>> {
         Headers::get_optional_as(self.headers(), &CONTENT_TYPE)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -1814,12 +2290,16 @@ impl BlobContainerClientListBlobsInternalResultHeaders
 ///     if let Some(last_modified) = response.last_modified()? {
 ///         println!("last-modified: {:?}", last_modified);
 ///     }
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
 ///     Ok(())
 /// }
 /// ```
 pub trait BlobContainerClientReleaseLeaseResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl BlobContainerClientReleaseLeaseResultHeaders
@@ -1835,6 +2315,11 @@ impl BlobContainerClientReleaseLeaseResultHeaders
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -1864,6 +2349,7 @@ pub trait BlobContainerClientRenewLeaseResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn lease_id(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl BlobContainerClientRenewLeaseResultHeaders
@@ -1884,6 +2370,69 @@ impl BlobContainerClientRenewLeaseResultHeaders
     /// Uniquely identifies a blob's lease.
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobContainerClient::set_access_policy()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientSetAccessPolicyResult, BlobContainerClientSetAccessPolicyResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientSetAccessPolicyResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobContainerClientSetAccessPolicyResultHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl BlobContainerClientSetAccessPolicyResultHeaders
+    for Response<BlobContainerClientSetAccessPolicyResult, NoFormat>
+{
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobContainerClient::set_metadata()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientSetMetadataResult, BlobContainerClientSetMetadataResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientSetMetadataResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobContainerClientSetMetadataResultHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl BlobContainerClientSetMetadataResultHeaders
+    for Response<BlobContainerClientSetMetadataResult, NoFormat>
+{
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -1955,6 +2504,7 @@ pub(crate) trait BlobLayoutHeaders: private::Sealed {
     fn object_replication_rules(&self) -> Result<HashMap<String, String>>;
     fn object_replication_policy_id(&self) -> Result<Option<String>>;
     fn rehydrate_priority(&self) -> Result<Option<RehydratePriority>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
     fn smart_access_tier(&self) -> Result<Option<String>>;
     fn tag_count(&self) -> Result<Option<i64>>;
@@ -2218,6 +2768,11 @@ impl BlobLayoutHeaders for Response<BlobLayout, XmlFormat> {
         Headers::get_optional_as(self.headers(), &REHYDRATE_PRIORITY)
     }
 
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+
     /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &SERVER_ENCRYPTED)
@@ -2255,8 +2810,8 @@ impl BlobLayoutHeaders for Response<BlobLayout, XmlFormat> {
 ///     if let Some(is_hierarchical_namespace_enabled) = response.is_hierarchical_namespace_enabled()? {
 ///         println!("x-ms-is-hns-enabled: {:?}", is_hierarchical_namespace_enabled);
 ///     }
-///     if let Some(sku_name) = response.sku_name()? {
-///         println!("x-ms-sku-name: {:?}", sku_name);
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
 ///     }
 ///     Ok(())
 /// }
@@ -2264,6 +2819,7 @@ impl BlobLayoutHeaders for Response<BlobLayout, XmlFormat> {
 pub trait BlobServiceClientGetAccountInfoResultHeaders: private::Sealed {
     fn account_kind(&self) -> Result<Option<AccountKind>>;
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn sku_name(&self) -> Result<Option<SkuName>>;
 }
 
@@ -2280,9 +2836,97 @@ impl BlobServiceClientGetAccountInfoResultHeaders
         Headers::get_optional_as(self.headers(), &IS_HNS_ENABLED)
     }
 
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+
     /// The SKU name of the account.
     fn sku_name(&self) -> Result<Option<SkuName>> {
         Headers::get_optional_as(self.headers(), &SKU_NAME)
+    }
+}
+
+/// Provides access to typed response headers for `BlobServiceClient::set_properties()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobServiceClientSetPropertiesResult, BlobServiceClientSetPropertiesResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobServiceClientSetPropertiesResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobServiceClientSetPropertiesResultHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl BlobServiceClientSetPropertiesResultHeaders
+    for Response<BlobServiceClientSetPropertiesResult, NoFormat>
+{
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobServiceClient::get_properties()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_blob::models::{BlobServiceProperties, BlobServicePropertiesHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobServiceProperties, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobServicePropertiesHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl BlobServicePropertiesHeaders for Response<BlobServiceProperties, XmlFormat> {
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobClient::get_tags()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_blob::models::{BlobTags, BlobTagsHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobTags, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobTagsHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl BlobTagsHeaders for Response<BlobTags, XmlFormat> {
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -2315,6 +2959,7 @@ pub trait BlockBlobClientCommitBlockListResultHeaders: private::Sealed {
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
@@ -2356,6 +3001,11 @@ impl BlockBlobClientCommitBlockListResultHeaders
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+
     /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
@@ -2394,6 +3044,7 @@ pub trait BlockBlobClientStageBlockFromUrlResultHeaders: private::Sealed {
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
 }
 
@@ -2420,6 +3071,11 @@ impl BlockBlobClientStageBlockFromUrlResultHeaders
     /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 
     /// Indicates whether the contents of the request are successfully encrypted.
@@ -2455,6 +3111,7 @@ pub trait BlockBlobClientStageBlockResultHeaders: private::Sealed {
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
 }
 
@@ -2481,6 +3138,11 @@ impl BlockBlobClientStageBlockResultHeaders
     /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 
     /// Indicates whether the contents of the request are successfully encrypted.
@@ -2518,6 +3180,7 @@ pub trait BlockBlobClientUploadBlobFromUrlResultHeaders: private::Sealed {
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
@@ -2557,6 +3220,11 @@ impl BlockBlobClientUploadBlobFromUrlResultHeaders
     /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 
     /// Indicates whether the contents of the request are successfully encrypted.
@@ -2599,6 +3267,7 @@ pub(crate) trait BlockBlobClientUploadInternalResultHeaders: private::Sealed {
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
@@ -2640,6 +3309,11 @@ impl BlockBlobClientUploadInternalResultHeaders
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+
     /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
@@ -2677,6 +3351,7 @@ pub trait BlockListHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn blob_content_length(&self) -> Result<Option<i64>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl BlockListHeaders for Response<BlockList, XmlFormat> {
@@ -2695,6 +3370,133 @@ impl BlockListHeaders for Response<BlockList, XmlFormat> {
     /// The size of the blob in bytes.
     fn blob_content_length(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_CONTENT_LENGTH)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobContainerClient::create_session()`
+///
+/// # Examples
+///
+/// ```ignore
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_blob::models::{CreateSessionResponse, CreateSessionResponseHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<CreateSessionResponse, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub(crate) trait CreateSessionResponseHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl CreateSessionResponseHeaders for Response<CreateSessionResponse, XmlFormat> {
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for the following methods:
+/// * `BlobContainerClient::find_blobs_by_tags()`
+/// * `BlobServiceClient::find_blobs_by_tags()`
+pub trait FilteredBlobResponseHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl FilteredBlobResponseHeaders for Response<FilteredBlobResponse, XmlFormat> {
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobContainerClient::list_blobs_hierarchical_xml()`
+///
+/// # Examples
+///
+/// ```ignore
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_blob::models::{ListBlobsHierarchicalResponse, ListBlobsHierarchicalResponseHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<ListBlobsHierarchicalResponse, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub(crate) trait ListBlobsHierarchicalResponseHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl ListBlobsHierarchicalResponseHeaders for Response<ListBlobsHierarchicalResponse, XmlFormat> {
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobContainerClient::list_blobs_xml()`
+///
+/// # Examples
+///
+/// ```ignore
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_blob::models::{ListBlobsResponse, ListBlobsResponseHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<ListBlobsResponse, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub(crate) trait ListBlobsResponseHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl ListBlobsResponseHeaders for Response<ListBlobsResponse, XmlFormat> {
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobServiceClient::list_containers()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_blob::models::{ListContainersResponse, ListContainersResponseHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<ListContainersResponse, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait ListContainersResponseHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl ListContainersResponseHeaders for Response<ListContainersResponse, XmlFormat> {
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -2726,6 +3528,7 @@ pub trait PageBlobClientClearPagesResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn blob_sequence_number(&self) -> Result<Option<i64>>;
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl PageBlobClientClearPagesResultHeaders for Response<PageBlobClientClearPagesResult, NoFormat> {
@@ -2757,6 +3560,11 @@ impl PageBlobClientClearPagesResultHeaders for Response<PageBlobClientClearPages
             base64::decode(h.as_str())
         })
     }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
 }
 
 /// Provides access to typed response headers for `PageBlobClient::create()`
@@ -2787,6 +3595,7 @@ pub trait PageBlobClientCreateResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
@@ -2817,6 +3626,11 @@ impl PageBlobClientCreateResultHeaders for Response<PageBlobClientCreateResult, 
     /// Specifies the encryption scope used to encrypt the data.
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 
     /// Indicates whether the contents of the request are successfully encrypted.
@@ -2856,6 +3670,7 @@ pub trait PageBlobClientResizeResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn blob_sequence_number(&self) -> Result<Option<i64>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl PageBlobClientResizeResultHeaders for Response<PageBlobClientResizeResult, NoFormat> {
@@ -2874,6 +3689,11 @@ impl PageBlobClientResizeResultHeaders for Response<PageBlobClientResizeResult, 
     /// The current sequence number for a page blob.
     fn blob_sequence_number(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEQUENCE_NUMBER)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -2903,6 +3723,7 @@ pub trait PageBlobClientSetSequenceNumberResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn blob_sequence_number(&self) -> Result<Option<i64>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl PageBlobClientSetSequenceNumberResultHeaders
@@ -2923,6 +3744,11 @@ impl PageBlobClientSetSequenceNumberResultHeaders
     /// The current sequence number for a page blob.
     fn blob_sequence_number(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEQUENCE_NUMBER)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -2956,6 +3782,7 @@ pub trait PageBlobClientUploadPagesFromUrlResultHeaders: private::Sealed {
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
 }
 
@@ -3001,6 +3828,11 @@ impl PageBlobClientUploadPagesFromUrlResultHeaders
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+
     /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
@@ -3037,6 +3869,7 @@ pub trait PageBlobClientUploadPagesResultHeaders: private::Sealed {
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
 }
 
@@ -3082,6 +3915,11 @@ impl PageBlobClientUploadPagesResultHeaders
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+
     /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
@@ -3114,6 +3952,7 @@ pub trait PageListHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn blob_content_length(&self) -> Result<Option<i64>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl PageListHeaders for Response<PageList, XmlFormat> {
@@ -3132,6 +3971,11 @@ impl PageListHeaders for Response<PageList, XmlFormat> {
     /// The size of the blob in bytes.
     fn blob_content_length(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_CONTENT_LENGTH)
+    }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
     }
 }
 
@@ -3161,6 +4005,7 @@ pub trait SignedIdentifiersHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn access(&self) -> Result<Option<PublicAccessType>>;
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
 }
 
 impl SignedIdentifiersHeaders for Response<SignedIdentifiers, XmlFormat> {
@@ -3180,27 +4025,68 @@ impl SignedIdentifiersHeaders for Response<SignedIdentifiers, XmlFormat> {
     fn access(&self) -> Result<Option<PublicAccessType>> {
         Headers::get_optional_as(self.headers(), &BLOB_PUBLIC_ACCESS)
     }
+
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
+}
+
+/// Provides access to typed response headers for `BlobServiceClient::get_statistics()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_blob::models::{StorageServiceStats, StorageServiceStatsHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<StorageServiceStats, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait StorageServiceStatsHeaders: private::Sealed {
+    fn effective_request_priority(&self) -> Result<Option<i32>>;
+}
+
+impl StorageServiceStatsHeaders for Response<StorageServiceStats, XmlFormat> {
+    /// Reports the effective request priority from 0 through 7.
+    fn effective_request_priority(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &REQUEST_PRIORITY)
+    }
 }
 
 mod private {
     use super::{
         AppendBlobClientAppendBlockFromUrlResult, AppendBlobClientAppendBlockResult,
-        AppendBlobClientCreateResult, AppendBlobClientSealResult, BlobClientAcquireLeaseResult,
-        BlobClientBreakLeaseResult, BlobClientChangeLeaseResult, BlobClientCreateSnapshotResult,
-        BlobClientDownloadInternalResult, BlobClientGetAccountInfoResult,
+        AppendBlobClientCreateResult, AppendBlobClientSealResult, BlobClientAbortCopyResult,
+        BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
+        BlobClientCreateSnapshotResult, BlobClientDeleteImmutabilityPolicyResult,
+        BlobClientDeleteResult, BlobClientDownloadInternalResult, BlobClientGetAccountInfoResult,
         BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
-        BlobClientStartCopyFromUrlResult, BlobContainerClientAcquireLeaseResult,
-        BlobContainerClientBreakLeaseResult, BlobContainerClientChangeLeaseResult,
-        BlobContainerClientGetAccountInfoResult, BlobContainerClientGetPropertiesResult,
+        BlobClientSetImmutabilityPolicyResult, BlobClientSetLegalHoldResult,
+        BlobClientSetMetadataResult, BlobClientSetPropertiesResult, BlobClientSetTagsResult,
+        BlobClientSetTierResult, BlobClientStartCopyFromUrlResult, BlobClientUndeleteResult,
+        BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
+        BlobContainerClientChangeLeaseResult, BlobContainerClientCreateResult,
+        BlobContainerClientDeleteResult, BlobContainerClientGetAccountInfoResult,
+        BlobContainerClientGetPropertiesResult,
         BlobContainerClientListBlobsHierarchicalInternalResult,
         BlobContainerClientListBlobsInternalResult, BlobContainerClientReleaseLeaseResult,
-        BlobContainerClientRenewLeaseResult, BlobLayout, BlobServiceClientGetAccountInfoResult,
+        BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyResult,
+        BlobContainerClientSetMetadataResult, BlobLayout, BlobServiceClientGetAccountInfoResult,
+        BlobServiceClientSetPropertiesResult, BlobServiceProperties, BlobTags,
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
         BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
-        BlockBlobClientUploadInternalResult, BlockList, PageBlobClientClearPagesResult,
-        PageBlobClientCreateResult, PageBlobClientResizeResult,
-        PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
-        PageBlobClientUploadPagesResult, PageList, SignedIdentifiers,
+        BlockBlobClientUploadInternalResult, BlockList, CreateSessionResponse,
+        FilteredBlobResponse, ListBlobsHierarchicalResponse, ListBlobsResponse,
+        ListContainersResponse, PageBlobClientClearPagesResult, PageBlobClientCreateResult,
+        PageBlobClientResizeResult, PageBlobClientSetSequenceNumberResult,
+        PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesResult, PageList,
+        SignedIdentifiers, StorageServiceStats,
     };
     use azure_core::http::{AsyncResponse, NoFormat, Response, XmlFormat};
 
@@ -3213,30 +4099,52 @@ mod private {
     impl Sealed for Response<AppendBlobClientAppendBlockResult, NoFormat> {}
     impl Sealed for Response<AppendBlobClientCreateResult, NoFormat> {}
     impl Sealed for Response<AppendBlobClientSealResult, NoFormat> {}
+    impl Sealed for Response<BlobClientAbortCopyResult, NoFormat> {}
     impl Sealed for Response<BlobClientAcquireLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobClientBreakLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobClientChangeLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobClientCreateSnapshotResult, NoFormat> {}
+    impl Sealed for Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat> {}
+    impl Sealed for Response<BlobClientDeleteResult, NoFormat> {}
     impl Sealed for Response<BlobClientGetAccountInfoResult, NoFormat> {}
     impl Sealed for Response<BlobClientGetPropertiesResult, NoFormat> {}
     impl Sealed for Response<BlobClientReleaseLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobClientRenewLeaseResult, NoFormat> {}
+    impl Sealed for Response<BlobClientSetImmutabilityPolicyResult, NoFormat> {}
+    impl Sealed for Response<BlobClientSetLegalHoldResult, NoFormat> {}
+    impl Sealed for Response<BlobClientSetMetadataResult, NoFormat> {}
+    impl Sealed for Response<BlobClientSetPropertiesResult, NoFormat> {}
+    impl Sealed for Response<BlobClientSetTagsResult, NoFormat> {}
+    impl Sealed for Response<BlobClientSetTierResult, NoFormat> {}
     impl Sealed for Response<BlobClientStartCopyFromUrlResult, NoFormat> {}
+    impl Sealed for Response<BlobClientUndeleteResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientAcquireLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientBreakLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientChangeLeaseResult, NoFormat> {}
+    impl Sealed for Response<BlobContainerClientCreateResult, NoFormat> {}
+    impl Sealed for Response<BlobContainerClientDeleteResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientGetAccountInfoResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientGetPropertiesResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientReleaseLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientRenewLeaseResult, NoFormat> {}
+    impl Sealed for Response<BlobContainerClientSetAccessPolicyResult, NoFormat> {}
+    impl Sealed for Response<BlobContainerClientSetMetadataResult, NoFormat> {}
     impl Sealed for Response<BlobLayout, XmlFormat> {}
     impl Sealed for Response<BlobServiceClientGetAccountInfoResult, NoFormat> {}
+    impl Sealed for Response<BlobServiceClientSetPropertiesResult, NoFormat> {}
+    impl Sealed for Response<BlobServiceProperties, XmlFormat> {}
+    impl Sealed for Response<BlobTags, XmlFormat> {}
     impl Sealed for Response<BlockBlobClientCommitBlockListResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientStageBlockFromUrlResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientStageBlockResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientUploadInternalResult, NoFormat> {}
     impl Sealed for Response<BlockList, XmlFormat> {}
+    impl Sealed for Response<CreateSessionResponse, XmlFormat> {}
+    impl Sealed for Response<FilteredBlobResponse, XmlFormat> {}
+    impl Sealed for Response<ListBlobsHierarchicalResponse, XmlFormat> {}
+    impl Sealed for Response<ListBlobsResponse, XmlFormat> {}
+    impl Sealed for Response<ListContainersResponse, XmlFormat> {}
     impl Sealed for Response<PageBlobClientClearPagesResult, NoFormat> {}
     impl Sealed for Response<PageBlobClientCreateResult, NoFormat> {}
     impl Sealed for Response<PageBlobClientResizeResult, NoFormat> {}
@@ -3245,4 +4153,5 @@ mod private {
     impl Sealed for Response<PageBlobClientUploadPagesResult, NoFormat> {}
     impl Sealed for Response<PageList, XmlFormat> {}
     impl Sealed for Response<SignedIdentifiers, XmlFormat> {}
+    impl Sealed for Response<StorageServiceStats, XmlFormat> {}
 }

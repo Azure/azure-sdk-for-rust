@@ -7,10 +7,11 @@ use azure_core::http::{ClientOptions, RequestContent, Url, XmlFormat};
 use azure_core::time::OffsetDateTime;
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
-    BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersOptions,
-    BlobServiceProperties, BlockBlobClientUploadOptions, CorsRule, GeoReplicationStatusType,
-    KeyInfo, ListContainersIncludeType, Metrics, RetentionPolicy,
+    AccountKind, BlobServiceClientGetAccountInfoOptions,
+    BlobServiceClientGetAccountInfoResultHeaders, BlobServiceClientGetPropertiesOptions,
+    BlobServiceClientListContainersOptions, BlobServiceProperties, BlockBlobClientUploadOptions,
+    CorsRule, GeoReplicationStatusType, KeyInfo, ListContainersIncludeType, Metrics,
+    RetentionPolicy,
 };
 use azure_storage_blob::{format_filter_expression, BlobServiceClient, BlobServiceClientOptions};
 use common::{
@@ -20,6 +21,25 @@ use common::{
 use futures::{StreamExt, TryStreamExt};
 use std::{collections::HashMap, error::Error};
 use time::Duration;
+
+#[recorded::test]
+async fn test_blob_service_client_request_priority(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
+
+    // Non-Default Priority Scenario
+    let response = service_client
+        .get_account_info(Some(BlobServiceClientGetAccountInfoOptions {
+            request_priority: Some(1),
+            ..Default::default()
+        }))
+        .await?;
+
+    // Assert
+    assert_eq!(response.effective_request_priority()?, Some(1));
+    Ok(())
+}
 
 #[recorded::test]
 async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {

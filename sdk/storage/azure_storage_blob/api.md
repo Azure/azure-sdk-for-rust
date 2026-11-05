@@ -114,26 +114,26 @@ pub mod clients {
         pub fn with_version(&self, version_id: &str) -> Result<Self>;
     }
     impl BlobClient {
-        pub async fn abort_copy(&self, copy_id: &str, options: Option<BlobClientAbortCopyOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn abort_copy(&self, copy_id: &str, options: Option<BlobClientAbortCopyOptions<'_>>) -> Result<Response<BlobClientAbortCopyResult, NoFormat>>;
         pub async fn acquire_lease(&self, duration: i32, options: Option<BlobClientAcquireLeaseOptions<'_>>) -> Result<Response<BlobClientAcquireLeaseResult, NoFormat>>;
         pub async fn break_lease(&self, options: Option<BlobClientBreakLeaseOptions<'_>>) -> Result<Response<BlobClientBreakLeaseResult, NoFormat>>;
         pub async fn change_lease(&self, lease_id: String, proposed_lease_id: String, options: Option<BlobClientChangeLeaseOptions<'_>>) -> Result<Response<BlobClientChangeLeaseResult, NoFormat>>;
         pub async fn create_snapshot(&self, options: Option<BlobClientCreateSnapshotOptions<'_>>) -> Result<Response<BlobClientCreateSnapshotResult, NoFormat>>;
-        pub async fn delete(&self, options: Option<BlobClientDeleteOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        pub async fn delete_immutability_policy(&self, options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn delete(&self, options: Option<BlobClientDeleteOptions<'_>>) -> Result<Response<BlobClientDeleteResult, NoFormat>>;
+        pub async fn delete_immutability_policy(&self, options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>) -> Result<Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat>>;
         pub async fn get_account_info(&self, options: Option<BlobClientGetAccountInfoOptions<'_>>) -> Result<Response<BlobClientGetAccountInfoResult, NoFormat>>;
         pub async fn get_properties(&self, options: Option<BlobClientGetPropertiesOptions<'_>>) -> Result<Response<BlobClientGetPropertiesResult, NoFormat>>;
         pub async fn get_tags(&self, options: Option<BlobClientGetTagsOptions<'_>>) -> Result<Response<BlobTags, XmlFormat>>;
         pub async fn release_lease(&self, lease_id: String, options: Option<BlobClientReleaseLeaseOptions<'_>>) -> Result<Response<BlobClientReleaseLeaseResult, NoFormat>>;
         pub async fn renew_lease(&self, lease_id: String, options: Option<BlobClientRenewLeaseOptions<'_>>) -> Result<Response<BlobClientRenewLeaseResult, NoFormat>>;
-        pub async fn set_immutability_policy(&self, expiry: &OffsetDateTime, options: Option<BlobClientSetImmutabilityPolicyOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        pub async fn set_legal_hold(&self, legal_hold: bool, options: Option<BlobClientSetLegalHoldOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        pub async fn set_metadata(&self, metadata: &HashMap<String, String>, options: Option<BlobClientSetMetadataOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        pub async fn set_properties(&self, options: Option<BlobClientSetPropertiesOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        pub async fn set_tags(&self, tags: RequestContent<BlobTags, XmlFormat>, options: Option<BlobClientSetTagsOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        pub async fn set_tier(&self, tier: AccessTier, options: Option<BlobClientSetTierOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn set_immutability_policy(&self, expiry: &OffsetDateTime, options: Option<BlobClientSetImmutabilityPolicyOptions<'_>>) -> Result<Response<BlobClientSetImmutabilityPolicyResult, NoFormat>>;
+        pub async fn set_legal_hold(&self, legal_hold: bool, options: Option<BlobClientSetLegalHoldOptions<'_>>) -> Result<Response<BlobClientSetLegalHoldResult, NoFormat>>;
+        pub async fn set_metadata(&self, metadata: &HashMap<String, String>, options: Option<BlobClientSetMetadataOptions<'_>>) -> Result<Response<BlobClientSetMetadataResult, NoFormat>>;
+        pub async fn set_properties(&self, options: Option<BlobClientSetPropertiesOptions<'_>>) -> Result<Response<BlobClientSetPropertiesResult, NoFormat>>;
+        pub async fn set_tags(&self, tags: RequestContent<BlobTags, XmlFormat>, options: Option<BlobClientSetTagsOptions<'_>>) -> Result<Response<BlobClientSetTagsResult, NoFormat>>;
+        pub async fn set_tier(&self, tier: AccessTier, options: Option<BlobClientSetTierOptions<'_>>) -> Result<Response<BlobClientSetTierResult, NoFormat>>;
         pub async fn start_copy_from_url(&self, copy_source: String, options: Option<BlobClientStartCopyFromUrlOptions<'_>>) -> Result<Response<BlobClientStartCopyFromUrlResult, NoFormat>>;
-        pub async fn undelete(&self, options: Option<BlobClientUndeleteOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn undelete(&self, options: Option<BlobClientUndeleteOptions<'_>>) -> Result<Response<BlobClientUndeleteResult, NoFormat>>;
     }
     #[derive(Clone, Debug)]
     pub struct BlobClientOptions {
@@ -158,16 +158,16 @@ pub mod clients {
         pub async fn acquire_lease(&self, duration: i32, options: Option<BlobContainerClientAcquireLeaseOptions<'_>>) -> Result<Response<BlobContainerClientAcquireLeaseResult, NoFormat>>;
         pub async fn break_lease(&self, options: Option<BlobContainerClientBreakLeaseOptions<'_>>) -> Result<Response<BlobContainerClientBreakLeaseResult, NoFormat>>;
         pub async fn change_lease(&self, lease_id: String, proposed_lease_id: String, options: Option<BlobContainerClientChangeLeaseOptions<'_>>) -> Result<Response<BlobContainerClientChangeLeaseResult, NoFormat>>;
-        pub async fn create(&self, options: Option<BlobContainerClientCreateOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        pub async fn delete(&self, options: Option<BlobContainerClientDeleteOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn create(&self, options: Option<BlobContainerClientCreateOptions<'_>>) -> Result<Response<BlobContainerClientCreateResult, NoFormat>>;
+        pub async fn delete(&self, options: Option<BlobContainerClientDeleteOptions<'_>>) -> Result<Response<BlobContainerClientDeleteResult, NoFormat>>;
         pub fn find_blobs_by_tags(&self, filter_expression: &str, options: Option<BlobContainerClientFindBlobsByTagsOptions<'_>>) -> Result<Pager<FilteredBlobResponse, XmlFormat>>;
         pub async fn get_access_policy(&self, options: Option<BlobContainerClientGetAccessPolicyOptions<'_>>) -> Result<Response<SignedIdentifiers, XmlFormat>>;
         pub async fn get_account_info(&self, options: Option<BlobContainerClientGetAccountInfoOptions<'_>>) -> Result<Response<BlobContainerClientGetAccountInfoResult, NoFormat>>;
         pub async fn get_properties(&self, options: Option<BlobContainerClientGetPropertiesOptions<'_>>) -> Result<Response<BlobContainerClientGetPropertiesResult, NoFormat>>;
         pub async fn release_lease(&self, lease_id: String, options: Option<BlobContainerClientReleaseLeaseOptions<'_>>) -> Result<Response<BlobContainerClientReleaseLeaseResult, NoFormat>>;
         pub async fn renew_lease(&self, lease_id: String, options: Option<BlobContainerClientRenewLeaseOptions<'_>>) -> Result<Response<BlobContainerClientRenewLeaseResult, NoFormat>>;
-        pub async fn set_access_policy(&self, container_acl: RequestContent<SignedIdentifiers, XmlFormat>, options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        pub async fn set_metadata(&self, metadata: &HashMap<String, String>, options: Option<BlobContainerClientSetMetadataOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn set_access_policy(&self, container_acl: RequestContent<SignedIdentifiers, XmlFormat>, options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>) -> Result<Response<BlobContainerClientSetAccessPolicyResult, NoFormat>>;
+        pub async fn set_metadata(&self, metadata: &HashMap<String, String>, options: Option<BlobContainerClientSetMetadataOptions<'_>>) -> Result<Response<BlobContainerClientSetMetadataResult, NoFormat>>;
     }
     #[derive(Clone, Debug)]
     pub struct BlobContainerClientOptions {
@@ -193,7 +193,7 @@ pub mod clients {
         pub async fn get_statistics(&self, options: Option<BlobServiceClientGetStatisticsOptions<'_>>) -> Result<Response<StorageServiceStats, XmlFormat>>;
         pub async fn get_user_delegation_key(&self, key_info: RequestContent<KeyInfo, XmlFormat>, options: Option<BlobServiceClientGetUserDelegationKeyOptions<'_>>) -> Result<Response<UserDelegationKey, XmlFormat>>;
         pub fn list_containers(&self, options: Option<BlobServiceClientListContainersOptions<'_>>) -> Result<Pager<ListContainersResponse, XmlFormat>>;
-        pub async fn set_properties(&self, storage_service_properties: RequestContent<BlobServiceProperties, XmlFormat>, options: Option<BlobServiceClientSetPropertiesOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn set_properties(&self, storage_service_properties: RequestContent<BlobServiceProperties, XmlFormat>, options: Option<BlobServiceClientSetPropertiesOptions<'_>>) -> Result<Response<BlobServiceClientSetPropertiesResult, NoFormat>>;
     }
     #[derive(Clone, Debug)]
     pub struct BlobServiceClientOptions {
@@ -281,6 +281,7 @@ pub mod models {
         pub lease_id: Option<String>,
         pub max_size: Option<i64>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub source_content_crc64: Option<Vec<u8>>,
         pub source_content_md5: Option<Vec<u8>>,
         pub source_encryption_algorithm: Option<super::EncryptionAlgorithmType>,
@@ -311,6 +312,7 @@ pub mod models {
         pub lease_id: Option<String>,
         pub max_size: Option<i64>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
         pub transactional_content_crc64: Option<Vec<u8>>,
         pub transactional_content_md5: Option<Vec<u8>>,
@@ -341,6 +343,7 @@ pub mod models {
         pub legal_hold: Option<bool>,
         pub metadata: Option<std::collections::HashMap<String, String>>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     impl crate::models::AppendBlobClientCreateOptions<'_> {
@@ -360,6 +363,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -381,8 +385,11 @@ pub mod models {
     pub struct BlobClientAbortCopyOptions<'a> {
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
+    #[derive(Debug)]
+    pub struct BlobClientAbortCopyResult;
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientAcquireLeaseOptions<'a> {
         pub if_match: Option<azure_core::http::Etag>,
@@ -392,6 +399,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub proposed_lease_id: Option<String>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -405,6 +413,7 @@ pub mod models {
         pub if_tags: Option<String>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -417,6 +426,7 @@ pub mod models {
         pub if_tags: Option<String>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -435,6 +445,7 @@ pub mod models {
         pub lease_id: Option<String>,
         pub metadata: Option<std::collections::HashMap<String, String>>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -442,10 +453,13 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientDeleteImmutabilityPolicyOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
     }
+    #[derive(Debug)]
+    pub struct BlobClientDeleteImmutabilityPolicyResult;
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientDeleteOptions<'a> {
         pub access_tier_if_modified_since: Option<azure_core::time::OffsetDateTime>,
@@ -459,10 +473,13 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
     }
+    #[derive(Debug)]
+    pub struct BlobClientDeleteResult;
     #[derive(Debug)]
     pub struct BlobClientDownloadIntoResult {
         pub len: usize,
@@ -487,6 +504,7 @@ pub mod models {
         pub range: Option<crate::models::HttpRange>,
         pub range_get_content_crc64: Option<bool>,
         pub range_get_content_md5: Option<bool>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
@@ -500,6 +518,7 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientGetAccountInfoOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -516,6 +535,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
@@ -531,6 +551,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
@@ -543,6 +564,7 @@ pub mod models {
         pub if_tags: Option<String>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -555,6 +577,7 @@ pub mod models {
         pub if_tags: Option<String>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -564,17 +587,23 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub immutability_policy_mode: Option<super::ImmutabilityPolicyMode>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
     }
+    #[derive(Debug)]
+    pub struct BlobClientSetImmutabilityPolicyResult;
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientSetLegalHoldOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
     }
+    #[derive(Debug)]
+    pub struct BlobClientSetLegalHoldResult;
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientSetMetadataOptions<'a> {
         pub encryption_algorithm: Option<super::EncryptionAlgorithmType>,
@@ -588,8 +617,11 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
+    #[derive(Debug)]
+    pub struct BlobClientSetMetadataResult;
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientSetPropertiesOptions<'a> {
         pub blob_cache_control: Option<String>,
@@ -605,8 +637,11 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
+    #[derive(Debug)]
+    pub struct BlobClientSetPropertiesResult;
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientSetTagsOptions<'a> {
         pub if_match: Option<azure_core::http::Etag>,
@@ -616,21 +651,27 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
         pub transactional_content_crc64: Option<Vec<u8>>,
         pub transactional_content_md5: Option<Vec<u8>>,
         pub version_id: Option<String>,
     }
+    #[derive(Debug)]
+    pub struct BlobClientSetTagsResult;
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientSetTierOptions<'a> {
         pub if_tags: Option<String>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub rehydrate_priority: Option<super::RehydratePriority>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
     }
+    #[derive(Debug)]
+    pub struct BlobClientSetTierResult;
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientStartCopyFromUrlOptions<'a> {
         pub blob_tags_string: Option<String>,
@@ -646,6 +687,7 @@ pub mod models {
         pub metadata: Option<std::collections::HashMap<String, String>>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub rehydrate_priority: Option<super::RehydratePriority>,
+        pub request_priority: Option<i32>,
         pub seal_blob: Option<bool>,
         pub source_if_match: Option<azure_core::http::Etag>,
         pub source_if_modified_since: Option<azure_core::time::OffsetDateTime>,
@@ -660,14 +702,18 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientUndeleteOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
+    #[derive(Debug)]
+    pub struct BlobClientUndeleteResult;
     #[derive(Clone, Debug, Default)]
     pub struct BlobContainerClientAcquireLeaseOptions<'a> {
         pub if_modified_since: Option<azure_core::time::OffsetDateTime>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub proposed_lease_id: Option<String>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -678,6 +724,7 @@ pub mod models {
         pub if_modified_since: Option<azure_core::time::OffsetDateTime>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -687,6 +734,7 @@ pub mod models {
         pub if_modified_since: Option<azure_core::time::OffsetDateTime>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -698,22 +746,29 @@ pub mod models {
         pub metadata: Option<std::collections::HashMap<String, String>>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub prevent_encryption_scope_override: Option<bool>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
+    #[derive(Debug)]
+    pub struct BlobContainerClientCreateResult;
     #[derive(Clone, Debug, Default)]
     pub struct BlobContainerClientDeleteOptions<'a> {
         pub if_modified_since: Option<azure_core::time::OffsetDateTime>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
+    #[derive(Debug)]
+    pub struct BlobContainerClientDeleteResult;
     #[derive(Clone, Debug, Default)]
     pub struct BlobContainerClientFindBlobsByTagsOptions<'a> {
         pub include: Option<Vec<super::FilterBlobsIncludeItem>>,
         pub marker: Option<String>,
         pub maxresults: Option<i32>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     impl BlobContainerClientFindBlobsByTagsOptions<'_> {
@@ -723,11 +778,13 @@ pub mod models {
     pub struct BlobContainerClientGetAccessPolicyOptions<'a> {
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct BlobContainerClientGetAccountInfoOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -736,6 +793,7 @@ pub mod models {
     pub struct BlobContainerClientGetPropertiesOptions<'a> {
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -749,6 +807,7 @@ pub mod models {
         pub maxresults: Option<i32>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
         pub prefix: Option<String>,
+        pub request_priority: Option<i32>,
         pub start_from: Option<String>,
         pub timeout: Option<i32>,
     }
@@ -764,6 +823,7 @@ pub mod models {
         pub maxresults: Option<i32>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
         pub prefix: Option<String>,
+        pub request_priority: Option<i32>,
         pub start_from: Option<String>,
         pub timeout: Option<i32>,
     }
@@ -775,6 +835,7 @@ pub mod models {
         pub if_modified_since: Option<azure_core::time::OffsetDateTime>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -784,6 +845,7 @@ pub mod models {
         pub if_modified_since: Option<azure_core::time::OffsetDateTime>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -795,15 +857,21 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
+    #[derive(Debug)]
+    pub struct BlobContainerClientSetAccessPolicyResult;
     #[derive(Clone, Debug, Default)]
     pub struct BlobContainerClientSetMetadataOptions<'a> {
         pub if_modified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
+    #[derive(Debug)]
+    pub struct BlobContainerClientSetMetadataResult;
     #[derive(Debug)]
     pub struct BlobDownloadProperties {
         pub etag: Option<azure_core::http::Etag>,
@@ -998,6 +1066,7 @@ pub mod models {
         pub marker: Option<String>,
         pub maxresults: Option<i32>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     impl BlobServiceClientFindBlobsByTagsOptions<'_> {
@@ -1006,6 +1075,7 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct BlobServiceClientGetAccountInfoOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -1013,16 +1083,19 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct BlobServiceClientGetPropertiesOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct BlobServiceClientGetStatisticsOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct BlobServiceClientGetUserDelegationKeyOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
@@ -1032,6 +1105,7 @@ pub mod models {
         pub maxresults: Option<i32>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
         pub prefix: Option<String>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     impl BlobServiceClientListContainersOptions<'_> {
@@ -1040,8 +1114,11 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct BlobServiceClientSetPropertiesOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
+    #[derive(Debug)]
+    pub struct BlobServiceClientSetPropertiesResult;
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[serde(rename = "StorageServiceProperties")]
     pub struct BlobServiceProperties {
@@ -1120,6 +1197,7 @@ pub mod models {
         pub legal_hold: Option<bool>,
         pub metadata: Option<std::collections::HashMap<String, String>>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub tier: Option<super::AccessTier>,
         pub timeout: Option<i32>,
         pub transactional_content_crc64: Option<Vec<u8>>,
@@ -1135,6 +1213,7 @@ pub mod models {
         pub if_tags: Option<String>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
     }
@@ -1148,6 +1227,7 @@ pub mod models {
         pub file_request_intent: Option<super::FileShareTokenIntent>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub source_content_crc64: Option<Vec<u8>>,
         pub source_content_md5: Option<Vec<u8>>,
         pub source_encryption_algorithm: Option<super::EncryptionAlgorithmType>,
@@ -1170,6 +1250,7 @@ pub mod models {
         pub encryption_scope: Option<String>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
         pub transactional_content_crc64: Option<Vec<u8>>,
         pub transactional_content_md5: Option<Vec<u8>>,
@@ -1201,6 +1282,7 @@ pub mod models {
         pub lease_id: Option<String>,
         pub metadata: Option<std::collections::HashMap<String, String>>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub source_content_md5: Option<Vec<u8>>,
         pub source_encryption_algorithm: Option<super::EncryptionAlgorithmType>,
         pub source_encryption_key: Option<String>,
@@ -1249,6 +1331,7 @@ pub mod models {
         pub parallel: Option<std::num::NonZero<usize>>,
         pub partition_size: Option<std::num::NonZero<u64>>,
         pub per_request_timeout: Option<i32>,
+        pub request_priority: Option<i32>,
         pub tier: Option<crate::models::AccessTier>,
     }
     impl crate::models::BlockBlobClientUploadOptions<'_> {
@@ -1601,6 +1684,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -1630,6 +1714,7 @@ pub mod models {
         pub legal_hold: Option<bool>,
         pub metadata: Option<std::collections::HashMap<String, String>>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub tier: Option<super::PremiumPageBlobAccessTier>,
         pub timeout: Option<i32>,
     }
@@ -1653,6 +1738,7 @@ pub mod models {
         pub maxresults: Option<i32>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
         pub range: Option<crate::models::HttpRange>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
     }
@@ -1672,6 +1758,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -1686,6 +1773,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -1708,6 +1796,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub source_content_crc64: Option<Vec<u8>>,
         pub source_content_md5: Option<Vec<u8>>,
         pub source_encryption_algorithm: Option<super::EncryptionAlgorithmType>,
@@ -1737,6 +1826,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
         pub transactional_content_crc64: Option<Vec<u8>>,
         pub transactional_content_md5: Option<Vec<u8>>,
@@ -2540,6 +2630,7 @@ pub mod models {
         fn blob_committed_block_count(&self) -> Result<Option<i32>>;
         fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
         fn content_md5(&self) -> Result<Option<Vec<u8>>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn encryption_key_sha256(&self) -> Result<Option<String>>;
         fn encryption_scope(&self) -> Result<Option<String>>;
         fn etag(&self) -> Result<Option<Etag>>;
@@ -2551,6 +2642,7 @@ pub mod models {
         fn blob_committed_block_count(&self) -> Result<Option<i32>>;
         fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
         fn content_md5(&self) -> Result<Option<Vec<u8>>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn encryption_key_sha256(&self) -> Result<Option<String>>;
         fn encryption_scope(&self) -> Result<Option<String>>;
         fn etag(&self) -> Result<Option<Etag>>;
@@ -2559,6 +2651,7 @@ pub mod models {
     }
     pub trait AppendBlobClientCreateResultHeaders: private::Sealed {
         fn content_md5(&self) -> Result<Option<Vec<u8>>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn encryption_key_sha256(&self) -> Result<Option<String>>;
         fn encryption_scope(&self) -> Result<Option<String>>;
         fn etag(&self) -> Result<Option<Etag>>;
@@ -2567,34 +2660,49 @@ pub mod models {
         fn version_id(&self) -> Result<Option<String>>;
     }
     pub trait AppendBlobClientSealResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn is_sealed(&self) -> Result<Option<bool>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     }
+    pub trait BlobClientAbortCopyResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
     pub trait BlobClientAcquireLeaseResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
         fn lease_id(&self) -> Result<Option<String>>;
     }
     pub trait BlobClientBreakLeaseResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
         fn lease_time(&self) -> Result<Option<i32>>;
     }
     pub trait BlobClientChangeLeaseResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
         fn lease_id(&self) -> Result<Option<String>>;
     }
     pub trait BlobClientCreateSnapshotResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn is_server_encrypted(&self) -> Result<Option<bool>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
         fn snapshot(&self) -> Result<Option<String>>;
         fn version_id(&self) -> Result<Option<String>>;
     }
+    pub trait BlobClientDeleteImmutabilityPolicyResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait BlobClientDeleteResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
     pub trait BlobClientGetAccountInfoResultHeaders: private::Sealed {
         fn account_kind(&self) -> Result<Option<AccountKind>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
         fn sku_name(&self) -> Result<Option<SkuName>>;
     }
@@ -2622,6 +2730,7 @@ pub mod models {
         fn creation_time(&self) -> Result<Option<OffsetDateTime>>;
         fn destination_snapshot(&self) -> Result<Option<String>>;
         fn duration(&self) -> Result<Option<LeaseDuration>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn encryption_key_sha256(&self) -> Result<Option<String>>;
         fn encryption_scope(&self) -> Result<Option<String>>;
         fn etag(&self) -> Result<Option<Etag>>;
@@ -2646,38 +2755,72 @@ pub mod models {
         fn version_id(&self) -> Result<Option<String>>;
     }
     pub trait BlobClientReleaseLeaseResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     }
     pub trait BlobClientRenewLeaseResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
         fn lease_id(&self) -> Result<Option<String>>;
     }
+    pub trait BlobClientSetImmutabilityPolicyResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait BlobClientSetLegalHoldResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait BlobClientSetMetadataResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait BlobClientSetPropertiesResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait BlobClientSetTagsResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait BlobClientSetTierResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
     pub trait BlobClientStartCopyFromUrlResultHeaders: private::Sealed {
         fn copy_id(&self) -> Result<Option<String>>;
         fn copy_status(&self) -> Result<Option<CopyStatus>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
         fn version_id(&self) -> Result<Option<String>>;
     }
+    pub trait BlobClientUndeleteResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
     pub trait BlobContainerClientAcquireLeaseResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
         fn lease_id(&self) -> Result<Option<String>>;
     }
     pub trait BlobContainerClientBreakLeaseResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
         fn lease_time(&self) -> Result<Option<i32>>;
     }
     pub trait BlobContainerClientChangeLeaseResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
         fn lease_id(&self) -> Result<Option<String>>;
     }
+    pub trait BlobContainerClientCreateResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait BlobContainerClientDeleteResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
     pub trait BlobContainerClientGetAccountInfoResultHeaders: private::Sealed {
         fn account_kind(&self) -> Result<Option<AccountKind>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
         fn sku_name(&self) -> Result<Option<SkuName>>;
     }
@@ -2685,6 +2828,7 @@ pub mod models {
         fn access(&self) -> Result<Option<PublicAccessType>>;
         fn default_encryption_scope(&self) -> Result<Option<String>>;
         fn duration(&self) -> Result<Option<LeaseDuration>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn has_immutability_policy(&self) -> Result<Option<bool>>;
         fn has_legal_hold(&self) -> Result<Option<bool>>;
@@ -2696,22 +2840,41 @@ pub mod models {
         fn prevent_encryption_scope_override(&self) -> Result<Option<bool>>;
     }
     pub trait BlobContainerClientReleaseLeaseResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     }
     pub trait BlobContainerClientRenewLeaseResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
         fn lease_id(&self) -> Result<Option<String>>;
     }
+    pub trait BlobContainerClientSetAccessPolicyResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait BlobContainerClientSetMetadataResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
     pub trait BlobServiceClientGetAccountInfoResultHeaders: private::Sealed {
         fn account_kind(&self) -> Result<Option<AccountKind>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
         fn sku_name(&self) -> Result<Option<SkuName>>;
+    }
+    pub trait BlobServiceClientSetPropertiesResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait BlobServicePropertiesHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait BlobTagsHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
     }
     pub trait BlockBlobClientCommitBlockListResultHeaders: private::Sealed {
         fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
         fn content_md5(&self) -> Result<Option<Vec<u8>>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn encryption_key_sha256(&self) -> Result<Option<String>>;
         fn encryption_scope(&self) -> Result<Option<String>>;
         fn etag(&self) -> Result<Option<Etag>>;
@@ -2722,6 +2885,7 @@ pub mod models {
     pub trait BlockBlobClientStageBlockFromUrlResultHeaders: private::Sealed {
         fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
         fn content_md5(&self) -> Result<Option<Vec<u8>>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn encryption_key_sha256(&self) -> Result<Option<String>>;
         fn encryption_scope(&self) -> Result<Option<String>>;
         fn is_server_encrypted(&self) -> Result<Option<bool>>;
@@ -2729,6 +2893,7 @@ pub mod models {
     pub trait BlockBlobClientStageBlockResultHeaders: private::Sealed {
         fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
         fn content_md5(&self) -> Result<Option<Vec<u8>>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn encryption_key_sha256(&self) -> Result<Option<String>>;
         fn encryption_scope(&self) -> Result<Option<String>>;
         fn is_server_encrypted(&self) -> Result<Option<bool>>;
@@ -2736,6 +2901,7 @@ pub mod models {
     pub trait BlockBlobClientUploadBlobFromUrlResultHeaders: private::Sealed {
         fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
         fn content_md5(&self) -> Result<Option<Vec<u8>>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn encryption_key_sha256(&self) -> Result<Option<String>>;
         fn encryption_scope(&self) -> Result<Option<String>>;
         fn etag(&self) -> Result<Option<Etag>>;
@@ -2745,18 +2911,27 @@ pub mod models {
     }
     pub trait BlockListHeaders: private::Sealed {
         fn blob_content_length(&self) -> Result<Option<i64>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    }
+    pub trait FilteredBlobResponseHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait ListContainersResponseHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
     }
     pub trait PageBlobClientClearPagesResultHeaders: private::Sealed {
         fn blob_sequence_number(&self) -> Result<Option<i64>>;
         fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
         fn content_md5(&self) -> Result<Option<Vec<u8>>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     }
     pub trait PageBlobClientCreateResultHeaders: private::Sealed {
         fn content_md5(&self) -> Result<Option<Vec<u8>>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn encryption_key_sha256(&self) -> Result<Option<String>>;
         fn encryption_scope(&self) -> Result<Option<String>>;
         fn etag(&self) -> Result<Option<Etag>>;
@@ -2766,11 +2941,13 @@ pub mod models {
     }
     pub trait PageBlobClientResizeResultHeaders: private::Sealed {
         fn blob_sequence_number(&self) -> Result<Option<i64>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     }
     pub trait PageBlobClientSetSequenceNumberResultHeaders: private::Sealed {
         fn blob_sequence_number(&self) -> Result<Option<i64>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     }
@@ -2778,6 +2955,7 @@ pub mod models {
         fn blob_sequence_number(&self) -> Result<Option<i64>>;
         fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
         fn content_md5(&self) -> Result<Option<Vec<u8>>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn encryption_key_sha256(&self) -> Result<Option<String>>;
         fn encryption_scope(&self) -> Result<Option<String>>;
         fn etag(&self) -> Result<Option<Etag>>;
@@ -2788,6 +2966,7 @@ pub mod models {
         fn blob_sequence_number(&self) -> Result<Option<i64>>;
         fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
         fn content_md5(&self) -> Result<Option<Vec<u8>>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn encryption_key_sha256(&self) -> Result<Option<String>>;
         fn encryption_scope(&self) -> Result<Option<String>>;
         fn etag(&self) -> Result<Option<Etag>>;
@@ -2796,13 +2975,21 @@ pub mod models {
     }
     pub trait PageListHeaders: private::Sealed {
         fn blob_content_length(&self) -> Result<Option<i64>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     }
     pub trait SignedIdentifiersHeaders: private::Sealed {
         fn access(&self) -> Result<Option<PublicAccessType>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn etag(&self) -> Result<Option<Etag>>;
         fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    }
+    pub trait StorageServiceStatsHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait UserDelegationKeyHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> azure_core::Result<Option<i32>>;
     }
 }
 pub mod stream {

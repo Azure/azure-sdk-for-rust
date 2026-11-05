@@ -36,6 +36,38 @@ use std::{
 };
 
 #[recorded::test]
+async fn test_block_blob_client_request_priority(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let block_blob_client = container_client
+        .blob_client(&get_blob_name(recording))
+        .block_blob_client();
+    let result = async {
+        // Non-Default Priority Scenario
+        let response = block_blob_client
+            .stage_block(
+                b"1",
+                5,
+                RequestContent::from(b"hello".to_vec()),
+                Some(BlockBlobClientStageBlockOptions {
+                    request_priority: Some(1),
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        response.effective_request_priority()
+    }
+    .await;
+
+    container_client.delete(None).await?;
+    // Assert
+    assert_eq!(result?, Some(1));
+    Ok(())
+}
+
+#[recorded::test]
 async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();

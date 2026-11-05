@@ -13,6 +13,7 @@ mod method_options;
 
 pub use http_ranges::HttpRange;
 pub(crate) mod response_ext;
+pub use response_ext::UserDelegationKeyHeaders;
 mod upload_result;
 
 pub use crate::generated::models::*;

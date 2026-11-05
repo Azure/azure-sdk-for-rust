@@ -60,6 +60,10 @@ pub struct AppendBlobClientCreateResult;
 #[derive(SafeDebug)]
 pub struct AppendBlobClientSealResult;
 
+/// Contains results for `BlobClient::abort_copy()`
+#[derive(SafeDebug)]
+pub struct BlobClientAbortCopyResult;
+
 /// Contains results for `BlobClient::acquire_lease()`
 #[derive(SafeDebug)]
 pub struct BlobClientAcquireLeaseResult;
@@ -75,6 +79,14 @@ pub struct BlobClientChangeLeaseResult;
 /// Contains results for `BlobClient::create_snapshot()`
 #[derive(SafeDebug)]
 pub struct BlobClientCreateSnapshotResult;
+
+/// Contains results for `BlobClient::delete_immutability_policy()`
+#[derive(SafeDebug)]
+pub struct BlobClientDeleteImmutabilityPolicyResult;
+
+/// Contains results for `BlobClient::delete()`
+#[derive(SafeDebug)]
+pub struct BlobClientDeleteResult;
 
 /// Contains results for `BlobClient::download_internal()`
 #[derive(SafeDebug)]
@@ -96,9 +108,37 @@ pub struct BlobClientReleaseLeaseResult;
 #[derive(SafeDebug)]
 pub struct BlobClientRenewLeaseResult;
 
+/// Contains results for `BlobClient::set_immutability_policy()`
+#[derive(SafeDebug)]
+pub struct BlobClientSetImmutabilityPolicyResult;
+
+/// Contains results for `BlobClient::set_legal_hold()`
+#[derive(SafeDebug)]
+pub struct BlobClientSetLegalHoldResult;
+
+/// Contains results for `BlobClient::set_metadata()`
+#[derive(SafeDebug)]
+pub struct BlobClientSetMetadataResult;
+
+/// Contains results for `BlobClient::set_properties()`
+#[derive(SafeDebug)]
+pub struct BlobClientSetPropertiesResult;
+
+/// Contains results for `BlobClient::set_tags()`
+#[derive(SafeDebug)]
+pub struct BlobClientSetTagsResult;
+
+/// Contains results for `BlobClient::set_tier()`
+#[derive(SafeDebug)]
+pub struct BlobClientSetTierResult;
+
 /// Contains results for `BlobClient::start_copy_from_url()`
 #[derive(SafeDebug)]
 pub struct BlobClientStartCopyFromUrlResult;
+
+/// Contains results for `BlobClient::undelete()`
+#[derive(SafeDebug)]
+pub struct BlobClientUndeleteResult;
 
 /// Contains results for `BlobContainerClient::acquire_lease()`
 #[derive(SafeDebug)]
@@ -111,6 +151,14 @@ pub struct BlobContainerClientBreakLeaseResult;
 /// Contains results for `BlobContainerClient::change_lease()`
 #[derive(SafeDebug)]
 pub struct BlobContainerClientChangeLeaseResult;
+
+/// Contains results for `BlobContainerClient::create()`
+#[derive(SafeDebug)]
+pub struct BlobContainerClientCreateResult;
+
+/// Contains results for `BlobContainerClient::delete()`
+#[derive(SafeDebug)]
+pub struct BlobContainerClientDeleteResult;
 
 /// Contains results for `BlobContainerClient::get_account_info()`
 #[derive(SafeDebug)]
@@ -135,6 +183,14 @@ pub struct BlobContainerClientReleaseLeaseResult;
 /// Contains results for `BlobContainerClient::renew_lease()`
 #[derive(SafeDebug)]
 pub struct BlobContainerClientRenewLeaseResult;
+
+/// Contains results for `BlobContainerClient::set_access_policy()`
+#[derive(SafeDebug)]
+pub struct BlobContainerClientSetAccessPolicyResult;
+
+/// Contains results for `BlobContainerClient::set_metadata()`
+#[derive(SafeDebug)]
+pub struct BlobContainerClientSetMetadataResult;
 
 /// Represents an array of blobs.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -543,6 +599,10 @@ pub struct BlobProperties {
 /// Contains results for `BlobServiceClient::get_account_info()`
 #[derive(SafeDebug)]
 pub struct BlobServiceClientGetAccountInfoResult;
+
+/// Contains results for `BlobServiceClient::set_properties()`
+#[derive(SafeDebug)]
+pub struct BlobServiceClientSetPropertiesResult;
 
 /// The blob service properties.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]

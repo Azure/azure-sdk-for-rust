@@ -79,6 +79,7 @@ impl AppendBlobClient {
     /// * [`content_crc64`()](crate::generated::models::AppendBlobClientAppendBlockResultHeaders::content_crc64) - x-ms-content-crc64
     /// * [`encryption_key_sha256`()](crate::generated::models::AppendBlobClientAppendBlockResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
     /// * [`encryption_scope`()](crate::generated::models::AppendBlobClientAppendBlockResultHeaders::encryption_scope) - x-ms-encryption-scope
+    /// * [`effective_request_priority`()](crate::generated::models::AppendBlobClientAppendBlockResultHeaders::effective_request_priority) - x-ms-request-priority
     /// * [`is_server_encrypted`()](crate::generated::models::AppendBlobClientAppendBlockResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`AppendBlobClientAppendBlockResultHeaders`]: crate::generated::models::AppendBlobClientAppendBlockResultHeaders
@@ -149,6 +150,9 @@ impl AppendBlobClient {
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
         let rsp = self
@@ -208,6 +212,7 @@ impl AppendBlobClient {
     /// * [`content_crc64`()](crate::generated::models::AppendBlobClientAppendBlockFromUrlResultHeaders::content_crc64) - x-ms-content-crc64
     /// * [`encryption_key_sha256`()](crate::generated::models::AppendBlobClientAppendBlockFromUrlResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
     /// * [`encryption_scope`()](crate::generated::models::AppendBlobClientAppendBlockFromUrlResultHeaders::encryption_scope) - x-ms-encryption-scope
+    /// * [`effective_request_priority`()](crate::generated::models::AppendBlobClientAppendBlockFromUrlResultHeaders::effective_request_priority) - x-ms-request-priority
     /// * [`is_server_encrypted`()](crate::generated::models::AppendBlobClientAppendBlockFromUrlResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`AppendBlobClientAppendBlockFromUrlResultHeaders`]: crate::generated::models::AppendBlobClientAppendBlockFromUrlResultHeaders
@@ -277,6 +282,9 @@ impl AppendBlobClient {
         }
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
+        }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
         }
         if let Some(source_content_crc64) = options.source_content_crc64 {
             request.insert_header(
@@ -382,6 +390,7 @@ impl AppendBlobClient {
     /// * [`last_modified`()](crate::generated::models::AppendBlobClientCreateResultHeaders::last_modified) - last-modified
     /// * [`encryption_key_sha256`()](crate::generated::models::AppendBlobClientCreateResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
     /// * [`encryption_scope`()](crate::generated::models::AppendBlobClientCreateResultHeaders::encryption_scope) - x-ms-encryption-scope
+    /// * [`effective_request_priority`()](crate::generated::models::AppendBlobClientCreateResultHeaders::effective_request_priority) - x-ms-request-priority
     /// * [`is_server_encrypted`()](crate::generated::models::AppendBlobClientCreateResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     /// * [`version_id`()](crate::generated::models::AppendBlobClientCreateResultHeaders::version_id) - x-ms-version-id
     ///
@@ -473,6 +482,9 @@ impl AppendBlobClient {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         if let Some(blob_tags_string) = options.blob_tags_string.as_ref() {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
@@ -527,6 +539,7 @@ impl AppendBlobClient {
     /// * [`etag`()](crate::generated::models::AppendBlobClientSealResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::AppendBlobClientSealResultHeaders::last_modified) - last-modified
     /// * [`is_sealed`()](crate::generated::models::AppendBlobClientSealResultHeaders::is_sealed) - x-ms-blob-sealed
+    /// * [`effective_request_priority`()](crate::generated::models::AppendBlobClientSealResultHeaders::effective_request_priority) - x-ms-request-priority
     ///
     /// [`AppendBlobClientSealResultHeaders`]: crate::generated::models::AppendBlobClientSealResultHeaders
     #[tracing::function("Storage.Blob.AppendBlobClient.seal")]
@@ -561,6 +574,9 @@ impl AppendBlobClient {
         }
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
+        }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self

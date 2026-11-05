@@ -100,6 +100,12 @@ pub struct BlobClientDownloadOptions<'a> {
     /// as the range is less than or equal to 4 MiB in size.
     pub range_get_content_md5: Option<bool>,
 
+    /// Specifies the requested priority from 0 through 7 for each download request.
+    ///
+    /// If omitted, no priority header is sent. Integers outside this range cause the service
+    /// to use priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// Specifies the snapshot of the blob.
     pub snapshot: Option<String>,
 
@@ -130,6 +136,7 @@ impl<'a> From<BlobClientDownloadOptions<'a>> for BlobClientDownloadInternalOptio
             range: None,
             range_get_content_crc64: value.range_get_content_crc64,
             range_get_content_md5: value.range_get_content_md5,
+            request_priority: value.request_priority,
             snapshot: value.snapshot,
             structured_body_type: None,
             timeout: value.timeout,
@@ -160,6 +167,12 @@ pub struct BlobContainerClientListBlobsOptions<'a> {
     /// Filters the results to return only resources whose name begins with the specified prefix.
     pub prefix: Option<String>,
 
+    /// Specifies the requested priority from 0 through 7 for each page request.
+    ///
+    /// If omitted, no priority header is sent. Integers outside this range cause the service
+    /// to use priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// Specifies the relative path to list paths from.
     pub start_from: Option<String>,
 
@@ -180,6 +193,7 @@ impl BlobContainerClientListBlobsOptions<'_> {
                 ..self.method_options
             },
             prefix: self.prefix,
+            request_priority: self.request_priority,
             start_from: self.start_from,
             timeout: self.timeout,
         }
@@ -199,6 +213,7 @@ impl BlobContainerClientListBlobsOptions<'_> {
             maxresults: self.maxresults,
             method_options,
             prefix: self.prefix.clone(),
+            request_priority: self.request_priority,
             start_from: self.start_from.clone(),
             timeout: self.timeout,
         }
@@ -227,6 +242,12 @@ pub struct BlobContainerClientListBlobsHierarchicalOptions<'a> {
     /// Filters the results to return only resources whose name begins with the specified prefix.
     pub prefix: Option<String>,
 
+    /// Specifies the requested priority from 0 through 7 for each page request.
+    ///
+    /// If omitted, no priority header is sent. Integers outside this range cause the service
+    /// to use priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// Specifies the relative path to list paths from.
     pub start_from: Option<String>,
 
@@ -247,6 +268,7 @@ impl BlobContainerClientListBlobsHierarchicalOptions<'_> {
                 ..self.method_options
             },
             prefix: self.prefix,
+            request_priority: self.request_priority,
             start_from: self.start_from,
             timeout: self.timeout,
         }
@@ -266,6 +288,7 @@ impl BlobContainerClientListBlobsHierarchicalOptions<'_> {
             maxresults: self.maxresults,
             method_options,
             prefix: self.prefix.clone(),
+            request_priority: self.request_priority,
             start_from: self.start_from.clone(),
             timeout: self.timeout,
         }
@@ -358,6 +381,61 @@ pub struct BlockBlobClientUploadOptions<'a> {
     /// [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
     pub per_request_timeout: Option<i32>,
 
+    /// Specifies the requested priority from 0 through 7 for each upload request,
+    /// including staging blocks and committing the block list.
+    ///
+    /// If omitted, no priority header is sent. Integers outside this range cause the service
+    /// to use priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The tier to be set on the blob.
     pub tier: Option<AccessTier>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        BlobClientDownloadInternalOptions, BlobClientDownloadOptions,
+        BlobContainerClientListBlobsHierarchicalOptions, BlobContainerClientListBlobsOptions,
+    };
+
+    #[test]
+    fn download_request_priority_conversion() {
+        for request_priority in [None, Some(0), Some(1), Some(7), Some(-1), Some(8)] {
+            let options = BlobClientDownloadOptions {
+                request_priority,
+                ..Default::default()
+            };
+            let internal = BlobClientDownloadInternalOptions::from(options);
+            assert_eq!(internal.request_priority, request_priority);
+        }
+    }
+
+    #[test]
+    fn list_blobs_request_priority_conversion() {
+        for request_priority in [None, Some(0), Some(1), Some(7), Some(-1), Some(8)] {
+            let options = BlobContainerClientListBlobsOptions {
+                request_priority,
+                ..Default::default()
+            }
+            .into_owned();
+            assert_eq!(options.request_priority, request_priority);
+            let internal = options.to_internal(Default::default());
+            assert_eq!(internal.request_priority, request_priority);
+        }
+    }
+
+    #[test]
+    fn list_blobs_hierarchical_request_priority_conversion() {
+        for request_priority in [None, Some(0), Some(1), Some(7), Some(-1), Some(8)] {
+            let options = BlobContainerClientListBlobsHierarchicalOptions {
+                request_priority,
+                ..Default::default()
+            }
+            .into_owned();
+            assert_eq!(options.request_priority, request_priority);
+            let internal = options.to_internal(Default::default());
+            assert_eq!(internal.request_priority, request_priority);
+        }
+    }
 }

@@ -13,9 +13,9 @@ use azure_storage_blob::models::{
     AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
     BlobContainerClientBreakLeaseOptions, BlobContainerClientChangeLeaseResultHeaders,
     BlobContainerClientCreateOptions, BlobContainerClientFindBlobsByTagsOptions,
-    BlobContainerClientGetAccountInfoResultHeaders, BlobContainerClientGetPropertiesResultHeaders,
-    BlobContainerClientSetMetadataOptions, BlockBlobClientUploadOptions, LeaseState,
-    SignedIdentifiers, StorageErrorCode,
+    BlobContainerClientGetAccountInfoResultHeaders, BlobContainerClientGetPropertiesOptions,
+    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientSetMetadataOptions,
+    BlockBlobClientUploadOptions, LeaseState, SignedIdentifiers, StorageErrorCode,
 };
 use azure_storage_blob::StorageError;
 use common::{
@@ -25,6 +25,32 @@ use common::{
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
+
+#[recorded::test]
+async fn test_blob_container_client_request_priority(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let result = async {
+        // Non-Default Priority Scenario
+        let response = container_client
+            .get_properties(Some(BlobContainerClientGetPropertiesOptions {
+                request_priority: Some(1),
+                ..Default::default()
+            }))
+            .await?;
+        response.effective_request_priority()
+    }
+    .await;
+
+    container_client.delete(None).await?;
+    // Assert
+    assert_eq!(result?, Some(1));
+    Ok(())
+}
 
 #[recorded::test]
 async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {

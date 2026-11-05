@@ -8,8 +8,8 @@ use crate::generated::models::{
     BlobServiceClientGetAccountInfoResult, BlobServiceClientGetPropertiesOptions,
     BlobServiceClientGetStatisticsOptions, BlobServiceClientGetUserDelegationKeyOptions,
     BlobServiceClientListContainersOptions, BlobServiceClientSetPropertiesOptions,
-    BlobServiceProperties, FilteredBlobResponse, KeyInfo, ListContainersResponse,
-    StorageServiceStats,
+    BlobServiceClientSetPropertiesResult, BlobServiceProperties, FilteredBlobResponse, KeyInfo,
+    ListContainersResponse, StorageServiceStats,
 };
 use azure_core::{
     error::CheckSuccessOptions,
@@ -46,6 +46,29 @@ impl BlobServiceClient {
     ///
     /// * `filter_expression` - Filters the results to return only blobs whose tags match the specified expression.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`FilteredBlobResponseHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, XmlFormat}};
+    /// use azure_storage_blob::models::{FilteredBlobResponse, FilteredBlobResponseHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<FilteredBlobResponse, XmlFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`effective_request_priority`()](crate::generated::models::FilteredBlobResponseHeaders::effective_request_priority) - x-ms-request-priority
+    ///
+    /// [`FilteredBlobResponseHeaders`]: crate::generated::models::FilteredBlobResponseHeaders
     #[tracing::function("Storage.Blob.BlobServiceClient.findBlobsByTags")]
     pub fn find_blobs_by_tags(
         &self,
@@ -95,6 +118,9 @@ impl BlobServiceClient {
                 }
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/xml");
+                if let Some(request_priority) = options.request_priority {
+                    request.insert_header("x-ms-request-priority", request_priority.to_string());
+                }
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
                 Box::pin(async move {
@@ -149,8 +175,8 @@ impl BlobServiceClient {
     ///     if let Some(is_hierarchical_namespace_enabled) = response.is_hierarchical_namespace_enabled()? {
     ///         println!("x-ms-is-hns-enabled: {:?}", is_hierarchical_namespace_enabled);
     ///     }
-    ///     if let Some(sku_name) = response.sku_name()? {
-    ///         println!("x-ms-sku-name: {:?}", sku_name);
+    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
     ///     }
     ///     Ok(())
     /// }
@@ -159,6 +185,7 @@ impl BlobServiceClient {
     /// ### Available headers
     /// * [`account_kind`()](crate::generated::models::BlobServiceClientGetAccountInfoResultHeaders::account_kind) - x-ms-account-kind
     /// * [`is_hierarchical_namespace_enabled`()](crate::generated::models::BlobServiceClientGetAccountInfoResultHeaders::is_hierarchical_namespace_enabled) - x-ms-is-hns-enabled
+    /// * [`effective_request_priority`()](crate::generated::models::BlobServiceClientGetAccountInfoResultHeaders::effective_request_priority) - x-ms-request-priority
     /// * [`sku_name`()](crate::generated::models::BlobServiceClientGetAccountInfoResultHeaders::sku_name) - x-ms-sku-name
     ///
     /// [`BlobServiceClientGetAccountInfoResultHeaders`]: crate::generated::models::BlobServiceClientGetAccountInfoResultHeaders
@@ -179,6 +206,9 @@ impl BlobServiceClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -202,6 +232,29 @@ impl BlobServiceClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobServicePropertiesHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, XmlFormat}};
+    /// use azure_storage_blob::models::{BlobServiceProperties, BlobServicePropertiesHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobServiceProperties, XmlFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`effective_request_priority`()](crate::generated::models::BlobServicePropertiesHeaders::effective_request_priority) - x-ms-request-priority
+    ///
+    /// [`BlobServicePropertiesHeaders`]: crate::generated::models::BlobServicePropertiesHeaders
     #[tracing::function("Storage.Blob.BlobServiceClient.getProperties")]
     pub async fn get_properties(
         &self,
@@ -220,6 +273,9 @@ impl BlobServiceClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -243,6 +299,29 @@ impl BlobServiceClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`StorageServiceStatsHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, XmlFormat}};
+    /// use azure_storage_blob::models::{StorageServiceStats, StorageServiceStatsHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<StorageServiceStats, XmlFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`effective_request_priority`()](crate::generated::models::StorageServiceStatsHeaders::effective_request_priority) - x-ms-request-priority
+    ///
+    /// [`StorageServiceStatsHeaders`]: crate::generated::models::StorageServiceStatsHeaders
     #[tracing::function("Storage.Blob.BlobServiceClient.getStatistics")]
     pub async fn get_statistics(
         &self,
@@ -261,6 +340,9 @@ impl BlobServiceClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -304,6 +386,9 @@ impl BlobServiceClient {
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(key_info);
         let rsp = self
@@ -327,6 +412,29 @@ impl BlobServiceClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`ListContainersResponseHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, XmlFormat}};
+    /// use azure_storage_blob::models::{ListContainersResponse, ListContainersResponseHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<ListContainersResponse, XmlFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`effective_request_priority`()](crate::generated::models::ListContainersResponseHeaders::effective_request_priority) - x-ms-request-priority
+    ///
+    /// [`ListContainersResponseHeaders`]: crate::generated::models::ListContainersResponseHeaders
     #[tracing::function("Storage.Blob.BlobServiceClient.listContainers")]
     pub fn list_containers(
         &self,
@@ -377,6 +485,9 @@ impl BlobServiceClient {
                 }
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/xml");
+                if let Some(request_priority) = options.request_priority {
+                    request.insert_header("x-ms-request-priority", request_priority.to_string());
+                }
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
                 Box::pin(async move {
@@ -415,12 +526,35 @@ impl BlobServiceClient {
     ///
     /// * `storage_service_properties` - The storage service properties to set.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobServiceClientSetPropertiesResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobServiceClientSetPropertiesResult, BlobServiceClientSetPropertiesResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobServiceClientSetPropertiesResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
+    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`effective_request_priority`()](crate::generated::models::BlobServiceClientSetPropertiesResultHeaders::effective_request_priority) - x-ms-request-priority
+    ///
+    /// [`BlobServiceClientSetPropertiesResultHeaders`]: crate::generated::models::BlobServiceClientSetPropertiesResultHeaders
     #[tracing::function("Storage.Blob.BlobServiceClient.setProperties")]
     pub async fn set_properties(
         &self,
         storage_service_properties: RequestContent<BlobServiceProperties, XmlFormat>,
         options: Option<BlobServiceClientSetPropertiesOptions<'_>>,
-    ) -> Result<Response<(), NoFormat>> {
+    ) -> Result<Response<BlobServiceClientSetPropertiesResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
@@ -434,6 +568,9 @@ impl BlobServiceClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(storage_service_properties);
         let rsp = self

@@ -137,6 +137,54 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
 }
 
 #[recorded::test]
+async fn test_blob_client_request_priority(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    let result = async {
+        create_test_blob(&blob_client, None, None).await?;
+        // No Option Scenario
+        let response = blob_client.get_properties(None).await?;
+        let unspecified_priority = response.effective_request_priority()?;
+
+        // Explicit, Boundary, and Out-of-Range Priority Scenarios
+        let mut priorities = Vec::new();
+        for requested in [1, 0, 7, -1, 8] {
+            let response = blob_client
+                .get_properties(Some(BlobClientGetPropertiesOptions {
+                    request_priority: Some(requested),
+                    ..Default::default()
+                }))
+                .await?;
+            priorities.push((requested, response.effective_request_priority()?));
+        }
+        azure_core::Result::Ok((unspecified_priority, priorities))
+    }
+    .await;
+
+    container_client.delete(None).await?;
+    let (unspecified_priority, priorities) = result?;
+    // Assert
+    assert_eq!(
+        unspecified_priority,
+        Some(3),
+        "unspecified request priority"
+    );
+    for (requested, effective) in priorities {
+        let expected = if (0..=7).contains(&requested) {
+            requested
+        } else {
+            3
+        };
+        assert_eq!(effective, Some(expected), "requested priority {requested}");
+    }
+    Ok(())
+}
+
+#[recorded::test]
 async fn test_set_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
