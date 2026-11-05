@@ -13,15 +13,15 @@ use azure_core::{
 use uuid::Uuid;
 
 use crate::{
-    driver::transport::rntbd::{
-        tokens::{ReadFeedKeyType, RntbdRequestToken, TokenValue},
-        RntbdRequestFrame, RntbdResponse,
-    },
     models::{
         cosmos_headers::request_header_names, effective_partition_key::EffectivePartitionKey,
         CosmosStatus, OperationType, ResourceType,
     },
     options::ReadConsistencyStrategy,
+    rntbd::{
+        tokens::{ReadFeedKeyType, RntbdRequestToken, TokenValue},
+        RntbdRequestFrame, RntbdResponse,
+    },
 };
 
 use super::{dispatch::EFFECTIVE_PARTITION_KEY, ConsistencyLevel, InMemoryEmulatorHttpClient};
@@ -430,9 +430,7 @@ fn read_consistency_strategy_from_wire(value: u8) -> crate::error::Result<ReadCo
     })
 }
 
-fn decode_metadata(
-    tokens: Vec<crate::driver::transport::rntbd::Token>,
-) -> crate::error::Result<RequestMetadata> {
+fn decode_metadata(tokens: Vec<crate::rntbd::Token>) -> crate::error::Result<RequestMetadata> {
     let mut metadata = RequestMetadata::default();
     for token in tokens {
         let Ok(kind) = RntbdRequestToken::try_from(token.id.value()) else {
@@ -728,15 +726,16 @@ fn gateway_v2_internal_error(error: impl std::fmt::Display) -> crate::error::Cos
 mod tests {
     use super::*;
     use crate::{
-        driver::transport::{
-            cosmos_transport_client::HttpRequest, rntbd::Token, wrap_request_for_gateway_v2,
-            AuthorizationContext, WrapInputs,
-        },
         in_memory_emulator::{ContainerConfig, VirtualAccountConfig, VirtualRegion},
         models::{
             DefaultConsistencyLevel, FeedRange, PartitionKey, PartitionKeyDefinition,
             PartitionKeyValue,
         },
+        pipeline::transport::{
+            cosmos_transport_client::HttpRequest, wrap_request_for_gateway_v2,
+            AuthorizationContext, WrapInputs,
+        },
+        rntbd::Token,
     };
     use url::Url;
 

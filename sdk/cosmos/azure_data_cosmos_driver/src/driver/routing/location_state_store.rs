@@ -17,14 +17,12 @@ use futures::future::BoxFuture;
 use url::Url;
 
 #[cfg(feature = "tokio")]
-use crate::driver::transport::background_task_manager::BackgroundTaskManager;
+use crate::background_task_manager::BackgroundTaskManager;
 use crate::{
-    driver::{
-        cache::{AccountMetadataCache, AccountProperties},
-        transport::connectivity_probe::{ConnectivityProbe, ProbeOutcome, ProbeRole},
-    },
+    driver::cache::{AccountMetadataCache, AccountProperties},
     models::AccountEndpoint,
     options::{OperationOptionsView, PartitionFailoverOptions, Region, ThrottlingRetryOptions},
+    pipeline::transport::connectivity_probe::{ConnectivityProbe, ProbeOutcome, ProbeRole},
 };
 
 use super::{
@@ -2847,7 +2845,7 @@ mod tests {
         let probe = Arc::new(MockProbe::new(ProbeOutcome::Failed {
             failures: vec![(
                 "eastus".into(),
-                crate::driver::transport::connectivity_probe::ProbeFailure::Status(503),
+                crate::pipeline::transport::connectivity_probe::ProbeFailure::Status(503),
             )],
         }));
 
@@ -2948,7 +2946,7 @@ mod tests {
         probe.set_outcome(ProbeOutcome::Failed {
             failures: vec![(
                 "eastus".into(),
-                crate::driver::transport::connectivity_probe::ProbeFailure::Status(503),
+                crate::pipeline::transport::connectivity_probe::ProbeFailure::Status(503),
             )],
         });
         store.force_refresh_account_properties().await;

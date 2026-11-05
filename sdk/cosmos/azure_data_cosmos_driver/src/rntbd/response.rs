@@ -499,7 +499,7 @@ mod tests {
     use super::*;
     use azure_core::http::StatusCode;
 
-    use crate::driver::transport::rntbd::tokens::{write_uuid_le, TokenValue};
+    use crate::rntbd::tokens::{write_uuid_le, TokenValue};
 
     #[test]
     fn response_round_trips_through_server_encoder() {

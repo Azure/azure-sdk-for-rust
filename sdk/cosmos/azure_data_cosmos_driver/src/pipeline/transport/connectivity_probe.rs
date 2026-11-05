@@ -159,6 +159,7 @@ impl std::fmt::Debug for Http2ConnectivityProbe {
 }
 
 impl Http2ConnectivityProbe {
+    /// Creates a probe using the supplied client identity and the default per-request timeout.
     pub(crate) fn new(transport: Arc<dyn TransportClient>, client_id: HeaderValue) -> Self {
         Self {
             transport,
@@ -180,6 +181,7 @@ impl Http2ConnectivityProbe {
         Ok(probe)
     }
 
+    /// Posts the client identity to one probe URL, returning success only for an HTTP 200 response.
     async fn probe_one(&self, url: Url) -> Result<(), ProbeFailure> {
         let mut headers = Headers::new();
         headers.insert(CLIENT_ID, self.client_id.clone());

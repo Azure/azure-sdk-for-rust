@@ -3,8 +3,7 @@
 
 //! Cosmos DB authorization helpers.
 //!
-//! Step 1 transport pipeline signs requests directly via `sign_request`, so this
-//! module provides only reusable auth primitives (no policy-chain implementation).
+//! Generates header values for request signing without modifying requests.
 
 use crate::models::{Credential, ResourceType};
 use azure_core::http::Method;
@@ -29,6 +28,7 @@ pub(crate) enum ResourceLink {
 }
 
 impl ResourceLink {
+    /// Borrows the signing link from the precomputed paths or the independently owned string.
     pub(crate) fn as_str(&self) -> &str {
         match self {
             Self::Paths(p) => p.signing_link(),

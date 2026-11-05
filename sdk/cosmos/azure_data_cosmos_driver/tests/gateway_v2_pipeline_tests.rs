@@ -12,7 +12,7 @@
 //!    by the account advertisement plus a runtime probe unless the runtime
 //!    explicitly opts out. HTTP/2 remains a hard prerequisite, covered by the
 //!    inside-crate tests in
-//!    `driver::transport::tests::dataplane_transport_*`.
+//!    `pipeline::transport::cosmos_transport::tests::dataplane_transport_*`.
 //!
 //! 2. **Operation eligibility** — operations that Gateway 2.0 does not yet
 //!    support (e.g., stored procedure execution) must transparently fall back
@@ -185,7 +185,7 @@ async fn probe(runtime: &Arc<CosmosDriverRuntime>) {
 // Gateway 2.0 vs. the standard gateway is selected by the server (account
 // advertisement + runtime connectivity probe), not by any client-side toggle.
 // The HTTP/2 prerequisite and the dispatcher branching are covered by the
-// inside-crate tests in `driver::transport::tests::dataplane_transport_*`.
+// inside-crate tests in `pipeline::transport::cosmos_transport::tests::dataplane_transport_*`.
 
 // ----------------------------------------------------------------------------
 // (b) Operation eligibility fallback (StoredProc Execute → standard gateway)
@@ -221,10 +221,8 @@ async fn stored_proc_execute_falls_back_to_standard_gateway() {
 /// Once Gateway 2.0 has dispatched a request, the recorded
 /// `RequestDiagnostics` for that request must indicate `TransportKind::GatewayV2`.
 ///
-/// This contract requires a live Gateway 2.0 account. The inside-crate test
-/// `transport_pipeline::tests::gateway_v2_pipeline_records_transport_kind`
-/// already covers the wiring at the unit-test level; this standalone test is
-/// the live-account companion.
+/// This contract requires a live Gateway 2.0 account. Transport selection also
+/// has unit coverage in `pipeline::transport::cosmos_transport::tests`.
 #[tokio::test]
 #[ignore = "Requires AZURE_COSMOS_GW_V2_ENDPOINT/_KEY to a Gateway 2.0 account"]
 async fn diagnostics_records_gateway_v2_transport_kind() {
@@ -298,7 +296,7 @@ async fn v1_http_never_emits_both_consistency_headers() {
 ///    the wrapped frame and assert at-most-one consistency token per frame.
 ///
 /// The structural invariant inside the wrapped frame is exhaustively covered
-/// by the inside-crate tests in `gateway_v2_dispatch::tests::wraps_with_*`;
+/// by the inside-crate tests in `pipeline::transport::gateway_v2::tests::request_tokens`;
 /// this test exists to prevent that coverage from silently disappearing if
 /// the V2 transport boundary moves.
 #[tokio::test]

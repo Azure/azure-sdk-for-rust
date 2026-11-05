@@ -302,30 +302,26 @@ pub(crate) struct TransportRequest {
     /// End-to-end deadline for the overall operation.
     /// Enforced in the transport pipeline by:
     /// 1. Checking `Instant::now() >= deadline` before each attempt.
-    /// 2. Setting the per-request timeout on the underlying `HttpClient`
-    ///    to `deadline - Instant::now()` (clamped to a minimum of 1ms)
-    ///    so that the HTTP layer itself cancels the I/O if the deadline
-    ///    is reached mid-flight.
-    /// 3. On timeout, the response stream is dropped, which closes the
-    ///    underlying HTTP/2 stream or TCP connection.
+    /// 2. Sampling the remaining duration before signing, with a 1 ms minimum.
+    /// 3. Racing dispatch against that duration and dropping the losing future.
     pub deadline: Option<Instant>,
 }
 
-/// COMPONENT: Transport-level retry state (for 429 throttling).
-///
-/// Scoped to a single attempt (including any regional failover within
-/// that attempt from `ClientRetryPolicy`). When hedging is active,
-/// each hedged request maintains its own independent `ThrottleRetryState`
-/// to avoid one attempt's throttling causing the other to fail. Local
-/// connectivity retry on a different shard is tracked separately inside
-/// `execute_transport_pipeline` because it is capped to a single replay and
-/// needs the failed shard ID from the just-finished dispatch.
-pub(crate) struct ThrottleRetryState {
-    pub attempt_count: u32,
+/// COMPONENT: Fixed throttle policy for one transport invocation.
+pub(crate) struct ThrottleRetryPolicy {
     pub max_attempts: u32,
-    pub cumulative_delay: Duration,
     pub max_wait_time: Duration,
+    pub max_per_retry_delay: Duration,
+    pub fallback_base_delay: Duration,
     pub backoff_factor: f64,
+    pub backoff_jitter_ratio: f64,
+}
+
+/// COMPONENT: Progress local to an invocation, including each hedge leg.
+pub(crate) struct ThrottleRetryProgress {
+    pub attempt_count: u32,
+    pub cumulative_budgeted_delay: Duration,
+    pub forced_final_retry_used: bool,
 }
 
 /// COMPONENT: Result of a single transport attempt.
@@ -398,14 +394,13 @@ fn evaluate_transport_result(
     session_state: &SessionState,
 ) -> (OperationAction, Vec<LocationEffect>);
 
-// SYSTEM: Decide whether to retry a 429 or connectivity error at transport level.
-// Extracted as a pure function (like `evaluate_transport_result`) so it can be
-// unit-tested in isolation. Covers 429 backoff as well as transient I/O /
-// timeout errors that can be retried on a different HttpClient shard.
-fn evaluate_transport_retry(
-    result: &TransportResult,
-    throttle_state: &ThrottleRetryState,
-) -> ThrottleAction;
+// SYSTEM: Evaluate a realized delay against the throttle budget.
+// The caller obtains jitter separately; this decision is deterministic.
+fn evaluate_throttle_budget(
+    realized_delay: Duration,
+    policy: &ThrottleRetryPolicy,
+    progress: ThrottleRetryProgress,
+) -> ThrottleDecision;
 
 // SYSTEM: Build the TransportRequest from operation + routing decision.
 fn build_transport_request(
@@ -416,14 +411,13 @@ fn build_transport_request(
     deadline: Option<Instant>,
 ) -> TransportRequest;
 
-// SYSTEM: Execute a single transport attempt — build HTTP request,
+// SYSTEM: Execute a fixed-target transport invocation — build HTTP request,
 // apply headers, sign, send, retry 429s and connectivity errors.
-// Pure function over its inputs (no struct state).
+// This actor performs I/O and records diagnostics; its decisions are separate.
 async fn execute_transport_pipeline(
     request: TransportRequest,
-    transport: &AdaptiveTransport,
-    allow_sent_transport_retry: bool,
-    credential: &Credential,
+    config: &TransportPipelineConfig<'_>,
+    services: &TransportPipelineServices<'_>,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult;
 
@@ -491,12 +485,13 @@ pub(crate) enum LocationEffect {
 }
 
 /// What the transport pipeline should do after a 429.
-pub(crate) enum ThrottleAction {
+pub(crate) enum ThrottleDecision {
     /// Retry after a delay.
     Retry {
         delay: Duration,
-        new_state: ThrottleRetryState,
+        next: ThrottleRetryProgress,
     },
+    ForcedFinal { next: ThrottleRetryProgress },
     /// Do not retry; propagate to operation pipeline.
     Propagate,
 }
@@ -1363,115 +1358,95 @@ impl LocationStateStore {
 
 ### 5.1 Responsibilities
 
-The transport pipeline handles a **single attempt** to execute an operation against a **specific
-selected target URL** derived from a regional endpoint. It is responsible for:
+One transport invocation may make several attempts against the **same selected target URL**
+derived from a regional endpoint. The URL, endpoint pool key, and transport mode remain fixed.
+The transport pipeline is responsible for:
 
 1. Adding authorization header
 2. Adding common Cosmos headers
 3. Transport-level retry (429 throttling AND connectivity/I/O errors via shard rotation)
 4. Tracking request-sent-status for retry safety
 5. Recording per-attempt diagnostics events
-6. Enforcing end-to-end deadline (setting per-request timeout on the `HttpClient`)
+6. Enforcing the end-to-end deadline through pre-attempt checks, a dispatch timeout race,
+   and retry-wait limits
 
 The transport pipeline does **NOT** handle:
+
 - Region failover (that's the operation pipeline)
 - Session consistency routing (that's the operation pipeline)
 - Partition-level circuit breaking (that's the operation pipeline)
+- Operation-level 449 RetryWith, PATCH, and distributed-transaction coordinator recovery
 
 ### 5.2 Transport Pipeline Flow
 
-Following the same DOP pattern as the operation pipeline, the transport pipeline is a bare
-async function — not a struct with methods. Its dependencies (`AdaptiveTransport`,
-`Credential`) are passed as parameters. Header application and request signing are also bare
-functions rather than policy objects.
+The implementation lives in `src/pipeline/transport/`; the operation pipeline stays in
+`src/driver/pipeline/`. `execute_transport_pipeline` receives `TransportRequest`,
+`TransportPipelineConfig`, borrowed `TransportPipelineServices` (`AdaptiveTransport` and
+`Credential`), and the mutable diagnostic builder. It does not receive routing stores or
+an operation that could select another region.
 
-```rust
-// SYSTEM: Execute a single transport attempt.
-// Applies headers, signs, sends, and handles 429 / connectivity retries.
-pub(crate) async fn execute_transport_pipeline(
-    request: TransportRequest,
-    transport: &AdaptiveTransport,
-    credential: &Credential,
-    diagnostics: &mut DiagnosticsContextBuilder,
-) -> TransportResult {
-    let mut throttle_state = ThrottleRetryState::new(
-        MAX_THROTTLE_ATTEMPTS, MAX_THROTTLE_WAIT, BACKOFF_FACTOR,
-    );
+Pure RNTBD codecs live separately in `src/rntbd/`. Shared task management and emulator
+detection live in `src/background_task_manager.rs` and `src/emulator.rs`, respectively.
+The reusable future-versus-timer race lives in `src/timeout.rs`; it polls the supplied future
+first and drops the unfinished future when the timer wins.
 
-    loop {
-        // Check deadline and set per-request timeout
-        if let Some(deadline) = request.deadline {
-            let remaining = deadline.saturating_duration_since(Instant::now());
-            if remaining.is_zero() {
-                return TransportResult::deadline_exceeded(diagnostics);
-            }
-            // Clamp per-request timeout so the HTTP layer cancels I/O
-            // when the operation-level deadline is reached mid-flight.
-            http_request.set_timeout(remaining.max(Duration::from_millis(1)));
-        }
+The outer loop checks the deadline, executes one attempt, obtains a recovery decision,
+and applies it. Preparation failures return immediately. Connectivity recovery precedes
+throttle recovery. Each attempt follows these stages:
 
-        // Build HTTP request, apply standard headers, sign
-        let mut http_request = build_http_request(&request);
-        apply_cosmos_headers(&mut http_request);
-        sign_request(&mut http_request, credential)?;
+1. Start its diagnostic record and attach routing-fallback and failed-shard history.
+2. Build the HTTP request and sample the remaining timeout.
+3. Apply headers, obtain and apply authorization, and wrap Gateway V2 requests.
+4. Record transport start, attach fault-injection collection, and dispatch.
+5. Record dispatch observations, classify the response, and complete diagnostics.
+6. Attach fault-injection evaluations before returning the completed attempt.
 
-        // Record transport start event
-        let attempt_start = Instant::now();
-        diagnostics.record_event(RequestEvent::TransportStart);
+| Module | Responsibility |
+| --- | --- |
+| `types.rs` | Request, transport mode, result, and outcome data |
+| `execution.rs` | Attempt orchestration, time/jitter/pool observations, and recovery actions |
+| `request_preparation.rs` | HTTP request construction, headers, signing, and Gateway V2 wrapping |
+| `dispatch.rs` | One send, optional timeout race, and cancellation |
+| `response.rs` | Response/error classification and completion facts, without builder mutation |
+| `recovery.rs` | Pure recovery decisions over policy, progress, and supplied observations |
+| `deadline.rs` | Pure timeout and wait arithmetic with explicit time inputs |
+| `diagnostics.rs` | Start, dispatch-observation, and completion recording |
+| `fault_injection.rs` | Feature-gated collector attachment and post-completion evaluation recording |
+| `gateway_v2/` | HTTP-to-frame and frame-to-HTTP adaptation; not dispatch |
 
-        // Execute via adaptive HTTP transport (sharded or plain)
-        let http_result = transport.send(http_request).await;
+`ThrottleRetryPolicy` holds fixed limits; `ThrottleRetryProgress` holds ordinary retry count,
+cumulative budgeted delay, and the forced-final-used flag. `TransportRetryProgress` also holds
+local connectivity retry count, a one-dispatch shard exclusion, and failed-shard history.
+Decision functions return descriptive data; actors observe time, realize jitter, inspect pool
+availability, sleep, and commit progress. Budgets are fresh for each invocation, including
+each hedge leg.
 
-        // Map to TransportResult
-        let result = match http_result {
-            Ok(response) => {
-                diagnostics.record_event(RequestEvent::ResponseHeadersReceived);
-                map_response(response, attempt_start, diagnostics).await
-            }
-            Err(error) => {
-                let sent_status = infer_request_sent_status(&error);
-                diagnostics.record_event(RequestEvent::TransportFailed(
-                    error.to_string(),
-                ));
-                TransportResult::transport_error(error, sent_status, diagnostics)
-            }
-        };
+Connectivity recovery permits at most one replay on another shard of the same endpoint.
+It requires an eligible synthetic transport error, a known failed shard, and another
+selectable shard. `NotSent` is safe to replay; `Sent` or `Unknown` additionally requires
+caller permission. The unsharded transport cannot perform this replay.
 
-        // Check for 429 throttling or connectivity errors → transport-level retry.
-        // Connectivity errors (I/O errors, timeouts) are retried locally by
-        // selecting a different HttpClient shard, which routes through a
-        // different TCP connection. This is effective because Gateway has
-        // multiple nodes and each backend partition has 4 replicas, so
-        // retries via a different network path have a high success rate.
-        let should_transport_retry = match &result.outcome {
-            TransportOutcome::HttpError { status, .. } if status.is_throttled() => true,
-            TransportOutcome::TransportError { .. }
-                if operation_is_idempotent_or_request_not_sent(&result) => true,
-            _ => false,
-        };
+Metadata throttle defaults are 9 retries, 30 seconds cumulative wait, and a 5-second
+per-retry cap; data-plane defaults are 18, 270 seconds, and 15 seconds. Service retry-after
+takes precedence over exponential fallback. The per-retry-capped delay is charged before
+deadline capping shortens the actual sleep. An exhausted count budget disables all throttle
+retries. Cumulative-wait exhaustion may allow one forced-final retry, which only sets its
+flag: it does not increment ordinary count or delay, and a later smaller delay may still
+allow an ordinary retry. Body-bearing DTX 429 responses remain coordinator-owned.
 
-        if should_transport_retry {
-            let action = evaluate_transport_retry(&result, &throttle_state);
-            match action {
-                ThrottleAction::Retry { delay, new_state } => {
-                    sleep(delay).await;
-                    throttle_state = new_state;
-                    continue;
-                }
-                ThrottleAction::Propagate => return result,
-            }
-        }
-
-        return result;
-    }
-}
-```
+Timeout sampling occurs after request construction and before signing/wrapping. The request's
+`timeout` field remains `None`; dispatch races the send against the sampled duration, with a
+1 ms minimum. A pre-attempt expiration returns `NotSent` without a new diagnostic record;
+an in-flight expiration returns `Unknown`. Ordinary retry waits reserve a saturating 100 ms
+margin and check the deadline again after sleeping, returning `Sent` if it expired.
+Forced-final waits use half the remaining time, skip waits below 100 ms, and propagate the
+original response if already expired. Without a deadline, forced-final recovery is immediate.
 
 ### 5.3 Policy Application (Bare Functions, Not a Chain)
 
-Unlike the current design where policies are chained via `Policy` trait with `next[0].send()`, the
-transport pipeline uses bare functions for header application and request signing. There are no
-policy objects — just functions that take and mutate the request.
+The transport pipeline uses functions for header application and request signing rather than
+a `Policy` chain. Signing obtains authorization-header data and then applies it to the request.
+The attempt orchestrator remains responsible for recording failures.
 
 ```rust
 // Instead of:
@@ -2147,7 +2122,7 @@ just the structural refactoring with a plain `Arc<dyn HttpClient>`.
 | Sub-step | Work Item                                                                                                                                                                                                                                                                                                                                                                                                                            | Files                                                          |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
 | 1.1      | **State components** — Define ECS-style component types (`RoutingDecision`, `OperationRetryState`, `TransportRequest`, `TransportResult`, `ThrottleRetryState`, decision enums)                                                                                                                                                                                                                                                      | `driver/pipeline/components.rs`                                |
-| 1.2      | **Transport pipeline (slim)** — Implement `execute_transport_pipeline` function with `apply_cosmos_headers`, `sign_request`, and 429 throttle retry only. Uses a plain `Arc<dyn HttpClient>` (no `AdaptiveTransport` yet). Hard-coded retry limits + backoff.                                                                                                                                                                        | `driver/transport/transport_pipeline.rs`                       |
+| 1.2      | **Transport pipeline (slim)** — Implement `execute_transport_pipeline` function with `apply_cosmos_headers`, `sign_request`, and 429 throttle retry only. Uses a plain `Arc<dyn HttpClient>` (no `AdaptiveTransport` yet). Hard-coded retry limits + backoff.                                                                                                                                                                        | `pipeline/transport/execution.rs`                              |
 | 1.3      | **Operation pipeline (slim)** — Implement `execute_operation_pipeline` core loop with single-region endpoint resolution. Include happy path plus minimal operation-level transport retries: retry `TransportError` only when request is definitely not sent or operation is idempotent and retry budget remains; propagate non-429 HTTP errors as abort (429 remains transport-level). No failover, no hedging. Hard-coded deadline. | `driver/pipeline/operation_pipeline.rs`, `retry_evaluation.rs` |
 | 1.4      | **Wire `execute_operation`** — Connect `CosmosDriver::execute_operation` to the new operation pipeline for all operations. The old pipeline code path remains but is no longer called.                                                                                                                                                                                                                                               | `driver/cosmos_driver.rs`                                      |
 | 1.5      | **Unit tests** — Tests for each pure function (`evaluate_transport_result` happy path + minimal transport-error retry semantics, `evaluate_transport_retry` for 429, `build_transport_request`).                                                                                                                                                                                                                                     | `tests/`                                                       |
@@ -2164,7 +2139,7 @@ Add cross-region failover, `AccountEndpointState` + routing systems, and the `Ac
 | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | 2.1      | **Routing state & systems** — Implement `AccountEndpointState`, the unified `LocationStateStore` (§4.6), and the system functions (`build_account_endpoint_state`, `mark_endpoint_unavailable`, `expire_unavailable_endpoints`). Wire to existing `AccountMetadataCache`.                      | `driver/routing/mod.rs`, `account_endpoint_state.rs`, `location_state_store.rs`, `routing_systems.rs` |
 | 2.2      | **Expand `evaluate_transport_result`** — Add 403.3 (WriteForbidden + cache refresh), 503, 404/1022, 429/3092, 500-for-reads. Return `(OperationAction, Vec<LocationEffect>)` tuples; add `FailoverRetry`, `SessionRetry` action handling and STAGE 6 effect application in the operation loop. | `driver/pipeline/retry_evaluation.rs`, `operation_pipeline.rs`                                        |
-| 2.3      | **Deadline enforcement** — Implement active deadline enforcement in transport pipeline (per-request timeout clamping, stream drop).                                                                                                                                                            | `driver/transport/transport_pipeline.rs`                                                              |
+| 2.3      | **Deadline enforcement** — Implement active deadline enforcement in transport pipeline (per-request timeout clamping, stream drop).                                                                                                                                                            | `pipeline/transport/execution.rs`                                                                     |
 | 2.4      | **Config surface (initial)** — Add basic retry and failover options to `RetryOptions` / `CosmosRuntimeOptions` / `CosmosClientOptions` (§9). Hard-coded defaults, environment variable overrides.                                                                                              | `options/retry.rs`, `options/availability.rs`                                                         |
 | 2.5      | **Tests** — Unit tests for each retry scenario in `evaluate_transport_result`, integration tests for multi-region failover.                                                                                                                                                                    | `tests/`                                                                                              |
 
@@ -2200,12 +2175,12 @@ with failback. Still HTTP/1.1, no hedging.
 Add protocol detection and the `AdaptiveTransport` enum, but without the sharded transport —
 HTTP/2 just uses a single `Arc<dyn HttpClient>` like HTTP/1.1.
 
-| Sub-step | Work Item                                                                                                                                                                                                                 | Files                                     |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| 5.1      | **Gateway detection** — Gateway 2.0 detection via `thinClient*Locations` in `AccountProperties`. HTTP/2 vs HTTP/1.1 selection via `is_http2_allowed` configuration flag (runtime ALPN probing deferred — see note below). | `driver/transport/adaptive_transport.rs`  |
-| 5.2      | **`AdaptiveTransport` enum** — `Sharded` / `Plain` dispatch. Initially both paths use a plain `Arc<dyn HttpClient>`.                                                                                                      | `driver/transport/adaptive_transport.rs`  |
-| 5.3      | **`HttpClientFactory` trait** — Pluggable factory + default reqwest-backed implementation. `HttpClientConfig` struct.                                                                                                     | `driver/transport/http_client_factory.rs` |
-| 5.4      | **Tests** — Protocol detection, factory creates clients, adaptive dispatch.                                                                                                                                               | `tests/`                                  |
+| Sub-step | Work Item                                                                                                                                                                                                                 | Files                                       |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| 5.1      | **Gateway detection** — Gateway 2.0 detection via `thinClient*Locations` in `AccountProperties`. HTTP/2 vs HTTP/1.1 selection via `is_http2_allowed` configuration flag (runtime ALPN probing deferred — see note below). | `pipeline/transport/adaptive_transport.rs`  |
+| 5.2      | **`AdaptiveTransport` enum** — `Sharded` / `Plain` dispatch. Initially both paths use a plain `Arc<dyn HttpClient>`.                                                                                                      | `pipeline/transport/adaptive_transport.rs`  |
+| 5.3      | **`HttpClientFactory` trait** — Pluggable factory + default reqwest-backed implementation. `HttpClientConfig` struct.                                                                                                     | `pipeline/transport/http_client_factory.rs` |
+| 5.4      | **Tests** — Protocol detection, factory creates clients, adaptive dispatch.                                                                                                                                               | `tests/`                                    |
 
 **What works after Step 5**: HTTP/2 requests work (via a single connection). Gateway 2.0
 endpoints are detected and used. No sharding yet — stream limit may be hit under high load.
@@ -2222,11 +2197,11 @@ endpoints are detected and used. No sharding yet — stream limit may be hit und
 
 ### Step 6: HTTP/2 connection sharding
 
-1. **6.1 `ShardedHttpTransport`**: Core per-endpoint shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking, deterministic shard IDs, and shard-local health counters. Shard membership uses `ArcSwap` for lock-free reads; per-shard state uses individual atomics. Files: `driver/transport/sharded_transport.rs`.
-2. **6.2 Shard selection algorithm**: `select_shard` concentrates load on the earliest shards needed for current inflight demand, can exclude one failed shard during local retry, scales up when those shards are saturated, and falls back to the least-loaded shard at the configured maximum. Files: `driver/transport/sharded_transport.rs`.
+1. **6.1 `ShardedHttpTransport`**: Core per-endpoint shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking, deterministic shard IDs, and shard-local health counters. Shard membership uses `ArcSwap` for lock-free reads; per-shard state uses individual atomics. Files: `pipeline/transport/sharded_transport.rs`.
+2. **6.2 Shard selection algorithm**: `select_shard` concentrates load on the earliest shards needed for current inflight demand, can exclude one failed shard during local retry, scales up when those shards are saturated, and falls back to the least-loaded shard at the configured maximum. Files: `pipeline/transport/sharded_transport.rs`.
 3. **6.3 Connection-pool knobs**: Add `http2_fan_out_threshold_percent`, `max_http2_streams_per_client`, a CPU-scaled `max_http2_connections_per_endpoint` (2× parallelism below 4 logical CPUs; 32-connection floor at 4+), `min_http2_connections_per_endpoint`, `idle_http2_client_timeout`, health-sweep knobs, HTTP/2 keepalive knobs, and TCP keepalive defaults for HTTP/1.1. Files: `options/connection_pool.rs`.
-4. **6.4 Wire into `AdaptiveTransport`**: `Http2Preferred` and `Http2Only` policies use `ShardedHttpTransport`; `Http11Only` keeps the plain client path. `AdaptiveTransport` also exposes shard-aware dispatch metadata for local retry. Files: `driver/transport/adaptive_transport.rs`.
-5. **6.5 Background sweep and tests**: `BackgroundTaskManager` runs endpoint-local shard sweeps for unhealthy-shard eviction, paced probe replacement, and idle overflow reclaim, with unit coverage for scale-up / reclaim / eviction behavior. Files: `driver/transport/sharded_transport.rs`, `tests/`.
+4. **6.4 Wire into `AdaptiveTransport`**: `Http2Preferred` and `Http2Only` policies use `ShardedHttpTransport`; `Http11Only` keeps the plain client path. `AdaptiveTransport` also exposes shard-aware dispatch metadata for local retry. Files: `pipeline/transport/adaptive_transport.rs`.
+5. **6.5 Background sweep and tests**: `BackgroundTaskManager` runs endpoint-local shard sweeps for unhealthy-shard eviction, paced probe replacement, and idle overflow reclaim, with unit coverage for scale-up / reclaim / eviction behavior. Files: `pipeline/transport/sharded_transport.rs`, `tests/`.
 
 **What works after Step 6**: HTTP/2 with per-endpoint connection sharding, elastic scale-up,
 background shard health sweeping, paced unhealthy-shard replacement/eviction, HTTP/2 protocol
@@ -2235,10 +2210,10 @@ minimum shard count.
 
 ### Step 7: Health checks, eviction, TCP keepalive & connectivity retry
 
-1. **7.1 Shard health checks**: Keep shard-local health state as atomic fields on `ClientShard` and evaluate eviction from consecutive failures, recent-success grace, and idle timeout. Files: `driver/transport/sharded_transport.rs`.
-2. **7.2 Background health sweep**: Use `BackgroundTaskManager` to run `health_sweep_loop` for unhealthy-shard eviction, idle reclaim, and paced single-probe replacement. Files: `driver/transport/sharded_transport.rs`.
-3. **7.3 Connectivity retry in transport**: Retry eligible connectivity failures once on a different shard before handing control back to operation-level failover. Files: `driver/transport/transport_pipeline.rs`.
-4. **7.4 TCP keepalive defaults**: Configure TCP keepalive on HTTP/1.1 transports with 1 s time / 1 s interval defaults, while preserving the optional retry-count knob. Files: `driver/transport/http_client_factory.rs`.
+1. **7.1 Shard health checks**: Keep shard-local health state as atomic fields on `ClientShard` and evaluate eviction from consecutive failures, recent-success grace, and idle timeout. Files: `pipeline/transport/sharded_transport.rs`.
+2. **7.2 Background health sweep**: Use `BackgroundTaskManager` to run `health_sweep_loop` for unhealthy-shard eviction, idle reclaim, and paced single-probe replacement. Files: `pipeline/transport/sharded_transport.rs`.
+3. **7.3 Connectivity retry in transport**: Retry eligible connectivity failures once on a different shard before handing control back to operation-level failover. Files: `pipeline/transport/execution.rs`.
+4. **7.4 TCP keepalive defaults**: Configure TCP keepalive on HTTP/1.1 transports with 1 s time / 1 s interval defaults, while preserving the optional retry-count knob. Files: `pipeline/transport/http_client_factory.rs`.
 5. **7.5 Tests**: Shard eviction, background reclaim, keepalive config, and connectivity retry on different shards. Files: `tests/`.
 
 **What works after Step 7**: Full HTTP/2 sharding with health monitoring, automatic eviction
@@ -2775,7 +2750,10 @@ for async coordination and does not need lock-free work-stealing queues at this 
 
 ---
 
-## Appendix: File Layout After Step 1
+## Appendix: Historical File Layout After Step 1
+
+This initial layout predates the transport refactor. Section 5 describes current transport
+ownership, module paths, and execution flow.
 
 ```text
 sdk/cosmos/azure_data_cosmos_driver/src/

@@ -80,7 +80,7 @@ pub enum ExecutionContext {
 `Retry` has been removed and replaced by `OperationRetry` so the operation-level
 retry reason is clearly distinct from the transport-level `TransportRetry`. The
 hand-written `ExecutionContext::as_str()` and every dispatch site
-(`operation_pipeline.rs`, `transport_pipeline.rs`, `cosmos_driver.rs`) are updated
+(`operation_pipeline.rs`, `pipeline/transport/execution.rs`, `cosmos_driver.rs`) are updated
 accordingly. Telemetry parsers that matched the literal `"retry"` execution context
 must update; serialized output now emits `"operation_retry"` instead.
 

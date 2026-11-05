@@ -1,10 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Gateway 2.0 RNTBD wire-format support.
+//! In-memory RNTBD framing, serialization, and parsing.
 //!
-//! This module owns in-memory request serialization and response deserialization
-//! for RNTBD frames carried by the Gateway 2.0 transport path.
+//! HTTP envelope adaptation and dispatch belong to the transport pipeline.
 
 pub(crate) mod request;
 pub(crate) mod response;

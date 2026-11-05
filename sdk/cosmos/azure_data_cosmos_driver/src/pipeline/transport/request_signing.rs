@@ -1,18 +1,21 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Bare function: generate and attach the Authorization header.
-//!
-//! This replaces `AuthorizationPolicy` from the old policy-chain pipeline.
+//! Obtains authorization data and applies it to an HTTP request.
 
 use azure_core::http::headers::{HeaderName, HeaderValue, AUTHORIZATION};
 use azure_core::time::{self, OffsetDateTime};
 
 use crate::models::Credential;
 
-use super::{cosmos_transport_client::HttpRequest, generate_authorization, AuthorizationContext};
+use super::{authorization, cosmos_transport_client::HttpRequest, AuthorizationContext};
 
 const MS_DATE: HeaderName = HeaderName::from_static("x-ms-date");
+
+struct AuthorizationHeaders {
+    date: HeaderValue,
+    authorization: HeaderValue,
+}
 
 /// Generates and attaches the Authorization header to an HTTP request.
 ///
@@ -21,29 +24,40 @@ const MS_DATE: HeaderName = HeaderName::from_static("x-ms-date");
 ///
 /// Returns a Cosmos-typed [`crate::error::CosmosError`]. Foreign errors from the
 /// credential provider and the HMAC routine are classified into typed
-/// Cosmos errors at the boundary by [`generate_authorization`].
+/// Cosmos errors at the boundary by [`authorization::generate_authorization()`].
 pub(crate) async fn sign_request(
     request: &mut HttpRequest,
     credential: &Credential,
     auth_context: &AuthorizationContext,
 ) -> crate::error::Result<()> {
-    let date_string = time::to_rfc7231(&OffsetDateTime::now_utc()).to_string();
-
-    let auth = generate_authorization(credential, auth_context, &date_string).await?;
-
-    request
-        .headers
-        .insert(MS_DATE, HeaderValue::from(date_string));
-    request
-        .headers
-        .insert(AUTHORIZATION, HeaderValue::from(auth));
-
+    let headers = obtain_authorization_headers(credential, auth_context).await?;
+    apply_authorization_headers(request, headers);
     Ok(())
+}
+
+/// Creates the request date and matching signature or bearer token without changing the request.
+async fn obtain_authorization_headers(
+    credential: &Credential,
+    auth_context: &AuthorizationContext,
+) -> crate::error::Result<AuthorizationHeaders> {
+    let date_string = time::to_rfc7231(&OffsetDateTime::now_utc()).to_string();
+    let auth =
+        authorization::generate_authorization(credential, auth_context, &date_string).await?;
+    Ok(AuthorizationHeaders {
+        date: HeaderValue::from(date_string),
+        authorization: HeaderValue::from(auth),
+    })
+}
+
+/// Replaces the request's date and authorization headers with the generated values.
+fn apply_authorization_headers(request: &mut HttpRequest, headers: AuthorizationHeaders) {
+    request.headers.insert(MS_DATE, headers.date);
+    request.headers.insert(AUTHORIZATION, headers.authorization);
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{sign_request, AuthorizationContext, Credential, HttpRequest, MS_DATE};
     use crate::models::ResourceType;
     use azure_core::credentials::Secret;
     use azure_core::http::Method;

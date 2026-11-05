@@ -132,20 +132,16 @@ Gateway 2.0 reuses the standard retry pipeline. Two status codes have Gateway-2.
 
 449 typically signals a server-side precondition failure (e.g. etag conflict on a single document being updated by many writers). Aggressive retry loops on 449 amplify pathological client patterns — for example, a numeric-ID generator where dozens or hundreds of threads patch the same document. The retry policy MUST optimize for the natural case (precondition failure that resolves with a brief wait) without amplifying abuse.
 
-The 449 retry rules are expressed as a **new `ThrottleAction` variant** that this spec
-introduces. The existing `ThrottleAction` enum in `driver/pipeline/components.rs` (today:
-`Retry { delay, new_state: ThrottleRetryState } | Propagate`) gains a third variant —
-`RetryWith { delay, new_state: RetryWithState }` — and `decide_throttle_action` in
-`driver/transport/transport_pipeline.rs` is extended to emit that variant whenever the
-resolved `(status_code, sub_status)` pair is `(449, *)`. The new `RetryWithState` struct
-owns the 449-specific retry budget and is **distinct from** `ThrottleRetryState`, which
-guarantees structurally that 449 retries cannot consume the 410/Gone or 429 budget (and
-vice versa).
+449 recovery belongs to the operation pipeline's `try_handle_retry_with`, with
+`RetryWithRetryState` in `driver/pipeline/components.rs`. It is not a transport retry
+decision even though it targets the same region. Transport-owned `ThrottleRetryPolicy`
+and `ThrottleRetryProgress` govern only 429 recovery, so the two policies do not share
+counters or cumulative wait.
 
 - **Few attempts** (≤ 3) with **exponential backoff** between them.
 - Retry against the **same** endpoint; do not switch regions on 449.
-- **Independent retry budget** — `RetryWithState` does not share counters with
-  `ThrottleRetryState` or the 410/Gone retry path. A 449 followed by a 410 on the same
+- **Independent retry budget** — `RetryWithRetryState` does not share counters with
+  `ThrottleRetryProgress` or the 410/Gone retry path. A 449 followed by a 410 on the same
   logical operation gets fresh budget on the 410 side, and vice versa.
 - **Gateway V1 uses the identical 449 policy.** When the server-side adds a "suppress 449" capability (under design with the server team), the client negotiates it via the `SdkSupportedCapabilities` channel and treats 449 as a non-retryable terminal error. Until that capability ships, both transports retry per the policy above.
 
@@ -196,7 +192,7 @@ Why fail-fast was chosen:
 2. `container_connection.rs` serializes `T` to `&[u8]`; EPK computation is deferred to the driver (via `EffectivePartitionKey::compute()` / `::compute_range()`), which then resolves PKRange
 3. `CosmosDriver::execute_operation()` enters the Operation Pipeline (7-stage loop)
 4. `resolve_endpoint()` prefers gateway 2.0 endpoint when `!gateway_v2_suppressed` per §3.1
-5. Transport Pipeline checks `is_operation_supported_by_gateway_v2()`:
+5. The operation pipeline checks `is_operation_supported_by_gateway_v2()` before constructing the fixed transport request:
    - **YES**: Inject gateway 2.0 headers + RNTBD serialize → HTTP/2 POST to Gateway 2.0 Proxy (SLA)
    - **NO**: Standard HTTP/REST request to Cosmos Gateway (eligibility fallback — per-request, deterministic)
 6. Driver deserializes the RNTBD response (24-byte frame header → metadata token stream → optional body payload, per §5.3) into a domain `RntbdResponse`, then maps the body bytes to the typed result (`T`, `FeedResponse<T>`, etc.) before returning to the SDK. The SDK never sees the raw RNTBD bytes — that boundary stays in the driver, mirroring the EPK-pushdown decision in step 2.
@@ -207,7 +203,21 @@ Why fail-fast was chosen:
 
 ### 5.3 RNTBD Protocol
 
-The RNTBD protocol lives in `src/driver/transport/rntbd/` (driver crate).
+RNTBD framing and parsing live in the driver crate's `src/rntbd/`. This codec owns
+in-memory frame and token representations, not HTTP requests, transport retries,
+endpoint selection, or diagnostic-builder mutation.
+
+HTTP adaptation lives in `src/pipeline/transport/gateway_v2/`:
+
+- `request_tokens.rs` maps signed request data to ordered frame metadata.
+- `request.rs` serializes that frame and builds the outer HTTP envelope.
+- `response.rs` maps a parsed response frame to status, headers, and body.
+- `eligibility.rs` supplies operation eligibility decisions to the operation pipeline.
+
+The transport pipeline's `response.rs` owns envelope fallback: decode both successful
+and unsuccessful envelopes; use valid inner status, headers, and retry-after; preserve
+an invalid non-2xx envelope unchanged; classify an invalid 2xx frame as a sent transport
+error. The codec does not make these HTTP policy decisions.
 
 The RNTBD ("Real Name To Be Determined" — a placeholder name that stuck) protocol is the wire format used by Cosmos DB for efficient binary communication. Gateway 2.0 wraps RNTBD-encoded payloads inside HTTP/2 POST requests to the proxy.
 
@@ -258,7 +268,7 @@ A unit test pins this behavior: a hand-crafted response frame containing a synth
 
 #### SDK-supported-capabilities advertisement
 
-The Rust driver wires the HTTP request header `x-ms-cosmos-sdk-supportedcapabilities` through `SDK_SUPPORTED_CAPABILITIES` in `azure_data_cosmos_driver/src/driver/transport/cosmos_headers.rs`, with `SUPPORTED_CAPABILITIES_BITS` as the source of truth for its value. The header is emitted on every gateway request as the string-encoded decimal bitmask `"11"`.
+The Rust driver wires the HTTP request header `x-ms-cosmos-sdk-supportedcapabilities` through `SDK_SUPPORTED_CAPABILITIES` in `azure_data_cosmos_driver/src/pipeline/transport/cosmos_headers.rs`, with `SUPPORTED_CAPABILITIES_BITS` as the source of truth for its value. The header is emitted on every gateway request as the string-encoded decimal bitmask `"11"`.
 
 The driver emits `PartitionMerge` (bit 0, decimal 1), `ChangeFeedWithStartTimePostMerge` (bit 1, decimal 2), and `IgnoreUnknownRntbdTokens` (bit 3, decimal 8). The header value is a string-encoded decimal of the bitwise OR of the capability bits.
 
@@ -266,7 +276,7 @@ The `IgnoreUnknownRntbdTokens` bit is the contract that backs the silent-skip be
 
 ##### Capability bit composition (Rust = `11`)
 
-The bitmask the Rust driver advertises is **`11`**. It is pinned in `azure_data_cosmos_driver/src/driver/transport/cosmos_headers.rs` with a `const _: () = assert!(SUPPORTED_CAPABILITIES_BITS == 11);` invariant. The bits are:
+The bitmask the Rust driver advertises is **`11`**. It is pinned in `azure_data_cosmos_driver/src/pipeline/transport/cosmos_headers.rs` with a `const _: () = assert!(SUPPORTED_CAPABILITIES_BITS == 11);` invariant. The bits are:
 
 | Bit | Decimal | Capability                         | Rust advertises | Notes                                                                                                                                                         |
 | --- | ------- | ---------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -515,7 +525,7 @@ Probes execute in parallel across regions with a per-endpoint deadline of `DEFAU
 
 **Diagnostics.** Each probe call records `(region, role, url, outcome)` into the same diagnostics surface as data-plane requests, so a customer support case can show the exact probe verdict per region. `ProbeFailure::Network(message)` preserves the underlying transport error text verbatim (DNS failure, TLS handshake, connection refused, timeout, etc.) so operators can correlate against their firewall logs.
 
-**Module entry point.** `driver::transport::connectivity_probe::ConnectivityProbe` (trait) + `Http2ConnectivityProbe` (production impl). The trait isolates the probe surface so test code can substitute deterministic outcomes without standing up a real proxy. `CosmosDriver::new` wires the production probe into `LocationStateStore`; bootstrap runs it via `sync_account_properties_with_probe` (in `CosmosDriver::initialize`) and every account-metadata refresh re-runs it inside `refresh_account_properties_inner`.
+**Module entry point.** `pipeline::transport::connectivity_probe::ConnectivityProbe` (trait) + `Http2ConnectivityProbe` (production impl). The trait isolates the probe surface so test code can substitute deterministic outcomes without standing up a real proxy. `CosmosDriver::new` wires the production probe into `LocationStateStore`; bootstrap runs it via `sync_account_properties_with_probe` (in `CosmosDriver::initialize`) and every account-metadata refresh re-runs it inside `refresh_account_properties_inner`.
 
 #### Endpoint Discovery Flow
 

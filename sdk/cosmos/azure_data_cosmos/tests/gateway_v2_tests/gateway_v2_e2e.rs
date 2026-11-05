@@ -2725,7 +2725,7 @@ pub async fn gateway_v2_session_read_your_writes_ppcb_disabled(
 // The three tests below close a live-coverage gap: the Gateway 2.0 wrap path
 // emits the `PageSize` (0x0004), `Match` (0x0008), and `ReadConsistencyStrategy`
 // (0x00FE) RNTBD tokens, but until now those were only asserted at unit level
-// in `gateway_v2_dispatch::tests` — which proves *we emit id X*, not that the
+// in `pipeline::transport::gateway_v2::tests` — which proves *we emit id X*, not that the
 // real thin-client proxy accepts id X. A wrong-on-the-wire id (the class of
 // bug that hid behind the RCS `0x00F0` → `0x00FE` correction) passes every
 // unit test yet would be caught here, because each test asserts a server-side
@@ -2935,7 +2935,7 @@ pub async fn gateway_v2_if_match_precondition_round_trip() -> Result<(), Box<dyn
 /// rather than an observable payload difference: it proves the proxy does not
 /// reject the RCS RNTBD token. The exact token id (`0x00FE`) is pinned by the
 /// unit test `wrap_emits_read_consistency_strategy_token_and_drops_consistency_level`
-/// in `gateway_v2_dispatch`; this test guards the wire-acceptance half that a
+/// in `pipeline::transport::gateway_v2`; this test guards the wire-acceptance half that a
 /// unit test cannot reach.
 ///
 /// `LatestCommitted` is a quorum read that is **not** session-effective (it does

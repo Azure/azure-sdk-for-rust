@@ -12,13 +12,13 @@ use super::FaultInjectionErrorType;
 use super::FaultInjectionEvaluation;
 use super::FaultOperationType;
 use crate::diagnostics::{RequestSentStatus, TransportKind};
-use crate::driver::transport::cosmos_transport_client::{
-    HttpRequest, HttpResponse, TransportClient, TransportError,
-};
 use crate::models::cosmos_headers::fault_injection_header_names::{
     FAULT_INJECTION_OPERATION, FAULT_INJECTION_REGION,
 };
 use crate::models::CosmosResponseHeaders;
+use crate::pipeline::transport::cosmos_transport_client::{
+    HttpRequest, HttpResponse, TransportClient, TransportError,
+};
 use async_trait::async_trait;
 use azure_core::http::headers::HeaderName;
 use azure_core::http::StatusCode;
@@ -177,7 +177,7 @@ impl FaultClient {
             return (200..300).contains(&response.status);
         }
 
-        crate::driver::transport::unwrap_response_for_gateway_v2(HttpResponse {
+        crate::pipeline::transport::unwrap_response_for_gateway_v2(HttpResponse {
             status: response.status,
             headers: response.headers.clone(),
             body: response.body.clone(),
@@ -364,7 +364,7 @@ impl FaultClient {
         // preserves the original status all the way to the caller. Returning
         // them as `TransportError` instead would cause the transport layer to
         // tag the outer outcome with the synthetic `TRANSPORT_GENERATED_503`
-        // (see `transport_error_result` in `transport_pipeline.rs`), which
+        // (see `classify_dispatch` in `pipeline/transport/response.rs`), which
         // would mask the injected status with a generic 503 — defeating the
         // purpose of HTTP-status fault injection.
         ApplyResult::Injected(Ok(HttpResponse {
@@ -531,9 +531,6 @@ fn host_matches_region(url: &url::Url, region: &str) -> bool {
 mod tests {
     use super::{host_matches_region, FaultClient};
     use crate::diagnostics::{RequestSentStatus, TransportKind};
-    use crate::driver::transport::cosmos_transport_client::{
-        HttpRequest, HttpResponse, TransportClient, TransportError,
-    };
     use crate::fault_injection::{
         CustomResponseBuilder, EvaluationCollector, FaultInjectionConditionBuilder,
         FaultInjectionErrorType, FaultInjectionEvaluation, FaultInjectionResultBuilder,
@@ -541,6 +538,9 @@ mod tests {
     };
     use crate::models::cosmos_headers::fault_injection_header_names::{
         FAULT_INJECTION_OPERATION, FAULT_INJECTION_REGION,
+    };
+    use crate::pipeline::transport::cosmos_transport_client::{
+        HttpRequest, HttpResponse, TransportClient, TransportError,
     };
 
     use crate::options::Region;

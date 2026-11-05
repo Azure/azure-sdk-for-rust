@@ -86,6 +86,7 @@ impl HttpClientConfig {
         }
     }
 
+    /// Returns this configuration with certificate validation disabled for emulator connections.
     pub(crate) fn with_allow_invalid_cert(mut self) -> Self {
         self.allow_invalid_cert = true;
         self
