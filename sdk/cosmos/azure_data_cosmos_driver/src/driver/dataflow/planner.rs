@@ -20,11 +20,12 @@ use crate::{
         effective_partition_key::{normalized_epk_len, EffectivePartitionKey},
         CosmosOperation, FeedRange,
     },
-    options::PlanOptions,
+    options::{FullTextScoreScope, PlanOptions},
 };
 
 use super::{
     distinct_hash::Hash128,
+    hybrid_search::{hybrid_window, HybridSearch},
     intersect_feed_ranges,
     query_plan::{QueryInfo, QueryPlan, SortOrder},
     query_response,
@@ -175,7 +176,7 @@ pub(crate) fn finalize_plan(
             return Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::status_codes::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED)
                 .with_message(format!(
-                    "operation fans out to {width} partitions, exceeding the maximum of {}; \
+                    "operation plans {width} request leaves, exceeding the maximum of {}; \
                      raise max_fan_out (via FeedOptions) to run a broader cross-partition query",
                     plan_options.max_fan_out
                 ))
@@ -397,6 +398,9 @@ pub(crate) fn validate_buffered_query(
     query_plan: &QueryPlan,
     max_buffered_query_window: u64,
 ) -> crate::error::Result<()> {
+    if let Some(hybrid) = &query_plan.hybrid_search_query_info {
+        return hybrid_window(hybrid, max_buffered_query_window).map(|_| ());
+    }
     let Some(info) = query_plan.query_info.as_ref() else {
         return Ok(());
     };
@@ -408,6 +412,95 @@ pub(crate) fn validate_buffered_query(
         return Ok(());
     };
     buffered_query_window(info, max_buffered_query_window, shape).map(|_| ())
+}
+
+/// Builds the statistics and component fan-out for a ranked full-text or hybrid query.
+pub(crate) async fn build_hybrid_search(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    resume: Option<PipelineNodeState>,
+    scope: FullTextScoreScope,
+    maximum: u64,
+) -> crate::error::Result<Pipeline> {
+    if resume.is_some() {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED)
+            .with_message("cross-partition ranked full-text and hybrid queries cannot be resumed from a continuation token")
+            .build());
+    }
+    let hybrid = query_plan
+        .hybrid_search_query_info
+        .as_ref()
+        .ok_or_else(|| {
+            unsupported_feature("hybrid search path selected without hybridSearchQueryInfo")
+        })?;
+    let (skip, take) = hybrid_window(hybrid, maximum)?;
+    if query_plan.query_info.as_ref().is_some_and(|info| {
+        info.distinct_type != DistinctType::None
+            || !info.aggregates.is_empty()
+            || !info.group_by_expressions.is_empty()
+    }) {
+        return Err(unsupported_feature(
+            "DISTINCT, aggregates, or GROUP BY combined with hybrid search",
+        ));
+    }
+    let target_ranges = if let Some(partition_key) = operation.partition_key() {
+        if operation.is_trivial() {
+            vec![RequestTarget::logical_partition_key(
+                partition_key.clone(),
+                None,
+            )]
+        } else {
+            resolve_fresh_targets(query_plan, topology_provider, operation, operation.target())
+                .await?
+        }
+    } else {
+        resolve_fresh_targets(query_plan, topology_provider, operation, operation.target()).await?
+    };
+    if target_ranges.is_empty() {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_message("hybrid search query plan produced no partition ranges to query")
+            .build());
+    }
+
+    let statistics_ranges = if hybrid.requires_global_statistics {
+        match scope {
+            FullTextScoreScope::Global => {
+                let full_plan = QueryPlan {
+                    query_ranges: vec![super::query_plan::QueryRange {
+                        min: String::new(),
+                        max: "FF".to_owned(),
+                        is_min_inclusive: true,
+                        is_max_inclusive: false,
+                    }],
+                    ..Default::default()
+                };
+                resolve_fresh_targets(&full_plan, topology_provider, operation, None).await?
+            }
+            FullTextScoreScope::Local => target_ranges.clone(),
+        }
+    } else {
+        Vec::new()
+    };
+    if hybrid.requires_global_statistics && statistics_ranges.is_empty() {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_message("hybrid search statistics produced no partition ranges to query")
+            .build());
+    }
+
+    let node = HybridSearch::new(
+        Arc::clone(operation),
+        hybrid,
+        target_ranges,
+        statistics_ranges,
+        scope,
+        skip,
+        take,
+    )?;
+    Ok(Pipeline::new(Box::new(node)))
 }
 
 fn buffered_query_window(info: &QueryInfo, maximum: u64, shape: &str) -> crate::error::Result<u64> {
@@ -939,24 +1032,58 @@ fn parse_continuation_epk(
 /// to its children, while a merge reads each saved sub-range independently
 /// without dropping a continuation — matching the per-EPK-range change feed
 /// resume used by the other Cosmos SDKs (.NET, Java, Python).
+///
+/// The driver must restore the checkpoint's start on `operation` before calling.
 pub(crate) async fn build_unordered_merge(
     feed_range: &FeedRange,
     topology_provider: &mut dyn TopologyProvider,
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
 ) -> crate::error::Result<Pipeline> {
-    let (saved_tokens, resume_start) = match resume {
-        None => (None, None),
+    let (saved_tokens, resume_start, next_poll_min_epk) = match resume {
+        None => (None, None, None),
         Some(PipelineNodeState::Drained) => {
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
         Some(PipelineNodeState::UnorderedMerge {
             active_tokens,
             start_from,
+            next_poll_min_epk,
         }) => (
             Some(validate_unordered_merge_tokens(active_tokens)?),
             start_from,
+            next_poll_min_epk
+                .map(|value| {
+                    parse_continuation_epk(
+                        &value,
+                        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                        "change-feed next polling position",
+                    )
+                })
+                .transpose()?,
         ),
+        Some(PipelineNodeState::Request {
+            server_continuation: None,
+        }) if feed_range.partition_key().is_some() => {
+            // Old prefix plans checkpointed a single request. Before its
+            // first poll, no per-range progress needs to be reconstructed.
+            (
+                Some(Vec::new()),
+                operation.change_feed_start().cloned(),
+                None,
+            )
+        }
+        Some(PipelineNodeState::Request {
+            server_continuation: Some(_),
+        }) if feed_range.partition_key().is_some() => {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_message(
+                    "a single-request prefix checkpoint has no per-range coverage and cannot \
+                         safely resume a prefix fan-out; explicitly choose a new start position",
+                )
+                .build());
+        }
         Some(other) => {
             return Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
@@ -968,16 +1095,21 @@ pub(crate) async fn build_unordered_merge(
         }
     };
 
+    if resume_start
+        .as_ref()
+        .is_some_and(|start| Some(start) != operation.change_feed_start())
+    {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+            .with_message("change-feed checkpoint start must be restored before planning")
+            .build());
+    }
+
     // The start marker is carried so every checkpoint re-persists it. On a
     // fresh start it comes from the operation; on resume the token's persisted
     // marker wins, because the caller only hands back the token and does not
     // repeat the original start position.
-    let is_resume = saved_tokens.is_some();
-    let start_marker = if is_resume {
-        resume_start
-    } else {
-        operation.change_feed_start().cloned()
-    };
+    let start_marker = resume_start.or_else(|| operation.change_feed_start().cloned());
 
     // Full-fidelity (AllVersionsAndDeletes) feeds must pin every range to a
     // concrete starting continuation before the first checkpoint, so a range
@@ -993,19 +1125,6 @@ pub(crate) async fn build_unordered_merge(
     let prime_on_first_drain = operation.request_headers().full_fidelity_feed
         && saved_tokens.as_ref().is_none_or(|tokens| tokens.is_empty());
 
-    // On resume the operation rebuilt by the SDK no longer carries the original
-    // start headers (the caller only passed the continuation token). Re-derive
-    // them from the persisted marker so partitions with no saved continuation
-    // (never polled before the checkpoint) honor the original start position
-    // instead of silently reading from the beginning. Partitions that do have a
-    // saved continuation still take precedence via their `If-None-Match` ETag.
-    let operation: Arc<CosmosOperation> = match (is_resume, &start_marker) {
-        (true, Some(marker)) => {
-            Arc::new((**operation).clone().with_change_feed_start(marker.clone()))
-        }
-        _ => Arc::clone(operation),
-    };
-
     let resolved = topology_provider
         .resolve_ranges(feed_range, PartitionRoutingRefresh::UseCached)
         .await?;
@@ -1013,8 +1132,12 @@ pub(crate) async fn build_unordered_merge(
     let mut request_nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
 
     for resolved_range in resolved {
-        let range = intersect_feed_ranges(&resolved_range.range, feed_range)
-            .expect("topology provider must return ranges that overlap the feed range");
+        let range = intersect_feed_ranges(&resolved_range.range, feed_range).ok_or_else(|| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
+                .with_message("topology provider returned a range that does not overlap the change-feed scope")
+                .build()
+        })?;
 
         // Rebuild this physical range's leaves by sweeping the saved tokens
         // that overlap it, left to right. Each saved sub-range resumes from its
@@ -1044,7 +1167,7 @@ pub(crate) async fn build_unordered_merge(
                     let gap = FeedRange::new(cursor.clone(), slice.min_inclusive().clone())?;
                     push_change_feed_leaf(
                         &mut request_nodes,
-                        &operation,
+                        operation,
                         gap,
                         &resolved_range,
                         None,
@@ -1053,7 +1176,7 @@ pub(crate) async fn build_unordered_merge(
                 cursor = slice.max_exclusive().clone();
                 push_change_feed_leaf(
                     &mut request_nodes,
-                    &operation,
+                    operation,
                     slice,
                     &resolved_range,
                     Some(token.server_continuation.clone()),
@@ -1065,7 +1188,7 @@ pub(crate) async fn build_unordered_merge(
             // Trailing slice with no saved continuation, or the whole range on
             // a fresh (non-resumed) start.
             let tail = FeedRange::new(cursor, range_max)?;
-            push_change_feed_leaf(&mut request_nodes, &operation, tail, &resolved_range, None);
+            push_change_feed_leaf(&mut request_nodes, operation, tail, &resolved_range, None);
         }
     }
 
@@ -1079,7 +1202,8 @@ pub(crate) async fn build_unordered_merge(
     let root = Box::new(
         UnorderedMerge::new(request_nodes)
             .with_start_marker(start_marker)
-            .with_prime_on_first_drain(prime_on_first_drain),
+            .with_prime_on_first_drain(prime_on_first_drain)
+            .with_next_poll_min_epk(next_poll_min_epk)?,
     );
     Ok(Pipeline::new(root))
 }
@@ -1116,7 +1240,23 @@ async fn plan_fresh(
     topology_provider: &mut dyn TopologyProvider,
     operation: &Arc<CosmosOperation>,
 ) -> crate::error::Result<Vec<Box<dyn PipelineNode>>> {
-    let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
+    let targets =
+        resolve_fresh_targets(query_plan, topology_provider, operation, operation.target()).await?;
+    Ok(targets
+        .into_iter()
+        .map(|target| {
+            Box::new(Request::new(Arc::clone(operation), target, None)) as Box<dyn PipelineNode>
+        })
+        .collect())
+}
+
+async fn resolve_fresh_targets(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    scope_range: Option<&FeedRange>,
+) -> crate::error::Result<Vec<RequestTarget>> {
+    let mut targets = Vec::new();
     // Clip each server-supplied query range to the operation scope (e.g.
     // `FeedScope::partition(partial_hpk)`), which bounds the partition-key
     // prefix. The `query_ranges` always cover the full container, so we
@@ -1125,7 +1265,6 @@ async fn plan_fresh(
     // An equality / `IN` predicate yields a point plan range `[X, X]`, which
     // `query_range_to_feed_range` normalizes to the half-open window
     // `[X, successor(X))` so it routes like any other range (#4574 / #4638).
-    let scope_range = operation.target();
     // Full EPK width for this container, used to zero-extend a closed range's
     // (or point's) inclusive upper bound to full width before making it
     // exclusive (#4574).
@@ -1159,10 +1298,10 @@ async fn plan_fresh(
                 resolved_range.parents,
                 resolved_range.range,
             );
-            nodes.push(Box::new(Request::new(Arc::clone(operation), target, None)));
+            targets.push(target);
         }
     }
-    Ok(nodes)
+    Ok(targets)
 }
 
 /// Builds the request leaves for a resumed cross-partition plan, using the
