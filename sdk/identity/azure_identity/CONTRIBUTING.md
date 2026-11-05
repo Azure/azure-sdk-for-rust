@@ -66,9 +66,9 @@ From the repository root, use the shared provisioning entry point, not the pre- 
     -AdditionalParameters @{ deployResources = $true }
 ```
 
-The [Bicep template](../test-resources.bicep) defaults `deployResources` to `false`.
+The [Bicep template](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/identity/test-resources.bicep) defaults `deployResources` to `false`.
 Enabling it creates two storage accounts, one user-assigned identity, one container registry, and one AKS cluster with a single node.
-The [post-provisioning script](../test-resources-post.ps1) builds and pushes the test app, creates an ACI instance, and deploys an AKS pod and public load balancer.
+The [post-provisioning script](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/identity/test-resources-post.ps1) builds and pushes the test app, creates an ACI instance, and deploys an AKS pod and public load balancer.
 It uses the template's `IDENTITY_DEPLOY_RESOURCES` output to honor the effective deployment setting, whether passed through `AdditionalParameters` or `ArmTemplateParameters`.
 Disabled deployments skip post-provisioning; enabled deployments require complete resource outputs.
 Before publishing endpoints, the script waits for addresses, pod readiness, and successful authentication and storage access through each deployed app.
