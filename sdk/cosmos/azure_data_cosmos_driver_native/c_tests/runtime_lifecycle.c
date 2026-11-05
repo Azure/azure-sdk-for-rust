@@ -27,9 +27,9 @@ static int test_options_default_all_unset(void)
     int result = TEST_PASS;
     cosmos_runtime_options_t opts = cosmos_runtime_options_default();
     ASSERT(opts.workload_id == 0, "workload_id defaults to 0 (unset)");
-    ASSERT(opts.correlation_id == NULL, "correlation_id defaults to NULL");
-    ASSERT(opts.user_agent_suffix == NULL, "user_agent_suffix defaults to NULL");
-    ASSERT(opts.wrapping_sdk_identifier == NULL,
+    ASSERT(opts.correlation_id.data == NULL && opts.correlation_id.len == 0, "correlation_id defaults to NULL/0");
+    ASSERT(opts.user_agent_suffix.data == NULL && opts.user_agent_suffix.len == 0, "user_agent_suffix defaults to NULL/0");
+    ASSERT(opts.wrapping_sdk_identifier.data == NULL && opts.wrapping_sdk_identifier.len == 0,
            "wrapping_sdk_identifier defaults to NULL");
     ASSERT(opts.cpu_refresh_interval_ms == 0,
            "cpu_refresh_interval_ms defaults to 0 (unset)");
@@ -72,7 +72,7 @@ static int test_string_field_validation(void)
 
     // Correlation id: 51 chars — one over the cap.
     cosmos_runtime_options_t opts = cosmos_runtime_options_default();
-    opts.correlation_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    opts.correlation_id = SV("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     int32_t rc = cosmos_runtime_build(&opts, &runtime, &err);
     ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE,
            "correlation_id too-long rejected (rc=%d)", rc);
@@ -80,7 +80,7 @@ static int test_string_field_validation(void)
 
     // Correlation id: invalid charset (space).
     opts = cosmos_runtime_options_default();
-    opts.correlation_id = "has space";
+    opts.correlation_id = SV("has space");
     rc = cosmos_runtime_build(&opts, &runtime, &err);
     ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE,
            "correlation_id invalid charset rejected (rc=%d)", rc);
@@ -88,7 +88,7 @@ static int test_string_field_validation(void)
 
     // User-agent suffix: 26 chars — one over the cap.
     opts = cosmos_runtime_options_default();
-    opts.user_agent_suffix = "xxxxxxxxxxxxxxxxxxxxxxxxxx";
+    opts.user_agent_suffix = SV("xxxxxxxxxxxxxxxxxxxxxxxxxx");
     rc = cosmos_runtime_build(&opts, &runtime, &err);
     ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE,
            "user_agent_suffix too-long rejected (rc=%d)", rc);
@@ -131,7 +131,7 @@ static int test_build_happy_path(void)
     // Configure a couple of valid fields and build.
     cosmos_runtime_options_t opts = cosmos_runtime_options_default();
     opts.workload_id = 7;
-    opts.user_agent_suffix = "c-tests";
+    opts.user_agent_suffix = SV("c-tests");
     opts.cpu_refresh_interval_ms = 5000;
 
     int32_t rc = cosmos_runtime_build(&opts, &runtime, &err);
@@ -172,6 +172,49 @@ cleanup:
     return result;
 }
 
+static int test_operation_defaults_and_atomic_updates(void)
+{
+    int result = TEST_PASS;
+    cosmos_runtime_t *runtime = NULL;
+    cosmos_error_t *error = NULL;
+    cosmos_operation_options_snapshot_t *snapshot = NULL;
+    int64_t timeout_ms = -2;
+    cosmos_operation_options_t defaults = cosmos_operation_options_default();
+    defaults.end_to_end_timeout_ms = 2500;
+    cosmos_runtime_options_t runtime_options = cosmos_runtime_options_default();
+    runtime_options.operation_options = &defaults;
+    REQUIRE(cosmos_runtime_build(&runtime_options, &runtime, &error) == COSMOS_STATUS_SUCCESS,
+            "runtime accepts operation defaults");
+    defaults.end_to_end_timeout_ms = 5000;
+    REQUIRE(cosmos_operation_options_snapshot_create(runtime, NULL, NULL, &snapshot, &timeout_ms) == COSMOS_STATUS_SUCCESS,
+            "capture inherited defaults");
+    ASSERT(timeout_ms == 2500, "construction copied inputs");
+    cosmos_operation_options_snapshot_free(snapshot);
+    snapshot = NULL;
+    REQUIRE(cosmos_runtime_set_operation_options(runtime, &defaults) == COSMOS_STATUS_SUCCESS,
+            "atomic replacement succeeds");
+    defaults.max_session_retry_count = (int64_t)UINT32_MAX + 1;
+    defaults.end_to_end_timeout_ms = 9000;
+    ASSERT(COSMOS_STATUS_SUB(cosmos_runtime_set_operation_options(runtime, &defaults)) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE,
+           "invalid update rejected");
+    REQUIRE(cosmos_operation_options_snapshot_create(runtime, NULL, NULL, &snapshot, &timeout_ms) == COSMOS_STATUS_SUCCESS,
+            "capture after rejected update");
+    ASSERT(timeout_ms == 5000, "invalid replacement preserves previous defaults");
+    cosmos_operation_options_snapshot_free(snapshot);
+    snapshot = NULL;
+    REQUIRE(cosmos_runtime_set_operation_options(runtime, NULL) == COSMOS_STATUS_SUCCESS,
+            "NULL clears runtime defaults");
+    REQUIRE(cosmos_operation_options_snapshot_create(runtime, NULL, NULL, &snapshot, &timeout_ms) == COSMOS_STATUS_SUCCESS,
+            "capture cleared defaults");
+    ASSERT(timeout_ms == -1, "cleared latency inherits no timeout");
+
+cleanup:
+    cosmos_operation_options_snapshot_free(snapshot);
+    cosmos_runtime_free(runtime);
+    cosmos_error_free(error);
+    return result;
+}
+
 TEST_SUITE_BEGIN("Runtime Construction & Lifecycle")
 TEST_REGISTER(options_default_all_unset)
 TEST_REGISTER(build_rejects_null_out_runtime)
@@ -180,4 +223,5 @@ TEST_REGISTER(string_field_validation)
 TEST_REGISTER(cpu_refresh_interval_range)
 TEST_REGISTER(build_happy_path)
 TEST_REGISTER(build_null_options_uses_defaults)
+TEST_REGISTER(operation_defaults_and_atomic_updates)
 TEST_SUITE_END("Runtime Construction & Lifecycle")

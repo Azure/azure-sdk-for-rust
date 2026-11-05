@@ -241,13 +241,13 @@ impl TryFrom<&Url> for EndpointKey {
     fn try_from(url: &Url) -> crate::error::Result<Self> {
         let host = url.host_str().ok_or_else(|| {
             crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_REQUEST_URL_MISSING_HOST)
+                .with_status(crate::error::status_codes::CLIENT_REQUEST_URL_MISSING_HOST)
                 .with_message(format!("request URL is missing a host: {url}"))
                 .build()
         })?;
         let port = url.port_or_known_default().ok_or_else(|| {
             crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_REQUEST_URL_MISSING_KNOWN_PORT)
+                .with_status(crate::error::status_codes::CLIENT_REQUEST_URL_MISSING_KNOWN_PORT)
                 .with_message(format!("request URL is missing a known port: {url}"))
                 .build()
         })?;
@@ -438,7 +438,7 @@ impl EndpointShardPool {
         let shard = select_least_loaded_shard(shards, excluded_shard_id, selectable_count, None)
             .ok_or_else(|| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::models::CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
                     .with_message(format!(
                         "endpoint shard pool {} has no available shards",
                         self.endpoint.0
@@ -496,7 +496,7 @@ impl EndpointShardPool {
         .map(|shard| shard.id)
         .ok_or_else(|| {
             crate::error::CosmosError::builder()
-                .with_status(crate::models::CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
                 .with_message(format!(
                     "endpoint shard pool {} has no available shards",
                     self.endpoint.0
@@ -525,7 +525,7 @@ impl EndpointShardPool {
         .map(|shard| shard.id)
         .ok_or_else(|| {
             crate::error::CosmosError::builder()
-                .with_status(crate::models::CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
                 .with_message(format!(
                     "endpoint shard pool {} has no available shards",
                     self.endpoint.0
@@ -1397,7 +1397,7 @@ mod tests {
                 Ok(Arc::new(NoopTransportClient))
             } else {
                 Err(crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED)
+                    .with_status(crate::error::status_codes::CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED)
                     .with_message("synthetic client construction failure")
                     .build())
             }
@@ -1919,7 +1919,7 @@ mod tests {
 
         assert_eq!(
             error.status(),
-            crate::error::CosmosStatus::CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED
+            crate::error::status_codes::CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED
         );
         assert_eq!(pool.shards.load().len(), 0);
     }

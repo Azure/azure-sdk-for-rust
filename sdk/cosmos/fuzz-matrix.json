@@ -1,0 +1,18 @@
+{
+  "displayNames": {
+    "golden": "binary_codec_golden_vector_validation",
+    "1": "",
+    "true": ""
+  },
+  "matrix": {
+    "Agent": {
+      "golden": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      }
+    },
+    "RustToolchainName": ["nightly"],
+    "AZURE_COSMOS_FUZZ": ["1"],
+    "ContinueOnError": ["true"]
+  }
+}

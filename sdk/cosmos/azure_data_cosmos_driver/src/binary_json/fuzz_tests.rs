@@ -218,17 +218,22 @@ fn all_two_byte_inputs_terminate() {
 /// `from_slice` is stricter — e.g. exotic forms it defers to `decode` for — so
 /// disagreement is asserted only when both return `Ok`.)
 ///
+/// Compared **modulo the integral-`Double`→integer rule**, because the two sit
+/// at different layers: `decode` stays faithful to the wire, while `from_slice`
+/// is the caller boundary and renders an integral `Double` as an integer. A
+/// structural or value disagreement still fails.
+///
 /// The contract is at the **`Value`** (untyped) level. It does not cover typed
-/// integer targets: `from_slice` intentionally coerces a service-echoed integral
-/// `Double` into an integer field (see
-/// [`BinaryDeserializer::deserialize_integer`]), a deliberate binary-only
-/// permissiveness that is out of scope here (both sides see the same `f64`).
+/// integer targets, where `from_slice` additionally coerces out-of-`Value`-range
+/// forms (see [`BinaryDeserializer::deserialize_integer`]).
 fn assert_decoders_agree(buf: &[u8]) {
     let decoded = decode(buf);
     let streamed = from_slice::<serde_json::Value>(buf);
     if let (Ok(a), Ok(b)) = (&decoded, &streamed) {
+        let mut a = a.clone();
+        super::normalize_integral_floats(&mut a);
         assert_eq!(
-            a, b,
+            &a, b,
             "decode and from_slice disagreed on a buffer both accepted: {buf:02x?}"
         );
     }

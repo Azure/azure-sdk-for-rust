@@ -16,7 +16,7 @@ use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Uuid};
 use azure_core_amqp::AmqpError;
 use azure_core_amqp::{
     message::AmqpSourceFilter, AmqpDescribed, AmqpOrderedMap, AmqpReceiverOptions, AmqpSource,
-    AmqpSymbol, AmqpValue, ReceiverCreditMode,
+    AmqpSymbol, AmqpTransport, AmqpValue, ReceiverCreditMode,
 };
 pub use event_receiver::EventReceiver;
 use std::{
@@ -45,6 +45,8 @@ struct ConsumerClientOptions {
     retry_options: Option<RetryOptions>,
     custom_endpoint: Option<Url>,
     cbs_token_type: Option<&'static str>,
+    transport: AmqpTransport,
+    idle_timeout: Option<Duration>,
 }
 
 impl ConsumerClient {
@@ -98,6 +100,8 @@ impl ConsumerClient {
                 url.clone(),
                 options.application_id,
                 options.custom_endpoint,
+                options.transport,
+                options.idle_timeout,
                 credential,
                 retry_options,
                 options.cbs_token_type,
@@ -195,6 +199,8 @@ impl ConsumerClient {
                 retry_options: None,
                 custom_endpoint: None,
                 cbs_token_type: None,
+                transport: AmqpTransport::default(),
+                idle_timeout: None,
             },
         )
     }
@@ -606,10 +612,11 @@ pub mod builders {
         common::{
             connection_string::{resolve_eventhub, ConnectionString},
             sas_credential::SasCredential,
-            SAS_TOKEN_TYPE,
+            validate_idle_timeout, SAS_TOKEN_TYPE,
         },
         Result,
     };
+    use azure_core_amqp::AmqpTransport;
     use std::sync::Arc;
 
     /// A builder for creating a [`ConsumerClient`].
@@ -637,6 +644,8 @@ pub mod builders {
         instance_id: Option<String>,
         retry_options: Option<RetryOptions>,
         custom_endpoint: Option<String>,
+        transport: Option<AmqpTransport>,
+        idle_timeout: Option<Duration>,
     }
 
     impl ConsumerClientBuilder {
@@ -709,6 +718,45 @@ pub mod builders {
             self
         }
 
+        /// Sets the transport used to communicate with the Event Hub.
+        ///
+        /// # Arguments
+        /// * `transport` - The transport to use. Defaults to [`AmqpTransport::Tcp`].
+        ///
+        /// # Returns
+        /// The updated [`ConsumerClientBuilder`].
+        pub fn with_transport(mut self, transport: AmqpTransport) -> Self {
+            self.transport = Some(transport);
+            self
+        }
+
+        /// Sets the AMQP connection idle timeout.
+        ///
+        /// The connection reports an idle timeout when it receives no AMQP frames
+        /// within this duration. Setting the timeout also advertises it to the
+        /// service so that the peers can negotiate heartbeats. The duration must
+        /// contain between 1 and [`u32::MAX`] whole milliseconds.
+        pub fn with_idle_timeout(mut self, idle_timeout: Duration) -> Self {
+            self.idle_timeout = Some(idle_timeout);
+            self
+        }
+
+        /// Returns the AMQP transport this builder opens the connection with.
+        /// Shared by every `open` path so they cannot drift apart.
+        pub(crate) fn transport(&self) -> AmqpTransport {
+            self.transport.unwrap_or_default()
+        }
+
+        /// Returns the AMQP connection idle timeout configured on this builder.
+        #[cfg(test)]
+        pub(crate) fn idle_timeout(&self) -> Option<Duration> {
+            self.idle_timeout
+        }
+
+        pub(crate) fn validate(&self) -> Result<()> {
+            validate_idle_timeout(self.idle_timeout)
+        }
+
         /// Opens a connection to the Event Hub.
         ///
         /// This method establishes a connection to the Event Hubs instance associated
@@ -750,6 +798,8 @@ pub mod builders {
             eventhub_name: String,
             credential: Arc<dyn azure_core::credentials::TokenCredential>,
         ) -> Result<super::ConsumerClient> {
+            self.validate()?;
+            let transport = self.transport();
             let custom_endpoint = match self.custom_endpoint {
                 Some(endpoint) => Some(Url::parse(&endpoint).map_err(azure_core::Error::from)?),
                 None => None,
@@ -766,6 +816,8 @@ pub mod builders {
                     retry_options: self.retry_options,
                     custom_endpoint,
                     cbs_token_type: None,
+                    transport,
+                    idle_timeout: self.idle_timeout,
                 },
             )?;
             consumer.ensure_connection().await?;
@@ -814,6 +866,8 @@ pub mod builders {
             connection_string: &str,
             eventhub: Option<&str>,
         ) -> Result<super::ConsumerClient> {
+            self.validate()?;
+            let transport = self.transport();
             let connection_string: ConnectionString = connection_string.parse()?;
             let eventhub = resolve_eventhub(&connection_string, eventhub)?;
             let credential = Arc::new(SasCredential::from_connection_string(
@@ -837,6 +891,8 @@ pub mod builders {
                     retry_options: self.retry_options,
                     custom_endpoint,
                     cbs_token_type: Some(SAS_TOKEN_TYPE),
+                    transport,
+                    idle_timeout: self.idle_timeout,
                 },
             )?;
             consumer.ensure_connection().await?;
@@ -852,13 +908,59 @@ pub(crate) mod tests {
         ProducerClient, Result, StartLocation, StartPosition,
     };
     use azure_core::{sleep::sleep, time::Duration};
-    use azure_core_amqp::{error::AmqpErrorKind, AmqpError};
+    use azure_core_amqp::{error::AmqpErrorKind, AmqpError, AmqpTransport};
     use azure_core_test::{recorded, TestContext};
     use futures::stream::StreamExt;
     use std::{
         sync::Arc,
         time::{SystemTime, UNIX_EPOCH},
     };
+
+    #[test]
+    fn builder_transport_defaults_to_tcp() {
+        assert_eq!(ConsumerClient::builder().transport(), AmqpTransport::Tcp);
+        assert_eq!(
+            ConsumerClient::builder()
+                .with_transport(AmqpTransport::Tcp)
+                .transport(),
+            AmqpTransport::Tcp
+        );
+    }
+
+    #[test]
+    fn builder_sets_idle_timeout() {
+        let idle_timeout = Duration::seconds(60);
+        assert_eq!(
+            ConsumerClient::builder()
+                .with_idle_timeout(idle_timeout)
+                .idle_timeout(),
+            Some(idle_timeout)
+        );
+    }
+
+    #[test]
+    fn builder_validates_idle_timeout() {
+        assert!(ConsumerClient::builder()
+            .with_idle_timeout(Duration::milliseconds(1))
+            .validate()
+            .is_ok());
+        assert!(ConsumerClient::builder()
+            .with_idle_timeout(Duration::milliseconds(i64::from(u32::MAX)))
+            .validate()
+            .is_ok());
+
+        for invalid in [
+            Duration::milliseconds(-1),
+            Duration::ZERO,
+            Duration::nanoseconds(1),
+            Duration::milliseconds(i64::from(u32::MAX) + 1),
+        ] {
+            assert!(ConsumerClient::builder()
+                .with_idle_timeout(invalid)
+                .validate()
+                .is_err());
+        }
+    }
     use tracing::info;
 
     // static INIT_LOGGING: std::sync::Once = std::sync::Once::new();

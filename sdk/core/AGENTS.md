@@ -23,12 +23,14 @@ These rules apply in addition to the repository root [AGENTS.md](../../AGENTS.md
 
 - Keep versions for `sdk/core` dependencies managed from the root workspace `Cargo.toml`.
 - Prefer `workspace = true` in `sdk/core` crate manifests when inheriting workspace-managed dependencies.
+- When evaluating a release, focus on normal `[dependencies]` that affect the published crate. Dev-only test/example/doc wiring may remain local unless the same manifest also names that package in normal dependencies.
 - For unreleased local `sdk/core` dependencies, use the workspace table for the needed `path + version` entry.
 - Keep crates in next-release state in their own manifests; manage cross-crate version wiring from the workspace table.
 
 ### Published vs. unpublished graphs
 
 - Mixing published and local versions of `typespec`, `typespec_client_core`, `azure_core`, or crates that expose their types can create duplicate-type failures.
+- Cargo also requires a single canonical source for a package within one manifest. If a crate appears in both normal and dev dependencies, do not mix a published source in one entry with a local path in the other.
 - Common breakage looks like mismatched `ClientOptions`, `TokenCredential`, or trait implementations that appear identical but come from different crate instances.
 - When changing one side of a test/example graph to local source, check all directly exchanged public types in that graph and keep them on the same crate instance.
 
@@ -39,3 +41,15 @@ These rules apply in addition to the repository root [AGENTS.md](../../AGENTS.md
 - Organize identity stubs in `azure_core_examples::identity` per credential module, mirroring `azure_identity` where practical, and re-export them from `identity/mod.rs`.
 - For markdown compile tests, alias helper modules to the public crate names used in docs (for example `use azure_core_examples::identity as azure_identity;`).
 - If a compile-only test needs just one or two service types and would otherwise mix published and local `azure_core` graphs, prefer a tiny local stub in that test module over broad dependency rewiring.
+
+## Resource Manager
+
+- Use "Resource Manager", not "ARM", in public documentation. "ARM" is acceptable in code.
+- Put Resource Manager (ARM)-specific functionality in existing `azure_core` modules where appropriate.
+- Use `resource_manager` in module, field, function, and method names; use `unstable_resource_manager` for the Cargo feature and retain `azure_resourcemanager_*` crate names.
+- When names collide, prefer a `resource_manager` submodule gated by the `unstable_resource_manager` feature, such as `azure_core::http::poller::resource_manager`, over `ResourceManager` type or variant prefixes; do not re-export its items from parent modules.
+- Enable `azure_core`'s `unstable_resource_manager` feature and use `azure_core::cloud::resource_manager::Audience` for custom audience registration in all ARM crates; do not define crate-specific ARM audience markers.
+- Import `azure_core::cloud::resource_manager::CloudConfigurationExt as _` in generated and hand-written ARM constructors to call `endpoint()`, `audience()`, and `default_scope()` without audience type parameters. Caller examples configuring `CloudConfiguration` and `CustomConfiguration` do not need this trait.
+- Keep each ARM crate's first README client-configuration example as the normal case. Add a second example configuring and using a custom cloud: set `CustomConfiguration::authority_host` and `endpoint`, register the ARM audience in `Audiences` with the shared marker, and use that cloud to configure the credential and client.
+- Read the caller's `CloudConfiguration` from client options in Resource Manager constructors; use `unwrap_or_default()` when omitted.
+- Resolve built-in service endpoints and authentication audiences in the library; honor supplied custom-cloud values.

@@ -76,7 +76,7 @@ struct ContainerSettings {
     partition_key: PartitionKeyDefinition,
     #[serde(default = "default_partition_count")]
     partition_count: u32,
-    throughput: Option<u32>,
+    throughput: Option<u64>,
     #[serde(default)]
     seed_items: Vec<SeedItem>,
 }
@@ -300,7 +300,7 @@ impl EmulatorConfig {
             )?;
         }
 
-        Ok(Arc::new(InMemoryEmulatorHttpClient::new(account)))
+        Ok(Arc::new(InMemoryEmulatorHttpClient::try_new(account)?))
     }
 
     pub(crate) async fn provision(

@@ -10,13 +10,15 @@ use crate::models::DefaultConsistencyLevel;
 /// it overrides the consistency level configured on the request options, on the client, or
 /// on the account for the read path.
 ///
-/// The strategy is honored across all supported transport modes (Gateway V1 / compute
-/// gateway and Gateway V2 / thin client proxy). Wire emission:
+/// The strategy is honored across all supported Rust transport modes. Wire emission:
 ///
 /// - Gateway V1 (HTTP) sends `x-ms-cosmos-read-consistency-strategy: <Strategy>` and
 ///   omits `x-ms-consistency-level` whenever a non-`Default` strategy is in effect.
 /// - Gateway V2 (RNTBD) serializes the strategy as token `0x00FE` (Byte) and omits the
 ///   `ConsistencyLevel` token under the same conditions.
+/// - Direct mode uses the same RNTBD `0x00FE` token and byte values as Gateway V2.
+///   The Rust driver does not currently expose a Direct transport; this mapping records
+///   protocol compatibility for Direct implementations and future support.
 ///
 /// `ReadConsistencyStrategy::Default` is transparent: no header / token is emitted and the
 /// existing consistency-level behavior is preserved.
@@ -26,8 +28,9 @@ use crate::models::DefaultConsistencyLevel;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum ReadConsistencyStrategy {
-    /// Use the default read behavior for the consistency level applied to the operation,
-    /// the client, or the account. No RCS header / token is emitted on the wire.
+    /// Reset to the default consistency-level or account behavior at the layer where this
+    /// value is explicitly configured. Unlike an absent value, an explicit `Default` masks
+    /// lower-precedence read consistency strategies. No RCS header / token is emitted.
     Default,
 
     /// Eventual consistency guarantees that reads will return a subset of writes.
@@ -38,12 +41,15 @@ pub enum ReadConsistencyStrategy {
     /// read-your-writes within any single session.
     Session,
 
-    /// Returns the latest committed version of the requested item across replicas.
+    /// Returns the latest committed version available across replicas in the
+    /// selected read region.
     ///
     /// On accounts whose default consistency is Session, ConsistentPrefix, or Eventual,
     /// this strategy upgrades the read to a quorum read (1:2 client-to-backend
     /// amplification) without weakening any other operation. On Strong / BoundedStaleness
-    /// accounts it behaves like the account default.
+    /// accounts it behaves like the account default. This is a region-local
+    /// quorum read, not a cross-region replication barrier: a newly written
+    /// item can be temporarily absent from a lagging secondary region.
     LatestCommitted,
 
     /// Reads the latest version across all regions.
@@ -118,6 +124,19 @@ impl ReadConsistencyStrategy {
             Self::Session => Some(0x02),
             Self::LatestCommitted => Some(0x03),
             Self::GlobalStrong => Some(0x04),
+        }
+    }
+
+    /// Decodes the RNTBD `ReadConsistencyStrategy` token value used by Gateway V2
+    /// and Direct mode.
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+    pub(crate) fn from_rntbd_wire_byte(value: u8) -> Option<Self> {
+        match value {
+            0x01 => Some(Self::Eventual),
+            0x02 => Some(Self::Session),
+            0x03 => Some(Self::LatestCommitted),
+            0x04 => Some(Self::GlobalStrong),
+            _ => None,
         }
     }
 
@@ -251,6 +270,25 @@ mod tests {
         assert!(ReadConsistencyStrategy::Session.is_non_default());
         assert!(ReadConsistencyStrategy::LatestCommitted.is_non_default());
         assert!(ReadConsistencyStrategy::GlobalStrong.is_non_default());
+    }
+
+    #[test]
+    fn rntbd_wire_mapping_round_trips_gateway_v2_and_direct_values() {
+        for (strategy, wire_byte) in [
+            (ReadConsistencyStrategy::Eventual, 0x01),
+            (ReadConsistencyStrategy::Session, 0x02),
+            (ReadConsistencyStrategy::LatestCommitted, 0x03),
+            (ReadConsistencyStrategy::GlobalStrong, 0x04),
+        ] {
+            assert_eq!(strategy.rntbd_wire_byte(), Some(wire_byte));
+            assert_eq!(
+                ReadConsistencyStrategy::from_rntbd_wire_byte(wire_byte),
+                Some(strategy)
+            );
+        }
+        assert_eq!(ReadConsistencyStrategy::Default.rntbd_wire_byte(), None);
+        assert_eq!(ReadConsistencyStrategy::from_rntbd_wire_byte(0x00), None);
+        assert_eq!(ReadConsistencyStrategy::from_rntbd_wire_byte(0xFF), None);
     }
 
     #[test]

@@ -3,3 +3,4 @@
 
 pub(crate) mod apiview;
 pub(crate) mod markdown;
+pub(crate) mod patch;

@@ -1,14 +1,28 @@
 # Release History
 
-## 0.9.0 (Unreleased)
-
-### Features Added
+## 0.12.0 (Unreleased)
 
 ### Breaking Changes
 
-### Bugs Fixed
+- The checkpoint and ownership blob key that `BlobCheckpointStore` reads and writes now folds the fully qualified namespace, the event hub name, and the consumer group to lowercase ASCII. The partition id keeps its case, so `NS.ServiceBus.Windows.Net/My-Hub/$Default/checkpoint/0` becomes `ns.servicebus.windows.net/my-hub/$default/checkpoint/0`, and the ownership key changes in the same way. Event Hubs treats the consumer group as case insensitive, so a deployment that spelled the group `$Default` on one run and `$default` on the next built two disjoint key sets and reprocessed events. Records that an older Rust client wrote stay at the old key and become unreachable. The change adds no dual read and no fallback lookup, and a processor that starts against an existing container resumes from its configured start position. ([#5099](https://github.com/Azure/azure-sdk-for-rust/issues/5099))
+
+## 0.11.0 (2026-09-14)
 
 ### Other Changes
+
+- Updated `azure_messaging_eventhubs` to 0.17.0, which withdraws AMQP-over-WebSockets support and removes the prohibited `sha1` dependency. ([#5261](https://github.com/Azure/azure-sdk-for-rust/issues/5261))
+
+## 0.10.0 (2026-09-08)
+
+### Other Changes
+
+- Updated dependencies.
+
+## 0.9.0 (2026-06-03)
+
+### Other Changes
+
+- Updated dependencies.
 
 ## 0.8.0 (2026-04-22)
 

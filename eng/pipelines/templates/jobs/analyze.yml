@@ -37,6 +37,8 @@ jobs:
           ConfigureRegistry: false
 
   - template: /eng/common/pipelines/templates/steps/save-package-properties.yml
+    parameters:
+      ServiceDirectory: ${{ parameters.ServiceDirectory }}
 
   # Always skip audit. Audit requires contact with restricted endpoints and is
   # excluded from use in internal builds. Instead, teams must check on the state
@@ -52,6 +54,11 @@ jobs:
         -SkipPackageAnalysis:('$(NoPackagesChanged)' -eq 'true')
         -Audit:$false
         -Deny
+
+  - task: UseNode@1
+    displayName: 'Use Node.js 22.x'
+    inputs:
+      version: 22.x
 
   - template: /eng/common/pipelines/templates/steps/check-spelling.yml
     parameters:

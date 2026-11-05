@@ -3,6 +3,14 @@
 
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+//!
+//! ## Unstable OpenTelemetry
+//!
+//! Enable the off-by-default `unstable_opentelemetry` feature to emit metrics and
+//! distributed traces through the OpenTelemetry diagnostics handlers. This
+//! integration is unstable because the `opentelemetry` crate is still in
+//! preview. Diagnostics contexts and non-OpenTelemetry handlers remain available
+//! without the feature.
 
 // =========================================================================
 // Public API
@@ -12,7 +20,7 @@ pub use account_endpoint::AccountEndpoint;
 pub use account_reference::AccountReference;
 #[doc(inline)]
 pub use clients::{ContainerClient, CosmosClient, CosmosClientBuilder, DatabaseClient};
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 pub use clients::{DistributedReadTransaction, DistributedWriteTransaction};
 pub use credential::CosmosCredential;
 pub use error::{CosmosError, CosmosStatus, Result, SubStatusCode};
@@ -48,13 +56,3 @@ mod region_proximity;
 mod resource_identity;
 mod runtime;
 mod session_helpers;
-
-// =========================================================================
-// Crate-internal re-exports
-// =========================================================================
-
-/// Internal alias for the driver's `CosmosError`. Used at error-construction
-/// sites inside this crate so they can call the driver's
-/// `CosmosError::builder()` directly and then `.into()` the result into the
-/// public [`CosmosError`] newtype. Not exposed in the public API.
-pub(crate) use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;

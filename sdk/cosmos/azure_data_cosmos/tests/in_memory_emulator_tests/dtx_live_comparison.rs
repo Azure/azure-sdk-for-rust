@@ -136,7 +136,10 @@ async fn resolve_container_with_retry(
 ) -> Result<ContainerReference, Box<dyn Error>> {
     let mut last_error = None;
     for _ in 0..10 {
-        match driver.resolve_container(db_name, container_name).await {
+        match driver
+            .resolve_container(db_name, container_name, OperationOptions::default())
+            .await
+        {
             Ok(container) => return Ok(container),
             Err(error) => {
                 last_error = Some(error);

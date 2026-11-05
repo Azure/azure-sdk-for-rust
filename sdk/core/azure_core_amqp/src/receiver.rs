@@ -2,12 +2,13 @@
 // Licensed under the MIT license.
 
 use crate::{
-    error::Result,
+    error::{AmqpDescribedError, AmqpError, Result},
     messaging::{AmqpDelivery, AmqpSource, AmqpTarget},
     session::AmqpSession,
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
     ReceiverSettleMode,
 };
+use typespec_macros::SafeDebug;
 
 #[cfg(feature = "fe2o3_amqp")]
 type ReceiverImplementation = super::fe2o3::receiver::Fe2o3AmqpReceiver;
@@ -108,6 +109,101 @@ pub trait AmqpReceiverApis {
 
     /// Releases a delivery from the AMQP receiver.
     async fn release_delivery(&self, delivery: &AmqpDelivery) -> Result<()>;
+
+    /// Settles a delivery with a terminal AMQP outcome.
+    ///
+    /// This is the general form of the four settlement methods. It can express outcomes
+    /// the older methods cannot, such as `Modified` and a `Rejected` outcome that carries
+    /// a described error.
+    ///
+    /// The default implementation forwards [`AmqpDeliveryOutcome::Accepted`],
+    /// [`AmqpDeliveryOutcome::Released`], and `Rejected(None)` to
+    /// [`accept_delivery`](AmqpReceiverApis::accept_delivery),
+    /// [`release_delivery`](AmqpReceiverApis::release_delivery), and
+    /// [`reject_delivery`](AmqpReceiverApis::reject_delivery). It returns an error for the
+    /// outcomes it cannot express. An implementation that can send the full outcome set
+    /// overrides this method.
+    async fn settle_delivery(
+        &self,
+        delivery: &AmqpDelivery,
+        outcome: AmqpDeliveryOutcome,
+    ) -> Result<()> {
+        match outcome.default_settlement_route() {
+            DefaultSettlementRoute::Accept => self.accept_delivery(delivery).await,
+            DefaultSettlementRoute::Release => self.release_delivery(delivery).await,
+            DefaultSettlementRoute::Reject => self.reject_delivery(delivery).await,
+            DefaultSettlementRoute::Unsupported => Err(AmqpError::with_message(
+                "This AMQP receiver implementation does not support this delivery outcome.",
+            )),
+        }
+    }
+}
+
+/// The older settlement method that the default [`AmqpReceiverApis::settle_delivery`]
+/// forwards to for a given outcome.
+#[derive(Debug, PartialEq)]
+pub(crate) enum DefaultSettlementRoute {
+    /// Forward to [`AmqpReceiverApis::accept_delivery`].
+    Accept,
+    /// Forward to [`AmqpReceiverApis::reject_delivery`].
+    Reject,
+    /// Forward to [`AmqpReceiverApis::release_delivery`].
+    Release,
+    /// No older method can express this outcome without losing information.
+    Unsupported,
+}
+
+/// A terminal AMQP outcome used to settle a received delivery.
+///
+/// See [AMQP delivery state](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#section-delivery-state)
+/// for the definition of each outcome.
+#[derive(SafeDebug, Clone, PartialEq)]
+pub enum AmqpDeliveryOutcome {
+    /// The delivery was processed successfully. The source may forget the message.
+    Accepted,
+
+    /// The delivery is invalid and must not be redelivered. The optional described error
+    /// tells the source why. Service Bus uses the error to carry the dead letter reason
+    /// and description.
+    Rejected(Option<AmqpDescribedError>),
+
+    /// The delivery was not processed. The source may redeliver the message unchanged.
+    Released,
+
+    /// The delivery was not processed, and the source should apply the changes below
+    /// before it redelivers the message.
+    ///
+    /// See [AMQP modified outcome](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#type-modified).
+    Modified {
+        /// Asks the source to increment the delivery count of the message.
+        delivery_failed: Option<bool>,
+
+        /// Tells the source not to redeliver the message to the link endpoint that
+        /// sent this outcome. The source can still redeliver the message on another
+        /// link. This is the AMQP `undeliverable-here` field.
+        undeliverable_here: Option<bool>,
+
+        /// Annotations the source merges into the message annotations before redelivery.
+        message_annotations: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
+    },
+}
+
+impl AmqpDeliveryOutcome {
+    /// Returns the older settlement method that can express this outcome, if any.
+    ///
+    /// An outcome that carries information the older methods drop is
+    /// [`DefaultSettlementRoute::Unsupported`]. The default trait implementation fails
+    /// on those rather than settling the delivery in a lossy way.
+    pub(crate) fn default_settlement_route(&self) -> DefaultSettlementRoute {
+        match self {
+            AmqpDeliveryOutcome::Accepted => DefaultSettlementRoute::Accept,
+            AmqpDeliveryOutcome::Released => DefaultSettlementRoute::Release,
+            AmqpDeliveryOutcome::Rejected(None) => DefaultSettlementRoute::Reject,
+            AmqpDeliveryOutcome::Rejected(Some(_)) | AmqpDeliveryOutcome::Modified { .. } => {
+                DefaultSettlementRoute::Unsupported
+            }
+        }
+    }
 }
 
 /// Struct representing the AMQP receiver functionality.
@@ -160,6 +256,14 @@ impl AmqpReceiverApis for AmqpReceiver {
     async fn release_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
         self.implementation.release_delivery(delivery).await
     }
+
+    async fn settle_delivery(
+        &self,
+        delivery: &AmqpDelivery,
+        outcome: AmqpDeliveryOutcome,
+    ) -> Result<()> {
+        self.implementation.settle_delivery(delivery, outcome).await
+    }
 }
 
 impl AmqpReceiver {
@@ -175,6 +279,51 @@ impl AmqpReceiver {
 mod tests {
 
     use super::*;
+
+    use crate::error::AmqpErrorCondition;
+
+    #[test]
+    fn default_route_forwards_outcomes_the_older_methods_express() {
+        assert_eq!(
+            AmqpDeliveryOutcome::Accepted.default_settlement_route(),
+            DefaultSettlementRoute::Accept
+        );
+        assert_eq!(
+            AmqpDeliveryOutcome::Released.default_settlement_route(),
+            DefaultSettlementRoute::Release
+        );
+        assert_eq!(
+            AmqpDeliveryOutcome::Rejected(None).default_settlement_route(),
+            DefaultSettlementRoute::Reject
+        );
+    }
+
+    #[test]
+    fn default_route_refuses_outcomes_that_would_lose_information() {
+        // A rejection carrying a described error cannot go through reject_delivery,
+        // which sends no error at all. Forwarding it would drop the dead letter reason.
+        let described = AmqpDeliveryOutcome::Rejected(Some(AmqpDescribedError::new(
+            AmqpErrorCondition::DeadLetter,
+            Some("description".into()),
+            AmqpOrderedMap::new(),
+        )));
+        assert_eq!(
+            described.default_settlement_route(),
+            DefaultSettlementRoute::Unsupported
+        );
+
+        // Modified has no older equivalent at all. Releasing instead would silently
+        // discard undeliverable_here and the annotations.
+        let modified = AmqpDeliveryOutcome::Modified {
+            delivery_failed: Some(false),
+            undeliverable_here: Some(true),
+            message_annotations: None,
+        };
+        assert_eq!(
+            modified.default_settlement_route(),
+            DefaultSettlementRoute::Unsupported
+        );
+    }
 
     #[test]
     fn test_amqp_receiver_options_builder() {

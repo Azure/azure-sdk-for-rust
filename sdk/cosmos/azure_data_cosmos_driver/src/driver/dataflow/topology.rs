@@ -29,6 +29,7 @@ pub(crate) struct CachedTopologyProvider<'a, F> {
     cache: &'a PartitionKeyRangeCache,
     container: ContainerReference,
     fetch_pk_ranges: F,
+    cache_only: bool,
 }
 
 impl<'a, F> CachedTopologyProvider<'a, F> {
@@ -42,14 +43,21 @@ impl<'a, F> CachedTopologyProvider<'a, F> {
             cache,
             container,
             fetch_pk_ranges,
+            cache_only: false,
         }
+    }
+
+    /// Uses optional cached identity without fetching topology, even during recovery.
+    pub(crate) fn with_cache_only(mut self, cache_only: bool) -> Self {
+        self.cache_only = cache_only;
+        self
     }
 }
 
 impl<F, Fut> TopologyProvider for CachedTopologyProvider<'_, F>
 where
     F: Fn(ContainerReference, Option<String>) -> Fut + Send + Sync,
-    Fut: std::future::Future<Output = Option<PkRangeFetchResult>> + Send,
+    Fut: std::future::Future<Output = crate::error::Result<Option<PkRangeFetchResult>>> + Send,
 {
     fn resolve_ranges<'a>(
         &'a mut self,
@@ -58,21 +66,32 @@ where
     ) -> BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
         let force_refresh = matches!(refresh, PartitionRoutingRefresh::ForceRefresh);
         Box::pin(async move {
-            let pk_ranges = self
-                .cache
-                .resolve_overlapping_ranges(
-                    &self.container,
-                    range.min_inclusive()..range.max_exclusive(),
-                    force_refresh,
-                    &self.fetch_pk_ranges,
-                )
-                .await;
+            let epk_range = range.min_inclusive()..range.max_exclusive();
+            let pk_ranges = if self.cache_only {
+                if force_refresh {
+                    self.cache.invalidate(&self.container).await;
+                    return Ok(Vec::new());
+                }
+                self.cache
+                    .cached_overlapping_ranges(&self.container, epk_range)
+                    .await?
+            } else {
+                self.cache
+                    .resolve_overlapping_ranges_result(
+                        &self.container,
+                        epk_range,
+                        force_refresh,
+                        &self.fetch_pk_ranges,
+                    )
+                    .await?
+            };
 
             let pk_ranges = match pk_ranges {
                 Some(ranges) if !ranges.is_empty() => ranges,
+                _ if self.cache_only => return Ok(Vec::new()),
                 _ => {
                     return Err(crate::error::CosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
+                        .with_status(crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
                         .with_message("failed to resolve partition key ranges from topology cache")
                         .build());
                 }
@@ -83,6 +102,7 @@ where
                 .map(|pkr| {
                     Ok(ResolvedRange {
                         partition_key_range_id: pkr.id,
+                        parents: pkr.parents.unwrap_or_default(),
                         range: FeedRange::new(pkr.min_inclusive, pkr.max_exclusive)?,
                     })
                 })
@@ -98,9 +118,102 @@ mod tests {
         effective_partition_key::EffectivePartitionKey,
         partition_key_range::PartitionKeyRange as PkRange, ContainerProperties,
     };
+    use futures::FutureExt;
+    use std::sync::Arc;
+
+    async fn unexpected_fetch(
+        _: ContainerReference,
+        _: Option<String>,
+    ) -> crate::error::Result<Option<PkRangeFetchResult>> {
+        panic!("cache-only resolution must not fetch topology")
+    }
+
+    #[tokio::test]
+    async fn cache_only_miss_does_not_initialize_topology() {
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container();
+        let mut provider = CachedTopologyProvider::new(&cache, container.clone(), unexpected_fetch)
+            .with_cache_only(true);
+        for refresh in [
+            PartitionRoutingRefresh::UseCached,
+            PartitionRoutingRefresh::ForceRefresh,
+        ] {
+            assert!(provider
+                .resolve_ranges(&FeedRange::full(), refresh)
+                .await
+                .unwrap()
+                .is_empty());
+        }
+
+        let mut required = CachedTopologyProvider::new(&cache, container, single_range_fetch);
+        assert_eq!(
+            required
+                .resolve_ranges(&FeedRange::full(), PartitionRoutingRefresh::UseCached)
+                .await
+                .unwrap()
+                .len(),
+            1
+        );
+    }
+
+    #[tokio::test]
+    async fn cache_only_reuses_parent_identity_but_invalidates_on_topology_error() {
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container();
+        cache
+            .try_lookup_result(&container, false, single_range_fetch)
+            .await
+            .unwrap();
+        let mut provider = CachedTopologyProvider::new(&cache, container.clone(), unexpected_fetch)
+            .with_cache_only(true);
+        let ranges = provider
+            .resolve_ranges(&FeedRange::full(), PartitionRoutingRefresh::UseCached)
+            .await
+            .unwrap();
+        assert_eq!(ranges.len(), 1);
+        assert_eq!(ranges[0].partition_key_range_id, "0");
+        assert_eq!(ranges[0].parents, ["parent"]);
+        assert!(provider
+            .resolve_ranges(&FeedRange::full(), PartitionRoutingRefresh::ForceRefresh)
+            .await
+            .unwrap()
+            .is_empty());
+        assert!(cache
+            .cached_overlapping_ranges(
+                &container,
+                &EffectivePartitionKey::MIN..&EffectivePartitionKey::MAX
+            )
+            .await
+            .unwrap()
+            .is_none());
+    }
+
+    #[tokio::test]
+    async fn cache_only_does_not_wait_for_in_progress_fetch() {
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container();
+        let pending = cache.try_lookup_result(&container, false, |_, _| {
+            futures::future::pending::<crate::error::Result<Option<PkRangeFetchResult>>>()
+        });
+        futures::pin_mut!(pending);
+        assert!(futures::poll!(pending.as_mut()).is_pending());
+
+        let mut provider = CachedTopologyProvider::new(&cache, container.clone(), unexpected_fetch)
+            .with_cache_only(true);
+        let range = FeedRange::full();
+        let result = provider
+            .resolve_ranges(&range, PartitionRoutingRefresh::UseCached)
+            .now_or_never()
+            .expect("optional resolution must not await the pending fetch");
+        assert!(result.unwrap().is_empty());
+    }
 
     fn make_container() -> ContainerReference {
-        let account = crate::models::AccountReference::with_master_key(
+        make_container_with_rid("c_rid")
+    }
+
+    fn make_container_with_rid(rid: &'static str) -> ContainerReference {
+        let account = crate::models::AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -109,82 +222,115 @@ mod tests {
             partition_key: serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap(),
             system_properties: Default::default(),
         };
-        ContainerReference::new(account, "db", "db_rid", "c", "c_rid", &props)
+        ContainerReference::new(account, "db", "db_rid", "c", rid, &props)
     }
 
     async fn single_range_fetch(
         _container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
-        if continuation.is_some() {
+    ) -> crate::error::Result<Option<PkRangeFetchResult>> {
+        Ok(if continuation.is_some() {
             Some(PkRangeFetchResult {
                 ranges: vec![],
                 continuation,
                 not_modified: true,
             })
         } else {
+            let mut range = PkRange::new(
+                "0".into(),
+                EffectivePartitionKey::MIN,
+                EffectivePartitionKey::MAX,
+            );
+            range.parents = Some(vec!["parent".to_string()]);
             Some(PkRangeFetchResult {
-                ranges: vec![PkRange::new("0".into(), "", "FF")],
+                ranges: vec![range],
                 continuation: Some("etag-1".to_string()),
                 not_modified: false,
             })
-        }
+        })
     }
 
     async fn two_range_fetch(
         _container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
-        if continuation.is_some() {
+    ) -> crate::error::Result<Option<PkRangeFetchResult>> {
+        Ok(if continuation.is_some() {
             Some(PkRangeFetchResult {
                 ranges: vec![],
                 continuation,
                 not_modified: true,
             })
         } else {
+            let boundary = EffectivePartitionKey::try_from("80")?;
             Some(PkRangeFetchResult {
                 ranges: vec![
-                    PkRange::new("1".into(), "", "80"),
-                    PkRange::new("2".into(), "80", "FF"),
+                    PkRange::new("1".into(), EffectivePartitionKey::MIN, boundary.clone()),
+                    PkRange::new("2".into(), boundary, EffectivePartitionKey::MAX),
                 ],
                 continuation: Some("etag-2".to_string()),
                 not_modified: false,
             })
-        }
+        })
     }
 
     async fn three_range_fetch(
         _container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
-        if continuation.is_some() {
+    ) -> crate::error::Result<Option<PkRangeFetchResult>> {
+        Ok(if continuation.is_some() {
             Some(PkRangeFetchResult {
                 ranges: vec![],
                 continuation,
                 not_modified: true,
             })
         } else {
+            let first_boundary = EffectivePartitionKey::try_from("40")?;
+            let second_boundary = EffectivePartitionKey::try_from("80")?;
             Some(PkRangeFetchResult {
                 ranges: vec![
-                    PkRange::new("1".into(), "", "40"),
-                    PkRange::new("2".into(), "40", "80"),
-                    PkRange::new("3".into(), "80", "FF"),
+                    PkRange::new(
+                        "1".into(),
+                        EffectivePartitionKey::MIN,
+                        first_boundary.clone(),
+                    ),
+                    PkRange::new("2".into(), first_boundary, second_boundary.clone()),
+                    PkRange::new("3".into(), second_boundary, EffectivePartitionKey::MAX),
                 ],
                 continuation: Some("etag-3".to_string()),
                 not_modified: false,
             })
-        }
+        })
     }
 
     async fn failing_fetch(
         _container: ContainerReference,
         _continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
-        None
+    ) -> crate::error::Result<Option<PkRangeFetchResult>> {
+        Ok(None)
+    }
+
+    async fn typed_error_fetch(
+        _container: ContainerReference,
+        _continuation: Option<String>,
+    ) -> crate::error::Result<Option<PkRangeFetchResult>> {
+        Err(collection_rid_mismatch_error())
+    }
+
+    fn collection_rid_mismatch_error() -> crate::error::CosmosError {
+        crate::error::CosmosError::builder()
+            .with_status(
+                crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
+                    .with_sub_status(
+                        crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH.value(),
+                    ),
+            )
+            .with_message("container RID mismatch")
+            .build()
     }
 
     #[tokio::test]
-    async fn resolves_normalized_point_to_owning_partition_including_boundary() {
+    async fn resolves_normalized_point_to_owning_partition_including_boundary(
+    ) -> crate::error::Result<()> {
         // Issue #4574: an equality / `IN` predicate's closed point `[X, X]` is
         // normalized to the half-open `[X, successor(X))`, which must resolve to
         // exactly its owning partition. Topology is split at "80"; a point
@@ -193,7 +339,7 @@ mod tests {
         let cache = PartitionKeyRangeCache::new();
         let mut provider = CachedTopologyProvider::new(&cache, make_container(), two_range_fetch);
 
-        let inside_epk = EffectivePartitionKey::from("C0");
+        let inside_epk = EffectivePartitionKey::try_from("C0")?;
         let inside = FeedRange::new(inside_epk.clone(), inside_epk.successor()).unwrap();
         let ranges = provider
             .resolve_ranges(&inside, PartitionRoutingRefresh::ForceRefresh)
@@ -202,7 +348,7 @@ mod tests {
         assert_eq!(ranges.len(), 1);
         assert_eq!(ranges[0].partition_key_range_id, "2");
 
-        let boundary_epk = EffectivePartitionKey::from("80");
+        let boundary_epk = EffectivePartitionKey::try_from("80")?;
         let at_boundary = FeedRange::new(boundary_epk.clone(), boundary_epk.successor()).unwrap();
         let ranges = provider
             .resolve_ranges(&at_boundary, PartitionRoutingRefresh::UseCached)
@@ -213,6 +359,7 @@ mod tests {
             ranges[0].partition_key_range_id, "2",
             "a point at the inclusive lower bound belongs to that partition"
         );
+        Ok(())
     }
 
     #[tokio::test]
@@ -228,12 +375,13 @@ mod tests {
 
         assert_eq!(ranges.len(), 1);
         assert_eq!(ranges[0].partition_key_range_id, "0");
+        assert_eq!(ranges[0].parents, vec!["parent".to_string()]);
         assert_eq!(ranges[0].range.min_inclusive(), &EffectivePartitionKey::MIN);
         assert_eq!(ranges[0].range.max_exclusive(), &EffectivePartitionKey::MAX);
     }
 
     #[tokio::test]
-    async fn resolves_split_ranges() {
+    async fn resolves_split_ranges() -> crate::error::Result<()> {
         let cache = PartitionKeyRangeCache::new();
         let mut provider = CachedTopologyProvider::new(&cache, make_container(), two_range_fetch);
 
@@ -247,24 +395,25 @@ mod tests {
         assert_eq!(ranges[0].range.min_inclusive(), &EffectivePartitionKey::MIN);
         assert_eq!(
             ranges[0].range.max_exclusive(),
-            &EffectivePartitionKey::from("80")
+            &EffectivePartitionKey::try_from("80")?
         );
         assert_eq!(ranges[1].partition_key_range_id, "2");
         assert_eq!(
             ranges[1].range.min_inclusive(),
-            &EffectivePartitionKey::from("80")
+            &EffectivePartitionKey::try_from("80")?
         );
         assert_eq!(ranges[1].range.max_exclusive(), &EffectivePartitionKey::MAX);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn resolves_partial_epk_range() {
+    async fn resolves_partial_epk_range() -> crate::error::Result<()> {
         let cache = PartitionKeyRangeCache::new();
         let mut provider = CachedTopologyProvider::new(&cache, make_container(), two_range_fetch);
 
         let left_half = FeedRange::new(
             EffectivePartitionKey::MIN.clone(),
-            EffectivePartitionKey::from("80"),
+            EffectivePartitionKey::try_from("80")?,
         )
         .unwrap();
         let ranges = provider
@@ -274,6 +423,7 @@ mod tests {
 
         assert_eq!(ranges.len(), 1);
         assert_eq!(ranges[0].partition_key_range_id, "1");
+        Ok(())
     }
 
     #[tokio::test]
@@ -306,5 +456,121 @@ mod tests {
             rendered.ends_with("failed to resolve partition key ranges from topology cache"),
             "unexpected: {rendered}"
         );
+    }
+
+    #[tokio::test]
+    async fn preserves_typed_fetch_error() {
+        let cache = PartitionKeyRangeCache::new();
+        let mut provider = CachedTopologyProvider::new(&cache, make_container(), typed_error_fetch);
+
+        let error = provider
+            .resolve_ranges(&FeedRange::full(), PartitionRoutingRefresh::ForceRefresh)
+            .await
+            .expect_err("typed topology fetch errors must be preserved");
+
+        assert_eq!(
+            error.status().status_code(),
+            azure_core::http::StatusCode::BadRequest
+        );
+        assert_eq!(
+            error.status().sub_status(),
+            Some(crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH)
+        );
+    }
+
+    #[tokio::test]
+    async fn coalesced_callers_preserve_typed_fetch_error() {
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container();
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let make_fetch = || {
+            let calls = Arc::clone(&calls);
+            move |_container: ContainerReference, _continuation: Option<String>| {
+                let calls = Arc::clone(&calls);
+                async move {
+                    calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    tokio::time::sleep(std::time::Duration::from_millis(25)).await;
+                    Err(collection_rid_mismatch_error())
+                }
+            }
+        };
+        let mut left = CachedTopologyProvider::new(&cache, container.clone(), make_fetch());
+        let mut right = CachedTopologyProvider::new(&cache, container, make_fetch());
+
+        let range = FeedRange::full();
+        let (left_result, right_result) = tokio::join!(
+            left.resolve_ranges(&range, PartitionRoutingRefresh::ForceRefresh),
+            right.resolve_ranges(&range, PartitionRoutingRefresh::ForceRefresh),
+        );
+
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+        for error in [left_result.unwrap_err(), right_result.unwrap_err()] {
+            assert_eq!(
+                error.status().sub_status(),
+                Some(crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH)
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn lossy_initializer_cannot_hide_error_from_typed_waiter() {
+        let cache = Arc::new(PartitionKeyRangeCache::new());
+        let container = make_container();
+        let started = Arc::new(tokio::sync::Notify::new());
+        let release = Arc::new(tokio::sync::Notify::new());
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+
+        let lossy = {
+            let cache = Arc::clone(&cache);
+            let container = container.clone();
+            let started = Arc::clone(&started);
+            let release = Arc::clone(&release);
+            let calls = Arc::clone(&calls);
+            tokio::spawn(async move {
+                cache
+                    .try_lookup(&container, false, move |_, _| {
+                        let started = Arc::clone(&started);
+                        let release = Arc::clone(&release);
+                        let calls = Arc::clone(&calls);
+                        async move {
+                            calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                            started.notify_one();
+                            release.notified().await;
+                            Err(collection_rid_mismatch_error())
+                        }
+                    })
+                    .await
+            })
+        };
+
+        started.notified().await;
+        let typed = {
+            let cache = Arc::clone(&cache);
+            let container = container.clone();
+            tokio::spawn(async move {
+                let mut provider = CachedTopologyProvider::new(&cache, container, |_, _| async {
+                    panic!("typed waiter must share the lossy caller's cache initialization");
+                    #[allow(unreachable_code)]
+                    Ok::<Option<PkRangeFetchResult>, crate::error::CosmosError>(None)
+                });
+                provider
+                    .resolve_ranges(&FeedRange::full(), PartitionRoutingRefresh::UseCached)
+                    .await
+            })
+        };
+
+        tokio::task::yield_now().await;
+        release.notify_one();
+
+        assert!(lossy.await.unwrap().is_none());
+        let error = typed
+            .await
+            .unwrap()
+            .expect_err("typed waiter must receive the coalesced fetch error");
+        assert_eq!(
+            error.status().sub_status(),
+            Some(crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH)
+        );
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
     }
 }

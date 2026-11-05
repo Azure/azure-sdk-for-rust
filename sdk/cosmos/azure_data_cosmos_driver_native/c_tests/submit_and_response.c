@@ -114,7 +114,7 @@ static int test_resolve_container_blocking_rejects_nulls(void)
     cosmos_container_ref_t *out = NULL;
     cosmos_error_t *err = NULL;
     int32_t rc = cosmos_driver_resolve_container_blocking(
-        NULL, NULL, "db", "c", &out, &err);
+        NULL, NULL, SV("db"), SV("c"), &out, &err);
     ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "rejects NULL runtime/driver (rc=%d)", rc);
     return result;
@@ -165,7 +165,7 @@ static int test_resolve_container_submit_rejects_null_driver(void)
     int result = TEST_PASS;
     cosmos_status_code_t err = COSMOS_STATUS_SUCCESS;
     cosmos_operation_handle_t *h =
-        cosmos_driver_resolve_container_submit(NULL, "db", "c", NULL, 0, &err);
+        cosmos_driver_resolve_container_submit(NULL, SV("db"), SV("c"), NULL, 0, &err);
     ASSERT(h == NULL, "submit returned NULL");
     ASSERT(COSMOS_STATUS_SUB(err) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "set INVALID_ARGUMENT (err=%d)", err);
@@ -181,7 +181,7 @@ static int test_singleton_submit_with_request_rejects_null_driver(void)
     int result = TEST_PASS;
     cosmos_operation_request_t req = {0};
     req.kind = COSMOS_OPERATION_KIND_READ_ITEM;
-    req.item_id = "id-1";
+    req.item_id = SV("id-1");
     req.max_item_count = -1;
 
     cosmos_status_code_t err = COSMOS_STATUS_SUCCESS;

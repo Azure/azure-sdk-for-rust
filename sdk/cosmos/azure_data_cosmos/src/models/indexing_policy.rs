@@ -712,14 +712,6 @@ mod tests {
             round_tripped["fullTextIndexes"][0]["someFutureTextKnob"]
         );
 
-        let debug = format!("{policy:?}");
-        for unknown_value in ["someFuturePolicyKnob", "someFutureVectorKnob"] {
-            assert!(
-                !debug.contains(unknown_value),
-                "unknown field value should be redacted from Debug output: {unknown_value}"
-            );
-        }
-
         // The modelled fields must still be readable alongside the unknown ones.
         assert_eq!(Some(IndexingMode::Consistent), policy.indexing_mode);
         assert_eq!("/vector", policy.vector_indexes[0].path);

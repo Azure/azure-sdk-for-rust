@@ -2,7 +2,8 @@
   "import": [
     "../../.vscode/cspell.json"
   ],
-  "ignoreWords": [
+  "words": [
+    "headerless",
     "maxresults"
   ]
 }

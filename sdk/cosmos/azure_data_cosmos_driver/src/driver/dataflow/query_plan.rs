@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use serde::Deserialize;
 use serde::Serialize;
 
-use crate::error::{CosmosError, CosmosStatus, Result};
+use crate::error::{CosmosError, Result};
 use crate::models::{EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyValue};
 
 /// Deserializes a boolean from either a JSON boolean (`true`/`false`) or
@@ -173,7 +173,7 @@ fn resolve_epk_bound(
             Ok(epk.to_hex())
         }
         other => Err(CosmosError::builder()
-            .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message(format!(
                 "queryRanges bound has unsupported shape (expected string or PartitionKeyInternal array, got {})",
                 json_type_name(other)
@@ -192,13 +192,13 @@ fn pki_component_to_pk_value(value: &serde_json::Value) -> Result<PartitionKeyVa
         Value::Number(n) => {
             let f = n.as_f64().ok_or_else(|| {
                 CosmosError::builder()
-                    .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message(format!(
                         "queryRanges component number {n} cannot be represented as f64"
                     ))
                     .build()
             })?;
-            Ok(PartitionKeyValue::from(f))
+            PartitionKeyValue::try_from(f)
         }
         Value::String(s) => Ok(PartitionKeyValue::from(s.clone())),
         Value::Object(obj) => {
@@ -210,7 +210,7 @@ fn pki_component_to_pk_value(value: &serde_json::Value) -> Result<PartitionKeyVa
                 Some("Infinity") => Ok(PartitionKeyValue::INFINITY),
                 Some("Undefined") => Ok(PartitionKeyValue::UNDEFINED),
                 _ => Err(CosmosError::builder()
-                    .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message(format!(
                         "queryRanges component object is not a recognized PartitionKeyInternal sentinel: {value}"
                     ))
@@ -218,7 +218,7 @@ fn pki_component_to_pk_value(value: &serde_json::Value) -> Result<PartitionKeyVa
             }
         }
         Value::Array(_) => Err(CosmosError::builder()
-            .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message("queryRanges component cannot be a nested array")
             .build()),
     }
@@ -288,7 +288,7 @@ pub(crate) struct HybridSearchQueryInfo {
 }
 
 /// The kind of DISTINCT tracking required by the query.
-#[derive(Debug, Clone, Deserialize, Default, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, Deserialize, Default, PartialEq, Eq, Serialize)]
 pub(crate) enum DistinctType {
     /// No deduplication required.
     #[default]

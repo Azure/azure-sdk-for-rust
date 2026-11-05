@@ -20,12 +20,15 @@ pub use handler::{SamplingLogHandler, TracingLogHandler};
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
     use std::time::{Duration, Instant};
 
     use azure_core::http::{Context, StatusCode};
-    use azure_data_cosmos_driver::diagnostics::{DiagnosticsContext, RequestDiagnostics};
+    use azure_data_cosmos_driver::diagnostics::{
+        DiagnosticsContext, HedgeDiagnostics, HedgeTerminalState, RequestDiagnostics,
+    };
     use azure_data_cosmos_driver::models::{ActivityId, RequestCharge};
     use azure_data_cosmos_driver::options::Region;
     use azure_data_cosmos_driver::{CosmosStatus, DiagnosticsThresholds};
@@ -274,5 +277,165 @@ mod tests {
             handler.handle(&expensive, &Context::new());
             assert_eq!(captured.lock().unwrap().as_deref(), Some("request_charge"));
         });
+    }
+
+    /// Captures every field of the most recent sampled log event into a map, so
+    /// tests can assert on the presence and value of the hedging fields.
+    struct FieldCapture(Arc<std::sync::Mutex<HashMap<String, String>>>);
+
+    impl<S: tracing::Subscriber> Layer<S> for FieldCapture {
+        fn on_event(&self, event: &tracing::Event<'_>, _cx: LayerContext<'_, S>) {
+            if event.metadata().target() != "azure_data_cosmos::diagnostics::sampled" {
+                return;
+            }
+            struct Visitor<'a>(&'a mut HashMap<String, String>);
+            impl tracing::field::Visit for Visitor<'_> {
+                fn record_bool(&mut self, field: &tracing::field::Field, value: bool) {
+                    self.0.insert(field.name().to_string(), value.to_string());
+                }
+                fn record_str(&mut self, field: &tracing::field::Field, value: &str) {
+                    self.0.insert(field.name().to_string(), value.to_string());
+                }
+                fn record_debug(
+                    &mut self,
+                    field: &tracing::field::Field,
+                    value: &dyn std::fmt::Debug,
+                ) {
+                    self.0
+                        .entry(field.name().to_string())
+                        .or_insert_with(|| format!("{value:?}"));
+                }
+            }
+            let mut map = self.0.lock().unwrap();
+            event.record(&mut Visitor(&mut map));
+        }
+    }
+
+    /// A failed operation that fanned out an `AlternateWon` hedge to West US 2.
+    fn hedged_context() -> DiagnosticsContext {
+        let now = Instant::now();
+        let primary = RequestDiagnostics::for_testing(
+            "https://acct-eastus.documents.azure.com:443/",
+            Some(Region::EAST_US),
+            CosmosStatus::new(StatusCode::TooManyRequests),
+            RequestCharge::new(2.0),
+            now - Duration::from_millis(20),
+            now,
+        );
+        let hedge = HedgeDiagnostics::for_testing(
+            Region::EAST_US,
+            Some(Region::WEST_US_2),
+            Some(Region::WEST_US_2),
+            HedgeTerminalState::AlternateWon,
+        );
+        DiagnosticsContext::for_testing_with_hedge(
+            ActivityId::new_uuid(),
+            Duration::from_millis(20),
+            Some(CosmosStatus::new(StatusCode::TooManyRequests)),
+            Some("read_item"),
+            vec![primary],
+            Some(hedge),
+        )
+    }
+
+    #[test]
+    fn sampled_line_carries_hedging_fields_when_hedging_occurred() {
+        let captured = Arc::new(std::sync::Mutex::new(HashMap::new()));
+        let layer = FieldCapture(Arc::clone(&captured));
+        let subscriber = tracing_subscriber::registry().with(layer);
+        let handler = SamplingLogHandler::new();
+
+        tracing::subscriber::with_default(subscriber, || {
+            handler.handle(&hedged_context(), &Context::new());
+        });
+
+        let map = captured.lock().unwrap();
+        assert_eq!(map.get("hedging_started").map(String::as_str), Some("true"));
+        assert_eq!(map.get("hedge_region").map(String::as_str), Some("westus2"));
+        assert_eq!(
+            map.get("hedge_terminal_state").map(String::as_str),
+            Some("alternate_won")
+        );
+    }
+
+    #[test]
+    fn sampled_line_omits_hedging_fields_without_hedging() {
+        let captured = Arc::new(std::sync::Mutex::new(HashMap::new()));
+        let layer = FieldCapture(Arc::clone(&captured));
+        let subscriber = tracing_subscriber::registry().with(layer);
+        let handler = SamplingLogHandler::new();
+
+        // A plain failure — no hedge occurred.
+        let failed = context(
+            Duration::from_millis(5),
+            CosmosStatus::new(StatusCode::TooManyRequests),
+            2.0,
+        );
+        tracing::subscriber::with_default(subscriber, || {
+            handler.handle(&failed, &Context::new());
+        });
+
+        let map = captured.lock().unwrap();
+        // The line was emitted (reason present) but carries no hedging fields.
+        assert!(map.contains_key("reason"));
+        assert!(!map.contains_key("hedging_started"));
+        assert!(!map.contains_key("hedge_region"));
+        assert!(!map.contains_key("hedge_terminal_state"));
+    }
+
+    #[test]
+    fn sampled_line_reports_fanout_without_terminal_outcome() {
+        // A hedge fanned out both-transient and was then resolved by a later
+        // failover attempt: the fan-out log makes `hedging_started()` true, but
+        // the pipeline deliberately leaves `hedge_diagnostics()` None (no
+        // terminal outcome). The line must still report `hedging_started` — the
+        // operation really did hedge — while omitting the per-outcome
+        // hedge_region / hedge_terminal_state fields rather than emitting empty
+        // strings for them.
+        use azure_data_cosmos_driver::diagnostics::ExecutionContext;
+
+        let captured = Arc::new(std::sync::Mutex::new(HashMap::new()));
+        let layer = FieldCapture(Arc::clone(&captured));
+        let subscriber = tracing_subscriber::registry().with(layer);
+        let handler = SamplingLogHandler::new();
+
+        let now = Instant::now();
+        let hedge_leg = RequestDiagnostics::for_testing(
+            "https://acct-westus2.documents.azure.com:443/",
+            Some(Region::WEST_US_2),
+            CosmosStatus::new(StatusCode::TooManyRequests),
+            RequestCharge::new(2.0),
+            now - Duration::from_millis(20),
+            now,
+        )
+        .with_execution_context_for_testing(ExecutionContext::Hedging);
+        let ctx = DiagnosticsContext::for_testing_with_hedge(
+            ActivityId::new_uuid(),
+            Duration::from_millis(20),
+            Some(CosmosStatus::new(StatusCode::TooManyRequests)),
+            Some("read_item"),
+            vec![hedge_leg],
+            None,
+        );
+        assert!(
+            ctx.hedging_started(),
+            "a retained Hedging request makes hedging_started() true"
+        );
+
+        tracing::subscriber::with_default(subscriber, || {
+            handler.handle(&ctx, &Context::new());
+        });
+
+        let map = captured.lock().unwrap();
+        // The line is emitted (it is a failure) and reports the fan-out, but
+        // carries no empty-string hedge_region / hedge_terminal_state.
+        assert!(map.contains_key("reason"));
+        assert_eq!(
+            map.get("hedging_started").map(String::as_str),
+            Some("true"),
+            "a fanned-out hedge is reported even without a terminal outcome"
+        );
+        assert!(!map.contains_key("hedge_region"));
+        assert!(!map.contains_key("hedge_terminal_state"));
     }
 }

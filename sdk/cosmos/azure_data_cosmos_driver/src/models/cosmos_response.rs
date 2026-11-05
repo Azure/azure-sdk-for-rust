@@ -4,7 +4,7 @@
 //! Cosmos DB operation result types.
 
 use crate::diagnostics::DiagnosticsContext;
-use crate::models::{CosmosResponseHeaders, CosmosStatus, ResponseBody};
+use crate::models::{CosmosResponseHeaders, CosmosStatus, PatchTrackingId, ResponseBody};
 use crate::options::Region;
 use std::sync::Arc;
 
@@ -48,10 +48,15 @@ impl CosmosResponsePayload {
     }
 
     /// Transcodes any binary JSON body to text JSON in place.
-    fn transcode_body_to_text(&mut self) -> crate::error::Result<()> {
+    fn transcode_body_to_text(
+        &mut self,
+        utf8_decoding_mode: crate::options::Utf8DecodingMode,
+    ) -> crate::error::Result<bool> {
         let body = std::mem::take(&mut self.body);
-        self.body = body.transcode_to_text()?;
-        Ok(())
+        let (body, invalid_utf8_was_recovered) =
+            body.transcode_to_text_with_utf8_mode_and_recovery(utf8_decoding_mode)?;
+        self.body = body;
+        Ok(invalid_utf8_was_recovered)
     }
 }
 /// Result of a Cosmos DB operation.
@@ -91,6 +96,9 @@ pub struct CosmosResponse {
 
     /// Full diagnostics context for this operation.
     diagnostics: Arc<DiagnosticsContext>,
+
+    /// Whether the terminal request used operation-specific fallback routing.
+    routing_fallback: bool,
 }
 
 impl CosmosResponse {
@@ -109,7 +117,19 @@ impl CosmosResponse {
             payload: CosmosResponsePayload::new(body, headers),
             status,
             diagnostics,
+            routing_fallback: false,
         }
+    }
+
+    /// Records whether the terminal request used operation-specific fallback routing.
+    pub(crate) fn with_routing_fallback(mut self, routing_fallback: bool) -> Self {
+        self.routing_fallback = routing_fallback;
+        self
+    }
+
+    /// Returns whether the terminal request used operation-specific fallback routing.
+    pub(crate) fn routing_fallback(&self) -> bool {
+        self.routing_fallback
     }
 
     /// Returns a reference to the wire-level payload (body + headers).
@@ -137,20 +157,31 @@ impl CosmosResponse {
         self.payload.into_body()
     }
 
-    /// Transcodes a binary JSON response body to text JSON in place.
-    ///
-    /// Applied by the driver when the operation negotiated binary on the wire
-    /// and the caller requested a text response
-    /// ([`BinaryEncodingOptions::request_text_response`](crate::options::BinaryEncodingOptions)):
-    /// the wire stays binary in both directions, and the driver converts the
-    /// binary response payload to text before returning it. A text (or empty)
-    /// body is left unchanged.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if a binary payload is malformed.
-    pub(crate) fn transcode_body_to_text(&mut self) -> crate::error::Result<()> {
-        self.payload.transcode_body_to_text()
+    /// Suppresses the response payload while preserving status, headers,
+    /// diagnostics, and routing metadata.
+    pub(crate) fn without_body(mut self) -> Self {
+        self.payload.body = ResponseBody::NoPayload;
+        self
+    }
+
+    pub(crate) fn transcode_body_to_text_with_utf8_mode(
+        &mut self,
+        utf8_decoding_mode: crate::options::Utf8DecodingMode,
+    ) -> crate::error::Result<()> {
+        let diagnostics = Arc::clone(&self.diagnostics);
+        let invalid_utf8_was_recovered = self
+            .payload
+            .transcode_body_to_text(utf8_decoding_mode)
+            .map_err(|error| {
+                let diagnostics = Arc::new(diagnostics.clone_with_status(error.status()));
+                crate::error::CosmosErrorBuilder::from_error(error)
+                    .with_diagnostics(diagnostics)
+                    .build()
+            })?;
+        if invalid_utf8_was_recovered {
+            Arc::make_mut(&mut self.diagnostics).mark_invalid_utf8_recovered();
+        }
+        Ok(())
     }
 
     /// Returns a reference to the extracted headers.
@@ -177,6 +208,14 @@ impl CosmosResponse {
     /// Returns a borrow of the diagnostics [`Arc`] without cloning it.
     pub fn diagnostics_ref(&self) -> &Arc<DiagnosticsContext> {
         &self.diagnostics
+    }
+
+    /// Returns the effective duplicate-suppression identity for a tracked PATCH.
+    ///
+    /// This includes IDs generated internally by the driver. It is `None` for
+    /// operations that do not require PATCH tracking.
+    pub fn patch_tracking_id(&self) -> Option<PatchTrackingId> {
+        self.diagnostics.patch_tracking_id()
     }
 
     /// Returns the region that actually produced this response, if known.
@@ -314,7 +353,7 @@ mod tests {
         let status = result.status();
         assert!(!status.is_success());
         assert!(status.is_throttled());
-        assert_eq!(status, CosmosStatus::RU_BUDGET_EXCEEDED);
+        assert_eq!(status, crate::error::status_codes::RU_BUDGET_EXCEEDED);
     }
 
     #[test]
@@ -350,7 +389,7 @@ mod tests {
     fn cosmos_response_status_accessor() {
         let status = make_status(
             Some(StatusCode::NotFound),
-            Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+            Some(crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE),
         );
         let result = CosmosResponse::new(
             b"{}".to_vec(),
@@ -358,7 +397,7 @@ mod tests {
             status,
             make_diagnostics(
                 Some(StatusCode::NotFound),
-                Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+                Some(crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE),
             ),
         );
 
@@ -368,5 +407,27 @@ mod tests {
         let diagnostics = result.diagnostics();
         let diagnostics_status = diagnostics.status().unwrap();
         assert_eq!(diagnostics_status.status_code(), StatusCode::NotFound);
+    }
+
+    #[test]
+    fn transcode_failure_preserves_response_diagnostics() {
+        let diagnostics = make_diagnostics(Some(StatusCode::Ok), None);
+        let activity_id = diagnostics.activity_id().clone();
+        let mut response = CosmosResponse::new(
+            vec![crate::binary_json::PREAMBLE],
+            CosmosResponseHeaders::new(),
+            make_status(Some(StatusCode::Ok), None),
+            diagnostics,
+        );
+
+        let error = response
+            .transcode_body_to_text_with_utf8_mode(crate::options::Utf8DecodingMode::Lossy)
+            .expect_err("a truncated binary response must fail transcoding");
+        let error_diagnostics = error
+            .diagnostics()
+            .expect("transcoding errors must retain response diagnostics");
+
+        assert_eq!(error_diagnostics.activity_id(), &activity_id);
+        assert_eq!(error_diagnostics.status().copied(), Some(error.status()));
     }
 }

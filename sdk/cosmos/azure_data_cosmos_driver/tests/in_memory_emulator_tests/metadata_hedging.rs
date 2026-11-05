@@ -61,7 +61,7 @@ const COLL_NAME: &str = "testcoll";
 const PRIMARY_METADATA_DELAY: Duration = Duration::from_millis(2500);
 
 fn account() -> AccountReference {
-    AccountReference::with_master_key(
+    AccountReference::with_account_key(
         Url::parse(ACCOUNT_ENDPOINT).expect("valid endpoint"),
         // The emulator does not validate the signature; any base64 works.
         ACCOUNT_KEY,
@@ -279,6 +279,24 @@ async fn metadata_container_read_primary_wins_when_fast() {
     );
 }
 
+#[tokio::test]
+async fn account_suppression_prevents_metadata_hedging_when_locally_enabled() {
+    let ctx = setup_multi_region(WriteMode::Single).await;
+    ctx.emulator
+        .store()
+        .config()
+        .set_cross_region_hedging_disabled(Some(true));
+    let driver = make_driver(&ctx, Vec::new()).await;
+    let mut options = hedging_options();
+    options.hedging_enabled = Some(true);
+
+    let hedge_diag = container_read_hedge_diagnostics(&driver, options).await;
+    assert!(
+        hedge_diag.is_none(),
+        "the account signal must prevent entering the metadata hedge path"
+    );
+}
+
 /// Disabled + primary metadata read slow ⇒ the read is NOT hedged (no
 /// HedgeDiagnostics attached) and still succeeds via the primary region.
 #[tokio::test]
@@ -392,7 +410,7 @@ async fn metadata_pk_range_read_hedges_cold_then_pins_to_the_winner() {
     let driver = make_driver(&ctx, vec![Arc::clone(&east_pk), Arc::clone(&west_pk)]).await;
 
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -401,7 +419,8 @@ async fn metadata_pk_range_read_hedges_cold_then_pins_to_the_winner() {
     driver
         .resolve_all_partition_key_ranges(&container, false)
         .await
-        .expect("cold partition key range fetch succeeds");
+        .expect("cold partition key range fetch succeeds")
+        .expect("cold partition key range fetch returns topology");
 
     assert!(
         east_pk.hit_count() >= 1,
@@ -421,7 +440,8 @@ async fn metadata_pk_range_read_hedges_cold_then_pins_to_the_winner() {
     driver
         .resolve_all_partition_key_ranges(&container, true)
         .await
-        .expect("forced partition key range refresh succeeds");
+        .expect("forced partition key range refresh succeeds")
+        .expect("forced partition key range refresh returns topology");
 
     assert_eq!(
         east_pk.hit_count(),

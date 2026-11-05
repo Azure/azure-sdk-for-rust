@@ -200,7 +200,7 @@ API can further modify state at runtime. (YAML support is deferred; see ADR-006.
 | `management.port`                         | u16, optional         | Management API port. Missing or `0` requests an OS-assigned port.                                  |
 | `databases[].containers[].partitionKey`   | object                | Standard Cosmos partition key definition (`paths`, `kind`, `version`).                             |
 | `databases[].containers[].partitionCount` | u32                   | Initial physical partition count.                                                                  |
-| `databases[].containers[].throughput`     | u32                   | Provisioned RU/s (drives throttling when enabled).                                                 |
+| `databases[].containers[].throughput`     | u64                   | Provisioned RU/s (drives throttling when enabled).                                                 |
 | `databases[].containers[].seedItems[]`    | array                 | Documents created on startup; each carries its `partitionKey` value array and the `document` body. |
 
 Region names and effective region IDs must be unique; region-name references are case-sensitive.

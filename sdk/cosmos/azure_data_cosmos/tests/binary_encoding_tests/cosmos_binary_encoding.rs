@@ -56,9 +56,13 @@ fn binary_encoding_options() -> TestOptions {
 }
 
 /// A document covering every JSON value shape the binary encoder emits: literal
-/// and wide integers, an unsigned value beyond `i64::MAX`, a double, booleans,
-/// `null`, unicode/empty strings, nested arrays and objects, and a vector of
-/// objects.
+/// and wide integers, a large unsigned value, a double, booleans, `null`,
+/// unicode/empty strings, nested arrays and objects, and a vector of objects.
+///
+/// Note: `huge` stays at or below `2^53` because the live Cosmos service
+/// normalizes JSON numbers to IEEE-754 doubles. A value beyond `2^53` (e.g.
+/// `u64::MAX`) is echoed back as a `Double` and can no longer be deserialized
+/// into a `u64` field, so it does not round-trip against the real service.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 struct BinaryItem {
     id: String,
@@ -95,11 +99,11 @@ fn sample_item(id: &str, partition_key: &str) -> BinaryItem {
         text: "hello binary".to_owned(),
         unicode: "café ☃ 𝄞 quotes:\" backslash:\\".to_owned(),
         empty: String::new(),
-        small_int: 7,           // literal-int form (0..32)
-        big_int: 9_000_000_000, // Int64 form
-        negative: -1_234_567,   // Int64 form
-        huge: u64::MAX,         // UInt64 form (beyond i64::MAX)
-        ratio: 123.456_789,     // Double form
+        small_int: 7,                // literal-int form (0..32)
+        big_int: 9_000_000_000,      // Int64 form
+        negative: -1_234_567,        // Int64 form
+        huge: 9_007_199_254_740_992, // UInt64 form, exactly f64-representable (2^53)
+        ratio: 123.456_789,          // Double form
         active: true,
         inactive: false,
         maybe: None, // null

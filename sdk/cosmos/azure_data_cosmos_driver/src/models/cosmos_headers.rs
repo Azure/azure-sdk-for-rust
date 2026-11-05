@@ -118,6 +118,7 @@ pub(crate) mod request_header_names {
     pub const VERSION: &str = "x-ms-version";
     pub const CACHE_CONTROL: &str = "cache-control";
     pub const COLLECTION_RID: &str = "x-ms-documentdb-collection-rid";
+    pub const INTENDED_COLLECTION_RID: &str = "x-ms-cosmos-intended-collection-rid";
 
     /// Account name the Gateway 2.0 proxy uses to route an outer HTTP/2
     /// request to the correct backend.
@@ -143,17 +144,17 @@ pub(crate) mod request_header_names {
     /// disabling Gateway 2.0 routing for the client.
     pub const USE_THINCLIENT: &str = "x-ms-cosmos-use-thinclient";
     /// DTX idempotency token (`Uuid`) generated once per distributed transaction.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub const DTX_IDEMPOTENCY_TOKEN: &str = "x-ms-cosmos-idempotency-token";
     /// DTX coordinator operation type (`CommitDistributedTransaction` or `Read`).
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub const DTX_OPERATION_TYPE: &str = "x-ms-cosmos-operation-type";
     /// DTX coordinator resource type (`DistributedTransactionBatch`).
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub const DTX_RESOURCE_TYPE: &str = "x-ms-cosmos-resource-type";
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 pub(crate) const DTX_RESOURCE_TYPE_HEADER_VALUE: &str = "DistributedTransactionBatch";
 
 /// Standard Cosmos DB response header names.
@@ -210,17 +211,22 @@ pub(crate) mod response_header_names {
     pub const COLLECTION_LAZY_INDEXING_PROGRESS: &str =
         "x-ms-documentdb-collection-lazy-indexing-progress";
     /// DTX idempotency token echoed by the coordinator.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub const DTX_IDEMPOTENCY_TOKEN: &str = "x-ms-cosmos-idempotency-token";
 }
 
 pub const QUERY_CONTENT_TYPE: &str = "application/query+json";
+
+/// Content type required by a server-side single-document PATCH request.
+pub const PATCH_CONTENT_TYPE: &str = "application/json_patch+json";
 
 /// Header names used by the fault injection framework.
 #[cfg(feature = "fault_injection")]
 pub(crate) mod fault_injection_header_names {
     /// Operation type header set on requests for fault injection rule matching.
     pub const FAULT_INJECTION_OPERATION: &str = "x-ms-fault-injection-operation";
+    /// Routed region tag used when endpoint host names do not encode a region.
+    pub const FAULT_INJECTION_REGION: &str = "x-ms-fault-injection-region";
 }
 
 /// Cosmos request headers for operation-level customization.
@@ -239,7 +245,7 @@ pub struct CosmosRequestHeaders {
     pub precondition: Option<Precondition>,
 
     /// Manual throughput in RU/s (`x-ms-offer-throughput`).
-    pub offer_throughput: Option<usize>,
+    pub offer_throughput: Option<u64>,
 
     /// Autoscale settings (`x-ms-cosmos-offer-autopilot-settings`).
     ///
@@ -464,7 +470,7 @@ fn header_value_from_cow(value: &Cow<'static, str>) -> HeaderValue {
 #[non_exhaustive]
 pub struct OfferAutoscaleSettings {
     /// Maximum throughput in RU/s for autoscale.
-    pub max_throughput: usize,
+    pub max_throughput: u64,
 
     /// Auto-upgrade policy for scaling behavior.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -473,7 +479,7 @@ pub struct OfferAutoscaleSettings {
 
 impl OfferAutoscaleSettings {
     /// Creates autoscale settings with the given maximum throughput.
-    pub fn new(max_throughput: usize) -> Self {
+    pub fn new(max_throughput: u64) -> Self {
         Self {
             max_throughput,
             auto_upgrade_policy: None,
@@ -481,7 +487,7 @@ impl OfferAutoscaleSettings {
     }
 
     /// Sets the auto-upgrade policy with the given increment percent.
-    pub fn with_increment_percent(mut self, increment_percent: usize) -> Self {
+    pub fn with_increment_percent(mut self, increment_percent: u32) -> Self {
         self.auto_upgrade_policy = Some(AutoscaleAutoUpgradePolicy {
             throughput_policy: Some(AutoscaleThroughputPolicy { increment_percent }),
         });
@@ -505,7 +511,7 @@ pub struct AutoscaleAutoUpgradePolicy {
 #[non_exhaustive]
 pub struct AutoscaleThroughputPolicy {
     /// Percentage to increment throughput during auto-upgrade.
-    pub increment_percent: usize,
+    pub increment_percent: u32,
 }
 
 /// Cosmos-specific headers extracted from HTTP response.
@@ -681,7 +687,7 @@ pub struct CosmosResponseHeaders {
 
     /// Distributed transaction idempotency token returned by the coordinator
     /// (`x-ms-cosmos-idempotency-token`).
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub distributed_transaction_idempotency_token: Option<uuid::Uuid>,
 }
 
@@ -855,7 +861,7 @@ impl CosmosResponseHeaders {
                 response_header_names::COLLECTION_LAZY_INDEXING_PROGRESS => {
                     result.collection_lazy_indexing_progress = value.as_str().parse().ok();
                 }
-                #[cfg(feature = "preview_dtx")]
+                #[cfg(feature = "unstable_dtx")]
                 response_header_names::DTX_IDEMPOTENCY_TOKEN => {
                     result.distributed_transaction_idempotency_token =
                         uuid::Uuid::parse_str(value.as_str()).ok();
@@ -1071,7 +1077,7 @@ impl CosmosResponseHeaders {
             self.collection_lazy_indexing_progress
                 .map(|v| v.to_string()),
         );
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         put_str(
             response_header_names::DTX_IDEMPOTENCY_TOKEN,
             self.distributed_transaction_idempotency_token
@@ -1605,7 +1611,7 @@ mod tests {
             etag: Some(Etag::from("\"v1\"")),
             continuation: Some("next-page".into()),
             item_count: Some(10),
-            substatus: Some(SubStatusCode::THROTTLE_DUE_TO_SPLIT),
+            substatus: Some(crate::error::status_codes::substatus::THROTTLE_DUE_TO_SPLIT),
             index_metrics: Some("{\"UtilizedSingleIndexes\":[]}".into()),
             query_metrics: Some("totalExecutionTimeInMs=1.23".into()),
             server_duration_ms: Some(4.5),
@@ -1642,7 +1648,7 @@ mod tests {
             log_results: Some("ok".into()),
             collection_index_transformation_progress: Some(100),
             collection_lazy_indexing_progress: Some(75),
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             distributed_transaction_idempotency_token: Some(uuid::Uuid::new_v4()),
         };
 
@@ -1670,7 +1676,12 @@ mod tests {
         // Sub-status is emitted as the bare numeric value.
         assert_eq!(
             raw.get_optional_str(&HeaderName::from_static(response_header_names::SUBSTATUS)),
-            Some(SubStatusCode::THROTTLE_DUE_TO_SPLIT.value().to_string()).as_deref()
+            Some(
+                crate::error::status_codes::substatus::THROTTLE_DUE_TO_SPLIT
+                    .value()
+                    .to_string()
+            )
+            .as_deref()
         );
         // `index_metrics` is base64 of the decoded JSON.
         assert_eq!(
@@ -1795,7 +1806,7 @@ mod tests {
             round_tripped.collection_lazy_indexing_progress,
             original.collection_lazy_indexing_progress
         );
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         assert_eq!(
             round_tripped.distributed_transaction_idempotency_token,
             original.distributed_transaction_idempotency_token

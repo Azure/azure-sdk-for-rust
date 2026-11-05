@@ -14,6 +14,7 @@ pub(crate) mod common;
 pub(crate) mod eval;
 pub(crate) mod gateway_plan;
 pub(crate) mod lexer;
+pub(crate) mod local_plan_adapter;
 pub(crate) mod parser;
 pub(crate) mod plan;
 #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
@@ -27,17 +28,21 @@ pub(crate) use parser::parse;
 /// advertises to the Cosmos DB Gateway via
 /// `x-ms-cosmos-supported-query-features`.
 ///
-/// Advertises `MultipleOrderBy,OffsetAndLimit,OrderBy,Top`. The production
-/// pipeline supports streaming single- and multi-column `ORDER BY` rewrites
+/// Advertises `Distinct`, `HybridSearch`, `MultipleOrderBy`,
+/// `NonStreamingOrderBy`, `OffsetAndLimit`, `OrderBy`, `Top`, and
+/// `WeightedRankFusion`. The production pipeline supports streaming
+/// single- and multi-column `ORDER BY` rewrites
 /// (`OrderBy,MultipleOrderBy`) and the result-window rewrite shapes
 /// `OffsetAndLimit,Top` through [`driver::dataflow::SkipTake`]. Advertising
 /// these lets the Gateway return the per-partition rewritten query the
 /// client-side pipeline needs, including for combined `ORDER BY … OFFSET/LIMIT`
-/// and `ORDER BY … TOP` queries.
+/// and `ORDER BY … TOP` queries. `NonStreamingOrderBy` enables finite-window
+/// plans that require the fully buffered ordered merge pipeline.
+/// `HybridSearch` and `WeightedRankFusion` enable the bounded ranked full-text
+/// and hybrid search pipeline.
 ///
 /// Other advanced rewrite shapes (Aggregate, CompositeAggregate, CountIf,
-/// DCount, Distinct, GroupBy, HybridSearch, MultipleAggregates,
-/// NonStreamingOrderBy, NonValueAggregate, WeightedRankFusion) remain
+/// DCount, GroupBy, MultipleAggregates, NonValueAggregate) remain
 /// unadvertised until their corresponding pipeline stages are implemented;
 /// advertising one prematurely would cause the Gateway to return a plan we
 /// cannot execute.
@@ -49,7 +54,23 @@ pub(crate) use parser::parse;
 /// Tests use [`__TEST_ONLY_SUPPORTED_QUERY_FEATURES`] (broad, matches what
 /// Java/.NET advertise) so plan-shape parity against the live Gateway is
 /// validated end-to-end across the full feature surface.
-pub(crate) const SUPPORTED_QUERY_FEATURES: &str = "MultipleOrderBy,OffsetAndLimit,OrderBy,Top";
+pub(crate) const SUPPORTED_QUERY_FEATURES: &str =
+    "Distinct,HybridSearch,MultipleOrderBy,NonStreamingOrderBy,OffsetAndLimit,OrderBy,Top,WeightedRankFusion";
+
+/// Whether a query requires hybrid planning even when scoped to one logical partition.
+pub(crate) fn uses_ranked_search(body: Option<&[u8]>) -> bool {
+    let Some(query) = body
+        .and_then(|body| serde_json::from_slice::<serde_json::Value>(body).ok())
+        .and_then(|spec| {
+            spec.get("query")
+                .and_then(|query| query.as_str())
+                .map(str::to_owned)
+        })
+    else {
+        return false;
+    };
+    local_plan_adapter::uses_ranked_search(&query)
+}
 
 /// Broad supported-features list used by cross-crate gateway-comparison
 /// tests. Matches what the Java and .NET SDKs send today so the Gateway
@@ -60,5 +81,7 @@ pub(crate) const SUPPORTED_QUERY_FEATURES: &str = "MultipleOrderBy,OffsetAndLimi
 #[doc(hidden)]
 pub const __TEST_ONLY_SUPPORTED_QUERY_FEATURES: &str = "Aggregate,CompositeAggregate,CountIf,DCount,Distinct,GroupBy,HybridSearch,MultipleAggregates,MultipleOrderBy,NonStreamingOrderBy,NonValueAggregate,OffsetAndLimit,OrderBy,Top,WeightedRankFusion";
 
+#[cfg(any(test, feature = "__internal_testing"))]
+pub use local_plan_adapter::__test_only_generate_production_query_plan;
 #[cfg(any(test, feature = "__internal_testing"))]
 pub use plan::__test_only_generate_query_plan_for_pk_paths;

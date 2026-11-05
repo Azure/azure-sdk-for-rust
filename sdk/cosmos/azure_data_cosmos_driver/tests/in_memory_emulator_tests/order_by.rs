@@ -64,7 +64,7 @@ async fn setup() -> (
         .build()
         .await
         .expect("runtime builds against the in-memory emulator");
-    let account = azure_data_cosmos_driver::models::AccountReference::with_master_key(
+    let account = azure_data_cosmos_driver::models::AccountReference::with_account_key(
         Url::parse(GATEWAY_URL).unwrap(),
         "ZW11bGF0b3Ita2V5",
     );
@@ -79,7 +79,7 @@ async fn setup() -> (
 async fn cross_partition_order_by_returns_globally_sorted_results() {
     let (_emulator, driver) = setup().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -139,7 +139,7 @@ async fn cross_partition_order_by_returns_globally_sorted_results() {
 async fn cross_partition_order_by_paginates_with_small_page_size() {
     let (_emulator, driver) = setup().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -252,7 +252,7 @@ async fn run_query_collecting_ids(
 async fn tied_order_by_key_within_one_partition_returns_rid_order_not_storage_order() {
     let (_emulator, driver) = setup().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -303,7 +303,7 @@ async fn tied_order_by_key_within_one_partition_returns_rid_order_not_storage_or
 async fn tied_order_by_key_across_partitions_is_deterministic_and_complete() {
     let (_emulator, driver) = setup().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -381,7 +381,7 @@ async fn tied_order_by_key_across_partitions_is_deterministic_and_complete() {
 async fn cross_partition_order_by_enforces_max_fan_out() {
     let (_emulator, driver) = setup().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -405,7 +405,7 @@ async fn cross_partition_order_by_enforces_max_fan_out() {
     assert_eq!(
         err.status().sub_status(),
         Some(
-            azure_data_cosmos_driver::error::SubStatusCode::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED
+            azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED
         ),
         "unexpected error: {err}",
     );
@@ -502,7 +502,7 @@ const SHUFFLED_SIX: &[(&str, &str, i64)] = &[
 async fn cross_partition_order_by_offset_limit_returns_exact_window() {
     let (_emulator, driver) = setup().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
     seed_ranked(&driver, &container, SHUFFLED_SIX).await;
@@ -526,7 +526,7 @@ async fn cross_partition_order_by_offset_limit_returns_exact_window() {
 async fn cross_partition_order_by_top_returns_exact_prefix() {
     let (_emulator, driver) = setup().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
     seed_ranked(&driver, &container, SHUFFLED_SIX).await;
@@ -550,7 +550,7 @@ async fn cross_partition_order_by_top_returns_exact_prefix() {
 async fn cross_partition_order_by_desc_offset_limit_returns_exact_window() {
     let (_emulator, driver) = setup().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
     seed_ranked(&driver, &container, SHUFFLED_SIX).await;
@@ -574,7 +574,7 @@ async fn cross_partition_order_by_desc_offset_limit_returns_exact_window() {
 async fn cross_partition_order_by_offset_beyond_total_is_empty() {
     let (_emulator, driver) = setup().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
     seed_ranked(&driver, &container, SHUFFLED_SIX).await;
@@ -601,7 +601,7 @@ async fn cross_partition_order_by_offset_beyond_total_is_empty() {
 async fn cross_partition_order_by_offset_limit_paginates_preserving_window() {
     let (_emulator, driver) = setup().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -643,7 +643,7 @@ async fn cross_partition_order_by_offset_limit_paginates_preserving_window() {
 async fn cross_partition_order_by_offset_limit_survives_split_mid_stream() {
     let (emulator, driver) = setup().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
 

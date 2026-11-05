@@ -20,7 +20,7 @@
 use base64::Engine;
 use serde_json::{Map, Value};
 
-use std::cell::Cell;
+use std::{borrow::Cow, cell::Cell};
 
 use super::markers::{
     ARR0, ARR1, ARR_ARR_NUM_C1C1, ARR_ARR_NUM_C2C2, ARR_L1, ARR_L2, ARR_L4, ARR_LC1, ARR_LC2,
@@ -39,13 +39,14 @@ use super::markers::{
 };
 use super::system_strings::system_string_for_marker;
 use super::{is_binary, BinaryError, Result};
+use crate::options::Utf8DecodingMode;
 
 /// Maximum container nesting depth the decoder will descend before returning
 /// [`BinaryError::DepthLimitExceeded`]. This mirrors the .NET Cosmos JSON
 /// stack's `JsonObjectState.JsonMaxNestingDepth` (256 simultaneously-open
 /// containers), so the Rust decoder enforces the same nesting policy while
 /// guarding against stack exhaustion from adversarial input.
-const MAX_DEPTH: usize = 256;
+pub(crate) const MAX_DEPTH: usize = 256;
 
 /// A single native scalar token read directly from the buffer, used by the
 /// native serde deserializer ([`super::de`]) to feed a visitor without
@@ -130,6 +131,20 @@ enum FieldWidth {
 /// assert_eq!(value, serde_json::Value::Bool(true));
 /// ```
 pub fn decode(buffer: &[u8]) -> Result<Value> {
+    decode_with_utf8_mode(buffer, Utf8DecodingMode::Strict)
+}
+
+pub(crate) fn decode_with_utf8_mode(
+    buffer: &[u8],
+    utf8_decoding_mode: Utf8DecodingMode,
+) -> Result<Value> {
+    decode_with_utf8_mode_and_recovery(buffer, utf8_decoding_mode).map(|(value, _)| value)
+}
+
+pub(crate) fn decode_with_utf8_mode_and_recovery(
+    buffer: &[u8],
+    utf8_decoding_mode: Utf8DecodingMode,
+) -> Result<(Value, bool)> {
     if !is_binary(buffer) {
         return Err(match buffer.first() {
             Some(&found) => BinaryError::MissingPreamble { found },
@@ -139,13 +154,13 @@ pub fn decode(buffer: &[u8]) -> Result<Value> {
 
     // Start reading after the one-byte preamble. The reader keeps absolute
     // offsets (into `buffer`) so error positions account for the preamble.
-    let mut reader = Reader::new(buffer, 1);
+    let mut reader = Reader::new_with_utf8_mode(buffer, 1, utf8_decoding_mode);
     let value = reader.read_value(0)?;
     let remaining = buffer.len() - reader.pos;
     if remaining != 0 {
         return Err(BinaryError::TrailingBytes { remaining });
     }
-    Ok(value)
+    Ok((value, reader.invalid_utf8_was_recovered.get()))
 }
 
 /// A bounds-checked forward cursor over a binary JSON buffer.
@@ -156,6 +171,8 @@ pub fn decode(buffer: &[u8]) -> Result<Value> {
 pub(super) struct Reader<'a> {
     pub(super) buf: &'a [u8],
     pub(super) pos: usize,
+    utf8_decoding_mode: Utf8DecodingMode,
+    invalid_utf8_was_recovered: Cell<bool>,
     /// Remaining budget, in bytes, for text materialized by **reference-string**
     /// resolution ([`STR_R1`](super::markers::STR_R1)-[`STR_R4`](super::markers::STR_R4)).
     ///
@@ -198,10 +215,16 @@ fn empty_element_budget(buf_len: usize) -> usize {
 impl<'a> Reader<'a> {
     /// Creates a reader positioned at `pos` within `buf`.
     pub(super) fn new(buf: &'a [u8], pos: usize) -> Self {
+        Self::new_with_utf8_mode(buf, pos, Utf8DecodingMode::Strict)
+    }
+
+    fn new_with_utf8_mode(buf: &'a [u8], pos: usize, utf8_decoding_mode: Utf8DecodingMode) -> Self {
         let ref_budget = Cell::new(reference_budget(buf.len()));
         Self {
             buf,
             pos,
+            utf8_decoding_mode,
+            invalid_utf8_was_recovered: Cell::new(false),
             ref_budget,
         }
     }
@@ -302,11 +325,22 @@ impl<'a> Reader<'a> {
     /// value's type marker, used for error reporting.
     fn read_string(&mut self, len: usize, marker_offset: usize) -> Result<String> {
         let bytes = self.read_bytes(len)?;
-        std::str::from_utf8(bytes)
-            .map(str::to_owned)
-            .map_err(|_| BinaryError::InvalidUtf8 {
-                offset: marker_offset,
-            })
+        match self.utf8_decoding_mode {
+            Utf8DecodingMode::Strict => {
+                std::str::from_utf8(bytes).map(str::to_owned).map_err(|_| {
+                    BinaryError::InvalidUtf8 {
+                        offset: marker_offset,
+                    }
+                })
+            }
+            Utf8DecodingMode::Lossy => match String::from_utf8_lossy(bytes) {
+                Cow::Borrowed(value) => Ok(value.to_owned()),
+                Cow::Owned(value) => {
+                    self.invalid_utf8_was_recovered.set(true);
+                    Ok(value)
+                }
+            },
+        }
     }
 
     /// Reads one complete value at the current position.
@@ -894,8 +928,9 @@ impl<'a> Reader<'a> {
     /// Reads a GUID string: the 16-byte encoded form (following the marker)
     /// expanded to the canonical `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` hex text.
     ///
-    /// This is a straight sequential hex dump of the 16 bytes (not the .NET
-    /// `Guid` mixed-endian layout), mirroring .NET `DecodeGuidStringValue`.
+    /// Each byte packs two hex characters **low nibble first**, the same 4-bit
+    /// character packing [`read_table_string`] uses (not the .NET `Guid`
+    /// mixed-endian layout), mirroring .NET `DecodeGuidStringValue`.
     /// `uppercase` selects the hex case. When `quoted`, the original JSON string
     /// included literal quote characters, so they are re-added around the text.
     fn read_guid_string(&mut self, uppercase: bool, quoted: bool) -> Result<String> {
@@ -918,8 +953,8 @@ impl<'a> Reader<'a> {
             if DASH_POSITIONS.contains(&index) {
                 out.push('-');
             }
-            out.push(char::from(digits[usize::from(byte >> 4)]));
             out.push(char::from(digits[usize::from(byte & 0x0F)]));
+            out.push(char::from(digits[usize::from(byte >> 4)]));
         }
         if quoted {
             out.push('"');
@@ -1236,8 +1271,10 @@ impl<'a> Reader<'a> {
         // string value, so depth does not grow and a bare reader suffices.
         // The target is guaranteed a non-reference string, so this sub-read
         // resolves no further references and needs no shared budget.
-        let mut sub = Reader::new(self.buf, target);
+        let mut sub = Reader::new_with_utf8_mode(self.buf, target, self.utf8_decoding_mode);
         let value = sub.read_value(0)?;
+        self.invalid_utf8_was_recovered
+            .set(self.invalid_utf8_was_recovered.get() || sub.invalid_utf8_was_recovered.get());
 
         // Charge the materialized text against the shared reference-expansion
         // budget so many references to one large string cannot amplify a
@@ -1390,6 +1427,17 @@ mod tests {
     }
 
     #[test]
+    fn lossy_decode_recovers_invalid_utf8() {
+        let value = decode_with_utf8_mode(
+            &[PREAMBLE, markers::STR_L1, 3, b'a', 0xFF, b'b'],
+            Utf8DecodingMode::Lossy,
+        )
+        .unwrap();
+
+        assert_eq!(value, "a\u{FFFD}b");
+    }
+
+    #[test]
     fn reserved_and_invalid_markers_are_rejected() {
         // 0xFF is the explicit Invalid marker; 0xD4 is a reserved/empty slot.
         // Neither has a value form, so both report InvalidMarker at the marker
@@ -1468,6 +1516,54 @@ mod tests {
         assert_eq!(
             decode(&buf(&bytes)),
             Err(BinaryError::UnexpectedEof { needed: 12 }),
+        );
+    }
+
+    /// Payload captured from a live account: the 16 bytes the service sent for
+    /// an `_etag` whose text-encoded value was
+    /// `"00004812-0000-0200-0000-6a7fa98a0000"`.
+    const LIVE_ETAG_GUID_BYTES: [u8; 16] = [
+        0x00, 0x00, 0x84, 0x21, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0xa6, 0xf7, 0x9a, 0xa8, 0x00,
+        0x00,
+    ];
+
+    #[test]
+    fn decodes_guid_string_low_nibble_first() {
+        // Each byte packs two hex characters low nibble first, so 0x84 is "48".
+        // Decoding high nibble first yields the nibble-swapped
+        // "00008421-0000-2000-0000-a6f79aa80000".
+        let mut bytes = vec![markers::LOWERCASE_GUID_STRING];
+        bytes.extend_from_slice(&LIVE_ETAG_GUID_BYTES);
+        assert_eq!(
+            decode(&buf(&bytes)),
+            Ok(Value::String(
+                "00004812-0000-0200-0000-6a7fa98a0000".to_string()
+            )),
+        );
+    }
+
+    #[test]
+    fn decodes_double_quoted_guid_string_as_etag_text() {
+        // The ETag wire form keeps the literal quotes that appear in the JSON.
+        let mut bytes = vec![markers::DOUBLE_QUOTED_LOWERCASE_GUID_STRING];
+        bytes.extend_from_slice(&LIVE_ETAG_GUID_BYTES);
+        assert_eq!(
+            decode(&buf(&bytes)),
+            Ok(Value::String(
+                "\"00004812-0000-0200-0000-6a7fa98a0000\"".to_string()
+            )),
+        );
+    }
+
+    #[test]
+    fn decodes_uppercase_guid_string_low_nibble_first() {
+        let mut bytes = vec![markers::UPPERCASE_GUID_STRING];
+        bytes.extend_from_slice(&LIVE_ETAG_GUID_BYTES);
+        assert_eq!(
+            decode(&buf(&bytes)),
+            Ok(Value::String(
+                "00004812-0000-0200-0000-6A7FA98A0000".to_string()
+            )),
         );
     }
 

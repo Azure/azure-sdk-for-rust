@@ -41,7 +41,6 @@ pub mod file;
 pub mod queue;
 pub mod table;
 
-pub use azure_storage_common::models::UserDelegationKey;
 pub use builder::{SasToken, SasTokenBuilder, SasUrl, SasUrlBuilder};
 pub use ip_range::SasIpRange;
 pub use protocol::SasProtocol;

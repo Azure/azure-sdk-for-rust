@@ -14,14 +14,14 @@ const APPLICATION_JSON: HeaderValue = HeaderValue::from_static("application/json
 const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
 const SDK_SUPPORTED_CAPABILITIES: HeaderName =
     HeaderName::from_static("x-ms-cosmos-sdk-supportedcapabilities");
-const IGNORE_UNKNOWN_RNTBD_TOKENS_BIT: u32 = 8;
-pub(crate) const SUPPORTED_CAPABILITIES_BITS: u32 = IGNORE_UNKNOWN_RNTBD_TOKENS_BIT;
-const _: () = assert!(SUPPORTED_CAPABILITIES_BITS == 8);
-/// String-encoded SDK capabilities bitmask. Scoped to `IGNORE_UNKNOWN_RNTBD_TOKENS`,
-/// which Gateway 2.0 needs to forward-compat unrecognized RNTBD tokens.
-/// Additional bits (`PARTITION_MERGE`, `CHANGE_FEED_WITH_START_TIME_POST_MERGE`)
-/// will be added in a follow-up once their handling is wired through.
-const SUPPORTED_CAPABILITIES_VALUE: &str = "8";
+const PARTITION_MERGE: u32 = 1;
+const CHANGE_FEED_WITH_START_TIME_POST_MERGE: u32 = 2;
+const IGNORE_UNKNOWN_RNTBD_TOKENS: u32 = 8;
+pub(crate) const SUPPORTED_CAPABILITIES_BITS: u32 =
+    PARTITION_MERGE | CHANGE_FEED_WITH_START_TIME_POST_MERGE | IGNORE_UNKNOWN_RNTBD_TOKENS;
+const _: () = assert!(SUPPORTED_CAPABILITIES_BITS == 11);
+/// String-encoded SDK capabilities bitmask.
+const SUPPORTED_CAPABILITIES_VALUE: &str = "11";
 const CACHE_CONTROL: HeaderName = HeaderName::from_static("cache-control");
 pub(crate) const CLIENT_ID: HeaderName = HeaderName::from_static(request_header_names::CLIENT_ID);
 const NO_CACHE: HeaderValue = HeaderValue::from_static("no-cache");
@@ -141,6 +141,25 @@ mod tests {
             request.headers.get_optional_str(&CLIENT_ID),
             Some("00000000-0000-4000-8000-000000000000")
         );
+    }
+
+    #[test]
+    fn supported_capability_bits_do_not_overlap() {
+        assert_eq!(PARTITION_MERGE & CHANGE_FEED_WITH_START_TIME_POST_MERGE, 0);
+        assert_eq!(PARTITION_MERGE & IGNORE_UNKNOWN_RNTBD_TOKENS, 0);
+        assert_eq!(
+            CHANGE_FEED_WITH_START_TIME_POST_MERGE & IGNORE_UNKNOWN_RNTBD_TOKENS,
+            0
+        );
+    }
+
+    #[test]
+    fn supported_capabilities_are_exact_aggregate() {
+        assert_eq!(
+            SUPPORTED_CAPABILITIES_BITS,
+            PARTITION_MERGE | CHANGE_FEED_WITH_START_TIME_POST_MERGE | IGNORE_UNKNOWN_RNTBD_TOKENS
+        );
+        assert_eq!(SUPPORTED_CAPABILITIES_BITS, 11);
     }
 
     fn make_request_with_cl_header(cl: Option<&'static str>) -> HttpRequest {

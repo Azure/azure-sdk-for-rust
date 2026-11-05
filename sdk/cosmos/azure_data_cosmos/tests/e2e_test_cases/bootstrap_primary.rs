@@ -1,0 +1,67 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+use std::panic::AssertUnwindSafe;
+
+use azure_core::http::StatusCode;
+use futures::FutureExt;
+
+use crate::e2e_test_cases::{
+    fixture::{build_client, build_management_client, TestResult},
+    support::should_run,
+};
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator_inmemory", test_category = "e2e")),
+    ignore = "requires the externally hosted in-memory emulator"
+)]
+async fn bootstrap_primary_endpoint() -> TestResult {
+    if !should_run("bootstrap.primary-success").await? {
+        return Ok(());
+    }
+
+    // Building the public SDK client against the reachable primary endpoint succeeds.
+    let client = build_client().await?;
+
+    // Resource management requires key auth, even when the data client uses AAD.
+    let management_client = build_management_client(&client).await?;
+    let database_id = format!("test-db-e2e-bootstrap-{}", azure_core::Uuid::now_v7());
+    let response = management_client
+        .create_database(&database_id, None)
+        .await?;
+    let database = management_client.database_client(&database_id);
+    let outcome = AssertUnwindSafe(async {
+        assert_eq!(response.status().status_code(), StatusCode::Created);
+        response.into_model()?;
+
+        // Exercise the selected authentication with a permitted metadata read.
+        let read = client.database_client(&database_id).read(None).await?;
+        assert_eq!(read.status().status_code(), StatusCode::Ok);
+        assert_eq!(read.into_model()?.id.as_deref(), Some(database_id.as_str()));
+        Ok::<_, Box<dyn std::error::Error>>(())
+    })
+    .catch_unwind()
+    .await;
+    let cleanup = database.delete(None).await;
+
+    match outcome {
+        Ok(Ok(())) => {
+            cleanup?;
+            Ok(())
+        }
+        Ok(Err(test_error)) => match cleanup {
+            Ok(_) => Err(test_error),
+            Err(cleanup_error) => Err(format!(
+                "bootstrap validation failed: {test_error}; database cleanup also failed: {cleanup_error}"
+            )
+            .into()),
+        },
+        Err(panic) => {
+            if let Err(error) = cleanup {
+                eprintln!("E2E database cleanup after bootstrap panic failed: {error}");
+            }
+            std::panic::resume_unwind(panic)
+        }
+    }
+}

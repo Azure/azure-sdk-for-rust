@@ -11,9 +11,8 @@
 //! `AZURE_COSMOS_CONNECTION_STRING` exported by the bicep template; if it is unset
 //! the tests skip cleanly via `DriverTestClient::run_with_*`.
 
-use azure_core::http::StatusCode;
 use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
-use azure_data_cosmos_driver::error::CosmosError;
+use azure_data_cosmos_driver::error::{status_codes, CosmosError, CosmosStatus};
 use azure_data_cosmos_driver::fault_injection::{
     FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
     FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType,
@@ -25,7 +24,7 @@ use azure_data_cosmos_driver::models::{ContainerReference, DatabaseReference};
 use azure_data_cosmos_driver::options::DriverOptions;
 use azure_data_cosmos_driver::options::OperationOptions;
 use azure_data_cosmos_driver::options::{ExcludedRegions, OperationOptionsBuilder, Region};
-use azure_data_cosmos_driver::{CosmosStatus, SubStatusCode};
+use serde::Serialize;
 use std::error::Error;
 use std::sync::Arc;
 use std::time::Duration;
@@ -37,7 +36,24 @@ use uuid::Uuid;
 #[allow(dead_code, unused_imports)]
 mod framework;
 
-use framework::resolve_test_env;
+use framework::{
+    probe_driver_data_plane_ready, resolve_driver_container_ready, resolve_test_env,
+    CosmosResourceManager,
+};
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ManagementContainerResource<'a> {
+    id: &'a str,
+    partition_key: ManagementPartitionKey<'a>,
+}
+
+#[derive(Serialize)]
+struct ManagementPartitionKey<'a> {
+    paths: [&'a str; 1],
+    kind: &'a str,
+    version: u8,
+}
 
 /// Persistent fault on every `MetadataReadDatabaseAccount` (GET /) request.
 /// Fires unconditionally on `create_driver`, regardless of the data-plane op that follows.
@@ -61,32 +77,28 @@ fn build_account_metadata_fault_rule(
     )
 }
 
-/// Asserts the error preserves the upstream HTTP status and is NOT relabeled as
-/// `SERIALIZATION_RESPONSE_BODY_INVALID` — the pre-fix bug shape for non-2xx bodies.
-fn assert_preserves_upstream_status(
+/// Checks the public wrapper and original wire error, rather than a serde failure.
+fn assert_wrapped_metadata_error(
     err: &CosmosError,
-    expected_status: StatusCode,
-    expected_sub_status: Option<SubStatusCode>,
+    expected_source: CosmosStatus,
+    expected_public: CosmosStatus,
 ) {
-    let status = err.status();
-    assert_ne!(
-        status,
-        CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
-        "error must preserve the upstream HTTP status, not be \
-         relabeled as SERIALIZATION_RESPONSE_BODY_INVALID. Got: {err:?}"
-    );
+    assert_eq!(err.status(), expected_public);
+    assert!(err.response().is_none());
+    let source = err.source().unwrap().downcast_ref::<CosmosError>().unwrap();
+    assert_eq!(source.status(), expected_source);
+    assert_eq!(source.response().unwrap().status(), expected_source);
+    let diagnostics = err.diagnostics().unwrap();
+    assert_eq!(diagnostics.effective_status(), Some(expected_public));
     assert_eq!(
-        status.status_code(),
-        expected_status,
-        "expected the injected upstream status to be preserved. Got: {err:?}"
+        source.diagnostics().unwrap().effective_status(),
+        Some(expected_source)
     );
-    if let Some(expected_sub) = expected_sub_status {
-        assert_eq!(
-            status.sub_status(),
-            Some(expected_sub),
-            "expected the injected sub-status to be preserved. Got: {err:?}"
-        );
-    }
+    assert!(!diagnostics.requests().is_empty());
+    assert!(diagnostics
+        .requests()
+        .iter()
+        .all(|request| request.status() == &expected_source));
 }
 
 /// Builds a fresh `CosmosDriverRuntime` (no FI applied — FI is per-driver).
@@ -97,14 +109,13 @@ async fn build_runtime() -> Arc<CosmosDriverRuntime> {
         .expect("runtime should be created")
 }
 
-/// Installs a persistent metadata fault, calls `create_driver`, and asserts the surfaced
-/// error preserves `(expected_status, expected_sub_status)` and the rule fired at least once.
+/// Injects a metadata failure and verifies its wrapper, source, and rule hits.
 async fn run_metadata_fault_test(
     account: AccountReference,
     rule_id: &str,
     error_type: FaultInjectionErrorType,
-    expected_status: StatusCode,
-    expected_sub_status: Option<SubStatusCode>,
+    expected_source: CosmosStatus,
+    expected_public: CosmosStatus,
 ) {
     let rule = build_account_metadata_fault_rule(rule_id, error_type);
     let runtime = build_runtime().await;
@@ -119,7 +130,7 @@ async fn run_metadata_fault_test(
         .await
         .expect_err("create_driver must fail under a persistent metadata fault");
 
-    assert_preserves_upstream_status(&err, expected_status, expected_sub_status);
+    assert_wrapped_metadata_error(&err, expected_source, expected_public);
     assert!(
         rule.hit_count() > 0,
         "MetadataReadDatabaseAccount fault should have been hit at least once"
@@ -140,16 +151,15 @@ fn resolve_account_or_skip(test_name: &str) -> Option<AccountReference> {
     }
 }
 
-/// 403 WriteForbidden on GET / must surface as upstream HTTP status, not a serde failure.
-/// Pins the per-error-type slice of the account-metadata parser invariant.
+/// Metadata 403/3 is wrapped as 503/20311, retaining the original wire failure.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "multi_write"),
     ignore = "requires test_category 'multi_write'"
 )]
-async fn write_forbidden_on_metadata_preserves_upstream_status() {
+async fn write_forbidden_on_metadata_preserves_source_status() {
     let Some(account) =
-        resolve_account_or_skip("write_forbidden_on_metadata_preserves_upstream_status")
+        resolve_account_or_skip("write_forbidden_on_metadata_preserves_source_status")
     else {
         return;
     };
@@ -158,22 +168,21 @@ async fn write_forbidden_on_metadata_preserves_upstream_status() {
         account,
         "multi-region-write-forbidden",
         FaultInjectionErrorType::WriteForbidden,
-        StatusCode::Forbidden,
-        Some(SubStatusCode::WRITE_FORBIDDEN),
+        status_codes::WRITE_FORBIDDEN,
+        status_codes::CLIENT_WRITE_FORBIDDEN,
     )
     .await;
 }
 
-/// 404/1002 ReadSessionNotAvailable on GET / must surface as upstream HTTP status, not a serde failure.
-/// Pins the per-error-type slice of the account-metadata parser invariant.
+/// Metadata 404/1002 is wrapped as 503/20310, retaining the original wire failure.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "multi_write"),
     ignore = "requires test_category 'multi_write'"
 )]
-async fn session_not_available_on_metadata_preserves_upstream_status() {
+async fn session_not_available_on_metadata_preserves_source_status() {
     let Some(account) =
-        resolve_account_or_skip("session_not_available_on_metadata_preserves_upstream_status")
+        resolve_account_or_skip("session_not_available_on_metadata_preserves_source_status")
     else {
         return;
     };
@@ -182,8 +191,30 @@ async fn session_not_available_on_metadata_preserves_upstream_status() {
         account,
         "multi-region-read-session-not-available",
         FaultInjectionErrorType::ReadSessionNotAvailable,
-        StatusCode::NotFound,
-        Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+        status_codes::READ_SESSION_NOT_AVAILABLE,
+        status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE,
+    )
+    .await;
+}
+
+/// Metadata 403/1008 is wrapped as 503/20312, retaining the original wire failure.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
+async fn account_not_found_on_metadata_preserves_source_status() {
+    let Some(account) =
+        resolve_account_or_skip("account_not_found_on_metadata_preserves_source_status")
+    else {
+        return;
+    };
+    run_metadata_fault_test(
+        account,
+        "multi-region-account-not-found",
+        FaultInjectionErrorType::DatabaseAccountNotFound,
+        status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+        status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
     )
     .await;
 }
@@ -247,12 +278,12 @@ fn assert_final_request_left_faulted_region(response: &CosmosResponse, faulted_r
     );
 }
 
-/// Creates a fresh DB + container via raw `CosmosOperation`s + JSON bodies (mirrors
-/// `framework::DriverTestClient::{create_database, create_container_with_pk_paths}`).
+/// Creates a fresh DB + container using external management for federated live accounts.
 /// Caller is responsible for cleanup via [`delete_database`].
 async fn create_unique_db_and_container(
     runtime: &Arc<CosmosDriverRuntime>,
     account: &AccountReference,
+    resource_manager: Option<&dyn CosmosResourceManager>,
 ) -> Result<(DatabaseReference, ContainerReference), Box<dyn Error>> {
     let driver = runtime
         .create_driver(DriverOptions::builder(account.clone()).build())
@@ -260,36 +291,61 @@ async fn create_unique_db_and_container(
     let db_name = format!("failover-test-db-{}", Uuid::new_v4());
     let container_name = "c".to_string();
 
-    // Create database.
-    let db_body = format!(r#"{{"id":"{db_name}"}}"#);
-    let db_op = CosmosOperation::create_database(account.clone()).with_body(db_body.into_bytes());
-    let db_result = driver
-        .execute_singleton_operation(db_op, OperationOptions::default())
-        .await?;
-    let db_diag = db_result.diagnostics();
-    let db_status = db_diag.status();
-    if !db_status.map(|s| s.is_success()).unwrap_or(false) {
-        return Err(format!("create database failed, status: {db_status:?}").into());
-    }
     let db_ref = DatabaseReference::from_name(account.clone(), db_name.clone());
+    if let Some(resource_manager) = resource_manager {
+        resource_manager.create_database(&db_name).await?;
+        resource_manager
+            .create_or_update_container(
+                &db_name,
+                &container_name,
+                &serde_json::to_value(ManagementContainerResource {
+                    id: &container_name,
+                    partition_key: ManagementPartitionKey {
+                        paths: ["/pk"],
+                        kind: "Hash",
+                        version: 2,
+                    },
+                })?,
+                None,
+            )
+            .await?;
+    } else {
+        let db_body = format!(r#"{{"id":"{db_name}"}}"#);
+        let db_op =
+            CosmosOperation::create_database(account.clone()).with_body(db_body.into_bytes());
+        let db_result = driver
+            .execute_singleton_operation(db_op, OperationOptions::default())
+            .await?;
+        let db_diagnostics = db_result.diagnostics();
+        let db_status = db_diagnostics.status();
+        if !db_status.map(|s| s.is_success()).unwrap_or(false) {
+            return Err(format!("create database failed, status: {db_status:?}").into());
+        }
 
-    // Create container.
-    let container_body = format!(
-        r#"{{"id":"{container_name}","partitionKey":{{"paths":["/pk"],"kind":"Hash","version":2}}}}"#
-    );
-    let container_op =
-        CosmosOperation::create_container(db_ref.clone()).with_body(container_body.into_bytes());
-    let container_result = driver
-        .execute_singleton_operation(container_op, OperationOptions::default())
-        .await?;
-    let container_diag = container_result.diagnostics();
-    let container_status = container_diag.status();
-    if !container_status.map(|s| s.is_success()).unwrap_or(false) {
-        return Err(format!("create container failed, status: {container_status:?}").into());
+        let container_body = format!(
+            r#"{{"id":"{container_name}","partitionKey":{{"paths":["/pk"],"kind":"Hash","version":2}}}}"#
+        );
+        let container_op = CosmosOperation::create_container(db_ref.clone())
+            .with_body(container_body.into_bytes());
+        let container_result = driver
+            .execute_singleton_operation(container_op, OperationOptions::default())
+            .await?;
+        let container_diagnostics = container_result.diagnostics();
+        let container_status = container_diagnostics.status();
+        if !container_status.map(|s| s.is_success()).unwrap_or(false) {
+            return Err(format!("create container failed, status: {container_status:?}").into());
+        }
     }
-    let container_ref = driver
-        .resolve_container_by_name(&db_name, &container_name)
-        .await?;
+
+    let container_ref = if resource_manager.is_some() {
+        let container = resolve_driver_container_ready(&driver, &db_name, &container_name).await?;
+        probe_driver_data_plane_ready(&driver, &container, 1).await?;
+        container
+    } else {
+        driver
+            .resolve_container_by_name(&db_name, &container_name, OperationOptions::default())
+            .await?
+    };
     Ok((db_ref, container_ref))
 }
 
@@ -298,7 +354,13 @@ async fn delete_database(
     runtime: &Arc<CosmosDriverRuntime>,
     account: &AccountReference,
     db: &DatabaseReference,
+    resource_manager: Option<&dyn CosmosResourceManager>,
 ) {
+    if let (Some(resource_manager), Some(database_name)) = (resource_manager, db.name()) {
+        let _ = resource_manager.delete_database(database_name).await;
+        return;
+    }
+
     if let Ok(driver) = runtime
         .create_driver(DriverOptions::builder(account.clone()).build())
         .await
@@ -501,9 +563,11 @@ async fn excluded_regions_honored_end_to_end() -> Result<(), Box<dyn Error>> {
         return Ok(());
     };
     let account = env.account;
+    let resource_manager = env.resource_manager;
 
     let runtime = CosmosDriverRuntime::builder().build().await?;
-    let (db_ref, container_ref) = create_unique_db_and_container(&runtime, &account).await?;
+    let (db_ref, container_ref) =
+        create_unique_db_and_container(&runtime, &account, resource_manager.as_deref()).await?;
 
     let all_regions = [HUB_REGION, SATELLITE_REGION];
     let mut setup_err = None;
@@ -516,7 +580,7 @@ async fn excluded_regions_honored_end_to_end() -> Result<(), Box<dyn Error>> {
         }
     }
     if let Some(msg) = setup_err {
-        delete_database(&runtime, &account, &db_ref).await;
+        delete_database(&runtime, &account, &db_ref, resource_manager.as_deref()).await;
         return Err(msg.into());
     }
 
@@ -553,7 +617,7 @@ async fn excluded_regions_honored_end_to_end() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    delete_database(&runtime, &account, &db_ref).await;
+    delete_database(&runtime, &account, &db_ref, resource_manager.as_deref()).await;
     result
 }
 
@@ -580,11 +644,14 @@ where
         return Ok(());
     };
     let account = env.account;
+    let resource_manager = env.resource_manager;
 
     // Setup runtime: NO fault rule. Used for DB/container creation + warmup so
     // those operations are unaffected by the rule we will exercise.
     let setup_runtime = CosmosDriverRuntime::builder().build().await?;
-    let (db_ref, container_ref) = create_unique_db_and_container(&setup_runtime, &account).await?;
+    let (db_ref, container_ref) =
+        create_unique_db_and_container(&setup_runtime, &account, resource_manager.as_deref())
+            .await?;
 
     let all_regions = [HUB_REGION, SATELLITE_REGION];
     let mut warmup_err = None;
@@ -603,7 +670,13 @@ where
         }
     }
     if let Some(msg) = warmup_err {
-        delete_database(&setup_runtime, &account, &db_ref).await;
+        delete_database(
+            &setup_runtime,
+            &account,
+            &db_ref,
+            resource_manager.as_deref(),
+        )
+        .await;
         return Err(msg.into());
     }
 
@@ -628,6 +701,12 @@ where
          before the driver failed over; hit_count was 0. Test result: {result:?}"
     );
 
-    delete_database(&setup_runtime, &account, &db_ref).await;
+    delete_database(
+        &setup_runtime,
+        &account,
+        &db_ref,
+        resource_manager.as_deref(),
+    )
+    .await;
     result
 }

@@ -268,7 +268,7 @@ impl VmMetadataServiceInner {
             .map_err(|e| {
                 crate::error::CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED,
+                        crate::error::status_codes::CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED,
                     )
                     .with_message("failed to build IMDS HTTP client")
                     .with_source(e)
@@ -282,7 +282,7 @@ impl VmMetadataServiceInner {
             .await
             .map_err(|e| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::models::CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
                     .with_message("IMDS request failed")
                     .with_source(e)
                     .build()
@@ -290,7 +290,7 @@ impl VmMetadataServiceInner {
 
         let body = response.text().await.map_err(|e| {
             crate::error::CosmosError::builder()
-                .with_status(crate::models::CosmosStatus::TRANSPORT_BODY_READ_FAILED)
+                .with_status(crate::error::status_codes::TRANSPORT_BODY_READ_FAILED)
                 .with_message("failed to read IMDS response body")
                 .with_source(e)
                 .build()
@@ -298,7 +298,7 @@ impl VmMetadataServiceInner {
 
         let metadata: AzureVmMetadata = serde_json::from_str(&body).map_err(|e| {
             crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("failed to parse IMDS response")
                 .with_source(e)
                 .build()
@@ -309,7 +309,7 @@ impl VmMetadataServiceInner {
     #[cfg(not(feature = "reqwest"))]
     async fn do_fetch() -> crate::error::Result<AzureVmMetadata> {
         Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_IMDS_REQWEST_FEATURE_REQUIRED)
+            .with_status(crate::error::status_codes::CLIENT_IMDS_REQWEST_FEATURE_REQUIRED)
             .with_message("IMDS fetch requires the `reqwest` feature")
             .build())
     }

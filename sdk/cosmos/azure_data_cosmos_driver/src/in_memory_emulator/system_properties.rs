@@ -71,7 +71,7 @@ pub(crate) fn container_to_json(meta: &super::store::ContainerMetadata) -> serde
         .iter()
         .map(|p| p.as_ref())
         .collect();
-    serde_json::json!({
+    let mut body = serde_json::json!({
         "id": meta.id,
         "_rid": meta.rid,
         "_self": meta.self_link,
@@ -101,7 +101,19 @@ pub(crate) fn container_to_json(meta: &super::store::ContainerMetadata) -> serde
         "_triggers": "triggers/",
         "_udfs": "udfs/",
         "_conflicts": "conflicts/"
-    })
+    });
+    if let Some(object) = body.as_object_mut() {
+        for (name, value) in &meta.properties {
+            if name != "id"
+                && name != "partitionKey"
+                && name != "conflictResolutionPolicy"
+                && !name.starts_with('_')
+            {
+                object.insert(name.clone(), value.clone());
+            }
+        }
+    }
+    body
 }
 
 /// Returns a JSON representation of throughput offer metadata.
@@ -182,20 +194,22 @@ pub(crate) fn account_properties_to_json(
     // service flaps *between* payloads, but each individual payload is
     // internally consistent).
     let topology = config.topology_snapshot();
-    let regions = &topology.active;
-    let readable: Vec<serde_json::Value> = regions.iter().map(location_json).collect();
+    // Offline regions are filtered out and the write region hoisted to the
+    // front; during a failover `writable` carries both the outgoing and
+    // incoming write regions, which is what the service advertises.
+    let advertised = topology.advertised();
+    let readable: Vec<serde_json::Value> = advertised.iter().map(|r| location_json(r)).collect();
 
     let is_multi_write = topology.write_mode == super::config::WriteMode::Multi;
-    let writable: Vec<serde_json::Value> = if is_multi_write {
-        regions.iter().map(location_json).collect()
-    } else {
-        regions
-            .iter()
-            .find(|r| r.name() == topology.write_region)
-            .map(location_json)
-            .into_iter()
-            .collect()
-    };
+    // The service emits enableMultipleWriteLocations=true under Strong, but
+    // separately gates expansion of writableLocations on consistency != Strong.
+    let allow_multiple_write_locations =
+        is_multi_write && config.consistency() != super::config::ConsistencyLevel::Strong;
+    let writable: Vec<serde_json::Value> = topology
+        .writable(allow_multiple_write_locations)
+        .iter()
+        .map(|r| location_json(r))
+        .collect();
 
     // The real gateway sets the account id from the tenant portion of the
     // request host (everything before the first '.'), so a client that called a
@@ -241,7 +255,6 @@ pub(crate) fn account_properties_to_json(
         // that flip `VirtualAccountConfig::set_per_partition_failover(...)`
         // observe the change here on the next refresh tick.
         "enablePerPartitionFailoverBehavior": config.per_partition_failover_enabled(),
-        "disableCrossRegionalHedging": false,
         "userReplicationPolicy": {
             "asyncReplication": false,
             "minReplicaSetSize": 3,
@@ -255,9 +268,19 @@ pub(crate) fn account_properties_to_json(
         "queryEngineConfiguration": "{}"
     });
 
+    if let Some(disabled) = config.cross_region_hedging_disabled() {
+        response
+            .as_object_mut()
+            .expect("account properties response is a JSON object")
+            .insert(
+                "disableCrossRegionalHedging".to_owned(),
+                serde_json::Value::Bool(disabled),
+            );
+    }
+
     #[cfg(feature = "__internal_in_memory_emulator")]
     {
-        let thin_client_readable: Vec<_> = regions
+        let thin_client_readable: Vec<_> = advertised
             .iter()
             .filter_map(|region| {
                 region.gateway_v2_url().map(|url| {
@@ -268,9 +291,9 @@ pub(crate) fn account_properties_to_json(
                 })
             })
             .collect();
-        let thin_client_writable: Vec<_> = regions
+        let thin_client_writable: Vec<_> = topology
+            .writable(allow_multiple_write_locations)
             .iter()
-            .filter(|region| is_multi_write || region.name() == topology.write_region)
             .filter_map(|region| {
                 region.gateway_v2_url().map(|url| {
                     serde_json::json!({

@@ -11,8 +11,8 @@ pub(crate) struct DirectoryResource {
 impl DirectoryResource {
     /// Creates a new directory resource.
     ///
-    /// The directory depth (`sdd`) is computed automatically from the path
-    /// by counting `/`-separated segments (e.g., `"dir1/dir2"` → depth 2).
+    /// The directory depth (`sdd`) is computed automatically after normalizing
+    /// `\` to `/` and counting the resulting path segments.
     pub(crate) fn new(container: impl Into<String>, directory: impl Into<String>) -> Self {
         Self {
             container: container.into(),
@@ -21,15 +21,26 @@ impl DirectoryResource {
     }
 
     pub(crate) fn depth(&self) -> u32 {
-        if self.directory.is_empty() {
+        let canonicalized_directory = self.canonicalized_directory();
+        let trimmed = canonicalized_directory.trim_matches('/');
+        if trimmed.is_empty() {
             0
         } else {
-            self.directory.split('/').count() as u32
+            trimmed.split('/').count() as u32
         }
     }
 
     pub(crate) fn canonicalized_resource(&self, account: &str) -> String {
-        format!("/blob/{}/{}/{}", account, self.container, self.directory)
+        format!(
+            "/blob/{}/{}/{}",
+            account,
+            self.container,
+            self.canonicalized_directory()
+        )
+    }
+
+    fn canonicalized_directory(&self) -> String {
+        self.directory.replace('\\', "/")
     }
 
     /// Returns path segments for URL construction.
@@ -42,5 +53,28 @@ impl DirectoryResource {
             segments.extend(self.directory.split('/'));
         }
         segments
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn canonicalized_resource_and_depth_normalize_backslashes() {
+        let resource = DirectoryResource::new("container", r"dir1\dir2/dir3");
+
+        assert_eq!(
+            resource.canonicalized_resource("account"),
+            "/blob/account/container/dir1/dir2/dir3"
+        );
+        assert_eq!(resource.depth(), 3);
+    }
+
+    #[test]
+    fn backslash_root_has_zero_depth() {
+        let resource = DirectoryResource::new("container", r"\");
+
+        assert_eq!(resource.depth(), 0);
     }
 }

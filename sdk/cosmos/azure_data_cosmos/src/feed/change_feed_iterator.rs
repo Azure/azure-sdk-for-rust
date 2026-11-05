@@ -77,10 +77,7 @@ impl LiveState {
                 let container = this.container.clone();
                 let options = this.options.clone();
                 let fut: DriverPageFuture = Box::pin(async move {
-                    let result = driver
-                        .execute_plan(&mut plan, container, options)
-                        .await
-                        .map_err(Into::into);
+                    let result = driver.execute_plan(&mut plan, container, options).await;
                     (plan, result)
                 });
                 this.in_flight.insert(fut)
@@ -104,16 +101,16 @@ impl LiveState {
                 // violation. Surface it as an error rather than silently
                 // ending the caller's polling loop.
                 *this.errored = true;
-                let err = crate::DriverCosmosError::builder()
+                let err = crate::CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED,
+                        azure_data_cosmos_driver::error::status_codes::CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED,
                     )
                     .with_message(
                         "change feed pipeline drained unexpectedly; the change feed stream is \
                          infinite and should surface empty pages (304) rather than terminating",
                     )
                     .build();
-                task::Poll::Ready(Some(Err(err.into())))
+                task::Poll::Ready(Some(Err(err)))
             }
             Err(err) => {
                 *this.errored = true;
@@ -178,12 +175,12 @@ impl LiveState {
 
     fn to_continuation_token(&self) -> crate::Result<ContinuationToken> {
         let plan = self.plan.as_ref().ok_or_else(|| {
-            crate::DriverCosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT)
+            crate::CosmosError::builder()
+                .with_status(azure_data_cosmos_driver::error::status_codes::CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT)
                 .with_message("to_continuation_token called while a page fetch is in flight")
                 .build()
         })?;
-        plan.to_continuation_token().map_err(Into::into)
+        plan.to_continuation_token()
     }
 }
 
@@ -291,12 +288,22 @@ impl<T: Send + DeserializeOwned + 'static> ChangeFeedPageIterator<T> {
     /// Captures the current iterator position as a [`ContinuationToken`].
     ///
     /// Pass the returned token to a subsequent
-    /// [`ContainerClient::query_change_feed`](crate::clients::ContainerClient::query_change_feed)
-    /// call (via [`ChangeFeedOptions::with_continuation_token`](crate::options::ChangeFeedOptions::with_continuation_token))
+    /// [`ContainerClient::query_change_feed()`](crate::clients::ContainerClient::query_change_feed)
+    /// call using [`ChangeFeedOptions::with_continuation_token()`](crate::options::ChangeFeedOptions::with_continuation_token)
     /// to resume the change feed at the same position.
     ///
-    /// Snapshotting is non-mutating; the iterator may continue to be used
-    /// afterwards.
+    /// Creating a token does not change the iterator or send requests to the
+    /// service. The iterator can continue reading pages after the token is saved.
+    ///
+    /// A token can also be saved before reading the first page. In that case,
+    /// it preserves the requested start position, not a position established
+    /// by reading changes. For example, with
+    /// [`ChangeFeedStartFrom::Now`](crate::options::ChangeFeedStartFrom::Now),
+    /// resuming such a token starts from when the resumed feed sends its
+    /// requests, not from when the token was saved.
+    ///
+    /// Treat the token as opaque and use a compatible SDK version when
+    /// resuming it after a restart or redeployment.
     ///
     /// # Errors
     ///

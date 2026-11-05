@@ -24,6 +24,28 @@ pub struct FaultInjectionRule {
     hit_limit: Option<u32>,
 }
 
+/// A hit-limit slot reserved for a fault whose injection decision is deferred.
+/// Dropping without committing releases the slot.
+#[derive(Debug)]
+pub(crate) struct FaultInjectionHitReservation {
+    hit_count: Arc<AtomicU32>,
+    committed: bool,
+}
+
+impl FaultInjectionHitReservation {
+    pub(crate) fn commit(mut self) {
+        self.committed = true;
+    }
+}
+
+impl Drop for FaultInjectionHitReservation {
+    fn drop(&mut self) {
+        if !self.committed {
+            self.hit_count.fetch_sub(1, Ordering::SeqCst);
+        }
+    }
+}
+
 impl FaultInjectionRule {
     /// Returns the condition under which to inject the fault.
     pub fn condition(&self) -> &FaultInjectionCondition {
@@ -60,9 +82,21 @@ impl FaultInjectionRule {
         self.hit_count.load(Ordering::SeqCst)
     }
 
-    /// Increments the hit count by one.
-    pub(crate) fn increment_hit_count(&self) {
-        self.hit_count.fetch_add(1, Ordering::SeqCst);
+    /// Atomically reserves a hit-limit slot.
+    pub(crate) fn try_reserve_hit(&self) -> Option<FaultInjectionHitReservation> {
+        if let Some(limit) = self.hit_limit {
+            self.hit_count
+                .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |count| {
+                    (count < limit).then_some(count + 1)
+                })
+                .ok()?;
+        } else {
+            self.hit_count.fetch_add(1, Ordering::SeqCst);
+        }
+        Some(FaultInjectionHitReservation {
+            hit_count: Arc::clone(&self.hit_count),
+            committed: false,
+        })
     }
 
     /// Returns the absolute time at which the rule becomes active, if set.
@@ -202,10 +236,24 @@ mod tests {
         let rule = FaultInjectionRuleBuilder::new("hit-test", create_test_error()).build();
 
         assert_eq!(rule.hit_count(), 0);
-        rule.increment_hit_count();
+        rule.try_reserve_hit().unwrap().commit();
         assert_eq!(rule.hit_count(), 1);
-        rule.increment_hit_count();
+        rule.try_reserve_hit().unwrap().commit();
         assert_eq!(rule.hit_count(), 2);
+    }
+
+    #[test]
+    fn uncommitted_hit_reservation_is_released() {
+        let rule = FaultInjectionRuleBuilder::new("hit-test", create_test_error())
+            .with_hit_limit(1)
+            .build();
+
+        let reservation = rule.try_reserve_hit().unwrap();
+        assert_eq!(rule.hit_count(), 1);
+        assert!(rule.try_reserve_hit().is_none());
+        drop(reservation);
+        assert_eq!(rule.hit_count(), 0);
+        assert!(rule.try_reserve_hit().is_some());
     }
 
     #[test]

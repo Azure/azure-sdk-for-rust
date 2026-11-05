@@ -16,6 +16,20 @@ pub(crate) fn get_root_alias(query: &SqlQuery) -> Option<String> {
     }
 }
 
+/// Infers the service projection name for an unnamed SELECT-list expression.
+pub(crate) fn infer_property_name(expr: &SqlScalarExpression, position: usize) -> String {
+    match expr {
+        SqlScalarExpression::PropertyRef(name) => name.clone(),
+        SqlScalarExpression::MemberRef { member, .. } => member.clone(),
+        SqlScalarExpression::MemberIndexer { index, .. } => match index.as_ref() {
+            SqlScalarExpression::Literal(SqlLiteral::String(value)) => value.clone(),
+            _ => format!("${position}"),
+        },
+        SqlScalarExpression::FunctionCall { name, .. } => name.clone(),
+        _ => format!("${position}"),
+    }
+}
+
 fn get_alias_from_collection(coll: &SqlCollectionExpression) -> Option<String> {
     match coll {
         SqlCollectionExpression::Aliased { collection, alias } => {

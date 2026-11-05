@@ -273,6 +273,19 @@ impl HeaderValidationSpec {
     }
 }
 
+/// Parses a driver response body, accepting either text JSON or Cosmos binary
+/// JSON.
+///
+/// Binary encoding is enabled by default, so a body is detected by its `0x80`
+/// preamble rather than assumed to be text.
+pub fn parse_body_json(bytes: &[u8]) -> Option<serde_json::Value> {
+    if azure_data_cosmos_driver::binary_json::is_binary(bytes) {
+        azure_data_cosmos_driver::binary_json::decode(bytes).ok()
+    } else {
+        serde_json::from_slice(bytes).ok()
+    }
+}
+
 /// Snapshot of a [`CosmosResponse`] for deferred comparison.
 pub struct ResponseSnapshot {
     pub status_code: u16,
@@ -289,7 +302,7 @@ impl ResponseSnapshot {
         let body = match response.body() {
             ResponseBody::NoPayload => None,
             ResponseBody::Bytes(b) if b.is_empty() => None,
-            ResponseBody::Bytes(b) => serde_json::from_slice(b).ok(),
+            ResponseBody::Bytes(b) => parse_body_json(b),
             // No production path emits `Items` for the operations exercised by
             // this validation framework today (point ops / batch / metadata).
             // Until the in-memory emulator harness grows query/changefeed

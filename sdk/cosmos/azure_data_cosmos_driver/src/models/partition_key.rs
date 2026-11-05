@@ -4,7 +4,7 @@
 
 //! Partition key types for Cosmos DB operations.
 
-use crate::models::FiniteF64;
+use crate::{error::CosmosError, models::FiniteF64};
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use std::{borrow::Cow, hash::Hash};
 
@@ -12,18 +12,15 @@ use std::{borrow::Cow, hash::Hash};
 pub(crate) const PARTITION_KEY: HeaderName =
     HeaderName::from_static("x-ms-documentdb-partitionkey");
 
-/// Header name to enable cross-partition queries.
-pub(crate) const QUERY_ENABLE_CROSS_PARTITION: HeaderName =
-    HeaderName::from_static("x-ms-documentdb-query-enablecrosspartition");
-
 // =============================================================================
 // PartitionKeyValue
 // =============================================================================
 
 /// Represents a value for a single partition key.
 ///
-/// You shouldn't need to construct this type directly. The various implementations
-/// of [`Into<PartitionKey>`] will handle it for you.
+/// Infallible partition key inputs convert automatically. Use [`TryFrom<f64>`]
+/// or [`TryFrom<f32>`] to reject non-finite numeric values before building a
+/// hierarchical key.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct PartitionKeyValue(InnerPartitionKeyValue);
@@ -42,8 +39,31 @@ enum InnerPartitionKeyValue {
     Infinity,
 }
 
-/// Maximum number of string bytes to include when hashing (V1 truncation).
+/// V1 logical string limit, measured in UTF-16 code units.
+const MAX_STRING_UTF16_UNITS: usize = 100;
+/// V1 binary strings longer than this include one extra byte and no terminator.
 const MAX_STRING_BYTES_TO_APPEND: usize = 100;
+
+fn v1_string_bytes(value: &str) -> Cow<'_, [u8]> {
+    if value.len() <= MAX_STRING_UTF16_UNITS {
+        return Cow::Borrowed(value.as_bytes());
+    }
+    let mut units = 0;
+    for (offset, ch) in value.char_indices() {
+        if units == MAX_STRING_UTF16_UNITS {
+            return Cow::Borrowed(&value.as_bytes()[..offset]);
+        }
+        units += ch.len_utf16();
+        if units > MAX_STRING_UTF16_UNITS {
+            // The backend and .NET replace a surrogate split at unit 100 with U+FFFD.
+            // Java's default UTF-8 encoder uses '?' instead; it is not service-compatible here.
+            let mut bytes = value.as_bytes()[..offset].to_vec();
+            bytes.extend_from_slice("\u{FFFD}".as_bytes());
+            return Cow::Owned(bytes);
+        }
+    }
+    Cow::Borrowed(value.as_bytes())
+}
 
 /// Byte markers for partition key value encoding.
 mod component {
@@ -69,11 +89,10 @@ impl InnerPartitionKeyValue {
             }
             InnerPartitionKeyValue::String(s) => {
                 writer.push(component::STRING);
-                let bytes = s.as_bytes();
-                if truncate && bytes.len() > MAX_STRING_BYTES_TO_APPEND {
-                    writer.extend_from_slice(&bytes[..MAX_STRING_BYTES_TO_APPEND]);
+                if truncate {
+                    writer.extend_from_slice(&v1_string_bytes(s));
                 } else {
-                    writer.extend_from_slice(bytes);
+                    writer.extend_from_slice(s.as_bytes());
                 }
                 writer.push(string_suffix);
             }
@@ -91,17 +110,11 @@ impl InnerPartitionKeyValue {
             }
             InnerPartitionKeyValue::String(s) => {
                 writer.push(component::STRING);
-                let utf8 = s.as_bytes();
-                let short = utf8.len() <= MAX_STRING_BYTES_TO_APPEND;
-                let write_len = if short {
-                    utf8.len()
-                } else {
-                    std::cmp::min(utf8.len(), MAX_STRING_BYTES_TO_APPEND + 1)
-                };
-                for item in utf8.iter().take(write_len) {
+                let utf8 = v1_string_bytes(s);
+                for item in utf8.iter().take(MAX_STRING_BYTES_TO_APPEND + 1) {
                     writer.push(item.wrapping_add(1));
                 }
-                if short {
+                if utf8.len() <= MAX_STRING_BYTES_TO_APPEND {
                     writer.push(0x00);
                 }
             }
@@ -175,6 +188,9 @@ impl PartitionKeyValue {
     }
 
     /// Writes this value using V1 binary encoding for the EPK output string.
+    ///
+    /// Strings use the same UTF-16-truncated logical value as V1 hashing, then
+    /// limit the encoded byte representation to the service's V1 boundary.
     pub(crate) fn write_for_binary_encoding_v1(&self, writer: &mut Vec<u8>) {
         self.0.write_for_binary_encoding_v1(writer)
     }
@@ -182,23 +198,6 @@ impl PartitionKeyValue {
     /// Returns `true` if this value is the special Infinity sentinel.
     pub(crate) fn is_infinity(&self) -> bool {
         matches!(self.0, InnerPartitionKeyValue::Infinity)
-    }
-
-    /// Returns a truncated copy of this value for V1 binary encoding.
-    ///
-    /// String values longer than [`MAX_STRING_BYTES_TO_APPEND`] bytes are truncated
-    /// so that `write_for_binary_encoding_v1` sees them as "short" and appends the
-    /// `0x00` terminator, matching how the hashing step truncates strings.
-    pub(crate) fn truncated_for_v1_encoding(&self) -> PartitionKeyValue {
-        match &self.0 {
-            InnerPartitionKeyValue::String(s) if s.len() > MAX_STRING_BYTES_TO_APPEND => {
-                InnerPartitionKeyValue::String(Cow::Owned(
-                    s[..MAX_STRING_BYTES_TO_APPEND].to_string(),
-                ))
-                .into()
-            }
-            _ => self.clone(),
-        }
     }
 }
 
@@ -226,11 +225,18 @@ impl From<Cow<'static, str>> for PartitionKeyValue {
     }
 }
 
+fn non_finite_partition_key_error() -> CosmosError {
+    CosmosError::builder()
+        .with_status(crate::error::status_codes::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE)
+        .with_message("partition key number must be finite")
+        .build()
+}
+
 macro_rules! impl_from_number {
     ($source_type:ty) => {
         impl From<$source_type> for PartitionKeyValue {
             fn from(value: $source_type) -> Self {
-                InnerPartitionKeyValue::Number(FiniteF64::new_strict(value as f64)).into()
+                InnerPartitionKeyValue::Number(FiniteF64::new_lossy(value as f64)).into()
             }
         }
     };
@@ -246,8 +252,23 @@ impl_from_number!(u16);
 impl_from_number!(u32);
 impl_from_number!(u64);
 impl_from_number!(usize);
-impl_from_number!(f32);
-impl_from_number!(f64);
+impl TryFrom<f32> for PartitionKeyValue {
+    type Error = CosmosError;
+
+    fn try_from(value: f32) -> Result<Self, Self::Error> {
+        Self::try_from(f64::from(value))
+    }
+}
+
+impl TryFrom<f64> for PartitionKeyValue {
+    type Error = CosmosError;
+
+    fn try_from(value: f64) -> Result<Self, Self::Error> {
+        FiniteF64::try_new(value)
+            .map(|value| InnerPartitionKeyValue::Number(value).into())
+            .ok_or_else(non_finite_partition_key_error)
+    }
+}
 
 impl From<bool> for PartitionKeyValue {
     fn from(value: bool) -> Self {
@@ -264,6 +285,28 @@ impl<T: Into<PartitionKeyValue>> From<Option<T>> for PartitionKeyValue {
     }
 }
 
+impl TryFrom<Option<f32>> for PartitionKeyValue {
+    type Error = CosmosError;
+
+    fn try_from(value: Option<f32>) -> Result<Self, Self::Error> {
+        value
+            .map(Self::try_from)
+            .transpose()
+            .map(|value| value.unwrap_or(Self::NULL))
+    }
+}
+
+impl TryFrom<Option<f64>> for PartitionKeyValue {
+    type Error = CosmosError;
+
+    fn try_from(value: Option<f64>) -> Result<Self, Self::Error> {
+        value
+            .map(Self::try_from)
+            .transpose()
+            .map(|value| value.unwrap_or(Self::NULL))
+    }
+}
+
 /// A partition key used to identify the target partition for an operation.
 ///
 /// Supports both single and hierarchical partition keys (HPK).
@@ -276,14 +319,19 @@ impl<T: Into<PartitionKeyValue>> From<Option<T>> for PartitionKeyValue {
 ///
 /// let pk = PartitionKey::from("my-partition");
 /// let pk_num = PartitionKey::from(42);
+/// let pk_float = PartitionKey::try_from(1.5_f64)?;
+/// # Ok::<(), azure_data_cosmos_driver::error::CosmosError>(())
 /// ```
 ///
 /// Hierarchical partition key (tuple):
 /// ```
-/// use azure_data_cosmos_driver::models::PartitionKey;
+/// use azure_data_cosmos_driver::models::{PartitionKey, PartitionKeyValue};
 ///
 /// let pk = PartitionKey::from(("tenant-1", "user-123"));
 /// let pk3 = PartitionKey::from(("region", "tenant", 42));
+/// let numeric = PartitionKeyValue::try_from(1.5_f64)?;
+/// let pk_mixed = PartitionKey::from(("region", numeric));
+/// # Ok::<(), azure_data_cosmos_driver::error::CosmosError>(())
 /// ```
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
@@ -326,7 +374,7 @@ impl PartitionKey {
 
 impl AsHeaders for PartitionKey {
     type Error = crate::error::CosmosError;
-    type Iter = std::iter::Once<(HeaderName, HeaderValue)>;
+    type Iter = std::option::IntoIter<(HeaderName, HeaderValue)>;
 
     fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
         // We have to do some manual JSON serialization here.
@@ -334,13 +382,13 @@ impl AsHeaders for PartitionKey {
         // It's not safe to use non-ASCII characters in HTTP headers, and serde_json will not escape non-ASCII characters if they are otherwise valid as UTF-8.
         // So, we do some conversion by hand, with the help of Rust's own `encode_utf16` method which gives us the necessary code points for non-ASCII values, and produces surrogate pairs as needed.
 
-        // Quick shortcut for empty partition keys list, which also prevents a bug when we pop the trailing comma for an empty list.
+        // An empty partition key means "no specific partition" (see
+        // `PartitionKey::EMPTY`), which the driver expresses by targeting
+        // partition key ranges explicitly — so there is no header to emit.
+        // Returning early also keeps the trailing-comma pop below from
+        // stripping the opening '[' and producing a bare ']'.
         if self.0.is_empty() {
-            // An empty partition key means a cross partition query
-            return Ok(std::iter::once((
-                QUERY_ENABLE_CROSS_PARTITION,
-                HeaderValue::from_static("True"),
-            )));
+            return Ok(None.into_iter());
         }
 
         let mut json = String::new();
@@ -411,10 +459,7 @@ impl AsHeaders for PartitionKey {
         json.pop();
         json.push(']');
 
-        Ok(std::iter::once((
-            PARTITION_KEY,
-            HeaderValue::from_cow(json),
-        )))
+        Ok(Some((PARTITION_KEY, HeaderValue::from_cow(json))).into_iter())
     }
 }
 
@@ -425,24 +470,59 @@ impl<T: Into<PartitionKeyValue>> From<T> for PartitionKey {
     }
 }
 
-impl From<Vec<PartitionKeyValue>> for PartitionKey {
+impl TryFrom<Vec<PartitionKeyValue>> for PartitionKey {
+    type Error = CosmosError;
     /// Creates a [`PartitionKey`] from a vector of partition key components.
     ///
     /// This is useful when the partition key structure is determined at runtime,
     /// such as when working with multiple containers with different schemas or
-    /// building partition keys from configuration.
+    /// building partition keys from configuration. Empty vectors remain valid
+    /// for internal cross-partition routing.
     ///
-    /// # Panics
-    ///
-    /// Panics if the vector contains more than 3 elements, as Cosmos DB supports
-    /// a maximum of 3 hierarchical partition key levels.
-    fn from(values: Vec<PartitionKeyValue>) -> Self {
-        assert!(
-            values.len() <= 3,
-            "Partition keys can have at most 3 levels, got {}",
-            values.len()
-        );
-        PartitionKey(values)
+    /// Returns an error if more than 3 components are provided.
+    fn try_from(values: Vec<PartitionKeyValue>) -> Result<Self, Self::Error> {
+        if values.len() > 3 {
+            return Err(CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
+                .with_message(format!(
+                    "Partition keys can have at most 3 levels, got {}",
+                    values.len()
+                ))
+                .build());
+        }
+        Ok(PartitionKey(values))
+    }
+}
+
+impl TryFrom<f32> for PartitionKey {
+    type Error = CosmosError;
+
+    fn try_from(value: f32) -> Result<Self, Self::Error> {
+        Ok(Self::new(PartitionKeyValue::try_from(value)?))
+    }
+}
+
+impl TryFrom<f64> for PartitionKey {
+    type Error = CosmosError;
+
+    fn try_from(value: f64) -> Result<Self, Self::Error> {
+        Ok(Self::new(PartitionKeyValue::try_from(value)?))
+    }
+}
+
+impl TryFrom<Option<f32>> for PartitionKey {
+    type Error = CosmosError;
+
+    fn try_from(value: Option<f32>) -> Result<Self, Self::Error> {
+        Ok(Self::new(PartitionKeyValue::try_from(value)?))
+    }
+}
+
+impl TryFrom<Option<f64>> for PartitionKey {
+    type Error = CosmosError;
+
+    fn try_from(value: Option<f64>) -> Result<Self, Self::Error> {
+        Ok(Self::new(PartitionKeyValue::try_from(value)?))
     }
 }
 
@@ -483,7 +563,7 @@ mod tests {
     fn numeric_partition_key() {
         let pk1 = PartitionKey::from(42);
         let pk2 = PartitionKey::from(42i64);
-        let pk3 = PartitionKey::from(1.5f64);
+        let pk3 = PartitionKey::try_from(1.5f64).unwrap();
         assert_eq!(pk1.len(), 1);
         assert_eq!(pk2.len(), 1);
         assert_eq!(pk3.len(), 1);
@@ -502,6 +582,32 @@ mod tests {
         assert_eq!(pk.len(), 0);
     }
 
+    /// An empty partition key means "no specific partition", which the driver
+    /// expresses by targeting partition key ranges explicitly — so it must emit
+    /// no headers at all.
+    ///
+    /// It previously emitted `x-ms-documentdb-query-enablecrosspartition`,
+    /// which contradicted [`PartitionKey::EMPTY`]'s own contract and was the
+    /// only place that header was ever produced.
+    #[test]
+    fn empty_partition_key_emits_no_headers() {
+        let headers: Vec<_> = PartitionKey::EMPTY.as_headers().unwrap().collect();
+        assert!(
+            headers.is_empty(),
+            "an empty partition key must not put anything on the wire, got {headers:?}"
+        );
+    }
+
+    /// Regression: without the empty-list guard the trailing-comma pop would
+    /// strip the opening `[` and emit a bare `]`.
+    #[test]
+    fn non_empty_partition_key_emits_exactly_the_partition_key_header() {
+        let headers: Vec<_> = PartitionKey::from("test").as_headers().unwrap().collect();
+        assert_eq!(headers.len(), 1);
+        assert_eq!(headers[0].0, PARTITION_KEY);
+        assert_eq!(headers[0].1.as_str(), r#"["test"]"#);
+    }
+
     #[test]
     fn null_partition_key_value() {
         let pk = PartitionKey::from(None::<String>);
@@ -509,7 +615,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "at most 3 levels")]
     fn too_many_levels() {
         let values = vec![
             PartitionKeyValue::from("a"),
@@ -517,6 +622,54 @@ mod tests {
             PartitionKeyValue::from("c"),
             PartitionKeyValue::from("d"),
         ];
-        let _pk = PartitionKey::from(values);
+        let error = PartitionKey::try_from(values).unwrap_err();
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS
+        );
+    }
+
+    #[test]
+    fn non_finite_numeric_components_are_errors() {
+        for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            assert_eq!(
+                PartitionKeyValue::try_from(value).unwrap_err().status(),
+                crate::error::status_codes::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
+            );
+            assert_eq!(
+                PartitionKey::try_from(value).unwrap_err().status(),
+                crate::error::status_codes::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
+            );
+            assert_eq!(
+                PartitionKeyValue::try_from(Some(value))
+                    .unwrap_err()
+                    .status(),
+                crate::error::status_codes::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
+            );
+        }
+        assert_eq!(
+            PartitionKeyValue::try_from(f32::NAN).unwrap_err().status(),
+            crate::error::status_codes::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
+        );
+        assert_eq!(
+            PartitionKeyValue::try_from(None::<f64>).unwrap(),
+            PartitionKeyValue::NULL
+        );
+        assert_eq!(PartitionKey::try_from(Vec::new()).unwrap().len(), 0);
+        assert_eq!(
+            PartitionKey::try_from(vec![PartitionKeyValue::NULL; 3])
+                .unwrap()
+                .len(),
+            3
+        );
+        let mixed = PartitionKey::from(("tenant", PartitionKeyValue::try_from(1.5_f64).unwrap()));
+        assert_eq!(
+            mixed.as_headers().unwrap().next().unwrap().1.as_str(),
+            r#"["tenant",1.5]"#
+        );
+        assert_eq!(
+            PartitionKeyValue::try_from(-0.0_f64).unwrap(),
+            PartitionKeyValue::try_from(0.0_f64).unwrap()
+        );
     }
 }

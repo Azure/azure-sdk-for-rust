@@ -8,6 +8,8 @@ use azure_core::http::headers::HeaderName;
 use azure_core::http::Request;
 use percent_encoding::percent_decode_str;
 
+use crate::{models::cosmos_headers::request_header_names, options::ReadConsistencyStrategy};
+
 /// The type of operation resolved from an HTTP request.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum OperationType {
@@ -21,12 +23,14 @@ pub(crate) enum OperationType {
     ReadFeedContainers,
     QueryContainers,
     ReadContainer,
+    ReplaceContainer,
     DeleteContainer,
     ReadPKRanges,
     ReadFeedItems,
     Create,
     Read,
     Replace,
+    Patch,
     Upsert,
     Delete,
     QueryItems,
@@ -36,7 +40,7 @@ pub(crate) enum OperationType {
     QueryOffers,
     ReadOffer,
     ReplaceOffer,
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     DistributedTransaction,
     Unsupported(String),
     /// Trailing-slash on a resource URL. Real Cosmos returns 400 BadRequest
@@ -67,13 +71,16 @@ pub(crate) struct ParsedRequest {
     /// reject) point-in-time starts.
     pub if_modified_since: Option<String>,
     pub session_token: Option<String>,
+    /// Explicit read consistency strategy forwarded by Gateway V1 or decoded
+    /// from the Gateway V2 RNTBD token.
+    pub read_consistency_strategy: Option<ReadConsistencyStrategy>,
     pub activity_id: Option<String>,
     pub content_response_on_write: bool,
     /// Provisioned RU/s parsed from the `x-ms-offer-throughput` request header.
     /// Forwarded to container creation so the emulator honors caller-specified
     /// throughput instead of silently falling back to `ContainerConfig::default()`
     /// (which has no provisioned RU/s and disables throttling for the container).
-    pub offer_throughput: Option<u32>,
+    pub offer_throughput: Option<u64>,
     /// Whether the client advertised that it accepts Cosmos binary JSON in the
     /// response, via `x-ms-cosmos-supported-serialization-formats` containing
     /// `CosmosBinary`. When set, item read/write responses encode their body as
@@ -91,6 +98,11 @@ pub(crate) struct ParsedRequest {
     pub start_epk: Option<String>,
     #[allow(dead_code)]
     pub end_epk: Option<String>,
+    /// Logical point/prefix scope, independent of explicit range filters.
+    pub effective_partition_key: Option<String>,
+    /// Routing bounds select physical partitions, never individual documents.
+    pub routing_start_epk: Option<String>,
+    pub routing_end_epk: Option<String>,
     #[allow(dead_code)]
     pub is_query_plan: bool,
     #[allow(dead_code)]
@@ -104,6 +116,8 @@ pub(crate) struct ParsedRequest {
     /// read-feed handler consults this to decide whether to return flat
     /// documents or full-fidelity envelopes.
     pub a_im: Option<String>,
+    /// Requested structured change-feed response format, when present.
+    pub change_feed_wire_format_version: Option<String>,
     /// Host the request arrived on. The real gateway derives the account `id`
     /// in the account-read response from this rather than reporting a fixed
     /// name, so a client calling a regional endpoint sees the regional id.
@@ -117,6 +131,8 @@ static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
 static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
 static IF_MODIFIED_SINCE: HeaderName = HeaderName::from_static("if-modified-since");
 static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
+static READ_CONSISTENCY_STRATEGY: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-read-consistency-strategy");
 static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
 static CONTENT_RESPONSE: HeaderName =
     HeaderName::from_static("x-ms-cosmos-populate-content-response-on-write");
@@ -131,6 +147,8 @@ static PARTITION_KEY_RANGE_ID: HeaderName =
     HeaderName::from_static("x-ms-documentdb-partitionkeyrangeid");
 static START_EPK: HeaderName = HeaderName::from_static("x-ms-start-epk");
 static END_EPK: HeaderName = HeaderName::from_static("x-ms-end-epk");
+pub(super) const EFFECTIVE_PARTITION_KEY: HeaderName =
+    HeaderName::from_static("x-ms-effective-partition-key");
 static READ_FEED_KEY_TYPE: HeaderName = HeaderName::from_static("x-ms-read-key-type");
 static IS_BATCH_REQUEST: HeaderName = HeaderName::from_static("x-ms-cosmos-is-batch-request");
 static OFFER_THROUGHPUT: HeaderName = HeaderName::from_static("x-ms-offer-throughput");
@@ -139,6 +157,8 @@ static SUPPORTED_SERIALIZATION_FORMATS: HeaderName =
 static OFFER_AUTOPILOT_SETTINGS: HeaderName =
     HeaderName::from_static("x-ms-cosmos-offer-autopilot-settings");
 static A_IM: HeaderName = HeaderName::from_static("a-im");
+static CHANGE_FEED_WIRE_FORMAT_VERSION: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-changefeed-wire-format-version");
 
 /// Parses an HTTP request into a `ParsedRequest`.
 pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
@@ -159,6 +179,9 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     let session_token = headers
         .get_optional_str(&SESSION_TOKEN)
         .map(|s| s.to_string());
+    let read_consistency_strategy = headers
+        .get_optional_str(&READ_CONSISTENCY_STRATEGY)
+        .and_then(|value| value.parse().ok());
     let activity_id = headers
         .get_optional_str(&ACTIVITY_ID)
         .map(|s| s.to_string());
@@ -192,6 +215,19 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         .map(|s| s.to_string());
     let start_epk = headers.get_optional_str(&START_EPK).map(|s| s.to_string());
     let end_epk = headers.get_optional_str(&END_EPK).map(|s| s.to_string());
+    let effective_partition_key = headers
+        .get_optional_str(&EFFECTIVE_PARTITION_KEY)
+        .map(str::to_owned);
+    let routing_start_epk = headers
+        .get_optional_str(&HeaderName::from_static(
+            request_header_names::THINCLIENT_PKRANGE_MIN,
+        ))
+        .map(str::to_owned);
+    let routing_end_epk = headers
+        .get_optional_str(&HeaderName::from_static(
+            request_header_names::THINCLIENT_PKRANGE_MAX,
+        ))
+        .map(str::to_owned);
     let read_key_type = headers
         .get_optional_str(&READ_FEED_KEY_TYPE)
         .map(|s| s.to_string());
@@ -202,17 +238,27 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     // legacy values still succeed (matching real-service tolerance).
     let offer_throughput = headers
         .get_optional_str(&OFFER_THROUGHPUT)
-        .and_then(|s| s.trim().parse::<u32>().ok());
+        .and_then(|s| s.trim().parse::<u64>().ok());
     let offer_autopilot_settings = headers
         .get_optional_str(&OFFER_AUTOPILOT_SETTINGS)
         .map(|s| s.to_string());
     let a_im = headers.get_optional_str(&A_IM).map(|s| s.to_string());
+    let change_feed_wire_format_version = headers
+        .get_optional_str(&CHANGE_FEED_WIRE_FORMAT_VERSION)
+        .map(str::to_owned);
 
     // The client advertises binary-response support via
     // `x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary`.
     // Matching the .NET flag enum, the presence of a `CosmosBinary` token (case-
     // insensitive, comma-separated) means the client can decode a binary
     // response.
+    //
+    // Fidelity note: this derives the flag from the header alone, whereas the
+    // real gateway honors the negotiation only for `OperationType.Query`. The
+    // emulator would therefore return binary for any negotiated feed, but the
+    // Rust driver only advertises binary for point ops and query
+    // (`binary_negotiates_response`), so no control-plane feed request that
+    // Rust sends carries the header — the divergence is unreachable in practice.
     let binary_response = headers
         .get_optional_str(&SUPPORTED_SERIALIZATION_FORMATS)
         .map(|v| {
@@ -286,6 +332,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         if_none_match,
         if_modified_since,
         session_token,
+        read_consistency_strategy,
         activity_id,
         content_response_on_write,
         offer_throughput,
@@ -296,10 +343,14 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         partition_key_range_id,
         start_epk,
         end_epk,
+        effective_partition_key,
+        routing_start_epk,
+        routing_end_epk,
         is_query_plan,
         is_batch,
         is_upsert,
         a_im,
+        change_feed_wire_format_version,
         request_host: url.host_str().map(|h| h.to_string()),
     }
 }
@@ -368,7 +419,7 @@ fn resolve_operation(
         // GET / → ReadAccount
         ("GET", 0) => OperationType::ReadAccount,
 
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         ("POST", 2) if segments[0] == "operations" && segments[1] == "dtc" => {
             OperationType::DistributedTransaction
         }
@@ -408,6 +459,11 @@ fn resolve_operation(
         // GET /dbs/{db}/colls/{coll} → ReadContainer
         ("GET", 4) if segments[0] == "dbs" && segments[2] == "colls" => {
             OperationType::ReadContainer
+        }
+
+        // PUT /dbs/{db}/colls/{coll} → ReplaceContainer
+        ("PUT", 4) if segments[0] == "dbs" && segments[2] == "colls" => {
+            OperationType::ReplaceContainer
         }
 
         // DELETE /dbs/{db}/colls/{coll} → DeleteContainer
@@ -450,6 +506,11 @@ fn resolve_operation(
         // PUT /dbs/{db}/colls/{coll}/docs/{doc} → Replace
         ("PUT", 6) if segments[0] == "dbs" && segments[2] == "colls" && segments[4] == "docs" => {
             OperationType::Replace
+        }
+
+        // PATCH /dbs/{db}/colls/{coll}/docs/{doc} → Patch
+        ("PATCH", 6) if segments[0] == "dbs" && segments[2] == "colls" && segments[4] == "docs" => {
+            OperationType::Patch
         }
 
         // DELETE /dbs/{db}/colls/{coll}/docs/{doc} → Delete

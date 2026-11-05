@@ -1,10 +1,47 @@
 # Release History
 
-## 1.2.0-beta.1 (Unreleased)
+## 1.2.0-beta.3 (Unreleased)
 
 ### Features Added
 
+- Added `AmqpConnection::abort()` to terminate a failed transport without waiting for a close handshake.
+
 ### Breaking Changes
+
+- Updated `fe2o3-amqp` to 0.18. A build that selects its TLS stack through a direct `fe2o3-amqp` dependency must now name version 0.18.
+- `AmqpErrorKind::AmqpDescribedError` can now represent locally detected AMQP limit violations as well as errors reported by the remote peer.
+
+### Bugs Fixed
+
+- Concurrent calls to `AmqpConnection::open()` now return an error without starting another connection attempt.
+- A failed or cancelled connection handshake now releases its transport and permits another `open()` on the same object.
+- `AmqpConnection::abort()` now cancels an in-progress opening, including TCP connection and protocol negotiation.
+- An aborted opening now permits an immediate replacement attempt; stale completion and cleanup cannot change the replacement connection.
+- Pending sends and sender metadata waits now return when their connection or session closes; session errors retain the peer's protocol condition.
+- Dropping a connection now releases its socket even when an AMQP write is blocked; cancelling session, sender, or CBS preparation retires the transport used by that preparation.
+- Sending a message that is larger than the link allows now reports `AmqpErrorCondition::LinkPayloadSizeExceeded` before any frame is sent.
+- A send no longer hangs when the peer settles the delivery at once. The fix comes from `fe2o3-amqp` 0.18.2.
+
+## 1.2.0-beta.2 (2026-09-14)
+
+### Breaking Changes
+
+- Removed AMQP-over-WebSockets support, including the `AmqpTransport::WebSocket` variant and the `fe2o3_amqp_ws` and `fe2o3_amqp_ws_rustls` features, to eliminate the prohibited `sha1` dependency. `AmqpTransport::Tcp` and the APIs that select the transport remain available. ([#5261](https://github.com/Azure/azure-sdk-for-rust/issues/5261))
+
+## 1.2.0-beta.1 (2026-09-04)
+
+### Features Added
+
+- Added `AmqpTransport` and `AmqpConnectionOptions::transport` to support AMQP over secure WebSockets.
+- Added the `fe2o3_amqp_ws` and `fe2o3_amqp_ws_rustls` features for AMQP over WebSockets. Both are enabled by default.
+- Added the `fe2o3_amqp_rustls` feature for AMQP over TCP with rustls and the aws-lc-rs provider. It is enabled by default. ([#4189](https://github.com/Azure/azure-sdk-for-rust/issues/4189))
+- Added `AmqpReceiverApis::settle_delivery` and `AmqpDeliveryOutcome` to settle deliveries with accepted, rejected, released, or modified outcomes. See [#4935](https://github.com/Azure/azure-sdk-for-rust/issues/4935).
+- Added the `AmqpErrorCondition::DeadLetter` variant for the `com.microsoft:dead-letter` error condition. See [#4935](https://github.com/Azure/azure-sdk-for-rust/issues/4935).
+
+### Breaking Changes
+
+- Added the `transport` field to `AmqpConnectionOptions`. Use struct update syntax with `Default::default()` when initializing the struct.
+- The default AMQP-over-TCP TLS backend changed from native-tls to rustls with the aws-lc-rs provider. The TLS connector uses the operating system trust store. ([#4189](https://github.com/Azure/azure-sdk-for-rust/issues/4189))
 
 ### Bugs Fixed
 
@@ -12,6 +49,8 @@
 - A failed receive now reports the link-state kind the sender path already reports: `AmqpDescribedError` when the remote closed or detached with an AMQP error, and `LinkClosedByRemote` or `LinkDetachedByRemote` otherwise. All of these previously reported `LinkStateError`.
 
 ### Other Changes
+
+- Updated the `fe2o3-amqp` family of dependencies from 0.14 to 0.16.
 
 ## 1.1.0 (2026-07-09)
 

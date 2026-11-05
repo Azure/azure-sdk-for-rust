@@ -33,7 +33,7 @@ pub use typespec_macros::SafeDebug;
 /// ));
 /// ```
 pub fn to_ascii_lowercase(value: &str) -> Cow<'_, str> {
-    for (i, c) in value.chars().enumerate() {
+    for (i, c) in value.char_indices() {
         if c.is_ascii_uppercase() {
             let mut s = value.to_owned();
             s[i..].make_ascii_lowercase();
@@ -55,6 +55,18 @@ fn test_to_ascii_lowercase() {
         actual,
         Cow::Owned(expected) if expected == "hello, 🌎!"
     ));
+}
+
+#[test]
+fn multibyte_two_byte_char_before_ascii_uppercase() {
+    let actual = to_ascii_lowercase("éA");
+    assert!(matches!(actual, Cow::Owned(expected) if expected == "éa"));
+}
+
+#[test]
+fn multibyte_three_byte_char_before_ascii_uppercase() {
+    let actual = to_ascii_lowercase("日本X");
+    assert!(matches!(actual, Cow::Owned(expected) if expected == "日本x"));
 }
 
 /// Contains serde functions for types that are sent and received as strings but aren't surfaced as strings.

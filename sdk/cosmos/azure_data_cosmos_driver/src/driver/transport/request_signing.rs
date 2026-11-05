@@ -73,7 +73,7 @@ mod tests {
         // the input decodes to bytes; the value is not validated against any
         // real account.
         let key = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-        let credential = Credential::MasterKey(Secret::new(key.to_owned()));
+        let credential = Credential::AccountKey(Secret::new(key.to_owned()));
         let auth_ctx = AuthorizationContext::new(
             Method::Get,
             ResourceType::DocumentCollection,

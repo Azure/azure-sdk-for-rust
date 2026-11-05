@@ -1,6 +1,6 @@
 [package]
 name = "azure_security_keyvault_secrets"
-version = "1.1.0-beta.1"
+version = "1.1.0-beta.2"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Key Vault Secrets"
 readme = "README.md"
 authors.workspace = true
@@ -12,15 +12,20 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_security_keyvault_secrets"
 keywords = ["sdk", "cloud"]
 categories = ["api-bindings"]
+exclude.workspace = true
 
 [features]
 default = ["azure_core/default"]
+test = ["azure_core/test"]
+unstable_fake = ["test", "azure_core/unstable_fake"]
+
+[package.metadata.docs.rs]
+all-features = true
 
 [dependencies]
 async-lock = { workspace = true }
 async-trait = { workspace = true }
-azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1" }
-clap = { workspace = true, features = ["derive"] }
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.2", default-features = false }
 futures = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
@@ -43,7 +48,10 @@ rustc_version.workspace = true
 [lints]
 workspace = true
 
-[[bench]]
-name = "perf"
-path = "perf/get_secret.rs"
-harness = false
+[[example]]
+name = "secret_client_fake"
+required-features = ["test", "unstable_fake"]
+
+[[test]]
+name = "secret_client_fake"
+required-features = ["test", "unstable_fake"]

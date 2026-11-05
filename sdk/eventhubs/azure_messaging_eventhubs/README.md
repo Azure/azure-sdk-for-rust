@@ -120,6 +120,10 @@ Additional examples for various scenarios can be found on in the examples direct
 - [Send events](#send-events)
   - [Send events directly to the Event Hub](#send-events-directly-to-the-event-hub)
   - [Send events using a batch operation](#send-events-using-a-batch-operation)
+- [Send events with the buffered producer](#send-events-with-the-buffered-producer)
+  - [Route events to a partition](#route-events-to-a-partition)
+  - [Flush and shut down](#flush-and-shut-down)
+  - [Trade-offs of buffered publishing](#trade-offs-of-buffered-publishing)
 - [Open an Event Hubs message consumer on an Event Hubs instance](#open-an-event-hubs-message-consumer-on-an-event-hub-instance)
 - [Receive events](#receive-events)
 
@@ -149,6 +153,14 @@ There are two mechanisms used to send events to an Event Hub instance. The first
 sends individual messages to the Event Hub, the second uses a "batch" operation to
 send multiple messages in a single network request to the service.
 
+When a connection or session closes, pending sends retry with the current connection. Peer-triggered invalidation also wakes pending sends.
+These retries use the configured limits and backoff. A lost acknowledgement can cause duplicate
+events, because the service can accept a send before the client detects the failure.
+
+`RetryOptions::max_total_elapsed` bounds each send and sender metadata request, including authorization, attachment, recovery, and backoff. The default remains 60 seconds. Expiry returns an I/O timeout and retires the transport used by the failed attempt. A later call can reconnect. An outage longer than the budget produces a terminal error; increasing the budget does not guarantee recovery.
+
+A deadline runs independently of AMQP reads and writes. It does not limit a healthy receiver's wait for an event. The client terminates retired transports without waiting for a graceful close handshake.
+
 #### Send events directly to the Event Hub
 
 ```rust no_run
@@ -177,6 +189,125 @@ async fn send_events(producer: &ProducerClient) -> Result<(), Box<dyn std::error
     Ok(())
 }
 ```
+
+### Send events with the buffered producer
+
+`BufferedProducerClient` accepts single events and publishes them in the background. The client
+groups the events into batches for each partition, and one worker for each partition sends them.
+This gives a higher throughput than `ProducerClient`, because the caller does not wait for each
+send.
+
+The client reports the outcome of each batch through handlers. A handler for failed batches is
+required, because a send failure arrives after the enqueue call already returned.
+
+```rust no_run
+use azure_identity::DeveloperToolsCredential;
+use azure_messaging_eventhubs::BufferedProducerClient;
+
+async fn buffered_publish() -> Result<(), Box<dyn std::error::Error>> {
+    let host = "<EVENTHUBS_HOST>";
+    let eventhub = "<EVENTHUB_NAME>";
+    let credential = DeveloperToolsCredential::new(None)?;
+
+    let producer = BufferedProducerClient::builder()
+        .with_on_send_succeeded(|context| async move {
+            println!(
+                "The service accepted {} events on partition {}.",
+                context.events.len(),
+                context.partition_id
+            );
+        })
+        .with_on_send_failed(|context| async move {
+            eprintln!(
+                "{} events failed on partition {}: {}",
+                context.events.len(),
+                context.partition_id,
+                context.error
+            );
+        })
+        .open(host, eventhub, credential.clone())
+        .await?;
+
+    for index in 0..1000 {
+        producer.enqueue_event(format!("event {index}"), None).await?;
+    }
+
+    producer.close().await?;
+    Ok(())
+}
+```
+
+#### Route events to a partition
+
+Give a partition ID to send an event to one partition. Give a partition key to send every event
+with that key to the same partition. Set at most one of the two; the client rejects a request that
+sets both. When you set neither, the client assigns the partitions in round-robin order.
+
+```rust no_run
+use azure_messaging_eventhubs::{BufferedProducerClient, EnqueueEventOptions};
+
+async fn route_events(
+    producer: &BufferedProducerClient,
+) -> Result<(), Box<dyn std::error::Error>> {
+    producer
+        .enqueue_event(
+            "to partition 0",
+            Some(EnqueueEventOptions {
+                partition_id: Some("0".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    producer
+        .enqueue_event(
+            "grouped by key",
+            Some(EnqueueEventOptions {
+                partition_key: Some("customer-17".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    Ok(())
+}
+```
+
+#### Flush and shut down
+
+`flush` sets a barrier. It completes once every event that the client accepted before the call
+reaches a terminal outcome. An event that arrives after the barrier does not delay the call.
+
+`close` sends the buffered events and then shuts the client down. `abort` shuts the client down at
+once and abandons the buffered events.
+
+```rust no_run
+use azure_messaging_eventhubs::BufferedProducerClient;
+
+async fn flush_and_close(
+    producer: &BufferedProducerClient,
+) -> Result<(), Box<dyn std::error::Error>> {
+    producer.enqueue_event("an event", None).await?;
+
+    // Wait for the events that the client already accepted.
+    producer.flush().await?;
+    println!("{} events are still buffered.", producer.total_buffered_event_count());
+
+    // Send what is left, then shut down.
+    producer.close().await?;
+    Ok(())
+}
+```
+
+#### Trade-offs of buffered publishing
+
+- A successful enqueue means only that the local buffer accepted the event. It does not mean that
+  Event Hubs accepted the event.
+- The process loses the buffered events if it stops before a flush or a close. Call `flush` or
+  `close` when the delivery of the buffered events matters.
+- A send failure arrives after the enqueue call already returned, through the failure handler.
+- Buffering gives a higher throughput, but the latency of one event is less predictable.
+- Use `ProducerClient` when the application needs the result of each send.
 
 ### Open an Event Hubs message consumer on an Event Hub instance
 
@@ -287,6 +418,34 @@ Events follow a consistent level policy so you can pick the verbosity you need:
 - `debug` - per-operation bookkeeping, error classification decisions, retry chatter, and internal
   map updates.
 - `trace` - very-high-frequency or per-message detail, including the hot send path.
+
+When a recovery loop stops after an attempt returns an error, the SDK logs one `warn` event,
+`Operation recovery stopped, returning error.`, with these fields:
+
+- `stop_reason` - the decision that ended recovery: `elapsed_budget_exhausted`,
+  `retries_exhausted`, `non_recoverable`, `recovery_failed`, or `recovery_unavailable`.
+- `retries_attempted` and `max_retries` - the retries that ran and the configured limit.
+- `recovery_elapsed` and `max_total_elapsed` - the time charged to the elapsed-time budget and
+  its configured limit. For a receive, only recovery work counts: recovery actions, backoff, and
+  link attach. For other operations, all time from the first attempt counts.
+- `receive_wait_elapsed` - receive only: the total time in the current recovery episode that the
+  receive waited for an event on an attached link. This time is not charged to the budget.
+
+When a receive link fails after it waited at least 10 seconds for an event, the link was healthy,
+so the SDK starts a new recovery episode with a new retry count and a new budget. It logs this at
+`info` as `Receive link failed after a healthy wait, starting a new recovery episode.`, with
+`connection_id`, `partition_id`, the previous `retries_attempted`, and the `healthy_wait`.
+
+- `connection_id` and `partition_id` - the receiver that stopped, present on receive events at
+  every level.
+- `err` - the error that the operation returns.
+
+### Link attachment during recovery
+
+Connection recovery can replace a session while a sender or receiver prepares
+to attach. The SDK checks that preparation still belongs to the current recovery
+generation before attaching the link. Superseded preparation restarts against the
+current session, avoiding a duplicate link-name attachment on that session.
 
 ## Contributing
 

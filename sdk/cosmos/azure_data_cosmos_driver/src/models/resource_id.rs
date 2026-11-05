@@ -46,16 +46,25 @@ impl std::fmt::Display for RidParseError {
 
 impl std::error::Error for RidParseError {}
 
-/// Decodes a Cosmos DB RID string into its raw bytes.
-///
-/// RIDs use standard Base64 with `-` substituted for `/`.
-pub(crate) fn decode_rid(rid: &str) -> Result<Vec<u8>, RidParseError> {
+fn decode_rid_base64(rid: &str) -> Result<Vec<u8>, RidParseError> {
     if rid.is_empty() {
         return Err(RidParseError::Empty);
     }
     if !rid.len().is_multiple_of(4) {
         return Err(RidParseError::InvalidLength);
     }
+    let b64 = rid.replace('-', "/");
+    STANDARD
+        .decode(&b64)
+        .map_err(|_| RidParseError::InvalidBase64)
+}
+
+/// Decodes a Cosmos DB RID string into its raw bytes.
+///
+/// RIDs used in resource paths use standard Base64 with `-` substituted for
+/// `/`. Service payloads may contain the standard alphabet instead and must use
+/// a context-specific decoder rather than this path-safe helper.
+pub(crate) fn decode_rid(rid: &str) -> Result<Vec<u8>, RidParseError> {
     // Canonical Cosmos RIDs substitute `-` for Base64's `/`, so a literal `/` is
     // never part of a valid RID. Reject it here: the raw-path protocol embeds the
     // RID string directly in the request URL, where an unencoded `/` would inject
@@ -63,10 +72,7 @@ pub(crate) fn decode_rid(rid: &str) -> Result<Vec<u8>, RidParseError> {
     if rid.contains('/') {
         return Err(RidParseError::InvalidBase64);
     }
-    let b64 = rid.replace('-', "/");
-    STANDARD
-        .decode(&b64)
-        .map_err(|_| RidParseError::InvalidBase64)
+    decode_rid_base64(rid)
 }
 
 /// Encodes raw bytes into a Cosmos DB RID string.
@@ -109,12 +115,13 @@ pub fn is_database_rid(rid: &str) -> bool {
 /// Returns `None` unless `rid` decodes to a *document* RID specifically,
 /// applying Java `ResourceId.tryParse`'s shape checks — the collection bit in
 /// byte 4, and a `Document` child-resource type nibble — plus a stricter
-/// length rule: exactly 16 bytes, so a 20-byte RID (an attachment *under* a
-/// document, which `tryParse` still resolves to its parent document) is
-/// rejected rather than silently treated as that document. Sibling 16-byte
-/// RIDs — partition key ranges, stored procedures, triggers, UDFs, conflicts,
-/// permissions — and synthetic test fixtures like `"a"` all return `None`;
-/// callers then fall back to raw-string ordering.
+/// length rule: exactly 16 bytes for a document or 20 bytes for a document
+/// hierarchy RID carrying the optional attachment segment. Both .NET and Java
+/// parse the latter as a document plus attachment and expose the same document
+/// ordinal from bytes `[8..16)`. Sibling collection children — partition key
+/// ranges, stored procedures, triggers, UDFs, conflicts, permissions — and
+/// synthetic test fixtures like `"a"` all return `None`; callers then fall
+/// back to raw-string ordering.
 pub(crate) fn document_ordinal(rid: &str) -> Option<u64> {
     /// `CollectionChildResourceType.Document` in .NET/Java `ResourceId`: the
     /// high nibble of the document segment's most significant byte tags which
@@ -122,10 +129,13 @@ pub(crate) fn document_ordinal(rid: &str) -> Option<u64> {
     /// range, `0x8` a stored procedure, and so on).
     const DOCUMENT_CHILD_TYPE: u8 = 0x0;
 
-    let bytes = decode_rid(rid).ok()?;
-    // Exactly 16: a 20-byte RID addresses an *attachment* under a document,
-    // not the document itself, and anything longer is not a RID at all.
-    if bytes.len() != 16 {
+    // ORDER BY state comes from service payloads and continuation tokens, where
+    // both standard Base64 `/` and the path-safe Cosmos `-` form are observed.
+    let bytes = decode_rid_base64(rid).ok()?;
+    // .NET/Java accept both the 16-byte document RID and its 20-byte hierarchy
+    // form with an attachment segment. The latter still identifies the parent
+    // document whose ordinal is used for the ORDER BY tie-break.
+    if !matches!(bytes.len(), 16 | 20) {
         return None;
     }
     // Byte 4's high bit separates collection children from user children, so
@@ -761,6 +771,33 @@ mod tests {
         );
     }
 
+    #[test]
+    fn document_ordinal_accepts_20_byte_document_hierarchy_rids() {
+        let mut rid = [0u8; 20];
+        rid[0..4].copy_from_slice(&[0x0A, 0x0B, 0x0C, 0x0D]);
+        rid[4..8].copy_from_slice(&[0x80, 0x01, 0x02, 0x03]);
+        rid[8..16].copy_from_slice(&7u64.to_le_bytes());
+        rid[16..20].copy_from_slice(&1u32.to_le_bytes());
+        assert_eq!(document_ordinal(&encode_rid(&rid)), Some(7));
+
+        // Regression vector returned by the vNext emulator in an ORDER BY
+        // continuation token. Its optional four-byte suffix is zero.
+        // cspell:ignore EAAAAJAAAAAOAAA PUAAAAAAAA
+        assert_eq!(
+            document_ordinal("EAAAAJAAAAAOAAAAvPUAAAAAAAA="),
+            Some(u64::from_le_bytes([
+                0x0E, 0x00, 0x00, 0x00, 0xBC, 0xF5, 0x00, 0x00,
+            ]))
+        );
+        // cspell:ignore EAAAAJAAAAAOAAAA OcAAAAAAAA
+        assert_eq!(
+            document_ordinal("EAAAAJAAAAAOAAAA/OcAAAAAAAA="),
+            Some(u64::from_le_bytes([
+                0x0E, 0x00, 0x00, 0x00, 0xFC, 0xE7, 0x00, 0x00,
+            ]))
+        );
+    }
+
     /// A base64 blob of the right length is not proof of a document RID.
     /// Mirrors Java `ResourceId.tryParse`, which rejects every non-document
     /// shape rather than reading bytes `[8..16)` unconditionally — otherwise a
@@ -784,18 +821,6 @@ mod tests {
         permission[4..8].copy_from_slice(&[0x01, 0x02, 0x03, 0x04]);
         permission[8..16].copy_from_slice(&7u64.to_le_bytes());
         assert_eq!(document_ordinal(&encode_rid(&permission)), None);
-
-        // 20 bytes: an attachment *under* a document, not the document.
-        let mut attachment = [0u8; 20];
-        attachment[0..16].copy_from_slice(&{
-            let mut doc = [0u8; 16];
-            doc[0..4].copy_from_slice(&[0x0A, 0x0B, 0x0C, 0x0D]);
-            doc[4..8].copy_from_slice(&[0x80, 0x01, 0x02, 0x03]);
-            doc[8..16].copy_from_slice(&7u64.to_le_bytes());
-            doc
-        });
-        attachment[16..20].copy_from_slice(&1u32.to_be_bytes());
-        assert_eq!(document_ordinal(&encode_rid(&attachment)), None);
 
         // Over-long arbitrary bytes.
         assert_eq!(document_ordinal(&encode_rid(&[0xFFu8; 24])), None);

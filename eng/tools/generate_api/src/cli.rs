@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use clap::{Parser, ValueEnum};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Parser)]
 #[command(
@@ -15,25 +15,35 @@ struct Args {
     #[arg(long, value_name = "PATH")]
     manifest_path: PathBuf,
 
+    /// Path to the repository root. Defaults to the current directory.
+    #[arg(long, value_name = "PATH")]
+    root: Option<PathBuf>,
+
     /// Output format to generate. Defaults to markdown.
     #[arg(long, value_enum, default_value_t = OutputFormat::Markdown)]
     format: OutputFormat,
 
-    /// Do not emit documentation comments in APIView output.
+    /// Emit Markdown API review metadata, source map, and documentation patch.
     #[arg(long)]
-    no_docs: bool,
+    review: bool,
 
-    /// Directory where generated files will be written.
-    #[arg(long, value_name = "DIR")]
-    output: PathBuf,
+    /// Check generated content against existing files without writing them.
+    #[arg(long)]
+    check: bool,
+
+    /// Directory where generated files will be written. Defaults to the crate directory.
+    #[arg(long = "output-dir", alias = "output", value_name = "DIR")]
+    output_dir: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone)]
 pub(crate) struct Request {
     pub(crate) manifest_path: PathBuf,
+    pub(crate) root: Option<PathBuf>,
     pub(crate) format: OutputFormat,
-    pub(crate) no_docs: bool,
-    pub(crate) output_dir: PathBuf,
+    pub(crate) review: bool,
+    pub(crate) check: bool,
+    pub(crate) output_dir: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, ValueEnum)]
@@ -42,22 +52,47 @@ pub(crate) enum OutputFormat {
     Apiview,
 }
 
+/// File name of the patch that adds documentation comments back to `api.md`.
+pub(crate) const DOCUMENTATION_PATCH_FILE_NAME: &str = "api.documentation.patch";
+pub(crate) const MARKDOWN_METADATA_FILE_NAME: &str = "api.metadata.yml";
+pub(crate) const SOURCE_MAP_FILE_NAME: &str = "api.md.map";
+
 impl OutputFormat {
     pub(crate) fn default_file_name(self) -> &'static str {
         match self {
-            Self::Markdown => "API.md",
+            Self::Markdown => "api.md",
             Self::Apiview => "apiview.json",
         }
     }
 }
 
-pub(crate) fn parse() -> Request {
+impl Request {
+    pub(crate) fn output_dir<'a>(&'a self, package_dir: &'a Path) -> &'a Path {
+        self.output_dir.as_deref().unwrap_or(package_dir)
+    }
+}
+
+pub(crate) fn parse() -> Result<Request, String> {
     let args = Args::parse();
-    Request {
-        manifest_path: args.manifest_path,
-        format: args.format,
-        no_docs: args.no_docs,
-        output_dir: args.output,
+    Request::try_from(args)
+}
+
+impl TryFrom<Args> for Request {
+    type Error = String;
+
+    fn try_from(args: Args) -> Result<Self, Self::Error> {
+        if args.review && args.format != OutputFormat::Markdown {
+            return Err("--review can only be used with --format markdown".to_string());
+        }
+
+        Ok(Self {
+            manifest_path: args.manifest_path,
+            root: args.root,
+            format: args.format,
+            review: args.review,
+            check: args.check,
+            output_dir: args.output_dir,
+        })
     }
 }
 

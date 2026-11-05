@@ -12,22 +12,37 @@ param(
   [string] $Toolchain = 'active',
   [int] $MaxAttempts = 3,
   [bool] $SetDefault = $true,
-  # A directory outside the repo used when $Toolchain is 'active' to check the
-  # rustup version without rust-toolchain.toml influence.
-  [string] $OutsideDirectory = ([System.IO.Path]::GetTempPath())
+  [string] $SourceDir = ([System.IO.Path]::Combine($PSScriptRoot, '..', '..')),
+  # When supplied, install this manifest's channel instead of resolving checkout aliases.
+  [string] $ToolchainManifest
 )
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 
-. ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
+. ([System.IO.Path]::Combine($SourceDir, 'eng', 'common', 'scripts', 'common.ps1'))
+# Import only the helpers needed when this script is staged outside the source checkout.
+. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Process.ps1'))
 . ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Rustup.ps1'))
 
-$toolchainArg = if ($Toolchain -eq 'active') {
+$rustupInstalled = Ensure-RustupInstalled
+if ($rustupInstalled) {
+  Write-Host "Installed rustup to $(Get-RustupCargoHome)."
+}
+
+$toolchainArg = if ($ToolchainManifest) {
+  [string] $content = Get-Content -LiteralPath $ToolchainManifest -Raw
+  if ($content -notmatch '(?m)^\s*channel\s*=\s*"([a-zA-Z0-9][a-zA-Z0-9._-]*)"\s*(?:#.*)?$') {
+    LogError "Failed to read channel from toolchain manifest '$ToolchainManifest'."
+    exit 1
+  }
+  $Matches[1]
+} elseif ($Toolchain -eq 'active') {
   # Depending on the version of rustup currently installed, simply calling `rustup --version` will
   # install the active toolchain per rust-toolchain.toml if it's not already installed. We should
   # check the rust version outside of our repo's context to avoid any rustup-toolchain file influence.
-  $rustupVersion = Invoke-LoggedCommand "rustup --version" -ExecutePath $OutsideDirectory -GroupOutput
+  $rustupVersion = Invoke-LoggedCommand "rustup --version" -ExecutePath ([System.IO.Path]::GetTempPath()) -GroupOutput
 
   if ($rustupVersion -match 'rustup (\d+)\.(\d+)\.\d+') {
     $major = [int] $matches[1]

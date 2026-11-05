@@ -6,20 +6,25 @@
 //! Handles all HTTP error cases for the multi-region operation loop:
 //! - Success → Complete
 //! - Transport error (NotSent) → TransportRetry if budget allows
-//! - Transport error (Sent/Unknown, idempotent) → TransportRetry if budget allows
-//! - Transport error (Sent/Unknown, non-idempotent, no PPAF) → Abort
+//! - Transport error (Sent/Unknown) → TransportRetry if budget allows
 //! - 403/3 WriteForbidden → FailoverRetry + refresh + mark unavailable
 //! - 404/1002 ReadSessionNotAvailable → SessionRetry (advances region)
 //! - 408 RequestTimeout → FailoverRetry + mark partition/endpoint unavailable
 //! - 503, 429/3092, 410 → FailoverRetry + mark partition/endpoint unavailable
-//! - 503, 429/3092, 410, 408 (non-idempotent, PPAF) → FailoverRetry (write region discovery)
 //! - 500 (reads only) → FailoverRetry + mark partition/endpoint unavailable
 //! - Other HTTP errors → Abort
+//!
+//! Writes are **not** gated on idempotency: `Create` and `Upsert` are retried
+//! after an ambiguous failure just like `Replace` and `Delete`, because Cosmos
+//! DB's conflict detection makes the final resource state deterministic. The
+//! exceptions are stored procedure execution (`OperationType::Execute`) and
+//! unsafe explicit server-side PATCH. They abort on 408, on 5xx other than
+//! 503, and on a transport error that was not definitively unsent.
 
 use crate::{
     diagnostics::RequestSentStatus,
     driver::routing::{CosmosEndpoint, LocationEffect, UnavailablePartition, UnavailableReason},
-    models::{CosmosOperation, CosmosResponseHeaders, CosmosStatus, SubStatusCode},
+    models::{CosmosOperation, CosmosResponseHeaders, CosmosStatus},
 };
 
 use std::sync::atomic::Ordering;
@@ -27,7 +32,7 @@ use std::sync::atomic::Ordering;
 use super::components::{
     OperationAction, OperationRetryState, RetryWithRetryState, TransportOutcome, TransportResult,
 };
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 use super::components::{
     DTX_COORDINATOR_RETRY_INTERVAL, DTX_INFRA_BASE_BACKOFF, DTX_INFRA_MAX_BACKOFF,
     DTX_INFRA_MAX_EXPONENT,
@@ -129,7 +134,8 @@ pub(crate) fn is_region_confirming_status(status: &CosmosStatus) -> bool {
     }
 
     if status.is_throttled()
-        && status.sub_status() == Some(SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE)
+        && status.sub_status()
+            == Some(crate::error::status_codes::substatus::SYSTEM_RESOURCE_UNAVAILABLE)
     {
         return false;
     }
@@ -139,7 +145,8 @@ pub(crate) fn is_region_confirming_status(status: &CosmosStatus) -> bool {
     }
 
     // Synthesized client-side statuses (e.g., end-to-end timeout) — not from a server.
-    if status.sub_status() == Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT) {
+    if status.sub_status() == Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT)
+    {
         return false;
     }
 
@@ -382,7 +389,7 @@ fn evaluate_http_outcome(
         return result;
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     if operation.resource_type() == crate::models::ResourceType::DistributedTransactionBatch {
         return evaluate_dtx_http_outcome(status, cosmos_headers, body, retry_state);
     }
@@ -415,7 +422,7 @@ fn evaluate_http_outcome(
     )
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn evaluate_dtx_http_outcome(
     status: CosmosStatus,
     cosmos_headers: CosmosResponseHeaders,
@@ -447,7 +454,7 @@ fn evaluate_dtx_http_outcome(
     )
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn try_dtx_bodyless_retry(
     status: &CosmosStatus,
     cosmos_headers: &CosmosResponseHeaders,
@@ -477,25 +484,26 @@ fn try_dtx_bodyless_retry(
     None
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn is_dtx_bodyless_coordinator_retriable(status: &CosmosStatus) -> bool {
     status.status_code() == azure_core::http::StatusCode::RequestTimeout
         || (u16::from(status.status_code()) == 449
-            && status.sub_status() == Some(SubStatusCode::DTC_COORDINATOR_RACE_CONFLICT))
+            && status.sub_status()
+                == Some(crate::error::status_codes::substatus::DTC_COORDINATOR_RACE_CONFLICT))
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn is_dtx_bodyless_infra_retriable(status: &CosmosStatus) -> bool {
     status.status_code() == azure_core::http::StatusCode::InternalServerError
         && matches!(
             status.sub_status(),
-            Some(SubStatusCode::DTC_LEDGER_FAILURE)
-                | Some(SubStatusCode::DTC_ACCOUNT_CONFIG_FAILURE)
-                | Some(SubStatusCode::DTC_DISPATCH_FAILURE)
+            Some(crate::error::status_codes::substatus::DTC_LEDGER_FAILURE)
+                | Some(crate::error::status_codes::substatus::DTC_ACCOUNT_CONFIG_FAILURE)
+                | Some(crate::error::status_codes::substatus::DTC_DISPATCH_FAILURE)
         )
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn dtx_infra_retry_delay(attempt: u32) -> std::time::Duration {
     let exponent = attempt.min(DTX_INFRA_MAX_EXPONENT);
     let delay = DTX_INFRA_BASE_BACKOFF.mul_f64(2_f64.powi(exponent as i32));
@@ -691,10 +699,9 @@ fn try_handle_read_session_not_available(
 
 /// Builds the `OperationRetryState` for a 404/1002 session retry,
 /// latching the `hub_region_processing_only` flag when the trigger
-/// conditions defined by HUB_REGION_PROCESSING_HEADER_SPEC.md fire.
+/// conditions defined by Spec 0010: Hub-region processing header.
 ///
-/// All four conditions must hold (HUB_REGION_PROCESSING_HEADER_SPEC.md
-/// §7.1 / public-spec §3.3):
+/// All four conditions must hold (Spec 0010 §7.1 / public spec §3.3):
 ///
 /// 1. `is_dataplane` — metadata operations ride the same pipeline but
 ///    are scoped out per spec §1.5 (AC-8).
@@ -744,6 +751,30 @@ fn build_session_retry_state(retry_state: &OperationRetryState) -> OperationRetr
 /// 2. **Request sent** — failover retry with `MarkPartitionUnavailable`
 ///    (and, when not PPCB-managed, `MarkEndpointUnavailable`) so future
 ///    requests benefit from the updated routing state.
+/// Whether retrying `operation` is unsafe because the backend may already have
+/// processed the request.
+///
+/// Stored procedure execution and unsafe explicit server-side PATCH are affected — see
+/// [`CosmosOperation::allows_ambiguous_outcome_retry`]. `503` stays retryable
+/// because Cosmos DB returns it exclusively for requests it did *not* process;
+/// `408` and the remaining `5xx` codes leave the outcome genuinely unknown, so
+/// the procedure may have run to completion despite the error.
+///
+/// Callers apply this only after ruling out `RequestSentStatus::NotSent`, which
+/// is safe for every operation type.
+fn is_unsafe_retry_after_possible_execution(
+    operation: &CosmosOperation,
+    status: &CosmosStatus,
+) -> bool {
+    if operation.allows_ambiguous_outcome_retry() {
+        return false;
+    }
+    let status_code = status.status_code();
+    status_code == azure_core::http::StatusCode::RequestTimeout
+        || (status_code.is_server_error()
+            && status_code != azure_core::http::StatusCode::ServiceUnavailable)
+}
+
 fn try_handle_retry_trigger_group(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -752,7 +783,8 @@ fn try_handle_retry_trigger_group(
     request_sent: RequestSentStatus,
 ) -> Option<(OperationAction, Vec<LocationEffect>)> {
     let is_system_resource_unavailable = status.is_throttled()
-        && status.sub_status() == Some(SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE);
+        && status.sub_status()
+            == Some(crate::error::status_codes::substatus::SYSTEM_RESOURCE_UNAVAILABLE);
     let is_service_unavailable =
         status.status_code() == azure_core::http::StatusCode::ServiceUnavailable;
     // Partition Topology changes (410 with sub-status 1009) are handled by the dataflow layer, not classified as retry triggers here. Only non-topology 410s trigger retries.
@@ -773,6 +805,12 @@ fn try_handle_retry_trigger_group(
             },
             Vec::new(),
         ));
+    }
+
+    // Declining here falls through to the caller's terminal branch, which
+    // surfaces the service's own error rather than a synthesized one.
+    if is_unsafe_retry_after_possible_execution(operation, status) {
+        return None;
     }
 
     let unavailable_reason = if is_request_timeout {
@@ -871,6 +909,10 @@ fn try_handle_server_error(
         return None;
     }
 
+    if is_unsafe_retry_after_possible_execution(operation, status) {
+        return None;
+    }
+
     let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
         make_partition_unavailable(operation, endpoint, retry_state, operation.is_read_only()),
     )];
@@ -932,7 +974,9 @@ fn evaluate_transport_layer_outcome(
         make_partition_unavailable(operation, endpoint, retry_state, operation.is_read_only()),
     )];
 
-    if retry_state.can_retry_failover() {
+    // A stored procedure may already have run to completion on the far side of
+    // this failure, so the outcome is unknowable and the retry is unsafe.
+    if retry_state.can_retry_failover() && operation.allows_ambiguous_outcome_retry() {
         return (
             OperationAction::FailoverRetry {
                 new_state: retry_state.clone().advance_failover(),
@@ -942,7 +986,7 @@ fn evaluate_transport_layer_outcome(
         );
     }
 
-    // Budget exhausted — no more failover attempts available.
+    // Budget exhausted, or the operation cannot tolerate an ambiguous retry.
     (
         OperationAction::Abort {
             error: build_transport_error(&status, error),
@@ -974,7 +1018,7 @@ fn evaluate_deadline_exceeded_outcome(
     let cosmos_err = crate::error::CosmosError::builder()
         .with_status(CosmosStatus::from_parts(
             azure_core::http::StatusCode::RequestTimeout,
-            Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+            Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
         ))
         .with_message(message)
         .build();
@@ -1150,7 +1194,7 @@ pub(crate) fn build_service_error(
     // unsupported features (ORDER BY, aggregates, GROUP BY, ...) without
     // emitting the `x-ms-substatus: 1004` header that the .NET / Java SDKs
     // rely on. Detect that case from the response body and synthesize the
-    // canonical [`CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE`] so
+    // canonical [`crate::error::status_codes::CROSS_PARTITION_QUERY_NOT_SERVABLE`] so
     // callers get a consistent typed status regardless of gateway version.
     let effective_status = synthesize_cross_partition_query_status(*status, body);
     let mut message = service_error_message(&effective_status);
@@ -1168,7 +1212,7 @@ pub(crate) fn build_service_error(
         .build()
 }
 
-/// Returns [`CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE`] when `status`
+/// Returns [`crate::error::status_codes::CROSS_PARTITION_QUERY_NOT_SERVABLE`] when `status`
 /// is a bare HTTP 400 (no sub-status) and `body` is the gateway's
 /// "unsupported query features" rejection. Otherwise returns `status`
 /// unchanged.
@@ -1185,7 +1229,7 @@ fn synthesize_cross_partition_query_status(status: CosmosStatus, body: &[u8]) ->
     // avoid a serde dependency on the hot error path. The fragment is
     // stable across .NET / Java / Python emulator gateways.
     if text.contains("unsupported features") && text.contains("Upgrade your SDK") {
-        crate::error::CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE
+        crate::error::status_codes::CROSS_PARTITION_QUERY_NOT_SERVABLE
     } else {
         status
     }
@@ -1235,6 +1279,7 @@ mod tests {
     use super::*;
     use crate::{
         diagnostics::RequestSentStatus,
+        error::SubStatusCode,
         models::{
             AccountReference, ContainerProperties, ContainerReference, CosmosOperation,
             CosmosResponseHeaders, CosmosStatus, DatabaseReference, ItemReference, PartitionKey,
@@ -1265,11 +1310,11 @@ mod tests {
         );
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     use super::super::components::{MAX_DTX_COORDINATOR_RETRIES, MAX_DTX_INFRA_RETRIES};
 
     fn make_create_item_operation() -> CosmosOperation {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -1292,7 +1337,7 @@ mod tests {
     }
 
     fn make_read_operation() -> CosmosOperation {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==", // base64 "test"
         );
@@ -1302,23 +1347,23 @@ mod tests {
 
     fn make_create_operation() -> CosmosOperation {
         // create_database uses OperationType::Create which is NOT idempotent
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
         CosmosOperation::create_database(account)
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn make_dtx_operation() -> CosmosOperation {
         make_dtx_operation_for(crate::models::DistributedTransactionType::Write)
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn make_dtx_operation_for(
         transaction_type: crate::models::DistributedTransactionType,
     ) -> CosmosOperation {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -1338,9 +1383,9 @@ mod tests {
     fn make_transport_error(sent: RequestSentStatus) -> TransportResult {
         TransportResult {
             outcome: TransportOutcome::TransportError {
-                status: CosmosStatus::TRANSPORT_GENERATED_503,
+                status: crate::error::status_codes::TRANSPORT_GENERATED_503,
                 error: crate::error::CosmosError::builder()
-                    .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
                     .with_message("connection refused")
                     .build(),
                 request_sent: sent,
@@ -1370,7 +1415,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn make_dtx_http_error(
         status: CosmosStatus,
         body: Vec<u8>,
@@ -1390,14 +1435,14 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_bodyless_449_5352_uses_coordinator_retry_budget() {
         let op = make_dtx_operation();
         let result = make_dtx_http_error(
             CosmosStatus::from_parts(
                 StatusCode::from(449_u16),
-                Some(SubStatusCode::DTC_COORDINATOR_RACE_CONFLICT),
+                Some(crate::error::status_codes::substatus::DTC_COORDINATOR_RACE_CONFLICT),
             ),
             Vec::new(),
             Some(250),
@@ -1420,14 +1465,14 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_bodyless_500_5411_uses_infra_retry_budget() {
         let op = make_dtx_operation();
         let result = make_dtx_http_error(
             CosmosStatus::from_parts(
                 StatusCode::InternalServerError,
-                Some(SubStatusCode::DTC_LEDGER_FAILURE),
+                Some(crate::error::status_codes::substatus::DTC_LEDGER_FAILURE),
             ),
             Vec::new(),
             None,
@@ -1450,14 +1495,14 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_bodyless_retry_budget_exhaustion_completes_response() {
         let op = make_dtx_operation();
         let result = make_dtx_http_error(
             CosmosStatus::from_parts(
                 StatusCode::from(449_u16),
-                Some(SubStatusCode::DTC_COORDINATOR_RACE_CONFLICT),
+                Some(crate::error::status_codes::substatus::DTC_COORDINATOR_RACE_CONFLICT),
             ),
             Vec::new(),
             None,
@@ -1474,14 +1519,14 @@ mod tests {
         assert!(matches!(action, OperationAction::Complete(_)));
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_bodyless_infra_retry_budget_exhaustion_completes_response() {
         let op = make_dtx_operation();
         let result = make_dtx_http_error(
             CosmosStatus::from_parts(
                 StatusCode::InternalServerError,
-                Some(SubStatusCode::DTC_LEDGER_FAILURE),
+                Some(crate::error::status_codes::substatus::DTC_LEDGER_FAILURE),
             ),
             Vec::new(),
             None,
@@ -1498,12 +1543,15 @@ mod tests {
         assert!(matches!(action, OperationAction::Complete(_)));
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_body_bearing_449_completes_for_outer_loop() {
         let op = make_dtx_operation();
         let result = make_dtx_http_error(
-            CosmosStatus::from_parts(StatusCode::from(449_u16), Some(SubStatusCode::UNKNOWN)),
+            CosmosStatus::from_parts(
+                StatusCode::from(449_u16),
+                Some(crate::error::status_codes::substatus::UNKNOWN),
+            ),
             br#"{"isRetriable":true}"#.to_vec(),
             None,
         );
@@ -1518,7 +1566,7 @@ mod tests {
         assert!(matches!(action, OperationAction::Complete(_)));
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_bodyless_write_forbidden_refreshes_topology_before_dtx_classification() {
         for transaction_type in [
@@ -1557,7 +1605,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_bodyless_database_account_not_found_refreshes_topology_before_dtx_classification() {
         // 403/1008 DatabaseAccountNotFound applies to every op type, including
@@ -1583,7 +1631,7 @@ mod tests {
             .any(|effect| matches!(effect, LocationEffect::RefreshAccountProperties)));
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_http_outcomes_never_failover_session_or_hedge() {
         // DTX is a write-bearing resource routed through the shared pipeline.
@@ -1610,7 +1658,10 @@ mod tests {
             CosmosStatus::new(StatusCode::from(503_u16)),
             CosmosStatus::from_parts(StatusCode::from(429_u16), Some(SubStatusCode::new(3092))),
             CosmosStatus::from_parts(StatusCode::from(404_u16), Some(SubStatusCode::new(1002))),
-            CosmosStatus::from_parts(StatusCode::from(449_u16), Some(SubStatusCode::UNKNOWN)),
+            CosmosStatus::from_parts(
+                StatusCode::from(449_u16),
+                Some(crate::error::status_codes::substatus::UNKNOWN),
+            ),
             CosmosStatus::new(StatusCode::from(408_u16)),
             CosmosStatus::new(StatusCode::from(410_u16)),
             CosmosStatus::new(StatusCode::from(500_u16)),
@@ -1691,6 +1742,10 @@ mod tests {
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
 
+    /// Locks in the driver's deliberate divergence from the other Cosmos SDKs
+    /// (see Spec 0006: Error codes and retries): a non-idempotent write is retried
+    /// even when the request may already have been sent. Python/Java/.NET abort
+    /// here.
     #[test]
     fn transport_error_sent_non_idempotent_retries() {
         let op = make_create_operation();
@@ -1711,6 +1766,287 @@ mod tests {
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
 
+    /// The stored-procedure carve-out must not leak onto ordinary writes: a
+    /// non-idempotent `Create` still retries on the same ambiguous statuses.
+    #[test]
+    fn non_idempotent_write_retries_on_timeout_and_server_errors() {
+        let op = make_create_operation();
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        for status_code in [
+            StatusCode::RequestTimeout,
+            StatusCode::InternalServerError,
+            StatusCode::BadGateway,
+            StatusCode::GatewayTimeout,
+            StatusCode::ServiceUnavailable,
+        ] {
+            let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+            let (action, _) =
+                evaluate_transport_result(&op, &endpoint, make_http_error(status_code), &state);
+            assert!(
+                matches!(action, OperationAction::FailoverRetry { .. }),
+                "{status_code:?} must still fail over for a non-idempotent write, got {action:?}"
+            );
+        }
+    }
+
+    mod server_side_patch_retries {
+        use super::*;
+
+        fn make_patch_operation(retry_safe: Option<bool>) -> CosmosOperation {
+            let account = AccountReference::with_account_key(
+                url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+                "dGVzdA==",
+            );
+            let pk_def: PartitionKeyDefinition =
+                serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+            let props = ContainerProperties {
+                id: "testcontainer".into(),
+                partition_key: pk_def,
+                system_properties: SystemProperties::default(),
+            };
+            let container = ContainerReference::new(
+                account,
+                "testdb",
+                "testdb_rid",
+                "testcontainer",
+                "testcontainer_rid",
+                &props,
+            );
+            let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
+            let operation = CosmosOperation::patch_item(item).with_body(
+                br#"{"operations":[{"op":"increment","path":"/visits","value":1}]}"#.to_vec(),
+            );
+            match retry_safe {
+                Some(retry_safe) => operation.with_patch_retry_safe(retry_safe),
+                None => operation,
+            }
+        }
+
+        fn evaluate(op: &CosmosOperation, result: TransportResult) -> OperationAction {
+            let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+            let endpoint = CosmosEndpoint::global(
+                url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            );
+            evaluate_transport_result(op, &endpoint, result, &state).0
+        }
+
+        #[test]
+        fn unsafe_and_unresolved_patch_abort_after_possible_execution() {
+            for retry_safe in [None, Some(false)] {
+                for request_sent in [RequestSentStatus::Sent, RequestSentStatus::Unknown] {
+                    let action = evaluate(
+                        &make_patch_operation(retry_safe),
+                        make_transport_error(request_sent),
+                    );
+                    assert!(
+                        matches!(action, OperationAction::Abort { .. }),
+                        "retry_safe={retry_safe:?}, request_sent={request_sent:?}: got {action:?}"
+                    );
+                }
+            }
+        }
+
+        #[test]
+        fn definitively_unsent_unsafe_patch_retries() {
+            let action = evaluate(
+                &make_patch_operation(Some(false)),
+                make_transport_error(RequestSentStatus::NotSent),
+            );
+            assert!(
+                matches!(action, OperationAction::FailoverRetry { .. }),
+                "a definitively unsent PATCH is safe to retry, got {action:?}"
+            );
+        }
+
+        #[test]
+        fn retry_safe_patch_retries_after_possible_execution() {
+            let action = evaluate(
+                &make_patch_operation(Some(true)),
+                make_transport_error(RequestSentStatus::Sent),
+            );
+            assert!(
+                matches!(action, OperationAction::FailoverRetry { .. }),
+                "a convergent PATCH may be retried, got {action:?}"
+            );
+        }
+
+        #[test]
+        fn unsafe_patch_request_timeout_aborts() {
+            let action = evaluate(
+                &make_patch_operation(Some(false)),
+                make_http_error(StatusCode::RequestTimeout),
+            );
+            assert!(
+                matches!(action, OperationAction::Abort { .. }),
+                "408 leaves PATCH execution ambiguous, got {action:?}"
+            );
+        }
+    }
+
+    /// Stored procedure execution supplies the exhaustive status matrix for
+    /// operations the driver refuses to retry after an ambiguous failure. The
+    /// PATCH-specific tests above verify classification into the same shared
+    /// retry gate without duplicating every status case here.
+    mod stored_procedure_retries {
+        use super::*;
+        use crate::models::{FeedRange, OperationType, StoredProcedureReference};
+
+        fn make_execute_stored_procedure_operation() -> CosmosOperation {
+            let account = AccountReference::with_account_key(
+                url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+                "dGVzdA==",
+            );
+            let pk_def: PartitionKeyDefinition =
+                serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+            let props = ContainerProperties {
+                id: "testcontainer".into(),
+                partition_key: pk_def,
+                system_properties: SystemProperties::default(),
+            };
+            let container = ContainerReference::new(
+                account,
+                "testdb",
+                "testdb_rid",
+                "testcontainer",
+                "testcontainer_rid",
+                &props,
+            );
+            let sproc = StoredProcedureReference::from_name(&container, "mysproc");
+            let target = FeedRange::for_partition(
+                PartitionKey::from("pk1"),
+                container.partition_key_definition(),
+            );
+            let resource_ref: crate::models::CosmosResourceReference = sproc.into();
+            CosmosOperation::new(OperationType::Execute, resource_ref, Some(target))
+        }
+
+        fn evaluate(op: &CosmosOperation, result: TransportResult) -> OperationAction {
+            let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+            let endpoint = CosmosEndpoint::global(
+                url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            );
+            evaluate_transport_result(op, &endpoint, result, &state).0
+        }
+
+        #[test]
+        fn execute_does_not_allow_ambiguous_outcome_retry() {
+            assert!(!make_execute_stored_procedure_operation().allows_ambiguous_outcome_retry());
+            // Every other operation type does, including the non-idempotent ones.
+            assert!(make_create_operation().allows_ambiguous_outcome_retry());
+            assert!(make_create_item_operation().allows_ambiguous_outcome_retry());
+            assert!(make_read_operation().allows_ambiguous_outcome_retry());
+        }
+
+        #[test]
+        fn transport_error_sent_aborts() {
+            let action = evaluate(
+                &make_execute_stored_procedure_operation(),
+                make_transport_error(RequestSentStatus::Sent),
+            );
+            assert!(
+                matches!(action, OperationAction::Abort { .. }),
+                "a sent stored procedure must not be retried, got {action:?}"
+            );
+        }
+
+        #[test]
+        fn transport_error_unknown_aborts() {
+            let action = evaluate(
+                &make_execute_stored_procedure_operation(),
+                make_transport_error(RequestSentStatus::Unknown),
+            );
+            assert!(
+                matches!(action, OperationAction::Abort { .. }),
+                "an unknown send status is not proof of non-execution, got {action:?}"
+            );
+        }
+
+        #[test]
+        fn transport_error_not_sent_retries() {
+            let action = evaluate(
+                &make_execute_stored_procedure_operation(),
+                make_transport_error(RequestSentStatus::NotSent),
+            );
+            assert!(
+                matches!(action, OperationAction::FailoverRetry { .. }),
+                "a definitively unsent stored procedure is safe to retry, got {action:?}"
+            );
+        }
+
+        #[test]
+        fn request_timeout_aborts() {
+            let action = evaluate(
+                &make_execute_stored_procedure_operation(),
+                make_http_error(StatusCode::RequestTimeout),
+            );
+            assert!(
+                matches!(action, OperationAction::Abort { .. }),
+                "408 leaves the outcome unknown, got {action:?}"
+            );
+        }
+
+        #[test]
+        fn internal_server_errors_abort() {
+            for status_code in [
+                StatusCode::InternalServerError,
+                StatusCode::BadGateway,
+                StatusCode::GatewayTimeout,
+            ] {
+                let action = evaluate(
+                    &make_execute_stored_procedure_operation(),
+                    make_http_error(status_code),
+                );
+                assert!(
+                    matches!(action, OperationAction::Abort { .. }),
+                    "{status_code:?} leaves the outcome unknown, got {action:?}"
+                );
+            }
+        }
+
+        #[test]
+        fn service_unavailable_retries() {
+            // Cosmos returns 503 only for requests it did not process, so the
+            // procedure provably did not run.
+            let action = evaluate(
+                &make_execute_stored_procedure_operation(),
+                make_http_error(StatusCode::ServiceUnavailable),
+            );
+            assert!(
+                matches!(action, OperationAction::FailoverRetry { .. }),
+                "503 proves non-execution and stays retryable, got {action:?}"
+            );
+        }
+
+        #[test]
+        fn gone_retries() {
+            // 410 is a routing rejection — the partition moved before execution.
+            let action = evaluate(
+                &make_execute_stored_procedure_operation(),
+                make_http_error(StatusCode::Gone),
+            );
+            assert!(
+                matches!(action, OperationAction::FailoverRetry { .. }),
+                "410 is a pre-execution rejection, got {action:?}"
+            );
+        }
+
+        #[test]
+        fn retry_with_still_retries_in_region() {
+            // 449 means the request never completed; aborting it would break
+            // stored procedure execution under ordinary write contention.
+            let action = evaluate(
+                &make_execute_stored_procedure_operation(),
+                make_http_error_status(CosmosStatus::new(StatusCode::from(449_u16))),
+            );
+            assert!(
+                matches!(action, OperationAction::InRegionRetry { .. }),
+                "449 is a pre-execution rejection, got {action:?}"
+            );
+        }
+    }
+
     #[test]
     fn build_transport_error_forwards_inner_diagnostics() {
         // Wrapping must preserve the inner diagnostics `Arc`.
@@ -1722,12 +2058,13 @@ mod tests {
             .complete(),
         );
         let inner = crate::error::CosmosError::builder()
-            .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+            .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
             .with_message("inner transport failure")
             .with_diagnostics(std::sync::Arc::clone(&diag))
             .build();
 
-        let outer = build_transport_error(&CosmosStatus::TRANSPORT_GENERATED_503, inner);
+        let outer =
+            build_transport_error(&crate::error::status_codes::TRANSPORT_GENERATED_503, inner);
 
         let outer_diag = outer
             .diagnostics()
@@ -1743,9 +2080,9 @@ mod tests {
         let op = make_create_operation();
         let result = TransportResult {
             outcome: TransportOutcome::TransportError {
-                status: CosmosStatus::TRANSPORT_GENERATED_503,
+                status: crate::error::status_codes::TRANSPORT_GENERATED_503,
                 error: crate::error::CosmosError::builder()
-                    .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
                     .with_message("failed to execute `reqwest` request")
                     .with_source(std::io::Error::new(
                         std::io::ErrorKind::BrokenPipe,
@@ -1765,7 +2102,10 @@ mod tests {
         match action {
             OperationAction::Abort { error } => {
                 // `.status()` compiling proves this stayed a typed `CosmosError`.
-                assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);
+                assert_eq!(
+                    error.status(),
+                    crate::error::status_codes::TRANSPORT_GENERATED_503
+                );
                 let text = error.to_string();
                 assert!(text.contains("HTTP 503/20003"));
                 assert!(text.contains("TransportGenerated503"));
@@ -1787,9 +2127,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: std::time::Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 1,
             max_backend_failover_retries: 120,
@@ -1799,6 +2139,7 @@ mod tests {
             hub_region_processing_only: false,
             shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
@@ -1814,7 +2155,10 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         match action {
             OperationAction::Abort { error } => {
-                assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);
+                assert_eq!(
+                    error.status(),
+                    crate::error::status_codes::TRANSPORT_GENERATED_503
+                );
             }
             other => panic!("expected abort, got {other:?}"),
         }
@@ -1836,10 +2180,9 @@ mod tests {
     #[test]
     fn partition_topology_gone_aborts_for_dataflow_handling() {
         let op = make_read_operation();
-        let result = make_http_error_status(
-            CosmosStatus::new(StatusCode::Gone)
-                .with_sub_status(SubStatusCode::PARTITION_KEY_RANGE_GONE.value()),
-        );
+        let result = make_http_error_status(CosmosStatus::new(StatusCode::Gone).with_sub_status(
+            crate::error::status_codes::substatus::PARTITION_KEY_RANGE_GONE.value(),
+        ));
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
         let endpoint = CosmosEndpoint::global(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
@@ -1851,8 +2194,9 @@ mod tests {
             OperationAction::Abort { error, .. } => {
                 assert_eq!(
                     error.status(),
-                    CosmosStatus::new(StatusCode::Gone)
-                        .with_sub_status(SubStatusCode::PARTITION_KEY_RANGE_GONE.value())
+                    CosmosStatus::new(StatusCode::Gone).with_sub_status(
+                        crate::error::status_codes::substatus::PARTITION_KEY_RANGE_GONE.value()
+                    )
                 );
             }
             other => panic!("expected abort, got {other:?}"),
@@ -1865,7 +2209,7 @@ mod tests {
         let op = make_read_operation();
         let result = make_http_error_status(
             CosmosStatus::new(StatusCode::Gone)
-                .with_sub_status(SubStatusCode::NAME_CACHE_STALE.value()),
+                .with_sub_status(crate::error::status_codes::substatus::NAME_CACHE_STALE.value()),
         );
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
         let endpoint = CosmosEndpoint::global(
@@ -1885,7 +2229,7 @@ mod tests {
         let op = make_create_operation();
         let result = TransportResult {
             outcome: TransportOutcome::HttpError {
-                status: CosmosStatus::WRITE_FORBIDDEN,
+                status: crate::error::status_codes::WRITE_FORBIDDEN,
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
@@ -1931,7 +2275,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -1980,7 +2324,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            http_error_status(crate::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND),
             &state,
         );
 
@@ -2031,7 +2375,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            http_error_status(crate::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND),
             &state,
         );
 
@@ -2065,7 +2409,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            http_error_status(crate::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND),
             &state,
         );
 
@@ -2073,7 +2417,7 @@ mod tests {
             OperationAction::Abort { error } => {
                 assert_eq!(
                     error.status(),
-                    CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND,
+                    crate::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND,
                     "1008 exhausted-budget bubble-up must surface the original status unchanged"
                 );
             }
@@ -2097,7 +2441,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -2105,7 +2449,7 @@ mod tests {
             OperationAction::Abort { error } => {
                 assert_eq!(
                     error.status(),
-                    CosmosStatus::WRITE_FORBIDDEN,
+                    crate::error::status_codes::WRITE_FORBIDDEN,
                     "403/3 exhausted-budget bubble-up must surface the original status unchanged"
                 );
             }
@@ -2128,7 +2472,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            http_error_status(crate::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND),
             &state,
         );
 
@@ -2152,7 +2496,7 @@ mod tests {
             let (action, _effects) = evaluate_transport_result(
                 &op,
                 &endpoint,
-                http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+                http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
                 &state,
             );
             match action {
@@ -2191,7 +2535,7 @@ mod tests {
         let (first, _) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
         let OperationAction::FailoverRetry {
@@ -2206,7 +2550,7 @@ mod tests {
         let (second, _) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &new_state,
         );
         let OperationAction::FailoverRetry {
@@ -2235,7 +2579,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            http_error_status(crate::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND),
             &state,
         );
 
@@ -2271,7 +2615,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -2307,7 +2651,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -2341,7 +2685,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -2367,7 +2711,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -2387,7 +2731,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            http_error_status(crate::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND),
             &state,
         );
 
@@ -2426,7 +2770,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            http_error_status(crate::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND),
             &state,
         );
 
@@ -2457,7 +2801,7 @@ mod tests {
         let op = make_read_operation();
         let result = TransportResult {
             outcome: TransportOutcome::HttpError {
-                status: CosmosStatus::READ_SESSION_NOT_AVAILABLE,
+                status: crate::error::status_codes::READ_SESSION_NOT_AVAILABLE,
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
@@ -2521,7 +2865,7 @@ mod tests {
         let (action, _) = evaluate_transport_result(
             &op,
             &endpoint,
-            throttle_result(SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE),
+            throttle_result(crate::error::status_codes::substatus::SYSTEM_RESOURCE_UNAVAILABLE),
             &state,
         );
         assert!(
@@ -2532,9 +2876,9 @@ mod tests {
         // Every other throttle sub-status must NOT become a region-changing
         // retry, so it can never be upgraded into a cross-region hedge.
         for sub in [
-            SubStatusCode::RU_BUDGET_EXCEEDED,            // 3200
-            SubStatusCode::RU_BUDGET_EXCEEDED_FOR_MASTER, // 3210
-            SubStatusCode::HOT_PARTITION_KEY_THROTTLED,   // 3214
+            crate::error::status_codes::substatus::RU_BUDGET_EXCEEDED, // 3200
+            crate::error::status_codes::substatus::RU_BUDGET_EXCEEDED_FOR_MASTER, // 3210
+            crate::error::status_codes::substatus::HOT_PARTITION_KEY_THROTTLED, // 3214
         ] {
             let op = make_read_operation();
             let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
@@ -2634,7 +2978,7 @@ mod tests {
                 assert_eq!(status.status_code(), StatusCode::RequestTimeout);
                 assert_eq!(
                     status.sub_status(),
-                    Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+                    Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT)
                 );
             }
             _ => panic!("expected timeout to abort"),
@@ -2751,9 +3095,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: std::time::Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 1,
             max_backend_failover_retries: 120,
@@ -2763,6 +3107,7 @@ mod tests {
             hub_region_processing_only: false,
             shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
@@ -2891,22 +3236,22 @@ mod tests {
         // 429/3092 SystemResourceUnavailable
         assert!(!is_region_confirming_status(&status_with_substatus(
             StatusCode::TooManyRequests,
-            SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE
+            crate::error::status_codes::substatus::SYSTEM_RESOURCE_UNAVAILABLE
         )));
         // 403/3 WriteForbidden
         assert!(!is_region_confirming_status(&status_with_substatus(
             StatusCode::Forbidden,
-            SubStatusCode::WRITE_FORBIDDEN
+            crate::error::status_codes::substatus::WRITE_FORBIDDEN
         )));
         // 403/1008 is a topology signal; the dedicated handler refreshes and fails over.
         assert!(!is_region_confirming_status(&status_with_substatus(
             StatusCode::Forbidden,
-            SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND
+            crate::error::status_codes::substatus::DATABASE_ACCOUNT_NOT_FOUND
         )));
         // 410/1008 is partition migration, not DatabaseAccountNotFound.
         assert!(!is_region_confirming_status(&status_with_substatus(
             StatusCode::Gone,
-            SubStatusCode::COMPLETING_PARTITION_MIGRATION
+            crate::error::status_codes::substatus::COMPLETING_PARTITION_MIGRATION
         )));
     }
 
@@ -2914,7 +3259,7 @@ mod tests {
     fn region_confirming_false_for_client_synthesized_timeout() {
         assert!(!is_region_confirming_status(&status_with_substatus(
             StatusCode::RequestTimeout,
-            SubStatusCode::CLIENT_OPERATION_TIMEOUT
+            crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT
         )));
     }
 
@@ -3054,7 +3399,7 @@ mod tests {
     // -----------------------------------------------------------------------
     // Hub-region-processing-only latch tests.
     //
-    // See HUB_REGION_PROCESSING_HEADER_SPEC.md §3 / public-spec §4.1 for the
+    // See Spec 0010, Hub-region processing header, §3 / public spec §4.1 for the
     // shape these cases are meant to cover (T-1..T-5, T-AC-8, T-8, T-9).
     //
     // All tests drive `evaluate_transport_result` against a 1002 response and
@@ -3078,7 +3423,7 @@ mod tests {
     fn make_read_session_not_available_result() -> TransportResult {
         TransportResult {
             outcome: TransportOutcome::HttpError {
-                status: CosmosStatus::READ_SESSION_NOT_AVAILABLE,
+                status: crate::error::status_codes::READ_SESSION_NOT_AVAILABLE,
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
@@ -3110,7 +3455,7 @@ mod tests {
     }
 
     /// T-1 — Single-master, data-plane, first 1002 sets the latch.
-    /// Covers AC-1 of HUB_REGION_PROCESSING_HEADER_SPEC.md.
+    /// Covers AC-1 of Spec 0010: Hub-region processing header.
     #[test]
     fn hub_region_latch_sets_on_first_1002_single_master_dataplane() {
         let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
@@ -3465,7 +3810,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            make_http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -3504,7 +3849,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            make_http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -3531,7 +3876,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            make_http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -3562,7 +3907,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            make_http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -3586,7 +3931,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            make_http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -3619,7 +3964,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            make_http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -3851,7 +4196,7 @@ mod tests {
     /// 404/1002 on a multi-master account does NOT signal
     /// `observed_session_unavailable` — matches
     /// `build_session_retry_state`'s 4-condition trigger (AC-4
-    /// per HUB_REGION_PROCESSING_HEADER_SPEC.md §7.1).
+    /// per Spec 0010: Hub-region processing header, §7.1).
     #[test]
     fn hedge_leg_effects_1002_multi_master_no_signal() {
         let op = make_read_operation();

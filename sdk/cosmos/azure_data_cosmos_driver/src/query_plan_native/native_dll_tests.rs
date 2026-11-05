@@ -587,7 +587,7 @@ fn distinct_field() {
     assert_query_info(
         &actual,
         QueryInfo {
-            distinct_type: actual.distinct_type.clone(),
+            distinct_type: actual.distinct_type,
             ..qi()
         },
     );

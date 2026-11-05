@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cSpell: disable
-
 //! Azure region identifier types.
 //!
 //! This module provides the [`Region`] type for representing Azure regions in a type-safe manner

@@ -1,5 +1,8 @@
 #!/usr/bin/env pwsh
 
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 #Requires -Version 7.0
 [CmdletBinding(DefaultParameterSetName = 'PackageInfo')]
 param(
@@ -8,7 +11,11 @@ param(
 
   [Parameter(Position = 0, ParameterSetName = 'PackageName')]
   [ValidateNotNullOrEmpty()]
+  [Alias('PackageNames')]
   [string[]]$PackageName,
+
+  [Parameter(ParameterSetName = 'ManifestDir')]
+  [string[]]$ManifestDir,
 
   [string]$Toolchain = 'stable',
   [switch]$Audit,
@@ -20,7 +27,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
-. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'common.ps1'))
 
 $resolvedToolchain = Get-ResolvedRustToolchain -Toolchain $Toolchain
 $isNightlyToolchain = Test-IsNightlyRustToolchain -Toolchain $Toolchain
@@ -45,27 +52,83 @@ if ($Deny) {
 $taploCliVersionParams = Get-VersionParamsFromCgManifest taplo-cli
 Invoke-LoggedCommand "cargo install taplo-cli --locked $($taploCliVersionParams -join ' ')" -GroupOutput
 
-$packageArgs = if ($PackageName) {
-  '--package ' + ($PackageName -join ' --package ')
+$packageInfoPath = $PackageInfoDirectory
+if ($PackageInfoDirectory -and !(Test-Path -Path $PackageInfoDirectory -PathType Container)) {
+  $packageInfoPath = $null
+}
+
+$workspacePackages = Get-CargoPackages
+$resolvedPackageName = $PackageName
+$resolvedPackageInfoPath = $packageInfoPath
+if (!$resolvedPackageName -and !$ManifestDir -and $resolvedPackageInfoPath) {
+  $packageInfoPackages = @(Get-PackagesFromPackageInfo $resolvedPackageInfoPath)
+
+  if (!$packageInfoPackages) {
+    $resolvedPackageName = Get-CanaryPackageNames
+    $resolvedPackageInfoPath = $null
+    Write-Host "No service crates were identified. Falling back to '$($resolvedPackageName -join "', '")'."
+  }
+}
+
+$selectedManifestPaths = Get-CargoManifestPaths `
+  -PackageName $resolvedPackageName `
+  -ManifestDir $ManifestDir `
+  -PackageInfoDirectory $resolvedPackageInfoPath `
+  -WorkspacePackages $workspacePackages
+$packagesToAnalyze = Get-CargoPackagesFromManifestPaths `
+  -ManifestPath $selectedManifestPaths `
+  -WorkspacePackages $workspacePackages
+$workspaceManifestPath = [System.IO.Path]::Combine($RepoRoot, 'Cargo.toml')
+$exportApiScript = [System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'Export-API.ps1')
+$hasPackageSelection = $resolvedPackageName -or $ManifestDir -or $resolvedPackageInfoPath
+$azureCoreManifestPath = (
+  Get-CargoPackageByName `
+    -WorkspacePackages $workspacePackages `
+    -PackageName azure_core
+).manifest_path
+$checkManifestPaths = if ($hasPackageSelection) {
+  @($packagesToAnalyze.manifest_path) + $azureCoreManifestPath | Select-Object -Unique
+}
+else {
+  @($azureCoreManifestPath)
+}
+$clippyManifestPaths = if ($hasPackageSelection) {
+  $checkManifestPaths
+}
+else {
+  @($workspaceManifestPath)
 }
 
 if ($Audit) {
   Invoke-LoggedCommand "cargo audit" -GroupOutput
 }
 
-Invoke-LoggedCommand "cargo check --manifest-path sdk/core/azure_core/Cargo.toml $packageArgs --all-features --all-targets --keep-going" -GroupOutput
+foreach ($manifestPath in $checkManifestPaths) {
+  Invoke-LoggedCommand "cargo check --manifest-path '$manifestPath' --all-features --all-targets --keep-going" -GroupOutput
+}
 
-Invoke-LoggedCommand "cargo fmt $packageArgs -- --check" -GroupOutput
+if (!$hasPackageSelection) {
+  Invoke-LoggedCommand "cargo fmt --manifest-path '$workspaceManifestPath' --all -- --check" -GroupOutput
+}
+else {
+  foreach ($manifestPath in $selectedManifestPaths) {
+    Invoke-LoggedCommand "cargo fmt --manifest-path '$manifestPath' -- --check" -GroupOutput
+  }
+}
 
 Invoke-LoggedCommand "taplo format --check"
 
-Invoke-LoggedCommand "cargo clippy $packageArgs --all-features --all-targets --keep-going --no-deps" -GroupOutput
-
-if ($Deny) {
-  Invoke-LoggedCommand "cargo deny --all-features check bans licenses sources" -GroupOutput
+foreach ($manifestPath in $clippyManifestPaths) {
+  Invoke-LoggedCommand "cargo clippy --manifest-path '$manifestPath' --all-features --all-targets --keep-going --no-deps" -GroupOutput
 }
 
-Invoke-LoggedCommand "cargo doc --no-deps --all-features" -GroupOutput
+if ($Deny) {
+  Invoke-LoggedCommand "cargo deny --manifest-path '$workspaceManifestPath' --all-features check bans licenses sources" -GroupOutput
+}
+
+foreach ($manifestPath in $selectedManifestPaths) {
+  Invoke-LoggedCommand "cargo doc --manifest-path '$manifestPath' --no-deps --all-features" -GroupOutput
+}
 
 # Verify package dependencies and keywords
 $verifyDependenciesScript = ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'verify-dependencies.rs'))
@@ -74,12 +137,20 @@ $checkApiSupersetManifest = ([System.IO.Path]::Combine($RepoRoot, 'eng', 'tools'
 
 if (!$SkipPackageAnalysis) {
   $checkApiSupersetCrates = @('typespec', 'typespec_client_core', 'azure_core')
+  $publishablePackagesToAnalyze = @(
+    $packagesToAnalyze | Where-Object { Test-CargoPackagePublishable $_ }
+  )
 
-  if ($PSCmdlet.ParameterSetName -eq 'PackageInfo' -and !(Test-Path $PackageInfoDirectory)) {
+  if ($publishablePackagesToAnalyze) {
+    $packageNames = $publishablePackagesToAnalyze | ForEach-Object { "'$($_.name)'" }
+    $exportApiArgs = @('-Check', '-PackageName', ($packageNames -join ','))
+    Invoke-LoggedCommand "& '$exportApiScript' $($exportApiArgs -join ' ')" -GroupOutput
+  }
+
+  if (!$resolvedPackageName -and !$ManifestDir -and !$resolvedPackageInfoPath) {
     Write-Host "Analyzing workspace`n"
-    $manifestPath = ([System.IO.Path]::Combine($RepoRoot, 'Cargo.toml'))
-    Invoke-LoggedCommand "&$verifyDependenciesScript $manifestPath" -GroupOutput
-    Invoke-LoggedCommand "&$verifyKeywordsScript $manifestPath" -GroupOutput
+    Invoke-LoggedCommand "&$verifyDependenciesScript $workspaceManifestPath" -GroupOutput
+    Invoke-LoggedCommand "&$verifyKeywordsScript $workspaceManifestPath" -GroupOutput
 
     Invoke-LoggedCommand "cargo run --manifest-path $checkApiSupersetManifest" -GroupOutput
     return
@@ -91,61 +162,10 @@ if (!$SkipPackageAnalysis) {
     Invoke-LoggedCommand "cargo install cargo-docs-rs --locked $($cargoDocsRsVersionParams -join ' ')" -GroupOutput
   }
 
-  class Package {
-    [string] $Name
-    [string] $DirectoryPath
-
-    Package([string] $name) {
-      $this.Name = $name
-    }
-
-    static $Workspace = {
-      $manifestPath = [System.IO.Path]::Combine($RepoRoot, 'Cargo.toml')
-      cargo metadata --format-version 1 --no-deps --manifest-path $manifestPath | ConvertFrom-Json
-    }.Invoke()
-
-    [string] ManifestPath() {
-      if ($this.DirectoryPath) {
-        return [System.IO.Path]::Combine($this.DirectoryPath, 'Cargo.toml')
-      }
-
-      $manifestPath = [Package]::Workspace.packages.Where({ $_.name -eq $this.Name })
-      if (!$manifestPath -or $manifestPath.Count -gt 1) {
-        throw "Package $($this.Name) not found in workspace"
-      }
-
-      return $manifestPath
-    }
-
-    [string] ToString() {
-      if ($this.DirectoryPath) {
-        return "'$($this.Name)' in directory '$($this.DirectoryPath)'"
-      }
-
-      return "'$($this.Name)'"
-    }
-  }
-
-  [Package[]] $packagesToTest = if ($PackageName) {
-    foreach ($name in $PackageName) {
-      [Package]::new($name)
-    }
-  }
-  else {
-    Get-ChildItem $PackageInfoDirectory -Filter "*.json" -Recurse
-    | Get-Content -Raw
-    | ConvertFrom-Json
-    | ForEach-Object {
-      $package = [Package]::new($_.Name)
-      $package.DirectoryPath = $_.DirectoryPath
-      $package
-    }
-  }
-
   $shouldCheckApiSuperset = $false
-  foreach ($package in $packagesToTest) {
-    Write-Host "Analyzing package $($package.ToString())`n"
-    $packageManifestPath = $package.ManifestPath()
+  foreach ($package in $packagesToAnalyze) {
+    $packageManifestPath = $package.manifest_path
+    Write-Host "Analyzing package '$($package.name)' from '$packageManifestPath'`n"
     Invoke-LoggedCommand "&$verifyDependenciesScript $packageManifestPath" -GroupOutput
     Invoke-LoggedCommand "&$verifyKeywordsScript $packageManifestPath" -GroupOutput
 
@@ -153,7 +173,7 @@ if (!$SkipPackageAnalysis) {
       Invoke-LoggedCommand "cargo +$resolvedToolchain docs-rs --manifest-path $packageManifestPath" -GroupOutput
     }
 
-    if ($checkApiSupersetCrates -contains $package.Name) {
+    if ($checkApiSupersetCrates -contains $package.name) {
       $shouldCheckApiSuperset = $true
     }
   }

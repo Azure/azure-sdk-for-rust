@@ -9,26 +9,45 @@ Check markdown files for common mistakes.
 
 ## Installation and usage
 
-Run `npm ci` from this skill directory (`.github/skills/lint-markdown/`) first. Then run commands using `npm exec --prefix .github/skills/lint-markdown -- markdownlint-cli2 {command}` from the repository root.
+Find the nearest `package.json` in the current directory or an ancestor through the
+repository root that lists `markdownlint-cli2` in `devDependencies`. Run `npm ci`
+from that directory, then run `npx markdownlint-cli2 <command>` from the current
+directory.
 
 ## Configuration
 
-Configuration is in `.markdownlint-cli2.yaml` files. The root configuration is at the repository root.
+Configuration is in the repository root `.markdownlint-cli2.yaml`.
 
-For markdownlint rules configuration, nest it under the `config` property following the markdownlint schema at `https://raw.githubusercontent.com/DavidAnson/markdownlint/main/schema/markdownlint-config-schema.json`. Use friendly rule names (e.g., `line-length`) instead of codes (e.g., `MD013`).
+Use the schema matching the installed `markdownlint-cli2` version. Nest markdownlint
+rules under `config` and use friendly names such as `line-length` instead of `MD013`.
 
 ## Check Markdown
 
-Run `npm exec --prefix .github/skills/lint-markdown -- markdownlint-cli2` from the repository root with a list of modified markdown files to lint.
+Lint an explicit list of modified markdown files:
+
+```bash
+npx markdownlint-cli2 --no-globs <files...>
+```
 
 ## Fix issues
 
-Run with the `--fix` flag with a list of modified markdown files to automatically fix supported issues:
+Fix supported issues in an explicit list of files:
 
 ```bash
-npm exec --prefix .github/skills/lint-markdown -- markdownlint-cli2 --fix
+npx markdownlint-cli2 --no-globs --fix <files...>
 ```
 
 ## Testing
 
-Run the same lint command again to verify all issues are fixed. There should be no errors reported.
+Run the check command again. Report any remaining issues.
+
+## Links
+
+Use absolute `main` links, such as the [core README](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/README.md)
+(`tree/main` for directories), including for new files not yet on `main`.
+
+Markdown linting does not validate links. From the repository root, run in PowerShell:
+
+```powershell
+./eng/common/scripts/Verify-Links.ps1 -urls @('<file>', '<file>') -rootUrl "file://$PWD/" -recursive:$false -ignoreLinksFile "$PWD/eng/ignore-links.txt" -checkLinkGuidance:$true -localBuildRepoName 'Azure/azure-sdk-for-rust' -localBuildRepoPath "$PWD"
+```

@@ -1,14 +1,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Preview Distributed Transaction builders.
+//! Unstable Distributed Transaction builders.
 //!
-//! **Preview / work in progress.** These APIs are gated behind the
-//! disabled-by-default `preview_dtx` feature, depend on a service-side feature
+//! **Unstable / work in progress.** These APIs are gated behind the
+//! disabled-by-default `unstable_dtx` feature, depend on a service-side feature
 //! that is not yet generally available, and may change or be removed without
 //! notice. They are **not supported for production use**.
 
-use std::{borrow::Cow, sync::Arc};
+#[cfg(feature = "unstable_patch")]
+use std::borrow::Cow;
+use std::sync::Arc;
 
 use azure_core::fmt::SafeDebug;
 use azure_core::Bytes;
@@ -17,7 +19,9 @@ use serde::{de::DeserializeOwned, Serialize};
 
 use crate::clients::{ClientContext, ContainerClient};
 use crate::diagnostics::{CosmosOperationContext, DiagnosticsContext};
-use crate::models::{PartitionKey, PatchInstructions, ResponseHeaders};
+#[cfg(feature = "unstable_patch")]
+use crate::models::PatchInstructions;
+use crate::models::{PartitionKey, ResponseHeaders};
 use crate::options::{Precondition, SessionToken};
 
 /// Options for a single operation inside a distributed transaction.
@@ -45,6 +49,7 @@ impl DistributedTransactionOperationOptions {
 }
 
 /// Options for a patch operation inside a distributed transaction.
+#[cfg(feature = "unstable_patch")]
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct DistributedTransactionPatchOperationOptions {
@@ -56,6 +61,7 @@ pub struct DistributedTransactionPatchOperationOptions {
     pub filter_predicate: Option<Cow<'static, str>>,
 }
 
+#[cfg(feature = "unstable_patch")]
 impl DistributedTransactionPatchOperationOptions {
     /// Sets the per-operation session token.
     pub fn with_session_token(mut self, session_token: impl Into<SessionToken>) -> Self {
@@ -179,6 +185,7 @@ impl DistributedWriteTransaction {
     }
 
     /// Adds a patch item operation.
+    #[cfg(feature = "unstable_patch")]
     pub fn patch_item(
         mut self,
         container: &ContainerClient,
@@ -281,6 +288,7 @@ fn operation_with_options(
     operation
 }
 
+#[cfg(feature = "unstable_patch")]
 fn patch_operation_with_options(
     container: &ContainerClient,
     partition_key: impl Into<PartitionKey>,
@@ -334,7 +342,6 @@ pub(crate) async fn commit_distributed_write(
             Ok(response)
         }
         Err(err) => {
-            let err = crate::CosmosError::from(err);
             context.dispatch_error(&err, || transaction_op_context("commit_distributed_write"));
             Err(err)
         }
@@ -362,7 +369,6 @@ pub(crate) async fn execute_distributed_read(
             Ok(response)
         }
         Err(err) => {
-            let err = crate::CosmosError::from(err);
             context.dispatch_error(&err, || transaction_op_context("execute_distributed_read"));
             Err(err)
         }
@@ -400,15 +406,14 @@ fn validate_transaction_account(
     {
         Ok(())
     } else {
-        Err(crate::DriverCosmosError::builder()
+        Err(crate::CosmosError::builder()
             .with_status(crate::CosmosStatus::new(
                 azure_core::http::StatusCode::BadRequest,
             ))
             .with_message(
                 "distributed transaction operations must target containers from the same Cosmos account as the committing client",
             )
-            .build()
-            .into())
+            .build())
     }
 }
 
@@ -518,9 +523,11 @@ impl DistributedTransactionResponse {
         self.inner.request_charge.map(|charge| charge.value())
     }
 
-    /// Returns the retry-after hint in milliseconds, when present.
-    pub fn retry_after_ms(&self) -> Option<u64> {
-        self.inner.retry_after_ms
+    /// Returns the retry-after hint, when present.
+    pub fn retry_after(&self) -> Option<std::time::Duration> {
+        self.inner
+            .retry_after_ms
+            .map(std::time::Duration::from_millis)
     }
 }
 

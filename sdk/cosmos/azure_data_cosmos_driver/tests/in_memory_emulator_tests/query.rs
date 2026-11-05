@@ -27,6 +27,62 @@ fn query_request(gateway_url: &str, path: &str, body: serde_json::Value) -> Requ
 }
 
 #[tokio::test]
+async fn non_session_query_response_preserves_incoming_region_progress() {
+    let ctx = setup_single_region().await;
+    let body = serde_json::json!({"id": "item1", "pk": "pk1", "score": 1});
+    let create = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &body,
+        r#"["pk1"]"#,
+        false,
+    );
+    let created = ctx.emulator.execute_request(&create).await.unwrap();
+    let created_token = created
+        .headers()
+        .get_optional_str(&SESSION_TOKEN)
+        .expect("create should return a session token");
+    let (partition_range_id, token_value) = created_token
+        .split_once(':')
+        .expect("session token should include a partition range");
+    let mut token_parts = token_value.split('#');
+    let version = token_parts.next().expect("token should include a version");
+    let global_lsn = token_parts
+        .next()
+        .expect("token should include a global LSN");
+    let incoming_token = format!("{partition_range_id}:{version}#{global_lsn}#999=123");
+
+    let query = serde_json::json!({
+        "query": "SELECT * FROM c",
+        "parameters": []
+    });
+    let mut request = query_request(&ctx.gateway_url, "/dbs/testdb/colls/testcoll/docs", query);
+    request.headers_mut().insert(
+        PARTITION_KEY.clone(),
+        HeaderValue::from_static(r#"["pk1"]"#),
+    );
+    request
+        .headers_mut()
+        .insert(SESSION_TOKEN.clone(), HeaderValue::from(incoming_token));
+    request.headers_mut().insert(
+        HeaderName::from_static("x-ms-cosmos-read-consistency-strategy"),
+        HeaderValue::from_static("LatestCommitted"),
+    );
+
+    let response = ctx.emulator.execute_request(&request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::Ok);
+    let response_token = response
+        .headers()
+        .get_optional_str(&SESSION_TOKEN)
+        .expect("query should return a session token");
+    assert!(
+        response_token.contains("#999=123"),
+        "non-Session feed response must preserve incoming region progress: {response_token}"
+    );
+}
+
+#[tokio::test]
 async fn query_items_filters_projects_and_paginates() {
     let ctx = setup_single_region().await;
 

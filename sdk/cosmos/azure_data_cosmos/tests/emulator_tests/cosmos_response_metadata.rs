@@ -33,7 +33,7 @@ async fn create_container(
             None,
         )
         .await?;
-    db_client.container_client(&container_id).await
+    db_client.container_client(&container_id, None).await
 }
 
 fn cosmos_headers_from_error(error: &azure_data_cosmos::CosmosError) -> ResponseHeaders {

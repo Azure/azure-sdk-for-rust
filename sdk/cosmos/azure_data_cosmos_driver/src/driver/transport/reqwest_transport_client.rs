@@ -65,9 +65,9 @@ impl TransportClient for ReqwestTransportClient {
             // statuses when the inner cause is recognizable (h2 protocol
             // incompatibility, DNS lookup failure, …).
             let base_status = if is_connect {
-                CosmosStatus::TRANSPORT_CONNECTION_FAILED
+                crate::error::status_codes::TRANSPORT_CONNECTION_FAILED
             } else {
-                CosmosStatus::TRANSPORT_IO_FAILED
+                crate::error::status_codes::TRANSPORT_IO_FAILED
             };
             let status = refine_status_from_source_chain(std::error::Error::source(&err))
                 .unwrap_or(base_status);
@@ -86,7 +86,7 @@ impl TransportClient for ReqwestTransportClient {
         let body = response.bytes().await.map_err(|err| {
             let message = err.to_string();
             let cosmos_err = crate::error::CosmosError::builder()
-                .with_status(CosmosStatus::TRANSPORT_BODY_READ_FAILED)
+                .with_status(crate::error::status_codes::TRANSPORT_BODY_READ_FAILED)
                 .with_message(message)
                 .with_source(err)
                 .build();
@@ -133,7 +133,7 @@ fn refine_status_from_source_chain(
                         | h2::Reason::FRAME_SIZE_ERROR
                 )
             ) {
-                return Some(CosmosStatus::TRANSPORT_HTTP2_INCOMPATIBLE);
+                return Some(crate::error::status_codes::TRANSPORT_HTTP2_INCOMPATIBLE);
             }
         }
         if let Some(io_err) = e.downcast_ref::<std::io::Error>() {
@@ -145,7 +145,7 @@ fn refine_status_from_source_chain(
                 io_err.kind(),
                 std::io::ErrorKind::NotFound | std::io::ErrorKind::AddrNotAvailable
             ) {
-                return Some(CosmosStatus::TRANSPORT_DNS_FAILED);
+                return Some(crate::error::status_codes::TRANSPORT_DNS_FAILED);
             }
         }
         cur = e.source();

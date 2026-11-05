@@ -112,6 +112,14 @@ pub enum FaultInjectionErrorType {
     /// Produces a transport error with `TRANSPORT_IO_FAILED` sub-status,
     /// not an HTTP response error.
     ResponseTimeout,
+    /// Forwards the request to the service, then discards a successful
+    /// response and reports a response timeout with sent status `Unknown`.
+    ///
+    /// Intended for tests that must exercise an ambiguous outcome after the
+    /// backend mutation has actually committed. On Gateway 2.0, success is
+    /// determined from the wrapped RNTBD backend status rather than the outer
+    /// proxy HTTP status.
+    ResponseTimeoutAfterService,
 }
 
 /// The type of operation to which the fault injection applies.
@@ -198,7 +206,9 @@ impl FaultOperationType {
             (OperationType::ReadFeed, ResourceType::PartitionKeyRange) => {
                 Some(FaultOperationType::MetadataPartitionKeyRanges)
             }
-            // PatchItem will be mapped when OperationType::Patch is added to the driver.
+            // Only server-side PATCH reaches transport as Patch. Client-side
+            // PATCH is injected through its Read and Replace helper requests.
+            (OperationType::Patch, ResourceType::Document) => Some(FaultOperationType::PatchItem),
             _ => None,
         }
     }
@@ -255,6 +265,7 @@ impl fmt::Display for FaultInjectionErrorType {
             Self::DatabaseAccountNotFound => write!(f, "DatabaseAccountNotFound"),
             Self::ConnectionError => write!(f, "ConnectionError"),
             Self::ResponseTimeout => write!(f, "ResponseTimeout"),
+            Self::ResponseTimeoutAfterService => write!(f, "ResponseTimeoutAfterService"),
         }
     }
 }
@@ -275,6 +286,7 @@ impl FromStr for FaultInjectionErrorType {
             "DatabaseAccountNotFound" => Ok(Self::DatabaseAccountNotFound),
             "ConnectionError" => Ok(Self::ConnectionError),
             "ResponseTimeout" => Ok(Self::ResponseTimeout),
+            "ResponseTimeoutAfterService" => Ok(Self::ResponseTimeoutAfterService),
             _ => Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::new(
                     azure_core::http::StatusCode::BadRequest,

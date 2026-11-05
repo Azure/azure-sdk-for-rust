@@ -3,16 +3,20 @@
 
 use super::processor::ProcessorConsumersMap;
 use crate::{
-    error::Result,
+    error::{ErrorKind, Result},
     models::{Checkpoint, ConsumerClientDetails, ReceivedEventData},
     processor::CheckpointStore,
     EventHubsError, EventReceiver,
 };
-use azure_core_amqp::{message::AmqpAnnotationKey, AmqpValue};
+use azure_core::Uuid;
 use futures::Stream;
 use std::{
+    future::Future,
     pin::Pin,
-    sync::{Arc, OnceLock, Weak},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, OnceLock, Weak,
+    },
 };
 use tracing::{debug, trace, warn};
 
@@ -21,15 +25,19 @@ use tracing::{debug, trace, warn};
 /// The `PartitionClient` provides methods for receiving events, updating checkpoints,
 /// and managing the lifecycle of the client for a specific partition.
 ///
-/// Stream termination is the only revocation signal: when the partition is
-/// reassigned (or the broker disconnects the receiver via epoch), `stream_events()`
-/// resolves with `EventHubsError::ConsumerDisconnected`. Re-acquire via
-/// [`EventProcessor::next_partition_client`](crate::EventProcessor::next_partition_client).
+/// When the partition is reassigned, the processor shuts down, or the broker
+/// disconnects the receiver via epoch, [`stream_events()`](Self::stream_events)
+/// yields [`ErrorKind::ConsumerDisconnected`]. Once the processor closes this
+/// client, [`update_checkpoint()`](Self::update_checkpoint) also returns that error.
+/// Reacquire a client via
+/// [`EventProcessor::next_partition_client()`](crate::EventProcessor::next_partition_client).
 pub struct PartitionClient {
     partition_id: String,
+    client_id: Uuid,
     checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
     client_details: ConsumerClientDetails,
     event_receiver: OnceLock<EventReceiver>,
+    closed: AtomicBool,
     consumers: Weak<ProcessorConsumersMap>,
 }
 
@@ -46,9 +54,11 @@ impl PartitionClient {
     ) -> Self {
         Self {
             partition_id,
+            client_id: Uuid::new_v4(),
             checkpoint_store,
             client_details,
             event_receiver: OnceLock::new(),
+            closed: AtomicBool::new(false),
             consumers,
         }
     }
@@ -61,19 +71,31 @@ impl PartitionClient {
         &self.partition_id
     }
 
-    /// Closes the AMQP receiver so any in-flight `stream_events()` resolves.
+    /// Stops delivery immediately and returns best-effort receiver cleanup.
     /// Called by load-balancer reconciliation as a backstop for the
     /// broker-initiated disconnect path. Idempotent.
-    pub(crate) async fn request_close_receiver(&self) {
-        if let Some(receiver) = self.event_receiver.get() {
-            if let Err(e) = receiver.request_close().await {
-                warn!(
-                    partition_id = %self.partition_id,
-                    err = ?e,
-                    "Failed to close event receiver during revocation for partition."
-                );
+    pub(crate) fn request_close_receiver(&self) -> impl Future<Output = ()> + '_ {
+        self.closed.store(true, Ordering::Release);
+        let closing = self.event_receiver.get().map(EventReceiver::request_close);
+        async move {
+            if let Some(closing) = closing {
+                if let Err(e) = closing.await {
+                    warn!(
+                        partition_id = %self.partition_id,
+                        err = ?e,
+                        "Failed to close event receiver during revocation for partition."
+                    );
+                }
             }
         }
+    }
+
+    pub(crate) fn client_id(&self) -> &Uuid {
+        &self.client_id
+    }
+
+    pub(crate) fn is_closed(&self) -> bool {
+        self.closed.load(Ordering::Acquire)
     }
 
     /// Receives events from the partition.
@@ -137,52 +159,49 @@ impl PartitionClient {
                 partition_id = %self.partition_id,
                 "Removing client for partition from the consumers map."
             );
-            consumers.remove_partition_client(&self.partition_id)?;
+            consumers.remove_partition_client(&self)?;
         }
         Ok(())
     }
 
     /// Updates the checkpoint for the current partition.
     ///
-    /// This method extracts the sequence number and offset from the provided `ReceivedEventData`
-    /// and updates the checkpoint in the `CheckpointStore`.
+    /// This method reads the offset and the sequence number from the provided [`ReceivedEventData`]
+    /// and updates the checkpoint in the [`CheckpointStore`].
+    ///
+    /// Shutdown and partition reassignment do not wait for or cancel checkpoint updates already
+    /// in progress. Such updates can complete after ownership is released and overwrite a newer
+    /// owner's checkpoint. Finish checkpoint updates before calling
+    /// [`EventProcessor::shutdown()`](crate::EventProcessor::shutdown).
     ///
     /// # Arguments
-    /// * `event_data` - The event data containing the sequence number and offset to update the checkpoint.
+    /// * `event_data` - The event data that carries the offset and the sequence number to record.
     ///
     /// # Errors
-    /// Returns an error if the sequence number or offset is invalid, or if updating the checkpoint fails.
+    /// Returns [`ErrorKind::ConsumerDisconnected`] without writing to the store if the processor
+    /// has already closed this client for shutdown or partition reassignment.
+    ///
+    /// Returns [`ErrorKind::MissingCheckpointMetadata`](crate::error::ErrorKind::MissingCheckpointMetadata)
+    /// when the event carries no offset and no sequence number. Such an event names no position in
+    /// the partition, and a checkpoint with both fields empty erases the position the store holds.
+    /// Returns an error also when the checkpoint store fails to write the checkpoint.
     pub async fn update_checkpoint(&self, event_data: &ReceivedEventData) -> Result<()> {
-        let mut offset_option = None;
-        let mut sequence_number_option = None;
+        if self.is_closed() {
+            return Err(ErrorKind::ConsumerDisconnected(None).into());
+        }
 
-        let event_data_message = event_data.raw_amqp_message();
-        let Some(message_annotations) = event_data_message.message_annotations.as_ref() else {
-            // No message annotations. Nothing to do.
-            return Ok(());
-        };
-        for (key, value) in message_annotations.0.iter() {
-            let AmqpAnnotationKey::Symbol(symbol) = key else {
-                continue;
-            };
-
-            if *symbol == "x-opt-offset" {
-                let AmqpValue::String(offset_value) = value else {
-                    continue;
-                };
-                offset_option = Some(offset_value.clone());
-            } else if *symbol == "x-opt-sequence-number" {
-                let AmqpValue::Long(sequence_number_value) = value else {
-                    continue;
-                };
-                sequence_number_option = Some(*sequence_number_value);
-            }
+        let offset = event_data.offset().clone();
+        let sequence_number = event_data.sequence_number();
+        if offset.is_none() && sequence_number.is_none() {
+            return Err(EventHubsError::from(ErrorKind::MissingCheckpointMetadata {
+                partition_id: self.partition_id.clone(),
+            }));
         }
 
         debug!(
             partition_id = %self.partition_id,
-            sequence_number = ?sequence_number_option,
-            offset = ?offset_option,
+            sequence_number = ?sequence_number,
+            offset = ?offset,
             "Updating checkpoint for partition."
         );
         let checkpoint = Checkpoint {
@@ -190,8 +209,8 @@ impl PartitionClient {
             event_hub_name: self.client_details.eventhub_name.clone(),
             consumer_group: self.client_details.consumer_group.clone(),
             partition_id: self.partition_id.clone(),
-            offset: offset_option,
-            sequence_number: sequence_number_option,
+            offset,
+            sequence_number,
         };
         self.checkpoint_store
             .update_checkpoint(checkpoint)
@@ -227,6 +246,395 @@ impl Drop for PartitionClient {
         trace!(
             partition_id = %self.partition_id,
             "Dropping PartitionClient for partition."
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        Checkpoint, CheckpointStore, ConsumerClientDetails, PartitionClient, ReceivedEventData,
+    };
+    use crate::{
+        error::ErrorKind, event_processor::Ownership,
+        in_memory_checkpoint_store::InMemoryCheckpointStore,
+    };
+    // Every AMQP name this module needs is declared here, not inherited from
+    // the parent module, so the tests survive a change to the parent imports.
+    use azure_core_amqp::{message::AmqpAnnotations, AmqpMessage, AmqpSymbol, AmqpValue};
+    use futures::poll;
+    use std::sync::{Arc, Weak};
+    use tokio::sync::Notify;
+
+    const TEST_NAMESPACE: &str = "ns.servicebus.windows.net";
+    const TEST_EVENT_HUB: &str = "test-eventhub";
+    const TEST_CONSUMER_GROUP: &str = "test-consumer-group";
+
+    fn client_details() -> ConsumerClientDetails {
+        ConsumerClientDetails {
+            fully_qualified_namespace: TEST_NAMESPACE.to_string(),
+            consumer_group: TEST_CONSUMER_GROUP.to_string(),
+            eventhub_name: TEST_EVENT_HUB.to_string(),
+            client_id: "test-client".to_string(),
+        }
+    }
+
+    fn client_with_store(partition_id: &str) -> (PartitionClient, Arc<InMemoryCheckpointStore>) {
+        let store = Arc::new(InMemoryCheckpointStore::new());
+        let client = PartitionClient::new(
+            partition_id.to_string(),
+            store.clone(),
+            client_details(),
+            Weak::new(),
+        );
+        (client, store)
+    }
+
+    /// Builds an event whose AMQP message carries message annotations. An
+    /// empty slice still sets an empty annotation map, which is not the same
+    /// input as an absent map.
+    fn event_with(pairs: &[(&str, AmqpValue)]) -> ReceivedEventData {
+        let mut annotations = AmqpAnnotations::new();
+        for (key, value) in pairs {
+            annotations.insert(AmqpSymbol::from(*key), value.clone());
+        }
+        AmqpMessage::builder()
+            .with_message_annotations(annotations)
+            .build()
+            .into()
+    }
+
+    fn event_without_annotations() -> ReceivedEventData {
+        AmqpMessage::default().into()
+    }
+
+    struct FailingCheckpointStore;
+
+    #[async_trait::async_trait]
+    impl CheckpointStore for FailingCheckpointStore {
+        async fn claim_ownership(
+            &self,
+            _ownerships: &[Ownership],
+        ) -> azure_core::Result<Vec<Ownership>> {
+            unreachable!("update_checkpoint must not claim ownership")
+        }
+
+        async fn list_checkpoints(
+            &self,
+            _namespace: &str,
+            _event_hub_name: &str,
+            _consumer_group: &str,
+        ) -> azure_core::Result<Vec<Checkpoint>> {
+            unreachable!("update_checkpoint must not list checkpoints")
+        }
+
+        async fn list_ownerships(
+            &self,
+            _namespace: &str,
+            _event_hub_name: &str,
+            _consumer_group: &str,
+        ) -> azure_core::Result<Vec<Ownership>> {
+            unreachable!("update_checkpoint must not list ownerships")
+        }
+
+        async fn update_checkpoint(&self, _checkpoint: Checkpoint) -> azure_core::Result<()> {
+            Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "store is down",
+            ))
+        }
+    }
+
+    struct BlockingCheckpointStore {
+        inner: InMemoryCheckpointStore,
+        resume_write: Notify,
+    }
+
+    #[async_trait::async_trait]
+    impl CheckpointStore for BlockingCheckpointStore {
+        async fn claim_ownership(
+            &self,
+            _ownerships: &[Ownership],
+        ) -> azure_core::Result<Vec<Ownership>> {
+            unreachable!("update_checkpoint must not claim ownership")
+        }
+
+        async fn list_checkpoints(
+            &self,
+            namespace: &str,
+            event_hub_name: &str,
+            consumer_group: &str,
+        ) -> azure_core::Result<Vec<Checkpoint>> {
+            self.inner
+                .list_checkpoints(namespace, event_hub_name, consumer_group)
+                .await
+        }
+
+        async fn list_ownerships(
+            &self,
+            _namespace: &str,
+            _event_hub_name: &str,
+            _consumer_group: &str,
+        ) -> azure_core::Result<Vec<Ownership>> {
+            unreachable!("update_checkpoint must not list ownerships")
+        }
+
+        async fn update_checkpoint(&self, checkpoint: Checkpoint) -> azure_core::Result<()> {
+            if checkpoint.sequence_number == Some(17) {
+                self.resume_write.notified().await;
+            }
+            self.inner.update_checkpoint(checkpoint).await
+        }
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_rejects_a_closed_client_and_preserves_newer_progress() {
+        let (client, store) = client_with_store("0");
+        let client = Arc::new(client);
+        let retained_client = Arc::clone(&client);
+        let next_client = PartitionClient::new(
+            "0".to_string(),
+            store.clone(),
+            client_details(),
+            Weak::new(),
+        );
+        let old_event = event_with(&[("x-opt-sequence-number", AmqpValue::Long(17))]);
+        let new_event = event_with(&[("x-opt-sequence-number", AmqpValue::Long(99))]);
+
+        // Closure must reject writes immediately, even before receiver cleanup is polled.
+        let closing = client.request_close_receiver();
+        next_client.update_checkpoint(&new_event).await.unwrap();
+        let error = retained_client
+            .update_checkpoint(&old_event)
+            .await
+            .expect_err("a retained closed client must reject checkpoint updates");
+        assert!(matches!(error.kind, ErrorKind::ConsumerDisconnected(None)));
+
+        let stored = store
+            .list_checkpoints(TEST_NAMESPACE, TEST_EVENT_HUB, TEST_CONSUMER_GROUP)
+            .await
+            .unwrap();
+        assert_eq!(stored.len(), 1);
+        assert_eq!(stored[0].sequence_number, Some(99));
+        closing.await;
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_already_in_progress_can_complete_after_closure() {
+        let store = Arc::new(BlockingCheckpointStore {
+            inner: InMemoryCheckpointStore::new(),
+            resume_write: Notify::new(),
+        });
+        let client = PartitionClient::new(
+            "0".to_string(),
+            store.clone(),
+            client_details(),
+            Weak::new(),
+        );
+        let next_client = PartitionClient::new(
+            "0".to_string(),
+            store.clone(),
+            client_details(),
+            Weak::new(),
+        );
+        let old_event = event_with(&[("x-opt-sequence-number", AmqpValue::Long(17))]);
+        let new_event = event_with(&[("x-opt-sequence-number", AmqpValue::Long(99))]);
+        let mut pending_write = std::pin::pin!(client.update_checkpoint(&old_event));
+        assert!(poll!(pending_write.as_mut()).is_pending());
+
+        // The store has accepted this write. Closing the client cannot cancel it.
+        let mut closing = std::pin::pin!(client.request_close_receiver());
+        assert!(poll!(closing.as_mut()).is_ready());
+        next_client.update_checkpoint(&new_event).await.unwrap();
+        store.resume_write.notify_one();
+        pending_write.await.unwrap();
+
+        let stored = store
+            .list_checkpoints(TEST_NAMESPACE, TEST_EVENT_HUB, TEST_CONSUMER_GROUP)
+            .await
+            .unwrap();
+        assert_eq!(stored.len(), 1);
+        assert_eq!(stored[0].sequence_number, Some(17));
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_rejects_an_event_without_message_annotations() {
+        let (client, store) = client_with_store("0");
+        let event = event_without_annotations();
+
+        let result = client.update_checkpoint(&event).await;
+        let stored = store
+            .list_checkpoints(TEST_NAMESPACE, TEST_EVENT_HUB, TEST_CONSUMER_GROUP)
+            .await
+            .expect("the store must list its checkpoints");
+
+        assert!(
+            stored.is_empty(),
+            "an event without message annotations must write no checkpoint, got: {stored:?}"
+        );
+        assert!(
+            result.is_err(),
+            "an event without message annotations must return an error to the caller"
+        );
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_rejects_an_event_without_offset_or_sequence_number() {
+        let (client, store) = client_with_store("1");
+        let event = event_with(&[("x-opt-partition-key", AmqpValue::String("pk".into()))]);
+
+        let result = client.update_checkpoint(&event).await;
+        let stored = store
+            .list_checkpoints(TEST_NAMESPACE, TEST_EVENT_HUB, TEST_CONSUMER_GROUP)
+            .await
+            .expect("the store must list its checkpoints");
+
+        assert!(
+            stored.is_empty(),
+            "annotations without an offset and without a sequence number must write no \
+             checkpoint, got: {stored:?}"
+        );
+        assert!(
+            result.is_err(),
+            "annotations without an offset and without a sequence number must return an error"
+        );
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_rejects_annotations_with_the_wrong_value_types() {
+        let (client, store) = client_with_store("2");
+        let event = event_with(&[
+            ("x-opt-offset", AmqpValue::Long(42)),
+            ("x-opt-sequence-number", AmqpValue::String("17".to_string())),
+        ]);
+
+        let result = client.update_checkpoint(&event).await;
+        let stored = store
+            .list_checkpoints(TEST_NAMESPACE, TEST_EVENT_HUB, TEST_CONSUMER_GROUP)
+            .await
+            .expect("the store must list its checkpoints");
+
+        assert!(
+            stored.is_empty(),
+            "annotations with the wrong value types must write no checkpoint, got: {stored:?}"
+        );
+        assert!(
+            result.is_err(),
+            "annotations with the wrong value types must return an error"
+        );
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_error_names_the_partition_and_the_kind() {
+        let (client, _store) = client_with_store("7");
+        let event = event_with(&[]);
+
+        let error = client
+            .update_checkpoint(&event)
+            .await
+            .expect_err("an event without the two annotations must return an error");
+
+        let ErrorKind::MissingCheckpointMetadata { partition_id } = &error.kind else {
+            panic!("the caller must be able to match on the kind, got: {error:?}");
+        };
+        assert_eq!(
+            partition_id.as_str(),
+            "7",
+            "the error must name the partition, got: {partition_id}"
+        );
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_writes_an_offset_only_checkpoint() {
+        let (client, store) = client_with_store("3");
+        let event = event_with(&[("x-opt-offset", AmqpValue::String("1024".to_string()))]);
+
+        client
+            .update_checkpoint(&event)
+            .await
+            .expect("an offset alone must write a checkpoint");
+
+        let stored = store
+            .list_checkpoints(TEST_NAMESPACE, TEST_EVENT_HUB, TEST_CONSUMER_GROUP)
+            .await
+            .expect("the store must list its checkpoints");
+        assert_eq!(stored.len(), 1, "the store must hold one checkpoint");
+        assert_eq!(stored[0].offset, Some("1024".to_string()));
+        assert_eq!(stored[0].sequence_number, None);
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_writes_a_sequence_number_only_checkpoint() {
+        let (client, store) = client_with_store("4");
+        let event = event_with(&[("x-opt-sequence-number", AmqpValue::Long(17))]);
+
+        client
+            .update_checkpoint(&event)
+            .await
+            .expect("a sequence number alone must write a checkpoint");
+
+        let stored = store
+            .list_checkpoints(TEST_NAMESPACE, TEST_EVENT_HUB, TEST_CONSUMER_GROUP)
+            .await
+            .expect("the store must list its checkpoints");
+        assert_eq!(stored.len(), 1, "the store must hold one checkpoint");
+        assert_eq!(stored[0].offset, None);
+        assert_eq!(stored[0].sequence_number, Some(17));
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_writes_both_values_and_the_identity_fields() {
+        let (client, store) = client_with_store("5");
+        let event = event_with(&[
+            ("x-opt-offset", AmqpValue::String("2048".to_string())),
+            ("x-opt-sequence-number", AmqpValue::Long(99)),
+        ]);
+
+        client
+            .update_checkpoint(&event)
+            .await
+            .expect("a complete pair of annotations must write a checkpoint");
+
+        let stored = store
+            .list_checkpoints(TEST_NAMESPACE, TEST_EVENT_HUB, TEST_CONSUMER_GROUP)
+            .await
+            .expect("the store must list its checkpoints");
+        assert_eq!(stored.len(), 1, "the store must hold one checkpoint");
+        assert_eq!(stored[0].fully_qualified_namespace, TEST_NAMESPACE);
+        assert_eq!(stored[0].event_hub_name, TEST_EVENT_HUB);
+        assert_eq!(stored[0].consumer_group, TEST_CONSUMER_GROUP);
+        assert_eq!(stored[0].partition_id, "5");
+        assert_eq!(stored[0].offset, Some("2048".to_string()));
+        assert_eq!(stored[0].sequence_number, Some(99));
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_reports_a_store_failure_with_its_context() {
+        let client = PartitionClient::new(
+            "6".to_string(),
+            Arc::new(FailingCheckpointStore),
+            client_details(),
+            Weak::new(),
+        );
+        let event = event_with(&[
+            ("x-opt-offset", AmqpValue::String("4096".to_string())),
+            ("x-opt-sequence-number", AmqpValue::Long(5)),
+        ]);
+
+        let error = client
+            .update_checkpoint(&event)
+            .await
+            .expect_err("a store failure must reach the caller");
+
+        assert!(
+            matches!(error.kind, ErrorKind::AzureCore(_)),
+            "a store failure must keep the Azure Core kind, got: {error:?}"
+        );
+        assert!(
+            error
+                .to_string()
+                .contains("Failed to update checkpoint for partition 6"),
+            "the error must name the partition, got: {error}"
         );
     }
 }

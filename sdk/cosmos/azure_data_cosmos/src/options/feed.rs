@@ -4,9 +4,14 @@
 //! Feed/query options: paging, query metrics, and continuation tokens.
 
 use azure_data_cosmos_driver::models::{MaxItemCountHint, SessionToken};
-use azure_data_cosmos_driver::options::{OperationOptions, PlanOptions, DEFAULT_MAX_FAN_OUT};
+use azure_data_cosmos_driver::options::{
+    OperationOptions, PlanOptions, DEFAULT_MAX_BUFFERED_QUERY_WINDOW, DEFAULT_MAX_FAN_OUT,
+};
 
-use crate::feed::ContinuationToken;
+use crate::{
+    feed::ContinuationToken,
+    options::{FullTextScoreScope, QueryPlanMode},
+};
 
 /// Options that apply to feed-style operations (paged reads, queries, etc.).
 ///
@@ -40,14 +45,13 @@ pub struct FeedOptions {
     /// See [`QueryPageIterator::to_continuation_token`](crate::feed::QueryPageIterator::to_continuation_token).
     pub continuation_token: Option<ContinuationToken>,
 
-    /// Maximum number of physical partitions a fresh cross-partition operation
-    /// may fan out to.
+    /// Maximum number of request leaves planned for a fresh cross-partition operation.
     ///
     /// Cross-partition queries and change feeds are expensive by design: a
     /// container can have a very large number of physical partitions, and an
-    /// accidental broad query can span all of them. To guard against this, the
-    /// SDK refuses to start a fresh operation that would fan out to more than
-    /// this many partitions.
+    /// accidental broad query can span all of them. Ranked full-text and hybrid
+    /// queries count each statistics and component request per partition toward
+    /// this limit.
     ///
     /// `None` applies the default of [`DEFAULT_MAX_FAN_OUT`]. `Some(0)` is
     /// treated the same as `None` — a fan-out of zero is meaningless, so it
@@ -57,7 +61,7 @@ pub struct FeedOptions {
     /// workload.
     ///
     /// The limit is only checked at **initial query setup**, against the
-    /// partition topology at that moment. It is not a runtime cap: if a
+    /// partition topology and query plan at that moment. It is not a runtime cap: if a
     /// partition splits while the operation is executing and pushes the
     /// effective fan-out above this value, the operation continues to run and is
     /// not aborted. Likewise, resuming from a `continuation_token` does not
@@ -119,9 +123,24 @@ impl FeedOptions {
 /// [`with_max_item_count`](Self::with_max_item_count) and
 /// [`with_continuation_token`](Self::with_continuation_token) delegate to the inner
 /// [`FeedOptions`].
-#[derive(Clone, Default)]
+#[derive(Clone)]
 #[non_exhaustive]
 pub struct QueryOptions {
+    /// Partitions used for ranked full-text statistics. Defaults to
+    /// [`FullTextScoreScope::Global`]. Does not change the result scope.
+    pub full_text_score_scope: FullTextScoreScope,
+
+    /// Maximum global OFFSET plus effective take for client-buffered queries.
+    ///
+    /// Requires a finite TOP or LIMIT; when both exist, the smaller is used.
+    /// Defaults to 1000. Zero is a valid limit.
+    pub max_buffered_query_window: u64,
+
+    /// Query-plan provider selection for this query.
+    ///
+    /// Defaults to [`QueryPlanMode::LocalPreferred`].
+    pub query_plan_mode: QueryPlanMode,
+
     /// General-purpose options that apply to this request.
     /// See [`OperationOptions`] for available settings and layered resolution behavior.
     pub operation: OperationOptions,
@@ -144,7 +163,40 @@ pub struct QueryOptions {
     pub populate_query_metrics: Option<bool>,
 }
 
+impl Default for QueryOptions {
+    fn default() -> Self {
+        Self {
+            full_text_score_scope: FullTextScoreScope::default(),
+            max_buffered_query_window: DEFAULT_MAX_BUFFERED_QUERY_WINDOW,
+            query_plan_mode: QueryPlanMode::default(),
+            operation: OperationOptions::default(),
+            feed: FeedOptions::default(),
+            session_token: None,
+            populate_index_metrics: None,
+            populate_query_metrics: None,
+        }
+    }
+}
+
 impl QueryOptions {
+    /// Sets the partitions used for ranked full-text statistics.
+    pub fn with_full_text_score_scope(mut self, scope: FullTextScoreScope) -> Self {
+        self.full_text_score_scope = scope;
+        self
+    }
+
+    /// Sets the maximum global OFFSET plus effective take for client-buffered queries.
+    pub fn with_max_buffered_query_window(mut self, max_buffered_query_window: u64) -> Self {
+        self.max_buffered_query_window = max_buffered_query_window;
+        self
+    }
+
+    /// Sets the query-plan provider selection for this query.
+    pub fn with_query_plan_mode(mut self, mode: QueryPlanMode) -> Self {
+        self.query_plan_mode = mode;
+        self
+    }
+
     /// Sets the session token for this request.
     pub fn with_session_token(mut self, session_token: impl Into<SessionToken>) -> Self {
         self.session_token = Some(session_token.into());
@@ -194,11 +246,66 @@ impl QueryOptions {
         self.feed = self.feed.with_continuation_token(continuation_token);
         self
     }
+
+    pub(crate) fn to_plan_options(&self) -> PlanOptions {
+        self.feed
+            .to_plan_options()
+            .with_max_buffered_query_window(self.max_buffered_query_window)
+            .with_query_plan_mode(self.query_plan_mode)
+            .with_full_text_score_scope(self.full_text_score_scope)
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{FeedOptions, QueryOptions, QueryPlanMode, DEFAULT_MAX_FAN_OUT};
+
+    #[test]
+    fn query_plan_options_preserve_defaults() {
+        let plan = QueryOptions::default().to_plan_options();
+        assert_eq!(plan.max_buffered_query_window, 1000);
+        assert_eq!(plan.query_plan_mode, QueryPlanMode::LocalPreferred);
+        assert_eq!(plan.max_fan_out, DEFAULT_MAX_FAN_OUT);
+        assert_eq!(
+            plan.full_text_score_scope,
+            azure_data_cosmos_driver::options::FullTextScoreScope::Global
+        );
+    }
+
+    #[test]
+    fn query_plan_options_map_query_fields_and_feed_limits() {
+        for maximum in [0, 999, 1001, u64::MAX] {
+            for mode in [QueryPlanMode::LocalPreferred, QueryPlanMode::GatewayOnly] {
+                for (max_fan_out, expected) in [(0, DEFAULT_MAX_FAN_OUT), (250, 250)] {
+                    let options = QueryOptions::default()
+                        .with_max_buffered_query_window(100)
+                        .with_max_buffered_query_window(maximum)
+                        .with_query_plan_mode(mode)
+                        .with_feed_options(FeedOptions::default().with_max_fan_out(max_fan_out));
+                    let plan = options.to_plan_options();
+                    assert_eq!(plan.max_buffered_query_window, maximum);
+                    assert_eq!(plan.query_plan_mode, mode);
+                    assert_eq!(plan.max_fan_out, expected);
+                    assert_eq!(
+                        plan.full_text_score_scope,
+                        azure_data_cosmos_driver::options::FullTextScoreScope::Global
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn full_text_scope_is_forwarded_to_the_driver() {
+        for scope in [
+            azure_data_cosmos_driver::options::FullTextScoreScope::Global,
+            azure_data_cosmos_driver::options::FullTextScoreScope::Local,
+        ] {
+            let options = QueryOptions::default().with_full_text_score_scope(scope);
+            assert_eq!(options.full_text_score_scope, scope);
+            assert_eq!(options.to_plan_options().full_text_score_scope, scope);
+        }
+    }
 
     #[test]
     fn plan_options_uses_default_fan_out_when_unset() {

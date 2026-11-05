@@ -20,8 +20,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::ChangeFeedStartFrom;
 
+use super::distinct_hash::Hash128;
 use super::order_by::OrderByResumeValue;
-use super::query_plan::SortOrder;
+use super::query_plan::{DistinctType, SortOrder};
 
 /// Serializable snapshot of a [`PipelineNode`](super::PipelineNode) subtree.
 ///
@@ -82,6 +83,9 @@ pub(crate) enum PipelineNodeState {
         active_tokens: Vec<RangedToken>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         start_from: Option<ChangeFeedStartFrom>,
+        /// Minimum EPK of the next leaf to poll, restored against the current topology.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        next_poll_min_epk: Option<String>,
     },
 
     /// A global skip/take (`OFFSET` / `LIMIT` / `TOP`) applied over a single
@@ -130,6 +134,29 @@ pub(crate) enum PipelineNodeState {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         query_fingerprint: Option<String>,
         ranges: Vec<OrderByRangeToken>,
+    },
+
+    /// A `DISTINCT` deduplication stage wrapping a cross-partition root.
+    ///
+    /// Only the **ordered** form is ever serialized. `ORDER BY` guarantees
+    /// structurally equal rows arrive adjacently, so `last_hash` — the hash of
+    /// the last row emitted before the checkpoint — is the complete resume
+    /// state: a value the stage has moved past can never reappear. It is
+    /// `None` when the checkpoint was taken before any row was emitted.
+    ///
+    /// An **unordered** `DISTINCT` never reaches this variant: its state is the
+    /// whole set of values seen, which is unbounded and cannot be truncated
+    /// without silently re-emitting duplicates, so
+    /// [`Distinct::snapshot_state`](super::Distinct::snapshot_state) fails
+    /// instead — *unless* the stage has drained, in which case there is no
+    /// state left to lose and it snapshots as [`Drained`](Self::Drained) like
+    /// any other finished node. `distinct_type` is still persisted so a resume
+    /// can reject a token whose shape no longer matches the query plan.
+    Distinct {
+        distinct_type: DistinctType,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        last_hash: Option<Hash128>,
+        child: Box<PipelineNodeState>,
     },
 }
 
@@ -250,7 +277,7 @@ impl PipelineNodeState {
             }),
             other => Err(crate::error::CosmosError::builder()
                 .with_status(
-                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE,
+                    crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE,
                 )
                 .with_message(format!(
                     "{parent} child {idx} of {total} produced an unsupported snapshot shape: {}",
@@ -261,6 +288,7 @@ impl PipelineNodeState {
                         PipelineNodeState::UnorderedMerge { .. } => "UnorderedMerge",
                         PipelineNodeState::SkipTake { .. } => "SkipTake",
                         PipelineNodeState::StreamingOrderedMerge { .. } => "StreamingOrderedMerge",
+                        PipelineNodeState::Distinct { .. } => "Distinct",
                     },
                 ))
                 .build()),
@@ -434,6 +462,7 @@ mod tests {
         let err = PipelineNodeState::UnorderedMerge {
             active_tokens: vec![],
             start_from: None,
+            next_poll_min_epk: None,
         }
         .into_child_contribution("Parent", 0, 1)
         .expect_err("nested UnorderedMerge is not a supported child shape");
@@ -669,6 +698,7 @@ mod tests {
         let state = PipelineNodeState::UnorderedMerge {
             active_tokens: vec![],
             start_from: None,
+            next_poll_min_epk: None,
         };
         let json = serde_json::to_string(&state).unwrap();
         assert_eq!(
@@ -684,6 +714,7 @@ mod tests {
         let state = PipelineNodeState::UnorderedMerge {
             active_tokens: vec![token("00", "55", "t1"), token("55", "AA", "t2")],
             start_from: None,
+            next_poll_min_epk: None,
         };
         let json = serde_json::to_string(&state).unwrap();
         let parsed: PipelineNodeState = serde_json::from_str(&json).unwrap();
@@ -695,6 +726,7 @@ mod tests {
         let now = PipelineNodeState::UnorderedMerge {
             active_tokens: vec![],
             start_from: Some(ChangeFeedStartFrom::Now),
+            next_poll_min_epk: None,
         };
         let json = serde_json::to_string(&now).unwrap();
         assert_eq!(
@@ -711,6 +743,7 @@ mod tests {
             start_from: Some(ChangeFeedStartFrom::PointInTime(time::macros::datetime!(
                 2015-10-21 07:28:00 UTC
             ))),
+            next_poll_min_epk: None,
         };
         let json = serde_json::to_string(&point_in_time).unwrap();
         assert_eq!(

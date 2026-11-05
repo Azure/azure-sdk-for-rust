@@ -12,15 +12,17 @@ successful point read produces no span and no sampled log line; a failure or a
 threshold-breaching slow operation emits a full diagnostics record.
 
 This crate is a developer tool (`publish = false`); it is not part of the
-published SDK surface.
+supported SDK surface. See the
+[Cosmos SDK project documentation](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/README.md) for the diagnostics
+architecture and specification.
 
 ## What it wires up
 
 - Registers, via `CosmosClientBuilder::with_diagnostics_handler`, in order:
   - `CosmosMetricsHandler` — the stable `db.client.operation.duration` histogram
-    (plus opt-in development-tier metrics). *(feature `metrics`)*
+    (plus opt-in development-tier metrics). *(feature `unstable_opentelemetry`)*
   - `CosmosTracingHandler` — tail-sampled, backdated OpenTelemetry span trees.
-    *(feature `distributed_tracing`)*
+    *(feature `unstable_opentelemetry`)*
   - `SamplingLogHandler` — tail-sampled compact diagnostics log lines emitted
     through `tracing` (always registered).
 - Installs global OpenTelemetry `SdkMeterProvider` + `SdkTracerProvider` backed by
@@ -35,8 +37,7 @@ published SDK surface.
 
 | Feature | Default | Effect |
 | --- | --- | --- |
-| `metrics` | ✅ | Enables `azure_data_cosmos/metrics` and registers `CosmosMetricsHandler`. |
-| `distributed_tracing` | ✅ | Enables `azure_data_cosmos/distributed_tracing` and registers `CosmosTracingHandler`. |
+| `unstable_opentelemetry` | ✅ | Enables `azure_data_cosmos/unstable_opentelemetry` and registers both `CosmosMetricsHandler` and `CosmosTracingHandler`. This integration is unstable because the `opentelemetry` crate is still in preview. |
 | `fault_injection` | ✅ | Enables `azure_data_cosmos/fault_injection` and the `--fault-*` flags. |
 | `otlp` | ❌ | Pulls `opentelemetry-otlp` (gRPC) so `--exporter otlp` works. Selects no TLS provider on its own. |
 | `otlp_rustls` | ✅ | Adds rustls with the `aws-lc-rs` provider and bundled webpki roots to the OTLP transport, so `https://` collectors work with no OpenSSL. Inert unless `otlp` is also enabled, which is why it can default on without dragging the gRPC stack into every build. |
@@ -48,10 +49,10 @@ that wants a different provider drops the default and names its own:
 ```bash
 cargo build -p azure_data_cosmos_observability_harness \
   --no-default-features \
-  --features "metrics,distributed_tracing,fault_injection,otlp,opentelemetry-otlp/tls-ring"
+  --features "unstable_opentelemetry,fault_injection,otlp,opentelemetry-otlp/tls-ring"
 ```
 
-The feature names intentionally mirror the SDK's own feature names so the harness
+The OpenTelemetry feature intentionally mirrors the SDK's feature name so the harness
 compiles the exact code path it is validating. `key_auth` is always enabled so the
 harness can talk to the emulator with the well-known key.
 

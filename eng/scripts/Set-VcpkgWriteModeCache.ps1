@@ -26,6 +26,7 @@ if ($AzModuleCachePath -and $env.PSModulePath -notcontains $AzModuleCachePath) {
 
 $env:PSModulePath = $modulePaths -join $moduleSeperator
 
+Install-ModuleIfNotInstalled "Az.Accounts" "2.7.1" | Import-Module
 Install-ModuleIfNotInstalled "Az.Storage" "4.3.0" | Import-Module
 
 $ctx = New-AzStorageContext `

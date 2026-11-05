@@ -18,9 +18,8 @@
 //! With no handlers registered the chain does nothing beyond checking whether a
 //! handler is present.
 //!
-//! A built-in OpenTelemetry metrics handler,
-//! [`CosmosMetricsHandler`], is available behind
-//! the off-by-default `metrics` feature. It emits the stable
+//! A built-in OpenTelemetry metrics handler, `CosmosMetricsHandler`, is available
+//! behind the off-by-default `unstable_opentelemetry` feature. It emits the stable
 //! `db.client.operation.duration` histogram (and, opt-in, development-tier
 //! metrics) from each completed context.
 //!
@@ -32,8 +31,8 @@
 //!   gate plus a per-window rate limit and delegates emission to an inner
 //!   handler, defaulting to a [`TracingLogHandler`] that logs a compact
 //!   diagnostics line through the [`tracing`](https://docs.rs/tracing) ecosystem.
-//! - [`CosmosTracingHandler`] — emits a backdated OpenTelemetry span tree
-//!   (behind the off-by-default `distributed_tracing` feature), rate-limited so
+//! - `CosmosTracingHandler` — emits a backdated OpenTelemetry span tree
+//!   (behind the off-by-default `unstable_opentelemetry` feature), rate-limited so
 //!   an error storm can't overwhelm exporters.
 
 // =========================================================================
@@ -52,32 +51,33 @@ pub use handler::{
 pub use logging::{SamplingLogHandler, TracingLogHandler};
 pub use operation_context::CosmosOperationContext;
 pub use rate_limiter::RateLimiterConfig;
-#[cfg(feature = "distributed_tracing")]
-pub use tracing::CosmosTracingHandler;
+pub use region::{RequestedRegion, RequestedRegionReason};
+#[cfg(feature = "unstable_opentelemetry")]
+pub use tracing::{
+    CosmosTracingHandler, CosmosTracingHandlerBuilder, CosmosTracingHandlerWithTracer,
+};
 
-#[cfg(feature = "metrics")]
-pub use metrics::{CosmosMetricsHandler, MetricsOptions};
+#[cfg(feature = "unstable_opentelemetry")]
+pub use metrics::CosmosMetricsHandler;
+pub use metrics::MetricsOptions;
 
 // =========================================================================
 // Internal modules
 // =========================================================================
 
-// Shared semantic-convention attribute-name literals, used by the metrics and
-// distributed-tracing handlers (single source of truth). Only needed when one of
-// those feature-gated handlers is compiled.
-#[cfg(any(feature = "metrics", feature = "distributed_tracing"))]
+// Shared semantic-convention attribute-name literals for metrics and tracing.
 pub(crate) mod attributes;
 
 mod handler;
 mod logging;
 mod operation_context;
 mod reason;
+mod region;
 // Count-per-interval rate limiter shared by the sampling handlers (logging and,
 // when enabled, tracing) so they can bound emission under an error storm.
 pub(crate) mod rate_limiter;
 
-#[cfg(feature = "metrics")]
 pub mod metrics;
 
-#[cfg(feature = "distributed_tracing")]
+#[cfg(feature = "unstable_opentelemetry")]
 mod tracing;

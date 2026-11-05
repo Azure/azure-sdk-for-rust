@@ -1,0 +1,219 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+#
+# Local tests for resolve-cosmos-test-account.ps1 (no ADO required).
+# Run: pwsh sdk/cosmos/eng/pipelines/resolve-cosmos-test-account.tests.ps1
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
+
+$here = $PSScriptRoot
+$script = [System.IO.Path]::Combine($here, 'resolve-cosmos-test-account.ps1')
+$samplePath = [System.IO.Path]::Combine($here, 'live-test-accounts.sample.json')
+$sampleJson = Get-Content -Raw -Path $samplePath
+
+$script:pass = 0
+$script:fail = 0
+
+function Test-Ok([string]$name) {
+    Write-Host "  PASS: $name" -ForegroundColor Green
+    $script:pass++
+}
+
+function Test-Fail([string]$name, [string]$detail = '') {
+    Write-Host "  FAIL: $name $detail" -ForegroundColor Red
+    $script:fail++
+}
+
+function Invoke-Resolver([string]$selector, [string]$json) {
+    $env:COSMOS_ACCOUNTS_LOCAL = 'true'
+    $env:COSMOS_ACCOUNT_SELECTOR = $selector
+    $env:COSMOS_TEST_ACCOUNTS_JSON = $json
+    $output = & pwsh -NoProfile -File $script 2>$null
+    $rc = $LASTEXITCODE
+    Remove-Item Env:\COSMOS_ACCOUNTS_LOCAL, Env:\COSMOS_ACCOUNT_SELECTOR, Env:\COSMOS_TEST_ACCOUNTS_JSON -ErrorAction SilentlyContinue
+    return @{ Output = ($output -join "`n"); ExitCode = $rc }
+}
+
+Write-Host "Test 1: resolves a valid selector and exports connection string + rustflags"
+$result = Invoke-Resolver 'session-multiwrite' $sampleJson
+if ($result.ExitCode -eq 0 -and
+    $result.Output -match 'AZURE_COSMOS_CONNECTION_STRING=AccountEndpoint=https://REPLACE-session-multiwrite' -and
+    $result.Output -match 'COSMOS_RUSTFLAGS=--cfg=test_category="multi_write" --cfg=test_category="live"' -and
+    $result.Output -match 'AZURE_COSMOS_DEFAULT_CONSISTENCY=Session' -and
+    $result.Output -match 'AZURE_COSMOS_E2E_BACKEND=azureLive' -and
+    $result.Output -match 'AZURE_COSMOS_ACCOUNT_WRITE_MODE=multi' -and
+    $result.Output -match 'AZURE_COSMOS_ACCOUNT_MULTI_REGION=true' -and
+    $result.Output -match 'AZURE_COSMOS_ACCOUNT_FULL_FIDELITY_CHANGE_FEED=false' -and
+    $result.Output -match 'AZURE_COSMOS_ACCOUNT_REGIONS=East US 2;West US 3') {
+    Test-Ok "resolved connection string + rustflags + profile metadata"
+}
+else {
+    Test-Fail "resolve valid selector" "(rc=$($result.ExitCode)): $($result.Output)"
+}
+
+Write-Host "Test 2: exports AZURE_COSMOS_SECONDARY_KEY when present"
+$result = Invoke-Resolver 'session-split' $sampleJson
+if ($result.ExitCode -eq 0 -and $result.Output -match 'AZURE_COSMOS_SECONDARY_KEY=REPLACE_SECONDARY_KEY') {
+    Test-Ok "secondary key exported"
+}
+else {
+    Test-Fail "secondary key" "(rc=$($result.ExitCode)): $($result.Output)"
+}
+
+Write-Host "Test 3: unknown selector fails with non-zero"
+$result = Invoke-Resolver 'does-not-exist' $sampleJson
+if ($result.ExitCode -ne 0) { Test-Ok "unknown selector rejected" } else { Test-Fail "unknown selector should fail" $result.Output }
+
+Write-Host "Test 4: invalid JSON fails"
+$result = Invoke-Resolver 'session-singlewrite' '{not json'
+if ($result.ExitCode -ne 0) { Test-Ok "invalid json rejected" } else { Test-Fail "invalid json should fail" }
+
+Write-Host "Test 5: unsupported version fails"
+$result = Invoke-Resolver 'session-singlewrite' '{"version":99,"accounts":{"session-singlewrite":{"endpoint":"https://x","key":"k","consistency":"Session","testCategory":"emulator"}}}'
+if ($result.ExitCode -ne 0) { Test-Ok "bad version rejected" } else { Test-Fail "bad version should fail" }
+
+Write-Host "Test 6: missing key fails"
+$result = Invoke-Resolver 'x' '{"version":1,"accounts":{"x":{"endpoint":"https://x","consistency":"Session","testCategory":"emulator"}}}'
+if ($result.ExitCode -ne 0) { Test-Ok "missing key rejected" } else { Test-Fail "missing key should fail" }
+
+Write-Host "Test 7: non-https endpoint fails"
+$result = Invoke-Resolver 'x' '{"version":1,"accounts":{"x":{"endpoint":"http://x","key":"k","consistency":"Session","testCategory":"emulator"}}}'
+if ($result.ExitCode -ne 0) { Test-Ok "non-https rejected" } else { Test-Fail "non-https should fail" }
+
+Write-Host "Test 8: empty selector fails"
+$result = Invoke-Resolver '' $sampleJson
+if ($result.ExitCode -ne 0) { Test-Ok "empty selector rejected" } else { Test-Fail "empty selector should fail" }
+
+Write-Host "Test 9: missing testCategory fails"
+$result = Invoke-Resolver 'x' '{"version":1,"accounts":{"x":{"endpoint":"https://x","key":"k","consistency":"Session","multiWrite":false,"multiRegion":false,"regions":["East US"]}}}'
+if ($result.ExitCode -ne 0) { Test-Ok "missing testCategory rejected" } else { Test-Fail "missing testCategory should fail" }
+
+Write-Host "Test 10: missing topology metadata fails"
+$result = Invoke-Resolver 'x' '{"version":1,"accounts":{"x":{"endpoint":"https://x","key":"k","consistency":"Session","testCategory":"emulator"}}}'
+if ($result.ExitCode -ne 0) { Test-Ok "missing topology metadata rejected" } else { Test-Fail "missing topology metadata should fail" }
+
+Write-Host ""
+Write-Host "Test 11: every fixed live account enables the dedicated live target"
+$accounts = ($sampleJson | ConvertFrom-Json).accounts
+foreach ($property in $accounts.PSObject.Properties) {
+    $result = Invoke-Resolver $property.Name $sampleJson
+    $expected = 'COSMOS_RUSTFLAGS=--cfg=test_category="{0}" --cfg=test_category="live"' -f $property.Value.testCategory
+    if ($result.ExitCode -eq 0 -and $result.Output.Contains($expected)) {
+        Test-Ok "$($property.Name) preserves its category and enables live coverage"
+    }
+    else {
+        Test-Fail "$($property.Name) live selection" "(rc=$($result.ExitCode)): $($result.Output)"
+    }
+}
+
+Write-Host ""
+Write-Host "Test 12: topology flags require actual JSON booleans before exporting variables"
+$invalidBooleans = @(
+    @{ Name = 'string false'; Json = '"false"' }
+    @{ Name = 'string true'; Json = '"true"' }
+    @{ Name = 'empty string'; Json = '""' }
+    @{ Name = 'null'; Json = 'null' }
+    @{ Name = 'zero'; Json = '0' }
+    @{ Name = 'one'; Json = '1' }
+    @{ Name = 'object'; Json = '{}' }
+    @{ Name = 'empty array'; Json = '[]' }
+    @{ Name = 'boolean array'; Json = '[false]' }
+    @{ Name = 'missing'; Json = $null }
+)
+foreach ($field in @('multiWrite', 'multiRegion')) {
+    foreach ($case in $invalidBooleans) {
+        $account = @{
+            endpoint = 'https://example.invalid'; key = 'synthetic-not-a-secret'
+            consistency = 'Session'; testCategory = 'e2e'
+            multiWrite = $false; multiRegion = $false; regions = @('East US 2')
+        }
+        if ($null -eq $case.Json) {
+            $account.Remove($field)
+            $expected = "missing required '$field'"
+        }
+        else {
+            $account[$field] = ConvertFrom-Json -InputObject $case.Json -NoEnumerate
+            $expected = "'$field' must be a JSON boolean"
+        }
+        $json = @{ version = 1; accounts = @{ synthetic = $account } } | ConvertTo-Json -Depth 6 -Compress
+        $result = Invoke-Resolver 'synthetic' $json
+        if ($result.ExitCode -ne 0 -and $result.Output.Contains($expected) -and
+            $result.Output -notmatch '(?m)^[A-Z_]+=' -and
+            $result.Output -notmatch 'synthetic-not-a-secret') {
+            Test-Ok "$field rejects $($case.Name) before exports"
+        }
+        else {
+            Test-Fail "$field must reject $($case.Name) before exports" "(rc=$($result.ExitCode))"
+        }
+    }
+}
+
+Write-Host "Test 13: valid boolean flags preserve topology exports"
+foreach ($flags in @(
+        @{ multiWrite = $false; multiRegion = $false }
+        @{ multiWrite = $false; multiRegion = $true }
+        @{ multiWrite = $true; multiRegion = $true }
+    )) {
+    $regions = @('East US 2')
+    if ($flags.multiRegion) { $regions += 'West US 3' }
+    $account = @{
+        endpoint = 'https://example.invalid'; key = 'synthetic-not-a-secret'
+        consistency = 'Session'; testCategory = 'e2e'
+        multiWrite = $flags.multiWrite; multiRegion = $flags.multiRegion
+        fullFidelityChangeFeed = $false; regions = $regions
+    }
+    $json = @{ version = 1; accounts = @{ synthetic = $account } } | ConvertTo-Json -Depth 6 -Compress
+    $result = Invoke-Resolver 'synthetic' $json
+    $writeMode = if ($flags.multiWrite) { 'multi' } else { 'single' }
+    $multiRegion = $flags.multiRegion.ToString().ToLowerInvariant()
+    if ($result.ExitCode -eq 0 -and
+        $result.Output.Contains("AZURE_COSMOS_ACCOUNT_WRITE_MODE=$writeMode") -and
+        $result.Output.Contains("AZURE_COSMOS_ACCOUNT_MULTI_REGION=$multiRegion")) {
+        Test-Ok "$writeMode write mode and multiRegion=$multiRegion preserved"
+    }
+    else {
+        Test-Fail "$writeMode write mode and multiRegion=$multiRegion" "(rc=$($result.ExitCode))"
+    }
+}
+
+Write-Host "Test 14: full-fidelity capability requires a JSON boolean"
+$invalidCapability = ($sampleJson | ConvertFrom-Json)
+$invalidCapability.accounts.'session-singlewrite'.fullFidelityChangeFeed = 'true'
+$result = Invoke-Resolver 'session-singlewrite' ($invalidCapability | ConvertTo-Json -Depth 8 -Compress)
+if ($result.ExitCode -ne 0 -and
+    $result.Output.Contains("'fullFidelityChangeFeed' must be a JSON boolean")) {
+    Test-Ok "invalid full-fidelity capability rejected"
+}
+else {
+    Test-Fail "invalid full-fidelity capability should fail" "(rc=$($result.ExitCode))"
+}
+
+Write-Host "Test 15: regions requires an array of non-empty JSON strings"
+$invalidRegions = @(
+    @{ Name = 'scalar string'; Value = 'East US 2'; Expected = "'regions' must be a JSON array" }
+    @{ Name = 'scalar number'; Value = 123; Expected = "'regions' must be a JSON array" }
+    @{ Name = 'numeric array element'; Value = @(123); Expected = "'regions' must contain only non-empty JSON strings" }
+    @{ Name = 'null array element'; Value = @($null); Expected = "'regions' must contain only non-empty JSON strings" }
+)
+foreach ($case in $invalidRegions) {
+    $account = @{
+        endpoint = 'https://example.invalid'; key = 'synthetic-not-a-secret'
+        consistency = 'Session'; testCategory = 'e2e'
+        multiWrite = $false; multiRegion = $false; regions = $case.Value
+    }
+    $json = @{ version = 1; accounts = @{ synthetic = $account } } | ConvertTo-Json -Depth 6 -Compress
+    $result = Invoke-Resolver 'synthetic' $json
+    if ($result.ExitCode -ne 0 -and $result.Output.Contains($case.Expected) -and
+        $result.Output -notmatch '(?m)^[A-Z_]+=' -and
+        $result.Output -notmatch 'synthetic-not-a-secret') {
+        Test-Ok "regions rejects $($case.Name) before exports"
+    }
+    else {
+        Test-Fail "regions must reject $($case.Name) before exports" "(rc=$($result.ExitCode))"
+    }
+}
+
+Write-Host ""
+Write-Host "Results: $script:pass passed, $script:fail failed"
+if ($script:fail -ne 0) { exit 1 }
+exit 0

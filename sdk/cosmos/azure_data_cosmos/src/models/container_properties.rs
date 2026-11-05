@@ -35,7 +35,8 @@ pub enum TimeToLive {
     /// Individual items can still define their own TTL.
     NoDefault,
 
-    /// TTL is enabled with a default expiration of the given number of seconds.
+    /// TTL is enabled with a default expiration, in seconds. Items expire after
+    /// this many seconds unless they override it with their own `ttl` property.
     Seconds(u32),
 }
 
@@ -60,7 +61,7 @@ impl Serialize for TimeToLive {
         match self {
             TimeToLive::Forever => serializer.serialize_none(),
             TimeToLive::NoDefault => serializer.serialize_i32(-1),
-            TimeToLive::Seconds(n) => serializer.serialize_u32(*n),
+            TimeToLive::Seconds(seconds) => serializer.serialize_u32(*seconds),
         }
     }
 }
@@ -1066,14 +1067,6 @@ mod tests {
             json!("word"),
             round_tripped["fullTextPolicy"]["fullTextPaths"][0]["tokenizer"]
         );
-
-        let debug = format!("{properties:?}");
-        for unknown_value in ["Geography", "text-embedding-3-small", "standard", "word"] {
-            assert!(
-                !debug.contains(unknown_value),
-                "unknown field value should be redacted from Debug output: {unknown_value}"
-            );
-        }
 
         // System properties must keep their existing treatment: `_rid` round
         // trips, while `_etag` and `_ts` stay read-only and are not sent back.

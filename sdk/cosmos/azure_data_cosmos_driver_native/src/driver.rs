@@ -11,21 +11,9 @@
 //! wrapper's generic `tokio::spawn` → `cq_enqueue` plumbing lands once,
 //! with the operation submit pipeline.
 //!
-//! ## Cache-hit advisory
+//! Every construction creates a fresh driver with its own credentials/options.
+//! Runtime-owned container references retain their original credentials and are shared.
 //!
-//! Spec section 4.4.1 describes an optional advisory for when the driver
-//! returns a cached driver for an endpoint that already has an entry. The
-//! merged `CosmosDriverRuntime::get_or_create_driver` API does not expose a
-//! "was cached" signal, so detecting cache hits requires either a
-//! driver-side enhancement (preferred) or wrapper-side cache shadowing
-//! (hacky). The advisory is intentionally **not** implemented today
-//! — `cosmos_driver_get_or_create_blocking` always returns `SUCCESS` on
-//! a cached hit. This is tracked as a follow-up.
-//!
-//! See [`docs/NATIVE_WRAPPER_SPEC.md`] section 4.4.
-//!
-//! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
-
 use std::sync::Arc;
 
 use azure_data_cosmos_driver::driver::CosmosDriver;
@@ -90,9 +78,8 @@ impl DriverHandle {
 // FFI: lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Frees a driver handle. Drops the FFI-side `Arc` reference; the
-/// underlying driver remains alive in the runtime's cache until the
-/// owning `cosmos_runtime_t` is freed (spec section 4.4.1). NULL is a no-op.
+/// Frees a driver handle. In-flight operations retain their own references.
+/// Other drivers on the same runtime are unaffected. NULL is a no-op.
 #[no_mangle]
 pub extern "C" fn cosmos_driver_free(driver: *mut DriverHandle) {
     if driver.is_null() {
@@ -109,23 +96,14 @@ pub extern "C" fn cosmos_driver_free(driver: *mut DriverHandle) {
 /// Synchronously gets or creates the driver for the supplied account.
 ///
 /// Bridges
-/// `CosmosDriverRuntime::get_or_create_driver` through the wrapper's
+/// `CosmosDriverRuntime::create_driver` through the wrapper's
 /// own multi-threaded Tokio runtime via `block_on`. Suitable for
 /// startup-time initialization; for runtime use prefer the async
 /// `_submit` variant.
 ///
-/// # Cache behavior (spec section 4.4.1)
-///
-/// - The runtime caches drivers by endpoint URL. A second call with the
-///   same endpoint returns the cached driver and **silently ignores**
-///   `options`.
-/// - Two `AccountReference`s with the same endpoint but different
-///   credentials collide in the cache — first credential wins.
-/// - Cache eviction happens only when the owning `cosmos_runtime_t` is
-///   freed; freeing a `cosmos_driver_t` does not evict.
-///
-/// The cache-hit advisory described in spec Section 4.4.1 is not emitted
-/// today — see the module-level `Cache-hit advisory` note for the rationale.
+/// Each call creates a fresh driver with its own account options. Cached container
+/// references can reuse credentials from another same-account driver on this runtime.
+/// No cache-hit advisory is emitted.
 ///
 /// # Parameters
 ///

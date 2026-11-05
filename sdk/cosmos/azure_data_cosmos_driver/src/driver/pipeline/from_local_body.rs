@@ -5,12 +5,11 @@
 //! transport headers.
 //!
 //! The PATCH handler issues an internal Replace to commit the merged document.
-//! Cosmos PATCH responses normally include the post-image of the item in the
-//! body, but callers may have disabled `content_response_on_write` for the
-//! Replace, or the Replace itself may have stripped the body. Either way the
-//! handler holds the authoritative post-image locally (it's what it sent), so
-//! it materializes a [`CosmosResponse`] using the *driver-routed* headers from
-//! the final Replace and its own locally-merged body bytes.
+//! The handler holds the post-image locally (it's what it sent), so it can
+//! materialize a [`CosmosResponse`] using the *driver-routed* headers from the
+//! final Replace and its own locally-merged body bytes. The logical PATCH
+//! boundary subsequently removes this payload when the effective
+//! `content_response_on_write` setting is disabled.
 
 use crate::diagnostics::DiagnosticsContext;
 use crate::models::{CosmosResponse, CosmosResponseHeaders, CosmosStatus};

@@ -89,6 +89,27 @@ where
         read_guard.get(key).and_then(|lazy| lazy.try_get())
     }
 
+    /// Applies `action` only while `observed` is still the current value.
+    ///
+    /// The cache read lock remains held for the synchronous action, so a
+    /// concurrent replacement cannot complete between the pointer check and
+    /// the action. The action must not re-enter this cache.
+    pub(crate) async fn apply_if_current<F>(&self, key: &K, observed: &Arc<V>, action: F) -> bool
+    where
+        F: FnOnce(),
+    {
+        let read_guard = self.map.read().await;
+        let Some(current) = read_guard.get(key).and_then(|lazy| lazy.try_get()) else {
+            return false;
+        };
+        if !Arc::ptr_eq(&current, observed) {
+            return false;
+        }
+
+        action();
+        true
+    }
+
     /// Removes an entry from the cache.
     ///
     /// Returns the value if the key existed and was initialized.
@@ -110,6 +131,26 @@ where
         }
 
         should_remove
+    }
+
+    /// Replaces an entry only if it still contains the observed value.
+    pub(crate) async fn replace_if_same(
+        &self,
+        key: &K,
+        observed: &Arc<V>,
+        replacement: Arc<V>,
+    ) -> bool {
+        let mut write_guard = self.map.write().await;
+        let should_replace = write_guard
+            .get(key)
+            .and_then(|lazy| lazy.try_get())
+            .is_some_and(|current| Arc::ptr_eq(&current, observed));
+
+        if should_replace {
+            write_guard.insert(key.clone(), Arc::new(AsyncLazy::from_arc(replacement)));
+        }
+
+        should_replace
     }
 
     /// Clears all entries from the cache.

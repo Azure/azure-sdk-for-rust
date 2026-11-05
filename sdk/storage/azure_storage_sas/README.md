@@ -35,7 +35,7 @@ Both builders expose the same resource selectors and permission setters.
 Use `SasUrlBuilder` to produce a complete signed URL in one step:
 
 ```rust ignore blob_sas_url
-use azure_storage_sas::{SasUrlBuilder, UserDelegationKey};
+use azure_storage_sas::SasUrlBuilder;
 use time::OffsetDateTime;
 
 let url = SasUrlBuilder::new(
@@ -58,7 +58,7 @@ Use `SasTokenBuilder` when you need just the signed query string to attach to an
 
 ```rust ignore blob_sas_token
 use azure_core::{http::Url, time::{Duration, OffsetDateTime}};
-use azure_storage_sas::{SasTokenBuilder, UserDelegationKey};
+use azure_storage_sas::SasTokenBuilder;
 
 let storage_account_name = "myaccount";
 let container_name = "images";

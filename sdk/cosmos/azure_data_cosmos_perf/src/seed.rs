@@ -136,8 +136,7 @@ pub async fn seed_container(
                 workers.abort_all();
                 return Err(azure_data_cosmos_driver::CosmosError::builder()
                     .with_message(format!("seed worker task failed: {e}"))
-                    .build()
-                    .into());
+                    .build());
             }
             None => {} // No more tasks
         }

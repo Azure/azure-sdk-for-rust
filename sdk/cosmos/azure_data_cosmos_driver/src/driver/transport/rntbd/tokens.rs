@@ -3,15 +3,74 @@
 
 //! RNTBD metadata token codecs and wire ID mappings.
 
-use std::io::Write;
+use std::{io::Write, str::FromStr};
 
 use azure_core::error::ErrorKind;
 use uuid::Uuid;
 
 use crate::{
-    models::{DefaultConsistencyLevel, OperationType, ResourceType},
+    models::{
+        cosmos_headers::request_header_names, DefaultConsistencyLevel, OperationType, ResourceType,
+    },
     options::ReadConsistencyStrategy,
 };
+
+/// The read-feed filter selector shared by HTTP headers and RNTBD metadata.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u8)]
+pub(crate) enum ReadFeedKeyType {
+    ResourceId = 1,
+    EffectivePartitionKey = 2,
+    EffectivePartitionKeyRange = 3,
+}
+
+impl From<ReadFeedKeyType> for &'static str {
+    fn from(value: ReadFeedKeyType) -> Self {
+        match value {
+            ReadFeedKeyType::ResourceId => "ResourceId",
+            ReadFeedKeyType::EffectivePartitionKey => "EffectivePartitionKey",
+            ReadFeedKeyType::EffectivePartitionKeyRange => {
+                request_header_names::READ_FEED_KEY_TYPE_EPK_RANGE
+            }
+        }
+    }
+}
+
+impl From<ReadFeedKeyType> for u8 {
+    fn from(value: ReadFeedKeyType) -> Self {
+        value as u8
+    }
+}
+
+impl TryFrom<u8> for ReadFeedKeyType {
+    type Error = azure_core::Error;
+
+    fn try_from(value: u8) -> azure_core::Result<Self> {
+        [
+            Self::ResourceId,
+            Self::EffectivePartitionKey,
+            Self::EffectivePartitionKeyRange,
+        ]
+        .into_iter()
+        .find(|kind| u8::from(*kind) == value)
+        .ok_or_else(|| data_conversion_error("unknown ReadFeedKeyType value"))
+    }
+}
+
+impl FromStr for ReadFeedKeyType {
+    type Err = azure_core::Error;
+
+    fn from_str(value: &str) -> azure_core::Result<Self> {
+        [
+            Self::ResourceId,
+            Self::EffectivePartitionKey,
+            Self::EffectivePartitionKeyRange,
+        ]
+        .into_iter()
+        .find(|kind| value.eq_ignore_ascii_case(<&'static str>::from(*kind)))
+        .ok_or_else(|| data_conversion_error("invalid x-ms-read-key-type header"))
+    }
+}
 
 /// The token type byte used by RNTBD metadata tokens.
 ///
@@ -324,6 +383,14 @@ impl Token {
         Self::new(RntbdRequestToken::Match, TokenValue::String(value))
     }
 
+    /// Point-in-time change feed start (id `0x0047`, `String`).
+    pub(crate) fn if_modified_since(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::IfModifiedSince,
+            TokenValue::String(value),
+        )
+    }
+
     pub(crate) fn consistency_level(value: DefaultConsistencyLevel) -> Self {
         Self::new(
             RntbdRequestToken::ConsistencyLevel,
@@ -331,7 +398,8 @@ impl Token {
         )
     }
 
-    /// `ReadConsistencyStrategy` token (id `0x00FE`, `Byte`).
+    /// `ReadConsistencyStrategy` token (id `0x00FE`, `Byte`) shared by
+    /// Gateway 2.0 and Direct RNTBD requests.
     ///
     /// Server requires this token in place of `ConsistencyLevel` when the caller
     /// specifies a non-`Default` read consistency strategy on a read request.
@@ -409,6 +477,20 @@ impl Token {
         )
     }
 
+    pub(crate) fn is_batch_atomic(value: bool) -> Self {
+        Self::new(
+            RntbdRequestToken::IsBatchAtomic,
+            TokenValue::Byte(u8::from(value)),
+        )
+    }
+
+    pub(crate) fn should_batch_continue_on_error(value: bool) -> Self {
+        Self::new(
+            RntbdRequestToken::ShouldBatchContinueOnError,
+            TokenValue::Byte(u8::from(value)),
+        )
+    }
+
     pub(crate) fn global_database_account_name(value: String) -> Self {
         Self::new(
             RntbdRequestToken::GlobalDatabaseAccountName,
@@ -435,6 +517,17 @@ impl Token {
         )
     }
 
+    /// `SupportedSerializationFormats` (ID 0x00C4, Byte). Flags byte of the
+    /// response formats the client accepts (`JsonText = 0x01`,
+    /// `CosmosBinary = 0x02`, `HybridRow = 0x04`; OR-combinable), forwarded from
+    /// the `x-ms-cosmos-supported-serialization-formats` header.
+    pub(crate) fn supported_serialization_formats(value: u8) -> Self {
+        Self::new(
+            RntbdRequestToken::SupportedSerializationFormats,
+            TokenValue::Byte(value),
+        )
+    }
+
     /// `StartEpkHash` (ID 0x00D2, Bytes). Per-partition routing key for
     /// thin-client cross-partition queries. The partition's `minInclusive` hex
     /// string is converted to bytes and emitted alongside `EndEpkHash`.
@@ -447,6 +540,29 @@ impl Token {
         Self::new(RntbdRequestToken::EndEpkHash, TokenValue::Bytes(value))
     }
 
+    /// Inclusive filter bound as UTF-8 hex text, not a binary routing hash.
+    pub(crate) fn start_epk(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::StartEpk,
+            TokenValue::Bytes(value.into_bytes()),
+        )
+    }
+
+    /// Exclusive filter bound as UTF-8 hex text, not a binary routing hash.
+    pub(crate) fn end_epk(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::EndEpk,
+            TokenValue::Bytes(value.into_bytes()),
+        )
+    }
+
+    pub(crate) fn read_feed_key_type(value: ReadFeedKeyType) -> Self {
+        Self::new(
+            RntbdRequestToken::ReadFeedKeyType,
+            TokenValue::Byte(value.into()),
+        )
+    }
+
     /// `PartitionKeyRangeId` (ID 0x002C, String). Filled from the
     /// `x-ms-documentdb-partitionkeyrangeid` HTTP header. The thin-client proxy
     /// expects this token alongside StartEpkHash/EndEpkHash to identify the
@@ -454,6 +570,19 @@ impl Token {
     pub(crate) fn partition_key_range_id(value: String) -> Self {
         Self::new(
             RntbdRequestToken::PartitionKeyRangeId,
+            TokenValue::String(value),
+        )
+    }
+
+    /// Change-feed mode (`A_IM`, ID `0x003F`, `String`).
+    pub(crate) fn a_im(value: String) -> Self {
+        Self::new(RntbdRequestToken::AIm, TokenValue::String(value))
+    }
+
+    /// Change-feed response shape (`ChangeFeedWireFormatVersion`, ID `0x00B2`, `String`).
+    pub(crate) fn change_feed_wire_format_version(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::ChangeFeedWireFormatVersion,
             TokenValue::String(value),
         )
     }
@@ -572,16 +701,25 @@ pub(crate) enum RntbdRequestToken {
     TransportRequestId,
     PartitionKey,
     PartitionKeyRangeId,
+    AIm,
+    IfModifiedSince,
     EffectivePartitionKey,
     AllowTentativeWrites,
     ReturnPreference,
     SDKSupportedCapabilities,
+    ChangeFeedWireFormatVersion,
     GlobalDatabaseAccountName,
     ReadConsistencyStrategy,
+    SupportedSerializationFormats,
     SupportedQueryFeatures,
     QueryVersion,
     StartEpkHash,
     EndEpkHash,
+    StartEpk,
+    EndEpk,
+    ReadFeedKeyType,
+    IsBatchAtomic,
+    ShouldBatchContinueOnError,
 }
 
 impl TryFrom<u16> for RntbdRequestToken {
@@ -604,11 +742,20 @@ impl TryFrom<u16> for RntbdRequestToken {
             0x002B => Ok(Self::PartitionKey),
             0x002C => Ok(Self::PartitionKeyRangeId),
             0x0035 => Ok(Self::CollectionRid),
+            0x003F => Ok(Self::AIm),
+            0x0047 => Ok(Self::IfModifiedSince),
             0x004D => Ok(Self::TransportRequestId),
             0x005A => Ok(Self::EffectivePartitionKey),
+            0x0062 => Ok(Self::StartEpk),
+            0x0063 => Ok(Self::EndEpk),
+            0x0064 => Ok(Self::ReadFeedKeyType),
             0x0066 => Ok(Self::AllowTentativeWrites),
+            0x0073 => Ok(Self::IsBatchAtomic),
+            0x0074 => Ok(Self::ShouldBatchContinueOnError),
             0x0082 => Ok(Self::ReturnPreference),
             0x00A2 => Ok(Self::SDKSupportedCapabilities),
+            0x00B2 => Ok(Self::ChangeFeedWireFormatVersion),
+            0x00C4 => Ok(Self::SupportedSerializationFormats),
             0x00CE => Ok(Self::GlobalDatabaseAccountName),
             0x00FE => Ok(Self::ReadConsistencyStrategy),
             0x00FF => Ok(Self::SupportedQueryFeatures),
@@ -638,11 +785,20 @@ impl From<RntbdRequestToken> for u16 {
             RntbdRequestToken::PartitionKey => 0x002B,
             RntbdRequestToken::PartitionKeyRangeId => 0x002C,
             RntbdRequestToken::CollectionRid => 0x0035,
+            RntbdRequestToken::AIm => 0x003F,
+            RntbdRequestToken::IfModifiedSince => 0x0047,
             RntbdRequestToken::TransportRequestId => 0x004D,
             RntbdRequestToken::EffectivePartitionKey => 0x005A,
+            RntbdRequestToken::StartEpk => 0x0062,
+            RntbdRequestToken::EndEpk => 0x0063,
+            RntbdRequestToken::ReadFeedKeyType => 0x0064,
             RntbdRequestToken::AllowTentativeWrites => 0x0066,
+            RntbdRequestToken::IsBatchAtomic => 0x0073,
+            RntbdRequestToken::ShouldBatchContinueOnError => 0x0074,
             RntbdRequestToken::ReturnPreference => 0x0082,
             RntbdRequestToken::SDKSupportedCapabilities => 0x00A2,
+            RntbdRequestToken::ChangeFeedWireFormatVersion => 0x00B2,
+            RntbdRequestToken::SupportedSerializationFormats => 0x00C4,
             RntbdRequestToken::GlobalDatabaseAccountName => 0x00CE,
             RntbdRequestToken::ReadConsistencyStrategy => 0x00FE,
             RntbdRequestToken::SupportedQueryFeatures => 0x00FF,
@@ -842,7 +998,7 @@ impl From<ResourceType> for RntbdResourceType {
             ResourceType::Offer => 0x000F,
             // Distributed transactions do not use the thin-client RNTBD
             // encoder; they route through the standard gateway coordinator.
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             ResourceType::DistributedTransactionBatch => unreachable!(
                 "ResourceType::DistributedTransactionBatch must not reach RNTBD encoding"
             ),
@@ -898,8 +1054,12 @@ impl RntbdOperationType {
 
 impl From<OperationType> for RntbdOperationType {
     fn from(value: OperationType) -> Self {
+        // Keep these IDs aligned with the Java SDK's
+        // RntbdConstants.RntbdOperationType wire enum:
+        // https://github.com/Azure/azure-sdk-for-java/blob/main/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/directconnectivity/rntbd/RntbdConstants.java
         let id = match value {
             OperationType::Create => 0x0001,
+            OperationType::Patch => 0x0002,
             OperationType::Read => 0x0003,
             OperationType::ReadFeed => 0x0004,
             OperationType::Delete => 0x0005,
@@ -914,18 +1074,9 @@ impl From<OperationType> for RntbdOperationType {
             OperationType::HeadFeed => 0x0012,
             OperationType::Upsert => 0x0013,
             OperationType::Batch => 0x0025,
-            // Patch operations are handled by the driver-side patch_handler
-            // pipeline stage (Read-Modify-Write) and never reach the RNTBD
-            // transport encoder. Reaching this arm is a bug in the driver
-            // dispatch path.
-            OperationType::Patch => {
-                unreachable!(
-                    "OperationType::Patch must be handled by patch_handler before RNTBD encoding"
-                )
-            }
             // Distributed transactions do not use the thin-client RNTBD
             // encoder; they route through the standard gateway coordinator.
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             OperationType::CommitDistributedTransaction
             | OperationType::ReadDistributedTransaction => {
                 unreachable!("distributed transaction operations must not reach RNTBD encoding")
@@ -940,8 +1091,8 @@ impl TryFrom<u16> for RntbdOperationType {
 
     fn try_from(value: u16) -> azure_core::Result<Self> {
         match value {
-            0x0001 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0008 | 0x0009 | 0x000F | 0x0011
-            | 0x0012 | 0x0013 | 0x0025 | 0x0042 => Ok(Self(value)),
+            0x0001 | 0x0002 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0008 | 0x0009 | 0x000F
+            | 0x0011 | 0x0012 | 0x0013 | 0x0025 | 0x0042 => Ok(Self(value)),
             other => Err(data_conversion_error(format!(
                 "unknown RNTBD operation type 0x{other:04X}"
             ))),
@@ -955,6 +1106,7 @@ impl TryFrom<RntbdOperationType> for OperationType {
     fn try_from(value: RntbdOperationType) -> azure_core::Result<Self> {
         match value.0 {
             0x0001 => Ok(Self::Create),
+            0x0002 => Ok(Self::Patch),
             0x0003 => Ok(Self::Read),
             0x0004 => Ok(Self::ReadFeed),
             0x0005 => Ok(Self::Delete),
@@ -1096,6 +1248,71 @@ mod tests {
     use super::*;
 
     #[test]
+    fn read_feed_key_type_matches_header_and_wire_contract() {
+        for (header, byte, kind) in [
+            ("ResourceId", 1, ReadFeedKeyType::ResourceId),
+            (
+                "EffectivePartitionKey",
+                2,
+                ReadFeedKeyType::EffectivePartitionKey,
+            ),
+            (
+                "EffectivePartitionKeyRange",
+                3,
+                ReadFeedKeyType::EffectivePartitionKeyRange,
+            ),
+        ] {
+            assert_eq!(header.parse::<ReadFeedKeyType>().unwrap(), kind);
+            assert_eq!(
+                header.to_lowercase().parse::<ReadFeedKeyType>().unwrap(),
+                kind
+            );
+            assert_eq!(<&'static str>::from(kind), header);
+            assert_eq!(ReadFeedKeyType::try_from(byte).unwrap(), kind);
+            let mut bytes = Vec::new();
+            Token::read_feed_key_type(kind)
+                .write_to(&mut bytes)
+                .unwrap();
+            assert_eq!(bytes, [0x64, 0, 0, byte]);
+        }
+        for byte in [0, 4, u8::MAX] {
+            assert!(ReadFeedKeyType::try_from(byte).is_err());
+        }
+        for header in ["", "Unknown", " ResourceId", "1"] {
+            assert!(header.parse::<ReadFeedKeyType>().is_err());
+        }
+    }
+
+    #[test]
+    fn range_filter_tokens_match_reference_wire_bytes() {
+        for (token, expected) in [
+            (
+                Token::start_epk("10AB".into()),
+                vec![0x62, 0, 0x0B, 4, 0, b'1', b'0', b'A', b'B'],
+            ),
+            (
+                Token::end_epk("20CD".into()),
+                vec![0x63, 0, 0x0B, 4, 0, b'2', b'0', b'C', b'D'],
+            ),
+            (
+                Token::read_feed_key_type(ReadFeedKeyType::EffectivePartitionKeyRange),
+                vec![0x64, 0, 0, 3],
+            ),
+        ] {
+            let mut bytes = Vec::new();
+            token.write_to(&mut bytes).unwrap();
+            assert_eq!(bytes, expected);
+        }
+        for (id, kind) in [
+            (0x0062, RntbdRequestToken::StartEpk),
+            (0x0063, RntbdRequestToken::EndEpk),
+            (0x0064, RntbdRequestToken::ReadFeedKeyType),
+        ] {
+            assert_eq!(RntbdRequestToken::try_from(id), Ok(kind));
+        }
+    }
+
+    #[test]
     fn invalid_token_type_sentinel_is_rejected() {
         let mut src = [0x01, 0x00, 0xFF].as_slice();
 
@@ -1182,8 +1399,9 @@ mod tests {
     #[test]
     fn read_consistency_strategy_token_byte_mapping() {
         // The RNTBD `ReadConsistencyStrategy` token has id `0x00FE`, `Byte`
-        // type, and these exact byte values. A drift here means the SDK and
-        // the gateway disagree about what consistency the caller requested.
+        // type, and these exact byte values in both Gateway 2.0 and Direct
+        // mode. A drift here means the SDK and backend disagree about what
+        // consistency the caller requested.
         let cases = [
             (ReadConsistencyStrategy::Eventual, 0x01u8),
             (ReadConsistencyStrategy::Session, 0x02u8),

@@ -38,7 +38,7 @@ fn build_emulator() -> Arc<InMemoryEmulatorHttpClient> {
 }
 
 fn account() -> AccountReference {
-    AccountReference::with_master_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5")
+    AccountReference::with_account_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5")
 }
 
 /// Regression guard for diagnostics-on-abort. Reading a non-existent

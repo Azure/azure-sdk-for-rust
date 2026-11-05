@@ -7,11 +7,15 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
+exclude.workspace = true
 
 [dependencies]
 
 [dev-dependencies]
 azure_canary.path = "../azure_canary"
+
+[package.metadata.docs.rs]
+all-features = true
 
 [lints]
 workspace = true

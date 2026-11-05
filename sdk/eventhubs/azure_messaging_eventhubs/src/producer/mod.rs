@@ -1,22 +1,26 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+// cspell: ignore retryable
+
 use crate::{
     common::{
         recoverable::{RecoverableConnection, RecoverableSender},
         ManagementInstance,
     },
-    error::Result,
+    error::{ErrorKind, Result},
     models::{AmqpMessage, EventData, EventHubPartitionProperties, EventHubProperties},
     EventHubsError, RetryOptions,
 };
 use azure_core::{
     error::{Error, ErrorKind as AzureErrorKind},
     http::Url,
+    time::Duration,
     Uuid,
 };
 use azure_core_amqp::{
     error::AmqpErrorKind, AmqpError, AmqpSendOptions, AmqpSendOutcome, AmqpSenderApis,
+    AmqpTransport,
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
 use std::{fmt::Debug, sync::Arc};
@@ -24,6 +28,9 @@ use tracing::{trace, warn};
 
 /// Types used to collect messages into a "batch" before submitting them to an Event Hub.
 pub(crate) mod batch;
+
+/// A producer client that buffers events and publishes them in the background.
+pub(crate) mod buffered;
 
 pub(crate) const DEFAULT_EVENTHUBS_APPLICATION: &str = "DefaultApplicationName";
 
@@ -92,6 +99,7 @@ impl From<SendEventOptions> for SendMessageOptions {
 }
 
 impl ProducerClient {
+    #[allow(clippy::too_many_arguments, reason = "private API")]
     pub(crate) fn new(
         endpoint: Url,
         eventhub: String,
@@ -100,12 +108,16 @@ impl ProducerClient {
         retry_options: RetryOptions,
         custom_endpoint: Option<Url>,
         cbs_token_type: Option<&'static str>,
+        transport: AmqpTransport,
+        idle_timeout: Option<Duration>,
     ) -> Self {
         Self {
             connection: RecoverableConnection::new(
                 endpoint.clone(),
                 application_id,
                 custom_endpoint,
+                transport,
+                idle_timeout,
                 credential,
                 retry_options,
                 cbs_token_type,
@@ -163,6 +175,8 @@ impl ProducerClient {
 
     /// Sends an event to the Event Hub.
     ///
+    /// Recovery can resend the event if its acknowledgement is lost. The service can receive duplicate events.
+    ///
     /// # Arguments
     /// * `event` - The event data to send.
     /// * `options` - The options to use when sending the event.
@@ -173,6 +187,9 @@ impl ProducerClient {
     /// Note:
     /// - If the event being sent does not have a message ID, a new message ID will be generated.
     /// - If the event options contain a partition ID, the event will be sent to the specified partition.
+    /// - If the encoded event is larger than the maximum the sender link allows,
+    ///   the event is not sent and the error kind is
+    ///   [`ErrorKind::MessageSizeExceeded`].
     ///
     pub async fn send_event(
         &self,
@@ -193,6 +210,8 @@ impl ProducerClient {
 
     /// Sends an AMQP message to the Event Hub.
     ///
+    /// Recovery can resend the message if its acknowledgement is lost. The service can receive duplicate messages.
+    ///
     /// # Arguments
     /// * `message` - The event to send.
     /// * `options` - The options to use when sending the event.
@@ -202,6 +221,10 @@ impl ProducerClient {
     ///
     /// Note:
     /// - The message is sent to the service unmodified.
+    /// - If the encoded message is larger than the maximum the sender link allows,
+    ///   the message is not sent and the error kind is
+    ///   [`ErrorKind::MessageSizeExceeded`].
+    /// - A sender link that reports no maximum is not checked.
     ///
     #[tracing::instrument(
         level = "debug",
@@ -231,6 +254,11 @@ impl ProducerClient {
             target = Url::parse(&target_url).map_err(azure_core::Error::from)?;
         }
         let sender = self.connection.get_sender(target.clone()).await?;
+
+        let message: AmqpMessage = message.into();
+        let link_max_size = sender.max_message_size().await?;
+        let encoded_size = AmqpMessage::serialize(&message)?.len() as u64;
+        Self::check_message_size(encoded_size, link_max_size)?;
 
         let outcome = sender
             .send(
@@ -280,6 +308,26 @@ impl ProducerClient {
                 );
                 Ok(())
             }
+        }
+    }
+
+    /// Makes sure the encoded message fits the maximum the sender link reports.
+    ///
+    /// The boundary is inclusive: a message of exactly the maximum is sent.
+    /// fe2o3-amqp splits an oversized payload across transfer frames instead
+    /// of refusing it, so this client must make the check itself. A link that
+    /// reports no maximum is not checked: AMQP 1.0 gives an unset or zero
+    /// `max-message-size` the meaning "no limit", and fe2o3-amqp maps a zero
+    /// to `None`.
+    pub(crate) fn check_message_size(encoded_size: u64, link_max_size: Option<u64>) -> Result<()> {
+        match link_max_size {
+            Some(max_allowed) if encoded_size > max_allowed => {
+                Err(EventHubsError::from(ErrorKind::MessageSizeExceeded {
+                    requested: encoded_size,
+                    max_allowed,
+                }))
+            }
+            _ => Ok(()),
         }
     }
 
@@ -355,6 +403,8 @@ impl ProducerClient {
 
     /// Submits a batch of events to the Event Hub.
     ///
+    /// Recovery can resend the batch if its acknowledgement is lost. The service can receive duplicate events.
+    ///
     /// # Arguments
     ///
     /// * `batch` - The batch of events to submit.
@@ -403,18 +453,8 @@ impl ProducerClient {
         #[allow(unused_variables)] options: Option<SendBatchOptions>,
     ) -> Result<()> {
         let path = batch.get_batch_path()?;
-        let sender = self.connection.get_sender(path.clone()).await?;
-
         let messages = batch.get_messages();
-        let outcome = sender
-            .send(
-                messages,
-                Some(AmqpSendOptions {
-                    message_format: Some(Self::BATCH_MESSAGE_FORMAT),
-                    ..Default::default()
-                }),
-            )
-            .await?;
+        let outcome = self.send_batch_envelope(path.clone(), messages).await?;
         match outcome {
             AmqpSendOutcome::Accepted => Ok(()),
             AmqpSendOutcome::Rejected(reason) => {
@@ -457,6 +497,35 @@ impl ProducerClient {
                 Ok(())
             }
         }
+    }
+
+    /// Sends a batch envelope to a path and returns the raw AMQP outcome.
+    ///
+    /// The caller decides what each outcome means. [`ProducerClient::send_batch`]
+    /// treats `Modified` and `Released` as success with a warning, for backward
+    /// compatibility. The buffered producer treats them as a delivery failure,
+    /// because neither outcome means the service stored the events.
+    ///
+    /// An `Err` from this method means the retry policy is exhausted, or the
+    /// error is not retryable. [`RecoverableSender`] applies the retry policy and
+    /// the connection recovery, and it converts a `Rejected` outcome into an
+    /// error inside the retry loop.
+    pub(crate) async fn send_batch_envelope(
+        &self,
+        path: Url,
+        envelope: AmqpMessage,
+    ) -> Result<AmqpSendOutcome> {
+        let sender = self.connection.get_sender(path).await?;
+        let outcome = sender
+            .send(
+                envelope,
+                Some(AmqpSendOptions {
+                    message_format: Some(Self::BATCH_MESSAGE_FORMAT),
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(outcome)
     }
 
     /// Gets the properties of the Event Hub.
@@ -536,12 +605,27 @@ impl ProducerClient {
         self.connection.force_error(error)
     }
 
+    /// Forces the next sender or receiver attach to fail.
+    #[cfg(test)]
+    pub(crate) fn force_attach_error(&self, error: AmqpError) -> Result<()> {
+        self.connection.force_attach_error(error)
+    }
+
     pub(crate) fn base_url(&self) -> &Url {
         &self.endpoint
     }
 
     async fn ensure_sender(&self, target: Url) -> Result<RecoverableSender> {
         self.connection.get_sender(target).await
+    }
+
+    pub(crate) async fn max_message_size(
+        &self,
+        target: Url,
+    ) -> azure_core_amqp::Result<Option<u64>> {
+        RecoverableSender::new(Arc::downgrade(&self.connection), target)
+            .max_message_size()
+            .await
     }
 
     async fn ensure_connection(&self) -> Result<()> {
@@ -556,11 +640,12 @@ pub mod builders {
         common::{
             connection_string::{resolve_eventhub, ConnectionString},
             sas_credential::SasCredential,
-            SAS_TOKEN_TYPE,
+            validate_idle_timeout, SAS_TOKEN_TYPE,
         },
         Result, RetryOptions,
     };
-    use azure_core::{http::Url, Error};
+    use azure_core::{http::Url, time::Duration, Error};
+    use azure_core_amqp::AmqpTransport;
     use std::sync::Arc;
 
     /// A builder for creating a [`ProducerClient`].
@@ -590,6 +675,12 @@ pub mod builders {
 
         /// The custom endpoint for the Event Hub.
         custom_endpoint: Option<String>,
+
+        /// The transport used to communicate with the Event Hub.
+        transport: Option<AmqpTransport>,
+
+        /// The AMQP connection idle timeout.
+        idle_timeout: Option<Duration>,
     }
 
     impl ProducerClientBuilder {
@@ -645,6 +736,45 @@ pub mod builders {
             self
         }
 
+        /// Sets the transport used to communicate with the Event Hub.
+        ///
+        /// # Arguments
+        /// * `transport` - The transport to use. Defaults to [`AmqpTransport::Tcp`].
+        ///
+        /// # Returns
+        /// The updated [`ProducerClientBuilder`].
+        pub fn with_transport(mut self, transport: AmqpTransport) -> Self {
+            self.transport = Some(transport);
+            self
+        }
+
+        /// Sets the AMQP connection idle timeout.
+        ///
+        /// The connection reports an idle timeout when it receives no AMQP frames
+        /// within this duration. Setting the timeout also advertises it to the
+        /// service so that the peers can negotiate heartbeats. The duration must
+        /// contain between 1 and [`u32::MAX`] whole milliseconds.
+        pub fn with_idle_timeout(mut self, idle_timeout: Duration) -> Self {
+            self.idle_timeout = Some(idle_timeout);
+            self
+        }
+
+        /// Returns the AMQP transport this builder opens the connection with.
+        /// Shared by every `open` path so they cannot drift apart.
+        pub(crate) fn transport(&self) -> AmqpTransport {
+            self.transport.unwrap_or_default()
+        }
+
+        /// Returns the AMQP connection idle timeout configured on this builder.
+        #[cfg(test)]
+        pub(crate) fn idle_timeout(&self) -> Option<Duration> {
+            self.idle_timeout
+        }
+
+        pub(crate) fn validate(&self) -> Result<()> {
+            validate_idle_timeout(self.idle_timeout)
+        }
+
         /// Opens the connection to the Event Hub.
         ///
         /// # Arguments
@@ -661,6 +791,8 @@ pub mod builders {
             eventhub: &str,
             credential: Arc<dyn azure_core::credentials::TokenCredential>,
         ) -> Result<ProducerClient> {
+            self.validate()?;
+            let transport = self.transport();
             let url = format!("amqps://{}/{}", fully_qualified_namespace, eventhub);
             let url = Url::parse(&url).map_err(azure_core::Error::from)?;
 
@@ -677,6 +809,8 @@ pub mod builders {
                 self.retry_options.unwrap_or_default(),
                 custom_endpoint,
                 None,
+                transport,
+                self.idle_timeout,
             );
 
             // Open a connection to the Event Hub to ensure that the client is ready to send messages.
@@ -726,6 +860,8 @@ pub mod builders {
             connection_string: &str,
             eventhub: Option<&str>,
         ) -> Result<ProducerClient> {
+            self.validate()?;
+            let transport = self.transport();
             let connection_string: ConnectionString = connection_string.parse()?;
             let eventhub = resolve_eventhub(&connection_string, eventhub)?;
             let credential = Arc::new(SasCredential::from_connection_string(
@@ -752,6 +888,8 @@ pub mod builders {
                 self.retry_options.unwrap_or_default(),
                 custom_endpoint,
                 Some(SAS_TOKEN_TYPE),
+                transport,
+                self.idle_timeout,
             );
 
             client.ensure_connection().await?;
@@ -763,11 +901,59 @@ pub mod builders {
 #[cfg(test)]
 mod tests {
     use crate::common::tests::force_errors;
-    use crate::{models::EventData, EventDataBatchOptions, ProducerClient, Result};
+    use crate::{
+        error::ErrorKind, models::EventData, EventDataBatchOptions, ProducerClient, Result,
+    };
     use azure_core::time::Duration;
-    use azure_core_amqp::error::AmqpErrorKind;
+    use azure_core_amqp::{error::AmqpErrorKind, AmqpTransport};
     use azure_core_test::{recorded, TestContext};
     use std::sync::Arc;
+
+    #[test]
+    fn builder_transport_defaults_to_tcp() {
+        assert_eq!(ProducerClient::builder().transport(), AmqpTransport::Tcp);
+        assert_eq!(
+            ProducerClient::builder()
+                .with_transport(AmqpTransport::Tcp)
+                .transport(),
+            AmqpTransport::Tcp
+        );
+    }
+
+    #[test]
+    fn builder_sets_idle_timeout() {
+        let idle_timeout = Duration::seconds(60);
+        assert_eq!(
+            ProducerClient::builder()
+                .with_idle_timeout(idle_timeout)
+                .idle_timeout(),
+            Some(idle_timeout)
+        );
+    }
+
+    #[test]
+    fn builder_validates_idle_timeout() {
+        assert!(ProducerClient::builder()
+            .with_idle_timeout(Duration::milliseconds(1))
+            .validate()
+            .is_ok());
+        assert!(ProducerClient::builder()
+            .with_idle_timeout(Duration::milliseconds(i64::from(u32::MAX)))
+            .validate()
+            .is_ok());
+
+        for invalid in [
+            Duration::milliseconds(-1),
+            Duration::ZERO,
+            Duration::nanoseconds(1),
+            Duration::milliseconds(i64::from(u32::MAX) + 1),
+        ] {
+            assert!(ProducerClient::builder()
+                .with_idle_timeout(invalid)
+                .validate()
+                .is_err());
+        }
+    }
 
     #[recorded::test(live)]
     async fn force_errors_send_batch_link_error(ctx: TestContext) -> Result<()> {
@@ -1187,5 +1373,57 @@ mod tests {
         .await?;
 
         Ok(())
+    }
+
+    const LINK_MAX_SIZE: u64 = 1_048_576;
+
+    // An event larger than the sender link allows must be refused before the
+    // send, and the error must name both sizes.
+    #[test]
+    fn message_size_above_the_link_maximum_is_rejected() {
+        let error = ProducerClient::check_message_size(LINK_MAX_SIZE + 1, Some(LINK_MAX_SIZE))
+            .expect_err("a message above the link maximum must be refused");
+        assert!(
+            matches!(
+                error.kind,
+                ErrorKind::MessageSizeExceeded {
+                    requested: 1_048_577,
+                    max_allowed: LINK_MAX_SIZE,
+                }
+            ),
+            "the caller must be able to match on the kind, got: {error:?}"
+        );
+        let message = error.to_string();
+        assert!(
+            message.contains("1048577") && message.contains("1048576"),
+            "the error must name the requested and the allowed size, got: {message}"
+        );
+    }
+
+    // The boundary is inclusive, so the check must use `>` and not `>=`.
+    #[test]
+    fn message_size_equal_to_the_link_maximum_is_allowed() {
+        ProducerClient::check_message_size(LINK_MAX_SIZE, Some(LINK_MAX_SIZE))
+            .expect("a message exactly at the link maximum is still sent");
+    }
+
+    // Every message the link can carry must go, as it does today.
+    #[test]
+    fn message_size_below_the_link_maximum_is_allowed() {
+        ProducerClient::check_message_size(1, Some(LINK_MAX_SIZE))
+            .expect("a message below the link maximum keeps the current behavior");
+        ProducerClient::check_message_size(LINK_MAX_SIZE - 1, Some(LINK_MAX_SIZE))
+            .expect("a message below the link maximum keeps the current behavior");
+    }
+
+    // This differs on purpose from `create_batch`, which treats `None` as an
+    // error. AMQP 1.0 section 2.7.3 gives an unset or zero maximum the meaning
+    // "no limit", so the send path must not invent a limit of its own.
+    #[test]
+    fn message_size_is_not_checked_when_the_link_reports_no_maximum() {
+        ProducerClient::check_message_size(4 * LINK_MAX_SIZE, None)
+            .expect("with no link maximum the check is skipped, per AMQP 1.0 section 2.7.3");
+        ProducerClient::check_message_size(u64::MAX, None)
+            .expect("with no link maximum the check is skipped, per AMQP 1.0 section 2.7.3");
     }
 }

@@ -33,6 +33,7 @@ wildcards = "deny"
 allow-wildcard-paths = true
 deny = [
   "ring",
+  "sha1",
   "smol",
 ]
 

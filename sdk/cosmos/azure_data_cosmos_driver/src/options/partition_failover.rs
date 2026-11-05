@@ -10,14 +10,49 @@ use super::env_parsing::{
     parse_duration_millis_from_env, parse_from_env, parse_optional_bool_from_env, ValidationBounds,
 };
 
-/// Configuration for partition-level failover and the per-partition circuit
-/// breaker (PPCB).
+/// Controls when partition topology is loaded into the partition key range cache.
+///
+/// [`Eager`](Self::Eager) is strongly recommended because partition topology is
+/// required by many operations and features, sometimes unexpectedly. Using
+/// [`Lazy`](Self::Lazy) can introduce a request-latency spike when the complete
+/// topology is first needed.
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum PartitionTopologyCacheMode {
+    /// Load partition topology while resolving a container.
+    #[default]
+    Eager,
+    /// Defer loading partition topology until an operation first needs it.
+    Lazy,
+}
+
+impl std::str::FromStr for PartitionTopologyCacheMode {
+    type Err = String;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "eager" => Ok(Self::Eager),
+            "lazy" => Ok(Self::Lazy),
+            _ => Err(format!(
+                "unknown partition topology cache mode '{value}'; expected 'eager' or 'lazy'"
+            )),
+        }
+    }
+}
+
+/// Configuration for partition topology loading, partition-level failover, and
+/// the per-partition circuit breaker (PPCB).
 ///
 /// These knobs are read **once** when the driver is constructed and are not
 /// resolved per-operation. Use [`PartitionFailoverOptionsBuilder`] to build a
 /// value, then attach it to
 /// [`DriverOptions`](crate::options::DriverOptions) via
 /// [`DriverOptionsBuilder::with_partition_failover_options`](crate::options::DriverOptionsBuilder::with_partition_failover_options).
+///
+/// Partition topology loads eagerly by default. This is strongly recommended
+/// because topology is important to most operations and can become necessary
+/// unexpectedly; lazy loading can add a full-cache latency spike to the first
+/// operation that needs it.
 ///
 /// # Example
 ///
@@ -37,6 +72,7 @@ use super::env_parsing::{
 #[non_exhaustive]
 #[derive(Clone, Debug)]
 pub struct PartitionFailoverOptions {
+    partition_topology_cache_mode: PartitionTopologyCacheMode,
     circuit_breaker_enabled: bool,
     circuit_breaker_enabled_override: Option<bool>,
     read_failure_threshold: u32,
@@ -50,6 +86,7 @@ pub struct PartitionFailoverOptions {
 impl Default for PartitionFailoverOptions {
     fn default() -> Self {
         Self {
+            partition_topology_cache_mode: PartitionTopologyCacheMode::Eager,
             circuit_breaker_enabled: true, // PPCB is enabled by default.
             circuit_breaker_enabled_override: None,
             read_failure_threshold: 10,
@@ -66,6 +103,11 @@ impl PartitionFailoverOptions {
     /// Creates a new builder for `PartitionFailoverOptions`.
     pub fn builder() -> PartitionFailoverOptionsBuilder {
         PartitionFailoverOptionsBuilder::new()
+    }
+
+    /// Returns when partition topology is loaded into the partition key range cache.
+    pub fn partition_topology_cache_mode(&self) -> PartitionTopologyCacheMode {
+        self.partition_topology_cache_mode
     }
 
     /// Returns whether the per-partition circuit breaker (PPCB) is enabled
@@ -148,6 +190,9 @@ impl PartitionFailoverOptions {
 ///
 /// # Environment Variables
 ///
+/// - `AZURE_COSMOS_PARTITION_TOPOLOGY_CACHE_MODE`: Controls when partition
+///   topology is loaded. Accepted values are `Eager` and `Lazy`; the default is
+///   `Eager`, which is strongly recommended.
 /// - `AZURE_COSMOS_PPCB_ENABLED`: Enables PPCB via driver options (default:
 ///   `true`).
 /// - `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE`: Incident kill switch that wins over
@@ -186,6 +231,7 @@ impl PartitionFailoverOptions {
 #[non_exhaustive]
 #[derive(Clone, Debug, Default)]
 pub struct PartitionFailoverOptionsBuilder {
+    partition_topology_cache_mode: Option<PartitionTopologyCacheMode>,
     circuit_breaker_enabled: Option<bool>,
     circuit_breaker_enabled_override: Option<bool>,
     read_failure_threshold: Option<u32>,
@@ -200,6 +246,19 @@ impl PartitionFailoverOptionsBuilder {
     /// Creates a new builder with default values.
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Sets when partition topology is loaded into the partition key range cache.
+    ///
+    /// Defaults to [`PartitionTopologyCacheMode::Eager`], which is strongly
+    /// recommended. [`PartitionTopologyCacheMode::Lazy`] is not recommended and
+    /// should be used only when necessary to reduce up-front memory usage. Lazy
+    /// loading risks unexpected memory usage and request latency spikes when
+    /// partition failover or an unexpected cross-partition query first requires
+    /// the complete partition key range cache.
+    pub fn with_partition_topology_cache_mode(mut self, value: PartitionTopologyCacheMode) -> Self {
+        self.partition_topology_cache_mode = Some(value);
+        self
     }
 
     /// Enables or disables the per-partition circuit breaker (PPCB) via
@@ -314,6 +373,14 @@ impl PartitionFailoverOptionsBuilder {
     ) -> crate::error::Result<PartitionFailoverOptions> {
         let defaults = PartitionFailoverOptions::default();
 
+        let partition_topology_cache_mode = parse_from_env(
+            self.partition_topology_cache_mode,
+            "AZURE_COSMOS_PARTITION_TOPOLOGY_CACHE_MODE",
+            defaults.partition_topology_cache_mode,
+            ValidationBounds::none(),
+            get_env,
+        )?;
+
         let circuit_breaker_enabled = parse_from_env(
             self.circuit_breaker_enabled,
             "AZURE_COSMOS_PPCB_ENABLED",
@@ -384,6 +451,7 @@ impl PartitionFailoverOptionsBuilder {
         )?;
 
         Ok(PartitionFailoverOptions {
+            partition_topology_cache_mode,
             circuit_breaker_enabled,
             circuit_breaker_enabled_override,
             read_failure_threshold,
@@ -411,6 +479,10 @@ mod tests {
             .unwrap();
 
         assert!(options.circuit_breaker_enabled());
+        assert_eq!(
+            options.partition_topology_cache_mode(),
+            PartitionTopologyCacheMode::Eager
+        );
         assert_eq!(options.read_failure_threshold(), 10);
         assert_eq!(options.write_failure_threshold(), 5);
         assert_eq!(options.counter_reset_window(), Duration::from_secs(5 * 60));
@@ -428,6 +500,7 @@ mod tests {
         // only inputs (and the test can't race the env-mutating
         // `real_env_tests`).
         let options = PartitionFailoverOptionsBuilder::new()
+            .with_partition_topology_cache_mode(PartitionTopologyCacheMode::Lazy)
             .with_circuit_breaker_enabled(true)
             .with_read_failure_threshold(20)
             .with_write_failure_threshold(7)
@@ -439,6 +512,10 @@ mod tests {
             .unwrap();
 
         assert!(options.circuit_breaker_enabled());
+        assert_eq!(
+            options.partition_topology_cache_mode(),
+            PartitionTopologyCacheMode::Lazy
+        );
         assert_eq!(options.read_failure_threshold(), 20);
         assert_eq!(options.write_failure_threshold(), 7);
         assert_eq!(options.counter_reset_window(), Duration::from_secs(60));
@@ -557,6 +634,60 @@ mod env_matrix_tests {
     /// An env accessor that always returns `None` (nothing set).
     fn empty_env() -> impl Fn(&str) -> Option<String> {
         |_: &str| None
+    }
+
+    #[test]
+    fn partition_topology_cache_mode_defaults_eager() {
+        let options = PartitionFailoverOptionsBuilder::new()
+            .build_from_env(&empty_env())
+            .unwrap();
+        assert_eq!(
+            options.partition_topology_cache_mode(),
+            PartitionTopologyCacheMode::Eager
+        );
+    }
+
+    #[test]
+    fn partition_topology_cache_mode_env_lazy_is_honored() {
+        let options = PartitionFailoverOptionsBuilder::new()
+            .build_from_env(&env_of(&[(
+                "AZURE_COSMOS_PARTITION_TOPOLOGY_CACHE_MODE",
+                "lazy",
+            )]))
+            .unwrap();
+        assert_eq!(
+            options.partition_topology_cache_mode(),
+            PartitionTopologyCacheMode::Lazy
+        );
+    }
+
+    #[test]
+    fn partition_topology_cache_mode_builder_wins_over_env() {
+        let options = PartitionFailoverOptionsBuilder::new()
+            .with_partition_topology_cache_mode(PartitionTopologyCacheMode::Eager)
+            .build_from_env(&env_of(&[(
+                "AZURE_COSMOS_PARTITION_TOPOLOGY_CACHE_MODE",
+                "lazy",
+            )]))
+            .unwrap();
+        assert_eq!(
+            options.partition_topology_cache_mode(),
+            PartitionTopologyCacheMode::Eager
+        );
+    }
+
+    #[test]
+    fn partition_topology_cache_mode_invalid_env_falls_back_to_default() {
+        let options = PartitionFailoverOptionsBuilder::new()
+            .build_from_env(&env_of(&[(
+                "AZURE_COSMOS_PARTITION_TOPOLOGY_CACHE_MODE",
+                "disabled",
+            )]))
+            .unwrap();
+        assert_eq!(
+            options.partition_topology_cache_mode(),
+            PartitionTopologyCacheMode::Eager
+        );
     }
 
     // ── Master switch: AZURE_COSMOS_PPCB_ENABLED ────────────────────────────
@@ -879,13 +1010,13 @@ mod env_matrix_tests {
 #[cfg(test)]
 mod real_env_tests {
     use super::*;
-    use crate::options::env_parsing::test_env::{with_scoped_env, PPCB_ENV_VARS};
+    use crate::options::env_parsing::test_env::{with_scoped_env, PARTITION_FAILOVER_ENV_VARS};
 
     #[test]
     fn real_env_enable_false_disables_ppcb() {
         // A real `AZURE_COSMOS_PPCB_ENABLED=false` flows through `build()`.
         with_scoped_env(
-            PPCB_ENV_VARS,
+            PARTITION_FAILOVER_ENV_VARS,
             &[("AZURE_COSMOS_PPCB_ENABLED", "false")],
             || {
                 let o = PartitionFailoverOptionsBuilder::new().build().unwrap();
@@ -897,7 +1028,7 @@ mod real_env_tests {
     #[test]
     fn real_env_empty_uses_default_enabled() {
         // With no PPCB variables set, `build()` yields the documented defaults.
-        with_scoped_env(PPCB_ENV_VARS, &[], || {
+        with_scoped_env(PARTITION_FAILOVER_ENV_VARS, &[], || {
             let o = PartitionFailoverOptionsBuilder::new().build().unwrap();
             assert!(o.circuit_breaker_enabled());
             assert_eq!(o.circuit_breaker_enabled_override(), None);

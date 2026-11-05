@@ -1,0 +1,59 @@
+# cargo-fuzz crate for the Cosmos binary JSON codec.
+#
+# A SEPARATE crate with its own `[workspace]` (empty table at the bottom) so it
+# is not pulled into the parent stable workspace: cargo-fuzz builds these
+# targets on nightly with libFuzzer.
+#
+# Usage:
+#   rustup toolchain install nightly
+#   cargo install cargo-fuzz
+#   cargo +nightly fuzz run decode
+# See README.md for target descriptions and corpus seeding.
+
+[package]
+name = "azure_data_cosmos_driver-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+license = "MIT"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+serde_json = "1"
+
+[dependencies.azure_data_cosmos_driver]
+path = ".."
+
+[[bin]]
+name = "decode"
+path = "fuzz_targets/decode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "from_slice"
+path = "fuzz_targets/from_slice.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "transcode_to_text"
+path = "fuzz_targets/transcode_to_text.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "decode_reencode_roundtrip"
+path = "fuzz_targets/decode_reencode_roundtrip.rs"
+test = false
+doc = false
+bench = false
+
+# Isolate this crate from the parent workspace (nightly + libFuzzer only).
+[workspace]

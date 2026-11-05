@@ -11,8 +11,7 @@ use azure_data_cosmos::{
     clients::ContainerClient,
     feed::FeedScope,
     models::{ContainerProperties, ThroughputProperties},
-    options::CreateContainerOptions,
-    CosmosStatus, Query, ResourceId,
+    Query, ResourceId,
 };
 use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
@@ -67,10 +66,7 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
                 .create_container(
                     db_client,
                     ContainerProperties::new(container_name.clone(), "/pk".into()),
-                    Some(
-                        CreateContainerOptions::default()
-                            .with_throughput(ThroughputProperties::manual(400)),
-                    ),
+                    Some(ThroughputProperties::manual(400)),
                 )
                 .await?;
 
@@ -107,27 +103,21 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
 
             // ...and the container by RID under that RID-addressed database.
             let rid_container = rid_db_client
-                .container_client(ResourceId::from(container_rid.clone()))
+                .container_client(ResourceId::from(container_rid.clone()), None)
                 .await?;
 
             // Reading by RID resolves back to the same container.
             let read_back = rid_container.read(None).await?.into_model()?;
             assert_eq!(container_name, read_back.id);
 
-            // Throughput is reachable by RID. Reading an offer is a
-            // control-plane operation that the data-plane RBAC role used in
-            // AAD mode cannot perform, so route it through the management (key)
-            // client — still addressed purely by RID. In key mode the
-            // management client is the same as the primary client.
-            let mgmt_rid_container = run_context
-                .management_client()
-                .database_client(ResourceId::from(db_rid.clone()))
-                .container_client(ResourceId::from(container_rid.clone()))
-                .await?;
-            let throughput = mgmt_rid_container
-                .read_throughput(None)
-                .await?
-                .expect("throughput should be present");
+            let throughput = if run_context.resource_manager().is_some() {
+                run_context
+                    .read_container_throughput(db_client, &container_name)
+                    .await?
+            } else {
+                rid_container.read_throughput(None).await?
+            }
+            .expect("throughput should be present");
             assert_eq!(Some(400), throughput.throughput());
 
             // Create an item through the RID-addressed container. Create POSTs
@@ -158,7 +148,7 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
                 let err = result.expect(
                     "a name-addressed point operation on a RID-addressed container must be rejected",
                 );
-                assert_eq!(CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING, err.status());
+                assert_eq!(azure_data_cosmos_driver::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING, err.status());
             }
 
             // The item really was created through the RID-addressed container:
@@ -242,12 +232,15 @@ pub async fn mixed_name_and_rid_addressing_is_rejected() -> Result<(), Box<dyn E
             // `db_client` is name-addressed; addressing the container by RID
             // mixes the two modes and must be rejected.
             let Err(err) = db_client
-                .container_client(ResourceId::from(container_rid))
+                .container_client(ResourceId::from(container_rid), None)
                 .await
             else {
                 panic!("expected mixed name/RID addressing to be rejected");
             };
-            assert_eq!(CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING, err.status());
+            assert_eq!(
+                azure_data_cosmos_driver::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING,
+                err.status()
+            );
 
             Ok(())
         },
@@ -279,18 +272,9 @@ pub async fn container_rid_from_another_database_is_rejected() -> Result<(), Box
                 .resource_id
                 .expect("db1 read should return a _rid");
 
-            // db2 + a container in db2, created out of band. Database
-            // create/delete is management-plane and is not granted by the
-            // data-plane RBAC role used in AAD mode, so both go through the
-            // management (key) client.
             let db2_name = format!("rid-otherdb-{}", Uuid::new_v4());
-            let _ = run_context
-                .management_client()
-                .create_database(&db2_name, None)
-                .await?;
-            let db2_client = run_context
-                .management_client()
-                .database_client(db2_name.as_str());
+            run_context.create_database(&db2_name).await?;
+            let db2_client = run_context.client().database_client(db2_name.as_str());
             let container2_name = format!("rid-otherc-{}", Uuid::new_v4());
             let container2 = run_context
                 .create_container(
@@ -312,16 +296,19 @@ pub async fn container_rid_from_another_database_is_rejected() -> Result<(), Box
                 .client()
                 .database_client(ResourceId::from(db1_rid));
             let result = rid_db1_client
-                .container_client(ResourceId::from(container2_rid))
+                .container_client(ResourceId::from(container2_rid), None)
                 .await;
 
             // Clean up db2 regardless of the assertion outcome below.
-            db2_client.delete(None).await?;
+            run_context.delete_database(&db2_name).await?;
 
             let Err(err) = result else {
                 panic!("expected a container RID from another database to be rejected");
             };
-            assert_eq!(CosmosStatus::CLIENT_INVALID_RESOURCE_ID, err.status());
+            assert_eq!(
+                azure_data_cosmos_driver::error::status_codes::CLIENT_INVALID_RESOURCE_ID,
+                err.status()
+            );
 
             Ok(())
         },

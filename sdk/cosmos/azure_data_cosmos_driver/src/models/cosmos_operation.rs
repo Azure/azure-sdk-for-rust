@@ -8,9 +8,10 @@ use crate::models::{
     DatabaseReference, FeedRange, ItemReference, OperationType, PartitionKey, Precondition,
     ResourceType,
 };
+use crate::options::Utf8DecodingMode;
 use azure_core::http::Etag;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
+use std::{borrow::Cow, time::Instant};
 use time::OffsetDateTime;
 
 /// Which change feed mode a factory should configure.
@@ -49,21 +50,20 @@ pub enum ChangeFeedStartFrom {
 
     /// Start from the current point in time (wire header `If-None-Match: *`).
     ///
-    /// "Now" is evaluated when the request is sent, so on resume a never-polled
-    /// partition starts from resume time rather than the original start time.
-    /// This is acceptable for LatestVersion (it still converges to the latest
-    /// state under at-least-once delivery). For AllVersionsAndDeletes it is a
-    /// documented limitation: a range that is never polled before a checkpoint
-    /// can drop the intermediate versions and deletes that occurred between the
-    /// original start and the resume. "Now" is deliberately not pinned to a
-    /// concrete start position before persisting, because that would change its
-    /// semantics; lossless per-range "Now" resolution is a future improvement.
+    /// "Now" is evaluated when each range's first request is sent, not when the
+    /// iterator is created or a checkpoint is saved. In LatestVersion mode, ranges not
+    /// polled before a checkpoint start at their first request after resume;
+    /// changes made before that request aren't included.
+    ///
+    /// AllVersionsAndDeletes fan-out polls every range to capture its starting
+    /// ETag before returning the first page. Saving a checkpoint before the first poll
+    /// does not perform this I/O; priming occurs when the resumed feed is polled.
     Now,
 
     /// Start from a specific point in time (wire header `If-Modified-Since`).
     ///
-    /// The timestamp is persisted in the continuation token as RFC 3339 so
-    /// resume is exact, and formatted as RFC 1123 for the wire header.
+    /// The timestamp is persisted in the continuation token as RFC 3339 and
+    /// formatted as RFC 1123 for the wire header, with one-second precision.
     PointInTime(#[serde(with = "time::serde::rfc3339")] OffsetDateTime),
 }
 
@@ -108,14 +108,14 @@ fn format_rfc1123(timestamp: &OffsetDateTime) -> String {
 /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
 /// // 1. Set up runtime and driver
 /// let runtime = CosmosDriverRuntime::builder().build().await?;
-/// let account = AccountReference::with_master_key(
+/// let account = AccountReference::with_account_key(
 ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
 ///     "my-key",
 /// );
 /// let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
 ///
 /// // 2. Resolve the container (reads database + container from service, caches result)
-/// let container = driver.resolve_container("mydb", "mycontainer").await?;
+/// let container = driver.resolve_container("mydb", "mycontainer", OperationOptions::default()).await?;
 ///
 /// // 3. Build and execute item operations
 /// let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
@@ -144,6 +144,12 @@ pub struct CosmosOperation {
     /// make. Only consulted when `operation_type == OperationType::Patch`;
     /// ignored for every other op. `None` selects the handler default (5).
     patch_max_attempts: Option<std::num::NonZeroU8>,
+    /// Stable identity used to detect a previously committed unsafe PATCH.
+    patch_tracking_id: Option<crate::models::PatchTrackingId>,
+    /// Maximum number of protected PATCH markers retained on the item.
+    patch_tracking_capacity: Option<std::num::NonZeroU16>,
+    /// Minimum number of whole seconds PATCH markers remain protected.
+    patch_tracking_retention_seconds: Option<std::num::NonZeroU32>,
     /// `true` when this operation is a change feed read. Set explicitly by
     /// [`change_feed`](Self::change_feed) rather than inferred from a header,
     /// so future change feed modes can be added without ambiguity.
@@ -159,6 +165,32 @@ pub struct CosmosOperation {
     /// affects [`db_operation_name`](Self::db_operation_name), so the sub-op
     /// is dispatched exactly like the standalone Read/Replace it is.
     is_patch_sub_operation: bool,
+    /// Whether a server-side PATCH may be resent after an ambiguous failure.
+    /// `None` means strategy resolution has not classified the operation and
+    /// therefore fails closed.
+    patch_retry_safe: Option<bool>,
+    /// `true` when the caller asked for a **text** payload over a binary wire
+    /// (`BinaryEncodingOptions::request_text_response`) and this operation
+    /// negotiated binary anyway. Recorded at negotiation time so pipeline nodes
+    /// that synthesize a page can tell the *wire* format apart from the
+    /// *emitted* format — see
+    /// [`emits_binary_payload`](Self::emits_binary_payload).
+    transcodes_response_to_text: bool,
+    /// Resolved handling for invalid UTF-8 in response JSON strings.
+    resolved_utf8_decoding_mode: Utf8DecodingMode,
+    /// Internal routing constraint for reads whose correctness depends on
+    /// observing the write region rather than the nearest read replica.
+    internal_read_routing: InternalReadRouting,
+    /// Absolute deadline inherited by internal sub-operations that belong to
+    /// one logical operation, such as PATCH Read-Modify-Write.
+    absolute_deadline: Option<Instant>,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum InternalReadRouting {
+    #[default]
+    Default,
+    PreferredWriteEndpointsNoHedging,
 }
 
 impl CosmosOperation {
@@ -230,7 +262,7 @@ impl CosmosOperation {
             // `read_feed_ranges` for feed reads and funnels container/database
             // queries through the generic `query_items`. Keep them aligned with
             // this crate's own `read_all_*` / `query_*` public API, not with
-            // .NET. See DIAGNOSTICS-CONTRACT.md.
+            // .NET. See Spec 0018: Diagnostics contract.
             (OperationType::ReadFeed, ResourceType::Document) => {
                 if self.is_change_feed {
                     "query_change_feed"
@@ -311,15 +343,27 @@ impl CosmosOperation {
         }
     }
 
-    /// Validates that this operation does not mix name and RID addressing.
+    /// Validates name/RID addressing consistency and, when enabled, user-defined
+    /// resource names.
     ///
-    /// Delegates to
-    /// [`CosmosResourceReference::validate_addressing`], telling it whether the
-    /// leaf id will appear in the request path so that feed-style operations
-    /// (Create/Upsert) are correctly exempted from the leaf check.
-    pub(crate) fn validate_addressing(&self) -> crate::error::Result<()> {
+    /// Create and Upsert keep their mixed-addressing exemption because their
+    /// item id is not in the request path, but name validation still checks that
+    /// id so the created item remains addressable by later point operations.
+    /// Batch validation reads only item IDs from the service-defined envelope;
+    /// all other document fields remain schema-agnostic.
+    pub(crate) fn validate_addressing(
+        &self,
+        validate_resource_names: bool,
+    ) -> crate::error::Result<()> {
         self.resource_reference
-            .validate_addressing(!self.uses_feed_paths())
+            .validate_addressing(!self.uses_feed_paths())?;
+        if validate_resource_names {
+            self.resource_reference.validate_resource_names()?;
+            if self.operation_type == OperationType::Batch {
+                super::transactional_batch::validate_resource_names(self.body())?;
+            }
+        }
+        Ok(())
     }
 
     /// Returns the container for this operation, if applicable.
@@ -327,6 +371,35 @@ impl CosmosOperation {
     /// Returns `None` for account-level and database-level operations.
     pub fn container(&self) -> Option<&ContainerReference> {
         self.resource_reference.container()
+    }
+
+    /// Retargets this operation to refreshed metadata for the same named
+    /// container and recomputes logical partition routing.
+    pub(crate) fn retarget_container(
+        &mut self,
+        replacement: ContainerReference,
+    ) -> crate::error::Result<()> {
+        if self
+            .target
+            .as_ref()
+            .is_some_and(|target| target.partition_key().is_none() && target != &FeedRange::full())
+        {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+                .with_message(
+                    "an explicit effective partition key range cannot be carried to a recreated \
+                     container; obtain a new feed range from the replacement container",
+                )
+                .build());
+        }
+        let replacement_target = self.partition_key().cloned().map(|partition_key| {
+            FeedRange::for_partition(partition_key, replacement.partition_key_definition())
+        });
+        self.resource_reference.retarget_container(replacement)?;
+        if replacement_target.is_some() {
+            self.target = replacement_target;
+        }
+        Ok(())
     }
 
     /// Returns the operation target.
@@ -364,6 +437,9 @@ impl CosmosOperation {
     }
 
     /// Sets the session token request header for the operation.
+    ///
+    /// Caller tokens take precedence over cached state. See
+    /// [`SessionToken`](crate::models::SessionToken) for per-attempt transport scoping.
     pub fn with_session_token(
         mut self,
         session_token: impl Into<crate::models::SessionToken>,
@@ -406,6 +482,67 @@ impl CosmosOperation {
         self
     }
 
+    /// Whether this operation advertised Cosmos binary JSON in its
+    /// `x-ms-cosmos-supported-serialization-formats` header.
+    ///
+    /// Describes the **wire**, not what the caller receives: under
+    /// `BinaryEncodingOptions::request_text_response` the wire stays binary
+    /// while the driver transcodes the response to text on the way out.
+    pub(crate) fn negotiates_binary_response(&self) -> bool {
+        self.request_headers
+            .supported_serialization_formats
+            .as_deref()
+            .is_some_and(|formats| {
+                formats
+                    .split(',')
+                    .any(|format| format.trim().eq_ignore_ascii_case("CosmosBinary"))
+            })
+    }
+
+    /// Records that binary response options require this operation's response
+    /// to be transcoded back to text before returning it to the caller.
+    pub(crate) fn transcoding_response_to_text(mut self) -> Self {
+        self.transcodes_response_to_text = true;
+        self
+    }
+
+    /// Whether the driver must transcode this operation's response body to text
+    /// before handing it back.
+    ///
+    /// Decided once at negotiation time, so a caller who varies
+    /// `request_text_response` between pages cannot desynchronize the emitted
+    /// encoding from what the pipeline nodes were built to produce.
+    pub(crate) fn transcodes_response_to_text(&self) -> bool {
+        self.transcodes_response_to_text
+            || self.resolved_utf8_decoding_mode == Utf8DecodingMode::Lossy
+    }
+
+    /// Stores the resolved handling for invalid UTF-8 in this operation's response.
+    ///
+    /// [`Utf8DecodingMode::Lossy`] preserves binary response negotiation but
+    /// returns recovered text JSON so typed deserialization remains strict.
+    pub(crate) fn with_resolved_utf8_decoding_mode(mut self, mode: Utf8DecodingMode) -> Self {
+        self.resolved_utf8_decoding_mode = mode;
+        self
+    }
+
+    /// Returns the resolved handling for invalid UTF-8 in this operation's response.
+    pub(crate) fn resolved_utf8_decoding_mode(&self) -> Utf8DecodingMode {
+        self.resolved_utf8_decoding_mode
+    }
+
+    /// Whether pipeline nodes that synthesize a page should emit **binary**
+    /// items.
+    ///
+    /// Distinct from [`negotiates_binary_response`](Self::negotiates_binary_response),
+    /// which describes the wire. The two diverge under
+    /// `BinaryEncodingOptions::request_text_response`: the wire stays binary
+    /// while the driver transcodes on the way out, so a node emitting binary
+    /// would re-encode every item only for `execute_plan` to decode it again.
+    pub(crate) fn emits_binary_payload(&self) -> bool {
+        self.negotiates_binary_response() && !self.transcodes_response_to_text()
+    }
+
     /// Sets the maximum number of items the server should return per page
     /// (the `x-ms-max-item-count` request header).
     ///
@@ -431,6 +568,9 @@ impl CosmosOperation {
 
     /// Records the change feed start position and emits its wire header.
     ///
+    /// Replaces any previously set precondition (`If-Match` or `If-None-Match`)
+    /// and `If-Modified-Since` value.
+    ///
     /// This is the single source of truth for translating a start position into
     /// the appropriate header, so both the initial request and a resume that
     /// reconstructs the position from a continuation token stay in sync:
@@ -439,6 +579,8 @@ impl CosmosOperation {
     /// - [`ChangeFeedStartFrom::Now`] → `If-None-Match: *`
     /// - [`ChangeFeedStartFrom::PointInTime`] → `If-Modified-Since: <RFC 1123>`
     pub fn with_change_feed_start(mut self, start_from: ChangeFeedStartFrom) -> Self {
+        self.request_headers.precondition = None;
+        self.request_headers.if_modified_since = None;
         match &start_from {
             ChangeFeedStartFrom::Beginning => {}
             ChangeFeedStartFrom::Now => {
@@ -484,6 +626,52 @@ impl CosmosOperation {
         self.patch_max_attempts
     }
 
+    /// Sets a stable tracking ID for a client-side PATCH.
+    ///
+    /// Reuse the same ID for application-level retries of the same logical
+    /// operation. Prefer a random, unpredictable ID. Supplying an ID opts even
+    /// a retry-safe instruction list into marker-based duplicate suppression
+    /// when client-side execution is selected. It does not influence strategy
+    /// resolution and is ignored by server-side PATCH. If omitted, the driver
+    /// generates an ID only for unsafe lists executed client-side.
+    pub fn with_patch_tracking_id(mut self, tracking_id: crate::models::PatchTrackingId) -> Self {
+        self.patch_tracking_id = Some(tracking_id);
+        self
+    }
+
+    /// Returns the caller-supplied PATCH tracking ID, if any.
+    pub fn patch_tracking_id(&self) -> Option<crate::models::PatchTrackingId> {
+        self.patch_tracking_id
+    }
+
+    /// Sets the maximum number of PATCH tracking entries retained on one item.
+    ///
+    /// When the cap is reached after age-based pruning, PATCH evicts the first
+    /// entry before appending the new marker.
+    pub fn with_patch_tracking_capacity(mut self, capacity: std::num::NonZeroU16) -> Self {
+        self.patch_tracking_capacity = Some(capacity);
+        self
+    }
+
+    /// Returns the configured PATCH tracking capacity, if any.
+    pub fn patch_tracking_capacity(&self) -> Option<std::num::NonZeroU16> {
+        self.patch_tracking_capacity
+    }
+
+    /// Sets the age-based retention window for PATCH tracking entries.
+    pub fn with_patch_tracking_retention_seconds(
+        mut self,
+        retention_seconds: std::num::NonZeroU32,
+    ) -> Self {
+        self.patch_tracking_retention_seconds = Some(retention_seconds);
+        self
+    }
+
+    /// Returns the configured PATCH tracking retention in whole seconds, if any.
+    pub fn patch_tracking_retention_seconds(&self) -> Option<std::num::NonZeroU32> {
+        self.patch_tracking_retention_seconds
+    }
+
     /// Marks this operation as an internal sub-operation of a PATCH's
     /// Read-Modify-Write loop.
     ///
@@ -494,6 +682,56 @@ impl CosmosOperation {
     pub(crate) fn as_patch_sub_operation(mut self) -> Self {
         self.is_patch_sub_operation = true;
         self
+    }
+
+    /// Marks this operation as the Read half of PATCH's Read-Modify-Write loop.
+    ///
+    /// The read prefers write endpoints and cannot be hedged because a response
+    /// from another region may not yet contain the write being verified.
+    pub(crate) fn as_patch_read_sub_operation(mut self) -> Self {
+        self.is_patch_sub_operation = true;
+        self.internal_read_routing = InternalReadRouting::PreferredWriteEndpointsNoHedging;
+        self
+    }
+
+    /// Records whether a server-side PATCH may be resent after an ambiguous
+    /// failure, based on the resolved instruction list.
+    pub(crate) fn with_patch_retry_safe(mut self, retry_safe: bool) -> Self {
+        self.patch_retry_safe = Some(retry_safe);
+        self
+    }
+
+    /// Returns whether PATCH strategy resolution classified this operation.
+    pub(crate) fn patch_strategy_is_resolved(&self) -> bool {
+        self.patch_retry_safe.is_some()
+    }
+
+    /// Returns whether this internal read should start at preferred write endpoints.
+    pub(crate) fn prefers_write_endpoints_for_read(&self) -> bool {
+        matches!(
+            self.internal_read_routing,
+            InternalReadRouting::PreferredWriteEndpointsNoHedging
+        )
+    }
+
+    /// Returns whether correctness requires hedging to remain disabled.
+    pub(crate) fn suppresses_hedging(&self) -> bool {
+        matches!(
+            self.internal_read_routing,
+            InternalReadRouting::PreferredWriteEndpointsNoHedging
+        )
+    }
+
+    /// Applies an absolute deadline shared by a logical operation's internal
+    /// sub-operations.
+    pub(crate) fn with_absolute_deadline(mut self, deadline: Option<Instant>) -> Self {
+        self.absolute_deadline = deadline;
+        self
+    }
+
+    /// Returns the absolute deadline inherited from the logical operation.
+    pub(crate) fn absolute_deadline(&self) -> Option<Instant> {
+        self.absolute_deadline
     }
 
     /// Returns `true` when this operation is an internal sub-operation of a
@@ -526,9 +764,17 @@ impl CosmosOperation {
             request_headers: CosmosRequestHeaders::new(),
             body: None,
             patch_max_attempts: None,
+            patch_tracking_id: None,
+            patch_tracking_capacity: None,
+            patch_tracking_retention_seconds: None,
             is_change_feed: false,
             change_feed_start: None,
             is_patch_sub_operation: false,
+            patch_retry_safe: None,
+            transcodes_response_to_text: false,
+            resolved_utf8_decoding_mode: Utf8DecodingMode::Strict,
+            internal_read_routing: InternalReadRouting::Default,
+            absolute_deadline: None,
         }
     }
 
@@ -552,7 +798,7 @@ impl CosmosOperation {
     /// use azure_data_cosmos_driver::models::{AccountReference, CosmosOperation};
     /// use url::Url;
     ///
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -597,7 +843,7 @@ impl CosmosOperation {
     /// };
     /// use url::Url;
     ///
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -634,7 +880,7 @@ impl CosmosOperation {
     /// };
     /// use url::Url;
     ///
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -684,12 +930,12 @@ impl CosmosOperation {
     ///
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
     /// let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
-    /// let container = driver.resolve_container("my-database", "my-container").await?;
+    /// let container = driver.resolve_container("my-database", "my-container", OperationOptions::default()).await?;
     ///
     /// let result = driver
     ///     .execute_singleton_operation(
@@ -777,12 +1023,12 @@ impl CosmosOperation {
     ///
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
     /// let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
-    /// let container = driver.resolve_container("my-database", "my-container").await?;
+    /// let container = driver.resolve_container("my-database", "my-container", OperationOptions::default()).await?;
     ///
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
     /// let result = driver
@@ -817,12 +1063,12 @@ impl CosmosOperation {
     ///
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
     /// let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
-    /// let container = driver.resolve_container("my-database", "my-container").await?;
+    /// let container = driver.resolve_container("my-database", "my-container", OperationOptions::default()).await?;
     ///
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
     /// let result = driver
@@ -876,22 +1122,17 @@ impl CosmosOperation {
         Self::for_item(OperationType::Replace, item)
     }
 
-    /// Builds a virtual PATCH operation for an item.
+    /// Builds a PATCH operation for an item.
     ///
-    /// The driver implements PATCH as a client-side Read-Modify-Write loop:
-    /// it reads the current item, applies the requested patch operations to
-    /// the local JSON document, and issues an ETag-guarded
-    /// [`OperationType::Replace`]. The PATCH operation itself is never sent on
-    /// the wire; callers build a [`crate::models::PatchInstructions`] and pass it as
-    /// the operation body (via [`with_body`](Self::with_body)) — the patch
-    /// handler deserializes it before issuing the underlying transport
-    /// operations.
+    /// [`crate::options::PatchStrategy`] selects one server-side request or the
+    /// client-side Read-Modify-Write loop. Callers serialize
+    /// [`crate::models::PatchInstructions`] into the operation body.
     pub fn patch_item(item: ItemReference) -> Self {
         Self::for_item(OperationType::Patch, item)
     }
 
     /// Builds a distributed transaction coordinator operation.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub fn distributed_transaction(
         account: AccountReference,
         transaction_type: crate::models::DistributedTransactionType,
@@ -1080,6 +1321,29 @@ impl CosmosOperation {
         self.operation_type.is_idempotent()
     }
 
+    /// Returns true if this operation may be retried when the backend outcome
+    /// is ambiguous — that is, when the request may already have been received
+    /// and processed.
+    ///
+    /// Stored procedure execution returns `false` because its body is opaque.
+    /// Server-side PATCH returns the strategy resolver's classification;
+    /// unresolved PATCH fails closed. Other data-plane operations retain the
+    /// driver's existing retry behavior.
+    ///
+    /// This is deliberately *not* `is_idempotent`: the driver retries
+    /// non-idempotent writes such as `Create` and `Upsert` on purpose.
+    ///
+    /// Gates both retry layers so they cannot disagree about the same failure:
+    /// cross-region failover in the operation pipeline, and the same-endpoint
+    /// shard retry in the transport pipeline.
+    pub fn allows_ambiguous_outcome_retry(&self) -> bool {
+        match self.operation_type {
+            OperationType::Execute => false,
+            OperationType::Patch => self.patch_retry_safe.unwrap_or(false),
+            _ => true,
+        }
+    }
+
     /// Returns true if this operation can be planned with a single-node pipeline.
     ///
     /// An operation is "trivial" when it does not require fan-out across multiple
@@ -1095,7 +1359,13 @@ impl CosmosOperation {
             // Change feed is trivial only when targeting a specific logical partition key.
             // Full-container (target=None) and EPK range targets require fan-out.
             if self.is_change_feed() {
-                return self.target().and_then(|t| t.partition_key()).is_some();
+                return self
+                    .target()
+                    .and_then(|target| target.partition_key())
+                    .zip(self.container())
+                    .is_some_and(|(key, container)| {
+                        container.partition_key_definition().is_complete(key)
+                    });
             }
             // For now, at least, all other non-query operations are trivial.
             return true;
@@ -1164,14 +1434,14 @@ impl CosmosOperation {
 mod tests {
     use super::*;
     use crate::models::{
-        AccountReference, ContainerProperties, ContainerReference, PartitionKeyDefinition,
-        SystemProperties,
+        AccountReference, ContainerProperties, ContainerReference, EffectivePartitionKey,
+        PartitionKeyDefinition, SystemProperties,
     };
 
     use url::Url;
 
     fn test_account() -> AccountReference {
-        AccountReference::with_master_key(
+        AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
@@ -1200,6 +1470,63 @@ mod tests {
         )
     }
 
+    #[test]
+    fn utf8_decoding_is_strict_by_default() {
+        let operation =
+            CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()));
+
+        assert_eq!(
+            operation.resolved_utf8_decoding_mode(),
+            Utf8DecodingMode::Strict
+        );
+        assert!(!operation.transcodes_response_to_text());
+    }
+
+    #[test]
+    fn lossy_utf8_requests_text_output_without_disabling_binary_negotiation() {
+        let operation =
+            CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()))
+                .with_supported_serialization_formats("JsonText,CosmosBinary")
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Lossy);
+
+        assert!(operation.negotiates_binary_response());
+        assert!(operation.transcodes_response_to_text());
+        assert!(!operation.emits_binary_payload());
+    }
+
+    #[test]
+    fn resolved_utf8_decoding_mode_is_reversible() {
+        let operation =
+            CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()))
+                .with_supported_serialization_formats("JsonText,CosmosBinary")
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Lossy)
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Strict);
+
+        assert_eq!(
+            operation.resolved_utf8_decoding_mode(),
+            Utf8DecodingMode::Strict
+        );
+        assert!(!operation.transcodes_response_to_text());
+        assert!(operation.emits_binary_payload());
+    }
+
+    #[test]
+    fn strict_utf8_preserves_independent_text_transcoding() {
+        let operation =
+            CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()))
+                .with_supported_serialization_formats("JsonText,CosmosBinary")
+                .transcoding_response_to_text()
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Lossy)
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Strict);
+
+        assert_eq!(
+            operation.resolved_utf8_decoding_mode(),
+            Utf8DecodingMode::Strict
+        );
+        assert!(operation.transcodes_response_to_text());
+        assert!(!operation.emits_binary_payload());
+    }
+
     /// A container addressed purely by RID (no name-based path available).
     fn test_container_by_rid() -> ContainerReference {
         ContainerReference::new_by_rid(
@@ -1208,6 +1535,19 @@ mod tests {
             "testcontainer",
             "Lx1BALxJyZ8=",
             &test_container_props(),
+        )
+    }
+
+    fn replacement_container() -> ContainerReference {
+        let mut properties = test_container_props();
+        properties.partition_key = test_partition_key_definition("/replacement-pk");
+        ContainerReference::new(
+            test_account(),
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "replacement_container_rid",
+            &properties,
         )
     }
 
@@ -1224,6 +1564,27 @@ mod tests {
     }
 
     #[test]
+    fn retarget_rejects_explicit_epk_range() -> crate::error::Result<()> {
+        let range = FeedRange::new(
+            EffectivePartitionKey::try_from("10")?,
+            EffectivePartitionKey::try_from("20")?,
+        )?;
+        let mut operation = CosmosOperation::query_items(test_container(), Some(range.clone()));
+
+        let error = operation
+            .retarget_container(replacement_container())
+            .unwrap_err();
+
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::CLIENT_BAD_REQUEST
+        );
+        assert_eq!(operation.container().unwrap().rid(), "testcontainer_rid");
+        assert_eq!(operation.target(), Some(&range));
+        Ok(())
+    }
+
+    #[test]
     fn create_item_on_rid_container_allows_name_id() {
         // Create POSTs to the parent collection URL, so the item name never
         // reaches the wire. Confirmed live: this succeeds on a RID-addressed
@@ -1232,12 +1593,56 @@ mod tests {
             ItemReference::from_name(&test_container_by_rid(), PartitionKey::from("pk1"), "doc1");
         let op = CosmosOperation::create_item(item_ref);
         assert!(op.uses_feed_paths());
-        op.validate_addressing()
+        op.validate_addressing(true)
             .expect("create on a RID container may carry a name id");
         assert_eq!(
             op.compute_resource_paths().request_path(),
             "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=/docs"
         );
+    }
+
+    #[test]
+    fn create_and_upsert_reject_unsafe_item_names_when_validation_is_enabled() {
+        for operation in [
+            CosmosOperation::create_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "../other-container",
+            )),
+            CosmosOperation::upsert_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "item?query",
+            )),
+        ] {
+            let error = operation
+                .validate_addressing(true)
+                .expect_err("unsafe item names must be rejected before creation");
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST
+            );
+        }
+    }
+
+    #[test]
+    fn create_and_upsert_allow_unsafe_item_names_when_validation_is_disabled() {
+        for operation in [
+            CosmosOperation::create_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "../other-container",
+            )),
+            CosmosOperation::upsert_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "item?query",
+            )),
+        ] {
+            operation
+                .validate_addressing(false)
+                .expect("the compatibility option must disable creation-time name validation");
+        }
     }
 
     #[test]
@@ -1250,11 +1655,11 @@ mod tests {
         let op = CosmosOperation::read_item(item_ref);
         assert!(!op.uses_feed_paths());
         let err = op
-            .validate_addressing()
+            .validate_addressing(false)
             .expect_err("a name leaf under a RID parent must be rejected");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+            crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING
         );
     }
 
@@ -1268,7 +1673,7 @@ mod tests {
             "Lx1BALxJyZ8BAAAAAAAAAA==",
         );
         let op = CosmosOperation::read_item(item_ref);
-        op.validate_addressing()
+        op.validate_addressing(false)
             .expect("a RID leaf under a RID parent is consistent");
 
         let paths = op.compute_resource_paths();
@@ -1332,7 +1737,57 @@ mod tests {
         assert!(!op.is_idempotent());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    /// Both retry layers consult this one predicate, so a failure the transport
+    /// pipeline declines to retry on another shard cannot then be retried
+    /// cross-region by the operation pipeline — strictly more expensive for
+    /// identical duplicate-execution semantics.
+    #[test]
+    fn ambiguous_outcome_retry_covers_non_idempotent_writes() {
+        let pk = PartitionKey::from("pk1");
+        let item = |op: fn(ItemReference) -> CosmosOperation| {
+            op(ItemReference::from_name(
+                &test_container(),
+                pk.clone(),
+                "doc1",
+            ))
+        };
+
+        for op in [
+            item(CosmosOperation::create_item),
+            item(CosmosOperation::upsert_item),
+            item(CosmosOperation::replace_item),
+            item(CosmosOperation::delete_item),
+            item(CosmosOperation::read_item),
+            CosmosOperation::batch(test_container(), pk.clone()),
+        ] {
+            assert!(
+                op.allows_ambiguous_outcome_retry(),
+                "{:?} must stay eligible for retry after an ambiguous failure",
+                op.operation_type()
+            );
+        }
+    }
+
+    #[test]
+    fn server_patch_ambiguous_retry_requires_resolved_safety() {
+        let patch = || {
+            CosmosOperation::patch_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "doc1",
+            ))
+        };
+
+        assert!(!patch().allows_ambiguous_outcome_retry());
+        assert!(patch()
+            .with_patch_retry_safe(true)
+            .allows_ambiguous_outcome_retry());
+        assert!(!patch()
+            .with_patch_retry_safe(false)
+            .allows_ambiguous_outcome_retry());
+    }
+
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn distributed_write_transaction_is_idempotent() {
         let op = CosmosOperation::distributed_transaction(
@@ -1344,7 +1799,7 @@ mod tests {
         assert!(op.is_idempotent());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn distributed_read_transaction_is_read_only_and_idempotent() {
         let op = CosmosOperation::distributed_transaction(
@@ -1367,6 +1822,66 @@ mod tests {
         assert!(op.request_headers().incremental_feed);
         assert!(!op.request_headers().full_fidelity_feed);
         assert!(op.request_headers().changefeed_wire_format_version);
+    }
+
+    #[test]
+    fn change_feed_start_replaces_previous_headers() {
+        let starts = [
+            ChangeFeedStartFrom::Beginning,
+            ChangeFeedStartFrom::Now,
+            ChangeFeedStartFrom::PointInTime(time::macros::datetime!(2026-08-21 12:34:56 UTC)),
+        ];
+        for previous in &starts {
+            for start in &starts {
+                let operation =
+                    CosmosOperation::change_feed(test_container(), Some(FeedRange::full()))
+                        .with_change_feed_start(previous.clone())
+                        .with_change_feed_start(start.clone());
+                assert_eq!(operation.change_feed_start(), Some(start));
+                let expected_precondition = matches!(start, ChangeFeedStartFrom::Now)
+                    .then(|| Precondition::if_none_match(Etag::from("*")));
+                assert_eq!(operation.precondition(), expected_precondition.as_ref());
+                let expected_time = match start {
+                    ChangeFeedStartFrom::PointInTime(timestamp) => Some(format_rfc1123(timestamp)),
+                    _ => None,
+                };
+                assert_eq!(operation.request_headers().if_modified_since, expected_time);
+            }
+        }
+    }
+
+    #[test]
+    fn change_feed_prefix_requires_fanout_but_complete_key_does_not() {
+        let properties = ContainerProperties {
+            id: "hpk".into(),
+            partition_key: ("/tenant", "/user", "/device").into(),
+            system_properties: SystemProperties::default(),
+        };
+        let container = ContainerReference::new(
+            test_account(),
+            "db",
+            "db_rid",
+            "hpk",
+            "hpk_rid",
+            &properties,
+        );
+        for key in [
+            PartitionKey::from("tenant"),
+            PartitionKey::from(("tenant", "user")),
+            PartitionKey::from(("tenant", "user", "device")),
+        ] {
+            let complete = container.partition_key_definition().is_complete(&key);
+            let range = FeedRange::for_partition(key, container.partition_key_definition());
+            for operation in [
+                CosmosOperation::change_feed(container.clone(), Some(range.clone())),
+                CosmosOperation::change_feed_all_versions_and_deletes(
+                    container.clone(),
+                    Some(range.clone()),
+                ),
+            ] {
+                assert_eq!(operation.is_trivial(), complete);
+            }
+        }
     }
 
     /// The full-fidelity (AllVersionsAndDeletes) factory sets the
@@ -1465,9 +1980,19 @@ mod tests {
 
         assert!(!CosmosOperation::read_item(item()).is_patch_sub_operation());
         assert!(!CosmosOperation::replace_item(item()).is_patch_sub_operation());
+        assert!(!CosmosOperation::read_item(item()).prefers_write_endpoints_for_read());
+        assert!(!CosmosOperation::read_item(item()).suppresses_hedging());
         assert!(CosmosOperation::read_item(item())
             .as_patch_sub_operation()
             .is_patch_sub_operation());
+        assert!(!CosmosOperation::read_item(item())
+            .as_patch_sub_operation()
+            .prefers_write_endpoints_for_read());
+
+        let patch_read = CosmosOperation::read_item(item()).as_patch_read_sub_operation();
+        assert!(patch_read.is_patch_sub_operation());
+        assert!(patch_read.prefers_write_endpoints_for_read());
+        assert!(patch_read.suppresses_hedging());
     }
 
     #[test]

@@ -19,6 +19,9 @@ pub trait AmqpClaimsBasedSecurityApis {
     /// This method is responsible for setting up the necessary AMQP links for CBS operations.
     /// It must be called before attempting to authorize any AMQP paths using the `authorize_path` method.
     ///
+    /// Cancelling a pending attach handshake terminates its connection to release
+    /// partially attached resources. Other operations on that connection also fail.
+    ///
     async fn attach(&self) -> Result<()>;
 
     /// Asynchronously detaches the Claims-Based Security (CBS) node from the AMQP session.
@@ -28,6 +31,9 @@ pub trait AmqpClaimsBasedSecurityApis {
     /// Asynchronously authorizes an AMQP path using the provided secret.
     ///
     /// The authorization is valid until the specified `expires_on` time. The path is typically a URI that represents an AMQP resource. The secret is typically a SAS token. The `expires_on` time is the time at which the authorization expires.
+    ///
+    /// Cancelling an active authorization request terminates its connection.
+    /// Other operations on that connection also fail.
     ///
     /// # Parameters
     ///

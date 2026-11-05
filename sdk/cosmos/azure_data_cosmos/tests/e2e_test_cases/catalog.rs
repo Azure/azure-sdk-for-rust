@@ -1,0 +1,1289 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs,
+    path::PathBuf,
+};
+
+use azure_data_cosmos::options::Region;
+use serde::Deserialize;
+use serde_json::Value;
+
+const DEFAULT_PROFILE: &str = "smokeTests";
+const SCENARIO_SCHEMA_REFERENCE: &str = "../../schema/scenario.v1.json";
+const PROFILE_SCHEMA_REFERENCE: &str = "../schema/profile.v1.json";
+const SCENARIO_DIRECTORY: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../e2e_tests/scenarios");
+const BACKENDS: [&str; 3] = [
+    "azureLive",
+    "hostedEmulatorGatewayV1",
+    "hostedEmulatorGatewayV2",
+];
+
+const SCENARIOS: &[&str] = &[
+    include_str!("../../../e2e_tests/scenarios/management/capabilities.json"),
+    include_str!("../../../e2e_tests/scenarios/management/resource-lifecycle.json"),
+    include_str!("../../../e2e_tests/scenarios/bootstrap/primary-success.json"),
+    include_str!("../../../e2e_tests/scenarios/bootstrap/backup-fallback.json"),
+    include_str!("../../../e2e_tests/scenarios/configuration/binary-routing.json"),
+    include_str!("../../../e2e_tests/scenarios/consistency/feed-read-strategies.json"),
+    include_str!("../../../e2e_tests/scenarios/consistency/response-token-capture.json"),
+    include_str!("../../../e2e_tests/scenarios/consistency/session-management.json"),
+    include_str!("../../../e2e_tests/scenarios/consistency/session-staleness.json"),
+    include_str!("../../../e2e_tests/scenarios/items/lifecycle.json"),
+    include_str!("../../../e2e_tests/scenarios/items/upsert-create-update.json"),
+    include_str!("../../../e2e_tests/scenarios/items/create-conflict.json"),
+    include_str!("../../../e2e_tests/scenarios/items/not-found-wrong-partition-key.json"),
+    include_str!("../../../e2e_tests/scenarios/items/optimistic-concurrency.json"),
+    include_str!("../../../e2e_tests/scenarios/items/scalar-partition-keys.json"),
+    include_str!("../../../e2e_tests/scenarios/items/hierarchical-partition-key.json"),
+    include_str!("../../../e2e_tests/scenarios/items/transactional-batch-atomicity.json"),
+    include_str!("../../../e2e_tests/scenarios/items/patch-state.json"),
+    include_str!("../../../e2e_tests/scenarios/items/validation-contracts.json"),
+    include_str!("../../../e2e_tests/scenarios/items/numeric-unique-key-equivalence.json"),
+    include_str!("../../../e2e_tests/scenarios/items/quoted-partition-key-paths.json"),
+    include_str!("../../../e2e_tests/scenarios/queries/parameterized-filter.json"),
+    include_str!("../../../e2e_tests/scenarios/queries/invalid-syntax.json"),
+    include_str!("../../../e2e_tests/scenarios/queries/pagination-resume.json"),
+    include_str!("../../../e2e_tests/scenarios/queries/feed-ranges.json"),
+    include_str!("../../../e2e_tests/scenarios/queries/change-feed-pagination-resume.json"),
+    include_str!("../../../e2e_tests/scenarios/queries/change-feed-all-versions-starts.json"),
+    include_str!("../../../e2e_tests/scenarios/diagnostics/success-and-error.json"),
+    include_str!("../../../e2e_tests/scenarios/diagnostics/handlers-telemetry.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/throttling-retry.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/deadline.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/hedge-deadline.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/hedging.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/partition-topology-retry.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/request-timeout-retry.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/service-retry.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/transport-retry.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/partition-circuit-breaker.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/hedging-topology.json"),
+    include_str!("../../../e2e_tests/scenarios/topology/region-lifecycle.json"),
+    include_str!("../../../e2e_tests/scenarios/topology/write-failover.json"),
+    include_str!("../../../e2e_tests/scenarios/topology/replication-pause-resume.json"),
+    include_str!("../../../e2e_tests/scenarios/topology/partition-split-merge.json"),
+    include_str!("../../../e2e_tests/scenarios/topology/continuation-transitions.json"),
+];
+
+const PROFILES: &[&str] = &[
+    include_str!("../../../e2e_tests/profiles/smokeTests.json"),
+    include_str!("../../../e2e_tests/profiles/coreOperations.json"),
+    include_str!("../../../e2e_tests/profiles/configurationResilience.json"),
+    include_str!("../../../e2e_tests/profiles/lifecycleConsistencyMatrix.json"),
+    include_str!("../../../e2e_tests/profiles/readConsistencyOverrideMatrix.json"),
+    include_str!("../../../e2e_tests/profiles/dynamicTopology.json"),
+    include_str!("../../../e2e_tests/profiles/liveConfiguration.json"),
+];
+
+const RUST_IMPLEMENTATIONS: &str = include_str!("../../../e2e_tests/implementations/rust.json");
+const CORE_OPERATIONS_MATRIX: &str = include_str!("../../../e2e-core-operations-matrix.json");
+const CONFIGURATION_RESILIENCE_MATRIX: &str =
+    include_str!("../../../e2e-configuration-resilience-matrix.json");
+const CONSISTENCY_MATRIX: &str = include_str!("../../../e2e-consistency-matrix.json");
+const OVERRIDE_MATRIX: &str = include_str!("../../../e2e-read-consistency-override-matrix.json");
+const DYNAMIC_TOPOLOGY_MATRIX: &str = include_str!("../../../e2e-dynamic-topology-matrix.json");
+const LIVE_FIXED_MATRIX: &str = include_str!("../../../e2e-live-fixed-matrix.json");
+const LIVE_CONFIGURATION_MATRIX: &str = include_str!("../../../e2e-live-configuration-matrix.json");
+const LIVE_AAD_MATRIX: &str = include_str!("../../../e2e-live-aad-matrix.json");
+const TEST_RESOURCES_BICEP: &str = include_str!("../../../test-resources.bicep");
+const SCENARIO_SCHEMA: &str = include_str!("../../../e2e_tests/schema/scenario.v1.json");
+const PROFILE_SCHEMA: &str = include_str!("../../../e2e_tests/schema/profile.v1.json");
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct Scenario {
+    #[serde(rename = "$schema")]
+    schema: String,
+    spec_version: String,
+    id: String,
+    title: String,
+    requirement: String,
+    #[expect(
+        dead_code,
+        reason = "typed schema metadata is validated during deserialization"
+    )]
+    maturity: Maturity,
+    precedents: Vec<Precedent>,
+    profiles: Vec<String>,
+    tags: Vec<String>,
+    backends: BTreeMap<String, Backend>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+enum Maturity {
+    Candidate,
+    Stable,
+    Deprecated,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Precedent {
+    #[expect(
+        dead_code,
+        reason = "typed schema metadata is validated during deserialization"
+    )]
+    sdk: ReferenceSdk,
+    path: String,
+    test: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum ReferenceSdk {
+    Service,
+    Rust,
+    Java,
+    Dotnet,
+    Python,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct Backend {
+    applicability: Applicability,
+    #[expect(
+        dead_code,
+        reason = "typed schema metadata is validated during deserialization"
+    )]
+    fidelity: Fidelity,
+    reason: Option<String>,
+    #[serde(default)]
+    requires: Vec<Capability>,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "camelCase")]
+pub(super) enum Capability {
+    Capabilities,
+    ChangeFeed,
+    Container,
+    Database,
+    FullFidelityChangeFeed,
+    GatewayV2,
+    Item,
+    Patch,
+    PartitionMerge,
+    PartitionSplit,
+    PerPartitionFailover,
+    Query,
+    RegionLifecycle,
+    ReplicationPauseResume,
+    TransactionalBatch,
+    WriteRegionFailover,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+enum Applicability {
+    Required,
+    Supported,
+    Simulated,
+    NotApplicable,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+enum Fidelity {
+    Full,
+    Partial,
+    Simulated,
+    None,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Profile {
+    #[serde(rename = "$schema")]
+    schema: String,
+    spec_version: String,
+    pub id: String,
+    pub accounts: Vec<AccountDefinition>,
+    pub runtimes: Vec<RuntimeDefinition>,
+    pub clients: Vec<ClientDefinition>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AccountDefinition {
+    pub id: String,
+    write_mode: String,
+    pub consistency: String,
+    regions: Vec<RegionDefinition>,
+    replication: ReplicationDefinition,
+    #[expect(
+        dead_code,
+        reason = "profile metadata is consumed by external orchestration"
+    )]
+    per_partition_failover: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RegionDefinition {
+    name: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ReplicationDefinition {
+    min_delay_ms: u64,
+    max_delay_ms: u64,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RuntimeDefinition {
+    pub id: String,
+    pub gateway_v2: String,
+    pub ppcb: String,
+    pub default_read_consistency_strategy: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ClientDefinition {
+    pub id: String,
+    pub binary_encoding: String,
+    pub routing: String,
+    pub default_read_consistency_strategy: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ImplementationMap {
+    #[serde(rename = "$schema")]
+    schema: String,
+    spec_version: String,
+    sdk: String,
+    test_target: String,
+    scenarios: Vec<Implementation>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Implementation {
+    id: String,
+    test: Option<String>,
+    status: ImplementationStatus,
+    reason: Option<String>,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+enum ImplementationStatus {
+    Active,
+    Planned,
+    Unsupported,
+}
+
+impl Profile {
+    pub fn account(&self, id: &str) -> &AccountDefinition {
+        self.accounts
+            .iter()
+            .find(|definition| definition.id == id)
+            .unwrap_or_else(|| panic!("profile '{}' has no account '{id}'", self.id))
+    }
+
+    pub fn runtime(&self, id: &str) -> &RuntimeDefinition {
+        self.runtimes
+            .iter()
+            .find(|definition| definition.id == id)
+            .unwrap_or_else(|| panic!("profile '{}' has no runtime '{id}'", self.id))
+    }
+
+    pub fn client(&self, id: &str) -> &ClientDefinition {
+        self.clients
+            .iter()
+            .find(|definition| definition.id == id)
+            .unwrap_or_else(|| panic!("profile '{}' has no client '{id}'", self.id))
+    }
+
+    pub fn selected_account(&self) -> Result<&AccountDefinition, String> {
+        let ids: Vec<_> = self
+            .accounts
+            .iter()
+            .map(|definition| definition.id.as_str())
+            .collect();
+        Ok(self.account(selected_axis("AZURE_COSMOS_E2E_ACCOUNT", &ids)?))
+    }
+
+    pub fn selected_runtime(&self) -> Result<&RuntimeDefinition, String> {
+        let ids: Vec<_> = self
+            .runtimes
+            .iter()
+            .map(|definition| definition.id.as_str())
+            .collect();
+        Ok(self.runtime(selected_axis("AZURE_COSMOS_E2E_RUNTIME", &ids)?))
+    }
+
+    pub fn selected_client(&self) -> Result<&ClientDefinition, String> {
+        let ids: Vec<_> = self
+            .clients
+            .iter()
+            .map(|definition| definition.id.as_str())
+            .collect();
+        Ok(self.client(selected_axis("AZURE_COSMOS_E2E_CLIENT", &ids)?))
+    }
+}
+
+impl AccountDefinition {
+    pub fn write_mode(&self) -> &str {
+        &self.write_mode
+    }
+
+    pub fn region_names(&self) -> impl Iterator<Item = &str> {
+        self.regions.iter().map(|region| region.name.as_str())
+    }
+
+    pub(super) fn effective_regions(&self) -> Result<Vec<Region>, String> {
+        effective_regions(
+            std::env::var("AZURE_COSMOS_E2E_BACKEND").ok().as_deref(),
+            std::env::var("AZURE_COSMOS_ACCOUNT_REGIONS")
+                .ok()
+                .as_deref(),
+            self.region_names(),
+        )
+    }
+}
+
+/// Projects single-region live profiles; multi-region topology must match in order.
+fn effective_regions<'a>(
+    backend: Option<&str>,
+    raw_regions: Option<&str>,
+    profile_regions: impl IntoIterator<Item = &'a str>,
+) -> Result<Vec<Region>, String> {
+    let parse = |names: Vec<&str>, source: &str| -> Result<Vec<Region>, String> {
+        let mut regions = Vec::new();
+        for name in names {
+            if name.trim().is_empty() {
+                return Err(format!("{source} must not contain empty region entries"));
+            }
+            let region = Region::new(name.to_owned());
+            if regions.contains(&region) {
+                return Err(format!("{source} contains duplicate region '{name}'"));
+            }
+            regions.push(region);
+        }
+        if regions.is_empty() {
+            return Err(format!("{source} must contain at least one region"));
+        }
+        Ok(regions)
+    };
+    let profile = parse(profile_regions.into_iter().collect(), "profile regions")?;
+    if backend != Some("azureLive") {
+        return Ok(profile);
+    }
+    let raw = raw_regions.ok_or("AZURE_COSMOS_ACCOUNT_REGIONS is required for Azure Live")?;
+    let live = parse(raw.split(';').collect(), "AZURE_COSMOS_ACCOUNT_REGIONS")?;
+    if live.len() != profile.len() || (profile.len() > 1 && live != profile) {
+        return Err(format!(
+            "AZURE_COSMOS_ACCOUNT_REGIONS {live:?} must match profile region count and multi-region identity/order {profile:?}"
+        ));
+    }
+    Ok(live)
+}
+
+pub(super) fn default_region() -> Result<Region, String> {
+    let selected = std::env::var("AZURE_COSMOS_E2E_PROFILE").ok();
+    if selected.is_none() && std::env::var("AZURE_COSMOS_E2E_BACKEND").as_deref() != Ok("azureLive")
+    {
+        // Historical fixture users do not select an E2E profile.
+        return Ok(Region::EAST_US);
+    }
+    let selected = selected.as_deref().unwrap_or(DEFAULT_PROFILE);
+    let profile = load_profiles()?
+        .into_iter()
+        .find(|profile| profile.id == selected)
+        .ok_or_else(|| format!("E2E profile '{selected}' does not exist"))?;
+    Ok(profile.selected_account()?.effective_regions()?.remove(0))
+}
+
+pub(super) fn validate_observed_live_account(
+    consistency: &str,
+    multi_write: bool,
+    writable_regions: &[Region],
+    readable_regions: &[Region],
+) -> Result<(), String> {
+    if std::env::var("AZURE_COSMOS_E2E_BACKEND").as_deref() != Ok("azureLive") {
+        return Ok(());
+    }
+    let selected =
+        std::env::var("AZURE_COSMOS_E2E_PROFILE").unwrap_or_else(|_| DEFAULT_PROFILE.to_owned());
+    let profile = load_profiles()?
+        .into_iter()
+        .find(|profile| profile.id == selected)
+        .ok_or_else(|| format!("E2E profile '{selected}' does not exist"))?;
+    let account = profile.selected_account()?;
+    let expected_regions = account.effective_regions()?;
+    validate_account_configuration(
+        account,
+        &selected,
+        &expected_regions,
+        consistency,
+        multi_write,
+        writable_regions,
+        readable_regions,
+    )
+}
+
+fn validate_account_configuration(
+    account: &AccountDefinition,
+    profile_id: &str,
+    expected_regions: &[Region],
+    consistency: &str,
+    multi_write: bool,
+    writable_regions: &[Region],
+    readable_regions: &[Region],
+) -> Result<(), String> {
+    if !consistency.eq_ignore_ascii_case(&account.consistency) {
+        return Err(format!(
+            "live account reports consistency '{consistency}', expected '{}' for profile '{profile_id}'",
+            account.consistency
+        ));
+    }
+    let expected_multi_write = account.write_mode == "multi";
+    if multi_write != expected_multi_write {
+        return Err(format!(
+            "live account reports multiWrite={multi_write}, expected {expected_multi_write} for profile '{profile_id}'"
+        ));
+    }
+    if readable_regions != expected_regions {
+        return Err(format!(
+            "live account reports readable regions {readable_regions:?}, expected {expected_regions:?} for profile '{profile_id}'"
+        ));
+    }
+    let writable_matches = if expected_multi_write {
+        writable_regions == expected_regions
+    } else {
+        writable_regions.first() == expected_regions.first()
+    };
+    if !writable_matches {
+        return Err(format!(
+            "live account reports writable regions {writable_regions:?}, expected write mode and primary region from {expected_regions:?} for profile '{profile_id}'"
+        ));
+    }
+    Ok(())
+}
+
+fn selected_axis<'a>(environment_variable: &str, available: &'a [&str]) -> Result<&'a str, String> {
+    match std::env::var(environment_variable) {
+        Ok(selected) => available
+            .iter()
+            .copied()
+            .find(|candidate| *candidate == selected)
+            .ok_or_else(|| {
+                format!("{environment_variable}='{selected}' is not one of {available:?}")
+            }),
+        Err(_) if available.len() == 1 => Ok(available[0]),
+        Err(_) => Err(format!(
+            "{environment_variable} is required because this profile defines {available:?}"
+        )),
+    }
+}
+
+fn load_scenarios() -> Result<Vec<Scenario>, String> {
+    SCENARIOS
+        .iter()
+        .map(|json| serde_json::from_str(json).map_err(|error| error.to_string()))
+        .collect()
+}
+
+fn scenario_ids_on_disk() -> Result<BTreeSet<String>, String> {
+    let mut directories = vec![PathBuf::from(SCENARIO_DIRECTORY)];
+    let mut documents = Vec::new();
+    while let Some(directory) = directories.pop() {
+        let entries = fs::read_dir(&directory)
+            .map_err(|error| format!("failed to read '{}': {error}", directory.display()))?;
+        for entry in entries {
+            let path = entry.map_err(|error| error.to_string())?.path();
+            if path.is_dir() {
+                directories.push(path);
+            } else if path
+                .extension()
+                .and_then(std::ffi::OsStr::to_str)
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("json"))
+            {
+                documents.push(path);
+            }
+        }
+    }
+    documents.sort();
+
+    let mut ids = BTreeSet::new();
+    for path in documents {
+        let json = fs::read_to_string(&path)
+            .map_err(|error| format!("failed to read '{}': {error}", path.display()))?;
+        let document: Value = serde_json::from_str(&json)
+            .map_err(|error| format!("invalid scenario '{}': {error}", path.display()))?;
+        let id = document
+            .get("id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| format!("scenario '{}' has no string id", path.display()))?;
+        if !ids.insert(id.to_owned()) {
+            return Err(format!("duplicate scenario id '{id}' on disk"));
+        }
+    }
+    Ok(ids)
+}
+
+fn load_profiles() -> Result<Vec<Profile>, String> {
+    PROFILES
+        .iter()
+        .map(|json| serde_json::from_str(json).map_err(|error| error.to_string()))
+        .collect()
+}
+
+pub fn selected_profile_for(scenario_id: &str) -> Result<Option<Profile>, String> {
+    let selected =
+        std::env::var("AZURE_COSMOS_E2E_PROFILE").unwrap_or_else(|_| DEFAULT_PROFILE.to_owned());
+    let scenarios = load_scenarios()?;
+    let scenario = scenarios
+        .iter()
+        .find(|scenario| scenario.id == scenario_id)
+        .ok_or_else(|| format!("E2E scenario '{scenario_id}' does not exist"))?;
+    let profiles = load_profiles()?;
+    if !profiles.iter().any(|profile| profile.id == selected) {
+        return Err(format!("E2E profile '{selected}' does not exist"));
+    }
+    if !scenario.profiles.contains(&selected) {
+        return Ok(None);
+    }
+    Ok(profiles.into_iter().find(|profile| profile.id == selected))
+}
+
+pub(super) fn required_capabilities_for(
+    scenario_id: &str,
+    backend: &str,
+) -> Result<Vec<Capability>, String> {
+    let scenarios = load_scenarios()?;
+    let scenario = scenarios
+        .iter()
+        .find(|scenario| scenario.id == scenario_id)
+        .ok_or_else(|| format!("E2E scenario '{scenario_id}' does not exist"))?;
+    Ok(scenario
+        .backends
+        .get(backend)
+        .ok_or_else(|| format!("E2E scenario '{scenario_id}' has no backend '{backend}'"))?
+        .requires
+        .clone())
+}
+
+pub(super) fn scenario_applies_to_backend(
+    scenario_id: &str,
+    backend: &str,
+) -> Result<bool, String> {
+    let scenarios = load_scenarios()?;
+    let scenario = scenarios
+        .iter()
+        .find(|scenario| scenario.id == scenario_id)
+        .ok_or_else(|| format!("E2E scenario '{scenario_id}' does not exist"))?;
+    Ok(scenario
+        .backends
+        .get(backend)
+        .ok_or_else(|| format!("E2E scenario '{scenario_id}' has no backend '{backend}'"))?
+        .applicability
+        != Applicability::NotApplicable)
+}
+
+pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
+    // Full JSON Schema evaluation is owned by Test-CosmosE2eScenarioDocuments in
+    // Invoke-CosmosTestSetup.ps1. Keep these repository-native semantic checks aligned with
+    // schema constraints that they intentionally duplicate.
+    for (name, schema) in [("scenario", SCENARIO_SCHEMA), ("profile", PROFILE_SCHEMA)] {
+        let schema: Value = serde_json::from_str(schema)
+            .map_err(|error| format!("{name} schema is not JSON: {error}"))?;
+        if schema.get("$schema").and_then(Value::as_str)
+            != Some("https://json-schema.org/draft/2020-12/schema")
+        {
+            return Err(format!("{name} schema must use JSON Schema draft 2020-12"));
+        }
+    }
+
+    let profiles = load_profiles()?;
+    let mut profile_ids = BTreeSet::new();
+    for profile in &profiles {
+        if profile.schema != PROFILE_SCHEMA_REFERENCE
+            || profile.spec_version != "1.0"
+            || !valid_camel_id(&profile.id)
+            || !profile_ids.insert(profile.id.as_str())
+        {
+            return Err(format!("invalid or duplicate profile '{}'", profile.id));
+        }
+        for (axis, ids) in [
+            (
+                "account",
+                profile
+                    .accounts
+                    .iter()
+                    .map(|definition| definition.id.as_str())
+                    .collect::<Vec<_>>(),
+            ),
+            (
+                "runtime",
+                profile
+                    .runtimes
+                    .iter()
+                    .map(|definition| definition.id.as_str())
+                    .collect::<Vec<_>>(),
+            ),
+            (
+                "client",
+                profile
+                    .clients
+                    .iter()
+                    .map(|definition| definition.id.as_str())
+                    .collect::<Vec<_>>(),
+            ),
+        ] {
+            let unique: BTreeSet<_> = ids.iter().copied().collect();
+            if ids.is_empty() || unique.len() != ids.len() {
+                return Err(format!(
+                    "profile '{}' has an empty or duplicate {axis} axis",
+                    profile.id
+                ));
+            }
+        }
+        for account in &profile.accounts {
+            if account.regions.is_empty()
+                || account.regions.iter().any(|region| region.name.is_empty())
+                || account.replication.min_delay_ms > account.replication.max_delay_ms
+                || !matches!(account.write_mode.as_str(), "single" | "multi")
+                || !matches!(
+                    account.consistency.as_str(),
+                    "strong" | "boundedStaleness" | "session" | "consistentPrefix" | "eventual"
+                )
+            {
+                return Err(format!(
+                    "profile '{}' account '{}' has invalid regions or replication delay",
+                    profile.id, account.id
+                ));
+            }
+        }
+        if profile.runtimes.iter().any(|runtime| {
+            !matches!(
+                runtime.gateway_v2.as_str(),
+                "enabled" | "disabled" | "backendDefault"
+            ) || !matches!(runtime.ppcb.as_str(), "enabled" | "disabled" | "sdkDefault")
+                || !valid_optional_read_strategy(
+                    runtime.default_read_consistency_strategy.as_deref(),
+                )
+        }) || profile.clients.iter().any(|client| {
+            !matches!(
+                client.binary_encoding.as_str(),
+                "enabled" | "disabled" | "sdkDefault"
+            ) || !matches!(
+                client.routing.as_str(),
+                "proximity" | "preferredRegions" | "accountOrder"
+            ) || !valid_optional_read_strategy(client.default_read_consistency_strategy.as_deref())
+        }) {
+            return Err(format!(
+                "profile '{}' has invalid setup options",
+                profile.id
+            ));
+        }
+    }
+    validate_pipeline_matrix(
+        CONFIGURATION_RESILIENCE_MATRIX,
+        profiles
+            .iter()
+            .find(|profile| profile.id == "configurationResilience")
+            .expect("configuration resilience profile must be registered"),
+    )?;
+    validate_pipeline_matrix(
+        CORE_OPERATIONS_MATRIX,
+        profiles
+            .iter()
+            .find(|profile| profile.id == "coreOperations")
+            .expect("core operations profile must be registered"),
+    )?;
+    validate_pipeline_matrix(
+        CONSISTENCY_MATRIX,
+        profiles
+            .iter()
+            .find(|profile| profile.id == "lifecycleConsistencyMatrix")
+            .expect("consistency profile must be registered"),
+    )?;
+    validate_pipeline_matrix(
+        OVERRIDE_MATRIX,
+        profiles
+            .iter()
+            .find(|profile| profile.id == "readConsistencyOverrideMatrix")
+            .expect("override profile must be registered"),
+    )?;
+    validate_pipeline_matrix(
+        DYNAMIC_TOPOLOGY_MATRIX,
+        profiles
+            .iter()
+            .find(|profile| profile.id == "dynamicTopology")
+            .expect("dynamic topology profile must be registered"),
+    )?;
+    validate_live_pipeline_matrix(
+        LIVE_FIXED_MATRIX,
+        &[
+            profiles
+                .iter()
+                .find(|profile| profile.id == "smokeTests")
+                .expect("smoke profile must be registered"),
+            profiles
+                .iter()
+                .find(|profile| profile.id == "coreOperations")
+                .expect("core operations profile must be registered"),
+        ],
+    )?;
+    validate_live_pipeline_matrix(
+        LIVE_CONFIGURATION_MATRIX,
+        &[profiles
+            .iter()
+            .find(|profile| profile.id == "liveConfiguration")
+            .expect("live configuration profile must be registered")],
+    )?;
+    validate_live_pipeline_matrix(
+        LIVE_AAD_MATRIX,
+        &[profiles
+            .iter()
+            .find(|profile| profile.id == "smokeTests")
+            .expect("smoke profile must be registered")],
+    )?;
+
+    let scenarios = load_scenarios()?;
+    let mut scenario_ids = BTreeSet::new();
+    for scenario in &scenarios {
+        if scenario.schema != SCENARIO_SCHEMA_REFERENCE
+            || scenario.spec_version != "1.0"
+            || !valid_scenario_id(&scenario.id)
+        {
+            return Err(format!(
+                "scenario '{}' has an unsupported version",
+                scenario.id
+            ));
+        }
+        if !scenario_ids.insert(scenario.id.as_str()) {
+            return Err(format!("duplicate scenario id '{}'", scenario.id));
+        }
+        if scenario.title.is_empty()
+            || scenario.requirement.is_empty()
+            || scenario.precedents.is_empty()
+            || scenario.profiles.is_empty()
+            || scenario.tags.is_empty()
+            || scenario
+                .precedents
+                .iter()
+                .any(|precedent| precedent.path.is_empty() || precedent.test.is_empty())
+        {
+            return Err(format!(
+                "scenario '{}' is missing required metadata",
+                scenario.id
+            ));
+        }
+        let selected_profiles: BTreeSet<_> = scenario.profiles.iter().map(String::as_str).collect();
+        let tags: BTreeSet<_> = scenario.tags.iter().map(String::as_str).collect();
+        if selected_profiles.len() != scenario.profiles.len()
+            || !selected_profiles.is_subset(&profile_ids)
+            || tags.len() != scenario.tags.len()
+        {
+            return Err(format!(
+                "scenario '{}' references an unknown or duplicate profile",
+                scenario.id
+            ));
+        }
+        let backend_names: BTreeSet<_> = scenario.backends.keys().map(String::as_str).collect();
+        if backend_names != BACKENDS.into_iter().collect() {
+            return Err(format!(
+                "scenario '{}' has incomplete backend applicability",
+                scenario.id
+            ));
+        }
+        for (backend_name, backend) in &scenario.backends {
+            if backend.applicability == Applicability::NotApplicable && backend.reason.is_none() {
+                return Err(format!(
+                    "scenario '{}' must explain why '{backend_name}' is not applicable",
+                    scenario.id
+                ));
+            }
+            let requirements: BTreeSet<_> = backend.requires.iter().collect();
+            if requirements.len() != backend.requires.len() {
+                return Err(format!(
+                    "scenario '{}' has duplicate requirements for '{backend_name}'",
+                    scenario.id
+                ));
+            }
+        }
+    }
+    let registered_scenario_ids: BTreeSet<_> =
+        scenario_ids.iter().map(|id| (*id).to_owned()).collect();
+    let discovered_scenario_ids = scenario_ids_on_disk()?;
+    if registered_scenario_ids != discovered_scenario_ids {
+        let unregistered: Vec<_> = discovered_scenario_ids
+            .difference(&registered_scenario_ids)
+            .cloned()
+            .collect();
+        let missing: Vec<_> = registered_scenario_ids
+            .difference(&discovered_scenario_ids)
+            .cloned()
+            .collect();
+        return Err(
+            format!(
+            "scenario inventory differs from e2e_tests/scenarios; unregistered: {unregistered:?}, missing: {missing:?}"
+            )
+        );
+    }
+    let referenced_profiles: BTreeSet<_> = scenarios
+        .iter()
+        .flat_map(|scenario| scenario.profiles.iter().map(String::as_str))
+        .collect();
+    if let Ok(selected_profile) = std::env::var("AZURE_COSMOS_E2E_PROFILE") {
+        if !profile_ids.contains(selected_profile.as_str()) {
+            return Err(format!(
+                "selected E2E profile '{selected_profile}' does not exist"
+            ));
+        }
+        if !referenced_profiles.contains(selected_profile.as_str()) {
+            return Err(format!(
+                "selected E2E profile '{selected_profile}' has no active scenarios"
+            ));
+        }
+        let selected_scenarios: Vec<_> = scenarios
+            .iter()
+            .filter(|scenario| scenario.profiles.contains(&selected_profile))
+            .map(|scenario| scenario.id.as_str())
+            .collect();
+        eprintln!("E2E profile '{selected_profile}' selects scenarios: {selected_scenarios:?}");
+    }
+
+    let implementations: ImplementationMap =
+        serde_json::from_str(RUST_IMPLEMENTATIONS).map_err(|error| error.to_string())?;
+    if !implementations.schema.ends_with("implementation.v1.json")
+        || implementations.spec_version != "1.0"
+        || implementations.sdk != "rust"
+        || implementations.test_target != "e2e_tests"
+    {
+        return Err("invalid Rust implementation map header".to_owned());
+    }
+    let known_tests: BTreeSet<_> = implemented_tests.iter().copied().collect();
+    let mut mapped_ids = BTreeSet::new();
+    for implementation in &implementations.scenarios {
+        if !scenario_ids.contains(implementation.id.as_str()) {
+            return Err(format!(
+                "implementation references unknown scenario '{}'",
+                implementation.id
+            ));
+        }
+        if !mapped_ids.insert(implementation.id.as_str()) {
+            return Err(format!(
+                "scenario '{}' is mapped more than once",
+                implementation.id
+            ));
+        }
+        match implementation.status {
+            ImplementationStatus::Active | ImplementationStatus::Planned => {
+                let test = implementation.test.as_deref().ok_or_else(|| {
+                    format!(
+                        "scenario '{}' must name a test when its implementation is {:?}",
+                        implementation.id, implementation.status
+                    )
+                })?;
+                if implementation.reason.is_some() {
+                    return Err(format!(
+                        "scenario '{}' must not include an unsupported reason when its implementation is {:?}",
+                        implementation.id, implementation.status
+                    ));
+                }
+                if implementation.status == ImplementationStatus::Active
+                    && !known_tests.contains(test)
+                {
+                    return Err(format!(
+                        "scenario '{}' references missing test '{test}'",
+                        implementation.id
+                    ));
+                }
+            }
+            ImplementationStatus::Unsupported => {
+                if implementation.test.is_some()
+                    || implementation.reason.as_deref().is_none_or(str::is_empty)
+                {
+                    return Err(format!(
+                        "unsupported scenario '{}' must include a reason and no test",
+                        implementation.id
+                    ));
+                }
+            }
+        }
+    }
+    if mapped_ids != scenario_ids {
+        return Err("every scenario must have exactly one Rust implementation mapping".to_owned());
+    }
+    Ok(())
+}
+
+fn valid_optional_read_strategy(strategy: Option<&str>) -> bool {
+    strategy.is_none_or(|strategy| {
+        matches!(
+            strategy,
+            "Default" | "Eventual" | "Session" | "LatestCommitted" | "GlobalStrong"
+        )
+    })
+}
+
+fn validate_pipeline_matrix(json: &str, profile: &Profile) -> Result<(), String> {
+    let document: Value = serde_json::from_str(json).map_err(|error| error.to_string())?;
+    let matrix = document
+        .get("matrix")
+        .and_then(Value::as_object)
+        .ok_or("pipeline matrix must contain an object named 'matrix'")?;
+    let actual_profiles = matrix_axis(matrix, "AZURE_COSMOS_E2E_PROFILE")?;
+    if actual_profiles != BTreeSet::from([profile.id.as_str()]) {
+        return Err(format!(
+            "pipeline matrix must select only profile '{}'",
+            profile.id
+        ));
+    }
+    for (axis, actual, expected) in [
+        (
+            "account",
+            matrix_axis(matrix, "AZURE_COSMOS_E2E_ACCOUNT")?,
+            profile
+                .accounts
+                .iter()
+                .map(|definition| definition.id.as_str())
+                .collect(),
+        ),
+        (
+            "runtime",
+            matrix_axis(matrix, "AZURE_COSMOS_E2E_RUNTIME")?,
+            profile
+                .runtimes
+                .iter()
+                .map(|definition| definition.id.as_str())
+                .collect(),
+        ),
+        (
+            "client",
+            matrix_axis(matrix, "AZURE_COSMOS_E2E_CLIENT")?,
+            profile
+                .clients
+                .iter()
+                .map(|definition| definition.id.as_str())
+                .collect(),
+        ),
+    ] {
+        if actual != expected {
+            return Err(
+                format!(
+                "pipeline matrix for '{}' does not cover its {axis} axis: expected {expected:?}, got {actual:?}",
+                profile.id
+                )
+            );
+        }
+    }
+    let flavors = matrix_axis(matrix, "AZURE_COSMOS_EMULATOR_FLAVOR")?;
+    if flavors != BTreeSet::from(["inmemory-v1", "inmemory-v2"]) {
+        return Err(format!(
+            "pipeline matrix for '{}' must cover Gateway V1 and Gateway V2",
+            profile.id
+        ));
+    }
+    Ok(())
+}
+
+fn validate_live_pipeline_matrix(json: &str, profiles: &[&Profile]) -> Result<(), String> {
+    let document: Value = serde_json::from_str(json).map_err(|error| error.to_string())?;
+    let matrix = document
+        .get("matrix")
+        .and_then(Value::as_object)
+        .ok_or("live pipeline matrix must contain an object named 'matrix'")?;
+    let expected_profiles = profiles.iter().map(|profile| profile.id.as_str()).collect();
+    if matrix_axis(matrix, "AZURE_COSMOS_E2E_PROFILE")? != expected_profiles {
+        return Err("live pipeline matrix does not cover its declared profiles".to_owned());
+    }
+    for (axis, environment_variable, expected) in [
+        (
+            "account",
+            "AZURE_COSMOS_E2E_ACCOUNT",
+            profiles
+                .iter()
+                .flat_map(|profile| profile.accounts.iter().map(|value| value.id.as_str()))
+                .collect(),
+        ),
+        (
+            "runtime",
+            "AZURE_COSMOS_E2E_RUNTIME",
+            profiles
+                .iter()
+                .flat_map(|profile| profile.runtimes.iter().map(|value| value.id.as_str()))
+                .collect(),
+        ),
+        (
+            "client",
+            "AZURE_COSMOS_E2E_CLIENT",
+            profiles
+                .iter()
+                .flat_map(|profile| profile.clients.iter().map(|value| value.id.as_str()))
+                .collect(),
+        ),
+    ] {
+        let actual = matrix_axis(matrix, environment_variable)?;
+        if actual != expected {
+            return Err(format!(
+                "live pipeline matrix does not cover its {axis} axis: expected {expected:?}, got {actual:?}"
+            ));
+        }
+    }
+    if matrix_axis(matrix, "RustToolchainName")? != BTreeSet::from(["nightly"]) {
+        return Err("live E2E matrices must use nightly to emit JUnit coverage data".to_owned());
+    }
+    Ok(())
+}
+
+fn matrix_axis<'a>(
+    matrix: &'a serde_json::Map<String, Value>,
+    name: &str,
+) -> Result<BTreeSet<&'a str>, String> {
+    matrix
+        .get(name)
+        .and_then(Value::as_array)
+        .ok_or_else(|| format!("pipeline matrix is missing '{name}'"))?
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .ok_or_else(|| format!("pipeline matrix axis '{name}' must contain strings"))
+        })
+        .collect()
+}
+
+fn valid_camel_id(value: &str) -> bool {
+    value
+        .chars()
+        .next()
+        .is_some_and(|first| first.is_ascii_lowercase())
+        && value
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric())
+}
+
+fn valid_scenario_id(value: &str) -> bool {
+    let mut segments = value.split('.');
+    let first = segments.next();
+    let rest: Vec<_> = segments.collect();
+    first.is_some_and(valid_first_scenario_segment)
+        && !rest.is_empty()
+        && rest.into_iter().all(valid_slug)
+}
+
+fn valid_first_scenario_segment(value: &str) -> bool {
+    value
+        .chars()
+        .next()
+        .is_some_and(|first| first.is_ascii_lowercase())
+        && value
+            .chars()
+            .all(|character| character.is_ascii_lowercase() || character.is_ascii_digit())
+}
+
+fn valid_slug(value: &str) -> bool {
+    value
+        .chars()
+        .next()
+        .is_some_and(|first| first.is_ascii_lowercase())
+        && value.chars().all(|character| {
+            character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-'
+        })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        effective_regions, load_profiles, valid_scenario_id, validate_account_configuration,
+        Implementation, ImplementationStatus, Region, LIVE_AAD_MATRIX, TEST_RESOURCES_BICEP,
+    };
+    use serde_json::Value;
+
+    #[test]
+    fn single_region_profiles_project_only_for_live() -> Result<(), String> {
+        for profile in load_profiles()?
+            .into_iter()
+            .filter(|profile| matches!(profile.id.as_str(), "smokeTests" | "coreOperations"))
+        {
+            assert_eq!(profile.accounts.len(), 1);
+            let account = &profile.accounts[0];
+            for backend in [
+                None,
+                Some("hostedEmulatorGatewayV1"),
+                Some("hostedEmulatorGatewayV2"),
+            ] {
+                assert_eq!(
+                    effective_regions(backend, Some("East US 2"), account.region_names())?,
+                    [Region::EAST_US]
+                );
+            }
+            for live in ["East US 2", "West US 3"] {
+                assert_eq!(
+                    effective_regions(Some("azureLive"), Some(live), account.region_names())?,
+                    [Region::new(live.to_owned())]
+                );
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn live_multi_region_identity_and_order_must_match() -> Result<(), String> {
+        let profile = ["East US 2", "West US 3"];
+        assert_eq!(
+            effective_regions(Some("azureLive"), Some(" eastus2 ; WEST US 3 "), profile)?,
+            [Region::EAST_US_2, Region::new("West US 3")]
+        );
+        for raw in ["West US 3;East US 2", "East US;West US 3", "East US 2"] {
+            assert!(
+                effective_regions(Some("azureLive"), Some(raw), profile).is_err(),
+                "{raw}"
+            );
+        }
+        assert!(
+            effective_regions(Some("azureLive"), Some("East US 2;West US 3"), ["East US"]).is_err()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn live_regions_reject_missing_empty_and_duplicate_entries() {
+        for raw in [
+            None,
+            Some(""),
+            Some(" "),
+            Some(";East US 2"),
+            Some("East US 2;"),
+            Some("East US 2;;West US 3"),
+            Some("East US 2;eastus2"),
+        ] {
+            assert!(
+                effective_regions(Some("azureLive"), raw, ["East US 2", "West US 3"]).is_err(),
+                "{raw:?}"
+            );
+        }
+        for profile in [vec![], vec![""], vec!["East US", "eastus"]] {
+            assert!(effective_regions(None, None, profile).is_err());
+        }
+    }
+
+    #[test]
+    fn aad_live_region_matches_bicep_single_region() -> Result<(), String> {
+        let document: Value = serde_json::from_str(LIVE_AAD_MATRIX).map_err(|e| e.to_string())?;
+        let region = document
+            .get("matrix")
+            .and_then(|matrix| matrix.get("AZURE_COSMOS_ACCOUNT_REGIONS"))
+            .and_then(Value::as_array)
+            .and_then(|regions| regions.first())
+            .and_then(Value::as_str)
+            .ok_or("AAD live matrix must declare one region")?;
+        assert_eq!(region, "East US 2");
+        assert!(TEST_RESOURCES_BICEP.contains("locationName: 'East US 2'"));
+        Ok(())
+    }
+
+    #[test]
+    fn aad_live_role_includes_required_data_actions() {
+        for action in [
+            "Microsoft.DocumentDB/databaseAccounts/readMetadata",
+            "Microsoft.DocumentDB/databaseAccounts/throughputSettings/read",
+            "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/*",
+            "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/executeQuery",
+            "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/items/*",
+        ] {
+            assert!(
+                TEST_RESOURCES_BICEP.contains(action),
+                "AAD live-test role must include '{action}'"
+            );
+        }
+        assert!(
+            !TEST_RESOURCES_BICEP
+                .contains("Microsoft.DocumentDB/databaseAccounts/throughputSettings/write"),
+            "AAD data-plane role must not grant control-plane throughput writes"
+        );
+    }
+
+    #[test]
+    fn observed_live_account_must_match_selected_profile() -> Result<(), String> {
+        let profile = load_profiles()?
+            .into_iter()
+            .find(|profile| profile.id == "liveConfiguration")
+            .expect("live configuration profile");
+        let account = &profile.accounts[0];
+        let regions = [Region::EAST_US_2, Region::new("West US 3")];
+        validate_account_configuration(
+            account,
+            &profile.id,
+            &regions,
+            "Session",
+            false,
+            &[Region::EAST_US_2],
+            &regions,
+        )?;
+        for result in [
+            validate_account_configuration(
+                account,
+                &profile.id,
+                &regions,
+                "Eventual",
+                false,
+                &[Region::EAST_US_2],
+                &regions,
+            ),
+            validate_account_configuration(
+                account,
+                &profile.id,
+                &regions,
+                "Session",
+                true,
+                &[Region::EAST_US_2],
+                &regions,
+            ),
+            validate_account_configuration(
+                account,
+                &profile.id,
+                &regions,
+                "Session",
+                false,
+                &[Region::EAST_US_2],
+                &[Region::EAST_US_2],
+            ),
+            validate_account_configuration(
+                account,
+                &profile.id,
+                &regions,
+                "Session",
+                false,
+                &[Region::new("West US 3")],
+                &regions,
+            ),
+        ] {
+            assert!(result.is_err());
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn scenario_id_matches_schema_segment_rules() {
+        assert!(valid_scenario_id("changefeed.all-versions"));
+        assert!(!valid_scenario_id("change-feed.all-versions"));
+        assert!(!valid_scenario_id("changefeed."));
+    }
+
+    #[test]
+    fn unsupported_implementation_uses_reason_instead_of_test() {
+        let implementation: Implementation = serde_json::from_value(serde_json::json!({
+            "id": "example.unsupported",
+            "status": "unsupported",
+            "reason": "The backend does not expose this behavior."
+        }))
+        .expect("schema-valid unsupported implementation");
+        assert_eq!(implementation.status, ImplementationStatus::Unsupported);
+        assert!(implementation.test.is_none());
+        assert!(implementation.reason.is_some());
+    }
+}

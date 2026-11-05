@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Preview Distributed Transaction wire models.
+//! Unstable Distributed Transaction wire models.
 //!
-//! **Preview / work in progress.** Gated behind the disabled-by-default
-//! `preview_dtx` feature; the DTX service feature is not yet generally
+//! **Unstable / work in progress.** Gated behind the disabled-by-default
+//! `unstable_dtx` feature; the DTX service feature is not yet generally
 //! available. These types may change or be removed without notice and are
 //! **not supported for production use**.
 
@@ -18,8 +18,8 @@ use uuid::Uuid;
 
 use crate::diagnostics::DiagnosticsContext;
 use crate::models::{
-    ActivityId, ContainerReference, CosmosResponseHeaders, PartitionKey, Precondition,
-    RequestCharge, SessionToken,
+    ActivityId, ContainerReference, CosmosResourceReference, CosmosResponseHeaders, ItemReference,
+    PartitionKey, Precondition, RequestCharge, SessionToken,
 };
 
 /// The coordinator behavior requested for a distributed transaction.
@@ -217,11 +217,28 @@ impl DistributedTransactionRequest {
 
         serde_json::to_vec(&serde_json::json!({ "operations": operations })).map_err(|error| {
             crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("failed to serialize distributed transaction request body")
                 .with_source(error)
                 .build()
         })
+    }
+
+    pub(crate) fn validate_resource_names(&self, enabled: bool) -> crate::error::Result<()> {
+        if !enabled {
+            return Ok(());
+        }
+
+        for operation in &self.operations {
+            let item = ItemReference::from_name(
+                &operation.target.container,
+                operation.target.partition_key.clone(),
+                operation.target.id.clone(),
+            );
+            CosmosResourceReference::from(item).validate_resource_names()?;
+        }
+
+        Ok(())
     }
 
     fn validate(&self) -> crate::error::Result<()> {
@@ -316,7 +333,7 @@ fn serialize_operation(
         let mut resource_body =
             serde_json::from_slice::<serde_json::Value>(body).map_err(|error| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message(
                         "distributed transaction operation resource body must be valid JSON",
                     )
@@ -413,11 +430,11 @@ fn validate_resource_body_id(
 fn partition_key_json(
     target: &DistributedTransactionTarget,
 ) -> crate::error::Result<serde_json::Value> {
-    let (_, value) = target
-        .partition_key
-        .as_headers()?
-        .next()
-        .ok_or_else(|| invalid_partition_key("partition key did not produce a header value"))?;
+    let (_, value) = target.partition_key.as_headers()?.next().ok_or_else(|| {
+        invalid_partition_key(
+            "distributed transaction operations require a non-empty partition key",
+        )
+    })?;
     let text = value.as_str();
     serde_json::from_str(text).map_err(|error| {
         crate::error::CosmosError::builder()
@@ -950,21 +967,32 @@ mod tests {
     use url::Url;
 
     fn container() -> ContainerReference {
-        let account = AccountReference::with_master_key(
+        container_with_names("db", "coll")
+    }
+
+    fn container_with_names(database_name: &str, container_name: &str) -> ContainerReference {
+        let account = AccountReference::with_account_key(
             Url::parse("https://example.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
         let pk_def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
         let properties = ContainerProperties {
-            id: "coll".into(),
+            id: container_name.to_owned().into(),
             partition_key: pk_def,
             system_properties: SystemProperties::default(),
         };
-        ContainerReference::new(account, "db", "db_rid", "coll", "coll_rid", &properties)
+        ContainerReference::new(
+            account,
+            database_name.to_owned(),
+            "db_rid",
+            container_name.to_owned(),
+            "coll_rid",
+            &properties,
+        )
     }
 
     fn rid_container() -> ContainerReference {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://example.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -979,6 +1007,54 @@ mod tests {
 
     fn target(id: &str) -> DistributedTransactionTarget {
         DistributedTransactionTarget::new(container(), PartitionKey::from("pk1"), id.to_owned())
+    }
+
+    fn create_request(
+        container: ContainerReference,
+        item_id: &str,
+    ) -> DistributedTransactionRequest {
+        let operation = DistributedTransactionOperation::new(
+            DistributedTransactionOperationKind::Create,
+            DistributedTransactionTarget::new(
+                container,
+                PartitionKey::from("pk1"),
+                item_id.to_owned(),
+            ),
+        )
+        .with_resource_body(
+            serde_json::to_vec(&serde_json::json!({ "id": item_id, "pk": "pk1" })).unwrap(),
+        );
+        DistributedTransactionRequest::new(DistributedTransactionType::Write, vec![operation])
+    }
+
+    /// A distributed transaction addresses a single item, so an empty partition
+    /// key is a client error rather than a cross-partition request.
+    ///
+    /// This used to be caught only by accident: `partition_key_json` took the
+    /// first header an empty key produced — `…enablecrosspartition: True` —
+    /// and rejected it because `True` is not valid JSON (JSON's boolean is
+    /// lowercase). Now that an empty key emits no headers at all, the
+    /// dedicated `ok_or_else` arm is what rejects it.
+    #[test]
+    fn empty_partition_key_is_rejected() {
+        let target =
+            DistributedTransactionTarget::new(container(), PartitionKey::EMPTY, "item1".to_owned());
+        let operation =
+            DistributedTransactionOperation::new(DistributedTransactionOperationKind::Read, target);
+        let request =
+            DistributedTransactionRequest::new(DistributedTransactionType::Read, vec![operation]);
+
+        let error = request
+            .serialize_body()
+            .expect_err("an empty partition key cannot address a single item");
+        assert_eq!(
+            error.status().status_code(),
+            azure_core::http::StatusCode::BadRequest
+        );
+        assert!(
+            error.to_string().contains("non-empty partition key"),
+            "the message must name the actual problem, got {error}"
+        );
     }
 
     #[test]
@@ -1009,6 +1085,42 @@ mod tests {
         assert_eq!(op["operationType"], "Create");
         assert_eq!(op["resourceType"], "Document");
         assert!(json.get("operationType").is_none());
+    }
+
+    #[test]
+    fn resource_name_validation_rejects_unsafe_distributed_transaction_names() {
+        for request in [
+            create_request(container(), "../other-container"),
+            create_request(container_with_names("../other-db", "coll"), "item1"),
+            create_request(container_with_names("db", "other/container"), "item1"),
+        ] {
+            let error = request
+                .validate_resource_names(true)
+                .expect_err("unsafe distributed transaction names must be rejected");
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST
+            );
+        }
+    }
+
+    #[test]
+    fn resource_name_validation_can_be_disabled_for_distributed_transactions() {
+        let unsafe_item = DistributedTransactionOperation::new(
+            DistributedTransactionOperationKind::Create,
+            target("../other-container"),
+        )
+        .with_resource_body(Bytes::from_static(
+            br#"{"id":"../other-container","pk":"pk1"}"#,
+        ));
+        let request = DistributedTransactionRequest::new(
+            DistributedTransactionType::Write,
+            vec![unsafe_item],
+        );
+
+        request
+            .validate_resource_names(false)
+            .expect("the compatibility option must allow unsafe distributed transaction names");
     }
 
     #[test]

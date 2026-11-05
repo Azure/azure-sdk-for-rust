@@ -175,8 +175,9 @@ async fn replication_survives_manual_split_lock() {
     let split_epk = store
         .midpoint_split_epk("testdb", "testcoll", target_partition)
         .unwrap();
-    let operation =
-        store.begin_manual_split_partition("testdb", "testcoll", target_partition, split_epk);
+    let operation = store
+        .begin_manual_split_partition("testdb", "testcoll", target_partition, split_epk)
+        .unwrap();
     store.drain_pending_replications().await;
     operation.complete().await.unwrap();
 
@@ -230,7 +231,9 @@ async fn replication_survives_manual_merge_lock() {
         store.drain_pending_replications().await;
     }
     let (pk_header, _) = routed.expect("expected an item routed to partition 0 or 1");
-    let operation = store.begin_manual_merge_partitions("testdb", "testcoll", 0, 1);
+    let operation = store
+        .begin_manual_merge_partitions("testdb", "testcoll", 0, 1)
+        .unwrap();
     store.drain_pending_replications().await;
     operation.complete().await.unwrap();
 
