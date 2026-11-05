@@ -3,7 +3,7 @@
 
 //! Recovers failed attempts against the same endpoint, using explicit retry limits and progress.
 
-use std::{ops::ControlFlow, time::Duration};
+use std::time::{Duration, Instant};
 
 use crate::{
     diagnostics::{
@@ -12,13 +12,15 @@ use crate::{
     },
     driver::jitter,
     error::{status_codes, CosmosError},
+    pipeline::{Clock, RecoveryAction},
 };
 
 use super::{
     adaptive_transport::AdaptiveTransport,
-    deadline, diagnostics,
-    dispatch::DispatchFailure,
-    request::PreparationFailure,
+    deadline::Deadline,
+    diagnostics,
+    dispatch::{DispatchError, DispatchErrorDetails},
+    request::PreparationError,
     types::{TransportOutcome, TransportRequest, TransportResult},
     TransportPipelineConfig,
 };
@@ -129,7 +131,6 @@ enum ThrottleWait {
 
 impl ThrottleDecision {
     /// Returns whether the throttle budget requires propagating the original result.
-    // Inline the small enum predicate.
     #[inline(always)]
     fn is_terminal(&self) -> bool {
         matches!(self, Self::Propagate)
@@ -139,39 +140,41 @@ impl ThrottleDecision {
 /// Records an authorization or encoding failure and ends the invocation without sending.
 // Inline the thin failure adapter; diagnostics retains its call frame.
 #[inline(always)]
-pub(super) fn recover_prep_failure(
-    failure: PreparationFailure,
+pub(super) fn recover_prep_error(
+    error: PreparationError,
     handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
-) -> ControlFlow<TransportResult> {
-    diagnostics::fail_preparation(&failure, handle, diagnostics);
-    ControlFlow::Break(failure.into())
+) -> RecoveryAction<TransportResult> {
+    diagnostics::fail_preparation(&error, handle, diagnostics);
+    RecoveryAction::Fail(error.into())
 }
 
 /// Retries an eligible connectivity failure or 429 against the same endpoint, or returns its result.
 ///
 /// Connectivity replay takes precedence. Ordinary throttle progress changes only after the wait
 /// and deadline check; a forced-final retry changes only its own flag.
-pub(super) async fn recover_dispatch_failure(
-    failure: DispatchFailure,
+pub(super) async fn recover_dispatch_error(
+    error: DispatchError,
     request: &TransportRequest,
     config: &TransportPipelineConfig<'_>,
     transport: &AdaptiveTransport,
     progress: &mut TransportRetryProgress,
-) -> ControlFlow<TransportResult> {
+    clock: Clock,
+) -> RecoveryAction<TransportResult> {
+    let details = DispatchErrorDetails::from(error);
     if let Some(shard_id) = connectivity_retry_candidate(
-        &failure.result,
-        failure.shard_id,
+        &details.result,
+        details.shard_id,
         progress.local_connectivity_retry_count,
         config.allow_sent_transport_retry,
     ) {
         if transport.can_retry_on_different_shard(shard_id, &config.endpoint_key) {
-            if let Some(failed) = failure.failed_shard() {
+            if let Some(failed) = details.failed_shard() {
                 progress.failed_shards.push(failed);
             }
             progress.local_connectivity_retry_count += 1;
             progress.excluded_shard_id = Some(shard_id);
-            return ControlFlow::Continue(());
+            return RecoveryAction::Retry;
         }
     }
 
@@ -181,23 +184,23 @@ pub(super) async fn recover_dispatch_failure(
     let is_dtx = false;
 
     let Some(source) = throttle_delay_source(
-        &failure.result,
+        &details.result,
         &config.throttle_policy,
         progress.throttle,
         is_dtx,
     ) else {
-        return ControlFlow::Break(failure.result);
+        return RecoveryAction::Fail(details.result);
     };
     let decision =
         evaluate_throttle_budget(source.sample(), &config.throttle_policy, progress.throttle);
     if decision.is_terminal() {
-        return ControlFlow::Break(failure.result);
+        return RecoveryAction::Fail(details.result);
     }
-    match plan_throttle_wait(decision, deadline::remaining(request.deadline)) {
+    match plan_throttle_wait(decision, request.deadline, clock.now()) {
         ThrottleWait::RetryThrottle { delay, next } => {
-            deadline::sleep(delay).await;
-            if deadline::exceeded(request.deadline) {
-                return ControlFlow::Break(TransportResult::deadline_exceeded(
+            clock.sleep(delay).await;
+            if request.deadline.exceeded(clock.now()) {
+                return RecoveryAction::Fail(TransportResult::deadline_exceeded(
                     RequestSentStatus::Sent,
                 ));
             }
@@ -205,16 +208,18 @@ pub(super) async fn recover_dispatch_failure(
         }
         ThrottleWait::ForceFinalThrottle { delay, next } => {
             if !delay.is_zero() {
-                deadline::sleep(delay).await;
+                clock.sleep(delay).await;
             }
             progress.throttle = next;
         }
-        ThrottleWait::Propagate => return ControlFlow::Break(failure.result),
+        ThrottleWait::Propagate => return RecoveryAction::Fail(details.result),
         ThrottleWait::DeadlineExceeded => {
-            return ControlFlow::Break(TransportResult::deadline_exceeded(RequestSentStatus::Sent));
+            return RecoveryAction::Fail(TransportResult::deadline_exceeded(
+                RequestSentStatus::Sent,
+            ));
         }
     }
-    ControlFlow::Continue(())
+    RecoveryAction::Retry
 }
 
 /// Selects and samples a retry delay, then applies the throttle budget.
@@ -234,7 +239,6 @@ pub(crate) fn throttle_retry(
 }
 
 /// Chooses the attempt's diagnostic context, giving local shard retries precedence over throttling.
-// Inline the small context selection.
 #[inline(always)]
 pub(super) fn execution_context(
     initial: ExecutionContext,
@@ -375,23 +379,26 @@ pub(super) fn evaluate_throttle_budget(
     }
 }
 
-/// Applies the remaining deadline to a throttle decision, returning a wait, timeout, or propagation.
+/// Applies the deadline at `now` to a throttle decision, returning a wait, timeout, or propagation.
 ///
-/// `None` means no deadline. The next progress retains the delay charged before deadline capping.
-fn plan_throttle_wait(decision: ThrottleDecision, remaining: Option<Duration>) -> ThrottleWait {
+/// The next progress retains the delay charged before deadline capping.
+fn plan_throttle_wait(
+    decision: ThrottleDecision,
+    deadline: Deadline,
+    now: Instant,
+) -> ThrottleWait {
     match decision {
         ThrottleDecision::Retry { delay, next } => {
-            if remaining.is_some_and(|remaining| remaining.is_zero()) {
+            if deadline.exceeded(now) {
                 ThrottleWait::DeadlineExceeded
             } else {
                 ThrottleWait::RetryThrottle {
-                    delay: remaining
-                        .map_or(delay, |remaining| deadline::cap_delay(delay, remaining)),
+                    delay: deadline.cap_delay(delay, now),
                     next,
                 }
             }
         }
-        ThrottleDecision::ForcedFinal { next } => match deadline::forced_final_delay(remaining) {
+        ThrottleDecision::ForcedFinal { next } => match deadline.forced_final_delay(now) {
             Some(delay) => ThrottleWait::ForceFinalThrottle { delay, next },
             None => ThrottleWait::Propagate,
         },
@@ -403,7 +410,7 @@ fn plan_throttle_wait(decision: ThrottleDecision, remaining: Option<Duration>) -
 mod tests {
     use super::{
         connectivity_retry_candidate, evaluate_throttle_budget, execution_context,
-        plan_throttle_wait, retry_delay_source, throttle_delay_source, RetryDelay,
+        plan_throttle_wait, retry_delay_source, throttle_delay_source, Deadline, RetryDelay,
         ThrottleDecision, ThrottleRetryPolicy, ThrottleRetryProgress, ThrottleWait,
         TransportRetryProgress, DATA_PLANE_MAX_PER_RETRY_DELAY, DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
         DATA_PLANE_MAX_THROTTLE_WAIT, METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS,
@@ -415,7 +422,7 @@ mod tests {
         models::CosmosResponseHeaders,
         pipeline::transport::types::{TransportOutcome, TransportResult},
     };
-    use std::time::Duration;
+    use std::time::{Duration, Instant};
 
     #[test]
     fn delay_sampling_preserves_jitter_bounds_and_disabled_cases() {
@@ -603,11 +610,16 @@ mod tests {
 
     #[test]
     fn deadline_capping_does_not_reduce_budgeted_delay() {
+        let now = Instant::now();
         let policy = metadata_policy();
         let decision =
             evaluate_throttle_budget(Duration::from_secs(5), &policy, Default::default());
         assert_eq!(
-            plan_throttle_wait(decision, Some(Duration::from_millis(250))),
+            plan_throttle_wait(
+                decision,
+                Deadline::from(Some(now + Duration::from_millis(250))),
+                now
+            ),
             ThrottleWait::RetryThrottle {
                 delay: Duration::from_millis(150),
                 next: ThrottleRetryProgress {
@@ -621,6 +633,8 @@ mod tests {
 
     #[test]
     fn expired_deadline_distinguishes_ordinary_and_forced_waits() {
+        let now = Instant::now();
+        let deadline = Deadline::from(Some(now));
         let next = ThrottleRetryProgress::default();
         assert_eq!(
             plan_throttle_wait(
@@ -628,12 +642,13 @@ mod tests {
                     delay: Duration::ZERO,
                     next
                 },
-                Some(Duration::ZERO),
+                deadline,
+                now,
             ),
             ThrottleWait::DeadlineExceeded
         );
         assert_eq!(
-            plan_throttle_wait(ThrottleDecision::ForcedFinal { next }, Some(Duration::ZERO),),
+            plan_throttle_wait(ThrottleDecision::ForcedFinal { next }, deadline, now),
             ThrottleWait::Propagate
         );
     }

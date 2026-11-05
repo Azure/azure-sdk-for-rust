@@ -551,8 +551,6 @@ impl EndpointShardPool {
     }
 
     /// Checks for an eligible peer or room to create one without changing the pool.
-    // Inline the small availability check.
-    #[inline(always)]
     fn can_select_different_shard(&self, excluded_shard_id: u64) -> bool {
         let shards = self.shards.load();
         shards
@@ -781,8 +779,6 @@ impl EndpointShardPool {
 }
 
 impl fmt::Debug for EndpointShardPool {
-    // Inline the thin formatting adapter.
-    #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let shard_count = self.shards.load().len();
         f.debug_struct("EndpointShardPool")
@@ -840,8 +836,6 @@ impl ClientShard {
     }
 
     /// Converts an `Instant` to a biased nanos offset from this shard's creation time.
-    // Inline the small timestamp conversion.
-    #[inline(always)]
     fn instant_to_nanos(&self, instant: Instant) -> u64 {
         if let Some(d) = instant.checked_duration_since(self.creation_time) {
             TIMESTAMP_BIAS_NANOS.saturating_add(d.as_nanos() as u64)
@@ -853,15 +847,11 @@ impl ClientShard {
     }
 
     /// Returns the current number of reserved streams.
-    // Inline the atomic field projection.
-    #[inline(always)]
     fn inflight(&self) -> u32 {
         self.inflight.load(Ordering::Relaxed)
     }
 
     /// Atomically reserves a stream below the limit, returning a guard that releases it.
-    // Inline the thin reservation adapter.
-    #[inline(always)]
     fn try_reserve(self: &Arc<Self>, max_streams: u32) -> Option<InflightGuard> {
         self.try_reserve_after_load(max_streams, || {})
     }
@@ -918,8 +908,6 @@ impl ClientShard {
     }
 
     /// Increments the lifetime request count and records the reservation time.
-    // Inline the small counter update.
-    #[inline(always)]
     fn record_reservation(&self) {
         self.total_requests.fetch_add(1, Ordering::Relaxed);
         self.last_request_at_nanos
@@ -943,8 +931,6 @@ impl ClientShard {
     }
 
     /// Releases an unfinished reservation and counts it as cancelled, not as a transport failure.
-    // Inline the small counter update.
-    #[inline(always)]
     fn decrement_inflight(&self) {
         self.inflight.fetch_sub(1, Ordering::Relaxed);
         self.total_cancellations.fetch_add(1, Ordering::Relaxed);
@@ -965,8 +951,6 @@ struct InflightGuard {
 
 impl InflightGuard {
     /// Takes responsibility for releasing an already-counted reservation on the shard.
-    // Inline the small guard constructor.
-    #[inline(always)]
     fn new(shard: Arc<ClientShard>) -> Self {
         Self {
             shard,
@@ -988,8 +972,6 @@ impl InflightGuard {
 }
 
 impl Drop for InflightGuard {
-    // Inline the thin cancellation adapter.
-    #[inline(always)]
     fn drop(&mut self) {
         if !self.finished {
             self.shard.decrement_inflight();
@@ -999,22 +981,16 @@ impl Drop for InflightGuard {
 
 impl ClientShard {
     /// Reports whether a health sweep has marked this shard to stop accepting new requests.
-    // Inline the atomic field projection.
-    #[inline(always)]
     fn is_marked_for_eviction(&self) -> bool {
         self.marked_for_eviction.load(Ordering::Relaxed)
     }
 
     /// Checks that neither the caller nor a health sweep has excluded this shard.
-    // Inline the small selection predicate.
-    #[inline(always)]
     fn is_selectable(&self, excluded_shard_id: Option<u64>) -> bool {
         excluded_shard_id != Some(self.id) && !self.is_marked_for_eviction()
     }
 
     /// Copies the shard's current load, outcome counters, and eviction flag into diagnostic data.
-    // Inline the small diagnostic projection.
-    #[inline(always)]
     fn transport_diagnostics(&self) -> TransportShardDiagnostics {
         TransportShardDiagnostics::new(
             self.id,
@@ -1072,8 +1048,6 @@ impl ClientShard {
 #[cfg(any(feature = "tokio", test))]
 impl ClientShard {
     /// Converts a biased nanos offset to an `Instant` relative to this shard's creation time.
-    // Inline the small timestamp conversion.
-    #[inline(always)]
     fn nanos_to_instant(&self, biased_nanos: u64) -> Instant {
         if biased_nanos >= TIMESTAMP_BIAS_NANOS {
             self.creation_time + Duration::from_nanos(biased_nanos - TIMESTAMP_BIAS_NANOS)
@@ -1104,8 +1078,6 @@ impl ClientShard {
     }
 
     /// Prevents future selections without interrupting existing requests.
-    // Inline the atomic flag update.
-    #[inline(always)]
     fn mark_for_eviction(&self) {
         self.marked_for_eviction.store(true, Ordering::Relaxed);
     }
@@ -1138,8 +1110,6 @@ struct ClientShardHealthSnapshot {
 #[cfg(any(feature = "tokio", test))]
 impl ClientShardHealthSnapshot {
     /// Checks whether the last successful response is within the eviction grace period.
-    // Inline the small health predicate.
-    #[inline(always)]
     fn has_recent_success(self, now: Instant, grace_period: Duration) -> bool {
         self.last_success_at
             .is_some_and(|last_success_at| now.duration_since(last_success_at) <= grace_period)
@@ -1189,8 +1159,6 @@ fn select_from_shards(
 }
 
 /// Chooses the active shard window and reserves a stream below the desired occupancy.
-// Inline the thin reservation adapter.
-#[inline(always)]
 fn reserve_from_shards(
     shards: &[Arc<ClientShard>],
     excluded_shard_id: Option<u64>,
@@ -1203,8 +1171,6 @@ fn reserve_from_shards(
 }
 
 /// Reserves a stream on the preferred shard if it remains selectable and below the stream limit.
-// Inline the thin reservation adapter.
-#[inline(always)]
 fn try_reserve_preferred(
     shards: &[Arc<ClientShard>],
     excluded_shard_id: Option<u64>,
@@ -1216,8 +1182,6 @@ fn try_reserve_preferred(
 }
 
 /// Finds the preferred shard unless it is missing, excluded, or marked for eviction.
-// Inline the small selection adapter.
-#[inline(always)]
 fn selectable_preferred_shard(
     shards: &[Arc<ClientShard>],
     excluded_shard_id: Option<u64>,
@@ -1360,8 +1324,6 @@ fn pick_probe_candidate(
 }
 
 impl fmt::Debug for ClientShard {
-    // Inline the thin formatting adapter.
-    #[inline(always)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ClientShard")
             .field("id", &self.id)

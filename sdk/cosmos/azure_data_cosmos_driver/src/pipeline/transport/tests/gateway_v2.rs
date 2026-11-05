@@ -11,12 +11,13 @@ use super::{
 /// Regression: a Gateway 2.0 error response arrives as an HTTP-error
 /// envelope (404) wrapping an RNTBD `404/1002` frame. The pipeline must
 /// unwrap the body and surface the real sub-status rather than a bare 404.
-#[test]
-fn finalize_unwraps_gateway_v2_error_envelope() {
+#[tokio::test]
+async fn finalize_unwraps_gateway_v2_error_envelope() {
     let executed = finalize_gateway_v2_response(
         azure_core::http::StatusCode::NotFound,
         gateway_v2_error_frame(404, 1002),
-    );
+    )
+    .await;
 
     match executed.outcome {
         TransportOutcome::HttpError { status, .. } => {
@@ -38,12 +39,13 @@ fn finalize_unwraps_gateway_v2_error_envelope() {
 /// A non-2xx thin-client envelope whose body is *not* an RNTBD frame (a
 /// genuine proxy-level error) must fall back to the bare envelope status
 /// instead of being masked as a transport failure.
-#[test]
-fn finalize_falls_back_on_non_rntbd_gateway_v2_error_envelope() {
+#[tokio::test]
+async fn finalize_falls_back_on_non_rntbd_gateway_v2_error_envelope() {
     let executed = finalize_gateway_v2_response(
         azure_core::http::StatusCode::Unauthorized,
         b"unauthorized".to_vec(),
-    );
+    )
+    .await;
 
     match executed.outcome {
         TransportOutcome::HttpError { status, .. } => {

@@ -5,20 +5,21 @@
 //!
 //! The operation pipeline owns routing, failover, and session recovery.
 //!
-//! Inline small projections and adapters; retain larger I/O and recovery functions for backtraces.
+//! Inline small pipeline-stage helpers; retain larger I/O and recovery functions for backtraces.
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, PipelineKind, RequestSentStatus, TransportSecurity},
     models::Credential,
-    pipeline::transport::{
-        adaptive_transport::AdaptiveTransport,
-        dispatch::DispatchOutcome,
-        recovery::{ThrottleRetryPolicy, TransportRetryProgress},
-        types::{TransportRequest, TransportResult},
+    pipeline::{
+        transport::{
+            adaptive_transport::AdaptiveTransport,
+            recovery::{ThrottleRetryPolicy, TransportRetryProgress},
+            types::{TransportRequest, TransportResult},
+        },
+        Clock, RecoveryAction,
     },
 };
 use azure_core::http::headers::HeaderValue;
-use std::ops::ControlFlow;
 
 pub(crate) mod adaptive_transport;
 mod authorization;
@@ -68,6 +69,7 @@ pub(crate) struct TransportPipelineConfig<'a> {
 pub(crate) struct TransportPipelineServices<'a> {
     pub transport: &'a AdaptiveTransport,
     pub credential: &'a Credential,
+    pub clock: Clock,
 }
 
 /// Prepares and dispatches a request, recovering failures only against the same target.
@@ -79,17 +81,24 @@ pub(crate) async fn execute(
 ) -> TransportResult {
     let mut progress = TransportRetryProgress::default();
     loop {
-        if deadline::exceeded(request.deadline) {
+        if request.deadline.exceeded(services.clock.now()) {
             tracing::trace!("transport pipeline: deadline exceeded before attempt");
             return TransportResult::deadline_exceeded(RequestSentStatus::NotSent);
         }
 
         let handle = diagnostics::start_attempt(&request, config, services, &progress, diagnostics);
-        let prepared = match request::prepare(&request, config, services.credential).await {
+        let prepared = match request::prepare(
+            &request,
+            config,
+            services.credential,
+            services.clock.clone(),
+        )
+        .await
+        {
             Ok(prepared) => prepared,
-            Err(failure) => match recovery::recover_prep_failure(failure, handle, diagnostics) {
-                ControlFlow::Continue(()) => continue,
-                ControlFlow::Break(result) => return result,
+            Err(error) => match recovery::recover_prep_error(error, handle, diagnostics) {
+                RecoveryAction::Retry => continue,
+                RecoveryAction::Fail(result) => return result,
             },
         };
         diagnostics::start_transport(handle, diagnostics);
@@ -105,33 +114,34 @@ pub(crate) async fn execute(
             &config.endpoint_key,
             handle,
             diagnostics,
+            services.clock.clone(),
         )
         .await;
         diagnostics::complete_attempt(&outcome, handle, diagnostics);
 
         #[cfg(feature = "fault_injection")]
         fault_injection::record_evaluations(collector, handle, diagnostics);
-        tracing::debug!(outcome = ?outcome.result().outcome, "transport request complete");
-        drop(prepared);
-
-        let failure = match outcome {
-            DispatchOutcome::Success(result) => return result,
-            DispatchOutcome::HttpError(failure)
-            | DispatchOutcome::TransportFailure { failure, .. }
-            | DispatchOutcome::ResponseDecodingFailure(failure)
-            | DispatchOutcome::Timeout(failure) => failure,
+        let result = match &outcome {
+            Ok(result) => result,
+            Err(error) => error.result(),
         };
-        match recovery::recover_dispatch_failure(
-            failure,
-            &request,
-            config,
-            services.transport,
-            &mut progress,
-        )
-        .await
-        {
-            ControlFlow::Continue(()) => continue,
-            ControlFlow::Break(result) => return result,
+        tracing::debug!(outcome = ?result.outcome, "transport request complete");
+
+        match outcome {
+            Ok(result) => return result,
+            Err(error) => match recovery::recover_dispatch_error(
+                error,
+                &request,
+                config,
+                services.transport,
+                &mut progress,
+                services.clock.clone(),
+            )
+            .await
+            {
+                RecoveryAction::Retry => continue,
+                RecoveryAction::Fail(result) => return result,
+            },
         }
     }
 }

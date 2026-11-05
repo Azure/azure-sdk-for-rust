@@ -2845,7 +2845,7 @@ mod tests {
         let probe = Arc::new(MockProbe::new(ProbeOutcome::Failed {
             failures: vec![(
                 "eastus".into(),
-                crate::pipeline::transport::connectivity_probe::ProbeFailure::Status(503),
+                crate::pipeline::transport::connectivity_probe::ProbeError::Status(503),
             )],
         }));
 
@@ -2946,7 +2946,7 @@ mod tests {
         probe.set_outcome(ProbeOutcome::Failed {
             failures: vec![(
                 "eastus".into(),
-                crate::pipeline::transport::connectivity_probe::ProbeFailure::Status(503),
+                crate::pipeline::transport::connectivity_probe::ProbeError::Status(503),
             )],
         });
         store.force_refresh_account_properties().await;

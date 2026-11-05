@@ -87,6 +87,7 @@ async fn execute_transport_pipeline_retries_not_sent_connectivity_error_on_diffe
         test_request(Some(Instant::now() + Duration::from_secs(2))),
         &PipelineTestContext {
             transport: &client,
+            clock: Default::default(),
             allow_sent_transport_retry: false,
             credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
             user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
@@ -142,6 +143,7 @@ async fn execute_transport_pipeline_only_retries_unknown_connectivity_error_when
         test_request(Some(Instant::now() + Duration::from_secs(2))),
         &PipelineTestContext {
             transport: &client_without_retry,
+            clock: Default::default(),
             allow_sent_transport_retry: false,
             credential: &credential,
             user_agent: &user_agent,
@@ -185,6 +187,7 @@ async fn execute_transport_pipeline_only_retries_unknown_connectivity_error_when
         test_request(Some(Instant::now() + Duration::from_secs(2))),
         &PipelineTestContext {
             transport: &client_with_retry,
+            clock: Default::default(),
             allow_sent_transport_retry: true,
             credential: &credential,
             user_agent: &user_agent,
@@ -264,6 +267,7 @@ async fn mixed_recovery_keeps_target_and_consumes_shard_exclusion_once() {
         request,
         &PipelineTestContext {
             transport: &transport,
+            clock: Default::default(),
             credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
             allow_sent_transport_retry: false,
             user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),

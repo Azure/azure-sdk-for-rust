@@ -41,8 +41,6 @@ use super::http_client_factory::DefaultHttpClientFactory;
 /// - `OperationType::Execute` on `ResourceType::StoredProcedure`
 ///
 /// Returns `false` for all other combinations.
-// Inline the small operation predicate.
-#[inline(always)]
 pub(crate) fn uses_dataplane_pipeline(
     resource_type: ResourceType,
     operation_type: OperationType,
@@ -189,8 +187,6 @@ impl CosmosTransport {
     }
 
     /// Returns the negotiated HTTP version for this account.
-    // Inline the field projection.
-    #[inline(always)]
     pub(crate) fn negotiated_version(&self) -> TransportHttpVersion {
         self.negotiated_version
     }

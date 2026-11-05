@@ -3,7 +3,7 @@
 
 //! Data exchanged between the operation and transport pipelines.
 
-use super::AuthorizationContext;
+use super::{deadline::Deadline, AuthorizationContext};
 #[cfg(feature = "unstable_dtx")]
 use crate::models::ResourceType;
 use crate::{
@@ -16,7 +16,6 @@ use crate::{
     options::ReadConsistencyStrategy,
 };
 use azure_core::http::{headers::Headers, Method};
-use std::time::Instant;
 use url::Url;
 
 /// Transport mode for a routed attempt.
@@ -33,7 +32,6 @@ pub(crate) enum TransportMode {
 
 impl TransportMode {
     /// Returns whether requests need Gateway V2 framing.
-    // Inline the small enum predicate.
     #[inline(always)]
     pub fn is_gateway_v2(self) -> bool {
         matches!(self, Self::GatewayV2)
@@ -87,7 +85,7 @@ pub(crate) struct TransportRequest {
     /// Why this request fell back from its operation-specific route.
     pub routing_fallback: Option<RoutingFallbackReason>,
     /// End-to-end deadline for the overall operation.
-    pub deadline: Option<Instant>,
+    pub deadline: Deadline,
 }
 
 /// The outcome of a transport attempt or a completed transport invocation.
@@ -141,7 +139,6 @@ impl TransportResult {
     }
 
     /// Returns the parsed Cosmos response headers if this is an HTTP response.
-    // Inline the small enum projection.
     #[inline(always)]
     pub fn cosmos_headers(&self) -> Option<&CosmosResponseHeaders> {
         match &self.outcome {
@@ -183,14 +180,12 @@ pub(crate) enum TransportOutcome {
 
 impl TransportOutcome {
     /// Returns whether the service returned a successful response.
-    // Inline the small enum predicate.
     #[inline(always)]
     pub fn is_successful(&self) -> bool {
         matches!(self, Self::Success { .. })
     }
 
     /// Checks for a 429 eligible for transport retries rather than body-bearing DTX recovery.
-    // Inline the small enum predicate.
     #[inline(always)]
     pub fn is_retryable_throttle(&self, is_distributed_transaction: bool) -> bool {
         matches!(
@@ -203,8 +198,6 @@ impl TransportOutcome {
 
 /// Display implementation for logging the high-level outcome in a compact format
 impl std::fmt::Display for TransportOutcome {
-    // Inline the thin formatting adapter.
-    #[inline(always)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             TransportOutcome::Success { status, .. } => write!(f, "Success({})", status),

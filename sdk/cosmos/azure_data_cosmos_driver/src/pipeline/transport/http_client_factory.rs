@@ -42,8 +42,6 @@ pub struct HttpClientConfig {
 
 impl HttpClientConfig {
     /// Config for metadata requests using the negotiated HTTP version.
-    // Inline the small configuration constructor.
-    #[inline(always)]
     pub(crate) fn metadata(
         connection_pool: &ConnectionPoolOptions,
         negotiated_version: TransportHttpVersion,
@@ -61,8 +59,6 @@ impl HttpClientConfig {
     }
 
     /// Config for dataplane gateway requests using the negotiated HTTP version.
-    // Inline the small configuration constructor.
-    #[inline(always)]
     pub(crate) fn dataplane_gateway(
         connection_pool: &ConnectionPoolOptions,
         negotiated_version: TransportHttpVersion,
@@ -80,8 +76,6 @@ impl HttpClientConfig {
     }
 
     /// Config for Gateway 2.0 requests (always HTTP/2).
-    // Inline the small configuration constructor.
-    #[inline(always)]
     pub(crate) fn dataplane_gateway_v2(connection_pool: &ConnectionPoolOptions) -> Self {
         Self {
             version_policy: HttpVersionPolicy::Http2Only,
@@ -93,8 +87,6 @@ impl HttpClientConfig {
     }
 
     /// Returns this configuration with certificate validation disabled for emulator connections.
-    // Inline the small configuration update.
-    #[inline(always)]
     pub(crate) fn with_allow_invalid_cert(mut self) -> Self {
         self.allow_invalid_cert = true;
         self
@@ -189,8 +181,6 @@ pub(crate) struct DefaultHttpClientFactory;
 
 impl DefaultHttpClientFactory {
     /// Creates the default HTTP client factory.
-    // Inline the unit constructor.
-    #[inline(always)]
     pub(crate) fn new() -> Self {
         Self
     }
@@ -284,8 +274,6 @@ impl HttpClientFactory for DefaultHttpClientFactory {
 
 #[cfg(not(feature = "reqwest"))]
 impl HttpClientFactory for DefaultHttpClientFactory {
-    // Inline the fixed configuration error.
-    #[inline(always)]
     fn build(
         &self,
         _connection_pool: &ConnectionPoolOptions,

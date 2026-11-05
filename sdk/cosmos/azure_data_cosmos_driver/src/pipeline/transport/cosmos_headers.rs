@@ -98,8 +98,6 @@ pub(crate) fn apply_read_consistency_strategy(
 /// Single source of truth for header name + value formatting; called from both
 /// the data-plane operation pipeline and off-pipeline bootstrap fetches.
 #[cfg(feature = "fault_injection")]
-// Inline the thin header adapter.
-#[inline(always)]
 pub(crate) fn apply_fault_injection_operation_tag(
     headers: &mut azure_core::http::headers::Headers,
     operation_type: crate::fault_injection::FaultOperationType,

@@ -29,8 +29,6 @@ pub(crate) enum ResourceLink {
 
 impl ResourceLink {
     /// Borrows the signing link from the precomputed paths or the independently owned string.
-    // Inline the small enum projection.
-    #[inline(always)]
     pub(crate) fn as_str(&self) -> &str {
         match self {
             Self::Paths(p) => p.signing_link(),
@@ -40,8 +38,6 @@ impl ResourceLink {
 }
 
 impl std::fmt::Debug for ResourceLink {
-    // Inline the thin formatting adapter.
-    #[inline(always)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.as_str())
     }
@@ -63,8 +59,6 @@ impl AuthorizationContext {
     ///
     /// Use [`AuthorizationContext::from_paths`] on the hot path to avoid copying
     /// the signing link out of the pre-computed [`ResourcePaths`].
-    // Inline the small context constructor.
-    #[inline(always)]
     pub(crate) fn new(
         method: Method,
         resource_type: ResourceType,
@@ -79,8 +73,6 @@ impl AuthorizationContext {
 
     /// Creates a new authorization context that derives the signing link directly
     /// from `paths`, avoiding any additional string allocation.
-    // Inline the small context constructor.
-    #[inline(always)]
     pub(crate) fn from_paths(
         method: Method,
         resource_type: ResourceType,

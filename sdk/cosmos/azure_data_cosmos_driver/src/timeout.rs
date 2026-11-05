@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Races a future against the shared runtime's timer.
+//! Races a future against an injected clock's timer.
 
+use crate::pipeline::Clock;
 use futures::{
     future::{self, Either},
     pin_mut,
@@ -20,14 +21,9 @@ pub(crate) struct TimedOut;
 pub(crate) async fn with_timeout<F: Future>(
     duration: Duration,
     future: F,
+    clock: Clock,
 ) -> Result<F::Output, TimedOut> {
-    let timer = async {
-        azure_core::sleep(
-            azure_core::time::Duration::try_from(duration)
-                .unwrap_or(azure_core::time::Duration::ZERO),
-        )
-        .await
-    };
+    let timer = clock.sleep(duration);
     // `select` needs pinned futures: async futures may not be Unpin.
     // `pin_mut!` keeps these locals at stable addresses until they are dropped.
     pin_mut!(future, timer);
@@ -39,7 +35,7 @@ pub(crate) async fn with_timeout<F: Future>(
 
 #[cfg(test)]
 mod tests {
-    use super::{with_timeout, Duration, TimedOut};
+    use super::{with_timeout, Clock, Duration, TimedOut};
     use futures::future;
     use std::cell::Cell;
 
@@ -59,57 +55,70 @@ mod tests {
             Err::<(), _>("operation failed")
         };
         assert_eq!(
-            with_timeout(Duration::ZERO, work).await,
+            with_timeout(Duration::ZERO, work, Clock::new_test()).await,
             Ok(Err("operation failed"))
         );
         assert_eq!(calls, 1);
     }
 
-    #[tokio::test(start_paused = true)]
+    #[tokio::test]
     async fn returns_output_when_work_finishes_no_later_than_timer() {
         for duration in [Duration::from_millis(5), Duration::from_millis(10)] {
+            let clock = Clock::new_test();
             let work = async {
-                tokio::time::sleep(Duration::from_millis(5)).await;
+                clock.sleep(Duration::from_millis(5)).await;
                 42
             };
-            assert_eq!(with_timeout(duration, work).await, Ok(42));
+            let mut race = Box::pin(with_timeout(duration, work, clock.clone()));
+            assert!(futures::poll!(race.as_mut()).is_pending());
+            assert_eq!(clock.pending_sleep_count(), 2);
+            clock.advance(Duration::from_millis(5));
+            assert_eq!(race.await, Ok(42));
+            assert_eq!(clock.pending_sleep_count(), 0);
         }
     }
 
     #[tokio::test(start_paused = true)]
     async fn unsupported_duration_uses_zero_duration_timer() {
-        assert_eq!(
-            with_timeout(Duration::MAX, future::pending::<()>()).await,
-            Err(TimedOut)
-        );
+        for clock in [Clock::default(), Clock::new_test()] {
+            assert_eq!(
+                with_timeout(Duration::MAX, future::pending::<()>(), clock).await,
+                Err(TimedOut)
+            );
+        }
     }
 
-    #[tokio::test(start_paused = true)]
+    #[tokio::test]
     async fn timeout_drops_unfinished_work() {
+        let clock = Clock::new_test();
         let dropped = Cell::new(false);
         let guard = DropSignal(&dropped);
         let work = async move {
             let _guard = guard;
             future::pending::<()>().await
         };
-        assert_eq!(
-            with_timeout(Duration::from_millis(10), work).await,
-            Err(TimedOut)
-        );
+        let mut race = Box::pin(with_timeout(Duration::from_millis(10), work, clock.clone()));
+        assert!(futures::poll!(race.as_mut()).is_pending());
+        clock.advance(Duration::from_millis(10));
+        assert_eq!(race.await, Err(TimedOut));
         assert!(dropped.get());
+        assert_eq!(clock.pending_sleep_count(), 0);
     }
 
     #[tokio::test]
     async fn cancelling_the_race_drops_unfinished_work() {
+        let clock = Clock::new_test();
         let dropped = Cell::new(false);
         let guard = DropSignal(&dropped);
         let work = async move {
             let _guard = guard;
             future::pending::<()>().await
         };
-        let mut race = Box::pin(with_timeout(Duration::from_secs(60), work));
+        let mut race = Box::pin(with_timeout(Duration::from_secs(60), work, clock.clone()));
         assert!(futures::poll!(race.as_mut()).is_pending());
+        assert_eq!(clock.pending_sleep_count(), 1);
         drop(race);
         assert!(dropped.get());
+        assert_eq!(clock.pending_sleep_count(), 0);
     }
 }

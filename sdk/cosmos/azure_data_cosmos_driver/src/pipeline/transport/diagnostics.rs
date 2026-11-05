@@ -4,11 +4,11 @@
 //! Applies transport observations to the operation's diagnostic builder.
 
 use super::{
-    dispatch::DispatchOutcome,
+    dispatch::DispatchError,
     recovery::{self, TransportRetryProgress},
-    request::PreparationFailure,
+    request::PreparationError,
     sharded_transport::TransportDispatch,
-    types::{TransportOutcome, TransportRequest},
+    types::{TransportOutcome, TransportRequest, TransportResult},
     TransportPipelineConfig, TransportPipelineServices,
 };
 use crate::{
@@ -75,29 +75,28 @@ pub(super) fn record_dispatch(
 
 /// Records a preparation failure as unsent, without adding transport events.
 pub(super) fn fail_preparation(
-    failure: &PreparationFailure,
+    error: &PreparationError,
     handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) {
-    let details = match failure {
-        PreparationFailure::Authorization(error) => error.to_string(),
-        PreparationFailure::Encoding(error) => driver::error_chain_summary(error),
+    let details = match error {
+        PreparationError::Authorization(error) => error.to_string(),
+        PreparationError::Encoding(error) => driver::error_chain_summary(error),
     };
-    diagnostics.fail_transport_request(
-        handle,
-        details,
-        RequestSentStatus::NotSent,
-        failure.status(),
-    );
+    diagnostics.fail_transport_request(handle, details, RequestSentStatus::NotSent, error.status());
 }
 
 /// Writes response headers or failure details into the attempt record and marks it terminal.
 pub(super) fn complete_attempt(
-    outcome: &DispatchOutcome,
+    outcome: &Result<TransportResult, DispatchError>,
     handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) {
-    match &outcome.result().outcome {
+    let (result, failed_after_headers) = match outcome {
+        Ok(result) => (result, false),
+        Err(error) => (error.result(), error.failed_after_headers()),
+    };
+    match &result.outcome {
         TransportOutcome::Success {
             status,
             cosmos_headers,
@@ -116,7 +115,7 @@ pub(super) fn complete_attempt(
             request_sent,
         } => {
             let details = driver::error_chain_summary(error);
-            if outcome.failed_after_headers() {
+            if failed_after_headers {
                 diagnostics.add_event(
                     handle,
                     RequestEvent::new(RequestEventType::ResponseHeadersReceived),

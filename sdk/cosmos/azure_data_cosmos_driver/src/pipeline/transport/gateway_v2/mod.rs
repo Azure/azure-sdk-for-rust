@@ -70,8 +70,6 @@ pub(crate) struct GatewayV2Headers<'a> {
 }
 
 /// Creates the conversion error returned for invalid Gateway V2 request or response data.
-// Inline the thin error adapter.
-#[inline(always)]
 fn data_conversion_error(message: impl Into<String>) -> azure_core::Error {
     azure_core::Error::with_message(ErrorKind::DataConversion, message.into())
 }

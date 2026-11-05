@@ -4,12 +4,129 @@
 use super::{
     gateway_v2_context, gateway_v2_diagnostics, gateway_v2_transport_request, run_pipeline,
     test_endpoint_key, test_request, ActivityId, AdaptiveTransport, AlwaysThrottlesTransportClient,
-    AlwaysThrottlesZeroDelayClient, Arc, ClientIdRecordingRetryTransport, CosmosEndpoint,
+    AlwaysThrottlesZeroDelayClient, Arc, ClientIdRecordingRetryTransport, Clock, CosmosEndpoint,
     Credential, DiagnosticsContextBuilder, DiagnosticsOptions, Duration, ExecutionContext,
-    GatewayV2MockTransportClient, HttpResponse, PipelineKind, PipelineTestContext, TransportMode,
-    TransportOutcome, TransportSecurity, METADATA_MAX_PER_RETRY_DELAY, TEST_CLIENT_ID,
-    TEST_CLIENT_ID_HEADER,
+    GatewayV2MockTransportClient, HttpResponse, PipelineKind, PipelineTestContext,
+    RequestSentStatus, TransportMode, TransportOutcome, TransportSecurity,
+    METADATA_MAX_PER_RETRY_DELAY, TEST_CLIENT_ID, TEST_CLIENT_ID_HEADER,
 };
+use std::task::Poll;
+
+#[tokio::test]
+async fn ordinary_and_forced_final_retries_wait_on_the_injected_clock() {
+    for (budget, delay, retry_context) in [
+        (
+            Duration::from_secs(30),
+            Duration::from_secs(1),
+            ExecutionContext::OperationRetry,
+        ),
+        (
+            Duration::from_millis(1),
+            Duration::from_secs(2),
+            ExecutionContext::Initial,
+        ),
+    ] {
+        let clock = Clock::new_test();
+        clock.advance(Duration::from_secs(3600));
+        let mut headers = azure_core::http::headers::Headers::new();
+        headers.insert("x-ms-retry-after-ms", "1000");
+        let mock = Arc::new(GatewayV2MockTransportClient::new(vec![
+            HttpResponse {
+                status: 429,
+                headers,
+                body: Vec::new(),
+            },
+            HttpResponse {
+                status: 200,
+                headers: Default::default(),
+                body: Vec::new(),
+            },
+        ]));
+        let client = AdaptiveTransport::Gateway(mock.clone());
+        let request = test_request(Some(clock.now() + Duration::from_secs(4)));
+        let credential = Credential::from(azure_core::credentials::Secret::new("dGVzdA=="));
+        let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
+        let mut context = gateway_v2_context(
+            &client,
+            request.endpoint.endpoint_key(),
+            None,
+            &credential,
+            &user_agent,
+        );
+        context.clock = clock.clone();
+        context.max_throttle_wait_time = budget;
+        let mut diagnostics = gateway_v2_diagnostics();
+
+        let result = {
+            let mut execution = Box::pin(run_pipeline(request, &context, &mut diagnostics));
+            assert!(futures::poll!(execution.as_mut()).is_pending());
+            assert_eq!(mock.requests().len(), 1);
+            assert_eq!(clock.pending_sleep_count(), 1);
+            clock.advance(delay - Duration::from_millis(1));
+            assert!(futures::poll!(execution.as_mut()).is_pending());
+            assert_eq!(mock.requests().len(), 1);
+            clock.advance(Duration::from_millis(1));
+            let Poll::Ready(result) = futures::poll!(execution.as_mut()) else {
+                panic!("retry must finish when its fake-clock delay expires");
+            };
+            result
+        };
+
+        assert!(result.outcome.is_successful());
+        assert_eq!(mock.requests().len(), 2);
+        assert_eq!(clock.pending_sleep_count(), 0);
+        let completed = diagnostics.complete();
+        assert_eq!(completed.requests().len(), 2);
+        assert_eq!(completed.requests()[1].execution_context(), retry_context);
+    }
+}
+
+#[tokio::test]
+async fn deadline_expiring_during_retry_wait_returns_sent_without_another_dispatch() {
+    let clock = Clock::new_test();
+    clock.advance(Duration::from_secs(3600));
+    let mut headers = azure_core::http::headers::Headers::new();
+    headers.insert("x-ms-retry-after-ms", "5000");
+    let mock = Arc::new(GatewayV2MockTransportClient::new(vec![HttpResponse {
+        status: 429,
+        headers,
+        body: Vec::new(),
+    }]));
+    let client = AdaptiveTransport::Gateway(mock.clone());
+    let request = test_request(Some(clock.now() + Duration::from_millis(250)));
+    let credential = Credential::from(azure_core::credentials::Secret::new("dGVzdA=="));
+    let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
+    let mut context = gateway_v2_context(
+        &client,
+        request.endpoint.endpoint_key(),
+        None,
+        &credential,
+        &user_agent,
+    );
+    context.clock = clock.clone();
+    let mut diagnostics = gateway_v2_diagnostics();
+
+    let result = {
+        let mut execution = Box::pin(run_pipeline(request, &context, &mut diagnostics));
+        assert!(futures::poll!(execution.as_mut()).is_pending());
+        assert_eq!(clock.pending_sleep_count(), 1);
+        clock.advance(Duration::from_millis(250));
+        let Poll::Ready(result) = futures::poll!(execution.as_mut()) else {
+            panic!("the expired deadline must end recovery");
+        };
+        result
+    };
+
+    assert!(matches!(
+        result.outcome,
+        TransportOutcome::DeadlineExceeded {
+            request_sent: RequestSentStatus::Sent
+        }
+    ));
+    assert_eq!(mock.requests().len(), 1);
+    assert_eq!(clock.pending_sleep_count(), 0);
+    assert_eq!(diagnostics.complete().requests().len(), 1);
+}
 
 #[tokio::test]
 async fn client_id_is_stable_across_retry_and_overrides_caller_header() {
@@ -31,6 +148,7 @@ async fn client_id_is_stable_across_retry_and_overrides_caller_header() {
         request,
         &PipelineTestContext {
             transport: &client,
+            clock: Default::default(),
             allow_sent_transport_retry: false,
             credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
             user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
@@ -84,6 +202,7 @@ async fn execute_transport_pipeline_with_zero_max_attempts_does_not_retry_429() 
         test_request(None),
         &PipelineTestContext {
             transport: &client,
+            clock: Default::default(),
             allow_sent_transport_retry: false,
             credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
             user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
@@ -149,6 +268,7 @@ async fn execute_transport_pipeline_with_default_attempts_uses_forced_final_retr
         test_request(None),
         &PipelineTestContext {
             transport: &client,
+            clock: Default::default(),
             allow_sent_transport_retry: false,
             credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
             user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
@@ -221,6 +341,7 @@ async fn execute_transport_pipeline_honors_configured_max_throttle_attempts() {
             test_request(None),
             &PipelineTestContext {
                 transport: &client,
+                clock: Default::default(),
                 allow_sent_transport_retry: false,
                 credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
@@ -317,6 +438,7 @@ async fn execute_transport_pipeline_honors_class_default_throttle_budgets() {
             test_request(None),
             &PipelineTestContext {
                 transport: &client,
+                clock: Default::default(),
                 allow_sent_transport_retry: false,
                 credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),

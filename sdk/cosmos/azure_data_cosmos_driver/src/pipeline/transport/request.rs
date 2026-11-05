@@ -6,7 +6,6 @@
 use super::{
     cosmos_headers::{self, NO_RETRY_449},
     cosmos_transport_client::HttpRequest,
-    deadline,
     gateway_v2::{self, GatewayV2Headers},
     request_signing,
     types::{TransportMode, TransportOutcome, TransportRequest, TransportResult},
@@ -16,6 +15,7 @@ use crate::{
     diagnostics::RequestSentStatus,
     error::{status_codes, CosmosError},
     models::{CosmosStatus, Credential},
+    pipeline::Clock,
 };
 use azure_core::http::headers::HeaderValue;
 use std::time::Duration;
@@ -27,18 +27,14 @@ pub(super) struct PreparedRequest {
     pub timeout: Option<Duration>,
 }
 
-/// The request is ready to send, or preparation failed before any network request.
-pub(super) type PreparationOutcome = Result<PreparedRequest, PreparationFailure>;
-
 /// Identifies the preparation step that failed and retains its underlying error.
-pub(super) enum PreparationFailure {
+pub(super) enum PreparationError {
     Authorization(CosmosError),
     Encoding(CosmosError),
 }
 
-impl PreparationFailure {
+impl PreparationError {
     /// Returns the client status reported for the failed preparation step.
-    // Inline the small enum projection.
     #[inline(always)]
     pub fn status(&self) -> CosmosStatus {
         match self {
@@ -48,13 +44,13 @@ impl PreparationFailure {
     }
 }
 
-impl From<PreparationFailure> for TransportResult {
+impl From<PreparationError> for TransportResult {
     // Inline result assembly; signing and encoding retain their call frames.
     #[inline]
-    fn from(failure: PreparationFailure) -> Self {
-        let status = failure.status();
-        let error = match failure {
-            PreparationFailure::Authorization(error) | PreparationFailure::Encoding(error) => error,
+    fn from(error: PreparationError) -> Self {
+        let status = error.status();
+        let error = match error {
+            PreparationError::Authorization(error) | PreparationError::Encoding(error) => error,
         };
         Self {
             outcome: TransportOutcome::TransportError {
@@ -73,7 +69,8 @@ pub(super) async fn prepare(
     request: &TransportRequest,
     config: &TransportPipelineConfig<'_>,
     credential: &Credential,
-) -> PreparationOutcome {
+    clock: Clock,
+) -> Result<PreparedRequest, PreparationError> {
     let mut http_request = HttpRequest {
         url: request.url.clone(),
         method: request.method,
@@ -83,7 +80,7 @@ pub(super) async fn prepare(
         #[cfg(feature = "fault_injection")]
         evaluation_collector: None,
     };
-    let timeout = deadline::remaining(request.deadline).map(deadline::request_timeout);
+    let timeout = request.deadline.request_timeout(clock.now());
     tracing::trace!(
         per_request_timeout = ?timeout, "transport pipeline: computed per-request timeout");
     cosmos_headers::apply_cosmos_headers(&mut http_request, config.user_agent, config.client_id);
@@ -99,7 +96,7 @@ pub(super) async fn prepare(
     }
     request_signing::sign_request(&mut http_request, credential, &request.auth_context)
         .await
-        .map_err(PreparationFailure::Authorization)?;
+        .map_err(PreparationError::Authorization)?;
     if request.transport_mode.is_gateway_v2() {
         let inputs = GatewayV2Headers {
             auth_context: &request.auth_context,
@@ -113,7 +110,7 @@ pub(super) async fn prepare(
         };
         http_request =
             gateway_v2::wrap_request_for_gateway_v2(http_request, &inputs).map_err(|error| {
-                PreparationFailure::Encoding(
+                PreparationError::Encoding(
                     CosmosError::builder()
                         .with_status(status_codes::CLIENT_BAD_REQUEST)
                         .with_message(format!("Gateway 2.0 request wrap failed: {error}"))

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{TransportPipelineConfig, TransportPipelineServices};
+use super::{Clock, TransportPipelineConfig, TransportPipelineServices};
 use std::{
     collections::VecDeque,
     sync::{Arc, Mutex},
@@ -25,13 +25,11 @@ use crate::{
         adaptive_transport::AdaptiveTransport,
         cosmos_headers::NO_RETRY_449,
         cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
-        dispatch,
         http_client_factory::{HttpClientConfig, HttpClientFactory},
         recovery::{
             should_retry_connectivity_failure, ThrottleRetryPolicy, MAX_LOCAL_CONNECTIVITY_RETRIES,
             METADATA_MAX_PER_RETRY_DELAY,
         },
-        sharded_transport::TransportDispatch,
         types::{TransportMode, TransportOutcome, TransportRequest, TransportResult},
         EndpointKey,
     },
@@ -39,6 +37,7 @@ use crate::{
 
 struct PipelineTestContext<'a> {
     transport: &'a AdaptiveTransport,
+    clock: Clock,
     credential: &'a Credential,
     allow_sent_transport_retry: bool,
     user_agent: &'a azure_core::http::headers::HeaderValue,
@@ -78,6 +77,7 @@ async fn run_pipeline(
         &TransportPipelineServices {
             transport: context.transport,
             credential: context.credential,
+            clock: context.clock.clone(),
         },
         diagnostics,
     )
@@ -103,9 +103,7 @@ fn connectivity_failure(request_sent: RequestSentStatus) -> TransportResult {
 }
 
 #[derive(Debug)]
-struct HangingTransportClient {
-    delay: Duration,
-}
+struct HangingTransportClient;
 
 #[derive(Debug)]
 struct SuccessfulTransportClient;
@@ -124,18 +122,7 @@ impl TransportClient for SuccessfulTransportClient {
 #[async_trait]
 impl TransportClient for HangingTransportClient {
     async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
-        azure_core::sleep(
-            azure_core::time::Duration::try_from(self.delay)
-                .unwrap_or(azure_core::time::Duration::ZERO),
-        )
-        .await;
-        Err(TransportError::new(
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
-                .with_message("request should have timed out before completion")
-                .build(),
-            crate::diagnostics::RequestSentStatus::Unknown,
-        ))
+        futures::future::pending().await
     }
 }
 
@@ -337,7 +324,7 @@ fn test_request(deadline: Option<Instant>) -> TransportRequest {
         ),
         execution_context: ExecutionContext::Initial,
         routing_fallback: None,
-        deadline,
+        deadline: deadline.into(),
     }
 }
 
@@ -356,23 +343,28 @@ fn gateway_v2_error_frame(http_status: u32, sub_status: u32) -> Vec<u8> {
     bytes
 }
 
-fn finalize_gateway_v2_response(
+async fn finalize_gateway_v2_response(
     status: azure_core::http::StatusCode,
     body: Vec<u8>,
 ) -> TransportResult {
-    dispatch::classify(
-        TransportDispatch {
-            result: Ok(HttpResponse {
-                status: status.into(),
-                headers: azure_core::http::headers::Headers::new(),
-                body,
-            }),
-            shard_id: None,
-            shard_diagnostics: None,
+    let client = AdaptiveTransport::Gateway(Arc::new(GatewayV2MockTransportClient::new(vec![
+        HttpResponse {
+            status: status.into(),
+            headers: azure_core::http::headers::Headers::new(),
+            body,
         },
-        TransportMode::GatewayV2,
-    )
-    .into()
+    ])));
+    let request = gateway_v2_transport_request(TransportMode::GatewayV2);
+    let credential = Credential::from(azure_core::credentials::Secret::new("dGVzdA=="));
+    let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
+    let context = gateway_v2_context(
+        &client,
+        request.endpoint.endpoint_key(),
+        Some("account".to_owned()),
+        &credential,
+        &user_agent,
+    );
+    run_pipeline(request, &context, &mut gateway_v2_diagnostics()).await
 }
 
 #[derive(Debug)]
@@ -438,7 +430,7 @@ fn gateway_v2_transport_request(transport_mode: TransportMode) -> TransportReque
         ),
         execution_context: ExecutionContext::Initial,
         routing_fallback: None,
-        deadline: None,
+        deadline: None.into(),
     }
 }
 
@@ -451,6 +443,7 @@ fn gateway_v2_context<'a>(
 ) -> PipelineTestContext<'a> {
     PipelineTestContext {
         transport: client,
+        clock: Clock::default(),
         allow_sent_transport_retry: false,
         credential,
         user_agent,

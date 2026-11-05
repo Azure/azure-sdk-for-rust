@@ -1381,8 +1381,8 @@ The transport pipeline does **NOT** handle:
 
 The implementation lives in `src/pipeline/transport/`; the operation pipeline stays in
 `src/driver/pipeline/`. `transport::execute` receives `TransportRequest`,
-`TransportPipelineConfig`, borrowed `TransportPipelineServices` (`AdaptiveTransport` and
-`Credential`), and the mutable diagnostic builder. It does not receive routing stores or
+`TransportPipelineConfig`, borrowed `TransportPipelineServices` (`AdaptiveTransport`,
+`Credential`, and `Clock`), and the mutable diagnostic builder. It does not receive routing stores or
 an operation that could select another region.
 
 Pure RNTBD codecs live separately in `src/rntbd/`. Shared task management and emulator
@@ -1390,25 +1390,33 @@ detection live in `src/background_task_manager.rs` and `src/emulator.rs`, respec
 The reusable future-versus-timer race lives in `src/timeout.rs`; it polls the supplied future
 first and drops the unfinished future when the timer wins.
 
+`pipeline::Clock` supplies monotonic time and sleeps. Its default real implementation is
+zero-sized in production. Under `cfg(test)`, `Clock::new_test()` creates an independent fake
+clock with `Arc`-shared state: clones see the same time and pending sleeps. `advance` moves
+that time forward and wakes sleepers; `pending_sleep_count` exposes registered waits. These
+test controls panic on real clocks. Preparation, dispatch timeouts, and recovery receive
+the clock explicitly, so tests can drive deadline and retry behavior without real sleeps.
+Backend housekeeping and diagnostic timestamps keep their existing clocks.
+
 One loop in `transport/mod.rs` checks the deadline, prepares a request, dispatches it,
 and returns successful responses directly. Recovery entrypoints appear only in failure
-branches and return `ControlFlow`: continue for a same-target retry, or break with the final
-result. Preparation failures currently always break; connectivity recovery precedes
+branches and return the shared `pipeline::RecoveryAction<T>`: `Retry` for another attempt,
+or `Fail(T)` with the terminal result. Preparation errors currently always fail; connectivity recovery precedes
 throttle recovery after dispatch. Each attempt follows these stages:
 
 1. Start its diagnostic record and attach routing-fallback and failed-shard history.
 2. Call `request::prepare`: build the HTTP request, sample the timeout, apply headers,
-   sign it, and wrap Gateway V2 requests. Its `PreparationOutcome` is a result containing
-   the prepared request or an authorization/encoding failure.
-3. Pass preparation failures to `recovery::recover_prep_failure`, which records the
+   sign it, and wrap Gateway V2 requests. It returns `Result<PreparedRequest, PreparationError>`,
+   identifying authorization or encoding errors.
+3. Pass preparation errors to `recovery::recover_prep_error`, which records the
    unsent failure and returns it without dispatch.
 4. Record transport start, attach fault-injection collection, and dispatch.
 5. Within `dispatch::send`, record raw headers and shard observations before decoding.
-   Return a `DispatchOutcome` identifying success, HTTP error, transport failure,
-   response-decoding failure, or timeout.
+   The same function classifies the response and returns `Result<TransportResult, DispatchError>`.
+   `DispatchError` distinguishes HTTP, transport, response-decoding, and timeout errors.
 6. Complete diagnostics, then attach fault-injection evaluations. This preserves the
    terminal record's existing hedge-journal copy.
-7. Return success directly; otherwise call `recovery::recover_dispatch_failure`.
+7. Return success directly; otherwise call `recovery::recover_dispatch_error`.
 
 | Module | Responsibility |
 | --- | --- |
@@ -1417,7 +1425,7 @@ throttle recovery after dispatch. Each attempt follows these stages:
 | `request.rs` | HTTP request construction, headers, signing, Gateway V2 wrapping, and preparation failures |
 | `dispatch.rs` | One send, timeout/cancellation, response decoding, and outcome classification |
 | `recovery.rs` | Failure-only entrypoints, retry decisions, pool/jitter observations, waits, and progress updates |
-| `deadline.rs` | Deadline checks, remaining time, timeout floor, and bounded retry waits |
+| `deadline.rs` | `Deadline` newtype, explicit-time deadline checks, timeout floor, and bounded retry waits |
 | `diagnostics.rs` | Start, dispatch-observation, and completion recording |
 | `fault_injection.rs` | Feature-gated collector attachment and post-completion evaluation recording |
 | `gateway_v2/` | HTTP-to-frame and frame-to-HTTP adaptation; not dispatch |
@@ -1430,9 +1438,11 @@ return explicit delay, budget, and wait decisions from supplied data. Budgets ar
 each invocation, including each hedge leg.
 
 Callers qualify stage functions with their module names. Enum predicates and projections
-keep variant tests out of orchestration. Tiny adapters and projections use `#[inline(always)]`
-with a brief rationale; larger signing, dispatch, decoding, and recovery boundaries are left
-to the compiler so useful call frames are not deliberately removed.
+keep variant tests out of orchestration. Inlining is limited to pipeline-stage functions and
+their data helpers, not backend, pool, probe, or codec helpers. Simple accessors and predicates
+use `#[inline(always)]` without explanatory comments. Other inlining choices keep a brief
+rationale; larger signing, dispatch, decoding, and recovery boundaries are left to the compiler
+so useful call frames are not deliberately removed.
 
 Connectivity recovery permits at most one replay on another shard of the same endpoint.
 It requires an eligible synthetic transport error, a known failed shard, and another
@@ -1447,7 +1457,10 @@ retries. Cumulative-wait exhaustion may allow one forced-final retry, which only
 flag: it does not increment ordinary count or delay, and a later smaller delay may still
 allow an ordinary retry. Body-bearing DTX 429 responses remain coordinator-owned.
 
-Timeout sampling occurs after request construction and before signing/wrapping. The request's
+`TransportRequest` carries a `Deadline` wrapping `Option<Instant>`. Its `exceeded`, `remaining`,
+`request_timeout`, `cap_delay`, and `forced_final_delay` methods accept a caller-supplied `now`;
+none reads the clock internally. The operation pipeline converts its optional instant at this boundary.
+Timeout sampling occurs after request construction and before signing/wrapping. The HTTP request's
 `timeout` field remains `None`; dispatch races the send against the sampled duration, with a
 1 ms minimum. A pre-attempt expiration returns `NotSent` without a new diagnostic record;
 an in-flight expiration returns `Unknown`. Ordinary retry waits reserve a saturating 100 ms

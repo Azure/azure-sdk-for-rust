@@ -1054,6 +1054,7 @@ pub(crate) async fn execute_operation_pipeline(
             &TransportPipelineServices {
                 transport: &selected_transport,
                 credential,
+                clock: Default::default(),
             },
             &mut diagnostics,
         )
@@ -2593,7 +2594,7 @@ fn build_transport_request_with_fault_injection(
         auth_context,
         execution_context: ctx.execution_context,
         routing_fallback: ctx.routing.routing_fallback,
-        deadline: ctx.deadline,
+        deadline: ctx.deadline.into(),
     })
 }
 
@@ -3673,6 +3674,7 @@ async fn perform_single_attempt(
         &TransportPipelineServices {
             transport: &selected_transport,
             credential: ctx.credential,
+            clock: Default::default(),
         },
         diagnostics,
     )

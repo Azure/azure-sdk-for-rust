@@ -3326,19 +3326,15 @@ pub mod test {
         pub request_sent: crate::diagnostics::RequestSentStatus,
     }
     impl TransportError {
-        #[inline(always)]
         pub fn new<impl Into<crate::error::CosmosError>: Into<crate::error::CosmosError>>(error: impl Into<crate::error::CosmosError>, request_sent: RequestSentStatus) -> Self;
     }
     impl Debug for TransportError {
-        #[inline(always)]
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
     }
     impl Display for TransportError {
-        #[inline(always)]
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
     }
     impl Error for TransportError {
-        #[inline(always)]
         fn source(&self) -> Option<&dyn std::error::Error + 'static>;
     }
     pub trait HttpClientFactory: fmt::Debug + Send + Sync {

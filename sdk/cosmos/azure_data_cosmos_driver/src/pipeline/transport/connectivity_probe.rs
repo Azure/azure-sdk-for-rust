@@ -69,7 +69,7 @@ pub(crate) const DEFAULT_PROBE_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Reason a single probe call did not return `200`.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) enum ProbeFailure {
+pub(crate) enum ProbeError {
     /// Proxy responded with a non-200 status. `503` typically indicates the
     /// `enableConnectivityProbe` federation flag is off; everything else
     /// indicates a real protocol-level mismatch.
@@ -80,13 +80,11 @@ pub(crate) enum ProbeFailure {
     Network(String),
 }
 
-impl std::fmt::Display for ProbeFailure {
-    // Inline the thin formatting adapter.
-    #[inline(always)]
+impl std::fmt::Display for ProbeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ProbeFailure::Status(code) => write!(f, "status {code}"),
-            ProbeFailure::Network(msg) => write!(f, "network: {msg}"),
+            ProbeError::Status(code) => write!(f, "status {code}"),
+            ProbeError::Network(msg) => write!(f, "network: {msg}"),
         }
     }
 }
@@ -104,7 +102,7 @@ pub(crate) enum ProbeOutcome {
         /// URL is advertised for multiple regions (e.g. listed in both
         /// readable and writable lists), each `(region, role)` pair appears
         /// here even though only one network call was made.
-        failures: Vec<(Region, ProbeFailure)>,
+        failures: Vec<(Region, ProbeError)>,
     },
 }
 
@@ -130,8 +128,6 @@ pub(crate) enum ProbeRole {
 }
 
 impl std::fmt::Display for ProbeRole {
-    // Inline the small enum projection.
-    #[inline(always)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ProbeRole::Read => f.write_str("read"),
@@ -155,8 +151,6 @@ pub(crate) struct Http2ConnectivityProbe {
 }
 
 impl std::fmt::Debug for Http2ConnectivityProbe {
-    // Inline the thin formatting adapter.
-    #[inline(always)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Http2ConnectivityProbe")
             .field("timeout", &self.timeout)
@@ -166,8 +160,6 @@ impl std::fmt::Debug for Http2ConnectivityProbe {
 
 impl Http2ConnectivityProbe {
     /// Creates a probe using the supplied client identity and the default per-request timeout.
-    // Inline the small probe constructor.
-    #[inline(always)]
     pub(crate) fn new(transport: Arc<dyn TransportClient>, client_id: HeaderValue) -> Self {
         Self {
             transport,
@@ -190,7 +182,7 @@ impl Http2ConnectivityProbe {
     }
 
     /// Posts the client identity to one probe URL, returning success only for an HTTP 200 response.
-    async fn probe_one(&self, url: Url) -> Result<(), ProbeFailure> {
+    async fn probe_one(&self, url: Url) -> Result<(), ProbeError> {
         let mut headers = Headers::new();
         headers.insert(CLIENT_ID, self.client_id.clone());
         let request = HttpRequest {
@@ -224,7 +216,7 @@ impl Http2ConnectivityProbe {
                     elapsed_ms = elapsed.as_millis() as u64,
                     "connectivity probe returned non-200 status (gating Gateway 2.0 off)"
                 );
-                Err(ProbeFailure::Status(status))
+                Err(ProbeError::Status(status))
             }
             Err(TransportError { error, .. }) => {
                 let message = error.to_string();
@@ -234,7 +226,7 @@ impl Http2ConnectivityProbe {
                     elapsed_ms = elapsed.as_millis() as u64,
                     "connectivity probe network failure (gating Gateway 2.0 off)"
                 );
-                Err(ProbeFailure::Network(message))
+                Err(ProbeError::Network(message))
             }
         }
     }
@@ -260,7 +252,7 @@ impl ConnectivityProbe for Http2ConnectivityProbe {
                 Err(e) => {
                     // Should not happen — base URL is a Url already.
                     return ProbeOutcome::Failed {
-                        failures: vec![(region, ProbeFailure::Network(e.to_string()))],
+                        failures: vec![(region, ProbeError::Network(e.to_string()))],
                     };
                 }
             };
@@ -280,7 +272,7 @@ impl ConnectivityProbe for Http2ConnectivityProbe {
 
         let results = join_all(probes).await;
 
-        let mut failures: Vec<(Region, ProbeFailure)> = Vec::new();
+        let mut failures: Vec<(Region, ProbeError)> = Vec::new();
         for (url, outcome) in results {
             if let Err(failure) = outcome {
                 let attributions = url_to_attribution.get(&url).cloned().unwrap_or_default();
@@ -462,7 +454,7 @@ mod tests {
             ProbeOutcome::Failed { failures } => {
                 assert_eq!(failures.len(), 1);
                 assert_eq!(failures[0].0, region("westus"));
-                assert_eq!(failures[0].1, ProbeFailure::Status(503));
+                assert_eq!(failures[0].1, ProbeError::Status(503));
             }
             other => panic!("expected Failed, got {other:?}"),
         }
@@ -488,7 +480,7 @@ mod tests {
             ProbeOutcome::Failed { failures } => {
                 assert_eq!(failures.len(), 1);
                 assert_eq!(failures[0].0, region("westus"));
-                assert!(matches!(failures[0].1, ProbeFailure::Network(_)));
+                assert!(matches!(failures[0].1, ProbeError::Network(_)));
             }
             other => panic!("expected Failed, got {other:?}"),
         }
@@ -519,14 +511,14 @@ mod tests {
         match outcome {
             ProbeOutcome::Failed { failures } => {
                 assert_eq!(failures.len(), 2);
-                let mut by_region: HashMap<Region, ProbeFailure> = failures.into_iter().collect();
+                let mut by_region: HashMap<Region, ProbeError> = failures.into_iter().collect();
                 assert_eq!(
                     by_region.remove(&region("eastus")),
-                    Some(ProbeFailure::Status(500))
+                    Some(ProbeError::Status(500))
                 );
                 assert_eq!(
                     by_region.remove(&region("westus")),
-                    Some(ProbeFailure::Status(503))
+                    Some(ProbeError::Status(503))
                 );
             }
             other => panic!("expected Failed, got {other:?}"),
@@ -557,7 +549,7 @@ mod tests {
                 // Two attribution entries — one per advertised role.
                 assert_eq!(failures.len(), 2);
                 for (_, failure) in failures {
-                    assert_eq!(failure, ProbeFailure::Status(503));
+                    assert_eq!(failure, ProbeError::Status(503));
                 }
             }
             other => panic!("expected Failed, got {other:?}"),

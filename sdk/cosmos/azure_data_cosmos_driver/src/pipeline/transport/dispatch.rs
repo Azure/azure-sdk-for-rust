@@ -9,7 +9,6 @@ use super::{
     diagnostics, gateway_v2,
     request::PreparedRequest,
     sent_status,
-    sharded_transport::TransportDispatch,
     types::{TransportMode, TransportOutcome, TransportResult},
     EndpointKey,
 };
@@ -20,49 +19,48 @@ use crate::{
     },
     error::{status_codes, CosmosError},
     models::{CosmosResponseHeaders, CosmosStatus},
+    pipeline::Clock,
     timeout,
 };
 
-/// The classified outcome of sending one prepared request.
-pub(super) enum DispatchOutcome {
-    Success(TransportResult),
-    HttpError(DispatchFailure),
-    TransportFailure {
-        failure: DispatchFailure,
+/// Identifies why dispatch failed and retains the result and shard data needed for recovery.
+#[derive(Debug)]
+pub(super) enum DispatchError {
+    Http(DispatchErrorDetails),
+    Transport {
+        details: DispatchErrorDetails,
         headers_received: bool,
     },
-    ResponseDecodingFailure(DispatchFailure),
-    Timeout(DispatchFailure),
+    ResponseDecoding(DispatchErrorDetails),
+    Timeout(DispatchErrorDetails),
 }
 
 /// A failed result and the shard information needed for same-endpoint recovery.
-pub(super) struct DispatchFailure {
+#[derive(Debug)]
+pub(super) struct DispatchErrorDetails {
     pub result: TransportResult,
     pub shard_id: Option<u64>,
     pub shard_diagnostics: Option<TransportShardDiagnostics>,
 }
 
-impl DispatchOutcome {
+impl DispatchError {
     /// Borrows the result without discarding its dispatch classification.
-    // Inline the small enum projection.
     #[inline(always)]
     pub fn result(&self) -> &TransportResult {
         match self {
-            Self::Success(result) => result,
-            Self::HttpError(failure)
-            | Self::TransportFailure { failure, .. }
-            | Self::ResponseDecodingFailure(failure)
-            | Self::Timeout(failure) => &failure.result,
+            Self::Http(details)
+            | Self::Transport { details, .. }
+            | Self::ResponseDecoding(details)
+            | Self::Timeout(details) => &details.result,
         }
     }
 
     /// Returns whether a transport error occurred after response headers arrived.
-    // Inline the small enum predicate.
     #[inline(always)]
     pub fn failed_after_headers(&self) -> bool {
         matches!(
             self,
-            Self::TransportFailure {
+            Self::Transport {
                 headers_received: true,
                 ..
             }
@@ -70,21 +68,19 @@ impl DispatchOutcome {
     }
 }
 
-impl From<DispatchOutcome> for TransportResult {
-    // Inline the small enum projection.
+impl From<DispatchError> for DispatchErrorDetails {
     #[inline(always)]
-    fn from(outcome: DispatchOutcome) -> Self {
-        match outcome {
-            DispatchOutcome::Success(result) => result,
-            DispatchOutcome::HttpError(failure)
-            | DispatchOutcome::TransportFailure { failure, .. }
-            | DispatchOutcome::ResponseDecodingFailure(failure)
-            | DispatchOutcome::Timeout(failure) => failure.result,
+    fn from(error: DispatchError) -> Self {
+        match error {
+            DispatchError::Http(details)
+            | DispatchError::Transport { details, .. }
+            | DispatchError::ResponseDecoding(details)
+            | DispatchError::Timeout(details) => details,
         }
     }
 }
 
-impl DispatchFailure {
+impl DispatchErrorDetails {
     /// Copies shard and error details for connectivity-retry diagnostics, if both are available.
     pub fn failed_shard(&self) -> Option<FailedTransportShardDiagnostics> {
         let shard = self.shard_diagnostics.clone()?;
@@ -103,10 +99,14 @@ impl DispatchFailure {
     }
 }
 
-/// Sends the prepared request and classifies its response or failure.
+/// Sends the prepared request, returning a successful transport result or a classified error.
 ///
 /// Records raw headers and shard observations before decoding. A timeout drops the send future;
 /// shard preselection is used only when there is a deadline.
+#[expect(
+    clippy::result_large_err,
+    reason = "Success also carries a large response; keep existing error data inline without adding allocations."
+)]
 pub(super) async fn send(
     prepared: &PreparedRequest,
     transport: &AdaptiveTransport,
@@ -114,20 +114,21 @@ pub(super) async fn send(
     endpoint_key: &EndpointKey,
     handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
-) -> DispatchOutcome {
+    clock: Clock,
+) -> Result<TransportResult, DispatchError> {
     let request = &prepared.http_request;
     let dispatch = if let Some(duration) = prepared.timeout {
         let shard_hint = transport.pre_select_shard(excluded_shard_id, endpoint_key);
         let future =
             transport.send_with_dispatch(request, excluded_shard_id, endpoint_key, shard_hint);
-        match timeout::with_timeout(duration, future).await {
+        match timeout::with_timeout(duration, future, clock).await {
             Ok(dispatch) => dispatch,
             Err(timeout::TimedOut) => {
-                return DispatchOutcome::Timeout(DispatchFailure {
+                return Err(DispatchError::Timeout(DispatchErrorDetails {
                     result: TransportResult::deadline_exceeded(RequestSentStatus::Unknown),
                     shard_id: shard_hint,
                     shard_diagnostics: None,
-                });
+                }));
             }
         }
     } else {
@@ -136,26 +137,21 @@ pub(super) async fn send(
             .await
     };
     diagnostics::record_dispatch(&dispatch, handle, diagnostics);
-    classify(dispatch, prepared.mode)
-}
-
-/// Decodes a completed send and preserves the failure kind and shard data needed by its callers.
-pub(super) fn classify(dispatch: TransportDispatch, mode: TransportMode) -> DispatchOutcome {
     match dispatch.result {
-        Ok(response) => match decode(response, mode) {
+        Ok(response) => match decode(response, prepared.mode) {
             Ok(response) => {
                 let result = response_result(response);
                 if result.outcome.is_successful() {
-                    DispatchOutcome::Success(result)
+                    Ok(result)
                 } else {
-                    DispatchOutcome::HttpError(DispatchFailure {
+                    Err(DispatchError::Http(DispatchErrorDetails {
                         result,
                         shard_id: dispatch.shard_id,
                         shard_diagnostics: dispatch.shard_diagnostics,
-                    })
+                    }))
                 }
             }
-            Err(error) => DispatchOutcome::ResponseDecodingFailure(DispatchFailure {
+            Err(error) => Err(DispatchError::ResponseDecoding(DispatchErrorDetails {
                 result: TransportResult {
                     outcome: TransportOutcome::TransportError {
                         status: status_codes::TRANSPORT_GENERATED_503,
@@ -165,7 +161,7 @@ pub(super) fn classify(dispatch: TransportDispatch, mode: TransportMode) -> Disp
                 },
                 shard_id: dispatch.shard_id,
                 shard_diagnostics: dispatch.shard_diagnostics,
-            }),
+            })),
         },
         Err(error) => {
             let headers_received = error.request_sent == RequestSentStatus::Sent;
@@ -174,8 +170,8 @@ pub(super) fn classify(dispatch: TransportDispatch, mode: TransportMode) -> Disp
             } else {
                 sent_status::infer_request_sent_status(&error.error)
             };
-            DispatchOutcome::TransportFailure {
-                failure: DispatchFailure {
+            Err(DispatchError::Transport {
+                details: DispatchErrorDetails {
                     result: TransportResult {
                         outcome: TransportOutcome::TransportError {
                             status: status_codes::TRANSPORT_GENERATED_503,
@@ -187,7 +183,7 @@ pub(super) fn classify(dispatch: TransportDispatch, mode: TransportMode) -> Disp
                     shard_diagnostics: dispatch.shard_diagnostics,
                 },
                 headers_received,
-            }
+            })
         }
     }
 }
@@ -224,41 +220,111 @@ fn response_result(response: HttpResponse) -> TransportResult {
 #[cfg(test)]
 mod tests {
     use super::{
-        classify, status_codes, CosmosError, DispatchOutcome, HttpResponse, RequestSentStatus,
-        TransportMode, TransportOutcome,
+        send, status_codes, AdaptiveTransport, CosmosError, DiagnosticsContextBuilder,
+        DispatchError, HttpResponse, PreparedRequest, RequestSentStatus, TransportMode,
+        TransportOutcome, TransportResult,
     };
-    use crate::pipeline::transport::{
-        cosmos_transport_client::TransportError, sharded_transport::TransportDispatch,
+    use crate::{
+        diagnostics::{ExecutionContext, PipelineKind, TransportSecurity},
+        driver::routing::CosmosEndpoint,
+        models::ActivityId,
+        options::DiagnosticsOptions,
+        pipeline::transport::cosmos_transport_client::{
+            HttpRequest, TransportClient, TransportError,
+        },
     };
+    use async_trait::async_trait;
+    use std::sync::{Arc, Mutex};
 
-    #[test]
-    fn response_classification_distinguishes_http_and_decoding_failures() {
+    #[derive(Debug)]
+    struct MockTransportClient(Mutex<Option<Result<HttpResponse, TransportError>>>);
+
+    #[async_trait]
+    impl TransportClient for MockTransportClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            self.0
+                .lock()
+                .unwrap()
+                .take()
+                .expect("only one send is expected")
+        }
+    }
+
+    #[expect(
+        clippy::result_large_err,
+        reason = "Exercises the production dispatch result without changing its inline representation."
+    )]
+    async fn dispatch_result(
+        result: Result<HttpResponse, TransportError>,
+        mode: TransportMode,
+    ) -> Result<TransportResult, DispatchError> {
+        let transport =
+            AdaptiveTransport::Gateway(Arc::new(MockTransportClient(Mutex::new(Some(result)))));
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let prepared = PreparedRequest {
+            http_request: HttpRequest {
+                url: endpoint.url().clone(),
+                method: azure_core::http::Method::Get,
+                headers: Default::default(),
+                body: None,
+                timeout: None,
+                #[cfg(feature = "fault_injection")]
+                evaluation_collector: None,
+            },
+            mode,
+            timeout: None,
+        };
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("dispatch-classification".to_owned()),
+            Arc::new(DiagnosticsOptions::default()),
+        );
+        let handle = diagnostics.start_request(
+            ExecutionContext::Initial,
+            PipelineKind::DataPlane,
+            TransportSecurity::Secure,
+            transport.diagnostics_kind(),
+            transport.diagnostics_http_version(),
+            &endpoint,
+        );
+        send(
+            &prepared,
+            &transport,
+            None,
+            &endpoint.endpoint_key(),
+            handle,
+            &mut diagnostics,
+            Default::default(),
+        )
+        .await
+    }
+
+    #[tokio::test]
+    async fn response_classification_distinguishes_http_and_decoding_errors() {
         for mode in [TransportMode::Gateway, TransportMode::GatewayV2] {
             for status in [200, 429, 502] {
-                let outcome = classify(
-                    TransportDispatch {
-                        result: Ok(HttpResponse {
-                            status,
-                            headers: Default::default(),
-                            body: b"not an RNTBD frame".to_vec(),
-                        }),
-                        shard_id: Some(7),
-                        shard_diagnostics: None,
-                    },
+                let outcome = dispatch_result(
+                    Ok(HttpResponse {
+                        status,
+                        headers: Default::default(),
+                        body: b"not an RNTBD frame".to_vec(),
+                    }),
                     mode,
-                );
+                )
+                .await;
                 match (mode, status, outcome) {
-                    (TransportMode::Gateway, 200, DispatchOutcome::Success(result)) => {
+                    (TransportMode::Gateway, 200, Ok(result)) => {
                         assert!(result.outcome.is_successful());
                     }
                     (
                         TransportMode::GatewayV2,
                         200,
-                        DispatchOutcome::ResponseDecodingFailure(failure),
+                        Err(DispatchError::ResponseDecoding(details)),
                     ) => {
-                        assert_eq!(failure.shard_id, Some(7));
+                        assert_eq!(details.shard_id, None);
                         assert!(matches!(
-                            failure.result.outcome,
+                            details.result.outcome,
                             TransportOutcome::TransportError {
                                 status: status_codes::TRANSPORT_GENERATED_503,
                                 request_sent: RequestSentStatus::Sent,
@@ -266,14 +332,14 @@ mod tests {
                             }
                         ));
                     }
-                    (_, 429 | 502, DispatchOutcome::HttpError(failure)) => {
-                        assert_eq!(failure.shard_id, Some(7));
+                    (_, 429 | 502, Err(DispatchError::Http(details))) => {
+                        assert_eq!(details.shard_id, None);
                         let TransportOutcome::HttpError {
                             status: actual,
                             body,
                             request_sent,
                             ..
-                        } = failure.result.outcome
+                        } = details.result.outcome
                         else {
                             panic!("expected an HTTP error");
                         };
@@ -287,8 +353,8 @@ mod tests {
         }
     }
 
-    #[test]
-    fn raw_sent_status_and_underlying_error_are_mapped_independently() {
+    #[tokio::test]
+    async fn raw_sent_status_and_underlying_error_are_mapped_independently() {
         for raw in [
             RequestSentStatus::NotSent,
             RequestSentStatus::Unknown,
@@ -304,29 +370,24 @@ mod tests {
                     RequestSentStatus::Unknown,
                 ),
             ] {
-                let attempt = classify(
-                    TransportDispatch {
-                        result: Err(TransportError::new(
-                            CosmosError::builder().with_status(inner).build(),
-                            raw,
-                        )),
-                        shard_id: Some(7),
-                        shard_diagnostics: None,
-                    },
+                let error = dispatch_result(
+                    Err(TransportError::new(
+                        CosmosError::builder().with_status(inner).build(),
+                        raw,
+                    )),
                     TransportMode::Gateway,
-                );
-                assert_eq!(
-                    attempt.failed_after_headers(),
-                    raw == RequestSentStatus::Sent
-                );
-                let DispatchOutcome::TransportFailure { failure, .. } = attempt else {
+                )
+                .await
+                .unwrap_err();
+                assert_eq!(error.failed_after_headers(), raw == RequestSentStatus::Sent);
+                let DispatchError::Transport { details, .. } = error else {
                     panic!("expected a transport failure");
                 };
                 let TransportOutcome::TransportError {
                     status,
                     error,
                     request_sent,
-                } = failure.result.outcome
+                } = details.result.outcome
                 else {
                     panic!("expected a transport failure");
                 };
@@ -340,7 +401,7 @@ mod tests {
                         inferred
                     }
                 );
-                assert_eq!(failure.shard_id, Some(7));
+                assert_eq!(details.shard_id, None);
             }
         }
     }

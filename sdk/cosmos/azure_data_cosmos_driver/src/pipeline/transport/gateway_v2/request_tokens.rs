@@ -398,8 +398,6 @@ fn append_pagination_and_condition_tokens(
 }
 
 /// Copies a required header value or returns a conversion error naming the missing header.
-// Inline the thin header adapter.
-#[inline(always)]
 fn required_header(
     request: &HttpRequest,
     header_name: &HeaderName,
@@ -505,8 +503,6 @@ fn decode_epk_hex(hex: &str) -> Option<Vec<u8>> {
 }
 
 /// Converts one ASCII hexadecimal digit to its numeric value, rejecting other bytes.
-// Inline the small value conversion.
-#[inline(always)]
 fn hex_nibble(c: u8) -> Option<u8> {
     match c {
         b'0'..=b'9' => Some(c - b'0'),

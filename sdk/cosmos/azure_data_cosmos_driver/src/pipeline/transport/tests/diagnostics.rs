@@ -4,11 +4,11 @@
 use super::{
     format_transport_error_details_cosmos, gateway_v2_context, gateway_v2_diagnostics,
     gateway_v2_transport_request, run_pipeline, test_endpoint_key, test_request, ActivityId,
-    AdaptiveTransport, Arc, CosmosEndpoint, Credential, DiagnosticsContextBuilder,
+    AdaptiveTransport, Arc, Clock, CosmosEndpoint, Credential, DiagnosticsContextBuilder,
     DiagnosticsOptions, Duration, GatewayV2MockTransportClient, HangingTransportClient,
-    HttpResponse, Instant, PipelineKind, PipelineTestContext, RequestSentStatus,
-    SuccessfulTransportClient, TransportMode, TransportOutcome, TransportSecurity,
-    METADATA_MAX_PER_RETRY_DELAY, TEST_CLIENT_ID,
+    HttpResponse, PipelineKind, PipelineTestContext, RequestSentStatus, SuccessfulTransportClient,
+    TransportMode, TransportOutcome, TransportSecurity, METADATA_MAX_PER_RETRY_DELAY,
+    TEST_CLIENT_ID,
 };
 use crate::diagnostics::RequestEventType;
 
@@ -31,6 +31,7 @@ async fn routing_fallback_is_recorded_in_request_diagnostics() {
         request,
         &PipelineTestContext {
             transport: &client,
+            clock: Default::default(),
             allow_sent_transport_retry: false,
             credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
             user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
@@ -65,18 +66,18 @@ async fn routing_fallback_is_recorded_in_request_diagnostics() {
 
 #[tokio::test]
 async fn execute_transport_pipeline_preserves_client_unauthorized_in_diagnostics() {
-    let client = AdaptiveTransport::Gateway(Arc::new(HangingTransportClient {
-        delay: Duration::from_secs(1),
-    }));
+    let clock = Clock::new_test();
+    let client = AdaptiveTransport::Gateway(Arc::new(HangingTransportClient));
     let mut diagnostics = DiagnosticsContextBuilder::new(
         ActivityId::from_string("transport-signing-failure".to_owned()),
         Arc::new(DiagnosticsOptions::default()),
     );
 
     let result = run_pipeline(
-        test_request(Some(Instant::now() + Duration::from_secs(1))),
+        test_request(Some(clock.now() + Duration::from_secs(1))),
         &PipelineTestContext {
             transport: &client,
+            clock,
             allow_sent_transport_retry: false,
             credential: &Credential::from(azure_core::credentials::Secret::new("***not-base64***")),
             user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
