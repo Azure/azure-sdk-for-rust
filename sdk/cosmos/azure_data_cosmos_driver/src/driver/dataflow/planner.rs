@@ -3592,6 +3592,40 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn grouped_and_aggregate_plans_reject_missing_and_empty_service_rewrites() {
+        for grouped in [false, true] {
+            for rewrite in [None, Some(String::new())] {
+                let mut info = QueryInfo {
+                    aggregates: vec!["Count".into()],
+                    has_select_value: true,
+                    rewritten_query: rewrite,
+                    ..Default::default()
+                };
+                if grouped {
+                    info.group_by_expressions = vec!["c.key".into()];
+                }
+                let plan = QueryPlan {
+                    query_info: Some(info),
+                    ..plan_with_ranges(vec![qr("", "FF")])
+                };
+                let error = build_advanced_query_pipeline(
+                    &plan,
+                    &mut NoopTopologyProvider,
+                    &Arc::new(cross_partition_query_operation()),
+                    None,
+                )
+                .await
+                .unwrap_err();
+                assert_eq!(
+                    error.status(),
+                    crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
+                );
+                assert!(error.to_string().contains("non-empty rewrittenQuery"));
+            }
+        }
+    }
+
     #[test]
     fn aggregate_shapes_do_not_inherit_the_standalone_distinct_window_gate() {
         let mut info = QueryInfo {
