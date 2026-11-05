@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added cross-partition `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, `GROUP BY`, and distinct-count queries using `COUNT` over a `DISTINCT` subquery; grouped results support live paging, but aggregates and groups do not support external continuation tokens. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Added ranked full-text and weighted text/vector hybrid search, with per-query `FullTextScoreScope` and bounded buffered results. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
 
 ### Breaking Changes

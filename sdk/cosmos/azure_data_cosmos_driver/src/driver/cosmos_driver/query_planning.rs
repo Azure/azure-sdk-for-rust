@@ -76,16 +76,9 @@ async fn try_plan_query_using_native_planner(
         .body()
         .and_then(|body| std::str::from_utf8(body).ok())
         .map(|query_spec| {
-            let partition_key = container.partition_key_definition();
-            let paths: Vec<&str> = partition_key
-                .paths()
-                .iter()
-                .map(|path| path.as_ref())
-                .collect();
             driver.native_query_plan_provider.get_query_plan(
                 query_spec,
-                &paths,
-                partition_key.kind(),
+                container.partition_key_definition(),
                 &query_engine_config,
             )
         });

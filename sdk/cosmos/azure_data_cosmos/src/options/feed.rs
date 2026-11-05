@@ -134,6 +134,9 @@ pub struct QueryOptions {
     ///
     /// Requires a finite TOP or LIMIT; when both exist, the smaller is used.
     /// Defaults to 1000. Zero is a valid limit.
+    ///
+    /// This is not a byte-level memory budget. GROUP BY and distinct-count queries
+    /// retain state for every group or distinct value and are not bounded by this setting.
     pub max_buffered_query_window: u64,
 
     /// Query-plan provider selection for this query.

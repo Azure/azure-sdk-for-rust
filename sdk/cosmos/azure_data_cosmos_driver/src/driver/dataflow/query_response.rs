@@ -356,6 +356,20 @@ fn parse_envelope_item(
 /// folded at this size instead of only at `build_page`.
 const MAX_RETAINED_DIAGNOSTICS_SOURCES: usize = 32;
 
+/// Preserves session progress across all pages contributing to one emitted page.
+pub(crate) fn merge_session_token(
+    current: &mut Option<SessionToken>,
+    next: Option<&SessionToken>,
+) -> crate::error::Result<()> {
+    if let Some(next) = next {
+        *current = Some(match current.as_ref() {
+            Some(current) => current.merge(next)?,
+            None => next.clone(),
+        });
+    }
+    Ok(())
+}
+
 /// Accumulates request charge and diagnostics across every backend page
 /// consumed while assembling one emitted output page, then reconstructs a
 /// single [`CosmosResponse`] carrying only the raw payload items.
@@ -424,13 +438,10 @@ impl PageAggregator {
         &mut self,
         response: &CosmosResponse,
     ) -> crate::error::Result<()> {
-        if let Some(token) = &response.headers().session_token {
-            self.session_token = Some(match &self.session_token {
-                Some(current) => current.merge(token)?,
-                None => token.clone(),
-            });
-        }
-        Ok(())
+        merge_session_token(
+            &mut self.session_token,
+            response.headers().session_token.as_ref(),
+        )
     }
 
     /// Records a validated page whose session token has already been merged.

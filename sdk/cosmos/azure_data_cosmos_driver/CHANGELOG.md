@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added client-side merging of cross-partition aggregates, `GROUP BY`, and distinct counts from native or Gateway query plans, preserving live iteration and split recovery without introducing a retained-state memory cap. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Added `FullTextScoreScope` and client-side ranked full-text and weighted hybrid query execution with bounded result windows. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
 
 ### Breaking Changes
@@ -12,6 +13,9 @@
 
 ### Bugs Fixed
 
+- Apply `DISTINCT` to completed `GROUP BY` projections before result windows, preserving identical partition-local aggregate contributions and deduplicating equal final projections. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
+- Preserve session tokens from query pages suppressed by `DISTINCT` or `OFFSET`, including terminal distinct-count results and empty-page flushes. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
+- Normalize native query-plan partition bounds using the container's partition key kind and version, preventing malformed EPK errors during cross-partition queries. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Replace stale change-feed start headers, retain starts and polling positions in checkpoints, and preserve hierarchical-prefix leaf bounds on both gateway transports. Invalid keyed change feeds return errors instead of panicking during planning. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - A checkpoint's saved start takes precedence over a newly supplied change-feed start. Omit the continuation token to start a new feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 

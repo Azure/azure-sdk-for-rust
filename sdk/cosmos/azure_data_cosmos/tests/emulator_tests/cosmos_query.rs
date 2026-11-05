@@ -1215,15 +1215,64 @@ pub async fn distinct_projection_shapes() -> Result<(), Box<dyn Error>> {
     .await
 }
 
-/// Live counterpart for the `unsupported_combination_*` scenarios.
-///
-/// Those scenarios assert the driver rejects `DISTINCT` combined with a stage
-/// it has no pipeline for. That rejection is only half the story: because the
-/// SDK advertises just the features it implements (`SUPPORTED_QUERY_FEATURES`),
-/// the *service* refuses these plans first, with 400 / 1004
-/// CrossPartitionQueryNotServable. Pinning that here means adding a new feature
-/// token without its pipeline stage cannot silently start serving a query the
-/// driver would then mishandle.
+/// DISTINCT composes with the ordinary aggregate and GROUP BY stages.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
+)]
+pub async fn distinct_combined_with_aggregate_stages() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            println!("Aggregate validation database: {}", run_context.db_name());
+            let items = test_data::generate_mock_items(4, 3);
+            let maximum = items.iter().map(|item| item.merge_order).max().unwrap();
+            let container =
+                test_data::create_container_with_items(run_context, db_client, items, None).await?;
+
+            for (query, mut expected) in [
+                (
+                    "select distinct top 1000 c.partitionKey, count(1) as n from c group by c.partitionKey",
+                    (0..4)
+                        .map(|index| serde_json::json!({
+                            "partitionKey": format!("partition{index}"),
+                            "n": 3,
+                        }))
+                        .collect::<Vec<_>>(),
+                ),
+                (
+                    "select distinct top 1000 value max(c.mergeOrder) from c",
+                    vec![serde_json::json!(maximum)],
+                ),
+            ] {
+                let mut pages = container
+                    .query_items::<serde_json::Value>(query, FeedScope::full_container(), None)
+                    .await?
+                    .into_pages();
+                let mut actual = Vec::new();
+                while let Some(page) = pages.next().await {
+                    actual.extend(page?.into_items());
+                }
+                actual.sort_by_key(serde_json::Value::to_string);
+                expected.sort_by_key(serde_json::Value::to_string);
+                assert_eq!(
+                    actual, expected,
+                    "`{query}` must compose DISTINCT with global aggregation"
+                );
+            }
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// Row windows count deduplicated values, including in the in-memory emulator.
 #[tokio::test]
 #[cfg_attr(
     not(any(
@@ -1237,53 +1286,13 @@ pub async fn distinct_projection_shapes() -> Result<(), Box<dyn Error>> {
     test_category = "emulator_vnext",
     ignore = "skipped on vnext emulator: behavioral divergence"
 )]
-pub async fn distinct_combined_with_unsupported_stages_is_rejected() -> Result<(), Box<dyn Error>> {
+pub async fn distinct_combined_with_row_windows() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
+            println!("Aggregate validation database: {}", run_context.db_name());
             let items = test_data::generate_mock_items(4, 3);
             let container =
                 test_data::create_container_with_items(run_context, db_client, items, None).await?;
-
-            // Each of these needs a composition stage the driver does not have
-            // yet: GROUP BY and aggregates. `TOP` and `OFFSET`/`LIMIT` are no
-            // longer here — `SkipTake` composes above `DISTINCT`, so those
-            // shapes are servable and are asserted positively below.
-            let unsupported = [
-                "select distinct top 1000 c.partitionKey, count(1) as n from c group by c.partitionKey",
-                "select distinct top 1000 value max(c.mergeOrder) from c",
-            ];
-
-            for query in unsupported {
-                let outcome = container
-                    .query_items::<serde_json::Value>(
-                        query,
-                        FeedScope::full_container(),
-                        None,
-                    )
-                    .await;
-                let error = match outcome {
-                    Err(error) => error,
-                    Ok(pager) => {
-                        // Some shapes fail while draining rather than at setup.
-                        let mut pages = pager.into_pages();
-                        let mut drain_error = None;
-                        while let Some(page) = pages.next().await {
-                            if let Err(error) = page {
-                                drain_error = Some(error);
-                                break;
-                            }
-                        }
-                        drain_error.unwrap_or_else(|| {
-                            panic!("expected `{query}` to be rejected, but it drained cleanly")
-                        })
-                    }
-                };
-                assert_eq!(
-                    error.status().status_code(),
-                    azure_core::http::StatusCode::BadRequest,
-                    "expected 400 for `{query}`, got {error}"
-                );
-            }
 
             // `DISTINCT` composed under a row window is servable, and the window
             // counts *deduplicated* values: 4 partition keys over 12 items, so

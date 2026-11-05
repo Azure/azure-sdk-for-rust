@@ -18,6 +18,7 @@ use azure_core::http::{headers::HeaderName, Request, Url};
 use serde::{Deserialize, Serialize};
 
 use azure_data_cosmos_driver::driver::CosmosDriver;
+use azure_data_cosmos_driver::error::status_codes;
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, RequestObserver,
     VirtualAccountConfig, VirtualRegion,
@@ -712,17 +713,26 @@ async fn catalog_emulator_error_scenarios_fail_as_expected() {
             .expect("container resolves");
         seed(&driver, &container, &scenario.documents).await;
 
+        let expected_status = match expected.category.as_str() {
+            "serializationResponseBodyInvalid" => status_codes::SERIALIZATION_RESPONSE_BODY_INVALID,
+            "clientDistinctContinuationUnsupported" => {
+                status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
+            }
+            other => panic!(
+                "scenario {} declares unhandled category {other}",
+                scenario.id
+            ),
+        };
         let outcome = match expected.category.as_str() {
-            // The unsupported-feature check happens while planning.
-            "clientUnsupportedQueryFeature" => Box::pin(driver.plan_operation(
+            // The emulator cannot produce service aggregate/GROUP BY rewrites.
+            "serializationResponseBodyInvalid" => Box::pin(driver.plan_operation(
                 query_operation(&container, &scenario.query, 10),
                 &OperationOptions::default(),
                 None,
                 &PlanOptions::default(),
             ))
             .await
-            .err()
-            .map(|e| e.to_string()),
+            .err(),
             // The continuation refusal happens when the caller mints a token.
             "clientDistinctContinuationUnsupported" => {
                 let mut plan = Box::pin(driver.plan_operation(
@@ -741,7 +751,7 @@ async fn catalog_emulator_error_scenarios_fail_as_expected() {
                     )
                     .await
                     .expect("the first page executes");
-                plan.to_continuation_token().err().map(|e| e.to_string())
+                plan.to_continuation_token().err()
             }
             other => panic!(
                 "scenario {} declares unhandled category {other}",
@@ -749,12 +759,14 @@ async fn catalog_emulator_error_scenarios_fail_as_expected() {
             ),
         };
 
-        let message = outcome.unwrap_or_else(|| {
+        let error = outcome.unwrap_or_else(|| {
             panic!(
                 "scenario {} expected a {} failure but the operation succeeded",
                 scenario.id, expected.category
             )
         });
+        assert_eq!(error.status(), expected_status, "scenario {}", scenario.id);
+        let message = error.to_string();
         assert!(
             message.contains(&expected.message_fragment),
             "scenario {}: error {message:?} does not contain {:?}",
