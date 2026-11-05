@@ -4,7 +4,7 @@
 //! End-to-end tests for blob user delegation SAS generation.
 //!
 //! These tests build a SAS token from a real user delegation key with
-//! [`SasBuilder`], assemble the authenticated URL by appending the token to the
+//! [`SasTokenBuilder`], assemble the authenticated URL by appending the token to the
 //! resource URL, and then use that URL (via an unauthenticated client) to access
 //! the resource. This proves the signature the SDK computes matches what the
 //! service expects.
@@ -19,7 +19,7 @@ use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{BlobClientGetPropertiesResultHeaders, KeyInfo};
 use azure_storage_blob::{BlobClient, BlobServiceClient};
 use azure_storage_common::models::UserDelegationKey;
-use azure_storage_sas::SasBuilder;
+use azure_storage_sas::SasTokenBuilder;
 use common::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client, StorageAccount,
 };
@@ -75,7 +75,7 @@ async fn test_blob_user_delegation_sas_read(ctx: TestContext) -> Result<(), Box<
     let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
     let udk = get_udk(&service_client).await?;
 
-    let token = SasBuilder::new(
+    let token = SasTokenBuilder::new(
         account_name.as_str(),
         &udk,
         OffsetDateTime::now_utc() + Duration::hours(1),
@@ -84,7 +84,7 @@ async fn test_blob_user_delegation_sas_read(ctx: TestContext) -> Result<(), Box<
     .read()
     .build();
     let mut sas_url = blob_client.url().clone();
-    sas_url.set_query(Some(&token));
+    sas_url.set_query(Some(&*token));
 
     // Download via an unauthenticated client using only the SAS URL.
     let sas_client = BlobClient::new(sas_url, None, None)?;
@@ -112,7 +112,7 @@ async fn test_blob_user_delegation_sas_write(ctx: TestContext) -> Result<(), Box
     let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
     let udk = get_udk(&service_client).await?;
 
-    let token = SasBuilder::new(
+    let token = SasTokenBuilder::new(
         account_name.as_str(),
         &udk,
         OffsetDateTime::now_utc() + Duration::hours(1),
@@ -123,7 +123,7 @@ async fn test_blob_user_delegation_sas_write(ctx: TestContext) -> Result<(), Box
     .create()
     .build();
     let mut sas_url = blob_client.url().clone();
-    sas_url.set_query(Some(&token));
+    sas_url.set_query(Some(&*token));
 
     let sas_client = BlobClient::new(sas_url, None, None)?;
     let new_data = b"written through sas";
@@ -180,7 +180,7 @@ async fn test_blob_version_user_delegation_sas(ctx: TestContext) -> Result<(), B
     // signed in the snapshot slot, but it is not emitted in the token, so the
     // base URL must carry `versionid=` (supplied here by `with_version`).
     let version_1_client = blob_client.with_version(&version_1)?;
-    let token = SasBuilder::new(
+    let token = SasTokenBuilder::new(
         account_name.as_str(),
         &udk,
         OffsetDateTime::now_utc() + Duration::hours(1),
@@ -195,7 +195,7 @@ async fn test_blob_version_user_delegation_sas(ctx: TestContext) -> Result<(), B
         Some(existing) if !existing.is_empty() => {
             sas_url.set_query(Some(&format!("{existing}&{token}")));
         }
-        _ => sas_url.set_query(Some(&token)),
+        _ => sas_url.set_query(Some(&*token)),
     }
     assert!(
         sas_url.query().is_some_and(|q| q.contains("sr=bv")),
@@ -252,7 +252,7 @@ async fn test_blob_snapshot_user_delegation_sas(ctx: TestContext) -> Result<(), 
     // The snapshot timestamp is signed in the snapshot slot and emitted as the
     // `snapshot=` query parameter of the token, so append the token to the plain
     // blob URL (the token already carries `snapshot=`).
-    let token = SasBuilder::new(
+    let token = SasTokenBuilder::new(
         account_name.as_str(),
         &udk,
         OffsetDateTime::now_utc() + Duration::hours(1),
@@ -262,7 +262,7 @@ async fn test_blob_snapshot_user_delegation_sas(ctx: TestContext) -> Result<(), 
     .read()
     .build();
     let mut sas_url = blob_client.url().clone();
-    sas_url.set_query(Some(&token));
+    sas_url.set_query(Some(&*token));
     assert!(
         sas_url.query().is_some_and(|q| q.contains("sr=bs")),
         "expected sr=bs in SAS URL, got: {sas_url}"
@@ -299,7 +299,7 @@ async fn test_container_user_delegation_sas(ctx: TestContext) -> Result<(), Box<
     let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
     let udk = get_udk(&service_client).await?;
 
-    let token = SasBuilder::new(
+    let token = SasTokenBuilder::new(
         account_name.as_str(),
         &udk,
         OffsetDateTime::now_utc() + Duration::hours(1),
@@ -320,7 +320,7 @@ async fn test_container_user_delegation_sas(ctx: TestContext) -> Result<(), Box<
             )
         })?
         .push(&blob_name);
-    blob_url.set_query(Some(&token));
+    blob_url.set_query(Some(&*token));
 
     let sas_client = BlobClient::new(blob_url, None, None)?;
     let body = sas_client.download(None).await?.body.collect().await?;

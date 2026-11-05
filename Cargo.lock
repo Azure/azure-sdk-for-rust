@@ -1142,6 +1142,7 @@ dependencies = [
  "percent-encoding",
  "sha2",
  "time",
+ "url",
 ]
 
 [[package]]

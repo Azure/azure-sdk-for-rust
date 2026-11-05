@@ -7,11 +7,11 @@
 //!
 //! ```rust no_run
 //! use azure_storage_common::models::UserDelegationKey;
-//! use azure_storage_sas::{SasBuilder, SasProtocol};
+//! use azure_storage_sas::{SasProtocol, SasTokenBuilder};
 //! use time::OffsetDateTime;
 //!
 //! # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
-//! let token = SasBuilder::new("myaccount", &udk,
+//! let token = SasTokenBuilder::new("myaccount", &udk,
 //!         OffsetDateTime::now_utc() + time::Duration::hours(8))?
 //!     .queue("work-items")
 //!     .read()
@@ -22,7 +22,7 @@
 //! # }
 //! ```
 
-use crate::builder::SasBuilder;
+use crate::builder::{SasTokenBuilder, SasUrlBuilder};
 use crate::common::sealed::Sealed;
 use crate::common::{CommonFields, SasResource, ValidatedKey};
 use crate::SAS_VERSION;
@@ -44,12 +44,16 @@ impl QueueResource {
     pub(crate) fn canonicalized_resource(&self, account: &str) -> String {
         format!("/queue/{}/{}", account, self.queue)
     }
+
+    pub(crate) fn url_path_segments(&self) -> [&str; 1] {
+        [&self.queue]
+    }
 }
 
 /// Permissions for a queue SAS.
 ///
 /// Serialization order: `raup`. Flags are set through the permission setters on
-/// [`SasBuilder<QueueState>`](crate::SasBuilder).
+/// [`SasTokenBuilder<QueueState>`](crate::SasTokenBuilder).
 #[derive(Clone, Copy, Default)]
 pub(crate) struct QueuePermissions {
     pub(crate) read: bool,
@@ -87,7 +91,7 @@ pub struct QueueState {
 impl Sealed for QueueState {}
 
 /// Permission setters for a queue SAS, gated on [`QueueState`].
-impl SasBuilder<'_, QueueState> {
+impl SasTokenBuilder<'_, QueueState> {
     /// Enables read permission.
     pub fn read(mut self) -> Self {
         self.state.permissions.read = true;
@@ -113,6 +117,25 @@ impl SasBuilder<'_, QueueState> {
     }
 }
 
+impl SasUrlBuilder<'_, QueueState> {
+    /// Enables read permission.
+    pub fn read(self) -> Self {
+        self.map(|b| b.read())
+    }
+    /// Enables add permission.
+    pub fn add(self) -> Self {
+        self.map(|b| b.add())
+    }
+    /// Enables update permission.
+    pub fn update(self) -> Self {
+        self.map(|b| b.update())
+    }
+    /// Enables process permission.
+    pub fn process(self) -> Self {
+        self.map(|b| b.process())
+    }
+}
+
 impl SasResource for QueueState {
     fn string_to_sign(&self, common: &CommonFields, key: &ValidatedKey<'_>) -> String {
         let sp = self.permissions.to_sas_str();
@@ -128,6 +151,14 @@ impl SasResource for QueueState {
     ) -> String {
         let sp = self.permissions.to_sas_str();
         queue_udk_query_parameters(&sp, common, key, signature)
+    }
+
+    fn url_path_segments(&self) -> Vec<&str> {
+        self.resource.url_path_segments().to_vec()
+    }
+
+    fn default_endpoint(account: &str) -> azure_core::Result<url::Url> {
+        crate::url::queue_endpoint(account)
     }
 }
 
@@ -161,7 +192,7 @@ fn queue_udk_string_to_sign(
         &ske,                   // [7]  signedKeyExpiry
         key.signed_service,     // [8]  signedKeyService
         key.signed_version,     // [9]  signedKeyVersion
-        skdutid,                // [10] signedDelegatedUserTenantId
+        skdutid,                // [10] signedDelegatedUserTenantId (from key)
         sduoid,                 // [11] signedDelegatedUserObjectId
         &sip,                   // [12] signedIP
         &spr,                   // [13] signedProtocol
@@ -245,6 +276,6 @@ mod tests {
         let common = test_common(datetime!(2025-06-01 12:00:00 UTC));
         let sts = queue_udk_string_to_sign("r", &common, &key, "/queue/acct/q");
         let lines: Vec<&str> = sts.split('\n').collect();
-        assert_eq!(lines[10], ""); // skdutid empty
+        assert_eq!(lines[10], "");
     }
 }
