@@ -13,7 +13,7 @@ use azure_data_cosmos::{
     models::{
         ContainerProperties, EffectivePartitionKey, PartitionKeyDefinition, ThroughputProperties,
     },
-    options::{CreateContainerOptions, ItemReadOptions, MaxItemCountHint, QueryOptions},
+    options::{ItemReadOptions, MaxItemCountHint, QueryOptions},
     CosmosError, PartitionKey, Query, TransactionalBatch,
 };
 use futures::{StreamExt, TryStreamExt};
@@ -25,10 +25,6 @@ const PARTITION_KEY_VALUE: &str = "pk1";
 
 fn container_properties(partition_key: PartitionKeyDefinition) -> ContainerProperties {
     ContainerProperties::new(CONTAINER_NAME, partition_key)
-}
-
-fn create_options(throughput: u64) -> CreateContainerOptions {
-    CreateContainerOptions::default().with_throughput(ThroughputProperties::manual(throughput))
 }
 
 fn item_for_path(id: &str, partition_key_path: &str, value: i64) -> serde_json::Value {
@@ -45,25 +41,14 @@ async fn recreate_container(
     partition_key: PartitionKeyDefinition,
     throughput: u64,
 ) -> Result<(ContainerProperties, ContainerClient), Box<dyn Error>> {
-    let management = run_context.fresh_management_client().await?;
-    let management_db = management.database_client(db_client.id());
-    management_db
-        .container_client(CONTAINER_NAME, None)
-        .await?
-        .delete(None)
-        .await?;
-    let properties = management_db
-        .create_container(
+    let replacement = run_context
+        .recreate_container_without_cache_refresh(
+            db_client,
             container_properties(partition_key),
-            Some(create_options(throughput)),
+            Some(ThroughputProperties::manual(throughput)),
         )
-        .await?
-        .into_model()?;
-
-    let readiness = run_context.fresh_management_client().await?;
-    let readiness_db = readiness.database_client(db_client.id());
-    let replacement =
-        TestRunContext::wait_for_container_ready(&readiness_db, CONTAINER_NAME).await?;
+        .await?;
+    let properties = replacement.read(None).await?.into_model()?;
     Ok((properties, replacement))
 }
 
@@ -131,7 +116,7 @@ pub async fn changed_definition_recovers_supported_operations() -> Result<(), Bo
                 .create_container(
                     db_client,
                     container_properties("/pk".into()),
-                    Some(create_options(400)),
+                    Some(ThroughputProperties::manual(400)),
                 )
                 .await?;
             let original = stale.read(None).await?.into_model()?;
@@ -211,18 +196,35 @@ pub async fn changed_definition_recovers_supported_operations() -> Result<(), Bo
 
             let (_, throughput_generation) =
                 recreate_container(run_context, db_client, "/throughputPk".into(), 900).await?;
-            let throughput = query_generation
-                .read_throughput(None)
-                .await?
-                .expect("replacement container has dedicated throughput");
+            let throughput = if run_context.resource_manager().is_some() {
+                run_context
+                    .read_container_throughput(db_client, CONTAINER_NAME)
+                    .await?
+                    .expect("replacement container has dedicated throughput")
+            } else {
+                query_generation
+                    .read_throughput(None)
+                    .await?
+                    .expect("replacement container has dedicated throughput")
+            };
             assert_eq!(throughput.throughput(), Some(900));
 
             recreate_container(run_context, db_client, "/replaceThroughputPk".into(), 1000).await?;
-            let replaced = throughput_generation
-                .begin_replace_throughput(ThroughputProperties::manual(1100), None)
-                .await?
-                .await?
-                .into_model()?;
+            let replaced = if run_context.resource_manager().is_some() {
+                run_context
+                    .replace_container_throughput(
+                        db_client,
+                        CONTAINER_NAME,
+                        ThroughputProperties::manual(1100),
+                    )
+                    .await?
+            } else {
+                throughput_generation
+                    .begin_replace_throughput(ThroughputProperties::manual(1100), None)
+                    .await?
+                    .await?
+                    .into_model()?
+            };
             assert_eq!(replaced.throughput(), Some(1100));
 
             Ok(())
@@ -247,7 +249,7 @@ pub async fn explicit_tokens_do_not_cross_recreation() -> Result<(), Box<dyn Err
                 .create_container(
                     db_client,
                     container_properties("/pk".into()),
-                    Some(create_options(400)),
+                    Some(ThroughputProperties::manual(400)),
                 )
                 .await?;
             let first = item_for_path("old-1", "pk", 1);
@@ -340,7 +342,7 @@ pub async fn stale_range_and_partition_shape_do_not_cross_recreation() -> Result
                 .create_container(
                     db_client,
                     container_properties(old_definition.clone()),
-                    Some(create_options(400)),
+                    Some(ThroughputProperties::manual(400)),
                 )
                 .await?;
             let old_logical_range = FeedRange::for_partition(

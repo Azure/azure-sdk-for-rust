@@ -313,6 +313,9 @@ impl<T: Send + DeserializeOwned + 'static> QueryPageIterator<T> {
     /// call (via [`QueryOptions::with_continuation_token`](crate::options::QueryOptions::with_continuation_token))
     /// to resume the query at the same position.
     ///
+    /// New checkpoints use `c2.` and require an SDK that supports that version.
+    /// Legacy `c1.` query checkpoints remain readable.
+    ///
     /// Snapshotting is non-mutating; the iterator may continue to be used
     /// afterwards. However, the captured token will resume from the position of the iterator at the time of capture,
     /// so any subsequent calls to `poll_next` after token capture will not affect the captured token's position.

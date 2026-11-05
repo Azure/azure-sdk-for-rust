@@ -1,10 +1,34 @@
 # Release History
 
-## 1.1.0-beta.2 (Unreleased)
+## 1.1.0-beta.3 (Unreleased)
 
 ### Features Added
 
 - Added client-side merging of cross-partition aggregates, `GROUP BY`, and distinct counts from native or Gateway query plans, preserving live iteration and split recovery without introducing a retained-state memory cap. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
+- Added `FullTextScoreScope` and client-side ranked full-text and weighted hybrid query execution with bounded result windows. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
+
+### Breaking Changes
+
+- Consumed legacy single-request prefix checkpoints cannot safely resume across physical ranges and are rejected; start a new feed with an explicit start position. Older unpolled single-request checkpoints require the original start on resume. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+
+### Bugs Fixed
+
+- Apply `DISTINCT` to completed `GROUP BY` projections before result windows, preserving identical partition-local aggregate contributions and deduplicating equal final projections. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
+- Preserve session tokens from query pages suppressed by `DISTINCT` or `OFFSET`, including terminal distinct-count results and empty-page flushes. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
+- Normalize native query-plan partition bounds using the container's partition key kind and version, preventing malformed EPK errors during cross-partition queries. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
+- Replace stale change-feed start headers, retain starts and polling positions in checkpoints, and preserve hierarchical-prefix leaf bounds on both gateway transports. Invalid keyed change feeds return errors instead of panicking during planning. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- A checkpoint's saved start takes precedence over a newly supplied change-feed start. Omit the continuation token to start a new feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+
+### Other Changes
+
+- New query and change-feed checkpoints use `c2.` and cannot be read by SDKs that only support `c1.`. Query checkpoint payloads are unchanged, and supported legacy `c1.` checkpoints remain readable. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+
+### Bugs Fixed
+
+### Other Changes
+
+## 1.1.0-beta.2 (2026-11-03)
 
 ### Breaking Changes
 
@@ -12,16 +36,11 @@
 
 ### Bugs Fixed
 
-- Apply `DISTINCT` to completed `GROUP BY` projections before result windows, preserving identical partition-local aggregate contributions and deduplicating equal final projections. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
-- Preserve session tokens from query pages suppressed by `DISTINCT` or `OFFSET`, including terminal distinct-count results and empty-page flushes. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
-- Normalize native query-plan partition bounds using the container's partition key kind and version, preventing malformed EPK errors during cross-partition queries. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Honor the emulator certificate-validation policy in Gateway V2 connectivity probes so self-signed emulator certificates do not prevent Gateway V2 connectivity when validation is disabled for emulator hosts. ([#5484](https://github.com/Azure/azure-sdk-for-rust/pull/5484))
 - Preserve Gateway 2.0 batch atomicity and continue-on-error controls, preventing partial commits in failed transactional batches. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 - Correct partition-local session-token scoping across classic Gateway and Gateway 2.0, including explicit compound tokens with automatic capture disabled, while retaining safe fallback for missing or stale topology. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 - Preserve query and feed EPK filters and avoid conflicting hierarchical partition-key selectors across gateways, regional retries, and continuation requests. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 - Retry transient account-discovery I/O failures within a bounded budget, including uncertain send outcomes. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
-
-### Other Changes
 
 ## 1.1.0-beta.1 (2026-10-22)
 

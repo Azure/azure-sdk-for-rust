@@ -4210,9 +4210,10 @@ impl CosmosDriver {
     /// `continuation` optionally provides resume state from a prior call. Two
     /// kinds of tokens are accepted:
     ///
-    /// - SDK-issued tokens (`c1.…`) carry a serialized snapshot of the
-    ///   previous pipeline's state and can resume any operation.
-    /// - Opaque server-issued tokens (no `c<N>.` prefix) are accepted only
+    /// - SDK-issued tokens start with `cN.`, where `N` is a format version, and
+    ///   can resume queries or change feeds. Treat their contents as opaque
+    ///   and resume them with a compatible SDK version.
+    /// - Server-issued tokens (no `cN.` prefix) are accepted only
     ///   for trivial operations; passing one to a cross-partition query
     ///   returns a `Client`-shaped error.
     ///
@@ -4345,6 +4346,15 @@ impl CosmosDriver {
         let retargeted = self
             .canonicalize_operation_container(&mut operation)
             .await?;
+        if operation.is_change_feed() {
+            if let (Some(key), Some(container)) = (operation.partition_key(), operation.container())
+            {
+                EffectivePartitionKey::compute_range(
+                    key.values(),
+                    container.partition_key_definition(),
+                )?;
+            }
+        }
         let explicit_session_token = operation.request_headers().session_token.is_some()
             || options.custom_headers.as_ref().is_some_and(|headers| {
                 headers.contains_key(&azure_core::http::headers::HeaderName::from_static(
@@ -4389,12 +4399,7 @@ impl CosmosDriver {
         // owned here alone. `execute_operation` resolves the binary options once
         // and forwards them via `resolved_binary` to avoid a second resolution;
         // the query path passes `None` and resolves lazily.
-        let operation = self.apply_response_negotiation(operation, options, resolved_binary);
-
-        // Share the operation across every Request node in the resulting plan.
-        // Per-Request differences are layered on at execution time via
-        // OperationOverrides; the operation itself is never mutated.
-        let operation = Arc::new(operation);
+        let mut operation = self.apply_response_negotiation(operation, options, resolved_binary);
 
         // Resolve the continuation token (if any) into a planner-ready resume
         // state. Server-issued tokens are only valid for trivial operations.
@@ -4405,8 +4410,11 @@ impl CosmosDriver {
         let is_fresh = continuation.is_none();
         let resume_state = match resolved_continuation {
             None => None,
-            Some(ResolvedToken::ClientV1(state)) => {
+            Some(ResolvedToken::Client(state)) => {
                 state.is_valid_for_operation(&operation)?;
+                if let Some(start) = state.change_feed_start() {
+                    operation = operation.with_change_feed_start(start.clone());
+                }
                 Some(state.into_root_node_state())
             }
             Some(ResolvedToken::ServerOpaque(server_token)) => {
@@ -4425,12 +4433,19 @@ impl CosmosDriver {
             }
         };
 
+        // Every leaf shares the checkpoint-restored operation. Per-range ETags
+        // are applied later through OperationOverrides.
+        let operation = Arc::new(operation);
+
         // 1. Trivial plan: anything that isn't a cross-partition query.
         //    The internal pipeline only supports projection and filtering over
         //    a sequential drain, with no support for ordering. Trivial
         //    operations (targeting a single logical partition) are sent directly
         //    to the gateway without query planning.
-        if operation.is_trivial() {
+        if operation.is_trivial()
+            && !(operation.operation_type() == crate::models::OperationType::Query
+                && crate::query::uses_ranked_search(operation.body()))
+        {
             let cache_only = self.uses_cache_only_topology(&operation, options).await;
             let mut topology = operation.container().cloned().map(|container| {
                 CachedTopologyProvider::new(
@@ -4526,6 +4541,19 @@ impl CosmosDriver {
             container_ref,
             self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
         );
+
+        if query_plan.hybrid_search_query_info.is_some() {
+            let pipeline = planner::build_hybrid_search(
+                &query_plan,
+                &mut topology,
+                &operation,
+                resume_state,
+                plan_options.full_text_score_scope,
+                plan_options.max_buffered_query_window,
+            )
+            .await?;
+            return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
+        }
 
         if query_plan.query_info.as_ref().is_some_and(|info| {
             info.has_aggregates() || info.has_group_by() || info.d_count_info.is_some()
@@ -5486,6 +5514,45 @@ mod tests {
             plan.take_initial_execution_deadline().is_none(),
             "the planning deadline must be consumed only once"
         );
+    }
+
+    #[tokio::test]
+    async fn change_feed_planning_rejects_invalid_partition_keys() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver =
+            CosmosDriver::new(runtime, DriverOptions::builder(test_account()).build()).unwrap();
+        driver.initialized.store(true, Ordering::Release);
+        for (definition, key, expected) in [
+            (
+                r#"{"paths":["/pk"],"version":2}"#,
+                PartitionKey::from(("a", "b")),
+                crate::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS,
+            ),
+            (
+                r#"{"paths":["/a","/b"],"kind":"Hash","version":2}"#,
+                PartitionKey::from("a"),
+                crate::error::status_codes::CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH,
+            ),
+            (
+                r#"{"paths":["/a","/b"],"kind":"MultiHash","version":2}"#,
+                PartitionKey::from(("a", "b", "c")),
+                crate::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS,
+            ),
+        ] {
+            let container = epk_test_container(definition);
+            let range = FeedRange::for_partition(key, container.partition_key_definition());
+            let error = driver
+                .plan_operation(
+                    CosmosOperation::change_feed(container, Some(range)),
+                    &OperationOptions::default(),
+                    None,
+                    &PlanOptions::default(),
+                )
+                .await
+                .err()
+                .expect("invalid change-feed key must fail before topology planning");
+            assert_eq!(error.status(), expected);
+        }
     }
 
     #[tokio::test]

@@ -894,29 +894,34 @@ impl ContainerClient {
     /// * `scope` - The [`FeedScope`] specifying the scope of the query.
     /// * `options` - Optional parameters for the request.
     ///
-    /// # Cross Partition Queries
+    /// # Cross-partition queries
     ///
     /// When `scope` spans multiple partitions, the SDK obtains a query plan and composes the
-    /// client-side pipeline needed to execute it. Supported features include ordinary projections
-    /// and filters, `TOP`, `OFFSET`/`LIMIT`, streaming single- and multiple-column `ORDER BY`, and
-    /// ordered or unordered `DISTINCT`, `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, `GROUP BY`,
-    /// and distinct counts expressed as `COUNT` over a `DISTINCT` subquery.
+    /// client-side pipeline needed to execute it.
     ///
-    /// Cross-partition vector ordering supports pure `ORDER BY VectorDistance(...)` queries with a
-    /// finite `TOP N` or `OFFSET x LIMIT y` window. The SDK buffers that result window before
-    /// returning the first page, so use narrow projections and choose a result window appropriate
-    /// for the memory available to the application.
+    /// Supported features:
     ///
-    /// The buffered result can be iterated in pages, but it does not support continuation tokens
-    /// for resuming in another process. Cross-partition aggregates and `GROUP BY` also do not
-    /// support external continuation tokens. They drain their input before returning results;
+    /// - Projections and filters.
+    /// - `TOP` and `OFFSET`/`LIMIT`.
+    /// - Single- and multiple-column `ORDER BY`.
+    /// - Ordered and unordered `DISTINCT`.
+    /// - `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, and `GROUP BY`.
+    /// - Distinct counts expressed as `COUNT` over a `DISTINCT` subquery.
+    /// - Vector ordering with `ORDER BY VectorDistance(...)`.
+    /// - Ranked full-text search with `ORDER BY RANK FullTextScore(...)`.
+    /// - Weighted full-text and vector hybrid search with `RRF(...)`.
+    ///
+    /// Vector ordering, ranked full-text, and hybrid queries buffer candidates before returning
+    /// the first page. They require a finite `TOP` or `OFFSET`/`LIMIT` within
+    /// [`QueryOptions::max_buffered_query_window`].
+    ///
+    /// Buffered queries, cross-partition aggregates, and `GROUP BY` do not support continuation
+    /// tokens for resuming in another process. Aggregates and groups drain their input before
+    /// returning results;
     /// `GROUP BY` can then return those results in multiple pages on the same live iterator.
     /// Distinct-count queries drain their deduplicated input and return one terminal count.
     /// Group and distinct-count state grows with input cardinality and is not bounded by
     /// [`QueryOptions::max_buffered_query_window`].
-    ///
-    /// Hybrid/full-text ranking remains unsupported when its query plan requires
-    /// client-side stages that have not been implemented.
     ///
     /// # Examples
     ///
@@ -985,6 +990,27 @@ impl ContainerClient {
     ///
     /// while let Some(item) = matches.try_next().await? {
     ///     println!("{}: {}", item.id, item.score);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Rank full-text matches with a parameterized search term:
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::{feed::FeedScope, Query};
+    /// use futures::TryStreamExt;
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// let query = Query::from(
+    ///     "SELECT TOP 5 c.id FROM c ORDER BY RANK FullTextScore(c.text, @term)",
+    /// )
+    /// .with_parameter("@term", "bicycle")?;
+    /// let mut matches = container_client
+    ///     .query_items::<serde_json::Value>(query, FeedScope::full_container(), None)
+    ///     .await?;
+    /// while let Some(item) = matches.try_next().await? {
+    ///     println!("{item}");
     /// }
     /// # Ok(())
     /// # }
@@ -1073,10 +1099,24 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `scope` - Determines which partitions to read changes from.
+    ///   A hierarchical partition-key prefix reads every overlapping physical
+    ///   range, with each request bounded to the prefix.
     /// * `start_from` - Where to begin reading when no continuation token is
-    ///   provided. Ignored when `options` carries a continuation token, since
-    ///   the token holds its own position.
+    ///   provided. A checkpoint's saved start takes precedence over this value,
+    ///   and saved per-range ETags take precedence over the start. Older
+    ///   single-request checkpoints don't record the original start; supply the
+    ///   same `start_from` when resuming those checkpoints before the first poll.
     /// * `options` - Optional parameters controlling mode, session token, and paging.
+    ///
+    /// In LatestVersion mode, [`ChangeFeedStartFrom::Now`] is evaluated at each
+    /// range's first request, including ranges first polled after resume.
+    /// Creating an iterator or saving its checkpoint doesn't anchor that time.
+    ///
+    /// Older prefix checkpoints that contain a single request's ETag cannot
+    /// safely reconstruct per-range positions and are rejected. Unpolled prefix
+    /// checkpoints can resume with the original `start_from`.
+    /// New query and change-feed checkpoints use `c2.` and are rejected by
+    /// older SDKs that only support `c1.`.
     ///
     /// # AllVersionsAndDeletes limitations
     ///
@@ -1089,8 +1129,9 @@ impl ContainerClient {
     /// * When starting from [`ChangeFeedStartFrom::Now`], every range is pinned
     ///   to its concrete starting position before the first page is returned, so
     ///   a range that is never served before a checkpoint still resumes from its
-    ///   true start rather than resume-time. No intermediate versions or deletes
-    ///   are dropped across a resume. `Now` is deliberately **not** rewritten to
+    ///   captured start rather than resume-time. A checkpoint taken before the
+    ///   first poll has no captured ETags; priming happens when that feed is
+    ///   polled, including after resume. `Now` is deliberately **not** rewritten to
     ///   a concrete [`ChangeFeedStartFrom::PointInTime`], which would change its
     ///   semantics; each range instead captures its own server continuation.
     /// * The feed mode is encoded in the continuation token, so a token issued in

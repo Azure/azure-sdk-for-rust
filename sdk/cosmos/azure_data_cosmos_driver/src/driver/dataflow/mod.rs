@@ -45,6 +45,7 @@ pub(crate) mod distinct_hash;
 mod drain;
 mod drained;
 mod group_by;
+mod hybrid_search;
 #[cfg(test)]
 mod integration_tests;
 #[cfg(test)]
