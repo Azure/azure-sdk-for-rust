@@ -146,40 +146,33 @@ async fn test_blob_client_request_priority(ctx: TestContext) -> Result<(), Box<d
 
     let result = async {
         create_test_blob(&blob_client, None, None).await?;
-        // No Option Scenario
-        let response = blob_client.get_properties(None).await?;
-        let unspecified_priority = response.effective_request_priority()?;
-
-        // Explicit, Boundary, and Out-of-Range Priority Scenarios
+        // Default, No Carryover, Boundary, and Out-of-Range Priority Scenarios
         let mut priorities = Vec::new();
-        for requested in [1, 0, 7, -1, 8] {
+        for (requested, expected) in [
+            (None, 3),
+            (Some(1), 1),
+            (None, 3),
+            (Some(0), 0),
+            (Some(7), 7),
+            (Some(-1), 3),
+            (Some(8), 3),
+        ] {
             let response = blob_client
-                .get_properties(Some(BlobClientGetPropertiesOptions {
-                    request_priority: Some(requested),
+                .get_properties(requested.map(|priority| BlobClientGetPropertiesOptions {
+                    request_priority: Some(priority),
                     ..Default::default()
                 }))
                 .await?;
-            priorities.push((requested, response.effective_request_priority()?));
+            priorities.push((requested, expected, response.effective_request_priority()?));
         }
-        azure_core::Result::Ok((unspecified_priority, priorities))
+        azure_core::Result::Ok(priorities)
     }
     .await;
 
     container_client.delete(None).await?;
-    let (unspecified_priority, priorities) = result?;
     // Assert
-    assert_eq!(
-        unspecified_priority,
-        Some(3),
-        "unspecified request priority"
-    );
-    for (requested, effective) in priorities {
-        let expected = if (0..=7).contains(&requested) {
-            requested
-        } else {
-            3
-        };
-        assert_eq!(effective, Some(expected), "requested priority {requested}");
+    for (requested, expected, actual) in result? {
+        assert_eq!(actual, Some(expected), "requested priority {requested:?}");
     }
     Ok(())
 }

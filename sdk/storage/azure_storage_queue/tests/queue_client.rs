@@ -39,20 +39,24 @@ async fn test_queue_client_request_priority(ctx: TestContext) -> Result<()> {
     queue_client.create(None).await?;
 
     let test_result = async {
-        // No Option Scenario
-        let response = queue_client.get_properties(None).await?;
-        let _ = response.effective_request_priority()?;
-
-        // Explicit, Boundary, and Out-of-Range Priority Scenarios
+        // Default, No Carryover, Boundary, and Out-of-Range Priority Scenarios
         let mut priorities = Vec::new();
-        for requested in [1, 0, 7, -1, 8] {
+        for (requested, expected) in [
+            (None, 3),
+            (Some(1), 1),
+            (None, 3),
+            (Some(0), 0),
+            (Some(7), 7),
+            (Some(-1), 3),
+            (Some(8), 3),
+        ] {
             let response = queue_client
-                .get_properties(Some(QueueClientGetPropertiesOptions {
-                    request_priority: Some(requested),
+                .get_properties(requested.map(|priority| QueueClientGetPropertiesOptions {
+                    request_priority: Some(priority),
                     ..Default::default()
                 }))
                 .await?;
-            priorities.push((requested, response.effective_request_priority()?));
+            priorities.push((requested, expected, response.effective_request_priority()?));
         }
         Ok::<_, azure_core::Error>(priorities)
     }
@@ -62,13 +66,8 @@ async fn test_queue_client_request_priority(ctx: TestContext) -> Result<()> {
     queue_client.delete(None).await?;
 
     // Assert
-    for (requested, effective) in test_result? {
-        let expected = if (0..=7).contains(&requested) {
-            requested
-        } else {
-            3
-        };
-        assert_eq!(effective, Some(expected), "requested priority {requested}");
+    for (requested, expected, actual) in test_result? {
+        assert_eq!(actual, Some(expected), "requested priority {requested:?}");
     }
     Ok(())
 }
