@@ -156,12 +156,18 @@ fn released_requirement(
         .trim()
         .trim_start_matches(['=', '^', '~'])
         .trim();
-    if let Ok(baseline) = Version::parse(baseline) {
-        if baseline > *target {
-            return Ok(target.to_string());
+    if let Ok(baseline_version) = Version::parse(baseline) {
+        if baseline_version > *target {
+            return Ok(requirement.replacen(baseline, &target.to_string(), 1));
         }
     }
-    if parsed.matches(target) {
+    if parsed.matches(target)
+        && (!target.pre.is_empty()
+            || parsed
+                .comparators
+                .iter()
+                .all(|comparator| comparator.pre.is_empty()))
+    {
         return Ok(requirement.to_string());
     }
     Err(format!("requirement {requirement:?} cannot use released version {target} without increasing or changing its compatibility").into())
