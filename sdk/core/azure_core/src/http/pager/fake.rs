@@ -10,7 +10,7 @@ use crate::http::pager::{PagerOptions, PagerResultFuture, PagerState};
 /// [`PageIterator::new()`](crate::http::PageIterator::new) applies this automatically
 /// when the `test` and `unstable_fake` features are enabled. A fake server can read the current
 /// [`PagerState`] from the context without interpreting continuation URLs or tokens.
-pub fn with_state<P, F>(
+pub(crate) fn with_state<P, F>(
     make_request: F,
 ) -> impl Fn(PagerState, PagerOptions<'static>) -> PagerResultFuture<P> + Send + 'static
 where

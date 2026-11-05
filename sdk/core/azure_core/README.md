@@ -620,6 +620,8 @@ assert_eq!(details.code.as_deref(), Some("SecretNotFound"));
 Use `new()` with credentials for Azure, or `with_fake()` with a fake server for tests.
 `with_fake()` returns an error if the supplied client options already specify a transport.
 
+Some models' fields are intended to be read-only as returned from the service
+and will not be serialized to the request body.
 Pass a JSON string to `fake_with_bytes()`, or build a response body with
 [`serde_json::json!()`](https://docs.rs/serde_json/latest/serde_json/macro.json.html)
 and call `.to_string()`. Use `fake_with_error()` for Azure errors and

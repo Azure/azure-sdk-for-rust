@@ -1227,7 +1227,6 @@ pub mod http {
         pub type PagerResultFuture<P> = std::pin::Pin<Box<dyn Future<Output = crate::Result<PagerResult<P>>> + Send + 'static>>;
         #[cfg(all(feature = "test", feature = "unstable_fake"))]
         pub mod fake {
-            pub fn with_state<P, F>(make_request: F) -> impl Fn(crate::http::pager::PagerState, crate::http::pager::PagerOptions<'static>) -> crate::http::pager::PagerResultFuture<P> + Send + 'static where F: Fn(crate::http::pager::PagerState, crate::http::pager::PagerOptions<'static>) -> crate::http::pager::PagerResultFuture<P> + Send + 'static;
         }
     }
     pub mod policies {
@@ -1418,7 +1417,6 @@ pub mod http {
         pub type PollerResultFuture<M, F> = std::pin::Pin<Box<dyn Future<Output = crate::Result<super::PollerResult<M, F>>> + Send + 'static>>;
         #[cfg(all(feature = "test", feature = "unstable_fake"))]
         pub mod fake {
-            pub fn with_state<M, F, C>(make_request: C) -> impl Fn(crate::http::poller::PollerState, crate::http::poller::PollerOptions<'static>) -> crate::http::poller::PollerResultFuture<M, F> + Send + 'static where M: StatusMonitor, F: Format, C: Fn(crate::http::poller::PollerState, crate::http::poller::PollerOptions<'static>) -> crate::http::poller::PollerResultFuture<M, F> + Send + 'static;
         }
         #[cfg(feature = "unstable_resource_manager")]
         pub mod resource_manager {

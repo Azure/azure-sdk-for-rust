@@ -13,7 +13,7 @@ use crate::http::{
 /// [`Poller::new()`](crate::http::Poller::new) applies this automatically when the
 /// `test` and `unstable_fake` features are enabled. A fake server can read the current [`PollerState`]
 /// from the context and return a raw response for each polling request.
-pub fn with_state<M, F, C>(
+pub(crate) fn with_state<M, F, C>(
     make_request: C,
 ) -> impl Fn(PollerState, PollerOptions<'static>) -> PollerResultFuture<M, F> + Send + 'static
 where

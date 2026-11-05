@@ -51,3 +51,7 @@ workspace = true
 [[example]]
 name = "secret_client_fake"
 required-features = ["test", "unstable_fake"]
+
+[[test]]
+name = "secret_client_fake"
+required-features = ["test", "unstable_fake"]
