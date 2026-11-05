@@ -194,7 +194,7 @@ When this spec says "inherited from the original wrapper" elsewhere, it means PR
 
 ### 3.1 Invocation model — completion queues
 
-> **Visual overview:** see [`sdk/cosmos/docs/specs/0020-native-async-invocation.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0020-native-async-invocation.md) for the picture-first walkthrough of every flow described below (component layout, submission lifecycle, two-handle ownership, queue states, per-language pinning).
+> **Visual overview:** see `sdk/cosmos/docs/specs/0020-native-async-invocation.md` for the picture-first walkthrough of every flow described below (component layout, submission lifecycle, two-handle ownership, queue states, per-language pinning).
 
 Every operation that touches the network in this wrapper is **asynchronous and non-blocking at the FFI boundary**. Submitting a request returns a lightweight in-flight handle (`cosmos_operation_handle_t`); the response (or error) is delivered later on a caller-owned **completion queue** (`cosmos_cq_t`). Host SDKs spin one or more "receive loop" threads that wait on a queue, dequeue completed operations, and dispatch them — typically by carrying the host-language continuation (e.g. a .NET `TaskCompletionSource`) through the `void *user_data` field round-trip.
 
