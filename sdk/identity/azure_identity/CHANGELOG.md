@@ -1,16 +1,10 @@
 # Release History
 
-## 1.1.0-beta.2 (Unreleased)
-
-### Features Added
+## 1.1.0-beta.2 (2026-11-05)
 
 ### Breaking Changes
 
 - The `reqwest` feature no longer enables rustls or the built-in AKS identity binding token proxy client; enable `reqwest_rustls` (enabled by default) or provide a custom `TokenProxyClient` for the proxy. This is breaking only compared to 1.1.0-beta.1, not stable 1.0.0.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 1.1.0-beta.1 (2026-09-04)
 

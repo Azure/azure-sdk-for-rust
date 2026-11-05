@@ -1,6 +1,6 @@
 # Release History
 
-## 1.2.0-beta.2 (Unreleased)
+## 1.2.0-beta.2 (2026-11-05)
 
 ### Features Added
 
@@ -15,16 +15,12 @@
 - Added `http::fake::get_api_name()` to borrow operation names from request context without requiring a tracer provider or listener.
 - Added `http::fake::ResponseExt::fake_with_error()` to create JSON service error responses.
 
-### Breaking Changes
-
 ### Bugs Fixed
 
 - Awaiting a `Poller` after fully consuming its stream no longer panics.
 - `check_success` would fail when error message contained escape sequences like CRLF ([#5364](https://github.com/Azure/azure-sdk-for-rust/pull/5364))
 - Avoided unnecessary error construction and backtrace capture in `Headers::get_optional_str()` when a header is absent ([#5446](https://github.com/Azure/azure-sdk-for-rust/pull/5446)).
 - Update TLS dependencies to distrust compromised emSign CAs
-
-### Other Changes
 
 ## 1.2.0-beta.1 (2026-09-04)
 
