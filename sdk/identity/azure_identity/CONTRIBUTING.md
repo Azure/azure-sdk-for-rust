@@ -76,10 +76,20 @@ Disabled deployments skip post-provisioning; enabled deployments require complet
 Before publishing endpoints, the script waits for addresses, pod readiness, and successful authentication and storage access through each deployed app.
 Pod and IP address readiness use `ReadinessTimeoutSeconds` (180 seconds by default).
 Authentication and storage access use a separate `EndpointReadinessTimeoutSeconds` budget (900 seconds by default) to allow for identity and role propagation.
+Within that endpoint budget, the script checks TCP connectivity from the agent and unauthenticated HTTP reachability before testing authentication and storage access.
+A response such as HTTP 404 proves HTTP reachability, not successful authentication; the `/api` check must still return HTTP 200.
+TCP probes wait at most 5 seconds and HTTP reachability probes wait at most 10 seconds, both capped by the remaining endpoint budget.
 Each HTTP request waits at most 60 seconds or the remaining endpoint budget, whichever is shorter.
 Timeout errors retain the last HTTP error status and response body, when available.
 If AKS endpoint validation fails, the script collects pod logs, pod and service status, service endpoints, and recent pod and service events before cleaning up its temporary Kubernetes configuration.
 These resources incur charges until removed.
+
+The identity weekly pipeline allows 120 minutes per test job, including provisioning, application setup, tests, and cleanup.
+This job ceiling is separate from the pod/IP and endpoint readiness limits; non-weekly pipelines retain their existing timeout.
+On failure or cancellation, a two-minute diagnostic step attempts to collect deployment state, failed deployment operations, recent failed Azure Activity Log entries, and AKS worker provisioning state before cleanup.
+The [diagnostic script](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/identity/eng/scripts/Get-DeploymentDiagnostics.ps1) selects resources by the current build, job, and service tags.
+Cancellation diagnostics are best effort and cannot run after the agent terminates or its cancellation grace expires.
+Azure Activity Log can still be inspected independently of the agent.
 
 Use the deployment outputs and post-provisioning output to set the environment variables in the shell running the tests.
 Endpoint variables are set in the provisioning PowerShell process and published as pipeline variables in CI.
@@ -192,7 +202,8 @@ Do not delete an identity's automatically created federated credential while oth
 - **Live test is ignored:** Set `AZURE_TEST_MODE=live` before compiling the tests; clean the package first if switching modes. Set the variables listed for that scenario before running it.
 - **CA/TLS test stays ignored in live mode:** These tests require separate manual setup and explicit `--ignored --exact` selection as described above.
 - **IMDS live test returns without authenticating:** Set `IDENTITY_IMDS_AVAILABLE=1` only on an Azure host with a configured system-assigned managed identity.
-- **Provisioning readiness times out:** Check the reported scenario, last HTTP error, AKS diagnostics, network access, and identity role assignments. Endpoint validation allows 900 seconds by default; pod and IP readiness allow 180 seconds. The script does not publish an endpoint before its authentication/storage check succeeds.
+- **Provisioning readiness times out:** Check the reported TCP, HTTP reachability, or authentication/storage phase, last HTTP error, AKS diagnostics, and identity role assignments. Endpoint validation allows 900 seconds by default; pod and IP readiness allow 180 seconds. The script does not publish an endpoint before its authentication/storage check succeeds.
+- **Weekly job times out during Azure deployment:** Check the deployment diagnostic step or Azure Activity Log for provider error codes and correlation IDs. Increasing endpoint readiness limits does not change the weekly job's 120-minute ceiling.
 - **Token proxy settings are missing:** Ordinary workload identity is insufficient; recreate the pod with the identity binding annotation after configuring the binding and Kubernetes authorization.
 - **CA or SNI failures:** Use the webhook-provided values inside the pod, and configure exactly one CA source. HTTP recordings cannot diagnose the live TLS handshake.
 - **Storage authorization failures:** Check the test identity's role assignments and allow time for role propagation.

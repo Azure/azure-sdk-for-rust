@@ -76,6 +76,19 @@ function Wait-IdentityAddress {
   throw "Timed out waiting for $Name IP address"
 }
 
+function Test-IdentityTcpConnection {
+  param([uri] $Uri, [int] $TimeoutSeconds)
+
+  $client = [System.Net.Sockets.TcpClient]::new()
+  try {
+    $null = $client.ConnectAsync($Uri.DnsSafeHost, $Uri.Port).
+      WaitAsync([TimeSpan]::FromSeconds($TimeoutSeconds)).GetAwaiter().GetResult()
+  }
+  finally {
+    $client.Dispose()
+  }
+}
+
 function Wait-IdentityEndpoint {
   param([string] $Name, [uri] $Uri)
 
@@ -83,9 +96,41 @@ function Wait-IdentityEndpoint {
   $deadline = $started.AddSeconds($EndpointReadinessTimeoutSeconds)
   $failure = 'no response'
   $lastHttpFailure = $null
+  $tcpReported = $false
+  $httpReachable = $false
+  $probeUri = [System.UriBuilder]::new($Uri)
+  $probeUri.Path = '/'
+  $probeUri.Query = ''
+  $probeUri.Fragment = ''
   while (($remaining = ($deadline - (Get-Date)).TotalSeconds) -ge 1) {
-    $requestTimeout = [int] [Math]::Min(60, [Math]::Floor($remaining))
+    $phase = 'TCP connectivity'
     try {
+      Test-IdentityTcpConnection -Uri $Uri -TimeoutSeconds ([int] [Math]::Min(5, [Math]::Floor($remaining)))
+      if (!$tcpReported) {
+        Write-Host "$Name TCP connection to $($Uri.Host):$($Uri.Port) succeeded from this agent"
+        $tcpReported = $true
+      }
+
+      if (!$httpReachable) {
+        $remaining = ($deadline - (Get-Date)).TotalSeconds
+        $phase = 'HTTP reachability'
+        if ($remaining -lt 1) {
+          $failure = "$phase was not checked before the endpoint deadline"
+          break
+        }
+        $probeTimeout = [int] [Math]::Min(10, [Math]::Floor($remaining))
+        $probe = Invoke-WebRequest -Uri $probeUri.Uri -TimeoutSec $probeTimeout -SkipHttpErrorCheck
+        $httpReachable = $true
+        Write-Host "$Name HTTP endpoint responded with status $($probe.StatusCode); checking authentication and storage access"
+      }
+
+      $remaining = ($deadline - (Get-Date)).TotalSeconds
+      $phase = 'Authentication and storage access'
+      if ($remaining -lt 1) {
+        $failure = "$phase was not checked before the endpoint deadline"
+        break
+      }
+      $requestTimeout = [int] [Math]::Min(60, [Math]::Floor($remaining))
       $response = Invoke-WebRequest -Uri $Uri -TimeoutSec $requestTimeout -SkipHttpErrorCheck
       if ($response.StatusCode -eq 200) {
         return
@@ -94,11 +139,11 @@ function Wait-IdentityEndpoint {
       if ($body.Length -gt 2048) {
         $body = $body.Substring(0, 2048) + ' [truncated]'
       }
-      $failure = "HTTP $($response.StatusCode): $body"
+      $failure = "${phase}: HTTP $($response.StatusCode): $body"
       $lastHttpFailure = $failure
     }
-    catch [System.Net.Http.HttpRequestException], [System.Threading.Tasks.TaskCanceledException], [System.TimeoutException], [System.Net.WebException] {
-      $failure = $_.Exception.Message
+    catch [System.Net.Http.HttpRequestException], [System.Threading.Tasks.TaskCanceledException], [System.TimeoutException], [System.Net.WebException], [System.Net.Sockets.SocketException] {
+      $failure = "${phase}: $($_.Exception.Message)"
     }
     $remaining = ($deadline - (Get-Date)).TotalSeconds
     if ($remaining -gt 0) {
