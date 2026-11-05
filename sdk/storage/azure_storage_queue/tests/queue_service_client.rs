@@ -12,7 +12,8 @@ use azure_core_test::{recorded, Recording, TestContext};
 use azure_storage_queue::{
     models::{
         CorsRule, GeoReplicationStatus, KeyInfo, ListQueuesIncludeType, Logging, Metrics,
-        QueueServiceClientListQueuesOptions, QueueServiceProperties, RetentionPolicy,
+        QueueServiceClientGetPropertiesOptions, QueueServiceClientListQueuesOptions,
+        QueueServiceProperties, QueueServicePropertiesHeaders, RetentionPolicy,
     },
     QueueServiceClient, QueueServiceClientOptions,
 };
@@ -21,6 +22,25 @@ use futures::StreamExt;
 use time::Duration;
 
 use std::collections::HashMap;
+
+#[recorded::test]
+async fn test_queue_service_client_request_priority(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_service_client = get_queue_service_client(recording).await?;
+
+    // Non-Default Priority Scenario
+    let response = queue_service_client
+        .get_properties(Some(QueueServiceClientGetPropertiesOptions {
+            request_priority: Some(1),
+            ..Default::default()
+        }))
+        .await?;
+
+    // Assert
+    assert_eq!(response.effective_request_priority()?, Some(1));
+    Ok(())
+}
 
 /// Creates a new queue under the given account.
 #[recorded::test]

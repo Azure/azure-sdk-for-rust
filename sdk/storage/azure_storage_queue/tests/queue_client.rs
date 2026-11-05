@@ -15,10 +15,11 @@ use azure_core::{
 use azure_core_test::{recorded, Recording, TestContext, VarOptions};
 use azure_storage_queue::{
     models::{
-        AccessPolicy, QueueClientCreateOptions, QueueClientGetPropertiesResultHeaders,
-        QueueClientPeekMessagesOptions, QueueClientReceiveMessagesOptions,
-        QueueClientSendMessageOptions, QueueClientUpdateMessageOptions, QueueMessage, SentMessage,
-        SignedIdentifier, SignedIdentifiers,
+        AccessPolicy, QueueClientCreateOptions, QueueClientGetPropertiesOptions,
+        QueueClientGetPropertiesResultHeaders, QueueClientPeekMessagesOptions,
+        QueueClientReceiveMessagesOptions, QueueClientSendMessageOptions,
+        QueueClientUpdateMessageOptions, QueueMessage, SentMessage, SignedIdentifier,
+        SignedIdentifiers,
     },
     QueueClient, QueueClientOptions,
 };
@@ -29,6 +30,48 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
+
+#[recorded::test]
+async fn test_queue_client_request_priority(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+    queue_client.create(None).await?;
+
+    let test_result = async {
+        // No Option Scenario
+        let response = queue_client.get_properties(None).await?;
+        let _ = response.effective_request_priority()?;
+
+        // Explicit, Boundary, and Out-of-Range Priority Scenarios
+        let mut priorities = Vec::new();
+        for requested in [1, 0, 7, -1, 8] {
+            let response = queue_client
+                .get_properties(Some(QueueClientGetPropertiesOptions {
+                    request_priority: Some(requested),
+                    ..Default::default()
+                }))
+                .await?;
+            priorities.push((requested, response.effective_request_priority()?));
+        }
+        Ok::<_, azure_core::Error>(priorities)
+    }
+    .await;
+
+    // Cleanup
+    queue_client.delete(None).await?;
+
+    // Assert
+    for (requested, effective) in test_result? {
+        let expected = if (0..=7).contains(&requested) {
+            requested
+        } else {
+            3
+        };
+        assert_eq!(effective, Some(expected), "requested priority {requested}");
+    }
+    Ok(())
+}
 
 /// Creates a new queue under the given account.
 #[recorded::test]

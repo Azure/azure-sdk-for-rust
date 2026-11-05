@@ -22,18 +22,18 @@ pub mod clients {
     pub struct QueueClient {
     }
     impl QueueClient {
-        pub async fn clear(&self, options: Option<QueueClientClearOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        pub async fn create(&self, options: Option<QueueClientCreateOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        pub async fn delete(&self, options: Option<QueueClientDeleteOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        pub async fn delete_message(&self, message_id: &str, pop_receipt: &str, options: Option<QueueClientDeleteMessageOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn clear(&self, options: Option<QueueClientClearOptions<'_>>) -> Result<Response<QueueClientClearResult, NoFormat>>;
+        pub async fn create(&self, options: Option<QueueClientCreateOptions<'_>>) -> Result<Response<QueueClientCreateResult, NoFormat>>;
+        pub async fn delete(&self, options: Option<QueueClientDeleteOptions<'_>>) -> Result<Response<QueueClientDeleteResult, NoFormat>>;
+        pub async fn delete_message(&self, message_id: &str, pop_receipt: &str, options: Option<QueueClientDeleteMessageOptions<'_>>) -> Result<Response<QueueClientDeleteMessageResult, NoFormat>>;
         pub async fn get_access_policy(&self, options: Option<QueueClientGetAccessPolicyOptions<'_>>) -> Result<Response<SignedIdentifiers, XmlFormat>>;
         pub async fn get_properties(&self, options: Option<QueueClientGetPropertiesOptions<'_>>) -> Result<Response<QueueClientGetPropertiesResult, NoFormat>>;
         pub async fn peek_messages(&self, options: Option<QueueClientPeekMessagesOptions<'_>>) -> Result<Response<PeekedMessages, XmlFormat>>;
         pub async fn receive_messages(&self, options: Option<QueueClientReceiveMessagesOptions<'_>>) -> Result<Response<ReceivedMessages, XmlFormat>>;
         pub async fn send_message(&self, queue_message: RequestContent<QueueMessage, XmlFormat>, options: Option<QueueClientSendMessageOptions<'_>>) -> Result<Response<ListOfSentMessage, XmlFormat>>;
-        pub async fn set_access_policy(&self, queue_acl: RequestContent<SignedIdentifiers, XmlFormat>, options: Option<QueueClientSetAccessPolicyOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        pub async fn set_metadata(&self, metadata: &HashMap<String, String>, options: Option<QueueClientSetMetadataOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        pub async fn update_message(&self, message_id: &str, pop_receipt: &str, visibility_timeout: i32, options: Option<QueueClientUpdateMessageOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn set_access_policy(&self, queue_acl: RequestContent<SignedIdentifiers, XmlFormat>, options: Option<QueueClientSetAccessPolicyOptions<'_>>) -> Result<Response<QueueClientSetAccessPolicyResult, NoFormat>>;
+        pub async fn set_metadata(&self, metadata: &HashMap<String, String>, options: Option<QueueClientSetMetadataOptions<'_>>) -> Result<Response<QueueClientSetMetadataResult, NoFormat>>;
+        pub async fn update_message(&self, message_id: &str, pop_receipt: &str, visibility_timeout: i32, options: Option<QueueClientUpdateMessageOptions<'_>>) -> Result<Response<QueueClientUpdateMessageResult, NoFormat>>;
     }
     impl QueueClient {
         pub async fn exists(&self) -> Result<bool>;
@@ -55,7 +55,7 @@ pub mod clients {
         pub async fn get_statistics(&self, options: Option<QueueServiceClientGetStatisticsOptions<'_>>) -> Result<Response<QueueServiceStats, XmlFormat>>;
         pub async fn get_user_delegation_key(&self, key_info: RequestContent<KeyInfo, XmlFormat>, options: Option<QueueServiceClientGetUserDelegationKeyOptions<'_>>) -> Result<Response<UserDelegationKey, XmlFormat>>;
         pub fn list_queues(&self, options: Option<QueueServiceClientListQueuesOptions<'_>>) -> Result<Pager<ListQueuesResponse, XmlFormat>>;
-        pub async fn set_properties(&self, queue_service_properties: RequestContent<QueueServiceProperties, XmlFormat>, options: Option<QueueServiceClientSetPropertiesOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn set_properties(&self, queue_service_properties: RequestContent<QueueServiceProperties, XmlFormat>, options: Option<QueueServiceClientSetPropertiesOptions<'_>>) -> Result<Response<QueueServiceClientSetPropertiesResult, NoFormat>>;
     }
     impl QueueServiceClient {
         pub fn new(service_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<QueueServiceClientOptions>) -> Result<Self>;
@@ -207,32 +207,46 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientClearOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
+    #[derive(Debug)]
+    pub struct QueueClientClearResult;
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientCreateOptions<'a> {
         pub metadata: Option<std::collections::HashMap<String, String>>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
+    #[derive(Debug)]
+    pub struct QueueClientCreateResult;
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientDeleteMessageOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
+    #[derive(Debug)]
+    pub struct QueueClientDeleteMessageResult;
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientDeleteOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
+    #[derive(Debug)]
+    pub struct QueueClientDeleteResult;
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientGetAccessPolicyOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientGetPropertiesOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -241,12 +255,14 @@ pub mod models {
     pub struct QueueClientPeekMessagesOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub number_of_messages: Option<i32>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientReceiveMessagesOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub number_of_messages: Option<i32>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
         pub visibility_timeout: Option<i32>,
     }
@@ -254,25 +270,35 @@ pub mod models {
     pub struct QueueClientSendMessageOptions<'a> {
         pub message_time_to_live: Option<i32>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
         pub visibility_timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientSetAccessPolicyOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
+    #[derive(Debug)]
+    pub struct QueueClientSetAccessPolicyResult;
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientSetMetadataOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
+    #[derive(Debug)]
+    pub struct QueueClientSetMetadataResult;
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientUpdateMessageOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub queue_message: Option<azure_core::http::RequestContent<super::QueueMessage, azure_core::http::XmlFormat>>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
+    #[derive(Debug)]
+    pub struct QueueClientUpdateMessageResult;
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
     #[serde(rename = "Queue")]
@@ -294,16 +320,19 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct QueueServiceClientGetPropertiesOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct QueueServiceClientGetStatisticsOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct QueueServiceClientGetUserDelegationKeyOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
@@ -313,6 +342,7 @@ pub mod models {
         pub maxresults: Option<i32>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
         pub prefix: Option<String>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     impl QueueServiceClientListQueuesOptions<'_> {
@@ -321,8 +351,11 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct QueueServiceClientSetPropertiesOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
+    #[derive(Debug)]
+    pub struct QueueServiceClientSetPropertiesResult;
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[serde(rename = "StorageServiceProperties")]
     pub struct QueueServiceProperties {
@@ -536,9 +569,58 @@ pub mod models {
     impl<'de> Deserialize<'de> for super::StorageErrorCode {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
+    pub trait ListOfSentMessageHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait ListQueuesResponseHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait PeekedMessagesHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait QueueClientClearResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait QueueClientCreateResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait QueueClientDeleteMessageResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait QueueClientDeleteResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
     pub trait QueueClientGetPropertiesResultHeaders: private::Sealed {
         fn approximate_messages_count(&self) -> Result<Option<i64>>;
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
         fn metadata(&self) -> Result<HashMap<String, String>>;
+    }
+    pub trait QueueClientSetAccessPolicyResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait QueueClientSetMetadataResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait QueueClientUpdateMessageResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait QueueServiceClientSetPropertiesResultHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait QueueServicePropertiesHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait QueueServiceStatsHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait ReceivedMessagesHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait SignedIdentifiersHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
+    }
+    pub trait UserDelegationKeyHeaders: private::Sealed {
+        fn effective_request_priority(&self) -> Result<Option<i32>>;
     }
 }
 ```
