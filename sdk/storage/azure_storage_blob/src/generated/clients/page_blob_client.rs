@@ -82,7 +82,6 @@ impl PageBlobClient {
     /// * [`last_modified`()](crate::generated::models::PageBlobClientClearPagesResultHeaders::last_modified) - last-modified
     /// * [`blob_sequence_number`()](crate::generated::models::PageBlobClientClearPagesResultHeaders::blob_sequence_number) - x-ms-blob-sequence-number
     /// * [`content_crc64`()](crate::generated::models::PageBlobClientClearPagesResultHeaders::content_crc64) - x-ms-content-crc64
-    /// * [`effective_request_priority`()](crate::generated::models::PageBlobClientClearPagesResultHeaders::effective_request_priority) - x-ms-request-priority
     ///
     /// [`PageBlobClientClearPagesResultHeaders`]: crate::generated::models::PageBlobClientClearPagesResultHeaders
     #[tracing::function("Storage.Blob.PageBlobClient.clearPages")]
@@ -214,7 +213,6 @@ impl PageBlobClient {
     /// * [`last_modified`()](crate::generated::models::PageBlobClientCreateResultHeaders::last_modified) - last-modified
     /// * [`encryption_key_sha256`()](crate::generated::models::PageBlobClientCreateResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
     /// * [`encryption_scope`()](crate::generated::models::PageBlobClientCreateResultHeaders::encryption_scope) - x-ms-encryption-scope
-    /// * [`effective_request_priority`()](crate::generated::models::PageBlobClientCreateResultHeaders::effective_request_priority) - x-ms-request-priority
     /// * [`is_server_encrypted`()](crate::generated::models::PageBlobClientCreateResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     /// * [`version_id`()](crate::generated::models::PageBlobClientCreateResultHeaders::version_id) - x-ms-version-id
     ///
@@ -374,7 +372,6 @@ impl PageBlobClient {
     /// * [`etag`()](crate::generated::models::PageListHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::PageListHeaders::last_modified) - last-modified
     /// * [`blob_content_length`()](crate::generated::models::PageListHeaders::blob_content_length) - x-ms-blob-content-length
-    /// * [`effective_request_priority`()](crate::generated::models::PageListHeaders::effective_request_priority) - x-ms-request-priority
     ///
     /// [`PageListHeaders`]: crate::generated::models::PageListHeaders
     #[tracing::function("Storage.Blob.PageBlobClient.getPageRanges")]
@@ -507,7 +504,6 @@ impl PageBlobClient {
     /// * [`etag`()](crate::generated::models::PageBlobClientResizeResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::PageBlobClientResizeResultHeaders::last_modified) - last-modified
     /// * [`blob_sequence_number`()](crate::generated::models::PageBlobClientResizeResultHeaders::blob_sequence_number) - x-ms-blob-sequence-number
-    /// * [`effective_request_priority`()](crate::generated::models::PageBlobClientResizeResultHeaders::effective_request_priority) - x-ms-request-priority
     ///
     /// [`PageBlobClientResizeResultHeaders`]: crate::generated::models::PageBlobClientResizeResultHeaders
     #[tracing::function("Storage.Blob.PageBlobClient.resize")]
@@ -617,7 +613,6 @@ impl PageBlobClient {
     /// * [`etag`()](crate::generated::models::PageBlobClientSetSequenceNumberResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::PageBlobClientSetSequenceNumberResultHeaders::last_modified) - last-modified
     /// * [`blob_sequence_number`()](crate::generated::models::PageBlobClientSetSequenceNumberResultHeaders::blob_sequence_number) - x-ms-blob-sequence-number
-    /// * [`effective_request_priority`()](crate::generated::models::PageBlobClientSetSequenceNumberResultHeaders::effective_request_priority) - x-ms-request-priority
     ///
     /// [`PageBlobClientSetSequenceNumberResultHeaders`]: crate::generated::models::PageBlobClientSetSequenceNumberResultHeaders
     #[tracing::function("Storage.Blob.PageBlobClient.setSequenceNumber")]
@@ -725,7 +720,6 @@ impl PageBlobClient {
     /// * [`content_crc64`()](crate::generated::models::PageBlobClientUploadPagesResultHeaders::content_crc64) - x-ms-content-crc64
     /// * [`encryption_key_sha256`()](crate::generated::models::PageBlobClientUploadPagesResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
     /// * [`encryption_scope`()](crate::generated::models::PageBlobClientUploadPagesResultHeaders::encryption_scope) - x-ms-encryption-scope
-    /// * [`effective_request_priority`()](crate::generated::models::PageBlobClientUploadPagesResultHeaders::effective_request_priority) - x-ms-request-priority
     /// * [`is_server_encrypted`()](crate::generated::models::PageBlobClientUploadPagesResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`PageBlobClientUploadPagesResultHeaders`]: crate::generated::models::PageBlobClientUploadPagesResultHeaders
@@ -876,7 +870,6 @@ impl PageBlobClient {
     /// * [`content_crc64`()](crate::generated::models::PageBlobClientUploadPagesFromUrlResultHeaders::content_crc64) - x-ms-content-crc64
     /// * [`encryption_key_sha256`()](crate::generated::models::PageBlobClientUploadPagesFromUrlResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
     /// * [`encryption_scope`()](crate::generated::models::PageBlobClientUploadPagesFromUrlResultHeaders::encryption_scope) - x-ms-encryption-scope
-    /// * [`effective_request_priority`()](crate::generated::models::PageBlobClientUploadPagesFromUrlResultHeaders::effective_request_priority) - x-ms-request-priority
     /// * [`is_server_encrypted`()](crate::generated::models::PageBlobClientUploadPagesFromUrlResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`PageBlobClientUploadPagesFromUrlResultHeaders`]: crate::generated::models::PageBlobClientUploadPagesFromUrlResultHeaders

@@ -163,7 +163,13 @@ async fn test_blob_client_request_priority(ctx: TestContext) -> Result<(), Box<d
                     ..Default::default()
                 }))
                 .await?;
-            priorities.push((requested, expected, response.effective_request_priority()?));
+            priorities.push((
+                requested,
+                expected,
+                response
+                    .headers()
+                    .get_optional_as::<i32, _>(&HeaderName::from_static("x-ms-request-priority"))?,
+            ));
         }
         azure_core::Result::Ok(priorities)
     }

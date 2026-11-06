@@ -6,6 +6,7 @@ mod common;
 use azure_core::{
     error::ErrorKind,
     http::{
+        headers::HeaderName,
         policies::{Policy, PolicyResult},
         Context, FixedRetryOptions, Response, RetryOptions, StatusCode, Url,
     },
@@ -56,7 +57,13 @@ async fn test_queue_client_request_priority(ctx: TestContext) -> Result<()> {
                     ..Default::default()
                 }))
                 .await?;
-            priorities.push((requested, expected, response.effective_request_priority()?));
+            priorities.push((
+                requested,
+                expected,
+                response
+                    .headers()
+                    .get_optional_as::<i32, _>(&HeaderName::from_static("x-ms-request-priority"))?,
+            ));
         }
         Ok::<_, azure_core::Error>(priorities)
     }

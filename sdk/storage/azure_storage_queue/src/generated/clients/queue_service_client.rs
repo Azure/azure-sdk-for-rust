@@ -7,7 +7,7 @@ use crate::generated::models::{
     KeyInfo, ListQueuesResponse, QueueServiceClientGetPropertiesOptions,
     QueueServiceClientGetStatisticsOptions, QueueServiceClientGetUserDelegationKeyOptions,
     QueueServiceClientListQueuesOptions, QueueServiceClientSetPropertiesOptions,
-    QueueServiceClientSetPropertiesResult, QueueServiceProperties, QueueServiceStats,
+    QueueServiceProperties, QueueServiceStats,
 };
 use azure_core::{
     error::CheckSuccessOptions,
@@ -44,29 +44,6 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`QueueServicePropertiesHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use azure_storage_queue::models::{QueueServiceProperties, QueueServicePropertiesHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<QueueServiceProperties, XmlFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
-    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`effective_request_priority`()](crate::generated::models::QueueServicePropertiesHeaders::effective_request_priority) - x-ms-request-priority
-    ///
-    /// [`QueueServicePropertiesHeaders`]: crate::generated::models::QueueServicePropertiesHeaders
     #[tracing::function("Storage.Queues.QueueServiceClient.getProperties")]
     pub async fn get_properties(
         &self,
@@ -111,29 +88,6 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`QueueServiceStatsHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use azure_storage_queue::models::{QueueServiceStats, QueueServiceStatsHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<QueueServiceStats, XmlFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
-    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`effective_request_priority`()](crate::generated::models::QueueServiceStatsHeaders::effective_request_priority) - x-ms-request-priority
-    ///
-    /// [`QueueServiceStatsHeaders`]: crate::generated::models::QueueServiceStatsHeaders
     #[tracing::function("Storage.Queues.QueueServiceClient.getStatistics")]
     pub async fn get_statistics(
         &self,
@@ -225,29 +179,6 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`ListQueuesResponseHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use azure_storage_queue::models::{ListQueuesResponse, ListQueuesResponseHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<ListQueuesResponse, XmlFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
-    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`effective_request_priority`()](crate::generated::models::ListQueuesResponseHeaders::effective_request_priority) - x-ms-request-priority
-    ///
-    /// [`ListQueuesResponseHeaders`]: crate::generated::models::ListQueuesResponseHeaders
     #[tracing::function("Storage.Queues.QueueServiceClient.getQueues")]
     pub fn list_queues(
         &self,
@@ -339,35 +270,12 @@ impl QueueServiceClient {
     ///
     /// * `queue_service_properties` - The storage service properties to set.
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`QueueServiceClientSetPropertiesResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_queue::models::{QueueServiceClientSetPropertiesResult, QueueServiceClientSetPropertiesResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<QueueServiceClientSetPropertiesResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
-    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`effective_request_priority`()](crate::generated::models::QueueServiceClientSetPropertiesResultHeaders::effective_request_priority) - x-ms-request-priority
-    ///
-    /// [`QueueServiceClientSetPropertiesResultHeaders`]: crate::generated::models::QueueServiceClientSetPropertiesResultHeaders
     #[tracing::function("Storage.Queues.QueueServiceClient.setProperties")]
     pub async fn set_properties(
         &self,
         queue_service_properties: RequestContent<QueueServiceProperties, XmlFormat>,
         options: Option<QueueServiceClientSetPropertiesOptions<'_>>,
-    ) -> Result<Response<QueueServiceClientSetPropertiesResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();

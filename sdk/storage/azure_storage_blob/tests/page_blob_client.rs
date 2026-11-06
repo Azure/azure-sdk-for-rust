@@ -3,7 +3,10 @@
 
 mod common;
 
-use azure_core::http::{headers::CONTENT_TYPE, RequestContent, StatusCode};
+use azure_core::http::{
+    headers::{HeaderName, CONTENT_TYPE},
+    RequestContent, StatusCode,
+};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     BlobClientGetPropertiesResultHeaders, BlobType, HttpRange, PageBlobClientCreateOptions,
@@ -39,7 +42,9 @@ async fn test_page_blob_client_request_priority(ctx: TestContext) -> Result<(), 
                 }),
             )
             .await?;
-        response.effective_request_priority()
+        response
+            .headers()
+            .get_optional_as::<i32, _>(&HeaderName::from_static("x-ms-request-priority"))
     }
     .await;
 

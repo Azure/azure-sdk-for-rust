@@ -3,7 +3,7 @@
 
 mod common;
 
-use azure_core::http::{ClientOptions, RequestContent, Url, XmlFormat};
+use azure_core::http::{headers::HeaderName, ClientOptions, RequestContent, Url, XmlFormat};
 use azure_core::time::OffsetDateTime;
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
@@ -37,7 +37,12 @@ async fn test_blob_service_client_request_priority(ctx: TestContext) -> Result<(
         .await?;
 
     // Assert
-    assert_eq!(response.effective_request_priority()?, Some(1));
+    assert_eq!(
+        response
+            .headers()
+            .get_optional_as::<i32, _>(&HeaderName::from_static("x-ms-request-priority"))?,
+        Some(1)
+    );
     Ok(())
 }
 

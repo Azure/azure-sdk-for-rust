@@ -262,37 +262,9 @@ pub struct PeekedMessages {
     pub items: Option<Vec<PeekedMessage>>,
 }
 
-/// Contains results for `QueueClient::clear()`
-#[derive(SafeDebug)]
-pub struct QueueClientClearResult;
-
-/// Contains results for `QueueClient::create()`
-#[derive(SafeDebug)]
-pub struct QueueClientCreateResult;
-
-/// Contains results for `QueueClient::delete_message()`
-#[derive(SafeDebug)]
-pub struct QueueClientDeleteMessageResult;
-
-/// Contains results for `QueueClient::delete()`
-#[derive(SafeDebug)]
-pub struct QueueClientDeleteResult;
-
 /// Contains results for `QueueClient::get_properties()`
 #[derive(SafeDebug)]
 pub struct QueueClientGetPropertiesResult;
-
-/// Contains results for `QueueClient::set_access_policy()`
-#[derive(SafeDebug)]
-pub struct QueueClientSetAccessPolicyResult;
-
-/// Contains results for `QueueClient::set_metadata()`
-#[derive(SafeDebug)]
-pub struct QueueClientSetMetadataResult;
-
-/// Contains results for `QueueClient::update_message()`
-#[derive(SafeDebug)]
-pub struct QueueClientUpdateMessageResult;
 
 /// An Azure Storage Queue.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -315,10 +287,6 @@ pub struct QueueMessage {
     #[serde(rename = "MessageText", skip_serializing_if = "Option::is_none")]
     pub message_text: Option<String>,
 }
-
-/// Contains results for `QueueServiceClient::set_properties()`
-#[derive(SafeDebug)]
-pub struct QueueServiceClientSetPropertiesResult;
 
 /// The service properties.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]

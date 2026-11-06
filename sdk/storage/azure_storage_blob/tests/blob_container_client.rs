@@ -4,7 +4,7 @@
 mod common;
 
 use azure_core::{
-    http::{RequestContent, StatusCode},
+    http::{headers::HeaderName, RequestContent, StatusCode},
     time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
 };
 use azure_core_test::{recorded, Matcher, TestContext, VarOptions};
@@ -42,7 +42,9 @@ async fn test_blob_container_client_request_priority(
                 ..Default::default()
             }))
             .await?;
-        response.effective_request_priority()
+        response
+            .headers()
+            .get_optional_as::<i32, _>(&HeaderName::from_static("x-ms-request-priority"))
     }
     .await;
 

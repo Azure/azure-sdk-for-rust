@@ -4,7 +4,7 @@
 mod common;
 
 use azure_core::{
-    http::{RequestContent, StatusCode, Url, XmlFormat},
+    http::{headers::HeaderName, RequestContent, StatusCode, Url, XmlFormat},
     time::OffsetDateTime,
     Result,
 };
@@ -13,7 +13,7 @@ use azure_storage_queue::{
     models::{
         CorsRule, GeoReplicationStatus, KeyInfo, ListQueuesIncludeType, Logging, Metrics,
         QueueServiceClientGetPropertiesOptions, QueueServiceClientListQueuesOptions,
-        QueueServiceProperties, QueueServicePropertiesHeaders, RetentionPolicy,
+        QueueServiceProperties, RetentionPolicy,
     },
     QueueServiceClient, QueueServiceClientOptions,
 };
@@ -38,7 +38,12 @@ async fn test_queue_service_client_request_priority(ctx: TestContext) -> Result<
         .await?;
 
     // Assert
-    assert_eq!(response.effective_request_priority()?, Some(1));
+    assert_eq!(
+        response
+            .headers()
+            .get_optional_as::<i32, _>(&HeaderName::from_static("x-ms-request-priority"))?,
+        Some(1)
+    );
     Ok(())
 }
 

@@ -7,9 +7,8 @@ use crate::generated::models::{
     BlobContainerClientAcquireLeaseOptions, BlobContainerClientAcquireLeaseResult,
     BlobContainerClientBreakLeaseOptions, BlobContainerClientBreakLeaseResult,
     BlobContainerClientChangeLeaseOptions, BlobContainerClientChangeLeaseResult,
-    BlobContainerClientCreateOptions, BlobContainerClientCreateResult,
-    BlobContainerClientCreateSessionOptions, BlobContainerClientDeleteOptions,
-    BlobContainerClientDeleteResult, BlobContainerClientFindBlobsByTagsOptions,
+    BlobContainerClientCreateOptions, BlobContainerClientCreateSessionOptions,
+    BlobContainerClientDeleteOptions, BlobContainerClientFindBlobsByTagsOptions,
     BlobContainerClientGetAccessPolicyOptions, BlobContainerClientGetAccountInfoOptions,
     BlobContainerClientGetAccountInfoResult, BlobContainerClientGetPropertiesOptions,
     BlobContainerClientGetPropertiesResult,
@@ -20,8 +19,7 @@ use crate::generated::models::{
     BlobContainerClientListBlobsXmlOptions, BlobContainerClientReleaseLeaseOptions,
     BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
     BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
-    BlobContainerClientSetAccessPolicyResult, BlobContainerClientSetMetadataOptions,
-    BlobContainerClientSetMetadataResult, CreateSessionConfiguration, CreateSessionResponse,
+    BlobContainerClientSetMetadataOptions, CreateSessionConfiguration, CreateSessionResponse,
     FilteredBlobResponse, ListBlobsHierarchicalResponse, ListBlobsResponse, SignedIdentifiers,
 };
 use azure_core::{
@@ -91,7 +89,6 @@ impl BlobContainerClient {
     /// * [`etag`()](crate::generated::models::BlobContainerClientAcquireLeaseResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::BlobContainerClientAcquireLeaseResultHeaders::last_modified) - last-modified
     /// * [`lease_id`()](crate::generated::models::BlobContainerClientAcquireLeaseResultHeaders::lease_id) - x-ms-lease-id
-    /// * [`effective_request_priority`()](crate::generated::models::BlobContainerClientAcquireLeaseResultHeaders::effective_request_priority) - x-ms-request-priority
     ///
     /// [`BlobContainerClientAcquireLeaseResultHeaders`]: crate::generated::models::BlobContainerClientAcquireLeaseResultHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.acquireLease")]
@@ -177,7 +174,6 @@ impl BlobContainerClient {
     /// * [`etag`()](crate::generated::models::BlobContainerClientBreakLeaseResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::BlobContainerClientBreakLeaseResultHeaders::last_modified) - last-modified
     /// * [`lease_time`()](crate::generated::models::BlobContainerClientBreakLeaseResultHeaders::lease_time) - x-ms-lease-time
-    /// * [`effective_request_priority`()](crate::generated::models::BlobContainerClientBreakLeaseResultHeaders::effective_request_priority) - x-ms-request-priority
     ///
     /// [`BlobContainerClientBreakLeaseResultHeaders`]: crate::generated::models::BlobContainerClientBreakLeaseResultHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.breakLease")]
@@ -263,7 +259,6 @@ impl BlobContainerClient {
     /// * [`etag`()](crate::generated::models::BlobContainerClientChangeLeaseResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::BlobContainerClientChangeLeaseResultHeaders::last_modified) - last-modified
     /// * [`lease_id`()](crate::generated::models::BlobContainerClientChangeLeaseResultHeaders::lease_id) - x-ms-lease-id
-    /// * [`effective_request_priority`()](crate::generated::models::BlobContainerClientChangeLeaseResultHeaders::effective_request_priority) - x-ms-request-priority
     ///
     /// [`BlobContainerClientChangeLeaseResultHeaders`]: crate::generated::models::BlobContainerClientChangeLeaseResultHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.changeLease")]
@@ -319,34 +314,11 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobContainerClientCreateResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_blob::models::{BlobContainerClientCreateResult, BlobContainerClientCreateResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<BlobContainerClientCreateResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
-    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`effective_request_priority`()](crate::generated::models::BlobContainerClientCreateResultHeaders::effective_request_priority) - x-ms-request-priority
-    ///
-    /// [`BlobContainerClientCreateResultHeaders`]: crate::generated::models::BlobContainerClientCreateResultHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.create")]
     pub async fn create(
         &self,
         options: Option<BlobContainerClientCreateOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientCreateResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
@@ -400,29 +372,6 @@ impl BlobContainerClient {
     ///
     /// * `create_session_configuration` - The configuration used to create the session.
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`CreateSessionResponseHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```ignore
-    /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use azure_storage_blob::models::{CreateSessionResponse, CreateSessionResponseHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<CreateSessionResponse, XmlFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
-    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`effective_request_priority`()](crate::generated::models::CreateSessionResponseHeaders::effective_request_priority) - x-ms-request-priority
-    ///
-    /// [`CreateSessionResponseHeaders`]: crate::generated::models::CreateSessionResponseHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.createSession")]
     pub(crate) async fn create_session(
         &self,
@@ -476,34 +425,11 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobContainerClientDeleteResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_blob::models::{BlobContainerClientDeleteResult, BlobContainerClientDeleteResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<BlobContainerClientDeleteResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
-    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`effective_request_priority`()](crate::generated::models::BlobContainerClientDeleteResultHeaders::effective_request_priority) - x-ms-request-priority
-    ///
-    /// [`BlobContainerClientDeleteResultHeaders`]: crate::generated::models::BlobContainerClientDeleteResultHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.delete")]
     pub async fn delete(
         &self,
         options: Option<BlobContainerClientDeleteOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientDeleteResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
@@ -549,29 +475,6 @@ impl BlobContainerClient {
     ///
     /// * `filter_expression` - Filters the results to return only blobs whose tags match the specified expression.
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`FilteredBlobResponseHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use azure_storage_blob::models::{FilteredBlobResponse, FilteredBlobResponseHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<FilteredBlobResponse, XmlFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
-    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`effective_request_priority`()](crate::generated::models::FilteredBlobResponseHeaders::effective_request_priority) - x-ms-request-priority
-    ///
-    /// [`FilteredBlobResponseHeaders`]: crate::generated::models::FilteredBlobResponseHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.findBlobsByTags")]
     pub fn find_blobs_by_tags(
         &self,
@@ -691,7 +594,6 @@ impl BlobContainerClient {
     /// * [`etag`()](crate::generated::models::SignedIdentifiersHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::SignedIdentifiersHeaders::last_modified) - last-modified
     /// * [`access`()](crate::generated::models::SignedIdentifiersHeaders::access) - x-ms-blob-public-access
-    /// * [`effective_request_priority`()](crate::generated::models::SignedIdentifiersHeaders::effective_request_priority) - x-ms-request-priority
     ///
     /// [`SignedIdentifiersHeaders`]: crate::generated::models::SignedIdentifiersHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.getAccessPolicy")]
@@ -758,8 +660,8 @@ impl BlobContainerClient {
     ///     if let Some(is_hierarchical_namespace_enabled) = response.is_hierarchical_namespace_enabled()? {
     ///         println!("x-ms-is-hns-enabled: {:?}", is_hierarchical_namespace_enabled);
     ///     }
-    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
-    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
+    ///     if let Some(sku_name) = response.sku_name()? {
+    ///         println!("x-ms-sku-name: {:?}", sku_name);
     ///     }
     ///     Ok(())
     /// }
@@ -768,7 +670,6 @@ impl BlobContainerClient {
     /// ### Available headers
     /// * [`account_kind`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::account_kind) - x-ms-account-kind
     /// * [`is_hierarchical_namespace_enabled`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::is_hierarchical_namespace_enabled) - x-ms-is-hns-enabled
-    /// * [`effective_request_priority`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::effective_request_priority) - x-ms-request-priority
     /// * [`sku_name`()](crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders::sku_name) - x-ms-sku-name
     ///
     /// [`BlobContainerClientGetAccountInfoResultHeaders`]: crate::generated::models::BlobContainerClientGetAccountInfoResultHeaders
@@ -853,7 +754,6 @@ impl BlobContainerClient {
     /// * [`lease_state`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::lease_state) - x-ms-lease-state
     /// * [`lease_status`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::lease_status) - x-ms-lease-status
     /// * [`metadata`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::metadata) - x-ms-meta
-    /// * [`effective_request_priority`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::effective_request_priority) - x-ms-request-priority
     ///
     /// [`BlobContainerClientGetPropertiesResultHeaders`]: crate::generated::models::BlobContainerClientGetPropertiesResultHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.getProperties")]
@@ -919,16 +819,12 @@ impl BlobContainerClient {
     ///     if let Some(content_type) = response.content_type()? {
     ///         println!("content-type: {:?}", content_type);
     ///     }
-    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
-    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
-    ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
     /// * [`content_type`()](crate::generated::models::BlobContainerClientListBlobsHierarchicalInternalResultHeaders::content_type) - content-type
-    /// * [`effective_request_priority`()](crate::generated::models::BlobContainerClientListBlobsHierarchicalInternalResultHeaders::effective_request_priority) - x-ms-request-priority
     ///
     /// [`BlobContainerClientListBlobsHierarchicalInternalResultHeaders`]: crate::generated::models::BlobContainerClientListBlobsHierarchicalInternalResultHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.listBlobsHierarchicalInternal")]
@@ -1006,29 +902,6 @@ impl BlobContainerClient {
     ///   names begin with the same substring up to the appearance of the delimiter character. The delimiter may be a single character
     ///   or a string.
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`ListBlobsHierarchicalResponseHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```ignore
-    /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use azure_storage_blob::models::{ListBlobsHierarchicalResponse, ListBlobsHierarchicalResponseHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<ListBlobsHierarchicalResponse, XmlFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
-    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`effective_request_priority`()](crate::generated::models::ListBlobsHierarchicalResponseHeaders::effective_request_priority) - x-ms-request-priority
-    ///
-    /// [`ListBlobsHierarchicalResponseHeaders`]: crate::generated::models::ListBlobsHierarchicalResponseHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.listBlobHierarchySegment")]
     pub(crate) fn list_blobs_hierarchical_xml(
         &self,
@@ -1142,16 +1015,12 @@ impl BlobContainerClient {
     ///     if let Some(content_type) = response.content_type()? {
     ///         println!("content-type: {:?}", content_type);
     ///     }
-    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
-    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
-    ///     }
     ///     Ok(())
     /// }
     /// ```
     ///
     /// ### Available headers
     /// * [`content_type`()](crate::generated::models::BlobContainerClientListBlobsInternalResultHeaders::content_type) - content-type
-    /// * [`effective_request_priority`()](crate::generated::models::BlobContainerClientListBlobsInternalResultHeaders::effective_request_priority) - x-ms-request-priority
     ///
     /// [`BlobContainerClientListBlobsInternalResultHeaders`]: crate::generated::models::BlobContainerClientListBlobsInternalResultHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.listBlobsInternal")]
@@ -1223,29 +1092,6 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`ListBlobsResponseHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```ignore
-    /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use azure_storage_blob::models::{ListBlobsResponse, ListBlobsResponseHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<ListBlobsResponse, XmlFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
-    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`effective_request_priority`()](crate::generated::models::ListBlobsResponseHeaders::effective_request_priority) - x-ms-request-priority
-    ///
-    /// [`ListBlobsResponseHeaders`]: crate::generated::models::ListBlobsResponseHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.listBlobs")]
     pub(crate) fn list_blobs_xml(
         &self,
@@ -1359,9 +1205,6 @@ impl BlobContainerClient {
     ///     if let Some(last_modified) = response.last_modified()? {
     ///         println!("last-modified: {:?}", last_modified);
     ///     }
-    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
-    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
-    ///     }
     ///     Ok(())
     /// }
     /// ```
@@ -1369,7 +1212,6 @@ impl BlobContainerClient {
     /// ### Available headers
     /// * [`etag`()](crate::generated::models::BlobContainerClientReleaseLeaseResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::BlobContainerClientReleaseLeaseResultHeaders::last_modified) - last-modified
-    /// * [`effective_request_priority`()](crate::generated::models::BlobContainerClientReleaseLeaseResultHeaders::effective_request_priority) - x-ms-request-priority
     ///
     /// [`BlobContainerClientReleaseLeaseResultHeaders`]: crate::generated::models::BlobContainerClientReleaseLeaseResultHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.releaseLease")]
@@ -1453,7 +1295,6 @@ impl BlobContainerClient {
     /// * [`etag`()](crate::generated::models::BlobContainerClientRenewLeaseResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::BlobContainerClientRenewLeaseResultHeaders::last_modified) - last-modified
     /// * [`lease_id`()](crate::generated::models::BlobContainerClientRenewLeaseResultHeaders::lease_id) - x-ms-lease-id
-    /// * [`effective_request_priority`()](crate::generated::models::BlobContainerClientRenewLeaseResultHeaders::effective_request_priority) - x-ms-request-priority
     ///
     /// [`BlobContainerClientRenewLeaseResultHeaders`]: crate::generated::models::BlobContainerClientRenewLeaseResultHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.renewLease")]
@@ -1508,35 +1349,12 @@ impl BlobContainerClient {
     ///
     /// * `container_acl` - The access control list for the container.
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobContainerClientSetAccessPolicyResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_blob::models::{BlobContainerClientSetAccessPolicyResult, BlobContainerClientSetAccessPolicyResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<BlobContainerClientSetAccessPolicyResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
-    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`effective_request_priority`()](crate::generated::models::BlobContainerClientSetAccessPolicyResultHeaders::effective_request_priority) - x-ms-request-priority
-    ///
-    /// [`BlobContainerClientSetAccessPolicyResultHeaders`]: crate::generated::models::BlobContainerClientSetAccessPolicyResultHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.setAccessPolicy")]
     pub async fn set_access_policy(
         &self,
         container_acl: RequestContent<SignedIdentifiers, XmlFormat>,
         options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientSetAccessPolicyResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
@@ -1589,35 +1407,12 @@ impl BlobContainerClient {
     ///
     /// * `metadata` - The metadata headers.
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobContainerClientSetMetadataResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_blob::models::{BlobContainerClientSetMetadataResult, BlobContainerClientSetMetadataResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<BlobContainerClientSetMetadataResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(effective_request_priority) = response.effective_request_priority()? {
-    ///         println!("x-ms-request-priority: {:?}", effective_request_priority);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`effective_request_priority`()](crate::generated::models::BlobContainerClientSetMetadataResultHeaders::effective_request_priority) - x-ms-request-priority
-    ///
-    /// [`BlobContainerClientSetMetadataResultHeaders`]: crate::generated::models::BlobContainerClientSetMetadataResultHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.setMetadata")]
     pub async fn set_metadata(
         &self,
         metadata: &HashMap<String, String>,
         options: Option<BlobContainerClientSetMetadataOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientSetMetadataResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
