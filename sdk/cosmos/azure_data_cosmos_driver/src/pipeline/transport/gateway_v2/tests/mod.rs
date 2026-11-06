@@ -25,7 +25,7 @@ use super::super::{
     cosmos_transport_client::{HttpRequest, HttpResponse},
     AuthorizationContext,
 };
-use crate::rntbd::RntbdRequestFrame;
+use crate::rntbd_encoding::RntbdRequestFrame;
 
 use super::request_tokens::parse_supported_serialization_formats;
 use super::{unwrap_response_for_gateway_v2, wrap_request_for_gateway_v2};

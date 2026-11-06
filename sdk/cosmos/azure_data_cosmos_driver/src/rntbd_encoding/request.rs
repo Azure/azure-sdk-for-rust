@@ -151,7 +151,7 @@ impl RntbdRequestFrame {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rntbd::tokens::{RntbdOperationType, TokenValue};
+    use crate::rntbd_encoding::tokens::{RntbdOperationType, TokenValue};
 
     /// Serializes a frame into a fresh `Vec<u8>` for assertions.
     fn serialize(frame: &RntbdRequestFrame) -> azure_core::Result<Vec<u8>> {

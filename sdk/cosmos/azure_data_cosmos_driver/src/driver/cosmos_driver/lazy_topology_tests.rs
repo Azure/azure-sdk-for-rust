@@ -18,7 +18,7 @@ use crate::{
         cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
         http_client_factory::{HttpClientConfig, HttpClientFactory},
     },
-    rntbd::{
+    rntbd_encoding::{
         tokens::{RntbdRequestToken, TokenValue},
         RntbdRequestFrame, RntbdResponse,
     },

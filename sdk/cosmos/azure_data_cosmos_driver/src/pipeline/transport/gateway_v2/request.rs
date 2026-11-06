@@ -13,7 +13,7 @@ use azure_core::http::{
 use crate::models::{OperationType, ResourceType};
 
 use super::super::{cosmos_headers::CLIENT_ID, cosmos_transport_client::HttpRequest};
-use crate::rntbd::tokens::RntbdRequestToken;
+use crate::rntbd_encoding::tokens::RntbdRequestToken;
 
 use super::request_tokens::{self, GatewayV2FrameData};
 use super::{

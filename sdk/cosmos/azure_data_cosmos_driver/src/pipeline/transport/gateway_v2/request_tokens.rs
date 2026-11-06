@@ -14,7 +14,7 @@ use crate::{
 use super::super::{
     cosmos_headers::SUPPORTED_CAPABILITIES_BITS, cosmos_transport_client::HttpRequest,
 };
-use crate::rntbd::{RntbdRequestFrame, Token};
+use crate::rntbd_encoding::{RntbdRequestFrame, Token};
 
 use super::{
     GatewayV2Headers, A_IM, CHANGE_FEED_WIRE_FORMAT_VERSION, IF_MATCH, IF_MODIFIED_SINCE,

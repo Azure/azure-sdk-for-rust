@@ -1383,7 +1383,7 @@ The implementation lives in `src/pipeline/transport/`; the operation pipeline st
 `Credential`, and `Clock`), and the mutable diagnostic builder. It does not receive routing stores or
 an operation that could select another region.
 
-Pure RNTBD codecs live separately in `src/rntbd/`. Shared task management and emulator
+Pure RNTBD codecs live separately in `src/rntbd_encoding/`. Shared task management and emulator
 detection live in `src/background_task_manager.rs` and `src/emulator.rs`, respectively.
 The reusable future-versus-timer race lives in `src/timeout.rs`; it polls the supplied future
 first and drops the unfinished future when the timer wins.

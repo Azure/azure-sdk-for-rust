@@ -203,7 +203,7 @@ Why fail-fast was chosen:
 
 ### 5.3 RNTBD Protocol
 
-RNTBD framing and parsing live in the driver crate's `src/rntbd/`. This codec owns
+RNTBD framing and parsing live in the driver crate's `src/rntbd_encoding/`. This codec owns
 in-memory frame and token representations, not HTTP requests, transport retries,
 endpoint selection, or diagnostic-builder mutation.
 
@@ -223,11 +223,11 @@ The RNTBD ("Real Name To Be Determined" — a placeholder name that stuck) proto
 
 #### Module layout
 
-- **`rntbd/mod.rs`** — Module root, public types
-- **`rntbd/request.rs`** — Request serialization: operation headers, resource metadata, partition key info → binary payload
-- **`rntbd/response.rs`** — Response deserialization: 24-byte frame header → metadata section → optional body payload
-- **`rntbd/tokens.rs`** — RNTBD token types (type IDs, lengths, value encodings) used in metadata sections
-- **`rntbd/status.rs`** — RNTBD status code mapping to `CosmosStatus`
+- **`rntbd_encoding/mod.rs`** — Module root, public types
+- **`rntbd_encoding/request.rs`** — Request serialization: operation headers, resource metadata, partition key info → binary payload
+- **`rntbd_encoding/response.rs`** — Response deserialization: 24-byte frame header → metadata section → optional body payload
+- **`rntbd_encoding/tokens.rs`** — RNTBD token types (type IDs, lengths, value encodings) used in metadata sections
+- **`rntbd_encoding/status.rs`** — RNTBD status code mapping to `CosmosStatus`
 
 #### Versioning
 
@@ -237,7 +237,7 @@ Gateway 2.0 RNTBD has no version negotiation on the wire. The proxy advertises a
 
 The Rust deserializer **must** treat the RNTBD response metadata-token stream as forward-compatible:
 
-- **Recognized response tokens**: request charge, session token, continuation token, activity-id echo, sub-status code, retry-after-milliseconds, LSN, partition-key-range-id, global-committed-lsn, item-lsn, transport-request-id, owner-id, and similar metadata. The exact token-ID enum is part of `rntbd/tokens.rs` (§module layout).
+- **Recognized response tokens**: request charge, session token, continuation token, activity-id echo, sub-status code, retry-after-milliseconds, LSN, partition-key-range-id, global-committed-lsn, item-lsn, transport-request-id, owner-id, and similar metadata. The exact token-ID enum is part of `rntbd_encoding/tokens.rs` (§module layout).
 - **Unknown token type IDs MUST be silently skipped** (consume `length` bytes and continue) — the deserializer must NOT panic, return an error, or fail the response, and must NOT log per-token (silent skip is the contract). The proxy is free to add new metadata tokens at any time and the driver must remain forward-compatible across proxy upgrades that ship before the corresponding Rust release. This silent-tolerance behavior is the *implementation* of the `IgnoreUnknownRntbdTokens` capability bit advertised over the `x-ms-cosmos-sdk-supportedcapabilities` header (see "SDK-supported-capabilities advertisement" below) — the proxy/backend assumes the SDK will not surface or warn on unknown tokens, so per-token logging is unnecessary noise.
 - **Inverse contract on the request side**: the request serializer drops headers that appear in `thinClientProxyExcludedSet` (see §"RNTBD Request Wire Format" Notes column). That set enumerates headers the proxy does not understand on the inbound RNTBD frame; emitting them would be either ignored or rejected.
 

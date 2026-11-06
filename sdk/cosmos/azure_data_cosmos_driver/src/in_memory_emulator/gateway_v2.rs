@@ -18,7 +18,7 @@ use crate::{
         CosmosStatus, OperationType, ResourceType,
     },
     options::ReadConsistencyStrategy,
-    rntbd::{
+    rntbd_encoding::{
         tokens::{ReadFeedKeyType, RntbdRequestToken, TokenValue},
         RntbdRequestFrame, RntbdResponse,
     },
@@ -430,7 +430,9 @@ fn read_consistency_strategy_from_wire(value: u8) -> crate::error::Result<ReadCo
     })
 }
 
-fn decode_metadata(tokens: Vec<crate::rntbd::Token>) -> crate::error::Result<RequestMetadata> {
+fn decode_metadata(
+    tokens: Vec<crate::rntbd_encoding::Token>,
+) -> crate::error::Result<RequestMetadata> {
     let mut metadata = RequestMetadata::default();
     for token in tokens {
         let Ok(kind) = RntbdRequestToken::try_from(token.id.value()) else {
@@ -735,7 +737,7 @@ mod tests {
             cosmos_transport_client::HttpRequest, wrap_request_for_gateway_v2,
             AuthorizationContext, GatewayV2Headers,
         },
-        rntbd::Token,
+        rntbd_encoding::Token,
     };
     use url::Url;
 

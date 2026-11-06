@@ -593,7 +593,7 @@ pub async fn gateway_v2_read_session_not_available_remote_preferred() -> Result<
 /// tokens that appear AFTER the unknown one and the document body that
 /// follows. The unit test
 /// `unknown_token_id_is_silently_skipped` in
-/// `src/rntbd/response.rs` covers the parser in isolation;
+/// `rntbd_encoding::response` covers the parser in isolation;
 /// this test exercises the full end-to-end path:
 ///
 ///   driver -> HTTP/2 transport (fault client) -> synthetic RNTBD frame
@@ -699,7 +699,7 @@ pub async fn gateway_v2_unknown_rntbd_response_token_is_silently_skipped(
 /// unknown token ID (`0xFFFE`) sandwiched between two recognized tokens.
 ///
 /// Wire layout (matches `RntbdResponse::deserialize` in
-/// `src/rntbd/response.rs`):
+/// `rntbd_encoding::response`):
 ///
 /// ```text
 ///   u32 LE  total_len            (24 + metadata bytes; does NOT include body)
@@ -715,7 +715,7 @@ pub async fn gateway_v2_unknown_rntbd_response_token_is_silently_skipped(
 /// ```
 ///
 /// Token IDs / type bytes are wire constants taken from
-/// `src/rntbd/tokens.rs`. The intentional ordering
+/// `rntbd_encoding::tokens`. The intentional ordering
 /// (unknown -> recognized) guarantees that a parser that stopped at the
 /// unknown token would NOT surface `request_charge`, making the assertion
 /// in the test load-bearing.

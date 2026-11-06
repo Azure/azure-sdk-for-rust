@@ -8,7 +8,7 @@ use azure_core::http::headers::Headers;
 use crate::{models::cosmos_headers::response_header_names, pipeline::transport::gateway_v2};
 
 use super::super::cosmos_transport_client::HttpResponse;
-use crate::rntbd::RntbdResponse;
+use crate::rntbd_encoding::RntbdResponse;
 
 use super::{X_MS_GLOBAL_COMMITTED_LSN, X_MS_LSN};
 

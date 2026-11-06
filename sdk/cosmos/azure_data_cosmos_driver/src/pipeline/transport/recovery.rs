@@ -256,6 +256,8 @@ fn is_connectivity_error(error: &CosmosError) -> bool {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "unstable_dtx")]
+    use super::TransportOutcome;
     use super::{
         try_throttle_retry, Clock, RecoveryAction, ThrottleRetryPolicy, ThrottleRetryProgress,
         TransportRetryProgress, DATA_PLANE_MAX_PER_RETRY_DELAY, DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
@@ -266,10 +268,7 @@ mod tests {
         diagnostics::ExecutionContext,
         error::{status_codes, CosmosStatus},
         models::CosmosResponseHeaders,
-        pipeline::transport::{
-            tests::test_request,
-            types::{TransportOutcome, TransportResult},
-        },
+        pipeline::transport::{tests::test_request, types::TransportResult},
     };
     use std::{task::Poll, time::Duration};
 

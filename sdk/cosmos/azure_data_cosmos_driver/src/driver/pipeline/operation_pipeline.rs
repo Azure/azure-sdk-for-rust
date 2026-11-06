@@ -5089,7 +5089,7 @@ mod tests {
             cosmos_transport_client::HttpRequest, types::TransportMode,
             wrap_request_for_gateway_v2, EndpointKey, GatewayV2Headers,
         },
-        rntbd::{
+        rntbd_encoding::{
             tokens::{ReadFeedKeyType, RntbdRequestToken},
             RntbdRequestFrame, Token,
         },

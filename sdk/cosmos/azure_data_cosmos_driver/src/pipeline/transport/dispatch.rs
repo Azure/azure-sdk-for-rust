@@ -103,7 +103,7 @@ impl DispatchErrorDetails {
 ///
 /// Records raw headers and shard observations before decoding. A timeout drops the send future;
 /// shard preselection is used only when there is a deadline.
-#[expect(
+#[allow(
     clippy::result_large_err,
     reason = "Success also carries a large response; keep existing error data inline without adding allocations."
 )]
@@ -244,7 +244,7 @@ mod tests {
         }
     }
 
-    #[expect(
+    #[allow(
         clippy::result_large_err,
         reason = "Exercises the production dispatch result without changing its inline representation."
     )]

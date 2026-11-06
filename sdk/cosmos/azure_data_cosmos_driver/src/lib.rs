@@ -38,7 +38,7 @@ pub(crate) mod background_task_manager;
 pub(crate) mod clock;
 pub(crate) mod emulator;
 pub(crate) mod pipeline;
-pub(crate) mod rntbd;
+pub(crate) mod rntbd_encoding;
 pub(crate) mod timeout;
 
 // The `query` module is local-plan scaffolding. Many helpers (gateway response
