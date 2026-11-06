@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added optional `test` and `unstable_fake` features with experimental `clients::fake::SecretServer` and `SecretClient::with_fake()` APIs to build credential-free tests using the existing client.
+
 ### Breaking Changes
 
 ### Bugs Fixed

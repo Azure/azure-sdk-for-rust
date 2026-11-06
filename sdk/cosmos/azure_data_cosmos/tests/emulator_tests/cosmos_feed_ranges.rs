@@ -13,7 +13,6 @@ use azure_data_cosmos::models::{
     ContainerProperties, EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyValue,
     ThroughputProperties,
 };
-use azure_data_cosmos::options::CreateContainerOptions;
 use azure_data_cosmos::{PartitionKey, Query};
 use base64::Engine;
 use futures::StreamExt;
@@ -32,7 +31,7 @@ use framework::{TestClient, TestOptions};
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
+    ignore = "vnext emulator does not implement request units needed for throughput-driven partitioning: https://learn.microsoft.com/en-us/azure/cosmos-db/emulator-linux#feature-support"
 )]
 pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -41,10 +40,9 @@ pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dy
 
             // Use 11000 RU/s to ensure at least 2 physical partitions (10000 RU/s per partition).
             let throughput = ThroughputProperties::manual(11000);
-            let options = CreateContainerOptions::default().with_throughput(throughput);
 
             let container_client = run_context
-                .create_container(db_client, properties, Some(options))
+                .create_container(db_client, properties, Some(throughput))
                 .await?;
 
             let ranges = container_client.read_feed_ranges(None).await?;
@@ -112,10 +110,9 @@ pub async fn feed_range_from_partition_key_maps_correctly() -> Result<(), Box<dy
 
             // Use 11000 RU/s to ensure at least 2 physical partitions.
             let throughput = ThroughputProperties::manual(11000);
-            let options = CreateContainerOptions::default().with_throughput(throughput);
 
             let container_client = run_context
-                .create_container(db_client, properties, Some(options))
+                .create_container(db_client, properties, Some(throughput))
                 .await?;
 
             // Get the physical partition ranges.
@@ -494,7 +491,7 @@ async fn drain_ids(
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
+    ignore = "vnext emulator returns items outside the requested EPK range: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/376"
 )]
 pub async fn feed_range_scope_restricts_cross_partition_query() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(

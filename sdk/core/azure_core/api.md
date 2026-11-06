@@ -20,8 +20,9 @@
 - `reqwest_deflate`
 - `reqwest_gzip`
 - `reqwest_rustls`
-- `resource_manager`
 - `tokio`
+- `unstable_fake`
+- `unstable_resource_manager`
 - `xml`
 
 ```rust
@@ -162,7 +163,7 @@ pub mod cloud {
     pub struct CustomConfiguration {
         pub authority_host: String,
         pub audiences: Audiences,
-        #[cfg(feature = "resource_manager")]
+        #[cfg(feature = "unstable_resource_manager")]
         pub endpoint: Option<String>,
     }
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -185,7 +186,7 @@ pub mod cloud {
     impl From<CustomConfiguration> for CloudConfiguration {
         fn from(config: CustomConfiguration) -> Self;
     }
-    #[cfg(feature = "resource_manager")]
+    #[cfg(feature = "unstable_resource_manager")]
     pub mod resource_manager {
         #[allow(missing_debug_implementations)]
         pub struct Audience;
@@ -1009,6 +1010,17 @@ pub mod http {
     pub const REDACTED_PATTERN: &str = "REDACTED";
     pub static DEFAULT_ALLOWED_HEADER_NAMES: std::sync::LazyLock<std::collections::HashSet<std::borrow::Cow<'static, str>>> = _;
     pub static DEFAULT_ALLOWED_QUERY_PARAMETERS: std::sync::LazyLock<std::collections::HashSet<std::borrow::Cow<'static, str>>> = _;
+    #[cfg(all(feature = "test", feature = "unstable_fake"))]
+    pub mod fake {
+        pub fn get_api_name<'a>(context: &'a crate::http::Context<'_>) -> Option<&'a str>;
+        pub trait AsyncResponseExt: ResponseExt {
+            fn fake_with_stream(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self;
+        }
+        pub trait ResponseExt: Sized {
+            fn fake_with_bytes<impl Into<Bytes>: Into<Bytes>>(status: StatusCode, headers: Headers, bytes: impl Into<Bytes>) -> Self;
+            fn fake_with_error(status: StatusCode, headers: Headers, code: &str, message: &str) -> Result<Self>;
+        }
+    }
     pub mod headers {
         #[derive(Clone, Debug, Eq, Ord, PartialOrd)]
         pub struct HeaderName {
@@ -1213,6 +1225,9 @@ pub mod http {
         }
         pub type Pager<P, F = crate::http::JsonFormat> = ItemIterator<crate::http::response::Response<P, F>>;
         pub type PagerResultFuture<P> = std::pin::Pin<Box<dyn Future<Output = crate::Result<PagerResult<P>>> + Send + 'static>>;
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        pub mod fake {
+        }
     }
     pub mod policies {
         pub fn create_public_api_span(ctx: &crate::http::Context<'_>, tracer: Option<std::sync::Arc<dyn Tracer>>, public_api_instrumentation: Option<PublicApiInstrumentationInformation>) -> Option<std::sync::Arc<dyn Span>>;
@@ -1400,7 +1415,10 @@ pub mod http {
             fn status(&self) -> PollerStatus;
         }
         pub type PollerResultFuture<M, F> = std::pin::Pin<Box<dyn Future<Output = crate::Result<super::PollerResult<M, F>>> + Send + 'static>>;
-        #[cfg(feature = "resource_manager")]
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        pub mod fake {
+        }
+        #[cfg(feature = "unstable_resource_manager")]
         pub mod resource_manager {
             pub fn new_poller<'a, M>(pipeline: crate::http::Pipeline, request: crate::http::Request, final_state_via: Option<FinalStateVia<M>>, options: Option<PollerOptions<'a>>) -> crate::http::Poller<M> where M: StatusMonitor + DeserializeOwned + Send + 'static, <M as >::Output: DeserializeOwned + Send + 'static, <M as >::Format: Send + 'static;
             #[derive(Clone, Debug)]
