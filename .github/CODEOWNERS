@@ -102,7 +102,7 @@
 /eng/                    @Azure/azure-sdk-eng @heaths @xirzec @RickWinter @antkmsft
 /eng/common/             @Azure/azure-sdk-eng @Azure/azure-sdk-sync-approvers
 /.github/workflows/      @heaths @xirzec @Azure/azure-sdk-eng
-/.github/CODEOWNERS      @xirzec @RickWinter @Azure/azure-sdk-eng
+/.github/CODEOWNERS      @xirzec @RickWinter @Azure/azure-sdk-eng @j7nw4r
 /.config/1espt/          @Azure/azure-sdk-eng
 /sdk/canary/             @Azure/azure-sdk-eng
 
