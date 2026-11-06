@@ -320,7 +320,7 @@ pub async fn batch_fails_when_exceeding_max_operations() -> Result<(), Box<dyn E
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
+    ignore = "vnext emulator accepts batches exceeding 2 MB: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/373"
 )]
 pub async fn batch_fails_when_exceeding_max_payload_size() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(

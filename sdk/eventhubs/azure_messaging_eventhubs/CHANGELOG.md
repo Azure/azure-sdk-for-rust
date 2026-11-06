@@ -7,10 +7,15 @@
 - Added the `ErrorKind::MessageSizeExceeded { requested, max_allowed }` error variant. `send_event` and `send_message` report it when the encoded message is larger than the maximum the sender link allows, so a caller can branch on the kind instead of the message. This matches the `EventHubsException` with `FailureReason.MessageSizeExceeded` that .NET reports for the same message.
 - Added `ConsumerClientBuilder::with_idle_timeout` and `ProducerClientBuilder::with_idle_timeout` to configure the AMQP connection idle timeout and enable peer heartbeat negotiation.
 
+### Breaking Changes
+
+- Custom `CheckpointStore` implementations must now support ownership release during processor shutdown: `claim_ownership` must persist records with `owner_id: None` and return successful releases with new ETags and updated modification times, and `list_ownerships` must include released records with their current ETags. Update custom stores to follow this contract so another processor can claim released partitions without waiting for ownership expiration. The bundled `BlobCheckpointStore` already supports this behavior.
+
 ### Bugs Fixed
 
 - `InMemoryCheckpointStore::claim_ownership` now treats a stale ETag as a lost claim instead of an error, the same way `BlobCheckpointStore` does. It skips that partition, returns the partitions it did claim, and logs the conflict at the debug level. A single lost claim used to return an error that reached `EventProcessor::run`, which stopped every partition the instance owned and discarded the new ETag for each partition that the same batch had already renewed. ([#5095](https://github.com/Azure/azure-sdk-for-rust/issues/5095))
 - `send_event` and `send_message` now reject a message larger than the maximum the sender link allows, and they do not transfer it. The AMQP library treats that maximum as a split boundary and fragmented an oversized message across transfer frames, so a 2 MiB event reached the partition. The batch path already enforced the same limit. ([#5101](https://github.com/Azure/azure-sdk-for-rust/issues/5101))
+- `EventProcessor::shutdown` now cancels pending partition reads and releases this instance's ownership records; restarting issues fresh clients, and `close` uses the same stop path. ([#5096](https://github.com/Azure/azure-sdk-for-rust/issues/5096))
 - Producer sends and sender metadata waits now enforce `RetryOptions::max_total_elapsed` while preparation, transport I/O, recovery, or backoff is pending; expiry returns an I/O timeout and retires the captured connection.
 - Connection recovery and client close now terminate failed transports without waiting for graceful shutdown, and cancelled recovery leaves generation state usable.
 - Sends waiting for settlement now retry when a peer invalidates their connection, session, or link. These retries use the configured limits and backoff. A lost acknowledgement can cause duplicate events.

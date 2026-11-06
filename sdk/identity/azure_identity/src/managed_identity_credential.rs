@@ -441,10 +441,6 @@ mod tests {
 
     #[recorded::test(live)]
     async fn aci_user_assigned_live() -> azure_core::Result<()> {
-        if env::var("CI_HAS_DEPLOYED_RESOURCES").is_err() {
-            println!("Skipped: ACI live tests require deployed resources");
-            return Ok(());
-        }
         let ip = env::var("IDENTITY_ACI_IP_USER_ASSIGNED").expect("IDENTITY_ACI_IP_USER_ASSIGNED");
         let storage_name = env::var("IDENTITY_STORAGE_NAME_USER_ASSIGNED")
             .expect("IDENTITY_STORAGE_NAME_USER_ASSIGNED");
@@ -700,7 +696,6 @@ mod tests {
 
     async fn run_imds_live_test(id: Option<UserAssignedId>) -> azure_core::Result<()> {
         if std::env::var("IDENTITY_IMDS_AVAILABLE").is_err() {
-            println!("Skipped: IMDS isn't available");
             return Ok(());
         }
 
