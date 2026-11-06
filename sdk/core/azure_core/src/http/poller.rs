@@ -3,8 +3,11 @@
 
 //! Types and methods for long-running operations (LROs).
 
-#[cfg(feature = "resource_manager")]
+#[cfg(feature = "unstable_resource_manager")]
 pub mod resource_manager;
+
+#[cfg(all(feature = "test", feature = "unstable_fake"))]
+pub mod fake;
 
 use crate::{
     error::{ErrorKind, ErrorResponse},
@@ -474,6 +477,8 @@ where
         Fun: Fn(PollerState, PollerOptions<'static>) -> PollerResultFuture<M, F> + Send + 'static,
     {
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let make_request = fake::with_state(make_request);
         let (stream, target) = create_poller_stream(make_request, options);
         Self {
             stream: Box::pin(stream.fuse()),

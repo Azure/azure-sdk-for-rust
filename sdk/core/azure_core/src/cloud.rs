@@ -55,7 +55,7 @@ pub struct CustomConfiguration {
     pub audiences: Audiences,
 
     /// Resource management endpoint.
-    #[cfg(feature = "resource_manager")]
+    #[cfg(feature = "unstable_resource_manager")]
     pub endpoint: Option<String>,
 }
 
@@ -93,7 +93,7 @@ impl Audiences {
 }
 
 /// Cloud configuration for Azure Resource Manager.
-#[cfg(feature = "resource_manager")]
+#[cfg(feature = "unstable_resource_manager")]
 pub mod resource_manager {
     use super::{CloudConfiguration, CustomConfiguration};
     use std::borrow::Cow;
@@ -255,16 +255,16 @@ pub mod resource_manager {
 
 #[cfg(test)]
 mod tests {
-    #[cfg(feature = "resource_manager")]
+    #[cfg(feature = "unstable_resource_manager")]
     use super::resource_manager::{Audience, CloudConfigurationExt};
     use super::{Audiences, CloudConfiguration, CustomConfiguration};
-    #[cfg(feature = "resource_manager")]
+    #[cfg(feature = "unstable_resource_manager")]
     use crate::error::ErrorKind;
-    #[cfg(feature = "resource_manager")]
+    #[cfg(feature = "unstable_resource_manager")]
     use std::borrow::Cow;
 
     #[test]
-    #[cfg(feature = "resource_manager")]
+    #[cfg(feature = "unstable_resource_manager")]
     fn resource_manager_known_clouds() {
         for (cloud, audience, scope, endpoint) in [
             (
@@ -295,7 +295,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "resource_manager")]
+    #[cfg(feature = "unstable_resource_manager")]
     fn resource_manager_custom_cloud() {
         for audience in [
             "https://service.mycloud.local",
@@ -316,7 +316,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "resource_manager")]
+    #[cfg(feature = "unstable_resource_manager")]
     fn resource_manager_missing_custom_audience() {
         let cloud: CloudConfiguration = CustomConfiguration::default().into();
 
@@ -339,7 +339,7 @@ mod tests {
             audiences: Audiences::new()
                 .with::<A>("A".to_string())
                 .with::<B>("B".to_string()),
-            #[cfg(feature = "resource_manager")]
+            #[cfg(feature = "unstable_resource_manager")]
             endpoint: None,
         }
         .into();

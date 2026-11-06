@@ -635,18 +635,8 @@ fn check_production_eligibility(
 }
 
 fn check_gateway_only_functions(query_text: &str) -> Result<(), LocalPlanFallbackReason> {
-    use crate::query::lexer::{Lexer, TokenKind};
-
-    let tokens = Lexer::tokenize(query_text);
-    for (index, token) in tokens.iter().enumerate() {
-        if token.kind != TokenKind::Identifier
-            || tokens.get(index + 1).map(|next| next.kind) != Some(TokenKind::LParen)
-            || index > 0 && tokens[index - 1].kind == TokenKind::Dot
-        {
-            continue;
-        }
-
-        match token.text.to_ascii_uppercase().as_str() {
+    for name in called_function_names(query_text) {
+        match name.as_str() {
             "DCOUNT" => return Err(LocalPlanFallbackReason::DCount),
             "COUNTIF" | "ARRAY_AGG" | "MAKELIST" | "MAKESET" => {
                 return Err(LocalPlanFallbackReason::Aggregates);
@@ -658,6 +648,30 @@ fn check_gateway_only_functions(query_text: &str) -> Result<(), LocalPlanFallbac
         }
     }
     Ok(())
+}
+
+/// Ranked queries need the Gateway plan even for a complete logical partition:
+/// global text statistics cannot be calculated by a direct partition request.
+pub(crate) fn uses_ranked_search(query_text: &str) -> bool {
+    called_function_names(query_text)
+        .iter()
+        .any(|name| matches!(name.as_str(), "RRF" | "FULLTEXTSCORE"))
+}
+
+fn called_function_names(query_text: &str) -> Vec<String> {
+    use crate::query::lexer::{Lexer, TokenKind};
+
+    let tokens = Lexer::tokenize(query_text);
+    tokens
+        .iter()
+        .enumerate()
+        .filter(|(index, token)| {
+            token.kind == TokenKind::Identifier
+                && tokens.get(index + 1).map(|next| next.kind) == Some(TokenKind::LParen)
+                && (*index == 0 || tokens[*index - 1].kind != TokenKind::Dot)
+        })
+        .map(|(_, token)| token.text.to_ascii_uppercase())
+        .collect()
 }
 
 /// Attempts to produce a local provider resolution without a Gateway roundtrip.
@@ -1316,6 +1330,19 @@ mod tests {
                 LocalPlanFallbackReason::HybridSearch
             );
         }
+    }
+
+    #[test]
+    fn ranked_search_detection_ignores_strings_and_properties() {
+        assert!(super::uses_ranked_search(
+            "SELECT TOP 2 * FROM c ORDER BY RANK fulltextscore(c.text, @term)"
+        ));
+        assert!(super::uses_ranked_search(
+            "SELECT TOP 2 * FROM c ORDER BY RANK RRF(VectorDistance(c.v, @v), FullTextScore(c.text, @term))"
+        ));
+        assert!(!super::uses_ranked_search(
+            "SELECT * FROM c WHERE c.name = 'FullTextScore(c.text)' AND c.RRF = 1"
+        ));
     }
 
     #[test]

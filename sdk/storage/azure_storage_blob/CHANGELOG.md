@@ -1,16 +1,22 @@
 # Release History
 
-## 1.2.0-beta.1 (Unreleased)
+## 1.2.0-beta.1 (2026-11-03)
 
 ### Features Added
 
+- Updated the default service version to `2026-10-06`.
+- Re-added `BlobContainerClient::list_blobs_hierarchical()`.
+- Added an `arrow` feature flag, enabled by default, that controls Apache Arrow support for `BlobContainerClient::list_blobs()` and `BlobContainerClient::list_blobs_hierarchical()`. When disabled, Arrow dependencies are excluded and listing uses XML only. `end_before` requires this feature.
+- Added `end_before` to `BlobContainerClientListBlobsOptions` and `BlobContainerClientListBlobsHierarchicalOptions`. `end_before` is only supported with the Apache Arrow response format.
+- The service-calculated CRC64 is now surfaced as `content_crc64` on upload responses, alongside `content_md5`, when a content MD5 is provided with the request. This applies to `stage_block`, `stage_block_from_url`, `upload_pages`, `upload_pages_from_url`, `append_block`, `append_block_from_url`, `upload` and `upload_blob_from_url`.
+- Added `access_tier`, `access_tier_changed_on`, and `access_tier_inferred` to `BlobDownloadProperties`.
+- Added `BlobClient::start_copy_from_url()` and `BlobClient::abort_copy()` for asynchronous blob copy operations.
+- Added opt-in session authentication for blob downloads through `SessionOptions`, with session-cache sharing through `ContainerSessionProvider`.
+- Added `BlobClientDownloadOptions::layout_aware_routing` to enable locality-aware range requests for `download()` and `download_into()`. Disabled by default.
+
 ### Breaking Changes
 
-### Bugs Fixed
-
-### Other Changes
-
-- Applied client options to bearer-token authorization policies.
+- `BlobContainerClient::list_blobs()` now returns `Result<Pager<ListBlobsResponse, AutoFormat>>` instead of `Result<Pager<ListBlobsResponse, XmlFormat>>`. It requests Apache Arrow with XML fallback when the `arrow` feature is enabled and XML only otherwise. Callers relying on type inference need no code changes unless their code requires the previous `XmlFormat` return type.
 
 ## 1.1.0 (2026-09-08)
 

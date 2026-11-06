@@ -249,6 +249,21 @@ unsupported status. A token is never required to advance a live cursor.
 Checkpoint errors indicating corrupted progress and execution failures terminate
 the cursor; inspect `cosmos_cursor_status` for its failure.
 
+Change-feed checkpoints can be captured before the first Next. They preserve the
+original start, saved ETags, and the next range to poll. On resume, set
+`start_from = 0` to omit a new start; a conflicting supplied start does not replace
+checkpoint-owned state. Unpolled LatestVersion `Now` is evaluated at request time,
+not at Open or Checkpoint.
+
+A feed-range handle created from an incomplete hierarchical key selects its
+prefix and fans out across every overlapping physical range. New query and
+change-feed checkpoints use `c2.`; drivers that only support `c1.` reject them.
+Query checkpoint payloads are unchanged, and legacy `c1.` query checkpoints
+remain readable. Legacy change-feed checkpoints remain readable
+with the following limitations. Older unpolled single-request checkpoints require
+the original start because it wasn't recorded; older prefix checkpoints with a
+single saved ETag are rejected rather than guessing missing per-range positions.
+
 Only one operation per cursor may be outstanding, until its result is transferred
 by the wait call. Overlap returns Busy. **Wrapper-managed prefetch is supported**:
 request another page after transfer while keeping earlier page completions alive.

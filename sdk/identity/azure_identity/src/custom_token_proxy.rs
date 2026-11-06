@@ -138,6 +138,7 @@ pub struct TokenProxyClientOptions<'a> {
 /// Constructs HTTP clients for the AKS identity binding token proxy.
 ///
 /// Implement this trait to use an HTTP stack other than the built-in `reqwest` client.
+/// The built-in client requires the `reqwest_rustls` feature, which is enabled by default.
 pub trait TokenProxyClient: Debug + Send + Sync {
     /// Creates an HTTP client with the supplied TLS and name resolution options.
     fn create(
@@ -276,7 +277,7 @@ fn build_client(
         })
 }
 
-#[cfg(feature = "reqwest")]
+#[cfg(feature = "reqwest_rustls")]
 impl TokenProxyClient for reqwest::Client {
     fn create(
         &self,
@@ -316,16 +317,16 @@ impl TokenProxyClient for reqwest::Client {
     }
 }
 
-#[cfg(feature = "reqwest")]
+#[cfg(feature = "reqwest_rustls")]
 fn default_token_proxy_client() -> azure_core::Result<Arc<dyn TokenProxyClient>> {
     Ok(Arc::new(reqwest::Client::new()))
 }
 
-#[cfg(not(feature = "reqwest"))]
+#[cfg(not(feature = "reqwest_rustls"))]
 fn default_token_proxy_client() -> azure_core::Result<Arc<dyn TokenProxyClient>> {
     Err(Error::with_message(
         ErrorKind::Credential,
-        "the `reqwest` feature is required to use the default token proxy client; enable `reqwest` or provide a custom `TokenProxyClient` implementation",
+        "the `reqwest_rustls` feature is required to use the default token proxy client; enable `reqwest_rustls` or provide a custom `TokenProxyClient` implementation",
     ))
 }
 
@@ -415,64 +416,81 @@ fn invalid_configuration(name: &'static str, message: impl Into<String>) -> Erro
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[cfg(feature = "reqwest")]
-    use futures::future::join_all;
-    #[cfg(all(feature = "reqwest", feature = "client_certificate"))]
-    use openssl::{
-        asn1::{Asn1Integer, Asn1Time},
-        bn::{BigNum, MsbOption},
-        hash::MessageDigest,
-        nid::Nid,
-        pkey::PKey,
-        rsa::Rsa,
-        ssl::{NameType, SslAcceptor, SslMethod},
-        x509::{
-            extension::{BasicConstraints, ExtendedKeyUsage, KeyUsage, SubjectAlternativeName},
-            X509NameBuilder, X509,
-        },
+    use crate::tests::{token_response, MockSts};
+    #[cfg(feature = "reqwest_rustls")]
+    use crate::{
+        tests::LIVE_TEST_SCOPES, WorkloadIdentityCredential, WorkloadIdentityCredentialOptions,
     };
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "reqwest_rustls")]
+    use azure_core::credentials::TokenCredential;
+    use azure_core::http::{headers::HeaderName, Method, StatusCode};
+    use futures::future::join_all;
+    #[cfg(feature = "reqwest_rustls")]
+    use std::time::{Duration, SystemTime};
     use std::{
         env,
         fs::File,
         io::Write,
         sync::atomic::{AtomicUsize, Ordering},
     };
-    #[cfg(all(feature = "reqwest", feature = "client_certificate"))]
-    use std::{io::Read, net::TcpListener, sync::mpsc, thread};
 
-    #[cfg(feature = "reqwest")]
-    const TEST_CA: &str = "-----BEGIN CERTIFICATE-----\n\
-MIIDZzCCAk+gAwIBAgIUPXdgRBlS4T18QnYJ/+yPV70GOEEwDQYJKoZIhvcNAQEL\n\
-BQAwFDESMBAGA1UEAwwJbG9jYWxob3N0MB4XDTI2MDcyMTIwNTYxOVoXDTI3MDcy\n\
-MTIwNTYxOVowFDESMBAGA1UEAwwJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEF\n\
-AAOCAQ8AMIIBCgKCAQEAohtW1OHr/XIAlhxXq+vhvbosa/MvCptI8Pb1eJApnhYk\n\
-Zt3wGGMfjPPga4z+a7NSz5v2xD9qhHyMVNrlnt6becBCLm8Az3Q7zdpu6Cp+mEAc\n\
-VMLY/ttiPQfMKdj33aJxXZfqtFw++jm5kUCawW6OlvfcmZCVhMp5LQvDbVWULa5v\n\
-nsdzAoghf1RPZWyMXSme0vkfZaDN6LuLxhbXQOz9AVHnfX4eXvXO8UAhCV3xTsXU\n\
-KqkzzxPZX5Bt6/PEo1Nmp9YhmCYaLrljAr9ShTHdczfCPWJvGtYnSnbzCtapVffe\n\
-u/YK2l4uBWP6Nx0xjoXrrA3hM7qZdhinmmQsz870AQIDAQABo4GwMIGtMA8GA1Ud\n\
-EwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgGmMBYGA1UdJQEB/wQMMAoGCCsGAQUF\n\
-BwMBMBcGA1UdEQEB/wQNMAuCCWxvY2FsaG9zdDA6BgorBgEEAYI3VAEBBCwMKkFT\n\
-UC5ORVQgQ29yZSBIVFRQUyBkZXZlbG9wbWVudCBjZXJ0aWZpY2F0ZTAdBgNVHQ4E\n\
-FgQUndm3u54Kli+UWZSuG6zjDMf07r0wDQYJKoZIhvcNAQELBQADggEBAIx4ssZM\n\
-ET31rNiqhcArt0RP7Yxe59RxIPVWlsh0O3Bh/cT1Q5ESmSs9CA6jaVSkNhJQFF3x\n\
-qKz/PaG1an8f6YDTZfb1Eu1xL5E9t26GkjKovmOwZporaQm+d367sCK2Hab/5aJG\n\
-bqH23P5sbJQ+TogAf0Uykdq9rSx/5uwQBEv53tAHpSLOQXDWtNXo6AGNcyuouTgt\n\
-v/X15v4Gb9clgZpl3WXCvzOtEpaRSdf8dL76KKIiyClOzdvNP4/BpXxsYfAPU4hb\n\
-CesVElsCj5WckSkJ23gnTkzIAAeWjNnf+sOwaMgfsqh/XtKzYluV8MtbBljuOz0G\n\
-uaZPC0VV2qRwbAE=\n\
------END CERTIFICATE-----\n";
+    #[derive(Debug)]
+    struct MockTokenProxyClient {
+        client: Arc<dyn HttpClient>,
+        ca_data: Vec<u8>,
+    }
 
-    #[cfg(feature = "reqwest")]
+    impl TokenProxyClient for MockTokenProxyClient {
+        fn create(
+            &self,
+            options: TokenProxyClientOptions<'_>,
+        ) -> azure_core::Result<Arc<dyn HttpClient>> {
+            assert_eq!(options.certificate_authority, Some(self.ca_data.as_slice()));
+            assert_eq!(options.server_name, "cluster.example.com");
+            assert_eq!(
+                options.resolved_addresses,
+                &["127.0.0.1:8443".parse::<SocketAddr>().unwrap()]
+            );
+            Ok(self.client.clone())
+        }
+    }
+
+    const MOCK_CA_DATA: &str = "mock CA data, not a certificate";
+
+    const ROTATED_MOCK_CA_DATA: &str = "rotated mock CA data, not a certificate";
+
+    #[derive(Debug, Default)]
+    struct MockCaClient {
+        calls: AtomicUsize,
+    }
+
+    impl TokenProxyClient for MockCaClient {
+        fn create(
+            &self,
+            options: TokenProxyClientOptions<'_>,
+        ) -> azure_core::Result<Arc<dyn HttpClient>> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            match options.certificate_authority {
+                Some(data)
+                    if data == MOCK_CA_DATA.as_bytes()
+                        || data == ROTATED_MOCK_CA_DATA.as_bytes() =>
+                {
+                    Ok(Arc::new(MockSts::new(Vec::new(), None)))
+                }
+                _ => Err(Error::with_message(
+                    ErrorKind::Credential,
+                    "mock client factory rejected CA data",
+                )),
+            }
+        }
+    }
+
     static TEMP_FILE_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
-    #[cfg(feature = "reqwest")]
     struct TempFile {
         path: PathBuf,
     }
 
-    #[cfg(feature = "reqwest")]
     impl TempFile {
         fn new(content: &str) -> Self {
             let id = TEMP_FILE_COUNTER.fetch_add(1, Ordering::SeqCst);
@@ -496,7 +514,6 @@ uaZPC0VV2qRwbAE=\n\
         }
     }
 
-    #[cfg(feature = "reqwest")]
     impl Drop for TempFile {
         fn drop(&mut self) {
             let _ = fs::remove_file(&self.path);
@@ -527,6 +544,46 @@ uaZPC0VV2qRwbAE=\n\
             Some("https://kubernetes.default.svc/proxy")
         );
         assert!(config.ca.is_none());
+    }
+
+    #[test]
+    fn configures_custom_client() {
+        let mut options = ClientOptions::default();
+        let factory = Arc::new(MockCaClient::default());
+        config(&[
+            (AZURE_KUBERNETES_TOKEN_PROXY, "https://proxy.contoso.com"),
+            (AZURE_KUBERNETES_CA_DATA, MOCK_CA_DATA),
+        ])
+        .expect("valid proxy configuration")
+        .configure(&mut options, Some(factory.clone()))
+        .expect("custom proxy client is available without the default client");
+        assert!(options.transport.is_some());
+        assert_eq!(factory.calls.load(Ordering::SeqCst), 1);
+    }
+
+    #[cfg(feature = "reqwest_rustls")]
+    #[test]
+    fn configures_default_client() {
+        let mut options = ClientOptions::default();
+        config(&[(AZURE_KUBERNETES_TOKEN_PROXY, "https://proxy.contoso.com")])
+            .expect("valid proxy configuration")
+            .configure(&mut options, None)
+            .expect("default proxy client is available");
+        assert!(options.transport.is_some());
+    }
+
+    #[cfg(not(feature = "reqwest_rustls"))]
+    #[test]
+    fn requires_rustls_for_default_client() {
+        let mut options = ClientOptions::default();
+        let error = config(&[(AZURE_KUBERNETES_TOKEN_PROXY, "https://proxy.contoso.com")])
+            .expect("valid proxy configuration")
+            .configure(&mut options, None)
+            .expect_err("default proxy client requires rustls");
+        assert_eq!(error.kind(), &ErrorKind::Credential);
+        assert!(error.to_string().contains("enable `reqwest_rustls`"));
+        assert!(error.to_string().contains("custom `TokenProxyClient`"));
+        assert!(options.transport.is_none());
     }
 
     #[test]
@@ -572,19 +629,19 @@ uaZPC0VV2qRwbAE=\n\
     fn rewrites_request_url() {
         for (proxy, request, expected) in [
             (
-                "https://proxy.example.com",
+                "https://proxy.contoso.com",
                 "https://login.example.com/tenant/oauth2/v2.0/token?a=1&b=2",
-                "https://proxy.example.com/tenant/oauth2/v2.0/token?a=1&b=2",
+                "https://proxy.contoso.com/tenant/oauth2/v2.0/token?a=1&b=2",
             ),
             (
-                "https://proxy.example.com/base/",
+                "https://proxy.contoso.com/base/",
                 "https://login.example.com/a%20b?q=1",
-                "https://proxy.example.com/base/a%20b?q=1",
+                "https://proxy.contoso.com/base/a%20b?q=1",
             ),
             (
-                "https://proxy.example.com/base",
+                "https://proxy.contoso.com/base",
                 "https://login.example.com",
-                "https://proxy.example.com/base/",
+                "https://proxy.contoso.com/base/",
             ),
         ] {
             let actual = rewrite_proxy_url(
@@ -596,12 +653,12 @@ uaZPC0VV2qRwbAE=\n\
         }
     }
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "reqwest_rustls")]
     #[test]
     fn rejects_missing_and_invalid_ca_files() {
         for path in ["/file/does/not/exist", file!()] {
             let error = CustomTokenProxy::new(
-                Url::parse("https://proxy.example.com").expect("proxy URL"),
+                Url::parse("https://proxy.contoso.com").expect("proxy URL"),
                 None,
                 Some(CertificateAuthority::File(path.into())),
                 Arc::new(reqwest::Client::new()),
@@ -611,12 +668,12 @@ uaZPC0VV2qRwbAE=\n\
         }
     }
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "reqwest_rustls")]
     #[test]
     fn rejects_invalid_inline_ca_without_exposing_data() {
         let ca_data = "not a certificate";
         let error = CustomTokenProxy::new(
-            Url::parse("https://proxy.example.com").expect("proxy URL"),
+            Url::parse("https://proxy.contoso.com").expect("proxy URL"),
             None,
             Some(CertificateAuthority::Data(ca_data.to_string())),
             Arc::new(reqwest::Client::new()),
@@ -626,36 +683,40 @@ uaZPC0VV2qRwbAE=\n\
         assert!(!error.to_string().contains(ca_data));
     }
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "reqwest_rustls")]
     #[test]
-    fn accepts_inline_and_file_ca() {
+    #[ignore = "requires a real configured AKS certificate authority; see CONTRIBUTING.md"]
+    fn accepts_inline_and_file_ca() -> azure_core::Result<()> {
+        let config = CustomTokenProxyConfig::from_env(&Env::default())?;
+        let ca_data = configured_ca_data(config.ca)?;
         CustomTokenProxy::new(
-            Url::parse("https://proxy.example.com").expect("proxy URL"),
+            Url::parse("https://proxy.contoso.com").expect("proxy URL"),
             None,
-            Some(CertificateAuthority::Data(TEST_CA.to_string())),
+            Some(CertificateAuthority::Data(ca_data.clone())),
             Arc::new(reqwest::Client::new()),
         )
         .expect("valid inline CA");
 
-        let file = TempFile::new(TEST_CA);
+        let file = TempFile::new(&ca_data);
         CustomTokenProxy::new(
-            Url::parse("https://proxy.example.com").expect("proxy URL"),
+            Url::parse("https://proxy.contoso.com").expect("proxy URL"),
             None,
             Some(CertificateAuthority::File(file.path.clone())),
             Arc::new(reqwest::Client::new()),
         )
         .expect("valid file CA");
+        Ok(())
     }
 
-    #[cfg(feature = "reqwest")]
     #[tokio::test]
     async fn reuses_and_rotates_file_ca_client() {
-        let file = TempFile::new(TEST_CA);
+        let file = TempFile::new(MOCK_CA_DATA);
+        let factory = Arc::new(MockCaClient::default());
         let proxy = CustomTokenProxy::new(
-            Url::parse("https://proxy.example.com").expect("proxy URL"),
+            Url::parse("https://proxy.contoso.com").expect("proxy URL"),
             None,
             Some(CertificateAuthority::File(file.path.clone())),
-            Arc::new(reqwest::Client::new()),
+            factory.clone(),
         )
         .expect("valid file CA");
         let original = proxy.client().await.expect("cached client");
@@ -668,20 +729,21 @@ uaZPC0VV2qRwbAE=\n\
         let retained = proxy.client().await.expect("last good client");
         assert!(Arc::ptr_eq(&original, &retained));
 
-        file.write(&format!("{TEST_CA}\n"));
+        file.write(ROTATED_MOCK_CA_DATA);
         let rotated = proxy.client().await.expect("rotated client");
         assert!(!Arc::ptr_eq(&original, &rotated));
+        assert_eq!(factory.calls.load(Ordering::SeqCst), 2);
     }
 
-    #[cfg(feature = "reqwest")]
     #[tokio::test]
     async fn serializes_concurrent_file_ca_refresh() {
-        let file = TempFile::new(TEST_CA);
+        let file = TempFile::new(MOCK_CA_DATA);
+        let factory = Arc::new(MockCaClient::default());
         let proxy = CustomTokenProxy::new(
-            Url::parse("https://proxy.example.com").expect("proxy URL"),
+            Url::parse("https://proxy.contoso.com").expect("proxy URL"),
             None,
             Some(CertificateAuthority::File(file.path.clone())),
-            Arc::new(reqwest::Client::new()),
+            factory.clone(),
         )
         .expect("valid file CA");
         let original = proxy.client().await.expect("cached client");
@@ -690,23 +752,33 @@ uaZPC0VV2qRwbAE=\n\
         for client in clients {
             assert!(Arc::ptr_eq(&original, &client.expect("refreshed client")));
         }
+        file.write(ROTATED_MOCK_CA_DATA);
+        let clients = join_all((0..16).map(|_| proxy.client())).await;
+        let rotated = proxy.client().await.expect("rotated client");
+        assert!(!Arc::ptr_eq(&original, &rotated));
+        for client in clients {
+            assert!(Arc::ptr_eq(&rotated, &client.expect("rotated client")));
+        }
+        assert_eq!(factory.calls.load(Ordering::SeqCst), 2);
     }
 
-    #[cfg(feature = "reqwest")]
     #[tokio::test]
     async fn surfaces_file_ca_refresh_errors_without_replacing_client() {
-        let file = TempFile::new(TEST_CA);
+        let file = TempFile::new(MOCK_CA_DATA);
         let proxy = CustomTokenProxy::new(
-            Url::parse("https://proxy.example.com").expect("proxy URL"),
+            Url::parse("https://proxy.contoso.com").expect("proxy URL"),
             None,
             Some(CertificateAuthority::File(file.path.clone())),
-            Arc::new(reqwest::Client::new()),
+            Arc::new(MockCaClient::default()),
         )
         .expect("valid file CA");
         let original = proxy.client().await.expect("cached client");
 
-        file.write("not a certificate");
-        let error = proxy.client().await.expect_err("invalid rotated CA");
+        file.write("rejected mock CA data");
+        let error = proxy
+            .client()
+            .await
+            .expect_err("factory rejected rotated CA");
         assert!(error.to_string().contains(AZURE_KUBERNETES_CA_FILE));
         assert!(Arc::ptr_eq(&original, &proxy.cache.read().await.client));
 
@@ -727,213 +799,131 @@ uaZPC0VV2qRwbAE=\n\
         assert_eq!(resolved_addrs, vec!["127.0.0.1:8443".parse().unwrap()]);
     }
 
-    #[cfg(all(feature = "reqwest", feature = "client_certificate"))]
     #[tokio::test]
-    async fn sends_requests_with_custom_ca_and_sni() {
-        const SNI_NAME: &str = "cluster.example.com";
-        let (certificate, key, ca_certificate) = test_server_certificate(SNI_NAME);
-        let ca_data = String::from_utf8(ca_certificate.to_pem().expect("CA certificate PEM"))
-            .expect("PEM is UTF-8");
-        let mut acceptor =
-            SslAcceptor::mozilla_intermediate_v5(SslMethod::tls_server()).expect("TLS acceptor");
-        acceptor.set_certificate(&certificate).expect("certificate");
-        acceptor.set_private_key(&key).expect("private key");
-        acceptor.check_private_key().expect("matching private key");
-        let acceptor = acceptor.build();
-        let listener = TcpListener::bind("127.0.0.1:0").expect("bind HTTPS server");
-        let address = listener.local_addr().expect("server address");
-        let (sender, receiver) = mpsc::channel();
-        let server = thread::spawn(move || {
-            for _ in 0..2 {
-                let (stream, _) = listener.accept().expect("TLS connection");
-                let mut stream = acceptor.accept(stream).expect("TLS handshake");
-                let sni = stream
-                    .ssl()
-                    .servername(NameType::HOST_NAME)
-                    .map(str::to_string);
-                let mut request = Vec::new();
-                let mut buffer = [0_u8; 1024];
-                while !request.windows(4).any(|value| value == b"\r\n\r\n") {
-                    let read = stream.read(&mut buffer).expect("read request");
-                    assert_ne!(read, 0, "connection closed before request headers");
-                    request.extend_from_slice(&buffer[..read]);
-                }
-                stream
-                    .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n")
-                    .expect("write response");
-                sender
-                    .send((sni, String::from_utf8(request).expect("HTTP is UTF-8")))
-                    .expect("send captured request");
-            }
+    async fn sends_requests_with_custom_ca_and_sni_using_mock_client() {
+        let file = TempFile::new(MOCK_CA_DATA);
+        let request_count = Arc::new(AtomicUsize::new(0));
+        let count = request_count.clone();
+        let client = Arc::new(MockSts::new(
+            vec![token_response(), token_response()],
+            Some(Arc::new(move |request| {
+                count.fetch_add(1, Ordering::SeqCst);
+                assert_eq!(
+                    request.url().as_str(),
+                    "https://cluster.example.com:8443/base/tenant/token?query=value"
+                );
+                assert_eq!(
+                    request
+                        .headers()
+                        .get_str(&HeaderName::from_static("host"))?,
+                    "127.0.0.1:8443"
+                );
+                assert_eq!(request.method(), Method::Get);
+                Ok(())
+            })),
+        ));
+        let factory = Arc::new(MockTokenProxyClient {
+            client,
+            ca_data: MOCK_CA_DATA.as_bytes().to_vec(),
         });
-
-        let proxy_url = Url::parse(&format!("https://{address}/base")).expect("proxy URL");
-        let inline_proxy = CustomTokenProxy::new(
-            proxy_url.clone(),
-            Some(SNI_NAME.to_string()),
-            Some(CertificateAuthority::Data(ca_data.clone())),
-            Arc::new(reqwest::Client::new()),
-        )
-        .expect("proxy transport");
         let request = Request::new(
             Url::parse("https://login.example.com/tenant/token?query=value").expect("request URL"),
-            azure_core::http::Method::Get,
+            Method::Get,
         );
-        let response = inline_proxy
-            .execute_request(&request)
-            .await
-            .expect("inline CA HTTPS response");
-        assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
-
-        let ca_file = TempFile::new(&ca_data);
-        let file_proxy = CustomTokenProxy::new(
-            proxy_url,
-            Some(SNI_NAME.to_string()),
-            Some(CertificateAuthority::File(ca_file.path.clone())),
-            Arc::new(reqwest::Client::new()),
-        )
-        .expect("proxy transport");
-        let response = file_proxy
-            .execute_request(&request)
-            .await
-            .expect("file CA HTTPS response");
-        assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
-
-        server.join().expect("HTTPS server");
-        for _ in 0..2 {
-            let (sni, request) = receiver.recv().expect("captured request");
-            assert_eq!(sni.as_deref(), Some(SNI_NAME));
-            assert!(request.starts_with("GET /base/tenant/token?query=value HTTP/1.1\r\n"));
-            assert!(request.contains(&format!("\r\nhost: {address}\r\n")));
+        for (name, value) in [
+            (AZURE_KUBERNETES_CA_DATA, MOCK_CA_DATA),
+            (
+                AZURE_KUBERNETES_CA_FILE,
+                file.path.to_str().expect("CA path"),
+            ),
+        ] {
+            let config = config(&[
+                (AZURE_KUBERNETES_TOKEN_PROXY, "https://127.0.0.1:8443/base"),
+                (AZURE_KUBERNETES_SNI_NAME, "cluster.example.com"),
+                (name, value),
+            ])
+            .expect("mock environment configuration");
+            let proxy = CustomTokenProxy::new(
+                config.proxy_url.expect("proxy URL"),
+                config.sni_name,
+                config.ca,
+                factory.clone(),
+            )
+            .expect("proxy transport");
+            let response = proxy
+                .execute_request(&request)
+                .await
+                .expect("mock response");
+            assert_eq!(response.status(), StatusCode::Ok);
         }
+        assert_eq!(request_count.load(Ordering::SeqCst), 2);
+        assert_eq!(
+            request.url().as_str(),
+            "https://login.example.com/tenant/token?query=value"
+        );
+        assert!(request
+            .headers()
+            .get_str(&HeaderName::from_static("host"))
+            .is_err());
     }
 
-    #[cfg(all(feature = "reqwest", feature = "client_certificate"))]
-    fn test_server_certificate(name: &str) -> (X509, PKey<openssl::pkey::Private>, X509) {
-        let ca_key =
-            PKey::from_rsa(Rsa::generate(2048).expect("CA RSA key")).expect("CA private key");
-        let mut ca_subject = X509NameBuilder::new().expect("CA subject");
-        ca_subject
-            .append_entry_by_nid(Nid::COMMONNAME, "test CA")
-            .expect("CA common name");
-        let ca_subject = ca_subject.build();
-        let mut serial = BigNum::new().expect("serial");
-        serial
-            .rand(128, MsbOption::MAYBE_ZERO, false)
-            .expect("random serial");
-        let serial = Asn1Integer::from_bn(&serial).expect("ASN.1 serial");
+    #[cfg(feature = "reqwest_rustls")]
+    #[tokio::test]
+    #[ignore = "requires real AKS identity binding TLS and workload identity; see CONTRIBUTING.md"]
+    async fn sends_requests_with_custom_ca_and_sni() -> azure_core::Result<()> {
+        let env = Env::default();
+        let config = CustomTokenProxyConfig::from_env(&env)?;
+        let proxy_url = config.proxy_url.expect("set AZURE_KUBERNETES_TOKEN_PROXY");
+        let sni_name = config.sni_name.expect("set AZURE_KUBERNETES_SNI_NAME");
+        let ca_data = configured_ca_data(config.ca)?;
+        let ca_file = TempFile::new(&ca_data);
+        let tenant_id = env.var("AZURE_TENANT_ID")?;
+        let client_id = env.var("AZURE_CLIENT_ID")?;
+        let token_file = PathBuf::from(env.var("AZURE_FEDERATED_TOKEN_FILE")?);
 
-        let mut ca_certificate = X509::builder().expect("CA certificate builder");
-        ca_certificate
-            .set_version(2)
-            .expect("CA certificate version");
-        ca_certificate
-            .set_serial_number(&serial)
-            .expect("CA certificate serial");
-        ca_certificate
-            .set_subject_name(&ca_subject)
-            .expect("CA certificate subject");
-        ca_certificate
-            .set_issuer_name(&ca_subject)
-            .expect("CA certificate issuer");
-        ca_certificate
-            .set_pubkey(&ca_key)
-            .expect("CA certificate key");
-        ca_certificate
-            .set_not_before(&Asn1Time::days_from_now(0).expect("CA not before"))
-            .expect("CA not before");
-        ca_certificate
-            .set_not_after(&Asn1Time::days_from_now(1).expect("CA not after"))
-            .expect("CA not after");
-        ca_certificate
-            .append_extension(BasicConstraints::new().critical().ca().build().expect("CA"))
-            .expect("CA extension");
-        ca_certificate
-            .append_extension(
-                KeyUsage::new()
-                    .critical()
-                    .key_cert_sign()
-                    .crl_sign()
-                    .build()
-                    .expect("CA key usage"),
+        for (name, value) in [
+            (AZURE_KUBERNETES_CA_DATA, ca_data.as_str()),
+            (
+                AZURE_KUBERNETES_CA_FILE,
+                ca_file.path.to_str().expect("CA file path"),
+            ),
+        ] {
+            let credential =
+                WorkloadIdentityCredential::new(Some(WorkloadIdentityCredentialOptions {
+                    tenant_id: Some(tenant_id.clone()),
+                    client_id: Some(client_id.clone()),
+                    token_file_path: Some(token_file.clone()),
+                    enable_proxy: true,
+                    env: Env::from(
+                        &[
+                            (AZURE_KUBERNETES_TOKEN_PROXY, proxy_url.as_str()),
+                            (AZURE_KUBERNETES_SNI_NAME, sni_name.as_str()),
+                            (name, value),
+                        ][..],
+                    ),
+                    ..Default::default()
+                }))?;
+            let token = tokio::time::timeout(
+                Duration::from_secs(60),
+                credential.get_token(LIVE_TEST_SCOPES, None),
             )
-            .expect("CA key usage extension");
-        ca_certificate
-            .sign(&ca_key, MessageDigest::sha256())
-            .expect("sign CA certificate");
-        let ca_certificate = ca_certificate.build();
+            .await
+            .expect("AKS identity binding token request timed out")?;
+            assert!(!token.token.secret().is_empty());
+            assert!(token.expires_on > SystemTime::now());
+        }
+        Ok(())
+    }
 
-        let key = PKey::from_rsa(Rsa::generate(2048).expect("server RSA key"))
-            .expect("server private key");
-        let mut subject = X509NameBuilder::new().expect("server subject");
-        subject
-            .append_entry_by_nid(Nid::COMMONNAME, name)
-            .expect("server common name");
-        let subject = subject.build();
-        let mut serial = BigNum::new().expect("server serial");
-        serial
-            .rand(128, MsbOption::MAYBE_ZERO, false)
-            .expect("random server serial");
-        let serial = Asn1Integer::from_bn(&serial).expect("ASN.1 server serial");
-
-        let mut certificate = X509::builder().expect("server certificate builder");
-        certificate
-            .set_version(2)
-            .expect("server certificate version");
-        certificate
-            .set_serial_number(&serial)
-            .expect("server certificate serial");
-        certificate
-            .set_subject_name(&subject)
-            .expect("server certificate subject");
-        certificate
-            .set_issuer_name(ca_certificate.subject_name())
-            .expect("server certificate issuer");
-        certificate
-            .set_pubkey(&key)
-            .expect("server certificate key");
-        certificate
-            .set_not_before(&Asn1Time::days_from_now(0).expect("not before"))
-            .expect("not before");
-        certificate
-            .set_not_after(&Asn1Time::days_from_now(1).expect("not after"))
-            .expect("not after");
-        certificate
-            .append_extension(
-                BasicConstraints::new()
-                    .critical()
-                    .build()
-                    .expect("server constraints"),
-            )
-            .expect("server constraints extension");
-        certificate
-            .append_extension(
-                KeyUsage::new()
-                    .critical()
-                    .digital_signature()
-                    .key_encipherment()
-                    .build()
-                    .expect("server key usage"),
-            )
-            .expect("server key usage extension");
-        certificate
-            .append_extension(
-                ExtendedKeyUsage::new()
-                    .server_auth()
-                    .build()
-                    .expect("extended key usage"),
-            )
-            .expect("extended key usage extension");
-        let subject_alt_name = SubjectAlternativeName::new()
-            .dns(name)
-            .build(&certificate.x509v3_context(None, None))
-            .expect("subject alternative name");
-        certificate
-            .append_extension(subject_alt_name)
-            .expect("subject alternative name extension");
-        certificate
-            .sign(&ca_key, MessageDigest::sha256())
-            .expect("sign server certificate");
-        (certificate.build(), key, ca_certificate)
+    #[cfg(feature = "reqwest_rustls")]
+    fn configured_ca_data(ca: Option<CertificateAuthority>) -> azure_core::Result<String> {
+        match ca {
+            Some(CertificateAuthority::Data(data)) => Ok(data),
+            Some(CertificateAuthority::File(path)) => Ok(String::from_utf8(read_ca_file(&path)?)?),
+            None => Err(Error::with_message(
+                ErrorKind::Credential,
+                "set AZURE_KUBERNETES_CA_FILE or AZURE_KUBERNETES_CA_DATA; see CONTRIBUTING.md",
+            )),
+        }
     }
 }

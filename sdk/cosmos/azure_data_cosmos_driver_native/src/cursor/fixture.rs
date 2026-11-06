@@ -26,6 +26,18 @@ pub(super) fn scripted_gated(
     current_thread: bool,
     gate: Option<Arc<Gate>>,
 ) -> (*mut RuntimeContext, *mut DriverHandle) {
+    scripted_with_options(current_thread, gate, false)
+}
+
+pub(super) fn scripted_hpk(current_thread: bool) -> (*mut RuntimeContext, *mut DriverHandle) {
+    scripted_with_options(current_thread, None, true)
+}
+
+fn scripted_with_options(
+    current_thread: bool,
+    gate: Option<Arc<Gate>>,
+    hierarchical: bool,
+) -> (*mut RuntimeContext, *mut DriverHandle) {
     let tokio = if current_thread {
         tokio::runtime::Builder::new_current_thread()
             .enable_all()
@@ -41,7 +53,7 @@ pub(super) fn scripted_gated(
     let runtime = tokio
         .block_on(
             azure_data_cosmos_driver::CosmosDriverRuntimeBuilder::new()
-                .with_mock_http_client_factory(Arc::new(transport::Factory(gate)))
+                .with_mock_http_client_factory(Arc::new(transport::Factory(gate, hierarchical)))
                 .build(),
         )
         .unwrap();
@@ -142,6 +154,8 @@ pub extern "C" fn cosmos_test_cursor_fixture(
         || {
             match if scripted_transport == 0 {
                 create(false)
+            } else if scripted_transport == 2 {
+                Ok(scripted_hpk(false))
             } else {
                 Ok(scripted(false))
             } {
