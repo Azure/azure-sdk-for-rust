@@ -66,10 +66,10 @@ for the full design.
 
 ## Building
 
-Version **0.2.0** is a breaking C ABI revision. Check `cosmos_version()` against
+Version **0.3.0** is a breaking C ABI revision. Check `cosmos_version()` against
 `AZURECOSMOSDRIVER_H_VERSION` before any layout-sensitive call, including options
 returned by value. Rebuild host bindings and vendor the generated header together
-with the matching library; do not mix 0.1.x headers and 0.2.x libraries.
+with the matching library; do not mix 0.2.x headers and 0.3.x libraries.
 
 ### Operation defaults and admission snapshots
 
@@ -249,6 +249,21 @@ unsupported status. A token is never required to advance a live cursor.
 Checkpoint errors indicating corrupted progress and execution failures terminate
 the cursor; inspect `cosmos_cursor_status` for its failure.
 
+Change-feed checkpoints can be captured before the first Next. They preserve the
+original start, saved ETags, and the next range to poll. On resume, set
+`start_from = 0` to omit a new start; a conflicting supplied start does not replace
+checkpoint-owned state. Unpolled LatestVersion `Now` is evaluated at request time,
+not at Open or Checkpoint.
+
+A feed-range handle created from an incomplete hierarchical key selects its
+prefix and fans out across every overlapping physical range. New query and
+change-feed checkpoints use `c2.`; drivers that only support `c1.` reject them.
+Query checkpoint payloads are unchanged, and legacy `c1.` query checkpoints
+remain readable. Legacy change-feed checkpoints remain readable
+with the following limitations. Older unpolled single-request checkpoints require
+the original start because it wasn't recorded; older prefix checkpoints with a
+single saved ETag are rejected rather than guessing missing per-range positions.
+
 Only one operation per cursor may be outstanding, until its result is transferred
 by the wait call. Overlap returns Busy. **Wrapper-managed prefetch is supported**:
 request another page after transfer while keeping earlier page completions alive.
@@ -272,10 +287,11 @@ operations and representable raw feed responses keep their existing behavior.
 
 ---
 
-## Fault injection
+## Versioned driver options and fault injection
 
-Native hosts can install the driver's existing fault-injection rules when they
-construct driver options. Existing callers keep using
+Native hosts can configure resource-name validation and install
+the driver's existing fault-injection rules when they construct driver options.
+Existing callers keep using
 `cosmos_driver_options_config_t` and `cosmos_driver_options_build`; the additive
 surface is `cosmos_driver_options_config_v2_t` plus
 `cosmos_driver_options_build_v2`.
@@ -301,6 +317,7 @@ rule.hit_limit = 1;
 
 cosmos_driver_options_config_v2_t config =
     cosmos_driver_options_config_v2_default();
+config.resource_name_validation_enabled = 1; /* disabled for compatibility */
 config.fault_injection_rules = &rule;
 config.fault_injection_rules_len = 1;
 config.fault_injection_rule_stride = sizeof(rule);
@@ -309,6 +326,14 @@ cosmos_driver_options_t *options = NULL;
 cosmos_status_code_t status =
     cosmos_driver_options_build_v2(account, &config, &options);
 ```
+
+`resource_name_validation_enabled` is a tri-state boolean: `0` leaves the
+driver default unchanged, `1` disables validation, and `2` enables validation.
+Validation is enabled by default. When enabled, the driver rejects unsafe
+user-defined names before request planning, including item names supplied to
+Create and Upsert so newly written items remain addressable by later point
+operations. It does not parse IDs from request bodies or transactional protocol
+fields.
 
 Condition fields match the operation/resource pair, region, container id, and
 Gateway/GatewayV2 transport. Results support the driver's predefined HTTP and

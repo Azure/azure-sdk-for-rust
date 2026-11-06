@@ -521,6 +521,20 @@ impl CosmosDriver {
         Ok((transport, metadata_transport))
     }
 
+    fn connectivity_probe_http_client_config(
+        connection_pool: &ConnectionPoolOptions,
+        account_endpoint: &AccountEndpoint,
+    ) -> HttpClientConfig {
+        let mut config = HttpClientConfig::dataplane_gateway_v2(connection_pool);
+        if connection_pool
+            .server_certificate_validation()
+            .allows_insecure_connection(account_endpoint)
+        {
+            config = config.with_allow_invalid_cert();
+        }
+        config
+    }
+
     async fn fetch_account_properties_with_version(
         runtime: &CosmosDriverRuntime,
         http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
@@ -1799,8 +1813,10 @@ impl CosmosDriver {
             if runtime.connection_pool().gateway_v2_disabled() {
                 None
             } else {
-                let probe_config =
-                    HttpClientConfig::dataplane_gateway_v2(runtime.connection_pool());
+                let probe_config = Self::connectivity_probe_http_client_config(
+                    runtime.connection_pool(),
+                    &account_endpoint,
+                );
                 let probe_client =
                     http_client_factory.build(runtime.connection_pool(), probe_config)?;
                 Some(Arc::new(Http2ConnectivityProbe::new(
@@ -3019,6 +3035,7 @@ impl CosmosDriver {
                 .with_message("cannot execute a distributed transaction with zero operations")
                 .build());
         }
+        request.validate_resource_names(self.options.resource_name_validation_enabled())?;
 
         let operation_count = request.operations.len();
         let is_session_consistency = {
@@ -4193,9 +4210,10 @@ impl CosmosDriver {
     /// `continuation` optionally provides resume state from a prior call. Two
     /// kinds of tokens are accepted:
     ///
-    /// - SDK-issued tokens (`c1.…`) carry a serialized snapshot of the
-    ///   previous pipeline's state and can resume any operation.
-    /// - Opaque server-issued tokens (no `c<N>.` prefix) are accepted only
+    /// - SDK-issued tokens start with `cN.`, where `N` is a format version, and
+    ///   can resume queries or change feeds. Treat their contents as opaque
+    ///   and resume them with a compatible SDK version.
+    /// - Server-issued tokens (no `cN.` prefix) are accepted only
     ///   for trivial operations; passing one to a cross-partition query
     ///   returns a `Client`-shaped error.
     ///
@@ -4265,21 +4283,12 @@ impl CosmosDriver {
         let planning_operation_name = operation.db_operation_name();
         let operation = operation.with_absolute_deadline(effective_deadline);
 
-        // Reject mixed name/RID addressing before any IO work is done. The
-        // service classifies a request as name-based or RID-based from its `dbs`
-        // segment alone, so a reference that mixes a name-addressed parent with
-        // a RID-addressed child (or vice versa) signs and routes inconsistently
-        // and the gateway rejects it with an opaque 401, while a name leaf under
-        // a RID-addressed parent is rejected with a 400 the caller cannot act
-        // on. Validating here — the single choke point every externally
-        // executable operation passes through on its way to a plan — turns both
-        // into deterministic client-side errors for references built through any
-        // path (including direct `plan_operation` + `execute_plan` callers and
-        // multi-page queries), not just `execute_operation`. The check is a cheap
-        // in-memory field comparison and a no-op for every consistently-addressed
-        // reference, so it issues no additional network calls and does not change
-        // the request flow.
-        operation.validate_addressing()?;
+        // Reject mixed name/RID addressing and, when enabled, unsafe
+        // user-defined names before any I/O work is done. This includes item
+        // names on Create and Upsert even though those operations use feed
+        // paths. Every executable operation passes this choke point, including
+        // direct plan callers and multi-page queries.
+        operation.validate_addressing(self.options.resource_name_validation_enabled())?;
 
         // Planning holds the whole pipeline-builder state across several await
         // points, which makes it one of the largest futures in the driver —
@@ -4337,6 +4346,15 @@ impl CosmosDriver {
         let retargeted = self
             .canonicalize_operation_container(&mut operation)
             .await?;
+        if operation.is_change_feed() {
+            if let (Some(key), Some(container)) = (operation.partition_key(), operation.container())
+            {
+                EffectivePartitionKey::compute_range(
+                    key.values(),
+                    container.partition_key_definition(),
+                )?;
+            }
+        }
         let explicit_session_token = operation.request_headers().session_token.is_some()
             || options.custom_headers.as_ref().is_some_and(|headers| {
                 headers.contains_key(&azure_core::http::headers::HeaderName::from_static(
@@ -4381,12 +4399,7 @@ impl CosmosDriver {
         // owned here alone. `execute_operation` resolves the binary options once
         // and forwards them via `resolved_binary` to avoid a second resolution;
         // the query path passes `None` and resolves lazily.
-        let operation = self.apply_response_negotiation(operation, options, resolved_binary);
-
-        // Share the operation across every Request node in the resulting plan.
-        // Per-Request differences are layered on at execution time via
-        // OperationOverrides; the operation itself is never mutated.
-        let operation = Arc::new(operation);
+        let mut operation = self.apply_response_negotiation(operation, options, resolved_binary);
 
         // Resolve the continuation token (if any) into a planner-ready resume
         // state. Server-issued tokens are only valid for trivial operations.
@@ -4397,8 +4410,11 @@ impl CosmosDriver {
         let is_fresh = continuation.is_none();
         let resume_state = match resolved_continuation {
             None => None,
-            Some(ResolvedToken::ClientV1(state)) => {
+            Some(ResolvedToken::Client(state)) => {
                 state.is_valid_for_operation(&operation)?;
+                if let Some(start) = state.change_feed_start() {
+                    operation = operation.with_change_feed_start(start.clone());
+                }
                 Some(state.into_root_node_state())
             }
             Some(ResolvedToken::ServerOpaque(server_token)) => {
@@ -4417,12 +4433,19 @@ impl CosmosDriver {
             }
         };
 
+        // Every leaf shares the checkpoint-restored operation. Per-range ETags
+        // are applied later through OperationOverrides.
+        let operation = Arc::new(operation);
+
         // 1. Trivial plan: anything that isn't a cross-partition query.
         //    The internal pipeline only supports projection and filtering over
         //    a sequential drain, with no support for ordering. Trivial
         //    operations (targeting a single logical partition) are sent directly
         //    to the gateway without query planning.
-        if operation.is_trivial() {
+        if operation.is_trivial()
+            && !(operation.operation_type() == crate::models::OperationType::Query
+                && crate::query::uses_ranked_search(operation.body()))
+        {
             let cache_only = self.uses_cache_only_topology(&operation, options).await;
             let mut topology = operation.container().cloned().map(|container| {
                 CachedTopologyProvider::new(
@@ -4518,6 +4541,19 @@ impl CosmosDriver {
             container_ref,
             self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
         );
+
+        if query_plan.hybrid_search_query_info.is_some() {
+            let pipeline = planner::build_hybrid_search(
+                &query_plan,
+                &mut topology,
+                &operation,
+                resume_state,
+                plan_options.full_text_score_scope,
+                plan_options.max_buffered_query_window,
+            )
+            .await?;
+            return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
+        }
 
         // Route streaming ORDER BY queries to the k-way merge instead of
         // the natural-order sequential drain.
@@ -4760,12 +4796,13 @@ mod tests {
     use url::Url;
 
     use crate::{
+        diagnostics::TransportKind,
         driver::CosmosDriverRuntimeBuilder,
         models::{AccountReference, CosmosResponseHeaders, ItemReference, SessionToken},
         options::{
             ContentResponseOnWrite, CorrelationId, DriverOptionsBuilder, OperationOptionsBuilder,
-            PartitionFailoverOptions, PriorityLevel, ThrottlingRetryOptionsBuilder,
-            ThroughputControlOptions, UserAgentSuffix, WorkloadId,
+            PartitionFailoverOptions, PriorityLevel, ServerCertificateValidation,
+            ThrottlingRetryOptionsBuilder, ThroughputControlOptions, UserAgentSuffix, WorkloadId,
         },
     };
 
@@ -5138,6 +5175,294 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn plan_operation_rejects_unsafe_item_name_on_point_operations() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        for operation in [
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+            CosmosOperation::delete_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+        ] {
+            let err = match Box::pin(driver.plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            ))
+            .await
+            {
+                Ok(_) => panic!("unsafe item name must be rejected before planning"),
+                Err(e) => e,
+            };
+            assert_eq!(err.status(), crate::error::status_codes::CLIENT_BAD_REQUEST);
+        }
+    }
+
+    #[tokio::test]
+    async fn plan_operation_rejects_unsafe_item_name_on_create_and_upsert() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        for operation in [
+            CosmosOperation::create_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+            CosmosOperation::upsert_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "item?query",
+            )),
+        ] {
+            let err = match Box::pin(driver.plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            ))
+            .await
+            {
+                Ok(_) => panic!("unsafe item name must be rejected before creation"),
+                Err(error) => error,
+            };
+            assert_eq!(err.status(), crate::error::status_codes::CLIENT_BAD_REQUEST);
+        }
+    }
+
+    #[tokio::test]
+    async fn plan_operation_rejects_unsafe_transactional_batch_item_names() {
+        // Native and other language SDKs submit this raw batch envelope directly
+        // to the driver, so validation must not depend on the typed Rust SDK.
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        for body in [
+            serde_json::json!([{
+                "operationType": "Create",
+                "resourceBody": {
+                    "id": "../other-container",
+                    "pk": "pk1"
+                }
+            }]),
+            serde_json::json!([{
+                "operationType": "Delete",
+                "id": "item?query"
+            }]),
+        ] {
+            let operation = CosmosOperation::batch(container.clone(), PartitionKey::from("pk1"))
+                .with_body(serde_json::to_vec(&body).unwrap());
+            let error = match Box::pin(driver.plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            ))
+            .await
+            {
+                Ok(_) => panic!("unsafe transactional batch item name must be rejected"),
+                Err(error) => error,
+            };
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn plan_operation_rejects_unsafe_database_and_container_names() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        let unsafe_database = epk_test_container_with_names(
+            r#"{"paths":["/pk"],"version":2}"#,
+            "../other-db",
+            "testcontainer",
+        );
+        let unsafe_container = epk_test_container_with_names(
+            r#"{"paths":["/pk"],"version":2}"#,
+            "testdb",
+            "test/container",
+        );
+
+        for operation in [
+            CosmosOperation::read_item(ItemReference::from_name(
+                &unsafe_database,
+                PartitionKey::from("pk1"),
+                "doc1",
+            )),
+            CosmosOperation::query_items(unsafe_container, Some(crate::models::FeedRange::full())),
+        ] {
+            let error = match Box::pin(driver.plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            ))
+            .await
+            {
+                Ok(_) => panic!("unsafe parent resource name must be rejected before planning"),
+                Err(error) => error,
+            };
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST
+            );
+        }
+    }
+
+    #[cfg(feature = "unstable_patch")]
+    #[tokio::test]
+    async fn patch_strategies_reject_unsafe_item_names() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        for strategy in [
+            crate::options::PatchStrategy::ClientSide,
+            crate::options::PatchStrategy::ServerSide,
+        ] {
+            let operation = CosmosOperation::patch_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../other-container",
+            ))
+            .with_body(
+                serde_json::to_vec(&crate::models::PatchInstructions::from(vec![
+                    crate::models::PatchOperation::increment("/count", 1),
+                ]))
+                .unwrap(),
+            );
+            let options = OperationOptionsBuilder::new()
+                .with_patch_strategy(strategy)
+                .build();
+
+            let error = driver
+                .execute_operation(operation, options)
+                .await
+                .expect_err("unsafe item name must be rejected for both PATCH strategies");
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST,
+                "{strategy:?}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn plan_operation_allows_unsafe_item_names_when_disabled() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver = CosmosDriver::new(
+            cosmos_runtime,
+            DriverOptions::builder(test_account())
+                .with_resource_name_validation(false)
+                .build(),
+        )
+        .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        for operation in [
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+            CosmosOperation::delete_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+            CosmosOperation::create_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+            CosmosOperation::upsert_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "item?query",
+            )),
+        ] {
+            let err = match Box::pin(driver.plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            ))
+            .await
+            {
+                Ok(_) => panic!("the uninitialized driver should fail after name validation"),
+                Err(error) => error,
+            };
+            assert_eq!(
+                err.status(),
+                crate::error::status_codes::CLIENT_DRIVER_NOT_INITIALIZED
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn plan_operation_allows_unsafe_transactional_batch_names_when_disabled() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver = CosmosDriver::new(
+            cosmos_runtime,
+            DriverOptions::builder(test_account())
+                .with_resource_name_validation(false)
+                .build(),
+        )
+        .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let operation = CosmosOperation::batch(container, PartitionKey::from("pk1")).with_body(
+            serde_json::to_vec(&serde_json::json!([{
+                "operationType": "Create",
+                "resourceBody": {
+                    "id": "../other-container",
+                    "pk": "pk1"
+                }
+            }]))
+            .unwrap(),
+        );
+
+        let error = match Box::pin(driver.plan_operation(
+            operation,
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        ))
+        .await
+        {
+            Ok(_) => panic!("the uninitialized driver should fail after name validation"),
+            Err(error) => error,
+        };
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::CLIENT_DRIVER_NOT_INITIALIZED
+        );
+    }
+
+    #[tokio::test]
     async fn plan_operation_starts_end_to_end_deadline_before_planning() {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let driver = CosmosDriver::new(runtime, DriverOptions::builder(test_account()).build())
@@ -5176,6 +5501,45 @@ mod tests {
             plan.take_initial_execution_deadline().is_none(),
             "the planning deadline must be consumed only once"
         );
+    }
+
+    #[tokio::test]
+    async fn change_feed_planning_rejects_invalid_partition_keys() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver =
+            CosmosDriver::new(runtime, DriverOptions::builder(test_account()).build()).unwrap();
+        driver.initialized.store(true, Ordering::Release);
+        for (definition, key, expected) in [
+            (
+                r#"{"paths":["/pk"],"version":2}"#,
+                PartitionKey::from(("a", "b")),
+                crate::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS,
+            ),
+            (
+                r#"{"paths":["/a","/b"],"kind":"Hash","version":2}"#,
+                PartitionKey::from("a"),
+                crate::error::status_codes::CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH,
+            ),
+            (
+                r#"{"paths":["/a","/b"],"kind":"MultiHash","version":2}"#,
+                PartitionKey::from(("a", "b", "c")),
+                crate::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS,
+            ),
+        ] {
+            let container = epk_test_container(definition);
+            let range = FeedRange::for_partition(key, container.partition_key_definition());
+            let error = driver
+                .plan_operation(
+                    CosmosOperation::change_feed(container, Some(range)),
+                    &OperationOptions::default(),
+                    None,
+                    &PlanOptions::default(),
+                )
+                .await
+                .err()
+                .expect("invalid change-feed key must fail before topology planning");
+            assert_eq!(error.status(), expected);
+        }
     }
 
     #[tokio::test]
@@ -5777,6 +6141,61 @@ mod tests {
             matches!(config.version_policy, HttpVersionPolicy::Http11Only)
                 && config.allow_invalid_cert
         }));
+    }
+
+    #[tokio::test]
+    async fn connectivity_probe_uses_emulator_certificate_policy() {
+        for policy in [
+            ServerCertificateValidation::Required,
+            ServerCertificateValidation::RequiredUnlessEmulator,
+        ] {
+            for endpoint in [
+                "https://localhost:8081/",
+                "https://test.documents.azure.com:443/",
+            ] {
+                let connection_pool = ConnectionPoolOptions::builder()
+                    .with_server_certificate_validation(policy)
+                    .with_is_http2_allowed(true)
+                    .with_gateway_v2_disabled(false)
+                    .build()
+                    .unwrap();
+                let factory = Arc::new(ScriptedFactory::new([]));
+                let runtime = CosmosDriverRuntimeBuilder::new()
+                    .with_connection_pool(connection_pool)
+                    .with_http_client_factory(factory.clone())
+                    .build()
+                    .await
+                    .unwrap();
+                let bootstrap_client_count = factory.configs().len();
+
+                let _driver = CosmosDriver::new(
+                    runtime,
+                    DriverOptions::builder(signed_test_account(endpoint)).build(),
+                )
+                .unwrap();
+
+                // Isolate the probe client from the runtime's bootstrap clients.
+                let configs = factory.configs();
+                let [probe_config] = &configs[bootstrap_client_count..] else {
+                    panic!("expected exactly one probe client for {policy:?}, {endpoint}");
+                };
+                assert_eq!(probe_config.transport_kind, Some(TransportKind::GatewayV2));
+                assert_eq!(probe_config.version_policy, HttpVersionPolicy::Http2Only);
+                if policy == ServerCertificateValidation::RequiredUnlessEmulator
+                    && endpoint == "https://localhost:8081/"
+                {
+                    assert!(
+                        probe_config.allow_invalid_cert,
+                        "emulator probe must honor {policy:?}"
+                    );
+                } else {
+                    assert!(
+                        !probe_config.allow_invalid_cert,
+                        "probe must validate certificates for {policy:?}, {endpoint}"
+                    );
+                }
+            }
+        }
     }
 
     #[tokio::test]
@@ -7637,16 +8056,38 @@ mod tests {
     }
 
     fn epk_test_container_with_rid(pk_json: &str, rid: &str) -> ContainerReference {
+        epk_test_container_with_names_and_rid(pk_json, "testdb", "testcontainer", rid)
+    }
+
+    fn epk_test_container_with_names(
+        pk_json: &str,
+        database_name: &str,
+        container_name: &str,
+    ) -> ContainerReference {
+        epk_test_container_with_names_and_rid(
+            pk_json,
+            database_name,
+            container_name,
+            "testcontainer_rid",
+        )
+    }
+
+    fn epk_test_container_with_names_and_rid(
+        pk_json: &str,
+        database_name: &str,
+        container_name: &str,
+        rid: &str,
+    ) -> ContainerReference {
         let container_props = crate::models::ContainerProperties {
-            id: "testcontainer".into(),
+            id: container_name.to_owned().into(),
             partition_key: serde_json::from_str(pk_json).unwrap(),
             system_properties: Default::default(),
         };
         ContainerReference::new(
             signed_test_account("https://test.documents.azure.com:443/"),
-            "testdb",
+            database_name.to_owned(),
             "testdb_rid",
-            "testcontainer",
+            container_name.to_owned(),
             rid.to_owned(),
             &container_props,
         )
