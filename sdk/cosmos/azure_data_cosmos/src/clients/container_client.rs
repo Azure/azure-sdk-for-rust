@@ -5,8 +5,8 @@ use crate::{
     clients::ClientContext,
     diagnostics::CosmosOperationContext,
     feed::{
-        ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator, ReadManyIterator,
-        ReadManySelection,
+        ChangeFeedPageIterator, FeedRange, FeedScope, ItemSelector, QueryItemIterator,
+        ReadManyIterator,
     },
     models::{BatchResponse, ChangeFeedItem, ItemResponse, TransactionalBatch},
     options::{
@@ -44,11 +44,11 @@ pub struct ContainerClient {
 }
 
 impl ContainerClient {
-    /// Reads selected items or logical partition scopes as unordered pages.
+    /// Reads selected items, logical partitions, or feed ranges as unordered pages.
     ///
     /// Duplicate selections are removed. Missing or filtered-out items are
     /// omitted. A filter only narrows the selection; use [`Self::query_items()`]
-    /// for container-wide queries. Both selection modes accept complete keys or
+    /// for general queries. Item and partition scopes accept complete keys or
     /// nonempty hierarchical prefixes. A prefix plus an id can return multiple
     /// items across logical partitions. Overlapping selections do not duplicate
     /// results. Item keys missing only a final `/id` component are completed from
@@ -57,17 +57,6 @@ impl ContainerClient {
     /// Queries consume RUs and may span multiple service requests. There is no
     /// cross-partition snapshot or durable resume. Use
     /// [`ReadManyIterator::collect_all()`] before iteration to aggregate results.
-    ///
-    /// # Request unit cost
-    ///
-    /// A point read of a roughly 1 KB item typically costs about 1 RU with Session
-    /// or Eventual consistency; this is a reference, not a per-item read-many price.
-    /// A partial partition key does not inherently reduce RU cost: it can cover
-    /// more physical partitions and matching items than a complete key.
-    /// Read-many targets relevant ranges and bounds query batches, but query
-    /// parsing and execution still incur cost. Item size, consistency, index
-    /// utilization, filtering, and fan-out affect the charge. Measure the total
-    /// with [`ReadManyResponse::request_charge()`](crate::feed::ReadManyResponse::request_charge).
     ///
     /// # Errors
     ///
@@ -79,19 +68,19 @@ impl ContainerClient {
     ///
     /// ```no_run
     /// # async fn example(container: azure_data_cosmos::clients::ContainerClient) -> azure_data_cosmos::Result<()> {
-    /// use azure_data_cosmos::{feed::{ReadManyFilter, ReadManySelection}, options::ReadManyOptions};
+    /// use azure_data_cosmos::feed::{ReadManyFilter, ItemScope, ItemSelector};
     /// let filter = "c.active = @active".parse::<ReadManyFilter>()?
     ///     .with_parameter("@active", true)?;
     /// let response = container.read_many::<serde_json::Value>(
-    ///     ReadManySelection::Partitions(vec!["tenant-1".into()]),
-    ///     Some(ReadManyOptions::default().with_filter(filter)),
+    ///     ItemSelector::from(ItemScope::Partitions(vec!["tenant-1".into()])).with_filter(filter),
+    ///     None,
     /// ).await?.collect_all().await?;
     /// println!("Found {} items", response.items().len());
     /// # Ok(()) }
     /// ```
     pub async fn read_many<T: DeserializeOwned + Send + 'static>(
         &self,
-        selection: ReadManySelection,
+        selection: impl Into<ItemSelector>,
         options: Option<ReadManyOptions>,
     ) -> crate::Result<ReadManyIterator<T>> {
         let options = options.unwrap_or_default();
@@ -102,17 +91,7 @@ impl ContainerClient {
         .to_plan_options();
         let (operation_options, _) =
             resolve_binary_encoding(options.operation, &self.context.binary_encoding);
-        let timeout = self
-            .context
-            .driver
-            .operation_options_view(&operation_options)
-            .end_to_end_latency_policy()
-            .map(|policy| policy.timeout());
-        let mut operation = CosmosOperation::read_many(
-            self.container_ref.clone(),
-            selection.into_driver(),
-            options.filter.map(|filter| filter.0),
-        );
+        let mut operation = CosmosOperation::read_many(self.container_ref.clone(), selection);
         if let Some(token) = options.session_token {
             operation = operation.with_session_token(token);
         }
@@ -133,7 +112,7 @@ impl ContainerClient {
             self.operation_context("read_many"),
         )
         .into_pages();
-        Ok(ReadManyIterator::new(pages, timeout))
+        Ok(ReadManyIterator::new(pages))
     }
 
     /// Returns the resolved [`ContainerReference`] for the container this client is attached to.

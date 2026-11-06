@@ -15,7 +15,7 @@ use crate::{
         CosmosOperation, CosmosResponse, CosmosStatus, FeedRange, ItemReference, PartitionKey,
         PartitionKeyDefinition, PartitionKeyKind, ResponseBody,
     },
-    read_many::{invalid, ReadManyRequest, ReadManySelection},
+    read_many::{invalid, ItemScope, ReadManyRequest},
 };
 
 use super::{
@@ -27,7 +27,11 @@ use super::{
 const MAX_BATCH_BYTES: usize = 256 * 1024;
 const MAX_BATCH_SELECTIONS: usize = 64;
 
-type Identity = (PartitionKey, Option<String>);
+#[derive(Clone, azure_core::fmt::SafeDebug, PartialEq, Eq)]
+struct Identity {
+    partition_key: PartitionKey,
+    item_id: Option<String>,
+}
 
 pub(crate) async fn build(
     operation: Arc<CosmosOperation>,
@@ -38,7 +42,10 @@ pub(crate) async fn build(
         .container()
         .ok_or_else(|| invalid("read-many requires a container"))?;
     let definition = container.partition_key_definition();
-    let identities = normalize(&request.selection, definition)?;
+    if let ItemScope::FeedRanges(scopes) = &request.selection {
+        return build_feed_ranges(operation.clone(), request, scopes, topology).await;
+    }
+    let identities = normalize(request.selection.clone(), definition)?;
     let filter = request
         .filter
         .as_ref()
@@ -58,12 +65,12 @@ pub(crate) async fn build(
         .await?;
     let mut groups: BTreeMap<usize, Vec<Identity>> = BTreeMap::new();
     for identity in identities {
-        let epk = FeedRange::for_partition(identity.0.clone(), definition);
+        let epk = FeedRange::for_partition(identity.partition_key.clone(), definition);
         let matching = ranges
             .iter()
             .enumerate()
             .filter(|(_, range)| {
-                if identity.0.len() == definition.paths().len() {
+                if identity.partition_key.len() == definition.paths().len() {
                     range.range.min_inclusive() <= epk.min_inclusive()
                         && epk.min_inclusive() < range.range.max_exclusive()
                 } else {
@@ -76,7 +83,7 @@ pub(crate) async fn build(
                 "read-many partition key is not covered by container topology",
             ));
         }
-        if identity.0.len() < definition.paths().len() {
+        if identity.partition_key.len() < definition.paths().len() {
             let covered = matching
                 .iter()
                 .map(|(_, range)| {
@@ -95,11 +102,15 @@ pub(crate) async fn build(
     for (index, identities) in groups {
         let range = &ranges[index];
         if identities.len() == 1
-            && identities[0].0.len() == definition.paths().len()
+            && identities[0].partition_key.len() == definition.paths().len()
             && filter.is_none()
             && !container.is_by_rid()
         {
-            if let (pk, Some(id)) = &identities[0] {
+            if let Identity {
+                partition_key: pk,
+                item_id: Some(id),
+            } = &identities[0]
+            {
                 let item = ItemReference::from_name(container, pk.clone(), id.clone());
                 let mut read = CosmosOperation::read_item(item)
                     .with_request_headers(operation.request_headers().clone());
@@ -159,20 +170,32 @@ pub(crate) async fn build(
 }
 
 fn normalize(
-    selection: &ReadManySelection,
+    selection: ItemScope,
     definition: &PartitionKeyDefinition,
 ) -> crate::Result<Vec<Identity>> {
-    let identities = match selection {
-        ReadManySelection::Items(items) => items
-            .iter()
-            .map(|(pk, id)| (pk.clone(), Some(id.clone())))
+    let mut identities = match selection {
+        ItemScope::Items(items) => items
+            .into_iter()
+            .map(|(partition_key, id)| Identity {
+                partition_key,
+                item_id: Some(id),
+            })
             .collect::<Vec<_>>(),
-        ReadManySelection::Partitions(keys) => keys.iter().cloned().map(|pk| (pk, None)).collect(),
+        ItemScope::Partitions(keys) => keys
+            .into_iter()
+            .map(|partition_key| Identity {
+                partition_key,
+                item_id: None,
+            })
+            .collect(),
+        ItemScope::FeedRanges(_) => return Err(invalid("feed ranges require range planning")),
     };
-    let mut seen = HashSet::new();
-    let mut unique = Vec::new();
-    for (mut pk, id) in identities {
-        if let Some(id) = &id {
+    for Identity {
+        partition_key: pk,
+        item_id: id,
+    } in &mut identities
+    {
+        if let Some(id) = id {
             if id.is_empty() {
                 return Err(invalid("read-many item ids must not be empty"));
             }
@@ -185,7 +208,7 @@ fn normalize(
             {
                 let mut values = pk.values().to_vec();
                 values.push(id.clone().into());
-                pk = values.try_into()?;
+                *pk = values.try_into()?;
             }
         }
         if pk.is_empty()
@@ -197,29 +220,154 @@ fn normalize(
                 "read-many requires a complete partition key or a nonempty hierarchical prefix",
             ));
         }
-        for value in pk.values() {
-            value.query_value()?;
-        }
-        if seen.insert((pk.clone(), id.clone())) {
-            unique.push((pk, id));
+        if pk.values().iter().any(|value| value.is_infinity()) {
+            return Err(invalid("invalid partition key sentinel"));
         }
     }
-    // Remove descendants before batching so overlapping selections cannot return a row twice.
-    unique
+    // Keep borrowed lookup keys only until all overlap decisions are complete.
+    let keep = {
+        let mut seen = HashSet::new();
+        let first = identities
+            .iter()
+            .map(|identity| {
+                seen.insert((identity.partition_key.values(), identity.item_id.as_deref()))
+            })
+            .collect::<Vec<_>>();
+        identities
+            .iter()
+            .zip(first)
+            .map(|(identity, first)| {
+                first
+                    && !(1..identity.partition_key.len()).any(|length| {
+                        seen.contains(&(
+                            &identity.partition_key.values()[..length],
+                            identity.item_id.as_deref(),
+                        ))
+                    })
+            })
+            .collect::<Vec<_>>()
+    };
+    Ok(identities
         .into_iter()
-        .filter_map(|(pk, id)| {
-            for length in 1..pk.len() {
-                let prefix = match PartitionKey::try_from(pk.values()[..length].to_vec()) {
-                    Ok(prefix) => prefix,
-                    Err(error) => return Some(Err(error)),
-                };
-                if seen.contains(&(prefix, id.clone())) {
-                    return None;
-                }
+        .zip(keep)
+        .filter_map(|(identity, keep)| keep.then_some(identity))
+        .collect())
+}
+
+fn normalize_feed_ranges(
+    scopes: &[FeedRange],
+    definition: &PartitionKeyDefinition,
+) -> crate::Result<Vec<FeedRange>> {
+    let width = crate::models::effective_partition_key::normalized_epk_len(definition);
+    let mut scopes = scopes
+        .iter()
+        .map(|scope| {
+            let scope = if let Some(key) = scope.partition_key() {
+                normalize(ItemScope::Partitions(vec![key.clone()]), definition)?;
+                FeedRange::for_partition(key.clone(), definition)
+            } else {
+                scope.clone()
+            };
+            let min = scope.min_inclusive().clone();
+            let max = if &min == scope.max_exclusive() {
+                // Transport EPK filters use half-open intervals, including point selections.
+                width.map_or_else(|| min.successor(), |width| min.normalized_successor(width))
+            } else {
+                scope.max_exclusive().clone()
+            };
+            if min >= max || max > crate::models::EffectivePartitionKey::MAX {
+                return Err(invalid(
+                    "read-many feed range is outside the partition key space",
+                ));
             }
-            Some(Ok((pk, id)))
+            FeedRange::new(min, max)
         })
-        .collect()
+        .collect::<crate::Result<Vec<_>>>()?;
+    scopes.sort_by(|left, right| {
+        left.min_inclusive()
+            .cmp(right.min_inclusive())
+            .then_with(|| right.max_exclusive().cmp(left.max_exclusive()))
+    });
+    let mut merged: Vec<FeedRange> = Vec::new();
+    for scope in scopes {
+        if let Some(last) = merged.last_mut() {
+            if scope.min_inclusive() <= last.max_exclusive() {
+                *last = FeedRange::new(
+                    last.min_inclusive().clone(),
+                    last.max_exclusive().max(scope.max_exclusive()).clone(),
+                )?;
+                continue;
+            }
+        }
+        merged.push(scope);
+    }
+    Ok(merged)
+}
+
+async fn build_feed_ranges(
+    operation: Arc<CosmosOperation>,
+    request: &ReadManyRequest,
+    scopes: &[FeedRange],
+    topology: &mut dyn TopologyProvider,
+) -> crate::Result<Pipeline> {
+    let filter = request
+        .filter
+        .as_ref()
+        .map(|f| f.query_predicate())
+        .transpose()?;
+    let parameters = request.filter.as_ref().map(|f| &f.parameters);
+    let query = match filter {
+        Some(filter) => format!("SELECT * FROM c WHERE ({filter})"),
+        None => "SELECT * FROM c".to_owned(),
+    };
+    let parameters = parameters
+        .into_iter()
+        .flat_map(|p| p.iter())
+        .map(|(name, value)| json!({"name": name, "value": value}))
+        .collect::<Vec<_>>();
+    let body = serde_json::to_vec(&json!({"query":query,"parameters":parameters}))?;
+    if body.len() > MAX_BATCH_BYTES {
+        return Err(invalid("read-many filter exceeds the query batch size"));
+    }
+    let definition = operation
+        .container()
+        .ok_or_else(|| invalid("read-many requires a container"))?
+        .partition_key_definition();
+    let scopes = normalize_feed_ranges(scopes, definition)?;
+    let query_operation = Arc::new(operation.as_ref().clone().with_body(body));
+    let mut children: Vec<Box<dyn PipelineNode>> = Vec::new();
+    let mut physical_ids = HashSet::new();
+    for scope in scopes {
+        let ranges = topology
+            .resolve_ranges(&scope, PartitionRoutingRefresh::UseCached)
+            .await?;
+        let mut covered = Vec::new();
+        for range in ranges {
+            let clipped = super::intersect_feed_ranges(&scope, &range.range);
+            let Some(clipped) = clipped else { continue };
+            covered.push(clipped.clone());
+            physical_ids.insert(range.partition_key_range_id.clone());
+            let target = RequestTarget::effective_partition_key_range_with_parents(
+                clipped,
+                range.partition_key_range_id,
+                range.parents,
+                range.range,
+            );
+            children.push(Box::new(Request::new(
+                Arc::clone(&query_operation),
+                target,
+                None,
+            )));
+        }
+        covered.sort_by(|a, b| a.min_inclusive().cmp(b.min_inclusive()));
+        super::validate_exact_coverage(&scope, covered.iter())?;
+    }
+    Ok(Pipeline::new(Box::new(ReadManyDrain {
+        inner: SequentialDrain::new(children),
+        width: physical_ids.len(),
+        emit_binary: operation.emits_binary_payload(),
+        failure: None,
+    })))
 }
 
 fn selectors(definition: &PartitionKeyDefinition) -> crate::Result<Vec<String>> {
@@ -263,7 +411,11 @@ fn query_body(
         name
     };
     let mut predicates = Vec::new();
-    for (key, id) in identities {
+    for Identity {
+        partition_key: key,
+        item_id: id,
+    } in identities
+    {
         let mut terms = Vec::new();
         if let Some(id) = id {
             terms.push(format!("c.id = {}", bind(Value::String(id.clone()))));

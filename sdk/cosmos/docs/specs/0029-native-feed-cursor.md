@@ -55,7 +55,7 @@ batches contain at most 64 selections and 256 KiB of serialized query input.
 Both native callers and the Rust SDK page over the same retained plan. Results
 are unordered, missing items are omitted, and there is no cross-partition
 snapshot guarantee. The SDK's explicit collection helper buffers all items and
-aggregates charge and diagnostics under a shared deadline. Collection is only
+aggregates charge and diagnostics with normal per-page timeouts. Collection is only
 available before the iterator is polled.
 
 Read-many never emits durable continuation tokens. Checkpoint failure is

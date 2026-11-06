@@ -554,12 +554,11 @@ mod tests {
     }
 
     #[test]
-    fn replan_preserves_pinned_collection_deadline_for_later_pages() {
+    fn replan_preserves_pinned_operation_deadline_for_later_pages() {
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
-        let original = plan().with_execution_deadline(deadline);
         let mut replacement = plan();
         replacement.set_initial_execution_deadline(deadline + std::time::Duration::from_secs(5));
-        replacement.reset_replan_deadlines(original.operation.absolute_deadline());
+        replacement.reset_replan_deadlines(Some(deadline));
         for _ in 0..3 {
             assert_eq!(replacement.take_initial_execution_deadline(), None);
             assert_eq!(replacement.operation.absolute_deadline(), Some(deadline));

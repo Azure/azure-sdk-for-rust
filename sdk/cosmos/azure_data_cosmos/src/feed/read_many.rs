@@ -6,7 +6,6 @@ use std::{
     str::FromStr,
     sync::Arc,
     task::{Context, Poll},
-    time::Duration,
 };
 
 use azure_core::fmt::SafeDebug;
@@ -17,32 +16,9 @@ use serde::{de::DeserializeOwned, Serialize};
 use crate::{
     diagnostics::DiagnosticsContext,
     feed::{QueryFeedPage, QueryPageIterator},
-    PartitionKey,
 };
 
-/// Items or logical partition scopes selected for a read-many operation.
-///
-/// Keys may be complete or nonempty hierarchical prefixes. Empty selections read
-/// nothing; duplicate and overlapping selections do not duplicate returned items.
-#[derive(Clone, SafeDebug)]
-#[non_exhaustive]
-pub enum ReadManySelection {
-    /// `(partition key or hierarchical prefix, item id)` pairs.
-    ///
-    /// A prefix plus an id returns every matching item across its logical partitions.
-    Items(Vec<(PartitionKey, String)>),
-    /// Complete logical partition keys or nonempty hierarchical prefixes.
-    Partitions(Vec<PartitionKey>),
-}
-
-impl ReadManySelection {
-    pub(crate) fn into_driver(self) -> driver::ReadManySelection {
-        match self {
-            Self::Items(items) => driver::ReadManySelection::Items(items),
-            Self::Partitions(keys) => driver::ReadManySelection::Partitions(keys),
-        }
-    }
-}
+pub use driver::{ItemScope, ItemSelector};
 
 /// A parameterized SQL predicate that narrows a read-many selection.
 ///
@@ -60,6 +36,12 @@ impl ReadManySelection {
 /// ```
 #[derive(Clone, SafeDebug)]
 pub struct ReadManyFilter(pub(crate) driver::ReadManyFilter);
+
+impl From<ReadManyFilter> for driver::ReadManyFilter {
+    fn from(filter: ReadManyFilter) -> Self {
+        filter.0
+    }
+}
 
 impl FromStr for ReadManyFilter {
     type Err = crate::CosmosError;
@@ -94,23 +76,21 @@ pub struct ReadManyIterator<T: Send> {
     #[pin]
     pages: QueryPageIterator<T>,
     started: bool,
-    timeout: Option<Duration>,
 }
 
 impl<T: DeserializeOwned + Send + 'static> ReadManyIterator<T> {
-    pub(crate) fn new(pages: QueryPageIterator<T>, timeout: Option<Duration>) -> Self {
+    pub(crate) fn new(pages: QueryPageIterator<T>) -> Self {
         Self {
             pages,
             started: false,
-            timeout,
         }
     }
 
     /// Collects all pages into one response with total charge and diagnostics.
     ///
     /// Memory usage grows with all returned items. This consumes the iterator;
-    /// call it before polling any pages. The configured operation timeout
-    /// bounds the whole collection, rather than each page independently.
+    /// call it before polling any pages. Operation timeouts apply per page.
+    /// Wrap this future in a timeout to bound the entire collection.
     ///
     /// # Errors
     ///
@@ -124,10 +104,6 @@ impl<T: DeserializeOwned + Send + 'static> ReadManyIterator<T> {
                 ))
                 .with_message("collect_all must be called before polling read-many")
                 .build());
-        }
-        if let Some(timeout) = self.timeout {
-            self.pages
-                .set_collection_deadline(std::time::Instant::now() + timeout)?;
         }
         let mut items = Vec::new();
         let mut diagnostics: Option<Arc<DiagnosticsContext>> = None;

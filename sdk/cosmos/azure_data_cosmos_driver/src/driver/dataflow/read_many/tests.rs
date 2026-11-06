@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use super::{
-    build, normalize, query_body, selectors, ReadManyRequest, ReadManySelection, MAX_BATCH_BYTES,
+    build, normalize, query_body, selectors, ItemScope, ReadManyRequest, MAX_BATCH_BYTES,
     MAX_BATCH_SELECTIONS,
 };
 use crate::{
@@ -15,7 +15,7 @@ use crate::{
             gone_error, response, response_with_charge, response_with_continuation,
             MockRequestExecutor, MockTopologyProvider, NoopRequestExecutor, NoopTopologyProvider,
         },
-        PipelineContext, ResolvedRange,
+        PartitionRoutingRefresh, PipelineContext, RequestExecutor, RequestTarget, ResolvedRange,
     },
     models::{
         AccountReference, ActivityId, ContainerProperties, ContainerReference, CosmosOperation,
@@ -25,8 +25,21 @@ use crate::{
     options::DiagnosticsOptions,
 };
 use azure_core::http::StatusCode;
+use futures::future::BoxFuture;
 use serde_json::{json, Value};
 use std::sync::Arc;
+
+fn read_many_operation(
+    container: ContainerReference,
+    scope: ItemScope,
+    filter: Option<crate::read_many::ReadManyFilter>,
+) -> CosmosOperation {
+    let mut selector = crate::read_many::ItemSelector::from(scope);
+    if let Some(filter) = filter {
+        selector = selector.with_filter(filter);
+    }
+    CosmosOperation::read_many(container, selector)
+}
 
 fn container() -> ContainerReference {
     ContainerReference::new(
@@ -54,6 +67,128 @@ fn full_range() -> ResolvedRange {
     }
 }
 
+#[derive(Default)]
+struct OperationAddressRecorder {
+    addresses: Vec<(usize, usize)>,
+    targets: Vec<RequestTarget>,
+}
+
+impl RequestExecutor for OperationAddressRecorder {
+    fn execute_request<'a>(
+        &'a mut self,
+        operation: &'a CosmosOperation,
+        target: RequestTarget,
+        _refresh: PartitionRoutingRefresh,
+        _continuation: Option<String>,
+    ) -> BoxFuture<'a, crate::Result<CosmosResponse>> {
+        self.addresses.push((
+            std::ptr::from_ref(operation) as usize,
+            operation.body().unwrap().as_ptr() as usize,
+        ));
+        self.targets.push(target);
+        Box::pin(async { Ok(response(br#"{"Documents":[]}"#)) })
+    }
+}
+
+#[tokio::test]
+async fn disjoint_feed_ranges_share_query_operation_and_body() {
+    let scopes = [("10", "20"), ("30", "40")].map(|(min, max)| {
+        FeedRange::new(min.try_into().unwrap(), max.try_into().unwrap()).unwrap()
+    });
+    let selector = crate::read_many::ItemSelector::from(ItemScope::FeedRanges(scopes.to_vec()))
+        .with_filter(
+            "c.id = @id"
+                .parse::<crate::read_many::ReadManyFilter>()
+                .unwrap()
+                .with_parameter("@id", json!("x".repeat(200 * 1024)))
+                .unwrap(),
+        );
+    let operation = Arc::new(CosmosOperation::read_many(container(), selector));
+    let mut topology =
+        MockTopologyProvider::new(vec![Ok(vec![full_range()]), Ok(vec![full_range()])]);
+    let mut pipeline = build(
+        operation.clone(),
+        operation.read_many.as_ref().unwrap(),
+        &mut topology,
+    )
+    .await
+    .unwrap();
+    assert_eq!(pipeline.fan_out_width(), 1);
+    let mut executor = OperationAddressRecorder::default();
+    let mut context = PipelineContext::new(&mut executor, None);
+    while pipeline.next_page(&mut context).await.unwrap().is_some() {}
+    assert_eq!(executor.addresses.len(), 2);
+    assert_eq!(executor.addresses[0], executor.addresses[1]);
+    for (target, scope) in executor.targets.iter().zip(scopes) {
+        let RequestTarget::EffectivePartitionKeyRange { range, .. } = target else {
+            panic!("expected an EPK range target");
+        };
+        assert_eq!(range.as_ref(), Some(&scope));
+    }
+}
+
+#[test]
+fn feed_range_union_retains_exclusive_upper_boundary_points() {
+    let definition = PartitionKeyDefinition::new(vec!["/pk".into()]);
+    let range = |min: &str, max: &str| {
+        FeedRange::new(min.try_into().unwrap(), max.try_into().unwrap()).unwrap()
+    };
+    assert_eq!(
+        super::normalize_feed_ranges(
+            &[
+                range("10", "20"),
+                range("15", "30"),
+                range("30", "30"),
+                range("10", "10"),
+                range("15", "20"),
+            ],
+            &definition
+        )
+        .unwrap(),
+        vec![range("10", "30000000000000000000000000000001")]
+    );
+    assert_eq!(
+        super::normalize_feed_ranges(&[range("10", "20"), range("20", "30")], &definition).unwrap(),
+        vec![range("10", "30")]
+    );
+}
+
+#[tokio::test]
+async fn feed_range_planning_rejects_topology_gaps_and_oversized_filters() {
+    let operation = Arc::new(CosmosOperation::read_many(
+        container(),
+        ItemScope::FeedRanges(vec![FeedRange::full()]),
+    ));
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![ResolvedRange {
+        range: FeedRange::new("10".try_into().unwrap(), "20".try_into().unwrap()).unwrap(),
+        ..full_range()
+    }])]);
+    assert!(build(
+        operation.clone(),
+        operation.read_many.as_ref().unwrap(),
+        &mut topology
+    )
+    .await
+    .is_err());
+    let selector =
+        crate::read_many::ItemSelector::from(ItemScope::FeedRanges(vec![FeedRange::full()]))
+            .with_filter(
+                "c.id = @id"
+                    .parse::<crate::read_many::ReadManyFilter>()
+                    .unwrap()
+                    .with_parameter("@id", json!("x".repeat(MAX_BATCH_BYTES)))
+                    .unwrap(),
+            );
+    let operation = Arc::new(CosmosOperation::read_many(container(), selector));
+    assert!(build(
+        operation.clone(),
+        operation.read_many.as_ref().unwrap(),
+        &mut NoopTopologyProvider
+    )
+    .await
+    .is_err());
+}
+
 #[test]
 fn prefixes_normalize_per_id_and_reject_invalid_component_counts() {
     let definition: PartitionKeyDefinition = serde_json::from_value(json!({
@@ -66,34 +201,96 @@ fn prefixes_normalize_per_id_and_reject_invalid_component_counts() {
         (("a", "west").into(), "one".to_owned()),
         (("a", "west").into(), "two".to_owned()),
     ];
-    let actual = normalize(&ReadManySelection::Items(selections.to_vec()), &definition).unwrap();
+    let actual = normalize(ItemScope::Items(selections.to_vec()), &definition).unwrap();
     assert_eq!(
         actual,
         vec![
-            ("a".into(), Some("one".into())),
-            (("a", "west").into(), Some("two".into()))
+            super::Identity {
+                partition_key: "a".into(),
+                item_id: Some("one".into())
+            },
+            super::Identity {
+                partition_key: ("a", "west").into(),
+                item_id: Some("two".into())
+            }
         ]
     );
     let keys = selections.into_iter().map(|(key, _)| key).collect();
     assert_eq!(
-        normalize(&ReadManySelection::Partitions(keys), &definition).unwrap(),
-        vec![("a".into(), None)]
+        normalize(ItemScope::Partitions(keys), &definition).unwrap(),
+        vec![super::Identity {
+            partition_key: "a".into(),
+            item_id: None
+        }]
     );
     for selection in [
-        ReadManySelection::Items(vec![(
+        ItemScope::Items(vec![(
             Vec::<PartitionKeyValue>::new().try_into().unwrap(),
             "one".into(),
         )]),
-        ReadManySelection::Partitions(vec![Vec::<PartitionKeyValue>::new().try_into().unwrap()]),
+        ItemScope::Partitions(vec![Vec::<PartitionKeyValue>::new().try_into().unwrap()]),
     ] {
-        assert!(normalize(&selection, &definition).is_err());
+        assert!(normalize(selection, &definition).is_err());
     }
     let hash = PartitionKeyDefinition::new(vec!["/pk".into()]);
-    assert!(normalize(
-        &ReadManySelection::Partitions(vec![("a", "b").into()]),
-        &hash
+    assert!(normalize(ItemScope::Partitions(vec![("a", "b").into()]), &hash).is_err());
+}
+
+#[test]
+fn normalization_rejects_infinity_in_items_and_partitions() {
+    let definition = PartitionKeyDefinition::new(vec!["/pk".into()]);
+    for selection in [
+        ItemScope::Items(vec![(
+            vec![PartitionKeyValue::INFINITY].try_into().unwrap(),
+            "item".into(),
+        )]),
+        ItemScope::Partitions(vec![vec![PartitionKeyValue::INFINITY].try_into().unwrap()]),
+    ] {
+        let error = normalize(selection, &definition).unwrap_err();
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::CLIENT_BAD_REQUEST
+        );
+    }
+}
+
+#[test]
+fn normalization_preserves_order_and_moves_surviving_owned_ids() {
+    let definition: PartitionKeyDefinition = serde_json::from_value(json!({
+        "paths":["/tenant","/region"],"kind":"MultiHash","version":2
+    }))
+    .unwrap();
+    let retained_id = String::from("retained-owned-id");
+    let retained_ptr = retained_id.as_ptr();
+    let actual = normalize(
+        ItemScope::Items(vec![
+            (("a", "west").into(), "covered".into()),
+            ("b".into(), retained_id),
+            ("a".into(), "covered".into()),
+            ("b".into(), "retained-owned-id".into()),
+            (("a", "west").into(), "different-id".into()),
+        ]),
+        &definition,
     )
-    .is_err());
+    .unwrap();
+    assert_eq!(
+        actual,
+        vec![
+            super::Identity {
+                partition_key: "b".into(),
+                item_id: Some("retained-owned-id".into())
+            },
+            super::Identity {
+                partition_key: "a".into(),
+                item_id: Some("covered".into())
+            },
+            super::Identity {
+                partition_key: ("a", "west").into(),
+                item_id: Some("different-id".into())
+            },
+        ]
+    );
+    assert_eq!(actual[0].item_id.as_ref().unwrap().as_ptr(), retained_ptr);
 }
 
 #[tokio::test]
@@ -129,9 +326,9 @@ async fn prefix_routes_to_all_intersecting_ranges_and_rejects_gaps() {
         parents: vec![],
         range: FeedRange::new(boundary, "FF".try_into().unwrap()).unwrap(),
     };
-    let operation = Arc::new(CosmosOperation::read_many(
+    let operation = Arc::new(read_many_operation(
         container,
-        ReadManySelection::Items(vec![("a".into(), "shared".into())]),
+        ItemScope::Items(vec![("a".into(), "shared".into())]),
         None,
     ));
     let mut topology = MockTopologyProvider::new(vec![Ok(vec![left.clone(), right])]);
@@ -168,9 +365,9 @@ async fn prefix_routes_to_all_intersecting_ranges_and_rejects_gaps() {
 #[tokio::test]
 async fn rid_addressed_singletons_use_queries_with_or_without_filters() {
     for filter in [None, Some("true".parse().unwrap())] {
-        let operation = Arc::new(CosmosOperation::read_many(
+        let operation = Arc::new(read_many_operation(
             container().into_rid_addressed(),
-            ReadManySelection::Items(vec![("pk".into(), "item".into())]),
+            ItemScope::Items(vec![("pk".into(), "item".into())]),
             filter,
         ));
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![full_range()])]);
@@ -219,9 +416,9 @@ async fn id_partition_singleton_keeps_point_read_optimization() {
             system_properties: Default::default(),
         },
     );
-    let operation = Arc::new(CosmosOperation::read_many(
+    let operation = Arc::new(read_many_operation(
         container,
-        ReadManySelection::Items(vec![("item".into(), "item".into())]),
+        ItemScope::Items(vec![("item".into(), "item".into())]),
         None,
     ));
     let mut topology = MockTopologyProvider::new(vec![Ok(vec![full_range()])]);
@@ -248,9 +445,9 @@ async fn batches_queries_instead_of_issuing_point_reads() {
     let items = (0..MAX_BATCH_SELECTIONS + 1)
         .map(|i| ("pk".into(), format!("d{i}")))
         .collect();
-    let operation = Arc::new(CosmosOperation::read_many(
+    let operation = Arc::new(read_many_operation(
         container(),
-        ReadManySelection::Items(items),
+        ItemScope::Items(items),
         None,
     ));
     let mut topology = MockTopologyProvider::new(vec![Ok(vec![full_range()])]);
@@ -281,7 +478,7 @@ async fn batches_queries_instead_of_issuing_point_reads() {
 #[tokio::test]
 async fn serialized_query_byte_limit_is_inclusive() {
     for size in [MAX_BATCH_BYTES - 1, MAX_BATCH_BYTES, MAX_BATCH_BYTES + 1] {
-        let selection = ReadManySelection::Partitions(vec!["pk".into()]);
+        let selection = ItemScope::Partitions(vec!["pk".into()]);
         let filter = "c.payload = @payload"
             .parse::<crate::read_many::ReadManyFilter>()
             .unwrap()
@@ -292,7 +489,7 @@ async fn serialized_query_byte_limit_is_inclusive() {
             filter: Some(filter),
         };
         let definition = container().partition_key_definition().clone();
-        let identities = normalize(&selection, &definition).unwrap();
+        let identities = normalize(selection.clone(), &definition).unwrap();
         let selectors = selectors(&definition).unwrap();
         let predicate = request.filter.as_ref().unwrap().query_predicate().unwrap();
         let overhead = query_body(&identities, &selectors, &request, Some(&predicate))
@@ -310,11 +507,7 @@ async fn serialized_query_byte_limit_is_inclusive() {
                 .len(),
             size
         );
-        let operation = Arc::new(CosmosOperation::read_many(
-            container(),
-            selection,
-            request.filter,
-        ));
+        let operation = Arc::new(read_many_operation(container(), selection, request.filter));
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![full_range()])]);
         let planned = build(
             operation.clone(),
@@ -350,9 +543,9 @@ async fn byte_split_preserves_every_identity_once_across_batches() {
         .map(|id| ("pk".into(), id.clone()))
         .collect::<Vec<_>>();
     items.push(items[0].clone());
-    let operation = Arc::new(CosmosOperation::read_many(
+    let operation = Arc::new(read_many_operation(
         container(),
-        ReadManySelection::Items(items),
+        ItemScope::Items(items),
         None,
     ));
     let mut topology = MockTopologyProvider::new(vec![Ok(vec![full_range()])]);
@@ -387,9 +580,9 @@ async fn byte_split_preserves_every_identity_once_across_batches() {
 
 #[tokio::test]
 async fn oversized_individual_identity_fails_instead_of_being_dropped() {
-    let operation = Arc::new(CosmosOperation::read_many(
+    let operation = Arc::new(read_many_operation(
         container(),
-        ReadManySelection::Items(vec![
+        ItemScope::Items(vec![
             ("pk".into(), "x".repeat(MAX_BATCH_BYTES)),
             ("pk".into(), "small".into()),
         ]),
@@ -413,9 +606,9 @@ async fn oversized_individual_identity_fails_instead_of_being_dropped() {
 
 #[tokio::test]
 async fn empty_selection_never_reads_metadata_or_items() {
-    let operation = Arc::new(CosmosOperation::read_many(
+    let operation = Arc::new(read_many_operation(
         container(),
-        ReadManySelection::Partitions(Vec::new()),
+        ItemScope::Partitions(Vec::new()),
         None,
     ));
     let mut pipeline = build(
@@ -435,10 +628,10 @@ async fn empty_selection_never_reads_metadata_or_items() {
 fn query_matches_full_identity_and_undefined_not_null() {
     let definition = PartitionKeyDefinition::new(vec!["/id".into()]);
     let request = ReadManyRequest {
-        selection: ReadManySelection::Items(vec![("wrong".into(), "id".into())]),
+        selection: ItemScope::Items(vec![("wrong".into(), "id".into())]),
         filter: None,
     };
-    let identities = normalize(&request.selection, &definition).unwrap();
+    let identities = normalize(request.selection.clone(), &definition).unwrap();
     let body: Value = serde_json::from_slice(
         &query_body(
             &identities,
@@ -458,7 +651,10 @@ fn query_matches_full_identity_and_undefined_not_null() {
         json!([{"name":"@__read_many_0","value":"id"},{"name":"@__read_many_1","value":"wrong"}])
     );
     let definition = PartitionKeyDefinition::new(vec!["/\"nested/name\"/key".into()]);
-    let identities = vec![(PartitionKeyValue::UNDEFINED.into(), None)];
+    let identities = vec![super::Identity {
+        partition_key: PartitionKeyValue::UNDEFINED.into(),
+        item_id: None,
+    }];
     let body: Value = serde_json::from_slice(
         &query_body(
             &identities,
@@ -477,9 +673,9 @@ fn query_matches_full_identity_and_undefined_not_null() {
 
 #[tokio::test]
 async fn split_replacements_preserve_predicate_and_continuation() {
-    let operation = Arc::new(CosmosOperation::read_many(
+    let operation = Arc::new(read_many_operation(
         container(),
-        ReadManySelection::Partitions(vec!["one".into()]),
+        ItemScope::Partitions(vec!["one".into()]),
         Some("c.rank > 0".parse().unwrap()),
     ));
     let child = |id: &str, min: &str, max: &str| ResolvedRange {
@@ -532,9 +728,9 @@ async fn split_replacements_preserve_predicate_and_continuation() {
 #[tokio::test]
 async fn missing_item_charge_is_preserved_but_session_failure_is_not_suppressed() {
     for substatus in [0, 1002] {
-        let operation = Arc::new(CosmosOperation::read_many(
+        let operation = Arc::new(read_many_operation(
             container(),
-            ReadManySelection::Items(vec![("pk".into(), "missing".into())]),
+            ItemScope::Items(vec![("pk".into(), "missing".into())]),
             None,
         ));
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![full_range()])]);
@@ -604,9 +800,9 @@ fn charged_error(status: CosmosStatus, charge: f64) -> crate::CosmosError {
 
 #[tokio::test]
 async fn split_retry_exhaustion_preserves_all_attempts_and_stays_terminal() {
-    let operation = Arc::new(CosmosOperation::read_many(
+    let operation = Arc::new(read_many_operation(
         container(),
-        ReadManySelection::Partitions(vec!["pk".into()]),
+        ItemScope::Partitions(vec!["pk".into()]),
         None,
     ));
     let mut topology = MockTopologyProvider::new(
@@ -659,9 +855,9 @@ async fn split_retry_exhaustion_preserves_all_attempts_and_stays_terminal() {
 
 #[tokio::test]
 async fn accepted_split_at_retry_limit_counts_prior_attempts_only_once() {
-    let operation = Arc::new(CosmosOperation::read_many(
+    let operation = Arc::new(read_many_operation(
         container(),
-        ReadManySelection::Partitions(vec!["pk".into()]),
+        ItemScope::Partitions(vec!["pk".into()]),
         None,
     ));
     let mut topology_results = (0..10).map(|_| Ok(vec![full_range()])).collect::<Vec<_>>();
@@ -716,9 +912,9 @@ async fn accepted_split_at_retry_limit_counts_prior_attempts_only_once() {
 #[tokio::test]
 async fn failed_split_repair_retains_current_and_inherited_attempt_diagnostics() {
     for cascading in [false, true] {
-        let operation = Arc::new(CosmosOperation::read_many(
+        let operation = Arc::new(read_many_operation(
             container(),
-            ReadManySelection::Partitions(vec!["pk".into()]),
+            ItemScope::Partitions(vec!["pk".into()]),
             None,
         ));
         let terminal = crate::error::status_codes::TRANSPORT_CONNECTION_FAILED;
@@ -770,9 +966,9 @@ async fn singleton_topology_retry_preserves_attempts_on_missing_and_terminal_err
         CosmosStatus::new(StatusCode::RequestTimeout).with_sub_status(20001),
         crate::error::status_codes::TRANSPORT_CONNECTION_FAILED,
     ] {
-        let operation = Arc::new(CosmosOperation::read_many(
+        let operation = Arc::new(read_many_operation(
             container(),
-            ReadManySelection::Items(vec![("pk".into(), "missing".into())]),
+            ItemScope::Items(vec![("pk".into(), "missing".into())]),
             None,
         ));
         let mut replacement = full_range();

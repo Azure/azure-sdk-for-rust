@@ -316,7 +316,7 @@ pub mod clients {
         pub async fn read(&self, options: Option<ReadContainerOptions>) -> crate::Result<ResourceResponse<ContainerProperties>>;
         pub async fn read_feed_ranges(&self, options: Option<ReadFeedRangesOptions>) -> crate::Result<Vec<FeedRange>>;
         pub async fn read_item<impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, options: Option<ItemReadOptions>) -> crate::Result<ItemResponse>;
-        pub async fn read_many<T: DeserializeOwned + Send + 'static>(&self, selection: ReadManySelection, options: Option<ReadManyOptions>) -> crate::Result<ReadManyIterator<T>>;
+        pub async fn read_many<T: DeserializeOwned + Send + 'static, impl Into<ItemSelector>: Into<ItemSelector>>(&self, selection: impl Into<ItemSelector>, options: Option<ReadManyOptions>) -> crate::Result<ReadManyIterator<T>>;
         #[cfg(feature = "control_plane")]
         pub async fn read_throughput(&self, options: Option<ThroughputOptions>) -> crate::Result<Option<ThroughputProperties>>;
         #[cfg(feature = "control_plane")]
@@ -1209,6 +1209,12 @@ pub mod feed {
     impl<'de> Deserialize<'de> for FeedRange {
         fn deserialize<D>(deserializer: D) -> Result<Self, <D as >::Error> where D: serde::Deserializer<'de>;
     }
+    #[derive(Clone, Debug)]
+    pub struct ItemSelector {
+    }
+    impl ItemSelector {
+        pub fn with_filter<impl Into<ReadManyFilter>: Into<ReadManyFilter>>(self, filter: impl Into<ReadManyFilter>) -> Self;
+    }
     #[derive(Clone, Debug, serde::Serialize)]
     pub struct Query {
     }
@@ -1257,6 +1263,9 @@ pub mod feed {
     impl ReadManyFilter {
         pub fn with_parameter<impl Into<String>: Into<String>, impl Serialize: Serialize>(self, name: impl Into<String>, value: impl Serialize) -> crate::Result<Self>;
     }
+    impl From<ReadManyFilter> for driver::ReadManyFilter {
+        fn from(filter: ReadManyFilter) -> Self;
+    }
     impl FromStr for ReadManyFilter {
         type Err = CosmosError;
         fn from_str(value: &str) -> crate::Result<Self>;
@@ -1295,9 +1304,13 @@ pub mod feed {
     }
     #[derive(Clone, Debug)]
     #[non_exhaustive]
-    pub enum ReadManySelection {
-        Items(Vec<(crate::PartitionKey, String)>),
-        Partitions(Vec<crate::PartitionKey>),
+    pub enum ItemScope {
+        Items(Vec<(crate::models::PartitionKey, String)>),
+        Partitions(Vec<crate::models::PartitionKey>),
+        FeedRanges(Vec<crate::models::FeedRange>),
+    }
+    impl From<ItemScope> for ItemSelector {
+        fn from(selection: ItemScope) -> Self;
     }
 }
 pub mod models {
@@ -2844,13 +2857,11 @@ pub mod options {
     #[non_exhaustive]
     pub struct ReadManyOptions {
         pub operation: crate::options::OperationOptions,
-        pub filter: Option<crate::feed::ReadManyFilter>,
         pub session_token: Option<crate::options::SessionToken>,
         pub max_item_count: Option<crate::options::MaxItemCountHint>,
         pub max_fan_out: Option<u32>,
     }
     impl ReadManyOptions {
-        pub fn with_filter(self, filter: ReadManyFilter) -> Self;
         pub fn with_max_fan_out(self, limit: u32) -> Self;
         pub fn with_max_item_count(self, hint: MaxItemCountHint) -> Self;
         pub fn with_operation_options(self, options: OperationOptions) -> Self;

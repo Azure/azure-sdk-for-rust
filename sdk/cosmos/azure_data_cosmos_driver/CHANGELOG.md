@@ -5,7 +5,7 @@
 ### Features Added
 
 - Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
-- Added non-resumable read-many plans with key/id or partition selections, including hierarchical prefixes, parameterized filters, bounded query batches, and shared execution deadlines. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
+- Added non-resumable read-many plans with `ItemSelector` and `ItemScope` for key/id, partition, or feed-range selections, including hierarchical prefixes, parameterized selector filters, and bounded query batches. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 
 ### Breaking Changes
 

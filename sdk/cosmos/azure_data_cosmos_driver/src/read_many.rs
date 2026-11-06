@@ -8,24 +8,55 @@ use std::{collections::BTreeMap, str::FromStr};
 use azure_core::fmt::SafeDebug;
 use serde_json::Value;
 
-use crate::{models::PartitionKey, query::ast::SqlScalarExpression};
+use crate::{
+    models::{FeedRange, PartitionKey},
+    query::ast::SqlScalarExpression,
+};
 
 mod predicate;
 
-/// Items or logical partition scopes to read from one container.
+/// Items, logical partitions, or feed ranges selected within one container.
 ///
 /// Complete keys and nonempty hierarchical prefixes are supported. Duplicate and
 /// overlapping selections do not duplicate results. Empty selections read nothing.
 /// Results are unordered and missing items are omitted.
 #[derive(Clone, SafeDebug)]
 #[non_exhaustive]
-pub enum ReadManySelection {
+pub enum ItemScope {
     /// `(partition key or hierarchical prefix, item id)` pairs.
     ///
     /// A prefix plus an id returns every matching item across its logical partitions.
     Items(Vec<(PartitionKey, String)>),
     /// Complete logical partition keys or nonempty hierarchical prefixes.
     Partitions(Vec<PartitionKey>),
+    /// Feed ranges whose union selects items without duplicating overlaps.
+    FeedRanges(Vec<FeedRange>),
+}
+
+/// An item scope and an optional narrowing WHERE predicate.
+///
+/// Construct from an [`ItemScope`], then optionally call [`Self::with_filter()`].
+#[derive(Clone, SafeDebug)]
+pub struct ItemSelector {
+    pub(crate) selection: ItemScope,
+    pub(crate) filter: Option<ReadManyFilter>,
+}
+
+impl From<ItemScope> for ItemSelector {
+    fn from(selection: ItemScope) -> Self {
+        Self {
+            selection,
+            filter: None,
+        }
+    }
+}
+
+impl ItemSelector {
+    /// Sets the predicate evaluated within the selected scope.
+    pub fn with_filter(mut self, filter: impl Into<ReadManyFilter>) -> Self {
+        self.filter = Some(filter.into());
+        self
+    }
 }
 
 /// A parameterized WHERE predicate that only narrows a read-many selection.
@@ -92,11 +123,7 @@ impl ReadManyFilter {
     }
 }
 
-#[derive(Clone, SafeDebug)]
-pub(crate) struct ReadManyRequest {
-    pub(crate) selection: ReadManySelection,
-    pub(crate) filter: Option<ReadManyFilter>,
-}
+pub(crate) type ReadManyRequest = ItemSelector;
 
 pub(crate) fn invalid(message: &'static str) -> crate::CosmosError {
     crate::CosmosError::builder()

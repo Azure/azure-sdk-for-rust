@@ -9,9 +9,9 @@ use std::error::Error;
 use azure_data_cosmos::feed::ContinuationToken;
 use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
-    feed::{FeedScope, ReadManyFilter, ReadManySelection},
+    feed::{FeedScope, ItemScope, ReadManyFilter},
     models::ThroughputProperties,
-    options::{MaxItemCountHint, QueryOptions, ReadManyOptions},
+    options::{MaxItemCountHint, QueryOptions},
     Query,
 };
 use framework::{test_data, MockItem, TestClient, TestOptions};
@@ -50,14 +50,13 @@ async fn read_many_scoped_filter() -> Result<(), Box<dyn Error>> {
             let filter = "c.partitionKey != @excluded"
                 .parse::<ReadManyFilter>()?
                 .with_parameter("@excluded", "partition1")?;
-            let options = ReadManyOptions::default().with_filter(filter);
             for selection in [
-                ReadManySelection::Partitions(vec![
+                ItemScope::Partitions(vec![
                     "partition0".into(),
                     "partition1".into(),
                     "partition0".into(),
                 ]),
-                ReadManySelection::Items(
+                ItemScope::Items(
                     items
                         .iter()
                         .filter(|item| item.partition_key != "partition2")
@@ -66,7 +65,11 @@ async fn read_many_scoped_filter() -> Result<(), Box<dyn Error>> {
                 ),
             ] {
                 let result = container
-                    .read_many::<MockItem>(selection, Some(options.clone()))
+                    .read_many::<MockItem>(
+                        azure_data_cosmos::feed::ItemSelector::from(selection)
+                            .with_filter(filter.clone()),
+                        None,
+                    )
                     .await?
                     .collect_all()
                     .await?;

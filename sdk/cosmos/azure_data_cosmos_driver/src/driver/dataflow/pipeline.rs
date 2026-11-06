@@ -111,31 +111,6 @@ pub struct OperationPlan {
 }
 
 impl OperationPlan {
-    /// Limits all subsequent page requests to a shared absolute deadline.
-    ///
-    /// Use this when collecting an entire feed under one timeout budget.
-    /// This only shortens an existing deadline, including the initial planning
-    /// deadline. Elapsed time, including caller idle time, still counts toward
-    /// any existing deadline; this method does not restart its budget.
-    /// A timeout terminates the request using the driver's normal error and
-    /// diagnostics contract.
-    pub fn with_execution_deadline(mut self, deadline: Instant) -> Self {
-        let deadline = self
-            .operation
-            .absolute_deadline()
-            .into_iter()
-            .chain(self.initial_execution_deadline)
-            .fold(deadline, Instant::min);
-        self.initial_execution_deadline = None;
-        self.operation = Arc::new(
-            self.operation
-                .as_ref()
-                .clone()
-                .with_absolute_deadline(Some(deadline)),
-        );
-        self
-    }
-
     /// Creates an operation plan wrapping the given pipeline.
     pub(crate) fn new(
         pipeline: Pipeline,

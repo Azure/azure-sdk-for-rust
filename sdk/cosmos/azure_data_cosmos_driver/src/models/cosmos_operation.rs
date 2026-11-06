@@ -9,7 +9,7 @@ use crate::models::{
     OperationType, PartitionKey, Precondition, ResourceType,
 };
 use crate::options::Utf8DecodingMode;
-use crate::read_many::ReadManySelection;
+use crate::read_many::ItemScope;
 use azure_core::http::Etag;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, time::Instant};
@@ -370,7 +370,7 @@ impl CosmosOperation {
                 super::transactional_batch::validate_resource_names(self.body())?;
             }
             if let Some(request) = &self.read_many {
-                if let ReadManySelection::Items(items) = &request.selection {
+                if let ItemScope::Items(items) = &request.selection {
                     for (_, id) in items {
                         validate_resource_name("item", id)?;
                     }
@@ -793,9 +793,9 @@ impl CosmosOperation {
         Self::new(operation_type, item, Some(range))
     }
 
-    /// Reads selected items or logical partition scopes, optionally filtered.
+    /// Reads selected items, logical partitions, or feed ranges, optionally filtered.
     ///
-    /// Both selection modes accept complete keys or nonempty hierarchical prefixes.
+    /// Item and partition scopes accept complete keys or nonempty hierarchical prefixes.
     /// A prefix plus an id returns every matching item across logical partitions.
     ///
     /// Execute with [`CosmosDriver::plan_operation()`](crate::CosmosDriver::plan_operation)
@@ -804,14 +804,10 @@ impl CosmosOperation {
     /// Durable continuation tokens are not supported.
     pub fn read_many(
         container: ContainerReference,
-        selection: crate::read_many::ReadManySelection,
-        filter: Option<crate::read_many::ReadManyFilter>,
+        selection: impl Into<crate::read_many::ItemSelector>,
     ) -> Self {
         let mut operation = Self::query_items(container, Some(FeedRange::full()));
-        operation.read_many = Some(std::sync::Arc::new(crate::read_many::ReadManyRequest {
-            selection,
-            filter,
-        }));
+        operation.read_many = Some(std::sync::Arc::new(selection.into()));
         operation
     }
 
@@ -1677,12 +1673,11 @@ mod tests {
             for ids in [vec![id], vec!["safe-item", id]] {
                 let operation = CosmosOperation::read_many(
                     test_container(),
-                    ReadManySelection::Items(
+                    ItemScope::Items(
                         ids.into_iter()
                             .map(|id| (PartitionKey::from("pk1"), id.to_owned()))
                             .collect(),
                     ),
-                    None,
                 );
                 let error = operation
                     .validate_addressing(true)
@@ -1701,14 +1696,14 @@ mod tests {
     #[test]
     fn read_many_accepts_safe_names_and_partition_scopes() {
         for selection in [
-            ReadManySelection::Items(vec![
+            ItemScope::Items(vec![
                 (PartitionKey::from("pk1"), "item with spaces".into()),
                 (PartitionKey::from("pk2"), "item+value=1".into()),
             ]),
-            ReadManySelection::Partitions(vec![PartitionKey::from("a/b")]),
-            ReadManySelection::Items(Vec::new()),
+            ItemScope::Partitions(vec![PartitionKey::from("a/b")]),
+            ItemScope::Items(Vec::new()),
         ] {
-            CosmosOperation::read_many(test_container(), selection, None)
+            CosmosOperation::read_many(test_container(), selection)
                 .validate_addressing(true)
                 .expect("safe selections must pass name validation");
         }

@@ -1,10 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{
-    feed::ReadManyFilter,
-    options::{MaxItemCountHint, OperationOptions, SessionToken},
-};
+use crate::options::{MaxItemCountHint, OperationOptions, SessionToken};
 
 /// Options for [`ContainerClient::read_many()`](crate::clients::ContainerClient::read_many).
 #[derive(Clone, Default)]
@@ -12,8 +9,6 @@ use crate::{
 pub struct ReadManyOptions {
     /// General operation options, including consistency and timeouts.
     pub operation: OperationOptions,
-    /// An optional predicate evaluated by the service within the selection.
-    pub filter: Option<ReadManyFilter>,
     /// Explicit session token for all requests.
     pub session_token: Option<SessionToken>,
     /// Service page-size hint, not a limit on the total results.
@@ -23,11 +18,6 @@ pub struct ReadManyOptions {
 }
 
 impl ReadManyOptions {
-    /// Sets the optional predicate without broadening the selection.
-    pub fn with_filter(mut self, filter: ReadManyFilter) -> Self {
-        self.filter = Some(filter);
-        self
-    }
     /// Sets general operation options.
     pub fn with_operation_options(mut self, options: OperationOptions) -> Self {
         self.operation = options;

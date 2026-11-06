@@ -3,7 +3,7 @@
 
 use azure_core::{credentials::Secret, http::Url};
 use azure_data_cosmos::{
-    feed::{FeedRange, ReadManyFilter, ReadManySelection},
+    feed::{FeedRange, ItemScope, ItemSelector, ReadManyFilter},
     options::{
         BinaryEncodingOptions, MaxItemCountHint, OperationOptionsBuilder, ReadFeedRangesOptions,
         ReadManyOptions, Region,
@@ -101,6 +101,91 @@ fn identities(items: Vec<Value>) -> Vec<(String, String)> {
 }
 
 #[tokio::test]
+async fn read_many_feed_ranges_preserve_union_boundaries_and_filters() {
+    let container = seed().await;
+    let definition = PartitionKeyDefinition::new(vec!["/pk".into()]);
+    let mut keys = ["one", "two", "outside"]
+        .map(|key| (FeedRange::for_partition(key.into(), &definition), key));
+    keys.sort_by(|a, b| a.0.min_inclusive().cmp(b.0.min_inclusive()));
+    let interval = FeedRange::new(
+        keys[0].0.min_inclusive().clone(),
+        keys[2].0.min_inclusive().clone(),
+    )
+    .unwrap();
+    let point = FeedRange::new(
+        keys[2].0.min_inclusive().clone(),
+        keys[2].0.min_inclusive().clone(),
+    )
+    .unwrap();
+    for (ranges, expected_keys) in [
+        (
+            vec![interval.clone(), interval.clone(), keys[0].0.clone()],
+            vec![keys[0].1, keys[1].1],
+        ),
+        (vec![interval, point], vec![keys[0].1, keys[1].1, keys[2].1]),
+        (vec![keys[2].0.clone(), keys[2].0.clone()], vec![keys[2].1]),
+        (vec![], vec![]),
+    ] {
+        let selector = ItemSelector::from(ItemScope::FeedRanges(ranges))
+            .with_filter("c.rank = 2".parse::<ReadManyFilter>().unwrap());
+        let response = container
+            .read_many::<Value>(selector, None)
+            .await
+            .unwrap()
+            .collect_all()
+            .await
+            .unwrap();
+        let mut expected = expected_keys
+            .into_iter()
+            .map(|key| (key.to_owned(), "d2".to_owned()))
+            .collect::<Vec<_>>();
+        expected.sort();
+        assert_eq!(identities(response.into_items()), expected);
+    }
+}
+
+#[tokio::test]
+async fn read_many_feed_ranges_survive_split_without_duplicates() {
+    let (container, emulator) =
+        container_with_emulator(PartitionKeyDefinition::new(vec!["/pk".into()]), 1).await;
+    for rank in 0..8 {
+        let id = format!("d{rank}");
+        container
+            .create_item("one", &id, &json!({"id":id,"pk":"one","rank":rank}), None)
+            .await
+            .unwrap();
+    }
+    let ranges = container.read_feed_ranges(None).await.unwrap();
+    let mut pages = container
+        .read_many::<Value>(
+            ItemScope::FeedRanges(ranges.into_iter().chain([FeedRange::full()]).collect()),
+            Some(
+                ReadManyOptions::default()
+                    .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap())),
+            ),
+        )
+        .await
+        .unwrap();
+    let mut items = pages.next().await.unwrap().unwrap().into_items();
+    emulator
+        .store()
+        .split_partition("read-many", "items", 0, std::time::Duration::ZERO);
+    emulator
+        .store()
+        .wait_for_split("read-many", "items", 0)
+        .await;
+    while let Some(page) = pages.next().await {
+        items.extend(page.unwrap().into_items());
+    }
+    assert_eq!(
+        identities(items),
+        (0..8)
+            .map(|rank| ("one".into(), format!("d{rank}")))
+            .collect::<Vec<_>>()
+    );
+}
+
+#[tokio::test]
 async fn read_many_populated_split_after_first_page_has_no_loss_or_duplicates() {
     let definition = PartitionKeyDefinition::new(vec!["/pk".into()]);
     for select_items in [true, false] {
@@ -128,12 +213,13 @@ async fn read_many_populated_split_after_first_page_has_no_loss_or_duplicates() 
         }
         expected.sort();
         let selection = if select_items {
-            ReadManySelection::Items(selections)
+            ItemScope::Items(selections)
         } else {
-            ReadManySelection::Partitions(selections.into_iter().map(|(key, _)| key).collect())
+            ItemScope::Partitions(selections.into_iter().map(|(key, _)| key).collect())
         };
+        let selection = ItemSelector::from(selection)
+            .with_filter("c.selected = true".parse::<ReadManyFilter>().unwrap());
         let options = ReadManyOptions::default()
-            .with_filter("c.selected = true".parse().unwrap())
             .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(3).unwrap()));
         let mut pages = container
             .read_many::<Value>(selection, Some(options))
@@ -155,7 +241,7 @@ async fn read_many_populated_split_after_first_page_has_no_loss_or_duplicates() 
 #[tokio::test]
 async fn read_many_items_deduplicate_and_omit_missing() {
     let container = seed().await;
-    let selection = ReadManySelection::Items(vec![
+    let selection = ItemScope::Items(vec![
         ("one".into(), "d1".into()),
         ("two".into(), "d1".into()),
         ("one".into(), "d1".into()),
@@ -176,7 +262,7 @@ async fn read_many_items_deduplicate_and_omit_missing() {
     );
     let missing = container
         .read_many::<Value>(
-            ReadManySelection::Items(vec![("one".into(), "missing".into())]),
+            ItemScope::Items(vec![("one".into(), "missing".into())]),
             None,
         )
         .await
@@ -199,11 +285,15 @@ async fn read_many_partition_filter_cannot_broaden_selection() {
         .with_parameter("@outside", "outside")
         .unwrap();
     let options = ReadManyOptions::default()
-        .with_filter(filter)
         .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));
     let response = container
         .read_many::<Value>(
-            ReadManySelection::Partitions(vec!["one".into(), "two".into(), "one".into()]),
+            ItemSelector::from(ItemScope::Partitions(vec![
+                "one".into(),
+                "two".into(),
+                "one".into(),
+            ]))
+            .with_filter(filter),
             Some(options),
         )
         .await
@@ -220,11 +310,11 @@ async fn read_many_partition_filter_cannot_broaden_selection() {
 #[tokio::test]
 async fn read_many_filtered_singleton_and_empty_selection() {
     let container = seed().await;
-    let options = ReadManyOptions::default().with_filter("c.rank = 99".parse().unwrap());
     let result = container
         .read_many::<Value>(
-            ReadManySelection::Items(vec![("one".into(), "d1".into())]),
-            Some(options),
+            ItemSelector::from(ItemScope::Items(vec![("one".into(), "d1".into())]))
+                .with_filter("c.rank = 99".parse::<ReadManyFilter>().unwrap()),
+            None,
         )
         .await
         .unwrap()
@@ -233,8 +323,8 @@ async fn read_many_filtered_singleton_and_empty_selection() {
         .unwrap();
     assert!(result.items().is_empty());
     for selection in [
-        ReadManySelection::Items(Vec::new()),
-        ReadManySelection::Partitions(Vec::new()),
+        ItemScope::Items(Vec::new()),
+        ItemScope::Partitions(Vec::new()),
     ] {
         let result = container
             .read_many::<Value>(selection, None)
@@ -260,7 +350,7 @@ async fn read_many_paging_and_collection_agree() {
                     .with_binary_encoding(BinaryEncodingOptions::default().with_enabled(binary))
                     .build(),
             );
-        let selection = ReadManySelection::Partitions(vec!["one".into(), "two".into()]);
+        let selection = ItemScope::Partitions(vec!["one".into(), "two".into()]);
         let mut pages = container
             .read_many::<Value>(selection.clone(), Some(options.clone()))
             .await
@@ -306,7 +396,7 @@ async fn read_many_hierarchical_keys_and_id_completion() {
         .unwrap();
     let all = container
         .read_many::<Value>(
-            ReadManySelection::Items(vec![
+            ItemScope::Items(vec![
                 ("tenant".into(), "item".into()),
                 (("tenant", "item").into(), "item".into()),
             ]),
@@ -320,7 +410,7 @@ async fn read_many_hierarchical_keys_and_id_completion() {
     assert_eq!(all.items().len(), 1);
     assert_eq!(all.items()[0]["id"], "item");
     let prefix = container
-        .read_many::<Value>(ReadManySelection::Partitions(vec!["tenant".into()]), None)
+        .read_many::<Value>(ItemScope::Partitions(vec!["tenant".into()]), None)
         .await
         .unwrap()
         .collect_all()
@@ -330,7 +420,7 @@ async fn read_many_hierarchical_keys_and_id_completion() {
     assert_eq!(prefix.items()[0]["id"], "item");
     let mismatch = container
         .read_many::<Value>(
-            ReadManySelection::Items(vec![
+            ItemScope::Items(vec![
                 (("tenant", "wrong").into(), "item".into()),
                 (("tenant", "wrong2").into(), "item".into()),
             ]),
@@ -359,7 +449,7 @@ async fn read_many_null_and_undefined_keys_are_distinct() {
         .unwrap();
     for (key, id) in [(undefined, "u"), (null, "n")] {
         let response = container
-            .read_many::<Value>(ReadManySelection::Partitions(vec![key]), None)
+            .read_many::<Value>(ItemScope::Partitions(vec![key]), None)
             .await
             .unwrap()
             .collect_all()
@@ -416,38 +506,36 @@ async fn read_many_undefined_keys_include_empty_objects_without_including_null()
         let mut results = Vec::new();
         for (selection, filter, expected) in [
             (
-                ReadManySelection::Partitions(vec![undefined.clone()]),
+                ItemScope::Partitions(vec![undefined.clone()]),
                 None,
                 vec!["missing", "object"],
             ),
             (
-                ReadManySelection::Items(vec![(undefined.clone(), "object".into())]),
+                ItemScope::Items(vec![(undefined.clone(), "object".into())]),
                 None,
                 vec!["object"],
             ),
             (
-                ReadManySelection::Items(vec![(undefined.clone(), "object".into())]),
+                ItemScope::Items(vec![(undefined.clone(), "object".into())]),
                 Some("true"),
                 vec!["object"],
             ),
             (
-                ReadManySelection::Items(vec![
+                ItemScope::Items(vec![
                     (undefined.clone(), "missing".into()),
                     (undefined.clone(), "object".into()),
                 ]),
                 None,
                 vec!["missing", "object"],
             ),
-            (
-                ReadManySelection::Partitions(vec![null]),
-                None,
-                vec!["null"],
-            ),
+            (ItemScope::Partitions(vec![null]), None, vec!["null"]),
         ] {
-            let options =
-                filter.map(|text| ReadManyOptions::default().with_filter(text.parse().unwrap()));
+            let mut selection = ItemSelector::from(selection);
+            if let Some(text) = filter {
+                selection = selection.with_filter(text.parse::<ReadManyFilter>().unwrap());
+            }
             let response = container
-                .read_many::<Value>(selection, options)
+                .read_many::<Value>(selection, None)
                 .await
                 .unwrap()
                 .collect_all()
@@ -480,11 +568,11 @@ async fn read_many_object_filter_keys_keep_escape_semantics() {
         r#"({"a\"b": true})["a\"b"]"#,
         r#"({"a\\b": true})["a\\b"]"#,
     ] {
-        let options = ReadManyOptions::default().with_filter(predicate.parse().unwrap());
         let response = container
             .read_many::<Value>(
-                ReadManySelection::Partitions(vec!["one".into()]),
-                Some(options),
+                ItemSelector::from(ItemScope::Partitions(vec!["one".into()]))
+                    .with_filter(predicate.parse::<ReadManyFilter>().unwrap()),
+                None,
             )
             .await
             .unwrap()
@@ -541,7 +629,7 @@ async fn read_many_hpk_prefixes_span_ranges_and_deduplicate_before_batching() {
     );
     let boundary_item = container
         .read_many::<Value>(
-            ReadManySelection::Items(vec![(("tenant-a", "west", "u2").into(), "shared".into())]),
+            ItemScope::Items(vec![(("tenant-a", "west", "u2").into(), "shared".into())]),
             Some(ReadManyOptions::default().with_max_fan_out(1)),
         )
         .await
@@ -555,7 +643,7 @@ async fn read_many_hpk_prefixes_span_ranges_and_deduplicate_before_batching() {
     assert!(
         container
             .read_many::<Value>(
-                ReadManySelection::Partitions(vec!["tenant-a".into()]),
+                ItemScope::Partitions(vec!["tenant-a".into()]),
                 Some(ReadManyOptions::default().with_max_fan_out(1)),
             )
             .await
@@ -580,7 +668,7 @@ async fn read_many_hpk_prefixes_span_ranges_and_deduplicate_before_batching() {
                 if reverse {
                     pairs.reverse();
                 }
-                ReadManySelection::Items(pairs)
+                ItemScope::Items(pairs)
             } else {
                 let mut keys = (0..65)
                     .map(|i| PartitionKey::from(format!("absent-{i}")))
@@ -594,10 +682,11 @@ async fn read_many_hpk_prefixes_span_ranges_and_deduplicate_before_batching() {
                 if reverse {
                     keys.reverse();
                 }
-                ReadManySelection::Partitions(keys)
+                ItemScope::Partitions(keys)
             };
+            let selection = ItemSelector::from(selection)
+                .with_filter("c.active = true".parse::<ReadManyFilter>().unwrap());
             let options = ReadManyOptions::default()
-                .with_filter("c.active = true".parse().unwrap())
                 .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));
             let mut pages = container
                 .read_many::<Value>(selection, Some(options))
@@ -627,7 +716,7 @@ async fn read_many_hpk_prefixes_span_ranges_and_deduplicate_before_batching() {
     }
     let shared = container
         .read_many::<Value>(
-            ReadManySelection::Items(vec![("tenant-a".into(), "shared".into())]),
+            ItemScope::Items(vec![("tenant-a".into(), "shared".into())]),
             None,
         )
         .await
@@ -642,7 +731,7 @@ async fn read_many_hpk_prefixes_span_ranges_and_deduplicate_before_batching() {
     );
     let narrow = container
         .read_many::<Value>(
-            ReadManySelection::Items(vec![(("tenant-a", "west").into(), "shared".into())]),
+            ItemScope::Items(vec![(("tenant-a", "west").into(), "shared".into())]),
             None,
         )
         .await
@@ -696,12 +785,9 @@ async fn read_many_decode_error_keeps_failing_page_diagnostics() {
     assert!(ranges[1].min_inclusive() <= &keys[1].0 && &keys[1].0 < ranges[1].max_exclusive());
     // Sequential draining visits the valid item's range first, regardless of document order.
     for (selection, requests) in [
+        (ItemScope::Items(vec![(invalid_key.into(), "b".into())]), 1),
         (
-            ReadManySelection::Items(vec![(invalid_key.into(), "b".into())]),
-            1,
-        ),
-        (
-            ReadManySelection::Partitions(vec![invalid_key.into(), valid_key.into()]),
+            ItemScope::Partitions(vec![invalid_key.into(), valid_key.into()]),
             2,
         ),
     ] {

@@ -15,7 +15,7 @@ use crate::{
 };
 use azure_data_cosmos_driver::{
     models::CosmosOperation,
-    read_many::{ReadManyFilter, ReadManySelection},
+    read_many::{ItemScope, ItemSelector, ReadManyFilter},
 };
 
 /// One selected logical key, with an item id only for item selection.
@@ -228,11 +228,15 @@ unsafe fn build_read_many(
         }
     }
     let selection = if input.selection_kind == 1 {
-        ReadManySelection::Items(items)
+        ItemScope::Items(items)
     } else {
-        ReadManySelection::Partitions(partitions)
+        ItemScope::Partitions(partitions)
     };
-    let operation = CosmosOperation::read_many(container, selection, filter);
+    let mut selector = ItemSelector::from(selection);
+    if let Some(filter) = filter {
+        selector = selector.with_filter(filter);
+    }
+    let operation = CosmosOperation::read_many(container, selector);
     // SAFETY: common fields inherit the request allocation contract.
     unsafe { build_request_with_operation(common, Some(operation)) }
 }
