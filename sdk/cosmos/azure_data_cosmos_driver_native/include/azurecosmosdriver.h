@@ -3110,33 +3110,6 @@ struct cosmos_operation_handle_t *cosmos_processor_start_with_policy_submit(cons
                                                                             cosmos_status_code_t *out_pre_error);
 
 /**
- * Starts a processor with a checkpoint policy and a positive batch limit.
- *
- * Workers sharing `source_driver` share the largest worker limit seen during
- * that driver's lifetime, not the sum or separate worker quotas.
- * Reservations, queued batches, and processing count until acknowledgment
- * submission or receipt disposal. Checkpoint metadata
- * and host-retained completed payloads do not count; this is not a heap limit.
- * Eligible leases take one page turn before rejoining behind waiting peers.
- * Stopping a worker or starting one with a smaller limit does not reduce the
- * shared limit. Other start functions contribute the default limit of 100.
- *
- * Zero is rejected before queue admission. Policy values, input lifetimes,
- * and acknowledgment semantics match `cosmos_processor_start_with_policy_submit`.
- */
-struct cosmos_operation_handle_t *cosmos_processor_start_with_admission_submit(const struct cosmos_driver_t *source_driver,
-                                                                               const struct cosmos_container_ref_t *source,
-                                                                               const struct cosmos_driver_t *lease_driver,
-                                                                               const struct cosmos_container_ref_t *leases,
-                                                                               const struct cosmos_processor_request_t *request,
-                                                                               uint32_t checkpoint_policy,
-                                                                               uint64_t checkpoint_interval_ms,
-                                                                               uint32_t max_outstanding_batches,
-                                                                               struct cosmos_processor_queue_t *queue,
-                                                                               intptr_t user_data,
-                                                                               cosmos_status_code_t *out_pre_error);
-
-/**
  * Requests the next batch. Only one undelivered next request is allowed per processor.
  *
  * After transfer, request further batches to process other leases concurrently.

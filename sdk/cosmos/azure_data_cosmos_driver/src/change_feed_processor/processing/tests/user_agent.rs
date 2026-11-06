@@ -162,11 +162,7 @@ async fn processor_user_agent_covers_bootstrap_polling_maintenance_and_topology_
             .any(|r| r.path.ends_with("/pkranges")));
 
         insert(&context, "one").await?;
-        let options = context
-            .options
-            .clone()
-            .with_max_outstanding_batches(1)
-            .with_checkpoint_policy(policy);
+        let options = context.options.clone().with_checkpoint_policy(policy);
         requests.take();
         let processor = start(&context, options).await?;
         let (_, response, receipt) = next(&processor).await.into_parts();

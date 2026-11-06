@@ -53,7 +53,6 @@ fn delivery(
     );
     let (sender, received) = oneshot::channel();
     let receipt = BatchReceipt {
-        permit: None,
         sender,
         cancelled: future::pending().boxed().shared(),
     };

@@ -55,7 +55,6 @@ where
         ChangeFeedMode::AllVersionsAndDeletes => DriverMode::FullFidelity,
     };
     let mut options = ProcessorOptions::new(mode, &config.processor_name, &config.instance_name)
-        .with_max_outstanding_batches(config.max_outstanding_batches)
         .with_lease_verification_enabled_on_restart(config.lease_verification_on_restart_enabled)
         .with_checkpoint_policy(match config.checkpoint_policy {
             ChangeFeedCheckpointPolicy::EveryBatch => CheckpointPolicy::EveryBatch,

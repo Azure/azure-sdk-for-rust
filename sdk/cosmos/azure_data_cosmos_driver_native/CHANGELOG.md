@@ -4,8 +4,6 @@
 
 ### Features Added
 
-- Added `cosmos_processor_start_with_admission_submit` for a positive worker batch limit, with the source driver retaining the largest limit seen during its lifetime; existing starts use 100 and retain their ABI.
-
 - Added `cosmos_processor_start_with_policy_submit` and `cosmos_processor_acknowledge_submit` for opt-in checkpoint coalescing, with distinct acknowledged and durably saved completion results.
 - Added `cosmos_processor_*` completion-queue APIs for driver-owned change feed processing and explicit post-callback checkpoint acknowledgments.
 

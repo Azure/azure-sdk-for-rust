@@ -10,7 +10,7 @@ mod query_planning;
 mod session_scope_live_tests;
 
 use crate::{
-    change_feed_processor::{BatchAdmission, ChangeFeedProcessorBootstrapCoalescer},
+    change_feed_processor::ChangeFeedProcessorBootstrapCoalescer,
     diagnostics::{
         DiagnosticsContextBuilder, ExecutionContext, PipelineKind, RequestSentStatus,
         TransportHttpVersion, TransportSecurity,
@@ -379,7 +379,6 @@ impl std::fmt::Debug for TestEndpointProbeFn {
 #[non_exhaustive]
 #[derive(Debug)]
 pub struct CosmosDriver {
-    batch_admission: OnceLock<Arc<BatchAdmission>>,
     /// Driver-local in-flight change feed initialization.
     bootstrap_coalescer: OnceLock<Arc<ChangeFeedProcessorBootstrapCoalescer>>,
     /// Weak link to factory ownership for internal bootstrap lifetime retention.
@@ -1899,7 +1898,6 @@ impl CosmosDriver {
         let pk_range_cache = PartitionKeyRangeCache::new();
 
         Ok(Self {
-            batch_admission: OnceLock::new(),
             bootstrap_coalescer: OnceLock::new(),
             bootstrap_owner: OnceLock::new(),
             runtime,
@@ -1942,11 +1940,6 @@ impl CosmosDriver {
     pub(crate) fn bootstrap_coalescer(&self) -> &Arc<ChangeFeedProcessorBootstrapCoalescer> {
         self.bootstrap_coalescer
             .get_or_init(|| Arc::new(ChangeFeedProcessorBootstrapCoalescer::default()))
-    }
-
-    pub(crate) fn batch_admission(&self) -> &Arc<BatchAdmission> {
-        self.batch_admission
-            .get_or_init(|| Arc::new(BatchAdmission::default()))
     }
 
     /// **Internal test hook -- not part of the public API.**

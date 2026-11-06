@@ -9,11 +9,9 @@
 
 use crate::options::{OperationOptions, UserAgentSuffix};
 
-mod admission;
 mod bootstrap;
 mod processing;
 
-pub(crate) use admission::BatchAdmission;
 pub use bootstrap::bootstrap;
 pub(crate) use bootstrap::ChangeFeedProcessorBootstrapCoalescer;
 pub use processing::{

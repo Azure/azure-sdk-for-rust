@@ -516,52 +516,7 @@ pub extern "C" fn cosmos_processor_start_with_policy_submit(
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
-    cosmos_processor_start_with_admission_submit(
-        source_driver,
-        source,
-        lease_driver,
-        leases,
-        request,
-        checkpoint_policy,
-        checkpoint_interval_ms,
-        100,
-        queue,
-        user_data,
-        out_pre_error,
-    )
-}
-
-/// Starts a processor with a checkpoint policy and a positive batch limit.
-///
-/// Workers sharing `source_driver` share the largest worker limit seen during
-/// that driver's lifetime, not the sum or separate worker quotas.
-/// Reservations, queued batches, and processing count until acknowledgment
-/// submission or receipt disposal. Checkpoint metadata
-/// and host-retained completed payloads do not count; this is not a heap limit.
-/// Eligible leases take one page turn before rejoining behind waiting peers.
-/// Stopping a worker or starting one with a smaller limit does not reduce the
-/// shared limit. Other start functions contribute the default limit of 100.
-///
-/// Zero is rejected before queue admission. Policy values, input lifetimes,
-/// and acknowledgment semantics match `cosmos_processor_start_with_policy_submit`.
-#[no_mangle]
-pub extern "C" fn cosmos_processor_start_with_admission_submit(
-    source_driver: *const DriverHandle,
-    source: *const ContainerRefHandle,
-    lease_driver: *const DriverHandle,
-    leases: *const ContainerRefHandle,
-    request: *const CosmosProcessorRequest,
-    checkpoint_policy: u32,
-    checkpoint_interval_ms: u64,
-    max_outstanding_batches: u32,
-    queue: *mut ProcessorQueue,
-    user_data: isize,
-    out_pre_error: *mut CosmosStatusCode,
-) -> *mut OperationHandle {
     let prepare = || {
-        if max_outstanding_batches == 0 {
-            return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
-        }
         let policy = match (checkpoint_policy, checkpoint_interval_ms) {
             (0, 0) => CheckpointPolicy::EveryBatch,
             (1, millis) if millis > 0 => {
@@ -595,9 +550,7 @@ pub extern "C" fn cosmos_processor_start_with_admission_submit(
             .inner
             .clone();
         // SAFETY: request follows the size-prefix and counted-string contracts.
-        let options = unsafe { options(request)? }
-            .with_checkpoint_policy(policy)
-            .with_max_outstanding_batches(max_outstanding_batches);
+        let options = unsafe { options(request)? }.with_checkpoint_policy(policy);
         queue.deliveries.reserve()?;
         Ok::<_, CosmosErrorCode>((queue, source_driver, source, lease_driver, leases, options))
     };
