@@ -470,9 +470,43 @@ impl CosmosResourceReference {
         None
     }
 
-    /// Validates that this reference does not mix name and RID addressing.
+    /// Returns the first invalid user-defined resource name.
+    fn invalid_resource_name(&self) -> Option<&'static str> {
+        match &self.scope {
+            ResourceScope::Database(database) => {
+                if database.name().is_some_and(is_unsafe_resource_name) {
+                    return Some("database");
+                }
+            }
+            ResourceScope::Container(container) if !container.is_by_rid() => {
+                if container
+                    .database_name()
+                    .is_some_and(is_unsafe_resource_name)
+                {
+                    return Some("database");
+                }
+                if is_unsafe_resource_name(container.name()) {
+                    return Some("container");
+                }
+            }
+            ResourceScope::Account | ResourceScope::Container(_) => {}
+        }
+
+        if self
+            .id
+            .as_ref()
+            .and_then(ResourceIdentifier::name)
+            .is_some_and(is_unsafe_resource_name)
+        {
+            return Some(self.resource_type.as_str());
+        }
+
+        None
+    }
+
+    /// Validates that this reference uses consistent name/RID addressing.
     ///
-    /// This is the release-mode counterpart to
+    /// Mixed-addressing validation is the release-mode counterpart to
     /// [`debug_assert_addressing_consistent`](Self::debug_assert_addressing_consistent):
     /// the debug assert turns a mixed reference into a loud panic during tests,
     /// while this returns a deterministic [`CLIENT_MIXED_NAME_RID_ADDRESSING`]
@@ -498,6 +532,20 @@ impl CosmosResourceReference {
                 .with_source(std::io::Error::other("mixed name/RID addressing"))
                 .build());
         }
+
+        Ok(())
+    }
+
+    /// Validates user-defined names used to address Cosmos resources.
+    ///
+    /// This includes item names carried by Create and Upsert operations. Those
+    /// operations target the container feed, but their item names must remain
+    /// safe for later point operations.
+    pub(crate) fn validate_resource_names(&self) -> crate::error::Result<()> {
+        if let Some(resource_type) = self.invalid_resource_name() {
+            return Err(invalid_resource_name_error(resource_type));
+        }
+
         Ok(())
     }
 
@@ -737,6 +785,34 @@ impl CosmosResourceReference {
             id.rid().unwrap_or_default()
         }
     }
+}
+
+fn is_unsafe_resource_name(name: &str) -> bool {
+    name.is_empty()
+        || matches!(name, "." | "..")
+        || name
+            .bytes()
+            .any(|byte| matches!(byte, b'/' | b'\\' | b'?' | b'#' | b'\t' | b'\n' | b'\r'))
+}
+
+pub(crate) fn validate_resource_name(resource_type: &str, name: &str) -> crate::error::Result<()> {
+    if is_unsafe_resource_name(name) {
+        return Err(invalid_resource_name_error(resource_type));
+    }
+
+    Ok(())
+}
+
+fn invalid_resource_name_error(resource_type: &str) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+        .with_message(format!(
+            "{resource_type} name is unsafe for Cosmos resource addressing; names must be \
+             non-empty and cannot contain '/', '\\', '?', '#', ASCII tab, line feed, or \
+             carriage return, or equal '.' or '..'"
+        ))
+        .with_source(std::io::Error::other("invalid Cosmos resource name"))
+        .build()
 }
 
 // =============================================================================
@@ -1373,6 +1449,97 @@ mod tests {
         let r = CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
         r.validate_addressing(false)
             .expect("a name leaf that never reaches the path is allowed");
+    }
+
+    #[test]
+    fn validate_resource_names_rejects_invalid_names() {
+        for name in [
+            "",
+            ".",
+            "..",
+            "other/container",
+            r"other\container",
+            "item?query",
+            "item#fragment",
+            "\t",
+            "\n",
+            "\r",
+            ".\t.",
+            ".\n.",
+            ".\r.",
+            "tar\tget",
+            "tar\nget",
+            "tar\rget",
+            "../../../../other-db/colls/other-container/docs/target",
+        ] {
+            let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), name);
+            let reference =
+                CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
+
+            let err = reference
+                .validate_resource_names()
+                .expect_err("invalid resource names must be rejected");
+            assert_eq!(
+                err.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST,
+                "name: {name:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn validate_resource_names_rejects_invalid_parent_names() {
+        for name in ["../other-db", ".\t.", "db\nname"] {
+            let database = DatabaseReference::from_name(test_account(), name);
+            let reference = CosmosResourceReference::from(database)
+                .with_resource_type(ResourceType::DocumentCollection)
+                .into_feed_reference();
+
+            let err = reference
+                .validate_resource_names()
+                .expect_err("invalid parent names must be rejected");
+            assert_eq!(
+                err.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST,
+                "name: {name:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn validate_resource_names_accepts_safe_names() {
+        for name in [
+            "item",
+            "item with spaces",
+            "item@scope",
+            "item+value=1",
+            "item%41",
+            "item..backup",
+        ] {
+            let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), name);
+            let reference =
+                CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
+
+            reference
+                .validate_resource_names()
+                .expect("safe names must remain supported");
+        }
+    }
+
+    #[test]
+    fn validate_resource_names_rejects_invalid_leaf_when_leaf_not_in_path() {
+        let item = ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "../other-container",
+        );
+        let reference =
+            CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
+
+        let err = reference
+            .validate_resource_names()
+            .expect_err("create and upsert item names must be safe for later point operations");
+        assert_eq!(err.status(), crate::error::status_codes::CLIENT_BAD_REQUEST);
     }
 
     #[test]

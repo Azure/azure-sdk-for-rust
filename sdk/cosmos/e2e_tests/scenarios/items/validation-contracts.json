@@ -4,7 +4,7 @@
     "id": "item.validation-contracts",
     "title": "Invalid item writes fail without changing state",
     "requirement": "Missing identity, mismatched partition keys, oversized payloads, and duplicate unique keys return stable failures without mutating stored items; name-addressed Replace can mutate the item ID while retaining its resource identity.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "rust",
@@ -49,7 +49,7 @@
             ]
         },
         "azureLive": {
-            "applicability": "supported",
+            "applicability": "required",
             "fidelity": "full"
         }
     }

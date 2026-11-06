@@ -231,7 +231,7 @@ impl OperationPlan {
                 )
                 .build());
         }
-        ContinuationToken::encode_v1(&self.operation, &self.pipeline.snapshot_state()?)
+        ContinuationToken::encode(&self.operation, &self.pipeline.snapshot_state()?)
     }
 
     /// Whether the driver must transcode each page's body back to text before
@@ -242,5 +242,9 @@ impl OperationPlan {
     /// plan agrees on the emitted encoding.
     pub(crate) fn transcodes_response_to_text(&self) -> bool {
         self.operation.transcodes_response_to_text()
+    }
+
+    pub(crate) fn resolved_utf8_decoding_mode(&self) -> crate::options::Utf8DecodingMode {
+        self.operation.resolved_utf8_decoding_mode()
     }
 }

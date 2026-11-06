@@ -1,30 +1,32 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Driver test client for emulator-based E2E tests.
+//! Driver test client for emulator and live E2E tests.
 
 use azure_core::http::StatusCode;
+use azure_data_cosmos_driver::error::status_codes::substatus;
 #[cfg(feature = "fault_injection")]
 use azure_data_cosmos_driver::fault_injection::FaultInjectionRule;
 #[cfg(feature = "unstable_patch")]
 use azure_data_cosmos_driver::options::PatchStrategy;
-#[cfg(feature = "__internal_testing")]
-use azure_data_cosmos_driver::CosmosDriver;
 use azure_data_cosmos_driver::{
     diagnostics::{DiagnosticsContext, PipelineKind, TransportSecurity},
     driver::CosmosDriverRuntime,
-    error::CosmosError,
+    error::{status_codes, CosmosError},
     models::{
         AccountReference, ConnectionString, ContainerReference, CosmosOperation, CosmosResponse,
-        DatabaseReference, ItemReference, PartitionKey,
+        DatabaseReference, ItemReference, PartitionKey, PartitionKeyValue,
     },
     options::{
-        ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsBuilder,
-        PartitionFailoverOptions, Region, ServerCertificateValidation,
+        AvailabilityStrategy, ConnectionPoolOptions, DriverOptions, ExcludedRegions,
+        OperationOptions, OperationOptionsBuilder, PartitionFailoverOptions, Region,
+        ServerCertificateValidation,
     },
-    SubStatusCode,
+    CosmosDriver, SubStatusCode,
 };
+use serde::Serialize;
 use std::{error::Error, future::Future, sync::Arc, time::Duration};
+use tokio::sync::OnceCell;
 use tracing_subscriber::EnvFilter;
 use uuid::Uuid;
 
@@ -33,6 +35,7 @@ use super::env::{
     EMULATOR_CONNECTION_STRING, GATEWAY_V2_ENDPOINT_ENV_VAR, GATEWAY_V2_KEY_ENV_VAR,
     GATEWAY_V2_MULTI_REGION_ENDPOINT_ENV_VAR, GATEWAY_V2_MULTI_REGION_KEY_ENV_VAR,
 };
+use super::resource_manager::{resource_manager_from_env, ResourceManager};
 
 /// Applies the runtime-level test defaults every framework-built
 /// [`CosmosDriverRuntime`] shares.
@@ -56,6 +59,58 @@ fn runtime_operation_options(options: OperationOptions) -> OperationOptions {
     options
 }
 
+/// Identifies transient errors while newly seeded resources reach regional gateways.
+pub fn is_regional_readiness_error(error: &CosmosError) -> bool {
+    let status = error.status();
+    if status == status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE {
+        return true;
+    }
+    match status.status_code() {
+        StatusCode::Unauthorized => error.to_string().contains(
+            "The MAC signature found in the HTTP request is not the same as the computed signature",
+        ),
+        StatusCode::NotFound => {
+            matches!(
+                status.sub_status().map(u16::from),
+                None | Some(0 | 1002 | 1013)
+            )
+        }
+        _ => false,
+    }
+}
+
+async fn wait_for_region_readiness<T, F, Fut>(
+    region: &Region,
+    mut probe: F,
+) -> Result<T, Box<dyn Error>>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = Result<T, CosmosError>>,
+{
+    let timeout = Duration::from_secs(30);
+    let deadline = tokio::time::Instant::now() + timeout;
+    let mut last_error = None;
+    while tokio::time::Instant::now() < deadline {
+        match tokio::time::timeout_at(deadline, probe()).await {
+            Ok(Ok(value)) => return Ok(value),
+            Ok(Err(error)) if is_regional_readiness_error(&error) => {
+                tracing::info!(?region, %error, "waiting for seeded data in region");
+                last_error = Some(error);
+            }
+            Ok(Err(error)) => return Err(error.into()),
+            Err(_) => break,
+        }
+        tokio::time::sleep_until(
+            (tokio::time::Instant::now() + Duration::from_millis(500)).min(deadline),
+        )
+        .await;
+    }
+    Err(format!(
+        "readiness of region {region:?} timed out after {timeout:?}; last error: {last_error:?}"
+    )
+    .into())
+}
+
 fn test_env_filter() -> EnvFilter {
     match std::env::var("RUST_LOG") {
         Ok(value) if value.trim().eq_ignore_ascii_case("trace") => EnvFilter::new("debug"),
@@ -71,8 +126,8 @@ fn test_env_filter() -> EnvFilter {
 pub struct DriverTestClient {
     runtime: Arc<CosmosDriverRuntime>,
     account: AccountReference,
-    /// Driver-level preferred regions applied to every driver created by the
-    /// per-operation helpers (`create_database`, `read_item`, …). Empty by
+    resource_manager: Option<ResourceManager>,
+    /// Driver-level preferred regions applied to the context's drivers. Empty by
     /// default; populated by [`run_with_unique_db_and_hedging`] for the
     /// hedging path, which requires application-preferred regions to be set
     /// per Spec 0009: Cross-region hedging, §5.2.
@@ -81,7 +136,7 @@ pub struct DriverTestClient {
     /// the per-operation helpers. Empty by default; populated by the
     /// fault-injection entry points (`from_env_with_fault_injection`,
     /// `run_with_fault_injection`, etc.) so that FI rules are configured on
-    /// each per-operation driver rather than on the shared runtime.
+    /// each driver rather than on the shared runtime.
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Vec<Arc<FaultInjectionRule>>,
     /// Driver-level partition-failover / PPCB options applied to every driver
@@ -97,6 +152,156 @@ pub struct DriverTestClient {
 pub struct TestEnv {
     pub account: AccountReference,
     pub connection_pool: ConnectionPoolOptions,
+    pub resource_manager: Option<ResourceManager>,
+}
+
+const ACCOUNT_HOST_ENV_VAR: &str = "ACCOUNT_HOST";
+const AUTH_MODE_ENV_VAR: &str = "AZURE_COSMOS_AUTH_MODE";
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ManagementContainerResource<'a> {
+    id: &'a str,
+    partition_key: ManagementPartitionKey<'a>,
+}
+
+#[derive(Serialize)]
+struct ManagementPartitionKey<'a> {
+    paths: &'a [&'a str],
+    kind: &'a str,
+    version: u8,
+}
+
+#[cfg(feature = "fault_injection")]
+struct DisabledFaultInjectionRules(Vec<(Arc<FaultInjectionRule>, bool)>);
+
+#[cfg(feature = "fault_injection")]
+impl DisabledFaultInjectionRules {
+    fn new(rules: &[Arc<FaultInjectionRule>]) -> Self {
+        let states = rules
+            .iter()
+            .map(|rule| {
+                let enabled = rule.is_enabled();
+                rule.disable();
+                (rule.clone(), enabled)
+            })
+            .collect();
+        Self(states)
+    }
+}
+
+#[cfg(feature = "fault_injection")]
+impl Drop for DisabledFaultInjectionRules {
+    fn drop(&mut self) {
+        for (rule, was_enabled) in &self.0 {
+            if *was_enabled {
+                rule.enable();
+            }
+        }
+    }
+}
+
+pub async fn probe_driver_data_plane_ready(
+    driver: &CosmosDriver,
+    container: &ContainerReference,
+    partition_key_component_count: usize,
+) -> Result<(), CosmosError> {
+    const MAX_ATTEMPTS: usize = 20;
+    const RETRY_DELAY: Duration = Duration::from_millis(500);
+
+    let probe_id = format!("data-plane-readiness-probe-{}", Uuid::new_v4());
+    let partition_key = PartitionKey::try_from(
+        (0..partition_key_component_count)
+            .map(|_| PartitionKeyValue::from(probe_id.clone()))
+            .collect::<Vec<_>>(),
+    )?;
+
+    for attempt in 1..=MAX_ATTEMPTS {
+        let item = ItemReference::from_name(container, partition_key.clone(), probe_id.clone());
+        let outcome = driver
+            .execute_singleton_operation(
+                CosmosOperation::delete_item(item),
+                OperationOptions::default(),
+            )
+            .await;
+        match outcome {
+            Ok(response) => {
+                return Err(CosmosError::builder()
+                    .with_status(response.status())
+                    .with_message(format!(
+                        "driver data-plane readiness probe unexpectedly deleted {probe_id}"
+                    ))
+                    .build());
+            }
+            Err(error)
+                if error.status().status_code() == StatusCode::NotFound
+                    && error
+                        .status()
+                        .sub_status()
+                        .is_none_or(|sub_status| sub_status.value() == 0) =>
+            {
+                return Ok(());
+            }
+            Err(error) => {
+                let status = error.status();
+                let retryable = (status.status_code() == StatusCode::Unauthorized
+                    && status.sub_status() == Some(SubStatusCode::new(5007)))
+                    || (status.status_code() == StatusCode::Forbidden
+                        && status.sub_status() == Some(SubStatusCode::new(5302)))
+                    || (status.status_code() == StatusCode::NotFound
+                        && status.sub_status() == Some(substatus::COLLECTION_CREATE_IN_PROGRESS))
+                    || (status.status_code() == StatusCode::NotFound
+                        && status.sub_status() == Some(substatus::OWNER_RESOURCE_NOT_FOUND))
+                    || matches!(
+                        status.status_code(),
+                        StatusCode::TooManyRequests
+                            | StatusCode::ServiceUnavailable
+                            | StatusCode::Gone
+                    );
+                if !retryable || attempt == MAX_ATTEMPTS {
+                    return Err(error);
+                }
+            }
+        }
+
+        tokio::time::sleep(RETRY_DELAY).await;
+    }
+
+    unreachable!("the final probe attempt returns above")
+}
+
+pub async fn resolve_driver_container_ready(
+    driver: &CosmosDriver,
+    database_name: &str,
+    container_name: &str,
+) -> Result<ContainerReference, CosmosError> {
+    const MAX_ATTEMPTS: usize = 60;
+    const RETRY_DELAY: Duration = Duration::from_millis(500);
+
+    for attempt in 1..=MAX_ATTEMPTS {
+        match driver
+            .resolve_container_by_name(database_name, container_name, OperationOptions::default())
+            .await
+        {
+            Ok(container) => return Ok(container),
+            Err(error)
+                if error.status().status_code() == StatusCode::NotFound
+                    && matches!(
+                        error.status().sub_status(),
+                        Some(
+                            substatus::COLLECTION_CREATE_IN_PROGRESS
+                                | substatus::OWNER_RESOURCE_NOT_FOUND
+                        )
+                    )
+                    && attempt < MAX_ATTEMPTS =>
+            {
+                tokio::time::sleep(RETRY_DELAY).await;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+
+    unreachable!("the final container resolution attempt returns above")
 }
 
 /// Resolves the test environment from environment variables.
@@ -130,42 +335,67 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
         return resolve_gateway_v2_env(test_mode);
     }
 
-    #[allow(unreachable_code)]
-    let connection_string = match std::env::var(CONNECTION_STRING_ENV_VAR) {
-        Ok(val) if val.to_lowercase() == "emulator" => EMULATOR_CONNECTION_STRING.to_string(),
-        Ok(val) => val,
-        Err(_) => {
-            if test_mode == CosmosTestMode::Required || is_azure_pipelines() {
-                panic!(
-                    "{} is not set but test mode is required",
-                    CONNECTION_STRING_ENV_VAR
-                );
-            }
-            return Ok(None);
-        }
-    };
-
-    let conn_str: ConnectionString = connection_string.parse()?;
-    let endpoint = conn_str.account_endpoint().parse()?;
-    let key = conn_str.account_key().secret().to_string();
-    let account = AccountReference::with_account_key(endpoint, key);
-
-    let mut connection_pool_builder = ConnectionPoolOptions::builder();
-    #[cfg(test_category = "emulator_vnext")]
+    #[cfg(not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )))]
     {
-        connection_pool_builder = connection_pool_builder.with_gateway_v2_disabled(true);
-    }
-    if connection_string.eq_ignore_ascii_case(EMULATOR_CONNECTION_STRING) {
-        connection_pool_builder = connection_pool_builder.with_server_certificate_validation(
-            ServerCertificateValidation::RequiredUnlessEmulator,
-        );
-    }
-    let connection_pool = connection_pool_builder.build()?;
+        if std::env::var(AUTH_MODE_ENV_VAR).is_ok_and(|value| value.eq_ignore_ascii_case("aad")) {
+            let endpoint = std::env::var(ACCOUNT_HOST_ENV_VAR)
+                .ok()
+                .filter(|value| !value.trim().is_empty());
+            let Some(endpoint) = endpoint else {
+                if test_mode == CosmosTestMode::Required || is_azure_pipelines() {
+                    panic!("{ACCOUNT_HOST_ENV_VAR} is not set but AAD test mode is required");
+                }
+                return Ok(None);
+            };
+            let credential = azure_core_test::credentials::from_env(None)?;
+            let account = AccountReference::with_credential(endpoint.parse()?, credential.clone());
+            return Ok(Some(TestEnv {
+                account,
+                connection_pool: ConnectionPoolOptions::builder().build()?,
+                resource_manager: Some(resource_manager_from_env(credential)?),
+            }));
+        }
 
-    Ok(Some(TestEnv {
-        account,
-        connection_pool,
-    }))
+        let connection_string = match std::env::var(CONNECTION_STRING_ENV_VAR) {
+            Ok(val) if val.to_lowercase() == "emulator" => EMULATOR_CONNECTION_STRING.to_string(),
+            Ok(val) => val,
+            Err(_) => {
+                if test_mode == CosmosTestMode::Required || is_azure_pipelines() {
+                    panic!(
+                        "{} is not set but test mode is required",
+                        CONNECTION_STRING_ENV_VAR
+                    );
+                }
+                return Ok(None);
+            }
+        };
+
+        let conn_str: ConnectionString = connection_string.parse()?;
+        let endpoint = conn_str.account_endpoint().parse()?;
+        let key = conn_str.account_key().secret().to_string();
+        let account = AccountReference::with_account_key(endpoint, key);
+
+        let mut connection_pool_builder = ConnectionPoolOptions::builder();
+        #[cfg(test_category = "emulator_vnext")]
+        {
+            connection_pool_builder = connection_pool_builder.with_gateway_v2_disabled(true);
+        }
+        if connection_string.eq_ignore_ascii_case(EMULATOR_CONNECTION_STRING) {
+            connection_pool_builder = connection_pool_builder.with_server_certificate_validation(
+                ServerCertificateValidation::RequiredUnlessEmulator,
+            );
+        }
+        let connection_pool = connection_pool_builder.build()?;
+
+        Ok(Some(TestEnv {
+            account,
+            connection_pool,
+            resource_manager: None,
+        }))
+    }
 }
 
 /// Builds a [`TestEnv`] from the pre-provisioned Gateway 2.0 account
@@ -227,6 +457,7 @@ fn resolve_gateway_v2_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, 
             Ok(Some(TestEnv {
                 account,
                 connection_pool,
+                resource_manager: None,
             }))
         }
         (None, None) => {
@@ -276,9 +507,9 @@ fn normalize_gateway_v2_endpoint(raw: &str) -> String {
 impl DriverTestClient {
     /// Creates a new test client from environment variables.
     ///
-    /// If the `AZURE_COSMOS_CONNECTION_STRING` environment variable is set to
-    /// "emulator", uses the well-known emulator connection string. Otherwise,
-    /// parses the provided connection string.
+    /// Uses `ACCOUNT_HOST` plus the standard test token credential when
+    /// `AZURE_COSMOS_AUTH_MODE=aad`; otherwise resolves the emulator or live
+    /// account from `AZURE_COSMOS_CONNECTION_STRING`.
     ///
     /// Returns `None` if:
     /// - The environment variable is not set and test mode is not "required"
@@ -297,6 +528,7 @@ impl DriverTestClient {
         Ok(Some(Self {
             runtime,
             account: env.account,
+            resource_manager: env.resource_manager,
             preferred_regions: Vec::new(),
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: Vec::new(),
@@ -325,6 +557,7 @@ impl DriverTestClient {
         Ok(Some(Self {
             runtime,
             account: env.account,
+            resource_manager: env.resource_manager,
             preferred_regions: Vec::new(),
             fault_injection_rules: rules,
             partition_failover_options: None,
@@ -420,6 +653,7 @@ impl DriverTestClient {
         let client = Self {
             runtime,
             account: env.account,
+            resource_manager: env.resource_manager,
             preferred_regions: Vec::new(),
             fault_injection_rules: rules,
             partition_failover_options: None,
@@ -470,6 +704,7 @@ impl DriverTestClient {
         let client = Self {
             runtime,
             account: env.account,
+            resource_manager: env.resource_manager,
             preferred_regions: Vec::new(),
             fault_injection_rules: rules,
             partition_failover_options: Some(partition_failover_options),
@@ -522,6 +757,7 @@ impl DriverTestClient {
         let client = Self {
             runtime,
             account: env.account,
+            resource_manager: env.resource_manager,
             preferred_regions,
             fault_injection_rules: rules,
             partition_failover_options: None,
@@ -583,6 +819,7 @@ impl DriverTestClient {
         let client = Self {
             runtime,
             account: env.account,
+            resource_manager: env.resource_manager,
             preferred_regions: Vec::new(),
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: Vec::new(),
@@ -605,6 +842,7 @@ impl DriverTestClient {
 #[derive(Clone)]
 pub struct DriverTestRunContext {
     client: Arc<DriverTestClient>,
+    driver: Arc<OnceCell<Arc<CosmosDriver>>>,
     run_id: String,
 }
 
@@ -612,6 +850,7 @@ impl DriverTestRunContext {
     fn new(client: DriverTestClient) -> Self {
         Self {
             client: Arc::new(client),
+            driver: Arc::new(OnceCell::new()),
             // v7 (not v4) so a cleanup sweep can decode the creation time straight from the
             // name; kept un-truncated (unlike unique_container_name) because v7's timestamp
             // occupies the leading hex digits - truncating there would drop all randomness
@@ -641,12 +880,16 @@ impl DriverTestRunContext {
         format!("test-container-{}", &uuid_str[..8])
     }
 
-    /// Builds the per-operation [`DriverOptions`] used by the helpers in
+    /// Builds the [`DriverOptions`] used by the shared driver in
     /// this context. Carries the client's account, any `preferred_regions`
     /// configured by the hedging entry point, and any fault-injection rules
     /// configured by the FI entry points, so that every driver created by
     /// these helpers inherits them.
-    fn driver_options(&self) -> Result<DriverOptions, Box<dyn Error>> {
+    ///
+    /// Public so tests that drive the plan/execute API directly (paged
+    /// queries, change feed) can build a driver carrying the same
+    /// region and fault-injection configuration as the helpers.
+    pub fn driver_options(&self) -> Result<DriverOptions, Box<dyn Error>> {
         let mut builder = DriverOptions::builder(self.client.account.clone());
         if !self.client.preferred_regions.is_empty() {
             builder = builder.with_preferred_regions(self.client.preferred_regions.clone());
@@ -660,6 +903,20 @@ impl DriverTestRunContext {
                 builder.with_fault_injection_rules(self.client.fault_injection_rules.clone())?;
         }
         Ok(builder.build())
+    }
+
+    async fn driver(&self) -> Result<Arc<CosmosDriver>, Box<dyn Error>> {
+        let driver = self
+            .driver
+            .get_or_try_init(|| async {
+                self.client
+                    .runtime
+                    .create_driver(self.driver_options()?)
+                    .await
+                    .map_err(Box::<dyn Error>::from)
+            })
+            .await?;
+        Ok(Arc::clone(driver))
     }
 
     fn is_transport_generated_503(error: &(dyn Error + 'static)) -> bool {
@@ -728,11 +985,27 @@ impl DriverTestRunContext {
         &self,
         db_name: &str,
     ) -> Result<DatabaseReference, Box<dyn Error>> {
-        let driver = self
-            .client
-            .runtime
-            .create_driver(self.driver_options()?)
-            .await?;
+        if let Some(resource_manager) = &self.client.resource_manager {
+            resource_manager.create_database(db_name).await?;
+            return Ok(DatabaseReference::from_name(
+                self.client.account.clone(),
+                db_name.to_string(),
+            ));
+        }
+
+        self.create_database_data_plane(db_name).await
+    }
+
+    /// Executes the driver database-create operation directly.
+    ///
+    /// Resource setup uses the configured control-plane implementation in AAD
+    /// mode; tests that explicitly validate the driver's database-create path
+    /// use this method instead.
+    pub async fn create_database_data_plane(
+        &self,
+        db_name: &str,
+    ) -> Result<DatabaseReference, Box<dyn Error>> {
+        let driver = self.driver().await?;
 
         let body = format!(r#"{{"id": "{}"}}"#, db_name);
         let operation = CosmosOperation::create_database(self.client.account.clone())
@@ -769,11 +1042,15 @@ impl DriverTestRunContext {
         &self,
         database: &DatabaseReference,
     ) -> Result<(), Box<dyn Error>> {
-        let driver = self
-            .client
-            .runtime
-            .create_driver(self.driver_options()?)
-            .await?;
+        if let Some(resource_manager) = &self.client.resource_manager {
+            let database_name = database
+                .name()
+                .ok_or("resource management requires a name-addressed database")?;
+            resource_manager.delete_database(database_name).await?;
+            return Ok(());
+        }
+
+        let driver = self.driver().await?;
 
         let operation = CosmosOperation::delete_database(database.clone());
 
@@ -821,11 +1098,7 @@ impl DriverTestRunContext {
             !partition_key_paths.is_empty(),
             "container requires at least one partition-key path"
         );
-        let driver = self
-            .client
-            .runtime
-            .create_driver(self.driver_options()?)
-            .await?;
+        let driver = self.driver().await?;
 
         let paths_json = partition_key_paths
             .iter()
@@ -837,52 +1110,78 @@ impl DriverTestRunContext {
         } else {
             "MultiHash"
         };
-        let body = format!(
-            r#"{{"id": "{}", "partitionKey": {{"paths": [{}], "kind": "{}", "version": 2}}}}"#,
-            container_name, paths_json, kind
-        );
-        let operation =
-            CosmosOperation::create_container(database.clone()).with_body(body.into_bytes());
+        let externally_managed = self.client.resource_manager.is_some();
+        let mut ambiguous_create_error = None;
+        if let Some(resource_manager) = &self.client.resource_manager {
+            let database_name = database
+                .name()
+                .ok_or("resource management requires a name-addressed database")?;
+            let resource = ManagementContainerResource {
+                id: container_name,
+                partition_key: ManagementPartitionKey {
+                    paths: partition_key_paths,
+                    kind,
+                    version: 2,
+                },
+            };
+            resource_manager
+                .create_or_update_container(
+                    database_name,
+                    container_name,
+                    &serde_json::to_value(resource)?,
+                    None,
+                )
+                .await?;
+        } else {
+            let body = format!(
+                r#"{{"id": "{}", "partitionKey": {{"paths": [{}], "kind": "{}", "version": 2}}}}"#,
+                container_name, paths_json, kind
+            );
+            let operation =
+                CosmosOperation::create_container(database.clone()).with_body(body.into_bytes());
 
-        let create_result = self
-            .retry_transient_transport("create container", || {
-                let operation = operation.clone();
-                let driver = driver.clone();
-                async move {
-                    driver
-                        .execute_singleton_operation(operation, OperationOptions::default())
-                        .await
-                        .map_err(Into::into)
+            let create_result = self
+                .retry_transient_transport("create container", || {
+                    let operation = operation.clone();
+                    let driver = driver.clone();
+                    async move {
+                        driver
+                            .execute_singleton_operation(operation, OperationOptions::default())
+                            .await
+                            .map_err(Into::into)
+                    }
+                })
+                .await;
+            // Tolerate a 409 Conflict from the create itself: a client-side
+            // timeout (surfaced as a synthetic `TransportGenerated503`) doesn't
+            // mean the server never processed the request — the driver's own
+            // region-failover retry can legitimately observe the container
+            // already exists. Fall through to the resolve-retry loop below
+            // exactly as a successful create would, since that's what actually
+            // produces the `ContainerReference` this method returns.
+            ambiguous_create_error = match create_result {
+                Err(error)
+                    if error.downcast_ref::<CosmosError>().is_some_and(|error| {
+                        error.status().status_code() == StatusCode::Conflict
+                    }) =>
+                {
+                    None
                 }
-            })
-            .await;
-        // Tolerate a 409 Conflict from the create itself: a client-side
-        // timeout (surfaced as a synthetic `TransportGenerated503`) doesn't
-        // mean the server never processed the request — the driver's own
-        // region-failover retry can legitimately observe the container
-        // already exists. Fall through to the resolve-retry loop below
-        // exactly as a successful create would, since that's what actually
-        // produces the `ContainerReference` this method returns.
-        let mut ambiguous_create_error = match create_result {
-            Err(error)
-                if error
-                    .downcast_ref::<CosmosError>()
-                    .is_some_and(|error| error.status().status_code() == StatusCode::Conflict) =>
-            {
-                None
-            }
-            Err(error) if Self::is_transport_generated_503(error.as_ref()) => Some(error),
-            other => {
-                let result = other?;
-                // Check for success status (201 Created)
-                let diagnostics = result.diagnostics();
-                let status = diagnostics.status();
-                if !status.map(|s| s.is_success()).unwrap_or(false) {
-                    return Err(format!("Failed to create container, status: {:?}", status).into());
+                Err(error) if Self::is_transport_generated_503(error.as_ref()) => Some(error),
+                other => {
+                    let result = other?;
+                    // Check for success status (201 Created)
+                    let diagnostics = result.diagnostics();
+                    let status = diagnostics.status();
+                    if !status.map(|s| s.is_success()).unwrap_or(false) {
+                        return Err(
+                            format!("Failed to create container, status: {:?}", status).into()
+                        );
+                    }
+                    None
                 }
-                None
-            }
-        };
+            };
+        }
         let db_name = database
             .name()
             .ok_or_else(|| "database reference must be name-based".to_string())?;
@@ -901,17 +1200,31 @@ impl DriverTestRunContext {
                 .resolve_container_by_name(db_name, container_name, OperationOptions::default())
                 .await
             {
-                Ok(c) => return Ok(c),
+                Ok(container) => {
+                    if externally_managed {
+                        #[cfg(feature = "fault_injection")]
+                        let _disabled_rules =
+                            DisabledFaultInjectionRules::new(&self.client.fault_injection_rules);
+                        probe_driver_data_plane_ready(
+                            &driver,
+                            &container,
+                            partition_key_paths.len(),
+                        )
+                        .await?;
+                    }
+                    return Ok(container);
+                }
                 Err(e) => {
                     // Match on the typed status/sub-status (404/1013) rather
                     // than substring-scanning the error message.
                     let status = e.status();
                     let create_in_progress = status.status_code() == StatusCode::NotFound
-                        && status.sub_status()
-                            == Some(azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_CREATE_IN_PROGRESS);
+                        && status.sub_status() == Some(substatus::COLLECTION_CREATE_IN_PROGRESS);
+                    let owner_not_found = status.status_code() == StatusCode::NotFound
+                        && status.sub_status() == Some(substatus::OWNER_RESOURCE_NOT_FOUND);
                     let ambiguous_not_found = ambiguous_create_error.is_some()
                         && status.status_code() == StatusCode::NotFound;
-                    if create_in_progress || ambiguous_not_found {
+                    if create_in_progress || owner_not_found || ambiguous_not_found {
                         tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
                         delay_ms = (delay_ms * 2).min(5000);
                         last_err_msg = Some(format!("{e}"));
@@ -968,11 +1281,7 @@ impl DriverTestRunContext {
         body: &[u8],
         options: OperationOptions,
     ) -> Result<CosmosResponse, Box<dyn Error>> {
-        let driver = self
-            .client
-            .runtime
-            .create_driver(self.driver_options()?)
-            .await?;
+        let driver = self.driver().await?;
 
         let pk = partition_key.into();
         let item_ref = ItemReference::from_name(container, pk, item_id.to_owned());
@@ -1046,6 +1355,54 @@ impl DriverTestRunContext {
         .await
     }
 
+    /// Waits for seeded data in each region without hedging or injected faults.
+    pub async fn wait_for_item_in_regions(
+        &self,
+        container: &ContainerReference,
+        item_id: &str,
+        partition_key: impl Into<PartitionKey>,
+        regions: &[Region],
+    ) -> Result<(), Box<dyn Error>> {
+        if regions.is_empty() {
+            return Err("regional readiness requires at least one region".into());
+        }
+        // Use a clean driver so readiness cannot consume faults or trip the tested circuit breaker.
+        let driver = self
+            .client
+            .runtime
+            .create_driver(
+                DriverOptions::builder(self.client.account.clone())
+                    .with_preferred_regions(regions.to_vec())
+                    .build(),
+            )
+            .await?;
+        let item = ItemReference::from_name(container, partition_key.into(), item_id.to_owned());
+        for region in regions {
+            let excluded: ExcludedRegions =
+                regions.iter().filter(|r| *r != region).cloned().collect();
+            let options = OperationOptionsBuilder::new()
+                .with_excluded_regions(excluded)
+                .with_hedging_enabled(false)
+                .with_availability_strategy(AvailabilityStrategy::Disabled)
+                .with_max_session_retry_count(0)
+                .build();
+            // Fresh regional caches can report a signature mismatch before container metadata arrives.
+            let response = wait_for_region_readiness(region, || {
+                driver.execute_singleton_operation(
+                    CosmosOperation::read_item(item.clone()),
+                    options.clone(),
+                )
+            })
+            .await?;
+            assert_eq!(
+                response.diagnostics().regions_contacted(),
+                vec![region.clone()],
+                "readiness must succeed in the requested region, not through fallback",
+            );
+        }
+        Ok(())
+    }
+
     /// Reads an item with options scoped to the read, not driver initialization.
     pub async fn read_item_with_options(
         &self,
@@ -1054,11 +1411,7 @@ impl DriverTestRunContext {
         partition_key: impl Into<PartitionKey>,
         options: OperationOptions,
     ) -> Result<CosmosResponse, Box<dyn Error>> {
-        let driver = self
-            .client
-            .runtime
-            .create_driver(self.driver_options()?)
-            .await?;
+        let driver = self.driver().await?;
 
         let pk = partition_key.into();
         let item_ref = ItemReference::from_name(container, pk, item_id.to_owned());
@@ -1092,11 +1445,7 @@ impl DriverTestRunContext {
         patch: &azure_data_cosmos_driver::models::PatchInstructions,
         max_attempts: Option<std::num::NonZeroU8>,
     ) -> Result<CosmosResponse, Box<dyn Error>> {
-        let driver = self
-            .client
-            .runtime
-            .create_driver(self.driver_options()?)
-            .await?;
+        let driver = self.driver().await?;
 
         let pk = partition_key.into();
         let item_ref = ItemReference::from_name(container, pk, item_id.to_owned());
@@ -1129,24 +1478,13 @@ impl DriverTestRunContext {
         Option<Vec<azure_data_cosmos_driver::models::partition_key_range::PartitionKeyRange>>,
         Box<dyn Error>,
     > {
-        let driver = self
-            .client
-            .runtime
-            .create_driver(self.driver_options()?)
-            .await?;
+        let driver = self.driver().await?;
         Ok(driver
             .resolve_all_partition_key_ranges(container, force_refresh)
             .await?)
     }
 
-    /// Creates a single long-lived driver that the caller holds for the
-    /// duration of a test.
-    ///
-    /// Unlike the per-operation helpers — each of which builds a throwaway
-    /// driver — every operation issued through this driver shares its
-    /// in-memory routing and hub-region cache state. This is required for
-    /// tests that assert on cross-operation cache behavior, where state
-    /// populated by one read must be observed by a later read.
+    /// Creates a driver with cache state independent of the shared operation helpers.
     #[cfg(feature = "__internal_testing")]
     pub async fn create_persistent_driver(&self) -> Result<Arc<CosmosDriver>, Box<dyn Error>> {
         Ok(self
@@ -1159,7 +1497,7 @@ impl DriverTestRunContext {
     /// Reads an item on a caller-provided persistent driver so the driver's
     /// in-memory cache state persists across reads. Mirrors
     /// [`read_item`](Self::read_item) but reuses the given driver instead of
-    /// creating a fresh one per call.
+    /// using the context's shared driver.
     #[cfg(feature = "__internal_testing")]
     pub async fn read_item_on(
         &self,
@@ -1266,8 +1604,358 @@ impl DriverTestRunContext {
 
 #[cfg(test)]
 mod tests {
-    use super::runtime_operation_options;
-    use azure_data_cosmos_driver::options::{BinaryEncodingOptions, OperationOptions};
+    use super::{
+        is_regional_readiness_error, runtime_operation_options, status_codes,
+        wait_for_region_readiness,
+    };
+    #[cfg(any(
+        feature = "__internal_mocking",
+        all(feature = "fault_injection", feature = "__internal_in_memory_emulator")
+    ))]
+    use super::{DriverTestClient, DriverTestRunContext};
+    #[cfg(feature = "__internal_mocking")]
+    use async_trait::async_trait;
+    use azure_core::http::StatusCode;
+    #[cfg(any(
+        feature = "__internal_mocking",
+        all(feature = "fault_injection", feature = "__internal_in_memory_emulator")
+    ))]
+    use azure_core::http::Url;
+    #[cfg(feature = "__internal_mocking")]
+    use azure_core::http::{headers::Headers, Method};
+    #[cfg(any(
+        feature = "__internal_mocking",
+        all(feature = "fault_injection", feature = "__internal_in_memory_emulator")
+    ))]
+    use azure_data_cosmos_driver::models::AccountReference;
+    use azure_data_cosmos_driver::{
+        error::{CosmosError, CosmosStatus},
+        options::{BinaryEncodingOptions, OperationOptions, Region},
+    };
+    #[cfg(feature = "__internal_mocking")]
+    use azure_data_cosmos_driver::{
+        options::ConnectionPoolOptions,
+        test::{
+            HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse, TransportClient,
+            TransportError,
+        },
+        CosmosDriverRuntime,
+    };
+    #[cfg(feature = "__internal_mocking")]
+    use std::sync::atomic::{AtomicU32, Ordering};
+    #[cfg(any(
+        feature = "__internal_mocking",
+        all(feature = "fault_injection", feature = "__internal_in_memory_emulator")
+    ))]
+    use std::sync::Arc;
+    use std::{future::pending, time::Duration};
+
+    #[cfg(all(feature = "fault_injection", feature = "__internal_in_memory_emulator"))]
+    use azure_data_cosmos_driver::{
+        fault_injection::{
+            FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+            FaultInjectionRuleBuilder, FaultOperationType,
+        },
+        in_memory_emulator::{
+            ConsistencyLevel, InMemoryEmulatorHttpClient, ReplicationConfig, VirtualAccountConfig,
+            VirtualRegion, WriteMode,
+        },
+    };
+
+    #[cfg(feature = "__internal_mocking")]
+    #[derive(Debug, Default)]
+    struct AccountTransport {
+        requests: Arc<AtomicU32>,
+    }
+
+    #[cfg(feature = "__internal_mocking")]
+    impl HttpClientFactory for AccountTransport {
+        fn build(
+            &self,
+            _pool: &ConnectionPoolOptions,
+            _config: HttpClientConfig,
+        ) -> azure_data_cosmos_driver::Result<Arc<dyn TransportClient>> {
+            Ok(Arc::new(Self {
+                requests: Arc::clone(&self.requests),
+            }))
+        }
+    }
+
+    #[cfg(feature = "__internal_mocking")]
+    #[async_trait]
+    impl TransportClient for AccountTransport {
+        async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            assert_eq!(request.method, Method::Get);
+            self.requests.fetch_add(1, Ordering::SeqCst);
+            Ok(HttpResponse {
+                status: 200,
+                headers: Headers::new(),
+                body: serde_json::to_vec(&serde_json::json!({
+                    "_self": "/", "_dbs": "//dbs/", "_rid": "AAAAAA==", "id": "context",
+                    "writableLocations": [{
+                        "name": "West US 2", "databaseAccountEndpoint": "https://context-westus2.documents.azure.com/"
+                    }],
+                    "readableLocations": [{
+                        "name": "West US 2", "databaseAccountEndpoint": "https://context-westus2.documents.azure.com/"
+                    }],
+                    "enableMultipleWriteLocations": false,
+                    "userConsistencyPolicy": {"defaultConsistencyLevel": "Session"},
+                    "userReplicationPolicy": {"minReplicaSetSize": 3, "maxReplicasetSize": 4},
+                    "systemReplicationPolicy": {"minReplicaSetSize": 3, "maxReplicasetSize": 4},
+                    "readPolicy": {"primaryReadCoefficient": 1, "secondaryReadCoefficient": 1},
+                    "queryEngineConfiguration": "{}"
+                })).unwrap(),
+            })
+        }
+    }
+
+    #[cfg(feature = "__internal_mocking")]
+    #[tokio::test]
+    async fn context_clones_share_driver_initialization() {
+        let transport = Arc::new(AccountTransport::default());
+        let runtime = CosmosDriverRuntime::builder()
+            .with_mock_http_client_factory(transport.clone())
+            .build()
+            .await
+            .unwrap();
+        let context = DriverTestRunContext::new(DriverTestClient {
+            runtime,
+            account: AccountReference::with_account_key(
+                Url::parse("https://context.documents.azure.com/").unwrap(),
+                "a2V5",
+            ),
+            resource_manager: None,
+            preferred_regions: Vec::new(),
+            #[cfg(feature = "fault_injection")]
+            fault_injection_rules: Vec::new(),
+            partition_failover_options: None,
+        });
+        let other = context.clone();
+        let (first, second) = tokio::join!(context.driver(), other.driver());
+        let first = first.unwrap();
+        assert!(Arc::ptr_eq(&first, &second.unwrap()));
+        let requests = transport.requests.load(Ordering::SeqCst);
+        assert!(
+            requests > 0,
+            "initialization must actually retrieve metadata"
+        );
+        assert!(Arc::ptr_eq(&first, &context.driver().await.unwrap()));
+        assert_eq!(transport.requests.load(Ordering::SeqCst), requests);
+    }
+
+    fn readiness_error(status: StatusCode, message: &'static str) -> CosmosError {
+        CosmosError::builder()
+            .with_status(CosmosStatus::new(status))
+            .with_message(message)
+            .build()
+    }
+
+    #[test]
+    fn regional_readiness_only_retries_propagation_errors() {
+        assert!(is_regional_readiness_error(&readiness_error(
+            StatusCode::Unauthorized,
+            "The MAC signature found in the HTTP request is not the same as the computed signature",
+        )));
+        for sub_status in [0, 1002, 1013] {
+            let error = CosmosError::builder()
+                .with_status(CosmosStatus::new(StatusCode::NotFound).with_sub_status(sub_status))
+                .build();
+            assert!(is_regional_readiness_error(&error));
+        }
+        assert!(is_regional_readiness_error(
+            &CosmosError::builder()
+                .with_status(status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE)
+                .build(),
+        ));
+        assert!(!is_regional_readiness_error(
+            &CosmosError::builder()
+                .with_status(
+                    CosmosStatus::new(StatusCode::ServiceUnavailable).with_sub_status(20011)
+                )
+                .build(),
+        ));
+        for status in [
+            StatusCode::Unauthorized,
+            StatusCode::Forbidden,
+            StatusCode::BadRequest,
+            StatusCode::ServiceUnavailable,
+        ] {
+            assert!(!is_regional_readiness_error(&readiness_error(
+                status,
+                "unrelated failure",
+            )));
+        }
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn regional_readiness_waits_for_replication() {
+        let start = tokio::time::Instant::now();
+        let mut attempts = 0;
+        let value = wait_for_region_readiness(&Region::WEST_US_3, || {
+            attempts += 1;
+            let result = if attempts < 3 {
+                Err(readiness_error(StatusCode::NotFound, "not replicated"))
+            } else {
+                Ok(42)
+            };
+            async move { result }
+        })
+        .await
+        .unwrap();
+        assert_eq!(value, 42);
+        assert_eq!(attempts, 3);
+        assert_eq!(start.elapsed(), Duration::from_secs(1));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn regional_readiness_retries_wrapped_session_lag() {
+        let start = tokio::time::Instant::now();
+        let mut attempts = 0;
+        wait_for_region_readiness(&Region::WEST_US_3, || {
+            attempts += 1;
+            let result = if attempts == 1 {
+                Err(CosmosError::builder()
+                    .with_status(status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE)
+                    .build())
+            } else {
+                Ok(())
+            };
+            async move { result }
+        })
+        .await
+        .unwrap();
+        assert_eq!(attempts, 2);
+        assert_eq!(start.elapsed(), Duration::from_millis(500));
+    }
+
+    #[tokio::test]
+    #[cfg(all(feature = "fault_injection", feature = "__internal_in_memory_emulator"))]
+    async fn regional_readiness_session_lag_does_not_fall_back_to_hub() {
+        let hub = Url::parse("https://eastus.emulator.local").unwrap();
+        let config = VirtualAccountConfig::new(vec![
+            VirtualRegion::new("East US", hub.clone()),
+            VirtualRegion::new(
+                "West US",
+                Url::parse("https://westus.emulator.local").unwrap(),
+            ),
+        ])
+        .unwrap()
+        .with_write_mode(WriteMode::Single)
+        .with_consistency(ConsistencyLevel::Session)
+        .with_replication_config(ReplicationConfig::immediate());
+        let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
+        let satellite_lag = Arc::new(
+            FaultInjectionRuleBuilder::new(
+                "satellite-session-lag",
+                FaultInjectionResultBuilder::new()
+                    .with_error(FaultInjectionErrorType::ReadSessionNotAvailable)
+                    .build(),
+            )
+            .with_condition(
+                FaultInjectionConditionBuilder::new()
+                    .with_operation_type(FaultOperationType::ReadItem)
+                    .with_region(Region::WEST_US)
+                    .build(),
+            )
+            .with_hit_limit(1)
+            .build(),
+        );
+        let hub_reads = Arc::new(
+            FaultInjectionRuleBuilder::new(
+                "count-hub-reads",
+                FaultInjectionResultBuilder::new()
+                    .with_delay(Duration::ZERO)
+                    .build(),
+            )
+            .with_condition(
+                FaultInjectionConditionBuilder::new()
+                    .with_operation_type(FaultOperationType::ReadItem)
+                    .with_region(Region::EAST_US)
+                    .build(),
+            )
+            .build(),
+        );
+        let runtime = emulator
+            .runtime_builder_with_fault_rules(vec![
+                Arc::clone(&satellite_lag),
+                Arc::clone(&hub_reads),
+            ])
+            .build()
+            .await
+            .unwrap();
+        let context = DriverTestRunContext::new(DriverTestClient {
+            runtime,
+            account: AccountReference::with_account_key(hub, "ZW11bGF0b3Ita2V5"),
+            resource_manager: None,
+            preferred_regions: vec![Region::EAST_US, Region::WEST_US],
+            fault_injection_rules: Vec::new(),
+            partition_failover_options: None,
+        });
+        let database = context.create_database("readiness").await.unwrap();
+        let container = context
+            .create_container(&database, "items", "/pk")
+            .await
+            .unwrap();
+        context
+            .create_item_with_pk(&container, "pk1", br#"{"id":"seed","pk":"pk1"}"#)
+            .await
+            .unwrap();
+
+        context
+            .wait_for_item_in_regions(
+                &container,
+                "seed",
+                "pk1",
+                &[Region::WEST_US, Region::EAST_US],
+            )
+            .await
+            .unwrap();
+        assert_eq!(satellite_lag.hit_count(), 1);
+        assert_eq!(
+            hub_reads.hit_count(),
+            1,
+            "only the explicit hub probe may read the hub"
+        );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn regional_readiness_preserves_unrelated_errors() {
+        let start = tokio::time::Instant::now();
+        let error = wait_for_region_readiness::<(), _, _>(&Region::WEST_US_3, || async {
+            Err(readiness_error(
+                StatusCode::Unauthorized,
+                "invalid credentials",
+            ))
+        })
+        .await
+        .unwrap_err();
+        assert!(error.to_string().contains("invalid credentials"));
+        assert_eq!(start.elapsed(), Duration::ZERO);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn regional_readiness_bounds_repeated_failures() {
+        let start = tokio::time::Instant::now();
+        let error = wait_for_region_readiness::<(), _, _>(&Region::WEST_US_3, || async {
+            Err(readiness_error(StatusCode::NotFound, "not replicated"))
+        })
+        .await
+        .unwrap_err();
+        assert_eq!(start.elapsed(), Duration::from_secs(30));
+        assert!(error.to_string().contains("not replicated"));
+        assert!(error.to_string().contains("westus3"));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn regional_readiness_bounds_a_hung_request() {
+        let start = tokio::time::Instant::now();
+        let error =
+            wait_for_region_readiness(&Region::WEST_US_3, || pending::<Result<(), CosmosError>>())
+                .await
+                .unwrap_err();
+        assert_eq!(start.elapsed(), Duration::from_secs(30));
+        assert!(error.to_string().contains("timed out"));
+    }
 
     #[test]
     #[cfg(any(

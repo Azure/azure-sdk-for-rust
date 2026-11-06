@@ -24,6 +24,7 @@ use azure_data_cosmos_driver::models::{ContainerReference, DatabaseReference};
 use azure_data_cosmos_driver::options::DriverOptions;
 use azure_data_cosmos_driver::options::OperationOptions;
 use azure_data_cosmos_driver::options::{ExcludedRegions, OperationOptionsBuilder, Region};
+use serde::Serialize;
 use std::error::Error;
 use std::sync::Arc;
 use std::time::Duration;
@@ -35,7 +36,24 @@ use uuid::Uuid;
 #[allow(dead_code, unused_imports)]
 mod framework;
 
-use framework::resolve_test_env;
+use framework::{
+    probe_driver_data_plane_ready, resolve_driver_container_ready, resolve_test_env,
+    CosmosResourceManager,
+};
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ManagementContainerResource<'a> {
+    id: &'a str,
+    partition_key: ManagementPartitionKey<'a>,
+}
+
+#[derive(Serialize)]
+struct ManagementPartitionKey<'a> {
+    paths: [&'a str; 1],
+    kind: &'a str,
+    version: u8,
+}
 
 /// Persistent fault on every `MetadataReadDatabaseAccount` (GET /) request.
 /// Fires unconditionally on `create_driver`, regardless of the data-plane op that follows.
@@ -260,12 +278,12 @@ fn assert_final_request_left_faulted_region(response: &CosmosResponse, faulted_r
     );
 }
 
-/// Creates a fresh DB + container via raw `CosmosOperation`s + JSON bodies (mirrors
-/// `framework::DriverTestClient::{create_database, create_container_with_pk_paths}`).
+/// Creates a fresh DB + container using external management for federated live accounts.
 /// Caller is responsible for cleanup via [`delete_database`].
 async fn create_unique_db_and_container(
     runtime: &Arc<CosmosDriverRuntime>,
     account: &AccountReference,
+    resource_manager: Option<&dyn CosmosResourceManager>,
 ) -> Result<(DatabaseReference, ContainerReference), Box<dyn Error>> {
     let driver = runtime
         .create_driver(DriverOptions::builder(account.clone()).build())
@@ -273,36 +291,61 @@ async fn create_unique_db_and_container(
     let db_name = format!("failover-test-db-{}", Uuid::new_v4());
     let container_name = "c".to_string();
 
-    // Create database.
-    let db_body = format!(r#"{{"id":"{db_name}"}}"#);
-    let db_op = CosmosOperation::create_database(account.clone()).with_body(db_body.into_bytes());
-    let db_result = driver
-        .execute_singleton_operation(db_op, OperationOptions::default())
-        .await?;
-    let db_diag = db_result.diagnostics();
-    let db_status = db_diag.status();
-    if !db_status.map(|s| s.is_success()).unwrap_or(false) {
-        return Err(format!("create database failed, status: {db_status:?}").into());
-    }
     let db_ref = DatabaseReference::from_name(account.clone(), db_name.clone());
+    if let Some(resource_manager) = resource_manager {
+        resource_manager.create_database(&db_name).await?;
+        resource_manager
+            .create_or_update_container(
+                &db_name,
+                &container_name,
+                &serde_json::to_value(ManagementContainerResource {
+                    id: &container_name,
+                    partition_key: ManagementPartitionKey {
+                        paths: ["/pk"],
+                        kind: "Hash",
+                        version: 2,
+                    },
+                })?,
+                None,
+            )
+            .await?;
+    } else {
+        let db_body = format!(r#"{{"id":"{db_name}"}}"#);
+        let db_op =
+            CosmosOperation::create_database(account.clone()).with_body(db_body.into_bytes());
+        let db_result = driver
+            .execute_singleton_operation(db_op, OperationOptions::default())
+            .await?;
+        let db_diagnostics = db_result.diagnostics();
+        let db_status = db_diagnostics.status();
+        if !db_status.map(|s| s.is_success()).unwrap_or(false) {
+            return Err(format!("create database failed, status: {db_status:?}").into());
+        }
 
-    // Create container.
-    let container_body = format!(
-        r#"{{"id":"{container_name}","partitionKey":{{"paths":["/pk"],"kind":"Hash","version":2}}}}"#
-    );
-    let container_op =
-        CosmosOperation::create_container(db_ref.clone()).with_body(container_body.into_bytes());
-    let container_result = driver
-        .execute_singleton_operation(container_op, OperationOptions::default())
-        .await?;
-    let container_diag = container_result.diagnostics();
-    let container_status = container_diag.status();
-    if !container_status.map(|s| s.is_success()).unwrap_or(false) {
-        return Err(format!("create container failed, status: {container_status:?}").into());
+        let container_body = format!(
+            r#"{{"id":"{container_name}","partitionKey":{{"paths":["/pk"],"kind":"Hash","version":2}}}}"#
+        );
+        let container_op = CosmosOperation::create_container(db_ref.clone())
+            .with_body(container_body.into_bytes());
+        let container_result = driver
+            .execute_singleton_operation(container_op, OperationOptions::default())
+            .await?;
+        let container_diagnostics = container_result.diagnostics();
+        let container_status = container_diagnostics.status();
+        if !container_status.map(|s| s.is_success()).unwrap_or(false) {
+            return Err(format!("create container failed, status: {container_status:?}").into());
+        }
     }
-    let container_ref = driver
-        .resolve_container_by_name(&db_name, &container_name, OperationOptions::default())
-        .await?;
+
+    let container_ref = if resource_manager.is_some() {
+        let container = resolve_driver_container_ready(&driver, &db_name, &container_name).await?;
+        probe_driver_data_plane_ready(&driver, &container, 1).await?;
+        container
+    } else {
+        driver
+            .resolve_container_by_name(&db_name, &container_name, OperationOptions::default())
+            .await?
+    };
     Ok((db_ref, container_ref))
 }
 
@@ -311,7 +354,13 @@ async fn delete_database(
     runtime: &Arc<CosmosDriverRuntime>,
     account: &AccountReference,
     db: &DatabaseReference,
+    resource_manager: Option<&dyn CosmosResourceManager>,
 ) {
+    if let (Some(resource_manager), Some(database_name)) = (resource_manager, db.name()) {
+        let _ = resource_manager.delete_database(database_name).await;
+        return;
+    }
+
     if let Ok(driver) = runtime
         .create_driver(DriverOptions::builder(account.clone()).build())
         .await
@@ -514,9 +563,11 @@ async fn excluded_regions_honored_end_to_end() -> Result<(), Box<dyn Error>> {
         return Ok(());
     };
     let account = env.account;
+    let resource_manager = env.resource_manager;
 
     let runtime = CosmosDriverRuntime::builder().build().await?;
-    let (db_ref, container_ref) = create_unique_db_and_container(&runtime, &account).await?;
+    let (db_ref, container_ref) =
+        create_unique_db_and_container(&runtime, &account, resource_manager.as_deref()).await?;
 
     let all_regions = [HUB_REGION, SATELLITE_REGION];
     let mut setup_err = None;
@@ -529,7 +580,7 @@ async fn excluded_regions_honored_end_to_end() -> Result<(), Box<dyn Error>> {
         }
     }
     if let Some(msg) = setup_err {
-        delete_database(&runtime, &account, &db_ref).await;
+        delete_database(&runtime, &account, &db_ref, resource_manager.as_deref()).await;
         return Err(msg.into());
     }
 
@@ -566,7 +617,7 @@ async fn excluded_regions_honored_end_to_end() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    delete_database(&runtime, &account, &db_ref).await;
+    delete_database(&runtime, &account, &db_ref, resource_manager.as_deref()).await;
     result
 }
 
@@ -593,11 +644,14 @@ where
         return Ok(());
     };
     let account = env.account;
+    let resource_manager = env.resource_manager;
 
     // Setup runtime: NO fault rule. Used for DB/container creation + warmup so
     // those operations are unaffected by the rule we will exercise.
     let setup_runtime = CosmosDriverRuntime::builder().build().await?;
-    let (db_ref, container_ref) = create_unique_db_and_container(&setup_runtime, &account).await?;
+    let (db_ref, container_ref) =
+        create_unique_db_and_container(&setup_runtime, &account, resource_manager.as_deref())
+            .await?;
 
     let all_regions = [HUB_REGION, SATELLITE_REGION];
     let mut warmup_err = None;
@@ -616,7 +670,13 @@ where
         }
     }
     if let Some(msg) = warmup_err {
-        delete_database(&setup_runtime, &account, &db_ref).await;
+        delete_database(
+            &setup_runtime,
+            &account,
+            &db_ref,
+            resource_manager.as_deref(),
+        )
+        .await;
         return Err(msg.into());
     }
 
@@ -641,6 +701,12 @@ where
          before the driver failed over; hit_count was 0. Test result: {result:?}"
     );
 
-    delete_database(&setup_runtime, &account, &db_ref).await;
+    delete_database(
+        &setup_runtime,
+        &account,
+        &db_ref,
+        resource_manager.as_deref(),
+    )
+    .await;
     result
 }

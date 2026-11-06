@@ -4,7 +4,7 @@
   "id": "item.hierarchical-partition-key",
   "title": "Hierarchical partition keys support point and prefix operations",
   "requirement": "A full hierarchical partition key addresses one item while a prefix-scoped query returns only matching descendants.",
-  "maturity": "candidate",
+  "maturity": "stable",
   "precedents": [
     {
       "sdk": "rust",
@@ -40,7 +40,7 @@
       ]
     },
     "azureLive": {
-      "applicability": "supported",
+      "applicability": "required",
       "fidelity": "full"
     }
   }

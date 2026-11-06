@@ -1,17 +1,26 @@
 # Release History
 
-## 1.2.0-beta.2 (Unreleased)
+## 1.2.0-beta.2 (2026-11-05)
 
 ### Features Added
 
-### Breaking Changes
+- Added `cloud::resource_manager::Audience` behind the `unstable_resource_manager` feature as the shared audience marker for Azure Resource Manager clients.
+- Added `CloudConfigurationExt::audience`, `CloudConfigurationExt::default_scope`, and `CloudConfigurationExt::endpoint` behind the `unstable_resource_manager` feature to get authentication audiences, default credential scopes matching Azure CLI, and management endpoints for known and custom clouds. `cloud::resource_manager::CloudConfigurationExt` is implemented for `CloudConfiguration` when the `unstable_resource_manager` feature is enabled.
+- Added `CustomConfiguration::endpoint` behind the `unstable_resource_manager` feature to configure Azure Resource Manager endpoints.
+- Added `unstable_resource_manager` feature to support Azure Resource Manager-specific functionality.
+- Added `http::poller::resource_manager::{new_poller, PollerOptions, FinalStateVia}` behind the `unstable_resource_manager` feature for Resource Manager polling with optional final-state selection, method- and response-based fallbacks, and a callback for inline operation-location results.
+- `Error` now captures a `std::backtrace::Backtrace` at construction time and includes it in `Debug` output (e.g., `{:?}`) when `RUST_BACKTRACE=1` is set.
+- Added bearer-token authorization options and `ClientOptions::allow_insecure_connections` to opt in to authenticated HTTP connections to `localhost` or `127.0.0.1` when the `test` feature is enabled.
+- Added experimental `http::fake` response extension traits and pager/poller state propagation behind the `test` and `unstable_fake` features for testing client libraries without network requests.
+- Added `http::fake::get_api_name()` to borrow operation names from request context without requiring a tracer provider or listener.
+- Added `http::fake::ResponseExt::fake_with_error()` to create JSON service error responses.
 
 ### Bugs Fixed
 
+- Awaiting a `Poller` after fully consuming its stream no longer panics.
 - `check_success` would fail when error message contained escape sequences like CRLF ([#5364](https://github.com/Azure/azure-sdk-for-rust/pull/5364))
 - Avoided unnecessary error construction and backtrace capture in `Headers::get_optional_str()` when a header is absent ([#5446](https://github.com/Azure/azure-sdk-for-rust/pull/5446)).
-
-### Other Changes
+- Update TLS dependencies to distrust compromised emSign CAs
 
 ## 1.2.0-beta.1 (2026-09-04)
 

@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added a `default` feature forwarding Core defaults so consumers can opt out with `default-features = false`.
+
 ### Breaking Changes
 
 ### Bugs Fixed

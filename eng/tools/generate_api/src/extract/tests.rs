@@ -280,8 +280,11 @@ fn extracts_declaration_path_references_for_resolved_result_paths() {
 
 #[test]
 fn extract_item_synthesizes_async_trait_and_elides_synthetic_lifetimes() {
-    let function_id = Id(2);
+    let trait_function_id = Id(2);
     let trait_id = Id(1);
+    let struct_id = Id(3);
+    let impl_id = Id(4);
+    let impl_function_id = Id(5);
 
     let krate = crate_with_items(vec![
         item(
@@ -291,41 +294,58 @@ fn extract_item_synthesizes_async_trait_and_elides_synthetic_lifetimes() {
                 is_auto: false,
                 is_unsafe: false,
                 is_dyn_compatible: true,
-                items: vec![function_id],
+                items: vec![trait_function_id],
                 generics: empty_generics(),
                 bounds: Vec::new(),
-                implementations: Vec::new(),
+                implementations: vec![impl_id],
             }),
         ),
-        item(
-            function_id,
+        async_trait_function(
+            trait_function_id,
             Some("poll"),
-            ItemEnum::Function(Function {
-                sig: FunctionSignature {
-                    inputs: vec![(
-                        "self".to_string(),
-                        Type::BorrowedRef {
-                            lifetime: Some("'life0".to_string()),
-                            is_mutable: false,
-                            type_: Box::new(Type::Generic("Self".to_string())),
-                        },
-                    )],
-                    output: None,
-                    is_c_variadic: false,
-                },
-                generics: Generics {
-                    params: vec![lifetime_param("'life0"), lifetime_param("'async_trait")],
-                    where_predicates: Vec::new(),
-                },
-                header: FunctionHeader {
-                    is_const: false,
-                    is_unsafe: false,
-                    is_async: false,
-                    abi: Abi::Rust,
-                },
-                has_body: false,
+            Type::ResolvedPath(path("Result", 10).with_args(GenericArgs::AngleBracketed {
+                args: vec![GenericArg::Type(Type::Primitive("bool".to_string()))],
+                constraints: Vec::new(),
+            })),
+            false,
+            true,
+        )
+        .with_attrs(vec![
+            "#[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]"
+                .to_string(),
+            "#[must_use]".to_string(),
+        ]),
+        item(
+            struct_id,
+            Some("Poller"),
+            ItemEnum::Struct(Struct {
+                kind: StructKind::Unit,
+                generics: empty_generics(),
+                impls: vec![impl_id],
             }),
         ),
+        impl_item_with_items(
+            impl_id,
+            Some(path("Polling", trait_id.0)),
+            "Poller",
+            struct_id,
+            false,
+            vec![impl_function_id],
+        ),
+        async_trait_function(
+            impl_function_id,
+            Some("poll"),
+            Type::ResolvedPath(path("Result", 10).with_args(GenericArgs::AngleBracketed {
+                args: vec![GenericArg::Type(Type::Primitive("bool".to_string()))],
+                constraints: Vec::new(),
+            })),
+            true,
+            true,
+        )
+        .with_attrs(vec![
+            "#[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::type_complexity, clippy::type_repetition_in_bounds)]"
+                .to_string(),
+        ]),
     ]);
 
     let item = krate.index.get(&trait_id).expect("trait item present");
@@ -339,7 +359,137 @@ fn extract_item_synthesizes_async_trait_and_elides_synthetic_lifetimes() {
         "trait should synthesize #[async_trait]"
     );
     assert_eq!(extracted.members.len(), 1);
-    assert_eq!(extracted.members[0].declaration, "fn poll(&self);");
+    assert_eq!(
+        extracted.members[0].declaration,
+        "async fn poll(&self) -> Result<bool>;"
+    );
+    assert!(
+        extracted.members[0].attributes.is_empty(),
+        "async-trait expansion attributes should be removed"
+    );
+
+    let impl_item = krate.index.get(&impl_id).expect("impl item present");
+    let ItemEnum::Impl(impl_block) = &impl_item.inner else {
+        panic!("expected impl item");
+    };
+    let extracted = extract_trait_impl(
+        &krate,
+        impl_item,
+        impl_block,
+        krate.index.get(&struct_id),
+        Some(ApiItemKind::Struct),
+    )
+    .expect("trait impl should be extracted");
+
+    assert!(
+        extracted
+            .attributes
+            .iter()
+            .any(|attribute| attribute.text == "#[async_trait]"),
+        "trait impl should synthesize #[async_trait]"
+    );
+    assert_eq!(extracted.members.len(), 1);
+    assert_eq!(
+        extracted.members[0].declaration,
+        "async fn poll(&self) -> Result<bool>;"
+    );
+    assert!(
+        extracted.members[0].attributes.is_empty(),
+        "async-trait expansion attributes should be removed"
+    );
+}
+
+#[test]
+fn preserves_non_send_async_trait_mode_for_traits_and_impls() {
+    let trait_id = Id(1);
+    let trait_function_id = Id(2);
+    let struct_id = Id(3);
+    let impl_id = Id(4);
+    let impl_function_id = Id(5);
+    let krate = crate_with_items(vec![
+        item(
+            trait_id,
+            Some("LocalPolling"),
+            ItemEnum::Trait(Trait {
+                is_auto: false,
+                is_unsafe: false,
+                is_dyn_compatible: true,
+                items: vec![trait_function_id],
+                generics: empty_generics(),
+                bounds: Vec::new(),
+                implementations: vec![impl_id],
+            }),
+        ),
+        async_trait_function(
+            trait_function_id,
+            Some("poll"),
+            Type::Tuple(Vec::new()),
+            false,
+            false,
+        ),
+        item(
+            struct_id,
+            Some("LocalPoller"),
+            ItemEnum::Struct(Struct {
+                kind: StructKind::Unit,
+                generics: empty_generics(),
+                impls: vec![impl_id],
+            }),
+        ),
+        impl_item_with_items(
+            impl_id,
+            Some(path("LocalPolling", trait_id.0)),
+            "LocalPoller",
+            struct_id,
+            false,
+            vec![impl_function_id],
+        ),
+        async_trait_function(
+            impl_function_id,
+            Some("poll"),
+            Type::Tuple(Vec::new()),
+            true,
+            false,
+        ),
+    ]);
+
+    let trait_item = krate.index.get(&trait_id).expect("trait item present");
+    let extracted_trait = extract_item(&krate, trait_item);
+    assert!(
+        extracted_trait
+            .attributes
+            .iter()
+            .any(|attribute| attribute.text == "#[async_trait(?Send)]"),
+        "trait should preserve the non-Send async-trait mode"
+    );
+    assert_eq!(
+        extracted_trait.members[0].declaration,
+        "async fn poll(&self);"
+    );
+
+    let impl_item = krate.index.get(&impl_id).expect("impl item present");
+    let ItemEnum::Impl(impl_block) = &impl_item.inner else {
+        panic!("expected impl item");
+    };
+    let extracted_impl = extract_trait_impl(
+        &krate,
+        impl_item,
+        impl_block,
+        krate.index.get(&struct_id),
+        Some(ApiItemKind::Struct),
+    )
+    .expect("trait impl should be extracted");
+    assert!(
+        extracted_impl
+            .attributes
+            .iter()
+            .any(|attribute| attribute.text == "#[async_trait(?Send)]"),
+        "trait impl should preserve the non-Send async-trait mode"
+    );
+    assert_eq!(
+        extracted_impl.members[0].declaration,
+        "async fn poll(&self);"
+    );
 }
 
 #[test]
@@ -579,6 +729,166 @@ fn extracts_root_module_attributes_as_inner_attrs() {
         vec![
             "#![warn(missing_docs)]",
             "#![doc = include_str!(\"../README.md\")]",
+        ]
+    );
+}
+
+#[test]
+fn omits_doc_only_cfg_attrs_and_preserves_interleaved_rustdoc_comments() {
+    let source = r#"
+//! Before crate docs.
+#![cfg_attr(doc, doc = "Conditional crate docs.")]
+//! After crate docs.
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
+const _: () = ();
+
+/// Before module docs.
+#[cfg_attr(doc, doc = "Conditional module docs.")]
+/// After module docs.
+pub mod nested {
+    /// Before item docs.
+    #[cfg_attr(doc, doc = "Conditional item docs.")]
+    /// After item docs.
+    #[cfg_attr(not(doc), doc = "Inactive item docs.")]
+    pub struct Example {
+        /// Before field docs.
+        #[cfg_attr(doc, doc = "Conditional field docs.")]
+        /// After field docs.
+        pub value: u32,
+    }
+}
+"#;
+    let path = std::env::temp_dir().join(format!(
+        "generate_api_conditional_docs_{}.rs",
+        std::process::id()
+    ));
+    std::fs::write(&path, source).unwrap();
+
+    let mut krate = crate_with_root_items(
+        vec![Id(1)],
+        vec![
+            module_item(Id(1), "nested", vec![Id(2)], false),
+            item(
+                Id(2),
+                Some("Example"),
+                ItemEnum::Struct(Struct {
+                    kind: StructKind::Plain {
+                        fields: vec![Id(3)],
+                        has_stripped_fields: false,
+                    },
+                    generics: empty_generics(),
+                    impls: Vec::new(),
+                }),
+            ),
+            item(
+                Id(3),
+                Some("value"),
+                ItemEnum::StructField(Type::Primitive("u32".to_string())),
+            ),
+        ],
+    );
+    for (id, declaration, label) in [
+        (Id(0), "//! Before crate docs.", "crate"),
+        (Id(1), "pub mod nested", "module"),
+        (Id(2), "pub struct Example", "item"),
+        (Id(3), "pub value", "field"),
+    ] {
+        let line = source
+            .lines()
+            .position(|line| line.contains(declaration))
+            .unwrap()
+            + 1;
+        let item = krate.index.get_mut(&id).unwrap();
+        item.span = Some(rustdoc_types::Span {
+            filename: path.clone(),
+            begin: (line, 1),
+            end: (source.lines().count(), 1),
+        });
+        // Rustdoc JSON merges active cfg_attr docs with comments in source order.
+        item.docs = Some(format!(
+            "Before {label} docs.\nConditional {label} docs.\nAfter {label} docs."
+        ));
+        item.attrs = vec![rustdoc_types::Attribute::Other(
+            "#[attr = CfgAttrTrace]".to_string(),
+        )];
+    }
+
+    let model = extract_model(&package_metadata("demo"), &krate, &mut NoopResolver);
+    std::fs::remove_file(path).unwrap();
+    let model = model.unwrap();
+    let module = &model.root_module.modules[0];
+    assert!(module.attributes.is_empty());
+    assert!(module.items[0].attributes.is_empty());
+    assert!(module.items[0].members[0].attributes.is_empty());
+    assert_eq!(
+        model
+            .root_module
+            .attributes
+            .iter()
+            .map(|attribute| attribute.text.as_str())
+            .collect::<Vec<_>>(),
+        vec!["#![cfg_attr(docsrs, feature(doc_cfg))]"]
+    );
+
+    let lines = crate::render::markdown::render_lines(&model);
+    let api = crate::render::markdown::render_from_lines(&lines);
+    assert!(!api.contains("doc ="));
+    assert!(!api.contains("///"));
+    assert!(api.contains("#![cfg_attr(docsrs, feature(doc_cfg))]"));
+
+    let patch = crate::render::patch::render(&lines, "api.md");
+    let documentation = diffy::apply(&api, &diffy::Patch::from_str(&patch).unwrap()).unwrap();
+    assert!(!documentation.contains("Inactive item docs."));
+    let unindented = documentation
+        .lines()
+        .map(str::trim_start)
+        .collect::<Vec<_>>()
+        .join("\n");
+    for label in ["crate", "module", "item", "field"] {
+        let prefix = if label == "crate" { "//!" } else { "///" };
+        let expected = format!(
+            "{prefix} Before {label} docs.\n{prefix} Conditional {label} docs.\n{prefix} After {label} docs."
+        );
+        assert!(unindented.contains(&expected), "{label}");
+    }
+
+    let apiview = crate::render::apiview::render(&model, &Default::default()).unwrap();
+    assert!(!apiview.contains("doc ="));
+    assert!(apiview.contains("/// Conditional item docs."));
+}
+
+#[test]
+fn omits_legacy_doc_only_cfg_attrs_but_keeps_mixed_attributes() {
+    let item = item(
+        Id(1),
+        Some("Example"),
+        ItemEnum::Struct(Struct {
+            kind: StructKind::Unit,
+            generics: empty_generics(),
+            impls: Vec::new(),
+        }),
+    )
+    .with_attrs(vec![
+        r#"#[<cfg_attr>(doc, doc = "Conditional docs.")]"#.to_string(),
+        r#"#[cfg_attr(doc, doc = "Mixed docs.", must_use)]"#.to_string(),
+    ])
+    .with_docs("Before.\nConditional docs.\nAfter.\nMixed docs.");
+
+    assert_eq!(
+        extract_attributes(&item)
+            .iter()
+            .map(|attribute| attribute.text.as_str())
+            .collect::<Vec<_>>(),
+        vec![r#"#[cfg_attr(doc, doc = "Mixed docs.", must_use)]"#]
+    );
+    assert_eq!(
+        extract_doc_comments(&item),
+        vec![
+            "/// Before.",
+            "/// Conditional docs.",
+            "/// After.",
+            "/// Mixed docs.",
         ]
     );
 }
@@ -2486,6 +2796,85 @@ fn inherent_method(id: Id, name: &str) -> Item {
                 abi: Abi::Rust,
             },
             has_body: true,
+        }),
+    )
+}
+
+fn async_trait_function(
+    id: Id,
+    name: Option<&str>,
+    output: Type,
+    has_body: bool,
+    is_send: bool,
+) -> Item {
+    let mut traits = vec![rustdoc_types::PolyTrait {
+        trait_: path("::core::future::Future", 902).with_args(GenericArgs::AngleBracketed {
+            args: Vec::new(),
+            constraints: vec![rustdoc_types::AssocItemConstraint {
+                name: "Output".to_string(),
+                args: None,
+                binding: rustdoc_types::AssocItemConstraintKind::Equality(Term::Type(output)),
+            }],
+        }),
+        generic_params: Vec::new(),
+    }];
+    if is_send {
+        traits.push(rustdoc_types::PolyTrait {
+            trait_: path("::core::marker::Send", 903),
+            generic_params: Vec::new(),
+        });
+    }
+    let future = Type::DynTrait(rustdoc_types::DynTrait {
+        traits,
+        lifetime: Some("'async_trait".to_string()),
+    });
+    let boxed = Type::ResolvedPath(path("Box", 901).with_args(GenericArgs::AngleBracketed {
+        args: vec![GenericArg::Type(future)],
+        constraints: Vec::new(),
+    }));
+    let pinned = Type::ResolvedPath(path("::core::pin::Pin", 900).with_args(
+        GenericArgs::AngleBracketed {
+            args: vec![GenericArg::Type(boxed)],
+            constraints: Vec::new(),
+        },
+    ));
+
+    item(
+        id,
+        name,
+        ItemEnum::Function(Function {
+            sig: FunctionSignature {
+                inputs: vec![(
+                    "self".to_string(),
+                    Type::BorrowedRef {
+                        lifetime: Some("'life0".to_string()),
+                        is_mutable: false,
+                        type_: Box::new(Type::Generic("Self".to_string())),
+                    },
+                )],
+                output: Some(pinned),
+                is_c_variadic: false,
+            },
+            generics: Generics {
+                params: vec![lifetime_param("'life0"), lifetime_param("'async_trait")],
+                where_predicates: vec![
+                    bound_predicate(
+                        Type::Generic("Self".to_string()),
+                        vec![GenericBound::Outlives("'async_trait".to_string())],
+                    ),
+                    WherePredicate::LifetimePredicate {
+                        lifetime: "'life0".to_string(),
+                        outlives: vec!["'async_trait".to_string()],
+                    },
+                ],
+            },
+            header: FunctionHeader {
+                is_const: false,
+                is_unsafe: false,
+                is_async: false,
+                abi: Abi::Rust,
+            },
+            has_body,
         }),
     )
 }
