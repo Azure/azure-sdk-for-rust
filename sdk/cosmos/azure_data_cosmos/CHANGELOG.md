@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
+- Added paged `ContainerClient::read_many` with shared `ItemSelector` and `ItemScope` types for key/id, partition, or feed-range selections, optional selector filters, and result collection with aggregate diagnostics. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Added ranked full-text and weighted text/vector hybrid search, with per-query `FullTextScoreScope` and bounded buffered results. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
 
 ### Breaking Changes
@@ -12,6 +14,7 @@
 
 ### Bugs Fixed
 
+- Report query-page deserialization failures in operation-level diagnostics while preserving request statuses and charges. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Restore checkpoint-owned change-feed starts, preserve round-robin progress across resumes, and correctly scope hierarchical-prefix feeds across overlapping partitions. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - A checkpoint's saved start takes precedence over a newly supplied change-feed start. Omit the continuation token to start a new feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 
@@ -19,10 +22,6 @@
 
 - New query and change-feed checkpoints use `c2.` and cannot be read by SDKs that only support `c1.`. Query checkpoint payloads are unchanged, and supported legacy `c1.` checkpoints remain readable. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 1.1.0-beta.2 (2026-11-03)
 

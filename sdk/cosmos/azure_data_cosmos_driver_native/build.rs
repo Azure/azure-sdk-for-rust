@@ -183,6 +183,15 @@ fn generate_c_header() {
             "partition_key_component_value_t".into(),
         ),
         ("CosmosStringView".into(), "string_view_t".into()),
+        ("CosmosReadManyRequest".into(), "read_many_request_t".into()),
+        (
+            "CosmosReadManyIdentity".into(),
+            "read_many_identity_t".into(),
+        ),
+        (
+            "CosmosReadManyParameter".into(),
+            "read_many_parameter_t".into(),
+        ),
         ("CosmosResponseHeader".into(), "response_header_t".into()),
         ("CosmosValue".into(), "value_t".into()),
         ("CosmosValueKind".into(), "value_kind_t".into()),
