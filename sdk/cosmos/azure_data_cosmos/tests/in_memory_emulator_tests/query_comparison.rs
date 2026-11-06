@@ -49,6 +49,7 @@ use super::validation::{compare_headers, HeaderValidationSpec};
 const EMULATOR_GATEWAY_URL: &str = "https://eastus.emulator.local";
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
+const AUTH_MODE_ENV_VAR: &str = "AZURE_COSMOS_AUTH_MODE";
 const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://127.0.0.1:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
 const HUB_REGION: Region = Region::EAST_US_2;
 
@@ -133,6 +134,10 @@ impl QueryComparisonHarness {
 }
 
 async fn resolve_external_backend() -> Result<Option<Backend>, Box<dyn Error>> {
+    if std::env::var(AUTH_MODE_ENV_VAR).is_ok_and(|value| value.eq_ignore_ascii_case("aad")) {
+        return Ok(None);
+    }
+
     let mode = std::env::var(TEST_MODE_ENV_VAR)
         .unwrap_or_default()
         .to_lowercase();
@@ -744,7 +749,7 @@ struct Scenario {
 #[tokio::test]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: vnext returns the full ['', 'FF') query range for a partition-key equality filter instead of the bounded point EPK range that real Cosmos and the in-memory emulator produce, so the query-plan comparison diverges"
+    ignore = "vnext emulator partition-scoped query pages do not expose LSN metadata: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/385"
 )]
 async fn query_results_plans_and_resume_paths_match() -> Result<(), Box<dyn Error>> {
     let harness = QueryComparisonHarness::setup().await?;

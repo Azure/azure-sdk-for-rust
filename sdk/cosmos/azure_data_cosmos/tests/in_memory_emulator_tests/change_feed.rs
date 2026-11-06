@@ -358,8 +358,7 @@ mod processor_lifecycle_tests {
     }
 
     #[tokio::test]
-    async fn processor_admission_is_shared_and_released_after_success_failure_or_abort(
-    ) -> Result<(), Box<dyn Error>> {
+    async fn processor_callbacks_are_independent_across_workers() -> Result<(), Box<dyn Error>> {
         type Entered = (String, oneshot::Sender<bool>);
         static ENTERED: Mutex<Option<mpsc::UnboundedSender<Entered>>> = Mutex::new(None);
         for policy in [
@@ -384,7 +383,6 @@ mod processor_lifecycle_tests {
                         "worker",
                     )
                     .with_start_from_beginning()
-                    .with_max_outstanding_batches(1)
                     .with_feed_poll_delay(Duration::from_millis(1))
                     .with_checkpoint_policy(policy)
                     .handle_change_feed(
@@ -422,26 +420,20 @@ mod processor_lifecycle_tests {
                         .expect("first callback")
                         .unwrap();
                 second.start().await?;
-                tokio::time::timeout(Duration::from_secs(5), async {
-                    loop {
-                        let ranges = records(&leases)
-                            .await
-                            .unwrap()
-                            .into_iter()
-                            .filter(|r| r.get("range").is_some())
-                            .collect::<Vec<_>>();
-                        if ranges.iter().all(|r| r.get("owner").is_some())
-                            && ranges
-                                .iter()
-                                .any(|r| r["workload"]["processorName"] == "second")
-                        {
-                            break;
-                        }
-                        tokio::task::yield_now().await;
-                    }
-                })
-                .await
-                .expect("both workers acquire leases");
+                let (second_id, second_release) =
+                    tokio::time::timeout(Duration::from_secs(5), callbacks.next())
+                        .await
+                        .expect("second worker does not wait for the first callback")
+                        .unwrap();
+                assert_ne!(first_id, second_id);
+                assert_eq!(
+                    records(&leases)
+                        .await?
+                        .iter()
+                        .find(|record| record["id"] == second_id)
+                        .unwrap()["workload"]["processorName"],
+                    "second"
+                );
                 assert!(
                     tokio::time::timeout(Duration::from_millis(30), callbacks.next())
                         .await
@@ -453,23 +445,10 @@ mod processor_lifecycle_tests {
                 } else {
                     release.send(outcome == "success").unwrap();
                 }
-                let (second_id, release) =
-                    tokio::time::timeout(Duration::from_secs(5), callbacks.next())
-                        .await
-                        .expect("second callback after capacity release")
-                        .unwrap();
-                assert_ne!(first_id, second_id);
-                assert_eq!(
-                    records(&leases)
-                        .await?
-                        .iter()
-                        .find(|record| record["id"] == second_id)
-                        .unwrap()["workload"]["processorName"],
-                    "second"
-                );
                 first.abort().await?;
+                assert!(!second_release.is_canceled());
                 second.abort().await?;
-                assert!(release.is_canceled());
+                assert!(second_release.is_canceled());
                 *ENTERED.lock().unwrap() = None;
             }
         }
@@ -498,7 +477,6 @@ mod processor_lifecycle_tests {
         )
         .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()))
         .with_feed_poll_delay(Duration::from_millis(1))
-        .with_max_outstanding_batches(1)
         .with_checkpoint_policy(ChangeFeedCheckpointPolicy::Coalesced {
             max_interval: Duration::from_secs(60),
         })
@@ -1029,7 +1007,6 @@ mod processor_lifecycle_tests {
             "worker",
         )
         .with_start_from_beginning()
-        .with_max_outstanding_batches(1)
         .handle_change_feed(
             |context: ChangeFeedProcessorContext, _: Vec<ChangeFeedItem<TestItem>>| {
                 let DrainCallback {

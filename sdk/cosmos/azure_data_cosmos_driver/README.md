@@ -124,21 +124,16 @@ cannot publish to or retire their replacements.
 
 There is one outstanding batch per active lease session, without read-ahead.
 Taking a batch from a mailbox does not acknowledge it: the producer still waits
-for successful acknowledgment under the selected checkpoint policy before reading again. The distributor does
-not acquire leases, implement topology transitions, or spawn callback tasks.
-`ProcessorOptions::with_max_outstanding_batches` defaults to 100. All workers
-sharing a source driver share the largest worker limit seen during that driver's
-lifetime, not the sum or a separate quota per worker. Zero is rejected before startup. A permit is
-reserved before fetching and held across queuing and processing; completing or
-discarding the batch releases it before checkpoint persistence finishes.
-Per-batch durability still gates the original lease's next read. Coalesced
-progress is metadata and does not occupy a batch slot.
+for successful acknowledgment under the selected checkpoint policy before reading
+again. Per-batch durability gates that lease's next read; coalesced acknowledgment
+retains only progress metadata, not completed payloads.
 
-Eligible leases join a FIFO queue for one page turn and rejoin at the tail.
-Renewal, checkpoint deadlines, and shutdown continue while admission is blocked.
-Stopping a worker or starting one with a smaller limit does not reduce the shared
-limit. Lease metadata still scales with owned leases; neither the batch limit nor
-page-size hints are byte limits.
+There is no shared batch-count cap across leases or processors. Buffered data
+can grow with the number of owned leases; page-size hints are not byte or heap
+limits. The distributor rotates already-ready deliveries, not fetch admission.
+It does not acquire leases, implement topology transitions, or spawn callback
+tasks. Renewal, checkpoint deadlines, and shutdown remain independent of callback
+completion.
 Foreign callers may retain completed payloads beyond acknowledgment and must
 manage that memory themselves. Stealing cannot cancel external application
 effects. A crash between callback success and checkpoint persistence can cause

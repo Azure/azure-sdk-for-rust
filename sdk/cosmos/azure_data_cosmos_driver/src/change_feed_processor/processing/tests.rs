@@ -2,8 +2,9 @@
 // Licensed under the MIT License.
 
 use super::{
-    balancing, bootstrap, namespace, now_millis, ChangeFeedBatch, ChangeFeedFactoryMode, Context,
-    Identity, Lease, ProcessingLease, Processor, ProcessorOptions, Update, SCHEMA_VERSION,
+    balancing, bootstrap, namespace, now_millis, ChangeFeedBatch, ChangeFeedFactoryMode,
+    CheckpointPolicy, Context, Identity, Lease, ProcessingLease, Processor, ProcessorOptions,
+    Update, SCHEMA_VERSION,
 };
 #[cfg(feature = "fault_injection")]
 use crate::fault_injection::{
@@ -28,9 +29,13 @@ use crate::{
     Result,
 };
 use azure_core::http::StatusCode;
-use std::{num::NonZeroU32, sync::Arc, time::Duration};
+use std::{
+    collections::{BTreeMap, HashSet},
+    num::NonZeroU32,
+    sync::Arc,
+    time::Duration,
+};
 
-mod admission;
 mod checkpoints;
 mod shutdown;
 mod topology;
@@ -228,6 +233,76 @@ async fn next(processor: &Processor) -> ChangeFeedBatch {
         .await
         .expect("batch timeout")
         .expect("processor stopped")
+}
+
+#[tokio::test]
+async fn more_than_one_hundred_leases_deliver_without_a_shared_batch_cap() -> Result<()> {
+    const LEASE_COUNT: u32 = 128;
+    for policy in [
+        CheckpointPolicy::EveryBatch,
+        CheckpointPolicy::Coalesced {
+            max_interval: Duration::from_secs(60),
+        },
+    ] {
+        let (context, _) =
+            fixture_with_emulator(ChangeFeedFactoryMode::Incremental, LEASE_COUNT).await?;
+        let ranges = context
+            .list()
+            .await?
+            .into_iter()
+            .map(|lease| lease.base.range)
+            .collect::<Vec<_>>();
+        assert_eq!(ranges.len(), LEASE_COUNT as usize);
+        let keys = topology::keys(&ranges);
+        topology::publish(&context, &keys, 0..1, &mut BTreeMap::new()).await?;
+        let mut options = context
+            .options
+            .clone()
+            .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()))
+            .with_checkpoint_policy(policy);
+        options.expiration = Duration::from_secs(60);
+        let processor = start(&context, options).await?;
+        let mut held = Vec::new();
+        let mut lease_ids = HashSet::new();
+        for _ in 0..LEASE_COUNT {
+            let (id, response, receipt) = next(&processor).await.into_parts();
+            assert!(
+                lease_ids.insert(id.clone()),
+                "no second batch before acknowledgment"
+            );
+            held.push((id, response, receipt));
+        }
+        assert_eq!(held.len(), LEASE_COUNT as usize);
+        assert!(
+            tokio::time::timeout(Duration::from_millis(50), processor.next_batch())
+                .await
+                .is_err()
+        );
+        let (id, response, receipt) = held.pop().unwrap();
+        drop(response);
+        receipt.acknowledge().await?;
+        let (next_id, response, receipt) = next(&processor).await.into_parts();
+        assert_eq!(next_id, id);
+        let saved = context.store().read::<Lease>(&id).await?.unwrap();
+        assert_eq!(
+            saved.value.base.continuation.is_some(),
+            policy == CheckpointPolicy::EveryBatch
+        );
+        held.push((next_id, response, receipt));
+        let mut stopping = Box::pin(processor.stop());
+        assert!(futures::poll!(stopping.as_mut()).is_pending());
+        for (_, response, receipt) in held {
+            drop(response);
+            receipt.acknowledge().await?;
+        }
+        stopping.await?;
+        assert!(context
+            .list()
+            .await?
+            .iter()
+            .all(|lease| { lease.base.owner.is_none() && lease.base.continuation.is_some() }));
+    }
+    Ok(())
 }
 
 #[tokio::test]

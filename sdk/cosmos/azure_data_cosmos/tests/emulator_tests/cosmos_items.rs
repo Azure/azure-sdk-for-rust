@@ -156,51 +156,89 @@ async fn create_v1_container(
 ) -> Result<ContainerClient, Box<dyn Error>> {
     let db_client = run_context.create_db().await?;
     let container_id = format!("Container-V1-{}", Uuid::new_v4());
-    let connection_string = framework::resolve_connection_string()
-        .ok_or("Cosmos connection string is not configured")?;
-    let account = DriverAccountReference::with_account_key(
-        connection_string.account_endpoint().parse::<url::Url>()?,
-        connection_string.account_key().clone(),
-    );
-    let runtime = CosmosDriverRuntime::builder()
-        .with_connection_pool(
-            ConnectionPoolOptions::builder()
-                .with_server_certificate_validation(
-                    ServerCertificateValidation::RequiredUnlessEmulator,
-                )
-                .build()?,
-        )
-        .build()
-        .await?;
-    let driver = runtime
-        .create_driver(DriverOptions::builder(account.clone()).build())
-        .await?;
-    let database = DatabaseReference::from_name(
-        account,
-        db_client
+    if let Some(resource_manager) = run_context.resource_manager() {
+        #[derive(Serialize)]
+        #[serde(rename_all = "camelCase")]
+        struct V1Container<'a> {
+            id: &'a str,
+            partition_key: V1PartitionKey<'a>,
+        }
+
+        #[derive(Serialize)]
+        struct V1PartitionKey<'a> {
+            paths: [&'a str; 1],
+            kind: &'a str,
+        }
+
+        let database_name = db_client
             .name()
-            .expect("emulator database is name-addressed")
-            .to_string(),
-    );
-    let body = format!(
-        r#"{{"id":"{container_id}","partitionKey":{{"paths":["/partition_key"],"kind":"Hash"}}}}"#
-    );
-    let response = driver
-        .execute_singleton_operation(
-            CosmosOperation::create_container(database).with_body(body.into_bytes()),
-            DriverOperationOptions::default(),
-        )
-        .await?;
-    if !response.status().is_success() {
-        return Err(format!(
-            "failed to create version-less V1 container: {}",
-            response.status()
-        )
-        .into());
+            .ok_or("resource management requires a name-addressed database")?;
+        let resource = V1Container {
+            id: &container_id,
+            partition_key: V1PartitionKey {
+                paths: ["/partition_key"],
+                kind: "Hash",
+            },
+        };
+        resource_manager
+            .create_or_update_container(
+                database_name,
+                &container_id,
+                &serde_json::to_value(resource)?,
+                None,
+            )
+            .await?;
+    } else {
+        let connection_string = framework::resolve_connection_string()
+            .ok_or("Cosmos connection string is not configured")?;
+        let account = DriverAccountReference::with_account_key(
+            connection_string.account_endpoint().parse::<url::Url>()?,
+            connection_string.account_key().clone(),
+        );
+        let runtime = CosmosDriverRuntime::builder()
+            .with_connection_pool(
+                ConnectionPoolOptions::builder()
+                    .with_server_certificate_validation(
+                        ServerCertificateValidation::RequiredUnlessEmulator,
+                    )
+                    .build()?,
+            )
+            .build()
+            .await?;
+        let driver = runtime
+            .create_driver(DriverOptions::builder(account.clone()).build())
+            .await?;
+        let database = DatabaseReference::from_name(
+            account,
+            db_client
+                .name()
+                .expect("emulator database is name-addressed")
+                .to_string(),
+        );
+        let body = format!(
+            r#"{{"id":"{container_id}","partitionKey":{{"paths":["/partition_key"],"kind":"Hash"}}}}"#
+        );
+        let response = driver
+            .execute_singleton_operation(
+                CosmosOperation::create_container(database).with_body(body.into_bytes()),
+                DriverOperationOptions::default(),
+            )
+            .await?;
+        if !response.status().is_success() {
+            return Err(format!(
+                "failed to create version-less V1 container: {}",
+                response.status()
+            )
+            .into());
+        }
     }
     let container_client = db_client.container_client(&container_id, None).await?;
 
     let body = container_client.read(None).await?.into_body().single()?;
+    if run_context.resource_manager().is_some() {
+        framework::probe_data_plane_ready("version-less V1 container", &container_client, 1)
+            .await?;
+    }
     let raw: serde_json::Value = serde_json::from_slice(&body)?;
     assert!(
         raw["partitionKey"].get("version").is_none(),
@@ -224,10 +262,6 @@ async fn create_v1_container(
         test_category = "emulator_inmemory"
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
-)]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -352,10 +386,6 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn v1_container_item_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -458,10 +488,6 @@ pub async fn v1_container_item_crud() -> Result<(), Box<dyn Error>> {
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -528,10 +554,6 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -588,10 +610,6 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
         test_category = "emulator_inmemory"
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
-)]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -656,10 +674,6 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
         test_category = "emulator_inmemory"
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
-)]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -760,10 +774,6 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -863,10 +873,6 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -965,10 +971,6 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
         test_category = "emulator_inmemory"
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
-)]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -1089,7 +1091,7 @@ struct ExplicitPkItem {
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
+    ignore = "vnext emulator returns an undefined-key item for a null-key read: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/378"
 )]
 #[cfg_attr(
     test_category = "emulator_inmemory",
@@ -1251,10 +1253,6 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -1314,10 +1312,6 @@ pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Erro
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -1371,10 +1365,6 @@ pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
         test_category = "emulator_inmemory"
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
-)]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(

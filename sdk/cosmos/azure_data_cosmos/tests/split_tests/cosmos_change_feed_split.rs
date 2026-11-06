@@ -28,9 +28,7 @@ use azure_data_cosmos::models::{
     ChangeFeedItem, ChangeFeedOperationType, ChangeFeedPolicy, ContainerProperties,
     ThroughputProperties,
 };
-use azure_data_cosmos::options::{
-    ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom, CreateContainerOptions,
-};
+use azure_data_cosmos::options::{ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom};
 use framework::{MockItem, TestClient, TestOptions};
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
@@ -109,7 +107,7 @@ pub async fn change_feed_resume_across_split() -> Result<(), Box<dyn Error>> {
                     .create_container(
                         db_client,
                         properties,
-                        Some(CreateContainerOptions::default().with_throughput(throughput)),
+                        Some(throughput),
                     )
                     .await?,
             );
@@ -159,7 +157,14 @@ pub async fn change_feed_resume_across_split() -> Result<(), Box<dyn Error>> {
             // Force a real split AFTER the token is captured so the resume must
             // map the pre-split parent token onto the post-split children.
             let partitions_after =
-                force_split_and_wait(&container_client, partitions_before).await?;
+                force_split_and_wait(
+                    run_context,
+                    db_client,
+                    &container_client,
+                    "ChangeFeedResumeAcrossSplit",
+                    partitions_before,
+                )
+                .await?;
             assert!(
                 partitions_after > partitions_before,
                 "split must increase partition count: before={partitions_before}, after={partitions_after}"
@@ -326,7 +331,7 @@ pub async fn change_feed_all_versions_and_deletes_resume_across_split() -> Resul
                     .create_container(
                         db_client,
                         properties,
-                        Some(CreateContainerOptions::default().with_throughput(throughput)),
+                        Some(throughput),
                     )
                     .await?,
             );
@@ -395,7 +400,14 @@ pub async fn change_feed_all_versions_and_deletes_resume_across_split() -> Resul
             // Force a real split AFTER the token is captured so the resume must
             // map the pre-split parent token onto the post-split children.
             let partitions_after =
-                force_split_and_wait(&container_client, partitions_before).await?;
+                force_split_and_wait(
+                    run_context,
+                    db_client,
+                    &container_client,
+                    "ChangeFeedAvadResumeAcrossSplit",
+                    partitions_before,
+                )
+                .await?;
             assert!(
                 partitions_after > partitions_before,
                 "split must increase partition count: before={partitions_before}, after={partitions_after}"

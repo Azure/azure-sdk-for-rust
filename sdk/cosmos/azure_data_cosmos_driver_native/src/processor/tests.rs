@@ -8,9 +8,8 @@ use super::{
     cosmos_processor_free, cosmos_processor_next_submit, cosmos_processor_queue_create,
     cosmos_processor_queue_free, cosmos_processor_queue_wait, cosmos_processor_receipt_free,
     cosmos_processor_request_init, cosmos_processor_start_submit,
-    cosmos_processor_start_with_admission_submit, cosmos_processor_start_with_policy_submit,
-    cosmos_processor_stop_submit, CosmosProcessorCompletion, CosmosProcessorRequest,
-    ProcessorHandle, ProcessorQueue,
+    cosmos_processor_start_with_policy_submit, cosmos_processor_stop_submit,
+    CosmosProcessorCompletion, CosmosProcessorRequest, ProcessorHandle, ProcessorQueue,
 };
 use crate::{
     completion::{
@@ -187,44 +186,14 @@ impl Fixture {
 }
 
 #[test]
-fn zero_batch_limit_is_rejected_without_consuming_queue_capacity() {
-    let fixture = Fixture::new();
-    let mut error = COSMOS_STATUS_SUCCESS;
-    let operation = cosmos_processor_start_with_admission_submit(
-        fixture.driver,
-        fixture.source,
-        fixture.driver,
-        fixture.leases,
-        &fixture.request(),
-        0,
-        0,
-        0,
-        fixture.queue,
-        1,
-        &mut error,
-    );
-    assert!(operation.is_null());
-    assert_eq!(
-        error,
-        CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
-    );
-    let processor = fixture.start();
-    let stop = cosmos_processor_abort_submit(processor, 2, ptr::null_mut());
-    fixture.drive(stop);
-    cosmos_processor_completion_free(fixture.receive());
-    cosmos_operation_handle_free(stop);
-    cosmos_processor_free(processor);
-}
-
-#[test]
-fn shared_batch_limit_survives_transfer_and_control_unblocks_other_workers() {
+fn workers_deliver_independently_while_other_receipts_are_pending() {
     for coalesced in [false, true] {
         let fixture = Fixture::new();
         let start = |name| {
             let mut request = fixture.request();
             request.processor_name = view(name);
             request.max_leases = 1;
-            fixture.finish_start(cosmos_processor_start_with_admission_submit(
+            fixture.finish_start(cosmos_processor_start_with_policy_submit(
                 fixture.driver,
                 fixture.source,
                 fixture.driver,
@@ -232,7 +201,6 @@ fn shared_batch_limit_survives_transfer_and_control_unblocks_other_workers() {
                 &request,
                 u32::from(coalesced),
                 if coalesced { 60_000 } else { 0 },
-                1,
                 fixture.queue,
                 1,
                 ptr::null_mut(),
@@ -245,26 +213,19 @@ fn shared_batch_limit_survives_transfer_and_control_unblocks_other_workers() {
         let receipt = cosmos_processor_completion_take_receipt(batch);
         let second = start(b"second");
         let next = cosmos_processor_next_submit(second, 3, ptr::null_mut());
-        RuntimeContext::inner_arc(fixture.runtime)
-            .unwrap()
-            .tokio
-            .block_on(async {
-                tokio::time::sleep(Duration::from_millis(30)).await;
-            });
+        fixture.drive(next);
+        let second_batch = fixture.receive();
+        assert_eq!(unsafe { (*second_batch).result_kind }, 2);
         assert_eq!(
-            cosmos_operation_handle_state(next),
-            CosmosOperationHandleState::CosmosOperationHandleStateInFlight
+            unsafe { (*second_batch).common.status },
+            COSMOS_STATUS_SUCCESS
         );
         let acknowledged = cosmos_processor_acknowledge_submit(receipt, 4, ptr::null_mut());
         fixture.drive(acknowledged);
-        fixture.drive(next);
-        let results = [fixture.receive(), fixture.receive()];
-        let mut kinds = results.map(|result| unsafe { (*result).result_kind });
-        kinds.sort_unstable();
-        assert_eq!(kinds, [2, 6]);
-        for result in results {
-            cosmos_processor_completion_free(result);
-        }
+        let acknowledgment = fixture.receive();
+        assert_eq!(unsafe { (*acknowledgment).result_kind }, 6);
+        cosmos_processor_completion_free(acknowledgment);
+        cosmos_processor_completion_free(second_batch);
         cosmos_processor_receipt_free(receipt);
         cosmos_processor_completion_free(batch);
         for operation in [operation, next, acknowledged] {

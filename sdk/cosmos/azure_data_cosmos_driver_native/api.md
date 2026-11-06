@@ -288,6 +288,7 @@ pub mod driver_options {
         pub fault_injection_rules: *const crate::fault_injection::CosmosFaultInjectionRule,
         pub fault_injection_rules_len: usize,
         pub fault_injection_rule_stride: usize,
+        pub resource_name_validation_enabled: i8,
     }
     pub struct DriverOptionsHandle {
     }
@@ -709,8 +710,6 @@ pub mod processor {
     pub extern "C" fn cosmos_processor_request_init(out: *mut CosmosProcessorRequest);
     #[no_mangle]
     pub extern "C" fn cosmos_processor_start_submit(source_driver: *const crate::driver::DriverHandle, source: *const crate::container_ref::ContainerRefHandle, lease_driver: *const crate::driver::DriverHandle, leases: *const crate::container_ref::ContainerRefHandle, request: *const CosmosProcessorRequest, queue: *mut ProcessorQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
-    #[no_mangle]
-    pub extern "C" fn cosmos_processor_start_with_admission_submit(source_driver: *const crate::driver::DriverHandle, source: *const crate::container_ref::ContainerRefHandle, lease_driver: *const crate::driver::DriverHandle, leases: *const crate::container_ref::ContainerRefHandle, request: *const CosmosProcessorRequest, checkpoint_policy: u32, checkpoint_interval_ms: u64, max_outstanding_batches: u32, queue: *mut ProcessorQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
     #[no_mangle]
     pub extern "C" fn cosmos_processor_start_with_policy_submit(source_driver: *const crate::driver::DriverHandle, source: *const crate::container_ref::ContainerRefHandle, lease_driver: *const crate::driver::DriverHandle, leases: *const crate::container_ref::ContainerRefHandle, request: *const CosmosProcessorRequest, checkpoint_policy: u32, checkpoint_interval_ms: u64, queue: *mut ProcessorQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
     #[no_mangle]
