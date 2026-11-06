@@ -419,7 +419,7 @@ async fn one_idle_slice_does_not_flush_a_still_busy_composite_lease() -> Result<
             response.status().status_code(),
             azure_core::http::StatusCode::NotModified
         );
-        let ResolvedToken::ClientV1(state) = plan.to_continuation_token()?.resolve()? else {
+        let ResolvedToken::Client(state) = plan.to_continuation_token()?.resolve()? else {
             panic!("composite token");
         };
         let PipelineNodeState::UnorderedMerge { active_tokens, .. } = state.into_root_node_state()
@@ -429,11 +429,12 @@ async fn one_idle_slice_does_not_flush_a_still_busy_composite_lease() -> Result<
         tokens.extend(active_tokens);
     }
     assert_eq!(tokens.len(), 2);
-    let checkpoint = ContinuationToken::encode_v1(
+    let checkpoint = ContinuationToken::encode(
         &context.operation(&FeedRange::full()),
         &PipelineNodeState::UnorderedMerge {
             active_tokens: tokens,
             start_from: Some(ChangeFeedStartFrom::Now),
+            next_poll_min_epk: None,
         },
     )?;
     let mut owned = context.acquire(&context.list().await?.remove(0)).await?;

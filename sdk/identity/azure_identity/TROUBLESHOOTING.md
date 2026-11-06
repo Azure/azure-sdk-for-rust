@@ -201,6 +201,7 @@ azd auth token --output json --scope https://management.core.windows.net/.defaul
 |`AZURE_KUBERNETES_TOKEN_PROXY` is not set but another proxy variable is present|The proxy has auxiliary TLS configuration but no endpoint.|Set `AZURE_KUBERNETES_TOKEN_PROXY`, or remove `AZURE_KUBERNETES_SNI_NAME`, `AZURE_KUBERNETES_CA_FILE`, and `AZURE_KUBERNETES_CA_DATA`. These variables are ignored when `enable_azure_proxy` is `false`.|
 |invalid `AZURE_KUBERNETES_CA_FILE` or `AZURE_KUBERNETES_CA_DATA`|The configured CA certificate can't be read or parsed, or both CA sources are set.|Set at most one CA source. Ensure `AZURE_KUBERNETES_CA_FILE` points to a readable, nonempty PEM certificate bundle or provide the PEM bundle in `AZURE_KUBERNETES_CA_DATA`.|
 |failed to resolve `AZURE_KUBERNETES_TOKEN_PROXY` host|The proxy host can't be resolved while custom SNI is configured.|Verify the proxy hostname is resolvable from the pod and that `AZURE_KUBERNETES_SNI_NAME` contains the TLS server name presented by the cluster endpoint.|
+|the `reqwest_rustls` feature is required to use the default token proxy client|Default features were disabled and no custom proxy client was provided.|Enable `reqwest_rustls`, or provide a custom `TokenProxyClient` through `WorkloadIdentityCredentialOptions::proxy_client`.|
 
 <a id="apc"></a>
 ## Troubleshoot `AzurePipelinesCredential` authentication issues

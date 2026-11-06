@@ -188,7 +188,7 @@ async fn stored(context: &Context, id: &str) -> Stored<Lease> {
 }
 
 fn token(context: &Context, scope: &FeedRange, value: &str) -> ContinuationToken {
-    ContinuationToken::encode_v1(
+    ContinuationToken::encode(
         &context.operation(scope),
         &PipelineNodeState::UnorderedMerge {
             active_tokens: vec![RangedToken {
@@ -197,6 +197,7 @@ fn token(context: &Context, scope: &FeedRange, value: &str) -> ContinuationToken
                 server_continuation: value.into(),
             }],
             start_from: Some(context.options.start.clone()),
+            next_poll_min_epk: None,
         },
     )
     .unwrap()
@@ -700,7 +701,7 @@ async fn descendant_split_projects_saved_state_and_keeps_disjoint_coverage() -> 
         .iter()
         .zip(["left-advanced", "left-advanced", "pinned"])
     {
-        let ResolvedToken::ClientV1(state) = lease.base.continuation.as_ref().unwrap().resolve()?
+        let ResolvedToken::Client(state) = lease.base.continuation.as_ref().unwrap().resolve()?
         else {
             panic!("composite token")
         };

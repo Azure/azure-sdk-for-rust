@@ -13,5 +13,8 @@ exclude.workspace = true
 azure_canary_core = { path = "../azure_canary_core", version = "0.1.0" }
 serde = { version = "1", features = ["derive"] }
 
+[package.metadata.docs.rs]
+all-features = true
+
 [lints]
 workspace = true
