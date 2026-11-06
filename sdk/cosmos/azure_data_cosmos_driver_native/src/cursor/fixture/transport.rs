@@ -3,6 +3,7 @@
 
 use async_trait::async_trait;
 use azure_core::http::headers::{HeaderName, Headers};
+use azure_data_cosmos_driver::models::{FeedRange, PartitionKey, PartitionKeyDefinition};
 use azure_data_cosmos_driver::test::{
     ConnectionPoolOptions, HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse,
     TransportClient, TransportError,
@@ -20,7 +21,7 @@ pub(crate) struct Gate {
 }
 
 #[derive(Debug)]
-pub(super) struct Factory(pub(crate) Option<Arc<Gate>>);
+pub(super) struct Factory(pub(crate) Option<Arc<Gate>>, pub(crate) bool);
 
 impl HttpClientFactory for Factory {
     fn build(
@@ -28,12 +29,19 @@ impl HttpClientFactory for Factory {
         _: &ConnectionPoolOptions,
         _: HttpClientConfig,
     ) -> azure_data_cosmos_driver::error::Result<Arc<dyn TransportClient>> {
-        Ok(Arc::new(ScriptedTransport(self.0.clone())))
+        Ok(Arc::new(ScriptedTransport(self.0.clone(), self.1)))
     }
 }
 
 #[derive(Debug)]
-struct ScriptedTransport(Option<Arc<Gate>>);
+struct ScriptedTransport(Option<Arc<Gate>>, bool);
+
+fn hpk_prefix() -> FeedRange {
+    FeedRange::for_partition(
+        PartitionKey::from(("tenant", "user")),
+        &PartitionKeyDefinition::from(("/tenant", "/user", "/device")),
+    )
+}
 
 fn header<'a>(request: &'a HttpRequest, name: &'static str) -> Option<&'a str> {
     request
@@ -76,6 +84,10 @@ impl TransportClient for ScriptedTransport {
                 "enableMultipleWriteLocations":false,
                 "userConsistencyPolicy":{"defaultConsistencyLevel":"Session"}
             }),
+            "/dbs/testdb/colls/testcoll" if self.1 => serde_json::json!({
+                "id":"testcoll", "_rid":"AQIDBAUGBwg=",
+                "partitionKey":{"paths":["/tenant","/user","/device"],"kind":"MultiHash","version":2}
+            }),
             "/dbs/testdb/colls/testcoll" => serde_json::json!({
                 "id":"testcoll", "_rid":"AQIDBAUGBwg=",
                 "partitionKey":{"paths":["/pk"],"kind":"Hash","version":2}
@@ -85,9 +97,14 @@ impl TransportClient for ScriptedTransport {
                     status = 304;
                 }
                 headers.insert("etag", "\"ranges\"");
+                let boundary = if self.1 {
+                    format!("{}80", hpk_prefix().min_inclusive().to_hex())
+                } else {
+                    "80".to_owned()
+                };
                 serde_json::json!({"PartitionKeyRanges":[
-                    {"id":"0","minInclusive":"","maxExclusive":"80"},
-                    {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+                    {"id":"0","minInclusive":"","maxExclusive":boundary},
+                    {"id":"1","minInclusive":boundary,"maxExclusive":"FF"}
                 ],"_count":2})
             }
             path if path.ends_with("/docs") => {
@@ -100,6 +117,13 @@ impl TransportClient for ScriptedTransport {
                         "queryRanges":[{"min":"","max":"FF","isMinInclusive":true,"isMaxInclusive":false}]
                     })
                 } else if let Some(mode) = header(request, "a-im") {
+                    if self.1 {
+                        assert!(header(request, "x-ms-documentdb-partitionkey").is_none());
+                        let min =
+                            header(request, "x-ms-start-epk").expect("prefix EPK lower bound");
+                        let max = header(request, "x-ms-end-epk").expect("prefix EPK upper bound");
+                        assert!(!min.is_empty() && max != "FF" && min < max);
+                    }
                     let continuation = header(request, "if-none-match");
                     if mode == "Full-Fidelity Feed"
                         && (continuation.is_none()
@@ -121,7 +145,12 @@ impl TransportClient for ScriptedTransport {
                     } else {
                         headers.insert("etag", "\"done\"");
                         let docs: Vec<_> = [0, 1].into_iter().map(|rank| {
-                            let doc = serde_json::json!({"id":format!("d{rank}"),"rank":rank,"Documents":["application-field"]});
+                            let range = if self.1 {
+                                header(request, "x-ms-documentdb-partitionkeyrangeid").unwrap()
+                            } else {
+                                ""
+                            };
+                            let doc = serde_json::json!({"id":format!("{range}d{rank}"),"rank":rank,"Documents":["application-field"]});
                             if mode == "Full-Fidelity Feed" {
                                 serde_json::json!({"current":doc,"previous":{"id":format!("d{rank}"),"rank":-1},"metadata":{"operationType":"replace","lsn":rank+1}})
                             } else { doc }

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 param baseName string = resourceGroup().name
-param tenantId string = '72f988bf-86f1-41af-91ab-2d7cd011db47'
+param tenantId string = '70a036f6-8e4d-4615-bad6-149c02e7720d'
 param testApplicationOid string
 param location string = resourceGroup().location
 @allowed(['standard', 'premium'])
@@ -34,3 +34,5 @@ resource kvAdmin 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
 }
 
 output AZURE_KEYVAULT_URL string = kv.properties.vaultUri
+output KEYVAULT_TENANT_ID string = tenantId
+output KEYVAULT_OBJECT_ID string = testApplicationOid

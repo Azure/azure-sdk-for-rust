@@ -21,6 +21,8 @@
 - `reqwest_gzip`
 - `reqwest_rustls`
 - `tokio`
+- `unstable_fake`
+- `unstable_resource_manager`
 - `xml`
 
 ```rust
@@ -161,6 +163,8 @@ pub mod cloud {
     pub struct CustomConfiguration {
         pub authority_host: String,
         pub audiences: Audiences,
+        #[cfg(feature = "unstable_resource_manager")]
+        pub endpoint: Option<String>,
     }
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     #[non_exhaustive]
@@ -171,8 +175,26 @@ pub mod cloud {
         AzureChina,
         Custom(CustomConfiguration),
     }
+    impl CloudConfigurationExt for super::CloudConfiguration {
+        fn audience(&self) -> crate::Result<&str>;
+        fn default_scope(&self) -> crate::Result<Cow<'static, str>>;
+        fn endpoint(&self) -> Option<&str>;
+    }
+    impl Default for &CloudConfiguration {
+        fn default() -> Self;
+    }
     impl From<CustomConfiguration> for CloudConfiguration {
         fn from(config: CustomConfiguration) -> Self;
+    }
+    #[cfg(feature = "unstable_resource_manager")]
+    pub mod resource_manager {
+        #[allow(missing_debug_implementations)]
+        pub struct Audience;
+        pub trait CloudConfigurationExt: crate::private::Sealed {
+            fn audience(&self) -> crate::Result<&str>;
+            fn default_scope(&self) -> crate::Result<Cow<'static, str>>;
+            fn endpoint(&self) -> Option<&str>;
+        }
     }
 }
 pub mod credentials {
@@ -445,6 +467,11 @@ pub mod http {
         pub instrumentation: InstrumentationOptions,
         pub logging: LoggingOptions,
         pub cloud: Option<std::sync::Arc<crate::cloud::CloudConfiguration>>,
+        #[cfg(feature = "test")]
+        pub allow_insecure_connections: bool,
+    }
+    impl From<&ClientOptions> for BearerTokenAuthorizationOptions {
+        fn from(_options: &ClientOptions) -> Self;
     }
     #[derive(Clone, Debug)]
     pub struct Context<'a> {
@@ -983,6 +1010,17 @@ pub mod http {
     pub const REDACTED_PATTERN: &str = "REDACTED";
     pub static DEFAULT_ALLOWED_HEADER_NAMES: std::sync::LazyLock<std::collections::HashSet<std::borrow::Cow<'static, str>>> = _;
     pub static DEFAULT_ALLOWED_QUERY_PARAMETERS: std::sync::LazyLock<std::collections::HashSet<std::borrow::Cow<'static, str>>> = _;
+    #[cfg(all(feature = "test", feature = "unstable_fake"))]
+    pub mod fake {
+        pub fn get_api_name<'a>(context: &'a crate::http::Context<'_>) -> Option<&'a str>;
+        pub trait AsyncResponseExt: ResponseExt {
+            fn fake_with_stream(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self;
+        }
+        pub trait ResponseExt: Sized {
+            fn fake_with_bytes<impl Into<Bytes>: Into<Bytes>>(status: StatusCode, headers: Headers, bytes: impl Into<Bytes>) -> Self;
+            fn fake_with_error(status: StatusCode, headers: Headers, code: &str, message: &str) -> Result<Self>;
+        }
+    }
     pub mod headers {
         #[derive(Clone, Debug, Eq, Ord, PartialOrd)]
         pub struct HeaderName {
@@ -1187,6 +1225,9 @@ pub mod http {
         }
         pub type Pager<P, F = crate::http::JsonFormat> = ItemIterator<crate::http::response::Response<P, F>>;
         pub type PagerResultFuture<P> = std::pin::Pin<Box<dyn Future<Output = crate::Result<PagerResult<P>>> + Send + 'static>>;
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        pub mod fake {
+        }
     }
     pub mod policies {
         pub fn create_public_api_span(ctx: &crate::http::Context<'_>, tracer: Option<std::sync::Arc<dyn Tracer>>, public_api_instrumentation: Option<PublicApiInstrumentationInformation>) -> Option<std::sync::Arc<dyn Span>>;
@@ -1256,6 +1297,14 @@ pub mod http {
         }
         pub type PolicyResult = typespec::error::Result<crate::http::AsyncRawResponse>;
         pub mod auth {
+            #[derive(Clone, Debug, Default)]
+            pub struct BearerTokenAuthorizationOptions {
+                #[cfg(feature = "test")]
+                pub allow_insecure_connections: bool,
+            }
+            impl From<&ClientOptions> for BearerTokenAuthorizationOptions {
+                fn from(_options: &ClientOptions) -> Self;
+            }
             #[derive(Clone, Debug)]
             pub struct BearerTokenAuthorizationPolicy {
             }
@@ -1263,6 +1312,7 @@ pub mod http {
                 pub fn new<A, B>(credential: Arc<dyn TokenCredential>, scopes: A) -> Self where A: IntoIterator<Item = B>, B: Into<String>;
                 pub fn with_on_challenge(self, on_challenge: Arc<dyn OnChallenge>) -> Self;
                 pub fn with_on_request(self, on_request: Arc<dyn OnRequest>) -> Self;
+                pub fn with_options(self, _options: BearerTokenAuthorizationOptions) -> Self;
             }
             #[async_trait]
             impl Policy for BearerTokenAuthorizationPolicy {
@@ -1315,6 +1365,9 @@ pub mod http {
         impl Default for PollerOptions<'_> {
             fn default() -> Self;
         }
+        impl<'a> From<PollerOptions<'a>> for crate::http::poller::PollerOptions<'a> {
+            fn from(options: PollerOptions<'a>) -> Self;
+        }
         #[derive(Clone, Debug, Eq, PartialEq)]
         #[non_exhaustive]
         pub enum PollerContinuation {
@@ -1362,6 +1415,41 @@ pub mod http {
             fn status(&self) -> PollerStatus;
         }
         pub type PollerResultFuture<M, F> = std::pin::Pin<Box<dyn Future<Output = crate::Result<super::PollerResult<M, F>>> + Send + 'static>>;
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        pub mod fake {
+        }
+        #[cfg(feature = "unstable_resource_manager")]
+        pub mod resource_manager {
+            pub fn new_poller<'a, M>(pipeline: crate::http::Pipeline, request: crate::http::Request, final_state_via: Option<FinalStateVia<M>>, options: Option<PollerOptions<'a>>) -> crate::http::Poller<M> where M: StatusMonitor + DeserializeOwned + Send + 'static, <M as >::Output: DeserializeOwned + Send + 'static, <M as >::Format: Send + 'static;
+            #[derive(Clone, Debug)]
+            pub struct PollerOptions<'a> {
+                pub context: crate::http::Context<'a>,
+                pub frequency: crate::time::Duration,
+            }
+            impl<'a> PollerOptions<'a> {
+                #[must_use]
+                pub fn into_owned(self) -> PollerOptions<'static>;
+            }
+            impl Default for PollerOptions<'_> {
+                fn default() -> Self;
+            }
+            impl<'a> From<PollerOptions<'a>> for crate::http::poller::PollerOptions<'a> {
+                fn from(options: PollerOptions<'a>) -> Self;
+            }
+            #[derive(Debug)]
+            pub enum FinalStateVia<M: StatusMonitor> {
+                AzureAsyncOperation,
+                Location,
+                OriginalUrl,
+                #[allow(clippy::type_complexity)]
+                OperationLocation(fn(crate::http::Response<M>) -> crate::Result<crate::http::Response<<M as >::Output, <M as >::Format>>),
+            }
+            impl<M: StatusMonitor> Clone for FinalStateVia<M> {
+                fn clone(&self) -> Self;
+            }
+            impl<M: StatusMonitor> Copy for FinalStateVia<M> {
+            }
+        }
     }
     pub mod request {
         #[derive(Clone)]
