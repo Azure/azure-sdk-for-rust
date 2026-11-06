@@ -60,8 +60,14 @@ function Invoke-ReleaseToml([string] $Mode, [hashtable] $InputObject) {
 
 function Initialize-ReleaseTags([string] $Directory) {
   if (!$Directory) { throw 'Pass the session directory used by the prepare-release skill.' }
-  $identity = [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData(
-      [System.Text.Encoding]::UTF8.GetBytes([string] $RepoRoot)))
+  $algorithm = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    $hash = $algorithm.ComputeHash([System.Text.Encoding]::UTF8.GetBytes([string] $RepoRoot))
+    $identity = ([BitConverter]::ToString($hash)).Replace('-', '')
+  }
+  finally {
+    $algorithm.Dispose()
+  }
   $marker = [System.IO.Path]::Combine($Directory, "prepare-release-tags-$identity")
   if (!(Test-Path -LiteralPath $marker)) {
     Invoke-ReleaseCommand @('git', 'fetch', '--tags', '--no-recurse-submodules',
@@ -300,7 +306,9 @@ function Get-ReleaseDecisions($Plan, $Inventory) {
       $package = $Inventory | Where-Object Name -CEQ $name
       if ($Plan.ReleaseType -eq 'Stable') {
         foreach ($dependency in ($package.Dependencies | Where-Object { $_.kind -ne 'dev' })) {
-          if (!$versions.ContainsKey($dependency.name) -and $dependency.req -match '\d+\.\d+\.\d+-[0-9A-Za-z]') {
+          $rewritten = $versions.ContainsKey($dependency.name) -and
+            @($package.Dependencies | Where-Object { $_.name -eq $dependency.name -and $_.path }).Count -gt 0
+          if (!$rewritten -and $dependency.req -match '\d+\.\d+\.\d+-[0-9A-Za-z]') {
             throw "Stable release '$name' cannot depend on preview '$($dependency.name)'. Analyze it against its last stable release."
           }
         }

@@ -72,6 +72,20 @@ Describe 'Session tag fetch' {
     Initialize-ReleaseTags $session
     @(Get-ChildItem $session).Count | Should -Be 1
   }
+
+  It 'keeps tag markers separate for repositories sharing a session' {
+    $session = [System.IO.Path]::Combine($TestDrive, 'shared-session')
+    $RepoRoot = [System.IO.Path]::Combine($TestDrive, 'first-repository')
+    Initialize-ReleaseTags $session
+    $first = @(Get-ChildItem $session).Name
+    $RepoRoot = [System.IO.Path]::Combine($TestDrive, 'second-repository')
+    Initialize-ReleaseTags $session
+    @(Get-ChildItem $session).Count | Should -Be 2
+    $RepoRoot = [System.IO.Path]::Combine($TestDrive, 'first-repository')
+    Initialize-ReleaseTags $session
+    Test-Path ([System.IO.Path]::Combine($session, $first)) | Should -BeTrue
+    Should -Invoke Invoke-ReleaseCommand -Times 2 -Exactly
+  }
 }
 
 Describe 'Semantic release baselines' {
@@ -238,6 +252,8 @@ Describe 'Release decisions' {
       }
     }
     (Get-ReleaseDecisions $plan @($fixture, $dependency)).Versions.azure_dependency | Should -Be '1.0.0'
+    $fixture.Dependencies[0].path = $null
+    { Get-ReleaseDecisions $plan @($fixture, $dependency) } | Should -Throw '*cannot depend on preview*'
   }
 
   It 'orders dependencies before dependents' {

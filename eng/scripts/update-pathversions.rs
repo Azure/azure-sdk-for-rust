@@ -247,15 +247,13 @@ fn rewrite_dependency(dependency: &mut Item, target: &Version) -> Result<(), Box
 fn rewrite_dependencies(
     table: &mut dyn TableLike,
     versions: &BTreeMap<String, Version>,
-    normal_packages: &BTreeSet<String>,
+    canonical_packages: &BTreeSet<String>,
 ) -> Result<(), Box<dyn Error>> {
     for section in ["dependencies", "build-dependencies", "dev-dependencies"] {
         if let Some(dependencies) = table.get_mut(section).and_then(Item::as_table_like_mut) {
             for (alias, dependency) in dependencies.iter_mut() {
                 let package = dependency_package(&alias, dependency).to_string();
-                if inherited(dependency)
-                    || (section == "dev-dependencies" && !normal_packages.contains(&package))
-                {
+                if inherited(dependency) || !canonical_packages.contains(&package) {
                     continue;
                 }
                 if let Some(target) = versions.get(&package) {
@@ -267,7 +265,7 @@ fn rewrite_dependencies(
     if let Some(targets) = table.get_mut("target").and_then(Item::as_table_like_mut) {
         for (_, target) in targets.iter_mut() {
             if let Some(target) = target.as_table_like_mut() {
-                rewrite_dependencies(target, versions, normal_packages)?;
+                rewrite_dependencies(target, versions, canonical_packages)?;
             }
         }
     }
@@ -353,7 +351,7 @@ fn plan_release_dependencies(
         })
         .unwrap_or_default();
     let mut workspace_used = BTreeSet::new();
-    let mut normal_sets = Vec::new();
+    let mut canonical_sets = Vec::new();
     for (_, document) in documents.iter() {
         let mut normal = BTreeSet::new();
         for (dev, dependencies) in dependency_tables(document.as_table()) {
@@ -370,6 +368,25 @@ fn plan_release_dependencies(
                 }
             }
         }
+        let mut canonical = BTreeSet::new();
+        for (_, dependencies) in dependency_tables(document.as_table()) {
+            for (alias, dependency) in dependencies.iter() {
+                let resolved = if inherited(dependency) {
+                    workspace
+                        .get(alias)
+                        .ok_or_else(|| format!("missing workspace dependency {alias}"))?
+                } else {
+                    dependency
+                };
+                let package = dependency_package(alias, resolved);
+                if normal.contains(package)
+                    && versions.contains_key(package)
+                    && resolved.get("path").is_some()
+                {
+                    canonical.insert(package.to_string());
+                }
+            }
+        }
         for (_, dependencies) in dependency_tables(document.as_table()) {
             for (alias, dependency) in dependencies.iter() {
                 if inherited(dependency) {
@@ -377,13 +394,13 @@ fn plan_release_dependencies(
                         .get(alias)
                         .ok_or_else(|| format!("missing workspace dependency {alias}"))?;
                     let package = dependency_package(alias, resolved);
-                    if normal.contains(package) && versions.contains_key(package) {
+                    if canonical.contains(package) {
                         workspace_used.insert(alias.to_string());
                     }
                 }
             }
         }
-        normal_sets.push(normal);
+        canonical_sets.push(canonical);
     }
     let mut workspace_changed = BTreeSet::new();
     let mut workspace_processed = BTreeSet::new();
@@ -399,7 +416,7 @@ fn plan_release_dependencies(
             workspace_processed.insert(alias);
         }
         // A shared source change also constrains dev-only aliases in each inheritor.
-        for ((_, document), canonical) in documents.iter().zip(&mut normal_sets) {
+        for ((_, document), canonical) in documents.iter().zip(&mut canonical_sets) {
             for (_, dependencies) in dependency_tables(document.as_table()) {
                 for (alias, dependency) in dependencies.iter() {
                     if inherited(dependency) && workspace_changed.contains(alias) {
@@ -422,10 +439,10 @@ fn plan_release_dependencies(
     }
     let mut changed = Vec::new();
     let mut affected = BTreeSet::new();
-    for ((path, (source, document)), normal) in
-        paths.iter().zip(documents.iter_mut()).zip(normal_sets)
+    for ((path, (source, document)), canonical) in
+        paths.iter().zip(documents.iter_mut()).zip(canonical_sets)
     {
-        rewrite_dependencies(document.as_table_mut(), versions, &normal)?;
+        rewrite_dependencies(document.as_table_mut(), versions, &canonical)?;
         let output = document.to_string();
         let before: JsonValue = toml_edit::de::from_str(source)?;
         let after: JsonValue = toml_edit::de::from_str(&output)?;
@@ -595,13 +612,20 @@ mod tests {
     use super::{
         plan_release_dependencies, release_inspect, released_requirement, update_package_versions,
     };
-    use semver::Version;
+    use semver::{Version, VersionReq};
     use serde_json::{json, Value as JsonValue};
     use std::{collections::BTreeMap, path::PathBuf};
     use toml_edit::DocumentMut;
 
     fn release_plan(
         sources: &[&str],
+    ) -> Result<(Vec<String>, JsonValue), Box<dyn std::error::Error>> {
+        release_plan_for_version(sources, "1.2.0")
+    }
+
+    fn release_plan_for_version(
+        sources: &[&str],
+        target: &str,
     ) -> Result<(Vec<String>, JsonValue), Box<dyn std::error::Error>> {
         let root = PathBuf::from("/repo");
         let paths = sources
@@ -619,7 +643,7 @@ mod tests {
             .iter()
             .map(|source| Ok((source.to_string(), source.parse::<DocumentMut>()?)))
             .collect::<Result<Vec<_>, toml_edit::TomlError>>()?;
-        let versions = BTreeMap::from([("released".to_string(), Version::parse("1.2.0")?)]);
+        let versions = BTreeMap::from([("released".to_string(), Version::parse(target)?)]);
         let report = plan_release_dependencies(&paths, &mut documents, &root, &versions)?;
         Ok((
             documents
@@ -679,6 +703,43 @@ mod tests {
                 "{requirement}"
             );
         }
+    }
+
+    #[test]
+    fn lowering_requirements_preserves_operators() {
+        let target = Version::parse("1.2.0").expect("version");
+        for (requirement, expected) in [
+            ("=2.0.0", "=1.2.0"),
+            ("~2.0.0", "~1.2.0"),
+            ("^2.0.0", "^1.2.0"),
+            (" ~ 2.0.0 ", " ~ 1.2.0 "),
+        ] {
+            assert_eq!(
+                released_requirement(Some(requirement), &target).expect("lowered"),
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn stable_targets_reject_retained_preview_requirements() {
+        let target = Version::parse("1.2.0").expect("version");
+        for requirement in ["^1.2.0-beta.1", "~1.2.0-beta.1", ">=1.0.0-beta.1, <2"] {
+            assert!(
+                VersionReq::parse(requirement)
+                    .expect("requirement")
+                    .matches(&target),
+                "{requirement}"
+            );
+            assert!(
+                released_requirement(Some(requirement), &target).is_err(),
+                "{requirement}"
+            );
+        }
+        assert_eq!(
+            released_requirement(Some("=1.3.0-beta.1"), &target).expect("lowered"),
+            "=1.2.0"
+        );
     }
 
     #[test]
@@ -872,6 +933,8 @@ name = "consumer"
 version = "1.0.0"
 [dependencies]
 released = "1" # compatible registry
+[build-dependencies]
+renamed = { package = "released", version = "=2.0.0" }
 [dev-dependencies]
 other = { path = "../other" }
 "#;
@@ -887,14 +950,74 @@ other = { path = "../other" }
     }
 
     #[test]
-    fn incompatible_requirements_and_custom_sources_fail() {
+    fn beta_fallback_leaves_unrelated_registry_consumers_unchanged() {
+        let root = r#"[workspace.dependencies]
+released = { version = "1.1.0", default-features = false }
+"#;
+        let registry = r#"[package]
+name = "registry"
+version = "1.0.0"
+[dependencies]
+released = "1.1.0"
+[build-dependencies]
+renamed = { package = "released", version = "=1.1.0", features = ["xml"] }
+[target.'cfg(unix)'.dependencies]
+released = { version = "~1.1.0", default-features = false }
+"#;
+        let inherited = r#"[package]
+name = "inherited"
+version = "1.0.0"
+[dependencies]
+released.workspace = true
+"#;
+        let local = r#"[package]
+name = "local"
+version = "1.0.0"
+[dependencies]
+released = { path = "../released", version = "1.2.0-beta.2" }
+[dev-dependencies]
+released = { path = "../released", version = "1.2.0-beta.2" }
+"#;
+        let (output, report) =
+            release_plan_for_version(&[root, registry, inherited, local], "1.2.0-beta.1")
+                .expect("beta fallback");
+        assert_eq!(output[0], root);
+        assert_eq!(output[1], registry);
+        assert_eq!(output[2], inherited);
+        let local = output[3].parse::<DocumentMut>().expect("local manifest");
+        for section in ["dependencies", "dev-dependencies"] {
+            assert!(local[section]["released"].get("path").is_none());
+            assert_eq!(
+                local[section]["released"]["version"].as_str(),
+                Some("1.2.0-beta.1")
+            );
+        }
+        assert_eq!(
+            report,
+            json!({
+                "changed_manifests": ["sdk/test/consumer3/Cargo.toml"],
+                "affected_packages": ["local"]
+            })
+        );
+        let sources = output.iter().map(String::as_str).collect::<Vec<_>>();
+        let (_, second) = release_plan_for_version(&sources, "1.2.0-beta.1").expect("repeat");
+        assert_eq!(
+            second,
+            json!({"changed_manifests": [], "affected_packages": []})
+        );
+    }
+
+    #[test]
+    fn incompatible_local_or_alignment_sources_fail() {
         for dependency in [
             "{ path = '../released', version = '0.9.0' }",
             "'0.9.0'",
             "{ version = '1', git = 'https://example.invalid/released' }",
             "{ version = '1', registry = 'custom' }",
         ] {
-            let source = format!("[dependencies]\nreleased = {dependency}\n");
+            let source = format!(
+                "[dependencies]\nreleased = {dependency}\n[dev-dependencies]\nreleased = {{ path = '../released' }}\n"
+            );
             assert!(
                 release_plan(&["[workspace]\n", &source]).is_err(),
                 "{dependency}"
