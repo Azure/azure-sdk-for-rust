@@ -39,8 +39,12 @@ use super::system_properties::{
     inject_system_properties, offer_to_json, pkranges_to_json,
 };
 use crate::driver::pipeline::patch_eval::apply_patch_ops;
-use crate::models::{effective_partition_key::prefix_range_end_bytes, PatchInstructions};
-use crate::models::{PartitionKeyDefinition, MAX_SERVER_SIDE_PATCH_OPERATIONS};
+#[cfg(feature = "unstable_dtx")]
+use crate::models::PatchInstructions;
+use crate::models::{
+    effective_partition_key::prefix_range_end_bytes, PartitionKeyDefinition,
+    MAX_SERVER_SIDE_PATCH_OPERATIONS,
+};
 use crate::options::ReadConsistencyStrategy;
 use crate::query::ast::{
     SqlCollection, SqlCollectionExpression, SqlQuery, SqlScalarExpression, SqlSelectSpec,
