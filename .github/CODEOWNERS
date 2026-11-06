@@ -46,7 +46,7 @@
 /sdk/core/               @heaths @xirzec @RickWinter @LarryOsterman
 
 # PRLabel: %Azure.Core
-/sdk/core/azure_core_amqp/    @heaths @xirzec @RickWinter @LarryOsterman @j7nw4r @sagar0207 @SwayGom @sjkwak @hmlam
+/sdk/core/azure_core_amqp/    @heaths @xirzec @RickWinter @LarryOsterman @j7nw4r @ayush1252 @sagar0207 @SwayGom @sjkwak @hmlam
 
 # AzureSDKOwners: @heaths
 # ServiceLabel: %Azure.Identity
@@ -83,14 +83,14 @@
 # AzureSDKOwners: @vincenttran-msft @jalauzon-msft @jaschrep-msft
 
 # PRLabel: %Event Hubs
-/sdk/eventhubs/          @j7nw4r @SwayGom @sagar0207
+/sdk/eventhubs/          @j7nw4r @ayush1252 @SwayGom @sagar0207
 
 # PRLabel: %Event Hubs %Storage
-/sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob/    @j7nw4r @SwayGom @sagar0207 @jalauzon-msft @vincenttran-msft @jaschrep-msft
+/sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob/    @j7nw4r @ayush1252 @SwayGom @sagar0207 @jalauzon-msft @vincenttran-msft @jaschrep-msft
 
 # ServiceLabel: %Event Hubs
 # AzureSDKOwners: @LarryOsterman
-# ServiceOwners: @j7nw4r @SwayGom @sagar0207
+# ServiceOwners: @j7nw4r @ayush1252 @SwayGom @sagar0207
 
 ####################
 # Management Libraries
@@ -102,7 +102,7 @@
 /eng/                    @Azure/azure-sdk-eng @heaths @xirzec @RickWinter @antkmsft
 /eng/common/             @Azure/azure-sdk-eng @Azure/azure-sdk-sync-approvers
 /.github/workflows/      @heaths @xirzec @Azure/azure-sdk-eng
-/.github/CODEOWNERS      @xirzec @RickWinter @Azure/azure-sdk-eng
+/.github/CODEOWNERS      @xirzec @RickWinter @Azure/azure-sdk-eng @j7nw4r
 /.config/1espt/          @Azure/azure-sdk-eng
 /sdk/canary/             @Azure/azure-sdk-eng
 
