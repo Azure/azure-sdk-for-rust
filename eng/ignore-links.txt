@@ -1,0 +1,1 @@
+https://docs.rs/azure_identity/latest/azure_identity/trait.TokenProxyClient.html

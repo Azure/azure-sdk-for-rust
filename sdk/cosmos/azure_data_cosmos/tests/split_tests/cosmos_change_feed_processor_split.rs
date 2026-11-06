@@ -6,17 +6,15 @@
 
 use super::{
     cosmos_query_split::force_split_and_wait,
-    framework::{test_client::TEST_MODE_ENV_VAR, TestClient, TestOptions},
+    framework::{test_client::TEST_MODE_ENV_VAR, TestClient, TestOptions, TestRunContext},
 };
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     feed::FeedRange,
     models::{ChangeFeedItem, ContainerProperties, ThroughputProperties, TimeToLive},
-    options::{
-        ChangeFeedMode, CreateContainerOptions, MaxItemCountHint, ReadFeedRangesOptions, Region,
-    },
+    options::{ChangeFeedMode, MaxItemCountHint, ReadFeedRangesOptions, Region},
     ChangeFeedProcessor, ChangeFeedProcessorBuilder, ChangeFeedProcessorContext, ContainerClient,
-    CosmosError, CosmosStatus, FeedScope,
+    CosmosError, CosmosStatus, DatabaseClient, FeedScope,
 };
 use futures::{
     channel::{mpsc, oneshot},
@@ -38,6 +36,7 @@ use std::{
 };
 
 const NAME: &str = "cfp-online-split";
+const SOURCE_NAME: &str = "cfp-split-source";
 const KEYS: u32 = 32;
 const BASELINE_GROUPS: u32 = 4;
 const CONTROL_WAIT: Duration = Duration::from_secs(180);
@@ -306,7 +305,12 @@ async fn publish_group(source: &ContainerClient, sequence: u32, fence: bool) -> 
     Ok(())
 }
 
-async fn exercise(source: &ContainerClient, leases: &ContainerClient) -> TestResult {
+async fn exercise(
+    run: &TestRunContext,
+    database: &DatabaseClient,
+    source: &ContainerClient,
+    leases: &ContainerClient,
+) -> TestResult {
     let _serial = CALLBACK_SERIAL.lock().await;
     let before = source.read_feed_ranges(None).await?;
     ensure(
@@ -334,7 +338,7 @@ async fn exercise(source: &ContainerClient, leases: &ContainerClient) -> TestRes
 
         let stop = AtomicBool::new(false);
         let split = async {
-            let result = force_split_and_wait(source, before.len()).await;
+            let result = force_split_and_wait(run, database, source, SOURCE_NAME, before.len()).await;
             stop.store(true, Ordering::Release);
             result
         };
@@ -449,11 +453,8 @@ async fn processor_recovers_online_after_real_split() -> TestResult {
             let source = run
                 .create_container(
                     database,
-                    ContainerProperties::new("cfp-split-source", "/pk".into()),
-                    Some(
-                        CreateContainerOptions::default()
-                            .with_throughput(ThroughputProperties::manual(1000)),
-                    ),
+                    ContainerProperties::new(SOURCE_NAME, "/pk".into()),
+                    Some(ThroughputProperties::manual(1000)),
                 )
                 .await?;
             let mut properties = ContainerProperties::new("cfp-split-leases", "/id".into());
@@ -462,13 +463,10 @@ async fn processor_recovers_online_after_real_split() -> TestResult {
                 .create_container(
                     database,
                     properties,
-                    Some(
-                        CreateContainerOptions::default()
-                            .with_throughput(ThroughputProperties::manual(400)),
-                    ),
+                    Some(ThroughputProperties::manual(400)),
                 )
                 .await?;
-            exercise(&source, &leases).await
+            exercise(run, database, &source, &leases).await
         },
         Some(
             TestOptions::new()

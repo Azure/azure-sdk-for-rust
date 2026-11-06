@@ -1,12 +1,15 @@
 # Release History
 
-## Unreleased
+## 0.3.0 (Unreleased)
 
 ### Features Added
 
 - Added `cosmos_processor_*` completion-queue APIs for driver-owned change feed processing and explicit post-callback checkpoint acknowledgments.
+- Added a driver option for disabling default-on resource-name validation, including item names supplied to Create and Upsert, when compatibility requires it. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
 
 ### Breaking Changes
+
+- Expanded `cosmos_driver_options_config_v2_t`; native hosts must rebuild against the 0.3.0 header and library. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
 
 ### Bugs Fixed
 

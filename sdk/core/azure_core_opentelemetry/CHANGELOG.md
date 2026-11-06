@@ -1,14 +1,10 @@
 # Release History
 
-## 1.1.0-beta.2 (Unreleased)
-
-### Features Added
-
-### Breaking Changes
-
-### Bugs Fixed
+## 1.1.0-beta.2 (2026-11-05)
 
 ### Other Changes
+
+- Update `azure_core` to `1.2.0-beta.2` and honor `default-features = false`.
 
 ## 1.1.0-beta.1 (2026-09-04)
 

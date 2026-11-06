@@ -176,6 +176,10 @@ selected. If an older composite checkpoint contains multiple positions, splittin
 projects every intersecting position onto the child without comparing opaque
 backend tokens. Partially pinned `Now` or full-fidelity checkpoints are rejected
 rather than resetting an uncovered slice to a later starting time.
+Projection preserves a saved next-poll position inside the child range. A child
+outside that position starts at its own first slice; a position outside the
+parent range is rejected. New projected checkpoints use the driver's `c2.`
+encoding while supported legacy checkpoints remain readable.
 
 Bootstrap records, active leases, and retired parents all use the initial schema
 version 1. A split changes lease state, not workload identity or schema version.

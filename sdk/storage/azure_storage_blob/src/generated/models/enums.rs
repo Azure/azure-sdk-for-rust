@@ -89,7 +89,20 @@ pub enum ArchiveStatus {
     /// The archive status is rehydrating pending to Hot.
     RehydratePendingToHot,
 
+    /// The archive status is rehydrating pending to Smart.
+    RehydratePendingToSmart,
+
     /// Any other value not defined in `ArchiveStatus`.
+    UnknownValue(String),
+}
+
+/// The type of authentication required to create the session. The only type currently supported is HMAC.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) enum AuthenticationType {
+    /// HMAC authentication.
+    Hmac,
+
+    /// Any other value not defined in `AuthenticationType`.
     UnknownValue(String),
 }
 
@@ -160,6 +173,16 @@ pub enum DeleteSnapshotsOptionType {
 
     /// Only delete the snapshots.
     Only,
+}
+
+/// The download hint for a blob.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) enum DownloadHint {
+    /// The blob layout can be retrieved with the Get Blob Layout operation.
+    Layout,
+
+    /// Any other value not defined in `DownloadHint`.
+    UnknownValue(String),
 }
 
 /// The algorithm used to produce the encryption key hash.
@@ -257,6 +280,13 @@ pub enum LeaseStatus {
     Unlocked,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum ListBlobsHierarchicalInternalResponseContentType {
+    ApplicationVndApacheArrowStream,
+
+    ApplicationXml,
+}
+
 /// Specifies additional datasets to include when listing blobs in a container.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ListBlobsIncludeItem {
@@ -289,6 +319,13 @@ pub enum ListBlobsIncludeItem {
 
     /// Include versions.
     Versions,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum ListBlobsInternalResponseContentType {
+    ApplicationVndApacheArrowStream,
+
+    ApplicationXml,
 }
 
 /// Specifies what additional information should be returned as part of the list operation.
@@ -518,6 +555,9 @@ pub enum StorageErrorCode {
 
     /// Empty metadata key.
     EmptyMetadataKey,
+
+    /// Feature is not enabled.
+    FeatureNotEnabled,
 
     /// Feature version mismatch.
     FeatureVersionMismatch,

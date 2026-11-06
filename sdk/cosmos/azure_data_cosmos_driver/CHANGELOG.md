@@ -1,6 +1,6 @@
 # Release History
 
-## 1.1.0-beta.2 (Unreleased)
+## 1.1.0-beta.3 (Unreleased)
 
 ### Features Added
 
@@ -8,6 +8,7 @@
 - Added automatic online processor split recovery with range-local child creation, fenced parent retirement, resumable incomplete transitions, independent merge checkpoints, and balanced child acquisition. ([#5476](https://github.com/Azure/azure-sdk-for-rust/pull/5476))
 - Added driver-owned change feed workload bootstrap with mode binding, create-only initial lease coverage, bounded initialization claims, and progress-preserving recovery of incomplete workloads. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 - Coalesce compatible overlapping bootstrap calls on shared drivers without coupling waiter cancellation or caching completed outcomes. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Added `FullTextScoreScope` and client-side ranked full-text and weighted hybrid query execution with bounded result windows. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
 
 ### Breaking Changes
 
@@ -16,17 +17,37 @@
 - Moved opt-in restart lease verification to `ProcessorOptions`, preserving missing-lease recovery without changing completed bootstrap workloads. ([#5474](https://github.com/Azure/azure-sdk-for-rust/pull/5474))
 - Removed public `BootstrapOptions`; bootstrap accepts mode and workload/worker names directly, keeps timing policy internal, and never repairs completed workloads. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 - Replaced bootstrap's `ChangeFeedProcessorMode` with `models::ChangeFeedFactoryMode`, preserving existing stored workload mode values. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Consumed legacy single-request prefix checkpoints cannot safely resume across physical ranges and are rejected; start a new feed with an explicit start position. Older unpolled single-request checkpoints require the original start on resume. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 
 ### Bugs Fixed
 
 - Re-register failed bootstrap attempts within each caller's original budget, preserving late joiners' deadlines and attempting conditional claim cleanup after initialization panics. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 - Allow change feed workload bootstrap on multi-write-region lease accounts using the driver's existing request routing. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Replace stale change-feed start headers, retain starts and polling positions in checkpoints, and preserve hierarchical-prefix leaf bounds on both gateway transports. Invalid keyed change feeds return errors instead of panicking during planning. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- A checkpoint's saved start takes precedence over a newly supplied change-feed start. Omit the continuation token to start a new feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+
+### Other Changes
+
+- New query and change-feed checkpoints use `c2.` and cannot be read by SDKs that only support `c1.`. Query checkpoint payloads are unchanged, and supported legacy `c1.` checkpoints remain readable. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+
+### Bugs Fixed
+
+### Other Changes
+
+## 1.1.0-beta.2 (2026-11-03)
+
+### Breaking Changes
+
+- Resource-name validation is now enabled by default for request paths and item names supplied to Create, Upsert, transactional batch, and distributed transaction operations; use `DriverOptionsBuilder::with_resource_name_validation(false)` only when compatibility requires service-accepted names that are unsafe for point addressing. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
+
+### Bugs Fixed
+
+- Honor the emulator certificate-validation policy in Gateway V2 connectivity probes so self-signed emulator certificates do not prevent Gateway V2 connectivity when validation is disabled for emulator hosts. ([#5484](https://github.com/Azure/azure-sdk-for-rust/pull/5484))
 - Preserve Gateway 2.0 batch atomicity and continue-on-error controls, preventing partial commits in failed transactional batches. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 - Correct partition-local session-token scoping across classic Gateway and Gateway 2.0, including explicit compound tokens with automatic capture disabled, while retaining safe fallback for missing or stale topology. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 - Preserve query and feed EPK filters and avoid conflicting hierarchical partition-key selectors across gateways, regional retries, and continuation requests. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 - Retry transient account-discovery I/O failures within a bounded budget, including uncertain send outcomes. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
-
-### Other Changes
 
 ## 1.1.0-beta.1 (2026-10-22)
 
