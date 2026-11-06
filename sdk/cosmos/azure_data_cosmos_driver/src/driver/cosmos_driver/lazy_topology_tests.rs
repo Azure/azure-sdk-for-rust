@@ -3,18 +3,7 @@
 
 use super::CosmosDriver;
 use crate::{
-    driver::{
-        cache::AccountProperties,
-        transport::{
-            cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
-            http_client_factory::{HttpClientConfig, HttpClientFactory},
-            rntbd::{
-                tokens::{RntbdRequestToken, TokenValue},
-                RntbdRequestFrame, RntbdResponse,
-            },
-        },
-        CosmosDriverRuntimeBuilder,
-    },
+    driver::{cache::AccountProperties, CosmosDriverRuntimeBuilder},
     models::{
         AccountEndpoint, AccountReference, ContainerProperties, ContainerReference,
         CosmosOperation, CosmosResponseHeaders, CosmosStatus, ItemReference, PartitionKey,
@@ -24,6 +13,14 @@ use crate::{
         AvailabilityStrategy, ConnectionPoolOptions, DriverOptions, HedgeThreshold,
         HedgingStrategy, OperationOptions, PartitionFailoverOptions, PartitionTopologyCacheMode,
         PlanOptions, Region,
+    },
+    pipeline::transport::{
+        cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
+        http_client_factory::{HttpClientConfig, HttpClientFactory},
+    },
+    rntbd_encoding::{
+        tokens::{RntbdRequestToken, TokenValue},
+        RntbdRequestFrame, RntbdResponse,
     },
 };
 use async_trait::async_trait;

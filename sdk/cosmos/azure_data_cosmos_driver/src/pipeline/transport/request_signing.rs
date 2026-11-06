@@ -1,16 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Bare function: generate and attach the Authorization header.
-//!
-//! This replaces `AuthorizationPolicy` from the old policy-chain pipeline.
+//! Signs HTTP requests with their date and authorization headers.
 
 use azure_core::http::headers::{HeaderName, HeaderValue, AUTHORIZATION};
 use azure_core::time::{self, OffsetDateTime};
 
 use crate::models::Credential;
 
-use super::{cosmos_transport_client::HttpRequest, generate_authorization, AuthorizationContext};
+use super::{authorization, cosmos_transport_client::HttpRequest, AuthorizationContext};
 
 const MS_DATE: HeaderName = HeaderName::from_static("x-ms-date");
 
@@ -21,29 +19,29 @@ const MS_DATE: HeaderName = HeaderName::from_static("x-ms-date");
 ///
 /// Returns a Cosmos-typed [`crate::error::CosmosError`]. Foreign errors from the
 /// credential provider and the HMAC routine are classified into typed
-/// Cosmos errors at the boundary by [`generate_authorization`].
+/// Cosmos errors at the boundary by [`authorization::generate_authorization()`].
 pub(crate) async fn sign_request(
     request: &mut HttpRequest,
     credential: &Credential,
     auth_context: &AuthorizationContext,
 ) -> crate::error::Result<()> {
     let date_string = time::to_rfc7231(&OffsetDateTime::now_utc()).to_string();
-
-    let auth = generate_authorization(credential, auth_context, &date_string).await?;
-
+    let auth =
+        authorization::generate_authorization(credential, auth_context, &date_string).await?;
     request
         .headers
         .insert(MS_DATE, HeaderValue::from(date_string));
     request
         .headers
         .insert(AUTHORIZATION, HeaderValue::from(auth));
-
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        sign_request, AuthorizationContext, Credential, HttpRequest, AUTHORIZATION, MS_DATE,
+    };
     use crate::models::ResourceType;
     use azure_core::credentials::Secret;
     use azure_core::http::Method;
@@ -60,6 +58,33 @@ mod tests {
             #[cfg(feature = "fault_injection")]
             evaluation_collector: None,
         }
+    }
+
+    #[tokio::test]
+    async fn authorization_failure_preserves_existing_headers() {
+        let credential = Credential::AccountKey(Secret::new("***not-base64***"));
+        let context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::DocumentCollection,
+            "dbs/db1/colls/coll1",
+        );
+        let mut request = empty_request();
+        request.headers.insert(MS_DATE, "original-date");
+        request
+            .headers
+            .insert(AUTHORIZATION, "original-authorization");
+
+        assert!(sign_request(&mut request, &credential, &context)
+            .await
+            .is_err());
+        assert_eq!(
+            request.headers.get_optional_str(&MS_DATE),
+            Some("original-date")
+        );
+        assert_eq!(
+            request.headers.get_optional_str(&AUTHORIZATION),
+            Some("original-authorization"),
+        );
     }
 
     /// Regression: `sign_request` must write `x-ms-date` in proper RFC 7231

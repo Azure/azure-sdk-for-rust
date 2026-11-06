@@ -8,17 +8,7 @@
 use super::CosmosDriver;
 use crate::{
     diagnostics::TransportKind,
-    driver::{
-        transport::{
-            cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
-            http_client_factory::{DefaultHttpClientFactory, HttpClientConfig, HttpClientFactory},
-            rntbd::{
-                tokens::{RntbdRequestToken, TokenValue},
-                RntbdRequestFrame,
-            },
-        },
-        CosmosDriverRuntimeBuilder,
-    },
+    driver::CosmosDriverRuntimeBuilder,
     models::{
         AccountReference, ContainerReference, CosmosOperation, CosmosResponse, ItemReference,
         PartitionKey,
@@ -27,6 +17,14 @@ use crate::{
         AvailabilityStrategy, ConnectionPoolOptions, ContentResponseOnWrite, DriverOptions,
         OperationOptions, PartitionFailoverOptions, PartitionTopologyCacheMode,
         ReadConsistencyStrategy,
+    },
+    pipeline::transport::{
+        cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
+        http_client_factory::{DefaultHttpClientFactory, HttpClientConfig, HttpClientFactory},
+    },
+    rntbd_encoding::{
+        tokens::{RntbdRequestToken, TokenValue},
+        RntbdRequestFrame,
     },
 };
 use async_trait::async_trait;

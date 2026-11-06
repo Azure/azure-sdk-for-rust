@@ -101,6 +101,7 @@ impl TransportClient for ReqwestTransportClient {
     }
 }
 
+/// Converts an SDK HTTP method to the equivalent reqwest method.
 fn to_reqwest_method(method: azure_core::http::Method) -> reqwest::Method {
     reqwest::Method::from_bytes(method.as_str().as_bytes())
         .expect("azure_core::http::Method should always be a valid HTTP method")
@@ -153,6 +154,7 @@ fn refine_status_from_source_chain(
     None
 }
 
+/// Copies response headers into the SDK header map, omitting values that cannot be read as text.
 fn to_driver_headers(reqwest_headers: &reqwest::header::HeaderMap) -> Headers {
     let mut headers = Headers::new();
     for (name, value) in reqwest_headers.iter() {

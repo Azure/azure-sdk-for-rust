@@ -1411,7 +1411,7 @@ src/driver/pipeline/operation_pipeline.rs
     # - evaluate_transport_result() may return OperationAction::Hedge
     # - STAGE 7 dispatch arm calls execute_hedged()
     # - execute_hedged() implementation (§6.4)
-src/driver/pipeline/transport_pipeline.rs
+src/pipeline/transport/execution.rs
     # - ExecutionContext::Hedging marker on the secondary's transport_request
 src/options/operation_options.rs    # Add availability_strategy field
 src/options/mod.rs                  # Export AvailabilityStrategy, HedgingStrategy
@@ -2054,7 +2054,7 @@ This marker:
 - Lets the transport layer attribute logs / spans / metric labels
   to the correct attempt class.
 - Is the input that distinguishes a secondary attempt from a normal
-  retry inside the per-attempt `transport_pipeline.rs` (TPS §5).
+  retry inside the per-attempt `pipeline/transport/execution.rs` (TPS §5).
 - Is set by `execute_hedged()` exactly once per operation (§6.4),
   on the secondary only.
 

@@ -7,9 +7,9 @@ use std::sync::Arc;
 
 use super::http_client::FaultClient;
 use super::rule::FaultInjectionRule;
-use crate::driver::transport::cosmos_transport_client::TransportClient;
-use crate::driver::transport::http_client_factory::{HttpClientConfig, HttpClientFactory};
 use crate::options::ConnectionPoolOptions;
+use crate::pipeline::transport::cosmos_transport_client::TransportClient;
+use crate::pipeline::transport::http_client_factory::{HttpClientConfig, HttpClientFactory};
 
 /// An [`HttpClientFactory`] decorator that wraps clients with fault injection.
 ///
@@ -55,11 +55,11 @@ impl HttpClientFactory for FaultInjectingHttpClientFactory {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::driver::transport::cosmos_transport_client::{
-        HttpRequest, HttpResponse, TransportClient, TransportError,
-    };
     use crate::fault_injection::{
         FaultInjectionErrorType, FaultInjectionResultBuilder, FaultInjectionRuleBuilder,
+    };
+    use crate::pipeline::transport::cosmos_transport_client::{
+        HttpRequest, HttpResponse, TransportClient, TransportError,
     };
     use std::sync::atomic::{AtomicU32, Ordering};
 

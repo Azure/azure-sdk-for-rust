@@ -190,7 +190,7 @@ flowchart LR
   end
   subgraph DRV["azure_data_cosmos_driver (schema-agnostic)"]
     OP["models/cosmos_operation.rs<br/>body: Vec&lt;u8&gt; (0x80…)"]
-    HDR["driver/transport/cosmos_headers.rs<br/>x-ms-cosmos-supported-serialization-formats"]
+    HDR["pipeline/transport/cosmos_headers.rs<br/>x-ms-cosmos-supported-serialization-formats"]
     DRB["models/response_body.rs<br/>deserialize_response:<br/>is_binary? from_slice::&lt;T&gt; : serde_json::from_slice"]
   end
   subgraph CODEC["binary_json codec"]

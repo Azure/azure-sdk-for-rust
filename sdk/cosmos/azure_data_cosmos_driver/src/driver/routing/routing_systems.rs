@@ -12,8 +12,8 @@ use std::{
 
 use tracing::warn;
 
-use crate::driver::{cache::AccountProperties, transport::is_emulator_host};
 use crate::options::{PartitionFailoverOptions, Region};
+use crate::{driver::cache::AccountProperties, emulator::is_emulator_host};
 
 use super::{
     partition_endpoint_state::{
