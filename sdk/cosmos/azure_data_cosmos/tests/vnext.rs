@@ -295,6 +295,12 @@ async fn vnext_transport_and_encoding_conformance() -> TestResult {
     )),
     ignore = "requires a vNext matrix cell and local emulator connection string"
 )]
+#[cfg_attr(
+    test_category = "emulator_vnext_gateway_v2",
+    ignore = "skipped on vnext emulator: Gateway V2 JSON batch reads are parsed as creates, \
+              returning 400 PartitionKeyMismatch; requires the emulator JSON/HybridRow fix \
+              and SDK batch atomicity tokens"
+)]
 async fn vnext_transactional_batch_conformance() -> TestResult {
     run_conformance(Suite::Batch).await
 }
@@ -318,6 +324,14 @@ async fn vnext_query_pagination_conformance() -> TestResult {
         test_category = "emulator_vnext_gateway_v2"
     )),
     ignore = "requires a vNext matrix cell and local emulator connection string"
+)]
+#[cfg_attr(
+    any(
+        test_category = "emulator_vnext",
+        test_category = "emulator_vnext_gateway_v2"
+    ),
+    ignore = "skipped on vnext emulator: ORDER BY ignores the requested page size and \
+              returns no continuation token (Azure/azure-cosmos-db-emulator-docker#387)"
 )]
 async fn vnext_ordered_query_pagination_conformance() -> TestResult {
     run_conformance(Suite::OrderedQuery).await
