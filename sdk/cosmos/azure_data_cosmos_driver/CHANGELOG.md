@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added server-side PATCH filter predicate support through the standard `condition` request envelope, with explicit rejection when execution resolves to client-side read-modify-write. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
 - Added `FullTextScoreScope` and client-side ranked full-text and weighted hybrid query execution with bounded result windows. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
 
 ### Breaking Changes

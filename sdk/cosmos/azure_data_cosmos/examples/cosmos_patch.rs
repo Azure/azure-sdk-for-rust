@@ -23,7 +23,9 @@
 //!    budget, including the initial attempt, is exhausted.
 //!
 //! Explicit `ServerSide` never falls back and Cosmos DB rejects more than 10
-//! instructions. See `ContainerClient::patch_item` for retry semantics.
+//! instructions. Server-side PATCH also supports SQL filter predicates that
+//! the service checks atomically before applying the operations. See
+//! `ContainerClient::patch_item` for retry and condition semantics.
 //!
 //! ## Required setup
 //!
@@ -142,6 +144,27 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // `content_response_on_write` to Disabled suppresses it for either path.
     let patched: serde_json::Value = response.into_model()?;
     println!("after    {patched:#}");
+
+    // A filter predicate is supported only when execution resolves to the
+    // server. If it is false, Cosmos DB returns 412/1110 and doesn't apply the
+    // operation.
+    let response = items
+        .patch_item(
+            "contoso",
+            "o-200",
+            PatchInstructions::from(vec![PatchOperation::set(
+                "/customer_tier",
+                json!("platinum"),
+            )]),
+            Some(
+                PatchItemOptions::default()
+                    .with_strategy(PatchStrategy::ServerSide)
+                    .with_filter_predicate("from c where c.total = 125"),
+            ),
+        )
+        .await?;
+    let conditional: serde_json::Value = response.into_model()?;
+    println!("conditional {conditional:#}");
 
     Ok(())
 }

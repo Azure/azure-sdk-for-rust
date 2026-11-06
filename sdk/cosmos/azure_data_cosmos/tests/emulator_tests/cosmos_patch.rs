@@ -878,6 +878,164 @@ pub async fn patch_preconditions_match_across_strategies() -> Result<(), Box<dyn
     .await
 }
 
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+pub async fn patch_filter_predicates_follow_effective_strategy() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+            let item_id = format!("patch-filter-{unique_id}");
+            let pk = format!("pk-{unique_id}");
+            let initial = PatchTestItem {
+                id: item_id.clone(),
+                partition_key: pk.clone(),
+                display_name: "before".into(),
+                visits: 0,
+                deleted: false,
+            };
+            container_client
+                .create_item(&pk, &item_id, &initial, None)
+                .await?;
+
+            let matching = PatchItemOptions::default()
+                .with_filter_predicate("from c where c.display_name = 'before'");
+            let response = container_client
+                .patch_item(
+                    &pk,
+                    &item_id,
+                    PatchInstructions::from(vec![PatchOperation::set(
+                        "/display_name",
+                        serde_json::json!("matched"),
+                    )]),
+                    Some(matching),
+                )
+                .await?;
+            let matched: PatchTestItem = response.into_model()?;
+            assert_eq!(matched.display_name, "matched");
+
+            let nonmatching = PatchItemOptions::default()
+                .with_strategy(PatchStrategy::ServerSide)
+                .with_filter_predicate("from c where c.display_name = 'before'");
+            let error = container_client
+                .patch_item(
+                    &pk,
+                    &item_id,
+                    PatchInstructions::from(vec![PatchOperation::set(
+                        "/deleted",
+                        serde_json::json!(true),
+                    )]),
+                    Some(nonmatching),
+                )
+                .await
+                .expect_err("a false service predicate must reject PATCH");
+            assert_eq!(error.status().status_code(), StatusCode::PreconditionFailed);
+            assert_eq!(
+                error.status().sub_status().map(|status| status.value()),
+                Some(1110)
+            );
+            let diagnostics = error
+                .diagnostics()
+                .expect("a service predicate failure must carry diagnostics");
+            assert_eq!(diagnostics.operation_name(), Some("patch_item"));
+            assert_eq!(diagnostics.requests().len(), 1);
+
+            let empty = PatchItemOptions::default()
+                .with_strategy(PatchStrategy::ServerSide)
+                .with_filter_predicate("   ");
+            let error = container_client
+                .patch_item(
+                    &pk,
+                    &item_id,
+                    PatchInstructions::from(vec![PatchOperation::set(
+                        "/deleted",
+                        serde_json::json!(true),
+                    )]),
+                    Some(empty),
+                )
+                .await
+                .expect_err("an empty predicate must be rejected before I/O");
+            assert_eq!(error.status().status_code(), StatusCode::BadRequest);
+            assert!(error.status().sub_status().is_none());
+            assert!(error.diagnostics().is_none());
+
+            let malformed = PatchItemOptions::default()
+                .with_strategy(PatchStrategy::ServerSide)
+                .with_filter_predicate("from c where");
+            let error = container_client
+                .patch_item(
+                    &pk,
+                    &item_id,
+                    PatchInstructions::from(vec![PatchOperation::set(
+                        "/deleted",
+                        serde_json::json!(true),
+                    )]),
+                    Some(malformed),
+                )
+                .await
+                .expect_err("a malformed predicate must be rejected by the service");
+            assert_eq!(error.status().status_code(), StatusCode::BadRequest);
+            assert!(error.status().sub_status().is_none());
+            let diagnostics = error
+                .diagnostics()
+                .expect("a malformed service predicate must carry diagnostics");
+            assert_eq!(diagnostics.operation_name(), Some("patch_item"));
+            assert_eq!(diagnostics.requests().len(), 1);
+
+            for (options, instructions, scenario) in [
+                (
+                    PatchItemOptions::default()
+                        .with_strategy(PatchStrategy::ClientSide)
+                        .with_filter_predicate("from c where c.display_name = 'matched'"),
+                    PatchInstructions::from(vec![PatchOperation::set(
+                        "/deleted",
+                        serde_json::json!(true),
+                    )]),
+                    "explicit ClientSide",
+                ),
+                (
+                    PatchItemOptions::default()
+                        .with_filter_predicate("from c where c.display_name = 'matched'"),
+                    PatchInstructions::from(vec![PatchOperation::increment("/visits", 1i64)]),
+                    "Auto fallback",
+                ),
+            ] {
+                let error = container_client
+                    .patch_item(&pk, &item_id, instructions, Some(options))
+                    .await
+                    .expect_err("effective client-side PATCH must reject predicates");
+                assert_eq!(
+                    error.status().status_code(),
+                    StatusCode::BadRequest,
+                    "{scenario}"
+                );
+                assert!(error.status().sub_status().is_none(), "{scenario}");
+                assert!(error.diagnostics().is_none(), "{scenario}");
+                assert!(error.patch_tracking_id().is_none(), "{scenario}");
+            }
+
+            let stored: PatchTestItem = container_client
+                .read_item(&pk, &item_id, None)
+                .await?
+                .into_model()?;
+            assert_eq!(stored.display_name, "matched");
+            assert_eq!(stored.visits, 0);
+            assert!(!stored.deleted);
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
 // ---------------------------------------------------------------------------
 // Fault-injected 412 retry + exhaustion at the SDK surface.
 //

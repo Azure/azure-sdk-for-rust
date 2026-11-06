@@ -325,6 +325,24 @@ pub struct PatchInstructions {
     pub operations: Vec<PatchOperation>,
 }
 
+#[derive(Debug, Deserialize)]
+pub(crate) struct PatchRequest {
+    #[serde(flatten)]
+    pub(crate) instructions: PatchInstructions,
+    #[serde(default)]
+    condition: Option<String>,
+}
+
+impl PatchRequest {
+    pub(crate) fn condition(&self) -> Option<&str> {
+        self.condition.as_deref()
+    }
+}
+
+pub(crate) fn parse_patch_request(body: &[u8]) -> serde_json::Result<PatchRequest> {
+    serde_json::from_slice(body)
+}
+
 impl PatchInstructions {
     /// Builds a [`PatchInstructions`] from a list of operations.
     pub fn new() -> Self {
@@ -407,6 +425,31 @@ mod tests {
         let op = PatchOperation::add("/a", json!(1));
         let s = serde_json::to_string(&op).unwrap();
         assert_eq!(s, r#"{"op":"add","path":"/a","value":1}"#);
+    }
+
+    #[test]
+    fn patch_request_extracts_non_empty_condition() {
+        let request = parse_patch_request(
+            br#"{"condition":"from c where c.status = 'pending'","operations":[{"op":"set","path":"/status","value":"done"}]}"#,
+        )
+        .unwrap();
+
+        assert_eq!(
+            request.condition(),
+            Some("from c where c.status = 'pending'")
+        );
+        assert_eq!(request.instructions.operations.len(), 1);
+    }
+
+    #[test]
+    fn patch_request_preserves_blank_condition_for_validation() {
+        let request = parse_patch_request(br#"{"condition":"  ","operations":[]}"#).unwrap();
+        assert_eq!(request.condition(), Some("  "));
+    }
+
+    #[test]
+    fn patch_request_rejects_non_string_condition() {
+        assert!(parse_patch_request(br#"{"condition":42,"operations":[]}"#).is_err());
     }
 
     #[test]
@@ -683,12 +726,8 @@ mod tests {
 
     #[test]
     fn patch_spec_does_not_serialize_condition_field() {
-        // The SQL filter predicate (peer SDKs' `FilterPredicate`) is not part
-        // of the public PATCH surface yet; serialization MUST NOT include a
-        // `condition` key, and deserialization MUST refuse one (since the
-        // struct is `#[non_exhaustive]` plus there is no `condition` field,
-        // serde's default `deny_unknown_fields = false` would silently drop
-        // an unknown field — verify the round-trip is condition-free).
+        // PatchInstructions contains only instructions; the request envelope
+        // carries the optional condition.
         let spec = PatchInstructions::from(vec![PatchOperation::set("/x", json!(1))]);
         let s = serde_json::to_string(&spec).unwrap();
         assert!(
