@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added SQL filter predicates to unstable PATCH request options for atomic conditional server-side PATCH execution.
+- Added SQL filter predicates to unstable PATCH request options for atomic conditional server-side PATCH execution. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
 - Added ranked full-text and weighted text/vector hybrid search, with per-query `FullTextScoreScope` and bounded buffered results. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
 
 ### Breaking Changes

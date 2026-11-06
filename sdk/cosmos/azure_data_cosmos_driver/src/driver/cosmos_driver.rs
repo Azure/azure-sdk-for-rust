@@ -2809,7 +2809,7 @@ impl CosmosDriver {
         {
             return Err(crate::driver::pipeline::patch_handler::invalid_filter_predicate_error());
         }
-        let execution = resolve_patch_strategy(requested, instructions)?;
+        let mut execution = resolve_patch_strategy(requested, instructions)?;
         if matches!(
             execution,
             crate::driver::pipeline::patch_strategy::PatchExecution::ClientSide
@@ -2820,6 +2820,19 @@ impl CosmosDriver {
             return Err(
                 crate::driver::pipeline::patch_handler::unsupported_filter_predicate_error(),
             );
+        }
+        if patch_request
+            .as_ref()
+            .is_some_and(|request| request.condition().is_some())
+        {
+            // A committed PATCH can make its predicate false, so replay can
+            // report a misleading 412 even when the instructions converge.
+            if let crate::driver::pipeline::patch_strategy::PatchExecution::ServerSide {
+                retry_safe,
+            } = &mut execution
+            {
+                *retry_safe = false;
+            }
         }
         tracing::debug!(
             requested_patch_strategy = requested.as_str(),

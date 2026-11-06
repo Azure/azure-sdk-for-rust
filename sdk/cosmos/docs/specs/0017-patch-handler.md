@@ -217,10 +217,16 @@ client-generated HTTP 400 before dispatch, with no request diagnostics. Service
 responses carry the normal one-request `patch_item` diagnostics, including
 activity ID and request charge.
 
-Retry-safe server PATCH can use normal ambiguous-outcome retries. For an unsafe
-list selected explicitly with `ServerSide`, both retry layers stop after an
-ambiguous result. Statuses that prove the operation was rejected before
-execution retain their normal retry policy.
+Unconditional server PATCH with retry-safe instructions can use normal
+ambiguous-outcome retries. For an unsafe list selected explicitly with
+`ServerSide`, or any server-side PATCH with a filter predicate (including
+`Auto`), both retry layers stop after an ambiguous result. A committed mutation
+can make its predicate false, so replay could incorrectly report HTTP 412/1110
+instead of the original failure. Conditional PATCH returns that
+failure without a reconciliation Read or marker-backed recovery. Callers must
+read the item to reconcile the outcome before deciding whether to submit
+another patch. Definitively unsent requests and statuses that prove rejection
+before execution retain their normal retry policy.
 
 ### Intentional implementation and test boundaries
 
@@ -549,12 +555,13 @@ as a JSON number without precision loss.
 
 - Server-side PATCH costs one request and preserves path-level conflict
   resolution, but accepts no more than 10 instructions and cannot safely retry
-  an unsafe list after an ambiguous outcome.
+  an unsafe list or a request with a filter predicate after an ambiguous outcome.
 - Client-side RMW supports longer lists and uses the tracking protocol for
   bounded duplicate suppression, at the cost of at least one Read plus one
   Replace and document-level ETag contention.
-- `Auto` selects the server path only when it retains the same retry safety and
-  falls back to RMW where the service limit or instruction semantics require it.
+- `Auto` selects the server path for retry-safe, service-sized instruction
+  lists and falls back to RMW otherwise. A filter predicate does not change
+  selection, but disables ambiguous-outcome retries on the server path.
 
 ## Invariants
 
@@ -575,8 +582,9 @@ as a JSON number without precision loss.
 - 412 stays non-retryable in the global retry-evaluation policy. PATCH's
   RMW retry is internal and never depends on the global policy.
 - An unresolved server PATCH fails closed for ambiguous-outcome retry.
-  Strategy resolution marks only a retry-safe server instruction list as
-  eligible; an explicit unsafe `ServerSide` request remains at-most-once.
+  Strategy resolution marks only a retry-safe server instruction list without
+  a filter predicate as eligible; unsafe or conditional server requests cannot
+  be replayed after possible execution.
 - Every internal Read prefers the PPAF partition writer or account write
   endpoints, forces `LatestCommitted`, and suppresses hedging. It carries the
   caller's explicit session token for possible fallback, but preferred-writer

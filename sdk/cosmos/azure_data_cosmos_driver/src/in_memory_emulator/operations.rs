@@ -101,9 +101,9 @@ fn patch_condition_matches(
         return Ok(true);
     };
     let sql = if condition
-        .trim_start()
-        .to_ascii_lowercase()
-        .starts_with("from ")
+        .trim_start_matches(|ch: char| ch.is_ascii_whitespace())
+        .split_once(|ch: char| ch.is_ascii_whitespace())
+        .is_some_and(|(keyword, _)| keyword.eq_ignore_ascii_case("from"))
     {
         format!("SELECT * {condition}")
     } else {

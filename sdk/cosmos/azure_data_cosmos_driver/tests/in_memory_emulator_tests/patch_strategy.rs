@@ -560,6 +560,53 @@ async fn server_side_filter_predicate_is_atomic_and_observable() {
 }
 
 #[tokio::test]
+async fn server_side_filter_predicate_accepts_sql_whitespace_after_from() {
+    for keyword in ["from", " \t\r\nFrOm"] {
+        for separator in [" ", "\t", "\n", "\r\n"] {
+            let (driver, container) = build_driver(None).await;
+            create_item(&driver, &container, &seed_document()).await;
+            let before = read_stored_raw(&driver, &container).await;
+            let instructions = PatchInstructions::from(vec![PatchOperation::set(
+                "/name",
+                serde_json::json!("after"),
+            )]);
+
+            let error = execute_conditional_patch(
+                &driver,
+                &container,
+                &instructions,
+                &format!("{keyword}{separator}c where c.name = 'missing'"),
+                PatchStrategy::ServerSide,
+            )
+            .await
+            .expect_err("a nonmatching predicate must fail for every SQL whitespace separator");
+            assert_eq!(
+                error.status().status_code(),
+                azure_core::http::StatusCode::PreconditionFailed
+            );
+            assert_eq!(
+                error.status().sub_status(),
+                Some(azure_data_cosmos_driver::error::SubStatusCode::new(1110))
+            );
+            assert_eq!(read_stored_raw(&driver, &container).await, before);
+
+            execute_conditional_patch(
+                &driver,
+                &container,
+                &instructions,
+                &format!("{keyword}{separator}c where c.name = 'before'"),
+                PatchStrategy::ServerSide,
+            )
+            .await
+            .expect("a matching predicate must accept every SQL whitespace separator");
+            let after = read_stored_raw(&driver, &container).await;
+            assert_eq!(after["name"], "after");
+            assert_ne!(after["_etag"], before["_etag"]);
+        }
+    }
+}
+
+#[tokio::test]
 async fn explicit_unsafe_server_side_predicate_uses_one_patch_request() {
     let recorder = MethodRecorder::new();
     let (driver, container) = build_driver(Some(recorder.clone())).await;
@@ -657,18 +704,19 @@ async fn server_side_if_match_is_checked_before_filter_predicate() {
 
     let committed = read_stored_raw(&driver, &container).await;
     assert_eq!(committed["name"], "matched");
+    let false_condition_body = patch_body(
+        &PatchInstructions::from(vec![PatchOperation::set(
+            "/deleted",
+            serde_json::json!(true),
+        )]),
+        "from c where c.name = 'before'",
+    );
     let error = driver
         .execute_singleton_operation(
             CosmosOperation::patch_item(item(&container))
-                .with_body(patch_body(
-                    &PatchInstructions::from(vec![PatchOperation::set(
-                        "/deleted",
-                        serde_json::json!(true),
-                    )]),
-                    "from c where c.name = 'matched'",
-                ))
+                .with_body(false_condition_body.clone())
                 .with_precondition(Precondition::if_match(Etag::from(initial_etag))),
-            options,
+            options.clone(),
         )
         .await
         .expect_err("a stale If-Match must fail before predicate evaluation");
@@ -678,6 +726,27 @@ async fn server_side_if_match_is_checked_before_filter_predicate() {
         azure_core::http::StatusCode::PreconditionFailed
     );
     assert!(error.status().sub_status().is_none());
+    assert_eq!(read_stored_raw(&driver, &container).await, committed);
+
+    let error = driver
+        .execute_singleton_operation(
+            CosmosOperation::patch_item(item(&container))
+                .with_body(false_condition_body)
+                .with_precondition(Precondition::if_match(Etag::from(
+                    committed["_etag"].as_str().unwrap().to_owned(),
+                ))),
+            options,
+        )
+        .await
+        .expect_err("a current If-Match must reach the same false predicate");
+    assert_eq!(
+        error.status().status_code(),
+        azure_core::http::StatusCode::PreconditionFailed
+    );
+    assert_eq!(
+        error.status().sub_status(),
+        Some(azure_data_cosmos_driver::error::SubStatusCode::new(1110))
+    );
     assert_eq!(read_stored_raw(&driver, &container).await, committed);
 }
 

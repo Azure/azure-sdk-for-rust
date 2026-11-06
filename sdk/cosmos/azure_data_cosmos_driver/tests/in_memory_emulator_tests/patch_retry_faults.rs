@@ -219,6 +219,29 @@ fn set_name() -> PatchInstructions {
     )])
 }
 
+async fn conditional_set_name(
+    driver: &CosmosDriver,
+    container: &ContainerReference,
+    strategy: PatchStrategy,
+) -> Result<
+    azure_data_cosmos_driver::models::CosmosResponse,
+    azure_data_cosmos_driver::error::CosmosError,
+> {
+    let item = ItemReference::from_name(container, PartitionKey::from(PK), ITEM_ID.to_string());
+    let body = serde_json::json!({
+        "operations": [{"op": "set", "path": "/name", "value": "after"}],
+        "condition": "from c where c.name = 'before'",
+    });
+    driver
+        .execute_singleton_operation(
+            CosmosOperation::patch_item(item).with_body(serde_json::to_vec(&body).unwrap()),
+            OperationOptionsBuilder::new()
+                .with_patch_strategy(strategy)
+                .build(),
+        )
+        .await
+}
+
 fn overlapping_replace_then_set() -> PatchInstructions {
     PatchInstructions::from(vec![
         PatchOperation::replace("/a/b", serde_json::json!(1)),
@@ -328,6 +351,104 @@ async fn safe_server_side_patch_retries_after_committed_response_is_lost() {
         "safe server PATCH must include the faulted request and successful retry"
     );
     assert_eq!(stored_item(&driver, &container).await["name"], "after");
+}
+
+#[tokio::test]
+async fn conditional_safe_set_is_not_replayed_after_committed_response_is_lost() {
+    for strategy in [PatchStrategy::Auto, PatchStrategy::ServerSide] {
+        let rule = post_service_timeout_rule(
+            "conditional-post-service-timeout",
+            FaultOperationType::PatchItem,
+        );
+        let driver = build_driver(vec![Arc::clone(&rule)]).await;
+        let container = seed(&driver).await;
+
+        let error = conditional_set_name(&driver, &container, strategy)
+            .await
+            .expect_err("conditional PATCH must surface ambiguous committed response loss");
+
+        assert_eq!(
+            error.status(),
+            azure_data_cosmos_driver::error::status_codes::TRANSPORT_GENERATED_503
+        );
+        assert!(error
+            .to_string()
+            .contains("Injected fault: response timeout after service execution"));
+        assert_eq!(
+            rule.hit_count(),
+            1,
+            "{strategy}: one committed response lost"
+        );
+        assert_eq!(
+            error
+                .diagnostics()
+                .expect("transport failure diagnostics")
+                .request_count(),
+            1,
+            "{strategy}: no replay or reconciliation Read"
+        );
+        assert!(error.patch_tracking_id().is_none());
+        let stored = stored_item(&driver, &container).await;
+        assert_eq!(stored["name"], "after", "{strategy}: mutation committed");
+        assert!(stored.get("_azsdkPatchTracking").is_none());
+    }
+}
+
+#[tokio::test]
+async fn conditional_safe_set_is_not_retried_when_send_status_is_unknown() {
+    for strategy in [PatchStrategy::Auto, PatchStrategy::ServerSide] {
+        let rule =
+            ambiguous_failure_rule("conditional-timeout", FaultOperationType::PatchItem, None);
+        let driver = build_driver(vec![Arc::clone(&rule)]).await;
+        let container = seed(&driver).await;
+        let before = stored_item(&driver, &container).await;
+
+        let error = conditional_set_name(&driver, &container, strategy)
+            .await
+            .expect_err("an unknown send outcome must not permit conditional replay");
+
+        assert_eq!(
+            error.status(),
+            azure_data_cosmos_driver::error::status_codes::TRANSPORT_GENERATED_503
+        );
+        assert!(error
+            .to_string()
+            .contains("Injected fault: response timeout"));
+        assert_eq!(rule.hit_count(), 1, "{strategy}: no ambiguous retry");
+        assert_eq!(error.diagnostics().unwrap().request_count(), 1);
+        assert_eq!(stored_item(&driver, &container).await, before);
+    }
+}
+
+#[tokio::test]
+async fn conditional_safe_set_retries_when_definitively_not_sent() {
+    for strategy in [PatchStrategy::Auto, PatchStrategy::ServerSide] {
+        let rule = Arc::new(
+            FaultInjectionRuleBuilder::new(
+                "conditional-connect-fail",
+                FaultInjectionResultBuilder::new()
+                    .with_error(FaultInjectionErrorType::ConnectionError)
+                    .build(),
+            )
+            .with_condition(
+                FaultInjectionConditionBuilder::new()
+                    .with_operation_type(FaultOperationType::PatchItem)
+                    .build(),
+            )
+            .with_hit_limit(1)
+            .build(),
+        );
+        let driver = build_driver(vec![Arc::clone(&rule)]).await;
+        let container = seed(&driver).await;
+
+        let response = conditional_set_name(&driver, &container, strategy)
+            .await
+            .expect("a definitively unsent conditional PATCH can be retried");
+
+        assert_eq!(rule.hit_count(), 1);
+        assert_eq!(response.diagnostics().request_count(), 2);
+        assert_eq!(stored_item(&driver, &container).await["name"], "after");
+    }
 }
 
 #[tokio::test]

@@ -599,8 +599,12 @@ impl ContainerClient {
     /// Client-side-only settings do not influence strategy selection and are
     /// ignored on the server path. To provide a stable identity for
     /// application-level retries when client-side execution is selected, use
-    /// [`PatchItemOptions::with_tracking_id`]. Explicit unsafe server-side
-    /// PATCH is not retried after an ambiguous outcome.
+    /// [`PatchItemOptions::with_tracking_id`]. Server-side PATCH with an unsafe
+    /// list or a filter predicate is not retried after an ambiguous outcome.
+    /// A committed patch can make its predicate false, so even convergent
+    /// instructions cannot safely be replayed. The driver returns the original
+    /// error without a reconciliation Read; read the item to reconcile the
+    /// outcome before deciding whether to submit another patch.
     ///
     /// By default the driver generates a tracking ID for instruction lists that
     /// are not safe to reapply. The effective ID is available from
@@ -1658,15 +1662,18 @@ fn serialize_patch_body(
     patch: &PatchInstructions,
     filter_predicate: Option<&str>,
 ) -> crate::Result<Vec<u8>> {
-    let mut body = serde_json::to_value(patch).map_err(crate::error::convert_json_encode_error)?;
-    if let Some(predicate) = filter_predicate {
-        body.as_object_mut()
-            .expect("PatchInstructions serializes as a JSON object")
-            .insert(
-                "condition".to_owned(),
-                serde_json::Value::String(predicate.to_owned()),
-            );
+    #[derive(Serialize)]
+    struct PatchBody<'a> {
+        #[serde(flatten)]
+        instructions: &'a PatchInstructions,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        condition: Option<&'a str>,
     }
+
+    let body = PatchBody {
+        instructions: patch,
+        condition: filter_predicate,
+    };
     serde_json::to_vec(&body).map_err(crate::error::convert_json_encode_error)
 }
 
@@ -1771,11 +1778,49 @@ mod tests {
             serde_json::json!("done"),
         )]);
 
-        let body = serialize_patch_body(&patch, Some("from c where c.status = 'pending'")).unwrap();
-        let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        for predicate in [
+            "from c where c.status = 'pending'",
+            "from c where c.status = \"quoted\\value\"\n",
+        ] {
+            let body = serialize_patch_body(&patch, Some(predicate)).unwrap();
+            let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+            assert_eq!(
+                body,
+                json!({
+                    "operations": [{"op": "set", "path": "/status", "value": "done"}],
+                    "condition": predicate,
+                })
+            );
+        }
+    }
 
-        assert_eq!(body["condition"], "from c where c.status = 'pending'");
-        assert_eq!(body["operations"].as_array().unwrap().len(), 1);
+    #[cfg(feature = "unstable_patch")]
+    #[test]
+    fn patch_body_preserves_instruction_bytes_and_move_ordering() {
+        use crate::models::PatchOperation;
+
+        let patch = PatchInstructions::from(vec![
+            PatchOperation::set("/nested", json!({"items": [null, true, {"value": "text"}]})),
+            PatchOperation::add("/tags/-", json!("new")),
+            PatchOperation::replace("/count", json!(u64::MAX)),
+            PatchOperation::increment("/integer", i64::MAX),
+            PatchOperation::increment("/float", 1.25),
+            PatchOperation::remove("/removed"),
+            PatchOperation::move_value("/source", "/destination"),
+        ]);
+        let expected = serde_json::to_vec(&patch).unwrap();
+        assert_eq!(serialize_patch_body(&patch, None).unwrap(), expected);
+
+        let mut conditional = expected;
+        conditional.pop();
+        conditional.extend_from_slice(b",\"condition\":\"from c where c.ready = true\"}");
+        assert_eq!(
+            serialize_patch_body(&patch, Some("from c where c.ready = true")).unwrap(),
+            conditional
+        );
+        assert!(String::from_utf8(conditional)
+            .unwrap()
+            .contains(r#"{"op":"move","from":"/source","path":"/destination"}"#));
     }
 
     #[cfg(feature = "unstable_patch")]

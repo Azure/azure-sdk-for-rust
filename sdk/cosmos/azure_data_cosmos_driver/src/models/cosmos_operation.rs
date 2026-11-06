@@ -1125,8 +1125,11 @@ impl CosmosOperation {
     /// Builds a PATCH operation for an item.
     ///
     /// [`crate::options::PatchStrategy`] selects one server-side request or the
-    /// client-side Read-Modify-Write loop. Callers serialize
-    /// [`crate::models::PatchInstructions`] into the operation body.
+    /// client-side Read-Modify-Write loop. Provide a UTF-8 JSON body containing
+    /// `operations` and an optional string `condition` (a SQL `FROM ... WHERE ...`
+    /// predicate). Conditions require effective server-side execution.
+    /// Serializing [`crate::models::PatchInstructions`] alone supplies the
+    /// unconditional body.
     pub fn patch_item(item: ItemReference) -> Self {
         Self::for_item(OperationType::Patch, item)
     }

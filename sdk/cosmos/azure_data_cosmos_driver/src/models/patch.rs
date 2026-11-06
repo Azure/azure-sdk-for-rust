@@ -726,12 +726,8 @@ mod tests {
 
     #[test]
     fn patch_spec_does_not_serialize_condition_field() {
-        // The SQL filter predicate (peer SDKs' `FilterPredicate`) is not part
-        // of the public PATCH surface yet; serialization MUST NOT include a
-        // `condition` key, and deserialization MUST refuse one (since the
-        // struct is `#[non_exhaustive]` plus there is no `condition` field,
-        // serde's default `deny_unknown_fields = false` would silently drop
-        // an unknown field — verify the round-trip is condition-free).
+        // PatchInstructions contains only instructions; the request envelope
+        // carries the optional condition.
         let spec = PatchInstructions::from(vec![PatchOperation::set("/x", json!(1))]);
         let s = serde_json::to_string(&spec).unwrap();
         assert!(

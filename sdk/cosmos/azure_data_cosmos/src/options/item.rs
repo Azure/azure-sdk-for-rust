@@ -184,6 +184,9 @@ pub struct PatchItemOptions {
     /// invalid. A false predicate returns HTTP 412 with sub-status 1110.
     /// Effective client-side execution doesn't support predicates and returns
     /// HTTP 400 before any request is dispatched.
+    /// Disables ambiguous-outcome retries even for retry-safe instructions.
+    /// Read the item to reconcile an ambiguous outcome before submitting another
+    /// patch; the driver does not reconcile conditional server-side PATCH.
     pub filter_predicate: Option<Cow<'static, str>>,
 
     /// Maximum number of client-side Read-Modify-Write attempts the driver may
