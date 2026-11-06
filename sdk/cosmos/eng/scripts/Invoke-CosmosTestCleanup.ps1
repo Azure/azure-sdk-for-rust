@@ -39,6 +39,10 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     }
 }
 
+elseif ($env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'vnext') {
+    Write-Host 'Keeping the owned vNext container for subsequent crates; the job finalizer removes it.'
+    $env:AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED = $null
+}
 elseif ($IsWindows) {
     $EmulatorPath = & "$PSScriptRoot\Get-CosmosEmulatorPath.ps1"
     if ($null -eq $EmulatorPath) {

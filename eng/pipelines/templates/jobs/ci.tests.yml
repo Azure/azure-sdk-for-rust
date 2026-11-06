@@ -91,6 +91,13 @@ jobs:
         -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
         -FeatureSet '$(EffectiveTestFeatureSet)'
 
+  - ${{ if eq(parameters.ServiceDirectory, 'cosmos') }}:
+    - pwsh: |
+        . "$(Build.SourcesDirectory)/sdk/cosmos/eng/scripts/CosmosVNext.ps1"
+        Complete-CosmosVNext
+      displayName: Collect vNext logs and remove owned container
+      condition: and(always(), eq(variables['AZURE_COSMOS_EMULATOR_FLAVOR'], 'vnext'))
+
   - task: Powershell@2
     displayName: Convert Test Results to JUnit XML
     condition: and(succeededOrFailed(), ne(variables['NoPackagesChanged'],'true'))

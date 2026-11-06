@@ -14,6 +14,14 @@
     ],
     "AZURE_COSMOS_EMULATOR_FLAVOR": [
       "vnext"
+    ],
+    "AZURE_COSMOS_VNEXT_GATEWAY": [
+      "v1",
+      "v2"
+    ],
+    "AZURE_COSMOS_VNEXT_ENCODING": [
+      "text",
+      "binary"
     ]
   }
 }
