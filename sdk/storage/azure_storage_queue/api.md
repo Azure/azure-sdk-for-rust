@@ -207,32 +207,38 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientClearOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientCreateOptions<'a> {
         pub metadata: Option<std::collections::HashMap<String, String>>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientDeleteMessageOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientDeleteOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientGetAccessPolicyOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientGetPropertiesOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -241,12 +247,14 @@ pub mod models {
     pub struct QueueClientPeekMessagesOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub number_of_messages: Option<i32>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientReceiveMessagesOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub number_of_messages: Option<i32>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
         pub visibility_timeout: Option<i32>,
     }
@@ -254,23 +262,27 @@ pub mod models {
     pub struct QueueClientSendMessageOptions<'a> {
         pub message_time_to_live: Option<i32>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
         pub visibility_timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientSetAccessPolicyOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientSetMetadataOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct QueueClientUpdateMessageOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub queue_message: Option<azure_core::http::RequestContent<super::QueueMessage, azure_core::http::XmlFormat>>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
@@ -294,16 +306,19 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct QueueServiceClientGetPropertiesOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct QueueServiceClientGetStatisticsOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct QueueServiceClientGetUserDelegationKeyOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
@@ -313,6 +328,7 @@ pub mod models {
         pub maxresults: Option<i32>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
         pub prefix: Option<String>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     impl QueueServiceClientListQueuesOptions<'_> {
@@ -321,6 +337,7 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct QueueServiceClientSetPropertiesOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]

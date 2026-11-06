@@ -182,6 +182,9 @@ impl BlockBlobClient {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         if let Some(blob_tags_string) = options.blob_tags_string.as_ref() {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
@@ -267,6 +270,9 @@ impl BlockBlobClient {
         }
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
+        }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
@@ -376,6 +382,9 @@ impl BlockBlobClient {
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
         let rsp = self
@@ -481,6 +490,9 @@ impl BlockBlobClient {
         }
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
+        }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
         }
         if let Some(source_content_crc64) = options.source_content_crc64 {
             request.insert_header(
@@ -688,6 +700,9 @@ impl BlockBlobClient {
             for (k, v) in metadata {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
+        }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
         }
         if let Some(source_content_md5) = options.source_content_md5 {
             request.insert_header(
@@ -899,6 +914,9 @@ impl BlockBlobClient {
             for (k, v) in metadata {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
+        }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
         }
         if let Some(structured_body_type) = options.structured_body_type.as_ref() {
             request.insert_header("x-ms-structured-body", structured_body_type);

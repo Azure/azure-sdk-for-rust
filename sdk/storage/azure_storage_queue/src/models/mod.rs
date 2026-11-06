@@ -23,7 +23,7 @@ impl ListOfSentMessage {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{ErrorKind, ListOfSentMessage, SentMessage};
 
     #[test]
     fn into_message_returns_first() {

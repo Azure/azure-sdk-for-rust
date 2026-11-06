@@ -67,6 +67,10 @@ pub struct AppendBlobClientAppendBlockFromUrlOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// Specifies the CRC64 calculated for the range of bytes that must be read from the source.
     pub source_content_crc64: Option<Vec<u8>>,
 
@@ -148,6 +152,10 @@ pub struct AppendBlobClientAppendBlockOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 
@@ -228,6 +236,10 @@ pub struct AppendBlobClientCreateOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -257,6 +269,10 @@ pub struct AppendBlobClientSealOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -269,6 +285,10 @@ pub struct BlobClientAbortCopyOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -297,6 +317,10 @@ pub struct BlobClientAcquireLeaseOptions<'a> {
 
     /// The proposed lease ID for the lease.
     pub proposed_lease_id: Option<String>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -327,6 +351,10 @@ pub struct BlobClientBreakLeaseOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -351,6 +379,10 @@ pub struct BlobClientChangeLeaseOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -395,6 +427,10 @@ pub struct BlobClientCreateSnapshotOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -404,6 +440,10 @@ pub struct BlobClientCreateSnapshotOptions<'a> {
 pub struct BlobClientDeleteImmutabilityPolicyOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// Specifies the snapshot of the blob.
     pub snapshot: Option<String>,
@@ -450,6 +490,10 @@ pub struct BlobClientDeleteOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// Specifies the snapshot of the blob.
     pub snapshot: Option<String>,
@@ -505,6 +549,10 @@ pub(crate) struct BlobClientDownloadInternalOptions<'a> {
     /// as the range is less than or equal to 4 MiB in size.
     pub(crate) range_get_content_md5: Option<bool>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub(crate) request_priority: Option<i32>,
+
     /// Specifies the snapshot of the blob.
     pub(crate) snapshot: Option<String>,
 
@@ -524,6 +572,10 @@ pub(crate) struct BlobClientDownloadInternalOptions<'a> {
 pub struct BlobClientGetAccountInfoOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -572,6 +624,10 @@ pub(crate) struct BlobClientGetLayoutOptions<'a> {
     /// Specifies the range of the blob to operate on.
     pub(crate) range: Option<HttpRange>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub(crate) request_priority: Option<i32>,
+
     /// Specifies the snapshot of the blob.
     pub(crate) snapshot: Option<String>,
 
@@ -602,6 +658,7 @@ impl BlobClientGetLayoutOptions<'_> {
                 ..self.method_options
             },
             range: self.range,
+            request_priority: self.request_priority,
             snapshot: self.snapshot,
             timeout: self.timeout,
             version_id: self.version_id,
@@ -642,6 +699,10 @@ pub struct BlobClientGetPropertiesOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// Specifies the snapshot of the blob.
     pub snapshot: Option<String>,
 
@@ -676,6 +737,10 @@ pub struct BlobClientGetTagsOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// Specifies the snapshot of the blob.
     pub snapshot: Option<String>,
 
@@ -707,6 +772,10 @@ pub struct BlobClientReleaseLeaseOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -732,6 +801,10 @@ pub struct BlobClientRenewLeaseOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -748,6 +821,10 @@ pub struct BlobClientSetImmutabilityPolicyOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// Specifies the snapshot of the blob.
     pub snapshot: Option<String>,
 
@@ -763,6 +840,10 @@ pub struct BlobClientSetImmutabilityPolicyOptions<'a> {
 pub struct BlobClientSetLegalHoldOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// Specifies the snapshot of the blob.
     pub snapshot: Option<String>,
@@ -809,6 +890,10 @@ pub struct BlobClientSetMetadataOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -857,6 +942,10 @@ pub struct BlobClientSetPropertiesOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -885,6 +974,10 @@ pub struct BlobClientSetTagsOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 
@@ -912,6 +1005,10 @@ pub struct BlobClientSetTierOptions<'a> {
 
     /// The priority of the rehydration operation.
     pub rehydrate_priority: Option<RehydratePriority>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// Specifies the snapshot of the blob.
     pub snapshot: Option<String>,
@@ -965,6 +1062,10 @@ pub struct BlobClientStartCopyFromUrlOptions<'a> {
     /// The priority of the rehydration operation.
     pub rehydrate_priority: Option<RehydratePriority>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// Overrides the sealed state of the destination blob.
     pub seal_blob: Option<bool>,
 
@@ -996,6 +1097,10 @@ pub struct BlobClientUndeleteOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -1014,6 +1119,10 @@ pub struct BlobContainerClientAcquireLeaseOptions<'a> {
 
     /// The proposed lease ID for the lease.
     pub proposed_lease_id: Option<String>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -1035,6 +1144,10 @@ pub struct BlobContainerClientBreakLeaseOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -1050,6 +1163,10 @@ pub struct BlobContainerClientChangeLeaseOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -1073,6 +1190,10 @@ pub struct BlobContainerClientCreateOptions<'a> {
     /// Whether to prevent encryption scope override.
     pub prevent_encryption_scope_override: Option<bool>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -1082,6 +1203,10 @@ pub struct BlobContainerClientCreateOptions<'a> {
 pub(crate) struct BlobContainerClientCreateSessionOptions<'a> {
     /// Allows customization of the method call.
     pub(crate) method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub(crate) request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub(crate) timeout: Option<i32>,
@@ -1101,6 +1226,10 @@ pub struct BlobContainerClientDeleteOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -1122,6 +1251,10 @@ pub struct BlobContainerClientFindBlobsByTagsOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: PagerOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -1137,6 +1270,7 @@ impl BlobContainerClientFindBlobsByTagsOptions<'_> {
                 context: self.method_options.context.into_owned(),
                 ..self.method_options
             },
+            request_priority: self.request_priority,
             timeout: self.timeout,
         }
     }
@@ -1151,6 +1285,10 @@ pub struct BlobContainerClientGetAccessPolicyOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -1160,6 +1298,10 @@ pub struct BlobContainerClientGetAccessPolicyOptions<'a> {
 pub struct BlobContainerClientGetAccountInfoOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -1173,6 +1315,10 @@ pub struct BlobContainerClientGetPropertiesOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -1199,6 +1345,10 @@ pub(crate) struct BlobContainerClientListBlobsHierarchicalInternalOptions<'a> {
 
     /// Filters the results to return only resources whose name begins with the specified prefix.
     pub(crate) prefix: Option<String>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub(crate) request_priority: Option<i32>,
 
     /// Specifies the relative path to list paths from. For non-recursive list, only one entity level is supported; for recursive
     /// list, multiple entity levels are supported. (Inclusive)
@@ -1227,6 +1377,10 @@ pub(crate) struct BlobContainerClientListBlobsHierarchicalXmlOptions<'a> {
     /// Filters the results to return only resources whose name begins with the specified prefix.
     pub(crate) prefix: Option<String>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub(crate) request_priority: Option<i32>,
+
     /// Specifies the relative path to list paths from. For non-recursive list, only one entity level is supported; for recursive
     /// list, multiple entity levels are supported. (Inclusive)
     pub(crate) start_from: Option<String>,
@@ -1247,6 +1401,7 @@ impl BlobContainerClientListBlobsHierarchicalXmlOptions<'_> {
                 ..self.method_options
             },
             prefix: self.prefix,
+            request_priority: self.request_priority,
             start_from: self.start_from,
             timeout: self.timeout,
         }
@@ -1275,6 +1430,10 @@ pub(crate) struct BlobContainerClientListBlobsInternalOptions<'a> {
     /// Filters the results to return only resources whose name begins with the specified prefix.
     pub(crate) prefix: Option<String>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub(crate) request_priority: Option<i32>,
+
     /// Specifies the relative path to list paths from. For non-recursive list, only one entity level is supported; for recursive
     /// list, multiple entity levels are supported. (Inclusive)
     pub(crate) start_from: Option<String>,
@@ -1302,6 +1461,10 @@ pub(crate) struct BlobContainerClientListBlobsXmlOptions<'a> {
     /// Filters the results to return only resources whose name begins with the specified prefix.
     pub(crate) prefix: Option<String>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub(crate) request_priority: Option<i32>,
+
     /// Specifies the relative path to list paths from. For non-recursive list, only one entity level is supported; for recursive
     /// list, multiple entity levels are supported. (Inclusive)
     pub(crate) start_from: Option<String>,
@@ -1322,6 +1485,7 @@ impl BlobContainerClientListBlobsXmlOptions<'_> {
                 ..self.method_options
             },
             prefix: self.prefix,
+            request_priority: self.request_priority,
             start_from: self.start_from,
             timeout: self.timeout,
         }
@@ -1340,6 +1504,10 @@ pub struct BlobContainerClientReleaseLeaseOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -1355,6 +1523,10 @@ pub struct BlobContainerClientRenewLeaseOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -1378,6 +1550,10 @@ pub struct BlobContainerClientSetAccessPolicyOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -1393,6 +1569,10 @@ pub struct BlobContainerClientSetMetadataOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -1414,6 +1594,10 @@ pub struct BlobServiceClientFindBlobsByTagsOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: PagerOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -1429,6 +1613,7 @@ impl BlobServiceClientFindBlobsByTagsOptions<'_> {
                 context: self.method_options.context.into_owned(),
                 ..self.method_options
             },
+            request_priority: self.request_priority,
             timeout: self.timeout,
         }
     }
@@ -1440,6 +1625,10 @@ pub struct BlobServiceClientGetAccountInfoOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -1449,6 +1638,10 @@ pub struct BlobServiceClientGetAccountInfoOptions<'a> {
 pub struct BlobServiceClientGetPropertiesOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -1460,6 +1653,10 @@ pub struct BlobServiceClientGetStatisticsOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -1469,6 +1666,10 @@ pub struct BlobServiceClientGetStatisticsOptions<'a> {
 pub struct BlobServiceClientGetUserDelegationKeyOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -1493,6 +1694,10 @@ pub struct BlobServiceClientListContainersOptions<'a> {
     /// Filters the results to return only resources whose name begins with the specified prefix.
     pub prefix: Option<String>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -1509,6 +1714,7 @@ impl BlobServiceClientListContainersOptions<'_> {
                 ..self.method_options
             },
             prefix: self.prefix,
+            request_priority: self.request_priority,
             timeout: self.timeout,
         }
     }
@@ -1519,6 +1725,10 @@ impl BlobServiceClientListContainersOptions<'_> {
 pub struct BlobServiceClientSetPropertiesOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -1594,6 +1804,10 @@ pub struct BlockBlobClientCommitBlockListOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The tier to be set on the blob.
     pub tier: Option<AccessTier>,
 
@@ -1618,6 +1832,10 @@ pub struct BlockBlobClientGetBlockListOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// Specifies the snapshot of the blob.
     pub snapshot: Option<String>,
@@ -1652,6 +1870,10 @@ pub struct BlockBlobClientStageBlockFromUrlOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// Specifies the CRC64 calculated for the range of bytes that must be read from the source.
     pub source_content_crc64: Option<Vec<u8>>,
@@ -1707,6 +1929,10 @@ pub struct BlockBlobClientStageBlockOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -1790,6 +2016,10 @@ pub struct BlockBlobClientUploadBlobFromUrlOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// Specifies the MD5 hash calculated for the range of bytes that must be read from the copy source.
     pub source_content_md5: Option<Vec<u8>>,
@@ -1898,6 +2128,10 @@ pub(crate) struct BlockBlobClientUploadInternalOptions<'a> {
     /// Allows customization of the method call.
     pub(crate) method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub(crate) request_priority: Option<i32>,
+
     /// Required if the request body is a structured message. Specifies the message schema version and properties.
     pub(crate) structured_body_type: Option<String>,
 
@@ -1962,6 +2196,10 @@ pub struct PageBlobClientClearPagesOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -2040,6 +2278,10 @@ pub struct PageBlobClientCreateOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// Indicates the tier to be set on the page blob.
     pub tier: Option<PremiumPageBlobAccessTier>,
 
@@ -2081,6 +2323,10 @@ pub struct PageBlobClientListPageRangesOptions<'a> {
     /// Specifies the range of the blob to operate on.
     pub range: Option<HttpRange>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// Specifies the snapshot of the blob.
     pub snapshot: Option<String>,
 
@@ -2105,6 +2351,7 @@ impl PageBlobClientListPageRangesOptions<'_> {
                 ..self.method_options
             },
             range: self.range,
+            request_priority: self.request_priority,
             snapshot: self.snapshot,
             timeout: self.timeout,
         }
@@ -2147,6 +2394,10 @@ pub struct PageBlobClientResizeOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
 }
@@ -2177,6 +2428,10 @@ pub struct PageBlobClientSetSequenceNumberOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
@@ -2232,6 +2487,10 @@ pub struct PageBlobClientUploadPagesFromUrlOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// Specifies the CRC64 calculated for the range of bytes that must be read from the source.
     pub source_content_crc64: Option<Vec<u8>>,
@@ -2308,6 +2567,10 @@ pub struct PageBlobClientUploadPagesOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,

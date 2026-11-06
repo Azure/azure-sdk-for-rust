@@ -62,6 +62,9 @@ impl QueueServiceClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -103,6 +106,9 @@ impl QueueServiceClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -147,6 +153,9 @@ impl QueueServiceClient {
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(key_info);
         let rsp = self
@@ -220,6 +229,9 @@ impl QueueServiceClient {
                 }
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/xml");
+                if let Some(request_priority) = options.request_priority {
+                    request.insert_header("x-ms-request-priority", request_priority.to_string());
+                }
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
                 Box::pin(async move {
@@ -277,6 +289,9 @@ impl QueueServiceClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("content-type", "application/xml");
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(queue_service_properties);
         let rsp = self

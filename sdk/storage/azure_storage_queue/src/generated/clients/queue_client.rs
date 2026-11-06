@@ -60,6 +60,9 @@ impl QueueClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Delete);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -102,6 +105,9 @@ impl QueueClient {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -138,6 +144,9 @@ impl QueueClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Delete);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -189,6 +198,9 @@ impl QueueClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Delete);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -227,6 +239,9 @@ impl QueueClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -289,6 +304,9 @@ impl QueueClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -331,6 +349,9 @@ impl QueueClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -375,6 +396,9 @@ impl QueueClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -425,6 +449,9 @@ impl QueueClient {
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(queue_message);
         let rsp = self
@@ -465,6 +492,9 @@ impl QueueClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         request.insert_header("content-type", "application/xml");
         request.set_body(queue_acl);
@@ -508,6 +538,9 @@ impl QueueClient {
         let mut request = Request::new(url, Method::Put);
         for (k, v) in metadata {
             request.insert_header(format!("x-ms-meta-{k}"), v);
+        }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
@@ -566,6 +599,9 @@ impl QueueClient {
         query_builder.set_pair("visibilitytimeout", visibility_timeout.to_string());
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         if let Some(queue_message) = options.queue_message.clone() {
             request.insert_header("content-type", "application/xml");

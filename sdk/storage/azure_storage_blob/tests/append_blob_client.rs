@@ -3,7 +3,10 @@
 
 mod common;
 
-use azure_core::http::{headers::CONTENT_TYPE, RequestContent, StatusCode};
+use azure_core::http::{
+    headers::{HeaderName, CONTENT_TYPE},
+    RequestContent, StatusCode,
+};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     AppendBlobClientAppendBlockFromUrlOptions, AppendBlobClientAppendBlockFromUrlResultHeaders,
@@ -12,6 +15,40 @@ use azure_storage_blob::models::{
 };
 use common::{create_test_blob, get_blob_name, get_container_client, StorageAccount};
 use std::{collections::HashMap, error::Error};
+
+#[recorded::test]
+async fn test_append_blob_client_request_priority(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let append_blob_client = container_client
+        .blob_client(&get_blob_name(recording))
+        .append_blob_client();
+    let result = async {
+        append_blob_client.create(None).await?;
+        // Non-Default Priority Scenario
+        let response = append_blob_client
+            .append_block(
+                RequestContent::from(b"hello".to_vec()),
+                5,
+                Some(AppendBlobClientAppendBlockOptions {
+                    request_priority: Some(1),
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        response
+            .headers()
+            .get_optional_as::<i32, _>(&HeaderName::from_static("x-ms-request-priority"))
+    }
+    .await;
+
+    container_client.delete(None).await?;
+    // Assert
+    assert_eq!(result?, Some(1));
+    Ok(())
+}
 
 #[recorded::test]
 async fn test_create_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {

@@ -120,6 +120,9 @@ impl BlobContainerClient {
         if let Some(proposed_lease_id) = options.proposed_lease_id.as_ref() {
             request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -199,6 +202,9 @@ impl BlobContainerClient {
         request.insert_header("x-ms-lease-action", "break");
         if let Some(break_period) = options.break_period {
             request.insert_header("x-ms-lease-break-period", break_period.to_string());
+        }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
@@ -283,6 +289,9 @@ impl BlobContainerClient {
         request.insert_header("x-ms-lease-action", "change");
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -337,6 +346,9 @@ impl BlobContainerClient {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -380,6 +392,9 @@ impl BlobContainerClient {
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(create_session_configuration);
         let rsp = self
@@ -433,6 +448,9 @@ impl BlobContainerClient {
         }
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
+        }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
@@ -508,6 +526,9 @@ impl BlobContainerClient {
                 }
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/xml");
+                if let Some(request_priority) = options.request_priority {
+                    request.insert_header("x-ms-request-priority", request_priority.to_string());
+                }
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
                 Box::pin(async move {
@@ -596,6 +617,9 @@ impl BlobContainerClient {
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -666,6 +690,9 @@ impl BlobContainerClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -746,6 +773,9 @@ impl BlobContainerClient {
         let mut request = Request::new(url, Method::Get);
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
+        }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
@@ -843,6 +873,9 @@ impl BlobContainerClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", accept);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -926,6 +959,9 @@ impl BlobContainerClient {
                 }
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/xml");
+                if let Some(request_priority) = options.request_priority {
+                    request.insert_header("x-ms-request-priority", request_priority.to_string());
+                }
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
                 Box::pin(async move {
@@ -1031,6 +1067,9 @@ impl BlobContainerClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", accept);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -1108,6 +1147,9 @@ impl BlobContainerClient {
                 }
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/xml");
+                if let Some(request_priority) = options.request_priority {
+                    request.insert_header("x-ms-request-priority", request_priority.to_string());
+                }
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
                 Box::pin(async move {
@@ -1198,6 +1240,9 @@ impl BlobContainerClient {
         }
         request.insert_header("x-ms-lease-action", "release");
         request.insert_header("x-ms-lease-id", lease_id);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -1278,6 +1323,9 @@ impl BlobContainerClient {
         }
         request.insert_header("x-ms-lease-action", "renew");
         request.insert_header("x-ms-lease-id", lease_id);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -1331,6 +1379,9 @@ impl BlobContainerClient {
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         request.insert_header("content-type", "application/xml");
         request.set_body(container_acl);
@@ -1382,6 +1433,9 @@ impl BlobContainerClient {
         }
         for (k, v) in metadata {
             request.insert_header(format!("x-ms-meta-{k}"), v);
+        }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self

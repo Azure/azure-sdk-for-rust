@@ -16,6 +16,10 @@ pub struct QueueClientClearOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
 }
@@ -29,6 +33,10 @@ pub struct QueueClientCreateOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
 }
@@ -38,6 +46,10 @@ pub struct QueueClientCreateOptions<'a> {
 pub struct QueueClientDeleteMessageOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
@@ -49,6 +61,10 @@ pub struct QueueClientDeleteOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
 }
@@ -59,6 +75,10 @@ pub struct QueueClientGetAccessPolicyOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
 }
@@ -68,6 +88,10 @@ pub struct QueueClientGetAccessPolicyOptions<'a> {
 pub struct QueueClientGetPropertiesOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
@@ -85,6 +109,10 @@ pub struct QueueClientPeekMessagesOptions<'a> {
     /// the queue with this operation.
     pub number_of_messages: Option<i32>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
 }
@@ -100,6 +128,10 @@ pub struct QueueClientReceiveMessagesOptions<'a> {
     /// visible messages are returned. By default, a single message is retrieved from
     /// the queue with this operation.
     pub number_of_messages: Option<i32>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
@@ -123,6 +155,10 @@ pub struct QueueClientSendMessageOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
 
@@ -138,6 +174,10 @@ pub struct QueueClientSetAccessPolicyOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
 }
@@ -147,6 +187,10 @@ pub struct QueueClientSetAccessPolicyOptions<'a> {
 pub struct QueueClientSetMetadataOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
@@ -162,6 +206,10 @@ pub struct QueueClientUpdateMessageOptions<'a> {
     /// an XML request with UTF-8 encoding. The encoded message can be up to 64 KB in size.
     pub queue_message: Option<RequestContent<QueueMessage, XmlFormat>>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
 }
@@ -171,6 +219,10 @@ pub struct QueueClientUpdateMessageOptions<'a> {
 pub struct QueueServiceClientGetPropertiesOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
@@ -182,6 +234,10 @@ pub struct QueueServiceClientGetStatisticsOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
 }
@@ -191,6 +247,10 @@ pub struct QueueServiceClientGetStatisticsOptions<'a> {
 pub struct QueueServiceClientGetUserDelegationKeyOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
@@ -218,6 +278,10 @@ pub struct QueueServiceClientListQueuesOptions<'a> {
     /// Filters the results to return only queues whose name begins with the specified prefix.
     pub prefix: Option<String>,
 
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
+
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
 }
@@ -234,6 +298,7 @@ impl QueueServiceClientListQueuesOptions<'_> {
                 ..self.method_options
             },
             prefix: self.prefix,
+            request_priority: self.request_priority,
             timeout: self.timeout,
         }
     }
@@ -244,6 +309,10 @@ impl QueueServiceClientListQueuesOptions<'_> {
 pub struct QueueServiceClientSetPropertiesOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// Specifies the requested priority from 0 through 7. Integers outside this range
+    /// do not cause the request to fail; the service uses priority 3 instead.
+    pub request_priority: Option<i32>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
     pub timeout: Option<i32>,
