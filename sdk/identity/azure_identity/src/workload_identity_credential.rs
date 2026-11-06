@@ -66,7 +66,8 @@ pub struct WorkloadIdentityCredentialOptions {
 
     /// HTTP client factory for the AKS identity binding token proxy.
     ///
-    /// When unset, the built-in client enabled by the `reqwest` feature is used.
+    /// When unset, the built-in client enabled by the `reqwest_rustls` feature (enabled by default) is used.
+    /// Without that feature, provide a custom [`TokenProxyClient`] when the proxy endpoint is configured.
     pub proxy_client: Option<Arc<dyn TokenProxyClient>>,
 
     #[cfg(test)]
@@ -519,10 +520,6 @@ mod tests {
 
     #[recorded::test(live)]
     async fn live() -> azure_core::Result<()> {
-        if env::var("CI_HAS_DEPLOYED_RESOURCES").is_err() {
-            println!("Skipped: workload identity live tests require deployed resources");
-            return Ok(());
-        }
         let ip = env::var("IDENTITY_AKS_IP").expect("IDENTITY_AKS_IP");
         let storage_name = env::var("IDENTITY_STORAGE_NAME_USER_ASSIGNED")
             .expect("IDENTITY_STORAGE_NAME_USER_ASSIGNED");

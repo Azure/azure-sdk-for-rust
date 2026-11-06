@@ -66,7 +66,7 @@ impl Context {
             .or(self.options.continuation.as_ref())
         {
             Some(token) => match token.resolve()? {
-                ResolvedToken::ClientV1(state) => {
+                ResolvedToken::Client(state) => {
                     state.is_valid_for_operation(&operation)?;
                     state.into_root_node_state()
                 }
@@ -80,6 +80,7 @@ impl Context {
             None => PipelineNodeState::UnorderedMerge {
                 active_tokens: Vec::new(),
                 start_from: Some(self.options.start.clone()),
+                next_poll_min_epk: None,
             },
         };
         let projected = project_change_feed_state(
@@ -88,7 +89,7 @@ impl Context {
             range,
             operation.request_headers().full_fidelity_feed,
         )?;
-        ContinuationToken::encode_v1(&operation, &projected)
+        ContinuationToken::encode(&operation, &projected)
     }
 
     pub(super) async fn list(&self) -> Result<Vec<Lease>> {

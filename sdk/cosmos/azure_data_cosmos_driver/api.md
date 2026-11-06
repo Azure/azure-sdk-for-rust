@@ -2747,6 +2747,7 @@ pub mod options {
         pub fn operation_options(&self) -> &Arc<OperationOptions>;
         pub fn partition_failover_options(&self) -> &PartitionFailoverOptions;
         pub fn preferred_regions(&self) -> &[Region];
+        pub fn resource_name_validation_enabled(&self) -> bool;
         pub fn user_agent_suffix(&self) -> Option<&UserAgentSuffix>;
     }
     #[derive(Clone, Debug)]
@@ -2762,6 +2763,7 @@ pub mod options {
         pub fn with_operation_options(self, options: OperationOptions) -> Self;
         pub fn with_partition_failover_options(self, options: PartitionFailoverOptions) -> Self;
         pub fn with_preferred_regions(self, regions: Vec<Region>) -> Self;
+        pub fn with_resource_name_validation(self, enabled: bool) -> Self;
         pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
@@ -2935,11 +2937,13 @@ pub mod options {
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct PlanOptions {
+        pub full_text_score_scope: crate::options::FullTextScoreScope,
         pub max_buffered_query_window: u64,
         pub query_plan_mode: crate::options::QueryPlanMode,
         pub max_fan_out: u32,
     }
     impl PlanOptions {
+        pub fn with_full_text_score_scope(self, scope: FullTextScoreScope) -> Self;
         pub fn with_max_buffered_query_window(self, max_buffered_query_window: u64) -> Self;
         pub fn with_max_fan_out(self, max_fan_out: u32) -> Self;
         pub fn with_query_plan_mode(self, mode: QueryPlanMode) -> Self;
@@ -3235,6 +3239,13 @@ pub mod options {
     impl FromStr for DiagnosticsVerbosity {
         type Err = String;
         fn from_str(s: &str) -> Result<Self, <Self as >::Err>;
+    }
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum FullTextScoreScope {
+        #[default]
+        Global,
+        Local,
     }
     #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
     #[non_exhaustive]
