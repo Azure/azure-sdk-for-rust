@@ -10,8 +10,8 @@ use azure_data_cosmos::{
     diagnostics::TransportKind,
     models::{ContainerProperties, ItemResponse, ThroughputProperties},
     options::{
-        AvailabilityStrategy, CreateContainerOptions, ItemReadOptions, ItemWriteOptions,
-        OperationOptions, ReadConsistencyStrategy, ReadFeedRangesOptions,
+        AvailabilityStrategy, ItemReadOptions, ItemWriteOptions, OperationOptions,
+        ReadConsistencyStrategy, ReadFeedRangesOptions,
     },
 };
 use futures::FutureExt;
@@ -58,10 +58,7 @@ async fn classic_gateway_session_reads_across_service_split() -> Result<(), Box<
                     .create_container(
                         &database,
                         ContainerProperties::new("SessionSplit", "/partitionKey".into()),
-                        Some(
-                            CreateContainerOptions::default()
-                                .with_throughput(ThroughputProperties::manual(1000)),
-                        ),
+                        Some(ThroughputProperties::manual(1000)),
                     )
                     .await?;
                 let before = container.read_feed_ranges(None).await?;
@@ -103,7 +100,14 @@ async fn classic_gateway_session_reads_across_service_split() -> Result<(), Box<
                     .database_client(database.id())
                     .container_client("SessionSplit", None)
                     .await?;
-                let after = force_split_and_wait(&management_container, before.len()).await?;
+                let after = force_split_and_wait(
+                    run,
+                    &database,
+                    &management_container,
+                    "SessionSplit",
+                    before.len(),
+                )
+                .await?;
                 let read_options =
                     ItemReadOptions::default().with_operation_options(session.clone());
                 let mut child_ids = BTreeSet::new();

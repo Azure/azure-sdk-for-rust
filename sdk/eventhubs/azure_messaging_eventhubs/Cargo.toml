@@ -74,6 +74,9 @@ default = ["azure_core_amqp/default"]
 fe2o3_amqp = ["azure_core_amqp/fe2o3_amqp"]
 fe2o3_amqp_rustls = ["fe2o3_amqp", "azure_core_amqp/fe2o3_amqp_rustls"]
 
+[package.metadata.docs.rs]
+all-features = true
+
 [[bench]]
 name = "benchmarks"
 harness = false

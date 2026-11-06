@@ -1,14 +1,27 @@
 # Release History
 
-## 1.1.0-beta.2 (Unreleased)
+## 1.1.0-beta.3 (Unreleased)
 
 ### Features Added
 
 - `ChangeFeedProcessor::start()` now delegates incomplete workload bootstrap to the shared driver, preserving progress and leaving completed lease inventories untouched; consumption remains unavailable after initialization. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 - Compatible concurrent processor starts sharing the same drivers now await one bootstrap outcome; cancelling one waiter does not cancel the others. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 - Added a change feed processor API scaffold reusing `ChangeFeedMode`, with required async function-pointer callbacks, feed and lease options, local configuration and mode/start validation, lease context, and monitoring types; execution and monitoring return not-implemented errors.
+- Added ranked full-text and weighted text/vector hybrid search, with per-query `FullTextScoreScope` and bounded buffered results. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
 
 ### Breaking Changes
+
+- Consumed legacy single-request prefix checkpoints cannot safely resume across physical ranges and are rejected; start a new feed with an explicit start position. Older unpolled single-request checkpoints require the original start on resume. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+
+### Bugs Fixed
+
+- Restore checkpoint-owned change-feed starts, preserve round-robin progress across resumes, and correctly scope hierarchical-prefix feeds across overlapping partitions. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- A checkpoint's saved start takes precedence over a newly supplied change-feed start. Omit the continuation token to start a new feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+
+### Other Changes
+
+- New query and change-feed checkpoints use `c2.` and cannot be read by SDKs that only support `c1.`. Query checkpoint payloads are unchanged, and supported legacy `c1.` checkpoints remain readable. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 
 ### Bugs Fixed
 
@@ -16,6 +29,12 @@
 - Allow processor bootstrap to use multi-write-region lease accounts. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 
 ### Other Changes
+
+## 1.1.0-beta.2 (2026-11-03)
+
+### Breaking Changes
+
+- Resource-name validation is now enabled by default for request paths and item names supplied to Create, Upsert, transactional batch, and distributed transaction operations; use `CosmosClientBuilder::with_resource_name_validation(false)` only when compatibility requires service-accepted names that are unsafe for point addressing. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
 
 ## 1.1.0-beta.1 (2026-10-22)
 

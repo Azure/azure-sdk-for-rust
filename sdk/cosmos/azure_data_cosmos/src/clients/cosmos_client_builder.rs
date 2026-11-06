@@ -97,6 +97,8 @@ pub struct CosmosClientBuilder {
     backup_endpoints: Vec<azure_core::http::Url>,
     /// Options to use for per-partition failover (PPAF, PPCB)
     partition_failover_options: Option<PartitionFailoverOptions>,
+    /// Whether to validate user-defined resource names before request planning.
+    resource_name_validation: Option<bool>,
 }
 
 impl CosmosClientBuilder {
@@ -152,6 +154,24 @@ impl CosmosClientBuilder {
     /// `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE=false`.
     pub fn with_partition_failover_options(mut self, options: PartitionFailoverOptions) -> Self {
         self.partition_failover_options = Some(options);
+        self
+    }
+
+    /// Controls validation of user-defined resource names.
+    ///
+    /// Validation is enabled by default and rejects names containing syntax that
+    /// could change a request URL path, query, or fragment. It also validates
+    /// item names supplied to Create and Upsert so newly written items remain
+    /// addressable by later point operations. Pass `false` only when
+    /// compatibility requires such names.
+    ///
+    /// The shared driver also validates item IDs in the service-defined
+    /// transactional batch envelope and resource names in structured
+    /// distributed transactions. Malformed transactional batch envelopes are
+    /// rejected as serialization errors. The driver does not parse IDs from
+    /// ordinary item request bodies.
+    pub fn with_resource_name_validation(mut self, enabled: bool) -> Self {
+        self.resource_name_validation = Some(enabled);
         self
     }
 
@@ -304,6 +324,7 @@ impl CosmosClientBuilder {
             operation_options: self.options.operation,
             user_agent_suffix: self.options.user_agent_suffix,
             partition_failover_options: self.partition_failover_options,
+            resource_name_validation: self.resource_name_validation,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: self.fault_injection_rules,
         }
@@ -337,6 +358,7 @@ struct DriverOptionsInput {
     operation_options: OperationOptions,
     user_agent_suffix: Option<UserAgentSuffix>,
     partition_failover_options: Option<PartitionFailoverOptions>,
+    resource_name_validation: Option<bool>,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
 }
@@ -364,6 +386,9 @@ impl DriverOptionsInput {
         }
         if let Some(pfo) = self.partition_failover_options {
             builder = builder.with_partition_failover_options(pfo);
+        }
+        if let Some(enabled) = self.resource_name_validation {
+            builder = builder.with_resource_name_validation(enabled);
         }
         #[cfg(feature = "fault_injection")]
         if !self.fault_injection_rules.is_empty() {
@@ -467,6 +492,7 @@ mod tests {
             operation_options: OperationOptions::default(),
             user_agent_suffix: None,
             partition_failover_options: None,
+            resource_name_validation: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: Vec::new(),
         }
@@ -569,6 +595,23 @@ mod tests {
             opts.partition_failover_options().read_failure_threshold(),
             42
         );
+    }
+
+    #[test]
+    fn resource_name_validation_flows_to_driver_options() {
+        let default_options =
+            test_driver_options_input(RoutingStrategy::PreferredRegions(Vec::new()))
+                .build()
+                .expect("driver options should build");
+        assert!(default_options.resource_name_validation_enabled());
+
+        let disabled_options = DriverOptionsInput {
+            resource_name_validation: Some(false),
+            ..test_driver_options_input(RoutingStrategy::PreferredRegions(Vec::new()))
+        }
+        .build()
+        .expect("driver options should build");
+        assert!(!disabled_options.resource_name_validation_enabled());
     }
 
     /// Omitting the partition-failover options on the builder must resolve

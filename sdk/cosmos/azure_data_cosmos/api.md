@@ -401,6 +401,7 @@ pub mod clients {
         #[cfg(feature = "fault_injection")]
         pub fn with_fault_injection_rules(self, rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>) -> crate::Result<Self>;
         pub fn with_partition_failover_options(self, options: PartitionFailoverOptions) -> Self;
+        pub fn with_resource_name_validation(self, enabled: bool) -> Self;
         pub fn with_runtime(self, runtime: CosmosRuntime) -> Self;
         pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
     }
@@ -2801,6 +2802,7 @@ pub mod options {
     #[derive(Clone)]
     #[non_exhaustive]
     pub struct QueryOptions {
+        pub full_text_score_scope: crate::options::FullTextScoreScope,
         pub max_buffered_query_window: u64,
         pub query_plan_mode: crate::options::QueryPlanMode,
         pub operation: azure_data_cosmos_driver::options::OperationOptions,
@@ -2812,6 +2814,7 @@ pub mod options {
     impl QueryOptions {
         pub fn with_continuation_token(self, continuation_token: ContinuationToken) -> Self;
         pub fn with_feed_options(self, feed: FeedOptions) -> Self;
+        pub fn with_full_text_score_scope(self, scope: FullTextScoreScope) -> Self;
         pub fn with_max_buffered_query_window(self, max_buffered_query_window: u64) -> Self;
         pub fn with_max_item_count(self, max_item_count: MaxItemCountHint) -> Self;
         pub fn with_operation_options(self, operation: OperationOptions) -> Self;
@@ -3178,6 +3181,14 @@ pub mod options {
     impl FromStr for DiagnosticsVerbosity {
         type Err = String;
         fn from_str(s: &str) -> Result<Self, <Self as >::Err>;
+    }
+    #[doc(inline)]
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum FullTextScoreScope {
+        #[default]
+        Global,
+        Local,
     }
     #[doc(inline)]
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]

@@ -125,6 +125,8 @@ fn run_proxy_test(name: &str, mode: ProxyMode) -> Result<(), Box<dyn Error>> {
         loop {
             match proxy.accept() {
                 Ok((mut stream, _)) => {
+                    // Windows inherits the listener's nonblocking mode; reads must honor the timeout.
+                    stream.set_nonblocking(false)?;
                     stream.set_read_timeout(Some(Duration::from_secs(2)))?;
                     let mut first_line = Vec::new();
                     loop {
