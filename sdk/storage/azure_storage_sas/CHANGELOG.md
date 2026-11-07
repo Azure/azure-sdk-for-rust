@@ -1,16 +1,15 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.1.0-beta.1 (2026-11-09)
 
 ### Features Added
 
+- Added support for service version `2027-03-07`.
 - Added a `default` feature forwarding Core defaults so consumers can opt out with `default-features = false`.
 
-### Breaking Changes
-
-### Bugs Fixed
-
 ### Other Changes
+
+- Updated dependencies.
 
 ## 1.0.0 (2026-09-08)
 
