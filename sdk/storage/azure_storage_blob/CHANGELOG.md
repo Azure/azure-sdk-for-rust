@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Updated the default service version to `2026-10-06`.
+- Updated the default service version to `2027-03-07`.
 - Re-added `BlobContainerClient::list_blobs_hierarchical()`.
 - Added an `arrow` feature flag, enabled by default, that controls Apache Arrow support for `BlobContainerClient::list_blobs()` and `BlobContainerClient::list_blobs_hierarchical()`. When disabled, Arrow dependencies are excluded and listing uses XML only. `end_before` requires this feature.
 - Added `end_before` to `BlobContainerClientListBlobsOptions` and `BlobContainerClientListBlobsHierarchicalOptions`. `end_before` is only supported with the Apache Arrow response format.

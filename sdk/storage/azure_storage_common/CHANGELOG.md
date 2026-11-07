@@ -6,6 +6,10 @@
 
 - Added a `default` feature forwarding Core defaults so consumers can opt out with `default-features = false`.
 
+### Other Changes
+
+- Updated dependencies.
+
 ## 1.0.0 (2026-09-08)
 
 ### Features Added
