@@ -186,17 +186,6 @@ and the equivalent `azure_data_cosmos` command before finalization. The helper
 uses the standard public emulator key and emulator-only certificate handling;
 do not supply cloud credentials.
 
-The Cosmos Analyze job runs the Docker-free lifecycle suite once, publishes
-its NUnit results, and fails on test failures or empty discovery. Coverage
-includes inherited-environment rejection, per-package cleanup/reuse, and
-finalization from a separate process with the same job identity.
-
-Run the same setup tests locally without Docker:
-
-```powershell
-Invoke-Pester -Path sdk/cosmos/eng/scripts/tests/CosmosVNext.Tests.ps1 -CI
-```
-
 ### Release compatibility gate
 
 The pinned image is a reproducible baseline, not a claim that these gates are
