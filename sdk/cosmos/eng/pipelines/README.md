@@ -146,6 +146,11 @@ containers fail setup. One owned container is reused across crates. The final
 CI step prints its identity and logs and removes it even after test failure.
 Local callers must finalize in the same PowerShell process that ran setup.
 
+Setup rejects inherited `ACCOUNT_HOST`, non-key `AZURE_COSMOS_AUTH_MODE`, and
+`CARGO_ENCODED_RUSTFLAGS` before invoking Docker. Unset those variables rather
+than allowing live AAD configuration or higher-priority Cargo flags to redirect
+or skip emulator tests. Explicit `AZURE_COSMOS_AUTH_MODE=key` is supported.
+
 V1 cells select the existing `emulator_vnext` suite and explicitly disable V2.
 V2 cells select `emulator_vnext_gateway_v2`, which runs focused conformance
 instead of the live-account V2 suite. Binary cells additionally select
@@ -181,7 +186,12 @@ and the equivalent `azure_data_cosmos` command before finalization. The helper
 uses the standard public emulator key and emulator-only certificate handling;
 do not supply cloud credentials.
 
-Run the setup tests without Docker:
+The Cosmos Analyze job runs the Docker-free lifecycle suite once, publishes
+its NUnit results, and fails on test failures or empty discovery. Coverage
+includes inherited-environment rejection, per-package cleanup/reuse, and
+finalization from a separate process with the same job identity.
+
+Run the same setup tests locally without Docker:
 
 ```powershell
 Invoke-Pester -Path sdk/cosmos/eng/scripts/tests/CosmosVNext.Tests.ps1 -CI

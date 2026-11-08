@@ -30,6 +30,15 @@ function Start-CosmosVNext {
     param([string] $Gateway, [string] $Encoding)
 
     $flags = Get-CosmosVNextFlags -Gateway $Gateway -Encoding $Encoding
+    if (Test-Path Env:CARGO_ENCODED_RUSTFLAGS) {
+        throw 'Remove CARGO_ENCODED_RUSTFLAGS before vNext setup; it overrides the required test-category RUSTFLAGS.'
+    }
+    if ((Test-Path Env:AZURE_COSMOS_AUTH_MODE) -and $env:AZURE_COSMOS_AUTH_MODE -ine 'key') {
+        throw 'vNext setup requires key authentication; remove conflicting AZURE_COSMOS_AUTH_MODE.'
+    }
+    if (Test-Path Env:ACCOUNT_HOST) {
+        throw 'Remove ACCOUNT_HOST before vNext setup; inherited AAD endpoints must not override the local emulator.'
+    }
     $name = 'cosmosdb-emulator-vnext'
     $image = 'mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator@sha256:4535ddbd27bba762f3e068f7585feb0022a2559ceccc9394b23aa38d91d77c38'
     $endpoint = 'https://localhost:8081/'

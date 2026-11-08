@@ -8,7 +8,11 @@ Describe 'Cosmos vNext setup' {
         $variables = @(
             'AZURE_COSMOS_CONNECTION_STRING', 'AZURE_COSMOS_TEST_MODE',
             'AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED', 'RUSTFLAGS', 'RUST_TEST_THREADS',
-            'SYSTEM_JOBID'
+            'SYSTEM_JOBID', 'AZURE_COSMOS_AUTH_MODE', 'ACCOUNT_HOST', 'CARGO_ENCODED_RUSTFLAGS',
+            'AZURE_COSMOS_EMULATOR_FLAVOR', 'AZURE_COSMOS_EMULATOR_HOST',
+            'AZURE_COSMOS_INMEMORY_EMULATOR_PID', 'AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT',
+            'AZURE_COSMOS_INMEMORY_ACCOUNT_ENDPOINT', 'AZURE_COSMOS_INMEMORY_RUN_DIRECTORY',
+            'AZURE_COSMOS_INMEMORY_RUN_ID'
         )
     }
 
@@ -85,6 +89,48 @@ Describe 'Cosmos vNext setup' {
         }
     }
 
+    It 'rejects inherited AAD or invalid authentication before Docker' -ForEach @('aad', 'AAD', 'invalid') {
+        $env:AZURE_COSMOS_AUTH_MODE = $_
+        { Start-CosmosVNext v1 text } | Should -Throw '*AZURE_COSMOS_AUTH_MODE*'
+        Should -Invoke Invoke-CosmosVNextDocker -Exactly 0
+    }
+
+    It 'rejects an inherited account endpoint even with key authentication' {
+        $env:AZURE_COSMOS_AUTH_MODE = 'key'
+        $env:ACCOUNT_HOST = 'https://live-account.documents.azure.com/'
+        { Start-CosmosVNext v2 binary } | Should -Throw '*ACCOUNT_HOST*'
+        Should -Invoke Invoke-CosmosVNextDocker -Exactly 0
+    }
+
+    It 'permits explicit key authentication' {
+        $env:AZURE_COSMOS_AUTH_MODE = 'KEY'
+        Start-CosmosVNext v1 text
+        $env:AZURE_COSMOS_TEST_MODE | Should -Be 'required'
+    }
+
+    It 'rejects encoded Rust flags even when they contain no category' {
+        $env:CARGO_ENCODED_RUSTFLAGS = '-Dwarnings'
+        { Start-CosmosVNext v2 binary } | Should -Throw '*CARGO_ENCODED_RUSTFLAGS*'
+        Should -Invoke Invoke-CosmosVNextDocker -Exactly 0
+    }
+
+    It 'reuses the container after real per-package cleanup' {
+        Mock Invoke-CosmosVNextDocker { 'cosmosdb-emulator-vnext' } -ParameterFilter { $Arguments[0] -eq 'ps' }
+        $env:AZURE_COSMOS_EMULATOR_FLAVOR = 'vnext'
+        Start-CosmosVNext v1 binary
+        $connectionString = $env:AZURE_COSMOS_CONNECTION_STRING
+        & ([System.IO.Path]::Combine($PSScriptRoot, '..', 'Invoke-CosmosTestCleanup.ps1'))
+        $env:RUSTFLAGS | Should -BeNullOrEmpty
+        $env:AZURE_COSMOS_TEST_MODE | Should -BeNullOrEmpty
+        $env:AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED | Should -BeNullOrEmpty
+        $env:AZURE_COSMOS_CONNECTION_STRING | Should -Be $connectionString
+        Start-CosmosVNext v2 text
+        $env:AZURE_COSMOS_TEST_MODE | Should -Be 'required'
+        $env:RUSTFLAGS | Should -Be '--cfg=test_category="emulator_vnext_gateway_v2"'
+        Should -Invoke Invoke-RestMethod -Exactly 2
+        Should -Invoke Invoke-CosmosVNextDocker -Exactly 0 -ParameterFilter { $Arguments[0] -in @('run', 'rm', 'pull') }
+    }
+
     It 'rechecks readiness without restarting the owned container' {
         Mock Invoke-CosmosVNextDocker { 'cosmosdb-emulator-vnext' } -ParameterFilter { $Arguments[0] -eq 'ps' }
         Start-CosmosVNext v1 text
@@ -126,6 +172,42 @@ Describe 'Cosmos vNext setup' {
         $container.Config.Labels.'cosmos-vnext-owner' = 'other-job'
         { Complete-CosmosVNext } | Should -Throw '*Refusing to remove*'
         Should -Invoke Invoke-CosmosVNextDocker -Exactly 0 -ParameterFilter { $Arguments[0] -eq 'rm' }
+    }
+
+    It 'finalizes by job ownership in a separate PowerShell process' {
+        Mock Invoke-CosmosVNextDocker { 'cosmosdb-emulator-vnext' } -ParameterFilter { $Arguments[0] -eq 'ps' }
+        Start-CosmosVNext v1 text
+        $containerPath = ([System.IO.Path]::Combine($TestDrive, 'container.json'))
+        $finalizerPath = ([System.IO.Path]::Combine($TestDrive, 'finalize.ps1'))
+        $helperPath = ([System.IO.Path]::Combine($PSScriptRoot, '..', 'CosmosVNext.ps1'))
+        ConvertTo-Json -InputObject @($container) -Depth 10 | Set-Content $containerPath
+        @'
+param($HelperPath, $ContainerPath)
+$ErrorActionPreference = 'Stop'
+. $HelperPath
+function Invoke-CosmosVNextDocker {
+    param([string[]] $Arguments)
+    switch ($Arguments[0]) {
+        'ps' { 'cosmosdb-emulator-vnext' }
+        'inspect' {
+            if ($Arguments.Count -eq 2) { Get-Content $ContainerPath -Raw }
+            else { 'identity' }
+        }
+        'logs' { 'captured logs' }
+        'rm' { "removed:$env:SYSTEM_JOBID" }
+        default { throw "Unexpected Docker operation: $($Arguments[0])" }
+    }
+}
+Complete-CosmosVNext
+'@ | Set-Content $finalizerPath
+        $output = & pwsh -NoProfile -File $finalizerPath $helperPath $containerPath 2>&1
+        $LASTEXITCODE | Should -Be 0
+        $output | Should -Contain 'removed:vnext-test-job'
+        $env:SYSTEM_JOBID = 'other-job'
+        $output = & pwsh -NoProfile -File $finalizerPath $helperPath $containerPath 2>&1
+        $LASTEXITCODE | Should -Not -Be 0
+        ($output -join "`n") | Should -BeLike '*Refusing to remove unowned container*'
+        ($output -join "`n") | Should -Not -BeLike '*removed:other-job*'
     }
 }
 

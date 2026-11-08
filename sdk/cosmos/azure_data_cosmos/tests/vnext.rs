@@ -439,6 +439,7 @@ async fn run_conformance(suite: Suite) -> TestResult {
             .await?
             .expect("seeded query must return a response");
         assert!(response.status().is_success());
+        assert_transport(&response.diagnostics());
         assert_encoding(&response.into_body().single()?);
         Ok::<(), Box<dyn Error>>(())
     })

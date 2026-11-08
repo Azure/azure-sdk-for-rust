@@ -40,6 +40,24 @@ jobs:
     parameters:
       ServiceDirectory: ${{ parameters.ServiceDirectory }}
 
+  - ${{ if eq(parameters.ServiceDirectory, 'cosmos') }}:
+    - template: /eng/common/pipelines/templates/steps/run-pester-tests.yml
+      parameters:
+        TargetDirectory: sdk/cosmos/eng/scripts/tests
+        CustomTestSteps:
+        - pwsh: |
+            $config = New-PesterConfiguration
+            $config.Run.Path = './CosmosVNext.Tests.ps1'
+            $config.Run.PassThru = $true
+            $config.TestResult.Enabled = $true
+            $config.TestResult.OutputPath = 'testResults.xml'
+            $result = Invoke-Pester -Configuration $config
+            if ($result.FailedCount -gt 0 -or $result.TotalCount -eq 0) {
+              throw 'Cosmos vNext lifecycle tests failed or no tests were discovered.'
+            }
+          displayName: Test Cosmos vNext lifecycle
+          workingDirectory: $(Build.SourcesDirectory)/sdk/cosmos/eng/scripts/tests
+
   # Always skip audit. Audit requires contact with restricted endpoints and is
   # excluded from use in internal builds. Instead, teams must check on the state
   # of the Audit in GitHub Actions.
