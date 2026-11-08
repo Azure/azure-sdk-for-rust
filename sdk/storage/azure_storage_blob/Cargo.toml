@@ -25,7 +25,7 @@ arrow-ipc = { workspace = true, optional = true }
 arrow-schema = { workspace = true, optional = true }
 async-stream.workspace = true
 async-trait.workspace = true
-azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.2", default-features = false, features = ["xml"] }
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.3", default-features = false, features = ["xml"] }
 azure_storage_common = { path = "../azure_storage_common", version = "1.1.0-beta.1", default-features = false }
 bytes.workspace = true
 futures.workspace = true
