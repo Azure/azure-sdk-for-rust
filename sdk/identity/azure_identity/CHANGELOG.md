@@ -1,5 +1,15 @@
 # Release History
 
+## 1.1.0-beta.3 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 1.1.0-beta.2 (2026-11-05)
 
 ### Breaking Changes
@@ -23,17 +33,17 @@
 
 - Added `#[non_exhaustive]` to `UserAssignedId`.
 
-## 0.35.0 (2026-04-022)
-
-### Other Changes
-
-- Updated dependencies.
-
 ## 0.34.0 (2026-04-08)
 
 ### Other Changes
 
 - Upgraded dependencies
+
+## 0.35.0 (2026-04-022)
+
+### Other Changes
+
+- Updated dependencies.
 
 ## 0.33.0 (2026-03-09)
 
