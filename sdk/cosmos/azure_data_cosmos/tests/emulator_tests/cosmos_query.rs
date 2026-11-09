@@ -9,7 +9,7 @@ use std::error::Error;
 use azure_data_cosmos::feed::ContinuationToken;
 use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
-    feed::{FeedScope, ItemScope, ReadManyFilter},
+    feed::{FeedScope, ItemFilter, ItemScope},
     models::ThroughputProperties,
     options::{MaxItemCountHint, QueryOptions},
     Query,
@@ -49,7 +49,7 @@ async fn read_many_scoped_filter() -> Result<(), Box<dyn Error>> {
                 test_data::create_container_with_items(run_context, db_client, items.clone(), None)
                     .await?;
             let filter = "c.partitionKey != @excluded"
-                .parse::<ReadManyFilter>()?
+                .parse::<ItemFilter>()?
                 .with_parameter("@excluded", "partition1")?;
             for selection in [
                 ItemScope::Partitions(vec![

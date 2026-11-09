@@ -3305,20 +3305,20 @@ pub mod options {
 }
 pub mod read_many {
     #[derive(Clone, Debug)]
+    pub struct ItemFilter {
+    }
+    impl ItemFilter {
+        pub fn with_parameter<impl Into<String>: Into<String>, impl Serialize: Serialize>(self, name: impl Into<String>, value: impl Serialize) -> crate::Result<Self>;
+    }
+    impl FromStr for ItemFilter {
+        type Err = CosmosError;
+        fn from_str(value: &str) -> crate::Result<Self>;
+    }
+    #[derive(Clone, Debug)]
     pub struct ItemSelector {
     }
     impl ItemSelector {
-        pub fn with_filter<impl Into<ReadManyFilter>: Into<ReadManyFilter>>(self, filter: impl Into<ReadManyFilter>) -> Self;
-    }
-    #[derive(Clone, Debug)]
-    pub struct ReadManyFilter {
-    }
-    impl ReadManyFilter {
-        pub fn with_parameter<impl Into<String>: Into<String>>(self, name: impl Into<String>, value: Value) -> crate::Result<Self>;
-    }
-    impl FromStr for ReadManyFilter {
-        type Err = CosmosError;
-        fn from_str(value: &str) -> crate::Result<Self>;
+        pub fn with_filter<impl Into<ItemFilter>: Into<ItemFilter>>(self, filter: impl Into<ItemFilter>) -> Self;
     }
     #[derive(Clone, Debug)]
     #[non_exhaustive]

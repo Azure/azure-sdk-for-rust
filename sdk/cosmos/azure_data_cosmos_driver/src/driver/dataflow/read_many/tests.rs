@@ -32,7 +32,7 @@ use std::sync::Arc;
 fn read_many_operation(
     container: ContainerReference,
     scope: ItemScope,
-    filter: Option<crate::read_many::ReadManyFilter>,
+    filter: Option<crate::read_many::ItemFilter>,
 ) -> CosmosOperation {
     let mut selector = crate::read_many::ItemSelector::from(scope);
     if let Some(filter) = filter {
@@ -98,7 +98,7 @@ async fn disjoint_feed_ranges_share_query_operation_and_body() {
     let selector = crate::read_many::ItemSelector::from(ItemScope::FeedRanges(scopes.to_vec()))
         .with_filter(
             "c.id = @id"
-                .parse::<crate::read_many::ReadManyFilter>()
+                .parse::<crate::read_many::ItemFilter>()
                 .unwrap()
                 .with_parameter("@id", json!("x".repeat(200 * 1024)))
                 .unwrap(),
@@ -174,7 +174,7 @@ async fn feed_range_planning_rejects_topology_gaps_and_oversized_filters() {
         crate::read_many::ItemSelector::from(ItemScope::FeedRanges(vec![FeedRange::full()]))
             .with_filter(
                 "c.id = @id"
-                    .parse::<crate::read_many::ReadManyFilter>()
+                    .parse::<crate::read_many::ItemFilter>()
                     .unwrap()
                     .with_parameter("@id", json!("x".repeat(MAX_BATCH_BYTES)))
                     .unwrap(),
@@ -480,7 +480,7 @@ async fn serialized_query_byte_limit_is_inclusive() {
     for size in [MAX_BATCH_BYTES - 1, MAX_BATCH_BYTES, MAX_BATCH_BYTES + 1] {
         let selection = ItemScope::Partitions(vec!["pk".into()]);
         let filter = "c.payload = @payload"
-            .parse::<crate::read_many::ReadManyFilter>()
+            .parse::<crate::read_many::ItemFilter>()
             .unwrap()
             .with_parameter("@payload", json!(""))
             .unwrap();

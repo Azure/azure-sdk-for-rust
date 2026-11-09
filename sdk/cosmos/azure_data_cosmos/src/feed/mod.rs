@@ -19,7 +19,7 @@ pub use iterator::{QueryItemIterator, QueryPageIterator};
 pub use page::FeedPage;
 pub use query::{FeedScope, Query};
 pub use query_page::QueryFeedPage;
-pub use read_many::{ItemScope, ItemSelector, ReadManyFilter, ReadManyIterator, ReadManyResponse};
+pub use read_many::{ItemFilter, ItemScope, ItemSelector, ReadManyIterator, ReadManyResponse};
 
 // =========================================================================
 // Crate-internal re-exports

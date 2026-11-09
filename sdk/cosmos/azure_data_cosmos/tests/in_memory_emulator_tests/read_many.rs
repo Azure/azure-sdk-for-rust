@@ -3,7 +3,7 @@
 
 use azure_core::{credentials::Secret, http::Url};
 use azure_data_cosmos::{
-    feed::{FeedRange, ItemScope, ItemSelector, ReadManyFilter},
+    feed::{FeedRange, ItemFilter, ItemScope, ItemSelector},
     options::{
         BinaryEncodingOptions, MaxItemCountHint, OperationOptionsBuilder, ReadFeedRangesOptions,
         ReadManyOptions, Region,
@@ -127,7 +127,7 @@ async fn read_many_feed_ranges_preserve_union_boundaries_and_filters() {
         (vec![], vec![]),
     ] {
         let selector = ItemSelector::from(ItemScope::FeedRanges(ranges))
-            .with_filter("c.rank = 2".parse::<ReadManyFilter>().unwrap());
+            .with_filter("c.rank = 2".parse::<ItemFilter>().unwrap());
         let response = container
             .read_many::<Value>(selector, None)
             .await
@@ -218,7 +218,7 @@ async fn read_many_populated_split_after_first_page_has_no_loss_or_duplicates() 
             ItemScope::Partitions(selections.into_iter().map(|(key, _)| key).collect())
         };
         let selection = ItemSelector::from(selection)
-            .with_filter("c.selected = true".parse::<ReadManyFilter>().unwrap());
+            .with_filter("c.selected = true".parse::<ItemFilter>().unwrap());
         let options = ReadManyOptions::default()
             .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(3).unwrap()));
         let mut pages = container
@@ -278,7 +278,7 @@ async fn read_many_items_deduplicate_and_omit_missing() {
 async fn read_many_partition_filter_cannot_broaden_selection() {
     let container = seed().await;
     let filter = "c.rank = @__read_many_0 OR c.pk = @outside"
-        .parse::<ReadManyFilter>()
+        .parse::<ItemFilter>()
         .unwrap()
         .with_parameter("@__read_many_0", 2)
         .unwrap()
@@ -313,7 +313,7 @@ async fn read_many_filtered_singleton_and_empty_selection() {
     let result = container
         .read_many::<Value>(
             ItemSelector::from(ItemScope::Items(vec![("one".into(), "d1".into())]))
-                .with_filter("c.rank = 99".parse::<ReadManyFilter>().unwrap()),
+                .with_filter("c.rank = 99".parse::<ItemFilter>().unwrap()),
             None,
         )
         .await
@@ -532,7 +532,7 @@ async fn read_many_undefined_keys_include_empty_objects_without_including_null()
         ] {
             let mut selection = ItemSelector::from(selection);
             if let Some(text) = filter {
-                selection = selection.with_filter(text.parse::<ReadManyFilter>().unwrap());
+                selection = selection.with_filter(text.parse::<ItemFilter>().unwrap());
             }
             let response = container
                 .read_many::<Value>(selection, None)
@@ -571,7 +571,7 @@ async fn read_many_object_filter_keys_keep_escape_semantics() {
         let response = container
             .read_many::<Value>(
                 ItemSelector::from(ItemScope::Partitions(vec!["one".into()]))
-                    .with_filter(predicate.parse::<ReadManyFilter>().unwrap()),
+                    .with_filter(predicate.parse::<ItemFilter>().unwrap()),
                 None,
             )
             .await
@@ -685,7 +685,7 @@ async fn read_many_hpk_prefixes_span_ranges_and_deduplicate_before_batching() {
                 ItemScope::Partitions(keys)
             };
             let selection = ItemSelector::from(selection)
-                .with_filter("c.active = true".parse::<ReadManyFilter>().unwrap());
+                .with_filter("c.active = true".parse::<ItemFilter>().unwrap());
             let options = ReadManyOptions::default()
                 .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));
             let mut pages = container

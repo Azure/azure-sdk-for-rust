@@ -3,68 +3,20 @@
 
 use std::{
     pin::Pin,
-    str::FromStr,
     sync::Arc,
     task::{Context, Poll},
 };
 
-use azure_core::fmt::SafeDebug;
 use azure_data_cosmos_driver::{read_many as driver, RequestCharge};
 use futures::{Stream, StreamExt};
-use serde::{de::DeserializeOwned, Serialize};
+use serde::de::DeserializeOwned;
 
 use crate::{
     diagnostics::DiagnosticsContext,
     feed::{QueryFeedPage, QueryPageIterator},
 };
 
-pub use driver::{ItemScope, ItemSelector};
-
-/// A parameterized SQL predicate that narrows a read-many selection.
-///
-/// Parse a WHERE expression using alias `c`, without the `WHERE` keyword.
-/// SELECT statements, subqueries, and user-defined functions are not supported.
-/// Use [`crate::clients::ContainerClient::query_items()`] for full queries.
-/// Filters support at most 256 lexical tokens. Bind escaped values as parameters
-/// or use JSON double-quoted string literals.
-///
-/// ```
-/// use azure_data_cosmos::feed::ReadManyFilter;
-/// let filter = "c.active = @active".parse::<ReadManyFilter>()?
-///     .with_parameter("@active", true)?;
-/// # Ok::<(), azure_data_cosmos::CosmosError>(())
-/// ```
-#[derive(Clone, SafeDebug)]
-pub struct ReadManyFilter(pub(crate) driver::ReadManyFilter);
-
-impl From<ReadManyFilter> for driver::ReadManyFilter {
-    fn from(filter: ReadManyFilter) -> Self {
-        filter.0
-    }
-}
-
-impl FromStr for ReadManyFilter {
-    type Err = crate::CosmosError;
-    fn from_str(value: &str) -> crate::Result<Self> {
-        value.parse().map(Self)
-    }
-}
-
-impl ReadManyFilter {
-    /// Binds a serializable value to a referenced parameter, including `@`.
-    ///
-    /// Returns an error for duplicate/unreferenced names or serialization
-    /// failures. Bind every parameter before starting read-many.
-    pub fn with_parameter(
-        self,
-        name: impl Into<String>,
-        value: impl Serialize,
-    ) -> crate::Result<Self> {
-        self.0
-            .with_parameter(name, serde_json::to_value(value)?)
-            .map(Self)
-    }
-}
+pub use driver::{ItemFilter, ItemScope, ItemSelector};
 
 /// A finite stream of read-many pages without durable continuation tokens.
 ///

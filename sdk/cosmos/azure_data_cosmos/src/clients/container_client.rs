@@ -68,8 +68,8 @@ impl ContainerClient {
     ///
     /// ```no_run
     /// # async fn example(container: azure_data_cosmos::clients::ContainerClient) -> azure_data_cosmos::Result<()> {
-    /// use azure_data_cosmos::feed::{ReadManyFilter, ItemScope, ItemSelector};
-    /// let filter = "c.active = @active".parse::<ReadManyFilter>()?
+    /// use azure_data_cosmos::feed::{ItemFilter, ItemScope, ItemSelector};
+    /// let filter = "c.active = @active".parse::<ItemFilter>()?
     ///     .with_parameter("@active", true)?;
     /// let response = container.read_many::<serde_json::Value>(
     ///     ItemSelector::from(ItemScope::Partitions(vec!["tenant-1".into()])).with_filter(filter),

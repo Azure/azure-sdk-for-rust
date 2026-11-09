@@ -1210,10 +1210,20 @@ pub mod feed {
         fn deserialize<D>(deserializer: D) -> Result<Self, <D as >::Error> where D: serde::Deserializer<'de>;
     }
     #[derive(Clone, Debug)]
+    pub struct ItemFilter {
+    }
+    impl ItemFilter {
+        pub fn with_parameter<impl Into<String>: Into<String>, impl Serialize: Serialize>(self, name: impl Into<String>, value: impl Serialize) -> crate::Result<Self>;
+    }
+    impl FromStr for ItemFilter {
+        type Err = CosmosError;
+        fn from_str(value: &str) -> crate::Result<Self>;
+    }
+    #[derive(Clone, Debug)]
     pub struct ItemSelector {
     }
     impl ItemSelector {
-        pub fn with_filter<impl Into<ReadManyFilter>: Into<ReadManyFilter>>(self, filter: impl Into<ReadManyFilter>) -> Self;
+        pub fn with_filter<impl Into<ItemFilter>: Into<ItemFilter>>(self, filter: impl Into<ItemFilter>) -> Self;
     }
     #[derive(Clone, Debug, serde::Serialize)]
     pub struct Query {
@@ -1257,18 +1267,6 @@ pub mod feed {
     impl<T: Send + DeserializeOwned + 'static> Stream for QueryPageIterator<T> {
         type Item = Result<QueryFeedPage<T>, CosmosError>;
         fn poll_next(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> task::Poll<Option<<Self as >::Item>>;
-    }
-    #[derive(Clone, Debug)]
-    pub struct ReadManyFilter(/* private fields */);
-    impl ReadManyFilter {
-        pub fn with_parameter<impl Into<String>: Into<String>, impl Serialize: Serialize>(self, name: impl Into<String>, value: impl Serialize) -> crate::Result<Self>;
-    }
-    impl From<ReadManyFilter> for driver::ReadManyFilter {
-        fn from(filter: ReadManyFilter) -> Self;
-    }
-    impl FromStr for ReadManyFilter {
-        type Err = CosmosError;
-        fn from_str(value: &str) -> crate::Result<Self>;
     }
     #[pin_project]
     pub struct ReadManyIterator<T: Send> {

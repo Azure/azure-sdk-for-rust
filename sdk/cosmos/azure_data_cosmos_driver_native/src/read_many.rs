@@ -15,7 +15,7 @@ use crate::{
 };
 use azure_data_cosmos_driver::{
     models::CosmosOperation,
-    read_many::{ItemScope, ItemSelector, ReadManyFilter},
+    read_many::{ItemFilter, ItemScope, ItemSelector},
 };
 
 /// One selected logical key, with an item id only for item selection.
@@ -204,7 +204,7 @@ unsafe fn build_read_many(
     // SAFETY: predicate view is readable for this submit.
     let text = unsafe { optional_text(input.filter, invalid)? };
     let mut filter = text
-        .map(|text| text.parse::<ReadManyFilter>().map_err(|_| invalid))
+        .map(|text| text.parse::<ItemFilter>().map_err(|_| invalid))
         .transpose()?;
     validate_array(input.parameters, input.parameters_len)?;
     if input.parameters_len != 0 {
@@ -220,7 +220,7 @@ unsafe fn build_read_many(
                     required_text(parameter.json_value, invalid)?,
                 )
             };
-            let value = serde_json::from_str(&value).map_err(|_| invalid)?;
+            let value: serde_json::Value = serde_json::from_str(&value).map_err(|_| invalid)?;
             *filter = filter
                 .clone()
                 .with_parameter(name, value)

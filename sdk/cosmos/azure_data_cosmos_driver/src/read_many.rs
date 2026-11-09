@@ -6,6 +6,7 @@
 use std::{collections::BTreeMap, str::FromStr};
 
 use azure_core::fmt::SafeDebug;
+use serde::Serialize;
 use serde_json::Value;
 
 use crate::{
@@ -39,7 +40,7 @@ pub enum ItemScope {
 #[derive(Clone, SafeDebug)]
 pub struct ItemSelector {
     pub(crate) selection: ItemScope,
-    pub(crate) filter: Option<ReadManyFilter>,
+    pub(crate) filter: Option<ItemFilter>,
 }
 
 impl From<ItemScope> for ItemSelector {
@@ -53,33 +54,33 @@ impl From<ItemScope> for ItemSelector {
 
 impl ItemSelector {
     /// Sets the predicate evaluated within the selected scope.
-    pub fn with_filter(mut self, filter: impl Into<ReadManyFilter>) -> Self {
+    pub fn with_filter(mut self, filter: impl Into<ItemFilter>) -> Self {
         self.filter = Some(filter.into());
         self
     }
 }
 
-/// A parameterized WHERE predicate that only narrows a read-many selection.
+/// A parameterized WHERE predicate that narrows an item selection.
 ///
-/// Parse a scalar SQL expression using alias `c`, then bind its parameters with
+/// Parse a scalar SQL expression using alias `c`, without the WHERE keyword, then bind its parameters with
 /// [`with_parameter()`](Self::with_parameter). SELECT statements, subqueries,
 /// and user-defined functions are not supported.
 /// Filters are limited to 256 lexical tokens. Use parameters or JSON
 /// double-quoted strings for values containing escape sequences.
 ///
 /// ```
-/// use azure_data_cosmos_driver::read_many::ReadManyFilter;
-/// let filter = "c.active = @active".parse::<ReadManyFilter>()?
-///     .with_parameter("@active", serde_json::json!(true))?;
+/// use azure_data_cosmos_driver::read_many::ItemFilter;
+/// let filter = "c.active = @active".parse::<ItemFilter>()?
+///     .with_parameter("@active", true)?;
 /// # Ok::<(), azure_data_cosmos_driver::CosmosError>(())
 /// ```
 #[derive(Clone, SafeDebug)]
-pub struct ReadManyFilter {
+pub struct ItemFilter {
     pub(crate) expression: SqlScalarExpression,
     pub(crate) parameters: BTreeMap<String, Value>,
 }
 
-impl FromStr for ReadManyFilter {
+impl FromStr for ItemFilter {
     type Err = crate::CosmosError;
 
     fn from_str(value: &str) -> crate::Result<Self> {
@@ -94,12 +95,17 @@ impl FromStr for ReadManyFilter {
     }
 }
 
-impl ReadManyFilter {
-    /// Binds a JSON value to a parameter, including the leading `@`.
+impl ItemFilter {
+    /// Binds a serializable value to a parameter, including the leading `@`.
     ///
-    /// Returns an error for duplicate names or names absent from the predicate.
+    /// Returns an error for duplicate names, names absent from the predicate, or serialization failures.
     /// All referenced parameters must be bound before planning the operation.
-    pub fn with_parameter(mut self, name: impl Into<String>, value: Value) -> crate::Result<Self> {
+    pub fn with_parameter(
+        mut self,
+        name: impl Into<String>,
+        value: impl Serialize,
+    ) -> crate::Result<Self> {
+        let value = serde_json::to_value(value)?;
         let name = name.into();
         let mut found = false;
         predicate::render(&self.expression, &mut |reference| {
@@ -134,13 +140,60 @@ pub(crate) fn invalid(message: &'static str) -> crate::CosmosError {
 
 #[cfg(test)]
 mod tests {
-    use super::ReadManyFilter;
+    use super::ItemFilter;
+    use serde::{Serialize, Serializer};
     use serde_json::json;
+
+    #[test]
+    fn parameters_accept_serializable_values_and_propagate_errors() {
+        #[derive(Serialize)]
+        struct Criteria {
+            active: bool,
+            tags: Vec<&'static str>,
+        }
+        struct Invalid;
+        impl Serialize for Invalid {
+            fn serialize<S: Serializer>(&self, _: S) -> Result<S::Ok, S::Error> {
+                Err(serde::ser::Error::custom(
+                    "cannot serialize filter parameter",
+                ))
+            }
+        }
+        let filter = "c.active = @active AND c.criteria = @criteria"
+            .parse::<ItemFilter>()
+            .unwrap()
+            .with_parameter("@active", true)
+            .unwrap()
+            .with_parameter(
+                "@criteria",
+                Criteria {
+                    active: true,
+                    tags: vec!["a", "b"],
+                },
+            )
+            .unwrap();
+        assert_eq!(filter.parameters["@active"], json!(true));
+        assert_eq!(
+            filter.parameters["@criteria"],
+            json!({"active":true,"tags":["a","b"]})
+        );
+        let error = "c.id = @id"
+            .parse::<ItemFilter>()
+            .unwrap()
+            .with_parameter("@id", Invalid)
+            .unwrap_err();
+        let expected = crate::CosmosError::from(serde_json::to_value(Invalid).unwrap_err());
+        assert_eq!(error.status(), expected.status());
+        assert_eq!(
+            std::error::Error::source(&error).unwrap().to_string(),
+            "cannot serialize filter parameter"
+        );
+    }
 
     #[test]
     fn predicates_preserve_precedence_and_parameter_names() {
         let filter = "c.rank = @a OR c.name = @b -- ignored\n"
-            .parse::<ReadManyFilter>()
+            .parse::<ItemFilter>()
             .unwrap()
             .with_parameter("@a", json!(2))
             .unwrap()
@@ -169,10 +222,10 @@ mod tests {
             "true; SELECT * FROM c",
             "c.x = @x /* unterminated",
         ] {
-            assert!(text.parse::<ReadManyFilter>().is_err(), "{text}");
+            assert!(text.parse::<ItemFilter>().is_err(), "{text}");
         }
         assert!("c.x = @x"
-            .parse::<ReadManyFilter>()
+            .parse::<ItemFilter>()
             .unwrap()
             .query_predicate()
             .is_err());
@@ -187,7 +240,7 @@ mod tests {
         ] {
             assert_eq!(
                 source
-                    .parse::<ReadManyFilter>()
+                    .parse::<ItemFilter>()
                     .unwrap()
                     .query_predicate()
                     .unwrap(),
