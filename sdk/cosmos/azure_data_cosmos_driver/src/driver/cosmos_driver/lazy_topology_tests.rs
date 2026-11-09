@@ -27,7 +27,10 @@ use crate::{
     },
 };
 use async_trait::async_trait;
-use azure_core::http::{headers::Headers, StatusCode};
+use azure_core::http::{
+    headers::{HeaderName, HeaderValue, Headers},
+    StatusCode,
+};
 use std::{
     sync::{
         atomic::{AtomicUsize, Ordering},
@@ -46,6 +49,8 @@ enum Scenario {
     Success,
     ExplicitSession,
     ExplicitSessionRetry,
+    TopologyUnavailable,
+    EmptyTopology,
     ActivateBeforeRetry,
     ActivateBeforeHedge,
     SplitOnWrite,
@@ -133,6 +138,13 @@ impl TransportClient for ScenarioClient {
         }
         if request.url.path().ends_with("/pkranges") {
             self.range_requests.fetch_add(1, Ordering::SeqCst);
+            if self.scenario == Scenario::TopologyUnavailable {
+                return Ok(HttpResponse {
+                    status: 400,
+                    headers,
+                    body: br#"{"code":"BadRequest","message":"topology unavailable"}"#.to_vec(),
+                });
+            }
             let split = self.item_requests.load(Ordering::SeqCst) > 0
                 && matches!(
                     self.scenario,
@@ -167,6 +179,8 @@ impl TransportClient for ScenarioClient {
                         headers,
                         body: if split {
                             br#"{"PartitionKeyRanges":[{"id":"1","minInclusive":"","maxExclusive":"80","parents":["0"]},{"id":"2","minInclusive":"80","maxExclusive":"FF","parents":["0"]}],"_count":2}"#.to_vec()
+                        } else if self.scenario == Scenario::EmptyTopology {
+                            br#"{"PartitionKeyRanges":[],"_count":0}"#.to_vec()
                         } else if matches!(
                             self.scenario,
                             Scenario::ExplicitSession | Scenario::ExplicitSessionRetry
@@ -530,7 +544,7 @@ async fn explicit_compound_tokens_scope_on_both_hedge_legs_independently_of_capt
 }
 
 #[tokio::test]
-async fn explicit_compound_cold_lazy_fallback_preserves_progress_without_capture_or_loading() {
+async fn explicit_compound_cold_lazy_loads_topology_before_gateway_v2_scoping() {
     for hedging in [false, true] {
         let (driver, client, read) =
             setup(account_properties(2, true, true), Scenario::ExplicitSession).await;
@@ -546,21 +560,17 @@ async fn explicit_compound_cold_lazy_fallback_preserves_progress_without_capture
             .execute_singleton_operation(read.clone(), request_options.clone())
             .await
             .unwrap();
-        assert_eq!(client.range_requests.load(Ordering::SeqCst), 0);
+        assert!(client.range_requests.load(Ordering::SeqCst) > 0);
         {
             let requests = client.requests.lock().unwrap();
             assert_eq!(requests.len(), if hedging { 2 } else { 1 });
-            assert!(requests.iter().all(|request| !request.thin));
+            assert!(requests.iter().all(|request| request.thin));
             assert!(requests
                 .iter()
-                .all(|request| request.session.as_deref() == Some(original)));
+                .all(|request| request.session.as_deref() == Some("0:1#10#1=9")));
         }
-        driver
-            .resolve_all_partition_key_ranges(read.container().unwrap(), true)
-            .await
-            .unwrap()
-            .unwrap();
         let fetches = client.range_requests.load(Ordering::SeqCst);
+        assert!(fetches > 0);
         driver
             .execute_singleton_operation(read.clone(), request_options)
             .await
@@ -584,18 +594,74 @@ async fn explicit_compound_cold_lazy_fallback_preserves_progress_without_capture
 }
 
 #[tokio::test]
+async fn custom_explicit_compound_token_is_scoped_on_gateway_v2() {
+    let (driver, client, read) =
+        setup(account_properties(2, true, true), Scenario::ExplicitSession).await;
+    let original = "0:1#10#1=9,1:1#20#1=19";
+    let mut request_options = options(false);
+    request_options.custom_headers = Some(
+        [(
+            HeaderName::from_static(crate::models::request_header_names::SESSION_TOKEN),
+            HeaderValue::from(original),
+        )]
+        .into_iter()
+        .collect(),
+    );
+
+    driver
+        .execute_singleton_operation(read, request_options)
+        .await
+        .unwrap();
+
+    assert!(client.range_requests.load(Ordering::SeqCst) > 0);
+    let requests = client.requests.lock().unwrap();
+    assert_eq!(requests.len(), 1);
+    assert!(requests[0].thin);
+    assert_eq!(requests[0].session.as_deref(), Some("0:1#10#1=9"));
+}
+
+#[tokio::test]
+async fn classic_compound_and_gateway_v2_single_tokens_do_not_load_topology() {
+    let (driver, client, read) = setup(
+        account_properties(1, false, false),
+        Scenario::ExplicitSession,
+    )
+    .await;
+    let compound = read.clone().with_session_token("0:1#10#1=9,1:1#20#1=19");
+    let mut request_options = options(false);
+    request_options.session_capturing_disabled = Some(true);
+    driver
+        .execute_singleton_operation(compound, request_options.clone())
+        .await
+        .unwrap();
+    assert_eq!(client.range_requests.load(Ordering::SeqCst), 0);
+    let request = client.requests.lock().unwrap().pop().unwrap();
+    assert!(!request.thin);
+    assert_eq!(request.session.as_deref(), Some("0:1#10#1=9,1:1#20#1=19"));
+
+    client.requests.lock().unwrap().clear();
+    *client.properties.lock().unwrap() = account_properties(2, true, true);
+    client.publish(account_properties(2, true, true)).await;
+    let single = read.with_session_token("0:1#10#1=9");
+    driver
+        .execute_singleton_operation(single, request_options)
+        .await
+        .unwrap();
+    assert_eq!(client.range_requests.load(Ordering::SeqCst), 0);
+    let requests = client.requests.lock().unwrap();
+    assert_eq!(requests.len(), 1);
+    assert!(requests[0].thin);
+    assert_eq!(requests[0].session.as_deref(), Some("0:1#10#1=9"));
+}
+
+#[tokio::test]
 async fn explicit_compound_retry_uses_original_when_transport_changes() {
     let (driver, client, read) = setup_with_topology_mode(
         account_properties(2, false, false),
         Scenario::ExplicitSessionRetry,
-        PartitionTopologyCacheMode::Eager,
+        PartitionTopologyCacheMode::Lazy,
     )
     .await;
-    driver
-        .resolve_all_partition_key_ranges(read.container().unwrap(), true)
-        .await
-        .unwrap()
-        .unwrap();
     let original = "0:1#10#1=9,1:1#20#1=19";
     let read = read.with_session_token(original);
     let mut request_options = options(false);
@@ -610,6 +676,7 @@ async fn explicit_compound_retry_uses_original_when_transport_changes() {
     assert_eq!(requests[0].session.as_deref(), Some(original));
     assert!(requests[1].thin);
     assert_eq!(requests[1].session.as_deref(), Some("0:1#10#1=9"));
+    assert!(client.range_requests.load(Ordering::SeqCst) > 0);
     assert_eq!(
         read.request_headers()
             .session_token
@@ -618,6 +685,74 @@ async fn explicit_compound_retry_uses_original_when_transport_changes() {
             .as_str(),
         original
     );
+}
+
+#[tokio::test]
+async fn explicit_compound_with_unknown_lineage_fails_without_gateway_v1_downgrade() {
+    let (driver, client, read) =
+        setup(account_properties(2, true, true), Scenario::ExplicitSession).await;
+    let read = read.with_session_token("unknown:1#10#1=9,1:1#20#1=19");
+    let error = driver
+        .execute_singleton_operation(read, options(false))
+        .await
+        .unwrap_err();
+    assert_eq!(
+        error.status(),
+        crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED
+    );
+    assert!(client.range_requests.load(Ordering::SeqCst) > 0);
+    assert!(client.requests.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn malformed_explicit_compound_token_fails_before_topology_loading() {
+    let (driver, client, read) =
+        setup(account_properties(2, true, true), Scenario::ExplicitSession).await;
+    let read = read.with_session_token("0:not-a-token,1:1#20#1=19");
+    let error = driver
+        .execute_singleton_operation(read, options(false))
+        .await
+        .unwrap_err();
+    assert_eq!(
+        error.status(),
+        crate::error::status_codes::CLIENT_BAD_REQUEST
+    );
+    assert_eq!(client.range_requests.load(Ordering::SeqCst), 0);
+    assert!(client.requests.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn required_topology_fetch_failure_is_returned_without_gateway_v1_downgrade() {
+    let (driver, client, read) = setup(
+        account_properties(2, true, true),
+        Scenario::TopologyUnavailable,
+    )
+    .await;
+    let read = read.with_session_token("0:1#10#1=9,1:1#20#1=19");
+    let error = driver
+        .execute_singleton_operation(read, options(false))
+        .await
+        .unwrap_err();
+    assert_eq!(error.status(), StatusCode::BadRequest);
+    assert!(client.range_requests.load(Ordering::SeqCst) > 0);
+    assert!(client.requests.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn successful_empty_topology_fails_explicit_scoping() {
+    let (driver, client, read) =
+        setup(account_properties(2, true, true), Scenario::EmptyTopology).await;
+    let read = read.with_session_token("0:1#10#1=9,1:1#20#1=19");
+    let error = driver
+        .execute_singleton_operation(read, options(false))
+        .await
+        .unwrap_err();
+    assert_eq!(
+        error.status(),
+        crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED
+    );
+    assert!(client.range_requests.load(Ordering::SeqCst) > 0);
+    assert!(client.requests.lock().unwrap().is_empty());
 }
 
 #[tokio::test]

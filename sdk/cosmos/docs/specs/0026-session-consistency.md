@@ -255,9 +255,11 @@ hedged requests:
 1. **Caller-supplied progress wins.** No cached session state is merged into an
    explicit token. Classic Gateway and non-compound tokens retain their existing
    passthrough behavior. Gateway V2 scopes compound tokens using the attempt's
-   physical range and an initialized routing snapshot, merging required parent
-   and target vectors with the shared version-aware rules. The original token is
-   retained for subsequent retries, hedge legs, and pages.
+   physical range and a routing snapshot, merging required parent and target
+   vectors with the shared version-aware rules. If lazy topology is not
+   initialized, the attempt loads it on demand using the operation's options and
+   deadline. The original token is retained for subsequent retries, hedge legs,
+   and pages.
 2. **Partition-scoped token**, when the attempt has a resolved partition key
    range ID: use that range's cached token, or merge its known parent vectors
    and re-key them to the target range. Classic Gateway additionally requires
@@ -265,19 +267,18 @@ hedged requests:
    cached session range is either active or a known ancestor. Its parent
    vectors come from that snapshot. Gateway V2 uses parent hints only when
    they belong to the attempt's resolved identity.
-3. **Classic Gateway fallback** when identity or trusted topology is unavailable,
-   or no scoped token can be resolved: retain the container-wide composite,
-   sorted by range ID. The service can interpret ancestor tokens after topology
-   changes; do not discard cached progress merely to permit forwarding to the proxy.
 
-When an explicit compound token cannot be scoped safely, use classic Gateway
-with the entire original token. Missing or inactive targets, unknown range IDs,
-unresolved older ancestry, malformed or duplicate segments, and incompatible
-parent token formats take this fallback; never omit required caller progress.
-Scoping reads no session cache and performs no topology fetch, including when
-`session_capturing_disabled` is true or topology loading is lazy. Each hedge leg
-and sequential retry makes its own decision using the original caller token.
-The selected consistency strategy and automatic capture gates remain unchanged.
+When an explicit compound token is routed through Gateway V2, required topology
+loading errors are returned without retrying the data operation through classic
+Gateway. If topology loads successfully but the target, lineage, or token
+progress cannot be safely scoped, the operation also fails explicitly. Malformed
+tokens fail before topology is loaded. Single-range tokens and attempts already
+routed through classic Gateway retain passthrough behavior and do not trigger
+this lookup. The lookup is independent of `session_capturing_disabled`, does not
+read or update the session cache, and uses the operation's existing deadline.
+Each V2 retry or hedge uses a topology snapshot for its attempt and the original
+caller token. The selected consistency strategy and automatic capture gates
+remain unchanged.
 
 Gateway V2 retains its existing automatic-token behavior for logical-partition
 requests: without a resolved range or an available range/parent token, no
@@ -285,9 +286,8 @@ automatic token is emitted. The automatic lazy-topology session guard is unchang
 
 Classic topology validation and token selection share one session-cache read
 lock. A new child token therefore prevents scoping to an old parent snapshot,
-even if a concurrent failed topology refresh restores that snapshot. Until
-topology accounts for the observed ranges, preserve the composite rather than
-discarding the newer child progress. Once normal topology refresh supplies a
+even if a concurrent failed topology refresh restores that snapshot.
+Once normal topology refresh supplies a
 usable map, range-local resolution resumes. This check does not fetch topology,
 wait for an in-flight refresh, invalidate routing maps, or clear session tokens.
 
@@ -347,8 +347,7 @@ and requests are *per region*. Three interactions follow:
   token gathered in one region is meaningful in another. Failing over to a
   region that has not yet replicated those LSNs is exactly the `1002` case in §7.
 - **Transport mode.** Both gateways use a range-local automatic token when one
-  can be resolved. Classic Gateway retains a composite fallback when scoping
-  is unavailable; Gateway V2 never uses that fallback for a logical target.
+  can be resolved.
 
 Session tokens are **never cleared** by routing decisions. Failover, hedging, and
 session retries all preserve the cache; discarding tokens to "make the read
@@ -522,10 +521,10 @@ formatting of driver state.
 
 ## 13. Known limitations and open questions
 
-1. **Classic Gateway scoping depends on trustworthy cached topology.** Missing
-   topology or an unrecognized cached range retains the composite token until
-   normal metadata refresh accounts for that progress. Resolving a session token
-   does not fetch topology. Known children can inherit merged parent progress.
+1. **Automatic session-token selection uses available routing metadata.** The
+   token resolver does not fetch topology itself; request planning may load
+   topology when physical partition identity is needed. Known children can
+   inherit merged parent progress.
 2. **Container recreation is only detected by name → RID mismatch.** A session
    retry does not itself re-validate RIDs; deterministic RID comparison on the
    retry path is noted as future work in the pipeline.

@@ -187,7 +187,88 @@ fn resolve_session_token_for_attempt(
 
 enum AttemptSessionToken {
     Resolved(Option<SessionToken>),
-    RequiresClassic(SessionToken),
+    CannotScope,
+}
+
+fn explicit_session_scope_error() -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
+        .with_message("partition topology cannot safely scope the explicit compound session token")
+        .build()
+}
+
+async fn load_explicit_session_topology(
+    driver: &CosmosDriver,
+    operation: &CosmosOperation,
+    transport_mode: TransportMode,
+    overrides: &mut OperationOverrides,
+    operation_options: &OperationOptions,
+    deadline: Option<Instant>,
+) -> crate::error::Result<()> {
+    let Some(token) = operation.request_headers().session_token.as_ref() else {
+        return Ok(());
+    };
+    if transport_mode != TransportMode::GatewayV2 || !token.as_str().contains(',') {
+        return Ok(());
+    }
+
+    if !SessionManager::is_valid_explicit_token(token) {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+            .with_message("the explicit compound session token is malformed")
+            .build());
+    }
+
+    let container = operation.container().ok_or_else(|| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
+            .with_message("cannot scope an explicit compound session token without a container")
+            .build()
+    })?;
+    let routing_map = driver
+        .load_session_token_routing_map(container, operation_options.clone(), deadline)
+        .await?
+        .ok_or_else(|| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
+                .with_message(format!(
+                    "partition topology is unavailable while scoping the explicit session token for container '{}'",
+                    container.name()
+                ))
+                .build()
+        })?;
+    overrides.session_token_routing_map = Some(routing_map);
+    Ok(())
+}
+
+fn explicit_session_target_id(
+    operation: &CosmosOperation,
+    partition_key_range_id: Option<&PartitionKeyRangeId>,
+    overrides: &OperationOverrides,
+) -> Option<String> {
+    let routing_map = overrides.session_token_routing_map.as_deref()?;
+    if let (Some(partition_key), Some(container)) =
+        (operation.partition_key(), operation.container())
+    {
+        let definition = container.partition_key_definition();
+        if definition.is_complete(partition_key) {
+            let epk = EffectivePartitionKey::compute(
+                partition_key.values(),
+                definition.kind(),
+                definition.version(),
+            );
+            return routing_map
+                .get_range_by_effective_partition_key(&epk)
+                .map(|range| range.id.clone());
+        }
+        if overrides.logical_partition_key_target {
+            return None;
+        }
+    }
+    let id = partition_key_range_id
+        .map(PartitionKeyRangeId::as_str)
+        .or_else(|| overrides.effective_partition_key_range_id())?;
+    routing_map.range(id).map(|range| range.id.clone())
 }
 
 fn prepare_session_token_for_attempt(
@@ -202,15 +283,12 @@ fn prepare_session_token_for_attempt(
         if transport_mode == TransportMode::GatewayV2 && token.as_str().contains(',') {
             if let Some(scoped) = SessionManager::scope_explicit_token(
                 token,
-                partition_key_range_id.map(PartitionKeyRangeId::as_str),
+                explicit_session_target_id(operation, partition_key_range_id, overrides).as_deref(),
                 overrides.session_token_routing_map.as_deref(),
             ) {
                 return AttemptSessionToken::Resolved(Some(scoped));
             }
-            tracing::debug!(
-                "using classic Gateway because explicit compound session progress cannot be safely scoped"
-            );
-            return AttemptSessionToken::RequiresClassic(token.clone());
+            return AttemptSessionToken::CannotScope;
         }
         return AttemptSessionToken::Resolved(Some(token.clone()));
     }
@@ -566,6 +644,15 @@ pub(crate) async fn execute_operation_pipeline(
 ) -> crate::error::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let mut throughput_control = throughput_control;
+    let mut overrides = overrides;
+    if operation.request_headers().session_token.is_none() {
+        let session_header = HeaderName::from_static(request_header_names::SESSION_TOKEN);
+        if let Some(value) = custom_headers.and_then(|headers| headers.get(&session_header)) {
+            let mut headers = operation.request_headers().clone();
+            headers.session_token = Some(SessionToken::new(value.as_str().to_owned()));
+            *operation = operation.clone().with_request_headers(headers);
+        }
+    }
     #[cfg(feature = "fault_injection")]
     let fault_injection_enabled = driver.fault_injection_enabled();
     #[cfg(not(feature = "fault_injection"))]
@@ -777,6 +864,15 @@ pub(crate) async fn execute_operation_pipeline(
             attempt_session_token_resolution_active,
             lazy_topology,
         );
+        load_explicit_session_topology(
+            driver,
+            operation,
+            routing.transport_mode,
+            &mut overrides,
+            operation_options,
+            deadline,
+        )
+        .await?;
         let resolved_session_token = match prepare_session_token_for_attempt(
             session_manager,
             operation,
@@ -786,10 +882,7 @@ pub(crate) async fn execute_operation_pipeline(
             attempt_session_token_resolution_active,
         ) {
             AttemptSessionToken::Resolved(token) => token,
-            AttemptSessionToken::RequiresClassic(token) => {
-                use_classic_gateway(&mut routing);
-                Some(token)
-            }
+            AttemptSessionToken::CannotScope => return Err(explicit_session_scope_error()),
         };
 
         // Emit one structured debug record per attempt with the chosen
@@ -865,6 +958,15 @@ pub(crate) async fn execute_operation_pipeline(
                 }
             });
             if let Some((upgrade, _hedge_permit)) = admitted {
+                load_explicit_session_topology(
+                    driver,
+                    operation,
+                    upgrade.secondary_routing.transport_mode,
+                    &mut overrides,
+                    operation_options,
+                    deadline,
+                )
+                .await?;
                 let attempt_ctx = AttemptContext {
                     operation,
                     overrides: &overrides,
@@ -3589,11 +3691,7 @@ async fn perform_single_attempt(
         ctx.session_token_resolution_active,
     ) {
         AttemptSessionToken::Resolved(token) => (Cow::Borrowed(routing), token),
-        AttemptSessionToken::RequiresClassic(token) => {
-            let mut routing = routing.clone();
-            use_classic_gateway(&mut routing);
-            (Cow::Owned(routing), Some(token))
-        }
+        AttemptSessionToken::CannotScope => return Err(explicit_session_scope_error()),
     };
 
     let request_ctx = TransportRequestContext {
@@ -5051,8 +5149,8 @@ mod tests {
     use super::{
         build_transport_request, container_recreation_retry_eligible,
         partition_key_range_id_from_overrides, prepare_session_token_for_attempt,
-        resolve_session_token_for_attempt, use_classic_gateway, AttemptSessionToken,
-        OperationOverrides, TransportRequestContext,
+        resolve_session_token_for_attempt, AttemptSessionToken, OperationOverrides,
+        TransportRequestContext,
     };
     #[cfg(feature = "fault_injection")]
     use crate::options::Region;
@@ -5445,7 +5543,7 @@ mod tests {
             for (mode, id, expected) in [
                 (TransportMode::Gateway, "0", original),
                 (TransportMode::GatewayV2, "0", "0:1#10#1=9"),
-                (TransportMode::GatewayV2, "1", "1:1#20#2=19"),
+                (TransportMode::GatewayV2, "1", "0:1#10#1=9"),
                 (TransportMode::Gateway, "1", original),
             ] {
                 let id = PartitionKeyRangeId::from(id.to_owned());
@@ -5517,7 +5615,7 @@ mod tests {
     }
 
     #[test]
-    fn unresolved_explicit_scope_preserves_original_and_classic_endpoint() {
+    fn unresolved_explicit_scope_is_rejected_by_attempt_preparation() {
         let original = "0:1#10,1:1#20";
         let operation = CosmosOperation::read_item(ItemReference::from_name(
             &test_container(),
@@ -5528,48 +5626,17 @@ mod tests {
         let manager = SessionManager::new();
         let id = PartitionKeyRangeId::from("0".to_owned());
         for automatic in [false, true] {
-            let AttemptSessionToken::RequiresClassic(token) = prepare_session_token_for_attempt(
-                &manager,
-                &operation,
-                TransportMode::GatewayV2,
-                Some(&id),
-                &OperationOverrides::default(),
-                automatic,
-            ) else {
-                panic!("missing topology must retain the original token through classic Gateway");
-            };
-            assert_eq!(token.as_str(), original);
-            let mut routing = test_routing();
-            routing.transport_mode = TransportMode::GatewayV2;
-            routing.selected_url = Url::parse("https://thin.documents.azure.com:10250/").unwrap();
-            routing.endpoint_key = EndpointKey::try_from(&routing.selected_url).unwrap();
-            use_classic_gateway(&mut routing);
-            assert_eq!(routing.transport_mode, TransportMode::Gateway);
-            assert_eq!(&routing.selected_url, routing.endpoint.url());
-            assert_eq!(routing.endpoint_key, routing.endpoint.endpoint_key());
-            let activity = ActivityId::from_string("explicit-fallback".to_owned());
-            let request = build_transport_request(
-                &operation,
-                &OperationOverrides::default(),
-                None,
-                &TransportRequestContext {
-                    routing: &routing,
-                    activity_id: &activity,
-                    execution_context: ExecutionContext::OperationRetry,
-                    deadline: None,
-                    effective_consistency: DefaultConsistencyLevel::Session,
-                    read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
-                    resolved_session_token: Some(token),
-                    throughput_control: None,
-                },
-            )
-            .unwrap();
-            assert_eq!(
-                request.headers.get_optional_str(&HeaderName::from_static(
-                    request_header_names::SESSION_TOKEN
-                )),
-                Some(original)
-            );
+            assert!(matches!(
+                prepare_session_token_for_attempt(
+                    &manager,
+                    &operation,
+                    TransportMode::GatewayV2,
+                    Some(&id),
+                    &OperationOverrides::default(),
+                    automatic,
+                ),
+                AttemptSessionToken::CannotScope
+            ));
         }
     }
 

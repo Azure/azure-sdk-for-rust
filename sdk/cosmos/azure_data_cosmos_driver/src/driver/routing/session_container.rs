@@ -108,6 +108,31 @@ impl SessionContainer {
         Self::build_parent_token(&tokens, &range.id, &sources)
     }
 
+    pub(crate) fn is_valid_explicit_token(token: &SessionToken) -> bool {
+        let mut ids = HashSet::new();
+        token.as_str().split(',').all(|segment| {
+            let Some((id, value)) = segment.trim().split_once(':') else {
+                return false;
+            };
+            if id.is_empty() || !ids.insert(id) {
+                return false;
+            }
+            if value
+                .split('#')
+                .skip(2)
+                .try_fold(HashSet::new(), |mut regions, progress| {
+                    let (region, _) = progress.split_once('=')?;
+                    let region = region.parse::<u64>().ok()?;
+                    regions.insert(region).then_some(regions)
+                })
+                .is_none()
+            {
+                return false;
+            }
+            SessionTokenValue::parse(value).is_ok()
+        })
+    }
+
     /// Builds a composite session token string from the cached inner state.
     ///
     /// Segments are sorted by partition-key-range ID for deterministic output.
