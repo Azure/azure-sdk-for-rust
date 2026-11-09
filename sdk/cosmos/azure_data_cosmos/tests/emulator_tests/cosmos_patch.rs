@@ -901,9 +901,14 @@ pub async fn patch_filter_predicates_follow_effective_strategy() -> Result<(), B
                 visits: 0,
                 deleted: false,
             };
-            container_client
+            let create_response = container_client
                 .create_item(&pk, &item_id, &initial, None)
                 .await?;
+            let initial_etag = create_response
+                .headers()
+                .etag()
+                .expect("create must return an ETag")
+                .clone();
 
             let matching = PatchItemOptions::default()
                 .with_filter_predicate("from c where c.display_name = 'before'");
@@ -918,6 +923,12 @@ pub async fn patch_filter_predicates_follow_effective_strategy() -> Result<(), B
                     Some(matching),
                 )
                 .await?;
+            let current_etag = response
+                .headers()
+                .etag()
+                .expect("PATCH must return an ETag")
+                .clone();
+            assert_ne!(current_etag, initial_etag);
             let matched: PatchTestItem = response.into_model()?;
             assert_eq!(matched.display_name, "matched");
 
@@ -946,6 +957,54 @@ pub async fn patch_filter_predicates_follow_effective_strategy() -> Result<(), B
                 .expect("a service predicate failure must carry diagnostics");
             assert_eq!(diagnostics.operation_name(), Some("patch_item"));
             assert_eq!(diagnostics.requests().len(), 1);
+
+            let before_precondition_checks: serde_json::Value = container_client
+                .read_item(&pk, &item_id, None)
+                .await?
+                .into_model()?;
+            for (etag, expected_substatus, scenario) in [
+                (initial_etag, None, "stale If-Match and false predicate"),
+                (
+                    current_etag.clone(),
+                    Some(1110),
+                    "current If-Match and false predicate",
+                ),
+            ] {
+                let options = PatchItemOptions::default()
+                    .with_strategy(PatchStrategy::ServerSide)
+                    .with_precondition(Precondition::if_match(etag))
+                    .with_filter_predicate("from c where c.display_name = 'before'");
+                let error = container_client
+                    .patch_item(
+                        &pk,
+                        &item_id,
+                        PatchInstructions::from(vec![PatchOperation::set(
+                            "/deleted",
+                            serde_json::json!(true),
+                        )]),
+                        Some(options),
+                    )
+                    .await
+                    .expect_err("failed preconditions must reject PATCH");
+                assert_eq!(
+                    error.status().status_code(),
+                    StatusCode::PreconditionFailed,
+                    "{scenario}"
+                );
+                assert_eq!(
+                    error.status().sub_status().map(|status| status.value()),
+                    expected_substatus,
+                    "{scenario}"
+                );
+                let stored_response = container_client.read_item(&pk, &item_id, None).await?;
+                assert_eq!(
+                    stored_response.headers().etag(),
+                    Some(&current_etag),
+                    "{scenario}"
+                );
+                let stored: serde_json::Value = stored_response.into_model()?;
+                assert_eq!(stored, before_precondition_checks, "{scenario}");
+            }
 
             let empty = PatchItemOptions::default()
                 .with_strategy(PatchStrategy::ServerSide)
