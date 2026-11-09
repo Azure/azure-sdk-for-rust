@@ -887,6 +887,10 @@ pub async fn patch_preconditions_match_across_strategies() -> Result<(), Box<dyn
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "vnext emulator omits PATCH condition failure substatus 1110: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/389"
+)]
 pub async fn patch_filter_predicates_follow_effective_strategy() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
