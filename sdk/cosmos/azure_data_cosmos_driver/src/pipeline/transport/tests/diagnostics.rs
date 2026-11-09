@@ -14,7 +14,7 @@ use crate::diagnostics::RequestEventType;
 
 #[tokio::test]
 async fn routing_fallback_is_recorded_in_request_diagnostics() {
-    use crate::driver::pipeline::components::RoutingFallbackReason;
+    use crate::pipeline::operation::routing::RoutingFallbackReason;
 
     let endpoint =
         CosmosEndpoint::global(url::Url::parse("https://test.documents.azure.com:443/").unwrap());
@@ -206,6 +206,9 @@ async fn completion_records_events_in_wire_order() {
 
 #[cfg(feature = "fault_injection")]
 mod fault_injection {
+    use async_trait::async_trait;
+    use azure_core::{credentials::Secret, http::headers::HeaderValue};
+
     use super::{
         gateway_v2_context, gateway_v2_diagnostics, run_pipeline, test_request, AdaptiveTransport,
         Arc, Credential, HttpResponse, TransportOutcome,
@@ -216,8 +219,6 @@ mod fault_injection {
             HttpRequest, TransportClient, TransportError,
         },
     };
-    use async_trait::async_trait;
-    use azure_core::{credentials::Secret, http::headers::HeaderValue};
 
     #[derive(Debug)]
     struct EvaluationTransport {

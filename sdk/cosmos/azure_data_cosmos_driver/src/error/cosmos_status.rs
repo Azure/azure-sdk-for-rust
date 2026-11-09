@@ -13,9 +13,10 @@
 //! [`CosmosStatus`] encapsulates both values together so the correct interpretation is
 //! always available.
 
+use std::fmt;
+
 use azure_core::http::StatusCode;
 use serde::{Deserialize, Serialize};
-use std::fmt;
 
 // =========================================================================
 // SubStatusCode
@@ -721,10 +722,7 @@ impl CosmosStatus {
     /// 449 RetryWith is returned by Cosmos backends for transient
     /// concurrency conflicts (e.g. concurrent writes racing through the
     /// store, RBAC info momentarily unavailable). The client is expected
-    /// to retry in the same region after a short delay. See
-    /// `try_handle_retry_with` in
-    /// `driver::pipeline::retry_evaluation` and the cross-SDK
-    /// `RetryWithRetryPolicy` for the policy.
+    /// to retry in the same region after a short delay.
     pub fn is_retry_with(&self) -> bool {
         u16::from(self.status_code) == 449
     }

@@ -15,8 +15,6 @@ pub(crate) mod cache;
 mod cosmos_driver;
 pub(crate) mod dataflow;
 pub(crate) mod jitter;
-pub(crate) mod pipeline;
-pub(crate) mod routing;
 mod runtime;
 
 pub use cosmos_driver::CosmosDriver;
@@ -45,11 +43,10 @@ pub(crate) fn error_chain_summary(error: &(dyn std::error::Error + 'static)) -> 
 
 #[cfg(test)]
 mod tests {
+    use std::{error::Error as StdError, sync::Arc};
+
     use super::error_chain_summary;
     use crate::error::CosmosError;
-
-    use std::error::Error as StdError;
-    use std::sync::Arc;
 
     #[test]
     fn returns_top_level_display_when_no_source() {

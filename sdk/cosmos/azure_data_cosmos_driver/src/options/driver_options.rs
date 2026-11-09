@@ -5,15 +5,14 @@
 
 use std::sync::Arc;
 
+#[cfg(feature = "fault_injection")]
+use crate::fault_injection::FaultInjectionRule;
 use crate::{
     models::AccountReference,
     options::{
         HedgingOptions, OperationOptions, PartitionFailoverOptions, Region, UserAgentSuffix,
     },
 };
-
-#[cfg(feature = "fault_injection")]
-use crate::fault_injection::FaultInjectionRule;
 
 /// Configuration options for a Cosmos DB driver instance.
 ///
@@ -366,10 +365,12 @@ impl DriverOptionsBuilder {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
+    use url::Url;
+
     use super::*;
     use crate::options::OperationOptionsBuilder;
-    use std::collections::HashMap;
-    use url::Url;
 
     fn test_account() -> AccountReference {
         AccountReference::with_account_key(
@@ -517,7 +518,7 @@ mod tests {
 
     #[test]
     fn omitted_pfo_env_override_wins_over_env_base_enable() {
-        use crate::driver::routing::partition_endpoint_state::PartitionEndpointState;
+        use crate::pipeline::operation::routing::partition_endpoint_state::PartitionEndpointState;
 
         // Base env var enables PPCB, but the kill switch disables it. The
         // override is authoritative, so the effective in-driver value is off.
@@ -536,7 +537,7 @@ mod tests {
 
     #[test]
     fn explicit_pfo_override_wins_over_base_enable() {
-        use crate::driver::routing::partition_endpoint_state::PartitionEndpointState;
+        use crate::pipeline::operation::routing::partition_endpoint_state::PartitionEndpointState;
 
         // The override also wins when the options are supplied explicitly (not
         // from the environment): base enabled, override disabled -> off.
@@ -624,9 +625,10 @@ mod tests {
 /// it is hermetic and parallel-safe.
 #[cfg(test)]
 mod real_env_tests {
+    use url::Url;
+
     use super::*;
     use crate::options::env_parsing::test_env::{with_scoped_env, PARTITION_FAILOVER_ENV_VARS};
-    use url::Url;
 
     fn test_account() -> AccountReference {
         AccountReference::with_account_key(

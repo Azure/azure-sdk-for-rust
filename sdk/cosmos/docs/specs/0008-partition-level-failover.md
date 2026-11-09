@@ -753,7 +753,7 @@ that set. This is **not guaranteed** to be the exact region that returned the
 region-confirming status — convergence happens implicitly: any subsequent
 failure on the still-unhealthy region rotates again, while any success leaves
 the entry alone. Because
-[`preferred_endpoints_for_attempt`](#cross-region-routing-during-discovery)
+[`routing::resolve_candidate_endpoints`](#cross-region-routing-during-discovery)
 exposes the union of read+write endpoints, both the retry loop and the
 post-flush rotation share the same candidate ordering, so steady-state
 convergence on the actually-healthy region is reached quickly.
@@ -765,7 +765,7 @@ convergence on the actually-healthy region is reached quickly.
 
 #### Cross-region routing during discovery
 
-While a PPAF SM write is retrying, `preferred_endpoints_for_attempt()` returns
+While a PPAF SM write is retrying, `routing::resolve_candidate_endpoints()` returns
 the deduplicated **union** of `preferred_read_endpoints + preferred_write_endpoints`
 (read order first, write-only entries appended). This is necessary because
 `preferred_write_endpoints` on a single-master account contains only the

@@ -52,13 +52,15 @@
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
-use azure_data_cosmos_driver::models::AccountReference;
-use azure_data_cosmos_driver::options::DriverOptions;
-use azure_data_cosmos_driver::test::{
-    ConnectionPoolOptions, HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse,
-    TransportClient, TransportError,
+use azure_data_cosmos_driver::{
+    models::AccountReference,
+    options::DriverOptions,
+    test::{
+        ConnectionPoolOptions, HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse,
+        TransportClient, TransportError,
+    },
+    CosmosDriverRuntime,
 };
-use azure_data_cosmos_driver::CosmosDriverRuntime;
 use url::Url;
 
 // ----------------------------------------------------------------------------
@@ -196,7 +198,7 @@ async fn probe(runtime: &Arc<CosmosDriverRuntime>) {
 ///
 /// The eligibility decision is made in `resolve_endpoint`
 /// (operation_pipeline.rs); the inside-crate tests in
-/// `driver::pipeline::operation_pipeline::tests::resolve_endpoint_*` cover the
+/// `pipeline::operation::operation_pipeline::tests::resolve_endpoint_*` cover the
 /// matrix exhaustively. This standalone test is the live-account contract
 /// lock — once `TransportKind` is exposed in diagnostics, assert that the
 /// stored-procedure-execute request used `TransportKind::StandardGateway`

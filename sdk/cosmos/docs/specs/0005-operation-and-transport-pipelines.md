@@ -501,6 +501,117 @@ pub(crate) enum RecoveryAction<T> {
 
 ### 4.1 Core Loop
 
+The implemented entry point is `operation::execute`.
+Operation routing, sessions, PPAF/PPCB, hedging, retry evaluation, and PATCH now
+live under `src/pipeline/operation`. Public hedge diagnostic types live under
+`src/diagnostics/hedging.rs`; metadata caches and dataflow retain their existing
+ownership.
+
+The following stage contracts describe the implementation. The older code
+sketch later in this section and the migration phases in section 8 are historical
+design material, not current internal API signatures.
+
+| Stage | Returned data or decision | State ownership |
+| --- | --- | --- |
+| `policy::resolve` | Fixed `Policy`, initial `OperationRetryState`, diagnostics | Creates invocation-local values |
+| `LocationStateStore::capture` / `AttemptContext::new` | `LocationSnapshot` and immutable attempt inputs | Captures topology and account identity without sharing retry mutations |
+| `routing::route` | `AttemptRoute`: endpoint, consistency strategy, session-resolution policy | Reads captured topology; does not choose a gateway or read session tokens |
+| `hedging::should_hedge` | Eligible alternate and admission guard, or no race | Non-blocking metadata admission; guard owns the permit |
+| `hedging::hedge_operation` | `ControlFlow`: terminal result or sequential fallback | Owns the race and applies coordinator observations |
+| `operation::perform_single_attempt` | Raw outcome and immutable sent-header facts | Shared path for sequential execution and both hedge legs |
+| `session::resolve` | `ResolvedSession`: gateway-specific tokens and Gateway v1 requirement | Reads cached representations under one lock, or scopes the caller's token without reading the cache |
+| `request::prepare_attempt` | Owned request and sent-header facts, or preparation error | Applies attempt overrides without resolving sessions or choosing a gateway |
+| `dispatch::send` | Raw `TransportResult` or dispatch error | Chooses gateway, session representation, URL, pool key, and transport; delegates transport-local retries |
+| `routing::capture_pkrange` / `session::capture` | Observation checkpoint | Adopts physical identity and captures eligible session progress before recovery |
+| `recovery::recover` | `ControlFlow`: terminal result or another iteration | Handles non-success outcomes: recreation, transport/HTTP recovery, feedback, and retry-hedge dispatch |
+| `routing::apply_location_effects` | Feedback checkpoint | Applies immediate effects; retains unconfirmed single-master write failures locally |
+| `recovery::state::advance` | `Continuation`: retry, complete, abort, or hedge | Advances local retry progress and performs bounded waits |
+| `routing::complete_attempt` / `routing::abort_attempt` | Terminal feedback checkpoint | Commits deferred effects only with region-confirming evidence |
+| `response` | Diagnosed response or error | Consumes the operation journal |
+
+`OperationPipelineConfig` carries immutable caller identity and options.
+`OperationPipelineServices` borrows the driver recovery service, transport,
+credential, location store, session manager, and hedge budget, and supplies the
+`Clock`. Fixed policy is resolved once. Topology snapshots, session-cache reads,
+and service hedge suppression remain attempt-specific.
+
+Routing evaluates `RoutingPolicy`, collects borrowed candidates through
+`routing::resolve_candidate_endpoints`, and uses `routing::try_select_endpoint`
+for a single selection pass. Reads checking whether a PATCH succeeded prioritize
+PPAF's current partition writer before account writers and reject unhealthy writers instead of
+retaining them as last-resort candidates. `routing::fallback` owns reader fallback, revisiting in-flight
+failures, and the final all-excluded fallback. `routing::try_partition_circuit_breaker`
+and `routing::try_partition_failover` each check operation eligibility before selecting
+a partition override, retaining their distinct exclusion and availability rules.
+`routing::resolve_partition_overrides` applies those choices after account-level
+selection. `routing::select` records the endpoint for both selected and explicitly
+pinned routes, without choosing its gateway version.
+
+Each `operation::perform_single_attempt` calls `session::resolve`, then
+`request::prepare_attempt`, then `dispatch::send`. Session resolution returns
+Gateway v1 and v2 representations because Gateway v1 may need to preserve the
+full composite while Gateway v2 needs a single partition's token. Both cached
+representations come from one snapshot; dispatch never rereads the cache.
+The same resolver requires Gateway v1 for an explicit composite that cannot be
+narrowed, or a cached token on a lazy logical request whose physical partition
+is still unknown.
+
+Dispatch selects the gateway together with the data-plane or metadata transport.
+Metadata always uses Gateway v1. Gateway v2 also requires a supported operation,
+known account identity, an advertised endpoint, and compatible session data.
+The URL, pool key, intended-container header, and token representation follow
+that one decision. Hedge planning selects regions only; each leg runs these same
+stages, and an alternate cannot upgrade beyond its primary endpoint's capability.
+
+`LocationEffects` carries ordered feedback and exposes failed regions without
+allocating a skip list. Retry state combines this evidence with caller exclusions;
+account state evaluates availability marks and TTLs. Relaxing in-flight failures
+never relaxes caller exclusions within a selection pass.
+
+The visible iteration order is:
+
+1. Check the deadline, capture shared state, and select the regional endpoint.
+2. Admit an initial hedge if eligible and divert to `hedging::hedge_operation`.
+3. Otherwise run the shared `operation::perform_single_attempt`.
+4. Capture physical partition identity and eligible session progress.
+5. On success, finalize routing feedback and return the diagnosed response directly.
+6. Otherwise run `recovery::recover` and follow its terminal-or-continue signal.
+
+Success bypasses recovery while still committing deferred write effects, cleaning up
+successful PPCB probes, and populating the hub-region cache. DTX recovery can still
+deliver an HTTP-error body to the transaction-level decoder; this is not a successful
+transport outcome entering recovery.
+
+Both hedge entrances return through `recovery::hedge::after_race`. A retry-triggered race
+selects both endpoints again after advancing and refreshing topology. If no distinct
+alternate remains, its permit is released without consuming the one-race allowance.
+This path does not introduce an additional deadline gate before the race.
+
+Recovery is a sub-pipeline: recreation first, then transport outcome classification.
+HTTP responses visit write-region, account-topology, DTX, session, failover,
+retry-with, and generic server-error handlers in that order. Each handler returns
+a decision and proposed location effects rather than publishing shared state.
+`OperationRetryState` also owns the consumed recreation budget and the current
+throughput scope, so neither is hidden in the outer loop.
+
+Effects belong to their topical stages. Routing feedback is applied at each
+existing observation checkpoint before awaiting the other leg. Sequential eligible
+error responses capture sessions before recovery; hedges capture only the winner.
+Background topology refresh and probe tasks remain independent writers.
+
+Hedge legs enter the same preparation and dispatch path as sequential attempts,
+using explicit wire-policy overrides. They do not run operation-level recovery
+loops independently. Only the retry-upgraded race continuation is boxed to keep
+the ordinary operation future below the repository's size limit.
+
+Routing selection and feedback timestamps use the location store's monotonic clock.
+Operation deadlines, retry delays, hedge thresholds, and bounded diagnostic harvest
+use that same clock. `timeout::with_timeout` supplies future-first harvest behavior;
+partner waits retain deadline-first tie handling. Wall-clock refresh rate limiting
+and diagnostic timestamps retain their existing roles.
+
+#### Historical core-loop sketch
+
 The operation pipeline orchestrates attempts across regions. It is the replacement for
 `ClientRetryPolicy` + `MetadataRequestRetryPolicy` + `BackOffRetryHandler` from `azure_data_cosmos`.
 
@@ -1378,7 +1489,7 @@ The transport pipeline does **NOT** handle:
 ### 5.2 Transport Pipeline Flow
 
 The implementation lives in `src/pipeline/transport/`; the operation pipeline stays in
-`src/driver/pipeline/`. `transport::execute` receives `TransportRequest`,
+`src/pipeline/operation/`. `transport::execute` receives `TransportRequest`,
 `TransportPipelineConfig`, borrowed `TransportPipelineServices` (`AdaptiveTransport`,
 `Credential`, and `Clock`), and the mutable diagnostic builder. It does not receive routing stores or
 an operation that could select another region.

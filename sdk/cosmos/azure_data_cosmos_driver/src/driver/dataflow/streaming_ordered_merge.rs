@@ -51,28 +51,24 @@
 //! `CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID` rather than guessing at
 //! an unknown stream's position.
 
-use std::cmp::Ordering;
-use std::collections::VecDeque;
-use std::sync::Arc;
+use std::{cmp::Ordering, collections::VecDeque, sync::Arc};
 
-use super::recovery_diagnostics::RecoveryDiagnostics;
 use async_trait::async_trait;
 
-use crate::models::{CosmosOperation, FeedRange, MaxItemCountHint, SessionToken};
-
-use super::binary_heap;
-use super::order_by::{
-    classify_row_vs_boundary, compare_key_tuples, compare_rids, OrderByItem, OrderByResumeValue,
-    RowVsBoundary,
-};
-use super::query_plan::SortOrder;
-use super::query_response::{self, PageAggregator};
-use super::snapshot::{OrderByRangeToken, ValueBoundary};
 use super::{
-    intersect_feed_ranges, split_replacement_invalid, validate_exact_coverage, PageResult,
-    PipelineContext, PipelineNode, PipelineNodeState, Request, RequestTarget, ResolvedRange,
-    SplitReplacements,
+    binary_heap, intersect_feed_ranges,
+    order_by::{
+        classify_row_vs_boundary, compare_key_tuples, compare_rids, OrderByItem,
+        OrderByResumeValue, RowVsBoundary,
+    },
+    query_plan::SortOrder,
+    query_response::{self, PageAggregator},
+    recovery_diagnostics::RecoveryDiagnostics,
+    snapshot::{OrderByRangeToken, ValueBoundary},
+    split_replacement_invalid, validate_exact_coverage, PageResult, PipelineContext, PipelineNode,
+    PipelineNodeState, Request, RequestTarget, ResolvedRange, SplitReplacements,
 };
+use crate::models::{CosmosOperation, FeedRange, MaxItemCountHint, SessionToken};
 
 /// Default emitted-page size when no `max_item_count` hint is set
 /// (matches Cosmos's default; independent of backend per-child page size).
@@ -1072,8 +1068,10 @@ fn build_value_boundary_child(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::driver::dataflow::mocks::{self, MockLeaf};
-    use crate::models::effective_partition_key::EffectivePartitionKey;
+    use crate::{
+        driver::dataflow::mocks::{self, MockLeaf},
+        models::effective_partition_key::EffectivePartitionKey,
+    };
 
     fn range(min: &str, max: &str) -> crate::error::Result<FeedRange> {
         FeedRange::new(
@@ -1340,6 +1338,8 @@ mod tests {
 
     #[tokio::test]
     async fn poisoned_distinct_retains_pending_child_recovery_diagnostics() {
+        use std::error::Error as _;
+
         use crate::{
             diagnostics::{
                 DiagnosticsContextBuilder, ExecutionContext, PipelineKind, TransportHttpVersion,
@@ -1349,7 +1349,6 @@ mod tests {
             error::status_codes,
             models::{CosmosResponse, RequestCharge},
         };
-        use std::error::Error as _;
 
         for nested in [false, true] {
             let payload = format!("{}0{}", "[".repeat(130), "]".repeat(130));
@@ -1385,7 +1384,7 @@ mod tests {
                     crate::models::ActivityId::new_uuid(),
                     Arc::new(crate::options::DiagnosticsOptions::default()),
                 );
-                let endpoint = crate::driver::routing::CosmosEndpoint::global(
+                let endpoint = crate::pipeline::operation::routing::CosmosEndpoint::global(
                     url::Url::parse("https://acct.example/").unwrap(),
                 );
                 let handle = diagnostics.start_request(
@@ -1471,8 +1470,10 @@ mod tests {
 
     #[tokio::test]
     async fn terminal_window_hands_off_deferred_recovery_error_without_polling() {
-        use crate::driver::dataflow::{query_plan::DistinctType, Distinct, SkipTake};
-        use crate::models::{CosmosResponse, RequestCharge};
+        use crate::{
+            driver::dataflow::{query_plan::DistinctType, Distinct, SkipTake},
+            models::{CosmosResponse, RequestCharge},
+        };
 
         for (wrapper, skip) in (0..3).flat_map(|wrapper| [0, 1].map(|skip| (wrapper, skip))) {
             let left_range = range("", "80").unwrap();

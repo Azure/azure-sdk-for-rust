@@ -2,26 +2,28 @@
 // Licensed under the MIT License.
 
 // Use the shared test framework declared in `tests/emulator_tests/mod.rs`.
-use super::framework;
+use std::{error::Error, sync::Arc};
 
 use azure_core::{http::StatusCode, Uuid};
-use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::diagnostics::TransportKind;
-use azure_data_cosmos::fault_injection::{
-    CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionResultBuilder,
-    FaultInjectionRuleBuilder, FaultOperationType,
+use azure_data_cosmos::{
+    clients::ContainerClient,
+    diagnostics::TransportKind,
+    fault_injection::{
+        CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionResultBuilder,
+        FaultInjectionRuleBuilder, FaultOperationType,
+    },
+    models::{
+        ContainerProperties, ItemResponse, PatchInstructions, PatchOperation,
+        PATCH_TRACKING_PROPERTY,
+    },
+    options::{
+        ContentResponseOnWrite, OperationOptions, PatchItemOptions, PatchStrategy, Precondition,
+    },
 };
-use azure_data_cosmos::models::{ContainerProperties, ItemResponse, PATCH_TRACKING_PROPERTY};
-use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
-use azure_data_cosmos::options::{
-    ContentResponseOnWrite, OperationOptions, PatchItemOptions, PatchStrategy, Precondition,
-};
-use framework::TestClient;
-use framework::TestOptions;
-use framework::TestRunContext;
+use framework::{TestClient, TestOptions, TestRunContext};
 use serde::{Deserialize, Serialize};
-use std::error::Error;
-use std::sync::Arc;
+
+use super::framework;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
 struct PatchTestItem {
@@ -75,7 +77,7 @@ async fn create_container_in_database(
 ///   RMW Replace actually landed on the service.
 ///
 /// This pins the public surface in addition to the driver-level unit
-/// tests in `azure_data_cosmos_driver::driver::pipeline::patch_handler`.
+/// tests in `azure_data_cosmos_driver::pipeline::operation::patch_handler`.
 #[tokio::test]
 #[cfg_attr(
     not(any(
@@ -273,7 +275,7 @@ pub async fn patch_item_missing_returns_not_found() -> Result<(), Box<dyn Error>
 /// exhausting `max_attempts`). The dispatcher-driven unit tests
 /// `rmw_recovers_from_412_on_first_replace` and
 /// `rmw_propagates_412_after_exhausting_max_attempts` in
-/// `azure_data_cosmos_driver::driver::pipeline::patch_handler` cover the
+/// `azure_data_cosmos_driver::pipeline::operation::patch_handler` cover the
 /// underlying loop semantics.
 #[tokio::test]
 #[cfg_attr(

@@ -5,45 +5,53 @@
 
 // cspell:ignore acked hexdigit llsn
 
-use std::sync::Arc;
-use std::time::Instant;
+use std::{sync::Arc, time::Instant};
 
-use azure_core::http::headers::{HeaderName, HeaderValue, Headers};
-use azure_core::http::{AsyncRawResponse, StatusCode};
+use azure_core::http::{
+    headers::{HeaderName, HeaderValue, Headers},
+    AsyncRawResponse, StatusCode,
+};
 use serde::{Deserialize, Serialize};
 
-use super::config::ContainerConfig;
-use super::dispatch::{OperationType, ParsedRequest};
-use super::epk::{compute_epk, extract_pk_from_body, parse_partition_key_header, Epk};
 #[cfg(feature = "unstable_dtx")]
 use super::response::headers::ETAG;
-use super::response::headers::{
-    ACTIVITY_ID, CONTINUATION, GLOBAL_COMMITTED_LSN, INTERNAL_PARTITION_ID, ITEM_LOCAL_LSN,
-    ITEM_LSN, LAST_STATE_CHANGE_UTC, LOCAL_LSN, NUMBER_OF_READ_REGIONS, PARTITION_KEY_RANGE_ID,
-    QUORUM_ACKED_LOCAL_LSN, QUORUM_ACKED_LSN, RESOURCE_QUOTA, RESOURCE_USAGE, SERVICE_VERSION,
-    TRANSPORT_REQUEST_ID,
-};
 #[cfg(feature = "unstable_dtx")]
 use super::response::headers::{REQUEST_CHARGE, SESSION_TOKEN, SUBSTATUS};
-use super::response::{
-    error_response, success_response, success_response_with_format, ResponseBuilder, ResponseFormat,
+use super::{
+    config::ContainerConfig,
+    dispatch::{OperationType, ParsedRequest},
+    epk::{compute_epk, extract_pk_from_body, parse_partition_key_header, Epk},
+    response::{
+        error_response,
+        headers::{
+            ACTIVITY_ID, CONTINUATION, GLOBAL_COMMITTED_LSN, INTERNAL_PARTITION_ID, ITEM_LOCAL_LSN,
+            ITEM_LSN, LAST_STATE_CHANGE_UTC, LOCAL_LSN, NUMBER_OF_READ_REGIONS,
+            PARTITION_KEY_RANGE_ID, QUORUM_ACKED_LOCAL_LSN, QUORUM_ACKED_LSN, RESOURCE_QUOTA,
+            RESOURCE_USAGE, SERVICE_VERSION, TRANSPORT_REQUEST_ID,
+        },
+        success_response, success_response_with_format, ResponseBuilder, ResponseFormat,
+    },
+    ru_model::RequestUnitChargingModel,
+    session::SessionToken,
+    store::{
+        current_timestamp, new_etag, ContainerMetadata, EmulatorStore, PhysicalPartition,
+        StoredDocument,
+    },
+    system_properties::{
+        account_properties_to_json, container_to_json, database_to_json, feed_to_json,
+        inject_system_properties, offer_to_json, pkranges_to_json,
+    },
 };
-use super::ru_model::RequestUnitChargingModel;
-use super::session::SessionToken;
-use super::store::{
-    current_timestamp, new_etag, ContainerMetadata, EmulatorStore, PhysicalPartition,
-    StoredDocument,
-};
-use super::system_properties::{
-    account_properties_to_json, container_to_json, database_to_json, feed_to_json,
-    inject_system_properties, offer_to_json, pkranges_to_json,
-};
-use crate::driver::pipeline::patch_eval::apply_patch_ops;
-use crate::models::{effective_partition_key::prefix_range_end_bytes, PatchInstructions};
-use crate::models::{PartitionKeyDefinition, MAX_SERVER_SIDE_PATCH_OPERATIONS};
-use crate::options::ReadConsistencyStrategy;
-use crate::query::ast::{
-    SqlCollection, SqlCollectionExpression, SqlQuery, SqlScalarExpression, SqlSelectSpec,
+use crate::{
+    models::{
+        effective_partition_key::prefix_range_end_bytes, PartitionKeyDefinition, PatchInstructions,
+        MAX_SERVER_SIDE_PATCH_OPERATIONS,
+    },
+    options::ReadConsistencyStrategy,
+    pipeline::operation::patch::eval::apply_patch_ops,
+    query::ast::{
+        SqlCollection, SqlCollectionExpression, SqlQuery, SqlScalarExpression, SqlSelectSpec,
+    },
 };
 
 static OFFER_REPLACE_PENDING: HeaderName = HeaderName::from_static("x-ms-offer-replace-pending");
@@ -6556,14 +6564,15 @@ fn container_not_found(db_id: &str, coll_id: &str, start: Instant) -> AsyncRawRe
 
 #[cfg(test)]
 mod tests {
+    use azure_core::http::{Method, Request};
+    use url::Url;
+
     use super::*;
     use crate::in_memory_emulator::{
         config::{VirtualAccountConfig, VirtualRegion},
         dispatch::parse_request,
         response::headers::ETAG,
     };
-    use azure_core::http::{Method, Request};
-    use url::Url;
 
     #[test]
     fn document_feed_rejects_malformed_epk_headers() -> Result<(), Box<dyn std::error::Error>> {

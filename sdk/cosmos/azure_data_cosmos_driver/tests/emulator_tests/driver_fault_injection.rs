@@ -5,16 +5,20 @@
 
 #![cfg(feature = "fault_injection")]
 
-use crate::framework::DriverTestClient;
-use azure_data_cosmos_driver::diagnostics::TransportKind;
-use azure_data_cosmos_driver::error::{status_codes, CosmosError};
-use azure_data_cosmos_driver::fault_injection::*;
-use azure_data_cosmos_driver::options::{
-    OperationOptions, OperationOptionsBuilder, Region, ThrottlingRetryOptionsBuilder,
+use std::{
+    error::Error,
+    sync::Arc,
+    time::{Duration, Instant},
 };
-use std::error::Error;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+
+use azure_data_cosmos_driver::{
+    diagnostics::TransportKind,
+    error::{status_codes, CosmosError},
+    fault_injection::*,
+    options::{OperationOptions, OperationOptionsBuilder, Region, ThrottlingRetryOptionsBuilder},
+};
+
+use crate::framework::DriverTestClient;
 
 /// Tests that a rule with probability 0.0 never injects faults.
 ///
@@ -911,7 +915,7 @@ pub async fn gateway_v2_hit_limit_caps_fault_count() -> Result<(), Box<dyn Error
 // 449 RetryWith is the Cosmos backend's signal for transient concurrency
 // conflicts that the client must retry in the same region. The driver
 // implements the policy in `try_handle_retry_with` (in
-// `driver::pipeline::retry_evaluation`): 10ms initial delay + a small random
+// `pipeline::operation::retry_evaluation`): 10ms initial delay + a small random
 // salt, exponential backoff up to ~1s per retry, ~30s cumulative cap.
 //
 // These tests use the same fault-injection harness as the other live-account

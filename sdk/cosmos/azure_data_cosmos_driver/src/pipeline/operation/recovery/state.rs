@@ -1,0 +1,894 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+//! Operation-local retry progress and transition rules.
+
+// ── Operation-Level Components ─────────────────────────────────────────
+use std::time::Duration;
+
+use url::Url;
+
+use crate::{
+    diagnostics::hedging::HedgingStrategyConfig,
+    driver::jitter,
+    models::CosmosOperation,
+    options::{HedgeThreshold, Region, ResolvedThroughputControl},
+    pipeline::{
+        operation::{
+            deadline as operation_deadline,
+            recovery::{self, state, Continuation},
+            routing::{
+                self, partition_key_range_id::PartitionKeyRangeId, CosmosEndpoint,
+                InFlightFailures, LocationEffects, LocationIndex, LocationStateStore,
+            },
+        },
+        transport::types::TransportResult,
+    },
+};
+
+/// Safety cap on backend-failover attempts for topology signals (403/3, 403/1008).
+///
+/// Retries are normally bounded by [`BACKEND_FAILOVER_MAX_TOTAL_DELAY`]; this
+/// count is a defensive upper bound so a pathological run can't loop
+/// unbounded. Sized with generous headroom above the 5s budget even when
+/// jitter shrinks individual delays.
+pub const MAX_BACKEND_FAILOVER_RETRIES: u32 = 10;
+
+/// Base delay for the backend-failover backoff curve. The first retry is
+/// immediate, so this is the delay for the *second* retry; it matches the
+/// previous fixed 1000ms cadence.
+pub const BACKEND_FAILOVER_BASE_BACKOFF: Duration = Duration::from_millis(1000);
+
+/// Exponential growth factor applied to [`BACKEND_FAILOVER_BASE_BACKOFF`].
+pub const BACKEND_FAILOVER_BACKOFF_FACTOR: f64 = 2.0;
+
+/// Pre-jitter per-retry ceiling for the exponential backend-failover backoff.
+///
+/// Jitter is applied *after* this clamp, so a single delay can reach
+/// `15s * (1 + BACKEND_FAILOVER_JITTER_RATIO)` = 18.75s before the
+/// cumulative-budget truncation. Clamping before jitter is deliberate:
+/// jittering first would pile probability mass on exactly 15s and defeat the
+/// retry spreading jitter exists to provide.
+///
+/// Unreachable at the current 5s budget (delays truncate to the remaining
+/// budget first); retained so the curve stays sane if the budget is raised.
+pub const BACKEND_FAILOVER_MAX_BACKOFF: Duration = Duration::from_secs(15);
+
+/// Symmetric jitter band applied to each backend-failover delay (±25%).
+///
+/// Decorrelates the intermediate retries. The final retry still lands at the
+/// budget boundary for every client, because that delay is truncated to the
+/// remaining budget rather than jittered.
+///
+/// The retry count is only deterministic while this stays below `2/7`; above
+/// that the budget can be exhausted in a jitter-dependent number of retries and
+/// the exact-count tests will flake.
+pub const BACKEND_FAILOVER_JITTER_RATIO: f64 = 0.25;
+
+/// Cumulative delay budget for backend-failover retries.
+pub const BACKEND_FAILOVER_MAX_TOTAL_DELAY: Duration = Duration::from_secs(5);
+
+/// Maximum exponent for the backend-failover backoff, guarding against
+/// overflow before the per-retry cap is applied. Unreachable at the current
+/// 5s budget, which exhausts after four retries.
+const BACKEND_FAILOVER_MAX_EXPONENT: u32 = 8;
+
+/// Maximum inner retries for bodyless DTX coordinator envelope failures.
+#[cfg(feature = "unstable_dtx")]
+pub const MAX_DTX_COORDINATOR_RETRIES: u32 = 10;
+
+/// Maximum inner retries for bodyless DTX infrastructure envelope failures.
+#[cfg(feature = "unstable_dtx")]
+pub const MAX_DTX_INFRA_RETRIES: u32 = 9;
+
+/// Default bodyless DTX coordinator retry delay when the service sends no retry hint.
+#[cfg(feature = "unstable_dtx")]
+pub const DTX_COORDINATOR_RETRY_INTERVAL: Duration = Duration::from_secs(1);
+
+/// Base bodyless DTX infrastructure retry delay.
+#[cfg(feature = "unstable_dtx")]
+pub const DTX_INFRA_BASE_BACKOFF: Duration = Duration::from_millis(100);
+
+/// Maximum bodyless DTX infrastructure retry delay.
+#[cfg(feature = "unstable_dtx")]
+pub const DTX_INFRA_MAX_BACKOFF: Duration = Duration::from_secs(5);
+
+/// Maximum exponent for bodyless DTX infrastructure retry backoff.
+#[cfg(feature = "unstable_dtx")]
+pub const DTX_INFRA_MAX_EXPONENT: u32 = 6;
+
+/// Operation-level retry state.
+///
+/// Tracks failover retry count, session retry count, location index,
+/// and write-region topology for the multi-region operation loop.
+#[derive(Clone, Debug)]
+pub(crate) struct OperationRetryState {
+    /// Whether this invocation has consumed its container recreation refresh.
+    pub container_recreation_retry_attempted: bool,
+    /// Throughput scope, recomputed when recreation replaces the container identity.
+    pub throughput_control: Option<ResolvedThroughputControl>,
+    /// Type-safe index into preferred endpoint lists.
+    pub location: LocationIndex,
+    /// Number of operation-level failover retries attempted.
+    pub failover_retry_count: u32,
+    /// Number of session-token retries attempted.
+    ///
+    /// Invariant: only [`Self::advance_session_retry`] increments this; the 404/1002 latch reads `== 0`.
+    pub session_token_retry_count: u32,
+    /// Retry state for HTTP 449 RetryWith. `None` until the first 449
+    /// for this operation; advanced via [`Self::advance_retry_with`](Self::advance_retry_with_delay).
+    ///
+    /// Modeled as `Option<_>` (rather than a default state on every
+    /// operation) so the common path — operations that never see a 449
+    /// — does not pay any allocation or branching cost for tracking
+    /// retry-with attempts. The state is constructed lazily on first
+    /// hit and stays alive for the rest of the operation.
+    pub retry_with_state: Option<RetryWithRetryState>,
+    /// Multi-write backend-failover counter, separate from generic failover retries.
+    pub backend_failover_retry_count: u32,
+    /// Cumulative delay already scheduled across backend-failover retries.
+    ///
+    /// Gates further 403/3 & 403/1008 retries against
+    /// [`BACKEND_FAILOVER_MAX_TOTAL_DELAY`] so the 5s budget holds
+    /// regardless of the exponential-backoff curve.
+    pub backend_failover_cumulative_delay: Duration,
+    /// Bodyless DTX coordinator retry counter.
+    #[cfg(feature = "unstable_dtx")]
+    pub dtx_coordinator_retry_count: u32,
+    /// Bodyless DTX infrastructure retry counter.
+    #[cfg(feature = "unstable_dtx")]
+    pub dtx_infra_retry_count: u32,
+    /// Maximum failover retries.
+    pub max_failover_retries: u32,
+    /// Maximum retries for backend-driven topology signals; not customer-tunable.
+    pub max_backend_failover_retries: u32,
+    /// Maximum session retries.
+    pub max_session_retries: u32,
+    /// Whether multiple write locations can be used.
+    pub can_use_multiple_write_locations: bool,
+    /// Whether this operation is on the data-plane pipeline (vs metadata).
+    ///
+    /// Load-bearing: set via `PipelineKind::is_data_plane()` so non-exhaustive variants stay scoped out.
+    pub is_dataplane: bool,
+    /// Hub-region-processing-only latch.
+    ///
+    /// Sticky per operation after the first data-plane 404/1002 single-master retry.
+    pub hub_region_processing_only: bool,
+    /// Regions excluded for this operation.
+    pub excluded_regions: Vec<Region>,
+    /// Endpoints already abandoned by this PATCH verification read.
+    ///
+    /// Operation-local so a sent/unknown partition failure can move to the
+    /// next writer without marking an otherwise healthy region unavailable
+    /// for unrelated operations.
+    pub patch_verification_failed_endpoint_urls: Vec<Url>,
+    /// Session-retry routing override for read operations.
+    pub session_retry_routing: SessionRetryRouting,
+    /// Partition key range ID resolved from the first response headers.
+    /// `None` until the first transport attempt returns headers.
+    pub partition_key_range_id: Option<PartitionKeyRangeId>,
+    /// Whether single-master PPAF write-region discovery is active for this
+    /// operation.
+    ///
+    /// Despite the name this does not gate any retry — write retries are never
+    /// gated on idempotency (see `retry_evaluation`). It defers
+    /// `MarkEndpointUnavailable` until the write definitively reaches a region,
+    /// so discovery probing does not evict endpoints on the way.
+    pub ppaf_write_retry_allowed: bool,
+    /// Whether the per-partition circuit breaker is active for this account.
+    ///
+    /// Suppresses endpoint marks because PPCB failover is partition-threshold driven.
+    pub ppcb_active: bool,
+    /// Write-path location effects deferred until the write definitively
+    /// reaches a region.
+    ///
+    /// Single-master writes defer unconfirmed marks until the write reaches a region.
+    /// Multi-master writes and reads apply marks immediately so PPCB sees every failure.
+    pub pending_write_effects: LocationEffects,
+    /// Whether a cross-region hedge race has already been dispatched for
+    /// this operation.
+    ///
+    /// Sticky within a single operation, including after both legs return
+    /// transient failures. Prevents another race from consuming two more
+    /// regions before sequential recovery can make progress.
+    pub hedge_already_fired: bool,
+}
+
+/// How a session retry should resolve endpoints for a read operation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum SessionRetryRouting {
+    /// Continue using the normal preferred endpoint list for the operation kind.
+    PreferredEndpoints,
+    /// Route a read session retry through the preferred write endpoint list.
+    PreferredWriteEndpoints,
+}
+
+impl OperationRetryState {
+    /// Creates the initial retry state for an operation.
+    pub fn initial(
+        generation: u64,
+        can_use_multiple_write_locations: bool,
+        excluded_regions: Vec<Region>,
+        max_failover_retries: u32,
+        max_session_retries: u32,
+    ) -> Self {
+        Self {
+            container_recreation_retry_attempted: false,
+            throughput_control: None,
+            location: LocationIndex::initial(generation),
+            failover_retry_count: 0,
+            session_token_retry_count: 0,
+            retry_with_state: None,
+            backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
+            #[cfg(feature = "unstable_dtx")]
+            dtx_coordinator_retry_count: 0,
+            #[cfg(feature = "unstable_dtx")]
+            dtx_infra_retry_count: 0,
+            max_failover_retries,
+            max_backend_failover_retries: MAX_BACKEND_FAILOVER_RETRIES,
+            max_session_retries,
+            can_use_multiple_write_locations,
+            is_dataplane: false,
+            hub_region_processing_only: false,
+            excluded_regions,
+            patch_verification_failed_endpoint_urls: Vec::new(),
+            session_retry_routing: SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
+            pending_write_effects: LocationEffects::default(),
+            hedge_already_fired: false,
+        }
+    }
+
+    /// Checks caller exclusions and, when requested, failures deferred by this invocation.
+    pub(crate) fn is_region_excluded(
+        &self,
+        region: Option<&Region>,
+        in_flight: InFlightFailures,
+    ) -> bool {
+        region.is_some_and(|region| self.excluded_regions.contains(region))
+            || (in_flight == InFlightFailures::Exclude && self.has_pending_failure(region))
+    }
+
+    /// Checks deferred failure evidence without imposing caller exclusions on authoritative writers.
+    pub(crate) fn has_pending_failure(&self, region: Option<&Region>) -> bool {
+        region.is_some_and(|region| {
+            self.pending_write_effects
+                .unavailable_regions()
+                .any(|failed| failed == region)
+        })
+    }
+
+    /// Whether failover retry budget allows another attempt.
+    pub fn can_retry_failover(&self) -> bool {
+        self.failover_retry_count < self.max_failover_retries
+    }
+
+    /// Whether the backend-failover budget allows another 403/3 or 403/1008 retry.
+    ///
+    /// Bounded primarily by the cumulative delay budget
+    /// ([`BACKEND_FAILOVER_MAX_TOTAL_DELAY`]); the retry count is a defensive
+    /// safety cap.
+    pub fn can_retry_backend_failover(&self) -> bool {
+        self.backend_failover_cumulative_delay < BACKEND_FAILOVER_MAX_TOTAL_DELAY
+            && self.backend_failover_retry_count < self.max_backend_failover_retries
+    }
+
+    /// Exponential-backoff delay (with jitter) for the next backend-failover retry.
+    ///
+    /// The first retry is immediate: 403/3 and 403/1008 both emit
+    /// [`LocationEffect::RefreshAccountProperties`], which is applied before the
+    /// next attempt, so on a first encounter the correct region is already
+    /// known and a delay is pure added latency. Subsequent retries grow as
+    /// `base * factor^(count - 1)`, capped at [`BACKEND_FAILOVER_MAX_BACKOFF`],
+    /// then jittered by [`BACKEND_FAILOVER_JITTER_RATIO`], and finally truncated
+    /// to whatever remains of [`BACKEND_FAILOVER_MAX_TOTAL_DELAY`].
+    ///
+    /// [`LocationEffect::RefreshAccountProperties`]: crate::pipeline::operation::routing::LocationEffect::RefreshAccountProperties
+    pub fn backend_failover_delay(&self) -> Duration {
+        let Some(exponent) = self.backend_failover_retry_count.checked_sub(1) else {
+            return Duration::ZERO;
+        };
+        let exponent = exponent.min(BACKEND_FAILOVER_MAX_EXPONENT);
+        let scaled = BACKEND_FAILOVER_BASE_BACKOFF
+            .mul_f64(BACKEND_FAILOVER_BACKOFF_FACTOR.powi(exponent as i32));
+        let capped = scaled.min(BACKEND_FAILOVER_MAX_BACKOFF);
+        let jittered = Duration::from_secs_f64(jitter::with_jitter(
+            capped.as_secs_f64(),
+            BACKEND_FAILOVER_JITTER_RATIO,
+        ));
+        let remaining =
+            BACKEND_FAILOVER_MAX_TOTAL_DELAY.saturating_sub(self.backend_failover_cumulative_delay);
+        jittered.min(remaining)
+    }
+
+    /// Whether the bodyless DTX coordinator retry budget allows another attempt.
+    #[cfg(feature = "unstable_dtx")]
+    pub fn can_retry_dtx_coordinator(&self) -> bool {
+        self.dtx_coordinator_retry_count < MAX_DTX_COORDINATOR_RETRIES
+    }
+
+    /// Whether the bodyless DTX infrastructure retry budget allows another attempt.
+    #[cfg(feature = "unstable_dtx")]
+    pub fn can_retry_dtx_infra(&self) -> bool {
+        self.dtx_infra_retry_count < MAX_DTX_INFRA_RETRIES
+    }
+
+    /// Whether session retry budget allows another attempt.
+    pub fn can_retry_session(&self) -> bool {
+        self.session_token_retry_count < self.max_session_retries
+    }
+
+    /// Returns a new state advanced for failover retry.
+    pub fn advance_failover(self) -> Self {
+        Self {
+            failover_retry_count: self.failover_retry_count + 1,
+            session_retry_routing: SessionRetryRouting::PreferredEndpoints,
+            ..self
+        }
+    }
+
+    /// Advances the dedicated backend-failover counter without touching generic
+    /// failover retries, accumulating the scheduled `delay` toward the budget.
+    pub fn advance_backend_failover(self, delay: Duration) -> Self {
+        Self {
+            backend_failover_retry_count: self.backend_failover_retry_count + 1,
+            backend_failover_cumulative_delay: self.backend_failover_cumulative_delay + delay,
+            session_retry_routing: SessionRetryRouting::PreferredEndpoints,
+            ..self
+        }
+    }
+
+    /// Advances the bodyless DTX coordinator retry counter.
+    #[cfg(feature = "unstable_dtx")]
+    pub fn advance_dtx_coordinator_retry(self) -> Self {
+        Self {
+            dtx_coordinator_retry_count: self.dtx_coordinator_retry_count + 1,
+            ..self
+        }
+    }
+
+    /// Advances the bodyless DTX infrastructure retry counter.
+    #[cfg(feature = "unstable_dtx")]
+    pub fn advance_dtx_infra_retry(self) -> Self {
+        Self {
+            dtx_infra_retry_count: self.dtx_infra_retry_count + 1,
+            ..self
+        }
+    }
+
+    /// Returns a new state advanced for session retry.
+    pub fn advance_session_retry(self) -> Self {
+        Self {
+            session_token_retry_count: self.session_token_retry_count + 1,
+            session_retry_routing: if self.can_use_multiple_write_locations {
+                SessionRetryRouting::PreferredEndpoints
+            } else {
+                SessionRetryRouting::PreferredWriteEndpoints
+            },
+            ..self
+        }
+    }
+
+    /// Advances the location index for endpoint list of `list_len`.
+    pub fn advance_location(self, list_len: usize, generation: u64) -> Self {
+        Self {
+            location: self.location.next_for_generation(list_len, generation),
+            ..self
+        }
+    }
+
+    /// Returns true when a read retry should use the write-endpoint list.
+    pub fn route_reads_to_write_endpoints(&self) -> bool {
+        matches!(
+            self.session_retry_routing,
+            SessionRetryRouting::PreferredWriteEndpoints
+        )
+    }
+
+    /// Returns a new state with the retry-with state advanced (or
+    /// initialized to its first attempt if `None`) using the
+    /// caller-provided `delay`.
+    ///
+    /// The caller is expected to use the same `delay` value that it
+    /// budget-checked via `RetryWithRetryState::can_retry`, so the
+    /// cumulative-wait bookkeeping never drifts from what the operation
+    /// pipeline actually sleeps for.
+    pub fn advance_retry_with_delay(self, delay: Duration) -> Self {
+        let next = self
+            .retry_with_state
+            .clone()
+            .unwrap_or_else(RetryWithRetryState::new)
+            .advance_with_delay(delay);
+        Self {
+            retry_with_state: Some(next),
+            ..self
+        }
+    }
+}
+
+/// Operation-level retry state for HTTP 449 RetryWith responses.
+///
+/// 449 RetryWith is the Cosmos backend's signal for transient concurrency
+/// conflicts (e.g. concurrent writes racing through the store, RBAC info
+/// momentarily unavailable). The client retries in the same region after
+/// a short delay, following the established cross-SDK retry policy:
+///
+/// * First retry after `initial_delay` (default 10ms) + a small random
+///   salt in `[0, salt_max)`, exponentially backing off by `backoff_factor`
+///   on subsequent attempts.
+/// * Per-retry delay capped at `max_per_retry_delay` (default 1s).
+/// * Cumulative wait capped at `max_total_wait` (default 30s) — when the
+///   next computed delay would push past this, we stop retrying and
+///   propagate the 449 to the caller.
+/// * Failover-retry budget is NOT consumed (449 stays in-region; failing
+///   over to another region is not the correct response to a concurrency
+///   conflict).
+///
+/// Mirrors the legacy timeout and retry configuration policy.
+#[derive(Clone, Debug)]
+pub(crate) struct RetryWithRetryState {
+    /// Number of 449 retries already attempted for this operation.
+    pub attempt_count: u32,
+    /// Cumulative delay slept across all 449 retries for this operation.
+    pub cumulative_delay: Duration,
+    /// Delay for the first retry, before backoff is applied. Default 10ms.
+    pub initial_delay: Duration,
+    /// Maximum delay for a single retry. Default 1s.
+    pub max_per_retry_delay: Duration,
+    /// Total cumulative-delay cap before giving up. Default 30s.
+    pub max_total_wait: Duration,
+    /// Multiplicative backoff factor applied to `initial_delay` per attempt.
+    pub backoff_factor: f64,
+    /// Upper bound (exclusive) of the random salt added to each delay,
+    /// in milliseconds. Default 5ms. Set to zero to disable jitter.
+    pub salt_max_millis: u64,
+}
+
+/// Hard-coded defaults for RetryWith retry, matching the cross-SDK baseline.
+const DEFAULT_RETRY_WITH_INITIAL_DELAY: Duration = Duration::from_millis(10);
+const DEFAULT_RETRY_WITH_MAX_PER_RETRY: Duration = Duration::from_secs(1);
+const DEFAULT_RETRY_WITH_MAX_TOTAL: Duration = Duration::from_secs(30);
+const DEFAULT_RETRY_WITH_BACKOFF_FACTOR: f64 = 2.0;
+const DEFAULT_RETRY_WITH_SALT_MAX_MILLIS: u64 = 5;
+
+impl RetryWithRetryState {
+    /// Creates a new retry-with state with default cross-SDK-matching parameters.
+    pub fn new() -> Self {
+        Self {
+            attempt_count: 0,
+            cumulative_delay: Duration::ZERO,
+            initial_delay: DEFAULT_RETRY_WITH_INITIAL_DELAY,
+            max_per_retry_delay: DEFAULT_RETRY_WITH_MAX_PER_RETRY,
+            max_total_wait: DEFAULT_RETRY_WITH_MAX_TOTAL,
+            backoff_factor: DEFAULT_RETRY_WITH_BACKOFF_FACTOR,
+            salt_max_millis: DEFAULT_RETRY_WITH_SALT_MAX_MILLIS,
+        }
+    }
+
+    /// Returns the delay to wait before the next retry, capped at
+    /// `max_per_retry_delay`. Does NOT include the random salt — see
+    /// [`Self::next_delay`] for the user-facing helper.
+    fn base_delay(&self) -> Duration {
+        let multiplier = self.backoff_factor.powi(self.attempt_count as i32);
+        let raw = self.initial_delay.mul_f64(multiplier);
+        raw.min(self.max_per_retry_delay)
+    }
+
+    /// Returns the delay to wait before the next retry, with a random
+    /// salt of `[0, salt_max_millis)` added on top of the exponential
+    /// base delay. Caps the result at `max_per_retry_delay`.
+    ///
+    /// IMPORTANT: each call samples a fresh salt. To avoid drift between
+    /// the budget-check delay and the actually-slept delay, callers
+    /// should compute the delay **once** and pass it to
+    /// [`Self::advance_with_delay`]. The handler in
+    /// `try_handle_retry_with` does exactly that.
+    pub fn next_delay(&self) -> Duration {
+        let base = self.base_delay();
+        if self.salt_max_millis == 0 {
+            return base;
+        }
+        // The salt's only purpose is to de-synchronize concurrent
+        // callers, not to provide cryptographic randomness. Use the
+        // workspace's thread-local RNG — same source the
+        // fault-injection probability path already uses.
+        let salt_millis = rand::random::<u64>() % self.salt_max_millis;
+        let with_salt = base + Duration::from_millis(salt_millis);
+        with_salt.min(self.max_per_retry_delay)
+    }
+
+    /// Returns `true` if the cumulative-wait budget can absorb another
+    /// retry of `delay` without exceeding `max_total_wait`. Use this
+    /// after computing `next_delay()` to decide whether to retry vs.
+    /// propagate the 449.
+    pub fn can_retry(&self, delay: Duration) -> bool {
+        self.cumulative_delay + delay <= self.max_total_wait
+    }
+
+    /// Returns a new state with the attempt count and cumulative delay
+    /// advanced by the **caller-provided** `delay`.
+    ///
+    /// This is the preferred entry point — pass the same `Duration`
+    /// that was budget-checked so the cumulative-wait bookkeeping
+    /// stays in lockstep with what the caller actually sleeps.
+    pub fn advance_with_delay(self, delay: Duration) -> Self {
+        Self {
+            attempt_count: self.attempt_count + 1,
+            cumulative_delay: self.cumulative_delay + delay,
+            ..self
+        }
+    }
+}
+
+// ── Transport-Level Components ─────────────────────────────────────────
+
+// ── Decision Enums ─────────────────────────────────────────────────────
+
+/// What the operation pipeline should do after a transport attempt.
+///
+/// Slim for Step 1 — only `Complete`, `TransportRetry`, and `Abort`.
+/// Expanded in Step 2 with `FailoverRetry`, `SessionRetry`, `Hedge`.
+#[derive(Debug)]
+pub(crate) enum OperationAction {
+    /// Return the successful response.
+    Complete(Box<TransportResult>),
+    /// Retry in another endpoint/region.
+    FailoverRetry {
+        new_state: OperationRetryState,
+        delay: Option<Duration>,
+    },
+    /// Retry the same endpoint/region after a delay, without advancing the
+    /// location index. Used by handlers like `try_handle_retry_with` whose
+    /// retry policy is intentionally same-region (e.g. 449 RetryWith — a
+    /// concurrency conflict in one region won't be resolved by hitting a
+    /// different one).
+    InRegionRetry {
+        new_state: OperationRetryState,
+        delay: Duration,
+    },
+    /// Retry for session consistency.
+    SessionRetry { new_state: OperationRetryState },
+    /// Retry a bodyless DTX envelope failure with DTX-specific budget.
+    #[cfg(feature = "unstable_dtx")]
+    DtxRetry {
+        new_state: OperationRetryState,
+        delay: Duration,
+    },
+    /// Promotes an eligible region or session retry to a cross-region race.
+    ///
+    /// Recovery adopts the proposed retry state before selecting fresh primary
+    /// and secondary routes. The race therefore inherits updated exclusions,
+    /// hub-region requirements, and retry counters.
+    ///
+    /// Initial races are admitted directly by the hedging stage, not through
+    /// this action.
+    Hedge {
+        threshold: HedgeThreshold,
+        strategy_config: HedgingStrategyConfig,
+        new_state: OperationRetryState,
+    },
+    /// Abort the operation with this error.
+    ///
+    /// The typed `CosmosStatus` is always available via `error.status()`;
+    /// callers that need the status for routing decisions (e.g.
+    /// flush-on-confirming-status) read it from there.
+    Abort { error: crate::error::CosmosError },
+}
+
+/// Directs internal write-region verification reads to preferred write endpoints.
+pub(crate) fn apply_read_routing_strategy(
+    retry_state: &mut OperationRetryState,
+    prefer_write_endpoints_for_read: bool,
+) {
+    if prefer_write_endpoints_for_read {
+        retry_state.session_retry_routing =
+            crate::pipeline::operation::recovery::state::SessionRetryRouting::PreferredWriteEndpoints;
+    }
+}
+
+/// Advances `retry_state`, preserving deferred write effects across the snapshot swap.
+///
+/// Note: a generation bump can rebase to position 1 and retry the just-failed region once.
+pub(crate) fn advance_to_next_attempt(
+    retry_state: &mut OperationRetryState,
+    new_state: OperationRetryState,
+    location_state_store: &LocationStateStore,
+    operation: &CosmosOperation,
+    attempted_endpoint: &CosmosEndpoint,
+) {
+    let next_location = location_state_store.capture();
+    let mut new_state = new_state;
+    recovery::state::apply_read_routing_strategy(
+        &mut new_state,
+        operation.prefers_write_endpoints_for_read(),
+    );
+    if operation.prefers_write_endpoints_for_read()
+        && !new_state
+            .patch_verification_failed_endpoint_urls
+            .contains(attempted_endpoint.url())
+    {
+        new_state
+            .patch_verification_failed_endpoint_urls
+            .push(attempted_endpoint.url().clone());
+    }
+    let endpoints_len = routing::resolve_candidate_endpoints(
+        &next_location,
+        &new_state,
+        &routing::RoutingPolicy::new(operation),
+    )
+    .endpoints
+    .len();
+    let pending = std::mem::take(&mut retry_state.pending_write_effects);
+    *retry_state = new_state.advance_location(endpoints_len, next_location.account.generation);
+    retry_state.pending_write_effects = pending;
+}
+
+/// Applies a proposed retry transition after its feedback checkpoint.
+///
+/// Cross-region retries refresh topology and preserve deferred write effects.
+/// Same-region retries retain the proposed state without rotating endpoints.
+/// Hedge upgrades advance immediately without an additional deadline gate.
+pub(crate) async fn advance(
+    action: state::OperationAction,
+    operation: &CosmosOperation,
+    retry_state: &mut OperationRetryState,
+    endpoint: &CosmosEndpoint,
+    services: &crate::pipeline::operation::config::OperationPipelineServices<'_>,
+    deadline: Option<std::time::Instant>,
+) -> Continuation {
+    match action {
+        state::OperationAction::Complete(result) => return Continuation::Complete(result),
+        state::OperationAction::Abort { error } => return Continuation::Abort(error),
+        state::OperationAction::FailoverRetry { new_state, delay } => {
+            operation_deadline::apply_failover_delay(&services.clock, delay, deadline).await;
+            self::advance_to_next_attempt(
+                retry_state,
+                new_state,
+                services.location_state_store,
+                operation,
+                endpoint,
+            );
+        }
+        state::OperationAction::SessionRetry { new_state } => {
+            self::advance_to_next_attempt(
+                retry_state,
+                new_state,
+                services.location_state_store,
+                operation,
+                endpoint,
+            );
+        }
+        state::OperationAction::InRegionRetry { new_state, delay } => {
+            operation_deadline::apply_failover_delay(&services.clock, Some(delay), deadline).await;
+            *retry_state = new_state;
+        }
+        #[cfg(feature = "unstable_dtx")]
+        state::OperationAction::DtxRetry { new_state, delay } => {
+            operation_deadline::apply_failover_delay(&services.clock, Some(delay), deadline).await;
+            *retry_state = new_state;
+        }
+        state::OperationAction::Hedge {
+            new_state,
+            threshold,
+            strategy_config,
+            ..
+        } => {
+            self::advance_to_next_attempt(
+                retry_state,
+                new_state,
+                services.location_state_store,
+                operation,
+                endpoint,
+            );
+            return Continuation::Hedge {
+                threshold,
+                strategy_config,
+            };
+        }
+    }
+    Continuation::Retry
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn operation_retry_state_budget() {
+        let state = OperationRetryState::initial(0, false, Vec::new(), 1, 1);
+        assert!(state.can_retry_failover());
+
+        let state = state.advance_failover();
+        assert!(!state.can_retry_failover());
+    }
+
+    #[test]
+    fn advance_session_retry_single_write_routes_to_write_endpoints() {
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 2);
+        assert_eq!(
+            state.session_retry_routing,
+            SessionRetryRouting::PreferredEndpoints
+        );
+
+        let state = state.advance_session_retry();
+        assert_eq!(state.session_token_retry_count, 1);
+        assert_eq!(
+            state.session_retry_routing,
+            SessionRetryRouting::PreferredWriteEndpoints
+        );
+    }
+
+    #[test]
+    fn backend_failover_delay_grows_exponentially_then_truncates_to_budget() {
+        // The first retry is immediate; the curve then starts at base 1s with
+        // factor 2. The 5s cumulative budget truncates the last delay.
+        let cases = [
+            (0u32, Duration::ZERO, Duration::ZERO),
+            (1, Duration::from_millis(750), Duration::from_millis(1250)),
+            (2, Duration::from_millis(1500), Duration::from_millis(2500)),
+            (3, Duration::from_millis(3000), Duration::from_millis(5000)),
+            (4, Duration::from_secs(5), Duration::from_secs(5)),
+            (10, Duration::from_secs(5), Duration::from_secs(5)),
+        ];
+        for (count, lo, hi) in cases {
+            let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+            state.backend_failover_retry_count = count;
+            let delay = state.backend_failover_delay();
+            assert!(
+                delay >= lo && delay <= hi,
+                "count {count}: delay {delay:?} outside expected jitter band [{lo:?}, {hi:?}]"
+            );
+        }
+    }
+
+    #[test]
+    fn backend_failover_gate_terminates_on_cumulative_budget() {
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        // Count is well under the safety cap, but the delay budget is spent.
+        state.backend_failover_retry_count = 1;
+        state.backend_failover_cumulative_delay = BACKEND_FAILOVER_MAX_TOTAL_DELAY;
+        assert!(
+            !state.can_retry_backend_failover(),
+            "spent cumulative delay budget must stop retries regardless of count"
+        );
+
+        state.backend_failover_cumulative_delay =
+            BACKEND_FAILOVER_MAX_TOTAL_DELAY - Duration::from_secs(1);
+        assert!(
+            state.can_retry_backend_failover(),
+            "budget with headroom remaining must still allow a retry"
+        );
+    }
+
+    #[test]
+    fn backend_failover_delay_does_not_overshoot_cumulative_budget() {
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        state.backend_failover_retry_count = 10;
+        state.backend_failover_cumulative_delay =
+            BACKEND_FAILOVER_MAX_TOTAL_DELAY - Duration::from_millis(250);
+
+        assert_eq!(
+            state.backend_failover_delay(),
+            Duration::from_millis(250),
+            "final retry delay must be capped to the remaining cumulative budget"
+        );
+    }
+
+    #[test]
+    fn advance_backend_failover_accumulates_delay_without_touching_generic_budget() {
+        let state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        let first = state.backend_failover_delay();
+        assert_eq!(first, Duration::ZERO, "the first retry is immediate");
+        let state = state.advance_backend_failover(first);
+        assert_eq!(state.backend_failover_retry_count, 1);
+        assert_eq!(state.backend_failover_cumulative_delay, first);
+        assert_eq!(
+            state.failover_retry_count, 0,
+            "backend-failover retries must not consume the generic failover budget"
+        );
+
+        let second = state.backend_failover_delay();
+        assert!(
+            second > Duration::ZERO,
+            "the curve must start paying delay from the second retry"
+        );
+        let state = state.advance_backend_failover(second);
+        assert_eq!(state.backend_failover_retry_count, 2);
+        assert_eq!(state.backend_failover_cumulative_delay, first + second);
+    }
+
+    #[test]
+    fn retry_with_retry_state_defaults_match_baseline() {
+        // RetryWithRetryPolicy: 10ms initial + [0,5)ms salt,
+        // exponential to 1s per retry, 30s cumulative cap. Mirroring those
+        // values is load-bearing for cross-SDK parity.
+        let state = RetryWithRetryState::new();
+        assert_eq!(state.attempt_count, 0);
+        assert_eq!(state.cumulative_delay, Duration::ZERO);
+        assert_eq!(state.initial_delay, Duration::from_millis(10));
+        assert_eq!(state.max_per_retry_delay, Duration::from_secs(1));
+        assert_eq!(state.max_total_wait, Duration::from_secs(30));
+        assert_eq!(state.backoff_factor, 2.0);
+        assert_eq!(state.salt_max_millis, 5);
+    }
+
+    #[test]
+    fn retry_with_next_delay_starts_at_initial_delay() {
+        let state = RetryWithRetryState::new();
+        // Salt is in [0,5)ms so first delay is in [10, 15) ms.
+        let delay = state.next_delay();
+        assert!(delay >= Duration::from_millis(10));
+        assert!(delay < Duration::from_millis(15));
+    }
+
+    #[test]
+    fn retry_with_next_delay_caps_at_max_per_retry() {
+        // With factor 2.0 from a 10ms base, retry 7 → 1280ms, which the
+        // cap should clamp back to 1s.
+        let state = RetryWithRetryState {
+            attempt_count: 7,
+            ..RetryWithRetryState::new()
+        };
+        let delay = state.next_delay();
+        assert_eq!(delay, Duration::from_secs(1));
+    }
+
+    #[test]
+    fn retry_with_advance_with_delay_increments_attempt_and_cumulative() {
+        let state = RetryWithRetryState::new();
+        let delay = Duration::from_millis(12);
+        let next = state.clone().advance_with_delay(delay);
+        assert_eq!(next.attempt_count, 1);
+        // Bookkeeping uses the caller-supplied delay verbatim, no
+        // re-sampling — so the cumulative is exactly the passed-in value.
+        assert_eq!(next.cumulative_delay, delay);
+    }
+
+    #[test]
+    fn retry_with_can_retry_rejects_when_budget_exhausted() {
+        let state = RetryWithRetryState {
+            cumulative_delay: Duration::from_secs(29),
+            ..RetryWithRetryState::new()
+        };
+        // Budget has 1s left → a 1s delay just fits, a 1s+1ns delay does not.
+        assert!(state.can_retry(Duration::from_secs(1)));
+        assert!(!state.can_retry(Duration::from_secs(1) + Duration::from_nanos(1)));
+    }
+
+    #[test]
+    fn retry_with_disables_salt_when_salt_max_zero() {
+        let state = RetryWithRetryState {
+            salt_max_millis: 0,
+            ..RetryWithRetryState::new()
+        };
+        assert_eq!(state.next_delay(), Duration::from_millis(10));
+    }
+
+    #[test]
+    fn operation_retry_state_advance_retry_with_initializes_on_first_hit() {
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 2);
+        assert!(state.retry_with_state.is_none());
+
+        let next = state.advance_retry_with_delay(Duration::from_millis(10));
+        let rw = next
+            .retry_with_state
+            .expect("first advance must initialize the retry-with state");
+        assert_eq!(rw.attempt_count, 1);
+        assert_eq!(rw.cumulative_delay, Duration::from_millis(10));
+    }
+
+    #[test]
+    fn operation_retry_state_advance_retry_with_progresses_existing_state() {
+        let initial = OperationRetryState::initial(0, false, Vec::new(), 3, 2);
+        let first = initial.advance_retry_with_delay(Duration::from_millis(10));
+        let second = first.advance_retry_with_delay(Duration::from_millis(20));
+        let rw = second
+            .retry_with_state
+            .expect("second advance must keep the state");
+        assert_eq!(rw.attempt_count, 2);
+        assert_eq!(rw.cumulative_delay, Duration::from_millis(30));
+    }
+}

@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{Clock, TransportPipelineConfig, TransportPipelineServices};
 use std::{
     collections::VecDeque,
     sync::{Arc, Mutex},
@@ -10,28 +9,31 @@ use std::{
 
 use async_trait::async_trait;
 
+use super::{Clock, TransportPipelineConfig, TransportPipelineServices};
 use crate::{
     diagnostics::{
         DiagnosticsContextBuilder, ExecutionContext, PipelineKind, RequestSentStatus,
         TransportSecurity,
     },
     driver::error_chain_summary as format_transport_error_details_cosmos,
-    driver::routing::CosmosEndpoint,
     models::{
         ActivityId, CosmosStatus, Credential, DefaultConsistencyLevel, OperationType, ResourceType,
     },
     options::DiagnosticsOptions,
-    pipeline::transport::{
-        adaptive_transport::AdaptiveTransport,
-        cosmos_headers::NO_RETRY_449,
-        cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
-        http_client_factory::{HttpClientConfig, HttpClientFactory},
-        recovery::{
-            should_retry_connectivity_failure, ThrottleRetryPolicy, MAX_LOCAL_CONNECTIVITY_RETRIES,
-            METADATA_MAX_PER_RETRY_DELAY,
+    pipeline::{
+        operation::routing::CosmosEndpoint,
+        transport::{
+            adaptive_transport::AdaptiveTransport,
+            cosmos_headers::NO_RETRY_449,
+            cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
+            http_client_factory::{HttpClientConfig, HttpClientFactory},
+            recovery::{
+                should_retry_connectivity_failure, ThrottleRetryPolicy,
+                MAX_LOCAL_CONNECTIVITY_RETRIES, METADATA_MAX_PER_RETRY_DELAY,
+            },
+            types::{TransportMode, TransportOutcome, TransportRequest, TransportResult},
+            EndpointKey,
         },
-        types::{TransportMode, TransportOutcome, TransportRequest, TransportResult},
-        EndpointKey,
     },
 };
 

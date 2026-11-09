@@ -3,6 +3,7 @@
 
 //! Request execution pipelines.
 
+pub(crate) mod operation;
 pub(crate) mod transport;
 
 /// Whether a pipeline should retry its stage or return a terminal failure.

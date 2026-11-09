@@ -148,7 +148,7 @@ async fn feedback_respects_ppcb_without_disabling_transport_hedging() {
         let store = &driver.location_state_store;
         assert_eq!(
             store
-                .snapshot()
+                .capture()
                 .partitions
                 .per_partition_circuit_breaker_enabled,
             enabled
@@ -161,11 +161,7 @@ async fn feedback_respects_ppcb_without_disabling_transport_hedging() {
                 HedgeTerminalState::PrimaryWonPreThreshold
             );
         }
-        assert!(store
-            .snapshot()
-            .partitions
-            .consecutive_hedge_wins
-            .is_empty());
+        assert!(store.capture().partitions.consecutive_hedge_wins.is_empty());
         rule.enable();
         let hits = rule.hit_count();
         for item in &items[..8] {
@@ -176,7 +172,7 @@ async fn feedback_respects_ppcb_without_disabling_transport_hedging() {
         }
         assert_eq!(rule.hit_count() - hits, 8);
         rule.disable();
-        let accumulated = store.snapshot();
+        let accumulated = store.capture();
         assert_eq!(
             accumulated.partitions.consecutive_hedge_wins.len(),
             if enabled { 8 } else { 0 }
@@ -190,7 +186,7 @@ async fn feedback_respects_ppcb_without_disabling_transport_hedging() {
                 HedgeTerminalState::PrimaryWonPreThreshold
             );
         }
-        let after = store.snapshot();
+        let after = store.capture();
         assert_eq!(
             accumulated.partitions.consecutive_hedge_wins,
             after.partitions.consecutive_hedge_wins
@@ -245,7 +241,7 @@ async fn hedge_win_with_hub_region_header_caches_hub_region() {
         HedgeTerminalState::AlternateWon
     );
     slow_primary.disable();
-    assert!(store.snapshot().partitions.failover_overrides.is_empty());
+    assert!(store.capture().partitions.failover_overrides.is_empty());
 
     // A fast 1002 on the primary latches the header before the alternate (write region) leg is built.
     session_unavailable.enable();
@@ -326,7 +322,7 @@ fn read_rule(id: &str, region: Region, result: FaultInjectionResult) -> Arc<Faul
 fn cached_hub(driver: &CosmosDriver, range_id: &str) -> Option<Region> {
     driver
         .location_state_store
-        .snapshot()
+        .capture()
         .partitions
         .failover_overrides
         .get(range_id)

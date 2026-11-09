@@ -20,6 +20,7 @@
 
 mod compaction;
 mod diagnostics_context;
+pub(crate) mod hedging;
 mod proxy_config;
 mod request_diagnostics_builder;
 
@@ -34,6 +35,6 @@ pub use diagnostics_context::{
 pub use proxy_config::ProxyConfig;
 pub(crate) use request_diagnostics_builder::RequestDiagnosticsBuilder;
 
-pub use crate::driver::pipeline::hedging_diagnostics::{
+pub use crate::diagnostics::hedging::{
     HedgeDiagnostics, HedgeTerminalState, HedgingStrategyConfig,
 };

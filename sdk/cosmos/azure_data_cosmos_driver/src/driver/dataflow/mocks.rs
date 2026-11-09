@@ -371,7 +371,7 @@ pub(crate) fn response_with_request_diagnostics(requests: usize) -> CosmosRespon
         ActivityId::new_uuid(),
         Arc::new(DiagnosticsOptions::default()),
     );
-    let endpoint = crate::driver::routing::CosmosEndpoint::global(
+    let endpoint = crate::pipeline::operation::routing::CosmosEndpoint::global(
         url::Url::parse("https://acct.example/").unwrap(),
     );
     for _ in 0..requests {
@@ -444,7 +444,7 @@ pub(crate) fn gone_error_with_diagnostics() -> crate::error::CosmosError {
                 .unwrap(),
         ),
     );
-    let endpoint = crate::driver::routing::CosmosEndpoint::global(
+    let endpoint = crate::pipeline::operation::routing::CosmosEndpoint::global(
         url::Url::parse("https://acct.example/").unwrap(),
     );
     let handle = diagnostics.start_request(

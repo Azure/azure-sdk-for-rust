@@ -1,0 +1,785 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+//! In-memory session token cache keyed by collection resource ID.
+
+use std::{
+    collections::{HashMap, HashSet},
+    sync::RwLock,
+};
+
+use azure_core::fmt::SafeDebug;
+
+use crate::{
+    driver::cache::ContainerRoutingMap,
+    models::{
+        partition_key_range::PartitionKeyRangeStatus, resource_id::ResourceId,
+        vector_session_token::SessionTokenValue, ContainerReference, SessionToken,
+    },
+    pipeline::operation::session::ResolvedSession,
+};
+
+/// An in-memory cache of session tokens for Cosmos DB containers.
+///
+/// Tokens are stored **per partition-key-range within each collection**, keyed
+/// by the collection's resource ID (RID). A secondary name→RID index allows
+/// name-based lookups and container-recreation detection.
+///
+/// Thread-safety is provided via [`std::sync::RwLock`] because the lock is
+/// never held across `.await` points.
+#[derive(SafeDebug)]
+pub(crate) struct SessionContainer {
+    inner: RwLock<SessionContainerInner>,
+}
+
+#[derive(Debug, Default)]
+struct SessionContainerInner {
+    /// `collection_rid → (pk_range_id → SessionTokenValue)`
+    tokens: HashMap<ResourceId, HashMap<String, SessionTokenValue>>,
+    /// `collection_name_path → collection_rid` (name path = `dbs/{db}/colls/{coll}`)
+    name_to_rid: HashMap<String, ResourceId>,
+}
+
+/// Returns the container path used as the session-token index key, reusing the
+/// pre-computed path by skipping the leading `/`.
+///
+/// For name-addressed containers this is `dbs/{db}/colls/{coll}`; for RID-addressed
+/// containers it is the RID-based path. Either way it is stable per container and
+/// consistent between `set` and `resolve`, which is all the name→RID fallback needs.
+fn index_path(container: &ContainerReference) -> &str {
+    // base_path() returns "/dbs/.../colls/..."; skip the leading '/'.
+    &container.base_path()[1..]
+}
+
+impl SessionContainer {
+    /// Creates a new, empty session container.
+    pub(crate) fn new() -> Self {
+        Self {
+            inner: RwLock::new(SessionContainerInner::default()),
+        }
+    }
+
+    /// Scopes caller-owned progress without consulting or updating the session cache.
+    pub(crate) fn scope_explicit_token(
+        token: &SessionToken,
+        partition_key_range_id: Option<&str>,
+        topology: Option<&ContainerRoutingMap>,
+    ) -> Option<SessionToken> {
+        let map = topology?;
+        let range = map.range(partition_key_range_id?)?;
+        if range.status != PartitionKeyRangeStatus::Online {
+            return None;
+        }
+        let parents = range.parents.as_deref().unwrap_or(&[]);
+        let mut tokens = HashMap::new();
+        for segment in token.as_str().split(',') {
+            let (id, value) = segment.trim().split_once(':')?;
+            if id.is_empty() {
+                return None;
+            }
+            let recognized = match map.range(id) {
+                Some(active) => active.status == PartitionKeyRangeStatus::Online,
+                // A gone ID without a known relationship to this target may be an older ancestor.
+                None => parents.iter().any(|parent| parent == id),
+            };
+            if !recognized {
+                return None;
+            }
+            // The general parser tolerates repeated region fields; do not discard caller progress.
+            let mut regions = HashSet::new();
+            for progress in value.split('#').skip(2) {
+                let (region, _) = progress.split_once('=')?;
+                if !regions.insert(region.parse::<u64>().ok()?) {
+                    return None;
+                }
+            }
+            let value = SessionTokenValue::parse(value).ok()?;
+            if tokens.insert(id.to_owned(), value).is_some() {
+                return None;
+            }
+        }
+
+        let mut sources = parents.to_vec();
+        sources.push(range.id.clone());
+        let mut kind = None;
+        for value in sources.iter().filter_map(|id| tokens.get(id)) {
+            let current = std::mem::discriminant(value);
+            if kind.is_some_and(|previous| previous != current) {
+                return None;
+            }
+            kind = Some(current);
+        }
+        Self::build_parent_token(&tokens, &range.id, &sources)
+    }
+
+    /// Builds a composite session token string from the cached inner state.
+    ///
+    /// Segments are sorted by partition-key-range ID for deterministic output.
+    fn build_composite_token(
+        inner: &SessionContainerInner,
+        collection_rid: &str,
+    ) -> Option<SessionToken> {
+        let pk_map = inner.tokens.get(collection_rid)?;
+        if pk_map.is_empty() {
+            return None;
+        }
+
+        let mut entries: Vec<_> = pk_map.iter().collect();
+        entries.sort_by_key(|(a, _)| *a);
+        let composite: Vec<String> = entries
+            .iter()
+            .map(|(pk_range_id, vector)| format!("{pk_range_id}:{vector}"))
+            .collect();
+        Some(SessionToken::new(composite.join(",")))
+    }
+
+    /// Resolves a session token for the given container, trying first by RID
+    /// then falling back to name-based resolution.
+    #[cfg(any(test, feature = "unstable_dtx"))]
+    pub(crate) fn resolve_session_token(
+        &self,
+        container: &ContainerReference,
+    ) -> Option<SessionToken> {
+        let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
+        let rid = container.rid();
+
+        // Try direct RID lookup
+        if let Some(token) = Self::build_composite_token(&guard, rid) {
+            return Some(token);
+        }
+
+        // Fall back to name → RID → token
+        let np = self::index_path(container);
+        if let Some(resolved_rid) = guard.name_to_rid.get(np) {
+            return Self::build_composite_token(&guard, resolved_rid.as_str());
+        }
+
+        None
+    }
+
+    /// Checks token presence without serializing the container-wide composite.
+    pub(crate) fn has_session_token(&self, container: &ContainerReference) -> bool {
+        let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
+        let has_tokens = |rid: &str| {
+            guard
+                .tokens
+                .get(rid)
+                .is_some_and(|tokens| !tokens.is_empty())
+        };
+        has_tokens(container.rid())
+            || guard
+                .name_to_rid
+                .get(self::index_path(container))
+                .is_some_and(|rid| has_tokens(rid.as_str()))
+    }
+
+    /// Resolves the session token for a single partition-key range as
+    /// `<pk_range_id>:<vector>`.
+    ///
+    /// Used on the RNTBD/thin-client path where a request targets exactly one
+    /// physical partition: that backend rejects a multi-range composite token
+    /// (`"Session token specified is invalid."`), so a partition-scoped request
+    /// must carry only its own range's token. Returns `None` when no token has
+    /// been cached for that range yet (the request is then sent without one).
+    #[cfg(test)]
+    pub(crate) fn resolve_session_token_for_range(
+        &self,
+        container: &ContainerReference,
+        pk_range_id: &str,
+    ) -> Option<SessionToken> {
+        let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
+        Self::range_token(&guard, container, pk_range_id)
+    }
+
+    /// Looks up a physical partition token by container RID, then by container name.
+    fn range_token(
+        guard: &SessionContainerInner,
+        container: &ContainerReference,
+        pk_range_id: &str,
+    ) -> Option<SessionToken> {
+        let lookup = |rid: &str| -> Option<SessionToken> {
+            let vector = guard.tokens.get(rid)?.get(pk_range_id)?;
+            Some(SessionToken::new(format!("{pk_range_id}:{vector}")))
+        };
+
+        let rid = container.rid();
+        if let Some(token) = lookup(rid) {
+            return Some(token);
+        }
+        let np = self::index_path(container);
+        let resolved_rid = guard.name_to_rid.get(np)?;
+        lookup(resolved_rid.as_str())
+    }
+
+    /// Resolves the session token for a specific partition key range.
+    ///
+    /// If the target range has no token, parent ranges are merged and emitted
+    /// using the target range ID. This mirrors the gateway's parent walk for
+    /// freshly split children.
+    #[cfg(any(test, feature = "unstable_dtx"))]
+    pub(crate) fn resolve_session_token_for_partition_key_range(
+        &self,
+        container: &ContainerReference,
+        partition_key_range_id: &str,
+        parents: &[String],
+    ) -> Option<SessionToken> {
+        let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
+        Self::partition_token(&guard, container, partition_key_range_id, parents)
+    }
+
+    /// Uses the target partition token when present, otherwise merges its cached parents.
+    fn partition_token(
+        guard: &SessionContainerInner,
+        container: &ContainerReference,
+        partition_key_range_id: &str,
+        parents: &[String],
+    ) -> Option<SessionToken> {
+        if let Some(token) = Self::range_token(guard, container, partition_key_range_id) {
+            return Some(token);
+        }
+
+        let pk_map = guard.tokens.get(container.rid()).or_else(|| {
+            let np = self::index_path(container);
+            guard
+                .name_to_rid
+                .get(np)
+                .and_then(|resolved_rid| guard.tokens.get(resolved_rid))
+        })?;
+
+        Self::build_parent_token(pk_map, partition_key_range_id, parents)
+    }
+
+    /// Merges known parent progress under the child's partition identity, returning none when no parent is cached.
+    fn build_parent_token(
+        pk_map: &HashMap<String, SessionTokenValue>,
+        partition_key_range_id: &str,
+        parents: &[String],
+    ) -> Option<SessionToken> {
+        let mut merged: Option<SessionTokenValue> = None;
+        for parent in parents {
+            let Some(parent_token) = pk_map.get(parent) else {
+                continue;
+            };
+            match &mut merged {
+                Some(current) => {
+                    current.merge(parent_token);
+                }
+                None => merged = Some(parent_token.clone()),
+            }
+        }
+
+        merged.map(|token| SessionToken::new(format!("{partition_key_range_id}:{token}")))
+    }
+
+    /// Narrows a Gateway v1 token only when topology accounts for all cached partitions.
+    fn gateway_token(
+        guard: &SessionContainerInner,
+        container: &ContainerReference,
+        partition_key_range_id: Option<&str>,
+        topology: Option<&ContainerRoutingMap>,
+    ) -> Option<SessionToken> {
+        let rid = if guard
+            .tokens
+            .get(container.rid())
+            .is_some_and(|tokens| !tokens.is_empty())
+        {
+            container.rid()
+        } else {
+            guard.name_to_rid.get(self::index_path(container))?.as_str()
+        };
+        let tokens = guard.tokens.get(rid)?;
+        let composite = || Self::build_composite_token(guard, rid);
+        let Some((map, range)) = topology.and_then(|map| {
+            partition_key_range_id
+                .and_then(|id| map.range(id))
+                .map(|range| (map, range))
+        }) else {
+            return composite();
+        };
+        // A newly observed child can contradict a cached parent even when refresh falls back to an old map.
+        if tokens
+            .keys()
+            .any(|id| map.range(id).is_none() && !map.is_gone(id))
+        {
+            return composite();
+        }
+        tokens
+            .get(&range.id)
+            .map(|token| SessionToken::new(format!("{}:{token}", range.id)))
+            .or_else(|| {
+                Self::build_parent_token(tokens, &range.id, range.parents.as_deref().unwrap_or(&[]))
+            })
+            .or_else(composite)
+    }
+
+    /// Resolves both gateway representations from one cache snapshot without publishing changes.
+    pub(crate) fn resolve_for_attempt(
+        &self,
+        container: &ContainerReference,
+        partition_key_range_id: Option<&str>,
+        parents: &[String],
+        topology: Option<&ContainerRoutingMap>,
+        logical_partition_key_target: bool,
+    ) -> ResolvedSession {
+        let guard = self.inner.read().unwrap_or_else(|error| error.into_inner());
+        let gateway = Self::gateway_token(&guard, container, partition_key_range_id, topology);
+        let gateway_v2 = match partition_key_range_id {
+            Some(id) => Self::partition_token(&guard, container, id, parents),
+            None if logical_partition_key_target => None,
+            None => gateway.clone(),
+        };
+        ResolvedSession {
+            gateway,
+            gateway_v2,
+            requires_gateway: false,
+        }
+    }
+
+    /// Stores (or merges) a session token for a given container.
+    ///
+    /// The `session_token_value` is the raw `x-ms-session-token` header value
+    /// which may contain multiple comma-separated `<pkRangeId>:<vector>` segments.
+    ///
+    /// A differing existing name→RID mapping is left unchanged. Container
+    /// recreation remaps names explicitly through [`Self::remap_container`], so a
+    /// late response from the old container cannot restore stale session state.
+    pub(crate) fn set_session_token(
+        &self,
+        container: &ContainerReference,
+        session_token_value: &str,
+    ) {
+        let _ = self.set_session_token_inner(container, session_token_value, false);
+    }
+
+    /// Stores or merges a session token and returns an error if any segment is malformed.
+    #[cfg(feature = "unstable_dtx")]
+    pub(crate) fn set_session_token_checked(
+        &self,
+        container: &ContainerReference,
+        session_token_value: &str,
+    ) -> crate::error::Result<()> {
+        self.set_session_token_inner(container, session_token_value, true)
+    }
+
+    /// Parses and merges progress without overwriting a newer container generation.
+    ///
+    /// Strict parsing rejects malformed segments before any cache write; permissive
+    /// parsing ignores them while retaining valid segments.
+    fn set_session_token_inner(
+        &self,
+        container: &ContainerReference,
+        session_token_value: &str,
+        strict: bool,
+    ) -> crate::error::Result<()> {
+        let mut parsed = Vec::new();
+        for segment in session_token_value.split(',') {
+            let segment = segment.trim();
+            if segment.is_empty() {
+                continue;
+            }
+            match segment.split_once(':') {
+                Some((pk_range_id, token_str)) => match SessionTokenValue::parse(token_str) {
+                    Ok(token) => parsed.push((pk_range_id.to_owned(), token)),
+                    Err(error) if strict => return Err(error),
+                    Err(_) => continue,
+                },
+                None if strict => {
+                    return Err(crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message("invalid session token segment: missing ':'")
+                        .build())
+                }
+                None => continue,
+            }
+        }
+
+        let collection_rid = container.rid();
+        let np = self::index_path(container);
+        let mut guard = self.inner.write().unwrap_or_else(|e| e.into_inner());
+
+        let rid = ResourceId::new(collection_rid.to_owned());
+
+        if guard
+            .name_to_rid
+            .get(np)
+            .is_some_and(|current| current.as_str() != collection_rid)
+        {
+            return Ok(());
+        }
+        guard.name_to_rid.insert(np.to_owned(), rid.clone());
+
+        let pk_map = guard.tokens.entry(rid).or_default();
+
+        for (pk_range_id, new_token) in parsed {
+            pk_map
+                .entry(pk_range_id)
+                .and_modify(|existing| {
+                    existing.merge(&new_token);
+                })
+                .or_insert(new_token);
+        }
+
+        Ok(())
+    }
+
+    /// Atomically moves a name-addressed container's session state to a new RID.
+    ///
+    /// Returns `false` when the name already points to a third RID, indicating
+    /// that a newer recreation won and this caller must not move the mapping
+    /// backwards.
+    pub(crate) fn remap_container(
+        &self,
+        old: &ContainerReference,
+        new: &ContainerReference,
+    ) -> bool {
+        let old_path = self::index_path(old);
+        if old_path != self::index_path(new) || old.is_by_rid() || new.is_by_rid() {
+            return false;
+        }
+
+        let old_rid = ResourceId::new(old.rid().to_owned());
+        let new_rid = ResourceId::new(new.rid().to_owned());
+        let mut guard = self.inner.write().unwrap_or_else(|e| e.into_inner());
+
+        if guard
+            .name_to_rid
+            .get(old_path)
+            .is_some_and(|current| current != &old_rid && current != &new_rid)
+        {
+            return false;
+        }
+
+        guard.tokens.remove(&old_rid);
+        guard.name_to_rid.insert(old_path.to_owned(), new_rid);
+        true
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::borrow::Cow;
+
+    use url::Url;
+
+    use super::*;
+    use crate::models::{
+        AccountReference, ContainerProperties, PartitionKeyDefinition, SystemProperties,
+    };
+
+    fn test_container(db_name: &str, coll_name: &str, coll_rid: &str) -> ContainerReference {
+        let account = AccountReference::with_account_key(
+            Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "dGVzdA==",
+        );
+        let pk_def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+        let props = ContainerProperties {
+            id: Cow::Owned(coll_name.to_owned()),
+            partition_key: pk_def,
+            system_properties: SystemProperties::default(),
+        };
+        ContainerReference::new(
+            account,
+            db_name.to_owned(),
+            "db_rid1".to_owned(),
+            coll_name.to_owned(),
+            coll_rid.to_owned(),
+            &props,
+        )
+    }
+
+    fn topology(ranges: serde_json::Value) -> ContainerRoutingMap {
+        ContainerRoutingMap::try_create(serde_json::from_value(ranges).unwrap(), None, None)
+            .unwrap()
+            .unwrap()
+    }
+
+    #[test]
+    fn explicit_compound_scoping_preserves_complete_vectors_and_original() {
+        let map = topology(serde_json::json!([
+            {"id":"0","minInclusive":"","maxExclusive":"80"},
+            {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+        ]));
+        let original = "0:1#100#1=90#2=-1,1:2#20#3=18";
+        let token = SessionToken::new(original);
+        for (target, expected) in [("0", "0:1#100#1=90#2=-1"), ("1", "1:2#20#3=18")] {
+            let scoped =
+                SessionContainer::scope_explicit_token(&token, Some(target), Some(&map)).unwrap();
+            assert_eq!(scoped.as_str(), expected);
+            assert_eq!(token.as_str(), original);
+        }
+    }
+
+    #[test]
+    fn explicit_compound_scoping_merges_all_required_parent_and_child_progress() {
+        let map = topology(serde_json::json!([
+            {"id":"2","minInclusive":"","maxExclusive":"FF","parents":["0","1"]}
+        ]));
+        for (original, expected) in [
+            ("0:1#100#1=90,1:1#110#2=100", "2:1#110#1=90#2=100"),
+            (
+                "0:1#100#1=90,1:1#110#2=100,2:1#105#1=95",
+                "2:1#110#1=95#2=100",
+            ),
+            ("0:100,1:200", "2:200"),
+        ] {
+            let token = SessionToken::new(original);
+            let scoped =
+                SessionContainer::scope_explicit_token(&token, Some("2"), Some(&map)).unwrap();
+            assert_eq!(scoped.as_str(), expected);
+            assert_eq!(token.as_str(), original);
+        }
+        let mixed = SessionToken::new("0:100,1:1#10#2=9");
+        assert!(SessionContainer::scope_explicit_token(&mixed, Some("2"), Some(&map)).is_none());
+    }
+
+    #[test]
+    fn explicit_compound_scoping_preserves_split_parent_progress_for_either_child() {
+        let map = topology(serde_json::json!([
+            {"id":"2","minInclusive":"","maxExclusive":"40","parents":["0"]},
+            {"id":"3","minInclusive":"40","maxExclusive":"80","parents":["0"]},
+            {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+        ]));
+        let token = SessionToken::new("0:1#100#1=90,1:1#200#2=150");
+        for target in ["2", "3"] {
+            assert_eq!(
+                SessionContainer::scope_explicit_token(&token, Some(target), Some(&map))
+                    .unwrap()
+                    .as_str(),
+                format!("{target}:1#100#1=90")
+            );
+        }
+    }
+
+    #[test]
+    fn explicit_compound_scoping_declines_missing_or_untrusted_identity() {
+        let map = topology(serde_json::json!([
+            {"id":"0","minInclusive":"","maxExclusive":"80"},
+            {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+        ]));
+        let token = SessionToken::new("0:1#100,1:1#200");
+        assert!(SessionContainer::scope_explicit_token(&token, None, Some(&map)).is_none());
+        assert!(SessionContainer::scope_explicit_token(&token, Some("0"), None).is_none());
+        assert!(SessionContainer::scope_explicit_token(&token, Some("old"), Some(&map)).is_none());
+        for original in [
+            "0:1#100,child:1#300",
+            "1:1#100,1:1#200",
+            "0:1#100#1=90#1=1,1:1#200",
+            "0:1#100##1=90,1:1#200",
+            "0:1#100,1:future-format",
+            "0:1#100,",
+            ":1#100,1:1#200",
+        ] {
+            let token = SessionToken::new(original);
+            assert!(
+                SessionContainer::scope_explicit_token(&token, Some("0"), Some(&map)).is_none()
+            );
+            assert_eq!(token.as_str(), original);
+        }
+        let unknown_lineage = topology(serde_json::json!([
+            {"id":"2","minInclusive":"","maxExclusive":"80","parents":["1"]},
+            {"id":"3","minInclusive":"80","maxExclusive":"FF","parents":["0"]}
+        ]));
+        let token = SessionToken::new("0:1#300,2:1#100");
+        assert!(
+            SessionContainer::scope_explicit_token(&token, Some("2"), Some(&unknown_lineage))
+                .is_none()
+        );
+        let offline = topology(serde_json::json!([
+            {"id":"0","minInclusive":"","maxExclusive":"80","status":"offline"},
+            {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+        ]));
+        let token = SessionToken::new("0:1#100,1:1#200");
+        assert!(
+            SessionContainer::scope_explicit_token(&token, Some("0"), Some(&offline)).is_none()
+        );
+    }
+
+    #[test]
+    fn empty_container_returns_none() {
+        let sc = SessionContainer::new();
+        let c = test_container("db1", "c1", "rid1");
+        assert!(sc.resolve_session_token(&c).is_none());
+    }
+
+    #[test]
+    fn token_presence_preserves_rid_name_fallback_and_remapping() {
+        let sc = SessionContainer::new();
+        let original = test_container("db1", "c1", "rid1");
+        let replacement = test_container("db1", "c1", "rid2");
+        let unrelated = test_container("db1", "c2", "rid3");
+        assert!(!sc.has_session_token(&original));
+        sc.set_session_token(&original, "malformed");
+        assert!(!sc.has_session_token(&original));
+
+        sc.set_session_token(&original, "0:1#100#1=10,1:1#200#1=20");
+        assert!(sc.has_session_token(&original));
+        assert!(sc.has_session_token(&replacement));
+        assert!(!sc.has_session_token(&unrelated));
+
+        assert!(sc.remap_container(&original, &replacement));
+        assert!(!sc.has_session_token(&original));
+        assert!(!sc.has_session_token(&replacement));
+        sc.set_session_token(&replacement, "2:1#300#1=30");
+        assert!(sc.has_session_token(&replacement));
+        assert!(sc.has_session_token(&original));
+    }
+
+    #[test]
+    fn set_and_get_single_token() {
+        let sc = SessionContainer::new();
+        let c = test_container("db1", "c1", "rid1");
+        sc.set_session_token(&c, "0:1#100#1=10");
+        let token = sc.resolve_session_token(&c).unwrap();
+        assert_eq!(token.as_str(), "0:1#100#1=10");
+    }
+
+    #[test]
+    fn set_and_get_token_with_negative_region_lsn() {
+        // Regression: a `-1` region LSN must not cause the token to be dropped
+        // (previously parsed as u64, which silently stored nothing and broke
+        // read-your-writes).
+        let sc = SessionContainer::new();
+        let c = test_container("db1", "c1", "rid1");
+        sc.set_session_token(&c, "0:0#2#2=-1");
+        let token = sc.resolve_session_token(&c).unwrap();
+        assert_eq!(token.as_str(), "0:0#2#2=-1");
+    }
+
+    #[test]
+    fn merge_updates_existing() {
+        let sc = SessionContainer::new();
+        let c = test_container("db1", "c1", "rid1");
+        sc.set_session_token(&c, "0:1#100#1=10");
+        sc.set_session_token(&c, "0:1#200#1=20");
+        let token = sc.resolve_session_token(&c).unwrap();
+        assert!(token.as_str().contains("200"));
+    }
+
+    #[test]
+    fn compound_token_multiple_pk_ranges() {
+        let sc = SessionContainer::new();
+        let c = test_container("db1", "c1", "rid1");
+        sc.set_session_token(&c, "0:1#100#1=10,1:1#200#1=20");
+        let token = sc.resolve_session_token(&c).unwrap();
+        let s = token.as_str();
+        assert!(s.contains("0:") && s.contains("1:"));
+    }
+
+    #[test]
+    fn resolves_specific_partition_key_range_token() {
+        let sc = SessionContainer::new();
+        let c = test_container("db1", "c1", "rid1");
+        sc.set_session_token(&c, "0:1#100#1=10,1:1#200#1=20");
+
+        let token = sc
+            .resolve_session_token_for_partition_key_range(&c, "1", &[])
+            .unwrap();
+
+        assert_eq!(token.as_str(), "1:1#200#1=20");
+    }
+
+    #[test]
+    fn resolves_child_partition_key_range_from_parent_tokens() {
+        let sc = SessionContainer::new();
+        let c = test_container("db1", "c1", "rid1");
+        sc.set_session_token(&c, "parent_a:1#100#1=10,parent_b:1#200#1=20");
+
+        let token = sc
+            .resolve_session_token_for_partition_key_range(
+                &c,
+                "child",
+                &["parent_a".to_owned(), "parent_b".to_owned()],
+            )
+            .unwrap();
+
+        assert_eq!(token.as_str(), "child:1#200#1=20");
+    }
+
+    #[test]
+    fn resolve_for_range_returns_only_that_range() {
+        // The RNTBD/thin-client path rejects a multi-range composite on a
+        // partition-scoped request, so a scoped resolve must return exactly one
+        // `<pk_range_id>:<vector>` segment even when other ranges are cached.
+        let sc = SessionContainer::new();
+        let c = test_container("db1", "c1", "rid1");
+        sc.set_session_token(&c, "0:0#2#2=-1,1:0#1#2=-1");
+
+        assert_eq!(
+            sc.resolve_session_token_for_range(&c, "0")
+                .unwrap()
+                .as_str(),
+            "0:0#2#2=-1",
+        );
+        assert_eq!(
+            sc.resolve_session_token_for_range(&c, "1")
+                .unwrap()
+                .as_str(),
+            "1:0#1#2=-1",
+        );
+        // A range with no cached token yields nothing (request sent without one).
+        assert!(sc.resolve_session_token_for_range(&c, "2").is_none());
+    }
+
+    #[test]
+    fn resolve_for_range_uses_name_fallback() {
+        let sc = SessionContainer::new();
+        let c_actual = test_container("db1", "c1", "rid_actual");
+        sc.set_session_token(&c_actual, "0:1#100#1=10");
+
+        let c_lookup = test_container("db1", "c1", "rid_different");
+        assert_eq!(
+            sc.resolve_session_token_for_range(&c_lookup, "0")
+                .unwrap()
+                .as_str(),
+            "0:1#100#1=10",
+        );
+    }
+
+    #[test]
+    fn name_based_resolution_fallback() {
+        let sc = SessionContainer::new();
+        // Set token with container having rid "rid_actual"
+        let c_actual = test_container("db1", "c1", "rid_actual");
+        sc.set_session_token(&c_actual, "0:1#100");
+
+        // Resolve with a container having a different rid but same name
+        // should fall back through name→RID index
+        let c_lookup = test_container("db1", "c1", "rid_different");
+        let token = sc.resolve_session_token(&c_lookup).unwrap();
+        assert_eq!(token.as_str(), "0:1#100");
+    }
+
+    #[test]
+    fn explicit_remap_clears_old_tokens_and_rejects_late_capture() {
+        let sc = SessionContainer::new();
+        let c_old = test_container("db1", "c1", "rid_old");
+        sc.set_session_token(&c_old, "0:1#100#1=10");
+
+        let c_new = test_container("db1", "c1", "rid_new");
+        assert!(sc.remap_container(&c_old, &c_new));
+        sc.set_session_token(&c_new, "0:1#50#1=5");
+        sc.set_session_token(&c_old, "0:1#500#1=50");
+
+        let old_token = sc.resolve_session_token(&c_old).unwrap();
+        assert_eq!(old_token.as_str(), "0:1#50#1=5");
+        assert!(sc.resolve_session_token(&c_new).is_some());
+
+        let c_different_name = test_container("db1", "other", "rid_old");
+        assert!(sc.resolve_session_token(&c_different_name).is_none());
+    }
+
+    #[test]
+    fn stale_remap_cannot_replace_newer_mapping() {
+        let sc = SessionContainer::new();
+        let c1 = test_container("db1", "c1", "rid1");
+        let c2 = test_container("db1", "c1", "rid2");
+        let c3 = test_container("db1", "c1", "rid3");
+
+        sc.set_session_token(&c1, "0:1#10");
+        assert!(sc.remap_container(&c1, &c2));
+        assert!(sc.remap_container(&c2, &c3));
+        assert!(!sc.remap_container(&c1, &c2));
+    }
+}

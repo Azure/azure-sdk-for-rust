@@ -7,24 +7,26 @@
 //! request diagnostics, pipeline classification types, request events,
 //! serialization helpers, and the diagnostics context itself.
 
-use crate::{
-    driver::{pipeline::hedging_diagnostics::HedgeDiagnostics, routing::CosmosEndpoint},
-    models::{
-        ActivityId, CosmosResponseHeaders, CosmosStatus, PatchTrackingId, RequestCharge,
-        SubStatusCode,
-    },
-    options::{DiagnosticsOptions, DiagnosticsThresholds, DiagnosticsVerbosity, Region},
-    system::CpuMemoryMonitor,
-};
-use azure_core::http::StatusCode;
-use serde::Serialize;
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex, OnceLock},
     time::{Duration, Instant},
 };
 
+use azure_core::http::StatusCode;
+use serde::Serialize;
+
 use super::compaction::{compact_requests, merge_carried_runs, CompactedRun, CompactionInfo};
+use crate::{
+    diagnostics::hedging::HedgeDiagnostics,
+    models::{
+        ActivityId, CosmosResponseHeaders, CosmosStatus, PatchTrackingId, RequestCharge,
+        SubStatusCode,
+    },
+    options::{DiagnosticsOptions, DiagnosticsThresholds, DiagnosticsVerbosity, Region},
+    pipeline::operation::routing::CosmosEndpoint,
+    system::CpuMemoryMonitor,
+};
 
 // =============================================================================
 // Threshold breach classification
@@ -5375,8 +5377,8 @@ mod tests {
         assert!(ctx.hedging_started());
     }
 
-    fn hedge_config() -> crate::driver::pipeline::hedging_diagnostics::HedgingStrategyConfig {
-        crate::driver::pipeline::hedging_diagnostics::HedgingStrategyConfig::new(
+    fn hedge_config() -> crate::diagnostics::hedging::HedgingStrategyConfig {
+        crate::diagnostics::hedging::HedgingStrategyConfig::new(
             crate::options::HedgeThreshold::new(std::time::Duration::from_millis(500))
                 .expect("500ms is a valid hedge threshold"),
         )
@@ -6178,7 +6180,7 @@ mod tests {
             .expect("aggregate must inherit a representative hedge diagnostics");
         assert_eq!(
             hedge.terminal_state(),
-            crate::driver::pipeline::hedging_diagnostics::HedgeTerminalState::AlternateWon,
+            crate::diagnostics::hedging::HedgeTerminalState::AlternateWon,
         );
     }
 

@@ -690,6 +690,12 @@ short-circuits the hedge decision before the primary request is sent.
 
 ## 6. Hedging Algorithm
 
+The pseudocode in this section records the original design proposal. The
+implemented stage and ownership contracts are described in section 8 and the
+current implementation note in section 9.6. In particular, the implementation
+does not spawn tasks, clone operation options per leg, or run an operation retry
+loop inside a leg.
+
 > **Reading guide.** This section is the **normative semantics** of
 > the `OperationAction::Hedge` arm dispatched by STAGE 7 of the
 > operation pipeline (TPS §4.1). The signatures below match the TPS
@@ -1254,49 +1260,38 @@ silently begin hedging RU-exhaustion or hot-partition throttles.
 
 ### 8.1 Entry Point Changes
 
-**`cosmos_driver.rs::execute_operation()` does not change.** Hedging
-is selected entirely inside the per-attempt pipeline by
-`evaluate_transport_result` (TPS §3.4) returning
-`OperationAction::Hedge { secondary_routing }`, and dispatched by
-STAGE 7 of `execute_operation_pipeline()` (TPS §4.1) calling
-`execute_hedged()` (§6.1, TPS §4.2).
+The driver calls `pipeline::operation::execute` with immutable configuration,
+borrowed services, operation overrides, and an owned diagnostics builder.
+`hedging::should_hedge` admits an eligible first-attempt race. After a sequential
+result, `recovery::recover` can instead admit a retry-triggered race.
 
-The only changes outside the transport pipeline are:
-
-- `OperationOptions` gains an `availability_strategy:
-  Option<AvailabilityStrategy>` field (§4.3).
-- `evaluate_transport_result` consults the resolved
-  `HedgingStrategy` (§4) and `should_hedge()` (§5.1) when deciding
-  whether to return `OperationAction::Hedge`.
-
-The driver does not need a top-level wrapper: `execute_operation()`
-calls `execute_operation_pipeline()` exactly as it does today.
+Both paths call `hedging::hedge_operation`, which coordinates the race and returns
+a terminal-or-continue `ControlFlow` through `recovery::hedge::after_race`.
+Retry upgrades first advance local retry state and
+reselect both regions against fresh topology using `hedging::retarget`.
+No distinct alternate means ordinary sequential fallback, without consuming
+the one-race allowance. Positive backend-failover backoff is not replaced by
+an immediate hedge.
 
 ### 8.2 Operation Cloning
 
-Each hedged invocation needs its own:
-- `OperationRetryState` — independent retry counters per region
-- `DiagnosticsContextBuilder` — separate diagnostics chain per attempt
-- `OperationOptions` — different `ExcludedRegions` per hedge
+Each leg owns its prepared request and diagnostics builder, and borrows immutable
+operation/configuration inputs through the same `AttemptContext` used by a
+sequential attempt. All attempts call `operation::perform_single_attempt`;
+consistency and header differences are explicit request-preparation overrides.
+A leg returns `AttemptOutcome`, including the
+raw result and whether it actually sent the hub-only header. Legs do not publish
+session progress or operation routing feedback.
 
-Items shared (via `Arc` or reference):
-- `CosmosOperation` — immutable; body is `Bytes` (cheaply cloneable)
-- `LocationStateStore` — lock-free; multiple readers are safe; **both
-  legs apply LocationEffects to the same store** via
-  `evaluate_hedge_leg_effects` (§6.5 invariant #10)
-- `SessionManager` — designed for concurrent access
-- `Credential` — `Arc`-wrapped
-- **Hub-region-processing-only latch** — a single `Arc<AtomicBool>`
-  is shared across the primary and the alternate hedge for the
-  lifetime of the outer operation. See §9.6 for the full rationale;
-  the short version is that the per-`OperationRetryState`
-  `hub_region_processing_only` field added by [PR #4389][pr-4389] is
-  otherwise per-hedge, which would force the alternate hedge to
-  independently re-discover the hub region via its own 404/1002
-  cycle. .NET v3 hit and fixed this in
-  [azure-cosmos-dotnet-v3 PR #5815][dotnet-pr-5815] via the
-  `CrossRegionAvailabilityContext` shared object; the Rust driver
-  adopts the equivalent shared signal.
+The coordinator retains the parent journal, observed partition identity, and
+session-unavailable observation. It calls `recovery::hedge::observe` at
+each completion checkpoint before waiting on the other leg, and captures only
+the winner's session token through `session::capture`. The journal preserves cancelled-leg diagnostics;
+merging completed children avoids double counting.
+
+The optional hub signal is a stack-owned `AtomicBool` borrowed by the secondary.
+Only the coordinator publishes to it. `OperationRetryState` contains no shared
+latch, and retry evaluation returns independent state proposals.
 
 **Alternate-region distinctness.** Per §6.4.1's
 `build_secondary_routing` contract, the alternate must differ from the
@@ -1313,20 +1308,18 @@ their `Region` strings differ.
 ### 8.3 Cancellation Propagation
 
 Cancellation in the hedge path is **structural**, not signalled.
-`execute_hedged()` owns both futures via `tokio::select!`; the loser
+`hedging::execute()` owns both futures via `futures::future::select`; the loser
 is dropped, which `Drop`s its in-flight transport (TPS §5.1) and
 emits the cancellation signal at the next transport `await` point.
 No `CancellationToken` is constructed.
 
-```
-                execute_hedged()
+```text
+                hedging::execute()
                        │
         ┌────────────────────────────┐
-        │  tokio::select! biased; {  │
-        │    primary_fut,            │
-        │    secondary_fut,          │
-        │    deadline_signal(),      │
-        │  }                         │
+        │  futures::future::select  │
+        │    primary / secondary    │
+        │    raced with deadline    │
         └──────────────┬─────────────┘
                        ▼
         winner returned → loser future dropped
@@ -1340,16 +1333,20 @@ No `CancellationToken` is constructed.
 Application-cancellation enters via the per-attempt deadline (the
 same mechanism used everywhere else in the transport pipeline). When
 the deadline fires while both attempts are racing,
-`execute_hedged()` harvests the most-advanced future for
+`hedging::execute()` harvests the most-advanced future for
 diagnostics within `HARVEST_WINDOW = 50ms` (§6.5 #7) before
 returning the cancellation error.
 
 ### 8.4 Local-Only Retries Inside a Hedge (Contract)
 
-> **Contract:** Each hedged pipeline invocation runs the **full operation
-> pipeline including the retry layer**, but the retry layer must perform
-> **local-only retries** — it is forbidden from re-routing the request to
-> a different region than the one targeted by that hedge.
+**Implemented contract:** Each leg performs one `dispatch::send` invocation
+against its selected endpoint, including transport-local retries only.
+There is no operation-level retry loop or per-leg excluded-region rewrite.
+When both legs are transient, the outer operation consumes two failover slots
+and continues past both raced regions. This preserves current behavior rather
+than introducing the additional retry layer proposed below.
+
+#### Historical local operation-retry proposal
 
 This matches the .NET v3 behavior documented in
 [Cross Region Request Hedging.md](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/0830090ca4dc47b71398ea0871cbe00b591aa8fc/docs/Cross%20Region%20Request%20Hedging.md):
@@ -1399,27 +1396,27 @@ nonetheless feed the shared availability map.*
 
 ### 8.5 File Layout
 
-New files:
+```text
+src/pipeline/operation/
+    mod.rs                 # operation::execute, AttemptContext, and common perform_single_attempt
+    policy.rs              # fixed policy resolution
+    hedging/mod.rs          # admission, retargeting, and race coordination
+    hedging/eligibility.rs  # eligibility and alternate selection
+    hedging/budget.rs       # race-scoped metadata admission guard
+    request.rs             # shared request preparation
+    dispatch.rs            # gateway selection, token representation, and transport dispatch
+    deadline.rs            # injected-clock waits and bounded diagnostic harvest
+    routing/feedback.rs    # location feedback, deferred effects, and probe cleanup
+    routing/selection.rs   # routing policy, candidates, selection, and fallback
+    routing/location_state_store.rs # topology and account-identity capture
+    routing/location_effects.rs # typed feedback and in-flight failure evidence
+    session/mod.rs         # session resolution and eligible response capture
+    recovery/mod.rs        # recovery sub-pipeline and ordered HTTP decision tree
+    recovery/recreation.rs # container refresh and recreation-budget handling
+    recovery/hedge.rs      # race observations and both-transient continuation
+    recovery/state.rs      # invocation-local retry progress and transitions
+src/diagnostics/hedging.rs  # public diagnostic types, with unchanged exports
 ```
-src/driver/pipeline/
-    hedging_diagnostics.rs  # HedgeDiagnostics struct
-```
-
-Modified files:
-```
-src/driver/pipeline/operation_pipeline.rs
-    # - evaluate_transport_result() may return OperationAction::Hedge
-    # - STAGE 7 dispatch arm calls execute_hedged()
-    # - execute_hedged() implementation (§6.4)
-src/pipeline/transport/execution.rs
-    # - ExecutionContext::Hedging marker on the secondary's transport_request
-src/options/operation_options.rs    # Add availability_strategy field
-src/options/mod.rs                  # Export AvailabilityStrategy, HedgingStrategy
-src/diagnostics/mod.rs              # HedgeDiagnostics type
-```
-
-There is no `hedging.rs` module: the hedge code is a peer of the
-rest of the pipeline dispatch in `operation_pipeline.rs`.
 
 ---
 
@@ -1602,6 +1599,24 @@ any PPCB-side implementation that consumes `record_consecutive_hedge_win()`
 satisfies this contract.
 
 ### 9.6 Hub-Region-Processing-Only Header
+
+**Current implementation:** the coordinator creates an optional stack-owned
+`AtomicBool` only when launching an alternate for a single-master data-plane
+operation. The secondary borrows that signal; it is not part of cloned retry
+state. The primary does not consult the signal, including on retry-triggered
+upgrades.
+
+`recovery::hedge::observe` returns a session-unavailable observation after
+applying location feedback. The coordinator then publishes the signal and
+accumulates the observation for a possible `BothTransient` continuation. The
+secondary's returned `AttemptOutcome` records the header actually sent, so a
+later signal cannot retroactively reclassify its 403/3 response. Only a winning
+hub-only read can populate the hub cache; losing and harvested responses do not
+advance session state.
+
+The subsections below retain the earlier shared-`Arc` proposal and its rationale.
+They are historical, not instructions to restore a shared field on
+`OperationRetryState` or add operation retries inside hedge legs.
 
 The driver emits the `x-ms-cosmos-hub-region-processing-only: True`
 request header on retries triggered by a `404 / 1002

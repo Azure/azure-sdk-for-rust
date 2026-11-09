@@ -1,18 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use super::CosmosDriver;
 #[cfg(feature = "__internal_native_query_plan")]
 use crate::models::AccountEndpoint;
 use crate::{
-    driver::{
-        dataflow::query_plan::{QueryPlan, RawQueryPlan},
-        pipeline::operation_pipeline::OperationOverrides,
-    },
+    driver::dataflow::query_plan::{QueryPlan, RawQueryPlan},
     models::{ContainerReference, CosmosOperation},
     options::{OperationOptions, PlanOptions, QueryPlanMode},
+    pipeline::operation::types::OperationOverrides,
 };
-
-use super::CosmosDriver;
 
 /// Result of resolving a query plan from any provider.
 pub(super) enum ResolvedQueryPlan {

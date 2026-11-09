@@ -8,11 +8,15 @@
 //! kept intentionally to match the service response shape and to ease future
 //! feature work.
 
-use super::AsyncCache;
-use crate::models::{AccountEndpoint, DefaultConsistencyLevel};
-use crate::options::Region;
-use serde::Deserialize;
 use std::sync::Arc;
+
+use serde::Deserialize;
+
+use super::AsyncCache;
+use crate::{
+    models::{AccountEndpoint, DefaultConsistencyLevel},
+    options::Region,
+};
 
 // =============================================================================
 // Supporting types for the account JSON contract
@@ -283,7 +287,7 @@ impl AccountProperties {
 ///
 /// Stores account properties keyed by account endpoint. Freshness is owned
 /// by the periodic background loop in
-/// [`LocationStateStore::start_account_refresh_loop`](crate::driver::routing::LocationStateStore::start_account_refresh_loop),
+/// [`LocationStateStore::start_account_refresh_loop`](crate::pipeline::operation::routing::LocationStateStore::start_account_refresh_loop),
 /// which atomically replaces cache entries via [`Self::get_or_refresh_with`].
 /// The per-operation hot path uses [`Self::get_or_fetch`] for a cheap
 /// fast-path lookup with no staleness check or extra locking.
@@ -307,7 +311,7 @@ impl AccountMetadataCache {
     ///
     /// **Does NOT honor any staleness threshold** — once a value is cached
     /// it is returned forever. Periodic re-fetch is handled by
-    /// [`LocationStateStore::start_account_refresh_loop`](crate::driver::routing::LocationStateStore::start_account_refresh_loop)
+    /// [`LocationStateStore::start_account_refresh_loop`](crate::pipeline::operation::routing::LocationStateStore::start_account_refresh_loop)
     /// which calls [`Self::get_or_refresh_with`] to atomically replace the
     /// entry on a timer.
     pub(crate) async fn get_or_fetch<F, Fut>(
@@ -397,8 +401,9 @@ impl Default for AccountMetadataCache {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+
+    use super::*;
 
     fn test_endpoint(name: &str) -> AccountEndpoint {
         AccountEndpoint::from(

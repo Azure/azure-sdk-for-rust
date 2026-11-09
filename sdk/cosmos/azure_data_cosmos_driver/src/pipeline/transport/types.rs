@@ -3,20 +3,21 @@
 
 //! Data exchanged between the operation and transport pipelines.
 
+use azure_core::http::{headers::Headers, Method};
+use url::Url;
+
 use super::{deadline::Deadline, AuthorizationContext};
 #[cfg(feature = "unstable_dtx")]
 use crate::models::ResourceType;
 use crate::{
     diagnostics::{ExecutionContext, RequestSentStatus},
-    driver::{pipeline::components::RoutingFallbackReason, routing::CosmosEndpoint},
     models::{
         effective_partition_key::EffectivePartitionKey, CosmosResponseHeaders, CosmosStatus,
         DefaultConsistencyLevel, OperationType,
     },
     options::ReadConsistencyStrategy,
+    pipeline::operation::routing::{CosmosEndpoint, RoutingFallbackReason},
 };
-use azure_core::http::{headers::Headers, Method};
-use url::Url;
 
 /// Transport mode for a routed attempt.
 ///

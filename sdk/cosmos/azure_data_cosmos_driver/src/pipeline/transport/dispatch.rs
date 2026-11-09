@@ -211,6 +211,10 @@ fn decode(response: HttpResponse, mode: TransportMode) -> Result<HttpResponse, C
 
 #[cfg(test)]
 mod tests {
+    use std::sync::{Arc, Mutex};
+
+    use async_trait::async_trait;
+
     use super::{
         send, status_codes, AdaptiveTransport, CosmosError, DispatchError, HttpResponse,
         PreparedRequest, RequestDiagnosticsBuilder, RequestSentStatus, TransportMode,
@@ -220,15 +224,13 @@ mod tests {
         diagnostics::{
             DiagnosticsContextBuilder, ExecutionContext, PipelineKind, TransportSecurity,
         },
-        driver::routing::CosmosEndpoint,
         models::ActivityId,
         options::DiagnosticsOptions,
-        pipeline::transport::cosmos_transport_client::{
-            HttpRequest, TransportClient, TransportError,
+        pipeline::{
+            operation::routing::CosmosEndpoint,
+            transport::cosmos_transport_client::{HttpRequest, TransportClient, TransportError},
         },
     };
-    use async_trait::async_trait;
-    use std::sync::{Arc, Mutex};
 
     #[derive(Debug)]
     struct MockTransportClient(Mutex<Option<Result<HttpResponse, TransportError>>>);

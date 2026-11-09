@@ -9,6 +9,21 @@ mod query_planning;
 #[cfg(all(test, feature = "reqwest", feature = "__internal_mocking"))]
 mod session_scope_live_tests;
 
+use std::{
+    collections::HashMap,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex,
+    },
+    time::{Duration, Instant},
+};
+
+use arc_swap::ArcSwap;
+use futures::future::{select, BoxFuture, Either};
+use query_planning::ResolvedQueryPlan;
+use url::Url;
+use uuid::Uuid;
+
 use crate::{
     diagnostics::{
         DiagnosticsContextBuilder, ExecutionContext, PipelineKind, RequestSentStatus,
@@ -20,18 +35,6 @@ use crate::{
             planner, CachedTopologyProvider, DrainedLeaf, OperationPlan, PartitionRoutingRefresh,
             Pipeline, PipelineContext, PipelineNodeState, RequestExecutor, RequestTarget,
             TopologyProvider,
-        },
-        pipeline::{
-            hedge_budget::HedgeBudget,
-            operation_pipeline::{
-                deadline_signal, operation_allows_automatic_session_token_resolution,
-                read_consistency_strategy_for_operation, ContainerRecreationRecoveryOutcome,
-                ContainerRecreationRecoveryTracker, OperationOverrides, RegionPin,
-            },
-        },
-        routing::{
-            is_eligible_for_ppaf, is_eligible_for_ppcb, session_manager::SessionManager,
-            CosmosEndpoint, LocationStateStore,
         },
     },
     models::{
@@ -45,25 +48,33 @@ use crate::{
         PartitionTopologyCacheMode, PlanOptions, ReadConsistencyStrategy,
         ResolvedThroughputControl, ThrottlingRetryOptions,
     },
-    pipeline::transport::{
-        is_operation_supported_by_gateway_v2,
-        recovery::{
-            ThrottleRetryPolicy, ThrottleRetryProgress, METADATA_MAX_PER_RETRY_DELAY,
-            METADATA_MAX_THROTTLE_ATTEMPTS, METADATA_MAX_THROTTLE_WAIT,
+    pipeline::{
+        operation::{
+            deadline::deadline_signal,
+            hedging::budget::HedgeBudget,
+            recovery::recreation::{
+                ContainerRecreationRecoveryOutcome, ContainerRecreationRecoveryTracker,
+            },
+            routing::{
+                is_eligible_for_ppaf, is_eligible_for_ppcb, CosmosEndpoint, LocationStateStore,
+            },
+            session::{
+                manager::SessionManager, operation_allows_automatic_session_token_resolution,
+                read_consistency_strategy_for_operation,
+            },
+            types::{OperationOverrides, RegionPin},
         },
-        uses_dataplane_pipeline,
+        transport::{
+            is_operation_supported_by_gateway_v2,
+            recovery::{
+                ThrottleRetryPolicy, ThrottleRetryProgress, METADATA_MAX_PER_RETRY_DELAY,
+                METADATA_MAX_THROTTLE_ATTEMPTS, METADATA_MAX_THROTTLE_WAIT,
+            },
+            uses_dataplane_pipeline,
+        },
     },
     ActivityId, CosmosResponse, DiagnosticsContext,
 };
-use arc_swap::ArcSwap;
-use futures::future::{select, BoxFuture, Either};
-use query_planning::ResolvedQueryPlan;
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
-use url::Url;
-use uuid::Uuid;
 
 /// Gateway 2.0 endpoint-discovery opt-in header, sent on every
 /// `getDatabaseAccount` request. Aliases the canonical wire string in
@@ -92,7 +103,11 @@ where
         if Instant::now() >= deadline {
             return None;
         }
-        match select(planning, deadline_signal(Some(deadline))).await {
+        let signal = Box::pin(deadline_signal(
+            &crate::clock::Clock::default(),
+            Some(deadline),
+        ));
+        match select(planning, signal).await {
             Either::Left((result, _deadline)) => Some(result),
             Either::Right(((), _planning)) => None,
         }
@@ -180,13 +195,12 @@ fn account_properties_connectivity_retry_delay(retry_count: u32) -> Duration {
     ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY * retry_count
 }
 
-#[cfg(feature = "tokio")]
-use super::routing::EndpointProbeFn;
-
 use super::{
     cache::{parse_pk_ranges_response, AccountRegion},
     CosmosDriverRuntime,
 };
+#[cfg(feature = "tokio")]
+use crate::pipeline::operation::routing::EndpointProbeFn;
 use crate::{
     emulator::ensure_endpoint_scheme_allowed,
     pipeline::transport::{
@@ -358,7 +372,7 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
     any(test, feature = "__internal_in_memory_emulator")
 ))]
 #[derive(Clone)]
-struct TestEndpointProbeFn(super::routing::EndpointProbeFn);
+struct TestEndpointProbeFn(crate::pipeline::operation::routing::EndpointProbeFn);
 
 #[cfg(all(
     feature = "tokio",
@@ -1870,7 +1884,9 @@ impl CosmosDriver {
         // path because freshness is owned by this loop.
         #[cfg(feature = "tokio")]
         location_state_store.start_account_refresh_loop(
-            super::routing::background_refresh_interval(&|name| std::env::var(name).ok()),
+            crate::pipeline::operation::routing::background_refresh_interval(&|name| {
+                std::env::var(name).ok()
+            }),
         );
 
         // Spawn the background endpoint-probe loop. This makes account-level
@@ -2081,7 +2097,7 @@ impl CosmosDriver {
     #[doc(hidden)]
     pub fn is_per_partition_automatic_failover_enabled_for_testing(&self) -> bool {
         self.location_state_store
-            .snapshot()
+            .capture()
             .partitions
             .per_partition_automatic_failover_enabled
     }
@@ -2166,7 +2182,7 @@ impl CosmosDriver {
     /// pipeline hook when a hub-region-only retry succeeds).
     #[cfg(any(test, feature = "__internal_testing"))]
     pub fn __test_only_hub_region_cache_snapshot(&self) -> Vec<(String, String)> {
-        let snapshot = self.location_state_store.snapshot();
+        let snapshot = self.location_state_store.capture();
         snapshot
             .partitions
             .failover_overrides
@@ -2187,7 +2203,7 @@ impl CosmosDriver {
         self.location_state_store.apply_partition(|current| {
             let mut next = current.clone();
             next.per_partition_automatic_failover_enabled = true;
-            crate::driver::routing::partition_endpoint_state::PartitionStateUpdate::Updated(next)
+            crate::pipeline::operation::routing::partition_endpoint_state::PartitionStateUpdate::Updated(next)
         });
     }
 
@@ -2501,7 +2517,7 @@ impl CosmosDriver {
         response: &crate::models::CosmosResponse,
     ) -> Option<CosmosEndpoint> {
         let region = response.serving_region()?;
-        let snapshot = self.location_state_store.snapshot();
+        let snapshot = self.location_state_store.capture();
         snapshot
             .account
             .preferred_read_endpoints
@@ -2666,7 +2682,7 @@ impl CosmosDriver {
         let (operation, options) =
             if operation.operation_type() == crate::models::OperationType::Patch {
                 match self.resolve_patch_execution(&operation, &options)? {
-                    crate::driver::pipeline::patch_strategy::PatchExecution::ClientSide => {
+                    crate::pipeline::operation::patch::strategy::PatchExecution::ClientSide => {
                         let max_attempts = operation.patch_max_attempts();
                         let option_view = self.operation_options_view(&options);
                         let absolute_deadline = option_view
@@ -2677,7 +2693,7 @@ impl CosmosDriver {
                             Some(crate::options::ContentResponseOnWrite::Disabled)
                         );
                         return Box::pin(async {
-                            let mut result = crate::driver::pipeline::patch_handler::execute(
+                            let mut result = crate::pipeline::operation::patch::execute(
                                 self,
                                 operation,
                                 options,
@@ -2693,7 +2709,7 @@ impl CosmosDriver {
                         })
                         .await;
                     }
-                    crate::driver::pipeline::patch_strategy::PatchExecution::ServerSide {
+                    crate::pipeline::operation::patch::strategy::PatchExecution::ServerSide {
                         retry_safe,
                     } => {
                         let mut options = options;
@@ -2766,8 +2782,8 @@ impl CosmosDriver {
         &self,
         operation: &CosmosOperation,
         options: &OperationOptions,
-    ) -> crate::error::Result<crate::driver::pipeline::patch_strategy::PatchExecution> {
-        use crate::driver::pipeline::patch_strategy::resolve_patch_strategy;
+    ) -> crate::error::Result<crate::pipeline::operation::patch::strategy::PatchExecution> {
+        use crate::pipeline::operation::patch::strategy::resolve_patch_strategy;
 
         let instructions = operation
             .body()
@@ -2807,7 +2823,7 @@ impl CosmosDriver {
                     .with_message("PATCH operation must include at least one PatchOperation")
                     .build());
             }
-            crate::driver::pipeline::patch_handler::validate_partition_key_paths(
+            crate::pipeline::operation::patch::validate_partition_key_paths(
                 &instructions.operations,
                 &item_ref,
             )?;
@@ -3426,21 +3442,18 @@ impl CosmosDriver {
             return false;
         }
 
-        let location = self.location_state_store.snapshot();
+        let location = self.location_state_store.capture();
         let partitioned = operation
             .resource_type()
             .is_partitioned(operation.operation_type());
-        if is_eligible_for_ppcb(
-            &location.partitions,
-            &location.account,
-            operation.is_read_only(),
-            partitioned,
-        ) || is_eligible_for_ppaf(
-            &location.partitions,
-            &location.account,
-            operation.is_read_only(),
-            partitioned,
-        ) {
+        if is_eligible_for_ppcb(&location.partitions, &location.account, operation)
+            || is_eligible_for_ppaf(
+                &location.partitions,
+                &location.account,
+                operation.is_read_only(),
+                partitioned,
+            )
+        {
             return false;
         }
 
@@ -3764,29 +3777,34 @@ impl CosmosDriver {
             azure_core::http::headers::HeaderValue::from(self.user_agent.as_str().to_owned());
 
         // Execute via the operation pipeline.
-        let result = super::pipeline::operation_pipeline::execute_operation_pipeline(
-            self,
+        let result = crate::pipeline::operation::execute(
             &mut operation,
             overrides.clone(),
-            &effective_options,
-            options,
-            options.custom_headers.as_ref(),
-            self.location_state_store.as_ref(),
-            &transport,
-            &endpoint,
-            &auth,
-            &user_agent,
-            &self.client_id,
-            &activity_id,
-            pipeline_type,
-            transport_security,
+            &crate::pipeline::operation::config::OperationPipelineConfig {
+                options: &effective_options,
+                operation_options: options,
+                custom_headers: options.custom_headers.as_ref(),
+                account_endpoint: &endpoint,
+                user_agent: &user_agent,
+                client_id: &self.client_id,
+                activity_id: &activity_id,
+                pipeline_type,
+                transport_security,
+                account_default_consistency: account_properties
+                    .user_consistency_policy
+                    .default_consistency_level,
+                throughput_control: effective_throughput_control,
+            },
+            &crate::pipeline::operation::config::OperationPipelineServices {
+                driver: self,
+                location_state_store: self.location_state_store.as_ref(),
+                transport: &transport,
+                credential: &auth,
+                session_manager: &self.session_manager,
+                hedge_budget: &self.hedge_budget,
+                clock: self.location_state_store.clock(),
+            },
             diagnostics_builder,
-            &self.session_manager,
-            account_properties
-                .user_consistency_policy
-                .default_consistency_level,
-            effective_throughput_control,
-            &self.hedge_budget,
         )
         .await;
 
@@ -3841,29 +3859,34 @@ impl CosmosDriver {
             retry_diagnostics.set_operation_name(operation_name);
         }
 
-        let retry_result = super::pipeline::operation_pipeline::execute_operation_pipeline(
-            self,
+        let retry_result = crate::pipeline::operation::execute(
             &mut operation,
             overrides,
-            &effective_options,
-            options,
-            options.custom_headers.as_ref(),
-            self.location_state_store.as_ref(),
-            &transport,
-            &endpoint,
-            &auth,
-            &user_agent,
-            &self.client_id,
-            &activity_id,
-            pipeline_type,
-            retry_transport_security,
+            &crate::pipeline::operation::config::OperationPipelineConfig {
+                options: &effective_options,
+                operation_options: options,
+                custom_headers: options.custom_headers.as_ref(),
+                account_endpoint: &endpoint,
+                user_agent: &user_agent,
+                client_id: &self.client_id,
+                activity_id: &activity_id,
+                pipeline_type,
+                transport_security: retry_transport_security,
+                account_default_consistency: account_properties
+                    .user_consistency_policy
+                    .default_consistency_level,
+                throughput_control: retry_throughput_control,
+            },
+            &crate::pipeline::operation::config::OperationPipelineServices {
+                driver: self,
+                location_state_store: self.location_state_store.as_ref(),
+                transport: &transport,
+                credential: &auth,
+                session_manager: &self.session_manager,
+                hedge_budget: &self.hedge_budget,
+                clock: self.location_state_store.clock(),
+            },
             retry_diagnostics,
-            &self.session_manager,
-            account_properties
-                .user_consistency_policy
-                .default_consistency_level,
-            retry_throughput_control,
-            &self.hedge_budget,
         )
         .await;
 
@@ -4809,30 +4832,23 @@ mod request_hedge_feedback_tests;
 
 #[cfg(test)]
 mod tests {
-    use std::collections::VecDeque;
-    use std::sync::Mutex;
+    use std::{collections::VecDeque, sync::Mutex};
 
     use async_trait::async_trait;
     use azure_core::http::headers::{HeaderValue, Headers};
-
     use url::Url;
 
+    use super::*;
     use crate::{
         diagnostics::TransportKind,
-        driver::CosmosDriverRuntimeBuilder,
+        driver::{cache::AccountProperties as CachedAccountProperties, CosmosDriverRuntimeBuilder},
         models::{AccountReference, CosmosResponseHeaders, ItemReference, SessionToken},
         options::{
-            ContentResponseOnWrite, CorrelationId, DriverOptionsBuilder, OperationOptionsBuilder,
-            PartitionFailoverOptions, PriorityLevel, ServerCertificateValidation,
-            ThrottlingRetryOptionsBuilder, ThroughputControlOptions, UserAgentSuffix, WorkloadId,
+            ConnectionPoolOptions, ContentResponseOnWrite, CorrelationId, DriverOptionsBuilder,
+            OperationOptionsBuilder, PartitionFailoverOptions, PriorityLevel, Region,
+            ServerCertificateValidation, ThrottlingRetryOptionsBuilder, ThroughputControlOptions,
+            UserAgentSuffix, WorkloadId,
         },
-    };
-
-    use super::*;
-    use crate::driver::cache::AccountProperties as CachedAccountProperties;
-    use crate::options::Region;
-    use crate::{
-        options::ConnectionPoolOptions,
         pipeline::transport::{
             cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
             http_client_factory::{HttpClientConfig, HttpClientFactory, HttpVersionPolicy},
@@ -7764,8 +7780,11 @@ mod tests {
     #[tokio::test]
     async fn bootstrap_transport_follows_3xx_redirects_against_real_server() {
         use std::sync::atomic::{AtomicU32, Ordering as AtomicOrdering};
-        use tokio::io::{AsyncReadExt, AsyncWriteExt};
-        use tokio::net::TcpListener;
+
+        use tokio::{
+            io::{AsyncReadExt, AsyncWriteExt},
+            net::TcpListener,
+        };
 
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
@@ -8762,8 +8781,10 @@ mod tests {
     /// operation negotiated to hand the caller text — the only configuration in
     /// which `execute_plan` transcodes.
     fn transcoding_plan(driver: &CosmosDriver, bodies: &[&[u8]]) -> OperationPlan {
-        use crate::driver::dataflow::mocks::{response, MockLeaf};
-        use crate::driver::dataflow::{PageResult, Pipeline};
+        use crate::driver::dataflow::{
+            mocks::{response, MockLeaf},
+            PageResult, Pipeline,
+        };
 
         let options = OperationOptionsBuilder::new()
             .with_binary_encoding(
@@ -8802,8 +8823,10 @@ mod tests {
     }
 
     fn lossy_transcoding_plan(driver: &CosmosDriver, bodies: &[&[u8]]) -> OperationPlan {
-        use crate::driver::dataflow::mocks::{response, MockLeaf};
-        use crate::driver::dataflow::{PageResult, Pipeline};
+        use crate::driver::dataflow::{
+            mocks::{response, MockLeaf},
+            PageResult, Pipeline,
+        };
 
         let options = OperationOptionsBuilder::new()
             .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
