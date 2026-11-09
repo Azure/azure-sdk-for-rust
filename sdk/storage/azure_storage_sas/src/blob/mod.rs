@@ -809,7 +809,7 @@ mod tests {
         assert_eq!(lines[12], "scid"); // scid
         assert_eq!(lines[13], "dut"); // skdutid (from key)
         assert_eq!(lines[14], "duoid"); // sduoid (from builder)
-        assert_eq!(lines[17], "2026-04-06"); // sv (SAS_VERSION)
+        assert_eq!(lines[17], SAS_VERSION); // sv (SAS_VERSION)
         assert_eq!(lines[18], "b"); // sr
         assert_eq!(lines[19], ""); // snapshot
         assert_eq!(lines[20], "ses"); // ses
