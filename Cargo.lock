@@ -1073,7 +1073,7 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_blob"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.2"
 dependencies = [
  "arrow-array",
  "arrow-ipc",
@@ -1105,7 +1105,7 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_common"
-version = "1.1.0-beta.1"
+version = "1.1.0-beta.2"
 dependencies = [
  "azure_core 1.2.0-beta.2",
  "serde",
@@ -1132,7 +1132,7 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_sas"
-version = "1.1.0-beta.1"
+version = "1.1.0-beta.2"
 dependencies = [
  "azure_core 1.2.0-beta.2",
  "azure_storage_common",
