@@ -19,8 +19,8 @@ use azure_data_cosmos::{
         IndexingPolicy, ThroughputProperties,
     },
     options::{
-        BinaryEncodingOptions, ConnectionPoolOptions, CreateContainerOptions, MaxItemCountHint,
-        QueryOptions, QueryPlanMode, Region,
+        BinaryEncodingOptions, ConnectionPoolOptions, MaxItemCountHint, QueryOptions,
+        QueryPlanMode, Region,
     },
     AccountReference, CosmosClient, CosmosRuntime, RoutingStrategy,
 };
@@ -280,10 +280,7 @@ async fn create_container(
         .create_container(
             database,
             properties,
-            Some(
-                CreateContainerOptions::default()
-                    .with_throughput(ThroughputProperties::manual(THROUGHPUT)),
-            ),
+            Some(ThroughputProperties::manual(THROUGHPUT)),
         )
         .await?)
 }

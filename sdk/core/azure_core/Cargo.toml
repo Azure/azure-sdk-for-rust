@@ -48,7 +48,8 @@ http = "1.4.0"
 include-file.workspace = true
 json-patch = "4.1.0"
 reqwest.workspace = true
-tokio.workspace = true
+serde_json = { workspace = true, features = ["raw_value"] }
+tokio = { workspace = true, features = ["test-util"] }
 tracing-subscriber.workspace = true
 ureq = { version = "3.2.0", default-features = false, features = [
   "gzip",
@@ -73,10 +74,9 @@ reqwest_gzip = ["reqwest", "typespec_client_core/reqwest_gzip"]
 reqwest_rustls = ["reqwest", "typespec_client_core/reqwest_rustls"]
 test = ["typespec_client_core/test"]
 tokio = ["dep:tokio", "typespec_client_core/tokio"]
+unstable_fake = ["test"]
+unstable_resource_manager = []
 xml = ["typespec_client_core/xml"]
-
-[lints]
-workspace = true
 
 [package.metadata.docs.rs]
 features = [
@@ -89,8 +89,13 @@ features = [
   "reqwest_gzip",
   "reqwest_rustls",
   "tokio",
+  "unstable_fake",
+  "unstable_resource_manager",
   "xml",
 ]
+
+[lints]
+workspace = true
 
 [[bench]]
 name = "benchmarks"

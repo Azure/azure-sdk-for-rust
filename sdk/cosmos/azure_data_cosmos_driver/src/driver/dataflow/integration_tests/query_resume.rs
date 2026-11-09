@@ -166,10 +166,10 @@ async fn drain_pages(
 /// path a real caller takes between `to_continuation_token()` and
 /// `plan_operation(resume = ...)`.
 fn round_trip_state(state: PipelineNodeState, op: &CosmosOperation) -> PipelineNodeState {
-    let token = ContinuationToken::encode_v1(op, &state).expect("encode succeeds");
+    let token = ContinuationToken::encode(op, &state).expect("encode succeeds");
     let resolved = token.resolve().expect("decode succeeds");
     match resolved {
-        ResolvedToken::ClientV1(token_state) => {
+        ResolvedToken::Client(token_state) => {
             token_state
                 .is_valid_for_operation(op)
                 .expect("operation compatible");

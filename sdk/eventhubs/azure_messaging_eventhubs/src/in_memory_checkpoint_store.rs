@@ -7,7 +7,7 @@ use azure_core::{
 };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tracing::{error, trace};
+use tracing::{debug, error, trace};
 
 /// An in-memory checkpoint store for Event Hubs.
 /// This store is used to manage checkpoints and ownerships in memory.
@@ -51,7 +51,36 @@ impl InMemoryCheckpointStore {
     /// `last_modified_time`, for a renewal and for a first claim. A renewal
     /// makes the caller's ETag stale, so the caller must keep the returned
     /// record for its next claim.
+    ///
+    /// A stale ETag returns an error. [`CheckpointStore::claim_ownership`]
+    /// reports the same condition as a lost claim instead.
     pub fn update_ownership(&self, ownership: &Ownership) -> Result<Ownership> {
+        if let Some(updated_ownership) = self.try_update_ownership(ownership)? {
+            return Ok(updated_ownership);
+        }
+
+        let key = Ownership::get_ownership_name(
+            &ownership.fully_qualified_namespace,
+            &ownership.event_hub_name,
+            &ownership.consumer_group,
+            &ownership.partition_id,
+        )?;
+        error!(
+            partition_id = %ownership.partition_id,
+            expected_etag = ?ownership.etag,
+            "ETag mismatch claiming ownership for key {}",
+            key
+        );
+        Err(Error::with_message(
+            AzureErrorKind::Other,
+            format!("ETag mismatch for partition {key}"),
+        ))
+    }
+
+    /// Updates the ownership for a specific partition, and reports a lost
+    /// claim as `Ok(None)`. An `Err` is a store failure or an invalid
+    /// `Ownership`, never a lost claim.
+    fn try_update_ownership(&self, ownership: &Ownership) -> Result<Option<Ownership>> {
         trace!("Update ownership for partition {}", ownership.partition_id);
 
         check_non_empty_parameter!(ownership.fully_qualified_namespace);
@@ -74,20 +103,15 @@ impl InMemoryCheckpointStore {
             Some(existing) => {
                 let actual_etag = existing.etag.clone();
                 if ownership.etag != actual_etag {
-                    // The call returns `Err` from here, so this logs at the
-                    // error level, the same as the other failure path in this
-                    // file.
-                    error!(
+                    debug!(
+                        event = "claim-conflict",
                         partition_id = %ownership.partition_id,
                         expected_etag = ?ownership.etag,
                         actual_etag = ?actual_etag,
-                        "ETag mismatch claiming ownership for key {}",
+                        "Lost ownership claim: ETag mismatch for key {}",
                         key
                     );
-                    return Err(Error::with_message(
-                        AzureErrorKind::Other,
-                        format!("ETag mismatch for partition {key}"),
-                    ));
+                    return Ok(None);
                 }
                 true
             }
@@ -107,7 +131,7 @@ impl InMemoryCheckpointStore {
         } else {
             trace!("Inserted new ownership for key {}", key);
         }
-        Ok(updated_ownership)
+        Ok(Some(updated_ownership))
     }
 }
 
@@ -145,9 +169,10 @@ impl CheckpointStore for InMemoryCheckpointStore {
         trace!("Claim ownership for {} partitions", ownerships.len());
         let mut claimed_ownerships = Vec::new();
         for ownership in ownerships {
-            let ownership = self.update_ownership(ownership)?;
-            if ownership.etag.is_some() {
-                claimed_ownerships.push(ownership);
+            // A lost claim is not a failure. Skip that partition and keep the
+            // claims this batch already made.
+            if let Some(claimed) = self.try_update_ownership(ownership)? {
+                claimed_ownerships.push(claimed);
             }
         }
         Ok(claimed_ownerships)
@@ -221,6 +246,74 @@ impl CheckpointStore for InMemoryCheckpointStore {
         )?;
         trace!("update_checkpoint: insert {checkpoint:?} checkpoint key {key}");
         checkpoints.insert(key, checkpoint);
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{CheckpointStore, InMemoryCheckpointStore, Ownership};
+    use azure_core::Result;
+
+    #[tokio::test]
+    async fn claim_ownership_releases_and_reclaims_without_expiration() -> Result<()> {
+        let store = InMemoryCheckpointStore::new();
+        let ownership = Ownership {
+            fully_qualified_namespace: "example.servicebus.windows.net".to_string(),
+            event_hub_name: "eventhub".to_string(),
+            consumer_group: "consumer-group".to_string(),
+            partition_id: "0".to_string(),
+            owner_id: Some("first-owner".to_string()),
+            ..Default::default()
+        };
+        let first = store.claim_ownership(&[ownership]).await?;
+        assert_eq!(first.len(), 1);
+        let mut release = first[0].clone();
+        release.owner_id = None;
+
+        let released = store
+            .claim_ownership(std::slice::from_ref(&release))
+            .await?;
+        assert_eq!(released.len(), 1);
+        assert_eq!(released[0].owner_id, None);
+        assert!(released[0].etag.is_some());
+        assert_ne!(released[0].etag, first[0].etag);
+        assert!(released[0].last_modified_time.is_some());
+
+        let listed = store
+            .list_ownerships(
+                &release.fully_qualified_namespace,
+                &release.event_hub_name,
+                &release.consumer_group,
+            )
+            .await?;
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].owner_id, None);
+        assert_eq!(listed[0].etag, released[0].etag);
+
+        // Reclaim immediately, using the released record's current ETag.
+        let mut reclaim = listed[0].clone();
+        reclaim.owner_id = Some("second-owner".to_string());
+        let reclaimed = store.claim_ownership(&[reclaim]).await?;
+        assert_eq!(reclaimed.len(), 1);
+        assert_eq!(reclaimed[0].owner_id.as_deref(), Some("second-owner"));
+        assert_ne!(reclaimed[0].etag, released[0].etag);
+
+        // A release from the previous owner must not clear the new owner's claim.
+        assert!(store
+            .claim_ownership(std::slice::from_ref(&release))
+            .await?
+            .is_empty());
+        let listed = store
+            .list_ownerships(
+                &release.fully_qualified_namespace,
+                &release.event_hub_name,
+                &release.consumer_group,
+            )
+            .await?;
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].owner_id.as_deref(), Some("second-owner"));
+        assert_eq!(listed[0].etag, reclaimed[0].etag);
         Ok(())
     }
 }

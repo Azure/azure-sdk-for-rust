@@ -3,15 +3,74 @@
 
 //! RNTBD metadata token codecs and wire ID mappings.
 
-use std::io::Write;
+use std::{io::Write, str::FromStr};
 
 use azure_core::error::ErrorKind;
 use uuid::Uuid;
 
 use crate::{
-    models::{DefaultConsistencyLevel, OperationType, ResourceType},
+    models::{
+        cosmos_headers::request_header_names, DefaultConsistencyLevel, OperationType, ResourceType,
+    },
     options::ReadConsistencyStrategy,
 };
+
+/// The read-feed filter selector shared by HTTP headers and RNTBD metadata.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u8)]
+pub(crate) enum ReadFeedKeyType {
+    ResourceId = 1,
+    EffectivePartitionKey = 2,
+    EffectivePartitionKeyRange = 3,
+}
+
+impl From<ReadFeedKeyType> for &'static str {
+    fn from(value: ReadFeedKeyType) -> Self {
+        match value {
+            ReadFeedKeyType::ResourceId => "ResourceId",
+            ReadFeedKeyType::EffectivePartitionKey => "EffectivePartitionKey",
+            ReadFeedKeyType::EffectivePartitionKeyRange => {
+                request_header_names::READ_FEED_KEY_TYPE_EPK_RANGE
+            }
+        }
+    }
+}
+
+impl From<ReadFeedKeyType> for u8 {
+    fn from(value: ReadFeedKeyType) -> Self {
+        value as u8
+    }
+}
+
+impl TryFrom<u8> for ReadFeedKeyType {
+    type Error = azure_core::Error;
+
+    fn try_from(value: u8) -> azure_core::Result<Self> {
+        [
+            Self::ResourceId,
+            Self::EffectivePartitionKey,
+            Self::EffectivePartitionKeyRange,
+        ]
+        .into_iter()
+        .find(|kind| u8::from(*kind) == value)
+        .ok_or_else(|| data_conversion_error("unknown ReadFeedKeyType value"))
+    }
+}
+
+impl FromStr for ReadFeedKeyType {
+    type Err = azure_core::Error;
+
+    fn from_str(value: &str) -> azure_core::Result<Self> {
+        [
+            Self::ResourceId,
+            Self::EffectivePartitionKey,
+            Self::EffectivePartitionKeyRange,
+        ]
+        .into_iter()
+        .find(|kind| value.eq_ignore_ascii_case(<&'static str>::from(*kind)))
+        .ok_or_else(|| data_conversion_error("invalid x-ms-read-key-type header"))
+    }
+}
 
 /// The token type byte used by RNTBD metadata tokens.
 ///
@@ -418,6 +477,20 @@ impl Token {
         )
     }
 
+    pub(crate) fn is_batch_atomic(value: bool) -> Self {
+        Self::new(
+            RntbdRequestToken::IsBatchAtomic,
+            TokenValue::Byte(u8::from(value)),
+        )
+    }
+
+    pub(crate) fn should_batch_continue_on_error(value: bool) -> Self {
+        Self::new(
+            RntbdRequestToken::ShouldBatchContinueOnError,
+            TokenValue::Byte(u8::from(value)),
+        )
+    }
+
     pub(crate) fn global_database_account_name(value: String) -> Self {
         Self::new(
             RntbdRequestToken::GlobalDatabaseAccountName,
@@ -465,6 +538,29 @@ impl Token {
     /// `EndEpkHash` (ID 0x00D3, Bytes). See [`start_epk_hash`](Self::start_epk_hash).
     pub(crate) fn end_epk_hash(value: Vec<u8>) -> Self {
         Self::new(RntbdRequestToken::EndEpkHash, TokenValue::Bytes(value))
+    }
+
+    /// Inclusive filter bound as UTF-8 hex text, not a binary routing hash.
+    pub(crate) fn start_epk(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::StartEpk,
+            TokenValue::Bytes(value.into_bytes()),
+        )
+    }
+
+    /// Exclusive filter bound as UTF-8 hex text, not a binary routing hash.
+    pub(crate) fn end_epk(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::EndEpk,
+            TokenValue::Bytes(value.into_bytes()),
+        )
+    }
+
+    pub(crate) fn read_feed_key_type(value: ReadFeedKeyType) -> Self {
+        Self::new(
+            RntbdRequestToken::ReadFeedKeyType,
+            TokenValue::Byte(value.into()),
+        )
     }
 
     /// `PartitionKeyRangeId` (ID 0x002C, String). Filled from the
@@ -619,6 +715,11 @@ pub(crate) enum RntbdRequestToken {
     QueryVersion,
     StartEpkHash,
     EndEpkHash,
+    StartEpk,
+    EndEpk,
+    ReadFeedKeyType,
+    IsBatchAtomic,
+    ShouldBatchContinueOnError,
 }
 
 impl TryFrom<u16> for RntbdRequestToken {
@@ -645,7 +746,12 @@ impl TryFrom<u16> for RntbdRequestToken {
             0x0047 => Ok(Self::IfModifiedSince),
             0x004D => Ok(Self::TransportRequestId),
             0x005A => Ok(Self::EffectivePartitionKey),
+            0x0062 => Ok(Self::StartEpk),
+            0x0063 => Ok(Self::EndEpk),
+            0x0064 => Ok(Self::ReadFeedKeyType),
             0x0066 => Ok(Self::AllowTentativeWrites),
+            0x0073 => Ok(Self::IsBatchAtomic),
+            0x0074 => Ok(Self::ShouldBatchContinueOnError),
             0x0082 => Ok(Self::ReturnPreference),
             0x00A2 => Ok(Self::SDKSupportedCapabilities),
             0x00B2 => Ok(Self::ChangeFeedWireFormatVersion),
@@ -683,7 +789,12 @@ impl From<RntbdRequestToken> for u16 {
             RntbdRequestToken::IfModifiedSince => 0x0047,
             RntbdRequestToken::TransportRequestId => 0x004D,
             RntbdRequestToken::EffectivePartitionKey => 0x005A,
+            RntbdRequestToken::StartEpk => 0x0062,
+            RntbdRequestToken::EndEpk => 0x0063,
+            RntbdRequestToken::ReadFeedKeyType => 0x0064,
             RntbdRequestToken::AllowTentativeWrites => 0x0066,
+            RntbdRequestToken::IsBatchAtomic => 0x0073,
+            RntbdRequestToken::ShouldBatchContinueOnError => 0x0074,
             RntbdRequestToken::ReturnPreference => 0x0082,
             RntbdRequestToken::SDKSupportedCapabilities => 0x00A2,
             RntbdRequestToken::ChangeFeedWireFormatVersion => 0x00B2,
@@ -1135,6 +1246,71 @@ fn write_len_prefixed_u32(out: &mut impl Write, bytes: &[u8]) -> azure_core::Res
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn read_feed_key_type_matches_header_and_wire_contract() {
+        for (header, byte, kind) in [
+            ("ResourceId", 1, ReadFeedKeyType::ResourceId),
+            (
+                "EffectivePartitionKey",
+                2,
+                ReadFeedKeyType::EffectivePartitionKey,
+            ),
+            (
+                "EffectivePartitionKeyRange",
+                3,
+                ReadFeedKeyType::EffectivePartitionKeyRange,
+            ),
+        ] {
+            assert_eq!(header.parse::<ReadFeedKeyType>().unwrap(), kind);
+            assert_eq!(
+                header.to_lowercase().parse::<ReadFeedKeyType>().unwrap(),
+                kind
+            );
+            assert_eq!(<&'static str>::from(kind), header);
+            assert_eq!(ReadFeedKeyType::try_from(byte).unwrap(), kind);
+            let mut bytes = Vec::new();
+            Token::read_feed_key_type(kind)
+                .write_to(&mut bytes)
+                .unwrap();
+            assert_eq!(bytes, [0x64, 0, 0, byte]);
+        }
+        for byte in [0, 4, u8::MAX] {
+            assert!(ReadFeedKeyType::try_from(byte).is_err());
+        }
+        for header in ["", "Unknown", " ResourceId", "1"] {
+            assert!(header.parse::<ReadFeedKeyType>().is_err());
+        }
+    }
+
+    #[test]
+    fn range_filter_tokens_match_reference_wire_bytes() {
+        for (token, expected) in [
+            (
+                Token::start_epk("10AB".into()),
+                vec![0x62, 0, 0x0B, 4, 0, b'1', b'0', b'A', b'B'],
+            ),
+            (
+                Token::end_epk("20CD".into()),
+                vec![0x63, 0, 0x0B, 4, 0, b'2', b'0', b'C', b'D'],
+            ),
+            (
+                Token::read_feed_key_type(ReadFeedKeyType::EffectivePartitionKeyRange),
+                vec![0x64, 0, 0, 3],
+            ),
+        ] {
+            let mut bytes = Vec::new();
+            token.write_to(&mut bytes).unwrap();
+            assert_eq!(bytes, expected);
+        }
+        for (id, kind) in [
+            (0x0062, RntbdRequestToken::StartEpk),
+            (0x0063, RntbdRequestToken::EndEpk),
+            (0x0064, RntbdRequestToken::ReadFeedKeyType),
+        ] {
+            assert_eq!(RntbdRequestToken::try_from(id), Ok(kind));
+        }
+    }
 
     #[test]
     fn invalid_token_type_sentinel_is_rejected() {

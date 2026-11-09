@@ -4,7 +4,7 @@
   "id": "consistency.session-management",
   "title": "Session tokens remain explicit and controllable",
   "requirement": "With automatic session capture disabled, an explicit write token restores session-consistent reads and query continuations preserve explicit session semantics without loss or duplication.",
-  "maturity": "candidate",
+  "maturity": "stable",
   "precedents": [
     {
       "sdk": "rust",
@@ -13,7 +13,8 @@
     }
   ],
   "profiles": [
-    "configurationResilience"
+    "configurationResilience",
+    "liveConfiguration"
   ],
   "tags": [
     "consistency",
@@ -39,7 +40,7 @@
       ]
     },
     "azureLive": {
-      "applicability": "supported",
+      "applicability": "required",
       "fidelity": "full"
     }
   }

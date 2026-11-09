@@ -115,10 +115,6 @@ async fn setup_with_container() -> (
 }
 
 #[tokio::test]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
-)]
 async fn create_and_read_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -210,7 +206,7 @@ async fn create_and_read_item_through_driver() {
 #[tokio::test]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+    ignore = "vnext emulator metadata-create response bodies differ under return-minimal options: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/384"
 )]
 async fn create_database_and_container_through_driver() {
     let backend = DualBackend::setup().await.unwrap();
@@ -314,10 +310,6 @@ async fn create_database_and_container_through_driver() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
-)]
 async fn delete_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -417,10 +409,6 @@ async fn delete_item_through_driver() {
 }
 
 #[tokio::test]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
-)]
 async fn replace_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -803,10 +791,6 @@ async fn read_after_split_refreshes_driver_routing_map() {
     backend.cleanup_real_database(&db_name).await;
 }
 #[tokio::test]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
-)]
 async fn upsert_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -1227,10 +1211,6 @@ async fn create_retries_after_429_throttling() {
 /// scenario runs against a real account and responses are compared.
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
-)]
 async fn read_failover_on_503_via_fault_injection() {
     use azure_core::http::Url;
     use azure_data_cosmos_driver::fault_injection::{
@@ -1452,7 +1432,14 @@ async fn try_real_failover_comparison(
     };
     use std::sync::Arc;
 
-    let conn_str_raw = std::env::var("AZURE_COSMOS_CONNECTION_STRING").ok()?;
+    if std::env::var("AZURE_COSMOS_AUTH_MODE").is_ok_and(|value| value.eq_ignore_ascii_case("aad"))
+    {
+        return None;
+    }
+
+    let conn_str_raw = std::env::var("AZURE_COSMOS_CONNECTION_STRING")
+        .ok()
+        .filter(|value| !value.trim().is_empty())?;
     let mode = std::env::var("AZURE_COSMOS_TEST_MODE")
         .unwrap_or_default()
         .to_lowercase();
@@ -1621,10 +1608,6 @@ async fn setup_with_v1_container() -> (
 }
 
 #[tokio::test]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
-)]
 async fn v1_create_read_replace_delete_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_v1_container().await;
 

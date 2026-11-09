@@ -16,6 +16,11 @@ exclude.workspace = true
 
 [features]
 default = ["azure_core/default"]
+test = ["azure_core/test"]
+unstable_fake = ["test", "azure_core/unstable_fake"]
+
+[package.metadata.docs.rs]
+all-features = true
 
 [dependencies]
 async-lock = { workspace = true }
@@ -30,7 +35,7 @@ time = { workspace = true }
 azure_core_test = { path = "../../core/azure_core_test", features = [
   "tracing",
 ] }
-azure_identity = { path = "../../identity/azure_identity", version = "1.1.0-beta.2" }
+azure_identity = { path = "../../identity/azure_identity" }
 azure_security_keyvault_test = { path = "../azure_security_keyvault_test" }
 include-file.workspace = true
 rand.workspace = true
@@ -42,3 +47,11 @@ rustc_version.workspace = true
 
 [lints]
 workspace = true
+
+[[example]]
+name = "secret_client_fake"
+required-features = ["test", "unstable_fake"]
+
+[[test]]
+name = "secret_client_fake"
+required-features = ["test", "unstable_fake"]

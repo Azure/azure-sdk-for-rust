@@ -6,6 +6,8 @@
 
 #[path = "live_tests/binary_order_by.rs"]
 mod binary_order_by;
+#[path = "live_tests/cosmos_change_feed.rs"]
+mod cosmos_change_feed;
 #[path = "live_tests/cosmos_query.rs"]
 mod cosmos_query;
 mod framework;

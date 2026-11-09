@@ -59,7 +59,7 @@ async fn create_container_in_database(
         )
         .await?;
     let container_client = db_client.container_client(&container_id, None).await?;
-    framework::probe_data_plane_ready("PATCH test container", &container_client).await?;
+    framework::probe_data_plane_ready("PATCH test container", &container_client, 1).await?;
     Ok(container_client)
 }
 
@@ -332,7 +332,7 @@ pub async fn patch_item_honors_max_attempts_option() -> Result<(), Box<dyn Error
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
+    ignore = "vnext emulator accepts server-side PATCH requests exceeding ten instructions: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/379"
 )]
 pub async fn patch_strategy_obeys_service_instruction_limit() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
