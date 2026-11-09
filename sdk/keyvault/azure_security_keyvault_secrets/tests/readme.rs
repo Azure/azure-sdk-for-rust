@@ -71,3 +71,10 @@ async fn readme(ctx: TestContext) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(all(feature = "test", feature = "unstable_fake"))]
+#[tokio::test]
+async fn testing_with_fakes_readme() -> Result<()> {
+    include_markdown!("README.md", "testing_with_fakes", scope);
+    Ok(())
+}
