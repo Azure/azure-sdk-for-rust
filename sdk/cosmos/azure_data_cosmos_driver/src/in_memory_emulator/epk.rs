@@ -141,65 +141,7 @@ fn extract_pk_at_path(
 }
 
 fn parse_partition_key_path(path: &str) -> crate::error::Result<Vec<String>> {
-    let bytes = path.as_bytes();
-    let mut segments = Vec::new();
-    let mut index = 0;
-    while index < bytes.len() {
-        if bytes[index] != b'/' {
-            return Err(invalid_partition_key_path(path, index));
-        }
-        index += 1;
-        if index == bytes.len() {
-            break;
-        }
-
-        if matches!(bytes[index], b'\'' | b'"') {
-            let quote = bytes[index];
-            let start = index + 1;
-            index = start;
-            loop {
-                let Some(relative) = bytes[index..].iter().position(|value| *value == quote) else {
-                    return Err(invalid_partition_key_path(path, start - 1));
-                };
-                index += relative;
-                let escaped = bytes[..index]
-                    .iter()
-                    .rev()
-                    .take_while(|value| **value == b'\\')
-                    .count()
-                    % 2
-                    == 1;
-                if !escaped {
-                    break;
-                }
-                index += 1;
-            }
-            segments.push(path[start..index].to_owned());
-            index += 1;
-            if index < bytes.len() && bytes[index] != b'/' {
-                return Err(invalid_partition_key_path(path, index));
-            }
-        } else {
-            let end = bytes[index..]
-                .iter()
-                .position(|value| *value == b'/')
-                .map_or(bytes.len(), |relative| index + relative);
-            segments.push(path[index..end].trim().to_owned());
-            index = end;
-        }
-    }
-    Ok(segments)
-}
-
-fn invalid_partition_key_path(path: &str, index: usize) -> crate::error::CosmosError {
-    crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::new(
-            azure_core::http::StatusCode::BadRequest,
-        ))
-        .with_message(format!(
-            "invalid partition key path '{path}' at byte index {index}"
-        ))
-        .build()
+    crate::models::partition_key::parse_path(path)
 }
 
 /// Converts a single JSON value to a [`PartitionKeyValue`], rejecting non-scalars

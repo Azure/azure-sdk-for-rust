@@ -40,3 +40,14 @@ npx markdownlint-cli2 --no-globs --fix <files...>
 ## Testing
 
 Run the check command again. Report any remaining issues.
+
+## Links
+
+Use absolute `main` links, such as the [core README](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/README.md)
+(`tree/main` for directories), including for new files not yet on `main`.
+
+Markdown linting does not validate links. From the repository root, run in PowerShell:
+
+```powershell
+./eng/common/scripts/Verify-Links.ps1 -urls @('<file>', '<file>') -rootUrl "file://$PWD/" -recursive:$false -ignoreLinksFile "$PWD/eng/ignore-links.txt" -checkLinkGuidance:$true -localBuildRepoName 'Azure/azure-sdk-for-rust' -localBuildRepoPath "$PWD"
+```

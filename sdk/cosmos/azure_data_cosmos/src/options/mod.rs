@@ -17,11 +17,12 @@ pub use azure_data_cosmos_driver::options::{
     AvailabilityStrategy, BinaryEncodingOptions, ConnectionPoolOptions,
     ConnectionPoolOptionsBuilder, ContentResponseOnWrite, DiagnosticsOptions,
     DiagnosticsOptionsBuilder, DiagnosticsVerbosity, EndToEndOperationLatencyPolicy,
-    ExcludedRegions, HedgeThreshold, HedgingStrategy, OperationOptions, OperationOptionsBuilder,
-    PartitionFailoverOptions, PartitionFailoverOptionsBuilder, PartitionTopologyCacheMode,
-    PriorityLevel, QueryPlanMode, ReadConsistencyStrategy, Region, ServerCertificateValidation,
-    ThrottlingRetryOptions, ThrottlingRetryOptionsBuilder, ThroughputControlOptions,
-    ThroughputControlOptionsBuilder, TlsBackend, UserAgentSuffix, Utf8DecodingMode,
+    ExcludedRegions, FullTextScoreScope, HedgeThreshold, HedgingStrategy, OperationOptions,
+    OperationOptionsBuilder, PartitionFailoverOptions, PartitionFailoverOptionsBuilder,
+    PartitionTopologyCacheMode, PriorityLevel, QueryPlanMode, ReadConsistencyStrategy, Region,
+    ServerCertificateValidation, ThrottlingRetryOptions, ThrottlingRetryOptionsBuilder,
+    ThroughputControlOptions, ThroughputControlOptionsBuilder, TlsBackend, UserAgentSuffix,
+    Utf8DecodingMode,
 };
 pub use batch::{
     BatchDeleteOptions, BatchOptions, BatchReadOptions, BatchReplaceOptions, BatchUpsertOptions,
@@ -42,6 +43,7 @@ pub use feed_ranges::ReadFeedRangesOptions;
 #[cfg(feature = "unstable_patch")]
 pub use item::PatchItemOptions;
 pub use item::{ItemReadOptions, ItemWriteOptions};
+pub use read_many::ReadManyOptions;
 pub use routing_strategy::RoutingStrategy;
 #[cfg(feature = "control_plane")]
 pub use throughput::ThroughputOptions;
@@ -59,6 +61,7 @@ mod database;
 mod feed;
 mod feed_ranges;
 mod item;
+mod read_many;
 mod routing_strategy;
 #[cfg(feature = "control_plane")]
 mod throughput;

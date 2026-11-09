@@ -23,8 +23,14 @@ use crate::{
     },
     driver::{cosmos_driver_free, DriverHandle},
     error::{CosmosErrorCode, COSMOS_STATUS_SUCCESS},
+    feed_range::{cosmos_feed_range_for_partition_key, cosmos_feed_range_free},
     op_request::cosmos_operation_options_default,
     partition_key::{cosmos_partition_key_free, PartitionKeyHandle},
+    partition_key::{CosmosPartitionKeyComponent, CosmosPartitionKeyComponentValue},
+    read_many::{
+        cosmos_read_many_open_submit, cosmos_read_many_request_init, CosmosReadManyIdentity,
+        CosmosReadManyParameter, CosmosReadManyRequest,
+    },
     runtime::{cosmos_runtime_free, RuntimeContext},
     string::view,
 };
@@ -75,6 +81,102 @@ async fn wrapped_faults_survive_cursor_error_delivery() {
 }
 
 #[test]
+fn read_many_cursor_selection_filter_and_owned_results() {
+    for kind in [1, 2] {
+        let fixture = Fixture::new(2);
+        let mut options = cosmos_operation_options_default();
+        options.binary_encoding_enabled = 1;
+        let mut status = COSMOS_STATUS_SUCCESS;
+        let op = {
+            let keys = ["pk-0".to_string(), "pk-1".to_string(), "pk-2".to_string()];
+            let ids = ["d0".to_string(), "d1".to_string(), "d2".to_string()];
+            let components = keys
+                .iter()
+                .map(|key| CosmosPartitionKeyComponent {
+                    kind: 0,
+                    value: CosmosPartitionKeyComponentValue {
+                        string_value: view(key.as_bytes()),
+                    },
+                })
+                .collect::<Vec<_>>();
+            let identities = components
+                .iter()
+                .enumerate()
+                .map(|(i, component)| CosmosReadManyIdentity {
+                    partition_key: component,
+                    partition_key_len: 1,
+                    item_id: if kind == 1 {
+                        view(ids[i].as_bytes())
+                    } else {
+                        Default::default()
+                    },
+                })
+                .collect::<Vec<_>>();
+            let parameters = [CosmosReadManyParameter {
+                name: view(b"@min"),
+                json_value: view(b"1"),
+            }];
+            let mut request = MaybeUninit::<CosmosReadManyRequest>::uninit();
+            // SAFETY: full initialized output storage and live nested input arrays.
+            unsafe {
+                cosmos_read_many_request_init(request.as_mut_ptr());
+                let mut request = request.assume_init();
+                request.operation.container = fixture.container;
+                request.operation.options = &options;
+                request.operation.max_item_count = 1;
+                request.selection_kind = kind;
+                request.identities = identities.as_ptr();
+                request.identities_len = identities.len();
+                request.filter = view(b"c.rank >= @min");
+                request.parameters = parameters.as_ptr();
+                request.parameters_len = parameters.len();
+                cosmos_read_many_open_submit(
+                    fixture.driver,
+                    &request,
+                    fixture.queue,
+                    88,
+                    &mut status,
+                )
+            }
+        };
+        assert_eq!(status, COSMOS_STATUS_SUCCESS);
+        let opened = fixture.receive(op);
+        // SAFETY: completion is live.
+        assert_eq!(unsafe { (*opened).common.status }, COSMOS_STATUS_SUCCESS);
+        let cursor = cosmos_cursor_completion_take_cursor(opened);
+        assert!(!cursor.is_null());
+        cosmos_cursor_completion_free(opened);
+        let checkpoint =
+            fixture.receive(cosmos_cursor_checkpoint_submit(cursor, 0, ptr::null_mut()));
+        // SAFETY: checkpoint is live and owned.
+        assert_eq!(unsafe { (*checkpoint).common.status.0 & 0xffff }, 20124);
+        cosmos_cursor_completion_free(checkpoint);
+        let mut held = Vec::new();
+        let mut ranks = Vec::new();
+        loop {
+            let page = fixture.receive(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
+            // SAFETY: page is a live owned completion.
+            if unsafe { (*page).result_kind } == 4 {
+                cosmos_cursor_completion_free(page);
+                break;
+            }
+            ranks.extend(documents(page).iter().map(|d| d["rank"].as_i64().unwrap()));
+            held.push(page);
+        }
+        cosmos_cursor_free(cursor);
+        let mut retained = Vec::new();
+        for page in held {
+            retained.extend(documents(page).iter().map(|d| d["rank"].as_i64().unwrap()));
+            cosmos_cursor_completion_free(page);
+        }
+        ranks.sort();
+        retained.sort();
+        assert_eq!(ranks, vec![1, 2]);
+        assert_eq!(retained, ranks);
+    }
+}
+
+#[test]
 fn only_legacy_representation_errors_recommend_cursor_migration() {
     for code in [
         CosmosErrorCode::CosmosErrorCodeRepresentationUnsupported,
@@ -95,6 +197,286 @@ fn only_legacy_representation_errors_recommend_cursor_migration() {
             "{code:?}: {error}"
         );
         assert_eq!(error.status(), code.to_status().unwrap());
+    }
+}
+
+#[test]
+fn read_many_rejects_invalid_inputs_without_admitting_work() {
+    let fixture = Fixture::new(1);
+    let component = CosmosPartitionKeyComponent {
+        kind: 0,
+        value: CosmosPartitionKeyComponentValue {
+            string_value: view(b"pk-0"),
+        },
+    };
+    let invalid = CosmosErrorCode::CosmosErrorCodeInvalidOptionValue;
+    let argument = CosmosErrorCode::CosmosErrorCodeInvalidArgument;
+    let cases = [
+        ("short prefix", invalid),
+        ("short record", invalid),
+        ("unknown version", invalid),
+        ("reserved", invalid),
+        ("selection kind", invalid),
+        ("resume", invalid),
+        ("identities null count", argument),
+        ("identities overflow", argument),
+        ("parameters null count", argument),
+        ("parameters overflow", argument),
+        ("key null count", argument),
+        (
+            "key too long",
+            CosmosErrorCode::CosmosErrorCodeTooManyPartitionKeyComponents,
+        ),
+        ("missing item id", argument),
+        ("partition with item id", invalid),
+        (
+            "invalid filter UTF-8",
+            CosmosErrorCode::CosmosErrorCodeInvalidUtf8,
+        ),
+        ("invalid predicate", invalid),
+        ("parameters without filter", invalid),
+        ("invalid parameter JSON", invalid),
+        ("duplicate parameter", invalid),
+        ("unused parameter", invalid),
+        ("mixed selection fields", invalid),
+    ];
+    for (case, expected) in cases {
+        let mut identity = CosmosReadManyIdentity {
+            partition_key: &component,
+            partition_key_len: 1,
+            item_id: view(b"d0"),
+        };
+        let mut parameters = [
+            CosmosReadManyParameter {
+                name: view(b"@min"),
+                json_value: view(b"1"),
+            },
+            CosmosReadManyParameter {
+                name: view(b"@min"),
+                json_value: view(b"2"),
+            },
+        ];
+        let mut storage = MaybeUninit::<CosmosReadManyRequest>::uninit();
+        // SAFETY: init receives writable storage for the complete record.
+        unsafe {
+            cosmos_read_many_request_init(storage.as_mut_ptr());
+        }
+        // SAFETY: init initialized every field.
+        let mut request = unsafe { storage.assume_init() };
+        request.operation.container = fixture.container;
+        request.selection_kind = 1;
+        request.identities = &identity;
+        request.identities_len = 1;
+        request.filter = view(b"c.rank >= @min");
+        request.parameters = parameters.as_ptr();
+        request.parameters_len = 1;
+        match case {
+            "short prefix" => request.struct_size_bytes = 4,
+            "short record" => request.struct_size_bytes -= 1,
+            "unknown version" => request.abi_version = 2,
+            "reserved" => request.reserved[0] = 1,
+            "selection kind" => request.selection_kind = 3,
+            "resume" => request.operation.continuation_token = view(b"token"),
+            "identities null count" => request.identities = ptr::null(),
+            "identities overflow" => request.identities_len = usize::MAX,
+            "parameters null count" => request.parameters = ptr::null(),
+            "parameters overflow" => request.parameters_len = usize::MAX,
+            "key null count" => identity.partition_key = ptr::null(),
+            "key too long" => identity.partition_key_len = 4,
+            "missing item id" => identity.item_id = Default::default(),
+            "partition with item id" => request.selection_kind = 2,
+            "invalid filter UTF-8" => request.filter = view(b"\xff"),
+            "invalid predicate" => request.filter = view(b"true) OR true"),
+            "parameters without filter" => request.filter = Default::default(),
+            "invalid parameter JSON" => parameters[0].json_value = view(b"{"),
+            "duplicate parameter" => request.parameters_len = 2,
+            "unused parameter" => parameters[0].name = view(b"@unused"),
+            "mixed selection fields" => request.operation.item_id = view(b"d0"),
+            _ => unreachable!(),
+        }
+        // Keep pointers tied to the final mutated input records.
+        if !matches!(case, "identities null count") {
+            request.identities = &identity;
+        }
+        if case != "parameters null count" {
+            request.parameters = parameters.as_ptr();
+        }
+        let mut status = COSMOS_STATUS_SUCCESS;
+        // SAFETY: all readable inputs are live; invalid counts must be rejected before access.
+        let operation = unsafe {
+            cosmos_read_many_open_submit(fixture.driver, &request, fixture.queue, 0, &mut status)
+        };
+        assert!(operation.is_null(), "{case} was admitted");
+        assert_eq!(status, expected.as_status_code(), "{case}");
+        let mut result = ptr::null_mut();
+        let mut count = 0;
+        assert_eq!(
+            cosmos_cursor_queue_wait(fixture.queue, &mut result, 1, 0, &mut count),
+            COSMOS_STATUS_SUCCESS
+        );
+        assert_eq!(count, 0, "{case} queued a completion");
+    }
+    // A valid open still fits the one-slot queue after all rejected submissions.
+    let mut request = fixture.request();
+    let body = br#"{"query":"SELECT * FROM c"}"#;
+    request.operation.body = body.as_ptr();
+    request.operation.body_len = body.len();
+    let cursor = fixture.open(&request);
+    cosmos_cursor_free(cursor);
+}
+
+#[test]
+fn read_many_versioned_extension_requires_zero_bytes() {
+    #[repr(C)]
+    struct Extended {
+        request: CosmosReadManyRequest,
+        extension: [u8; 8],
+    }
+    let fixture = Fixture::new(1);
+    for extension in [[1; 8], [0; 8]] {
+        let mut storage = MaybeUninit::<CosmosReadManyRequest>::uninit();
+        // SAFETY: output storage is full-size and writable.
+        unsafe {
+            cosmos_read_many_request_init(storage.as_mut_ptr());
+        }
+        // SAFETY: request is completely initialized.
+        let mut input = Extended {
+            request: unsafe { storage.assume_init() },
+            extension,
+        };
+        input.request.struct_size_bytes = std::mem::size_of::<Extended>() as u32;
+        input.request.operation.container = fixture.container;
+        input.request.selection_kind = 2;
+        let mut status = COSMOS_STATUS_SUCCESS;
+        // SAFETY: Extended backs every declared byte; no nested input arrays.
+        let operation = unsafe {
+            cosmos_read_many_open_submit(
+                fixture.driver,
+                &input.request,
+                fixture.queue,
+                0,
+                &mut status,
+            )
+        };
+        if extension[0] != 0 {
+            assert!(operation.is_null());
+            assert_eq!(
+                status,
+                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
+            );
+        } else {
+            assert_eq!(status, COSMOS_STATUS_SUCCESS);
+            let opened = fixture.receive(operation);
+            // SAFETY: opened is an owned live completion.
+            assert_eq!(unsafe { (*opened).common.status }, COSMOS_STATUS_SUCCESS);
+            let cursor = cosmos_cursor_completion_take_cursor(opened);
+            cosmos_cursor_completion_free(opened);
+            let end = fixture.receive(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
+            // SAFETY: end is an owned live completion.
+            assert_eq!(unsafe { (*end).result_kind }, 4);
+            cosmos_cursor_completion_free(end);
+            cosmos_cursor_free(cursor);
+        }
+    }
+}
+
+#[test]
+fn read_many_native_prefixes_return_all_matching_identities() {
+    let fixture = Fixture::from_handles(fixture::create_with_hpk(true, true).unwrap(), 2);
+    let components = [
+        CosmosPartitionKeyComponent {
+            kind: 0,
+            value: CosmosPartitionKeyComponentValue {
+                string_value: view(b"tenant"),
+            },
+        },
+        CosmosPartitionKeyComponent {
+            kind: 0,
+            value: CosmosPartitionKeyComponentValue {
+                string_value: view(b"pk-5"),
+            },
+        },
+    ];
+    for kind in [1, 2] {
+        for filtered in [false, true] {
+            let id = if kind == 1 {
+                view(b"shared")
+            } else {
+                Default::default()
+            };
+            let identities = [
+                CosmosReadManyIdentity {
+                    partition_key: components.as_ptr(),
+                    partition_key_len: 2,
+                    item_id: id,
+                },
+                CosmosReadManyIdentity {
+                    partition_key: components.as_ptr(),
+                    partition_key_len: 1,
+                    item_id: id,
+                },
+            ];
+            let mut storage = MaybeUninit::<CosmosReadManyRequest>::uninit();
+            // SAFETY: storage is writable for the complete initialized request.
+            unsafe {
+                cosmos_read_many_request_init(storage.as_mut_ptr());
+            }
+            // SAFETY: init wrote every field.
+            let mut request = unsafe { storage.assume_init() };
+            request.operation.container = fixture.container;
+            request.operation.max_item_count = 1;
+            let mut options = cosmos_operation_options_default();
+            options.binary_encoding_enabled = 1;
+            request.operation.options = &options;
+            request.selection_kind = kind;
+            request.identities = identities.as_ptr();
+            request.identities_len = identities.len();
+            if filtered {
+                request.filter = view(b"c.rank >= 3");
+            }
+            let mut status = COSMOS_STATUS_SUCCESS;
+            // SAFETY: fixture handles and input arrays remain live throughout submission.
+            let operation = unsafe {
+                cosmos_read_many_open_submit(
+                    fixture.driver,
+                    &request,
+                    fixture.queue,
+                    0,
+                    &mut status,
+                )
+            };
+            assert_eq!(status, COSMOS_STATUS_SUCCESS);
+            let opened = fixture.receive(operation);
+            // SAFETY: opened is an owned completion.
+            assert_eq!(unsafe { (*opened).common.status }, COSMOS_STATUS_SUCCESS);
+            let cursor = cosmos_cursor_completion_take_cursor(opened);
+            cosmos_cursor_completion_free(opened);
+            let mut ranks = Vec::new();
+            loop {
+                let page = fixture.receive(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
+                // SAFETY: page is an owned completion.
+                if unsafe { (*page).result_kind } == 4 {
+                    cosmos_cursor_completion_free(page);
+                    break;
+                }
+                ranks.extend(
+                    documents(page)
+                        .iter()
+                        .map(|doc| doc["rank"].as_i64().unwrap()),
+                );
+                cosmos_cursor_completion_free(page);
+            }
+            cosmos_cursor_free(cursor);
+            ranks.sort();
+            assert_eq!(
+                ranks,
+                if filtered {
+                    vec![3, 4, 5]
+                } else {
+                    vec![0, 1, 2, 3, 4, 5]
+                }
+            );
+        }
     }
 }
 
@@ -182,6 +564,140 @@ fn non_streaming_order_by_retains_all_rows_after_unsupported_checkpoint() {
         assert_eq!(ranks, vec![0, 1, 2, 3, 4, 5]);
         assert!(unsupported);
         cosmos_cursor_free(cursor);
+    }
+}
+
+#[test]
+fn change_feed_checkpoint_before_next_preserves_start() {
+    for mode in [1, 2] {
+        for start in [1, 2, 3] {
+            if mode == 2 && start != 2 {
+                continue;
+            }
+            for logical in [false, true] {
+                let fixture = Fixture::scripted();
+                let mut range = ptr::null_mut();
+                if logical {
+                    assert_eq!(
+                        cosmos_feed_range_for_partition_key(
+                            fixture.container,
+                            fixture.partition_key,
+                            &mut range,
+                        ),
+                        COSMOS_STATUS_SUCCESS
+                    );
+                }
+                let mut request = fixture.request();
+                request.operation.kind = 0;
+                request.operation.feed_range = range;
+                request.change_feed_mode = mode;
+                request.start_from = start;
+                if start == 3 {
+                    request.start_time = view(b"2023-11-14T00:00:00Z");
+                }
+                let cursor = fixture.open(&request);
+                for supplied_start in [0, if start == 2 { 1 } else { 2 }] {
+                    let checkpoint = fixture.receive(cosmos_cursor_checkpoint_submit(
+                        cursor,
+                        0,
+                        ptr::null_mut(),
+                    ));
+                    // SAFETY: the borrowed checkpoint remains live through Open.
+                    unsafe {
+                        request.operation.continuation_token = (*checkpoint).checkpoint;
+                    }
+                    request.start_from = supplied_start;
+                    request.start_time = Default::default();
+                    let resumed = fixture.open(&request);
+                    cosmos_cursor_completion_free(checkpoint);
+                    let page =
+                        fixture.receive(cosmos_cursor_next_submit(resumed, 0, ptr::null_mut()));
+                    // SAFETY: the owned completion remains live until freed below.
+                    unsafe {
+                        assert_eq!((*page).common.status, COSMOS_STATUS_SUCCESS);
+                        assert_eq!(
+                            (*page).common.http_status_code,
+                            if start == 2 && (mode == 1 || logical) {
+                                304
+                            } else {
+                                200
+                            }
+                        );
+                    }
+                    cosmos_cursor_completion_free(page);
+                    cosmos_cursor_free(resumed);
+                }
+                cosmos_cursor_free(cursor);
+                cosmos_feed_range_free(range);
+            }
+        }
+    }
+}
+
+#[test]
+fn hierarchical_prefix_cursor_checkpoints_traverse_both_overlapping_ranges() {
+    for (mode, key) in [
+        (
+            1,
+            azure_data_cosmos_driver::models::PartitionKey::from("tenant"),
+        ),
+        (
+            1,
+            azure_data_cosmos_driver::models::PartitionKey::from(("tenant", "user")),
+        ),
+        (
+            2,
+            azure_data_cosmos_driver::models::PartitionKey::from("tenant"),
+        ),
+        (
+            2,
+            azure_data_cosmos_driver::models::PartitionKey::from(("tenant", "user")),
+        ),
+    ] {
+        let fixture = Fixture::from_handles(fixture::scripted_hpk(true), 2);
+        let key = Box::into_raw(Box::new(PartitionKeyHandle { inner: key }));
+        let mut range = ptr::null_mut();
+        assert_eq!(
+            cosmos_feed_range_for_partition_key(fixture.container, key, &mut range),
+            COSMOS_STATUS_SUCCESS
+        );
+        let mut request = fixture.request();
+        request.operation.kind = 0;
+        request.operation.feed_range = range;
+        request.change_feed_mode = mode;
+        request.start_from = if mode == 2 { 2 } else { 1 };
+        let mut cursor = fixture.open(&request);
+        let mut ids = Vec::new();
+        for poll in 0..5 {
+            let checkpoint =
+                fixture.receive(cosmos_cursor_checkpoint_submit(cursor, 0, ptr::null_mut()));
+            // SAFETY: checkpoint stays live until the resumed cursor copies it.
+            unsafe {
+                request.operation.continuation_token = (*checkpoint).checkpoint;
+            }
+            request.start_from = if poll % 2 != 0 {
+                0
+            } else if mode == 2 {
+                1
+            } else {
+                2
+            };
+            let resumed = fixture.open(&request);
+            cosmos_cursor_completion_free(checkpoint);
+            cosmos_cursor_free(cursor);
+            cursor = resumed;
+            let page = fixture.receive(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
+            ids.extend(documents(page).into_iter().map(|doc| {
+                let item = if mode == 2 { &doc["current"] } else { &doc };
+                item["id"].as_str().unwrap().to_owned()
+            }));
+            cosmos_cursor_completion_free(page);
+        }
+        ids.sort();
+        assert_eq!(ids, ["0d0", "0d1", "1d0", "1d1"]);
+        cosmos_cursor_free(cursor);
+        cosmos_feed_range_free(range);
+        cosmos_partition_key_free(key);
     }
 }
 
@@ -293,6 +809,7 @@ impl Fixture {
         );
         assert_eq!(count, 1);
         cosmos_operation_handle_free(op);
+        assert!(!completion.is_null());
         completion
     }
 

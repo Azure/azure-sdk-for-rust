@@ -4,12 +4,15 @@
 use crate::{
     clients::ClientContext,
     diagnostics::CosmosOperationContext,
-    feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
+    feed::{
+        ChangeFeedPageIterator, FeedRange, FeedScope, ItemSelector, QueryItemIterator,
+        ReadManyIterator,
+    },
     models::{BatchResponse, ChangeFeedItem, ItemResponse, TransactionalBatch},
     options::{
         BatchOptions, BinaryEncodingOptions, ChangeFeedMode, ChangeFeedOptions,
         ChangeFeedStartFrom, ItemReadOptions, ItemWriteOptions, OperationOptions, Precondition,
-        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, SessionToken,
+        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, ReadManyOptions, SessionToken,
     },
     PartitionKey, Query, ResourceIdentity,
 };
@@ -41,6 +44,77 @@ pub struct ContainerClient {
 }
 
 impl ContainerClient {
+    /// Reads selected items, logical partitions, or feed ranges as unordered pages.
+    ///
+    /// Duplicate selections are removed. Missing or filtered-out items are
+    /// omitted. A filter only narrows the selection; use [`Self::query_items()`]
+    /// for general queries. Item and partition scopes accept complete keys or
+    /// nonempty hierarchical prefixes. A prefix plus an id can return multiple
+    /// items across logical partitions. Overlapping selections do not duplicate
+    /// results. Item keys missing only a final `/id` component are completed from
+    /// the supplied id.
+    ///
+    /// Queries consume RUs and may span multiple service requests. There is no
+    /// cross-partition snapshot or durable resume. Use
+    /// [`ReadManyIterator::collect_all()`] before iteration to aggregate results.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid selections, unbound filter parameters,
+    /// excessive fan-out, or planning failures. Request and deserialization
+    /// failures are returned while consuming pages.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # async fn example(container: azure_data_cosmos::clients::ContainerClient) -> azure_data_cosmos::Result<()> {
+    /// use azure_data_cosmos::feed::{ItemFilter, ItemScope, ItemSelector};
+    /// let filter = "c.active = @active".parse::<ItemFilter>()?
+    ///     .with_parameter("@active", true)?;
+    /// let response = container.read_many::<serde_json::Value>(
+    ///     ItemSelector::from(ItemScope::Partitions(vec!["tenant-1".into()])).with_filter(filter),
+    ///     None,
+    /// ).await?.collect_all().await?;
+    /// println!("Found {} items", response.items().len());
+    /// # Ok(()) }
+    /// ```
+    pub async fn read_many<T: DeserializeOwned + Send + 'static>(
+        &self,
+        selection: impl Into<ItemSelector>,
+        options: Option<ReadManyOptions>,
+    ) -> crate::Result<ReadManyIterator<T>> {
+        let options = options.unwrap_or_default();
+        let plan_options = crate::options::FeedOptions {
+            max_fan_out: options.max_fan_out,
+            ..Default::default()
+        }
+        .to_plan_options();
+        let (operation_options, _) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
+        let mut operation = CosmosOperation::read_many(self.container_ref.clone(), selection);
+        if let Some(token) = options.session_token {
+            operation = operation.with_session_token(token);
+        }
+        if let Some(hint) = options.max_item_count {
+            operation = operation.with_max_item_count(hint);
+        }
+        let plan = self
+            .context
+            .driver
+            .plan_operation(operation, &operation_options, None, &plan_options)
+            .await?;
+        let pages = QueryItemIterator::new(
+            self.context.driver.clone(),
+            Some(self.container_ref.clone()),
+            plan,
+            operation_options,
+            self.context.diagnostics_handlers.clone(),
+            self.operation_context("read_many"),
+        )
+        .into_pages();
+        Ok(ReadManyIterator::new(pages))
+    }
+
     /// Returns the resolved [`ContainerReference`] for the container this client is attached to.
     #[cfg(feature = "unstable_dtx")]
     pub(crate) fn container_reference(&self) -> &ContainerReference {
@@ -894,22 +968,27 @@ impl ContainerClient {
     /// * `scope` - The [`FeedScope`] specifying the scope of the query.
     /// * `options` - Optional parameters for the request.
     ///
-    /// # Cross Partition Queries
+    /// # Cross-partition queries
     ///
-    /// When `scope` spans multiple partitions, the SDK obtains a query plan and composes the
-    /// client-side pipeline needed to execute it. Supported features include ordinary projections
-    /// and filters, `TOP`, `OFFSET`/`LIMIT`, streaming single- and multiple-column `ORDER BY`, and
-    /// ordered or unordered `DISTINCT`.
+    /// Supported features:
     ///
-    /// Cross-partition vector ordering supports pure `ORDER BY VectorDistance(...)` queries with a
-    /// finite `TOP N` or `OFFSET x LIMIT y` window. The SDK buffers that result window before
-    /// returning the first page, so use narrow projections and choose a result window appropriate
-    /// for the memory available to the application.
+    /// - Projections and filters.
+    /// - `TOP` and `OFFSET`/`LIMIT`.
+    /// - Single- and multiple-column `ORDER BY`.
+    /// - Ordered and unordered `DISTINCT`.
+    /// - Vector ordering with `ORDER BY VectorDistance(...)`.
+    /// - Ranked full-text search with `ORDER BY RANK FullTextScore(...)`.
+    /// - Weighted full-text and vector hybrid search with `RRF(...)`.
     ///
-    /// The buffered result can be iterated in pages, but it does not support continuation tokens
-    /// for resuming in another process. Aggregates, `GROUP BY`, and hybrid/full-text ranking remain
-    /// unsupported when their query plans require client-side stages that have not been
-    /// implemented.
+    /// Unsupported features:
+    ///
+    /// - Aggregates and `GROUP BY` that require client-side aggregation.
+    /// - Continuation tokens for buffered queries, including vector ordering, ranked full-text,
+    ///   and hybrid search.
+    ///
+    /// Vector ordering, ranked full-text, and hybrid queries buffer candidates before returning
+    /// the first page. They require a finite `TOP` or `OFFSET`/`LIMIT` within
+    /// [`QueryOptions::max_buffered_query_window`].
     ///
     /// # Examples
     ///
@@ -978,6 +1057,27 @@ impl ContainerClient {
     ///
     /// while let Some(item) = matches.try_next().await? {
     ///     println!("{}: {}", item.id, item.score);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Rank full-text matches with a parameterized search term:
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::{feed::FeedScope, Query};
+    /// use futures::TryStreamExt;
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// let query = Query::from(
+    ///     "SELECT TOP 5 c.id FROM c ORDER BY RANK FullTextScore(c.text, @term)",
+    /// )
+    /// .with_parameter("@term", "bicycle")?;
+    /// let mut matches = container_client
+    ///     .query_items::<serde_json::Value>(query, FeedScope::full_container(), None)
+    ///     .await?;
+    /// while let Some(item) = matches.try_next().await? {
+    ///     println!("{item}");
     /// }
     /// # Ok(())
     /// # }
@@ -1066,10 +1166,24 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `scope` - Determines which partitions to read changes from.
+    ///   A hierarchical partition-key prefix reads every overlapping physical
+    ///   range, with each request bounded to the prefix.
     /// * `start_from` - Where to begin reading when no continuation token is
-    ///   provided. Ignored when `options` carries a continuation token, since
-    ///   the token holds its own position.
+    ///   provided. A checkpoint's saved start takes precedence over this value,
+    ///   and saved per-range ETags take precedence over the start. Older
+    ///   single-request checkpoints don't record the original start; supply the
+    ///   same `start_from` when resuming those checkpoints before the first poll.
     /// * `options` - Optional parameters controlling mode, session token, and paging.
+    ///
+    /// In LatestVersion mode, [`ChangeFeedStartFrom::Now`] is evaluated at each
+    /// range's first request, including ranges first polled after resume.
+    /// Creating an iterator or saving its checkpoint doesn't anchor that time.
+    ///
+    /// Older prefix checkpoints that contain a single request's ETag cannot
+    /// safely reconstruct per-range positions and are rejected. Unpolled prefix
+    /// checkpoints can resume with the original `start_from`.
+    /// New query and change-feed checkpoints use `c2.` and are rejected by
+    /// older SDKs that only support `c1.`.
     ///
     /// # AllVersionsAndDeletes limitations
     ///
@@ -1082,8 +1196,9 @@ impl ContainerClient {
     /// * When starting from [`ChangeFeedStartFrom::Now`], every range is pinned
     ///   to its concrete starting position before the first page is returned, so
     ///   a range that is never served before a checkpoint still resumes from its
-    ///   true start rather than resume-time. No intermediate versions or deletes
-    ///   are dropped across a resume. `Now` is deliberately **not** rewritten to
+    ///   captured start rather than resume-time. A checkpoint taken before the
+    ///   first poll has no captured ETags; priming happens when that feed is
+    ///   polled, including after resume. `Now` is deliberately **not** rewritten to
     ///   a concrete [`ChangeFeedStartFrom::PointInTime`], which would change its
     ///   semantics; each range instead captures its own server continuation.
     /// * The feed mode is encoded in the continuation token, so a token issued in

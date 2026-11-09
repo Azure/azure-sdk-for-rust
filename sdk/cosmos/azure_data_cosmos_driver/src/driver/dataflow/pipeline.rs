@@ -141,11 +141,15 @@ impl OperationPlan {
         self.initial_execution_deadline.take()
     }
 
-    /// Clears deadlines retained by an internal replan after the current
-    /// `execute_plan` call has already adopted that budget.
-    pub(crate) fn clear_execution_deadlines(&mut self) {
+    /// Drops a replan's temporary budget without losing a caller-pinned deadline.
+    pub(crate) fn reset_replan_deadlines(&mut self, persistent: Option<Instant>) {
         self.initial_execution_deadline = None;
-        self.operation = Arc::new(self.operation.as_ref().clone().with_absolute_deadline(None));
+        self.operation = Arc::new(
+            self.operation
+                .as_ref()
+                .clone()
+                .with_absolute_deadline(persistent),
+        );
     }
 
     /// Records that a page advanced the pipeline but never reached the caller.
@@ -231,7 +235,7 @@ impl OperationPlan {
                 )
                 .build());
         }
-        ContinuationToken::encode_v1(&self.operation, &self.pipeline.snapshot_state()?)
+        ContinuationToken::encode(&self.operation, &self.pipeline.snapshot_state()?)
     }
 
     /// Whether the driver must transcode each page's body back to text before

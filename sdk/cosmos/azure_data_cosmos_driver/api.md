@@ -206,6 +206,7 @@ pub mod diagnostics {
     }
     impl DiagnosticsContext {
         pub fn activity_id(&self) -> &ActivityId;
+        pub fn clone_with_status(&self, status: CosmosStatus) -> Self;
         pub fn compaction(&self) -> Option<&CompactionInfo>;
         pub fn duration(&self) -> Duration;
         pub fn effective_status(&self) -> Option<CosmosStatus>;
@@ -1517,6 +1518,7 @@ pub mod models {
         pub fn read_container_by_rid<impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(account: AccountReference, db_rid: impl Into<std::borrow::Cow<'static, str>>, container_rid: impl Into<std::borrow::Cow<'static, str>>) -> Self;
         pub fn read_database(database: DatabaseReference) -> Self;
         pub fn read_item(item: ItemReference) -> Self;
+        pub fn read_many<impl Into<crate::read_many::ItemSelector>: Into<crate::read_many::ItemSelector>>(container: ContainerReference, selection: impl Into<crate::read_many::ItemSelector>) -> Self;
         pub fn read_offer<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(account: AccountReference, offer_id: impl Into<Cow<'static, str>>) -> Self;
         pub fn replace_container(container: ContainerReference) -> Self;
         pub fn replace_item(item: ItemReference) -> Self;
@@ -2885,11 +2887,13 @@ pub mod options {
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct PlanOptions {
+        pub full_text_score_scope: crate::options::FullTextScoreScope,
         pub max_buffered_query_window: u64,
         pub query_plan_mode: crate::options::QueryPlanMode,
         pub max_fan_out: u32,
     }
     impl PlanOptions {
+        pub fn with_full_text_score_scope(self, scope: FullTextScoreScope) -> Self;
         pub fn with_max_buffered_query_window(self, max_buffered_query_window: u64) -> Self;
         pub fn with_max_fan_out(self, max_fan_out: u32) -> Self;
         pub fn with_query_plan_mode(self, mode: QueryPlanMode) -> Self;
@@ -3186,6 +3190,13 @@ pub mod options {
         type Err = String;
         fn from_str(s: &str) -> Result<Self, <Self as >::Err>;
     }
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum FullTextScoreScope {
+        #[default]
+        Global,
+        Local,
+    }
     #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
     #[non_exhaustive]
     pub enum PartitionTopologyCacheMode {
@@ -3291,6 +3302,34 @@ pub mod options {
     pub const DEFAULT_MAX_BUFFERED_QUERY_WINDOW: u64 = 1000;
     pub const DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS: usize = 32;
     pub const DEFAULT_MAX_FAN_OUT: u32 = 100;
+}
+pub mod read_many {
+    #[derive(Clone, Debug)]
+    pub struct ItemFilter {
+    }
+    impl ItemFilter {
+        pub fn with_parameter<impl Into<String>: Into<String>, impl Serialize: Serialize>(self, name: impl Into<String>, value: impl Serialize) -> crate::Result<Self>;
+    }
+    impl FromStr for ItemFilter {
+        type Err = CosmosError;
+        fn from_str(value: &str) -> crate::Result<Self>;
+    }
+    #[derive(Clone, Debug)]
+    pub struct ItemSelector {
+    }
+    impl ItemSelector {
+        pub fn with_filter<impl Into<ItemFilter>: Into<ItemFilter>>(self, filter: impl Into<ItemFilter>) -> Self;
+    }
+    #[derive(Clone, Debug)]
+    #[non_exhaustive]
+    pub enum ItemScope {
+        Items(Vec<(crate::models::PartitionKey, String)>),
+        Partitions(Vec<crate::models::PartitionKey>),
+        FeedRanges(Vec<crate::models::FeedRange>),
+    }
+    impl From<ItemScope> for ItemSelector {
+        fn from(selection: ItemScope) -> Self;
+    }
 }
 #[cfg(feature = "__internal_mocking")]
 pub mod test {

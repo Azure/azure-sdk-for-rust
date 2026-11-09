@@ -30,6 +30,7 @@ const MAX_SPLIT_RETRIES: usize = 10;
 /// When all children are drained, the node itself is drained.
 pub(crate) struct SequentialDrain {
     children: VecDeque<Box<dyn PipelineNode>>,
+    spawned_children: usize,
 }
 
 impl SequentialDrain {
@@ -39,7 +40,13 @@ impl SequentialDrain {
     pub(crate) fn new(children: Vec<Box<dyn PipelineNode>>) -> Self {
         Self {
             children: children.into(),
+            spawned_children: 0,
         }
+    }
+
+    /// Returns the number of children spawned by splits since the last read.
+    pub(crate) fn take_spawned_children(&mut self) -> usize {
+        std::mem::take(&mut self.spawned_children)
     }
 }
 
@@ -106,6 +113,14 @@ impl PipelineNode for SequentialDrain {
                         ));
                     }
 
+                    // The replaced child may have emitted pages before splitting, so
+                    // each replacement can contribute another full result window.
+                    self.spawned_children = self
+                        .spawned_children
+                        .checked_add(replacements.len())
+                        .ok_or_else(|| {
+                        super::node::split_replacement_invalid("split replacement count overflowed")
+                    })?;
                     // Remove the split child and splice in replacements at the front.
                     self.children.pop_front();
                     for (i, node) in replacements.into_nodes().into_iter().enumerate() {

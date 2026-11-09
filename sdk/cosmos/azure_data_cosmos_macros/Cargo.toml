@@ -25,5 +25,8 @@ syn.workspace = true
 [dev-dependencies]
 tracing.workspace = true
 
+[package.metadata.docs.rs]
+all-features = true
+
 [lints]
 workspace = true

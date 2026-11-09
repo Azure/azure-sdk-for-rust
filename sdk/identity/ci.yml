@@ -25,6 +25,7 @@ extends:
         releaseInBatch: ${{ parameters.release_azure_identity }}
 
     ${{ if endsWith(variables['Build.DefinitionName'], 'weekly') }}:
+      TestTimeoutInMinutes: 120
       Location: uksouth
       RunLiveTests: true
       PersistOidcToken: true
@@ -33,3 +34,14 @@ extends:
           GenerateVMJobs: true
           Path: sdk/identity/azure_identity/managed-identity-matrix.json
           Selection: sparse
+      PostSteps:
+        - task: AzureCLI@2
+          displayName: Collect identity deployment diagnostics
+          condition: and(always(), in(variables['Agent.JobStatus'], 'Failed', 'Canceled'))
+          timeoutInMinutes: 2
+          continueOnError: true
+          inputs:
+            azureSubscription: azure-sdk-tests-public
+            scriptType: pscore
+            scriptLocation: scriptPath
+            scriptPath: $(Build.SourcesDirectory)/sdk/identity/eng/scripts/Get-DeploymentDiagnostics.ps1

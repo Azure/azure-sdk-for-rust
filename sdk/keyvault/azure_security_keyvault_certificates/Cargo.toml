@@ -17,6 +17,9 @@ exclude.workspace = true
 [features]
 default = ["azure_core/default"]
 
+[package.metadata.docs.rs]
+all-features = true
+
 [dependencies]
 async-lock = { workspace = true }
 async-trait = { workspace = true }

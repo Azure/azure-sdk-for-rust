@@ -4,11 +4,12 @@
 //! Cosmos DB operation representation.
 
 use crate::models::{
-    AccountReference, ContainerReference, CosmosRequestHeaders, CosmosResourceReference,
-    DatabaseReference, FeedRange, ItemReference, OperationType, PartitionKey, Precondition,
-    ResourceType,
+    cosmos_resource_reference::validate_resource_name, AccountReference, ContainerReference,
+    CosmosRequestHeaders, CosmosResourceReference, DatabaseReference, FeedRange, ItemReference,
+    OperationType, PartitionKey, Precondition, ResourceType,
 };
 use crate::options::Utf8DecodingMode;
+use crate::read_many::ItemScope;
 use azure_core::http::Etag;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, time::Instant};
@@ -50,21 +51,20 @@ pub enum ChangeFeedStartFrom {
 
     /// Start from the current point in time (wire header `If-None-Match: *`).
     ///
-    /// "Now" is evaluated when the request is sent, so on resume a never-polled
-    /// partition starts from resume time rather than the original start time.
-    /// This is acceptable for LatestVersion (it still converges to the latest
-    /// state under at-least-once delivery). For AllVersionsAndDeletes it is a
-    /// documented limitation: a range that is never polled before a checkpoint
-    /// can drop the intermediate versions and deletes that occurred between the
-    /// original start and the resume. "Now" is deliberately not pinned to a
-    /// concrete start position before persisting, because that would change its
-    /// semantics; lossless per-range "Now" resolution is a future improvement.
+    /// "Now" is evaluated when each range's first request is sent, not when the
+    /// iterator is created or a checkpoint is saved. In LatestVersion mode, ranges not
+    /// polled before a checkpoint start at their first request after resume;
+    /// changes made before that request aren't included.
+    ///
+    /// AllVersionsAndDeletes fan-out polls every range to capture its starting
+    /// ETag before returning the first page. Saving a checkpoint before the first poll
+    /// does not perform this I/O; priming occurs when the resumed feed is polled.
     Now,
 
     /// Start from a specific point in time (wire header `If-Modified-Since`).
     ///
-    /// The timestamp is persisted in the continuation token as RFC 3339 so
-    /// resume is exact, and formatted as RFC 1123 for the wire header.
+    /// The timestamp is persisted in the continuation token as RFC 3339 and
+    /// formatted as RFC 1123 for the wire header, with one-second precision.
     PointInTime(#[serde(with = "time::serde::rfc3339")] OffsetDateTime),
 }
 
@@ -129,6 +129,7 @@ fn format_rfc1123(timestamp: &OffsetDateTime) -> String {
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct CosmosOperation {
+    pub(crate) read_many: Option<std::sync::Arc<crate::read_many::ReadManyRequest>>,
     /// The type of operation (immutable after construction).
     operation_type: OperationType,
     /// The type of resource (derived from resource reference, immutable).
@@ -239,6 +240,9 @@ impl CosmosOperation {
     /// caller actually invoked keeps reporting `patch_item` on the root span and
     /// the operation metric.
     pub fn db_operation_name(&self) -> Option<&'static str> {
+        if self.read_many.is_some() {
+            return Some("read_many");
+        }
         let name = match (self.operation_type, self.resource_type) {
             // Data-plane item operations.
             (OperationType::Create, ResourceType::Document) => "create_item",
@@ -352,6 +356,7 @@ impl CosmosOperation {
     /// id so the created item remains addressable by later point operations.
     /// Batch validation reads only item IDs from the service-defined envelope;
     /// all other document fields remain schema-agnostic.
+    /// Read-many validates selected IDs before planning point reads or queries.
     pub(crate) fn validate_addressing(
         &self,
         validate_resource_names: bool,
@@ -362,6 +367,13 @@ impl CosmosOperation {
             self.resource_reference.validate_resource_names()?;
             if self.operation_type == OperationType::Batch {
                 super::transactional_batch::validate_resource_names(self.body())?;
+            }
+            if let Some(request) = &self.read_many {
+                if let ItemScope::Items(items) = &request.selection {
+                    for (_, id) in items {
+                        validate_resource_name("item", id)?;
+                    }
+                }
             }
         }
         Ok(())
@@ -569,6 +581,9 @@ impl CosmosOperation {
 
     /// Records the change feed start position and emits its wire header.
     ///
+    /// Replaces any previously set precondition (`If-Match` or `If-None-Match`)
+    /// and `If-Modified-Since` value.
+    ///
     /// This is the single source of truth for translating a start position into
     /// the appropriate header, so both the initial request and a resume that
     /// reconstructs the position from a continuation token stay in sync:
@@ -577,6 +592,8 @@ impl CosmosOperation {
     /// - [`ChangeFeedStartFrom::Now`] → `If-None-Match: *`
     /// - [`ChangeFeedStartFrom::PointInTime`] → `If-Modified-Since: <RFC 1123>`
     pub fn with_change_feed_start(mut self, start_from: ChangeFeedStartFrom) -> Self {
+        self.request_headers.precondition = None;
+        self.request_headers.if_modified_since = None;
         match &start_from {
             ChangeFeedStartFrom::Beginning => {}
             ChangeFeedStartFrom::Now => {
@@ -753,6 +770,7 @@ impl CosmosOperation {
             "Attempted to create a partitioned operation without an OperationTarget specifying the partitions to access"
         );
         Self {
+            read_many: None,
             operation_type,
             resource_type,
             resource_reference,
@@ -777,6 +795,24 @@ impl CosmosOperation {
     fn for_item(operation_type: OperationType, item: ItemReference) -> Self {
         let range = FeedRange::for_item(&item);
         Self::new(operation_type, item, Some(range))
+    }
+
+    /// Reads selected items, logical partitions, or feed ranges, optionally filtered.
+    ///
+    /// Item and partition scopes accept complete keys or nonempty hierarchical prefixes.
+    /// A prefix plus an id returns every matching item across logical partitions.
+    ///
+    /// Execute with [`CosmosDriver::plan_operation()`](crate::CosmosDriver::plan_operation)
+    /// and [`CosmosDriver::execute_plan()`](crate::CosmosDriver::execute_plan).
+    /// Pages are unordered, duplicates are removed, and missing items are omitted.
+    /// Durable continuation tokens are not supported.
+    pub fn read_many(
+        container: ContainerReference,
+        selection: impl Into<crate::read_many::ItemSelector>,
+    ) -> Self {
+        let mut operation = Self::query_items(container, Some(FeedRange::full()));
+        operation.read_many = Some(std::sync::Arc::new(selection.into()));
+        operation
     }
 
     // ===== Control Plane Factory Methods =====
@@ -1355,7 +1391,13 @@ impl CosmosOperation {
             // Change feed is trivial only when targeting a specific logical partition key.
             // Full-container (target=None) and EPK range targets require fan-out.
             if self.is_change_feed() {
-                return self.target().and_then(|t| t.partition_key()).is_some();
+                return self
+                    .target()
+                    .and_then(|target| target.partition_key())
+                    .zip(self.container())
+                    .is_some_and(|(key, container)| {
+                        container.partition_key_definition().is_complete(key)
+                    });
             }
             // For now, at least, all other non-query operations are trivial.
             return true;
@@ -1636,6 +1678,48 @@ mod tests {
     }
 
     #[test]
+    fn read_many_validates_selected_names_with_compatibility_opt_out() {
+        for id in ["..", "a/b", "item?query", "item#fragment", "item\nname"] {
+            for ids in [vec![id], vec!["safe-item", id]] {
+                let operation = CosmosOperation::read_many(
+                    test_container(),
+                    ItemScope::Items(
+                        ids.into_iter()
+                            .map(|id| (PartitionKey::from("pk1"), id.to_owned()))
+                            .collect(),
+                    ),
+                );
+                let error = operation
+                    .validate_addressing(true)
+                    .expect_err("unsafe selected IDs must be rejected before planning");
+                assert_eq!(
+                    error.status(),
+                    crate::error::status_codes::CLIENT_BAD_REQUEST
+                );
+                operation
+                    .validate_addressing(false)
+                    .expect("the compatibility option must disable selected ID validation");
+            }
+        }
+    }
+
+    #[test]
+    fn read_many_accepts_safe_names_and_partition_scopes() {
+        for selection in [
+            ItemScope::Items(vec![
+                (PartitionKey::from("pk1"), "item with spaces".into()),
+                (PartitionKey::from("pk2"), "item+value=1".into()),
+            ]),
+            ItemScope::Partitions(vec![PartitionKey::from("a/b")]),
+            ItemScope::Items(Vec::new()),
+        ] {
+            CosmosOperation::read_many(test_container(), selection)
+                .validate_addressing(true)
+                .expect("safe selections must pass name validation");
+        }
+    }
+
+    #[test]
     fn read_item_on_rid_container_rejects_name_id() {
         // Read puts the leaf in the path, where the service tries to parse it as
         // a ResourceId. Confirmed live: this returns
@@ -1812,6 +1896,66 @@ mod tests {
         assert!(op.request_headers().incremental_feed);
         assert!(!op.request_headers().full_fidelity_feed);
         assert!(op.request_headers().changefeed_wire_format_version);
+    }
+
+    #[test]
+    fn change_feed_start_replaces_previous_headers() {
+        let starts = [
+            ChangeFeedStartFrom::Beginning,
+            ChangeFeedStartFrom::Now,
+            ChangeFeedStartFrom::PointInTime(time::macros::datetime!(2026-08-21 12:34:56 UTC)),
+        ];
+        for previous in &starts {
+            for start in &starts {
+                let operation =
+                    CosmosOperation::change_feed(test_container(), Some(FeedRange::full()))
+                        .with_change_feed_start(previous.clone())
+                        .with_change_feed_start(start.clone());
+                assert_eq!(operation.change_feed_start(), Some(start));
+                let expected_precondition = matches!(start, ChangeFeedStartFrom::Now)
+                    .then(|| Precondition::if_none_match(Etag::from("*")));
+                assert_eq!(operation.precondition(), expected_precondition.as_ref());
+                let expected_time = match start {
+                    ChangeFeedStartFrom::PointInTime(timestamp) => Some(format_rfc1123(timestamp)),
+                    _ => None,
+                };
+                assert_eq!(operation.request_headers().if_modified_since, expected_time);
+            }
+        }
+    }
+
+    #[test]
+    fn change_feed_prefix_requires_fanout_but_complete_key_does_not() {
+        let properties = ContainerProperties {
+            id: "hpk".into(),
+            partition_key: ("/tenant", "/user", "/device").into(),
+            system_properties: SystemProperties::default(),
+        };
+        let container = ContainerReference::new(
+            test_account(),
+            "db",
+            "db_rid",
+            "hpk",
+            "hpk_rid",
+            &properties,
+        );
+        for key in [
+            PartitionKey::from("tenant"),
+            PartitionKey::from(("tenant", "user")),
+            PartitionKey::from(("tenant", "user", "device")),
+        ] {
+            let complete = container.partition_key_definition().is_complete(&key);
+            let range = FeedRange::for_partition(key, container.partition_key_definition());
+            for operation in [
+                CosmosOperation::change_feed(container.clone(), Some(range.clone())),
+                CosmosOperation::change_feed_all_versions_and_deletes(
+                    container.clone(),
+                    Some(range.clone()),
+                ),
+            ] {
+                assert_eq!(operation.is_trivial(), complete);
+            }
+        }
     }
 
     /// The full-fidelity (AllVersionsAndDeletes) factory sets the
