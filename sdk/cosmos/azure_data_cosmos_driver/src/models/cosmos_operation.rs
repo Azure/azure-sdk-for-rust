@@ -4,11 +4,12 @@
 //! Cosmos DB operation representation.
 
 use crate::models::{
-    AccountReference, ContainerReference, CosmosRequestHeaders, CosmosResourceReference,
-    DatabaseReference, FeedRange, ItemReference, OperationType, PartitionKey, Precondition,
-    ResourceType,
+    cosmos_resource_reference::validate_resource_name, AccountReference, ContainerReference,
+    CosmosRequestHeaders, CosmosResourceReference, DatabaseReference, FeedRange, ItemReference,
+    OperationType, PartitionKey, Precondition, ResourceType,
 };
 use crate::options::Utf8DecodingMode;
+use crate::read_many::ItemScope;
 use azure_core::http::Etag;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, time::Instant};
@@ -128,6 +129,7 @@ fn format_rfc1123(timestamp: &OffsetDateTime) -> String {
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct CosmosOperation {
+    pub(crate) read_many: Option<std::sync::Arc<crate::read_many::ReadManyRequest>>,
     /// The type of operation (immutable after construction).
     operation_type: OperationType,
     /// The type of resource (derived from resource reference, immutable).
@@ -238,6 +240,9 @@ impl CosmosOperation {
     /// caller actually invoked keeps reporting `patch_item` on the root span and
     /// the operation metric.
     pub fn db_operation_name(&self) -> Option<&'static str> {
+        if self.read_many.is_some() {
+            return Some("read_many");
+        }
         let name = match (self.operation_type, self.resource_type) {
             // Data-plane item operations.
             (OperationType::Create, ResourceType::Document) => "create_item",
@@ -351,6 +356,7 @@ impl CosmosOperation {
     /// id so the created item remains addressable by later point operations.
     /// Batch validation reads only item IDs from the service-defined envelope;
     /// all other document fields remain schema-agnostic.
+    /// Read-many validates selected IDs before planning point reads or queries.
     pub(crate) fn validate_addressing(
         &self,
         validate_resource_names: bool,
@@ -361,6 +367,13 @@ impl CosmosOperation {
             self.resource_reference.validate_resource_names()?;
             if self.operation_type == OperationType::Batch {
                 super::transactional_batch::validate_resource_names(self.body())?;
+            }
+            if let Some(request) = &self.read_many {
+                if let ItemScope::Items(items) = &request.selection {
+                    for (_, id) in items {
+                        validate_resource_name("item", id)?;
+                    }
+                }
             }
         }
         Ok(())
@@ -757,6 +770,7 @@ impl CosmosOperation {
             "Attempted to create a partitioned operation without an OperationTarget specifying the partitions to access"
         );
         Self {
+            read_many: None,
             operation_type,
             resource_type,
             resource_reference,
@@ -781,6 +795,24 @@ impl CosmosOperation {
     fn for_item(operation_type: OperationType, item: ItemReference) -> Self {
         let range = FeedRange::for_item(&item);
         Self::new(operation_type, item, Some(range))
+    }
+
+    /// Reads selected items, logical partitions, or feed ranges, optionally filtered.
+    ///
+    /// Item and partition scopes accept complete keys or nonempty hierarchical prefixes.
+    /// A prefix plus an id returns every matching item across logical partitions.
+    ///
+    /// Execute with [`CosmosDriver::plan_operation()`](crate::CosmosDriver::plan_operation)
+    /// and [`CosmosDriver::execute_plan()`](crate::CosmosDriver::execute_plan).
+    /// Pages are unordered, duplicates are removed, and missing items are omitted.
+    /// Durable continuation tokens are not supported.
+    pub fn read_many(
+        container: ContainerReference,
+        selection: impl Into<crate::read_many::ItemSelector>,
+    ) -> Self {
+        let mut operation = Self::query_items(container, Some(FeedRange::full()));
+        operation.read_many = Some(std::sync::Arc::new(selection.into()));
+        operation
     }
 
     // ===== Control Plane Factory Methods =====
@@ -1642,6 +1674,48 @@ mod tests {
             operation
                 .validate_addressing(false)
                 .expect("the compatibility option must disable creation-time name validation");
+        }
+    }
+
+    #[test]
+    fn read_many_validates_selected_names_with_compatibility_opt_out() {
+        for id in ["..", "a/b", "item?query", "item#fragment", "item\nname"] {
+            for ids in [vec![id], vec!["safe-item", id]] {
+                let operation = CosmosOperation::read_many(
+                    test_container(),
+                    ItemScope::Items(
+                        ids.into_iter()
+                            .map(|id| (PartitionKey::from("pk1"), id.to_owned()))
+                            .collect(),
+                    ),
+                );
+                let error = operation
+                    .validate_addressing(true)
+                    .expect_err("unsafe selected IDs must be rejected before planning");
+                assert_eq!(
+                    error.status(),
+                    crate::error::status_codes::CLIENT_BAD_REQUEST
+                );
+                operation
+                    .validate_addressing(false)
+                    .expect("the compatibility option must disable selected ID validation");
+            }
+        }
+    }
+
+    #[test]
+    fn read_many_accepts_safe_names_and_partition_scopes() {
+        for selection in [
+            ItemScope::Items(vec![
+                (PartitionKey::from("pk1"), "item with spaces".into()),
+                (PartitionKey::from("pk2"), "item+value=1".into()),
+            ]),
+            ItemScope::Partitions(vec![PartitionKey::from("a/b")]),
+            ItemScope::Items(Vec::new()),
+        ] {
+            CosmosOperation::read_many(test_container(), selection)
+                .validate_addressing(true)
+                .expect("safe selections must pass name validation");
         }
     }
 
