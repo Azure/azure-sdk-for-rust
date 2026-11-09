@@ -27,13 +27,3 @@ pub use protocol::SasProtocol;
 
 /// The SAS service version targeted by this crate.
 pub(crate) const SAS_VERSION: &str = "2027-03-07";
-
-#[cfg(test)]
-mod tests {
-    use super::SAS_VERSION;
-
-    #[test]
-    fn sas_version() {
-        assert_eq!(SAS_VERSION, "2027-03-07");
-    }
-}

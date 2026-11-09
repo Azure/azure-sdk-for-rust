@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added support for service version `2027-03-07`.
+- Updated the SAS service version to `2027-03-07`.
 - Added a `default` feature forwarding Core defaults so consumers can opt out with `default-features = false`.
 
 ### Other Changes
