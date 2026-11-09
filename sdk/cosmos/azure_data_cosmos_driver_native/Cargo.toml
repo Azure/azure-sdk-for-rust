@@ -44,7 +44,7 @@ serde_json.workspace = true
 tracing.workspace = true
 time.workspace = true
 # Rust-side global allocator for the shipped library; see the `mimalloc` feature.
-mimalloc = { workspace = true, optional = true }
+mimalloc = { version = "0.1.52", default-features = false, optional = true }
 
 [dev-dependencies]
 # Path-only — the driver crate is not (yet) a workspace dependency.
