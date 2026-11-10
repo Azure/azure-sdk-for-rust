@@ -52,6 +52,7 @@ repository = "https://github.com/azure/azure-sdk-for-rust"
 rust-version = "1.88"
 exclude = [
   "api.md",
+  "TODO.md",
 ]
 
 [workspace.dependencies.typespec]

@@ -32,6 +32,7 @@ pub mod fault_injection;
 pub mod in_memory_emulator;
 pub mod models;
 pub mod options;
+pub mod read_many;
 
 #[cfg(feature = "tokio")]
 pub(crate) mod background_task_manager;

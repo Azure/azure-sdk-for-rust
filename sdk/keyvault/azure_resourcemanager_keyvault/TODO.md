@@ -109,6 +109,16 @@ Repository: <https://github.com/Azure/typespec-rust>
 
 The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
 
+### Shared generated-client requirements
+
+- [ ] Apply the shared fake-generation requirements tracked in the
+  [Secrets emitter follow-up](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/azure_security_keyvault_secrets/TODO.md) when
+  generating fake support: typed context arguments for path/query/header inputs,
+  and opaque body forwarding.
+  This Resource Manager prototype does not add fake implementations or features.
+- [ ] Retain `exclude.workspace = true` in package manifests. The workspace
+  excludes `TODO.md` so both prototypes' emitter instructions stay out of packages.
+
 ### Emitter configuration
 
 - [ ] Document and test support for the common `api-version` option used by the

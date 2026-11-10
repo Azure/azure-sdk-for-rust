@@ -51,6 +51,7 @@ mod pipeline;
 pub(crate) mod planner;
 pub(crate) mod query_plan;
 mod query_response;
+pub(crate) mod read_many;
 mod recovery_diagnostics;
 mod request;
 mod skip_take;
@@ -551,5 +552,19 @@ mod tests {
         assert_eq!(plan.take_initial_execution_deadline(), Some(deadline));
         assert!(plan.take_initial_execution_deadline().is_none());
         assert!(plan.operation.absolute_deadline().is_none());
+    }
+
+    #[test]
+    fn replan_preserves_pinned_operation_deadline_for_later_pages() {
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        let mut replacement = plan();
+        replacement.set_initial_execution_deadline(deadline + std::time::Duration::from_secs(5));
+        replacement.reset_replan_deadlines(Some(deadline));
+        for _ in 0..3 {
+            assert_eq!(replacement.take_initial_execution_deadline(), None);
+            assert_eq!(replacement.operation.absolute_deadline(), Some(deadline));
+        }
+        replacement.reset_replan_deadlines(None);
+        assert_eq!(replacement.operation.absolute_deadline(), None);
     }
 }

@@ -530,7 +530,7 @@ version = "1.2.0-beta.3"
 dependencies = [
  "async-trait",
  "azure_core 1.2.0-beta.2",
- "fe2o3-amqp 0.18.4",
+ "fe2o3-amqp 0.18.3",
  "fe2o3-amqp-cbs 0.18.0",
  "fe2o3-amqp-ext 0.18.0",
  "fe2o3-amqp-management 0.18.0",
@@ -766,6 +766,7 @@ dependencies = [
  "azure_data_cosmos_driver",
  "cbindgen",
  "futures",
+ "mimalloc",
  "serde_json",
  "time",
  "tokio",
@@ -920,7 +921,7 @@ dependencies = [
  "azure_storage_blob",
  "base64",
  "criterion",
- "fe2o3-amqp 0.18.4",
+ "fe2o3-amqp 0.18.3",
  "futures",
  "hmac",
  "include-file",
@@ -1073,7 +1074,7 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_blob"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.2"
 dependencies = [
  "arrow-array",
  "arrow-ipc",
@@ -1105,7 +1106,7 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_common"
-version = "1.1.0-beta.1"
+version = "1.1.0-beta.2"
 dependencies = [
  "azure_core 1.2.0-beta.2",
  "serde",
@@ -1132,7 +1133,7 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_sas"
-version = "1.1.0-beta.1"
+version = "1.1.0-beta.2"
 dependencies = [
  "azure_core 1.2.0-beta.2",
  "azure_storage_common",
@@ -1878,9 +1879,9 @@ dependencies = [
 
 [[package]]
 name = "fe2o3-amqp"
-version = "0.18.4"
+version = "0.18.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1866e0bb2dae6f9481296b2350270bc964d2d2473ca58dc9d1434af820f670c"
+checksum = "5474a3b580e12b716a34cfef7f2857fa3aca70751e96c85a477549ac3179dfe0"
 dependencies = [
  "bytes",
  "fe2o3-amqp-types 0.18.0",
@@ -1921,7 +1922,7 @@ version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aba27aa79b79e44a0365b7e30b232276efb3297253368bd303a9f19eea2e184f"
 dependencies = [
- "fe2o3-amqp 0.18.4",
+ "fe2o3-amqp 0.18.3",
  "fe2o3-amqp-management 0.18.0",
  "trait-variant",
 ]
@@ -1964,7 +1965,7 @@ version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7141df54f8a0d418bc102b5aa0dd0b3dfcac6520f4a59fa393e1faaed8e38d1b"
 dependencies = [
- "fe2o3-amqp 0.18.4",
+ "fe2o3-amqp 0.18.3",
  "fe2o3-amqp-types 0.18.0",
  "serde",
  "thiserror",
@@ -2780,6 +2781,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
 
 [[package]]
+name = "libmimalloc-sys"
+version = "0.1.49"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a45a52f43e1c16f667ccfe4dd8c85b7f7c204fd5e3bf46c5b0db9a5c3c0b8e9"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2838,6 +2848,15 @@ name = "memchr"
 version = "2.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
+
+[[package]]
+name = "mimalloc"
+version = "0.1.52"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d4139bb28d14ad1facf21d5eb8825051b326e172d216b39f6d31df53cc97862"
+dependencies = [
+ "libmimalloc-sys",
+]
 
 [[package]]
 name = "mime"
