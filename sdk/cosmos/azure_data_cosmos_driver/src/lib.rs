@@ -32,6 +32,7 @@ pub mod fault_injection;
 pub mod in_memory_emulator;
 pub mod models;
 pub mod options;
+pub mod read_many;
 // The `query` module is local-plan scaffolding. Many helpers (gateway response
 // envelope, value comparison helpers, etc.) are temporarily unused in the driver
 // proper because no production caller wires the local plan generator in yet. The
