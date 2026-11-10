@@ -425,7 +425,7 @@ Service behavior that is **not** currently modeled:
 | Richer location lifecycle              | `LocationStatus` is `Uninitialized`/`Initializing`/`InternallyReady`/`Online`/`Deleting`; `InternallyReady` means provisioned but deliberately not exposed to external customers         | collapsed into `Active`/`Draining`/`Offline`/`Retired`                                                                              |
 
 Only the RNTBD / Gateway 2.0 transport parses the read-region count today
-(`rntbd/response.rs`), so the first row has a narrow blast radius — but it does mean a Gateway 2.0
+(`rntbd_encoding/response.rs`), so the first row has a narrow blast radius — but it does mean a Gateway 2.0
 test can never observe that count change.
 
 #### What the emulator deliberately does *not* model

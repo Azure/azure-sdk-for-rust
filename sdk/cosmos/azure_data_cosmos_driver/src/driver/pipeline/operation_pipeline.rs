@@ -29,7 +29,6 @@ use crate::{
             AccountEndpointState, CosmosEndpoint, LocationEffect, LocationSnapshot,
             LocationStateStore,
         },
-        transport::CosmosTransport,
         CosmosDriver,
     },
     models::{
@@ -42,15 +41,21 @@ use crate::{
         resolve_effective_consistency, HedgeThreshold, OperationOptions, OperationOptionsView,
         PartitionTopologyCacheMode, ReadConsistencyStrategy, Region, ResolvedThroughputControl,
     },
+    pipeline::transport::{
+        self, is_operation_supported_by_gateway_v2,
+        recovery::{
+            ThrottleRetryPolicy, DATA_PLANE_MAX_PER_RETRY_DELAY, DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
+            DATA_PLANE_MAX_THROTTLE_WAIT, METADATA_MAX_PER_RETRY_DELAY,
+            METADATA_MAX_THROTTLE_ATTEMPTS, METADATA_MAX_THROTTLE_WAIT,
+        },
+        types::{TransportMode, TransportOutcome, TransportRequest, TransportResult},
+        AuthorizationContext, CosmosTransport, EndpointKey, TransportPipelineConfig,
+        TransportPipelineServices,
+    },
 };
 
 use super::{
-    components::{
-        OperationAction, OperationRetryState, RoutingDecision, TransportMode, TransportOutcome,
-        TransportRequest, TransportResult, DATA_PLANE_MAX_PER_RETRY_DELAY,
-        DATA_PLANE_MAX_THROTTLE_ATTEMPTS, DATA_PLANE_MAX_THROTTLE_WAIT,
-        METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS, METADATA_MAX_THROTTLE_WAIT,
-    },
+    components::{OperationAction, OperationRetryState, RoutingDecision},
     hedge_budget::{HedgeBudget, HedgePermit},
     hedging_diagnostics::{HedgeDiagnostics, HedgingStrategyConfig},
     hedging_eligibility::evaluate_hedge_eligibility,
@@ -58,12 +63,6 @@ use super::{
         build_service_error, evaluate_hedge_leg_effects, evaluate_transport_result,
         is_region_confirming_status, partition_effects_for_deferral,
     },
-};
-
-use crate::driver::transport::{
-    is_operation_supported_by_gateway_v2,
-    transport_pipeline::{execute_transport_pipeline, TransportPipelineContext},
-    AuthorizationContext, EndpointKey,
 };
 
 /// Default throttle-retry budget for a pipeline class when the caller hasn't
@@ -586,7 +585,7 @@ pub(crate) async fn execute_operation_pipeline(
     // throttle retries.
     //
     // **Scope note**: each value is forwarded as a *per-transport-pipeline*
-    // budget — `execute_transport_pipeline` is invoked once per attempt that
+    // budget — `transport::execute` is invoked once per attempt that
     // this operation pipeline makes (e.g., per region during failover or per
     // leg during hedging), and each invocation starts with a fresh
     // throttle-retry budget. Total wall-clock cost across an operation is
@@ -1035,12 +1034,10 @@ pub(crate) async fn execute_operation_pipeline(
 
         // ── STAGE 4: Execute via transport pipeline ────────────────────
 
-        let result = execute_transport_pipeline(
+        let result = transport::execute(
             transport_request,
-            &TransportPipelineContext {
-                transport: &selected_transport,
+            &TransportPipelineConfig {
                 allow_sent_transport_retry: operation.allows_ambiguous_outcome_retry(),
-                credential,
                 user_agent,
                 client_id,
                 pipeline_type,
@@ -1048,9 +1045,16 @@ pub(crate) async fn execute_operation_pipeline(
                 endpoint_key: routing.endpoint_key.clone(),
                 account_name: account_name.clone(),
                 collection_rid: operation.container().map(|c| c.rid().to_owned()),
-                max_throttle_attempts,
-                max_throttle_wait_time,
-                max_throttle_per_retry_delay,
+                throttle_policy: ThrottleRetryPolicy::with_limits(
+                    max_throttle_attempts,
+                    max_throttle_wait_time,
+                    max_throttle_per_retry_delay,
+                ),
+            },
+            &TransportPipelineServices {
+                transport: &selected_transport,
+                credential,
+                clock: Default::default(),
             },
             &mut diagnostics,
         )
@@ -1710,7 +1714,7 @@ fn routing_decision_for_pinned_endpoint(
     };
     let selected_url = pinned.selected_url(use_gateway_v2).clone();
     let endpoint_key = if use_gateway_v2 {
-        crate::driver::transport::EndpointKey::try_from(&selected_url)
+        crate::pipeline::transport::EndpointKey::try_from(&selected_url)
             .expect("selected URL must have a valid host and port")
     } else {
         pinned.endpoint_key()
@@ -2488,7 +2492,7 @@ fn build_transport_request_with_fault_injection(
             );
             // These two headers must always be set on QueryPlan
             // requests. The thin-client proxy reads them out of the RNTBD body
-            // (mirrored from these HTTP headers in gateway_v2_dispatch) and rejects
+            // (mirrored from these HTTP headers in gateway_v2::request_tokens) and rejects
             // requests where they're missing entirely. Default them here when the
             // caller hasn't already set explicit values.
             let supported_features_header =
@@ -2519,7 +2523,7 @@ fn build_transport_request_with_fault_injection(
                 &operation.resource_type(),
             )
         {
-            crate::driver::transport::cosmos_headers::apply_fault_injection_operation_tag(
+            crate::pipeline::transport::cosmos_headers::apply_fault_injection_operation_tag(
                 &mut headers,
                 fault_op,
             );
@@ -2590,7 +2594,7 @@ fn build_transport_request_with_fault_injection(
         auth_context,
         execution_context: ctx.execution_context,
         routing_fallback: ctx.routing.routing_fallback,
-        deadline: ctx.deadline,
+        deadline: ctx.deadline.into(),
     })
 }
 
@@ -3650,12 +3654,10 @@ async fn perform_single_attempt(
         .copied()
         .unwrap_or(default_wait);
 
-    let result = execute_transport_pipeline(
+    let result = transport::execute(
         transport_request,
-        &TransportPipelineContext {
-            transport: &selected_transport,
+        &TransportPipelineConfig {
             allow_sent_transport_retry: ctx.operation.allows_ambiguous_outcome_retry(),
-            credential: ctx.credential,
             user_agent: ctx.user_agent,
             client_id: ctx.client_id,
             pipeline_type: ctx.pipeline_type,
@@ -3663,9 +3665,16 @@ async fn perform_single_attempt(
             endpoint_key: routing.endpoint_key.clone(),
             account_name: ctx.account_name.clone(),
             collection_rid: ctx.operation.container().map(|c| c.rid().to_owned()),
-            max_throttle_attempts,
-            max_throttle_wait_time,
-            max_throttle_per_retry_delay,
+            throttle_policy: ThrottleRetryPolicy::with_limits(
+                max_throttle_attempts,
+                max_throttle_wait_time,
+                max_throttle_per_retry_delay,
+            ),
+        },
+        &TransportPipelineServices {
+            transport: &selected_transport,
+            credential: ctx.credential,
+            clock: Default::default(),
         },
         diagnostics,
     )
@@ -3858,6 +3867,8 @@ where
     }
     let deadline_fut = deadline_signal(deadline).fuse();
     let attempt = attempt.fuse();
+    // The selection macro polls through pinned references because async futures may not be Unpin.
+    // Stack pinning keeps both futures at stable addresses until this scope drops them.
     futures::pin_mut!(deadline_fut, attempt);
     // Bias toward the operation deadline so application cancellation wins when
     // the partner attempt's own per-attempt deadline becomes ready at the same
@@ -5060,19 +5071,11 @@ mod tests {
         diagnostics::ExecutionContext,
         driver::{
             cache::ContainerRoutingMap,
-            pipeline::components::{RoutingDecision, TransportMode},
+            pipeline::components::RoutingDecision,
             routing::{
                 partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
                 AccountEndpointState, CosmosEndpoint, LocationEffect, LocationIndex,
                 LocationSnapshot,
-            },
-            transport::{
-                cosmos_transport_client::HttpRequest,
-                rntbd::{
-                    tokens::{ReadFeedKeyType, RntbdRequestToken},
-                    RntbdRequestFrame, Token,
-                },
-                wrap_request_for_gateway_v2, EndpointKey, WrapInputs,
             },
         },
         models::{
@@ -5082,6 +5085,14 @@ mod tests {
             PartitionKeyDefinition, PartitionKeyValue, SessionToken, SystemProperties,
         },
         options::{PriorityLevel, ResolvedThroughputControl},
+        pipeline::transport::{
+            cosmos_transport_client::HttpRequest, types::TransportMode,
+            wrap_request_for_gateway_v2, EndpointKey, GatewayV2Headers,
+        },
+        rntbd_encoding::{
+            tokens::{ReadFeedKeyType, RntbdRequestToken},
+            RntbdRequestFrame, Token,
+        },
     };
 
     fn test_account() -> AccountReference {
@@ -6513,7 +6524,7 @@ mod tests {
                 HeaderName::from_static("x-ms-date"),
                 "Wed, 21 Oct 2015 07:28:00 GMT",
             );
-            let inputs = WrapInputs {
+            let inputs = GatewayV2Headers {
                 auth_context: &request.auth_context,
                 operation_type: operation.operation_type(),
                 resource_type: operation.resource_type(),
@@ -8283,8 +8294,8 @@ mod tests {
         use azure_core::http::StatusCode;
 
         use crate::{
-            driver::pipeline::components::TransportOutcome,
             models::{CosmosResponseHeaders, CosmosStatus},
+            pipeline::transport::types::TransportOutcome,
         };
 
         use super::super::should_capture_session_token_from_status;

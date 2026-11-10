@@ -24,12 +24,10 @@ use crate::{
 };
 
 use super::cache::{AccountMetadataCache, ContainerCache};
-use super::{
-    transport::{
-        http_client_factory::{DefaultHttpClientFactory, HttpClientFactory},
-        CosmosTransport,
-    },
-    CosmosDriver,
+use super::CosmosDriver;
+use crate::pipeline::transport::{
+    http_client_factory::{DefaultHttpClientFactory, HttpClientFactory},
+    CosmosTransport,
 };
 
 /// The Cosmos DB driver runtime environment.
@@ -942,7 +940,7 @@ mod tests {
     /// untested.
     #[tokio::test]
     async fn user_agent_suffix_appears_in_request_headers() {
-        use crate::driver::transport::{
+        use crate::pipeline::transport::{
             cosmos_headers::apply_cosmos_headers, cosmos_transport_client::HttpRequest,
         };
         use azure_core::http::headers::{HeaderValue, Headers, USER_AGENT};
