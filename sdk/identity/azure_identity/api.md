@@ -162,6 +162,24 @@ pub struct DeveloperToolsCredentialOptions {
 impl Debug for DeveloperToolsCredentialOptions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
 }
+pub struct GitHubActionsCredential(/* private fields */);
+impl GitHubActionsCredential {
+    pub fn new(tenant_id: String, client_id: String, options: Option<GitHubActionsCredentialOptions>) -> azure_core::Result<Arc<Self>>;
+}
+impl Debug for GitHubActionsCredential {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+}
+#[async_trait]
+impl TokenCredential for GitHubActionsCredential {
+    async fn get_token(&self, scopes: &[&str], options: Option<TokenRequestOptions<'_>>) -> azure_core::Result<AccessToken>;
+}
+#[derive(Default)]
+pub struct GitHubActionsCredentialOptions {
+    pub credential_options: crate::ClientAssertionCredentialOptions,
+}
+impl Debug for GitHubActionsCredentialOptions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+}
 pub struct ManagedIdentityCredential {
 }
 impl ManagedIdentityCredential {
