@@ -45,6 +45,12 @@ pub struct GitHubActionsCredentialOptions {
     /// When no cloud is configured, `AZURE_AUTHORITY_HOST` is used, defaulting to Azure Public.
     pub credential_options: ClientAssertionCredentialOptions,
 
+    /// Client ID of the Entra identity, used when `AZURE_CLIENT_ID` isn't set.
+    pub client_id: Option<String>,
+
+    /// Tenant ID of the Entra identity, used when `AZURE_TENANT_ID` isn't set.
+    pub tenant_id: Option<String>,
+
     #[cfg(test)]
     pub(crate) env: Env,
 }
@@ -58,28 +64,44 @@ impl fmt::Debug for GitHubActionsCredentialOptions {
 impl GitHubActionsCredential {
     /// Creates a new [`GitHubActionsCredential`].
     ///
+    /// Reads the tenant and client IDs from `AZURE_TENANT_ID` and `AZURE_CLIENT_ID`.
+    /// If either variable isn't set, uses the corresponding field in `options`.
+    ///
     /// # Arguments
-    /// - `tenant_id`: The tenant (directory) ID of the service principal.
-    /// - `client_id`: The client (application) ID of the service principal.
     /// - `options`: Options for configuring the credential. If `None`, the credential uses its default options.
     ///
     /// # Errors
     ///
-    /// Returns an error if an ID is invalid, a required GitHub Actions environment variable is
+    /// Returns an error if an ID is missing or invalid, a required GitHub Actions environment variable is
     /// missing or empty, the OIDC endpoint isn't an HTTPS URL without user information or a
     /// fragment, or the authority host isn't supported.
-    pub fn new(
-        tenant_id: String,
-        client_id: String,
-        options: Option<GitHubActionsCredentialOptions>,
-    ) -> azure_core::Result<Arc<Self>> {
-        validate_tenant_id(&tenant_id)?;
-        validate_not_empty(&client_id, "no client ID specified")?;
+    pub fn new(options: Option<GitHubActionsCredentialOptions>) -> azure_core::Result<Arc<Self>> {
         let options = options.unwrap_or_default();
         #[cfg(test)]
         let env = options.env;
         #[cfg(not(test))]
         let env = Env::default();
+
+        let tenant_id = env.var("AZURE_TENANT_ID").or_else(|err| {
+            options.tenant_id.ok_or_else(|| {
+                Error::with_error(
+                    ErrorKind::Credential,
+                    err,
+                    "set AZURE_TENANT_ID or tenant_id in the options",
+                )
+            })
+        })?;
+        validate_tenant_id(&tenant_id)?;
+        let client_id = env.var("AZURE_CLIENT_ID").or_else(|err| {
+            options.client_id.ok_or_else(|| {
+                Error::with_error(
+                    ErrorKind::Credential,
+                    err,
+                    "set AZURE_CLIENT_ID or client_id in the options",
+                )
+            })
+        })?;
+        validate_not_empty(&client_id, "no client ID specified")?;
 
         let read_variable = |name| -> azure_core::Result<String> {
             let message = format!(
@@ -271,18 +293,82 @@ mod tests {
                     ..Default::default()
                 },
             },
+            tenant_id: Some(FAKE_TENANT_ID.into()),
+            client_id: Some(FAKE_CLIENT_ID.into()),
+        }
+    }
+
+    #[test]
+    fn identity_configuration() {
+        for (tenant_env, client_env, tenant_option, client_option, expected_error) in [
+            (None, None, None, None, Some("AZURE_TENANT_ID")),
+            (None, None, Some("tenant"), None, Some("AZURE_CLIENT_ID")),
+            (None, None, None, Some("client"), Some("AZURE_TENANT_ID")),
+            (Some("tenant"), Some("client"), None, None, None),
+            (None, None, Some("tenant"), Some("client"), None),
+            (Some("tenant"), None, None, Some("client"), None),
+            (None, Some("client"), Some("tenant"), None, None),
+            (
+                Some("tenant"),
+                Some("client"),
+                Some("invalid_tenant"),
+                Some(""),
+                None,
+            ),
+            (
+                Some(""),
+                Some("client"),
+                Some("tenant"),
+                Some("client"),
+                Some("invalid tenant ID"),
+            ),
+            (
+                Some("invalid_tenant"),
+                Some("client"),
+                Some("tenant"),
+                Some("client"),
+                Some("invalid tenant ID"),
+            ),
+            (
+                Some("tenant"),
+                Some(""),
+                Some("tenant"),
+                Some("client"),
+                Some("no client ID"),
+            ),
+        ] {
+            let mut options = default_options();
+            let mut variables = vec![
+                (OIDC_REQUEST_URL, ENDPOINT),
+                (OIDC_REQUEST_TOKEN, "request-token"),
+            ];
+            if let Some(tenant) = tenant_env {
+                variables.push(("AZURE_TENANT_ID", tenant));
+            }
+            if let Some(client) = client_env {
+                variables.push(("AZURE_CLIENT_ID", client));
+            }
+            options.env = Env::from(variables.as_slice());
+            options.tenant_id = tenant_option.map(String::from);
+            options.client_id = client_option.map(String::from);
+            let result = GitHubActionsCredential::new(Some(options));
+            if let Some(message) = expected_error {
+                let err = result.unwrap_err();
+                assert!(matches!(err.kind(), ErrorKind::Credential));
+                assert!(err.to_string().contains(message), "{err}");
+            } else {
+                result.unwrap();
+            }
         }
     }
 
     #[test]
     fn invalid_configuration() {
         for (tenant, client) in [("", "client"), ("invalid_tenant", "client"), ("tenant", "")] {
-            assert!(GitHubActionsCredential::new(
-                tenant.into(),
-                client.into(),
-                Some(default_options()),
-            )
-            .is_err());
+            let mut options = default_options();
+            options.tenant_id = Some(tenant.into());
+            options.client_id = Some(client.into());
+            assert!(GitHubActionsCredential::new(Some(options)).is_err());
         }
         for variables in [
             vec![],
@@ -296,8 +382,7 @@ mod tests {
         ] {
             let mut options = default_options();
             options.env = Env::from(variables.as_slice());
-            let err = GitHubActionsCredential::new("tenant".into(), "client".into(), Some(options))
-                .unwrap_err();
+            let err = GitHubActionsCredential::new(Some(options)).unwrap_err();
             assert!(matches!(err.kind(), ErrorKind::Credential));
             assert!(err.to_string().contains("permissions: id-token: write"));
             assert!(!format!("{err:?}").contains("request-token"));
@@ -322,8 +407,7 @@ mod tests {
                     (OIDC_REQUEST_TOKEN, "request-token"),
                 ][..],
             );
-            let err = GitHubActionsCredential::new("tenant".into(), "client".into(), Some(options))
-                .unwrap_err();
+            let err = GitHubActionsCredential::new(Some(options)).unwrap_err();
             assert!(matches!(err.kind(), ErrorKind::Credential));
             assert!(!format!("{err:?}").contains("password"));
         }
@@ -336,8 +420,7 @@ mod tests {
         cloud.authority_host = "https://login.contoso.com".into();
         options.credential_options.client_options.cloud =
             Some(Arc::new(CloudConfiguration::Custom(cloud)));
-        let err = GitHubActionsCredential::new("tenant".into(), "client".into(), Some(options))
-            .unwrap_err();
+        let err = GitHubActionsCredential::new(Some(options)).unwrap_err();
         assert!(err.to_string().contains("authority host isn't supported"));
     }
 
@@ -354,15 +437,11 @@ mod tests {
                 ),
             ][..],
         );
-        assert!(
-            GitHubActionsCredential::new("tenant".into(), "client".into(), Some(options),).is_ok()
-        );
+        assert!(GitHubActionsCredential::new(Some(options)).is_ok());
 
         let mut options = default_options();
         options.credential_options.client_options.cloud = None;
-        assert!(
-            GitHubActionsCredential::new("tenant".into(), "client".into(), Some(options),).is_ok()
-        );
+        assert!(GitHubActionsCredential::new(Some(options)).is_ok());
 
         let mut options = default_options();
         options.credential_options.client_options.cloud = None;
@@ -376,8 +455,7 @@ mod tests {
                 ),
             ][..],
         );
-        let err = GitHubActionsCredential::new("tenant".into(), "client".into(), Some(options))
-            .unwrap_err();
+        let err = GitHubActionsCredential::new(Some(options)).unwrap_err();
         assert!(err.to_string().contains("authority host isn't supported"));
     }
 
@@ -473,12 +551,7 @@ mod tests {
                 options.credential_options.client_options.cloud = Some(Arc::new(cloud.clone()));
                 options.credential_options.client_options.transport =
                     Some(Transport::new(Arc::new(mock)));
-                let credential = GitHubActionsCredential::new(
-                    FAKE_TENANT_ID.into(),
-                    FAKE_CLIENT_ID.into(),
-                    Some(options),
-                )
-                .unwrap();
+                let credential = GitHubActionsCredential::new(Some(options)).unwrap();
                 for _ in 0..2 {
                     let token = credential.get_token(LIVE_TEST_SCOPES, None).await.unwrap();
                     assert_eq!(token.token.secret(), FAKE_TOKEN);
@@ -510,9 +583,7 @@ mod tests {
                     )],
                     None,
                 ))));
-            let credential =
-                GitHubActionsCredential::new("tenant".into(), "client".into(), Some(options))
-                    .unwrap();
+            let credential = GitHubActionsCredential::new(Some(options)).unwrap();
             let err = credential
                 .get_token(LIVE_TEST_SCOPES, None)
                 .await
@@ -537,8 +608,7 @@ mod tests {
                 )],
                 None,
             ))));
-        let credential =
-            GitHubActionsCredential::new("tenant".into(), "client".into(), Some(options)).unwrap();
+        let credential = GitHubActionsCredential::new(Some(options)).unwrap();
         let err = credential
             .get_token(LIVE_TEST_SCOPES, None)
             .await

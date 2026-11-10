@@ -164,7 +164,7 @@ impl Debug for DeveloperToolsCredentialOptions {
 }
 pub struct GitHubActionsCredential(/* private fields */);
 impl GitHubActionsCredential {
-    pub fn new(tenant_id: String, client_id: String, options: Option<GitHubActionsCredentialOptions>) -> azure_core::Result<Arc<Self>>;
+    pub fn new(options: Option<GitHubActionsCredentialOptions>) -> azure_core::Result<Arc<Self>>;
 }
 impl Debug for GitHubActionsCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -176,6 +176,8 @@ impl TokenCredential for GitHubActionsCredential {
 #[derive(Default)]
 pub struct GitHubActionsCredentialOptions {
     pub credential_options: crate::ClientAssertionCredentialOptions,
+    pub client_id: Option<String>,
+    pub tenant_id: Option<String>,
 }
 impl Debug for GitHubActionsCredentialOptions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
