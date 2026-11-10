@@ -15,6 +15,8 @@
 
 ### Other Changes
 
+- Rust allocations in the native library now use mimalloc by default, which improved point-read throughput and CPU per operation in benchmarks. Build with `--no-default-features` to keep the system allocator. The host process's `malloc`/`free` are not overridden. ([#5579](https://github.com/Azure/azure-sdk-for-rust/pull/5579))
+
 ## 0.2.0 (2026-10-01)
 
 ### Features Added

@@ -36,6 +36,7 @@ static EXEMPTIONS: &[(&str, &str)] = &[
     ("azure_core_test", "dotenvy"),
     ("azure_canary", "serde"),
     ("azure_data_cosmos_driver_native", "cbindgen"),
+    ("azure_data_cosmos_driver_native", "mimalloc"),
     (
         "azure_messaging_eventhubs_checkpointstore_blob",
         "azure_storage_blob",
