@@ -645,7 +645,7 @@ impl ContainerClient {
     ///
     /// # Filter predicates
     ///
-    /// [`PatchItemOptions::with_filter_predicate()`] adds a nonempty SQL
+    /// [`PatchInstructions::with_filter_predicate()`] adds a nonempty SQL
     /// FROM/WHERE clause that Cosmos DB evaluates atomically before a
     /// server-side PATCH. A false predicate returns HTTP 412 with sub-status
     /// 1110 and leaves the item unchanged. Predicates aren't supported when
@@ -718,7 +718,7 @@ impl ContainerClient {
         options: Option<PatchItemOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serialize_patch_body(&patch, options.filter_predicate.as_deref())?;
+        let body = serde_json::to_vec(&patch).map_err(crate::error::convert_json_encode_error)?;
 
         let item_ref = ItemReference::from_name(
             &self.container_ref,
@@ -1732,26 +1732,6 @@ fn apply_patch_options(
 }
 
 #[cfg(feature = "unstable_patch")]
-fn serialize_patch_body(
-    patch: &PatchInstructions,
-    filter_predicate: Option<&str>,
-) -> crate::Result<Vec<u8>> {
-    #[derive(Serialize)]
-    struct PatchBody<'a> {
-        #[serde(flatten)]
-        instructions: &'a PatchInstructions,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        condition: Option<&'a str>,
-    }
-
-    let body = PatchBody {
-        instructions: patch,
-        condition: filter_predicate,
-    };
-    serde_json::to_vec(&body).map_err(crate::error::convert_json_encode_error)
-}
-
-#[cfg(feature = "unstable_patch")]
 fn apply_patch_operation_options(
     mut operation_options: OperationOptions,
     strategy: Option<crate::options::PatchStrategy>,
@@ -1856,7 +1836,12 @@ mod tests {
             "from c where c.status = 'pending'",
             "from c where c.status = \"quoted\\value\"\n",
         ] {
-            let body = serialize_patch_body(&patch, Some(predicate)).unwrap();
+            let patch = patch.clone().with_filter_predicate(predicate);
+            let body = serde_json::to_vec(&patch).unwrap();
+            assert_eq!(
+                serde_json::from_slice::<PatchInstructions>(&body).unwrap(),
+                patch
+            );
             let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
             assert_eq!(
                 body,
@@ -1882,15 +1867,27 @@ mod tests {
             PatchOperation::remove("/removed"),
             PatchOperation::move_value("/source", "/destination"),
         ]);
-        let expected = serde_json::to_vec(&patch).unwrap();
-        assert_eq!(serialize_patch_body(&patch, None).unwrap(), expected);
+        let expected = concat!(
+            r#"{"operations":["#,
+            r#"{"op":"set","path":"/nested","value":{"items":[null,true,{"value":"text"}]}}"#,
+            r#",{"op":"add","path":"/tags/-","value":"new"}"#,
+            r#",{"op":"replace","path":"/count","value":18446744073709551615}"#,
+            r#",{"op":"incr","path":"/integer","value":9223372036854775807}"#,
+            r#",{"op":"incr","path":"/float","value":1.25}"#,
+            r#",{"op":"remove","path":"/removed"}"#,
+            r#",{"op":"move","from":"/source","path":"/destination"}]}"#,
+        )
+        .as_bytes();
+        assert_eq!(serde_json::to_vec(&patch).unwrap(), expected);
 
-        let mut conditional = expected;
+        let mut conditional = expected.to_vec();
         conditional.pop();
         conditional.extend_from_slice(b",\"condition\":\"from c where c.ready = true\"}");
+        let patch = patch.with_filter_predicate("from c where c.ready = true");
+        assert_eq!(serde_json::to_vec(&patch).unwrap(), conditional);
         assert_eq!(
-            serialize_patch_body(&patch, Some("from c where c.ready = true")).unwrap(),
-            conditional
+            serde_json::from_slice::<PatchInstructions>(&conditional).unwrap(),
+            patch
         );
         assert!(String::from_utf8(conditional)
             .unwrap()
@@ -1905,13 +1902,18 @@ mod tests {
             serde_json::json!("done"),
         )]);
 
-        for predicate in [Some(""), Some("   ")] {
-            let body = serialize_patch_body(&patch, predicate).unwrap();
+        for predicate in ["", "   "] {
+            let patch = patch.clone().with_filter_predicate(predicate);
+            let body = serde_json::to_vec(&patch).unwrap();
+            assert_eq!(
+                serde_json::from_slice::<PatchInstructions>(&body).unwrap(),
+                patch
+            );
             let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
-            assert_eq!(body["condition"], predicate.unwrap());
+            assert_eq!(body["condition"], predicate);
         }
 
-        let body = serialize_patch_body(&patch, None).unwrap();
+        let body = serde_json::to_vec(&patch).unwrap();
         let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
         assert!(body.get("condition").is_none());
     }

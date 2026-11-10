@@ -1160,8 +1160,9 @@ impl CosmosOperation {
     /// client-side Read-Modify-Write loop. Provide a UTF-8 JSON body containing
     /// `operations` and an optional string `condition` (a SQL `FROM ... WHERE ...`
     /// predicate). Conditions require effective server-side execution.
-    /// Serializing [`crate::models::PatchInstructions`] alone supplies the
-    /// unconditional body.
+    /// Serialize [`crate::models::PatchInstructions`] to supply this body,
+    /// including any predicate set with
+    /// [`PatchInstructions::with_filter_predicate()`](crate::models::PatchInstructions::with_filter_predicate).
     pub fn patch_item(item: ItemReference) -> Self {
         Self::for_item(OperationType::Patch, item)
     }

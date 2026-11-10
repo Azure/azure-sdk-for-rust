@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added SQL filter predicates to unstable PATCH request options for atomic conditional server-side PATCH execution. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
+- Added SQL filter predicates to unstable PATCH instruction payloads for atomic conditional server-side PATCH execution. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
 - Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Added paged `ContainerClient::read_many` with shared `ItemSelector`, `ItemScope`, and `ItemFilter` types for key/id, partition, or feed-range selections, optional selector filters, and result collection with aggregate diagnostics. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Added ranked full-text and weighted text/vector hybrid search, with per-query `FullTextScoreScope` and bounded buffered results. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))

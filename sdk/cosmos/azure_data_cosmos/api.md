@@ -1885,8 +1885,10 @@ pub mod models {
     #[cfg(feature = "unstable_patch")]
     #[doc(inline)]
     impl PatchInstructions {
+        pub fn filter_predicate(&self) -> Option<&str>;
         pub fn is_retry_safe(&self) -> bool;
         pub fn new() -> Self;
+        pub fn with_filter_predicate<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, predicate: impl Into<Cow<'static, str>>) -> Self;
         pub fn with_operation(self, operation: PatchOperation) -> Self;
     }
     #[cfg(feature = "unstable_patch")]
@@ -2763,7 +2765,6 @@ pub mod options {
         pub strategy: Option<azure_data_cosmos_driver::options::PatchStrategy>,
         pub session_token: Option<azure_data_cosmos_driver::models::SessionToken>,
         pub precondition: Option<azure_data_cosmos_driver::models::Precondition>,
-        pub filter_predicate: Option<std::borrow::Cow<'static, str>>,
         pub max_attempts: Option<std::num::NonZeroU8>,
         pub tracking_id: Option<crate::models::PatchTrackingId>,
         pub tracking_capacity: Option<std::num::NonZeroU16>,
@@ -2771,7 +2772,6 @@ pub mod options {
     }
     #[cfg(feature = "unstable_patch")]
     impl PatchItemOptions {
-        pub fn with_filter_predicate<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, predicate: impl Into<Cow<'static, str>>) -> Self;
         pub fn with_max_attempts(self, max_attempts: std::num::NonZeroU8) -> Self;
         pub fn with_operation_options(self, operation: OperationOptions) -> Self;
         pub fn with_precondition(self, precondition: Precondition) -> Self;

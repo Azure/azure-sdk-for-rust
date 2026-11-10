@@ -914,18 +914,13 @@ pub async fn patch_filter_predicates_follow_effective_strategy() -> Result<(), B
                 .expect("create must return an ETag")
                 .clone();
 
-            let matching = PatchItemOptions::default()
-                .with_filter_predicate("from c where c.display_name = 'before'");
+            let matching = PatchInstructions::from(vec![PatchOperation::set(
+                "/display_name",
+                serde_json::json!("matched"),
+            )])
+            .with_filter_predicate("from c where c.display_name = 'before'");
             let response = container_client
-                .patch_item(
-                    &pk,
-                    &item_id,
-                    PatchInstructions::from(vec![PatchOperation::set(
-                        "/display_name",
-                        serde_json::json!("matched"),
-                    )]),
-                    Some(matching),
-                )
+                .patch_item(&pk, &item_id, matching, None)
                 .await?;
             let current_etag = response
                 .headers()
@@ -936,18 +931,17 @@ pub async fn patch_filter_predicates_follow_effective_strategy() -> Result<(), B
             let matched: PatchTestItem = response.into_model()?;
             assert_eq!(matched.display_name, "matched");
 
-            let nonmatching = PatchItemOptions::default()
-                .with_strategy(PatchStrategy::ServerSide)
-                .with_filter_predicate("from c where c.display_name = 'before'");
+            let nonmatching = PatchInstructions::from(vec![PatchOperation::set(
+                "/deleted",
+                serde_json::json!(true),
+            )])
+            .with_filter_predicate("from c where c.display_name = 'before'");
             let error = container_client
                 .patch_item(
                     &pk,
                     &item_id,
-                    PatchInstructions::from(vec![PatchOperation::set(
-                        "/deleted",
-                        serde_json::json!(true),
-                    )]),
-                    Some(nonmatching),
+                    nonmatching,
+                    Some(PatchItemOptions::default().with_strategy(PatchStrategy::ServerSide)),
                 )
                 .await
                 .expect_err("a false service predicate must reject PATCH");
@@ -976,8 +970,7 @@ pub async fn patch_filter_predicates_follow_effective_strategy() -> Result<(), B
             ] {
                 let options = PatchItemOptions::default()
                     .with_strategy(PatchStrategy::ServerSide)
-                    .with_precondition(Precondition::if_match(etag))
-                    .with_filter_predicate("from c where c.display_name = 'before'");
+                    .with_precondition(Precondition::if_match(etag));
                 let error = container_client
                     .patch_item(
                         &pk,
@@ -985,7 +978,8 @@ pub async fn patch_filter_predicates_follow_effective_strategy() -> Result<(), B
                         PatchInstructions::from(vec![PatchOperation::set(
                             "/deleted",
                             serde_json::json!(true),
-                        )]),
+                        )])
+                        .with_filter_predicate("from c where c.display_name = 'before'"),
                         Some(options),
                     )
                     .await
@@ -1010,18 +1004,17 @@ pub async fn patch_filter_predicates_follow_effective_strategy() -> Result<(), B
                 assert_eq!(stored, before_precondition_checks, "{scenario}");
             }
 
-            let empty = PatchItemOptions::default()
-                .with_strategy(PatchStrategy::ServerSide)
-                .with_filter_predicate("   ");
+            let empty = PatchInstructions::from(vec![PatchOperation::set(
+                "/deleted",
+                serde_json::json!(true),
+            )])
+            .with_filter_predicate("   ");
             let error = container_client
                 .patch_item(
                     &pk,
                     &item_id,
-                    PatchInstructions::from(vec![PatchOperation::set(
-                        "/deleted",
-                        serde_json::json!(true),
-                    )]),
-                    Some(empty),
+                    empty,
+                    Some(PatchItemOptions::default().with_strategy(PatchStrategy::ServerSide)),
                 )
                 .await
                 .expect_err("an empty predicate must be rejected before I/O");
@@ -1029,18 +1022,17 @@ pub async fn patch_filter_predicates_follow_effective_strategy() -> Result<(), B
             assert!(error.status().sub_status().is_none());
             assert!(error.diagnostics().is_none());
 
-            let malformed = PatchItemOptions::default()
-                .with_strategy(PatchStrategy::ServerSide)
-                .with_filter_predicate("from c where");
+            let malformed = PatchInstructions::from(vec![PatchOperation::set(
+                "/deleted",
+                serde_json::json!(true),
+            )])
+            .with_filter_predicate("from c where");
             let error = container_client
                 .patch_item(
                     &pk,
                     &item_id,
-                    PatchInstructions::from(vec![PatchOperation::set(
-                        "/deleted",
-                        serde_json::json!(true),
-                    )]),
-                    Some(malformed),
+                    malformed,
+                    Some(PatchItemOptions::default().with_strategy(PatchStrategy::ServerSide)),
                 )
                 .await
                 .expect_err("a malformed predicate must be rejected by the service");
@@ -1054,19 +1046,18 @@ pub async fn patch_filter_predicates_follow_effective_strategy() -> Result<(), B
 
             for (options, instructions, scenario) in [
                 (
-                    PatchItemOptions::default()
-                        .with_strategy(PatchStrategy::ClientSide)
-                        .with_filter_predicate("from c where c.display_name = 'matched'"),
+                    PatchItemOptions::default().with_strategy(PatchStrategy::ClientSide),
                     PatchInstructions::from(vec![PatchOperation::set(
                         "/deleted",
                         serde_json::json!(true),
-                    )]),
+                    )])
+                    .with_filter_predicate("from c where c.display_name = 'matched'"),
                     "explicit ClientSide",
                 ),
                 (
-                    PatchItemOptions::default()
+                    PatchItemOptions::default(),
+                    PatchInstructions::from(vec![PatchOperation::increment("/visits", 1i64)])
                         .with_filter_predicate("from c where c.display_name = 'matched'"),
-                    PatchInstructions::from(vec![PatchOperation::increment("/visits", 1i64)]),
                     "Auto fallback",
                 ),
             ] {

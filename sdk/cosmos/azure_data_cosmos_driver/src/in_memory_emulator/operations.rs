@@ -5350,8 +5350,8 @@ async fn handle_patch_locked(
             .build()
         }
     };
-    let condition = patch_request.condition().map(str::to_owned);
-    let instructions = patch_request.instructions;
+    let condition = patch_request.filter_predicate().map(str::to_owned);
+    let instructions = patch_request;
 
     if instructions.operations.is_empty() {
         return error_response(

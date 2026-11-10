@@ -216,13 +216,13 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
             .with_source(err)
             .build()
     })?;
-    if let Some(condition) = request.condition() {
+    if let Some(condition) = request.filter_predicate() {
         if condition.trim().is_empty() {
             return Err(invalid_filter_predicate_error());
         }
         return Err(unsupported_filter_predicate_error());
     }
-    let spec: PatchInstructions = request.instructions;
+    let spec: PatchInstructions = request;
 
     if spec.operations.is_empty() {
         return Err(crate::error::CosmosError::builder()

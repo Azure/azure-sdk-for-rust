@@ -155,12 +155,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             PatchInstructions::from(vec![PatchOperation::set(
                 "/customer_tier",
                 json!("platinum"),
-            )]),
-            Some(
-                PatchItemOptions::default()
-                    .with_strategy(PatchStrategy::ServerSide)
-                    .with_filter_predicate("from c where c.total = 125"),
-            ),
+            )])
+            .with_filter_predicate("from c where c.total = 125"),
+            Some(PatchItemOptions::default().with_strategy(PatchStrategy::ServerSide)),
         )
         .await?;
     let conditional: serde_json::Value = response.into_model()?;

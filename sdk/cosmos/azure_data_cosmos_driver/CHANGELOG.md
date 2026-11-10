@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added server-side PATCH filter predicate support through the standard `condition` request envelope, with explicit rejection when execution resolves to client-side read-modify-write. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
+- Added server-side PATCH filter predicates to `PatchInstructions` through the standard `condition` request envelope, with explicit rejection when execution resolves to client-side read-modify-write. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
 - Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Added non-resumable read-many plans with `ItemSelector`, `ItemScope`, and `ItemFilter` for key/id, partition, or feed-range selections, including hierarchical prefixes, parameterized selector filters, and bounded query batches. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Added `FullTextScoreScope` and client-side ranked full-text and weighted hybrid query execution with bounded result windows. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))

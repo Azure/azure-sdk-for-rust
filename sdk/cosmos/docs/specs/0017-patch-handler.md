@@ -49,7 +49,7 @@ before transport selection and dispatches ordinary Read and Replace helpers.
 | `patch_tracking_id`                           | `with_patch_tracking_id(PatchTrackingId)`           | Optional. Generated once per invocation for unsafe instructions.  |
 | `patch_tracking_capacity`                     | `with_patch_tracking_capacity(NonZeroU16)`          | Optional. Defaults to 1024 entries; oldest is evicted when full.  |
 | `patch_tracking_retention_seconds`            | `with_patch_tracking_retention_seconds(NonZeroU32)` | Optional. Defaults to 300 seconds; whole-second granularity.      |
-| Filter predicate                              | `PatchItemOptions::filter_predicate`                | Optional SQL FROM/WHERE fragment serialized as `condition`.       |
+| Filter predicate                              | `PatchInstructions::filter_predicate()`             | Optional SQL FROM/WHERE fragment serialized as `condition`.       |
 
 ## Strategy resolution
 
@@ -207,7 +207,10 @@ tracking ID/capacity/retention settings apply only to client-side RMW. No
 `_azsdkPatchTracking` property is written by server-side PATCH.
 
 The optional top-level `condition` property contains a SQL FROM/WHERE fragment,
-for example `from c where c.status = 'pending'`. The service evaluates it in
+for example `from c where c.status = 'pending'`. Set it on the instruction
+payload with `PatchInstructions::with_filter_predicate(...)`, not on
+`PatchItemOptions`. An absent predicate is omitted from serialization; empty
+and whitespace-only values are preserved for boundary validation. The service evaluates it in
 the same transaction as the patch operations. A true condition proceeds, while
 a false condition returns HTTP 412 with sub-status 1110
 (`PatchConditionNotMet`) and leaves the item and ETag unchanged. If both an

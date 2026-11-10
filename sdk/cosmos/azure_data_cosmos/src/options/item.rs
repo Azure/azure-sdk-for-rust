@@ -9,8 +9,6 @@ use azure_data_cosmos_driver::models::{Precondition, SessionToken};
 use azure_data_cosmos_driver::options::OperationOptions;
 #[cfg(feature = "unstable_patch")]
 use azure_data_cosmos_driver::options::PatchStrategy;
-#[cfg(feature = "unstable_patch")]
-use std::borrow::Cow;
 
 /// Options for item point-read operations.
 ///
@@ -118,20 +116,14 @@ impl ItemWriteOptions {
 ///
 /// # Conditions
 ///
-/// PATCH exposes ETag preconditions and SQL filter predicates:
+/// These options configure ETag preconditions. SQL filter predicates belong to
+/// the payload; set them with
+/// [`PatchInstructions::with_filter_predicate()`](crate::models::PatchInstructions::with_filter_predicate).
 ///
-/// * **`Precondition::IfMatch`.** Server-side PATCH sends the condition to
-///   Cosmos DB. Client-side PATCH evaluates it against each write-region
-///   `LatestCommitted` Read, then uses that Read's ETag as the internal Replace
-///   concurrency guard. `IfNoneMatch` is a read condition and is rejected for
-///   PATCH.
-/// * **SQL filter predicate.** The service evaluates the predicate atomically
-///   before applying a server-side PATCH and returns HTTP 412 with sub-status
-///   1110 when it isn't satisfied. Filter predicates aren't supported when
-///   strategy resolution selects client-side execution; that combination
-///   returns HTTP 400 before dispatching a request. Use explicit
-///   [`PatchStrategy::ServerSide`] when a predicate must accompany operations
-///   that [`PatchStrategy::Auto`] would otherwise run client-side.
+/// Server-side PATCH sends [`Precondition::IfMatch`] to Cosmos DB. Client-side
+/// PATCH evaluates it against each write-region `LatestCommitted` Read, then
+/// uses that Read's ETag as the internal Replace concurrency guard.
+/// [`Precondition::IfNoneMatch`] is a read condition and is rejected for PATCH.
 ///
 /// The session token lives on the dedicated
 /// [`session_token`](Self::session_token) field (mirroring
@@ -178,17 +170,6 @@ pub struct PatchItemOptions {
     /// `If-Match` ETag check applied to the item before PATCH commits.
     pub precondition: Option<Precondition>,
 
-    /// SQL FROM/WHERE clause evaluated before a server-side PATCH commits.
-    ///
-    /// For example, `from c where c.status = 'pending'`. Empty predicates are
-    /// invalid. A false predicate returns HTTP 412 with sub-status 1110.
-    /// Effective client-side execution doesn't support predicates and returns
-    /// HTTP 400 before any request is dispatched.
-    /// Disables ambiguous-outcome retries even for retry-safe instructions.
-    /// Read the item to reconcile an ambiguous outcome before submitting another
-    /// patch; the driver does not reconcile conditional server-side PATCH.
-    pub filter_predicate: Option<Cow<'static, str>>,
-
     /// Maximum number of client-side Read-Modify-Write attempts the driver may
     /// make before surfacing a 412. Ignored by server-side PATCH. `None`
     /// selects the driver default (5).
@@ -226,17 +207,6 @@ impl PatchItemOptions {
     /// Sets an `If-Match` ETag check for this PATCH.
     pub fn with_precondition(mut self, precondition: Precondition) -> Self {
         self.precondition = Some(precondition);
-        self
-    }
-
-    /// Sets a SQL FROM/WHERE clause evaluated before the PATCH commits.
-    ///
-    /// The condition must be nonempty and is supported only when strategy
-    /// resolution selects server-side execution. A condition that evaluates
-    /// to false returns HTTP 412 with sub-status 1110 and leaves the item
-    /// unchanged.
-    pub fn with_filter_predicate(mut self, predicate: impl Into<Cow<'static, str>>) -> Self {
-        self.filter_predicate = Some(predicate.into());
         self
     }
 

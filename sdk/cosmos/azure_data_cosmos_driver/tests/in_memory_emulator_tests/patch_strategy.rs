@@ -445,6 +445,41 @@ async fn auto_obeys_safety_and_the_ten_instruction_limit() {
 }
 
 #[tokio::test]
+async fn typed_filter_predicate_uses_server_side_auto_and_remains_atomic() {
+    let recorder = MethodRecorder::new();
+    let (driver, container) = build_driver(Some(recorder.clone())).await;
+    create_item(&driver, &container, &seed_document()).await;
+    recorder.clear();
+
+    let instructions = PatchInstructions::from(vec![PatchOperation::set(
+        "/name",
+        serde_json::json!("matched"),
+    )])
+    .with_filter_predicate("from c where c.name = 'before'");
+    let response = execute_patch(&driver, &container, &instructions, PatchStrategy::Auto)
+        .await
+        .expect("a typed predicate should use server-side Auto");
+    assert_eq!(response_json(response)["name"], "matched");
+    assert_eq!(recorder.data_plane_methods(), vec![Method::Patch]);
+
+    let before_failure = read_stored_raw(&driver, &container).await;
+    recorder.clear();
+    let error = execute_patch(&driver, &container, &instructions, PatchStrategy::Auto)
+        .await
+        .expect_err("the committed mutation should make the typed predicate false");
+    assert_eq!(
+        error.status().status_code(),
+        azure_core::http::StatusCode::PreconditionFailed
+    );
+    assert_eq!(
+        error.status().sub_status(),
+        Some(azure_data_cosmos_driver::error::SubStatusCode::new(1110))
+    );
+    assert_eq!(recorder.data_plane_methods(), vec![Method::Patch]);
+    assert_eq!(read_stored_raw(&driver, &container).await, before_failure);
+}
+
+#[tokio::test]
 async fn effective_client_side_paths_reject_filter_predicates_before_io() {
     let scenarios = [
         (

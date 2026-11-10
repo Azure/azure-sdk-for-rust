@@ -2750,7 +2750,7 @@ impl CosmosDriver {
         let patch_request = operation
             .body()
             .and_then(|body| crate::models::parse_patch_request(body).ok());
-        let instructions = patch_request.as_ref().map(|request| &request.instructions);
+        let instructions = patch_request.as_ref();
 
         if operation
             .precondition()
@@ -2804,7 +2804,7 @@ impl CosmosDriver {
         let requested = crate::options::PatchStrategy::Auto;
         if patch_request
             .as_ref()
-            .and_then(|request| request.condition())
+            .and_then(|request| request.filter_predicate())
             .is_some_and(|condition| condition.trim().is_empty())
         {
             return Err(crate::driver::pipeline::patch_handler::invalid_filter_predicate_error());
@@ -2815,7 +2815,7 @@ impl CosmosDriver {
             crate::driver::pipeline::patch_strategy::PatchExecution::ClientSide
         ) && patch_request
             .as_ref()
-            .is_some_and(|request| request.condition().is_some())
+            .is_some_and(|request| request.filter_predicate().is_some())
         {
             return Err(
                 crate::driver::pipeline::patch_handler::unsupported_filter_predicate_error(),
@@ -2823,7 +2823,7 @@ impl CosmosDriver {
         }
         if patch_request
             .as_ref()
-            .is_some_and(|request| request.condition().is_some())
+            .is_some_and(|request| request.filter_predicate().is_some())
         {
             // A committed PATCH can make its predicate false, so replay can
             // report a misleading 412 even when the instructions converge.
