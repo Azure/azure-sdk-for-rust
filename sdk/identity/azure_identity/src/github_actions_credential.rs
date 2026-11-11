@@ -57,7 +57,10 @@ pub struct GitHubActionsCredentialOptions {
 
 impl fmt::Debug for GitHubActionsCredentialOptions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct(type_name::<Self>()).finish_non_exhaustive()
+        f.debug_struct(type_name::<Self>())
+            .field("tenant_id", &self.tenant_id)
+            .field("client_id", &self.client_id)
+            .finish_non_exhaustive()
     }
 }
 
