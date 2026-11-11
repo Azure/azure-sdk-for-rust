@@ -162,6 +162,21 @@ impl PipelineBody {
         }
     }
 
+    pub(crate) fn single(self) -> Result<Bytes> {
+        let count = match self {
+            Self::NoPayload => return Ok(Bytes::new()),
+            Self::Bytes(bytes) => return Ok(bytes),
+            Self::Items(items) => items.len(),
+            Self::ContextualItems(items) => items.len(),
+        };
+        Err(CosmosError::builder()
+            .with_status(CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
+            .with_message(format!(
+                "expected single response body, found feed response with {count} item(s)"
+            ))
+            .build())
+    }
+
     #[cfg(test)]
     pub(crate) fn items(self) -> Result<Vec<Bytes>> {
         self.into_public(false, true)?.items()
@@ -248,7 +263,6 @@ impl PipelineResponse {
         }
     }
 
-    #[cfg(test)]
     pub(crate) fn into_body(self) -> PipelineBody {
         self.body
     }
@@ -453,6 +467,25 @@ mod tests {
             }
         }
         assert_eq!(item_count(ResponseBody::Items(Vec::new())), 0);
+    }
+
+    #[test]
+    fn single_payload_rejects_feed_shapes_without_materializing_items() {
+        let bytes = Bytes::from_static(&[0x80, markers::STR_R1, 255]);
+        let view = ItemView::from_binary_page(bytes.clone(), 1..3).unwrap();
+        let expected = ResponseBody::Items(vec![bytes.clone()])
+            .single()
+            .unwrap_err();
+        for body in [
+            PipelineBody::Items(vec![bytes.clone()]),
+            PipelineBody::from_item_views(vec![view]),
+        ] {
+            let error = body.single().unwrap_err();
+            assert_eq!(error.status(), expected.status());
+            assert_eq!(error.to_string(), expected.to_string());
+        }
+        assert!(PipelineBody::NoPayload.single().unwrap().is_empty());
+        assert_eq!(PipelineBody::Bytes(bytes.clone()).single().unwrap(), bytes);
     }
 
     #[test]
