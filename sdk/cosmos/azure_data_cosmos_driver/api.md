@@ -206,6 +206,7 @@ pub mod diagnostics {
     }
     impl DiagnosticsContext {
         pub fn activity_id(&self) -> &ActivityId;
+        pub fn clone_with_status(&self, status: CosmosStatus) -> Self;
         pub fn compaction(&self) -> Option<&CompactionInfo>;
         pub fn duration(&self) -> Duration;
         pub fn effective_status(&self) -> Option<CosmosStatus>;
@@ -1517,6 +1518,7 @@ pub mod models {
         pub fn read_container_by_rid<impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(account: AccountReference, db_rid: impl Into<std::borrow::Cow<'static, str>>, container_rid: impl Into<std::borrow::Cow<'static, str>>) -> Self;
         pub fn read_database(database: DatabaseReference) -> Self;
         pub fn read_item(item: ItemReference) -> Self;
+        pub fn read_many<impl Into<crate::read_many::ItemSelector>: Into<crate::read_many::ItemSelector>>(container: ContainerReference, selection: impl Into<crate::read_many::ItemSelector>) -> Self;
         pub fn read_offer<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(account: AccountReference, offer_id: impl Into<Cow<'static, str>>) -> Self;
         pub fn replace_container(container: ContainerReference) -> Self;
         pub fn replace_item(item: ItemReference) -> Self;
@@ -2023,8 +2025,10 @@ pub mod models {
         pub operations: Vec<PatchOperation>,
     }
     impl PatchInstructions {
+        pub fn filter_predicate(&self) -> Option<&str>;
         pub fn is_retry_safe(&self) -> bool;
         pub fn new() -> Self;
+        pub fn with_filter_predicate<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, predicate: impl Into<Cow<'static, str>>) -> Self;
         pub fn with_operation(self, operation: PatchOperation) -> Self;
     }
     impl From<Vec<PatchOperation>> for PatchInstructions {
@@ -3300,6 +3304,34 @@ pub mod options {
     pub const DEFAULT_MAX_BUFFERED_QUERY_WINDOW: u64 = 1000;
     pub const DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS: usize = 32;
     pub const DEFAULT_MAX_FAN_OUT: u32 = 100;
+}
+pub mod read_many {
+    #[derive(Clone, Debug)]
+    pub struct ItemFilter {
+    }
+    impl ItemFilter {
+        pub fn with_parameter<impl Into<String>: Into<String>, impl Serialize: Serialize>(self, name: impl Into<String>, value: impl Serialize) -> crate::Result<Self>;
+    }
+    impl FromStr for ItemFilter {
+        type Err = CosmosError;
+        fn from_str(value: &str) -> crate::Result<Self>;
+    }
+    #[derive(Clone, Debug)]
+    pub struct ItemSelector {
+    }
+    impl ItemSelector {
+        pub fn with_filter<impl Into<ItemFilter>: Into<ItemFilter>>(self, filter: impl Into<ItemFilter>) -> Self;
+    }
+    #[derive(Clone, Debug)]
+    #[non_exhaustive]
+    pub enum ItemScope {
+        Items(Vec<(crate::models::PartitionKey, String)>),
+        Partitions(Vec<crate::models::PartitionKey>),
+        FeedRanges(Vec<crate::models::FeedRange>),
+    }
+    impl From<ItemScope> for ItemSelector {
+        fn from(selection: ItemScope) -> Self;
+    }
 }
 #[cfg(feature = "__internal_mocking")]
 pub mod test {

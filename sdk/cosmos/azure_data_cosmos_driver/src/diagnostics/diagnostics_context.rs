@@ -511,7 +511,7 @@ pub struct RequestDiagnostics {
     /// Populated only when the `fault_injection` feature is enabled and
     /// evaluations are propagated from the [`FaultClient`](crate::fault_injection::FaultClient)
     /// via an [`EvaluationCollector`](crate::fault_injection::EvaluationCollector) attached
-    /// to the [`HttpRequest`](crate::driver::transport::cosmos_transport_client::HttpRequest).
+    /// to the [`HttpRequest`](crate::pipeline::transport::cosmos_transport_client::HttpRequest).
     #[cfg(feature = "fault_injection")]
     fault_injection_evaluations: Vec<crate::fault_injection::FaultInjectionEvaluation>,
 }
@@ -3171,6 +3171,11 @@ impl DiagnosticsContext {
         self
     }
 
+    pub(crate) fn with_operation_status(mut self, status: CosmosStatus) -> Self {
+        self.status = Some(status);
+        self
+    }
+
     /// Pushes a context-level operation name down onto the requests that were
     /// issued under it, so relabeling the context does not erase where its
     /// requests came from.
@@ -3257,7 +3262,11 @@ impl DiagnosticsContext {
         }
     }
 
-    pub(crate) fn clone_with_status(&self, status: CosmosStatus) -> Self {
+    /// Returns a copy with the specified operation-level status.
+    ///
+    /// Preserves request statuses, charges, and timing without changing this context.
+    /// Use this when processing a successful response fails after the request completes.
+    pub fn clone_with_status(&self, status: CosmosStatus) -> Self {
         let mut context = self.clone_with_operation_name(self.operation_name.clone());
         context.status = Some(status);
         context

@@ -316,6 +316,7 @@ pub mod clients {
         pub async fn read(&self, options: Option<ReadContainerOptions>) -> crate::Result<ResourceResponse<ContainerProperties>>;
         pub async fn read_feed_ranges(&self, options: Option<ReadFeedRangesOptions>) -> crate::Result<Vec<FeedRange>>;
         pub async fn read_item<impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, options: Option<ItemReadOptions>) -> crate::Result<ItemResponse>;
+        pub async fn read_many<T: DeserializeOwned + Send + 'static, impl Into<ItemSelector>: Into<ItemSelector>>(&self, selection: impl Into<ItemSelector>, options: Option<ReadManyOptions>) -> crate::Result<ReadManyIterator<T>>;
         #[cfg(feature = "control_plane")]
         pub async fn read_throughput(&self, options: Option<ThroughputOptions>) -> crate::Result<Option<ThroughputProperties>>;
         #[cfg(feature = "control_plane")]
@@ -576,6 +577,7 @@ pub mod diagnostics {
     #[doc(inline)]
     impl DiagnosticsContext {
         pub fn activity_id(&self) -> &ActivityId;
+        pub fn clone_with_status(&self, status: CosmosStatus) -> Self;
         pub fn compaction(&self) -> Option<&CompactionInfo>;
         pub fn duration(&self) -> Duration;
         pub fn effective_status(&self) -> Option<CosmosStatus>;
@@ -1207,6 +1209,22 @@ pub mod feed {
     impl<'de> Deserialize<'de> for FeedRange {
         fn deserialize<D>(deserializer: D) -> Result<Self, <D as >::Error> where D: serde::Deserializer<'de>;
     }
+    #[derive(Clone, Debug)]
+    pub struct ItemFilter {
+    }
+    impl ItemFilter {
+        pub fn with_parameter<impl Into<String>: Into<String>, impl Serialize: Serialize>(self, name: impl Into<String>, value: impl Serialize) -> crate::Result<Self>;
+    }
+    impl FromStr for ItemFilter {
+        type Err = CosmosError;
+        fn from_str(value: &str) -> crate::Result<Self>;
+    }
+    #[derive(Clone, Debug)]
+    pub struct ItemSelector {
+    }
+    impl ItemSelector {
+        pub fn with_filter<impl Into<ItemFilter>: Into<ItemFilter>>(self, filter: impl Into<ItemFilter>) -> Self;
+    }
     #[derive(Clone, Debug, serde::Serialize)]
     pub struct Query {
     }
@@ -1250,6 +1268,27 @@ pub mod feed {
         type Item = Result<QueryFeedPage<T>, CosmosError>;
         fn poll_next(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> task::Poll<Option<<Self as >::Item>>;
     }
+    #[pin_project]
+    pub struct ReadManyIterator<T: Send> {
+    }
+    impl<T: DeserializeOwned + Send + 'static> ReadManyIterator<T> {
+        pub async fn collect_all(self) -> crate::Result<ReadManyResponse<T>>;
+    }
+    impl<T: DeserializeOwned + Send + 'static> Stream for ReadManyIterator<T> {
+        type Item = Result<QueryFeedPage<T>, CosmosError>;
+        fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<<Self as >::Item>>;
+    }
+    pub struct ReadManyResponse<T> {
+    }
+    impl<T> ReadManyResponse<T> {
+        pub fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>>;
+        pub fn into_items(self) -> Vec<T>;
+        pub fn items(&self) -> &[T];
+        pub fn request_charge(&self) -> RequestCharge;
+    }
+    impl<T> Debug for ReadManyResponse<T> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
+    }
     #[derive(Clone)]
     #[non_exhaustive]
     pub enum FeedScope {
@@ -1260,6 +1299,16 @@ pub mod feed {
         pub fn full_container() -> Self;
         pub fn partition<impl Into<PartitionKey>: Into<PartitionKey>>(pk: impl Into<PartitionKey>) -> Self;
         pub fn range<impl Into<FeedRange>: Into<FeedRange>>(fr: impl Into<FeedRange>) -> Self;
+    }
+    #[derive(Clone, Debug)]
+    #[non_exhaustive]
+    pub enum ItemScope {
+        Items(Vec<(crate::models::PartitionKey, String)>),
+        Partitions(Vec<crate::models::PartitionKey>),
+        FeedRanges(Vec<crate::models::FeedRange>),
+    }
+    impl From<ItemScope> for ItemSelector {
+        fn from(selection: ItemScope) -> Self;
     }
 }
 pub mod models {
@@ -1836,8 +1885,10 @@ pub mod models {
     #[cfg(feature = "unstable_patch")]
     #[doc(inline)]
     impl PatchInstructions {
+        pub fn filter_predicate(&self) -> Option<&str>;
         pub fn is_retry_safe(&self) -> bool;
         pub fn new() -> Self;
+        pub fn with_filter_predicate<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, predicate: impl Into<Cow<'static, str>>) -> Self;
         pub fn with_operation(self, operation: PatchOperation) -> Self;
     }
     #[cfg(feature = "unstable_patch")]
@@ -2803,6 +2854,20 @@ pub mod options {
     impl ReadFeedRangesOptions {
         pub fn with_force_refresh(self, force_refresh: bool) -> Self;
         pub fn with_operation_options(self, operation: OperationOptions) -> Self;
+    }
+    #[derive(Clone, Default)]
+    #[non_exhaustive]
+    pub struct ReadManyOptions {
+        pub operation: crate::options::OperationOptions,
+        pub session_token: Option<crate::options::SessionToken>,
+        pub max_item_count: Option<crate::options::MaxItemCountHint>,
+        pub max_fan_out: Option<u32>,
+    }
+    impl ReadManyOptions {
+        pub fn with_max_fan_out(self, limit: u32) -> Self;
+        pub fn with_max_item_count(self, hint: MaxItemCountHint) -> Self;
+        pub fn with_operation_options(self, options: OperationOptions) -> Self;
+        pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, token: impl Into<SessionToken>) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, serde::Serialize)]

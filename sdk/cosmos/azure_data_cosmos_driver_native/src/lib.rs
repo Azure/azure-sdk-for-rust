@@ -35,6 +35,7 @@ pub mod feed_range;
 pub mod op_request;
 pub mod options_snapshot;
 pub mod partition_key;
+pub mod read_many;
 pub mod response_header;
 pub mod runtime;
 pub mod runtime_builder;
@@ -53,6 +54,16 @@ mod test_abi;
 #[no_mangle]
 pub static COSMOS_BUILD_IDENTIFIER: &CStr = c_str!(env!("BUILD_IDENTIFIER"));
 
+// This crate is the final native artifact, so it owns the global allocator
+// choice; library crates such as `azure_data_cosmos_driver` leave it to their
+// consumers. mimalloc's `override` feature stays off, so host `malloc`/`free`
+// remain on the host allocator. Every pointer this library returns is released
+// through a `cosmos_*_free` export, so the two allocators never free each
+// other's memory.
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 const VERSION: &CStr = c_str!(env!("CARGO_PKG_VERSION"));
 
 /// Returns a constant, NUL-terminated UTF-8 string containing the version of
@@ -61,4 +72,28 @@ const VERSION: &CStr = c_str!(env!("CARGO_PKG_VERSION"));
 #[no_mangle]
 pub extern "C" fn cosmos_version() -> *const c_char {
     VERSION.as_ptr()
+}
+
+#[cfg(test)]
+mod tests {
+    #[cfg(feature = "mimalloc")]
+    #[test]
+    fn rust_allocations_use_mimalloc() {
+        use std::ffi::{c_int, c_void};
+
+        // Declared locally because mimalloc's sys crate only exposes them
+        // behind its `extended` feature.
+        extern "C" {
+            fn mi_is_in_heap_region(p: *const c_void) -> bool;
+            fn mi_version() -> c_int;
+        }
+
+        let small = Box::new([0u8; 64]);
+        let large = vec![0u8; 1 << 20];
+        unsafe {
+            assert!(mi_version() > 0);
+            assert!(mi_is_in_heap_region(small.as_ptr().cast()));
+            assert!(mi_is_in_heap_region(large.as_ptr().cast()));
+        }
+    }
 }

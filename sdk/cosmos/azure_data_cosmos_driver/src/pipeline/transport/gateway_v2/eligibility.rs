@@ -18,7 +18,7 @@ use crate::models::{OperationType, ResourceType};
 ///
 /// `is_rid_addressed` operations always return `false`. Gateway 2.0 derives its
 /// `DatabaseName` / `CollectionName` routing tokens by parsing the signing link
-/// (`gateway_v2_dispatch::parse_resource_names`), but a RID-addressed feed signs
+/// (`gateway_v2::request_tokens::parse_resource_names`), but a RID-addressed feed signs
 /// over a bare lowercased RID that carries no `dbs`/`colls` segments, so the
 /// wrap would fail locally with `CLIENT_BAD_REQUEST`. Those requests fall back
 /// to standard Gateway, which routes raw RID paths natively. See

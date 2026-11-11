@@ -56,6 +56,23 @@ use std::time::Instant;
 /// `412 PreconditionFailed` to the caller.
 pub const DEFAULT_PATCH_MAX_ATTEMPTS: u8 = 5;
 
+pub(crate) fn unsupported_filter_predicate_error() -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+        .with_message(
+            "PATCH filter predicates require effective server-side execution; \
+             use PatchStrategy::ServerSide when client-side execution would otherwise be selected",
+        )
+        .build()
+}
+
+pub(crate) fn invalid_filter_predicate_error() -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+        .with_message("PATCH filter predicate must not be empty")
+        .build()
+}
+
 /// Internal abstraction for dispatching sub-operations from inside the
 /// PATCH handler's RMW loop.
 ///
@@ -192,13 +209,20 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
     let body = operation
         .body()
         .ok_or_else(|| missing_body_error("PATCH operation requires a PatchInstructions body"))?;
-    let spec: PatchInstructions = serde_json::from_slice(body).map_err(|err| {
+    let request = crate::models::parse_patch_request(body).map_err(|err| {
         crate::error::CosmosError::builder()
             .with_status(crate::error::status_codes::SERIALIZATION_REQUEST_BODY_INVALID)
             .with_message("failed to parse PATCH body as PatchInstructions")
             .with_source(err)
             .build()
     })?;
+    if let Some(condition) = request.filter_predicate() {
+        if condition.trim().is_empty() {
+            return Err(invalid_filter_predicate_error());
+        }
+        return Err(unsupported_filter_predicate_error());
+    }
+    let spec: PatchInstructions = request;
 
     if spec.operations.is_empty() {
         return Err(crate::error::CosmosError::builder()
@@ -3114,6 +3138,28 @@ mod tests {
             error.status(),
             crate::error::status_codes::CLIENT_BAD_REQUEST
         );
+        assert!(dispatcher.calls().is_empty());
+    }
+
+    #[tokio::test]
+    async fn filter_predicate_is_rejected_before_read() {
+        let dispatcher = ScriptedDispatcher::new(vec![]);
+        let op = CosmosOperation::patch_item(test_item_ref()).with_body(
+            br#"{"condition":"from c where c.visits = 0","operations":[{"op":"incr","path":"/visits","value":1}]}"#
+                .to_vec(),
+        );
+
+        let error = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+            .await
+            .expect_err("client-side PATCH must reject filter predicates before I/O");
+
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::CLIENT_BAD_REQUEST
+        );
+        assert!(error.status().sub_status().is_none());
+        assert!(error.diagnostics().is_none());
+        assert!(error.patch_tracking_id().is_none());
         assert!(dispatcher.calls().is_empty());
     }
 

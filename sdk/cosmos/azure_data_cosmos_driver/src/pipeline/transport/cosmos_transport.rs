@@ -13,57 +13,21 @@
 //! - **Emulator operations**: Lazily-initialized pools for local emulator
 //!   with certificate validation disabled.
 
-pub(crate) mod adaptive_transport;
-mod authorization_policy;
-#[cfg(feature = "tokio")]
-pub(crate) mod background_task_manager;
-pub(crate) mod connectivity_probe;
-pub(crate) mod cosmos_headers;
-pub(crate) mod cosmos_transport_client;
-mod emulator;
-mod gateway_v2_dispatch;
-/// Gateway 2.0 operation eligibility filter.
-pub(crate) mod gateway_v2_eligibility;
-pub(crate) use gateway_v2_eligibility::is_operation_supported_by_gateway_v2;
-pub(crate) mod http_client_factory;
-pub(crate) mod request_signing;
-#[cfg(feature = "reqwest")]
-pub(crate) mod reqwest_transport_client;
-pub(crate) mod rntbd;
-mod sharded_transport;
-pub(crate) use sharded_transport::EndpointKey;
-mod tracked_transport;
-pub(crate) mod transport_pipeline;
-
 use crate::{
-    driver::pipeline::components::TransportMode,
     models::{AccountEndpoint, OperationType, ResourceType},
     options::ConnectionPoolOptions,
+    pipeline::transport::types::TransportMode,
 };
 use std::sync::{Arc, OnceLock};
 
-use self::{
+use super::{
     adaptive_transport::AdaptiveTransport,
     http_client_factory::{HttpClientConfig, HttpClientFactory},
 };
 use crate::diagnostics::TransportHttpVersion;
 
 #[cfg(test)]
-use self::http_client_factory::DefaultHttpClientFactory;
-
-pub(crate) use authorization_policy::generate_authorization;
-pub(crate) use authorization_policy::AuthorizationContext;
-pub(crate) use emulator::{ensure_endpoint_scheme_allowed, is_emulator_host};
-pub(crate) use gateway_v2_dispatch::{
-    unwrap_response_for_gateway_v2, wrap_request_for_gateway_v2, WrapInputs,
-};
-pub(crate) use tracked_transport::infer_request_sent_status;
-
-/// Cosmos DB REST API version.
-///
-/// This must match the version supported by the service. The value `2020-07-15`
-/// is the same as used by the Java SDK for compatibility.
-pub(crate) const COSMOS_API_VERSION: &str = "2020-07-15";
+use super::http_client_factory::DefaultHttpClientFactory;
 
 /// Determines whether the dataplane pipeline should be used for a given operation.
 ///
@@ -323,8 +287,8 @@ impl CosmosTransport {
 pub(crate) mod tests {
     use super::*;
     use crate::diagnostics::TransportHttpVersion;
-    use crate::driver::pipeline::components::TransportMode;
     use crate::options::ConnectionPoolOptionsBuilder;
+    use crate::pipeline::transport::types::TransportMode;
 
     #[test]
     fn metadata_transport_is_sharded_when_http2_negotiated() {

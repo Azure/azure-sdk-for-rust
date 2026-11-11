@@ -13,15 +13,15 @@ use azure_core::{
 use uuid::Uuid;
 
 use crate::{
-    driver::transport::rntbd::{
-        tokens::{ReadFeedKeyType, RntbdRequestToken, TokenValue},
-        RntbdRequestFrame, RntbdResponse,
-    },
     models::{
         cosmos_headers::request_header_names, effective_partition_key::EffectivePartitionKey,
         CosmosStatus, OperationType, ResourceType,
     },
     options::ReadConsistencyStrategy,
+    rntbd_encoding::{
+        tokens::{ReadFeedKeyType, RntbdRequestToken, TokenValue},
+        RntbdRequestFrame, RntbdResponse,
+    },
 };
 
 use super::{dispatch::EFFECTIVE_PARTITION_KEY, ConsistencyLevel, InMemoryEmulatorHttpClient};
@@ -431,7 +431,7 @@ fn read_consistency_strategy_from_wire(value: u8) -> crate::error::Result<ReadCo
 }
 
 fn decode_metadata(
-    tokens: Vec<crate::driver::transport::rntbd::Token>,
+    tokens: Vec<crate::rntbd_encoding::Token>,
 ) -> crate::error::Result<RequestMetadata> {
     let mut metadata = RequestMetadata::default();
     for token in tokens {
@@ -728,15 +728,16 @@ fn gateway_v2_internal_error(error: impl std::fmt::Display) -> crate::error::Cos
 mod tests {
     use super::*;
     use crate::{
-        driver::transport::{
-            cosmos_transport_client::HttpRequest, rntbd::Token, wrap_request_for_gateway_v2,
-            AuthorizationContext, WrapInputs,
-        },
         in_memory_emulator::{ContainerConfig, VirtualAccountConfig, VirtualRegion},
         models::{
             DefaultConsistencyLevel, FeedRange, PartitionKey, PartitionKeyDefinition,
             PartitionKeyValue,
         },
+        pipeline::transport::{
+            cosmos_transport_client::HttpRequest, wrap_request_for_gateway_v2,
+            AuthorizationContext, GatewayV2Headers,
+        },
+        rntbd_encoding::Token,
     };
     use url::Url;
 
@@ -826,7 +827,7 @@ mod tests {
                 #[cfg(feature = "fault_injection")]
                 evaluation_collector: None,
             },
-            &WrapInputs {
+            &GatewayV2Headers {
                 auth_context: &context,
                 operation_type: OperationType::Batch,
                 resource_type: ResourceType::Document,
@@ -1160,7 +1161,7 @@ mod tests {
         );
         let wrapped = wrap_request_for_gateway_v2(
             request,
-            &WrapInputs {
+            &GatewayV2Headers {
                 auth_context: &auth_context,
                 operation_type: OperationType::ReadFeed,
                 resource_type: ResourceType::Document,
@@ -1639,7 +1640,7 @@ mod tests {
                         );
                         let wrapped = wrap_request_for_gateway_v2(
                             request,
-                            &WrapInputs {
+                            &GatewayV2Headers {
                                 auth_context: &auth_context,
                                 operation_type: operation,
                                 resource_type: ResourceType::Document,

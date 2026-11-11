@@ -43,6 +43,8 @@ futures.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
 time.workspace = true
+# Rust-side global allocator for the shipped library; see the `mimalloc` feature.
+mimalloc = { version = "0.1.52", default-features = false, optional = true }
 
 [dev-dependencies]
 # Path-only — the driver crate is not (yet) a workspace dependency.
@@ -55,6 +57,12 @@ tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "macr
 cbindgen = "0.29.2"
 
 [features]
+default = ["mimalloc"]
+# Uses mimalloc as Rust's `#[global_allocator]` for this library only; it does
+# not override the host process's `malloc`/`free`. Build with
+# `--no-default-features` to keep the system allocator (for example, under
+# sanitizers or on targets mimalloc does not support).
+mimalloc = ["dep:mimalloc"]
 # Compiles the `__test_only_*` C-ABI helpers that back the `c_tests/`
 # end-to-end suite. Off by default — production `cdylib` / `staticlib`
 # builds do not expose these symbols. Enabled by the CMake C-test build

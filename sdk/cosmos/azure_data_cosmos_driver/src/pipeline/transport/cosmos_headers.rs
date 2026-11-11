@@ -7,10 +7,12 @@
 
 use azure_core::http::headers::{HeaderName, HeaderValue, ACCEPT, CONTENT_TYPE, USER_AGENT};
 
-use super::{cosmos_transport_client::HttpRequest, COSMOS_API_VERSION};
+use super::cosmos_transport_client::HttpRequest;
 use crate::{models::cosmos_headers::request_header_names, options::ReadConsistencyStrategy};
 
 const APPLICATION_JSON: HeaderValue = HeaderValue::from_static("application/json");
+/// Cosmos DB REST API version supported by the driver.
+pub(crate) const COSMOS_API_VERSION: &str = "2020-07-15";
 const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
 const SDK_SUPPORTED_CAPABILITIES: HeaderName =
     HeaderName::from_static("x-ms-cosmos-sdk-supportedcapabilities");

@@ -4,12 +4,15 @@
 use crate::{
     clients::ClientContext,
     diagnostics::CosmosOperationContext,
-    feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
+    feed::{
+        ChangeFeedPageIterator, FeedRange, FeedScope, ItemSelector, QueryItemIterator,
+        ReadManyIterator,
+    },
     models::{BatchResponse, ChangeFeedItem, ItemResponse, TransactionalBatch},
     options::{
         BatchOptions, BinaryEncodingOptions, ChangeFeedMode, ChangeFeedOptions,
         ChangeFeedStartFrom, ItemReadOptions, ItemWriteOptions, OperationOptions, Precondition,
-        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, SessionToken,
+        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, ReadManyOptions, SessionToken,
     },
     PartitionKey, Query, ResourceIdentity,
 };
@@ -41,6 +44,77 @@ pub struct ContainerClient {
 }
 
 impl ContainerClient {
+    /// Reads selected items, logical partitions, or feed ranges as unordered pages.
+    ///
+    /// Duplicate selections are removed. Missing or filtered-out items are
+    /// omitted. A filter only narrows the selection; use [`Self::query_items()`]
+    /// for general queries. Item and partition scopes accept complete keys or
+    /// nonempty hierarchical prefixes. A prefix plus an id can return multiple
+    /// items across logical partitions. Overlapping selections do not duplicate
+    /// results. Item keys missing only a final `/id` component are completed from
+    /// the supplied id.
+    ///
+    /// Queries consume RUs and may span multiple service requests. There is no
+    /// cross-partition snapshot or durable resume. Use
+    /// [`ReadManyIterator::collect_all()`] before iteration to aggregate results.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid selections, unbound filter parameters,
+    /// excessive fan-out, or planning failures. Request and deserialization
+    /// failures are returned while consuming pages.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # async fn example(container: azure_data_cosmos::clients::ContainerClient) -> azure_data_cosmos::Result<()> {
+    /// use azure_data_cosmos::feed::{ItemFilter, ItemScope, ItemSelector};
+    /// let filter = "c.active = @active".parse::<ItemFilter>()?
+    ///     .with_parameter("@active", true)?;
+    /// let response = container.read_many::<serde_json::Value>(
+    ///     ItemSelector::from(ItemScope::Partitions(vec!["tenant-1".into()])).with_filter(filter),
+    ///     None,
+    /// ).await?.collect_all().await?;
+    /// println!("Found {} items", response.items().len());
+    /// # Ok(()) }
+    /// ```
+    pub async fn read_many<T: DeserializeOwned + Send + 'static>(
+        &self,
+        selection: impl Into<ItemSelector>,
+        options: Option<ReadManyOptions>,
+    ) -> crate::Result<ReadManyIterator<T>> {
+        let options = options.unwrap_or_default();
+        let plan_options = crate::options::FeedOptions {
+            max_fan_out: options.max_fan_out,
+            ..Default::default()
+        }
+        .to_plan_options();
+        let (operation_options, _) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
+        let mut operation = CosmosOperation::read_many(self.container_ref.clone(), selection);
+        if let Some(token) = options.session_token {
+            operation = operation.with_session_token(token);
+        }
+        if let Some(hint) = options.max_item_count {
+            operation = operation.with_max_item_count(hint);
+        }
+        let plan = self
+            .context
+            .driver
+            .plan_operation(operation, &operation_options, None, &plan_options)
+            .await?;
+        let pages = QueryItemIterator::new(
+            self.context.driver.clone(),
+            Some(self.container_ref.clone()),
+            plan,
+            operation_options,
+            self.context.diagnostics_handlers.clone(),
+            self.operation_context("read_many"),
+        )
+        .into_pages();
+        Ok(ReadManyIterator::new(pages))
+    }
+
     /// Returns the resolved [`ContainerReference`] for the container this client is attached to.
     #[cfg(feature = "unstable_dtx")]
     pub(crate) fn container_reference(&self) -> &ContainerReference {
@@ -569,6 +643,26 @@ impl ContainerClient {
     /// and resolves multi-write conflicts at document granularity. Select an
     /// explicit strategy when those differences matter.
     ///
+    /// # Filter predicates
+    ///
+    /// [`PatchInstructions::with_filter_predicate()`] adds a nonempty SQL
+    /// FROM/WHERE clause that Cosmos DB evaluates atomically before a
+    /// server-side PATCH. A false predicate returns HTTP 412 with sub-status
+    /// 1110 and leaves the item unchanged. Predicates aren't supported when
+    /// strategy resolution selects client-side execution; that combination
+    /// returns HTTP 400 before I/O.
+    /// Select [`PatchStrategy::ServerSide`](crate::options::PatchStrategy::ServerSide)
+    /// when a predicate must accompany operations that `Auto` would otherwise
+    /// execute client-side.
+    ///
+    /// # Errors
+    ///
+    /// Returns HTTP 412 with sub-status 1110 when a server-side predicate is
+    /// false. An empty predicate returns client-generated HTTP 400 before I/O;
+    /// other invalid predicates return service HTTP 400. If execution resolves
+    /// to client-side, the predicate is rejected before I/O with HTTP 400, no
+    /// sub-status, no request diagnostics, and no PATCH tracking ID.
+    ///
     /// # Retry Semantics
     ///
     /// [`PatchStrategy::Auto`](crate::options::PatchStrategy::Auto) is the
@@ -579,8 +673,12 @@ impl ContainerClient {
     /// Client-side-only settings do not influence strategy selection and are
     /// ignored on the server path. To provide a stable identity for
     /// application-level retries when client-side execution is selected, use
-    /// [`PatchItemOptions::with_tracking_id`]. Explicit unsafe server-side
-    /// PATCH is not retried after an ambiguous outcome.
+    /// [`PatchItemOptions::with_tracking_id`]. Server-side PATCH with an unsafe
+    /// list or a filter predicate is not retried after an ambiguous outcome.
+    /// A committed patch can make its predicate false, so even convergent
+    /// instructions cannot safely be replayed. The driver returns the original
+    /// error without a reconciliation Read; read the item to reconcile the
+    /// outcome before deciding whether to submit another patch.
     ///
     /// By default the driver generates a tracking ID for instruction lists that
     /// are not safe to reapply. The effective ID is available from
@@ -1724,6 +1822,100 @@ mod tests {
             operation_options.patch_strategy,
             Some(crate::options::PatchStrategy::ClientSide)
         );
+    }
+
+    #[cfg(feature = "unstable_patch")]
+    #[test]
+    fn patch_body_serializes_filter_predicate_as_condition() {
+        let patch = PatchInstructions::from(vec![crate::models::PatchOperation::set(
+            "/status",
+            serde_json::json!("done"),
+        )]);
+
+        for predicate in [
+            "from c where c.status = 'pending'",
+            "from c where c.status = \"quoted\\value\"\n",
+        ] {
+            let patch = patch.clone().with_filter_predicate(predicate);
+            let body = serde_json::to_vec(&patch).unwrap();
+            assert_eq!(
+                serde_json::from_slice::<PatchInstructions>(&body).unwrap(),
+                patch
+            );
+            let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+            assert_eq!(
+                body,
+                json!({
+                    "operations": [{"op": "set", "path": "/status", "value": "done"}],
+                    "condition": predicate,
+                })
+            );
+        }
+    }
+
+    #[cfg(feature = "unstable_patch")]
+    #[test]
+    fn patch_body_preserves_instruction_bytes_and_move_ordering() {
+        use crate::models::PatchOperation;
+
+        let patch = PatchInstructions::from(vec![
+            PatchOperation::set("/nested", json!({"items": [null, true, {"value": "text"}]})),
+            PatchOperation::add("/tags/-", json!("new")),
+            PatchOperation::replace("/count", json!(u64::MAX)),
+            PatchOperation::increment("/integer", i64::MAX),
+            PatchOperation::increment("/float", 1.25),
+            PatchOperation::remove("/removed"),
+            PatchOperation::move_value("/source", "/destination"),
+        ]);
+        let expected = concat!(
+            r#"{"operations":["#,
+            r#"{"op":"set","path":"/nested","value":{"items":[null,true,{"value":"text"}]}}"#,
+            r#",{"op":"add","path":"/tags/-","value":"new"}"#,
+            r#",{"op":"replace","path":"/count","value":18446744073709551615}"#,
+            r#",{"op":"incr","path":"/integer","value":9223372036854775807}"#,
+            r#",{"op":"incr","path":"/float","value":1.25}"#,
+            r#",{"op":"remove","path":"/removed"}"#,
+            r#",{"op":"move","from":"/source","path":"/destination"}]}"#,
+        )
+        .as_bytes();
+        assert_eq!(serde_json::to_vec(&patch).unwrap(), expected);
+
+        let mut conditional = expected.to_vec();
+        conditional.pop();
+        conditional.extend_from_slice(b",\"condition\":\"from c where c.ready = true\"}");
+        let patch = patch.with_filter_predicate("from c where c.ready = true");
+        assert_eq!(serde_json::to_vec(&patch).unwrap(), conditional);
+        assert_eq!(
+            serde_json::from_slice::<PatchInstructions>(&conditional).unwrap(),
+            patch
+        );
+        assert!(String::from_utf8(conditional)
+            .unwrap()
+            .contains(r#"{"op":"move","from":"/source","path":"/destination"}"#));
+    }
+
+    #[cfg(feature = "unstable_patch")]
+    #[test]
+    fn patch_body_preserves_explicit_filter_predicate() {
+        let patch = PatchInstructions::from(vec![crate::models::PatchOperation::set(
+            "/status",
+            serde_json::json!("done"),
+        )]);
+
+        for predicate in ["", "   "] {
+            let patch = patch.clone().with_filter_predicate(predicate);
+            let body = serde_json::to_vec(&patch).unwrap();
+            assert_eq!(
+                serde_json::from_slice::<PatchInstructions>(&body).unwrap(),
+                patch
+            );
+            let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+            assert_eq!(body["condition"], predicate);
+        }
+
+        let body = serde_json::to_vec(&patch).unwrap();
+        let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert!(body.get("condition").is_none());
     }
 
     #[test]
