@@ -37,7 +37,6 @@ struct Counts {
     checkpoints: u64,
     renewals: u64,
     releases: u64,
-    splits: u64,
 }
 
 #[derive(Debug, Default)]
@@ -75,8 +74,6 @@ impl RequestObserver for Writes {
         let (previous, counts) = &mut *state;
         if request.method() == Method::Post {
             counts.creates += 1;
-        } else if value.get("children").is_some() {
-            counts.splits += 1;
         } else if value.get("owner").is_none() {
             counts.releases += 1;
         } else if previous.get(&id).map(|v| &v["incarnation"]) != Some(&value["incarnation"]) {

@@ -356,12 +356,8 @@ struct Lease {
     last_processed_at: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     processing_deadline: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    children: Option<Vec<FeedRange>>,
     #[serde(skip)]
     renewed: Option<Instant>,
-    #[serde(default)]
-    split_complete: bool,
     #[serde(skip)]
     pending: Option<PendingCheckpoint>,
 }
@@ -385,7 +381,7 @@ enum DeliveryPhase {
     AwaitingDemand,
     Fetching,
     AwaitingAcknowledgment,
-    Retired,
+    Closed,
 }
 
 #[derive(Default)]
@@ -425,8 +421,6 @@ enum Update<'a> {
     Renew,
     Checkpoint(&'a ContinuationToken),
     Release,
-    Split(&'a [FeedRange]),
-    CompleteSplit,
 }
 ```
 
@@ -828,8 +822,7 @@ async fn run(
                 return Ok(());
             };
             context.validate(&current.value)?;
-            if current.value.children.is_none()
-                && current.value.base.owner == observed.base.owner
+            if current.value.base.owner == observed.base.owner
                 && current.value.incarnation == observed.incarnation
             {
                 context.update(&mut current, Update::Release).await?;
@@ -855,8 +848,8 @@ async fn run(
 
 ### 4.2 Balancing and acquisition
 
-`balance` reads current leases, schedules unfinished topology repair, and attempts
-the leases selected by the balancing policy. Acquisition races do not become SDK
+`balance` reads current leases and attempts the leases selected by the balancing
+policy. It does not schedule split cleanup. Acquisition races do not become SDK
 retry decisions:
 
 ```rust
@@ -877,30 +870,8 @@ async fn balance(
         return Vec::new();
     }
     let result = async {
-        let (pending, active): (Vec<_>, Vec<_>) = context
-            .list()
-            .await?
-            .into_iter()
-            .partition(|lease| lease.children.is_some());
+        let active = context.list().await?;
         let mut acquired = Vec::new();
-        for parent in pending {
-            if state.stopping.load(Ordering::Acquire) {
-                break;
-            }
-            let id = &parent.base.record.id;
-            if owned.contains(id) {
-                continue;
-            }
-            match context.store().read::<Lease>(id).await {
-                Ok(Some(parent)) if parent.value.children.is_some() => acquired.push(parent),
-                Ok(Some(_)) => {}
-                Ok(None) => tracing::warn!(lease = %id, "Unfinished split parent is missing"),
-                Err(err) => {
-                    tracing::warn!(lease = %id, error = %err, "Failed to read unfinished split");
-                    state.notify(Some(id), err);
-                }
-            }
-        }
         let selected = balancing::select(&active, &context.options, now_millis());
         for index in selected {
             if state.stopping.load(Ordering::Acquire) {
@@ -1055,8 +1026,7 @@ flowchart TD
     Cleanup -->|Release fails| Expiring["Expiring ownership"]
     Owned -->|Process dies or renewal expires| Expiring
     Expiring -->|New acquisition| Owned
-    Owned -->|Persist split transition| Retired["Retired parent: frozen progress"]
-    Retired -->|Children established; conditional delete| Deleted["Parent deleted"]
+    Owned -->|Split error; children established; conditional delete| Deleted["Parent deleted"]
 ```
 
 | Event | Rule |
@@ -1066,9 +1036,11 @@ flowchart TD
 | Stop waiter canceled | Cleanup continues. Drop requests cancellation without waiting. No implicit callback/drain timeout; cancellation cannot undo external effects. |
 | Ambiguous acquire/failed release | Track for cleanup; process death recovers through expiration/checkpoints. |
 
-All acquisition and owned lease mutations share `Context::modify_lease`. It reads
-fresh state, verifies owner/incarnation, preserves newer activity, applies only the
-requested field changes, and writes conditionally with the freshly read ETag.
+Acquisition, renewal, checkpoint, and release share `Context::modify_lease`. It
+reads fresh state, verifies owner/incarnation, preserves newer activity, applies
+only the requested field changes, and writes conditionally with the freshly read
+ETag. Split handling uses this ownership check before creating children, then
+conditionally deletes the parent; it does not add another lease mutation state.
 Acquisition races fail immediately; owned write conflicts have a bounded retry:
 
 ```rust
@@ -1084,8 +1056,7 @@ async fn modify_lease(
     for _ in 0..attempts {
         let mut current = self.store().read::<Lease>(id).await?.ok_or_else(lost)?;
         self.validate(&current.value)?;
-        if (current.value.children.is_some() && !matches!(update, Update::CompleteSplit))
-            || current.value.base.owner != observed.base.owner
+        if current.value.base.owner != observed.base.owner
             || current.value.incarnation != observed.incarnation
         {
             return Err(lost());
@@ -1139,32 +1110,6 @@ async fn modify_lease(
                 current.value.base.owner = None;
                 current.value.pending = None;
             }
-            Update::Split(children) => {
-                if current.value.pending.is_some() {
-                    return Err(error(
-                        StatusCode::Conflict,
-                        "Split requires durable progress.",
-                    ));
-                }
-                topology::validate_children(&current.value.base.range, children)?;
-                let checkpoint = self.checkpoint(&current.value, &current.value.base.range)?;
-                current.value.base.continuation = Some(checkpoint);
-                current.value.base.owner = None;
-                current.value.incarnation = None;
-                current.value.children = Some(children.to_vec());
-            }
-            Update::CompleteSplit => {
-                if current.value.children.is_none() {
-                    return Err(error(
-                        StatusCode::Conflict,
-                        "Processing lease is not retired.",
-                    ));
-                }
-                if current.value.split_complete {
-                    return Ok(current);
-                }
-                current.value.split_complete = true;
-            }
         }
         current.value.renewed_at = Some(now_millis());
         current.value.renewed = Some(Instant::now());
@@ -1208,7 +1153,6 @@ flowchart TD
     Worker -->|Start| Dispatcher
     subgraph Driver["Rust driver"]
         Coordinator["Coordinator task"] -->|Poll| Balance["Balancing and acquisition future"]
-        Coordinator -->|Poll| Repair["Pending split-repair futures"]
         Coordinator -->|Poll owned acquisitions| Leases
         subgraph Acquisition["One acquisition: owned state"]
             Leases["Supervisor future"] -->|Poll| Poll["Demand-gated read, receipt, and checkpoint future"]
@@ -1228,37 +1172,18 @@ flowchart TD
 When either acquisition child ends, the supervisor cancels the peer, joins both,
 and attempts conditional release.
 
-`supervise` shows both the incomplete-split repair path and the normal pair of
-processing/renewal futures. Cleanup reports failed releases and retains them for
-later shutdown handling:
+`supervise` runs the normal processing/renewal futures, then handles a topology
+error for that acquisition after renewal has stopped. Cleanup reports failed
+releases and retains them for later shutdown handling:
 
 ```rust
 async fn supervise(
     context: Arc<Context>,
     state: Arc<SharedState>,
-    mut lease: Stored<Lease>,
+    lease: Stored<Lease>,
     stop: Signal,
     force: Signal,
 ) {
-    if lease.value.children.is_some() {
-        if state.stopping.load(Ordering::Acquire) {
-            return;
-        }
-        let token = lease.value.base.record.id.clone();
-        let repair = context.ensure_children(&mut lease).fuse();
-        futures::pin_mut!(repair);
-        futures::select! {
-            result = repair => {
-                if let Err(err) = result {
-                    tracing::warn!(error = %err, "Child lease creation failed; retrying on the next cycle");
-                    state.notify(Some(&token), err);
-                }
-            },
-            _ = stop.fuse() => {},
-            _ = force.fuse() => {},
-        }
-        return;
-    }
     let token = lease.value.base.record.id.clone();
     let session = state
         .distributor
@@ -1297,14 +1222,24 @@ async fn supervise(
         Err(err) => Err(err),
     };
     drop(cancel);
+    let result = match result {
+        Err(err)
+            if err.status().is_partition_topology_change()
+                && !state.stopping.load(Ordering::Acquire) =>
+        {
+            match context.recover(lease.clone()).await {
+                Ok(true) => return,
+                Ok(false) => Err(err),
+                Err(err) => Err(err),
+            }
+        }
+        result => result,
+    };
     if let Err(err) = result {
         tracing::warn!(lease = %token, error = %err, "Lease processing stopped");
         state.failed(Some(&token), err);
     }
     let mut lease = lease.lock().await;
-    if lease.value.children.is_some() {
-        return;
-    }
     if let Err(err) = context.update(&mut lease, Update::Release).await {
         tracing::warn!(lease = %token, error = %err, "Lease release failed; ownership will expire");
         state.failed(Some(&token), err);
@@ -1873,20 +1808,20 @@ flowchart TD
         Ack -->|Receipt accepted under policy| Demand
         Fetch -->|Idle or 429, release demand| Delay["Local delay, not eligible"]
         Delay -->|Timer elapsed, register again| Demand
-        Fetch -->|Read failure or unclaimed response| Retired["Retired"]
-        Fetch -->|Ownership loss or forced cancellation| Retired
-        Ack -->|Abandonment, failed required checkpoint| Retired
-        Demand -->|Ownership loss or shutdown cleanup| Retired
-        Delay -->|Ownership loss or shutdown cleanup| Retired
-        Ack -->|Ownership loss or forced cancellation| Retired
+        Fetch -->|Read failure or unclaimed response| Closed["Closed"]
+        Fetch -->|Ownership loss or forced cancellation| Closed
+        Ack -->|Abandonment, failed required checkpoint| Closed
+        Demand -->|Ownership loss or shutdown cleanup| Closed
+        Delay -->|Ownership loss or shutdown cleanup| Closed
+        Ack -->|Ownership loss or forced cancellation| Closed
     end
-    Retired -->|Supervisor handles persistence separately| Cleanup["Release, expire, or recover topology"]
+    Closed -->|Supervisor handles persistence separately| Cleanup["Release, expire, or recover topology"]
 ```
 
 `Local delay` is a reason for ineligibility, not a fifth delivery enum variant:
 the current implementation retains `Fetching` until demand is registered again.
-Similarly, local `Retired` does **not** mean the persisted lease became a retired
-split parent.
+`Closed` is only the terminal state of local delivery. It is not a persisted
+lease lifecycle or a signal to schedule split cleanup.
 
 These transitions are made by `AcquisitionDelivery`. Eligibility stores a weak
 handle, delivery moves the response to its original requester, and receipt
@@ -1901,7 +1836,7 @@ impl AcquisitionDelivery {
                 return Ok(None);
             }
             let mut state = self.delivery.state();
-            if state.phase == DeliveryPhase::Retired {
+            if state.phase == DeliveryPhase::Closed {
                 return Err(lost());
             }
             if state.request.is_some()
@@ -1942,7 +1877,7 @@ impl AcquisitionDelivery {
             return Ok(false);
         }
         let mut state = self.delivery.state();
-        if scheduler.closed || state.phase == DeliveryPhase::Retired {
+        if scheduler.closed || state.phase == DeliveryPhase::Closed {
             return Err(lost());
         }
         if state.phase != DeliveryPhase::Fetching {
@@ -1959,7 +1894,7 @@ impl AcquisitionDelivery {
         state.phase = DeliveryPhase::AwaitingAcknowledgment;
         let sent = demand.response.send(batch);
         if sent.is_err() {
-            state.phase = DeliveryPhase::Retired;
+            state.phase = DeliveryPhase::Closed;
         }
         drop(state);
         drop(scheduler);
@@ -1979,7 +1914,7 @@ impl AcquisitionDelivery {
                 state.phase = DeliveryPhase::AwaitingDemand;
                 Ok(())
             }
-            DeliveryPhase::Retired => Err(lost()),
+            DeliveryPhase::Closed => Err(lost()),
             _ => Err(error(
                 StatusCode::Conflict,
                 "Acquisition has no delivered batch to acknowledge.",
@@ -1987,12 +1922,12 @@ impl AcquisitionDelivery {
         }
     }
 
-    fn retire(&self) {
+    fn close(&self) {
         let pending = {
             let mut scheduler = self.distributor.scheduler();
             let delivery = Arc::downgrade(&self.delivery);
             scheduler.available.retain(|ready| !ready.ptr_eq(&delivery));
-            self.delivery.retire()
+            self.delivery.close()
         };
         drop(pending);
         self.distributor.waker.wake();
@@ -2418,7 +2353,7 @@ This fences stored progress, not external application effects that already happe
 | 429 or failed data read | Update retry state or end acquisition. | No progress for the failed page. Earlier successes may flush independently. |
 | Renewal | Refresh local renewal deadline. | Refresh renewal time and publish latest processing activity; preserve freshest stored continuation. |
 | Callback failure/receipt drop | End acquisition; failed page never becomes pending success. | Cleanup may flush earlier successes, not the failed page. |
-| Release or steal | Retire old delivery state; new acquisition rejects old receipts. | Change ownership through fenced mutation; preserve stored continuation. |
+| Release or steal | Close old delivery state; new acquisition rejects old receipts. | Change ownership through fenced mutation; preserve stored continuation. |
 | Split/merge | End/rebuild the affected plan; retain safe progress. | Follow topology recovery, not ordinary acknowledgment; see section 7. |
 
 These are field-level effects. Ownership mutations currently read fresh state and
@@ -2631,8 +2566,11 @@ pub(super) async fn stop<T, H>(
 
 ### 7.2 Acquisition cleanup and recovery dispatch
 
-The enclosing `poll` function performs final safe-progress flushing and hands
-partition-topology errors to recovery:
+The enclosing `poll` function performs final safe-progress flushing and returns
+the polling result. It does not create child leases or delete the parent.
+`supervise` settles the processing/renewal pair, then dispatches a recognized
+topology error to range-local recovery unless shutdown has started. The supervisor
+implementation is shown in section 4.4:
 
 ```rust
 async fn poll(
@@ -2669,51 +2607,69 @@ async fn poll(
             context.flush(&mut lease).await?;
         }
     }
-    match result {
-        Err(err) if err.status().is_partition_topology_change() => {
-            if state.stopping.load(Ordering::Acquire) {
-                return Ok(());
-            }
-            if context.recover(lease).await? {
-                Ok(())
-            } else {
-                // A merge or an unfinished transition re-enters through normal lease acquisition.
-                Err(err)
-            }
-        }
-        result => result,
-    }
+    result
 }
 ```
 
 ### 7.3 Splits and merges
 
-Range-local recovery; no bootstrap rerun or worker-wide restart.
+**Design rule: split cleanup is a response to a change-feed poll's split error,
+not a separate lease lifecycle.** A topology refresh, balancing pass, or application
+callback failure alone must not initiate it. A split is not delivered as an
+application batch. Recovery affects only that acquisition's lease; it does not
+rerun bootstrap or restart the worker.
+
+The ordering follows the Java `FeedRangeGoneHandler` pattern: establish child
+leases from the last safe continuation, then remove the parent after successful
+handling. There is no persisted `Retiring` state.
 
 ```mermaid
 flowchart TD
-    Changed["Change-feed API: topology change"] -->|Return control to coordination| Refresh
+    Changed["Change-feed poll returns a topology error"] -->|Return from polling| Flush["Flush acknowledged progress"]
+    Flush -->|Success; polling and renewal settled| Stopping{"Shutdown started?"}
+    Stopping -->|Yes| Release["Normal release; retain parent"]
+    Stopping -->|No| Refresh
     subgraph Recovery["Driver: affected lease range"]
-        Refresh["Flush successful progress; refresh ranges"] -->|Ranges refreshed| Coverage["Intersect with lease bounds; validate exact coverage"]
+        Refresh["Refresh affected ranges"] -->|Ranges refreshed| Coverage["Intersect with lease bounds; validate exact coverage"]
         Coverage -->|Coverage valid| Split{"Multiple physical ranges?"}
-        Split -->|Yes: split| Retire["Conditionally retire parent with frozen progress"]
-        Retire -->|Retirement persisted| Children["Create missing children with projected continuations"]
+        Split -->|Yes: split| Fence["Validate ownership and conditionally renew parent"]
+        Fence -->|Owned lease| Children["Create missing children with projected continuations"]
         Split -->|No: merge or transition| Keep["Keep logical lease and checkpoint"]
     end
     Children -->|Children available| Acquire["Acquire child leases normally"]
     Children -->|All replacements confirmed| Delete["Conditionally delete parent"]
     Keep -->|Retry through acquisition| Retry["Reacquire and rebuild the read plan"]
+    Flush -->|Failure| Release
+    Children -->|Failure| Release
+    Delete -->|Failure| Release
+    Release -->|Released or expired| Retry
+    Retry -->|Next poll reports a split| Changed
 ```
 
-- **Split:** reject gaps/overlaps; flush successes before fenced retirement.
-  Keep the frozen parent until replacements exist, then delete it. Retry failed
-  creation/deletion; never reset children or recreate replaced ancestors.
+- **Split:** reject gaps/overlaps and flush successes. The split-error handler
+  creates children from durable progress, then conditionally deletes the parent.
+  Until deletion succeeds, the parent stays an ordinary lease. Failed handling
+  is retried when normal reacquisition encounters the split again; no retirement
+  record, split-completion flag, or background repair task is used.
+  Child creation is idempotent and never resets existing progress. Partial
+  creation can permit replay; it is not a cross-document transaction.
 - **Merge:** independent EPK slices/checkpoints; never min/max opaque tokens.
 - **Outstanding batch:** topology never acknowledges it; failure permits replay.
 
+| Outcome | Parent and child handling |
+| --- | --- |
+| Earlier batch is still outstanding | Do not advance past it. Only successful acknowledgment contributes to the continuation used for children. |
+| Safe-progress flush fails | Do not create children or delete the parent. Surface the failure and use ordinary acquisition cleanup. |
+| Refresh reports one covering range | Keep the logical lease and its checkpoint; rebuild through normal acquisition. This includes merges and unfinished transitions. |
+| Child creation fails partway | Keep the ordinary parent and already-created children. A later source split error retries create-if-absent; existing owners and checkpoints are never reset. |
+| All replacements exist, parent deletion fails | Keep the parent. A later split-error handler revalidates replacements and retries conditional deletion; balancing does not schedule cleanup. |
+| Ownership changed | Reject the stale mutation or deletion with the owner/incarnation and ETag checks. Do not clear the replacement owner's state. |
+| Parent deletion succeeds | End the parent acquisition without a release write to the deleted document. Child leases are acquired normally. |
+
 The actual recovery entry point refreshes ranges for the affected lease, validates
 coverage, and distinguishes one retained logical slice from a split requiring
-child creation. `ensure_children` owns resumable child creation and parent deletion:
+child creation. `split` creates or confirms replacements and deletes the parent
+with its ETag only after they exist:
 
 ```rust
 pub(super) async fn recover(&self, lease: Arc<Mutex<Stored<Lease>>>) -> Result<bool> {
@@ -2739,15 +2695,16 @@ pub(super) async fn recover(&self, lease: Arc<Mutex<Stored<Lease>>>) -> Result<b
         return Ok(false);
     }
     let mut lease = lease.lock().await;
-    self.update(&mut lease, Update::Split(&children)).await?;
-    self.ensure_children(&mut lease).await?;
-    tracing::info!(lease = %lease.value.base.record.id, children = children.len(), "Created child leases for the retired split range");
+    self.split(&mut lease, &children).await?;
+    tracing::info!(lease = %lease.value.base.record.id, children = children.len(), "Created child leases and deleted the split parent");
     Ok(true)
 }
 ```
 
-**Checks:** parent absent after success; retained on failure; nested splits and
-restart verification preserve complete coverage and checkpoints.
+**Checks:** topology changes alone do not mutate a held batch's lease; balancing
+does not repair incomplete child creation; no new lease contains `children` or
+`split_complete`; parent absent after success and retained on failure; nested
+splits and restart verification preserve complete coverage and checkpoints.
 
 **Open:** storage consistency, multi-write routing, clock skew. TTL/ETag alone
 does not prove global fencing.
@@ -2799,6 +2756,9 @@ These are contract assertions, not claims of a new test execution:
    acknowledgment, and checkpoint attempts cannot mutate the replacement owner.
 6. **Recovery:** honor final throttle cooldown, propagate read deadlines, and
    preserve child coverage/continuations during split and merge recovery.
+   Trigger split cleanup from the source poll error, not inventory or maintenance
+   failures. Inject partial child-creation and parent-deletion failures; retry
+   through normal acquisition without resetting established children.
 7. **Shutdown:** graceful drain settles issued receipts and surfaces failed
    cleanup; forced cancellation never fabricates callback success.
 
@@ -2869,8 +2829,11 @@ process-crash, or regional-failover behavior.
 
 ### 9.1 Upgrade boundary
 
-**Compatibility:** bootstrap, identity, record schema unchanged; SDK concurrency now defaults to one.
-Drain/upgrade all workers together: older verification can recreate deleted parents.
+**Compatibility:** bootstrap and workload identity/version are unchanged; SDK
+concurrency now defaults to one. New lease records omit the former `children`
+and `split_complete` lifecycle fields. No replacement retirement marker is added.
+Drain/upgrade all workers together: older verification can recreate deleted
+parents, and mixed lifecycle implementations are not a supported rollout.
 **Open:** schema migration/rollback; `c1.`-only readers cannot assume `c2.` support.
 
 ### 9.2 Publication gates
@@ -2892,6 +2855,9 @@ is ready to publish.
 ### 10.2 Recovery and validation limits
 
 - Read and maintenance errors share a result path; checkpoint 429 classification still needs a regression and fix.
+- The same shared error path must distinguish source-feed topology errors from
+  lease-store maintenance errors. Maintenance failures are not evidence that
+  the source lease split; a dedicated classification regression remains required.
 - Repeated deterministic failures need a defined suspension/backoff policy rather than endless reacquisition.
 - Multi-write routing, clock skew, and mixed-version rollback require explicit guarantees and validation.
 - The in-memory emulator lacks retained AVAD history; local oracle tests are not full-fidelity service evidence.

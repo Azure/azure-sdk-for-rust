@@ -36,7 +36,7 @@ pub(super) fn validate_children(parent: &FeedRange, children: &[FeedRange]) -> R
     {
         return Err(error(
             StatusCode::Conflict,
-            "A retired lease must have at least two nonempty children.",
+            "A split must have at least two nonempty children.",
         ));
     }
     validate_exact_coverage(parent, children.iter())
@@ -160,7 +160,6 @@ impl Context {
             }
             if candidate.min_inclusive() <= range.min_inclusive()
                 && candidate.max_exclusive() >= range.max_exclusive()
-                && lease.children.is_some()
             {
                 continue;
             }
@@ -195,10 +194,9 @@ impl Context {
         for lease in &replacements {
             let candidate = &lease.base.range;
             if candidate.min_inclusive() < cursor {
-                // An unfinished retired descendant can coexist with its own children.
+                // A split parent can coexist with its children until deletion succeeds.
                 if covering.is_some_and(|parent| {
-                    parent.children.is_some()
-                        && candidate.max_exclusive() <= parent.base.range.max_exclusive()
+                    candidate.max_exclusive() <= parent.base.range.max_exclusive()
                 }) {
                     continue;
                 }
@@ -262,8 +260,6 @@ impl Context {
                         renewed_at: None,
                         last_processed_at: None,
                         processing_deadline: None,
-                        children: None,
-                        split_complete: false,
                         renewed: None,
                         pending: None,
                     };
@@ -287,36 +283,21 @@ impl Context {
         self.list().await
     }
 
-    pub(super) async fn ensure_children(&self, parent: &mut Stored<Lease>) -> Result<()> {
+    pub(super) async fn split(
+        &self,
+        parent: &mut Stored<Lease>,
+        children: &[FeedRange],
+    ) -> Result<()> {
         self.validate(&parent.value)?;
-        if parent.value.children.is_none() {
+        validate_children(&parent.value.base.range, children)?;
+        if parent.value.pending.is_some() {
             return Err(error(
                 StatusCode::Conflict,
-                "Processing lease is not retired.",
+                "Split requires durable progress.",
             ));
         }
+        self.update(parent, Update::Renew).await?;
         let id = parent.value.base.record.id.clone();
-        let Some(current) = self.store().read::<Lease>(&id).await? else {
-            return Ok(());
-        };
-        self.validate(&current.value)?;
-        if current.value.children != parent.value.children
-            || current.value.base.continuation != parent.value.base.continuation
-        {
-            return Err(error(
-                StatusCode::PreconditionFailed,
-                "Retired parent state changed.",
-            ));
-        }
-        *parent = current;
-        let children = parent
-            .value
-            .children
-            .as_ref()
-            .ok_or_else(|| error(StatusCode::Conflict, "Processing lease is not retired."))?;
-        if parent.value.split_complete {
-            return self.store().delete(&id, parent.etag.clone()).await;
-        }
         for range in children {
             let id = lease_id(&self.namespace, range);
             let continuation = self.checkpoint(&parent.value, range)?;
@@ -341,9 +322,7 @@ impl Context {
                         renewed_at: None,
                         last_processed_at: None,
                         processing_deadline: None,
-                        children: None,
                         renewed: None,
-                        split_complete: false,
                         pending: None,
                     };
                     self.store().create(&id, &child).await?;
@@ -362,14 +341,6 @@ impl Context {
                     "Child lease range or continuation does not match its parent.",
                 ));
             }
-        }
-        if let Err(err) = self.update(parent, Update::CompleteSplit).await {
-            if err.status().is_precondition_failed()
-                && self.store().read::<Lease>(&id).await?.is_none()
-            {
-                return Ok(());
-            }
-            return Err(err);
         }
         self.store().delete(&id, parent.etag.clone()).await
     }
@@ -397,9 +368,8 @@ impl Context {
             return Ok(false);
         }
         let mut lease = lease.lock().await;
-        self.update(&mut lease, Update::Split(&children)).await?;
-        self.ensure_children(&mut lease).await?;
-        tracing::info!(lease = %lease.value.base.record.id, children = children.len(), "Created child leases for the retired split range");
+        self.split(&mut lease, &children).await?;
+        tracing::info!(lease = %lease.value.base.record.id, children = children.len(), "Created child leases and deleted the split parent");
         Ok(true)
     }
 }

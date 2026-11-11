@@ -142,30 +142,26 @@ an ETag is an error, not a usable checkpoint.
 Splits use the existing lease container and conditional writes:
 
 1. Re-read the parent and validate its owner and acquisition incarnation.
-2. Conditionally replace the parent with a retirement record. It
-   retains the latest durable continuation, records the ordered child EPK
-   ranges, and clears ownership. This write is the transition's commit point.
-3. In the same range-local recovery handler, create the immediate child leases
+2. Renew the owned parent conditionally, preserving its latest durable continuation.
+   There is no persisted retirement state or split-completion marker.
+3. In the same split-error handler, create the immediate child leases
    with deterministic range IDs and projected continuations. Existing children
    are validated but never reset. Children start unowned and are acquired
    through normal count balancing, including the configured maximum.
-4. Conditionally mark the retired parent `split_complete` after all immediate
-   children or their complete replacement coverage have been confirmed.
-5. Delete the parent with its ETag condition. Not-found is success; other failures
-   remain visible and are retried. Child progress is never reset during cleanup.
+4. After all children or their complete replacement coverage are confirmed, delete
+   the parent with its ETag condition. Not-found is success; other failures remain
+   visible. Child progress is never reset during cleanup.
 
-The parent remains the recovery plan while creation is incomplete, not permanent
-lineage storage. Interrupted child creation can resume from its frozen ranges
-and continuation. If a child has already split again and been deleted, complete
+The parent remains an ordinary lease until deletion succeeds. If handling fails,
+normal lease release/acquisition and the next change-feed split error retry the
+work from the durable checkpoint and current topology. No background cleanup
+task or persistent intermediate lifecycle is needed. If a child has already split again and been deleted, complete
 descendant coverage prevents recreating it. Missing or overlapping partial
 coverage is an error, not permission to create an overlapping ancestor.
 
-Balancing queries active leases and retained split records, including completed
-records awaiting deletion. Enumeration itself does not create leases.
-An unfinished split is scheduled as independent range-local recovery work so
-creation/deletion failures do not block other ranges. Existing completed parents
-are eligible for cleanup; records without the completion marker are checked
-before deletion.
+Balancing queries ordinary leases only. Enumeration never creates child leases
+or schedules separate split-repair work. Cleanup is scoped to the affected
+change-feed request's topology error, so other ranges continue normally.
 
 Bootstrap's immutable initial range plan remains the startup verification
 inventory. Opt-in verification accepts complete replacement coverage for a
@@ -189,12 +185,13 @@ outside that position starts at its own first slice; a position outside the
 parent range is rejected. New projected checkpoints use the driver's `c2.`
 encoding while supported legacy checkpoints remain readable.
 
-Bootstrap records, active leases, and retired parents all use the initial schema
-version 1. A split changes lease state, not workload identity or schema version.
-The running processors retire the affected lease session and acquire its
+Bootstrap records and processing leases use the initial schema version 1.
+A split replaces leases without changing workload identity or schema version.
+The running processors stop the affected lease session and acquire its
 children automatically; customers do not stop or restart workers for a split
-or merge. Ownership incarnations, conditional writes, and the retired-parent
-state fence stale lease operations.
+or merge. Ownership incarnations and conditional writes fence stale lease operations.
+Child creation and parent deletion are not a cross-document transaction: partial
+child creation can allow replay, but must not overwrite progress or delete a new owner.
 
 Local tests cover error propagation, acknowledgment fencing, child creation
 races, interrupted transitions, independent merge progress, and restarts.
@@ -267,7 +264,7 @@ batches. An in-flight acquisition is allowed to settle and
 every successfully acquired lease is retained for conditional release.
 Renewal continues until the lease's outstanding processing and checkpoint work
 finishes. Checkpoint and renewal writes serialize with release; shutdown does
-not cancel a lease mutation in flight. A split retirement already in flight can
+not cancel a lease mutation in flight. Split-error handling already in flight can
 finish, but the stopping worker does not acquire its descendants.
 
 A successful drain saves acknowledged progress before releasing ownership.
@@ -351,13 +348,13 @@ incomplete drain still fails. Forced cancellation does not initiate a final
 flush; in-flight writes can settle. Ownership loss fences all writes, including
 final flushes. A failed flush ends the lease session without marking progress
 durable or resetting the dirty clock. A timed-out write can have committed, so
-recovery still permits replay. Split retirement requires durable progress;
+recovery still permits replay. Split handling requires durable progress;
 merged EPK-slice leases keep independent checkpoints.
 
 Each successful checkpoint write also refreshes the lease renewal timestamp.
 Fewer checkpoints can therefore require more renewal-only writes; coalescing
 does not suppress renewal or extend expiration. Local A/B tests count checkpoint,
-renewal, acquisition, release, creation, and split write requests separately.
+renewal, acquisition, release, and creation requests separately.
 They assert identical ordered create-only coverage in both modes and fewer
 checkpoint writes, alongside deadline, multi-slice idle, failure, shutdown,
 ownership, topology, SDK, and native receipt tests. Full historical

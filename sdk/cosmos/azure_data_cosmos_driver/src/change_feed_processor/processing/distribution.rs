@@ -23,7 +23,7 @@ enum DeliveryPhase {
     AwaitingDemand,
     Fetching,
     AwaitingAcknowledgment,
-    Retired,
+    Closed,
 }
 
 #[derive(Default)]
@@ -45,12 +45,12 @@ impl Delivery {
         })
     }
 
-    fn retire(&self) -> AcquisitionState {
+    fn close(&self) -> AcquisitionState {
         let mut state = self.state();
         std::mem::replace(
             &mut *state,
             AcquisitionState {
-                phase: DeliveryPhase::Retired,
+                phase: DeliveryPhase::Closed,
                 ..Default::default()
             },
         )
@@ -156,15 +156,15 @@ impl BatchDistributor {
     }
 
     pub(super) fn stop_delivery(&self, force: bool) {
-        let retired = {
+        let pending = {
             let mut scheduler = self.scheduler();
             scheduler.stopping = true;
             scheduler.forced |= force;
             std::mem::take(&mut scheduler.available)
         };
-        for retired in retired {
-            if let Some(delivery) = retired.upgrade() {
-                drop(delivery.retire());
+        for pending in pending {
+            if let Some(delivery) = pending.upgrade() {
+                drop(delivery.close());
             }
         }
         self.waker.wake();
@@ -186,7 +186,7 @@ impl AcquisitionDelivery {
                 return Ok(None);
             }
             let mut state = self.delivery.state();
-            if state.phase == DeliveryPhase::Retired {
+            if state.phase == DeliveryPhase::Closed {
                 return Err(lost());
             }
             if state.request.is_some()
@@ -227,7 +227,7 @@ impl AcquisitionDelivery {
             return Ok(false);
         }
         let mut state = self.delivery.state();
-        if scheduler.closed || state.phase == DeliveryPhase::Retired {
+        if scheduler.closed || state.phase == DeliveryPhase::Closed {
             return Err(lost());
         }
         if state.phase != DeliveryPhase::Fetching {
@@ -244,7 +244,7 @@ impl AcquisitionDelivery {
         state.phase = DeliveryPhase::AwaitingAcknowledgment;
         let sent = demand.response.send(batch);
         if sent.is_err() {
-            state.phase = DeliveryPhase::Retired;
+            state.phase = DeliveryPhase::Closed;
         }
         drop(state);
         drop(scheduler);
@@ -264,7 +264,7 @@ impl AcquisitionDelivery {
                 state.phase = DeliveryPhase::AwaitingDemand;
                 Ok(())
             }
-            DeliveryPhase::Retired => Err(lost()),
+            DeliveryPhase::Closed => Err(lost()),
             _ => Err(error(
                 StatusCode::Conflict,
                 "Acquisition has no delivered batch to acknowledge.",
@@ -272,12 +272,12 @@ impl AcquisitionDelivery {
         }
     }
 
-    fn retire(&self) {
+    fn close(&self) {
         let pending = {
             let mut scheduler = self.distributor.scheduler();
             let delivery = Arc::downgrade(&self.delivery);
             scheduler.available.retain(|ready| !ready.ptr_eq(&delivery));
-            self.delivery.retire()
+            self.delivery.close()
         };
         drop(pending);
         self.distributor.waker.wake();
@@ -286,7 +286,7 @@ impl AcquisitionDelivery {
 
 impl Drop for AcquisitionDelivery {
     fn drop(&mut self) {
-        self.retire();
+        self.close();
     }
 }
 

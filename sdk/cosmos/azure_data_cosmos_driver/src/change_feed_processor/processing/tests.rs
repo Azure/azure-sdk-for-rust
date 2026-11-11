@@ -440,9 +440,7 @@ fn leases(owners: &[Option<&str>]) -> Vec<Lease> {
             renewed_at: Some(1000),
             last_processed_at: None,
             processing_deadline: None,
-            children: None,
             renewed: None,
-            split_complete: false,
             pending: None,
         })
         .collect()
@@ -511,8 +509,7 @@ fn lease_serialization_excludes_unpersisted_progress() -> Result<()> {
                 "owner": "worker",
                 "continuation": "durable",
                 "incarnation": "0",
-                "renewed_at": 1000,
-                "split_complete": false
+                "renewed_at": 1000
             })
         );
     }
@@ -553,8 +550,6 @@ fn original_schema_lease_deserializes_without_runtime_progress() -> Result<()> {
     assert!(lease.incarnation.is_none());
     assert!(lease.renewed_at.is_none());
     assert!(lease.renewed.is_none());
-    assert!(lease.children.is_none());
-    assert!(!lease.split_complete);
     assert!(lease.pending.is_none());
     Ok(())
 }
@@ -615,7 +610,7 @@ async fn acquisition_failure_does_not_skip_other_selected_leases() -> Result<()>
 
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
-async fn feed_read_failure_releases_without_saving_progress_or_retiring() -> Result<()> {
+async fn feed_read_failure_releases_without_saving_progress_or_creating_children() -> Result<()> {
     let (context, rule) = fault_fixture(
         FaultOperationType::ChangeFeedItem,
         StatusCode::BadRequest,
@@ -650,8 +645,6 @@ async fn feed_read_failure_releases_without_saving_progress_or_retiring() -> Res
         .value;
     assert_eq!(stored.base.continuation, Some(checkpoint));
     assert!(stored.base.owner.is_none());
-    assert!(stored.children.is_none());
-    assert!(!stored.split_complete);
     Ok(())
 }
 
@@ -692,7 +685,6 @@ async fn renewal_not_found_cancels_pending_receipt_and_preserves_progress() -> R
     let saved = context.store().read::<Lease>(&id).await?.unwrap().value;
     assert!(saved.base.continuation.is_none());
     assert!(saved.base.owner.is_none());
-    assert!(saved.children.is_none());
     Ok(())
 }
 
@@ -1007,7 +999,7 @@ async fn owned_mutations_retry_only_conditional_write_conflicts() -> Result<()> 
                 Update::Checkpoint(token) => expected.base.continuation = Some(token.clone()),
                 Update::Release => expected.base.owner = None,
                 Update::Renew => {}
-                Update::Acquire | Update::Split(_) | Update::CompleteSplit => unreachable!(),
+                Update::Acquire => unreachable!(),
             }
             rule.enable();
             let result = context.update(&mut owned, update).await;

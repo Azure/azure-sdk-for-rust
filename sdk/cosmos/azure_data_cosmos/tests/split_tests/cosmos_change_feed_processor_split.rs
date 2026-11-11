@@ -284,10 +284,6 @@ async fn records(leases: &ContainerClient) -> TestResult<Vec<Value>> {
         .collect())
 }
 
-fn active(record: &Value) -> bool {
-    record.get("children").is_none_or(Value::is_null)
-}
-
 async fn progress(leases: &ContainerClient, id: &str) -> TestResult<Value> {
     Ok(leases
         .read_item(id.to_owned(), id, None)
@@ -361,21 +357,21 @@ async fn exercise(
         let physical = source.read_feed_ranges(Some(ReadFeedRangesOptions::default().with_force_refresh(true))).await?;
         let all = wait_for(&sink, "child lease ownership on both running workers", async || {
             let all = records(leases).await?;
-            let active: Vec<_> = all.iter().filter(|record| active(record)).collect();
-            let owners: BTreeSet<_> = active.iter().filter_map(|record| record["owner"].as_str()).collect();
-            let ready = all.len() == 2 && active.len() == 2
+            let owners: BTreeSet<_> = all.iter().filter_map(|record| record["owner"].as_str()).collect();
+            let ready = all.len() == 2
                 && all.iter().all(|record| record["id"] != parent_id)
                 && owners == BTreeSet::from(["host-a", "host-b"])
-                && active.iter().all(|record| record["continuation"].is_string());
+                && all.iter().all(|record| record["continuation"].is_string());
             Ok(ready.then_some(all))
         }).await?;
         ensure(all.iter().all(|record| record["id"] != parent_id), "Completed split parent was not deleted.")?;
         ensure(all.iter().all(|record| record["workload"] == initial[0]["workload"]), "Split changed workload identity.")?;
-        let mut lease_ranges: Vec<FeedRange> = all.iter().filter(|record| active(record))
+        ensure(all.iter().all(|record| record.get("children").is_none() && record.get("split_complete").is_none()), "Lease contains obsolete split lifecycle state.")?;
+        let mut lease_ranges: Vec<FeedRange> = all.iter()
             .map(|record| serde_json::from_value(record["range"].clone())).collect::<Result<_, _>>()?;
         lease_ranges.sort_by(|left, right| left.min_inclusive().cmp(right.min_inclusive()));
         ensure(lease_ranges == physical, "Active child lease coverage differs from physical topology.")?;
-        let child_ids: BTreeSet<_> = all.iter().filter(|record| active(record))
+        let child_ids: BTreeSet<_> = all.iter()
             .map(|record| record["id"].as_str().ok_or("Child lease has no ID.").map(str::to_owned))
             .collect::<Result<_, _>>()?;
         ensure(workers.iter().all(Processor::is_started), "A processor stopped during split recovery.")?;
@@ -397,7 +393,7 @@ async fn exercise(
                 .map_err(|_| io::Error::other("Timed out waiting for final callback fences."))?
                 .ok_or("Fence stream ended.")?;
             sink.check()?;
-            ensure(child_ids.contains(&gate.lease), "Post-split fence was delivered on the retired parent.")?;
+            ensure(child_ids.contains(&gate.lease), "Post-split fence was delivered on the deleted parent.")?;
             let before = progress(leases, &gate.lease).await?;
             ensure(before["owner"].as_str() == Some(&gate.worker) && before["continuation"].is_string(), "Fence callback does not own a checkpointed child lease.")?;
             tokio::time::sleep(INTERVAL).await;

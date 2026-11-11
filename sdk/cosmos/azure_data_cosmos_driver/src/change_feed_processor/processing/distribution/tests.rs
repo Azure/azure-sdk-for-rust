@@ -287,11 +287,11 @@ fn scheduler_does_not_retain_acquisition_state() {
 }
 
 #[test]
-fn stale_demand_cannot_deliver_acknowledge_or_retire_a_replacement() {
+fn stale_demand_cannot_deliver_acknowledge_or_close_a_replacement() {
     let distributor = Arc::new(BatchDistributor::default());
     let old = acquire(&distributor, "lease");
     let (stale, receiving) = authorize(&old);
-    old.retire();
+    old.close();
     let replacement = acquire(&distributor, "lease");
     let (demand, replacement_receive) = authorize(&replacement);
     let received = publish(&replacement, demand, "replacement");

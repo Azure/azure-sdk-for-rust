@@ -3,10 +3,7 @@
 
 use super::super::{poll_feed, signal, SharedState};
 #[cfg(feature = "fault_injection")]
-use super::{
-    super::{balance, supervise},
-    fault_fixture,
-};
+use super::{super::balance, fault_fixture};
 use super::{
     bootstrap, fixture_with_emulator, next, poll_until, start, ChangeFeedBatch,
     ChangeFeedFactoryMode, Context, Lease, Processor, ProcessorOptions, Update,
@@ -190,7 +187,7 @@ async fn stored(context: &Context, id: &str) -> Stored<Lease> {
 async fn assert_deleted(context: &Context, id: &str) {
     assert!(
         context.store().read::<Lease>(id).await.unwrap().is_none(),
-        "retired parent remains: {id}"
+        "split parent remains: {id}"
     );
 }
 
@@ -329,11 +326,7 @@ async fn split_recovery_clips_physical_children_to_the_lease_slice() -> Result<(
         assert!(child.incarnation.is_none());
     }
     assert_deleted(&context, &slice.base.record.id).await;
-    let retired = owned.lock().await.value.clone();
-    assert_eq!(retired.base.continuation, Some(checkpoint));
-    assert_eq!(retired.children, Some(expected.to_vec()));
-    assert!(retired.split_complete);
-    assert!(retired.base.owner.is_none());
+    assert_eq!(owned.lock().await.value.base.continuation, Some(checkpoint));
     Ok(())
 }
 
@@ -343,7 +336,7 @@ async fn split_with_pending_batch_preserves_coverage_and_rebalances_children() -
 }
 
 #[tokio::test]
-async fn split_flushes_coalesced_progress_before_retiring_the_parent() -> Result<()> {
+async fn split_flushes_coalesced_progress_before_creating_children() -> Result<()> {
     exercise_split(super::super::CheckpointPolicy::Coalesced {
         max_interval: Duration::from_secs(60),
     })
@@ -388,7 +381,7 @@ async fn exercise_split(policy: super::super::CheckpointPolicy) -> Result<()> {
             stored(&context, &parent_id).await.value.base.continuation,
             before
         );
-        assert!(stored(&context, &parent_id).await.value.children.is_none());
+        assert_eq!(context.list().await?.len(), 1);
         assert!(
             tokio::time::timeout(Duration::from_millis(50), first.next_batch())
                 .await
@@ -506,7 +499,7 @@ async fn graceful_exit_during_split_saves_parent_progress_for_the_next_owner() -
     assert!(parent.base.owner.is_none());
     assert!(parent.base.continuation.is_some());
     assert!(
-        parent.children.is_none(),
+        context.list().await?.len() == 1,
         "the stopping worker must not start topology recovery"
     );
     let replacement = start(&context, config(&context, "replacement", 2)).await?;
@@ -634,7 +627,6 @@ async fn exercise_merge(
             .collect::<BTreeSet<_>>(),
         initial_ids
     );
-    assert!(active.iter().all(|lease| lease.children.is_none()));
     assert_eq!(
         context
             .source_driver
@@ -673,8 +665,7 @@ async fn exercise_merge(
 }
 
 #[tokio::test]
-async fn frozen_parent_recovers_partial_creation_without_resetting_a_competing_child() -> Result<()>
-{
+async fn split_retries_partial_creation_without_resetting_a_competing_child() -> Result<()> {
     for partial in [false, true] {
         let (context, _) = fixture_with_emulator(ChangeFeedFactoryMode::Incremental, 1).await?;
         let root = context.list().await?.remove(0);
@@ -683,16 +674,7 @@ async fn frozen_parent_recovers_partial_creation_without_resetting_a_competing_c
         context
             .update(&mut owned, Update::Checkpoint(&checkpoint))
             .await?;
-        let stale = owned.value.clone();
         let children = [range("", "20"), range("20", "FF")];
-        context.update(&mut owned, Update::Split(&children)).await?;
-        assert!(context
-            .acquire(&stale)
-            .await
-            .err()
-            .expect("retired parent cannot be acquired")
-            .status()
-            .is_precondition_failed());
         let left_id = lease_id(&context.namespace, &children[0]);
         let right_id = lease_id(&context.namespace, &children[1]);
         assert!(context.store().read::<Lease>(&left_id).await?.is_none());
@@ -700,7 +682,7 @@ async fn frozen_parent_recovers_partial_creation_without_resetting_a_competing_c
         let inventory = context.list().await?;
         assert_eq!(inventory.len(), 1);
         assert_eq!(inventory[0].base.record.id, root.base.record.id);
-        assert!(!inventory[0].split_complete);
+        assert_eq!(inventory[0].base.owner, owned.value.base.owner);
         assert!(context.store().read::<Lease>(&left_id).await?.is_none());
         assert!(context.store().read::<Lease>(&right_id).await?.is_none());
         let advanced = token(&context, &children[0], "child-advanced");
@@ -711,16 +693,9 @@ async fn frozen_parent_recovers_partial_creation_without_resetting_a_competing_c
             left.base.continuation = Some(advanced.clone());
             left.base.owner = Some("competing-worker".into());
             left.incarnation = Some("competing-acquisition".into());
-            left.children = None;
             assert!(context.store().create(&left_id, &left).await?);
         }
-        let mut competing = stored(&context, &root.base.record.id).await;
-        let (first, second) = futures::join!(
-            context.ensure_children(&mut owned),
-            context.ensure_children(&mut competing),
-        );
-        first?;
-        second?;
+        context.split(&mut owned, &children).await?;
         assert_eq!(context.list().await?.len(), 2);
         assert_deleted(&context, &root.base.record.id).await;
         if partial {
@@ -768,31 +743,25 @@ async fn frozen_parent_recovers_partial_creation_without_resetting_a_competing_c
 }
 
 #[tokio::test]
-async fn stale_owner_cannot_retire_parent_or_advance_after_takeover() -> Result<()> {
+async fn stale_owner_cannot_split_parent_or_advance_after_takeover() -> Result<()> {
     let (context, _) = fixture_with_emulator(ChangeFeedFactoryMode::Incremental, 1).await?;
     let root = context.list().await?.remove(0);
     let mut old = context.acquire(&root).await?;
     let mut new = context.acquire(&old.value).await?;
     let children = [range("", "20"), range("20", "FF")];
     assert!(context
-        .update(&mut old, Update::Split(&children))
+        .split(&mut old, &children)
         .await
         .unwrap_err()
         .status()
         .is_precondition_failed());
-    assert!(stored(&context, &root.base.record.id)
-        .await
-        .value
-        .children
-        .is_none());
-    context.update(&mut new, Update::Split(&children)).await?;
+    assert_eq!(context.list().await?.len(), 1);
+    context.split(&mut new, &children).await?;
     let checkpoint = token(&context, &root.base.range, "stale");
     for update in [
         Update::Renew,
         Update::Release,
         Update::Checkpoint(&checkpoint),
-        Update::Split(&children),
-        Update::CompleteSplit,
     ] {
         assert!(context
             .update(&mut old, update)
@@ -817,12 +786,8 @@ async fn descendant_split_projects_saved_state_and_keeps_disjoint_coverage() -> 
         .update(&mut parent, Update::Checkpoint(&checkpoint))
         .await?;
     context
-        .update(
-            &mut parent,
-            Update::Split(&[range("", "20"), range("20", "FF")]),
-        )
+        .split(&mut parent, &[range("", "20"), range("20", "FF")])
         .await?;
-    context.ensure_children(&mut parent).await?;
     let leaves = context.list().await?;
     let mut left = context.acquire(&leaves[0]).await?;
     let checkpoint = token(&context, &left.value.base.range, "left-advanced");
@@ -830,12 +795,8 @@ async fn descendant_split_projects_saved_state_and_keeps_disjoint_coverage() -> 
         .update(&mut left, Update::Checkpoint(&checkpoint))
         .await?;
     context
-        .update(
-            &mut left,
-            Update::Split(&[range("", "10"), range("10", "20")]),
-        )
+        .split(&mut left, &[range("", "10"), range("10", "20")])
         .await?;
-    context.ensure_children(&mut left).await?;
     let leaves = context.list().await?;
     assert_eq!(
         leaves
@@ -870,7 +831,12 @@ async fn descendant_split_projects_saved_state_and_keeps_disjoint_coverage() -> 
     assert_deleted(&context, &root.base.record.id).await;
     assert_deleted(&context, &left.value.base.record.id).await;
     context.verify_leases().await?;
-    context.ensure_children(&mut parent).await?;
+    assert!(context
+        .split(&mut parent, &[range("", "20"), range("20", "FF")])
+        .await
+        .unwrap_err()
+        .status()
+        .is_precondition_failed());
     assert_deleted(&context, &root.base.record.id).await;
     assert_deleted(&context, &left.value.base.record.id).await;
     assert_eq!(context.list().await?.len(), 3);
@@ -878,7 +844,7 @@ async fn descendant_split_projects_saved_state_and_keeps_disjoint_coverage() -> 
 }
 
 #[tokio::test]
-async fn unfinished_split_surfaces_1007_without_retiring_a_lease() -> Result<()> {
+async fn unfinished_split_surfaces_1007_without_changing_a_lease() -> Result<()> {
     let (context, emulator) = fixture_with_emulator(ChangeFeedFactoryMode::Incremental, 1).await?;
     let root = context.list().await?.remove(0);
     let owned = Arc::new(Mutex::new(context.acquire(&root).await?));
@@ -910,12 +876,12 @@ async fn unfinished_split_surfaces_1007_without_retiring_a_lease() -> Result<()>
         .await
         .unwrap_err();
     assert_eq!(error.status(), crate::error::status_codes::COMPLETING_SPLIT);
+    let before = stored(&context, &root.base.record.id).await;
     assert!(!context.recover(owned.clone()).await?);
-    assert!(stored(&context, &root.base.record.id)
-        .await
-        .value
-        .children
-        .is_none());
+    assert_eq!(
+        stored(&context, &root.base.record.id).await.etag,
+        before.etag
+    );
     transition.complete().await?;
     assert!(context.recover(owned).await?);
     assert_eq!(context.list().await?.len(), 2);
@@ -923,7 +889,7 @@ async fn unfinished_split_surfaces_1007_without_retiring_a_lease() -> Result<()>
 }
 
 #[tokio::test]
-async fn concurrent_retirement_has_one_winner_and_cannot_replace_its_checkpoint() -> Result<()> {
+async fn concurrent_split_handling_preserves_child_checkpoints() -> Result<()> {
     let (context, _) = fixture_with_emulator(ChangeFeedFactoryMode::Incremental, 1).await?;
     let root = context.list().await?.remove(0);
     let mut first = context.acquire(&root).await?;
@@ -934,28 +900,30 @@ async fn concurrent_retirement_has_one_winner_and_cannot_replace_its_checkpoint(
     let mut second = stored(&context, &root.base.record.id).await;
     let children = [range("", "20"), range("20", "FF")];
     let (one, two) = futures::join!(
-        context.update(&mut first, Update::Split(&children)),
-        context.update(&mut second, Update::Split(&children)),
+        context.split(&mut first, &children),
+        context.split(&mut second, &children),
     );
-    assert_eq!(usize::from(one.is_ok()) + usize::from(two.is_ok()), 1);
-    let rejected = one.err().or_else(|| two.err()).unwrap();
-    assert!(rejected.status().is_precondition_failed());
-    assert_eq!(
-        stored(&context, &root.base.record.id)
-            .await
-            .value
-            .base
-            .continuation,
-        Some(checkpoint)
-    );
-    let mut parent = stored(&context, &root.base.record.id).await;
-    context.ensure_children(&mut parent).await?;
+    assert!(one.is_ok() || two.is_ok());
+    for rejected in [one, two].into_iter().filter_map(Result::err) {
+        assert!(rejected.status().is_precondition_failed());
+    }
+    assert_deleted(&context, &root.base.record.id).await;
+    for child in &children {
+        assert_eq!(
+            stored(&context, &lease_id(&context.namespace, child))
+                .await
+                .value
+                .base
+                .continuation,
+            Some(context.checkpoint(&first.value, child)?)
+        );
+    }
     assert_eq!(context.list().await?.len(), 2);
     Ok(())
 }
 
 #[tokio::test]
-async fn retirement_rejects_gaps_overlaps_and_non_splits_without_mutation() -> Result<()> {
+async fn split_rejects_gaps_overlaps_and_non_splits_without_mutation() -> Result<()> {
     let (context, _) = fixture_with_emulator(ChangeFeedFactoryMode::Incremental, 1).await?;
     let root = context.list().await?.remove(0);
     let mut owned = context.acquire(&root).await?;
@@ -967,13 +935,10 @@ async fn retirement_rejects_gaps_overlaps_and_non_splits_without_mutation() -> R
         vec![range("", "20"), range("10", "FF")],
         vec![range("", "10"), range("10", "20")],
     ] {
-        assert!(context
-            .update(&mut owned, Update::Split(&children))
-            .await
-            .is_err());
+        assert!(context.split(&mut owned, &children).await.is_err());
         let actual = stored(&context, &root.base.record.id).await;
         assert_eq!(actual.etag, before);
-        assert!(actual.value.children.is_none());
+        assert_eq!(context.list().await?.len(), 1);
     }
     Ok(())
 }
@@ -1009,10 +974,14 @@ async fn recovery_creates_only_affected_children_before_returning() -> Result<()
     let parent = Arc::new(Mutex::new(parent));
     assert!(context.recover(parent.clone()).await?);
     let parent = parent.lock().await;
-    let children = parent.value.children.as_ref().unwrap();
-    assert_eq!(children.len(), 2);
-    assert!(parent.value.split_complete);
-    for range in children {
+    let children = [
+        range("", "10"),
+        FeedRange::new(
+            Epk::try_from("10")?,
+            roots[0].base.range.max_exclusive().clone(),
+        )?,
+    ];
+    for range in &children {
         let child = stored(&context, &lease_id(&context.namespace, range))
             .await
             .value;
@@ -1073,10 +1042,7 @@ async fn inventory_excludes_deleted_parents_and_other_workloads() -> Result<()> 
     let root = context.list().await?.remove(0);
     let mut parent = context.acquire(&root).await?;
     let children = [range("", "20"), range("20", "FF")];
-    context
-        .update(&mut parent, Update::Split(&children))
-        .await?;
-    context.ensure_children(&mut parent).await?;
+    context.split(&mut parent, &children).await?;
 
     let mut foreign = root.clone();
     foreign.base.record.workload.processor_name = "another-workload".into();
@@ -1114,45 +1080,47 @@ async fn failed_child_creation_is_retried_without_blocking_other_acquisitions() 
             roots[0].base.range.max_exclusive().clone(),
         )?,
     ];
-    context
-        .update(&mut parent, Update::Split(&children))
-        .await?;
     let state = Arc::new(SharedState::default());
-    let (stop, stopping) = signal();
-    let (force, forced) = signal();
+    let (_stop, stopping) = signal();
+    let (_force, forced) = signal();
+    rule.enable();
+    assert_eq!(
+        context
+            .split(&mut parent, &children)
+            .await
+            .unwrap_err()
+            .status()
+            .status_code(),
+        StatusCode::BadRequest
+    );
+    rule.disable();
+    assert_eq!(rule.hit_count(), 1);
+    let retained = stored(&context, &roots[0].base.record.id).await;
+    assert_eq!(retained.value.base.owner, parent.value.base.owner);
+    assert_eq!(retained.value.incarnation, parent.value.incarnation);
+    let before = retained.etag;
     let work = balance(
         context.clone(),
         state.clone(),
-        Default::default(),
+        [roots[0].base.record.id.clone()].into_iter().collect(),
         Duration::ZERO,
         stopping.clone(),
         forced.clone(),
     )
     .await;
-    assert!(work.iter().any(|lease| lease.value.children.is_some()));
-    assert!(work
-        .iter()
-        .any(|lease| lease.value.children.is_none() && lease.value.base.owner.is_some()));
-    let pending = work
-        .into_iter()
-        .find(|lease| lease.value.children.is_some())
-        .unwrap();
-    rule.enable();
-    supervise(
-        context.clone(),
-        state.clone(),
-        pending,
-        stopping.clone(),
-        forced.clone(),
-    )
-    .await;
-    rule.disable();
-    assert_eq!(rule.hit_count(), 1);
-    assert!(
-        !stored(&context, &roots[0].base.record.id)
-            .await
-            .value
-            .split_complete
+    assert_eq!(
+        work.iter()
+            .map(|lease| &lease.value.base.record.id)
+            .collect::<BTreeSet<_>>(),
+        roots[1..]
+            .iter()
+            .map(|lease| &lease.base.record.id)
+            .collect::<BTreeSet<_>>()
+    );
+    assert!(work.iter().all(|lease| lease.value.base.owner.is_some()));
+    assert_eq!(
+        stored(&context, &roots[0].base.record.id).await.etag,
+        before
     );
     for child in &children {
         assert!(context
@@ -1171,26 +1139,12 @@ async fn failed_child_creation_is_retried_without_blocking_other_acquisitions() 
             plan_id,
         )))
         .await?;
-    let retry = balance(
-        context.clone(),
-        state.clone(),
-        Default::default(),
-        Duration::ZERO,
-        stopping.clone(),
-        forced.clone(),
-    )
-    .await;
-    let pending = retry
-        .into_iter()
-        .find(|lease| lease.value.children.is_some())
-        .unwrap();
-    supervise(context.clone(), state, pending, stopping, forced).await;
-    drop(stop);
-    drop(force);
+    context.update(&mut parent, Update::Release).await?;
+    let mut next_owner = context.acquire(&parent.value).await?;
+    context.split(&mut next_owner, &children).await?;
     assert_deleted(&context, &roots[0].base.record.id).await;
     let leases = context.list().await?;
     assert_eq!(leases.len(), roots.len() + 1);
-    assert!(leases.iter().all(|lease| lease.children.is_none()));
     Ok(())
 }
 
@@ -1212,14 +1166,11 @@ async fn failed_parent_deletion_is_retried_without_rewriting_children() -> Resul
             root.base.range.max_exclusive().clone(),
         )?,
     ];
-    context
-        .update(&mut parent, Update::Split(&children))
-        .await?;
     let stale_etag = parent.etag.clone();
     rule.enable();
     assert_eq!(
         context
-            .ensure_children(&mut parent)
+            .split(&mut parent, &children)
             .await
             .unwrap_err()
             .status()
@@ -1229,7 +1180,8 @@ async fn failed_parent_deletion_is_retried_without_rewriting_children() -> Resul
     rule.disable();
     assert_eq!(rule.hit_count(), 1);
     let retained = stored(&context, &root.base.record.id).await;
-    assert!(retained.value.split_complete);
+    assert_eq!(retained.value.base.owner, parent.value.base.owner);
+    assert_eq!(retained.value.incarnation, parent.value.incarnation);
     assert_eq!(retained.value.base.continuation, Some(checkpoint));
     assert!(context
         .store()
@@ -1247,34 +1199,18 @@ async fn failed_parent_deletion_is_retried_without_rewriting_children() -> Resul
         let id = lease_id(&context.namespace, range);
         before.push((id.clone(), stored(&context, &id).await.etag));
     }
-    let state = Arc::new(SharedState::default());
-    let owned = context
-        .list()
-        .await?
-        .into_iter()
-        .filter(|l| l.children.is_none())
-        .map(|l| l.base.record.id)
-        .collect();
-    let (_stop, stopped) = signal();
-    let (_force, forced) = signal();
-    let mut work = balance(
-        context.clone(),
-        state.clone(),
-        owned,
-        Duration::ZERO,
-        stopped.clone(),
-        forced.clone(),
-    )
-    .await;
-    assert_eq!(work.len(), 1);
-    assert!(work[0].value.split_complete);
-    supervise(context.clone(), state, work.remove(0), stopped, forced).await;
+    let mut next_owner = context.acquire(&retained.value).await?;
+    assert!(context
+        .split(&mut parent, &children)
+        .await
+        .unwrap_err()
+        .status()
+        .is_precondition_failed());
+    context.split(&mut next_owner, &children).await?;
     assert_deleted(&context, &root.base.record.id).await;
     for (id, etag) in before {
         assert_eq!(stored(&context, &id).await.etag, etag);
     }
-    context.ensure_children(&mut parent).await?;
-    assert_deleted(&context, &root.base.record.id).await;
     Ok(())
 }
 
@@ -1285,10 +1221,7 @@ async fn restart_verification_rejects_partial_or_overlapping_replacement_coverag
         let root = context.list().await?.remove(0);
         let mut parent = context.acquire(&root).await?;
         let children = [range("", "20"), range("20", "FF")];
-        context
-            .update(&mut parent, Update::Split(&children))
-            .await?;
-        context.ensure_children(&mut parent).await?;
+        context.split(&mut parent, &children).await?;
         let left_id = lease_id(&context.namespace, &children[0]);
         let left_before = stored(&context, &left_id).await;
         if overlapping {
@@ -1333,19 +1266,20 @@ async fn restart_accepts_an_unfinished_descendant_without_recreating_its_ancesto
         .update(&mut parent, Update::Checkpoint(&checkpoint))
         .await?;
     context
-        .update(
-            &mut parent,
-            Update::Split(&[range("", "20"), range("20", "FF")]),
-        )
+        .split(&mut parent, &[range("", "20"), range("20", "FF")])
         .await?;
-    context.ensure_children(&mut parent).await?;
     let leaves = context.list().await?;
     let mut left = context.acquire(&leaves[0]).await?;
+    let children = [range("", "10"), range("10", "20")];
+    let mut partial = left.value.clone();
+    partial.base.range = children[0].clone();
+    partial.base.record.id = lease_id(&context.namespace, &partial.base.range);
+    partial.base.continuation = Some(context.checkpoint(&left.value, &partial.base.range)?);
+    partial.base.owner = None;
+    partial.incarnation = None;
     context
-        .update(
-            &mut left,
-            Update::Split(&[range("", "10"), range("10", "20")]),
-        )
+        .store()
+        .create(&partial.base.record.id, &partial)
         .await?;
     let etag = left.etag.clone();
     context.verify_leases().await?;
@@ -1354,7 +1288,7 @@ async fn restart_accepts_an_unfinished_descendant_without_recreating_its_ancesto
         stored(&context, &left.value.base.record.id).await.etag,
         etag
     );
-    context.ensure_children(&mut left).await?;
+    context.split(&mut left, &children).await?;
     context.verify_leases().await?;
     assert_deleted(&context, &left.value.base.record.id).await;
     assert_deleted(&context, &root.base.record.id).await;
@@ -1363,7 +1297,7 @@ async fn restart_accepts_an_unfinished_descendant_without_recreating_its_ancesto
 }
 
 #[tokio::test]
-async fn incomplete_parent_repair_preserves_already_replaced_children() -> Result<()> {
+async fn retried_split_preserves_already_replaced_children() -> Result<()> {
     let (context, _) = fixture_with_emulator(ChangeFeedFactoryMode::Incremental, 1).await?;
     let root = context.list().await?.remove(0);
     let mut parent = context.acquire(&root).await?;
@@ -1372,14 +1306,12 @@ async fn incomplete_parent_repair_preserves_already_replaced_children() -> Resul
         .update(&mut parent, Update::Checkpoint(&checkpoint))
         .await?;
     let children = [range("", "20"), range("20", "FF")];
-    context
-        .update(&mut parent, Update::Split(&children))
-        .await?;
     let mut left = parent.value.clone();
     left.base.range = children[0].clone();
     left.base.record.id = lease_id(&context.namespace, &left.base.range);
     left.base.continuation = Some(context.checkpoint(&parent.value, &left.base.range)?);
-    left.children = None;
+    left.base.owner = None;
+    left.incarnation = None;
     context.store().create(&left.base.record.id, &left).await?;
     let mut left = context.acquire(&left).await?;
     let advanced = token(&context, &left.value.base.range, "left-advanced");
@@ -1387,20 +1319,17 @@ async fn incomplete_parent_repair_preserves_already_replaced_children() -> Resul
         .update(&mut left, Update::Checkpoint(&advanced))
         .await?;
     context
-        .update(
-            &mut left,
-            Update::Split(&[range("", "10"), range("10", "20")]),
-        )
+        .split(&mut left, &[range("", "10"), range("10", "20")])
         .await?;
-    context.ensure_children(&mut left).await?;
     assert_deleted(&context, &left.value.base.record.id).await;
-    assert!(
-        !stored(&context, &root.base.record.id)
+    assert_eq!(
+        stored(&context, &root.base.record.id)
             .await
             .value
-            .split_complete
+            .incarnation,
+        parent.value.incarnation
     );
-    context.ensure_children(&mut parent).await?;
+    context.split(&mut parent, &children).await?;
     assert_deleted(&context, &root.base.record.id).await;
     assert_deleted(&context, &left.value.base.record.id).await;
     let leaves = context.list().await?;

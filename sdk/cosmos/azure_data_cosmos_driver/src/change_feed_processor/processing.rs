@@ -29,7 +29,7 @@ use crate::{
     driver::dataflow::split_feed_envelope,
     models::{
         ChangeFeedFactoryMode, ChangeFeedStartFrom, ContainerReference, ContinuationToken,
-        CosmosResponse, FeedRange, MaxItemCountHint, ResponseBody,
+        CosmosResponse, MaxItemCountHint, ResponseBody,
     },
     options::PlanOptions,
     CosmosDriver, Result,
@@ -294,12 +294,8 @@ struct Lease {
     last_processed_at: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     processing_deadline: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    children: Option<Vec<FeedRange>>,
     #[serde(skip)]
     renewed: Option<Instant>,
-    #[serde(default)]
-    split_complete: bool,
     #[serde(skip)]
     pending: Option<PendingCheckpoint>,
 }
@@ -366,26 +362,7 @@ impl Context {
     }
 
     fn validate(&self, lease: &Lease) -> Result<()> {
-        bootstrap::validate_lease(&lease.base, &self.identity, &self.namespace)?;
-        if lease.split_complete && lease.children.is_none() {
-            return Err(error(
-                StatusCode::Conflict,
-                "Completed split has no children.",
-            ));
-        }
-        if let Some(children) = &lease.children {
-            if lease.base.owner.is_some()
-                || lease.incarnation.is_some()
-                || lease.base.continuation.is_none()
-            {
-                return Err(error(
-                    StatusCode::Conflict,
-                    "Invalid retired processing lease.",
-                ));
-            }
-            topology::validate_children(&lease.base.range, children)?;
-        }
-        Ok(())
+        bootstrap::validate_lease(&lease.base, &self.identity, &self.namespace)
     }
 
     #[cfg(all(test, feature = "__internal_in_memory_emulator"))]
@@ -420,8 +397,7 @@ impl Context {
         for _ in 0..attempts {
             let mut current = self.store().read::<Lease>(id).await?.ok_or_else(lost)?;
             self.validate(&current.value)?;
-            if (current.value.children.is_some() && !matches!(update, Update::CompleteSplit))
-                || current.value.base.owner != observed.base.owner
+            if current.value.base.owner != observed.base.owner
                 || current.value.incarnation != observed.incarnation
             {
                 return Err(lost());
@@ -474,32 +450,6 @@ impl Context {
                 Update::Release => {
                     current.value.base.owner = None;
                     current.value.pending = None;
-                }
-                Update::Split(children) => {
-                    if current.value.pending.is_some() {
-                        return Err(error(
-                            StatusCode::Conflict,
-                            "Split requires durable progress.",
-                        ));
-                    }
-                    topology::validate_children(&current.value.base.range, children)?;
-                    let checkpoint = self.checkpoint(&current.value, &current.value.base.range)?;
-                    current.value.base.continuation = Some(checkpoint);
-                    current.value.base.owner = None;
-                    current.value.incarnation = None;
-                    current.value.children = Some(children.to_vec());
-                }
-                Update::CompleteSplit => {
-                    if current.value.children.is_none() {
-                        return Err(error(
-                            StatusCode::Conflict,
-                            "Processing lease is not retired.",
-                        ));
-                    }
-                    if current.value.split_complete {
-                        return Ok(current);
-                    }
-                    current.value.split_complete = true;
                 }
             }
             current.value.renewed_at = Some(now_millis());
@@ -602,8 +552,6 @@ enum Update<'a> {
     Renew,
     Checkpoint(&'a ContinuationToken),
     Release,
-    Split(&'a [FeedRange]),
-    CompleteSplit,
 }
 
 fn now_millis() -> i64 {
@@ -777,7 +725,7 @@ impl Drop for Owner {
 /// Clones share a lifecycle. Dropping the last handle requests shutdown.
 /// Lease renewal and balancing continue while consumers process batches.
 ///
-/// Splits retire the parent lease and create independently balanced child
+/// Split errors create independently balanced child
 /// leases from acknowledged progress. Merges retain separate EPK-slice leases
 /// and their checkpoints. Split parents are deleted after their children are
 /// established; incomplete transitions and failed deletions are retried.
@@ -1088,8 +1036,7 @@ async fn run(
                 return Ok(());
             };
             context.validate(&current.value)?;
-            if current.value.children.is_none()
-                && current.value.base.owner == observed.base.owner
+            if current.value.base.owner == observed.base.owner
                 && current.value.incarnation == observed.incarnation
             {
                 context.update(&mut current, Update::Release).await?;
@@ -1129,30 +1076,8 @@ async fn balance(
         return Vec::new();
     }
     let result = async {
-        let (pending, active): (Vec<_>, Vec<_>) = context
-            .list()
-            .await?
-            .into_iter()
-            .partition(|lease| lease.children.is_some());
+        let active = context.list().await?;
         let mut acquired = Vec::new();
-        for parent in pending {
-            if state.stopping.load(Ordering::Acquire) {
-                break;
-            }
-            let id = &parent.base.record.id;
-            if owned.contains(id) {
-                continue;
-            }
-            match context.store().read::<Lease>(id).await {
-                Ok(Some(parent)) if parent.value.children.is_some() => acquired.push(parent),
-                Ok(Some(_)) => {}
-                Ok(None) => tracing::warn!(lease = %id, "Unfinished split parent is missing"),
-                Err(err) => {
-                    tracing::warn!(lease = %id, error = %err, "Failed to read unfinished split");
-                    state.notify(Some(id), err);
-                }
-            }
-        }
         let selected = balancing::select(&active, &context.options, now_millis());
         for index in selected {
             if state.stopping.load(Ordering::Acquire) {
@@ -1184,29 +1109,10 @@ async fn balance(
 async fn supervise(
     context: Arc<Context>,
     state: Arc<SharedState>,
-    mut lease: Stored<Lease>,
+    lease: Stored<Lease>,
     stop: Signal,
     force: Signal,
 ) {
-    if lease.value.children.is_some() {
-        if state.stopping.load(Ordering::Acquire) {
-            return;
-        }
-        let token = lease.value.base.record.id.clone();
-        let repair = context.ensure_children(&mut lease).fuse();
-        futures::pin_mut!(repair);
-        futures::select! {
-            result = repair => {
-                if let Err(err) = result {
-                    tracing::warn!(error = %err, "Child lease creation failed; retrying on the next cycle");
-                    state.notify(Some(&token), err);
-                }
-            },
-            _ = stop.fuse() => {},
-            _ = force.fuse() => {},
-        }
-        return;
-    }
     let token = lease.value.base.record.id.clone();
     let session = state
         .distributor
@@ -1245,14 +1151,24 @@ async fn supervise(
         Err(err) => Err(err),
     };
     drop(cancel);
+    let result = match result {
+        Err(err)
+            if err.status().is_partition_topology_change()
+                && !state.stopping.load(Ordering::Acquire) =>
+        {
+            match context.recover(lease.clone()).await {
+                Ok(true) => return,
+                Ok(false) => Err(err),
+                Err(err) => Err(err),
+            }
+        }
+        result => result,
+    };
     if let Err(err) = result {
         tracing::warn!(lease = %token, error = %err, "Lease processing stopped");
         state.failed(Some(&token), err);
     }
     let mut lease = lease.lock().await;
-    if lease.value.children.is_some() {
-        return;
-    }
     if let Err(err) = context.update(&mut lease, Update::Release).await {
         tracing::warn!(lease = %token, error = %err, "Lease release failed; ownership will expire");
         state.failed(Some(&token), err);
@@ -1357,20 +1273,7 @@ async fn poll(
             context.flush(&mut lease).await?;
         }
     }
-    match result {
-        Err(err) if err.status().is_partition_topology_change() => {
-            if state.stopping.load(Ordering::Acquire) {
-                return Ok(());
-            }
-            if context.recover(lease).await? {
-                Ok(())
-            } else {
-                // A merge or an unfinished transition re-enters through normal lease acquisition.
-                Err(err)
-            }
-        }
-        result => result,
-    }
+    result
 }
 
 async fn poll_feed(
