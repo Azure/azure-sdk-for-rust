@@ -12,6 +12,12 @@ param baseName string = resourceGroup().name
 @description('Whether to deploy resources. When set to false, this file deploys nothing.')
 param deployResources bool = false
 
+@description('GitHub repository (owner/name) trusted to use the test identity.')
+param githubRepository string = 'Azure/azure-sdk-for-rust'
+
+@description('Git ref allowed to use the test identity, such as refs/heads/main or refs/heads/my-branch.')
+param githubRef string = 'refs/heads/main'
+
 @description('The location of the resource. By default, this is the same as the resource group.')
 param location string = resourceGroup().location
 
@@ -53,11 +59,23 @@ resource usermgdid 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30'
   name: baseName
 }
 
+resource githubActionsCredential 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2023-01-31' = if (deployResources) {
+  parent: usermgdid
+  name: 'github-actions'
+  properties: {
+    audiences: [
+      'api://AzureADTokenExchange'
+    ]
+    issuer: 'https://token.actions.githubusercontent.com'
+    subject: 'repo:${githubRepository}:ref:${githubRef}'
+  }
+}
+
 resource storageRoleUserAssigned 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployResources) {
   scope: saUserAssigned
   name: guid(resourceGroup().id, storageAccountContributor, usermgdid.id)
   properties: {
-    principalId: deployResources ? usermgdid.properties.principalId : ''
+    principalId: deployResources ? usermgdid!.properties.principalId : ''
     principalType: 'ServicePrincipal'
     roleDefinitionId: storageAccountContributor
   }
@@ -74,7 +92,7 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-01-01-pr
 resource acrPullContainerInstance 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployResources) {
   name: guid(resourceGroup().id, acrPull, 'containerInstance')
   properties: {
-    principalId: deployResources ? usermgdid.properties.principalId : ''
+    principalId: deployResources ? usermgdid!.properties.principalId : ''
     principalType: 'ServicePrincipal'
     roleDefinitionId: acrPull
   }
@@ -126,13 +144,15 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-06-01' = if (deplo
   }
 }
 
-output IDENTITY_ACR_LOGIN_SERVER string = deployResources ? containerRegistry.properties.loginServer : ''
+output AZURE_TENANT_ID string = deployResources ? usermgdid!.properties.tenantId : ''
+output AZURE_CLIENT_ID string = deployResources ? usermgdid!.properties.clientId : ''
+output IDENTITY_ACR_LOGIN_SERVER string = deployResources ? containerRegistry!.properties.loginServer : ''
 output IDENTITY_ACR_NAME string = deployResources ? containerRegistry.name : ''
 output IDENTITY_AKS_NAME string = deployResources ? aks.name : ''
 output IDENTITY_STORAGE_ID string = deployResources ? saSystemAssigned.id : ''
 output IDENTITY_STORAGE_NAME_SYSTEM_ASSIGNED string = deployResources ? saSystemAssigned.name : ''
 output IDENTITY_STORAGE_NAME_USER_ASSIGNED string = deployResources ? saUserAssigned.name : ''
 output IDENTITY_USER_ASSIGNED_IDENTITY string = deployResources ? usermgdid.id : ''
-output IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID string = deployResources ? usermgdid.properties.clientId : ''
+output IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID string = deployResources ? usermgdid!.properties.clientId : ''
 output IDENTITY_USER_ASSIGNED_IDENTITY_NAME string = deployResources ? usermgdid.name : ''
-output IDENTITY_USER_ASSIGNED_IDENTITY_OBJECT_ID string = deployResources ? usermgdid.properties.principalId : ''
+output IDENTITY_USER_ASSIGNED_IDENTITY_OBJECT_ID string = deployResources ? usermgdid!.properties.principalId : ''

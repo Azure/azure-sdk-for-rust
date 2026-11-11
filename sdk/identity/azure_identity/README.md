@@ -138,7 +138,7 @@ See [Service principal authentication](https://learn.microsoft.com/entra/identit
 | [`ClientSecretCredential`][secret_cred_ref] | Authenticate a service principal with a secret.
 | [`GitHubActionsCredential`][github_actions_cred_ref] | Authenticate a service principal using GitHub Actions workload identity federation. Requires workflow `permissions: id-token: write`.
 
-`GitHubActionsCredential` reads the tenant and client IDs from the `AZURE_TENANT_ID` and `AZURE_CLIENT_ID` environment variables. If either variable isn't set, it uses the corresponding `tenant_id` or `client_id` option. Construction fails if an ID is missing from both sources or is invalid.
+`GitHubActionsCredential` requires the `AZURE_TENANT_ID` and `AZURE_CLIENT_ID` environment variables to specify the tenant and client IDs.
 
 ## Next steps
 

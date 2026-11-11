@@ -176,8 +176,6 @@ impl TokenCredential for GitHubActionsCredential {
 #[derive(Default)]
 pub struct GitHubActionsCredentialOptions {
     pub credential_options: crate::ClientAssertionCredentialOptions,
-    pub client_id: Option<String>,
-    pub tenant_id: Option<String>,
 }
 impl Debug for GitHubActionsCredentialOptions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;

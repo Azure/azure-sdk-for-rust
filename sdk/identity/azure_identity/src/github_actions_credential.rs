@@ -45,30 +45,21 @@ pub struct GitHubActionsCredentialOptions {
     /// When no cloud is configured, `AZURE_AUTHORITY_HOST` is used, defaulting to Azure Public.
     pub credential_options: ClientAssertionCredentialOptions,
 
-    /// Client ID of the Entra identity. Defaults to the value of the environment variable `AZURE_CLIENT_ID`.
-    pub client_id: Option<String>,
-
-    /// Tenant ID of the Entra identity. Defaults to the value of the environment variable `AZURE_TENANT_ID`.
-    pub tenant_id: Option<String>,
-
     #[cfg(test)]
     pub(crate) env: Env,
 }
 
 impl fmt::Debug for GitHubActionsCredentialOptions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct(type_name::<Self>())
-            .field("tenant_id", &self.tenant_id)
-            .field("client_id", &self.client_id)
-            .finish_non_exhaustive()
+        f.debug_struct(type_name::<Self>()).finish_non_exhaustive()
     }
 }
 
 impl GitHubActionsCredential {
     /// Creates a new [`GitHubActionsCredential`].
     ///
-    /// Reads the tenant and client IDs from the `AZURE_TENANT_ID` and `AZURE_CLIENT_ID` environment variables.
-    /// If either variable isn't set, uses the corresponding field in `options`.
+    /// Reads the tenant and client IDs from the required `AZURE_TENANT_ID` and
+    /// `AZURE_CLIENT_ID` environment variables.
     ///
     /// # Arguments
     /// - `options`: Options for configuring the credential. If `None`, the credential uses its default options.
@@ -84,27 +75,15 @@ impl GitHubActionsCredential {
         #[cfg(not(test))]
         let env = Env::default();
 
-        let tenant_id = env
-            .var("AZURE_TENANT_ID")
-            .ok()
-            .or(options.tenant_id)
-            .ok_or_else(|| {
-                Error::with_message(
-                    ErrorKind::Credential,
-                    "no tenant ID specified. Set AZURE_TENANT_ID or tenant_id in the options",
-                )
-            })?;
+        let tenant_id = env.var("AZURE_TENANT_ID").with_context(
+            ErrorKind::Credential,
+            "no tenant ID specified. Set AZURE_TENANT_ID",
+        )?;
         validate_tenant_id(&tenant_id)?;
-        let client_id = env
-            .var("AZURE_CLIENT_ID")
-            .ok()
-            .or(options.client_id)
-            .ok_or_else(|| {
-                Error::with_message(
-                    ErrorKind::Credential,
-                    "no client ID specified. Set AZURE_CLIENT_ID or client_id in the options",
-                )
-            })?;
+        let client_id = env.var("AZURE_CLIENT_ID").with_context(
+            ErrorKind::Credential,
+            "no client ID specified. Set AZURE_CLIENT_ID",
+        )?;
         validate_not_empty(&client_id, "no client ID specified")?;
 
         let read_variable = |name| -> azure_core::Result<String> {
@@ -123,6 +102,12 @@ impl GitHubActionsCredential {
             ErrorKind::Credential,
             "invalid URL for ACTIONS_ID_TOKEN_REQUEST_URL",
         )?;
+        if endpoint.scheme() != "https" {
+            return Err(Error::with_message(
+                ErrorKind::Credential,
+                "authorized requests are not permitted for non-TLS protected endpoints",
+            ));
+        }
         let authority = get_authority_host(
             Some(env),
             options.credential_options.client_options.cloud.as_deref(),
@@ -277,7 +262,7 @@ mod tests {
 
     fn default_options() -> GitHubActionsCredentialOptions {
         GitHubActionsCredentialOptions {
-            env: Env::from(
+            env: oidc_env(
                 &[
                     (OIDC_REQUEST_URL, ENDPOINT),
                     (OIDC_REQUEST_TOKEN, "request-token"),
@@ -289,49 +274,32 @@ mod tests {
                     ..Default::default()
                 },
             },
-            tenant_id: Some(FAKE_TENANT_ID.into()),
-            client_id: Some(FAKE_CLIENT_ID.into()),
         }
+    }
+
+    fn oidc_env(variables: &[(&str, &str)]) -> Env {
+        let mut variables = variables.to_vec();
+        variables.extend([
+            ("AZURE_TENANT_ID", FAKE_TENANT_ID),
+            ("AZURE_CLIENT_ID", FAKE_CLIENT_ID),
+        ]);
+        Env::from(variables.as_slice())
     }
 
     #[test]
     fn identity_configuration() {
-        for (tenant_env, client_env, tenant_option, client_option, expected_error) in [
-            (None, None, None, None, Some("AZURE_TENANT_ID")),
-            (None, None, Some("tenant"), None, Some("AZURE_CLIENT_ID")),
-            (None, None, None, Some("client"), Some("AZURE_TENANT_ID")),
-            (Some("tenant"), Some("client"), None, None, None),
-            (None, None, Some("tenant"), Some("client"), None),
-            (Some("tenant"), None, None, Some("client"), None),
-            (None, Some("client"), Some("tenant"), None, None),
-            (
-                Some("tenant"),
-                Some("client"),
-                Some("invalid_tenant"),
-                Some(""),
-                None,
-            ),
-            (
-                Some(""),
-                Some("client"),
-                Some("tenant"),
-                Some("client"),
-                Some("invalid tenant ID"),
-            ),
+        for (tenant_env, client_env, expected_error) in [
+            (None, None, Some("AZURE_TENANT_ID")),
+            (Some("tenant"), None, Some("AZURE_CLIENT_ID")),
+            (None, Some("client"), Some("AZURE_TENANT_ID")),
+            (Some("tenant"), Some("client"), None),
+            (Some(""), Some("client"), Some("invalid tenant ID")),
             (
                 Some("invalid_tenant"),
                 Some("client"),
-                Some("tenant"),
-                Some("client"),
                 Some("invalid tenant ID"),
             ),
-            (
-                Some("tenant"),
-                Some(""),
-                Some("tenant"),
-                Some("client"),
-                Some("no client ID"),
-            ),
+            (Some("tenant"), Some(""), Some("no client ID")),
         ] {
             let mut options = default_options();
             let mut variables = vec![
@@ -345,8 +313,6 @@ mod tests {
                 variables.push(("AZURE_CLIENT_ID", client));
             }
             options.env = Env::from(variables.as_slice());
-            options.tenant_id = tenant_option.map(String::from);
-            options.client_id = client_option.map(String::from);
             let result = GitHubActionsCredential::new(Some(options));
             if let Some(message) = expected_error {
                 let err = result.unwrap_err();
@@ -360,12 +326,6 @@ mod tests {
 
     #[test]
     fn invalid_configuration() {
-        for (tenant, client) in [("", "client"), ("invalid_tenant", "client"), ("tenant", "")] {
-            let mut options = default_options();
-            options.tenant_id = Some(tenant.into());
-            options.client_id = Some(client.into());
-            assert!(GitHubActionsCredential::new(Some(options)).is_err());
-        }
         for variables in [
             vec![],
             vec![(OIDC_REQUEST_URL, ENDPOINT)],
@@ -377,14 +337,14 @@ mod tests {
             vec![(OIDC_REQUEST_URL, ENDPOINT), (OIDC_REQUEST_TOKEN, "")],
         ] {
             let mut options = default_options();
-            options.env = Env::from(variables.as_slice());
+            options.env = oidc_env(variables.as_slice());
             let err = GitHubActionsCredential::new(Some(options)).unwrap_err();
             assert!(matches!(err.kind(), ErrorKind::Credential));
             assert!(err.to_string().contains("permissions: id-token: write"));
             assert!(!format!("{err:?}").contains("request-token"));
         }
         let mut options = default_options();
-        options.env = Env::from(
+        options.env = oidc_env(
             &[
                 (OIDC_REQUEST_URL, "not a URL"),
                 (OIDC_REQUEST_TOKEN, "request-token"),
@@ -408,7 +368,7 @@ mod tests {
     #[test]
     fn authority_environment() {
         let mut options = default_options();
-        options.env = Env::from(
+        options.env = oidc_env(
             &[
                 (OIDC_REQUEST_URL, ENDPOINT),
                 (OIDC_REQUEST_TOKEN, "request-token"),
@@ -426,7 +386,7 @@ mod tests {
 
         let mut options = default_options();
         options.credential_options.client_options.cloud = None;
-        options.env = Env::from(
+        options.env = oidc_env(
             &[
                 (OIDC_REQUEST_URL, ENDPOINT),
                 (OIDC_REQUEST_TOKEN, "request-token"),
@@ -523,7 +483,7 @@ mod tests {
                 );
                 let mut options = default_options();
                 let endpoint = format!("{ENDPOINT}{query}");
-                options.env = Env::from(
+                options.env = oidc_env(
                     &[
                         (OIDC_REQUEST_URL, endpoint.as_str()),
                         (OIDC_REQUEST_TOKEN, "request-token"),
