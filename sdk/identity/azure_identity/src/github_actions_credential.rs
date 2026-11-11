@@ -45,10 +45,10 @@ pub struct GitHubActionsCredentialOptions {
     /// When no cloud is configured, `AZURE_AUTHORITY_HOST` is used, defaulting to Azure Public.
     pub credential_options: ClientAssertionCredentialOptions,
 
-    /// Client ID of the Entra identity, used when `AZURE_CLIENT_ID` isn't set.
+    /// Client ID of the Entra identity. Defaults to the value of the environment variable `AZURE_CLIENT_ID`.
     pub client_id: Option<String>,
 
-    /// Tenant ID of the Entra identity, used when `AZURE_TENANT_ID` isn't set.
+    /// Tenant ID of the Entra identity. Defaults to the value of the environment variable `AZURE_TENANT_ID`.
     pub tenant_id: Option<String>,
 
     #[cfg(test)]
@@ -64,7 +64,7 @@ impl fmt::Debug for GitHubActionsCredentialOptions {
 impl GitHubActionsCredential {
     /// Creates a new [`GitHubActionsCredential`].
     ///
-    /// Reads the tenant and client IDs from `AZURE_TENANT_ID` and `AZURE_CLIENT_ID`.
+    /// Reads the tenant and client IDs from the `AZURE_TENANT_ID` and `AZURE_CLIENT_ID` environment variables.
     /// If either variable isn't set, uses the corresponding field in `options`.
     ///
     /// # Arguments
@@ -73,8 +73,7 @@ impl GitHubActionsCredential {
     /// # Errors
     ///
     /// Returns an error if an ID is missing or invalid, a required GitHub Actions environment variable is
-    /// missing or empty, the OIDC endpoint isn't an HTTPS URL without user information or a
-    /// fragment, or the authority host isn't supported.
+    /// missing or empty, the OIDC request URL is invalid, or the authority host isn't supported.
     pub fn new(options: Option<GitHubActionsCredentialOptions>) -> azure_core::Result<Arc<Self>> {
         let options = options.unwrap_or_default();
         #[cfg(test)]
@@ -82,25 +81,27 @@ impl GitHubActionsCredential {
         #[cfg(not(test))]
         let env = Env::default();
 
-        let tenant_id = env.var("AZURE_TENANT_ID").or_else(|err| {
-            options.tenant_id.ok_or_else(|| {
-                Error::with_error(
+        let tenant_id = env
+            .var("AZURE_TENANT_ID")
+            .ok()
+            .or(options.tenant_id)
+            .ok_or_else(|| {
+                Error::with_message(
                     ErrorKind::Credential,
-                    err,
-                    "set AZURE_TENANT_ID or tenant_id in the options",
+                    "no tenant ID specified. Set AZURE_TENANT_ID or tenant_id in the options",
                 )
-            })
-        })?;
+            })?;
         validate_tenant_id(&tenant_id)?;
-        let client_id = env.var("AZURE_CLIENT_ID").or_else(|err| {
-            options.client_id.ok_or_else(|| {
-                Error::with_error(
+        let client_id = env
+            .var("AZURE_CLIENT_ID")
+            .ok()
+            .or(options.client_id)
+            .ok_or_else(|| {
+                Error::with_message(
                     ErrorKind::Credential,
-                    err,
-                    "set AZURE_CLIENT_ID or client_id in the options",
+                    "no client ID specified. Set AZURE_CLIENT_ID or client_id in the options",
                 )
-            })
-        })?;
+            })?;
         validate_not_empty(&client_id, "no client ID specified")?;
 
         let read_variable = |name| -> azure_core::Result<String> {
@@ -119,36 +120,12 @@ impl GitHubActionsCredential {
             ErrorKind::Credential,
             "invalid URL for ACTIONS_ID_TOKEN_REQUEST_URL",
         )?;
-        if endpoint.scheme() != "https"
-            || endpoint.host_str().is_none()
-            || !endpoint.username().is_empty()
-            || endpoint.password().is_some()
-            || endpoint.fragment().is_some()
-        {
-            return Err(Error::with_message(
-                ErrorKind::Credential,
-                "ACTIONS_ID_TOKEN_REQUEST_URL must be an HTTPS URL without user information or a fragment",
-            ));
-        }
-
         let authority = get_authority_host(
             Some(env),
             options.credential_options.client_options.cloud.as_deref(),
         )?;
-        let audience = match authority.host_str() {
-            Some("login.microsoftonline.com") => "api://AzureADTokenExchange",
-            Some("login.chinacloudapi.cn") => "api://AzureADTokenExchangeChina",
-            Some("login.microsoftonline.us") => "api://AzureADTokenExchangeUSGov",
-            Some("login.sovcloud-identity.fr") => "api://AzureADTokenExchangeFrance",
-            Some("login.sovcloud-identity.de") => "api://AzureADTokenExchangeGermany",
-            Some("login.sovcloud-identity.sg") => "api://AzureADTokenExchangeGovSG",
-            _ => {
-                return Err(Error::with_message(
-                    ErrorKind::Credential,
-                    "the authority host isn't supported by GitHubActionsCredential",
-                ))
-            }
-        };
+        let audience = audience_for_authority(&authority)?;
+
         let query: Vec<(String, String)> = endpoint
             .query_pairs()
             .filter(|(key, _)| key != "audience")
@@ -180,6 +157,22 @@ impl GitHubActionsCredential {
             Some(options.credential_options),
         )?;
         Ok(Arc::new(Self(credential)))
+    }
+}
+
+#[inline]
+fn audience_for_authority(authority: &Url) -> azure_core::Result<&'static str> {
+    match authority.host_str() {
+        Some("login.microsoftonline.com") => Ok("api://AzureADTokenExchange"),
+        Some("login.chinacloudapi.cn") => Ok("api://AzureADTokenExchangeChina"),
+        Some("login.microsoftonline.us") => Ok("api://AzureADTokenExchangeUSGov"),
+        Some("login.sovcloud-identity.fr") => Ok("api://AzureADTokenExchangeFrance"),
+        Some("login.sovcloud-identity.de") => Ok("api://AzureADTokenExchangeGermany"),
+        Some("login.sovcloud-identity.sg") => Ok("api://AzureADTokenExchangeGovSG"),
+        _ => Err(Error::with_message(
+            ErrorKind::Credential,
+            "the authority host isn't supported by GitHubActionsCredential",
+        )),
     }
 }
 
@@ -387,30 +380,15 @@ mod tests {
             assert!(err.to_string().contains("permissions: id-token: write"));
             assert!(!format!("{err:?}").contains("request-token"));
         }
-        for url in [
-            "",
-            "not a URL",
-            "http://oidc.contoso.com/token",
-            concat!(
-                "https://",
-                "user",
-                ":",
-                "password",
-                "@oidc.contoso.com/token"
-            ),
-            "https://oidc.contoso.com/token#fragment",
-        ] {
-            let mut options = default_options();
-            options.env = Env::from(
-                &[
-                    (OIDC_REQUEST_URL, url),
-                    (OIDC_REQUEST_TOKEN, "request-token"),
-                ][..],
-            );
-            let err = GitHubActionsCredential::new(Some(options)).unwrap_err();
-            assert!(matches!(err.kind(), ErrorKind::Credential));
-            assert!(!format!("{err:?}").contains("password"));
-        }
+        let mut options = default_options();
+        options.env = Env::from(
+            &[
+                (OIDC_REQUEST_URL, "not a URL"),
+                (OIDC_REQUEST_TOKEN, "request-token"),
+            ][..],
+        );
+        let err = GitHubActionsCredential::new(Some(options)).unwrap_err();
+        assert!(matches!(err.kind(), ErrorKind::Credential));
     }
 
     #[test]
