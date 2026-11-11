@@ -139,6 +139,9 @@ fn row_to_blob_item(batch: &RecordBatch, row: usize) -> BlobItem {
         remaining_retention_days: i32_at(batch, "RemainingRetentionDays", row),
         server_encrypted: bool_at(batch, "ServerEncrypted", row),
         tag_count: i32_at(batch, "TagCount", row),
+        tier_managed_by: string_at(batch, "TierManagedBy", row)
+            .and_then(|value| value.parse().ok()),
+        turbo_status: string_at(batch, "TurboStatus", row).and_then(|value| value.parse().ok()),
         ..Default::default()
     };
 
@@ -330,7 +333,7 @@ mod tests {
     use super::*;
     use crate::models::{
         AccessTier, ArchiveStatus, BlobType, CopyStatus, ImmutabilityPolicyMode, LeaseDuration,
-        LeaseState, LeaseStatus, RehydratePriority,
+        LeaseState, LeaseStatus, RehydratePriority, TierManagedBy, TurboStatus,
     };
     use arrow_array::{
         builder::{MapBuilder, StringBuilder},
@@ -555,6 +558,8 @@ mod tests {
         let props = item.properties.expect("properties should be set");
         assert_eq!(None, props.content_type);
         assert_eq!(None, props.access_tier);
+        assert_eq!(None, props.tier_managed_by);
+        assert_eq!(None, props.turbo_status);
         assert_eq!(None, props.creation_time);
         assert_eq!(None, props.blob_sequence_number);
     }
@@ -658,6 +663,92 @@ mod tests {
     }
 
     #[test]
+    fn turbo_columns_preserve_optional_and_future_values() {
+        let names = ["turbo", "hot", "future", "manager-only", "status-only"];
+        let tiers = ["Turbo", "Hot", "FutureTier", "Turbo", "Turbo"];
+        let statuses = [
+            Some("pending"),
+            None,
+            Some("FutureStatus"),
+            None,
+            Some("Pending"),
+        ];
+        let managers = [
+            Some("user"),
+            None,
+            Some("FutureManager"),
+            Some("system"),
+            None,
+        ];
+        let record_batch = batch(vec![
+            ("Name", Arc::new(StringArray::from(names.to_vec()))),
+            ("AccessTier", Arc::new(StringArray::from(tiers.to_vec()))),
+            (
+                "TurboStatus",
+                Arc::new(StringArray::from(statuses.to_vec())),
+            ),
+            (
+                "TierManagedBy",
+                Arc::new(StringArray::from(managers.to_vec())),
+            ),
+        ]);
+        let mut buffer = Vec::new();
+        {
+            let mut writer = StreamWriter::try_new(&mut buffer, &record_batch.schema()).unwrap();
+            writer.write(&record_batch).unwrap();
+            writer.finish().unwrap();
+        }
+        for items in [
+            decode_arrow_list_blobs(&buffer).unwrap().blob_items,
+            decode_arrow_list_blobs_hierarchy(&buffer)
+                .unwrap()
+                .hierarchical_list
+                .blob_items,
+        ] {
+            assert_eq!(names.len(), items.len());
+            for (row, item) in items.iter().enumerate() {
+                assert_eq!(Some(names[row]), item.name.as_deref());
+                let properties = item.properties.as_ref().unwrap();
+                assert_eq!(
+                    Some(tiers[row]),
+                    properties.access_tier.as_ref().map(AsRef::<str>::as_ref)
+                );
+                assert_eq!(
+                    statuses[row],
+                    properties.turbo_status.as_ref().map(AsRef::<str>::as_ref)
+                );
+                assert_eq!(
+                    managers[row],
+                    properties
+                        .tier_managed_by
+                        .as_ref()
+                        .map(AsRef::<str>::as_ref)
+                );
+            }
+            assert_eq!(
+                Some(TierManagedBy::User),
+                items[0].properties.as_ref().unwrap().tier_managed_by
+            );
+            assert_eq!(
+                Some(TierManagedBy::System),
+                items[3].properties.as_ref().unwrap().tier_managed_by
+            );
+            assert_eq!(
+                Some(TurboStatus::Pending),
+                items[0].properties.as_ref().unwrap().turbo_status
+            );
+            assert_eq!(
+                Some(TurboStatus::UnknownValue("FutureStatus".to_owned())),
+                items[2].properties.as_ref().unwrap().turbo_status
+            );
+            assert_eq!(
+                Some(TurboStatus::UnknownValue("Pending".to_owned())),
+                items[4].properties.as_ref().unwrap().turbo_status
+            );
+        }
+    }
+
+    #[test]
     fn arrow_next_marker_absent_is_none() {
         let columns = vec![("Name", s("hello.txt"))];
         let fields: Vec<Field> = columns
@@ -739,6 +830,8 @@ mod tests {
             // Intentionally unmapped pending Service support for Smart Tier
             smart_access_tier: _,
             tag_count: _,
+            tier_managed_by: _,
+            turbo_status: _,
         } = properties.expect("properties should be set");
     }
 

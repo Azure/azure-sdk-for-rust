@@ -5,7 +5,7 @@
 
 mod common;
 
-use azure_core::http::RequestContent;
+use azure_core::http::{headers::CONTENT_TYPE, RequestContent};
 use azure_core::time::{parse_rfc3339, to_rfc3339, OffsetDateTime};
 use azure_core_test::{recorded, TestContext};
 use azure_core_test::{TestMode, VarOptions};
@@ -14,18 +14,158 @@ use azure_storage_blob::models::{
     BlobClientSetImmutabilityPolicyOptions, BlobClientSetTierOptions,
     BlobContainerClientListBlobsHierarchicalOptions, CopyStatus, ImmutabilityPolicyMode,
     LeaseDuration, LeaseState, LeaseStatus, PageBlobClientSetSequenceNumberOptions,
-    RehydratePriority, SequenceNumberActionType,
+    RehydratePriority, SequenceNumberActionType, TierManagedBy,
 };
 use azure_storage_blob::models::{
     BlobContainerClientListBlobsOptions, BlobType, BlockBlobClientUploadOptions,
     ListBlobsIncludeItem,
 };
-use common::{create_test_blob, get_blob_name, get_container_client, StorageAccount};
+use common::{create_test_blob, get_blob_name, get_container_client, poll_until, StorageAccount};
 use common::{get_blob_service_client, get_valid_encryption_scope, list_blobs_with_include};
 use futures::{StreamExt, TryStreamExt};
 use std::time::Duration;
 use std::{collections::HashMap, error::Error};
 use tokio::time;
+
+#[recorded::test]
+async fn test_list_blobs_turbo_xml(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Turbo, None).await?;
+    // Mixed Tier Setup
+    let data = b"hello rusty world";
+    let expected = [
+        ("dir/hot", AccessTier::Hot),
+        ("dir/turbo", AccessTier::Turbo),
+        ("dir/transition", AccessTier::Turbo),
+    ];
+    for (name, tier) in &expected {
+        let upload_tier = if *name == "dir/transition" {
+            AccessTier::Hot
+        } else {
+            tier.clone()
+        };
+        create_test_blob(
+            &container_client.blob_client(name),
+            Some(RequestContent::from(data.to_vec())),
+            Some(BlockBlobClientUploadOptions {
+                tier: Some(upload_tier),
+                ..Default::default()
+            }),
+        )
+        .await?;
+    }
+    let expected = HashMap::from(expected);
+    // Hot to Turbo Scenario
+    let transition_blob = container_client.blob_client("dir/transition");
+    transition_blob.set_tier(AccessTier::Turbo, None).await?;
+    poll_until(recording, || async {
+        Ok(transition_blob
+            .get_properties(None)
+            .await?
+            .access_tier()?
+            .as_deref()
+            == Some("Turbo"))
+    })
+    .await?;
+
+    // Flat Listing Scenario
+    let mut pages = container_client
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            prefix: Some("dir/".to_string()),
+            maxresults: Some(2),
+            ..Default::default()
+        }))?
+        .into_pages();
+    let mut items = Vec::new();
+    let mut page_count = 0;
+    while let Some(page) = pages.try_next().await? {
+        assert_eq!(
+            "application/xml",
+            page.headers()
+                .get_str(&CONTENT_TYPE)?
+                .split(';')
+                .next()
+                .unwrap()
+                .trim()
+        );
+        items.extend(page.into_model()?.blob_items);
+        page_count += 1;
+    }
+    // Assert
+    assert!(page_count > 1);
+    let mut actual = HashMap::new();
+    for item in items {
+        let name = item.name.expect("expected blob name");
+        assert!(actual
+            .insert(name, item.properties.expect("expected blob properties"))
+            .is_none());
+    }
+    assert_eq!(expected.len(), actual.len());
+    for (name, tier) in &expected {
+        let properties = actual.get(*name).expect("expected blob in listing");
+        assert_eq!(Some(tier), properties.access_tier.as_ref());
+        assert_eq!(Some(data.len() as u64), properties.content_length);
+        if *tier == AccessTier::Turbo {
+            assert_eq!(Some(TierManagedBy::User), properties.tier_managed_by);
+        } else {
+            assert_eq!(None, properties.tier_managed_by);
+            assert_eq!(None, properties.turbo_status);
+        }
+    }
+
+    // Hierarchical Listing Scenario
+    let mut pages = container_client
+        .list_blobs_hierarchical(
+            "/",
+            Some(BlobContainerClientListBlobsHierarchicalOptions {
+                prefix: Some("dir/".to_string()),
+                maxresults: Some(2),
+                ..Default::default()
+            }),
+        )?
+        .into_pages();
+    let mut items = Vec::new();
+    let mut page_count = 0;
+    while let Some(page) = pages.try_next().await? {
+        assert_eq!(
+            "application/xml",
+            page.headers()
+                .get_str(&CONTENT_TYPE)?
+                .split(';')
+                .next()
+                .unwrap()
+                .trim()
+        );
+        items.extend(page.into_model()?.hierarchical_list.blob_items);
+        page_count += 1;
+    }
+    // Assert
+    assert!(page_count > 1);
+    let mut actual = HashMap::new();
+    for item in items {
+        let name = item.name.expect("expected blob name");
+        assert!(actual
+            .insert(name, item.properties.expect("expected blob properties"))
+            .is_none());
+    }
+    assert_eq!(expected.len(), actual.len());
+    for (name, tier) in &expected {
+        let properties = actual.get(*name).expect("expected blob in listing");
+        assert_eq!(Some(tier), properties.access_tier.as_ref());
+        assert_eq!(Some(data.len() as u64), properties.content_length);
+        if *tier == AccessTier::Turbo {
+            assert_eq!(Some(TierManagedBy::User), properties.tier_managed_by);
+        } else {
+            assert_eq!(None, properties.tier_managed_by);
+            assert_eq!(None, properties.turbo_status);
+        }
+    }
+
+    container_client.delete(None).await?;
+    Ok(())
+}
 
 #[recorded::test]
 async fn test_list_blobs_xml(ctx: TestContext) -> Result<(), Box<dyn Error>> {

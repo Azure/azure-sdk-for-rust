@@ -107,6 +107,8 @@ pub enum StorageAccount {
     Standard,
     /// The versioned storage account (VERSIONED_AZURE_STORAGE_ACCOUNT_NAME)
     Versioned,
+    /// The fully activated Turbo storage account (TURBO_AZURE_STORAGE_ACCOUNT_NAME)
+    Turbo,
 }
 
 /// Takes in a Recording instance and returns an instrumented options bag and endpoint.
@@ -125,6 +127,7 @@ pub fn recorded_test_setup(
     let account_name_var = match account_type {
         StorageAccount::Standard => "AZURE_STORAGE_ACCOUNT_NAME",
         StorageAccount::Versioned => "VERSIONED_AZURE_STORAGE_ACCOUNT_NAME",
+        StorageAccount::Turbo => "TURBO_AZURE_STORAGE_ACCOUNT_NAME",
     };
 
     format!(

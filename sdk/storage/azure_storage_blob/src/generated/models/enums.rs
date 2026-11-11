@@ -54,6 +54,10 @@ pub enum AccessTier {
     /// The Premium access tier.
     Premium,
 
+    /// The low-latency SSD-backed tier for Block blobs. Transitions between Turbo and Hot, Cool, or Cold are supported. Archive
+    /// blobs must first be rehydrated to a supported online tier.
+    Turbo,
+
     /// Any other value not defined in `AccessTier`.
     UnknownValue(String),
 }
@@ -803,5 +807,29 @@ pub enum StorageErrorCode {
     UnsupportedXmlNode,
 
     /// Any other value not defined in `StorageErrorCode`.
+    UnknownValue(String),
+}
+
+/// Indicates whether Turbo was implicitly assigned on ingestion or explicitly selected by the user, independently of migration
+/// completion.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum TierManagedBy {
+    /// The blob's tier was implicitly set to Turbo on ingestion.
+    System,
+
+    /// Turbo was explicitly selected by the user.
+    User,
+
+    /// Any other value not defined in `TierManagedBy`.
+    UnknownValue(String),
+}
+
+/// Indicates whether migration to Turbo storage is pending.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum TurboStatus {
+    /// Migration to SSD storage is pending. The status is omitted after migration completes.
+    Pending,
+
+    /// Any other value not defined in `TurboStatus`.
     UnknownValue(String),
 }

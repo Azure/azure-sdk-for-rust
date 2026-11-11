@@ -11,7 +11,7 @@ use super::{
     },
     AccessTier, ArchiveStatus, AuthenticationType, BlobType, CopyStatus, GeoReplicationStatusType,
     ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
-    RehydratePriority, StorageErrorCode,
+    RehydratePriority, StorageErrorCode, TierManagedBy, TurboStatus,
 };
 use crate::models::BlobMetadata;
 use azure_core::{base64, fmt::SafeDebug, http::Etag, time::OffsetDateTime};
@@ -538,6 +538,14 @@ pub struct BlobProperties {
     /// The number of tags for the blob.
     #[serde(rename = "TagCount", skip_serializing_if = "Option::is_none")]
     pub tag_count: Option<i32>,
+
+    /// Indicates whether Turbo was implicitly assigned on ingestion or explicitly selected by the user.
+    #[serde(rename = "TierManagedBy", skip_serializing_if = "Option::is_none")]
+    pub tier_managed_by: Option<TierManagedBy>,
+
+    /// Indicates whether migration to Turbo storage is pending. Omitted after migration to SSD storage completes.
+    #[serde(rename = "TurboStatus", skip_serializing_if = "Option::is_none")]
+    pub turbo_status: Option<TurboStatus>,
 }
 
 /// Contains results for `BlobServiceClient::get_account_info()`

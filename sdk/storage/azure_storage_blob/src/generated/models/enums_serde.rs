@@ -11,6 +11,7 @@ use super::{
     ListBlobsHierarchicalInternalResponseContentType, ListBlobsIncludeItem,
     ListBlobsInternalResponseContentType, ListContainersIncludeType, PremiumPageBlobAccessTier,
     PublicAccessType, RehydratePriority, SequenceNumberActionType, SkuName, StorageErrorCode,
+    TierManagedBy, TurboStatus,
 };
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -557,6 +558,44 @@ impl<'de> Deserialize<'de> for StorageErrorCode {
 }
 
 impl Serialize for StorageErrorCode {
+    fn serialize<S>(&self, s: S) -> ::core::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        s.serialize_str(self.as_ref())
+    }
+}
+
+impl<'de> Deserialize<'de> for TierManagedBy {
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        s.parse().map_err(serde::de::Error::custom)
+    }
+}
+
+impl Serialize for TierManagedBy {
+    fn serialize<S>(&self, s: S) -> ::core::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        s.serialize_str(self.as_ref())
+    }
+}
+
+impl<'de> Deserialize<'de> for TurboStatus {
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        s.parse().map_err(serde::de::Error::custom)
+    }
+}
+
+impl Serialize for TurboStatus {
     fn serialize<S>(&self, s: S) -> ::core::result::Result<S::Ok, S::Error>
     where
         S: Serializer,

@@ -22,9 +22,10 @@ use azure_storage_blob::{
         BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
         BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlobClientStartCopyFromUrlResultHeaders, BlobDownloadProperties, BlobTags,
-        BlockBlobClientUploadOptions, CopyStatus, ImmutabilityPolicyMode, KeyInfo, LeaseState,
-        RehydratePriority, StorageErrorCode,
+        BlobClientStartCopyFromUrlOptions, BlobClientStartCopyFromUrlResultHeaders,
+        BlobDownloadProperties, BlobTags, BlockBlobClientUploadOptions, CopyStatus,
+        ImmutabilityPolicyMode, KeyInfo, LeaseState, RehydratePriority, StorageErrorCode,
+        TierManagedBy,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, StorageError,
 };
@@ -92,6 +93,8 @@ fn download_properties_supports_external_struct_literals() {
         access_tier: None,
         access_tier_changed_on: None,
         access_tier_inferred: None,
+        turbo_status: None,
+        tier_managed_by: None,
     };
 
     assert!(properties.content_length.is_none());
@@ -213,6 +216,170 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(29, response.properties.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(Bytes::from_static(new_data), body_data);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_upload_blob_turbo(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Turbo, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    // Upload with Turbo Scenario
+    let data = b"hello rusty world";
+    create_test_blob(
+        &blob_client,
+        Some(RequestContent::from(data.to_vec())),
+        Some(BlockBlobClientUploadOptions {
+            tier: Some(AccessTier::Turbo),
+            ..Default::default()
+        }),
+    )
+    .await?;
+
+    // Assert
+    let properties = blob_client.get_properties(None).await?;
+    assert_eq!(Some("Turbo".to_string()), properties.access_tier()?);
+    assert_eq!(Some(TierManagedBy::User), properties.tier_managed_by()?);
+
+    // Full Download Scenario
+    let response = blob_client.download(None).await?;
+    assert_eq!(Some(AccessTier::Turbo), response.properties.access_tier);
+    assert_eq!(
+        Some(TierManagedBy::User),
+        response.properties.tier_managed_by
+    );
+    assert_eq!(data.as_ref(), response.body.collect().await?.as_ref());
+
+    // Ranged Download Scenario
+    let response = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            range: Some((6usize..11).into()),
+            ..Default::default()
+        }))
+        .await?;
+    assert_eq!(Some(AccessTier::Turbo), response.properties.access_tier);
+    assert_eq!(
+        Some(TierManagedBy::User),
+        response.properties.tier_managed_by
+    );
+    assert_eq!(&data[6..11], response.body.collect().await?.as_ref());
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_set_access_tier_turbo(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Turbo, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let data = b"hello rusty world";
+    create_test_blob(
+        &blob_client,
+        Some(RequestContent::from(data.to_vec())),
+        Some(BlockBlobClientUploadOptions {
+            tier: Some(AccessTier::Hot),
+            ..Default::default()
+        }),
+    )
+    .await?;
+    assert_eq!(
+        Some("Hot".to_string()),
+        blob_client.get_properties(None).await?.access_tier()?
+    );
+
+    // Hot to Turbo Scenario
+    blob_client.set_tier(AccessTier::Turbo, None).await?;
+    poll_until(recording, || async {
+        Ok(blob_client
+            .get_properties(None)
+            .await?
+            .access_tier()?
+            .as_deref()
+            == Some("Turbo"))
+    })
+    .await?;
+
+    // Assert
+    let properties = blob_client.get_properties(None).await?;
+    assert_eq!(Some("Turbo".to_string()), properties.access_tier()?);
+    assert_eq!(Some(TierManagedBy::User), properties.tier_managed_by()?);
+    let response = blob_client.download(None).await?;
+    assert_eq!(Some(AccessTier::Turbo), response.properties.access_tier);
+    assert_eq!(
+        Some(TierManagedBy::User),
+        response.properties.tier_managed_by
+    );
+    assert_eq!(data.as_ref(), response.body.collect().await?.as_ref());
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_start_copy_from_url_turbo(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Turbo, None).await?;
+    let source_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let destination_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let data = b"hello copied rusty world";
+    create_test_blob(
+        &source_blob_client,
+        Some(RequestContent::from(data.to_vec())),
+        Some(BlockBlobClientUploadOptions {
+            tier: Some(AccessTier::Hot),
+            ..Default::default()
+        }),
+    )
+    .await?;
+    // Start Copy with Turbo Scenario
+    let response = destination_blob_client
+        .start_copy_from_url(
+            source_blob_client.url().as_str().into(),
+            Some(BlobClientStartCopyFromUrlOptions {
+                tier: Some(AccessTier::Turbo),
+                ..Default::default()
+            }),
+        )
+        .await?;
+    // Assert
+    let copy_id = response.copy_id()?;
+    assert!(copy_id.is_some());
+    assert!(matches!(
+        response.copy_status()?,
+        Some(CopyStatus::Pending | CopyStatus::Success)
+    ));
+    // Wait for Copy Completion
+    poll_until(recording, || async {
+        Ok(destination_blob_client
+            .get_properties(None)
+            .await?
+            .copy_status()?
+            != Some(CopyStatus::Pending))
+    })
+    .await?;
+
+    // Assert
+    let properties = destination_blob_client.get_properties(None).await?;
+    assert_eq!(copy_id, properties.copy_id()?);
+    assert_eq!(Some(CopyStatus::Success), properties.copy_status()?);
+    assert_eq!(Some("Turbo".to_string()), properties.access_tier()?);
+    assert_eq!(Some(TierManagedBy::User), properties.tier_managed_by()?);
+    let body = destination_blob_client
+        .download(None)
+        .await?
+        .body
+        .collect()
+        .await?;
+    assert_eq!(data.as_ref(), body.as_ref());
 
     container_client.delete(None).await?;
     Ok(())
