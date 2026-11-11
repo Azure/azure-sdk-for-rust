@@ -12,7 +12,7 @@
 
 ### Bugs Fixed
 
-- Gateway V2 now loads lazy partition topology on demand to scope explicit compound session tokens and returns topology or unsafe-scoping errors instead of downgrading the request to classic Gateway.
+- Gateway V2 now loads lazy partition topology on demand to scope explicit compound session tokens; topology-loading failures propagate, while unavailable safe scoping omits the token and downgrades Session consistency to Eventual for that attempt, without a read-your-writes guarantee. ([#5585](https://github.com/Azure/azure-sdk-for-rust/pull/5585))
 - Replace stale change-feed start headers, retain starts and polling positions in checkpoints, and preserve hierarchical-prefix leaf bounds on both gateway transports. Invalid keyed change feeds return errors instead of panicking during planning. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - A checkpoint's saved start takes precedence over a newly supplied change-feed start. Omit the continuation token to start a new feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 

@@ -80,9 +80,11 @@ an unresolved logical request with an automatic session token stays on classic
 Gateway so it can send the composite token. This also applies to retry and
 hedge routing; subsequent pages can resolve identity for Gateway 2.0 normally.
 An explicit compound token is different: when an attempt actually selects
-Gateway 2.0, lazy mode loads topology on demand to scope it. A required load or
-safe-scoping failure fails the operation rather than downgrading that attempt to
-classic Gateway. Classic-only attempts and single-range explicit tokens do not
+Gateway 2.0, lazy mode loads topology on demand to scope it. Required load failures
+propagate. If the lookup succeeds but topology is empty or the token cannot be
+safely scoped, the attempt omits the token and downgrades Session consistency to
+Eventual, without a read-your-writes guarantee. Non-session consistency settings
+are preserved. Classic-only attempts and single-range explicit tokens do not
 cause this lookup.
 
 The same decision applies during planning and before each page, using current

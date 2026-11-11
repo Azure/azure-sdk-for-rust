@@ -23,7 +23,7 @@ use crate::{
     options::{
         AvailabilityStrategy, ConnectionPoolOptions, DriverOptions, HedgeThreshold,
         HedgingStrategy, OperationOptions, PartitionFailoverOptions, PartitionTopologyCacheMode,
-        PlanOptions, Region,
+        PlanOptions, ReadConsistencyStrategy, Region,
     },
 };
 use async_trait::async_trait;
@@ -36,7 +36,7 @@ use std::{
         atomic::{AtomicUsize, Ordering},
         Arc, Mutex, Weak,
     },
-    time::Duration,
+    time::{Duration, Instant},
 };
 use url::Url;
 use uuid::Uuid;
@@ -64,6 +64,8 @@ struct Observation {
     host: String,
     thin: bool,
     session: Option<String>,
+    read_consistency_strategy: Option<u8>,
+    consistency_level: Option<u8>,
 }
 
 #[derive(Debug)]
@@ -183,7 +185,9 @@ impl TransportClient for ScenarioClient {
                             br#"{"PartitionKeyRanges":[],"_count":0}"#.to_vec()
                         } else if matches!(
                             self.scenario,
-                            Scenario::ExplicitSession | Scenario::ExplicitSessionRetry
+                            Scenario::ExplicitSession
+                                | Scenario::ExplicitSessionRetry
+                                | Scenario::ActivateBeforeHedge
                         ) {
                             br#"{"PartitionKeyRanges":[{"id":"0","minInclusive":"","maxExclusive":"80"},{"id":"1","minInclusive":"80","maxExclusive":"FF"}],"_count":2}"#.to_vec()
                         } else {
@@ -220,10 +224,26 @@ impl TransportClient for ScenarioClient {
                 .get_optional_str(&"x-ms-session-token".into())
                 .map(str::to_owned),
         };
+        let byte_token = |name| {
+            frame.as_ref().and_then(|frame| {
+                frame.metadata.iter().find_map(|token| {
+                    if RntbdRequestToken::try_from(token.id.0) == Ok(name) {
+                        match &token.value {
+                            TokenValue::Byte(value) => Some(*value),
+                            other => panic!("unexpected consistency encoding: {other:?}"),
+                        }
+                    } else {
+                        None
+                    }
+                })
+            })
+        };
         self.requests.lock().unwrap().push(Observation {
             host,
             thin,
             session,
+            read_consistency_strategy: byte_token(RntbdRequestToken::ReadConsistencyStrategy),
+            consistency_level: byte_token(RntbdRequestToken::ConsistencyLevel),
         });
         let attempt = self.item_requests.fetch_add(1, Ordering::SeqCst);
         let activates = matches!(
@@ -688,20 +708,60 @@ async fn explicit_compound_retry_uses_original_when_transport_changes() {
 }
 
 #[tokio::test]
-async fn explicit_compound_with_unknown_lineage_fails_without_gateway_v1_downgrade() {
-    let (driver, client, read) =
-        setup(account_properties(2, true, true), Scenario::ExplicitSession).await;
-    let read = read.with_session_token("unknown:1#10#1=9,1:1#20#1=19");
-    let error = driver
-        .execute_singleton_operation(read, options(false))
-        .await
-        .unwrap_err();
-    assert_eq!(
-        error.status(),
-        crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED
-    );
-    assert!(client.range_requests.load(Ordering::SeqCst) > 0);
-    assert!(client.requests.lock().unwrap().is_empty());
+async fn unscopable_explicit_compound_uses_eventual_without_a_token() {
+    for hedging in [false, true] {
+        for capturing_disabled in [false, true] {
+            for custom_header in [false, true] {
+                let (driver, client, read) =
+                    setup(account_properties(2, true, true), Scenario::ExplicitSession).await;
+                let original = "unknown:1#10#1=9,1:1#20#1=19";
+                let mut request_options = options(hedging);
+                request_options.session_capturing_disabled = Some(capturing_disabled);
+                let read = if custom_header {
+                    request_options.custom_headers = Some(
+                        [(
+                            HeaderName::from_static(
+                                crate::models::request_header_names::SESSION_TOKEN,
+                            ),
+                            HeaderValue::from(original),
+                        )]
+                        .into_iter()
+                        .collect(),
+                    );
+                    read
+                } else {
+                    read.with_session_token(original)
+                };
+                let (_release, gate) = futures::channel::oneshot::channel();
+                if hedging {
+                    *client.response_gate.lock().unwrap() = Some(gate);
+                }
+                driver
+                    .execute_singleton_operation(read.clone(), request_options)
+                    .await
+                    .unwrap();
+                assert!(client.range_requests.load(Ordering::SeqCst) > 0);
+                let requests = client.requests.lock().unwrap();
+                assert_eq!(requests.len(), if hedging { 2 } else { 1 });
+                for request in requests.iter() {
+                    assert!(request.thin);
+                    assert_eq!(request.session, None);
+                    assert_eq!(request.read_consistency_strategy, Some(0x01));
+                    assert_eq!(request.consistency_level, None);
+                }
+                if !custom_header {
+                    assert_eq!(
+                        read.request_headers()
+                            .session_token
+                            .as_ref()
+                            .unwrap()
+                            .as_str(),
+                        original
+                    );
+                }
+            }
+        }
+    }
 }
 
 #[tokio::test]
@@ -739,20 +799,164 @@ async fn required_topology_fetch_failure_is_returned_without_gateway_v1_downgrad
 }
 
 #[tokio::test]
-async fn successful_empty_topology_fails_explicit_scoping() {
+async fn successful_empty_topology_uses_eventual_without_a_token() {
     let (driver, client, read) =
         setup(account_properties(2, true, true), Scenario::EmptyTopology).await;
     let read = read.with_session_token("0:1#10#1=9,1:1#20#1=19");
-    let error = driver
+    driver
         .execute_singleton_operation(read, options(false))
         .await
-        .unwrap_err();
-    assert_eq!(
-        error.status(),
-        crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED
-    );
+        .unwrap();
     assert!(client.range_requests.load(Ordering::SeqCst) > 0);
-    assert!(client.requests.lock().unwrap().is_empty());
+    let requests = client.requests.lock().unwrap();
+    assert_eq!(requests.len(), 1);
+    assert!(requests[0].thin);
+    assert_eq!(requests[0].session, None);
+    assert_eq!(requests[0].read_consistency_strategy, Some(0x01));
+    assert_eq!(requests[0].consistency_level, None);
+}
+
+#[tokio::test]
+async fn unscopable_explicit_token_preserves_non_session_read_strategy() {
+    for strategy in [
+        ReadConsistencyStrategy::Eventual,
+        ReadConsistencyStrategy::LatestCommitted,
+    ] {
+        let (driver, client, read) =
+            setup(account_properties(2, true, true), Scenario::ExplicitSession).await;
+        let read = read.with_session_token("unknown:1#10#1=9,1:1#20#1=19");
+        let mut request_options = options(false);
+        request_options.read_consistency_strategy = Some(strategy);
+        driver
+            .execute_singleton_operation(read, request_options)
+            .await
+            .unwrap();
+        let requests = client.requests.lock().unwrap();
+        assert_eq!(requests.len(), 1);
+        assert!(requests[0].thin);
+        assert_eq!(requests[0].session, None);
+        assert_eq!(
+            requests[0].read_consistency_strategy,
+            strategy.rntbd_wire_byte()
+        );
+        assert_eq!(requests[0].consistency_level, None);
+    }
+}
+
+#[tokio::test]
+async fn eventual_fallback_is_per_attempt_and_preserves_caller_and_cached_progress() {
+    let (driver, client, read) = setup(
+        account_properties(2, true, true),
+        Scenario::ExplicitSessionRetry,
+    )
+    .await;
+    let original = "unknown:1#10#1=9,1:1#20#1=19";
+    let read = read.with_session_token(original);
+    let mut request_options = options(false);
+    request_options.session_capturing_disabled = Some(true);
+    driver
+        .execute_singleton_operation(read.clone(), request_options.clone())
+        .await
+        .unwrap();
+    {
+        let requests = client.requests.lock().unwrap();
+        assert_eq!(requests.len(), 2);
+        for request in requests.iter() {
+            assert!(request.thin);
+            assert_eq!(request.session, None);
+            assert_eq!(request.read_consistency_strategy, Some(0x01));
+            assert_eq!(request.consistency_level, None);
+        }
+    }
+    assert_eq!(
+        driver
+            .session_manager
+            .resolve_session_token(&read, None, None)
+            .unwrap()
+            .as_str(),
+        COMPOSITE_TOKEN,
+    );
+    assert_eq!(
+        read.request_headers()
+            .session_token
+            .as_ref()
+            .unwrap()
+            .as_str(),
+        original
+    );
+
+    client.publish(account_properties(2, false, false)).await;
+    driver
+        .execute_singleton_operation(read, request_options)
+        .await
+        .unwrap();
+    let requests = client.requests.lock().unwrap();
+    assert_eq!(requests.len(), 3);
+    assert!(!requests[2].thin);
+    assert_eq!(requests[2].session.as_deref(), Some(original));
+}
+
+#[tokio::test]
+async fn session_topology_wait_respects_caller_deadline_without_canceling_initializer() {
+    let (driver, client, read) =
+        setup(account_properties(2, true, true), Scenario::ExplicitSession).await;
+    let container = read.container().unwrap().clone();
+    let (release, gate) = futures::channel::oneshot::channel();
+    let gate = Mutex::new(Some(gate));
+    let fetcher = driver.pk_range_page_fetcher(
+        options(false),
+        Some(Instant::now() + Duration::from_secs(30)),
+    );
+    let mut initializer = Box::pin(driver.pk_range_cache.try_lookup_result(
+        &container,
+        false,
+        |container, continuation| {
+            let gate = gate.lock().unwrap().take();
+            let fetcher = &fetcher;
+            async move {
+                if let Some(gate) = gate {
+                    gate.await.expect("test releases topology initialization");
+                }
+                fetcher(container, continuation).await
+            }
+        },
+    ));
+    assert!(futures::poll!(initializer.as_mut()).is_pending());
+    assert!(gate.lock().unwrap().is_none());
+
+    let error = tokio::time::timeout(
+        Duration::from_secs(2),
+        driver.load_session_token_routing_map(
+            &container,
+            options(false),
+            Some(Instant::now() + Duration::from_millis(20)),
+        ),
+    )
+    .await
+    .expect("short-deadline waiter must not wait for initialization")
+    .unwrap_err();
+    assert_eq!(error.status().status_code(), StatusCode::RequestTimeout);
+    assert_eq!(
+        error.status().sub_status(),
+        Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
+    );
+    assert_eq!(client.range_requests.load(Ordering::SeqCst), 0);
+
+    release.send(()).unwrap();
+    let initialized = initializer.await.unwrap().unwrap();
+    assert_eq!(initialized.ranges().len(), 2);
+    let completed_fetches = client.range_requests.load(Ordering::SeqCst);
+    assert!(completed_fetches > 0);
+    let cached = driver
+        .load_session_token_routing_map(&container, options(false), None)
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(Arc::ptr_eq(&initialized, &cached));
+    assert_eq!(
+        client.range_requests.load(Ordering::SeqCst),
+        completed_fetches
+    );
 }
 
 #[tokio::test]
@@ -998,6 +1202,45 @@ async fn activation_before_retry_hedge_preserves_session_on_both_legs() {
         assert_eq!(request.session.as_deref(), Some(COMPOSITE_TOKEN));
     }
     assert_eq!(client.range_requests.load(Ordering::SeqCst), 0);
+}
+
+#[tokio::test]
+async fn activation_before_retry_hedge_loads_topology_for_explicit_compound_tokens() {
+    let (driver, client, operation) = setup(
+        account_properties(1, false, false),
+        Scenario::ActivateBeforeHedge,
+    )
+    .await;
+    let operation = operation.with_session_token(COMPOSITE_TOKEN);
+    let response = tokio::time::timeout(
+        Duration::from_secs(5),
+        driver.execute_singleton_operation(operation, options(true)),
+    )
+    .await
+    .unwrap()
+    .unwrap();
+    assert_eq!(response.status(), StatusCode::Ok);
+    let requests = client.requests.lock().unwrap();
+    assert_eq!(requests.len(), 4);
+    assert!(requests[2].thin && requests[3].thin);
+    assert_ne!(
+        requests[2].host, requests[3].host,
+        "both hedge regions must dispatch after retry advancement"
+    );
+    let classic: Vec<_> = requests.iter().filter(|request| !request.thin).collect();
+    assert!(!classic.is_empty(), "expected at least one classic attempt");
+    for request in classic {
+        assert_eq!(request.session.as_deref(), Some(COMPOSITE_TOKEN));
+    }
+    for request in [&requests[2], &requests[3]] {
+        assert_eq!(
+            request.session.as_deref(),
+            Some(SCOPED_TOKEN),
+            "Gateway V2 hedge leg must keep scoped explicit session"
+        );
+        assert_ne!(request.read_consistency_strategy, Some(0x01));
+    }
+    assert!(client.range_requests.load(Ordering::SeqCst) > 0);
 }
 
 #[tokio::test]

@@ -271,14 +271,19 @@ hedged requests:
 When an explicit compound token is routed through Gateway V2, required topology
 loading errors are returned without retrying the data operation through classic
 Gateway. If topology loads successfully but the target, lineage, or token
-progress cannot be safely scoped, the operation also fails explicitly. Malformed
-tokens fail before topology is loaded. Single-range tokens and attempts already
+progress cannot be safely scoped, the attempt omits the token and downgrades
+Session consistency to Eventual. An empty successful lookup takes the same path.
+This intentionally gives up the caller's read-your-writes guarantee for that
+attempt and emits a warning without logging the token. Non-session consistency
+settings are preserved. Malformed tokens fail before topology is loaded.
+Single-range tokens and attempts already
 routed through classic Gateway retain passthrough behavior and do not trigger
 this lookup. The lookup is independent of `session_capturing_disabled`, does not
 read or update the session cache, and uses the operation's existing deadline.
 Each V2 retry or hedge uses a topology snapshot for its attempt and the original
-caller token. The selected consistency strategy and automatic capture gates
-remain unchanged.
+caller token. The consistency downgrade is local to an unscopable attempt;
+subsequent attempts re-evaluate the original token and consistency settings.
+Automatic capture gates remain unchanged.
 
 Gateway V2 retains its existing automatic-token behavior for logical-partition
 requests: without a resolved range or an available range/parent token, no
@@ -349,9 +354,10 @@ and requests are *per region*. Three interactions follow:
 - **Transport mode.** Both gateways use a range-local automatic token when one
   can be resolved.
 
-Session tokens are **never cleared** by routing decisions. Failover, hedging, and
-session retries all preserve the cache; discarding tokens to "make the read
-succeed" would silently downgrade the customer's chosen guarantee.
+Cached session tokens are **never cleared** by routing decisions. Failover,
+hedging, and session retries all preserve the cache. The explicit compound-token
+fallback in §4 omits only the affected attempt's token and warns about its
+Eventual downgrade; it does not discard cached or caller-owned progress.
 
 Cross-region hedging resolves the token for each arm's range and transport, and a `1002`
 observed on either arm propagates into the surrounding retry state (see

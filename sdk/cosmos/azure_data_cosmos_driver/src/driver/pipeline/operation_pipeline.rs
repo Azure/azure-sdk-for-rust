@@ -7,10 +7,10 @@
 //! session retry, endpoint unavailability tracking, partition-level failover
 //! (PPAF/PPCB), and deadline enforcement.
 
+use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use std::{borrow::Cow, pin::Pin};
 
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use futures::future::{pending, select, Either, Future};
@@ -190,11 +190,35 @@ enum AttemptSessionToken {
     CannotScope,
 }
 
-fn explicit_session_scope_error() -> crate::error::CosmosError {
-    crate::error::CosmosError::builder()
-        .with_status(crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
-        .with_message("partition topology cannot safely scope the explicit compound session token")
-        .build()
+impl AttemptSessionToken {
+    fn apply(self, ctx: &mut TransportRequestContext<'_>, is_read_only: bool) {
+        match self {
+            Self::Resolved(token) => ctx.resolved_session_token = token,
+            Self::CannotScope => {
+                ctx.resolved_session_token = None;
+                if ctx
+                    .read_consistency_strategy
+                    .is_session_effective(ctx.effective_consistency)
+                {
+                    ctx.effective_consistency = DefaultConsistencyLevel::Eventual;
+                    ctx.read_consistency_strategy = if is_read_only {
+                        ReadConsistencyStrategy::Eventual
+                    } else {
+                        ReadConsistencyStrategy::Default
+                    };
+                    tracing::warn!(
+                        activity_id = %ctx.activity_id,
+                        "explicit session token cannot be safely scoped; sending without a session token at Eventual consistency"
+                    );
+                } else {
+                    tracing::warn!(
+                        activity_id = %ctx.activity_id,
+                        "explicit session token cannot be safely scoped; omitting it without changing non-session consistency"
+                    );
+                }
+            }
+        }
+    }
 }
 
 async fn load_explicit_session_topology(
@@ -225,19 +249,9 @@ async fn load_explicit_session_topology(
             .with_message("cannot scope an explicit compound session token without a container")
             .build()
     })?;
-    let routing_map = driver
+    overrides.session_token_routing_map = driver
         .load_session_token_routing_map(container, operation_options.clone(), deadline)
-        .await?
-        .ok_or_else(|| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
-                .with_message(format!(
-                    "partition topology is unavailable while scoping the explicit session token for container '{}'",
-                    container.name()
-                ))
-                .build()
-        })?;
-    overrides.session_token_routing_map = Some(routing_map);
+        .await?;
     Ok(())
 }
 
@@ -873,17 +887,14 @@ pub(crate) async fn execute_operation_pipeline(
             deadline,
         )
         .await?;
-        let resolved_session_token = match prepare_session_token_for_attempt(
+        let attempt_session_token = prepare_session_token_for_attempt(
             session_manager,
             operation,
             routing.transport_mode,
             retry_state.partition_key_range_id.as_ref(),
             &overrides,
             attempt_session_token_resolution_active,
-        ) {
-            AttemptSessionToken::Resolved(token) => token,
-            AttemptSessionToken::CannotScope => return Err(explicit_session_scope_error()),
-        };
+        );
 
         // Emit one structured debug record per attempt with the chosen
         // routing decision. Tests and SREs filter on this to verify which
@@ -1085,7 +1096,7 @@ pub(crate) async fn execute_operation_pipeline(
         // ── STAGE 3: Build transport request ───────────────────────────
         let execution_context = compute_execution_context(&retry_state);
 
-        let ctx = TransportRequestContext {
+        let mut ctx = TransportRequestContext {
             routing: &routing,
             activity_id,
             execution_context,
@@ -1096,9 +1107,10 @@ pub(crate) async fn execute_operation_pipeline(
             } else {
                 ReadConsistencyStrategy::Default
             },
-            resolved_session_token,
+            resolved_session_token: None,
             throughput_control,
         };
+        attempt_session_token.apply(&mut ctx, operation.is_read_only());
         let mut transport_request = build_transport_request_with_fault_injection(
             operation,
             &overrides,
@@ -1559,6 +1571,26 @@ pub(crate) async fn execute_operation_pipeline(
                         continue;
                     }
                 };
+                // Stage 7 can transition classic->GatewayV2 after advancing retry state;
+                // preload explicit-token topology before preparing either post-advance leg.
+                load_explicit_session_topology(
+                    driver,
+                    operation,
+                    primary_routing.transport_mode,
+                    &mut overrides,
+                    operation_options,
+                    deadline,
+                )
+                .await?;
+                load_explicit_session_topology(
+                    driver,
+                    operation,
+                    secondary_routing.transport_mode,
+                    &mut overrides,
+                    operation_options,
+                    deadline,
+                )
+                .await?;
                 let attempt_ctx = AttemptContext {
                     operation,
                     overrides: &overrides,
@@ -2651,7 +2683,8 @@ fn build_transport_request_with_fault_injection(
         effective_partition_key
     };
 
-    // Add resolved session token
+    // Resolution is authoritative, including when an explicit token is omitted.
+    headers.remove(HeaderName::from_static(request_header_names::SESSION_TOKEN));
     if let Some(token) = &ctx.resolved_session_token {
         headers.insert(
             request_header_names::SESSION_TOKEN,
@@ -2950,7 +2983,9 @@ fn apply_optional_request_headers(
 
     if let Some(custom_headers) = options.custom_headers() {
         for (name, value) in custom_headers {
-            if !transport_request.headers.iter().any(|(n, _)| n == name) {
+            if name.as_str() != request_header_names::SESSION_TOKEN
+                && !transport_request.headers.iter().any(|(n, _)| n == name)
+            {
                 transport_request
                     .headers
                     .insert(name.clone(), value.clone());
@@ -3682,28 +3717,26 @@ async fn perform_single_attempt(
     sent_hub_region_header: Option<&AtomicBool>,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> crate::error::Result<TransportResult> {
-    let (routing, resolved_session_token) = match prepare_session_token_for_attempt(
+    let attempt_session_token = prepare_session_token_for_attempt(
         ctx.session_manager,
         ctx.operation,
         routing.transport_mode,
         ctx.partition_key_range_id.as_ref(),
         ctx.overrides,
         ctx.session_token_resolution_active,
-    ) {
-        AttemptSessionToken::Resolved(token) => (Cow::Borrowed(routing), token),
-        AttemptSessionToken::CannotScope => return Err(explicit_session_scope_error()),
-    };
+    );
 
-    let request_ctx = TransportRequestContext {
-        routing: &routing,
+    let mut request_ctx = TransportRequestContext {
+        routing,
         activity_id: ctx.activity_id,
         execution_context,
         deadline: ctx.deadline,
-        resolved_session_token,
+        resolved_session_token: None,
         throughput_control: ctx.throughput_control,
         effective_consistency: ctx.effective_consistency,
         read_consistency_strategy: ctx.read_consistency_strategy,
     };
+    attempt_session_token.apply(&mut request_ctx, ctx.operation.is_read_only());
 
     let mut transport_request = build_transport_request_with_fault_injection(
         ctx.operation,
@@ -5615,7 +5648,7 @@ mod tests {
     }
 
     #[test]
-    fn unresolved_explicit_scope_is_rejected_by_attempt_preparation() {
+    fn unresolved_explicit_scope_is_reported_by_attempt_preparation() {
         let original = "0:1#10,1:1#20";
         let operation = CosmosOperation::read_item(ItemReference::from_name(
             &test_container(),

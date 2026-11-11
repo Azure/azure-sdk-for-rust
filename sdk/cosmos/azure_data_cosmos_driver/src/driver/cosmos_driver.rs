@@ -2515,13 +2515,24 @@ impl CosmosDriver {
         operation_options: OperationOptions,
         absolute_deadline: Option<Instant>,
     ) -> crate::error::Result<Option<Arc<ContainerRoutingMap>>> {
-        self.pk_range_cache
-            .try_lookup_result(
-                container,
-                false,
-                self.pk_range_page_fetcher(operation_options, absolute_deadline),
-            )
+        let lookup = self.pk_range_cache.try_lookup_result(
+            container,
+            false,
+            self.pk_range_page_fetcher(operation_options, absolute_deadline),
+        );
+        await_planning_or_deadline(lookup, absolute_deadline)
             .await
+            .ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::models::CosmosStatus::from_parts(
+                        azure_core::http::StatusCode::RequestTimeout,
+                        Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
+                    ))
+                    .with_message(
+                        "end-to-end operation timeout exceeded while loading session topology",
+                    )
+                    .build()
+            })?
     }
 
     fn pk_range_page_fetcher<'a>(
