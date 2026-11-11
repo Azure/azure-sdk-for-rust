@@ -29,14 +29,13 @@ use crate::{
 
 use std::sync::atomic::Ordering;
 
-use super::components::{
-    OperationAction, OperationRetryState, RetryWithRetryState, TransportOutcome, TransportResult,
-};
+use super::components::{OperationAction, OperationRetryState, RetryWithRetryState};
 #[cfg(feature = "unstable_dtx")]
 use super::components::{
     DTX_COORDINATOR_RETRY_INTERVAL, DTX_INFRA_BASE_BACKOFF, DTX_INFRA_MAX_BACKOFF,
     DTX_INFRA_MAX_EXPONENT,
 };
+use crate::pipeline::transport::types::{TransportOutcome, TransportResult};
 
 /// Whether the current request is handled by the PPCB threshold mechanism.
 ///

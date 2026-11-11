@@ -32,6 +32,7 @@ pub(crate) enum AdaptiveTransport {
 }
 
 impl AdaptiveTransport {
+    /// Builds an unsharded HTTP/1.1 client or a sharded HTTP/2 transport from the negotiated policy.
     pub(crate) fn from_config(
         connection_pool: &ConnectionPoolOptions,
         client_factory: Arc<dyn HttpClientFactory>,
@@ -107,6 +108,7 @@ impl AdaptiveTransport {
         }
     }
 
+    /// Sends to the fixed endpoint and returns the response or error with any selected-shard metadata.
     pub(crate) async fn send_with_dispatch(
         &self,
         request: &HttpRequest,
@@ -128,6 +130,7 @@ impl AdaptiveTransport {
         }
     }
 
+    /// Checks whether an HTTP/2 endpoint pool can select or create a shard other than the failed one.
     pub(crate) fn can_retry_on_different_shard(
         &self,
         excluded_shard_id: u64,

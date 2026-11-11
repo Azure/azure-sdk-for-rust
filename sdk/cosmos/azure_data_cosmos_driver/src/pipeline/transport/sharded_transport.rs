@@ -28,9 +28,9 @@ use url::Url;
 use crate::diagnostics::TransportShardDiagnostics;
 use crate::options::ConnectionPoolOptions;
 
-#[cfg(feature = "tokio")]
-use super::background_task_manager::BackgroundTaskManager;
 use super::http_client_factory::{HttpClientConfig, HttpClientFactory};
+#[cfg(feature = "tokio")]
+use crate::background_task_manager::BackgroundTaskManager;
 
 pub(crate) struct TransportDispatch {
     pub(crate) result: Result<HttpResponse, TransportError>,
@@ -49,6 +49,7 @@ pub(crate) struct ShardedHttpTransport {
 }
 
 impl ShardedHttpTransport {
+    /// Creates endpoint-pool storage and starts health sweeps when a Tokio runtime is available.
     pub(crate) fn new(
         connection_pool: ConnectionPoolOptions,
         client_factory: Arc<dyn HttpClientFactory>,
@@ -69,6 +70,9 @@ impl ShardedHttpTransport {
         transport
     }
 
+    /// Reserves a shard, sends the request, and returns its outcome and shard diagnostics.
+    ///
+    /// Pool or reservation failures are unsent; cancelling the send releases its reservation.
     pub(crate) async fn send(
         &self,
         request: &HttpRequest,
@@ -115,6 +119,7 @@ impl ShardedHttpTransport {
         }
     }
 
+    /// Checks whether an existing endpoint pool can select or create a shard other than the failed one.
     pub(crate) fn can_retry_on_different_shard(
         &self,
         excluded_shard_id: u64,
@@ -149,6 +154,7 @@ impl ShardedHttpTransport {
         pool.and_then(|pool| pool.pre_select_shard_id(excluded_shard_id).ok())
     }
 
+    /// Retrieves the endpoint's shared pool, creating and storing it on first use.
     fn get_or_create_pool(
         &self,
         endpoint_key: EndpointKey,
@@ -171,6 +177,7 @@ impl ShardedHttpTransport {
     }
 
     #[cfg(feature = "tokio")]
+    /// Starts periodic sweeps of all endpoint pools if called inside a Tokio runtime.
     fn spawn_health_sweep(&self) {
         if tokio::runtime::Handle::try_current().is_err() {
             return;
@@ -274,6 +281,7 @@ struct EndpointShardPool {
 }
 
 impl EndpointShardPool {
+    /// Creates a pool and attempts to populate its minimum shards, leaving failures for later backfill.
     fn new(
         endpoint: EndpointKey,
         connection_pool: ConnectionPoolOptions,
@@ -319,6 +327,9 @@ impl EndpointShardPool {
         Ok(pool)
     }
 
+    /// Reserves an eligible shard, growing the pool or using existing capacity when needed.
+    ///
+    /// A preferred shard is reused only below the target load; the excluded shard is never selected.
     fn select_shard(
         &self,
         excluded_shard_id: Option<u64>,
@@ -412,6 +423,9 @@ impl EndpointShardPool {
         self.reserve_at_max_connections(&current, excluded_shard_id, max_streams)
     }
 
+    /// Reserves existing capacity, allowing the least-loaded shard to exceed the stream threshold.
+    ///
+    /// Returns an error when no shard is selectable.
     fn reserve_at_max_connections(
         &self,
         shards: &[Arc<ClientShard>],
@@ -448,6 +462,7 @@ impl EndpointShardPool {
         Ok(shard.reserve_over_capacity())
     }
 
+    /// Selects or creates a shard for a diagnostic hint without reserving a stream.
     fn pre_select_shard_id(&self, excluded_shard_id: Option<u64>) -> crate::error::Result<u64> {
         let max_streams = self.connection_pool.max_http2_streams_per_client();
         let target_streams = self.connection_pool.target_http2_streams_per_client();
@@ -505,6 +520,7 @@ impl EndpointShardPool {
         })
     }
 
+    /// Returns an eligible shard ID, preferring spare capacity but allowing saturated shards.
     fn preselect_at_max_connections(
         &self,
         shards: &[Arc<ClientShard>],
@@ -534,6 +550,7 @@ impl EndpointShardPool {
         })
     }
 
+    /// Checks for an eligible peer or room to create one without changing the pool.
     fn can_select_different_shard(&self, excluded_shard_id: u64) -> bool {
         let shards = self.shards.load();
         shards
@@ -609,6 +626,7 @@ impl EndpointShardPool {
             .expect("preselection barrier lock poisoned") = Some(barrier);
     }
 
+    /// Builds a client with the pool's settings and assigns it the next shard ID.
     fn build_shard(&self) -> crate::error::Result<ClientShard> {
         let client_config = self.base_client_config;
 
@@ -625,6 +643,7 @@ impl EndpointShardPool {
 
 #[cfg(any(feature = "tokio", test))]
 impl EndpointShardPool {
+    /// Removes idle or failing shards and builds replacements to maintain the pool's minimum capacity.
     fn run_health_sweep(&self) -> crate::error::Result<()> {
         let now = Instant::now();
         let threshold = self.connection_pool.http2_consecutive_failure_threshold();
@@ -799,6 +818,7 @@ struct ClientShard {
 }
 
 impl ClientShard {
+    /// Wraps a client with its pool-assigned ID and initializes load and health tracking.
     fn new(id: u64, client: Arc<dyn TransportClient>) -> Self {
         Self {
             id,
@@ -826,14 +846,17 @@ impl ClientShard {
         }
     }
 
+    /// Returns the current number of reserved streams.
     fn inflight(&self) -> u32 {
         self.inflight.load(Ordering::Relaxed)
     }
 
+    /// Atomically reserves a stream below the limit, returning a guard that releases it.
     fn try_reserve(self: &Arc<Self>, max_streams: u32) -> Option<InflightGuard> {
         self.try_reserve_after_load(max_streams, || {})
     }
 
+    /// Retries atomic reservation until successful or full, invoking the hook before its first attempt.
     fn try_reserve_after_load<F>(
         self: &Arc<Self>,
         max_streams: u32,
@@ -869,6 +892,7 @@ impl ClientShard {
         }
     }
 
+    /// Reserves the first stream on a newly built, unpublished shard.
     fn reserve_initial(self: &Arc<Self>) -> InflightGuard {
         let previous = self.inflight.fetch_add(1, Ordering::Relaxed);
         debug_assert_eq!(previous, 0, "new shards must be unpublished and idle");
@@ -876,18 +900,21 @@ impl ClientShard {
         InflightGuard::new(Arc::clone(self))
     }
 
+    /// Reserves a stream without a load limit when no more shard capacity can be created.
     fn reserve_over_capacity(self: &Arc<Self>) -> InflightGuard {
         self.inflight.fetch_add(1, Ordering::Relaxed);
         self.record_reservation();
         InflightGuard::new(Arc::clone(self))
     }
 
+    /// Increments the lifetime request count and records the reservation time.
     fn record_reservation(&self) {
         self.total_requests.fetch_add(1, Ordering::Relaxed);
         self.last_request_at_nanos
             .store(self.instant_to_nanos(Instant::now()), Ordering::Relaxed);
     }
 
+    /// Releases the stream and updates activity, success, and failure counters from the send result.
     fn record_request_outcome(&self, result: &Result<HttpResponse, TransportError>) {
         self.inflight.fetch_sub(1, Ordering::Relaxed);
         let now_nanos = self.instant_to_nanos(Instant::now());
@@ -903,6 +930,7 @@ impl ClientShard {
         }
     }
 
+    /// Releases an unfinished reservation and counts it as cancelled, not as a transport failure.
     fn decrement_inflight(&self) {
         self.inflight.fetch_sub(1, Ordering::Relaxed);
         self.total_cancellations.fetch_add(1, Ordering::Relaxed);
@@ -922,6 +950,7 @@ struct InflightGuard {
 }
 
 impl InflightGuard {
+    /// Takes responsibility for releasing an already-counted reservation on the shard.
     fn new(shard: Arc<ClientShard>) -> Self {
         Self {
             shard,
@@ -951,14 +980,17 @@ impl Drop for InflightGuard {
 }
 
 impl ClientShard {
+    /// Reports whether a health sweep has marked this shard to stop accepting new requests.
     fn is_marked_for_eviction(&self) -> bool {
         self.marked_for_eviction.load(Ordering::Relaxed)
     }
 
+    /// Checks that neither the caller nor a health sweep has excluded this shard.
     fn is_selectable(&self, excluded_shard_id: Option<u64>) -> bool {
         excluded_shard_id != Some(self.id) && !self.is_marked_for_eviction()
     }
 
+    /// Copies the shard's current load, outcome counters, and eviction flag into diagnostic data.
     fn transport_diagnostics(&self) -> TransportShardDiagnostics {
         TransportShardDiagnostics::new(
             self.id,
@@ -1025,6 +1057,7 @@ impl ClientShard {
         }
     }
 
+    /// Copies shard health data and converts stored time offsets for sweep decisions.
     fn snapshot(&self) -> ClientShardHealthSnapshot {
         let last_success_nanos = self.last_success_at_nanos.load(Ordering::Relaxed);
         ClientShardHealthSnapshot {
@@ -1044,10 +1077,12 @@ impl ClientShard {
         }
     }
 
+    /// Prevents future selections without interrupting existing requests.
     fn mark_for_eviction(&self) {
         self.marked_for_eviction.store(true, Ordering::Relaxed);
     }
 
+    /// Checks that no streams are reserved and the last request activity was at least this long ago.
     fn is_idle_for(&self, now: Instant, idle_timeout: Duration) -> bool {
         if self.inflight() != 0 {
             return false;
@@ -1074,6 +1109,7 @@ struct ClientShardHealthSnapshot {
 
 #[cfg(any(feature = "tokio", test))]
 impl ClientShardHealthSnapshot {
+    /// Checks whether the last successful response is within the eviction grace period.
     fn has_recent_success(self, now: Instant, grace_period: Duration) -> bool {
         self.last_success_at
             .is_some_and(|last_success_at| now.duration_since(last_success_at) <= grace_period)
@@ -1122,6 +1158,7 @@ fn select_from_shards(
     )
 }
 
+/// Chooses the active shard window and reserves a stream below the desired occupancy.
 fn reserve_from_shards(
     shards: &[Arc<ClientShard>],
     excluded_shard_id: Option<u64>,
@@ -1133,6 +1170,7 @@ fn reserve_from_shards(
     reserve_least_loaded_shard(shards, excluded_shard_id, active_count, desired_streams)
 }
 
+/// Reserves a stream on the preferred shard if it remains selectable and below the stream limit.
 fn try_reserve_preferred(
     shards: &[Arc<ClientShard>],
     excluded_shard_id: Option<u64>,
@@ -1143,6 +1181,7 @@ fn try_reserve_preferred(
         .and_then(|shard| shard.try_reserve(stream_limit))
 }
 
+/// Finds the preferred shard unless it is missing, excluded, or marked for eviction.
 fn selectable_preferred_shard(
     shards: &[Arc<ClientShard>],
     excluded_shard_id: Option<u64>,
@@ -1154,6 +1193,7 @@ fn selectable_preferred_shard(
         .find(|shard| shard.id == preferred_id && shard.is_selectable(excluded_shard_id))
 }
 
+/// Picks the least-loaded eligible shard in the candidate window without reserving a stream.
 fn select_least_loaded_shard(
     shards: &[Arc<ClientShard>],
     excluded_shard_id: Option<u64>,
@@ -1181,6 +1221,7 @@ fn select_least_loaded_shard(
     selected.map(|(shard, _)| shard)
 }
 
+/// Reserves the least-loaded candidate, trying its peers if another request takes the last slot.
 fn reserve_least_loaded_shard(
     shards: &[Arc<ClientShard>],
     excluded_shard_id: Option<u64>,
@@ -1246,6 +1287,7 @@ fn active_shard_count(
 }
 
 #[cfg(any(feature = "tokio", test))]
+/// Selects a failing shard for replacement only when no eligible shard is healthy or recently succeeded.
 fn pick_probe_candidate(
     snapshots: &[ClientShardHealthSnapshot],
     threshold: u32,
@@ -1293,7 +1335,7 @@ impl fmt::Debug for ClientShard {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::driver::transport::cosmos_transport_client::{
+    use crate::pipeline::transport::cosmos_transport_client::{
         HttpRequest, HttpResponse, TransportError,
     };
     use async_trait::async_trait;
