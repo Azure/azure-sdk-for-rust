@@ -2,12 +2,14 @@
 // Licensed under the MIT License.
 
 use crate::{
+    diagnostics::DiagnosticsContext,
     feed::ContinuationToken,
     models::ChangeFeedItem,
     options::{ChangeFeedMode, MaxItemCountHint},
     ContainerClient, CosmosError, CosmosStatus,
 };
 use azure_core::{fmt::SafeDebug, http::StatusCode};
+use futures::future::BoxFuture;
 use serde::de::DeserializeOwned;
 use std::{
     future::Future,
@@ -24,6 +26,8 @@ use time::OffsetDateTime;
 mod execution;
 
 type ChangeFeedHandler<T, Fut> = fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut;
+type ErrorHandler =
+    dyn Fn(Option<ChangeFeedProcessorContext>, CosmosError) -> BoxFuture<'static, ()> + Send + Sync;
 
 /// Controls when successful change feed callback progress is persisted.
 ///
@@ -34,8 +38,8 @@ pub enum ChangeFeedCheckpointPolicy {
     /// Persists each successful callback before reading its lease's next batch.
     #[default]
     EveryBatch,
-    /// Coalesces successful callbacks until the lease is observed idle or the
-    /// interval since its first unpersisted success elapses.
+    /// Coalesces successful callbacks until the interval since the first
+    /// unpersisted success elapses. Idle reads do not trigger persistence.
     ///
     /// Successful callbacks can replay after a crash or ownership loss. Graceful
     /// shutdown and topology recovery flush without waiting for the interval.
@@ -44,6 +48,18 @@ pub enum ChangeFeedCheckpointPolicy {
         /// Positive maximum interval for deferring persistence of successful progress.
         max_interval: Duration,
     },
+}
+
+impl ChangeFeedCheckpointPolicy {
+    /// Coalesces successful progress for up to five minutes.
+    ///
+    /// Use [`Self::Coalesced`] to select a different interval. Graceful cleanup
+    /// and explicit checkpoints can persist progress earlier.
+    pub fn coalesced() -> Self {
+        Self::Coalesced {
+            max_interval: Duration::from_secs(300),
+        }
+    }
 }
 
 /// Context identifying the lease associated with a callback batch.
@@ -55,6 +71,8 @@ pub enum ChangeFeedCheckpointPolicy {
 #[derive(Clone, SafeDebug)]
 pub struct ChangeFeedProcessorContext {
     lease_token: String,
+    #[safe(false)]
+    diagnostics: Option<Arc<DiagnosticsContext>>,
 }
 
 impl ChangeFeedProcessorContext {
@@ -64,6 +82,16 @@ impl ChangeFeedProcessorContext {
     /// Treat it as meaningful within the processor's lease namespace.
     pub fn lease_token(&self) -> &str {
         &self.lease_token
+    }
+
+    /// Returns operation diagnostics associated with this notification.
+    ///
+    /// For change callbacks, these describe the read that produced the batch,
+    /// not subsequent callback execution or checkpoint writes. Error notifications
+    /// may have no diagnostics. Retaining this handle does not retain the batch
+    /// payload, and does not render or log the diagnostics.
+    pub fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>> {
+        self.diagnostics.clone()
     }
 }
 
@@ -133,9 +161,10 @@ enum ProcessorStartFrom {
 /// type. Before registration, `T` and `H` default to `()`. Registering a callback
 /// infers both types and makes [`build()`](Self::build) available.
 ///
-/// Each owned lease has at most one outstanding batch. There is no shared
-/// batch-count limit across leases or processors, so buffered data can grow with
-/// the number of owned leases. Page-size hints are not byte or heap limits.
+/// Each owned lease has at most one outstanding batch. SDK processing defaults
+/// to one worker; [`with_max_concurrency()`](Self::with_max_concurrency) bounds
+/// concurrent receive, callback, and acknowledgment cycles for this instance.
+/// Page-size hints and worker counts are not byte or heap limits.
 ///
 /// # Examples
 ///
@@ -212,6 +241,8 @@ pub struct ChangeFeedProcessorBuilder<T = (), H = ()> {
     max_item_count: MaxItemCountHint,
     feed_poll_delay: Duration,
     checkpoint_policy: ChangeFeedCheckpointPolicy,
+    max_concurrency: NonZeroU32,
+    error_handler: Option<Arc<ErrorHandler>>,
     min_scale_count: u32,
     max_scale_count: u32,
     lease_verification_on_restart_enabled: bool,
@@ -253,6 +284,8 @@ impl ChangeFeedProcessorBuilder {
             max_item_count: MaxItemCountHint::Limit(NonZeroU32::new(100).expect("100 is nonzero")),
             feed_poll_delay: Duration::from_secs(5),
             checkpoint_policy: ChangeFeedCheckpointPolicy::default(),
+            max_concurrency: NonZeroU32::MIN,
+            error_handler: None,
             min_scale_count: 0,
             max_scale_count: 0,
             lease_verification_on_restart_enabled: false,
@@ -271,7 +304,8 @@ impl ChangeFeedProcessorBuilder {
     ///
     /// Consumes the builder and makes [`build()`](Self::build) available. A
     /// callback can be registered only once. Callbacks for different leases can
-    /// overlap. For each lease, successful callback progress is saved before the
+    /// overlap when [`with_max_concurrency()`](Self::with_max_concurrency) exceeds one.
+    /// For each lease, successful callback progress is saved before the
     /// next batch by default. [`with_checkpoint_policy()`](Self::with_checkpoint_policy)
     /// can defer persistence across callbacks. Failures can cause replay;
     /// callbacks should make their external effects idempotent.
@@ -402,6 +436,8 @@ impl ChangeFeedProcessorBuilder {
             max_item_count: self.max_item_count,
             feed_poll_delay: self.feed_poll_delay,
             checkpoint_policy: self.checkpoint_policy,
+            max_concurrency: self.max_concurrency,
+            error_handler: self.error_handler,
             min_scale_count: self.min_scale_count,
             max_scale_count: self.max_scale_count,
             lease_verification_on_restart_enabled: self.lease_verification_on_restart_enabled,
@@ -412,12 +448,75 @@ impl ChangeFeedProcessorBuilder {
 }
 
 impl<T, H> ChangeFeedProcessorBuilder<T, H> {
+    /// Sets the maximum number of concurrent batch-processing workers.
+    ///
+    /// Defaults to one. Each worker receives one batch, runs its callback, and
+    /// completes acknowledgment before requesting another batch. A slow callback
+    /// occupies one worker; other workers can process other eligible leases.
+    /// This does not limit lease ownership or delay lease maintenance.
+    pub fn with_max_concurrency(mut self, max_concurrency: NonZeroU32) -> Self {
+        self.max_concurrency = max_concurrency;
+        self
+    }
+
+    /// Registers an asynchronous observer of background and processing failures.
+    ///
+    /// The optional context identifies the affected lease. It is absent for
+    /// worker-wide failures. Notifications include driver failures, deserialization
+    /// and callback errors, caught callback panics, and acknowledgment failures.
+    /// Startup errors are returned directly by [`ChangeFeedProcessor::start()`].
+    ///
+    /// The observer runs serially, independently of batch workers and lease
+    /// maintenance. Its notification queue is bounded; overflow is logged and
+    /// excess notifications are dropped. Related failures may produce multiple
+    /// notifications. The observer cannot acknowledge a batch or change recovery.
+    ///
+    /// Graceful shutdown drains accepted notifications; forced shutdown or drop
+    /// cancels the observer. No implicit timeout applies. Do not await processor
+    /// shutdown from this observer. Observer panics are logged without recursion.
+    ///
+    /// Replaces any previously registered error observer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use azure_data_cosmos::{
+    ///     ChangeFeedProcessorBuilder, ChangeFeedProcessorContext, CosmosError,
+    /// };
+    ///
+    /// async fn on_error(context: Option<ChangeFeedProcessorContext>, error: CosmosError) {
+    ///     eprintln!("Lease {:?}: {error}", context.map(|c| c.lease_token().to_owned()));
+    /// }
+    ///
+    /// fn configure(builder: ChangeFeedProcessorBuilder) -> ChangeFeedProcessorBuilder {
+    ///     builder.handle_error(on_error)
+    /// }
+    /// ```
+    pub fn handle_error<Fut>(
+        mut self,
+        handler: fn(Option<ChangeFeedProcessorContext>, CosmosError) -> Fut,
+    ) -> Self
+    where
+        Fut: Future<Output = ()> + Send + 'static,
+    {
+        self.error_handler = Some(Arc::new(move |context, error| {
+            Box::pin(handler(context, error))
+        }));
+        self
+    }
+
     /// Sets the persistence policy for successfully handled change feed batches.
     ///
     /// Defaults to [`ChangeFeedCheckpointPolicy::EveryBatch`]. Coalescing retains
     /// progress, not callback payloads, in memory and can replay multiple successful
     /// callbacks after failure. It does not change the service page-size hint.
     /// Invalid intervals are rejected by [`build()`](Self::build).
+    ///
+    /// Processing inactivity makes a lease eligible for takeover after ten
+    /// minutes with every-batch checkpoints, or twice the coalescing interval.
+    /// Each acquisition gets a fresh grace period. Idle reads, absent demand,
+    /// and throttling do not count as successful batch processing. Activity
+    /// becomes visible to other workers through existing lease writes.
     ///
     /// # Examples
     ///
@@ -540,7 +639,9 @@ impl<T, H> ChangeFeedProcessorBuilder<T, H> {
     ///
     /// Disabled by default. After bootstrap, the processing runtime recreates
     /// missing leases from the persisted initial range plan without replacing
-    /// existing owners or checkpoints. This does not discover topology changes.
+    /// existing owners or checkpoints. Complete replacement coverage prevents
+    /// recreation of deleted split parents; partial or overlapping coverage
+    /// fails verification. This does not discover topology changes.
     pub fn with_lease_verification_enabled_on_restart(mut self, enabled: bool) -> Self {
         self.lease_verification_on_restart_enabled = enabled;
         self
@@ -623,11 +724,19 @@ where
     /// ```
     pub fn build(self) -> crate::Result<ChangeFeedProcessor<T, ChangeFeedHandler<T, Fut>>> {
         if let ChangeFeedCheckpointPolicy::Coalesced { max_interval } = self.checkpoint_policy {
+            let now = (OffsetDateTime::now_utc().unix_timestamp_nanos() / 1_000_000) as i64;
             if max_interval.is_zero()
                 || std::time::Instant::now()
                     .checked_add(max_interval)
                     .is_none()
                 || azure_core::time::Duration::try_from(max_interval).is_err()
+                || max_interval
+                    .checked_mul(2)
+                    .and_then(|duration| {
+                        i64::try_from(duration.as_nanos().div_ceil(1_000_000)).ok()
+                    })
+                    .and_then(|millis| now.checked_add(millis))
+                    .is_none()
             {
                 return Err(CosmosError::builder()
                     .with_status(CosmosStatus::new(StatusCode::BadRequest))
@@ -795,14 +904,18 @@ impl<T, H> ChangeFeedProcessor<T, H> {
     /// Lease maintenance is independent of feed polling and callback duration.
     /// Expiration uses a 60-second budget; renewal and acquisition schedules are
     /// derived from that budget. Callbacks have no implicit timeout.
+    /// Throttled reads yield to other eligible leases, even with one worker.
+    /// Each read turn is bounded to five seconds or a shorter configured driver
+    /// deadline; this does not impose a callback timeout.
     ///
     /// # Errors
     ///
     /// Propagates bootstrap failures, including incompatible modes, invalid
     /// lease-container configuration, and service errors. Opt-in restart
     /// verification can also fail for invalid range plans or lease records.
-    /// After startup, later per-lease failures are logged and
-    /// recovered independently. Starting an already-running instance returns
+    /// After startup, later per-lease failures are logged, reported to the optional
+    /// [`error observer`](ChangeFeedProcessorBuilder::handle_error), and recovered
+    /// independently. Starting an already-running instance returns
     /// [`StatusCode::Conflict`].
     pub async fn start<Fut>(&self) -> crate::Result<()>
     where

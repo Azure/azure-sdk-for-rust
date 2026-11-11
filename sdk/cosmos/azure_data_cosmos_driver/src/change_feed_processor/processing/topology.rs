@@ -94,10 +94,26 @@ impl Context {
     }
 
     pub(super) async fn list(&self) -> Result<Vec<Lease>> {
+        self.list_overlapping(None).await
+    }
+
+    async fn list_overlapping(&self, range: Option<&FeedRange>) -> Result<Vec<Lease>> {
+        let mut query =
+            "SELECT * FROM c WHERE STARTSWITH(c.id, @prefix) AND IS_DEFINED(c.range)".to_owned();
+        let mut parameters = vec![
+            serde_json::json!({"name":"@prefix", "value":format!("{}.lease.", self.namespace)}),
+        ];
+        if let Some(range) = range {
+            query.push_str(" AND c.range.Range.min < @max AND c.range.Range.max > @min");
+            parameters
+                .push(serde_json::json!({"name":"@min", "value":range.min_inclusive().to_hex()}));
+            parameters
+                .push(serde_json::json!({"name":"@max", "value":range.max_exclusive().to_hex()}));
+        }
         let operation = CosmosOperation::query_items(self.leases.clone(), Some(FeedRange::full()))
             .with_body(serde_json::to_vec(&serde_json::json!({
-                "query": "SELECT * FROM c WHERE STARTSWITH(c.id, @prefix) AND IS_DEFINED(c.range) AND (NOT IS_DEFINED(c.children) OR NOT IS_DEFINED(c.split_complete) OR c.split_complete = false)",
-                "parameters": [{"name": "@prefix", "value": format!("{}.lease.", self.namespace)}]
+                "query": query,
+                "parameters": parameters
             }))?)
             .with_absolute_deadline(Some(Instant::now() + Duration::from_secs(25)));
         let mut plan = self
@@ -135,6 +151,77 @@ impl Context {
         Ok(leases)
     }
 
+    async fn has_replacements(&self, range: &FeedRange) -> Result<bool> {
+        let mut replacements = Vec::new();
+        for lease in self.list_overlapping(Some(range)).await? {
+            let candidate = &lease.base.range;
+            if candidate == range {
+                continue;
+            }
+            if candidate.min_inclusive() <= range.min_inclusive()
+                && candidate.max_exclusive() >= range.max_exclusive()
+                && lease.children.is_some()
+            {
+                continue;
+            }
+            if candidate.min_inclusive() < range.min_inclusive()
+                || candidate.max_exclusive() > range.max_exclusive()
+            {
+                return Err(error(
+                    StatusCode::Conflict,
+                    "Replacement leases cross the missing lease range.",
+                ));
+            }
+            replacements.push(lease);
+        }
+        if replacements.is_empty() {
+            return Ok(false);
+        }
+        replacements.sort_by(|left, right| {
+            left.base
+                .range
+                .min_inclusive()
+                .cmp(right.base.range.min_inclusive())
+                .then_with(|| {
+                    right
+                        .base
+                        .range
+                        .max_exclusive()
+                        .cmp(left.base.range.max_exclusive())
+                })
+        });
+        let mut cursor = range.min_inclusive();
+        let mut covering: Option<&Lease> = None;
+        for lease in &replacements {
+            let candidate = &lease.base.range;
+            if candidate.min_inclusive() < cursor {
+                // An unfinished retired descendant can coexist with its own children.
+                if covering.is_some_and(|parent| {
+                    parent.children.is_some()
+                        && candidate.max_exclusive() <= parent.base.range.max_exclusive()
+                }) {
+                    continue;
+                }
+                return Err(error(StatusCode::Conflict, "Replacement leases overlap."));
+            }
+            if candidate.min_inclusive() != cursor || lease.base.continuation.is_none() {
+                return Err(error(
+                    StatusCode::Conflict,
+                    "Replacement lease coverage or progress is incomplete.",
+                ));
+            }
+            cursor = candidate.max_exclusive();
+            covering = Some(lease);
+        }
+        if cursor != range.max_exclusive() {
+            return Err(error(
+                StatusCode::Conflict,
+                "Replacement lease coverage is incomplete.",
+            ));
+        }
+        Ok(true)
+    }
+
     pub(super) async fn verify_leases(&self) -> Result<Vec<Lease>> {
         let plan_id = format!("{}.plan", self.namespace);
         let plan = self
@@ -157,6 +244,9 @@ impl Context {
             let stored = match self.store().read::<Lease>(&id).await? {
                 Some(stored) => stored,
                 None => {
+                    if self.has_replacements(&range).await? {
+                        continue;
+                    }
                     let lease = Lease {
                         base: ProcessingLease {
                             record: Record {
@@ -170,6 +260,8 @@ impl Context {
                         },
                         incarnation: None,
                         renewed_at: None,
+                        last_processed_at: None,
+                        processing_deadline: None,
                         children: None,
                         split_complete: false,
                         renewed: None,
@@ -197,13 +289,33 @@ impl Context {
 
     pub(super) async fn ensure_children(&self, parent: &mut Stored<Lease>) -> Result<()> {
         self.validate(&parent.value)?;
+        if parent.value.children.is_none() {
+            return Err(error(
+                StatusCode::Conflict,
+                "Processing lease is not retired.",
+            ));
+        }
+        let id = parent.value.base.record.id.clone();
+        let Some(current) = self.store().read::<Lease>(&id).await? else {
+            return Ok(());
+        };
+        self.validate(&current.value)?;
+        if current.value.children != parent.value.children
+            || current.value.base.continuation != parent.value.base.continuation
+        {
+            return Err(error(
+                StatusCode::PreconditionFailed,
+                "Retired parent state changed.",
+            ));
+        }
+        *parent = current;
         let children = parent
             .value
             .children
             .as_ref()
             .ok_or_else(|| error(StatusCode::Conflict, "Processing lease is not retired."))?;
         if parent.value.split_complete {
-            return Ok(());
+            return self.store().delete(&id, parent.etag.clone()).await;
         }
         for range in children {
             let id = lease_id(&self.namespace, range);
@@ -211,6 +323,9 @@ impl Context {
             let stored = match self.store().read::<Lease>(&id).await? {
                 Some(stored) => stored,
                 None => {
+                    if self.has_replacements(range).await? {
+                        continue;
+                    }
                     let child = Lease {
                         base: ProcessingLease {
                             record: Record {
@@ -224,6 +339,8 @@ impl Context {
                         },
                         incarnation: None,
                         renewed_at: None,
+                        last_processed_at: None,
+                        processing_deadline: None,
                         children: None,
                         renewed: None,
                         split_complete: false,
@@ -239,14 +356,22 @@ impl Context {
                 }
             };
             self.validate(&stored.value)?;
-            if stored.value.base.range != *range {
+            if stored.value.base.range != *range || stored.value.base.continuation.is_none() {
                 return Err(error(
                     StatusCode::Conflict,
-                    "Child lease range does not match its parent.",
+                    "Child lease range or continuation does not match its parent.",
                 ));
             }
         }
-        self.update(parent, Update::CompleteSplit).await
+        if let Err(err) = self.update(parent, Update::CompleteSplit).await {
+            if err.status().is_precondition_failed()
+                && self.store().read::<Lease>(&id).await?.is_none()
+            {
+                return Ok(());
+            }
+            return Err(err);
+        }
+        self.store().delete(&id, parent.etag.clone()).await
     }
 
     pub(super) async fn recover(&self, lease: Arc<Mutex<Stored<Lease>>>) -> Result<bool> {

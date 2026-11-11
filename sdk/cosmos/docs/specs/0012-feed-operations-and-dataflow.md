@@ -150,26 +150,33 @@ Splits use the existing lease container and conditional writes:
    are validated but never reset. Children start unowned and are acquired
    through normal count balancing, including the configured maximum.
 4. Conditionally mark the retired parent `split_complete` after all immediate
-   children have been confirmed. Its child ranges and checkpoint remain frozen.
+   children or their complete replacement coverage have been confirmed.
+5. Delete the parent with its ETag condition. Not-found is success; other failures
+   remain visible and are retried. Child progress is never reset during cleanup.
 
-The parent record is the authority to create and acquire descendants. A crash
-before retirement leaves the original lease active; a crash after retirement
-leaves a complete plan from which any worker can finish child creation. Partial
-creation can delay coverage but cannot discard the missing child's starting
-position. Strictly smaller child ranges and retained parent records make repeated
-splits acyclic. Retired parent documents must not be deleted.
+The parent remains the recovery plan while creation is incomplete, not permanent
+lineage storage. Interrupted child creation can resume from its frozen ranges
+and continuation. If a child has already split again and been deleted, complete
+descendant coverage prevents recreating it. Missing or overlapping partial
+coverage is an error, not permission to create an overlapping ancestor.
 
-Balancing queries the workload's active leases and unfinished split records,
-not the complete historical lineage. Enumeration itself does not create leases.
+Balancing queries active leases and retained split records, including completed
+records awaiting deletion. Enumeration itself does not create leases.
 An unfinished split is scheduled as independent range-local recovery work so
-child-creation failures do not block processing or acquisition on other ranges.
-Completed retired parents are excluded from the query. The completion marker
-defaults to false on older records, allowing their children to be checked once.
+creation/deletion failures do not block other ranges. Existing completed parents
+are eligible for cleanup; records without the completion marker are checked
+before deletion.
 
 Bootstrap's immutable initial range plan remains the startup verification
-inventory. Opt-in restart verification checks and repairs only those original
-records without replacing retired parents. Normal balancing does not read or
-rewrite the initial range plan.
+inventory. Opt-in verification accepts complete replacement coverage for a
+missing initial parent, preserves child checkpoints, and rejects partial or
+overlapping coverage. With no replacement records, it retains the existing
+missing-initial-lease repair behavior. Normal balancing does not read or rewrite
+the initial range plan.
+
+Drain and upgrade all workers sharing a workload before using parent cleanup.
+Older restart-verification implementations can recreate deleted parents; mixed
+versions and rollback to that behavior are not safe.
 
 On a physical merge, independent EPK-slice leases retain their own continuations
 and route to the merged partition with EPK bounds. No min/max continuation is
@@ -200,6 +207,53 @@ eligible account and separate live validation.
 
 ### Processor worker shutdown
 
+Each driver acquisition owns its delivery state. The scheduler holds only weak
+eligible-acquisition handles, with no ready-batch slot or payload queue.
+Each read transfers its result through the requesting receive's response channel;
+another receive cannot take that result. The acquisition retains progress and
+acknowledgment state, not the transferred payload.
+Acknowledgment makes the acquisition eligible; it does not authorize another read.
+Feed planning and reads require a pending consumer receive. Each receive permits
+one acquisition read at a time; concurrent receives determine read parallelism.
+Idle reads release demand to other eligible acquisitions. A canceled receive
+does not start further reads. An already-started read may finish, but an unclaimed
+batch is discarded without acknowledgment, even if it reached the response
+channel before cancellation. It is not retained for a later receive; the
+acquisition ends and unsaved changes can replay.
+
+Renewal, checkpoint deadlines, acquisition, and cleanup continue without data
+demand. Automatic bootstrap, start-option precedence, and persisted lease records
+are unchanged; a fresh feed position is resolved only on a requested read.
+The Rust SDK defaults to one processing worker. `with_max_concurrency` sets the
+number of concurrent receive/callback/acknowledgment cycles; each worker keeps
+its slot until policy completion, with no prefetched batch backlog.
+Native hosts choose concurrency through admitted next requests; queue capacity
+still bounds data admission, separately from acknowledgment and stop.
+
+Ordinary read throttles (429, except system-resource 429/3092) release the current
+receive demand and keep the affected acquisition out of the eligible queue until
+Retry-After expires. Positive service delays are honored without shortening;
+missing/zero delays use bounded exponential backoff with jitter. Only the next
+pending receive authorizes another read. Retry count and cumulative-delay budgets
+inherit source-driver settings, survive scheduling turns, and reset after a
+successful read. Exhaustion completes the final cooldown before reporting failure
+and conditionally releasing; later balancing may reacquire.
+
+Planning and page reads share a five-second turn budget, shortened by a stricter
+configured operation deadline. A timed-out turn ends the acquisition without
+saving failed-page progress. During cooldown, renewal and prior-success
+checkpoint deadlines continue; shutdown/cancellation interrupts the wait. These bounds do
+not limit application callback duration or the overall wait for the next batch.
+Normal non-processor retry behavior and bootstrap are unchanged.
+
+The optional asynchronous SDK error observer receives driver, decode, callback,
+panic, and acknowledgment failures through an independent bounded dispatcher.
+One observer invocation runs at a time; excess notifications are dropped with a
+warning rather than blocking data processing or lease maintenance. Graceful
+shutdown drains accepted notifications; forced shutdown/drop cancels them.
+Observers cannot acknowledge failed batches or alter recovery. Startup failures
+remain return values, and error-observer panics are logged without recursion.
+
 The driver owns both graceful draining and forced cancellation. Language wrappers
 adapt this lifecycle without exposing Rust queues, futures, or receipts across
 the C ABI. Application signal handling, including AKS pod termination, remains
@@ -207,8 +261,9 @@ an application concern. Removing a pod from readiness alone does not stop its
 processor.
 
 `stop()` closes acquisition and feed-delivery admission, then drains the finite
-set of already-issued receipts, including queued batches. Wrappers continue
-dispatching those batches. An in-flight acquisition is allowed to settle and
+set of already-issued receipts, including responses transferred to outstanding
+receives and native completion queues. Wrappers continue dispatching those
+batches. An in-flight acquisition is allowed to settle and
 every successfully acquired lease is retained for conditional release.
 Renewal continues until the lease's outstanding processing and checkpoint work
 finishes. Checkpoint and renewal writes serialize with release; shutdown does
@@ -264,12 +319,14 @@ original page. Counts reflect actual change envelopes, not unique documents,
 requested page size, or all source writes in latest-version mode. Count is
 tracked for checkpoint diagnostics, not used as an implicit threshold.
 
-Flush occurs at observed lease-idle or the deadline, whichever is first. A
-processor plan disables transparent topology repair, so consecutive idle
-responses covering its stable round-robin leaf set establish temporary lease
-idleness. Neither a single leaf's `304` nor an empty host queue proves global
-completion. Initial `Now` positioning is persisted independently before data
-processing. Repeated unchanged idle positions do not cause writes.
+Flush occurs at the deadline, not merely because the lease becomes idle.
+`CheckpointPolicy::coalesced()` and the corresponding SDK constructor select five
+minutes; callers can still configure another positive interval. Changed idle
+positions, including initial `Now` positioning, are deferred under coalescing.
+A restart before the first durable checkpoint can therefore resolve a later
+`Now`; use a supplied continuation when the initial position must survive that
+window. Repeated unchanged positions do not cause writes. Neither a `304` nor an
+empty host queue proves global completion.
 
 The interval must be positive and representable. Later acknowledgments and
 renewals do not reset its clock. The deadline is driven while awaiting feed I/O,
@@ -307,6 +364,22 @@ ownership, topology, SDK, and native receipt tests. Full historical
 all-versions-and-deletes correctness still requires separately authorized
 real-service validation.
 
+Processing inactivity is independent of renewal. Each acquisition stores a
+processing deadline: ten minutes for `EveryBatch`, or twice the owner's coalescing
+interval. Acknowledged nonempty batches refresh the local last-processed time and
+deadline; existing lease writes publish them without advancing pending checkpoints.
+Idle reads, no demand, and retry delays do not refresh processing activity.
+Other workers use the stored deadline, and new acquisitions receive a fresh grace
+period. Activity publication can lag processing until the next write. Legacy
+leases lacking this metadata retain renewal-based expiry until reacquired.
+Drain/upgrade all workers together so old writers do not erase activity fields.
+
+The SDK callback context exposes an optional shared handle to the batch-read
+diagnostics. Retaining it does not retain payloads or eagerly serialize diagnostics.
+Errors preserve available operation diagnostics; native completions already carry
+the corresponding read-only diagnostic handle. No FFI log-forwarding bridge is
+required.
+
 Lease maintenance uses a single 60-second expiration budget, independent of
 feed poll delay. Renewal targets one third of that budget since the last
 successful lease write, including checkpoints; acquisition checks use one sixth.
@@ -332,6 +405,33 @@ process-crash recovery, or admission fairness. Local versions use the in-memory
 emulator. The live versions remain ignored unless explicitly selected and
 require the existing isolated source/lease container opt-ins. Compiling these
 tests is not evidence of a real-service run.
+
+### Java processor unit-test parity
+
+The parity pass uses Java commit `903b47a8b4e6c547a003b48e2a9eb8419ebd1b5f`:
+the common, EPK-based, and legacy partition-ID
+[processor unit suites](https://github.com/Azure/azure-sdk-for-java/tree/903b47a8b4e6c547a003b48e2a9eb8419ebd1b5f/sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/implementation/changefeed),
+plus `ServiceItemLeaseTests` and `ChangeFeedProcessorItemSerializerTest`.
+Ports test contract outcomes through existing in-memory and fault-injection
+helpers rather than reproducing Java's class structure or mock call counts.
+
+| Java contract | Rust coverage disposition |
+| --- | --- |
+| Bootstrap completion, missing leases, and incompatible feed modes | Existing bootstrap and restart-verification tests; no duplicate ports. |
+| Unowned leases with competing workers; attempting all selected acquisitions | Added one-turn selection and acquisition-failure isolation checks. Java's configurable multi-acquire rate is not a Rust option. |
+| Lease serialization | Added exact schema-1 serialization and independent deserialization fixtures. Deferred checkpoints and runtime clocks must not become durable fields. Java's lease wire schema is not imported. |
+| Unchanged idle continuation | Added repeated idle-read checkpoint-write checks in both modes and checkpoint policies. Existing tests cover changed progress and callback acknowledgment barriers. |
+| Feed-read and renewal errors | Added preservation/release checks and pending-receipt cancellation. The feed-read failure is injected, not a test of Java exception types or actual corrupt service payloads. |
+| Split on first poll; physical children extending beyond a lease slice | Added saved-progress fencing and exact child-range/token projection checks. Existing tests cover partial creation, competing owners, and merged slice progress. |
+| Fresh and resumed feed request headers | Added observed wire-format-header assertions in both modes, with actual resumed delivery. |
+| Create, replace, delete, and TTL item metadata | Existing SDK envelope deserialization tests; no duplicate getter or round-trip tests. |
+
+Java's no-progress watchdog, legacy Java lease migrations, per-range throughput
+division, and constructor-only checks are not ported. Rust has no implicit
+callback timeout and implements its own lease schema and per-lease delivery
+contract. Like Java, it deletes completed split parents and retains logical
+leases across merges. These are local tests, not evidence of
+real-service full-fidelity history, timing, or throughput behavior.
 
 ### Running a real-account processor split test
 

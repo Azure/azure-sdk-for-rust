@@ -8,8 +8,8 @@ use azure_core::{
 use azure_data_cosmos::{
     models::ChangeFeedItem,
     options::{ChangeFeedMode, Region},
-    AccountReference, ChangeFeedProcessorBuilder, ContainerClient, CosmosClientBuilder, FeedScope,
-    RoutingStrategy,
+    AccountReference, ChangeFeedProcessorBuilder, ContainerClient, CosmosClient,
+    CosmosClientBuilder, FeedScope, RoutingStrategy,
 };
 use futures::TryStreamExt;
 use serde_json::Value;
@@ -23,6 +23,8 @@ type TestResult<T = ()> = Result<T, Box<dyn Error>>;
 
 #[path = "change_feed_processor/backlog.rs"]
 mod backlog;
+#[path = "change_feed_processor/scheduled.rs"]
+mod scheduled;
 #[path = "change_feed_processor/workload.rs"]
 mod workload;
 
@@ -116,6 +118,14 @@ async fn exercise_start(
 }
 
 async fn live_containers() -> TestResult<(ContainerClient, ContainerClient)> {
+    let (client, database) = live_client().await?;
+    let database = client.database_client(database);
+    let source = database.container_client("source", None).await?;
+    let leases = database.container_client("leases", None).await?;
+    Ok((source, leases))
+}
+
+async fn live_client() -> TestResult<(CosmosClient, String)> {
     if std::env::var("COSMOS_POLLING_ALLOW_LIVE")? != "true" {
         return Err(io::Error::other("Live polling requires separate explicit opt-in.").into());
     }
@@ -144,10 +154,7 @@ async fn live_containers() -> TestResult<(ContainerClient, ContainerClient)> {
             RoutingStrategy::ProximityTo(Region::CENTRAL_US),
         )
         .await?;
-    let database = client.database_client(database);
-    let source = database.container_client("source", None).await?;
-    let leases = database.container_client("leases", None).await?;
-    Ok((source, leases))
+    Ok((client, database))
 }
 
 #[tokio::test]

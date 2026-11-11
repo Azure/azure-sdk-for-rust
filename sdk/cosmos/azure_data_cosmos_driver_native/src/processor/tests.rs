@@ -39,6 +39,10 @@ struct Fixture {
 
 impl Fixture {
     fn new() -> Self {
+        Self::with_capacity(1)
+    }
+
+    fn with_capacity(capacity: u32) -> Self {
         let (runtime, driver) = fixture::create(true).unwrap();
         let rt = RuntimeContext::inner_arc(runtime).unwrap();
         let dr = DriverHandle::inner_arc(driver).unwrap();
@@ -59,7 +63,7 @@ impl Fixture {
             driver,
             source: ContainerRefHandle::into_raw(source),
             leases: ContainerRefHandle::into_raw(leases),
-            queue: cosmos_processor_queue_create(runtime, 1),
+            queue: cosmos_processor_queue_create(runtime, capacity),
         }
     }
 
@@ -252,6 +256,33 @@ impl Drop for Fixture {
 }
 
 #[test]
+fn concurrent_next_requests_are_admitted_and_shutdown_can_complete() {
+    let fixture = Fixture::with_capacity(2);
+    let processor = fixture.start();
+    let first = cosmos_processor_next_submit(processor, 2, ptr::null_mut());
+    let second = cosmos_processor_next_submit(processor, 3, ptr::null_mut());
+    assert!(!first.is_null());
+    assert!(!second.is_null());
+    let stop = cosmos_processor_abort_submit(processor, 4, ptr::null_mut());
+    fixture.drive(stop);
+    fixture.drive(first);
+    fixture.drive(second);
+    for _ in 0..3 {
+        let completion = fixture.receive();
+        // SAFETY: completion remains live until freed below.
+        assert_eq!(
+            unsafe { (*completion).common.status },
+            COSMOS_STATUS_SUCCESS
+        );
+        cosmos_processor_completion_free(completion);
+    }
+    for operation in [first, second, stop] {
+        cosmos_operation_handle_free(operation);
+    }
+    cosmos_processor_free(processor);
+}
+
+#[test]
 fn callback_acknowledgment_bypasses_full_data_admission() {
     let fixture = Fixture::new();
     let processor = fixture.start();
@@ -275,7 +306,7 @@ fn callback_acknowledgment_bypasses_full_data_admission() {
     assert!(duplicate_next.is_null());
     assert_eq!(
         error,
-        CosmosErrorCode::CosmosErrorCodeCursorBusy.as_status_code()
+        CosmosErrorCode::CosmosErrorCodeQueueFull.as_status_code()
     );
     let checkpoint = cosmos_processor_checkpoint_submit(receipt, 4, &mut error);
     assert!(

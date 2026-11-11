@@ -12,7 +12,11 @@ pub(super) fn select(leases: &[Lease], options: &ProcessorOptions, now: i64) -> 
         match (&lease.base.owner, lease.renewed_at) {
             (Some(owner), Some(updated))
                 if !owner.is_empty()
-                    && now.saturating_sub(updated) <= options.expiration.as_millis() as i64 =>
+                    && now.saturating_sub(updated) <= options.expiration.as_millis() as i64
+                    && (owner == &options.instance_name
+                        || lease
+                            .processing_deadline
+                            .is_none_or(|deadline| now < deadline)) =>
             {
                 *owners.entry(owner.as_str()).or_insert(0usize) += 1;
             }

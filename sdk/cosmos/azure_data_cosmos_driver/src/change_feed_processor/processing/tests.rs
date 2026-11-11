@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#[cfg(feature = "fault_injection")]
+use super::{balance, signal, supervise, SharedState};
 use super::{
     balancing, bootstrap, namespace, now_millis, ChangeFeedBatch, ChangeFeedFactoryMode,
     CheckpointPolicy, Context, Identity, Lease, ProcessingLease, Processor, ProcessorOptions,
@@ -29,14 +31,21 @@ use crate::{
     Result,
 };
 use azure_core::http::StatusCode;
+use serde_json::json;
+#[cfg(feature = "fault_injection")]
+use std::collections::BTreeSet;
 use std::{
     collections::{BTreeMap, HashSet},
+    future::Future,
     num::NonZeroU32,
     sync::Arc,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 mod checkpoints;
+#[cfg(feature = "fault_injection")]
+mod cooldown;
+mod liveness;
 mod shutdown;
 mod topology;
 mod user_agent;
@@ -235,6 +244,45 @@ async fn next(processor: &Processor) -> ChangeFeedBatch {
         .expect("processor stopped")
 }
 
+async fn poll_until<T>(processor: &Processor, completed: impl Future<Output = T>) -> T {
+    tokio::select! {
+        biased;
+        result = completed => result,
+        _ = processor.next_batch() => panic!("Unexpected delivery while waiting for idle processing"),
+    }
+}
+
+async fn pin_start(context: &Context) -> Result<()> {
+    let warm = start(
+        context,
+        context
+            .options
+            .clone()
+            .with_checkpoint_policy(CheckpointPolicy::EveryBatch),
+    )
+    .await?;
+    poll_until(
+        &warm,
+        tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                if context
+                    .list()
+                    .await
+                    .unwrap()
+                    .iter()
+                    .all(|lease| lease.base.continuation.is_some())
+                {
+                    break;
+                }
+                tokio::task::yield_now().await;
+            }
+        }),
+    )
+    .await
+    .expect("initial position");
+    warm.stop().await
+}
+
 #[tokio::test]
 async fn more_than_one_hundred_leases_deliver_without_a_shared_batch_cap() -> Result<()> {
     const LEASE_COUNT: u32 = 128;
@@ -390,6 +438,8 @@ fn leases(owners: &[Option<&str>]) -> Vec<Lease> {
             },
             incarnation: Some(index.to_string()),
             renewed_at: Some(1000),
+            last_processed_at: None,
+            processing_deadline: None,
             children: None,
             renewed: None,
             split_complete: false,
@@ -422,6 +472,228 @@ fn donor_threshold_does_not_oscillate_uneven_distribution() {
     let all = leases(&[Some("a"), Some("a"), Some("a"), Some("b"), Some("b")]);
     assert!(balancing::select(&all, &options("b"), 1000).is_empty());
     assert_eq!(balancing::select(&all, &options("c"), 1000).len(), 1);
+}
+
+#[test]
+fn unowned_leases_take_one_turn_before_stealing_from_live_workers() {
+    let all = leases(&[None, None, None, Some("a"), Some("a"), Some("b"), Some("b")]);
+    let selected = balancing::select(&all, &options("new-worker"), 1000);
+    assert_eq!(selected.len(), 1);
+    assert!(
+        selected[0] < 3,
+        "must choose an unowned lease, not steal from a live owner"
+    );
+}
+
+#[test]
+fn lease_serialization_excludes_unpersisted_progress() -> Result<()> {
+    for (mode, wire_mode) in [
+        (ChangeFeedFactoryMode::Incremental, "latestVersion"),
+        (ChangeFeedFactoryMode::FullFidelity, "allVersionsAndDeletes"),
+    ] {
+        let mut lease = leases(&[Some("worker")]).remove(0);
+        lease.base.record.workload.mode = mode;
+        lease.base.continuation = Some(ContinuationToken::from_string("durable".into()));
+        lease.renewed = Some(Instant::now());
+        lease.acknowledge(ContinuationToken::from_string("unpersisted".into()), 7);
+        assert_eq!(
+            serde_json::to_value(&lease)?,
+            json!({
+                "id": "0",
+                "workload": {
+                    "version": 1, "account": "account", "containerRid": "rid",
+                    "processorName": "workload", "mode": wire_mode
+                },
+                "ttl": -1,
+                "range": {
+                    "Range": {"min": "", "max": "FF", "isMinInclusive": true, "isMaxInclusive": false}
+                },
+                "owner": "worker",
+                "continuation": "durable",
+                "incarnation": "0",
+                "renewed_at": 1000,
+                "split_complete": false
+            })
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn original_schema_lease_deserializes_without_runtime_progress() -> Result<()> {
+    let lease: Lease = serde_json::from_str(
+        r#"{
+            "id": "original-lease",
+            "workload": {
+                "version": 1, "account": "account", "containerRid": "rid",
+                "processorName": "workload", "mode": "allVersionsAndDeletes"
+            },
+            "ttl": -1,
+            "range": {
+                "Range": {"min": "", "max": "FF", "isMinInclusive": true, "isMaxInclusive": false}
+            },
+            "continuation": "saved-before-upgrade"
+        }"#,
+    )?;
+    assert_eq!(lease.base.record.id, "original-lease");
+    assert_eq!(
+        lease.base.record.workload.mode,
+        ChangeFeedFactoryMode::FullFidelity
+    );
+    assert_eq!(lease.base.range, FeedRange::full());
+    assert_eq!(
+        lease
+            .base
+            .continuation
+            .as_ref()
+            .map(ContinuationToken::as_str),
+        Some("saved-before-upgrade")
+    );
+    assert!(lease.base.owner.is_none());
+    assert!(lease.incarnation.is_none());
+    assert!(lease.renewed_at.is_none());
+    assert!(lease.renewed.is_none());
+    assert!(lease.children.is_none());
+    assert!(!lease.split_complete);
+    assert!(lease.pending.is_none());
+    Ok(())
+}
+
+#[cfg(feature = "fault_injection")]
+#[tokio::test]
+async fn acquisition_failure_does_not_skip_other_selected_leases() -> Result<()> {
+    let (context, rule) =
+        fault_fixture(FaultOperationType::ReplaceItem, StatusCode::BadRequest, 1).await?;
+    let roots = context.list().await?;
+    let expected: BTreeSet<_> = roots
+        .iter()
+        .map(|lease| lease.base.record.id.clone())
+        .collect();
+    let state = Arc::new(SharedState::default());
+    let (_stop, stopping) = signal();
+    let (_force, forced) = signal();
+    rule.enable();
+    let mut acquired = balance(
+        context.clone(),
+        state.clone(),
+        Default::default(),
+        Duration::ZERO,
+        stopping.clone(),
+        forced.clone(),
+    )
+    .await;
+    assert_eq!(rule.hit_count(), 1);
+    assert_eq!(acquired.len(), roots.len() - 1);
+    let owned = acquired
+        .iter()
+        .map(|lease| lease.value.base.record.id.clone())
+        .collect();
+    let recovered = balance(
+        context.clone(),
+        state,
+        owned,
+        Duration::ZERO,
+        stopping,
+        forced,
+    )
+    .await;
+    assert_eq!(recovered.len(), 1);
+    acquired.extend(recovered);
+    assert_eq!(
+        acquired
+            .iter()
+            .map(|lease| lease.value.base.record.id.clone())
+            .collect::<BTreeSet<_>>(),
+        expected
+    );
+    assert_eq!(acquired.len(), roots.len());
+    for lease in &mut acquired {
+        context.update(lease, Update::Release).await?;
+    }
+    Ok(())
+}
+
+#[cfg(feature = "fault_injection")]
+#[tokio::test]
+async fn feed_read_failure_releases_without_saving_progress_or_retiring() -> Result<()> {
+    let (context, rule) = fault_fixture(
+        FaultOperationType::ChangeFeedItem,
+        StatusCode::BadRequest,
+        1,
+    )
+    .await?;
+    let root = context.list().await?.remove(0);
+    let mut owned = context.acquire(&root).await?;
+    let checkpoint = context.checkpoint(&owned.value, &owned.value.base.range)?;
+    context
+        .update(&mut owned, Update::Checkpoint(&checkpoint))
+        .await?;
+    let state = Arc::new(SharedState::default());
+    let (_stop, stopping) = signal();
+    let (_force, forced) = signal();
+    rule.enable();
+    tokio::time::timeout(Duration::from_secs(5), async {
+        tokio::select! {
+            () = supervise(context.clone(), state.clone(), owned, stopping, forced) => {},
+            _ = state.distributor.next_batch() => panic!("Faulted feed unexpectedly delivered"),
+        }
+    })
+    .await
+    .unwrap();
+    assert_eq!(rule.hit_count(), 1);
+    assert!(futures::poll!(Box::pin(state.distributor.next_batch())).is_pending());
+    let stored = context
+        .store()
+        .read::<Lease>(&root.base.record.id)
+        .await?
+        .unwrap()
+        .value;
+    assert_eq!(stored.base.continuation, Some(checkpoint));
+    assert!(stored.base.owner.is_none());
+    assert!(stored.children.is_none());
+    assert!(!stored.split_complete);
+    Ok(())
+}
+
+#[cfg(feature = "fault_injection")]
+#[tokio::test]
+async fn renewal_not_found_cancels_pending_receipt_and_preserves_progress() -> Result<()> {
+    let (context, rule) =
+        fault_fixture(FaultOperationType::ReplaceItem, StatusCode::NotFound, 1).await?;
+    let roots = context.list().await?;
+    let ranges: Vec<_> = roots.iter().map(|lease| lease.base.range.clone()).collect();
+    let keys = topology::keys(&ranges);
+    topology::publish(&context, &keys[..1], 0..1, &mut Default::default()).await?;
+    let owned = context.acquire(&roots[0]).await?;
+    let id = owned.value.base.record.id.clone();
+    let state = Arc::new(SharedState::default());
+    let (_stop, stopping) = signal();
+    let (_force, forced) = signal();
+    tokio::time::timeout(Duration::from_secs(5), async {
+        let observing = async {
+            let (_, _, receipt) = state.distributor.next_batch().await.unwrap().into_parts();
+            rule.enable();
+            receipt.cancelled().await;
+            assert!(receipt
+                .checkpoint()
+                .await
+                .unwrap_err()
+                .status()
+                .is_precondition_failed());
+        };
+        futures::join!(
+            supervise(context.clone(), state.clone(), owned, stopping, forced),
+            observing,
+        );
+    })
+    .await
+    .unwrap();
+    assert_eq!(rule.hit_count(), 1);
+    let saved = context.store().read::<Lease>(&id).await?.unwrap().value;
+    assert!(saved.base.continuation.is_none());
+    assert!(saved.base.owner.is_none());
+    assert!(saved.children.is_none());
+    Ok(())
 }
 
 #[tokio::test]
@@ -871,15 +1143,18 @@ async fn now_start_pins_idle_position_before_new_changes() -> Result<()> {
         options("first").with_start(ChangeFeedStartFrom::Now),
     )
     .await?;
-    tokio::time::timeout(Duration::from_secs(5), async {
-        loop {
-            let all = context.list().await.unwrap();
-            if all.iter().all(|lease| lease.base.continuation.is_some()) {
-                break;
+    poll_until(
+        &processor,
+        tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                let all = context.list().await.unwrap();
+                if all.iter().all(|lease| lease.base.continuation.is_some()) {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(5)).await;
             }
-            tokio::time::sleep(Duration::from_millis(5)).await;
-        }
-    })
+        }),
+    )
     .await
     .unwrap();
     assert!(

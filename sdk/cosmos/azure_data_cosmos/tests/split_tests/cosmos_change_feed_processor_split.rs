@@ -363,17 +363,14 @@ async fn exercise(
             let all = records(leases).await?;
             let active: Vec<_> = all.iter().filter(|record| active(record)).collect();
             let owners: BTreeSet<_> = active.iter().filter_map(|record| record["owner"].as_str()).collect();
-            let ready = all.len() == 3 && active.len() == 2
+            let ready = all.len() == 2 && active.len() == 2
+                && all.iter().all(|record| record["id"] != parent_id)
                 && owners == BTreeSet::from(["host-a", "host-b"])
                 && active.iter().all(|record| record["continuation"].is_string());
             Ok(ready.then_some(all))
         }).await?;
-        let parent = all.iter().find(|record| record["id"] == parent_id).ok_or("Retired parent is missing.")?;
-        ensure(parent["owner"].is_null() && parent["continuation"].is_string(), "Parent was not retired with durable progress.")?;
-        ensure(parent["workload"] == initial[0]["workload"], "Split changed workload identity.")?;
-        let mut children: Vec<FeedRange> = serde_json::from_value(parent["children"].clone())?;
-        children.sort_by(|left, right| left.min_inclusive().cmp(right.min_inclusive()));
-        ensure(children == physical, "Retired parent children do not exactly cover the new physical topology.")?;
+        ensure(all.iter().all(|record| record["id"] != parent_id), "Completed split parent was not deleted.")?;
+        ensure(all.iter().all(|record| record["workload"] == initial[0]["workload"]), "Split changed workload identity.")?;
         let mut lease_ranges: Vec<FeedRange> = all.iter().filter(|record| active(record))
             .map(|record| serde_json::from_value(record["range"].clone())).collect::<Result<_, _>>()?;
         lease_ranges.sort_by(|left, right| left.min_inclusive().cmp(right.min_inclusive()));

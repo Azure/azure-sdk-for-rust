@@ -4,6 +4,9 @@
 
 ### Features Added
 
+- Added `CheckpointPolicy::coalesced()` for five-minute checkpoint coalescing; idle reads no longer trigger coalesced persistence.
+- Processor reads now defer throttled acquisitions without blocking other eligible leases, preserve retry budgets across turns, and finish the final cooldown before reporting exhaustion and releasing ownership.
+- Added `ProcessorOptions::with_error_observer()` for observing background coordination and lease-processing failures without changing recovery.
 - Added coalesced checkpoint policies and `BatchReceipt::acknowledge()` for deferred persistence of successful batches; `checkpoint()` remains a durable barrier and renewal schedules are unchanged.
 - Added `change_feed_processor::Processor` with equal lease balancing, renewal, and schema-agnostic batch receipts that gate durable checkpoints and subsequent polls.
 - Added automatic online processor split recovery with range-local child creation, fenced parent retirement, resumable incomplete transitions, independent merge checkpoints, and balanced child acquisition. ([#5476](https://github.com/Azure/azure-sdk-for-rust/pull/5476))
@@ -13,6 +16,9 @@
 
 ### Breaking Changes
 
+- Lease balancing now considers processing inactivity using a persisted owner deadline; acquisition grants a fresh grace period, and existing lease writes publish activity without advancing checkpoints.
+- Completed split parent leases are now deleted after replacement leases are established; restart verification preserves descendant coverage. Drain and upgrade all workers together to avoid older versions recreating deleted parents.
+- Processor read turns, including planning, are now limited to five seconds or a shorter configured operation deadline; callback duration is unchanged.
 - Renamed `change_feed_processor::Batch` to `change_feed_processor::ChangeFeedBatch` to distinguish processor deliveries from transactional batches.
 - `Processor::stop()` now drains issued receipts and returns shutdown errors; use `abort()` or `request_stop()` for forced cancellation. ([#5477](https://github.com/Azure/azure-sdk-for-rust/pull/5477))
 - Updated `ProcessorOptions::new()` to accept `ChangeFeedFactoryMode` and workload/worker names directly. ([#5474](https://github.com/Azure/azure-sdk-for-rust/pull/5474))

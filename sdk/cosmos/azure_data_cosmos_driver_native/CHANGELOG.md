@@ -10,6 +10,7 @@
 
 ### Breaking Changes
 
+- Processor leases now permit takeover after processing inactivity, and idle reads no longer flush coalesced checkpoints; the processor ABI is unchanged.
 - Expanded `cosmos_driver_options_config_v2_t`; native hosts must rebuild against the 0.3.0 header and library. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
 
 ### Bugs Fixed

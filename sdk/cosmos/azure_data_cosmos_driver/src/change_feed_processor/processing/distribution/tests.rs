@@ -1,27 +1,27 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{BatchDistributor, LeaseSession};
+use super::{AcquisitionDelivery, BatchDistributor, ReadDemand};
 use crate::{
     change_feed_processor::processing::{Acknowledgment, BatchReceipt, ChangeFeedBatch},
     diagnostics::DiagnosticsContextBuilder,
     models::{ActivityId, CosmosResponse, CosmosResponseHeaders, CosmosStatus},
     options::DiagnosticsOptions,
+    Result,
 };
 use azure_core::http::StatusCode;
 use futures::{
     channel::oneshot,
-    future,
+    future::{self, BoxFuture},
     task::{waker_ref, ArcWake},
     FutureExt,
 };
 use std::{
-    future::Future,
     sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
     },
-    task::{Context, Poll},
+    task::Context,
 };
 
 #[derive(Default)]
@@ -59,277 +59,318 @@ fn delivery(
     (response, receipt, received)
 }
 
-fn publish(session: &LeaseSession, value: &str) -> oneshot::Receiver<Acknowledgment> {
+fn acquire(distributor: &Arc<BatchDistributor>, lease: &str) -> AcquisitionDelivery {
+    distributor
+        .acquire(lease.into(), Some("incarnation".into()))
+        .unwrap()
+}
+
+fn waiting(session: &AcquisitionDelivery) -> BoxFuture<'_, Result<Option<ReadDemand>>> {
+    let mut waiting = session.wait_for_demand().boxed();
+    assert!(waiting.as_mut().now_or_never().is_none());
+    waiting
+}
+
+fn receive(distributor: &Arc<BatchDistributor>) -> BoxFuture<'static, Option<ChangeFeedBatch>> {
+    let distributor = distributor.clone();
+    async move { distributor.next_batch().await }.boxed()
+}
+
+fn authorize(
+    session: &AcquisitionDelivery,
+) -> (ReadDemand, BoxFuture<'static, Option<ChangeFeedBatch>>) {
+    let waiting = waiting(session);
+    let mut receiving = receive(&session.distributor);
+    assert!(receiving.as_mut().now_or_never().is_none());
+    let demand = waiting.now_or_never().unwrap().unwrap().unwrap();
+    (demand, receiving)
+}
+
+fn publish(
+    session: &AcquisitionDelivery,
+    demand: ReadDemand,
+    value: &str,
+) -> oneshot::Receiver<Acknowledgment> {
     let (response, receipt, received) = delivery(value);
-    assert!(session.deliver(response, receipt).unwrap());
+    assert!(session.deliver(demand, response, receipt).unwrap());
     received
 }
 
-fn next(distributor: &BatchDistributor) -> ChangeFeedBatch {
-    distributor
-        .next_batch()
-        .now_or_never()
-        .expect("ready session")
-        .expect("open distributor")
-}
-
-fn acknowledge(batch: ChangeFeedBatch, mut received: oneshot::Receiver<Acknowledgment>) {
+fn acknowledge(
+    session: &AcquisitionDelivery,
+    batch: ChangeFeedBatch,
+    mut received: oneshot::Receiver<Acknowledgment>,
+) {
     assert!(received.try_recv().unwrap().is_none());
     let (_, _, receipt) = batch.into_parts();
-    let mut saving = Box::pin(receipt.checkpoint());
+    let mut saving = receipt.checkpoint().boxed();
     assert!(saving.as_mut().now_or_never().is_none());
     let acknowledgment = received
         .try_recv()
         .unwrap()
         .expect("acknowledgment submitted");
+    session.acknowledged().unwrap();
     acknowledgment.result.send(Ok(())).unwrap();
-    saving
-        .now_or_never()
-        .expect("checkpoint result delivered")
-        .unwrap();
+    saving.now_or_never().unwrap().unwrap();
 }
 
 #[test]
-fn publication_wakes_waiter_and_waiting_cancellation_keeps_batch() {
+fn acquisition_waits_for_demand_and_idle_reads_rotate() {
     let distributor = Arc::new(BatchDistributor::default());
-    let session = distributor
-        .register("lease".into(), Some("first".into()))
-        .unwrap();
+    let a = acquire(&distributor, "a");
+    let b = acquire(&distributor, "b");
+    let mut a_waiting = waiting(&a);
+    let mut b_waiting = waiting(&b);
+    assert!(a_waiting.as_mut().now_or_never().is_none());
+    assert!(b_waiting.as_mut().now_or_never().is_none());
+    let mut receiving = receive(&distributor);
+    assert!(receiving.as_mut().now_or_never().is_none());
+    let demand = a_waiting.as_mut().now_or_never().unwrap().unwrap().unwrap();
+    assert!(b_waiting.as_mut().now_or_never().is_none());
+    drop(demand);
+    let mut a_again = waiting(&a);
+    assert!(receiving.as_mut().now_or_never().is_none());
+    let demand = b_waiting.as_mut().now_or_never().unwrap().unwrap().unwrap();
+    assert!(a_again.as_mut().now_or_never().is_none());
+    let received = publish(&b, demand, "b");
+    let batch = receiving.now_or_never().unwrap().unwrap();
+    assert_eq!(batch.lease_token, "b");
+    acknowledge(&b, batch, received);
+    assert!(a_again.as_mut().now_or_never().is_none());
+}
+
+#[test]
+fn concurrent_receives_authorize_only_the_requested_parallelism() {
+    let distributor = Arc::new(BatchDistributor::default());
+    let a = acquire(&distributor, "a");
+    let b = acquire(&distributor, "b");
+    let c = acquire(&distributor, "c");
+    let a_waiting = waiting(&a);
+    let b_waiting = waiting(&b);
+    let mut c_waiting = waiting(&c);
+    let mut first = receive(&distributor);
+    let mut second = receive(&distributor);
+    assert!(first.as_mut().now_or_never().is_none());
+    assert!(second.as_mut().now_or_never().is_none());
+    let a_demand = a_waiting.now_or_never().unwrap().unwrap().unwrap();
+    let b_demand = b_waiting.now_or_never().unwrap().unwrap().unwrap();
+    assert!(c_waiting.as_mut().now_or_never().is_none());
+    let received = publish(&b, b_demand, "b");
+    assert!(first.as_mut().now_or_never().is_none());
+    let batch = second.now_or_never().unwrap().unwrap();
+    assert_eq!(batch.lease_token, "b");
+    acknowledge(&b, batch, received);
+    assert!(c_waiting.as_mut().now_or_never().is_none());
+    let received = publish(&a, a_demand, "a");
+    acknowledge(&a, first.now_or_never().unwrap().unwrap(), received);
+    assert!(c_waiting.as_mut().now_or_never().is_none());
+}
+
+#[test]
+fn response_wakes_only_its_requester_and_cannot_be_taken_by_another_receive() {
+    let distributor = Arc::new(BatchDistributor::default());
+    let session = acquire(&distributor, "lease");
+    let (demand, mut receiving) = authorize(&session);
     let wakes = Arc::new(Wakes::default());
     let waker = waker_ref(&wakes);
     let mut cx = Context::from_waker(&waker);
-    let mut waiting = Box::pin(distributor.next_batch());
-    assert!(waiting.as_mut().poll(&mut cx).is_pending());
-    let received = publish(&session, "queued");
-    assert_eq!(wakes.0.load(Ordering::SeqCst), 1);
-    drop(waiting);
-    let batch = next(&distributor);
-    assert_eq!(batch.response.body_bytes(), b"queued");
-    acknowledge(batch, received);
-    assert!(distributor.next_batch().now_or_never().is_none());
+    assert!(receiving.as_mut().poll(&mut cx).is_pending());
+    let received = publish(&session, demand, "requested");
+    assert!(wakes.0.load(Ordering::SeqCst) > 0);
+    assert!(receive(&distributor).now_or_never().is_none());
+    let batch = receiving.now_or_never().unwrap().unwrap();
+    assert_eq!(batch.response.body_bytes(), b"requested");
+    acknowledge(&session, batch, received);
 }
 
 #[test]
-fn ready_sessions_take_turns_without_waiting_for_idle_sessions() {
+fn cancellation_after_response_transfer_drops_the_unclaimed_batch() {
     let distributor = Arc::new(BatchDistributor::default());
-    let a = distributor.register("a".into(), Some("a1".into())).unwrap();
-    let b = distributor.register("b".into(), Some("b1".into())).unwrap();
-    let c = distributor.register("c".into(), Some("c1".into())).unwrap();
-    let _idle = distributor
-        .register("idle".into(), Some("i1".into()))
-        .unwrap();
-    let a1 = publish(&a, "a1");
-    let b1 = publish(&b, "b1");
-    let c1 = publish(&c, "c1");
-    let batch = next(&distributor);
-    assert_eq!(batch.lease_token, "a");
-    acknowledge(batch, a1);
-    let a2 = publish(&a, "a2");
-
-    for (expected, received) in [("b", b1), ("c", c1), ("a", a2)] {
-        let batch = next(&distributor);
-        assert_eq!(batch.lease_token, expected);
-        acknowledge(batch, received);
-    }
-    assert!(distributor.next_batch().now_or_never().is_none());
+    let session = acquire(&distributor, "lease");
+    let (demand, receiving) = authorize(&session);
+    let received = publish(&session, demand, "unclaimed");
+    drop(receiving);
+    assert!(received.now_or_never().unwrap().is_err());
+    assert!(receive(&distributor).now_or_never().is_none());
 }
 
 #[test]
-fn full_mailbox_rejects_duplicate_publication_without_losing_first_batch() {
+fn response_after_receive_cancellation_is_rejected_without_buffering() {
     let distributor = Arc::new(BatchDistributor::default());
-    let a = distributor.register("a".into(), Some("a1".into())).unwrap();
-    let b = distributor.register("b".into(), Some("b1".into())).unwrap();
-    let first = publish(&a, "first");
-    let (response, receipt, rejected) = delivery("second");
+    let session = acquire(&distributor, "lease");
+    let (demand, receiving) = authorize(&session);
+    drop(receiving);
+    assert!(demand.is_canceled());
+    let (response, receipt, received) = delivery("unclaimed");
     assert_eq!(
-        a.deliver(response, receipt)
+        session
+            .deliver(demand, response, receipt)
             .unwrap_err()
             .status()
             .status_code(),
-        StatusCode::Conflict,
+        StatusCode::Conflict
     );
-    assert!(rejected.now_or_never().unwrap().is_err());
-    let other = publish(&b, "other");
-    assert_eq!(distributor.registry().ready.len(), 2);
-    let batch = next(&distributor);
-    assert_eq!(batch.response.body_bytes(), b"first");
-    acknowledge(batch, first);
-    let batch = next(&distributor);
-    assert_eq!(batch.response.body_bytes(), b"other");
-    acknowledge(batch, other);
-    assert!(distributor.next_batch().now_or_never().is_none());
+    assert!(received.now_or_never().unwrap().is_err());
+    assert!(session
+        .acknowledged()
+        .unwrap_err()
+        .status()
+        .is_precondition_failed());
+    assert!(receive(&distributor).now_or_never().is_none());
 }
 
 #[test]
-fn canceled_producer_is_skipped_without_blocking_another_session() {
+fn canceled_demand_is_visible_before_a_read_starts() {
     let distributor = Arc::new(BatchDistributor::default());
-    let a = distributor.register("a".into(), Some("a1".into())).unwrap();
-    let b = distributor.register("b".into(), Some("b1".into())).unwrap();
-    drop(publish(&a, "canceled"));
-    let received = publish(&b, "valid");
-    let batch = next(&distributor);
-    assert_eq!(batch.lease_token, "b");
-    acknowledge(batch, received);
-    assert!(distributor.next_batch().now_or_never().is_none());
+    let session = acquire(&distributor, "lease");
+    let (demand, receiving) = authorize(&session);
+    assert!(!demand.is_canceled());
+    drop(receiving);
+    assert!(demand.is_canceled());
+    drop(demand);
+    let mut waiting = waiting(&session);
+    assert!(waiting.as_mut().now_or_never().is_none());
 }
 
 #[test]
-fn retirement_discards_only_its_mailbox_and_empty_registry_stays_open() {
+fn delivery_requires_demand_and_the_previous_acknowledgment() {
     let distributor = Arc::new(BatchDistributor::default());
-    assert!(distributor.next_batch().now_or_never().is_none());
-    let a = distributor.register("a".into(), Some("a1".into())).unwrap();
-    let b = distributor.register("b".into(), Some("b1".into())).unwrap();
-    let retired = publish(&a, "retired");
-    let retained = publish(&b, "retained");
-    drop(a);
-    assert!(retired.now_or_never().unwrap().is_err());
-    let batch = next(&distributor);
-    assert_eq!(batch.lease_token, "b");
-    acknowledge(batch, retained);
-    drop(b);
-    assert!(distributor.registry().sessions.is_empty());
-    assert!(distributor.registry().ready.is_empty());
-    assert!(distributor.is_running());
-    assert!(distributor.next_batch().now_or_never().is_none());
-
-    let child = distributor
-        .register("child".into(), Some("child1".into()))
-        .unwrap();
-    let received = publish(&child, "successor");
-    let batch = next(&distributor);
-    assert_eq!(batch.response.body_bytes(), b"successor");
-    acknowledge(batch, received);
-}
-
-#[test]
-fn stale_session_cannot_publish_to_or_retire_its_replacement() {
-    for incarnation in ["second", "first"] {
-        let distributor = Arc::new(BatchDistributor::default());
-        let old = distributor
-            .register("lease".into(), Some("first".into()))
-            .unwrap();
-        let retired = publish(&old, "old");
-        distributor.retire(&old.key, &old.mailbox);
-        assert!(retired.now_or_never().unwrap().is_err());
-        let replacement = distributor
-            .register("lease".into(), Some(incarnation.into()))
-            .unwrap();
-        let received = publish(&replacement, "replacement");
-        let (response, receipt, rejected) = delivery("stale");
-        assert!(old
-            .deliver(response, receipt)
+    let session = acquire(&distributor, "lease");
+    let (sender, _receiver) = oneshot::channel();
+    let (response, receipt, rejected) = delivery("unsolicited");
+    assert_eq!(
+        session
+            .deliver(ReadDemand { response: sender }, response, receipt)
             .unwrap_err()
             .status()
-            .is_precondition_failed());
-        assert!(rejected.now_or_never().unwrap().is_err());
-        drop(old);
-        let batch = next(&distributor);
-        assert_eq!(batch.response.body_bytes(), b"replacement");
-        acknowledge(batch, received);
-    }
-}
-
-#[test]
-fn duplicate_registration_preserves_existing_session() {
-    let distributor = Arc::new(BatchDistributor::default());
-    let session = distributor
-        .register("lease".into(), Some("first".into()))
-        .unwrap();
-    let received = publish(&session, "original");
-    let error = distributor
-        .register("lease".into(), Some("first".into()))
-        .err()
-        .unwrap();
-    assert_eq!(error.status().status_code(), StatusCode::Conflict);
-    assert!(distributor.register("other".into(), None).is_err());
-    let batch = next(&distributor);
-    assert_eq!(batch.response.body_bytes(), b"original");
-    acknowledge(batch, received);
-}
-
-#[test]
-fn graceful_shutdown_drains_ready_sessions_and_rejects_new_batches() {
-    let distributor = Arc::new(BatchDistributor::default());
-    let a = distributor.register("a".into(), Some("a1".into())).unwrap();
-    let b = distributor.register("b".into(), Some("b1".into())).unwrap();
-    let first = publish(&a, "first");
-    let second = publish(&b, "second");
-    distributor.stop_delivery(false);
-    assert!(distributor.is_running());
-    for (expected, received) in [("a", first), ("b", second)] {
-        let batch = next(&distributor);
-        assert_eq!(batch.lease_token, expected);
-        acknowledge(batch, received);
-    }
-    let (response, receipt, rejected) = delivery("late");
-    assert!(!a.deliver(response, receipt).unwrap());
+            .status_code(),
+        StatusCode::Conflict
+    );
     assert!(rejected.now_or_never().unwrap().is_err());
-    assert!(matches!(
-        distributor.next_batch().now_or_never(),
-        Some(None)
-    ));
+    let (demand, receiving) = authorize(&session);
+    let received = publish(&session, demand, "first");
+    assert!(session.wait_for_demand().now_or_never().unwrap().is_err());
+    let batch = receiving.now_or_never().unwrap().unwrap();
+    assert!(session.wait_for_demand().now_or_never().unwrap().is_err());
+    acknowledge(&session, batch, received);
+    let mut waiting = waiting(&session);
+    assert!(waiting.as_mut().now_or_never().is_none());
+}
+
+#[test]
+fn canceled_producer_is_skipped_without_blocking_another_acquisition() {
+    let distributor = Arc::new(BatchDistributor::default());
+    let a = acquire(&distributor, "a");
+    let (demand, mut receiving) = authorize(&a);
+    drop(publish(&a, demand, "canceled"));
+    let b = acquire(&distributor, "b");
+    let b_waiting = waiting(&b);
+    assert!(receiving.as_mut().now_or_never().is_none());
+    let demand = b_waiting.now_or_never().unwrap().unwrap().unwrap();
+    let received = publish(&b, demand, "valid");
+    let batch = receiving.now_or_never().unwrap().unwrap();
+    assert_eq!(batch.lease_token, "b");
+    acknowledge(&b, batch, received);
+}
+
+#[test]
+fn scheduler_does_not_retain_acquisition_state() {
+    let distributor = Arc::new(BatchDistributor::default());
+    let session = acquire(&distributor, "lease");
+    let weak = Arc::downgrade(&session.delivery);
+    drop(waiting(&session));
+    drop(session);
+    assert!(weak.upgrade().is_none());
+    assert!(distributor.scheduler().available.is_empty());
+    assert!(receive(&distributor).now_or_never().is_none());
     assert!(distributor.is_running());
-    distributor.close();
-    assert!(!distributor.is_running());
 }
 
 #[test]
-fn force_during_drain_discards_pending_mailboxes_without_reopening() {
+fn stale_demand_cannot_deliver_acknowledge_or_retire_a_replacement() {
     let distributor = Arc::new(BatchDistributor::default());
-    let session = distributor.register("a".into(), Some("a1".into())).unwrap();
-    let queued = publish(&session, "pending");
-    distributor.stop_delivery(false);
-    distributor.stop_delivery(true);
-    distributor.stop_delivery(false);
-    assert!(queued.now_or_never().unwrap().is_err());
-    assert!(matches!(
-        distributor.next_batch().now_or_never(),
-        Some(None)
-    ));
-    let (response, receipt, rejected) = delivery("late");
-    assert!(!session.deliver(response, receipt).unwrap());
-    assert!(rejected.now_or_never().unwrap().is_err());
-}
-
-#[test]
-fn shutdown_wakes_waiter_and_rejects_further_sessions() {
-    let distributor = Arc::new(BatchDistributor::default());
-    let wakes = Arc::new(Wakes::default());
-    let waker = waker_ref(&wakes);
-    let mut cx = Context::from_waker(&waker);
-    let mut waiting = Box::pin(distributor.next_batch());
-    assert!(waiting.as_mut().poll(&mut cx).is_pending());
-    distributor.close();
-    assert_eq!(wakes.0.load(Ordering::SeqCst), 1);
-    assert!(matches!(waiting.as_mut().poll(&mut cx), Poll::Ready(None)));
-    assert!(!distributor.is_running());
-    assert!(distributor
-        .register("late".into(), Some("late1".into()))
-        .is_err());
-}
-
-#[test]
-fn shutdown_discards_queued_batches_and_rejects_late_publication() {
-    let distributor = Arc::new(BatchDistributor::default());
-    let session = distributor
-        .register("lease".into(), Some("first".into()))
-        .unwrap();
-    let queued = publish(&session, "queued");
-    distributor.close();
-    assert!(queued.now_or_never().unwrap().is_err());
-    assert!(matches!(
-        distributor.next_batch().now_or_never(),
-        Some(None)
-    ));
-    let (response, receipt, rejected) = delivery("late");
-    assert!(session
-        .deliver(response, receipt)
+    let old = acquire(&distributor, "lease");
+    let (stale, receiving) = authorize(&old);
+    old.retire();
+    let replacement = acquire(&distributor, "lease");
+    let (demand, replacement_receive) = authorize(&replacement);
+    let received = publish(&replacement, demand, "replacement");
+    let (response, receipt, rejected) = delivery("stale");
+    assert!(old
+        .deliver(stale, response, receipt)
+        .unwrap_err()
+        .status()
+        .is_precondition_failed());
+    assert!(old
+        .acknowledged()
         .unwrap_err()
         .status()
         .is_precondition_failed());
     assert!(rejected.now_or_never().unwrap().is_err());
-    drop(session);
+    drop(old);
+    assert!(receiving.now_or_never().is_none());
+    let batch = replacement_receive.now_or_never().unwrap().unwrap();
+    assert_eq!(batch.response.body_bytes(), b"replacement");
+    acknowledge(&replacement, batch, received);
+}
+
+#[test]
+fn graceful_shutdown_drains_transferred_batches_and_ends_demand_waits() {
+    let distributor = Arc::new(BatchDistributor::default());
+    let session = acquire(&distributor, "requested");
+    let (demand, receiving) = authorize(&session);
+    let received = publish(&session, demand, "requested");
+    let late = acquire(&distributor, "late");
+    let (demand, late_receiving) = authorize(&late);
+    let idle = acquire(&distributor, "idle");
+    let waiting = waiting(&idle);
+    distributor.stop_delivery(false);
+    assert!(waiting.now_or_never().unwrap().unwrap().is_none());
+    acknowledge(
+        &session,
+        receiving.now_or_never().unwrap().unwrap(),
+        received,
+    );
+    let (response, receipt, rejected) = delivery("late");
+    assert!(!late.deliver(demand, response, receipt).unwrap());
+    assert!(rejected.now_or_never().unwrap().is_err());
+    assert!(late_receiving.now_or_never().unwrap().is_none());
+    assert!(receive(&distributor).now_or_never().unwrap().is_none());
+    assert!(session
+        .wait_for_demand()
+        .now_or_never()
+        .unwrap()
+        .unwrap()
+        .is_none());
+    assert!(distributor.is_running());
+}
+
+#[test]
+fn force_during_drain_rejects_unclaimed_responses_without_reopening() {
+    let distributor = Arc::new(BatchDistributor::default());
+    let session = acquire(&distributor, "lease");
+    let (demand, receiving) = authorize(&session);
+    let unclaimed = publish(&session, demand, "unclaimed");
+    distributor.stop_delivery(false);
+    distributor.stop_delivery(true);
+    distributor.stop_delivery(false);
+    assert!(receiving.now_or_never().unwrap().is_none());
+    assert!(unclaimed.now_or_never().unwrap().is_err());
+}
+
+#[test]
+fn shutdown_wakes_waiters_and_rejects_late_acquisitions() {
+    let distributor = Arc::new(BatchDistributor::default());
+    let mut first = receive(&distributor);
+    let mut second = receive(&distributor);
+    assert!(first.as_mut().now_or_never().is_none());
+    assert!(second.as_mut().now_or_never().is_none());
     distributor.close();
-    assert!(distributor.registry().sessions.is_empty());
-    assert!(distributor.registry().ready.is_empty());
+    assert!(first.now_or_never().unwrap().is_none());
+    assert!(second.now_or_never().unwrap().is_none());
+    assert!(!distributor.is_running());
+    assert!(distributor
+        .acquire("late".into(), Some("late".into()))
+        .is_err());
+    assert!(distributor.acquire("unowned".into(), None).is_err());
 }

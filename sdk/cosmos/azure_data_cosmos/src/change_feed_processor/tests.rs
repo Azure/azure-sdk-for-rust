@@ -12,13 +12,21 @@ use azure_core::{
     credentials::Secret,
     http::{StatusCode, Url},
 };
-use azure_data_cosmos_driver::in_memory_emulator::{
-    InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion,
+use azure_data_cosmos_driver::{
+    driver::CosmosDriverRuntimeBuilder,
+    in_memory_emulator::{
+        ContainerConfig, InMemoryEmulatorHttpClient, RequestObserver, VirtualAccountConfig,
+        VirtualRegion,
+    },
 };
 use futures::TryStreamExt;
 use serde_json::Value;
 use std::{error::Error, num::NonZeroU32, sync::Arc, time::Duration};
 use time::OffsetDateTime;
+
+#[cfg(feature = "fault_injection")]
+mod cooldown;
+mod workers;
 
 async fn on_changes(
     _context: ChangeFeedProcessorContext,
@@ -27,15 +35,47 @@ async fn on_changes(
     Ok(())
 }
 
+async fn on_error(context: Option<ChangeFeedProcessorContext>, error: crate::CosmosError) {
+    assert_eq!(context.unwrap().lease_token(), "failed-lease");
+    assert_eq!(error.status().status_code(), StatusCode::ServiceUnavailable);
+}
+
 async fn containers() -> Result<(ContainerClient, ContainerClient), Box<dyn Error>> {
+    containers_with_partitions(1).await
+}
+
+async fn containers_with_partitions(
+    partitions: u32,
+) -> Result<(ContainerClient, ContainerClient), Box<dyn Error>> {
+    containers_with_observer(partitions, None).await
+}
+
+async fn containers_with_observer(
+    partitions: u32,
+    observer: Option<Arc<dyn RequestObserver>>,
+) -> Result<(ContainerClient, ContainerClient), Box<dyn Error>> {
+    containers_with_runtime(partitions, observer, |emulator| emulator.runtime_builder()).await
+}
+
+async fn containers_with_runtime(
+    partitions: u32,
+    observer: Option<Arc<dyn RequestObserver>>,
+    runtime: impl FnOnce(&Arc<InMemoryEmulatorHttpClient>) -> CosmosDriverRuntimeBuilder,
+) -> Result<(ContainerClient, ContainerClient), Box<dyn Error>> {
     let endpoint = "https://eastus.emulator.local";
-    let emulator = Arc::new(InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(
-        vec![VirtualRegion::new("East US", Url::parse(endpoint)?)],
-    )?));
+    let mut emulator =
+        InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(vec![VirtualRegion::new(
+            "East US",
+            Url::parse(endpoint)?,
+        )])?);
+    if let Some(observer) = observer {
+        emulator = emulator.with_request_observer(observer);
+    }
+    let emulator = Arc::new(emulator);
     let store = emulator.store();
     store.create_database("processor-tests");
     for name in ["monitored", "leases"] {
-        store.create_container(
+        store.create_container_with_config(
             "processor-tests",
             name,
             serde_json::from_value(serde_json::json!({
@@ -43,11 +83,16 @@ async fn containers() -> Result<(ContainerClient, ContainerClient), Box<dyn Erro
                 "kind": "Hash",
                 "version": 2
             }))?,
+            ContainerConfig::default().with_partition_count(if name == "monitored" {
+                partitions
+            } else {
+                1
+            }),
         );
     }
     let client = CosmosClientBuilder::new()
         .with_runtime(
-            CosmosRuntimeBuilder::from(emulator.runtime_builder())
+            CosmosRuntimeBuilder::from(runtime(&emulator))
                 .build()
                 .await?,
         )
@@ -83,7 +128,45 @@ fn assert_defaults<T, H>(builder: &ChangeFeedProcessorBuilder<T, H>) {
     );
     assert_eq!(builder.min_scale_count, 0);
     assert_eq!(builder.max_scale_count, 0);
+    assert_eq!(builder.max_concurrency, NonZeroU32::MIN);
+    assert!(builder.error_handler.is_none());
     assert!(!builder.lease_verification_on_restart_enabled);
+}
+
+async fn pin_start(
+    mode: ChangeFeedMode,
+    source: &ContainerClient,
+    leases: &ContainerClient,
+    name: &str,
+    partitions: usize,
+) -> Result<(), Box<dyn Error>> {
+    let warm = ChangeFeedProcessorBuilder::new(mode, source.clone(), leases.clone(), name, "warm")
+        .with_feed_poll_delay(Duration::from_millis(5))
+        .handle_change_feed(|_, _: Vec<ChangeFeedItem<Value>>| async {
+            panic!("source must be empty while pinning its initial position")
+        })
+        .build()?;
+    warm.start().await?;
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let records = lease_records(leases).await.unwrap();
+            let active: Vec<_> = records
+                .iter()
+                .filter(|record| record.get("range").is_some())
+                .collect();
+            if active.len() == partitions
+                && active
+                    .iter()
+                    .all(|record| record.get("continuation").is_some())
+            {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await?;
+    warm.stop().await?;
+    Ok(())
 }
 
 fn configure<T, H>(builder: ChangeFeedProcessorBuilder<T, H>) -> ChangeFeedProcessorBuilder<T, H> {
@@ -96,6 +179,8 @@ fn configure<T, H>(builder: ChangeFeedProcessorBuilder<T, H>) -> ChangeFeedProce
         .with_start_continuation(ContinuationToken::from_string("saved-position".into()))
         .with_min_scale_count(2)
         .with_max_scale_count(7)
+        .with_max_concurrency(NonZeroU32::new(3).unwrap())
+        .handle_error(on_error)
         .with_lease_verification_enabled_on_restart(true)
 }
 
@@ -139,6 +224,8 @@ async fn configuration_round_trip(mode: ChangeFeedMode) -> Result<(), Box<dyn Er
             max_item_count,
             feed_poll_delay,
             checkpoint_policy,
+            max_concurrency,
+            error_handler,
             min_scale_count,
             max_scale_count,
             lease_verification_on_restart_enabled,
@@ -167,6 +254,17 @@ async fn configuration_round_trip(mode: ChangeFeedMode) -> Result<(), Box<dyn Er
         );
         assert_eq!(min_scale_count, 2);
         assert_eq!(max_scale_count, 7);
+        assert_eq!(max_concurrency.get(), 3);
+        error_handler.unwrap()(
+            Some(ChangeFeedProcessorContext {
+                lease_token: "failed-lease".into(),
+                diagnostics: None,
+            }),
+            crate::CosmosError::builder()
+                .with_status(crate::CosmosStatus::new(StatusCode::ServiceUnavailable))
+                .build(),
+        )
+        .await;
         assert!(lease_verification_on_restart_enabled);
         let ProcessorStartFrom::Continuation(token) = start_from else {
             panic!("initial continuation was not preserved");
@@ -176,6 +274,7 @@ async fn configuration_round_trip(mode: ChangeFeedMode) -> Result<(), Box<dyn Er
         handler(
             ChangeFeedProcessorContext {
                 lease_token: "lease-token".into(),
+                diagnostics: None,
             },
             vec![serde_json::from_value(serde_json::json!({
                 "current": "order-42"

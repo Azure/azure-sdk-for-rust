@@ -3,7 +3,7 @@
 
 use super::super::CheckpointPolicy;
 use super::{
-    bootstrap, fixture_with_runtime, insert, next, start, ChangeFeedFactoryMode, Lease,
+    bootstrap, fixture_with_runtime, insert, next, poll_until, start, ChangeFeedFactoryMode, Lease,
     RequestObserver, ENDPOINT,
 };
 use crate::{
@@ -28,6 +28,8 @@ struct Observed {
     path: String,
     agent: String,
     body: Option<Value>,
+    feed: bool,
+    wire_format: Option<String>,
 }
 
 #[derive(Debug, Default)]
@@ -54,6 +56,15 @@ impl RequestObserver for Requests {
             path: request.url().path().to_owned(),
             agent,
             body,
+            feed: request
+                .headers()
+                .iter()
+                .any(|(name, _)| name.as_str() == "a-im"),
+            wire_format: request
+                .headers()
+                .iter()
+                .find(|(name, _)| name.as_str() == "x-ms-cosmos-changefeed-wire-format-version")
+                .map(|(_, value)| value.as_str().to_owned()),
         });
     }
 }
@@ -74,6 +85,55 @@ fn assert_tagged(requests: &[Observed], source_agent: &str, lease_agent: &str) {
         );
         assert!(request.agent.len() <= 255);
     }
+}
+
+#[tokio::test]
+async fn processor_wire_format_is_preserved_on_fresh_and_resumed_reads() -> Result<()> {
+    for mode in [
+        ChangeFeedFactoryMode::Incremental,
+        ChangeFeedFactoryMode::FullFidelity,
+    ] {
+        let requests = Arc::new(Requests::default());
+        let (mut context, _) =
+            super::fixture_with_observer(mode, 1, Some(requests.clone())).await?;
+        Arc::get_mut(&mut context).unwrap().options.start = ChangeFeedStartFrom::Now;
+        for (stage, id) in ["initial", "after-restart"].into_iter().enumerate() {
+            requests.take();
+            if stage == 1 {
+                insert(&context, id).await?;
+            }
+            let processor = start(&context, context.options.clone()).await?;
+            if stage == 0 {
+                poll_until(
+                    &processor,
+                    tokio::time::timeout(Duration::from_secs(5), async {
+                        while context.list().await.unwrap()[0].base.continuation.is_none() {
+                            tokio::task::yield_now().await;
+                        }
+                    }),
+                )
+                .await
+                .unwrap();
+                insert(&context, id).await?;
+            }
+            let (_, response, receipt) = next(&processor).await.into_parts();
+            let body: Value = response.into_body().into_single()?;
+            assert_eq!(body["Documents"].as_array().unwrap().len(), 1);
+            assert_eq!(body["Documents"][0]["current"]["id"], id);
+            receipt.checkpoint().await?;
+            processor.stop().await?;
+            let feed: Vec<_> = requests
+                .take()
+                .into_iter()
+                .filter(|request| request.feed)
+                .collect();
+            assert!(!feed.is_empty());
+            for request in feed {
+                assert_eq!(request.wire_format.as_deref(), Some("2021-09-15"));
+            }
+        }
+    }
+    Ok(())
 }
 
 #[tokio::test]

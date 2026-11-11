@@ -202,6 +202,7 @@ pub mod change_feed_processor {
         pub fn new<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(mode: ChangeFeedFactoryMode, processor_name: impl Into<String>, instance_name: impl Into<String>) -> Self;
         pub fn with_checkpoint_policy(self, policy: CheckpointPolicy) -> Self;
         pub fn with_continuation(self, continuation: ContinuationToken) -> Self;
+        pub fn with_error_observer<F>(self, observer: F) -> Self where F: Fn(Option<String>, crate::CosmosError) + Send + Sync + 'static;
         pub fn with_lease_counts(self, minimum: u32, maximum: u32) -> Self;
         pub fn with_lease_verification_enabled_on_restart(self, enabled: bool) -> Self;
         pub fn with_max_item_count(self, hint: MaxItemCountHint) -> Self;
@@ -214,6 +215,9 @@ pub mod change_feed_processor {
         #[default]
         EveryBatch,
         Coalesced { max_interval: std::time::Duration },
+    }
+    impl CheckpointPolicy {
+        pub fn coalesced() -> Self;
     }
 }
 pub mod diagnostics {

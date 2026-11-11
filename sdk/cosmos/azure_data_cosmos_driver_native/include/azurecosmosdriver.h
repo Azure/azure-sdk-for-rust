@@ -3099,8 +3099,12 @@ struct cosmos_operation_handle_t *cosmos_processor_start_submit(const struct cos
  *
  * `checkpoint_policy` is 0 for every batch (interval must be zero), or 1 for
  * coalescing (interval must be positive). `checkpoint_interval_ms` bounds the
- * delay before attempting persistence; observed lease-idle flushes earlier.
- * Coalescing can replay multiple successfully acknowledged batches.
+ * delay before attempting persistence; use 300000 for five minutes. Idle reads
+ * do not flush coalesced progress. Coalescing can replay acknowledged batches.
+ *
+ * Processing inactivity permits takeover after ten minutes with every-batch
+ * checkpoints, or twice the coalescing interval. Renewal and idle reads do not
+ * reset that deadline. Each acquisition starts a fresh grace period.
  *
  * All handles and request allocations must remain readable for this call.
  * Inputs are copied before returning. Use `cosmos_processor_acknowledge_submit`
@@ -3118,10 +3122,14 @@ struct cosmos_operation_handle_t *cosmos_processor_start_with_policy_submit(cons
                                                                             cosmos_status_code_t *out_pre_error);
 
 /**
- * Requests the next batch. Only one undelivered next request is allowed per processor.
+ * Requests the next batch and authorizes feed reads until one is available.
  *
- * After transfer, request further batches to process other leases concurrently.
- * The driver still permits only one unacknowledged batch for each lease.
+ * Concurrent requests control read parallelism, subject to queue data capacity.
+ * Without requests, no new feed reads start. Lease maintenance continues.
+ * Each lease still permits only one unacknowledged batch.
+ * Throttled leases yield to other eligible leases without completing this
+ * request. Read turns are bounded to five seconds or a shorter driver deadline;
+ * the submitted receive can wait longer across idle reads and cooldown waits.
  */
 struct cosmos_operation_handle_t *cosmos_processor_next_submit(const struct cosmos_processor_t *processor,
                                                                intptr_t user_data,

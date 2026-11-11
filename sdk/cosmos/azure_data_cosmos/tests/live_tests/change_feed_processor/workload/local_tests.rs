@@ -56,6 +56,13 @@ impl RequestObserver for StartRequests {
 async fn containers(
     observer: Option<Arc<StartRequests>>,
 ) -> TestResult<(ContainerClient, ContainerClient)> {
+    containers_with_partitions(observer, 3).await
+}
+
+async fn containers_with_partitions(
+    observer: Option<Arc<StartRequests>>,
+    partitions: u32,
+) -> TestResult<(ContainerClient, ContainerClient)> {
     let endpoint = "https://eastus.emulator.local";
     let emulator =
         InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(vec![VirtualRegion::new(
@@ -72,7 +79,7 @@ async fn containers(
         "mixed-workload",
         "source",
         serde_json::from_value(serde_json::json!({"paths":["/pk"],"kind":"Hash","version":2}))?,
-        ContainerConfig::default().with_partition_count(3),
+        ContainerConfig::default().with_partition_count(partitions),
     );
     let runtime = CosmosRuntimeBuilder::from(emulator.runtime_builder())
         .build()
@@ -107,6 +114,12 @@ async fn containers(
 pub(in crate::change_feed_processor) async fn workload_containers(
 ) -> TestResult<(ContainerClient, ContainerClient)> {
     containers(None).await
+}
+
+pub(in crate::change_feed_processor) async fn partitioned_workload_containers(
+    partitions: u32,
+) -> TestResult<(ContainerClient, ContainerClient)> {
+    containers_with_partitions(None, partitions).await
 }
 
 #[tokio::test]

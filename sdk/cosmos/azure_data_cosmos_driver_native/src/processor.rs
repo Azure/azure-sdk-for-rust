@@ -35,10 +35,7 @@ use std::{
     future::Future,
     num::NonZeroU32,
     panic::AssertUnwindSafe,
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc, Mutex, Weak,
-    },
+    sync::{atomic::Ordering, Arc, Mutex, Weak},
     time::Duration,
 };
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
@@ -112,7 +109,6 @@ pub struct ProcessorHandle {
 struct ProcessorInner {
     driver: Processor,
     queue: Weak<QueueInner>,
-    next_pending: AtomicBool,
 }
 
 /// A one-use processing receipt. Free without acknowledgment on callback failure.
@@ -169,7 +165,7 @@ struct Delivery {
     op: Arc<OperationInner>,
     user_data: isize,
     queue: Weak<QueueInner>,
-    admission: Option<(Arc<ProcessorInner>, bool)>,
+    admission: Option<Arc<ProcessorInner>>,
     control: bool,
 }
 
@@ -207,10 +203,7 @@ impl QueuedDelivery for Delivery {
         if let Ok(ResultData::Started(processor)) = &self.result {
             processor.driver.request_stop();
         }
-        if let Some((processor, stop)) = &self.admission {
-            if !stop {
-                processor.next_pending.store(false, Ordering::Release);
-            }
+        if let Some(processor) = &self.admission {
             processor.driver.request_stop();
         }
     }
@@ -288,11 +281,6 @@ impl Delivery {
                 _lease: lease,
             })),
         };
-        if let Some((processor, stop)) = self.admission {
-            if !stop {
-                processor.next_pending.store(false, Ordering::Release);
-            }
-        }
         Box::into_raw(Box::new(result))
     }
 }
@@ -317,7 +305,7 @@ fn pre_error(out: *mut CosmosStatusCode, code: CosmosStatusCode) {
 fn launch(
     queue: Arc<QueueInner>,
     user_data: isize,
-    admission: Option<(Arc<ProcessorInner>, bool)>,
+    admission: Option<Arc<ProcessorInner>>,
     control: bool,
     work: impl Future<Output = Result<ResultData, CosmosError>> + Send + 'static,
 ) -> *mut OperationHandle {
@@ -497,8 +485,12 @@ pub extern "C" fn cosmos_processor_start_submit(
 ///
 /// `checkpoint_policy` is 0 for every batch (interval must be zero), or 1 for
 /// coalescing (interval must be positive). `checkpoint_interval_ms` bounds the
-/// delay before attempting persistence; observed lease-idle flushes earlier.
-/// Coalescing can replay multiple successfully acknowledged batches.
+/// delay before attempting persistence; use 300000 for five minutes. Idle reads
+/// do not flush coalesced progress. Coalescing can replay acknowledged batches.
+///
+/// Processing inactivity permits takeover after ten minutes with every-batch
+/// checkpoints, or twice the coalescing interval. Renewal and idle reads do not
+/// reset that deadline. Each acquisition starts a fresh grace period.
 ///
 /// All handles and request allocations must remain readable for this call.
 /// Inputs are copied before returning. Use `cosmos_processor_acknowledge_submit`
@@ -579,7 +571,6 @@ pub extern "C" fn cosmos_processor_start_with_policy_submit(
         let processor = Arc::new(ProcessorInner {
             driver,
             queue: weak.clone(),
-            next_pending: AtomicBool::new(false),
         });
         if let Some(queue) = weak.upgrade() {
             let mut processors = queue.processors.lock_recover();
@@ -595,10 +586,14 @@ pub extern "C" fn cosmos_processor_start_with_policy_submit(
     })
 }
 
-/// Requests the next batch. Only one undelivered next request is allowed per processor.
+/// Requests the next batch and authorizes feed reads until one is available.
 ///
-/// After transfer, request further batches to process other leases concurrently.
-/// The driver still permits only one unacknowledged batch for each lease.
+/// Concurrent requests control read parallelism, subject to queue data capacity.
+/// Without requests, no new feed reads start. Lease maintenance continues.
+/// Each lease still permits only one unacknowledged batch.
+/// Throttled leases yield to other eligible leases without completing this
+/// request. Read turns are bounded to five seconds or a shorter driver deadline;
+/// the submitted receive can wait longer across idle reads and cooldown waits.
 #[no_mangle]
 pub extern "C" fn cosmos_processor_next_submit(
     processor: *const ProcessorHandle,
@@ -658,21 +653,12 @@ fn submit_processor(
             .queue
             .upgrade()
             .ok_or(CosmosErrorCode::CosmosErrorCodeQueueShutdown)?;
-        if !stop && processor.next_pending.swap(true, Ordering::AcqRel) {
-            return Err(CosmosErrorCode::CosmosErrorCodeCursorBusy);
-        }
-        let admitted = if stop {
+        if stop {
             queue.deliveries.reserve_control()
         } else {
             queue.deliveries.reserve()
-        };
-        if let Err(err) = admitted {
-            if !stop {
-                processor.next_pending.store(false, Ordering::Release);
-            }
-            return Err(err);
-        }
-        Ok(queue)
+        }?;
+        Ok::<_, CosmosErrorCode>(queue)
     };
     let queue = match prepare() {
         Ok(queue) => queue,
@@ -682,7 +668,7 @@ fn submit_processor(
         }
     };
     pre_error(out, COSMOS_STATUS_SUCCESS);
-    let admission = Some((processor.clone(), stop));
+    let admission = Some(processor.clone());
     launch(queue, user_data, admission, stop, async move {
         if stop {
             if force {

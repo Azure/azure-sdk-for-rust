@@ -3,6 +3,7 @@
 
 mod balancing;
 mod distribution;
+mod retry;
 #[cfg(all(test, feature = "__internal_in_memory_emulator"))]
 mod tests;
 mod topology;
@@ -20,7 +21,10 @@ use crate::{
             ChangeFeedProcessorBootstrapProcessingLease as ProcessingLease, SCHEMA_VERSION,
         },
         operation_options,
-        processing::distribution::{BatchDistributor, LeaseSession},
+        processing::{
+            distribution::{AcquisitionDelivery, BatchDistributor},
+            retry::ReadRetry,
+        },
     },
     driver::dataflow::split_feed_envelope,
     models::{
@@ -53,6 +57,7 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 type Signal = Shared<BoxFuture<'static, ()>>;
+type ErrorObserver = dyn Fn(Option<String>, crate::CosmosError) + Send + Sync;
 
 /// Controls persistence of successfully acknowledged change feed batches.
 ///
@@ -63,12 +68,13 @@ pub enum CheckpointPolicy {
     /// Persists each successful acknowledgment before polling the next batch.
     #[default]
     EveryBatch,
-    /// Retains acknowledged progress in memory until the lease is observed idle
-    /// or the interval since its first unpersisted acknowledgment elapses.
+    /// Retains acknowledged progress in memory until the interval since its
+    /// first unpersisted acknowledgment elapses.
     ///
     /// The interval must be positive and representable by the runtime clock.
     /// It schedules persistence, but cannot guarantee storage availability.
-    /// Graceful shutdown and topology recovery flush without waiting for it.
+    /// Idle reads do not trigger persistence. Graceful shutdown and topology
+    /// recovery flush without waiting for the interval.
     /// A crash can replay multiple successfully handled batches.
     Coalesced {
         /// Maximum time to defer attempting persistence of acknowledged progress.
@@ -77,6 +83,16 @@ pub enum CheckpointPolicy {
 }
 
 impl CheckpointPolicy {
+    /// Coalesces successful progress for up to five minutes.
+    ///
+    /// Use [`Self::Coalesced`] to select a different interval. Explicit
+    /// checkpoints and graceful cleanup can persist progress earlier.
+    pub fn coalesced() -> Self {
+        Self::Coalesced {
+            max_interval: Duration::from_secs(300),
+        }
+    }
+
     fn validate(self) -> Result<()> {
         if let Self::Coalesced { max_interval } = self {
             if max_interval.is_zero()
@@ -89,7 +105,24 @@ impl CheckpointPolicy {
                 ));
             }
         }
+        self.processing_deadline(now_millis())?;
         Ok(())
+    }
+
+    fn processing_deadline(self, now: i64) -> Result<i64> {
+        let duration = match self {
+            Self::EveryBatch => Some(Duration::from_secs(600)),
+            Self::Coalesced { max_interval } => max_interval.checked_mul(2),
+        };
+        duration
+            .and_then(|duration| i64::try_from(duration.as_nanos().div_ceil(1_000_000)).ok())
+            .and_then(|millis| now.checked_add(millis))
+            .ok_or_else(|| {
+                error(
+                    StatusCode::BadRequest,
+                    "Processing inactivity interval is not representable.",
+                )
+            })
     }
 }
 
@@ -98,6 +131,18 @@ impl CheckpointPolicy {
 /// Each acquired lease permits one outstanding batch. The consumer must
 /// acknowledge it after processing, or drop its receipt to abandon the lease.
 /// There is no shared batch-count limit across leases or processors.
+///
+/// Ordinary HTTP 429 responses defer only the affected acquisition. Retry
+/// count and wait budgets inherit the source driver's throttling options.
+/// A read turn, including planning, is bounded to five seconds or a shorter
+/// configured operation deadline. Lease maintenance continues during cooldown.
+///
+/// Other workers may also acquire a lease whose processing deadline has expired:
+/// ten minutes without an acknowledged nonempty batch with
+/// [`CheckpointPolicy::EveryBatch`], or twice the coalescing interval.
+/// Acquisition starts a fresh grace period. Idle reads, missing demand, and
+/// throttling do not refresh processing activity. Activity is published by
+/// existing lease writes, independently of checkpoint progress.
 #[derive(Clone, SafeDebug)]
 pub struct ProcessorOptions {
     mode: ChangeFeedFactoryMode,
@@ -112,6 +157,8 @@ pub struct ProcessorOptions {
     max_leases: u32,
     expiration: Duration,
     checkpoint_policy: CheckpointPolicy,
+    #[safe(false)]
+    error_observer: Option<Arc<ErrorObserver>>,
 }
 
 impl ProcessorOptions {
@@ -143,7 +190,26 @@ impl ProcessorOptions {
             max_leases: 0,
             expiration: Duration::from_secs(60),
             checkpoint_policy: CheckpointPolicy::default(),
+            error_observer: None,
         }
+    }
+
+    /// Observes background coordination and lease-processing failures.
+    ///
+    /// The first argument is the affected lease identifier, or `None` for
+    /// worker-wide failures. Startup errors are returned directly. Transient
+    /// request retries do not each produce a notification.
+    ///
+    /// This synchronous observer must return promptly without blocking. Language
+    /// adapters can forward notifications to their own bounded asynchronous
+    /// dispatcher. Observer panics are logged and do not interrupt recovery.
+    /// Replaces any previously configured observer.
+    pub fn with_error_observer<F>(mut self, observer: F) -> Self
+    where
+        F: Fn(Option<String>, crate::CosmosError) + Send + Sync + 'static,
+    {
+        self.error_observer = Some(Arc::new(observer));
+        self
     }
 
     /// Selects the initial position for leases without saved progress.
@@ -198,6 +264,9 @@ impl ProcessorOptions {
     /// Checks the persisted initial range plan and recreates missing leases on start.
     ///
     /// Disabled by default. Existing owners and checkpoints are never replaced.
+    /// Complete replacement coverage prevents recreation of deleted split parents.
+    /// Partial or overlapping replacement coverage fails verification rather
+    /// than creating an overlapping lease.
     /// This does not discover topology changes or modify bootstrap completion.
     pub fn with_lease_verification_enabled_on_restart(mut self, enabled: bool) -> Self {
         self.verify_leases_on_restart = enabled;
@@ -222,6 +291,10 @@ struct Lease {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     renewed_at: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    last_processed_at: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    processing_deadline: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     children: Option<Vec<FeedRange>>,
     #[serde(skip)]
     renewed: Option<Instant>,
@@ -240,6 +313,15 @@ struct PendingCheckpoint {
 }
 
 impl Lease {
+    fn processed(&mut self, policy: CheckpointPolicy, now: i64) -> Result<()> {
+        let now = self
+            .last_processed_at
+            .map_or(now, |previous| previous.max(now));
+        self.processing_deadline = Some(policy.processing_deadline(now)?);
+        self.last_processed_at = Some(now);
+        Ok(())
+    }
+
     fn acknowledge(&mut self, token: ContinuationToken, handled_changes: u64) {
         if let Some(pending) = &mut self.pending {
             pending.token = token;
@@ -344,11 +426,45 @@ impl Context {
             {
                 return Err(lost());
             }
+            if matches!(update, Update::Acquire)
+                && observed
+                    .processing_deadline
+                    .is_some_and(|deadline| now_millis() >= deadline)
+                && current
+                    .value
+                    .processing_deadline
+                    .is_some_and(|deadline| now_millis() < deadline)
+                && current.value.renewed_at.is_some_and(|renewed| {
+                    now_millis().saturating_sub(renewed)
+                        <= self.options.expiration.as_millis() as i64
+                })
+            {
+                return Err(error(
+                    StatusCode::PreconditionFailed,
+                    "Lease processing resumed before acquisition.",
+                ));
+            }
             current.value.pending = observed.pending.clone();
+            if !matches!(update, Update::Acquire) {
+                current.value.last_processed_at = current
+                    .value
+                    .last_processed_at
+                    .max(observed.last_processed_at);
+                current.value.processing_deadline = current
+                    .value
+                    .processing_deadline
+                    .max(observed.processing_deadline);
+            }
             match update {
                 Update::Acquire => {
                     current.value.base.owner = Some(self.options.instance_name.clone());
                     current.value.incarnation = Some(Uuid::new_v4().to_string());
+                    current.value.last_processed_at = None;
+                    current.value.processing_deadline = Some(
+                        self.options
+                            .checkpoint_policy
+                            .processing_deadline(now_millis())?,
+                    );
                 }
                 Update::Renew => {}
                 Update::Checkpoint(token) => {
@@ -607,6 +723,7 @@ struct SharedState {
     forced: AtomicBool,
     failure: StdMutex<Option<crate::CosmosError>>,
     unreleased: StdMutex<HashMap<(String, Option<String>), Lease>>,
+    error_observer: Option<Arc<ErrorObserver>>,
 }
 
 impl SharedState {
@@ -618,14 +735,27 @@ impl SharedState {
         self.distributor.stop_delivery(force);
     }
 
-    fn failed(&self, err: crate::CosmosError) {
+    fn notify(&self, lease: Option<&str>, err: crate::CosmosError) {
+        if let Some(observer) = &self.error_observer {
+            if std::panic::catch_unwind(AssertUnwindSafe(|| {
+                observer(lease.map(str::to_owned), err);
+            }))
+            .is_err()
+            {
+                tracing::error!("Processor error observer panicked");
+            }
+        }
+    }
+
+    fn failed(&self, lease: Option<&str>, err: crate::CosmosError) {
         tracing::warn!(error = %err, "Processor lease operation failed");
         if self.stopping.load(Ordering::Acquire) {
             self.failure
                 .lock()
                 .unwrap_or_else(|e| e.into_inner())
-                .get_or_insert(err);
+                .get_or_insert(err.clone());
         }
+        self.notify(lease, err);
     }
 }
 
@@ -649,7 +779,8 @@ impl Drop for Owner {
 ///
 /// Splits retire the parent lease and create independently balanced child
 /// leases from acknowledged progress. Merges retain separate EPK-slice leases
-/// and their checkpoints. Retired parent records must not be deleted.
+/// and their checkpoints. Split parents are deleted after their children are
+/// established; incomplete transitions and failed deletions are retried.
 ///
 /// Splits and merges are recovered automatically while processor instances
 /// remain running. Only the affected lease's processing session is replaced;
@@ -662,8 +793,8 @@ pub struct Processor {
 impl Processor {
     /// Bootstraps the workload and starts lease coordination.
     ///
-    /// Source and lease containers may use different drivers. Only one caller
-    /// should await [`next_batch()`](Self::next_batch) at a time. Background
+    /// Source and lease containers may use different drivers. Consumers control
+    /// feed-read concurrency through concurrent [`next_batch()`](Self::next_batch) calls. Background
     /// lease/feed failures are logged and isolated to the affected lease.
     ///
     /// # Errors
@@ -754,7 +885,10 @@ impl Processor {
         if context.options.verify_leases_on_restart {
             context.verify_leases().await?;
         }
-        let state = Arc::new(SharedState::default());
+        let state = Arc::new(SharedState {
+            error_observer: context.options.error_observer.clone(),
+            ..Default::default()
+        });
         let (stop, stopping) = signal();
         let (force, forced) = signal();
         let (done, stopped) = oneshot::channel();
@@ -779,10 +913,9 @@ impl Processor {
                 .catch_unwind()
                 .await
                 .unwrap_or_else(|_| {
-                    Err(error(
-                        StatusCode::InternalServerError,
-                        "Processor task panicked.",
-                    ))
+                    let err = error(StatusCode::InternalServerError, "Processor task panicked.");
+                    state.failed(None, err.clone());
+                    Err(err)
                 });
             state.distributor.close();
             let _ = done.send(result);
@@ -798,9 +931,22 @@ impl Processor {
 
     /// Waits for an owned batch, or returns `None` when delivery has drained.
     ///
-    /// Canceling this wait does not consume a batch. Progress from 304 responses
-    /// is handled internally without invoking application callbacks.
-    /// Ready lease sessions take turns supplying batches; an empty set of owned
+    /// Each pending call authorizes one acquisition read at a time. Idle reads
+    /// rotate through eligible acquisitions until a batch is available.
+    /// Without pending calls, no new feed reads start. Lease maintenance continues.
+    /// A throttled acquisition yields this receive to other eligible leases.
+    /// Retry-After expiry restores eligibility without starting a read.
+    ///
+    /// Read turns are bounded to five seconds or a shorter configured driver
+    /// deadline; this receive can wait longer across idle reads and cooldown waits.
+    /// On throttle-budget exhaustion, the acquisition finishes its final
+    /// cooldown, reports failure, and attempts conditional release.
+    ///
+    /// Canceling this wait discards any unclaimed response without acknowledging
+    /// its changes. A read already in flight can finish, but its batch is not
+    /// retained for a later call. A later acquisition can replay unsaved changes.
+    /// Progress from 304 responses is handled internally without callbacks.
+    /// Eligible acquisitions take turns supplying batches; an empty set of owned
     /// leases waits for future acquisitions rather than ending the stream.
     ///
     /// During graceful shutdown, continue consuming already-issued batches and
@@ -952,7 +1098,7 @@ async fn run(
         }
         .await;
         if let Err(err) = result {
-            state.failed(err);
+            state.failed(Some(&observed.base.record.id), err);
         }
     }
     match state
@@ -998,11 +1144,12 @@ async fn balance(
                 continue;
             }
             match context.store().read::<Lease>(id).await {
-                Ok(Some(parent)) if !parent.value.split_complete => acquired.push(parent),
+                Ok(Some(parent)) if parent.value.children.is_some() => acquired.push(parent),
                 Ok(Some(_)) => {}
                 Ok(None) => tracing::warn!(lease = %id, "Unfinished split parent is missing"),
                 Err(err) => {
-                    tracing::warn!(lease = %id, error = %err, "Failed to read unfinished split")
+                    tracing::warn!(lease = %id, error = %err, "Failed to read unfinished split");
+                    state.notify(Some(id), err);
                 }
             }
         }
@@ -1019,7 +1166,7 @@ async fn balance(
                 Err(err) if err.status().is_precondition_failed() => {
                     tracing::debug!(error = %err, "Lease acquisition lost a race");
                 }
-                Err(err) => state.failed(err),
+                Err(err) => state.failed(Some(&active[index].base.record.id), err),
             }
         }
         Ok::<_, crate::CosmosError>(acquired)
@@ -1028,7 +1175,7 @@ async fn balance(
     match result {
         Ok(acquired) => acquired,
         Err(err) => {
-            state.failed(err);
+            state.failed(None, err);
             Vec::new()
         }
     }
@@ -1045,12 +1192,14 @@ async fn supervise(
         if state.stopping.load(Ordering::Acquire) {
             return;
         }
+        let token = lease.value.base.record.id.clone();
         let repair = context.ensure_children(&mut lease).fuse();
         futures::pin_mut!(repair);
         futures::select! {
             result = repair => {
                 if let Err(err) = result {
                     tracing::warn!(error = %err, "Child lease creation failed; retrying on the next cycle");
+                    state.notify(Some(&token), err);
                 }
             },
             _ = stop.fuse() => {},
@@ -1061,7 +1210,7 @@ async fn supervise(
     let token = lease.value.base.record.id.clone();
     let session = state
         .distributor
-        .register(token.clone(), lease.value.incarnation.clone());
+        .acquire(token.clone(), lease.value.incarnation.clone());
     let lease = Arc::new(Mutex::new(lease));
     let (cancel, cancelled) = signal();
     let mut cancel = Some(cancel);
@@ -1098,7 +1247,7 @@ async fn supervise(
     drop(cancel);
     if let Err(err) = result {
         tracing::warn!(lease = %token, error = %err, "Lease processing stopped");
-        state.failed(err);
+        state.failed(Some(&token), err);
     }
     let mut lease = lease.lock().await;
     if lease.value.children.is_some() {
@@ -1106,7 +1255,7 @@ async fn supervise(
     }
     if let Err(err) = context.update(&mut lease, Update::Release).await {
         tracing::warn!(lease = %token, error = %err, "Lease release failed; ownership will expire");
-        state.failed(err);
+        state.failed(Some(&token), err);
         state
             .unreleased
             .lock()
@@ -1177,7 +1326,7 @@ async fn renew(
 async fn poll(
     context: Arc<Context>,
     state: Arc<SharedState>,
-    session: &LeaseSession,
+    session: &AcquisitionDelivery,
     lease: Arc<Mutex<Stored<Lease>>>,
     cancelled: Signal,
     stop: Signal,
@@ -1227,7 +1376,7 @@ async fn poll(
 async fn poll_feed(
     context: Arc<Context>,
     state: Arc<SharedState>,
-    session: &LeaseSession,
+    session: &AcquisitionDelivery,
     lease: Arc<Mutex<Stored<Lease>>>,
     cancelled: Signal,
     stop: Signal,
@@ -1245,23 +1394,10 @@ async fn poll_feed(
         change_feed_processor: true,
         ..Default::default()
     };
-    let Some(mut plan) = context
-        .wait_with_checkpoint(
-            &lease,
-            &cancelled,
-            &force,
-            context.source_driver.plan_operation(
-                operation,
-                &operation_options(),
-                Some(&checkpoint),
-                &plan_options,
-            ),
-        )
-        .await?
-    else {
-        return Ok(());
-    };
-    let mut idle_responses = 0usize;
+    let (mut retry, read_options, read_timeout) = ReadRetry::for_driver(&context.source_driver);
+    let mut planning_options = operation_options();
+    planning_options.end_to_end_latency_policy = Some(read_timeout.into());
+    let mut plan = None;
     loop {
         if cancelled.clone().now_or_never().is_some() {
             return Err(lost());
@@ -1269,18 +1405,93 @@ async fn poll_feed(
         if state.stopping.load(Ordering::Acquire) {
             return Ok(());
         }
+        let Some(Some(demand)) = context
+            .wait_with_checkpoint(&lease, &cancelled, &force, session.wait_for_demand())
+            .await?
+        else {
+            return Ok(());
+        };
+        if state.stopping.load(Ordering::Acquire) {
+            return Ok(());
+        }
+        if demand.is_canceled() {
+            continue;
+        }
+        let deadline = Instant::now() + read_timeout;
+        if plan.is_none() {
+            plan = context
+                .wait_with_checkpoint(
+                    &lease,
+                    &cancelled,
+                    &force,
+                    ReadRetry::bounded(
+                        deadline,
+                        context.source_driver.plan_operation(
+                            operation.clone(),
+                            &planning_options,
+                            Some(&checkpoint),
+                            &plan_options,
+                        ),
+                    ),
+                )
+                .await?;
+        }
+        let Some(plan) = plan.as_mut() else {
+            return Ok(());
+        };
+        if state.stopping.load(Ordering::Acquire) {
+            return Ok(());
+        }
+        if demand.is_canceled() {
+            continue;
+        }
         let response = context
             .wait_with_checkpoint(
                 &lease,
                 &cancelled,
                 &force,
-                context.source_driver.execute_plan(
-                    &mut plan,
-                    Some(context.source.clone()),
-                    operation_options(),
+                ReadRetry::bounded(
+                    deadline,
+                    context.source_driver.execute_plan(
+                        plan,
+                        Some(context.source.clone()),
+                        read_options.clone(),
+                    ),
                 ),
             )
-            .await?;
+            .await;
+        let response = match response {
+            Err(err) if ReadRetry::is_throttled(&err) => {
+                let cooldown = retry.cooldown(
+                    err.response()
+                        .and_then(|response| response.headers().retry_after_ms),
+                    Instant::now(),
+                )?;
+                let failure = (!cooldown.retry).then_some(err);
+                drop(demand);
+                tracing::debug!(lease = %initial.base.record.id, retry = cooldown.retry,
+                    delay_ms = cooldown.until.saturating_duration_since(Instant::now()).as_millis(),
+                    "Deferring throttled change feed acquisition");
+                let waiting = async {
+                    futures::select_biased! {
+                        _ = stop.clone().fuse() => Ok(false),
+                        _ = sleep(cooldown.until.saturating_duration_since(Instant::now())).fuse() => Ok(true),
+                    }
+                };
+                if context
+                    .wait_with_checkpoint(&lease, &cancelled, &force, waiting)
+                    .await?
+                    != Some(true)
+                {
+                    return Ok(());
+                }
+                if let Some(err) = failure {
+                    return Err(err);
+                }
+                continue;
+            }
+            result => result?,
+        };
         let Some(response) = response else {
             return Ok(());
         };
@@ -1290,6 +1501,7 @@ async fn poll_feed(
                 "Change feed unexpectedly drained.",
             )
         })?;
+        retry.reset();
         if state.stopping.load(Ordering::Acquire) {
             return Ok(());
         }
@@ -1303,9 +1515,6 @@ async fn poll_feed(
         let token = plan.to_continuation_token()?;
         if idle {
             drop(response);
-            // Processor plans disable repair, so a full round covers a stable set of leaves.
-            idle_responses = idle_responses.saturating_add(1);
-            let lease_idle = idle_responses >= plan.pipeline.fan_out_width();
             let mut stored = lease.lock().await;
             if stored
                 .value
@@ -1315,17 +1524,13 @@ async fn poll_feed(
                 .map(ContinuationToken::as_str)
                 != Some(token.as_str())
             {
-                let initial =
-                    stored.value.base.continuation.is_none() && stored.value.pending.is_none();
                 stored.value.acknowledge(token, 0);
-                if initial
-                    || lease_idle
-                    || context.options.checkpoint_policy == CheckpointPolicy::EveryBatch
-                {
+                if context.options.checkpoint_policy == CheckpointPolicy::EveryBatch {
                     context.flush(&mut stored).await?;
                 }
             }
             drop(stored);
+            drop(demand);
             let waiting = async {
                 futures::select! {
                 _ = sleep(context.options.poll_delay).fuse() => {},
@@ -1342,17 +1547,14 @@ async fn poll_feed(
             }
             continue;
         }
-        idle_responses = 0;
-        let handled_changes = match context.options.checkpoint_policy {
-            CheckpointPolicy::EveryBatch => 0,
-            CheckpointPolicy::Coalesced { .. } => match response.body() {
-                ResponseBody::NoPayload => 0,
-                ResponseBody::Items(items) => items.len() as u64,
-                ResponseBody::Bytes(body) => split_feed_envelope(body)?.len() as u64,
-            },
+        let handled_changes = match response.body() {
+            ResponseBody::NoPayload => 0,
+            ResponseBody::Items(items) => items.len() as u64,
+            ResponseBody::Bytes(body) => split_feed_envelope(body)?.len() as u64,
         };
         let (sender, received) = oneshot::channel();
         if !session.deliver(
+            demand,
             response,
             BatchReceipt {
                 sender,
@@ -1379,6 +1581,11 @@ async fn poll_feed(
             return Err(lost());
         }
         lease.value.acknowledge(token, handled_changes);
+        if handled_changes > 0 {
+            lease
+                .value
+                .processed(context.options.checkpoint_policy, now_millis())?;
+        }
         let result = if acknowledgment.durable
             || context.options.checkpoint_policy == CheckpointPolicy::EveryBatch
         {
@@ -1386,6 +1593,7 @@ async fn poll_feed(
         } else {
             Ok(())
         };
+        let result = result.and_then(|()| session.acknowledged());
         let failed = result.is_err();
         let _ = acknowledgment.result.send(result);
         if failed {

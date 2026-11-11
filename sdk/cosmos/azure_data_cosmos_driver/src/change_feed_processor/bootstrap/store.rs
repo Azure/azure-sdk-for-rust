@@ -115,6 +115,20 @@ impl ChangeFeedProcessorBootstrapStore<'_> {
         })
     }
 
+    pub(in crate::change_feed_processor) async fn delete(
+        &self,
+        id: &str,
+        etag: Etag,
+    ) -> Result<()> {
+        let operation = CosmosOperation::delete_item(self.item(id)?)
+            .with_precondition(Precondition::if_match(etag));
+        match self.execute(operation).await {
+            Ok(_) => Ok(()),
+            Err(err) if err.status().is_not_found() => Ok(()),
+            Err(err) => Err(err),
+        }
+    }
+
     pub(super) async fn release(&self, id: &str, etag: Etag) -> Result<()> {
         let operation = CosmosOperation::delete_item(self.item(id)?)
             .with_precondition(Precondition::if_match(etag));

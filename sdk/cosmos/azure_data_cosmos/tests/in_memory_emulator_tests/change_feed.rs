@@ -466,6 +466,31 @@ mod processor_lifecycle_tests {
         type Delivery = (String, Vec<String>, oneshot::Sender<()>);
         static ENTERED: Mutex<Option<mpsc::UnboundedSender<Delivery>>> = Mutex::new(None);
         let (source, leases) = setup_processor().await?;
+        let warm = ChangeFeedProcessorBuilder::new(
+            mode,
+            source.clone(),
+            leases.clone(),
+            "coalesced",
+            "warm",
+        )
+        .with_feed_poll_delay(Duration::from_millis(1))
+        .handle_change_feed(|_, _: Vec<ChangeFeedItem<TestItem>>| async {
+            panic!("source must be idle while pinning its initial position")
+        })
+        .build()?;
+        warm.start().await?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                let all = records(&leases).await.unwrap();
+                let ranges: Vec<_> = all.iter().filter(|r| r.get("range").is_some()).collect();
+                if !ranges.is_empty() && ranges.iter().all(|r| r.get("continuation").is_some()) {
+                    break;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await?;
+        warm.stop().await?;
         let (entered, mut callbacks) = mpsc::unbounded();
         *ENTERED.lock().unwrap() = Some(entered);
         let processor = ChangeFeedProcessorBuilder::new(
@@ -484,6 +509,9 @@ mod processor_lifecycle_tests {
             |context: ChangeFeedProcessorContext, changes: Vec<ChangeFeedItem<TestItem>>| {
                 let entered = ENTERED.lock().unwrap().as_ref().unwrap().clone();
                 async move {
+                    let diagnostics = context.diagnostics().expect("batch-read diagnostics");
+                    assert!(diagnostics.is_completed());
+                    assert!(!diagnostics.is_failure());
                     let (release, released) = oneshot::channel();
                     let ids: Vec<_> = changes
                         .iter()
@@ -499,17 +527,6 @@ mod processor_lifecycle_tests {
         )
         .build()?;
         processor.start().await?;
-        tokio::time::timeout(Duration::from_secs(5), async {
-            loop {
-                let all = records(&leases).await.unwrap();
-                let ranges: Vec<_> = all.iter().filter(|r| r.get("range").is_some()).collect();
-                if !ranges.is_empty() && ranges.iter().all(|r| r.get("continuation").is_some()) {
-                    break;
-                }
-                tokio::task::yield_now().await;
-            }
-        })
-        .await?;
         for id in ["one", "two"] {
             source
                 .create_item(PARTITION_KEY, id, TestItem::new(id, 1), None)

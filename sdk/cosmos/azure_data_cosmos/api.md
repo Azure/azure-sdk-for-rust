@@ -84,9 +84,11 @@ impl ChangeFeedProcessorBuilder {
     pub fn new<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(mode: ChangeFeedMode, monitored_container: ContainerClient, lease_container: ContainerClient, processor_name: impl Into<String>, instance_name: impl Into<String>) -> Self;
 }
 impl<T, H> ChangeFeedProcessorBuilder<T, H> {
+    pub fn handle_error<Fut>(self, handler: fn(Option<ChangeFeedProcessorContext>, CosmosError) -> Fut) -> Self where Fut: Future<Output = ()> + Send + 'static;
     pub fn with_checkpoint_policy(self, policy: ChangeFeedCheckpointPolicy) -> Self;
     pub fn with_feed_poll_delay(self, feed_poll_delay: Duration) -> Self;
     pub fn with_lease_verification_enabled_on_restart(self, enabled: bool) -> Self;
+    pub fn with_max_concurrency(self, max_concurrency: NonZeroU32) -> Self;
     pub fn with_max_item_count(self, max_item_count: MaxItemCountHint) -> Self;
     pub fn with_max_scale_count(self, max_scale_count: u32) -> Self;
     pub fn with_min_scale_count(self, min_scale_count: u32) -> Self;
@@ -104,6 +106,7 @@ impl<T, Fut> ChangeFeedProcessorBuilder<T, fn(ChangeFeedProcessorContext, Vec<cr
 pub struct ChangeFeedProcessorContext {
 }
 impl ChangeFeedProcessorContext {
+    pub fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>>;
     pub fn lease_token(&self) -> &str;
 }
 #[derive(Clone, Debug)]
@@ -315,6 +318,9 @@ pub enum ChangeFeedCheckpointPolicy {
     #[default]
     EveryBatch,
     Coalesced { max_interval: std::time::Duration },
+}
+impl ChangeFeedCheckpointPolicy {
+    pub fn coalesced() -> Self;
 }
 #[derive(Clone, Debug)]
 #[non_exhaustive]

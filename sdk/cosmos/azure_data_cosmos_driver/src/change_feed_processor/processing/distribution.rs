@@ -10,211 +10,283 @@ use crate::{
     Result,
 };
 use azure_core::http::StatusCode;
-use futures::{future::poll_fn, task::AtomicWaker};
+use futures::{channel::oneshot, future::poll_fn, task::AtomicWaker};
 use std::{
-    collections::{HashMap, VecDeque},
-    sync::{Arc, Mutex, MutexGuard},
+    collections::VecDeque,
+    sync::{Arc, Mutex, MutexGuard, Weak},
     task::Poll,
 };
 
-#[derive(Clone, PartialEq, Eq, Hash)]
-struct SessionKey {
-    lease_token: String,
-    incarnation: String,
+#[derive(Default, PartialEq, Eq)]
+enum DeliveryPhase {
+    #[default]
+    AwaitingDemand,
+    Fetching,
+    AwaitingAcknowledgment,
+    Retired,
 }
 
 #[derive(Default)]
-struct Mailbox {
-    batch: Mutex<Option<ChangeFeedBatch>>,
+struct AcquisitionState {
+    phase: DeliveryPhase,
+    request: Option<oneshot::Sender<ReadDemand>>,
 }
 
-impl Mailbox {
-    fn batch(&self) -> MutexGuard<'_, Option<ChangeFeedBatch>> {
-        self.batch.lock().unwrap_or_else(|err| {
-            tracing::error!("Recovering poisoned lease mailbox");
+#[derive(Default)]
+struct Delivery {
+    state: Mutex<AcquisitionState>,
+}
+
+impl Delivery {
+    fn state(&self) -> MutexGuard<'_, AcquisitionState> {
+        self.state.lock().unwrap_or_else(|err| {
+            tracing::error!("Recovering poisoned acquisition delivery state");
             err.into_inner()
         })
+    }
+
+    fn retire(&self) -> AcquisitionState {
+        let mut state = self.state();
+        std::mem::replace(
+            &mut *state,
+            AcquisitionState {
+                phase: DeliveryPhase::Retired,
+                ..Default::default()
+            },
+        )
     }
 }
 
 #[derive(Default)]
-struct Registry {
-    sessions: HashMap<SessionKey, Arc<Mailbox>>,
-    ready: VecDeque<SessionKey>,
+struct Scheduler {
+    available: VecDeque<Weak<Delivery>>,
     closed: bool,
     stopping: bool,
+    forced: bool,
 }
 
+#[derive(Default)]
 pub(super) struct BatchDistributor {
-    registry: Mutex<Registry>,
+    scheduler: Mutex<Scheduler>,
+    receiver: async_lock::Mutex<()>,
     waker: AtomicWaker,
 }
 
-impl Default for BatchDistributor {
-    fn default() -> Self {
-        Self {
-            registry: Mutex::new(Registry::default()),
-            waker: AtomicWaker::new(),
-        }
+pub(super) struct ReadDemand {
+    response: oneshot::Sender<ChangeFeedBatch>,
+}
+
+impl ReadDemand {
+    pub(super) fn is_canceled(&self) -> bool {
+        self.response.is_canceled()
     }
 }
 
 impl BatchDistributor {
-    fn registry(&self) -> MutexGuard<'_, Registry> {
-        self.registry.lock().unwrap_or_else(|err| {
-            tracing::error!("Recovering poisoned batch distributor");
+    fn scheduler(&self) -> MutexGuard<'_, Scheduler> {
+        self.scheduler.lock().unwrap_or_else(|err| {
+            tracing::error!("Recovering poisoned batch scheduler");
             err.into_inner()
         })
     }
 
-    pub(super) fn register(
+    pub(super) fn acquire(
         self: &Arc<Self>,
         lease_token: String,
         incarnation: Option<String>,
-    ) -> Result<LeaseSession> {
-        let key = SessionKey {
-            lease_token,
-            incarnation: incarnation.ok_or_else(lost)?,
-        };
-        let mut registry = self.registry();
-        if registry.closed {
+    ) -> Result<AcquisitionDelivery> {
+        if incarnation.is_none() || self.scheduler().closed {
             return Err(lost());
         }
-        if registry.sessions.contains_key(&key) {
-            return Err(error(
-                StatusCode::Conflict,
-                "Lease delivery session is already registered.",
-            ));
-        }
-        let mailbox = Arc::new(Mailbox::default());
-        registry.sessions.insert(key.clone(), mailbox.clone());
-        Ok(LeaseSession {
-            key,
-            mailbox,
+        Ok(AcquisitionDelivery {
+            lease_token,
+            delivery: Arc::new(Delivery::default()),
             distributor: self.clone(),
         })
     }
 
     pub(super) fn is_running(&self) -> bool {
-        !self.registry().closed
+        !self.scheduler().closed
     }
 
     pub(super) async fn next_batch(&self) -> Option<ChangeFeedBatch> {
-        poll_fn(|cx| {
-            self.waker.register(cx.waker());
-            loop {
-                let batch = {
-                    let mut registry = self.registry();
-                    let Some(key) = registry.ready.pop_front() else {
-                        return if registry.closed || registry.stopping {
-                            Poll::Ready(None)
-                        } else {
-                            Poll::Pending
-                        };
-                    };
-                    let Some(mailbox) = registry.sessions.get(&key) else {
-                        continue;
-                    };
-                    let batch = mailbox.batch().take();
-                    batch
-                };
-                if let Some(batch) = batch {
-                    if !batch.receipt.sender.is_canceled() {
-                        return Poll::Ready(Some(batch));
+        loop {
+            let received = {
+                // Only queue selection is serialized, not the authorized reads.
+                let _receiver = self.receiver.lock().await;
+                poll_fn(|cx| {
+                    self.waker.register(cx.waker());
+                    let mut scheduler = self.scheduler();
+                    if scheduler.closed || scheduler.stopping {
+                        return Poll::Ready(None);
                     }
+                    while let Some(available) = scheduler.available.pop_front() {
+                        let Some(delivery) = available.upgrade() else {
+                            continue;
+                        };
+                        let mut state = delivery.state();
+                        let Some(request) = state.request.take() else {
+                            continue;
+                        };
+                        let (response, received) = oneshot::channel();
+                        state.phase = DeliveryPhase::Fetching;
+                        if request.send(ReadDemand { response }).is_ok() {
+                            return Poll::Ready(Some(received));
+                        }
+                        state.phase = DeliveryPhase::AwaitingDemand;
+                    }
+                    Poll::Pending
+                })
+                .await
+            };
+            let received = received?;
+            // Idle reads and ended acquisitions drop the sender; try another acquisition.
+            if let Ok(batch) = received.await {
+                let scheduler = self.scheduler();
+                if !scheduler.closed && !scheduler.forced && !batch.receipt.sender.is_canceled() {
+                    return Some(batch);
                 }
             }
-        })
-        .await
-    }
-
-    fn retire(&self, key: &SessionKey, mailbox: &Arc<Mailbox>) {
-        {
-            let mut registry = self.registry();
-            if !registry
-                .sessions
-                .get(key)
-                .is_some_and(|registered| Arc::ptr_eq(registered, mailbox))
-            {
-                return;
-            }
-            registry.sessions.remove(key);
-            registry.ready.retain(|ready| ready != key);
         }
-        let pending = mailbox.batch().take();
-        drop(pending);
-        self.waker.wake();
     }
 
     pub(super) fn close(&self) {
-        self.registry().closed = true;
+        self.scheduler().closed = true;
         self.stop_delivery(true);
     }
 
     pub(super) fn stop_delivery(&self, force: bool) {
-        let sessions = {
-            let mut registry = self.registry();
-            registry.stopping = true;
-            if force {
-                registry.ready.clear();
-                std::mem::take(&mut registry.sessions)
-            } else {
-                HashMap::new()
-            }
+        let retired = {
+            let mut scheduler = self.scheduler();
+            scheduler.stopping = true;
+            scheduler.forced |= force;
+            std::mem::take(&mut scheduler.available)
         };
-        for mailbox in sessions.into_values() {
-            let pending = mailbox.batch().take();
-            drop(pending);
+        for retired in retired {
+            if let Some(delivery) = retired.upgrade() {
+                drop(delivery.retire());
+            }
         }
         self.waker.wake();
     }
 }
 
-/// A producer's acquisition-scoped mailbox, retired when its supervisor exits.
-pub(super) struct LeaseSession {
-    key: SessionKey,
-    mailbox: Arc<Mailbox>,
+/// Owns delivery state for one acquisition; scheduling handles cannot keep it alive.
+pub(super) struct AcquisitionDelivery {
+    lease_token: String,
+    delivery: Arc<Delivery>,
     distributor: Arc<BatchDistributor>,
 }
 
-impl LeaseSession {
-    pub(super) fn deliver(&self, response: CosmosResponse, receipt: BatchReceipt) -> Result<bool> {
-        let mut registry = self.distributor.registry();
-        if registry.stopping && !registry.closed {
+impl AcquisitionDelivery {
+    pub(super) async fn wait_for_demand(&self) -> Result<Option<ReadDemand>> {
+        let received = {
+            let mut scheduler = self.distributor.scheduler();
+            if scheduler.stopping || scheduler.closed {
+                return Ok(None);
+            }
+            let mut state = self.delivery.state();
+            if state.phase == DeliveryPhase::Retired {
+                return Err(lost());
+            }
+            if state.request.is_some()
+                || !matches!(
+                    state.phase,
+                    DeliveryPhase::AwaitingDemand | DeliveryPhase::Fetching
+                )
+            {
+                return Err(error(
+                    StatusCode::Conflict,
+                    "Acquisition already has pending demand or an outstanding batch.",
+                ));
+            }
+            let (request, received) = oneshot::channel();
+            state.phase = DeliveryPhase::AwaitingDemand;
+            state.request = Some(request);
+            scheduler
+                .available
+                .push_back(Arc::downgrade(&self.delivery));
+            received
+        };
+        self.distributor.waker.wake();
+        match received.await {
+            Ok(demand) => Ok(Some(demand)),
+            Err(_) if self.distributor.scheduler().stopping => Ok(None),
+            Err(_) => Err(lost()),
+        }
+    }
+
+    pub(super) fn deliver(
+        &self,
+        demand: ReadDemand,
+        response: CosmosResponse,
+        receipt: BatchReceipt,
+    ) -> Result<bool> {
+        let scheduler = self.distributor.scheduler();
+        if scheduler.stopping && !scheduler.closed {
             return Ok(false);
         }
-        if registry.closed
-            || !registry
-                .sessions
-                .get(&self.key)
-                .is_some_and(|registered| Arc::ptr_eq(registered, &self.mailbox))
-        {
+        let mut state = self.delivery.state();
+        if scheduler.closed || state.phase == DeliveryPhase::Retired {
             return Err(lost());
         }
-        let mut pending = self.mailbox.batch();
-        if pending.is_some() {
+        if state.phase != DeliveryPhase::Fetching {
             return Err(error(
                 StatusCode::Conflict,
-                "Lease session already has a queued batch.",
+                "Acquisition already has an outstanding batch.",
             ));
         }
-        *pending = Some(ChangeFeedBatch {
-            lease_token: self.key.lease_token.clone(),
+        let batch = ChangeFeedBatch {
+            lease_token: self.lease_token.clone(),
             response,
             receipt,
-        });
-        // A nonempty mailbox cannot publish again, so each session is queued once.
-        registry.ready.push_back(self.key.clone());
-        drop(pending);
-        drop(registry);
-        self.distributor.waker.wake();
+        };
+        state.phase = DeliveryPhase::AwaitingAcknowledgment;
+        let sent = demand.response.send(batch);
+        if sent.is_err() {
+            state.phase = DeliveryPhase::Retired;
+        }
+        drop(state);
+        drop(scheduler);
+        sent.map_err(|_| {
+            error(
+                StatusCode::Conflict,
+                "Batch receive was canceled before delivery; abandoning the acquisition.",
+            )
+        })?;
         Ok(true)
+    }
+
+    pub(super) fn acknowledged(&self) -> Result<()> {
+        let mut state = self.delivery.state();
+        match state.phase {
+            DeliveryPhase::AwaitingAcknowledgment => {
+                state.phase = DeliveryPhase::AwaitingDemand;
+                Ok(())
+            }
+            DeliveryPhase::Retired => Err(lost()),
+            _ => Err(error(
+                StatusCode::Conflict,
+                "Acquisition has no delivered batch to acknowledge.",
+            )),
+        }
+    }
+
+    fn retire(&self) {
+        let pending = {
+            let mut scheduler = self.distributor.scheduler();
+            let delivery = Arc::downgrade(&self.delivery);
+            scheduler.available.retain(|ready| !ready.ptr_eq(&delivery));
+            self.delivery.retire()
+        };
+        drop(pending);
+        self.distributor.waker.wake();
     }
 }
 
-impl Drop for LeaseSession {
+impl Drop for AcquisitionDelivery {
     fn drop(&mut self) {
-        self.distributor.retire(&self.key, &self.mailbox);
+        self.retire();
     }
 }
 
