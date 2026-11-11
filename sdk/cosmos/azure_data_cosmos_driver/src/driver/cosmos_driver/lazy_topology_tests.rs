@@ -708,7 +708,7 @@ async fn explicit_compound_retry_uses_original_when_transport_changes() {
 }
 
 #[tokio::test]
-async fn unscopable_explicit_compound_uses_eventual_without_a_token() {
+async fn explicit_compound_token_that_cannot_be_scoped_uses_eventual_without_a_token() {
     for hedging in [false, true] {
         for capturing_disabled in [false, true] {
             for custom_header in [false, true] {
@@ -817,7 +817,7 @@ async fn successful_empty_topology_uses_eventual_without_a_token() {
 }
 
 #[tokio::test]
-async fn unscopable_explicit_token_preserves_non_session_read_strategy() {
+async fn explicit_token_that_cannot_be_scoped_preserves_non_session_read_strategy() {
     for strategy in [
         ReadConsistencyStrategy::Eventual,
         ReadConsistencyStrategy::LatestCommitted,

@@ -281,7 +281,8 @@ routed through classic Gateway retain passthrough behavior and do not trigger
 this lookup. The lookup is independent of `session_capturing_disabled`, does not
 read or update the session cache, and uses the operation's existing deadline.
 Each V2 retry or hedge uses a topology snapshot for its attempt and the original
-caller token. The consistency downgrade is local to an unscopable attempt;
+caller token. The consistency downgrade is local to an attempt whose token
+cannot be safely scoped;
 subsequent attempts re-evaluate the original token and consistency settings.
 Automatic capture gates remain unchanged.
 
