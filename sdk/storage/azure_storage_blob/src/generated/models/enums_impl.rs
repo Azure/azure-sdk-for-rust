@@ -11,6 +11,7 @@ use super::{
     ListBlobsHierarchicalInternalResponseContentType, ListBlobsIncludeItem,
     ListBlobsInternalResponseContentType, ListContainersIncludeType, PremiumPageBlobAccessTier,
     PublicAccessType, RehydratePriority, SequenceNumberActionType, SkuName, StorageErrorCode,
+    TierManagedBy, TurboStatus,
 };
 use azure_core::error::{Error, ErrorKind};
 use std::{
@@ -38,6 +39,7 @@ impl<'a> From<&'a AccessTier> for &'a str {
             AccessTier::P70 => "P70",
             AccessTier::P80 => "P80",
             AccessTier::Premium => "Premium",
+            AccessTier::Turbo => "Turbo",
             AccessTier::UnknownValue(s) => s.as_ref(),
         }
     }
@@ -63,6 +65,7 @@ impl FromStr for AccessTier {
             "P70" => AccessTier::P70,
             "P80" => AccessTier::P80,
             "Premium" => AccessTier::Premium,
+            "Turbo" => AccessTier::Turbo,
             _ => AccessTier::UnknownValue(s.to_string()),
         })
     }
@@ -87,6 +90,7 @@ impl AsRef<str> for AccessTier {
             AccessTier::P70 => "P70",
             AccessTier::P80 => "P80",
             AccessTier::Premium => "Premium",
+            AccessTier::Turbo => "Turbo",
             AccessTier::UnknownValue(s) => s.as_str(),
         }
     }
@@ -111,6 +115,7 @@ impl Display for AccessTier {
             AccessTier::P70 => f.write_str("P70"),
             AccessTier::P80 => f.write_str("P80"),
             AccessTier::Premium => f.write_str("Premium"),
+            AccessTier::Turbo => f.write_str("Turbo"),
             AccessTier::UnknownValue(s) => f.write_str(s.as_str()),
         }
     }
@@ -1899,6 +1904,84 @@ impl Display for StorageErrorCode {
             StorageErrorCode::UnsupportedQueryParameter => f.write_str("UnsupportedQueryParameter"),
             StorageErrorCode::UnsupportedXmlNode => f.write_str("UnsupportedXmlNode"),
             StorageErrorCode::UnknownValue(s) => f.write_str(s.as_str()),
+        }
+    }
+}
+
+impl<'a> From<&'a TierManagedBy> for &'a str {
+    fn from(e: &'a TierManagedBy) -> Self {
+        match e {
+            TierManagedBy::System => "system",
+            TierManagedBy::User => "user",
+            TierManagedBy::UnknownValue(s) => s.as_ref(),
+        }
+    }
+}
+
+impl FromStr for TierManagedBy {
+    type Err = Infallible;
+    fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err> {
+        Ok(match s {
+            "system" => TierManagedBy::System,
+            "user" => TierManagedBy::User,
+            _ => TierManagedBy::UnknownValue(s.to_string()),
+        })
+    }
+}
+
+impl AsRef<str> for TierManagedBy {
+    fn as_ref(&self) -> &str {
+        match self {
+            TierManagedBy::System => "system",
+            TierManagedBy::User => "user",
+            TierManagedBy::UnknownValue(s) => s.as_str(),
+        }
+    }
+}
+
+impl Display for TierManagedBy {
+    fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result {
+        match self {
+            TierManagedBy::System => f.write_str("system"),
+            TierManagedBy::User => f.write_str("user"),
+            TierManagedBy::UnknownValue(s) => f.write_str(s.as_str()),
+        }
+    }
+}
+
+impl<'a> From<&'a TurboStatus> for &'a str {
+    fn from(e: &'a TurboStatus) -> Self {
+        match e {
+            TurboStatus::Pending => "pending",
+            TurboStatus::UnknownValue(s) => s.as_ref(),
+        }
+    }
+}
+
+impl FromStr for TurboStatus {
+    type Err = Infallible;
+    fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err> {
+        Ok(match s {
+            "pending" => TurboStatus::Pending,
+            _ => TurboStatus::UnknownValue(s.to_string()),
+        })
+    }
+}
+
+impl AsRef<str> for TurboStatus {
+    fn as_ref(&self) -> &str {
+        match self {
+            TurboStatus::Pending => "pending",
+            TurboStatus::UnknownValue(s) => s.as_str(),
+        }
+    }
+}
+
+impl Display for TurboStatus {
+    fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result {
+        match self {
+            TurboStatus::Pending => f.write_str("pending"),
+            TurboStatus::UnknownValue(s) => f.write_str(s.as_str()),
         }
     }
 }

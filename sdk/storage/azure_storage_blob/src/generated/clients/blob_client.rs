@@ -664,6 +664,8 @@ impl BlobClient {
     /// * [`is_server_encrypted`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::is_server_encrypted) - x-ms-server-encrypted
     /// * [`smart_access_tier`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::smart_access_tier) - x-ms-smart-access-tier
     /// * [`tag_count`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::tag_count) - x-ms-tag-count
+    /// * [`tier_managed_by`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::tier_managed_by) - x-ms-tier-managed-by
+    /// * [`turbo_status`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::turbo_status) - x-ms-turbo-status
     /// * [`version_id`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`BlobClientDownloadInternalResultHeaders`]: crate::generated::models::BlobClientDownloadInternalResultHeaders
@@ -1089,6 +1091,8 @@ impl BlobClient {
     /// * [`is_server_encrypted`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::is_server_encrypted) - x-ms-server-encrypted
     /// * [`smart_access_tier`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::smart_access_tier) - x-ms-smart-access-tier
     /// * [`tag_count`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::tag_count) - x-ms-tag-count
+    /// * [`tier_managed_by`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::tier_managed_by) - x-ms-tier-managed-by
+    /// * [`turbo_status`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::turbo_status) - x-ms-turbo-status
     /// * [`version_id`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`BlobClientGetPropertiesResultHeaders`]: crate::generated::models::BlobClientGetPropertiesResultHeaders
@@ -1964,7 +1968,7 @@ impl BlobClient {
 }
 
 /// Default value for [`BlobClientOptions::version`].
-pub(crate) const DEFAULT_VERSION: &str = "2027-03-07";
+pub(crate) const DEFAULT_VERSION: &str = "2027-05-07";
 
 impl Default for BlobClientOptions {
     fn default() -> Self {

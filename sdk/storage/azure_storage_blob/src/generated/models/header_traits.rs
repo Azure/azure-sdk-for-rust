@@ -23,7 +23,7 @@ use super::{
     PageBlobClientClearPagesResult, PageBlobClientCreateResult, PageBlobClientResizeResult,
     PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
     PageBlobClientUploadPagesResult, PageList, PublicAccessType, RehydratePriority,
-    SignedIdentifiers, SkuName,
+    SignedIdentifiers, SkuName, TierManagedBy, TurboStatus,
 };
 use azure_core::{
     base64,
@@ -110,6 +110,8 @@ const SKU_NAME: HeaderName = HeaderName::from_static("x-ms-sku-name");
 const SMART_ACCESS_TIER: HeaderName = HeaderName::from_static("x-ms-smart-access-tier");
 const SNAPSHOT: HeaderName = HeaderName::from_static("x-ms-snapshot");
 const TAG_COUNT: HeaderName = HeaderName::from_static("x-ms-tag-count");
+const TIER_MANAGED_BY: HeaderName = HeaderName::from_static("x-ms-tier-managed-by");
+const TURBO_STATUS: HeaderName = HeaderName::from_static("x-ms-turbo-status");
 const VERSION_ID: HeaderName = HeaderName::from_static("x-ms-version-id");
 
 /// Provides access to typed response headers for `AppendBlobClient::append_block_from_url()`
@@ -669,6 +671,8 @@ pub(crate) trait BlobClientDownloadInternalResultHeaders: private::Sealed {
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
     fn smart_access_tier(&self) -> Result<Option<String>>;
     fn tag_count(&self) -> Result<Option<i64>>;
+    fn tier_managed_by(&self) -> Result<Option<TierManagedBy>>;
+    fn turbo_status(&self) -> Result<Option<TurboStatus>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
 
@@ -914,6 +918,17 @@ impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloa
         Headers::get_optional_as(self.headers(), &TAG_COUNT)
     }
 
+    /// Indicates whether Turbo was implicitly assigned on ingestion or explicitly selected by the user, independently of migration
+    /// completion.
+    fn tier_managed_by(&self) -> Result<Option<TierManagedBy>> {
+        Headers::get_optional_as(self.headers(), &TIER_MANAGED_BY)
+    }
+
+    /// Indicates whether migration to Turbo storage is pending. Omitted after migration to SSD storage completes.
+    fn turbo_status(&self) -> Result<Option<TurboStatus>> {
+        Headers::get_optional_as(self.headers(), &TURBO_STATUS)
+    }
+
     /// The version ID of the blob.
     fn version_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &VERSION_ID)
@@ -1032,6 +1047,8 @@ pub trait BlobClientGetPropertiesResultHeaders: private::Sealed {
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
     fn smart_access_tier(&self) -> Result<Option<String>>;
     fn tag_count(&self) -> Result<Option<i64>>;
+    fn tier_managed_by(&self) -> Result<Option<TierManagedBy>>;
+    fn turbo_status(&self) -> Result<Option<TurboStatus>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
 
@@ -1280,6 +1297,17 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
     /// The number of tags associated with the blob.
     fn tag_count(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &TAG_COUNT)
+    }
+
+    /// Indicates whether Turbo was implicitly assigned on ingestion or explicitly selected by the user, independently of migration
+    /// completion.
+    fn tier_managed_by(&self) -> Result<Option<TierManagedBy>> {
+        Headers::get_optional_as(self.headers(), &TIER_MANAGED_BY)
+    }
+
+    /// Indicates whether migration to Turbo storage is pending. Omitted after migration to SSD storage completes.
+    fn turbo_status(&self) -> Result<Option<TurboStatus>> {
+        Headers::get_optional_as(self.headers(), &TURBO_STATUS)
     }
 
     /// The version ID of the blob.
