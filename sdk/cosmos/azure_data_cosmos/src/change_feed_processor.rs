@@ -162,9 +162,10 @@ enum ProcessorStartFrom {
 /// infers both types and makes [`build()`](Self::build) available.
 ///
 /// Each owned lease has at most one outstanding batch. SDK processing defaults
-/// to one worker; [`with_max_concurrency()`](Self::with_max_concurrency) bounds
+/// to one batch poller; [`with_max_concurrency()`](Self::with_max_concurrency) bounds
 /// concurrent receive, callback, and acknowledgment cycles for this instance.
-/// Page-size hints and worker counts are not byte or heap limits.
+/// A worker is one started processor instance; it can run multiple batch pollers.
+/// Page-size hints and poller counts are not byte or heap limits.
 ///
 /// # Examples
 ///
@@ -448,11 +449,11 @@ impl ChangeFeedProcessorBuilder {
 }
 
 impl<T, H> ChangeFeedProcessorBuilder<T, H> {
-    /// Sets the maximum number of concurrent batch-processing workers.
+    /// Sets the maximum number of concurrent batch pollers in this worker.
     ///
-    /// Defaults to one. Each worker receives one batch, runs its callback, and
+    /// Defaults to one. Each poller receives one batch, runs its callback, and
     /// completes acknowledgment before requesting another batch. A slow callback
-    /// occupies one worker; other workers can process other eligible leases.
+    /// occupies one poller; other pollers can process other eligible leases.
     /// This does not limit lease ownership or delay lease maintenance.
     pub fn with_max_concurrency(mut self, max_concurrency: NonZeroU32) -> Self {
         self.max_concurrency = max_concurrency;
@@ -466,7 +467,7 @@ impl<T, H> ChangeFeedProcessorBuilder<T, H> {
     /// and callback errors, caught callback panics, and acknowledgment failures.
     /// Startup errors are returned directly by [`ChangeFeedProcessor::start()`].
     ///
-    /// The observer runs serially, independently of batch workers and lease
+    /// The observer runs serially, independently of batch pollers and lease
     /// maintenance. Its notification queue is bounded; overflow is logged and
     /// excess notifications are dropped. Related failures may produce multiple
     /// notifications. The observer cannot acknowledge a batch or change recovery.
@@ -904,7 +905,7 @@ impl<T, H> ChangeFeedProcessor<T, H> {
     /// Lease maintenance is independent of feed polling and callback duration.
     /// Expiration uses a 60-second budget; renewal and acquisition schedules are
     /// derived from that budget. Callbacks have no implicit timeout.
-    /// Throttled reads yield to other eligible leases, even with one worker.
+    /// Throttled reads yield to other eligible leases, even with one batch poller.
     /// Each read turn is bounded to five seconds or a shorter configured driver
     /// deadline; this does not impose a callback timeout.
     ///

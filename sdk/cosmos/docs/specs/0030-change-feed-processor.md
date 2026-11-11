@@ -65,7 +65,7 @@ processor.stop().await?;
 | --- | --- |
 | Workload | Source, lease storage, processor name, feed mode. |
 | Worker | Unique instance name, start policy/continuation, callback, max concurrency, error observer, page hint, poll delay, checkpoint policy, lease counts. |
-| Defaults | One worker; no error observer; `Now`; page hint 100; idle delay 5s; read turn at most 5s; `EveryBatch`; min/max leases 0/0 (uncapped). |
+| Defaults | One batch poller per worker; no error observer; `Now`; page hint 100; idle delay 5s; read turn at most 5s; `EveryBatch`; min/max leases 0/0 (uncapped). |
 | Validation | Names neither empty nor whitespace-only; beginning/time only in latest-version mode; continuation matches source/mode/ranges. Local checks at construction; service checks at startup. |
 | Lifecycle | Reject duplicate start; `is_started()` is local only. |
 | Callback | `Send + 'static` future returning Cosmos `Result<()>`; acknowledgment follows success. |
@@ -245,7 +245,7 @@ modes.
 
 - **Separate application processing from coordination.** The SDK owns typed
   callbacks; the driver owns leases, service interaction, and recovery.
-- **Read only on demand.** A free SDK worker requests work; the driver does not
+- **Read only on demand.** A free SDK batch poller requests work; the driver does not
   prefetch batches for busy callbacks.
 - **Separate acknowledgment from durability.** Callback success makes progress
   eligible for checkpointing. The policy determines when it is persisted.
@@ -260,10 +260,16 @@ monitoring service are not goals of this design.
 **The SDK owns application processing; the driver owns lease coordination and
 durable progress.** The SDK requests batches, not particular leases.
 
+| Term | Meaning |
+| --- | --- |
+| Worker | One started change-feed processor instance, identified by its instance name. Multiple workers can run in one process. |
+| SDK batch poller | One receive -> callback -> acknowledgment loop inside a worker. `with_max_concurrency` controls this count, not the number of workers. |
+| Driver lease poller | The supervised polling task for one acquired lease, with independent renewal. Its source reads require demand from a batch poller. |
+
 | Concern | SDK responsibility | Driver responsibility |
 | --- | --- | --- |
 | Configuration and startup | Expose language-specific options and invoke startup. | Validate the workload, perform bootstrap, and begin lease coordination. |
-| Demand and concurrency | Run N receive -> callback -> acknowledgment workers; request another batch only when a worker is free. | Select an eligible acquisition for each receive; do not start feed reads without demand. |
+| Demand and concurrency | Run N batch pollers; request another batch only when a poller is free. | Select an eligible acquisition for each receive; do not start feed reads without demand. |
 | Empty reads and read failures | Await the next deliverable batch; do not select leases or implement service retries. | Handle idle responses, retry budgets, and lease-local cooldown waits; let other eligible acquisitions serve demand. Report failures and manage acquisition cleanup. |
 | Batch processing | Deserialize into application types and invoke the callback. Report failures; abandon the receipt on unsuccessful processing. | Deliver the page with an opaque receipt; allow replay when the receipt is abandoned. Never invoke the application callback. |
 | Checkpointing | Acknowledge the receipt after successful processing; select the configured policy or request an explicit durable checkpoint. | Track contiguous successful progress and persist according to policy. Reject stale receipts; acknowledgment is not necessarily durable. |
@@ -291,19 +297,19 @@ flowchart TD
     end
     subgraph Driver["Rust driver"]
         Bootstrap["bootstrap()"]
-        Poller["Processor: coordinator and acquisitions"]
+        Processor["Worker driver: coordinator and lease pollers"]
     end
     Lifecycle -->|Initialize workload| Bootstrap
     Bootstrap -->|Persist metadata and initial leases| Store[("Workload and leases")]
-    Bootstrap -->|Workload ready| Poller
-    Poller -->|Direct response with receipt| Consumer
-    Consumer -->|Receive demand| Poller
-    Consumer -->|Successful acknowledgment| Poller
-    Poller -->|Ownership and checkpoints| Store
+    Bootstrap -->|Workload ready| Processor
+    Processor -->|Direct response with receipt| Consumer
+    Consumer -->|Receive demand| Processor
+    Consumer -->|Successful acknowledgment| Processor
+    Processor -->|Ownership and checkpoints| Store
 ```
 
 The implementation follows this call sequence. Spawning coordination and SDK
-workers creates concurrent task trees; returning a processor handle does not
+batch pollers creates concurrent task trees; returning a processor handle does not
 mean every lease has already been acquired.
 
 ```text
@@ -316,7 +322,7 @@ ChangeFeedProcessor::start
            -> optional lease verification
            -> spawn run: balance -> acquire -> supervise
                                   supervise polls poll and renew concurrently
-     -> spawn SDK worker pool
+     -> spawn SDK batch-poller pool
         -> consume
            -> Processor::next_batch -> BatchDistributor::next_batch
               -> grant demand -> poll_feed -> execute_plan
@@ -336,12 +342,13 @@ ChangeFeedProcessor::stop
 ### 2.4 Component state model
 
 A **lease** survives the process. An **acquisition** is one owner's temporary
-right to process it. These are separate lifetimes, even though the implementation
-may keep persisted and non-serialized fields in the same Rust aggregate.
+right to process it. The implementation represents these lifetimes separately.
 
 The actual `Lease` flattens the bootstrap `ProcessingLease` record, which contains
-workload identity, range, owner, and continuation. `serde(skip)` separates the
-runtime-only renewal clock and pending checkpoint from persisted fields:
+workload identity, range, owner, and continuation. It contains only persisted
+fields. `Acquisition` is not serializable: it owns the lease view and ETag together
+with the local renewal clock and pending checkpoint. Persisting `value` does not
+serialize those runtime fields or implicitly promote the pending checkpoint:
 
 ```rust
 #[derive(Clone, Serialize, Deserialize)]
@@ -356,9 +363,12 @@ struct Lease {
     last_processed_at: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     processing_deadline: Option<i64>,
-    #[serde(skip)]
+}
+
+struct Acquisition {
+    value: Lease,
+    etag: Etag,
     renewed: Option<Instant>,
-    #[serde(skip)]
     pending: Option<PendingCheckpoint>,
 }
 
@@ -371,35 +381,36 @@ struct PendingCheckpoint {
 }
 ```
 
-Delivery is a separate local state machine. Its request slot contains a one-shot
-demand sender, not a batch payload:
+Delivery is a separate local state machine. Only `WaitingForDemand` can contain
+the one-shot demand sender; `Idle`, `Fetching`, `AwaitingAcknowledgment`, and
+`Closed` cannot retain one. This replaces independent phase and optional-channel
+fields with a data-bearing enum. The channel carries demand, not a batch payload:
 
 ```rust
-#[derive(Default, PartialEq, Eq)]
-enum DeliveryPhase {
+#[derive(Default)]
+enum DeliveryState {
     #[default]
-    AwaitingDemand,
+    Idle,
+    WaitingForDemand(oneshot::Sender<ReadDemand>),
     Fetching,
     AwaitingAcknowledgment,
     Closed,
 }
 
 #[derive(Default)]
-struct AcquisitionState {
-    phase: DeliveryPhase,
-    request: Option<oneshot::Sender<ReadDemand>>,
-}
-
-#[derive(Default)]
 struct Delivery {
-    state: Mutex<AcquisitionState>,
+    state: Mutex<DeliveryState>,
 }
 ```
 
-The acquisition also owns its read plan, retry budget, cancellation signals, and
-receipt channel. The latest stored ETag accompanies the lease snapshot for
-conditional writes. The scheduler owns only weak eligible handles; the requesting
-receive owns the delivered response and receipt.
+The surrounding acquisition task owns its read plan, retry budget, cancellation
+signals, and receipt channel. The latest stored ETag accompanies the lease view
+for conditional writes. The scheduler owns only weak eligible handles; the
+requesting receive owns the delivered response and receipt.
+
+The data/behavior boundary is explicit: `transition_lease` transforms records
+using supplied time and identity, while `Context` performs storage I/O and retries.
+Neither separation introduces a new public API or changes the lease wire format.
 
 There are three different positions:
 
@@ -417,7 +428,7 @@ Owned writes use this internal mutation enum; selecting a variant does not itsel
 
 ```rust
 enum Update<'a> {
-    Acquire,
+    Acquire(&'a str),
     Renew,
     Checkpoint(&'a ContinuationToken),
     Release,
@@ -435,7 +446,7 @@ coverage. It does not choose starting feed positions.
 **Original bootstrap retained:** readiness means metadata and coverage, not a
 container-wide feed snapshot.
 
-### 3.1 SDK startup and worker-pool construction
+### 3.1 SDK startup and batch-poller construction
 
 The SDK maps its public options into driver options and awaits driver startup.
 Only then does it spawn N consumer futures and the serial error dispatcher:
@@ -502,16 +513,16 @@ where
     let task = get_async_runtime().spawn(Box::pin(async move {
         let processing = async {
             let dispatching = async {
-                let mut workers = FuturesUnordered::new();
+                let mut batch_pollers = FuturesUnordered::new();
                 for _ in 0..concurrency {
-                    workers.push(consume::<T, H, Fut>(
+                    batch_pollers.push(consume::<T, H, Fut>(
                         dispatcher.clone(),
                         container.clone(),
                         handler.clone(),
                         reporting.clone(),
                     ));
                 }
-                while workers.next().await.is_some() {}
+                while batch_pollers.next().await.is_some() {}
             };
             let result = AssertUnwindSafe(dispatching)
                 .catch_unwind()
@@ -738,7 +749,7 @@ preserve stored checkpoints; flushing follows the [checkpointing pipeline](#6-ch
 
 A lease is the persisted coordination record. An acquisition is one ownership
 incarnation of that lease, with its own cancellation and delivery state. A worker
-may own several acquisitions; callback workers are not permanently assigned to
+may own several acquisitions; batch pollers are not permanently assigned to
 them.
 
 Owned writes validate owner, incarnation, and ETag. Renewal, checkpoint, and
@@ -757,7 +768,7 @@ async fn run(
     stop: Signal,
     force: Signal,
 ) -> Result<bool> {
-    let mut workers = FuturesUnordered::<BoxFuture<'static, String>>::new();
+    let mut lease_pollers = FuturesUnordered::<BoxFuture<'static, String>>::new();
     let mut owned = HashSet::new();
     let mut balancing = balance(
         context.clone(),
@@ -773,10 +784,10 @@ async fn run(
             _ = force.clone().fuse() => break,
             _ = stop.clone().fuse() => break,
             id = async {
-                if workers.is_empty() {
+                if lease_pollers.is_empty() {
                     futures::future::pending().await
                 } else {
-                    workers.next().await
+                    lease_pollers.next().await
                 }
             }.fuse() => {
                 if let Some(id) = id { owned.remove(&id); }
@@ -789,7 +800,7 @@ async fn run(
                         let state = state.clone();
                         let stop = stop.clone();
                         let force = force.clone();
-                        workers.push(supervise(context, state, lease, stop, force).map(move |()| id).boxed());
+                        lease_pollers.push(supervise(context, state, lease, stop, force).map(move |()| id).boxed());
                     }
                 }
                 balancing = balance(context.clone(), state.clone(), owned.clone(), context.options.acquire_interval(), stop.clone(), force.clone()).boxed();
@@ -803,18 +814,18 @@ async fn run(
         let stop = stop.clone();
         let force = force.clone();
         let id = lease.value.base.record.id.clone();
-        workers.push(
+        lease_pollers.push(
             supervise(context, state, lease, stop, force)
                 .map(move |()| id)
                 .boxed(),
         );
     }
-    while workers.next().await.is_some() {}
+    while lease_pollers.next().await.is_some() {}
     let unreleased =
         std::mem::take(&mut *state.unreleased.lock().unwrap_or_else(|e| e.into_inner()));
     for observed in unreleased.into_values() {
         let result = async {
-            let Some(mut current) = context
+            let Some(current) = context
                 .store()
                 .read::<Lease>(&observed.base.record.id)
                 .await?
@@ -825,7 +836,7 @@ async fn run(
             if current.value.base.owner == observed.base.owner
                 && current.value.incarnation == observed.incarnation
             {
-                context.update(&mut current, Update::Release).await?;
+                context.update(&mut current.into(), Update::Release).await?;
             }
             Ok(())
         }
@@ -860,7 +871,7 @@ async fn balance(
     delay: Duration,
     stop: Signal,
     force: Signal,
-) -> Vec<Stored<Lease>> {
+) -> Vec<Acquisition> {
     futures::select! {
         _ = sleep(delay).fuse() => {},
         _ = stop.fuse() => return Vec::new(),
@@ -1041,7 +1052,62 @@ reads fresh state, verifies owner/incarnation, preserves newer activity, applies
 only the requested field changes, and writes conditionally with the freshly read
 ETag. Split handling uses this ownership check before creating children, then
 conditionally deletes the parent; it does not add another lease mutation state.
-Acquisition races fail immediately; owned write conflicts have a bounded retry:
+The record transition is independent of storage, clocks, and random identity generation.
+Its inputs include the fresh record, observed acquisition, requested update, options,
+and a supplied timestamp. Acquisition carries its new identity in `Update::Acquire`:
+
+```rust
+fn transition_lease(
+    mut current: Lease,
+    observed: &Lease,
+    update: &Update<'_>,
+    options: &ProcessorOptions,
+    now: i64,
+) -> Result<Lease> {
+    if current.base.owner != observed.base.owner || current.incarnation != observed.incarnation {
+        return Err(lost());
+    }
+    if matches!(update, Update::Acquire(_))
+        && observed
+            .processing_deadline
+            .is_some_and(|deadline| now >= deadline)
+        && current
+            .processing_deadline
+            .is_some_and(|deadline| now < deadline)
+        && current.renewed_at.is_some_and(|renewed| {
+            now.saturating_sub(renewed) <= options.expiration.as_millis() as i64
+        })
+    {
+        return Err(error(
+            StatusCode::PreconditionFailed,
+            "Lease processing resumed before acquisition.",
+        ));
+    }
+    if !matches!(update, Update::Acquire(_)) {
+        current.last_processed_at = current.last_processed_at.max(observed.last_processed_at);
+        current.processing_deadline = current
+            .processing_deadline
+            .max(observed.processing_deadline);
+    }
+    match update {
+        Update::Acquire(incarnation) => {
+            current.base.owner = Some(options.instance_name.clone());
+            current.incarnation = Some((*incarnation).to_owned());
+            current.last_processed_at = None;
+            current.processing_deadline = Some(options.checkpoint_policy.processing_deadline(now)?);
+        }
+        Update::Renew => {}
+        Update::Checkpoint(token) => current.base.continuation = Some((*token).clone()),
+        Update::Release => current.base.owner = None,
+    }
+    current.renewed_at = Some(now);
+    Ok(current)
+}
+```
+
+The storage adapter below performs reads, conditional writes, retries, and
+ambiguous-acquisition tracking. Acquisition races fail immediately; owned write
+conflicts have a bounded retry:
 
 ```rust
 async fn modify_lease(
@@ -1049,79 +1115,30 @@ async fn modify_lease(
     observed: &Lease,
     update: Update<'_>,
     acquisition_state: Option<&SharedState>,
-) -> Result<Stored<Lease>> {
+) -> Result<Acquisition> {
     let id = &observed.base.record.id;
-    let retry_conflicts = !matches!(update, Update::Acquire);
+    let retry_conflicts = !matches!(update, Update::Acquire(_));
     let attempts = if retry_conflicts { 5 } else { 1 };
     for _ in 0..attempts {
-        let mut current = self.store().read::<Lease>(id).await?.ok_or_else(lost)?;
+        let current = self.store().read::<Lease>(id).await?.ok_or_else(lost)?;
         self.validate(&current.value)?;
-        if current.value.base.owner != observed.base.owner
-            || current.value.incarnation != observed.incarnation
-        {
-            return Err(lost());
-        }
-        if matches!(update, Update::Acquire)
-            && observed
-                .processing_deadline
-                .is_some_and(|deadline| now_millis() >= deadline)
-            && current
-                .value
-                .processing_deadline
-                .is_some_and(|deadline| now_millis() < deadline)
-            && current.value.renewed_at.is_some_and(|renewed| {
-                now_millis().saturating_sub(renewed)
-                    <= self.options.expiration.as_millis() as i64
-            })
-        {
-            return Err(error(
-                StatusCode::PreconditionFailed,
-                "Lease processing resumed before acquisition.",
-            ));
-        }
-        current.value.pending = observed.pending.clone();
-        if !matches!(update, Update::Acquire) {
-            current.value.last_processed_at = current
-                .value
-                .last_processed_at
-                .max(observed.last_processed_at);
-            current.value.processing_deadline = current
-                .value
-                .processing_deadline
-                .max(observed.processing_deadline);
-        }
-        match update {
-            Update::Acquire => {
-                current.value.base.owner = Some(self.options.instance_name.clone());
-                current.value.incarnation = Some(Uuid::new_v4().to_string());
-                current.value.last_processed_at = None;
-                current.value.processing_deadline = Some(
-                    self.options
-                        .checkpoint_policy
-                        .processing_deadline(now_millis())?,
-                );
-            }
-            Update::Renew => {}
-            Update::Checkpoint(token) => {
-                current.value.base.continuation = Some(token.clone());
-                current.value.pending = None;
-            }
-            Update::Release => {
-                current.value.base.owner = None;
-                current.value.pending = None;
-            }
-        }
-        current.value.renewed_at = Some(now_millis());
-        current.value.renewed = Some(Instant::now());
-        let key = (id.clone(), current.value.incarnation.clone());
+        let next = transition_lease(
+            current.value,
+            observed,
+            &update,
+            &self.options,
+            now_millis(),
+        )?;
+        let renewed = Instant::now();
+        let key = (id.clone(), next.incarnation.clone());
         if let Some(state) = acquisition_state {
             state
                 .unreleased
                 .lock()
                 .unwrap_or_else(|e| e.into_inner())
-                .insert(key.clone(), current.value.clone());
+                .insert(key.clone(), next.clone());
         }
-        match self.store().replace(id, &current.value, current.etag).await {
+        match self.store().replace(id, &next, current.etag).await {
             Ok(updated) => {
                 if let Some(state) = acquisition_state {
                     state
@@ -1130,7 +1147,10 @@ async fn modify_lease(
                         .unwrap_or_else(|e| e.into_inner())
                         .remove(&key);
                 }
-                return Ok(updated);
+                return Ok(Acquisition {
+                    renewed: Some(renewed),
+                    ..updated.into()
+                });
             }
             Err(err) if retry_conflicts && err.status().is_precondition_failed() => continue,
             Err(err) => return Err(err),
@@ -1160,7 +1180,7 @@ flowchart TD
         end
     end
     subgraph SDK["Rust SDK"]
-        Dispatcher["Dispatcher task"] -->|Poll N workers| Receive["Receive -> callback -> acknowledge"]
+        Dispatcher["Dispatcher task"] -->|Run N batch pollers| Receive["Receive -> callback -> acknowledge"]
         Dispatcher -->|Poll independently| Errors["Serial async error observer"]
     end
     Receive -.->|Authorize a read| Poll
@@ -1180,7 +1200,7 @@ releases and retains them for later shutdown handling:
 async fn supervise(
     context: Arc<Context>,
     state: Arc<SharedState>,
-    lease: Stored<Lease>,
+    lease: Acquisition,
     stop: Signal,
     force: Signal,
 ) {
@@ -1262,7 +1282,7 @@ delay from the last successful lease mutation:
 ```rust
 async fn renew(
     context: Arc<Context>,
-    lease: Arc<Mutex<Stored<Lease>>>,
+    lease: Arc<Mutex<Acquisition>>,
     stopped: Signal,
 ) -> Result<()> {
     let interval = context.options.renew_interval();
@@ -1271,7 +1291,6 @@ async fn renew(
             let lease = lease.lock().await;
             interval.saturating_sub(
                 lease
-                    .value
                     .renewed
                     .map(|updated| updated.elapsed())
                     .unwrap_or_default(),
@@ -1286,7 +1305,6 @@ async fn renew(
             return Ok(());
         }
         let elapsed = lease
-            .value
             .renewed
             .map(|updated| updated.elapsed())
             .unwrap_or(context.options.expiration);
@@ -1332,7 +1350,7 @@ which futures remain alive, and where errors leave an acquisition.
 
 ### 5.1 SDK receive loop
 
-Each SDK worker receives, processes, and settles one receipt before asking for
+Each SDK batch poller receives, processes, and settles one receipt before asking for
 more work. It does not choose a lease, maintain retry counters, or write a token.
 
 The SDK's `consume` function in
@@ -1361,7 +1379,7 @@ decoded collection, and reports success only after all application processing
 finishes. It races processing against receipt cancellation; there is no implicit
 callback timeout. Enqueuing an error does not await the application's error hook.
 
-Run N such worker futures for configured concurrency N, default one. A slow
+Run N such batch-poller futures for configured concurrency N, default one. A slow
 cooperative callback occupies one slot; other slots remain usable. A blocking
 callback can stall their shared dispatcher. Go would implement this application
 loop around native completions; its CFP adapter is deferred.
@@ -1372,8 +1390,8 @@ owned. Another receive is new demand, **never implicit acknowledgment**.
 ### 5.2 Demand selection and read authorization
 
 ```text
-SDK worker 1: next_batch() ---------------------------------------+
-SDK worker 2: next_batch() ------------------------+              |
+Batch poller 1: next_batch() -------------------------------------+
+Batch poller 2: next_batch() ----------------------+              |
                                                   v              v
                                  Driver scheduler: eligible acquisitions
                                  FIFO weak handles, no batch payload queue
@@ -1384,7 +1402,7 @@ SDK worker 2: next_batch() ------------------------+              |
                                 read -> receipt        read -> receipt
                                 renew independently    renew independently
                                       |                     |
-                                      +--> original requesting SDK worker
+                                      +--> original requesting batch poller
 ```
 
 Each receive authorizes only one acquisition read at a time. If A returns idle or
@@ -1426,15 +1444,19 @@ pub(super) async fn next_batch(&self) -> Option<ChangeFeedBatch> {
                         continue;
                     };
                     let mut state = delivery.state();
-                    let Some(request) = state.request.take() else {
-                        continue;
+                    let request = match std::mem::replace(&mut *state, DeliveryState::Fetching)
+                    {
+                        DeliveryState::WaitingForDemand(request) => request,
+                        previous => {
+                            *state = previous;
+                            continue;
+                        }
                     };
                     let (response, received) = oneshot::channel();
-                    state.phase = DeliveryPhase::Fetching;
                     if request.send(ReadDemand { response }).is_ok() {
                         return Poll::Ready(Some(received));
                     }
-                    state.phase = DeliveryPhase::AwaitingDemand;
+                    *state = DeliveryState::Idle;
                 }
                 Poll::Pending
             })
@@ -1456,7 +1478,7 @@ pub(super) async fn next_batch(&self) -> Option<ChangeFeedBatch> {
 
 The loop below belongs to **one acquisition**, not the whole processor. Errors
 returned here go to its supervisor for reporting and cleanup; they do not
-instruct the SDK to terminate all workers.
+instruct the SDK to terminate all batch pollers.
 
 Read `poll_feed` in five stages:
 
@@ -1476,7 +1498,7 @@ async fn poll_feed(
     context: Arc<Context>,
     state: Arc<SharedState>,
     session: &AcquisitionDelivery,
-    lease: Arc<Mutex<Stored<Lease>>>,
+    lease: Arc<Mutex<Acquisition>>,
     cancelled: Signal,
     stop: Signal,
     force: Signal,
@@ -1623,7 +1645,7 @@ async fn poll_feed(
                 .map(ContinuationToken::as_str)
                 != Some(token.as_str())
             {
-                stored.value.acknowledge(token, 0);
+                stored.acknowledge(token, 0);
                 if context.options.checkpoint_policy == CheckpointPolicy::EveryBatch {
                     context.flush(&mut stored).await?;
                 }
@@ -1679,7 +1701,7 @@ async fn poll_feed(
         if cancelled.clone().now_or_never().is_some() || state.forced.load(Ordering::Acquire) {
             return Err(lost());
         }
-        lease.value.acknowledge(token, handled_changes);
+        lease.acknowledge(token, handled_changes);
         if handled_changes > 0 {
             lease
                 .value
@@ -1803,22 +1825,24 @@ The persisted lease remains owned while local delivery moves through the cycle:
 ```mermaid
 flowchart TD
     subgraph Live["Local acquisition state, not lease-document fields"]
-        Demand["AwaitingDemand"] -->|Receive grants one read| Fetch["Fetching"]
+        Idle["Idle"] -->|Register a demand sender| Demand["WaitingForDemand"]
+        Demand -->|Receive consumes sender and grants one read| Fetch["Fetching"]
         Fetch -->|Page transferred to requester| Ack["AwaitingAcknowledgment"]
-        Ack -->|Receipt accepted under policy| Demand
+        Ack -->|Receipt accepted under policy| Idle
         Fetch -->|Idle or 429, release demand| Delay["Local delay, not eligible"]
         Delay -->|Timer elapsed, register again| Demand
         Fetch -->|Read failure or unclaimed response| Closed["Closed"]
         Fetch -->|Ownership loss or forced cancellation| Closed
         Ack -->|Abandonment, failed required checkpoint| Closed
         Demand -->|Ownership loss or shutdown cleanup| Closed
+        Idle -->|Acquisition ends| Closed
         Delay -->|Ownership loss or shutdown cleanup| Closed
         Ack -->|Ownership loss or forced cancellation| Closed
     end
     Closed -->|Supervisor handles persistence separately| Cleanup["Release, expire, or recover topology"]
 ```
 
-`Local delay` is a reason for ineligibility, not a fifth delivery enum variant:
+`Local delay` is a reason for ineligibility, not an additional delivery enum variant:
 the current implementation retains `Fetching` until demand is registered again.
 `Closed` is only the terminal state of local delivery. It is not a persisted
 lease lifecycle or a signal to schedule split cleanup.
@@ -1836,23 +1860,18 @@ impl AcquisitionDelivery {
                 return Ok(None);
             }
             let mut state = self.delivery.state();
-            if state.phase == DeliveryPhase::Closed {
-                return Err(lost());
-            }
-            if state.request.is_some()
-                || !matches!(
-                    state.phase,
-                    DeliveryPhase::AwaitingDemand | DeliveryPhase::Fetching
-                )
-            {
-                return Err(error(
-                    StatusCode::Conflict,
-                    "Acquisition already has pending demand or an outstanding batch.",
-                ));
+            match &*state {
+                DeliveryState::Closed => return Err(lost()),
+                DeliveryState::Idle | DeliveryState::Fetching => {}
+                _ => {
+                    return Err(error(
+                        StatusCode::Conflict,
+                        "Acquisition already has pending demand or an outstanding batch.",
+                    ))
+                }
             }
             let (request, received) = oneshot::channel();
-            state.phase = DeliveryPhase::AwaitingDemand;
-            state.request = Some(request);
+            *state = DeliveryState::WaitingForDemand(request);
             scheduler
                 .available
                 .push_back(Arc::downgrade(&self.delivery));
@@ -1877,10 +1896,10 @@ impl AcquisitionDelivery {
             return Ok(false);
         }
         let mut state = self.delivery.state();
-        if scheduler.closed || state.phase == DeliveryPhase::Closed {
+        if scheduler.closed || matches!(*state, DeliveryState::Closed) {
             return Err(lost());
         }
-        if state.phase != DeliveryPhase::Fetching {
+        if !matches!(*state, DeliveryState::Fetching) {
             return Err(error(
                 StatusCode::Conflict,
                 "Acquisition already has an outstanding batch.",
@@ -1891,10 +1910,10 @@ impl AcquisitionDelivery {
             response,
             receipt,
         };
-        state.phase = DeliveryPhase::AwaitingAcknowledgment;
+        *state = DeliveryState::AwaitingAcknowledgment;
         let sent = demand.response.send(batch);
         if sent.is_err() {
-            state.phase = DeliveryPhase::Closed;
+            *state = DeliveryState::Closed;
         }
         drop(state);
         drop(scheduler);
@@ -1909,12 +1928,12 @@ impl AcquisitionDelivery {
 
     pub(super) fn acknowledged(&self) -> Result<()> {
         let mut state = self.delivery.state();
-        match state.phase {
-            DeliveryPhase::AwaitingAcknowledgment => {
-                state.phase = DeliveryPhase::AwaitingDemand;
+        match &*state {
+            DeliveryState::AwaitingAcknowledgment => {
+                *state = DeliveryState::Idle;
                 Ok(())
             }
-            DeliveryPhase::Closed => Err(lost()),
+            DeliveryState::Closed => Err(lost()),
             _ => Err(error(
                 StatusCode::Conflict,
                 "Acquisition has no delivered batch to acknowledge.",
@@ -2135,7 +2154,7 @@ and known ownership loss take priority over a due timer:
 ```rust
 async fn wait_with_checkpoint<T>(
     &self,
-    lease: &Mutex<Stored<Lease>>,
+    lease: &Mutex<Acquisition>,
     cancelled: &Signal,
     force: &Signal,
     work: impl Future<Output = Result<T>>,
@@ -2146,7 +2165,6 @@ async fn wait_with_checkpoint<T>(
         let delay = lease
             .lock()
             .await
-            .value
             .checkpoint_delay(self.options.checkpoint_policy, Instant::now());
         let deadline = async {
             match delay {
@@ -2307,7 +2325,9 @@ impl Lease {
         self.last_processed_at = Some(now);
         Ok(())
     }
+}
 
+impl Acquisition {
     fn acknowledge(&mut self, token: ContinuationToken, handled_changes: u64) {
         if let Some(pending) = &mut self.pending {
             pending.token = token;
@@ -2343,7 +2363,7 @@ This fences stored progress, not external application effects that already happe
 | Event | In-memory state | Persisted lease effect |
 | --- | --- | --- |
 | Acquire | Create new acquisition, cancellation signal, and empty delivery state. | Set owner/new incarnation, renewal time, and processing deadline; clear per-acquisition last-processed time; preserve stored continuation. |
-| Receive demand | `AwaitingDemand -> Fetching`. | None. |
+| Register/receive demand | `Idle -> WaitingForDemand(sender) -> Fetching`; consume the sender once. | None. |
 | Data read succeeds | Plan reaches next token; hand response to SDK; await receipt. | None for this data page. |
 | Callback succeeds, coalesced acknowledgment | Replace pending token; preserve the first pending-success time; refresh processing activity for nonempty batches; release payload. | No immediate write. Renewal can publish activity without saving the pending token. |
 | Callback succeeds, `EveryBatch` or explicit checkpoint | Accept pending token; keep next delivery blocked until write result. | Conditionally persist successful continuation. |
@@ -2385,10 +2405,10 @@ pending progress through `Update::Checkpoint`; a failed write marks the pending
 checkpoint as failed and returns the original error:
 
 ```rust
-async fn flush(&self, lease: &mut Stored<Lease>) -> Result<()> {
-    if let Some(pending) = lease.value.pending.clone() {
+async fn flush(&self, lease: &mut Acquisition) -> Result<()> {
+    if let Some(pending) = lease.pending.clone() {
         if let Err(err) = self.update(lease, Update::Checkpoint(&pending.token)).await {
-            if let Some(pending) = &mut lease.value.pending {
+            if let Some(pending) = &mut lease.pending {
                 pending.failed = true;
             }
             return Err(err);
@@ -2413,7 +2433,7 @@ async fn flush(&self, lease: &mut Stored<Lease>) -> Result<()> {
 ```mermaid
 sequenceDiagram
     box rgb(235, 245, 255) SDK and application
-        participant SDK as SDK worker
+        participant SDK as SDK batch poller
         participant App as Application callback
     end
     box rgb(240, 250, 240) Shared engine
@@ -2577,7 +2597,7 @@ async fn poll(
     context: Arc<Context>,
     state: Arc<SharedState>,
     session: &AcquisitionDelivery,
-    lease: Arc<Mutex<Stored<Lease>>>,
+    lease: Arc<Mutex<Acquisition>>,
     cancelled: Signal,
     stop: Signal,
     force: Signal,
@@ -2595,11 +2615,7 @@ async fn poll(
     if !state.forced.load(Ordering::Acquire) {
         let mut lease = lease.lock().await;
         if !state.forced.load(Ordering::Acquire)
-            && !lease
-                .value
-                .pending
-                .as_ref()
-                .is_some_and(|pending| pending.failed)
+            && !lease.pending.as_ref().is_some_and(|pending| pending.failed)
         {
             if cancelled.clone().now_or_never().is_some() {
                 return Err(lost());
@@ -2672,7 +2688,7 @@ child creation. `split` creates or confirms replacements and deletes the parent
 with its ETag only after they exist:
 
 ```rust
-pub(super) async fn recover(&self, lease: Arc<Mutex<Stored<Lease>>>) -> Result<bool> {
+pub(super) async fn recover(&self, lease: Arc<Mutex<Acquisition>>) -> Result<bool> {
     let scope = lease.lock().await.value.base.range.clone();
     let topology = self
         .source_driver
@@ -2761,6 +2777,10 @@ These are contract assertions, not claims of a new test execution:
    through normal acquisition without resetting established children.
 7. **Shutdown:** graceful drain settles issued receipts and surfaces failed
    cleanup; forced cancellation never fabricates callback success.
+8. **Data boundaries:** record serialization is unchanged when acquisition-local
+   progress changes. Pure transition tests supply time/identity, reject stale
+   ownership, and preserve fresh stored checkpoints and newer activity. Duplicate
+   demand registration must leave the original waiter usable.
 
 Exercise both feed modes and checkpoint policies. Keep local in-memory execution,
 compiled-only integration coverage, and real-service validation distinct.

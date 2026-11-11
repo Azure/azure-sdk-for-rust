@@ -201,16 +201,16 @@ where
     let task = get_async_runtime().spawn(Box::pin(async move {
         let processing = async {
             let dispatching = async {
-                let mut workers = FuturesUnordered::new();
+                let mut batch_pollers = FuturesUnordered::new();
                 for _ in 0..concurrency {
-                    workers.push(consume::<T, H, Fut>(
+                    batch_pollers.push(consume::<T, H, Fut>(
                         dispatcher.clone(),
                         container.clone(),
                         handler.clone(),
                         reporting.clone(),
                     ));
                 }
-                while workers.next().await.is_some() {}
+                while batch_pollers.next().await.is_some() {}
             };
             let result = AssertUnwindSafe(dispatching)
                 .catch_unwind()

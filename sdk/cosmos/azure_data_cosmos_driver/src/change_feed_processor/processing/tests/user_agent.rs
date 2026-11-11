@@ -212,7 +212,7 @@ async fn processor_user_agent_covers_bootstrap_polling_maintenance_and_topology_
             .unwrap();
         assert!(
             !context
-                .recover(Arc::new(async_lock::Mutex::new(stored)))
+                .recover(Arc::new(async_lock::Mutex::new(stored.into())))
                 .await?
         );
         let recovery_requests = requests.take();

@@ -221,8 +221,9 @@ acquisition ends and unsaved changes can replay.
 Renewal, checkpoint deadlines, acquisition, and cleanup continue without data
 demand. Automatic bootstrap, start-option precedence, and persisted lease records
 are unchanged; a fresh feed position is resolved only on a requested read.
-The Rust SDK defaults to one processing worker. `with_max_concurrency` sets the
-number of concurrent receive/callback/acknowledgment cycles; each worker keeps
+One worker is one started change-feed processor instance. The Rust SDK defaults
+to one batch poller per worker. `with_max_concurrency` sets the number of concurrent
+receive/callback/acknowledgment cycles; each batch poller keeps
 its slot until policy completion, with no prefetched batch backlog.
 Native hosts choose concurrency through admitted next requests; queue capacity
 still bounds data admission, separately from acknowledgment and stop.

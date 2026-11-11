@@ -318,12 +318,11 @@ mod faults {
             max_interval: Duration::from_secs(60),
         };
         let mut owned = context.acquire(&context.list().await?.remove(0)).await?;
-        owned.value.acknowledge(
+        owned.acknowledge(
             crate::models::ContinuationToken::from_string("handled".into()),
             2,
         );
-        owned.value.pending.as_mut().unwrap().since =
-            std::time::Instant::now() - Duration::from_secs(60);
+        owned.pending.as_mut().unwrap().since = std::time::Instant::now() - Duration::from_secs(60);
         let id = owned.value.base.record.id.clone();
         let lease = async_lock::Mutex::new(owned);
         let (_cancel, cancelled) = signal();
@@ -341,7 +340,7 @@ mod faults {
             result.unwrap_err().status().status_code(),
             StatusCode::BadRequest
         );
-        assert!(lease.lock().await.value.pending.is_some());
+        assert!(lease.lock().await.pending.is_some());
         assert!(record(&context, &id).await.base.continuation.is_none());
         assert_eq!(rule.hit_count(), 1);
         Ok(())

@@ -3,7 +3,7 @@
 
 use super::{
     balancing, fixture_with_emulator, insert, leases, next, now_millis, options, start,
-    ChangeFeedFactoryMode, CheckpointPolicy, ContinuationToken, Lease, Result, Update,
+    Acquisition, ChangeFeedFactoryMode, CheckpointPolicy, ContinuationToken, Lease, Result, Update,
 };
 use std::{sync::Arc, time::Duration};
 
@@ -80,9 +80,7 @@ async fn activity_is_published_by_renewal_without_persisting_pending_progress() 
         let id = owned.value.base.record.id.clone();
         let initial_deadline = owned.value.processing_deadline.unwrap();
         let processed_at = now_millis() + 1_000;
-        owned
-            .value
-            .acknowledge(ContinuationToken::from_string("pending".into()), 1);
+        owned.acknowledge(ContinuationToken::from_string("pending".into()), 1);
         owned.value.processed(policy, processed_at)?;
         let before = context.store().read::<Lease>(&id).await?.unwrap();
         assert!(before.value.last_processed_at.is_none());
@@ -97,21 +95,15 @@ async fn activity_is_published_by_renewal_without_persisting_pending_progress() 
         );
         assert!(stored.value.processing_deadline.unwrap() > initial_deadline);
         assert!(stored.value.base.continuation.is_none());
-        assert!(stored.value.pending.is_none());
-        assert_eq!(
-            owned.value.pending.as_ref().unwrap().token.as_str(),
-            "pending"
-        );
+        assert_eq!(owned.pending.as_ref().unwrap().token.as_str(), "pending");
 
         let deadline = owned.value.processing_deadline;
-        let dirty_since = owned.value.pending.as_ref().unwrap().since;
-        owned
-            .value
-            .acknowledge(ContinuationToken::from_string("idle".into()), 0);
+        let dirty_since = owned.pending.as_ref().unwrap().since;
+        owned.acknowledge(ContinuationToken::from_string("idle".into()), 0);
         context.update(&mut owned, Update::Renew).await?;
         assert_eq!(owned.value.last_processed_at, Some(processed_at));
         assert_eq!(owned.value.processing_deadline, deadline);
-        assert_eq!(owned.value.pending.as_ref().unwrap().since, dirty_since);
+        assert_eq!(owned.pending.as_ref().unwrap().since, dirty_since);
         assert!(owned.value.base.continuation.is_none());
 
         let token = ContinuationToken::from_string("durable".into());
@@ -130,16 +122,18 @@ async fn stale_activity_cannot_replace_newer_activity_or_reacquire_recovered_wor
     let (context, _) = fixture_with_emulator(ChangeFeedFactoryMode::Incremental, 1).await?;
     let mut owned = context.acquire(&context.list().await?.remove(0)).await?;
     owned.value.processing_deadline = Some(now_millis() - 1);
-    let mut owned = context
+    let mut owned: Acquisition = context
         .store()
         .replace(&owned.value.base.record.id, &owned.value, owned.etag)
-        .await?;
+        .await?
+        .into();
     let expired = owned.value.clone();
-    let mut stale = context
+    let mut stale: Acquisition = context
         .store()
         .read::<Lease>(&owned.value.base.record.id)
         .await?
-        .unwrap();
+        .unwrap()
+        .into();
     let now = now_millis();
     owned
         .value

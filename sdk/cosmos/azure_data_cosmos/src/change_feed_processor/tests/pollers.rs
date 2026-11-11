@@ -186,7 +186,7 @@ impl RequestObserver for FeedReads {
 }
 
 #[tokio::test]
-async fn worker_limit_covers_receive_callback_and_drain_in_both_modes() -> Result<(), Box<dyn Error>>
+async fn poller_limit_covers_receive_callback_and_drain_in_both_modes() -> Result<(), Box<dyn Error>>
 {
     static ENTERED: Mutex<Option<mpsc::UnboundedSender<Entered>>> = Mutex::new(None);
     for mode in [
@@ -282,7 +282,7 @@ async fn worker_limit_covers_receive_callback_and_drain_in_both_modes() -> Resul
                 assert_eq!(
                     reads.0.load(Ordering::SeqCst),
                     reads_while_full,
-                    "full SDK workers must not prefetch"
+                    "busy SDK pollers must not prefetch"
                 );
                 if limit > 1 {
                     let slow = held[0].0.clone();
@@ -290,7 +290,7 @@ async fn worker_limit_covers_receive_callback_and_drain_in_both_modes() -> Resul
                     let next = tokio::time::timeout(Duration::from_secs(5), callbacks.next())
                         .await?
                         .unwrap();
-                    assert_ne!(next.0, slow, "a held lease must not consume another worker");
+                    assert_ne!(next.0, slow, "a held lease must not consume another poller");
                     held.push(next);
                 }
                 let mut stopping = Box::pin(processor.stop());

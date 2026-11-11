@@ -26,7 +26,7 @@ use time::OffsetDateTime;
 
 #[cfg(feature = "fault_injection")]
 mod cooldown;
-mod workers;
+mod pollers;
 
 async fn on_changes(
     _context: ChangeFeedProcessorContext,

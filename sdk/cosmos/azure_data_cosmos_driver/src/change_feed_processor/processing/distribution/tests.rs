@@ -258,6 +258,31 @@ fn delivery_requires_demand_and_the_previous_acknowledgment() {
 }
 
 #[test]
+fn duplicate_demand_registration_preserves_the_original_waiter() {
+    let distributor = Arc::new(BatchDistributor::default());
+    let session = acquire(&distributor, "lease");
+    let original = waiting(&session);
+    assert_eq!(
+        session
+            .wait_for_demand()
+            .now_or_never()
+            .unwrap()
+            .err()
+            .expect("duplicate registration must fail")
+            .status()
+            .status_code(),
+        StatusCode::Conflict
+    );
+    let mut receiving = receive(&distributor);
+    assert!(receiving.as_mut().now_or_never().is_none());
+    let demand = original.now_or_never().unwrap().unwrap().unwrap();
+    let acknowledgment = publish(&session, demand, "original");
+    let batch = receiving.now_or_never().unwrap().unwrap();
+    assert_eq!(batch.lease_token, "lease");
+    acknowledge(&session, batch, acknowledgment);
+}
+
+#[test]
 fn canceled_producer_is_skipped_without_blocking_another_acquisition() {
     let distributor = Arc::new(BatchDistributor::default());
     let a = acquire(&distributor, "a");

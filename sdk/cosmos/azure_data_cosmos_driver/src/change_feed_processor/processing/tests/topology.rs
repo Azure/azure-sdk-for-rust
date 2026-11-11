@@ -5,7 +5,7 @@ use super::super::{poll_feed, signal, SharedState};
 #[cfg(feature = "fault_injection")]
 use super::{super::balance, fault_fixture};
 use super::{
-    bootstrap, fixture_with_emulator, next, poll_until, start, ChangeFeedBatch,
+    bootstrap, fixture_with_emulator, next, poll_until, start, Acquisition, ChangeFeedBatch,
     ChangeFeedFactoryMode, Context, Lease, Processor, ProcessorOptions, Update,
 };
 #[cfg(feature = "fault_injection")]
@@ -897,7 +897,7 @@ async fn concurrent_split_handling_preserves_child_checkpoints() -> Result<()> {
     context
         .update(&mut first, Update::Checkpoint(&checkpoint))
         .await?;
-    let mut second = stored(&context, &root.base.record.id).await;
+    let mut second: Acquisition = stored(&context, &root.base.record.id).await.into();
     let children = [range("", "20"), range("20", "FF")];
     let (one, two) = futures::join!(
         context.split(&mut first, &children),

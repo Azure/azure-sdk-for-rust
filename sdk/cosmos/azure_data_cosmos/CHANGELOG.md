@@ -6,7 +6,7 @@
 
 - Added `ChangeFeedProcessorContext::diagnostics()` for retaining batch-read diagnostics independently of response payloads.
 - Added `ChangeFeedCheckpointPolicy::coalesced()` for five-minute checkpoint coalescing without idle-triggered persistence.
-- A throttled processor lease now yields receive demand to other leases, including with one SDK worker; Retry-After expiry only restores eligibility and does not prefetch.
+- A throttled processor lease now yields receive demand to other leases, including with one SDK batch poller; Retry-After expiry only restores eligibility and does not prefetch.
 - Added `ChangeFeedProcessorBuilder::with_max_concurrency()` to bound receive, callback, and acknowledgment cycles, and `handle_error()` for independent asynchronous failure notifications.
 - Added opt-in `ChangeFeedCheckpointPolicy::Coalesced` to reduce checkpoint writes across successful callbacks, flushing at the configured interval, graceful shutdown, or topology recovery; durable-per-batch remains the default.
 - `ChangeFeedProcessor::start()` bootstraps the workload and starts driver-owned lease balancing, renewal, and polling; by default, a checkpoint follows each successful callback before the next batch for that lease, and `stop()` waits for local shutdown.
@@ -21,7 +21,7 @@
 - Leases can be reclaimed after processing inactivity despite healthy renewal: ten minutes with every-batch checkpoints, or twice the configured coalescing interval; idle reads and absent demand do not refresh processing activity.
 - Split parent leases are now deleted after child creation, while merge leases are retained; upgrade all cooperating workers before restarting with lease verification.
 - Processor read turns are now bounded to five seconds or a shorter driver operation deadline, independently of callback duration.
-- Change feed processors now use one batch-processing worker by default; configure `with_max_concurrency()` to process leases concurrently.
+- Change feed processors now use one batch poller per worker instance by default; configure `with_max_concurrency()` to process leases concurrently.
 - `ChangeFeedProcessor::stop()` now drains issued callbacks and reports incomplete shutdown or lease cleanup; use `abort()` for explicit callback cancellation. ([#5477](https://github.com/Azure/azure-sdk-for-rust/pull/5477))
 - Consumed legacy single-request prefix checkpoints cannot safely resume across physical ranges and are rejected; start a new feed with an explicit start position. Older unpolled single-request checkpoints require the original start on resume. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 

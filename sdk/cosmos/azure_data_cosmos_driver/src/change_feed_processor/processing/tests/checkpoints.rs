@@ -269,7 +269,7 @@ async fn canceled_receive_discards_unclaimed_changes_and_replays_saved_progress(
                     .continuation,
                 before
             );
-            assert!(lease.lock().await.value.pending.is_none());
+            assert!(lease.lock().await.pending.is_none());
             context
                 .update(&mut *lease.lock().await, Update::Release)
                 .await?;
@@ -590,27 +590,19 @@ async fn ownership_loss_fences_buffered_progress_and_durable_barriers() -> Resul
 async fn deadline_flushes_while_work_is_pending_and_renewal_preserves_dirty_age() -> Result<()> {
     let (context, writes) = fixture(ChangeFeedFactoryMode::Incremental, coalesced()).await?;
     let mut owned = context.acquire(&context.list().await?.remove(0)).await?;
-    owned
-        .value
-        .acknowledge(ContinuationToken::from_string("handled".into()), 3);
+    owned.acknowledge(ContinuationToken::from_string("handled".into()), 3);
     let since = Instant::now() - Duration::from_secs(60);
-    owned.value.pending.as_mut().unwrap().since = since;
+    owned.pending.as_mut().unwrap().since = since;
     context.update(&mut owned, Update::Renew).await?;
-    owned
-        .value
-        .acknowledge(ContinuationToken::from_string("latest-handled".into()), 4);
-    assert_eq!(owned.value.pending.as_ref().unwrap().since, since);
-    assert_eq!(owned.value.pending.as_ref().unwrap().handled_changes, 7);
+    owned.acknowledge(ContinuationToken::from_string("latest-handled".into()), 4);
+    assert_eq!(owned.pending.as_ref().unwrap().since, since);
+    assert_eq!(owned.pending.as_ref().unwrap().handled_changes, 7);
     assert_eq!(
-        owned
-            .value
-            .checkpoint_delay(coalesced(), since + Duration::from_secs(60)),
+        owned.checkpoint_delay(coalesced(), since + Duration::from_secs(60)),
         Some(Duration::ZERO)
     );
     assert_eq!(
-        owned
-            .value
-            .checkpoint_delay(coalesced(), since + Duration::from_secs(59)),
+        owned.checkpoint_delay(coalesced(), since + Duration::from_secs(59)),
         Some(Duration::from_secs(1))
     );
     let id = owned.value.base.record.id.clone();
@@ -633,12 +625,11 @@ async fn deadline_flushes_while_work_is_pending_and_renewal_preserves_dirty_age(
         .unwrap();
         let saved = record(&context, &id).await.value;
         assert_eq!(saved.base.continuation.unwrap().as_str(), "latest-handled");
-        assert!(saved.pending.is_none());
         force.send(()).unwrap();
     };
     let (result, ()) = futures::join!(waiting, verifying);
     assert!(result?.is_none());
-    assert!(lease.lock().await.value.pending.is_none());
+    assert!(lease.lock().await.pending.is_none());
     assert_eq!(writes.counts().checkpoints, 1);
     Ok(())
 }
@@ -647,10 +638,8 @@ async fn deadline_flushes_while_work_is_pending_and_renewal_preserves_dirty_age(
 async fn forced_cancellation_wins_over_an_expired_flush_deadline() -> Result<()> {
     let (context, writes) = fixture(ChangeFeedFactoryMode::Incremental, coalesced()).await?;
     let mut owned = context.acquire(&context.list().await?.remove(0)).await?;
-    owned
-        .value
-        .acknowledge(ContinuationToken::from_string("never-persist".into()), 1);
-    owned.value.pending.as_mut().unwrap().since = Instant::now() - Duration::from_secs(60);
+    owned.acknowledge(ContinuationToken::from_string("never-persist".into()), 1);
+    owned.pending.as_mut().unwrap().since = Instant::now() - Duration::from_secs(60);
     let lease = Mutex::new(owned);
     let (_cancel, cancelled) = signal();
     let (force, forced) = signal();
@@ -811,23 +800,17 @@ async fn five_minute_deadline_flushes_without_demand_or_new_acknowledgment() -> 
     let policy = CheckpointPolicy::coalesced();
     let (context, writes) = fixture(ChangeFeedFactoryMode::Incremental, policy).await?;
     let mut owned = context.acquire(&context.list().await?.remove(0)).await?;
-    owned
-        .value
-        .acknowledge(ContinuationToken::from_string("handled".into()), 1);
-    let since = owned.value.pending.as_ref().unwrap().since;
+    owned.acknowledge(ContinuationToken::from_string("handled".into()), 1);
+    let since = owned.pending.as_ref().unwrap().since;
     assert_eq!(
-        owned
-            .value
-            .checkpoint_delay(policy, since + Duration::from_secs(299)),
+        owned.checkpoint_delay(policy, since + Duration::from_secs(299)),
         Some(Duration::from_secs(1))
     );
     assert_eq!(
-        owned
-            .value
-            .checkpoint_delay(policy, since + Duration::from_secs(300)),
+        owned.checkpoint_delay(policy, since + Duration::from_secs(300)),
         Some(Duration::ZERO)
     );
-    owned.value.pending.as_mut().unwrap().since = Instant::now() - Duration::from_secs(300);
+    owned.pending.as_mut().unwrap().since = Instant::now() - Duration::from_secs(300);
     let id = owned.value.base.record.id.clone();
     let lease = Mutex::new(owned);
     let (_cancel, cancelled) = signal();

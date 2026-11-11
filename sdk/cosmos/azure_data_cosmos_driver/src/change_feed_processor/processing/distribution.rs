@@ -17,43 +17,32 @@ use std::{
     task::Poll,
 };
 
-#[derive(Default, PartialEq, Eq)]
-enum DeliveryPhase {
+#[derive(Default)]
+enum DeliveryState {
     #[default]
-    AwaitingDemand,
+    Idle,
+    WaitingForDemand(oneshot::Sender<ReadDemand>),
     Fetching,
     AwaitingAcknowledgment,
     Closed,
 }
 
 #[derive(Default)]
-struct AcquisitionState {
-    phase: DeliveryPhase,
-    request: Option<oneshot::Sender<ReadDemand>>,
-}
-
-#[derive(Default)]
 struct Delivery {
-    state: Mutex<AcquisitionState>,
+    state: Mutex<DeliveryState>,
 }
 
 impl Delivery {
-    fn state(&self) -> MutexGuard<'_, AcquisitionState> {
+    fn state(&self) -> MutexGuard<'_, DeliveryState> {
         self.state.lock().unwrap_or_else(|err| {
             tracing::error!("Recovering poisoned acquisition delivery state");
             err.into_inner()
         })
     }
 
-    fn close(&self) -> AcquisitionState {
+    fn close(&self) -> DeliveryState {
         let mut state = self.state();
-        std::mem::replace(
-            &mut *state,
-            AcquisitionState {
-                phase: DeliveryPhase::Closed,
-                ..Default::default()
-            },
-        )
+        std::mem::replace(&mut *state, DeliveryState::Closed)
     }
 }
 
@@ -125,15 +114,19 @@ impl BatchDistributor {
                             continue;
                         };
                         let mut state = delivery.state();
-                        let Some(request) = state.request.take() else {
-                            continue;
+                        let request = match std::mem::replace(&mut *state, DeliveryState::Fetching)
+                        {
+                            DeliveryState::WaitingForDemand(request) => request,
+                            previous => {
+                                *state = previous;
+                                continue;
+                            }
                         };
                         let (response, received) = oneshot::channel();
-                        state.phase = DeliveryPhase::Fetching;
                         if request.send(ReadDemand { response }).is_ok() {
                             return Poll::Ready(Some(received));
                         }
-                        state.phase = DeliveryPhase::AwaitingDemand;
+                        *state = DeliveryState::Idle;
                     }
                     Poll::Pending
                 })
@@ -186,23 +179,18 @@ impl AcquisitionDelivery {
                 return Ok(None);
             }
             let mut state = self.delivery.state();
-            if state.phase == DeliveryPhase::Closed {
-                return Err(lost());
-            }
-            if state.request.is_some()
-                || !matches!(
-                    state.phase,
-                    DeliveryPhase::AwaitingDemand | DeliveryPhase::Fetching
-                )
-            {
-                return Err(error(
-                    StatusCode::Conflict,
-                    "Acquisition already has pending demand or an outstanding batch.",
-                ));
+            match &*state {
+                DeliveryState::Closed => return Err(lost()),
+                DeliveryState::Idle | DeliveryState::Fetching => {}
+                _ => {
+                    return Err(error(
+                        StatusCode::Conflict,
+                        "Acquisition already has pending demand or an outstanding batch.",
+                    ))
+                }
             }
             let (request, received) = oneshot::channel();
-            state.phase = DeliveryPhase::AwaitingDemand;
-            state.request = Some(request);
+            *state = DeliveryState::WaitingForDemand(request);
             scheduler
                 .available
                 .push_back(Arc::downgrade(&self.delivery));
@@ -227,10 +215,10 @@ impl AcquisitionDelivery {
             return Ok(false);
         }
         let mut state = self.delivery.state();
-        if scheduler.closed || state.phase == DeliveryPhase::Closed {
+        if scheduler.closed || matches!(*state, DeliveryState::Closed) {
             return Err(lost());
         }
-        if state.phase != DeliveryPhase::Fetching {
+        if !matches!(*state, DeliveryState::Fetching) {
             return Err(error(
                 StatusCode::Conflict,
                 "Acquisition already has an outstanding batch.",
@@ -241,10 +229,10 @@ impl AcquisitionDelivery {
             response,
             receipt,
         };
-        state.phase = DeliveryPhase::AwaitingAcknowledgment;
+        *state = DeliveryState::AwaitingAcknowledgment;
         let sent = demand.response.send(batch);
         if sent.is_err() {
-            state.phase = DeliveryPhase::Closed;
+            *state = DeliveryState::Closed;
         }
         drop(state);
         drop(scheduler);
@@ -259,12 +247,12 @@ impl AcquisitionDelivery {
 
     pub(super) fn acknowledged(&self) -> Result<()> {
         let mut state = self.delivery.state();
-        match state.phase {
-            DeliveryPhase::AwaitingAcknowledgment => {
-                state.phase = DeliveryPhase::AwaitingDemand;
+        match &*state {
+            DeliveryState::AwaitingAcknowledgment => {
+                *state = DeliveryState::Idle;
                 Ok(())
             }
-            DeliveryPhase::Closed => Err(lost()),
+            DeliveryState::Closed => Err(lost()),
             _ => Err(error(
                 StatusCode::Conflict,
                 "Acquisition has no delivered batch to acknowledge.",

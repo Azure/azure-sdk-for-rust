@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{Context, Lease, Update};
+use super::{Acquisition, Context, Lease, Update};
 use crate::{
     change_feed_processor::bootstrap::{
-        error, lease_id, store::ChangeFeedProcessorBootstrapStoredRecord as Stored,
-        validate_ranges, ChangeFeedProcessorBootstrapProcessingLease as ProcessingLease,
+        error, lease_id, validate_ranges,
+        ChangeFeedProcessorBootstrapProcessingLease as ProcessingLease,
         ChangeFeedProcessorBootstrapRangePlan as RangePlan,
         ChangeFeedProcessorBootstrapRecord as Record,
     },
@@ -260,8 +260,6 @@ impl Context {
                         renewed_at: None,
                         last_processed_at: None,
                         processing_deadline: None,
-                        renewed: None,
-                        pending: None,
                     };
                     self.store().create(&id, &lease).await?;
                     self.store().read::<Lease>(&id).await?.ok_or_else(|| {
@@ -285,12 +283,12 @@ impl Context {
 
     pub(super) async fn split(
         &self,
-        parent: &mut Stored<Lease>,
+        parent: &mut Acquisition,
         children: &[FeedRange],
     ) -> Result<()> {
         self.validate(&parent.value)?;
         validate_children(&parent.value.base.range, children)?;
-        if parent.value.pending.is_some() {
+        if parent.pending.is_some() {
             return Err(error(
                 StatusCode::Conflict,
                 "Split requires durable progress.",
@@ -322,8 +320,6 @@ impl Context {
                         renewed_at: None,
                         last_processed_at: None,
                         processing_deadline: None,
-                        renewed: None,
-                        pending: None,
                     };
                     self.store().create(&id, &child).await?;
                     self.store().read::<Lease>(&id).await?.ok_or_else(|| {
@@ -345,7 +341,7 @@ impl Context {
         self.store().delete(&id, parent.etag.clone()).await
     }
 
-    pub(super) async fn recover(&self, lease: Arc<Mutex<Stored<Lease>>>) -> Result<bool> {
+    pub(super) async fn recover(&self, lease: Arc<Mutex<Acquisition>>) -> Result<bool> {
         let scope = lease.lock().await.value.base.range.clone();
         let topology = self
             .source_driver

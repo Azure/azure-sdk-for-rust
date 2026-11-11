@@ -35,7 +35,10 @@ use crate::{
     CosmosDriver, Result,
 };
 use async_lock::Mutex;
-use azure_core::{fmt::SafeDebug, http::StatusCode};
+use azure_core::{
+    fmt::SafeDebug,
+    http::{Etag, StatusCode},
+};
 use futures::{
     channel::oneshot,
     future::{BoxFuture, Shared},
@@ -294,10 +297,24 @@ struct Lease {
     last_processed_at: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     processing_deadline: Option<i64>,
-    #[serde(skip)]
+}
+
+struct Acquisition {
+    value: Lease,
+    etag: Etag,
     renewed: Option<Instant>,
-    #[serde(skip)]
     pending: Option<PendingCheckpoint>,
+}
+
+impl From<Stored<Lease>> for Acquisition {
+    fn from(stored: Stored<Lease>) -> Self {
+        Self {
+            value: stored.value,
+            etag: stored.etag,
+            renewed: None,
+            pending: None,
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -317,7 +334,9 @@ impl Lease {
         self.last_processed_at = Some(now);
         Ok(())
     }
+}
 
+impl Acquisition {
     fn acknowledge(&mut self, token: ContinuationToken, handled_changes: u64) {
         if let Some(pending) = &mut self.pending {
             pending.token = token;
@@ -366,7 +385,7 @@ impl Context {
     }
 
     #[cfg(all(test, feature = "__internal_in_memory_emulator"))]
-    async fn acquire(&self, observed: &Lease) -> Result<Stored<Lease>> {
+    async fn acquire(&self, observed: &Lease) -> Result<Acquisition> {
         self.acquire_tracked(observed, None).await
     }
 
@@ -374,12 +393,19 @@ impl Context {
         &self,
         observed: &Lease,
         state: Option<&SharedState>,
-    ) -> Result<Stored<Lease>> {
-        self.modify_lease(observed, Update::Acquire, state).await
+    ) -> Result<Acquisition> {
+        let incarnation = Uuid::new_v4().to_string();
+        self.modify_lease(observed, Update::Acquire(&incarnation), state)
+            .await
     }
 
-    async fn update(&self, lease: &mut Stored<Lease>, update: Update<'_>) -> Result<()> {
-        *lease = self.modify_lease(&lease.value, update, None).await?;
+    async fn update(&self, lease: &mut Acquisition, update: Update<'_>) -> Result<()> {
+        let preserve_pending = matches!(update, Update::Renew);
+        let mut updated = self.modify_lease(&lease.value, update, None).await?;
+        if preserve_pending {
+            updated.pending = lease.pending.take();
+        }
+        *lease = updated;
         Ok(())
     }
 
@@ -390,79 +416,30 @@ impl Context {
         observed: &Lease,
         update: Update<'_>,
         acquisition_state: Option<&SharedState>,
-    ) -> Result<Stored<Lease>> {
+    ) -> Result<Acquisition> {
         let id = &observed.base.record.id;
-        let retry_conflicts = !matches!(update, Update::Acquire);
+        let retry_conflicts = !matches!(update, Update::Acquire(_));
         let attempts = if retry_conflicts { 5 } else { 1 };
         for _ in 0..attempts {
-            let mut current = self.store().read::<Lease>(id).await?.ok_or_else(lost)?;
+            let current = self.store().read::<Lease>(id).await?.ok_or_else(lost)?;
             self.validate(&current.value)?;
-            if current.value.base.owner != observed.base.owner
-                || current.value.incarnation != observed.incarnation
-            {
-                return Err(lost());
-            }
-            if matches!(update, Update::Acquire)
-                && observed
-                    .processing_deadline
-                    .is_some_and(|deadline| now_millis() >= deadline)
-                && current
-                    .value
-                    .processing_deadline
-                    .is_some_and(|deadline| now_millis() < deadline)
-                && current.value.renewed_at.is_some_and(|renewed| {
-                    now_millis().saturating_sub(renewed)
-                        <= self.options.expiration.as_millis() as i64
-                })
-            {
-                return Err(error(
-                    StatusCode::PreconditionFailed,
-                    "Lease processing resumed before acquisition.",
-                ));
-            }
-            current.value.pending = observed.pending.clone();
-            if !matches!(update, Update::Acquire) {
-                current.value.last_processed_at = current
-                    .value
-                    .last_processed_at
-                    .max(observed.last_processed_at);
-                current.value.processing_deadline = current
-                    .value
-                    .processing_deadline
-                    .max(observed.processing_deadline);
-            }
-            match update {
-                Update::Acquire => {
-                    current.value.base.owner = Some(self.options.instance_name.clone());
-                    current.value.incarnation = Some(Uuid::new_v4().to_string());
-                    current.value.last_processed_at = None;
-                    current.value.processing_deadline = Some(
-                        self.options
-                            .checkpoint_policy
-                            .processing_deadline(now_millis())?,
-                    );
-                }
-                Update::Renew => {}
-                Update::Checkpoint(token) => {
-                    current.value.base.continuation = Some(token.clone());
-                    current.value.pending = None;
-                }
-                Update::Release => {
-                    current.value.base.owner = None;
-                    current.value.pending = None;
-                }
-            }
-            current.value.renewed_at = Some(now_millis());
-            current.value.renewed = Some(Instant::now());
-            let key = (id.clone(), current.value.incarnation.clone());
+            let next = transition_lease(
+                current.value,
+                observed,
+                &update,
+                &self.options,
+                now_millis(),
+            )?;
+            let renewed = Instant::now();
+            let key = (id.clone(), next.incarnation.clone());
             if let Some(state) = acquisition_state {
                 state
                     .unreleased
                     .lock()
                     .unwrap_or_else(|e| e.into_inner())
-                    .insert(key.clone(), current.value.clone());
+                    .insert(key.clone(), next.clone());
             }
-            match self.store().replace(id, &current.value, current.etag).await {
+            match self.store().replace(id, &next, current.etag).await {
                 Ok(updated) => {
                     if let Some(state) = acquisition_state {
                         state
@@ -471,7 +448,10 @@ impl Context {
                             .unwrap_or_else(|e| e.into_inner())
                             .remove(&key);
                     }
-                    return Ok(updated);
+                    return Ok(Acquisition {
+                        renewed: Some(renewed),
+                        ..updated.into()
+                    });
                 }
                 Err(err) if retry_conflicts && err.status().is_precondition_failed() => continue,
                 Err(err) => return Err(err),
@@ -483,10 +463,10 @@ impl Context {
         ))
     }
 
-    async fn flush(&self, lease: &mut Stored<Lease>) -> Result<()> {
-        if let Some(pending) = lease.value.pending.clone() {
+    async fn flush(&self, lease: &mut Acquisition) -> Result<()> {
+        if let Some(pending) = lease.pending.clone() {
             if let Err(err) = self.update(lease, Update::Checkpoint(&pending.token)).await {
-                if let Some(pending) = &mut lease.value.pending {
+                if let Some(pending) = &mut lease.pending {
                     pending.failed = true;
                 }
                 return Err(err);
@@ -507,7 +487,7 @@ impl Context {
 
     async fn wait_with_checkpoint<T>(
         &self,
-        lease: &Mutex<Stored<Lease>>,
+        lease: &Mutex<Acquisition>,
         cancelled: &Signal,
         force: &Signal,
         work: impl Future<Output = Result<T>>,
@@ -518,7 +498,6 @@ impl Context {
             let delay = lease
                 .lock()
                 .await
-                .value
                 .checkpoint_delay(self.options.checkpoint_policy, Instant::now());
             let deadline = async {
                 match delay {
@@ -548,10 +527,57 @@ impl Context {
 }
 
 enum Update<'a> {
-    Acquire,
+    Acquire(&'a str),
     Renew,
     Checkpoint(&'a ContinuationToken),
     Release,
+}
+
+fn transition_lease(
+    mut current: Lease,
+    observed: &Lease,
+    update: &Update<'_>,
+    options: &ProcessorOptions,
+    now: i64,
+) -> Result<Lease> {
+    if current.base.owner != observed.base.owner || current.incarnation != observed.incarnation {
+        return Err(lost());
+    }
+    if matches!(update, Update::Acquire(_))
+        && observed
+            .processing_deadline
+            .is_some_and(|deadline| now >= deadline)
+        && current
+            .processing_deadline
+            .is_some_and(|deadline| now < deadline)
+        && current.renewed_at.is_some_and(|renewed| {
+            now.saturating_sub(renewed) <= options.expiration.as_millis() as i64
+        })
+    {
+        return Err(error(
+            StatusCode::PreconditionFailed,
+            "Lease processing resumed before acquisition.",
+        ));
+    }
+    if !matches!(update, Update::Acquire(_)) {
+        current.last_processed_at = current.last_processed_at.max(observed.last_processed_at);
+        current.processing_deadline = current
+            .processing_deadline
+            .max(observed.processing_deadline);
+    }
+    match update {
+        Update::Acquire(incarnation) => {
+            current.base.owner = Some(options.instance_name.clone());
+            current.incarnation = Some((*incarnation).to_owned());
+            current.last_processed_at = None;
+            current.processing_deadline = Some(options.checkpoint_policy.processing_deadline(now)?);
+        }
+        Update::Renew => {}
+        Update::Checkpoint(token) => current.base.continuation = Some((*token).clone()),
+        Update::Release => current.base.owner = None,
+    }
+    current.renewed_at = Some(now);
+    Ok(current)
 }
 
 fn now_millis() -> i64 {
@@ -971,7 +997,7 @@ async fn run(
     stop: Signal,
     force: Signal,
 ) -> Result<bool> {
-    let mut workers = FuturesUnordered::<BoxFuture<'static, String>>::new();
+    let mut lease_pollers = FuturesUnordered::<BoxFuture<'static, String>>::new();
     let mut owned = HashSet::new();
     let mut balancing = balance(
         context.clone(),
@@ -987,10 +1013,10 @@ async fn run(
             _ = force.clone().fuse() => break,
             _ = stop.clone().fuse() => break,
             id = async {
-                if workers.is_empty() {
+                if lease_pollers.is_empty() {
                     futures::future::pending().await
                 } else {
-                    workers.next().await
+                    lease_pollers.next().await
                 }
             }.fuse() => {
                 if let Some(id) = id { owned.remove(&id); }
@@ -1003,7 +1029,7 @@ async fn run(
                         let state = state.clone();
                         let stop = stop.clone();
                         let force = force.clone();
-                        workers.push(supervise(context, state, lease, stop, force).map(move |()| id).boxed());
+                        lease_pollers.push(supervise(context, state, lease, stop, force).map(move |()| id).boxed());
                     }
                 }
                 balancing = balance(context.clone(), state.clone(), owned.clone(), context.options.acquire_interval(), stop.clone(), force.clone()).boxed();
@@ -1017,18 +1043,18 @@ async fn run(
         let stop = stop.clone();
         let force = force.clone();
         let id = lease.value.base.record.id.clone();
-        workers.push(
+        lease_pollers.push(
             supervise(context, state, lease, stop, force)
                 .map(move |()| id)
                 .boxed(),
         );
     }
-    while workers.next().await.is_some() {}
+    while lease_pollers.next().await.is_some() {}
     let unreleased =
         std::mem::take(&mut *state.unreleased.lock().unwrap_or_else(|e| e.into_inner()));
     for observed in unreleased.into_values() {
         let result = async {
-            let Some(mut current) = context
+            let Some(current) = context
                 .store()
                 .read::<Lease>(&observed.base.record.id)
                 .await?
@@ -1039,7 +1065,7 @@ async fn run(
             if current.value.base.owner == observed.base.owner
                 && current.value.incarnation == observed.incarnation
             {
-                context.update(&mut current, Update::Release).await?;
+                context.update(&mut current.into(), Update::Release).await?;
             }
             Ok(())
         }
@@ -1066,7 +1092,7 @@ async fn balance(
     delay: Duration,
     stop: Signal,
     force: Signal,
-) -> Vec<Stored<Lease>> {
+) -> Vec<Acquisition> {
     futures::select! {
         _ = sleep(delay).fuse() => {},
         _ = stop.fuse() => return Vec::new(),
@@ -1109,7 +1135,7 @@ async fn balance(
 async fn supervise(
     context: Arc<Context>,
     state: Arc<SharedState>,
-    lease: Stored<Lease>,
+    lease: Acquisition,
     stop: Signal,
     force: Signal,
 ) {
@@ -1185,7 +1211,7 @@ async fn supervise(
 
 async fn renew(
     context: Arc<Context>,
-    lease: Arc<Mutex<Stored<Lease>>>,
+    lease: Arc<Mutex<Acquisition>>,
     stopped: Signal,
 ) -> Result<()> {
     let interval = context.options.renew_interval();
@@ -1194,7 +1220,6 @@ async fn renew(
             let lease = lease.lock().await;
             interval.saturating_sub(
                 lease
-                    .value
                     .renewed
                     .map(|updated| updated.elapsed())
                     .unwrap_or_default(),
@@ -1209,7 +1234,6 @@ async fn renew(
             return Ok(());
         }
         let elapsed = lease
-            .value
             .renewed
             .map(|updated| updated.elapsed())
             .unwrap_or(context.options.expiration);
@@ -1243,7 +1267,7 @@ async fn poll(
     context: Arc<Context>,
     state: Arc<SharedState>,
     session: &AcquisitionDelivery,
-    lease: Arc<Mutex<Stored<Lease>>>,
+    lease: Arc<Mutex<Acquisition>>,
     cancelled: Signal,
     stop: Signal,
     force: Signal,
@@ -1261,11 +1285,7 @@ async fn poll(
     if !state.forced.load(Ordering::Acquire) {
         let mut lease = lease.lock().await;
         if !state.forced.load(Ordering::Acquire)
-            && !lease
-                .value
-                .pending
-                .as_ref()
-                .is_some_and(|pending| pending.failed)
+            && !lease.pending.as_ref().is_some_and(|pending| pending.failed)
         {
             if cancelled.clone().now_or_never().is_some() {
                 return Err(lost());
@@ -1280,7 +1300,7 @@ async fn poll_feed(
     context: Arc<Context>,
     state: Arc<SharedState>,
     session: &AcquisitionDelivery,
-    lease: Arc<Mutex<Stored<Lease>>>,
+    lease: Arc<Mutex<Acquisition>>,
     cancelled: Signal,
     stop: Signal,
     force: Signal,
@@ -1427,7 +1447,7 @@ async fn poll_feed(
                 .map(ContinuationToken::as_str)
                 != Some(token.as_str())
             {
-                stored.value.acknowledge(token, 0);
+                stored.acknowledge(token, 0);
                 if context.options.checkpoint_policy == CheckpointPolicy::EveryBatch {
                     context.flush(&mut stored).await?;
                 }
@@ -1483,7 +1503,7 @@ async fn poll_feed(
         if cancelled.clone().now_or_never().is_some() || state.forced.load(Ordering::Acquire) {
             return Err(lost());
         }
-        lease.value.acknowledge(token, handled_changes);
+        lease.acknowledge(token, handled_changes);
         if handled_changes > 0 {
             lease
                 .value

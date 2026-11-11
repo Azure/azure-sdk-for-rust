@@ -4,9 +4,9 @@
 #[cfg(feature = "fault_injection")]
 use super::{balance, signal, supervise, SharedState};
 use super::{
-    balancing, bootstrap, namespace, now_millis, ChangeFeedBatch, ChangeFeedFactoryMode,
-    CheckpointPolicy, Context, Identity, Lease, ProcessingLease, Processor, ProcessorOptions,
-    Update, SCHEMA_VERSION,
+    balancing, bootstrap, namespace, now_millis, transition_lease, Acquisition, ChangeFeedBatch,
+    ChangeFeedFactoryMode, CheckpointPolicy, Context, Identity, Lease, ProcessingLease, Processor,
+    ProcessorOptions, Update, SCHEMA_VERSION,
 };
 #[cfg(feature = "fault_injection")]
 use crate::fault_injection::{
@@ -15,6 +15,7 @@ use crate::fault_injection::{
 };
 use crate::{
     change_feed_processor::bootstrap::{
+        store::ChangeFeedProcessorBootstrapStoredRecord as Stored,
         ChangeFeedProcessorBootstrapRangePlan as RangePlan,
         ChangeFeedProcessorBootstrapRecord as Record,
     },
@@ -440,8 +441,6 @@ fn leases(owners: &[Option<&str>]) -> Vec<Lease> {
             renewed_at: Some(1000),
             last_processed_at: None,
             processing_deadline: None,
-            renewed: None,
-            pending: None,
         })
         .collect()
 }
@@ -484,7 +483,7 @@ fn unowned_leases_take_one_turn_before_stealing_from_live_workers() {
 }
 
 #[test]
-fn lease_serialization_excludes_unpersisted_progress() -> Result<()> {
+fn persisted_lease_schema_is_independent_of_acquisition_progress() -> Result<()> {
     for (mode, wire_mode) in [
         (ChangeFeedFactoryMode::Incremental, "latestVersion"),
         (ChangeFeedFactoryMode::FullFidelity, "allVersionsAndDeletes"),
@@ -492,10 +491,14 @@ fn lease_serialization_excludes_unpersisted_progress() -> Result<()> {
         let mut lease = leases(&[Some("worker")]).remove(0);
         lease.base.record.workload.mode = mode;
         lease.base.continuation = Some(ContinuationToken::from_string("durable".into()));
-        lease.renewed = Some(Instant::now());
-        lease.acknowledge(ContinuationToken::from_string("unpersisted".into()), 7);
+        let mut acquisition = Acquisition::from(Stored {
+            value: lease,
+            etag: "stored-etag".into(),
+        });
+        acquisition.renewed = Some(Instant::now());
+        acquisition.acknowledge(ContinuationToken::from_string("unpersisted".into()), 7);
         assert_eq!(
-            serde_json::to_value(&lease)?,
+            serde_json::to_value(&acquisition.value)?,
             json!({
                 "id": "0",
                 "workload": {
@@ -512,6 +515,129 @@ fn lease_serialization_excludes_unpersisted_progress() -> Result<()> {
                 "renewed_at": 1000
             })
         );
+    }
+    Ok(())
+}
+
+#[test]
+fn owned_transitions_preserve_fresh_progress_and_merge_local_activity() -> Result<()> {
+    let options = options("worker");
+    let mut observed = leases(&[Some("worker")]).remove(0);
+    observed.base.continuation = Some(ContinuationToken::from_string("old".into()));
+    observed.last_processed_at = Some(3000);
+    observed.processing_deadline = Some(9000);
+    let mut current = observed.clone();
+    current.base.continuation = Some(ContinuationToken::from_string("fresh".into()));
+    current.last_processed_at = Some(2000);
+    current.processing_deadline = Some(10000);
+    let checkpoint = ContinuationToken::from_string("acknowledged".into());
+    for update in [
+        Update::Renew,
+        Update::Release,
+        Update::Checkpoint(&checkpoint),
+    ] {
+        let next = transition_lease(current.clone(), &observed, &update, &options, 5000)?;
+        let mut expected = current.clone();
+        expected.last_processed_at = Some(3000);
+        expected.renewed_at = Some(5000);
+        match update {
+            Update::Renew => {}
+            Update::Release => expected.base.owner = None,
+            Update::Checkpoint(token) => expected.base.continuation = Some(token.clone()),
+            Update::Acquire(_) => unreachable!(),
+        }
+        assert_eq!(serde_json::to_value(next)?, serde_json::to_value(expected)?);
+    }
+    assert_eq!(observed.base.continuation.unwrap().as_str(), "old");
+    Ok(())
+}
+
+#[test]
+fn acquisition_transition_uses_supplied_identity_and_time() -> Result<()> {
+    let mut current = leases(&[Some("old-worker")]).remove(0);
+    current.base.continuation = Some(ContinuationToken::from_string("durable".into()));
+    current.last_processed_at = Some(500);
+    for (policy, deadline) in [
+        (CheckpointPolicy::EveryBatch, 601000),
+        (
+            CheckpointPolicy::Coalesced {
+                max_interval: Duration::from_secs(30),
+            },
+            61000,
+        ),
+    ] {
+        let options = options("new-worker").with_checkpoint_policy(policy);
+        let next = transition_lease(
+            current.clone(),
+            &current,
+            &Update::Acquire("new-acquisition"),
+            &options,
+            1000,
+        )?;
+        let mut expected = current.clone();
+        expected.base.owner = Some("new-worker".into());
+        expected.incarnation = Some("new-acquisition".into());
+        expected.last_processed_at = None;
+        expected.processing_deadline = Some(deadline);
+        expected.renewed_at = Some(1000);
+        assert_eq!(serde_json::to_value(next)?, serde_json::to_value(expected)?);
+    }
+    Ok(())
+}
+
+#[test]
+fn lease_transitions_reject_owner_or_incarnation_changes() {
+    let options = options("worker");
+    let observed = leases(&[Some("worker")]).remove(0);
+    let checkpoint = ContinuationToken::from_string("stale".into());
+    for different_owner in [false, true] {
+        let mut current = observed.clone();
+        if different_owner {
+            current.base.owner = Some("replacement".into());
+        } else {
+            current.incarnation = Some("replacement".into());
+        }
+        for update in [
+            Update::Acquire("new-acquisition"),
+            Update::Renew,
+            Update::Release,
+            Update::Checkpoint(&checkpoint),
+        ] {
+            let failure = transition_lease(current.clone(), &observed, &update, &options, 1000)
+                .err()
+                .expect("a stale acquisition must be rejected");
+            assert!(failure.status().is_precondition_failed());
+        }
+    }
+}
+
+#[test]
+fn acquisition_transition_rechecks_processing_and_renewal_deadlines() -> Result<()> {
+    let options = options("new-worker");
+    let mut observed = leases(&[Some("worker")]).remove(0);
+    observed.processing_deadline = Some(1000);
+    for (deadline, renewed, rejected) in
+        [(2000, 1000, true), (1000, 1000, false), (2000, 399, false)]
+    {
+        let mut current = observed.clone();
+        current.processing_deadline = Some(deadline);
+        current.renewed_at = Some(renewed);
+        let result = transition_lease(
+            current,
+            &observed,
+            &Update::Acquire("new-acquisition"),
+            &options,
+            1000,
+        );
+        if rejected {
+            assert!(result
+                .err()
+                .expect("live progress must fence takeover")
+                .status()
+                .is_precondition_failed());
+        } else {
+            assert_eq!(result?.incarnation.as_deref(), Some("new-acquisition"));
+        }
     }
     Ok(())
 }
@@ -549,8 +675,12 @@ fn original_schema_lease_deserializes_without_runtime_progress() -> Result<()> {
     assert!(lease.base.owner.is_none());
     assert!(lease.incarnation.is_none());
     assert!(lease.renewed_at.is_none());
-    assert!(lease.renewed.is_none());
-    assert!(lease.pending.is_none());
+    let acquisition = Acquisition::from(Stored {
+        value: lease,
+        etag: "stored-etag".into(),
+    });
+    assert!(acquisition.renewed.is_none());
+    assert!(acquisition.pending.is_none());
     Ok(())
 }
 
@@ -999,7 +1129,7 @@ async fn owned_mutations_retry_only_conditional_write_conflicts() -> Result<()> 
                 Update::Checkpoint(token) => expected.base.continuation = Some(token.clone()),
                 Update::Release => expected.base.owner = None,
                 Update::Renew => {}
-                Update::Acquire => unreachable!(),
+                Update::Acquire(_) => unreachable!(),
             }
             rule.enable();
             let result = context.update(&mut owned, update).await;
