@@ -16,7 +16,7 @@ use time::OffsetDateTime;
 
 use crate::generated::models::{
     AccessTier, BlobType, CopyStatus, ImmutabilityPolicyMode, LeaseDuration, LeaseState,
-    LeaseStatus,
+    LeaseStatus, TierManagedBy, TurboStatus,
 };
 
 /// Result of a `BlobClient::download()` operation.
@@ -193,6 +193,12 @@ pub struct BlobDownloadProperties {
     /// Whether the access tier was inferred rather than explicitly set
     /// (`x-ms-access-tier-inferred` header).
     pub access_tier_inferred: Option<bool>,
+
+    /// The migration status reported in the `x-ms-turbo-status` header, if present.
+    pub turbo_status: Option<TurboStatus>,
+
+    /// How the tier was selected, as reported in the `x-ms-tier-managed-by` header, if present.
+    pub tier_managed_by: Option<TierManagedBy>,
 }
 
 impl BlobClientDownloadResult {
@@ -290,8 +296,62 @@ impl BlobDownloadProperties {
             )?,
             access_tier_inferred: headers
                 .get_optional_as(&HeaderName::from_static("x-ms-access-tier-inferred"))?,
+            turbo_status: headers.get_optional_as(&HeaderName::from_static("x-ms-turbo-status"))?,
+            tier_managed_by: headers
+                .get_optional_as(&HeaderName::from_static("x-ms-tier-managed-by"))?,
             metadata,
             object_replication_rules,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{BlobDownloadProperties, Headers, TierManagedBy, TurboStatus};
+
+    #[test]
+    fn turbo_headers_are_independently_optional() {
+        for status in [None, Some("pending")] {
+            for manager in [None, Some("user"), Some("system")] {
+                let mut headers = Headers::new();
+                if let Some(status) = status {
+                    headers.insert("x-ms-turbo-status", status);
+                }
+                if let Some(manager) = manager {
+                    headers.insert("x-ms-tier-managed-by", manager);
+                }
+                let properties = BlobDownloadProperties::from_headers(&headers).unwrap();
+                assert_eq!(
+                    properties.turbo_status,
+                    status.map(|_| TurboStatus::Pending)
+                );
+                assert_eq!(
+                    properties.tier_managed_by,
+                    manager.map(|value| match value {
+                        "user" => TierManagedBy::User,
+                        "system" => TierManagedBy::System,
+                        _ => unreachable!(),
+                    })
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn turbo_headers_preserve_uppercase_and_future_values() {
+        for status in ["Pending", "FutureStatus"] {
+            let mut headers = Headers::new();
+            headers.insert("x-ms-turbo-status", status);
+            headers.insert("x-ms-tier-managed-by", "FutureManager");
+            let properties = BlobDownloadProperties::from_headers(&headers).unwrap();
+            assert_eq!(
+                properties.turbo_status,
+                Some(TurboStatus::UnknownValue(status.to_owned()))
+            );
+            assert_eq!(
+                properties.tier_managed_by,
+                Some(TierManagedBy::UnknownValue("FutureManager".to_owned()))
+            );
+        }
     }
 }

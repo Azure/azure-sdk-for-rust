@@ -845,6 +845,8 @@ pub mod models {
         pub access_tier: Option<crate::generated::models::AccessTier>,
         pub access_tier_changed_on: Option<time::OffsetDateTime>,
         pub access_tier_inferred: Option<bool>,
+        pub turbo_status: Option<crate::generated::models::TurboStatus>,
+        pub tier_managed_by: Option<crate::generated::models::TierManagedBy>,
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -991,6 +993,10 @@ pub mod models {
         pub smart_access_tier: Option<super::AccessTier>,
         #[serde(rename = "TagCount", skip_serializing_if = "Option::is_none")]
         pub tag_count: Option<i32>,
+        #[serde(rename = "TierManagedBy", skip_serializing_if = "Option::is_none")]
+        pub tier_managed_by: Option<super::TierManagedBy>,
+        #[serde(rename = "TurboStatus", skip_serializing_if = "Option::is_none")]
+        pub turbo_status: Option<super::TurboStatus>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct BlobServiceClientFindBlobsByTagsOptions<'a> {
@@ -1825,6 +1831,7 @@ pub mod models {
         P70,
         P80,
         Premium,
+        Turbo,
         UnknownValue(String),
     }
     impl AsRef<str> for super::AccessTier {
@@ -2535,6 +2542,55 @@ pub mod models {
     impl<'de> Deserialize<'de> for super::StorageErrorCode {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub enum TierManagedBy {
+        System,
+        User,
+        UnknownValue(String),
+    }
+    impl AsRef<str> for super::TierManagedBy {
+        fn as_ref(&self) -> &str;
+    }
+    impl Display for super::TierManagedBy {
+        fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
+    }
+    impl FromStr for super::TierManagedBy {
+        type Err = Infallible;
+        fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
+    }
+    impl Serialize for super::TierManagedBy {
+        fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
+    }
+    impl<'a> From<&'a TierManagedBy> for &'a str {
+        fn from(e: &'a TierManagedBy) -> Self;
+    }
+    impl<'de> Deserialize<'de> for super::TierManagedBy {
+        fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub enum TurboStatus {
+        Pending,
+        UnknownValue(String),
+    }
+    impl AsRef<str> for super::TurboStatus {
+        fn as_ref(&self) -> &str;
+    }
+    impl Display for super::TurboStatus {
+        fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
+    }
+    impl FromStr for super::TurboStatus {
+        type Err = Infallible;
+        fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
+    }
+    impl Serialize for super::TurboStatus {
+        fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
+    }
+    impl<'a> From<&'a TurboStatus> for &'a str {
+        fn from(e: &'a TurboStatus) -> Self;
+    }
+    impl<'de> Deserialize<'de> for super::TurboStatus {
+        fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
+    }
     pub trait AppendBlobClientAppendBlockFromUrlResultHeaders: private::Sealed {
         fn blob_append_offset(&self) -> Result<Option<String>>;
         fn blob_committed_block_count(&self) -> Result<Option<i32>>;
@@ -2643,6 +2699,8 @@ pub mod models {
         fn rehydrate_priority(&self) -> Result<Option<RehydratePriority>>;
         fn smart_access_tier(&self) -> Result<Option<String>>;
         fn tag_count(&self) -> Result<Option<i64>>;
+        fn tier_managed_by(&self) -> Result<Option<TierManagedBy>>;
+        fn turbo_status(&self) -> Result<Option<TurboStatus>>;
         fn version_id(&self) -> Result<Option<String>>;
     }
     pub trait BlobClientReleaseLeaseResultHeaders: private::Sealed {

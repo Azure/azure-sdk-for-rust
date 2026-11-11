@@ -10,11 +10,11 @@ use azure_core::{
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     models::{
-        BlobClientGetPropertiesResultHeaders, BlockBlobClientCommitBlockListOptions,
+        AccessTier, BlobClientGetPropertiesResultHeaders, BlockBlobClientCommitBlockListOptions,
         BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientStageBlockFromUrlResultHeaders,
         BlockBlobClientStageBlockOptions, BlockBlobClientStageBlockResultHeaders,
         BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadBlobFromUrlResultHeaders,
-        BlockBlobClientUploadOptions, BlockListType, BlockLookupList,
+        BlockBlobClientUploadOptions, BlockListType, BlockLookupList, TierManagedBy,
     },
     BlobContainerClientOptions,
 };
@@ -34,6 +34,124 @@ use std::{
     },
     time::Duration,
 };
+
+#[recorded::test]
+async fn test_commit_block_list_turbo(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let policy = Arc::new(TestPolicy::new(
+        Some(Arc::new(|request| {
+            if predicates::is_stage_block_request(request) {
+                assert!(request
+                    .headers()
+                    .get_optional_str(&"x-ms-access-tier".into())
+                    .is_none());
+            }
+            Ok(())
+        })),
+        None,
+    ));
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Turbo,
+        Some(BlobContainerClientOptions::default().with_per_call_policy(policy.clone())),
+    )
+    .await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = blob_client.block_blob_client();
+    let blocks = [
+        (b"1".to_vec(), b"hello ".to_vec()),
+        (b"2".to_vec(), b"rusty world".to_vec()),
+    ];
+    // Stage Blocks without a Tier Scenario
+    let _scope = policy.check_request_scope();
+    for (id, data) in &blocks {
+        block_blob_client
+            .stage_block(
+                id,
+                u64::try_from(data.len())?,
+                RequestContent::from(data.clone()),
+                None,
+            )
+            .await?;
+    }
+    // Commit Blocks with Turbo Scenario
+    block_blob_client
+        .commit_block_list(
+            BlockLookupList {
+                latest: Some(blocks.into_iter().map(|(id, _)| id).collect()),
+                ..Default::default()
+            }
+            .try_into()?,
+            Some(BlockBlobClientCommitBlockListOptions {
+                tier: Some(AccessTier::Turbo),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Assert
+    let properties = blob_client.get_properties(None).await?;
+    assert_eq!(Some("Turbo".to_string()), properties.access_tier()?);
+    assert_eq!(Some(TierManagedBy::User), properties.tier_managed_by()?);
+    let body = blob_client.download(None).await?.body.collect().await?;
+    assert_eq!(b"hello rusty world".as_ref(), body.as_ref());
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_upload_blob_from_url_turbo(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Turbo, None).await?;
+    let source_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let data = b"hello rusty world";
+    create_test_blob(
+        &source_blob_client,
+        Some(RequestContent::from(data.to_vec())),
+        Some(BlockBlobClientUploadOptions {
+            tier: Some(AccessTier::Hot),
+            ..Default::default()
+        }),
+    )
+    .await?;
+    let access_token = format!(
+        "Bearer {}",
+        recording
+            .credential()
+            .get_token(&[STORAGE_SCOPE], None)
+            .await?
+            .token
+            .secret()
+    );
+    // Upload from URL with Turbo Scenario
+    blob_client
+        .block_blob_client()
+        .upload_blob_from_url(
+            source_blob_client.url().as_str().into(),
+            Some(BlockBlobClientUploadBlobFromUrlOptions {
+                tier: Some(AccessTier::Turbo),
+                copy_source_authorization: Some(access_token),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Assert
+    let properties = blob_client.get_properties(None).await?;
+    assert_eq!(Some("Turbo".to_string()), properties.access_tier()?);
+    assert_eq!(Some(TierManagedBy::User), properties.tier_managed_by()?);
+    let body = blob_client.download(None).await?.body.collect().await?;
+    assert_eq!(data.as_ref(), body.as_ref());
+
+    container_client.delete(None).await?;
+    Ok(())
+}
 
 #[recorded::test]
 async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
