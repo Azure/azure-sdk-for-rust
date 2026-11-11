@@ -2769,9 +2769,10 @@ impl CosmosDriver {
     ) -> crate::error::Result<crate::driver::pipeline::patch_strategy::PatchExecution> {
         use crate::driver::pipeline::patch_strategy::resolve_patch_strategy;
 
-        let instructions = operation
+        let patch_request = operation
             .body()
-            .and_then(|body| serde_json::from_slice::<crate::models::PatchInstructions>(body).ok());
+            .and_then(|body| crate::models::parse_patch_request(body).ok());
+        let instructions = patch_request.as_ref();
 
         if operation
             .precondition()
@@ -2823,7 +2824,38 @@ impl CosmosDriver {
         let _ = options;
         #[cfg(not(feature = "unstable_patch"))]
         let requested = crate::options::PatchStrategy::Auto;
-        let execution = resolve_patch_strategy(requested, instructions.as_ref())?;
+        if patch_request
+            .as_ref()
+            .and_then(|request| request.filter_predicate())
+            .is_some_and(|condition| condition.trim().is_empty())
+        {
+            return Err(crate::driver::pipeline::patch_handler::invalid_filter_predicate_error());
+        }
+        let mut execution = resolve_patch_strategy(requested, instructions)?;
+        if matches!(
+            execution,
+            crate::driver::pipeline::patch_strategy::PatchExecution::ClientSide
+        ) && patch_request
+            .as_ref()
+            .is_some_and(|request| request.filter_predicate().is_some())
+        {
+            return Err(
+                crate::driver::pipeline::patch_handler::unsupported_filter_predicate_error(),
+            );
+        }
+        if patch_request
+            .as_ref()
+            .is_some_and(|request| request.filter_predicate().is_some())
+        {
+            // A committed PATCH can make its predicate false, so replay can
+            // report a misleading 412 even when the instructions converge.
+            if let crate::driver::pipeline::patch_strategy::PatchExecution::ServerSide {
+                retry_safe,
+            } = &mut execution
+            {
+                *retry_safe = false;
+            }
+        }
         tracing::debug!(
             requested_patch_strategy = requested.as_str(),
             patch_execution = execution.as_str(),

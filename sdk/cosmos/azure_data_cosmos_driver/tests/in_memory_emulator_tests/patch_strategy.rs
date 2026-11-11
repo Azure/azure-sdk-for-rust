@@ -8,14 +8,15 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use azure_core::http::{Method, Request, Url};
+use azure_core::http::{Etag, Method, Request, Url};
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, InMemoryEmulatorHttpClient, RequestObserver, VirtualAccountConfig,
     VirtualRegion,
 };
 use azure_data_cosmos_driver::models::{
     AccountReference, ContainerReference, CosmosOperation, CosmosResponse, ItemReference,
-    PartitionKey, PatchInstructions, PatchOperation, PatchTrackingId, PATCH_TRACKING_PROPERTY,
+    PartitionKey, PatchInstructions, PatchOperation, PatchTrackingId, Precondition,
+    PATCH_TRACKING_PROPERTY,
 };
 use azure_data_cosmos_driver::options::{
     ContentResponseOnWrite, DriverOptions, OperationOptions, OperationOptionsBuilder, PatchStrategy,
@@ -193,6 +194,31 @@ async fn execute_patch(
 ) -> Result<CosmosResponse, azure_data_cosmos_driver::error::CosmosError> {
     let operation = CosmosOperation::patch_item(item(container))
         .with_body(serde_json::to_vec(instructions).unwrap());
+    let options = OperationOptionsBuilder::new()
+        .with_patch_strategy(strategy)
+        .with_content_response_on_write(ContentResponseOnWrite::Enabled)
+        .build();
+    driver.execute_singleton_operation(operation, options).await
+}
+
+fn patch_body(instructions: &PatchInstructions, condition: &str) -> Vec<u8> {
+    let mut body = serde_json::to_value(instructions).unwrap();
+    body.as_object_mut().unwrap().insert(
+        "condition".to_owned(),
+        serde_json::Value::String(condition.to_owned()),
+    );
+    serde_json::to_vec(&body).unwrap()
+}
+
+async fn execute_conditional_patch(
+    driver: &CosmosDriver,
+    container: &ContainerReference,
+    instructions: &PatchInstructions,
+    condition: &str,
+    strategy: PatchStrategy,
+) -> Result<CosmosResponse, azure_data_cosmos_driver::error::CosmosError> {
+    let operation =
+        CosmosOperation::patch_item(item(container)).with_body(patch_body(instructions, condition));
     let options = OperationOptionsBuilder::new()
         .with_patch_strategy(strategy)
         .with_content_response_on_write(ContentResponseOnWrite::Enabled)
@@ -416,6 +442,347 @@ async fn auto_obeys_safety_and_the_ten_instruction_limit() {
         vec![Method::Get, Method::Put],
         "unsafe instructions must use tracked RMW"
     );
+}
+
+#[tokio::test]
+async fn typed_filter_predicate_uses_server_side_auto_and_remains_atomic() {
+    let recorder = MethodRecorder::new();
+    let (driver, container) = build_driver(Some(recorder.clone())).await;
+    create_item(&driver, &container, &seed_document()).await;
+    recorder.clear();
+
+    let instructions = PatchInstructions::from(vec![PatchOperation::set(
+        "/name",
+        serde_json::json!("matched"),
+    )])
+    .with_filter_predicate("from c where c.name = 'before'");
+    let response = execute_patch(&driver, &container, &instructions, PatchStrategy::Auto)
+        .await
+        .expect("a typed predicate should use server-side Auto");
+    assert_eq!(response_json(response)["name"], "matched");
+    assert_eq!(recorder.data_plane_methods(), vec![Method::Patch]);
+
+    let before_failure = read_stored_raw(&driver, &container).await;
+    recorder.clear();
+    let error = execute_patch(&driver, &container, &instructions, PatchStrategy::Auto)
+        .await
+        .expect_err("the committed mutation should make the typed predicate false");
+    assert_eq!(
+        error.status().status_code(),
+        azure_core::http::StatusCode::PreconditionFailed
+    );
+    assert_eq!(
+        error.status().sub_status(),
+        Some(azure_data_cosmos_driver::error::SubStatusCode::new(1110))
+    );
+    assert_eq!(recorder.data_plane_methods(), vec![Method::Patch]);
+    assert_eq!(read_stored_raw(&driver, &container).await, before_failure);
+}
+
+#[tokio::test]
+async fn effective_client_side_paths_reject_filter_predicates_before_io() {
+    let scenarios = [
+        (
+            PatchStrategy::ClientSide,
+            set_operations(1),
+            "explicit ClientSide",
+        ),
+        (
+            PatchStrategy::Auto,
+            PatchInstructions::from(vec![PatchOperation::increment("/visits", 1i64)]),
+            "Auto unsafe",
+        ),
+        (PatchStrategy::Auto, set_operations(11), "Auto over limit"),
+    ];
+
+    for (strategy, instructions, scenario) in scenarios {
+        let recorder = MethodRecorder::new();
+        let (driver, container) = build_driver(Some(recorder.clone())).await;
+        create_item(&driver, &container, &seed_document()).await;
+        let before = read_stored_raw(&driver, &container).await;
+        recorder.clear();
+
+        let error = execute_conditional_patch(
+            &driver,
+            &container,
+            &instructions,
+            "from c where c.name = 'before'",
+            strategy,
+        )
+        .await
+        .expect_err("effective client-side execution must reject predicates");
+
+        assert_eq!(
+            error.status(),
+            azure_data_cosmos_driver::error::status_codes::CLIENT_BAD_REQUEST,
+            "{scenario}"
+        );
+        assert!(error.status().sub_status().is_none(), "{scenario}");
+        assert!(error.diagnostics().is_none(), "{scenario}");
+        assert!(error.patch_tracking_id().is_none(), "{scenario}");
+        assert!(
+            error
+                .to_string()
+                .contains("require effective server-side execution"),
+            "{scenario}: {error}"
+        );
+        assert_eq!(
+            recorder.data_plane_methods(),
+            Vec::<Method>::new(),
+            "{scenario}"
+        );
+        assert_eq!(
+            read_stored_raw(&driver, &container).await,
+            before,
+            "{scenario}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn server_side_filter_predicate_is_atomic_and_observable() {
+    let recorder = MethodRecorder::new();
+    let (driver, container) = build_driver(Some(recorder.clone())).await;
+    create_item(&driver, &container, &seed_document()).await;
+    recorder.clear();
+
+    let response = execute_conditional_patch(
+        &driver,
+        &container,
+        &PatchInstructions::from(vec![PatchOperation::set(
+            "/name",
+            serde_json::json!("matched"),
+        )]),
+        "from c where c.name = 'before'",
+        PatchStrategy::Auto,
+    )
+    .await
+    .expect("a matching Auto predicate should execute server-side");
+    assert_eq!(response_json(response)["name"], "matched");
+    assert_eq!(recorder.data_plane_methods(), vec![Method::Patch]);
+
+    let before_failure = read_stored_raw(&driver, &container).await;
+    recorder.clear();
+    let error = execute_conditional_patch(
+        &driver,
+        &container,
+        &PatchInstructions::from(vec![PatchOperation::set(
+            "/name",
+            serde_json::json!("must-not-commit"),
+        )]),
+        "from c where c.name = 'before'",
+        PatchStrategy::ServerSide,
+    )
+    .await
+    .expect_err("a false predicate must reject the PATCH");
+
+    assert_eq!(
+        error.status().status_code(),
+        azure_core::http::StatusCode::PreconditionFailed
+    );
+    assert_eq!(
+        error.status().sub_status(),
+        Some(azure_data_cosmos_driver::error::SubStatusCode::new(1110))
+    );
+    assert_eq!(recorder.data_plane_methods(), vec![Method::Patch]);
+    let diagnostics = error
+        .diagnostics()
+        .expect("a service response must carry diagnostics");
+    assert_eq!(diagnostics.operation_name(), Some("patch_item"));
+    assert_eq!(diagnostics.requests().len(), 1);
+    assert!(diagnostics.total_request_charge().value() > 0.0);
+    assert_eq!(read_stored_raw(&driver, &container).await, before_failure);
+}
+
+#[tokio::test]
+async fn server_side_filter_predicate_accepts_sql_whitespace_after_from() {
+    for keyword in ["from", " \t\r\nFrOm"] {
+        for separator in [" ", "\t", "\n", "\r\n"] {
+            let (driver, container) = build_driver(None).await;
+            create_item(&driver, &container, &seed_document()).await;
+            let before = read_stored_raw(&driver, &container).await;
+            let instructions = PatchInstructions::from(vec![PatchOperation::set(
+                "/name",
+                serde_json::json!("after"),
+            )]);
+
+            let error = execute_conditional_patch(
+                &driver,
+                &container,
+                &instructions,
+                &format!("{keyword}{separator}c where c.name = 'missing'"),
+                PatchStrategy::ServerSide,
+            )
+            .await
+            .expect_err("a nonmatching predicate must fail for every SQL whitespace separator");
+            assert_eq!(
+                error.status().status_code(),
+                azure_core::http::StatusCode::PreconditionFailed
+            );
+            assert_eq!(
+                error.status().sub_status(),
+                Some(azure_data_cosmos_driver::error::SubStatusCode::new(1110))
+            );
+            assert_eq!(read_stored_raw(&driver, &container).await, before);
+
+            execute_conditional_patch(
+                &driver,
+                &container,
+                &instructions,
+                &format!("{keyword}{separator}c where c.name = 'before'"),
+                PatchStrategy::ServerSide,
+            )
+            .await
+            .expect("a matching predicate must accept every SQL whitespace separator");
+            let after = read_stored_raw(&driver, &container).await;
+            assert_eq!(after["name"], "after");
+            assert_ne!(after["_etag"], before["_etag"]);
+        }
+    }
+}
+
+#[tokio::test]
+async fn explicit_unsafe_server_side_predicate_uses_one_patch_request() {
+    let recorder = MethodRecorder::new();
+    let (driver, container) = build_driver(Some(recorder.clone())).await;
+    create_item(&driver, &container, &seed_document()).await;
+    recorder.clear();
+
+    let response = execute_conditional_patch(
+        &driver,
+        &container,
+        &PatchInstructions::from(vec![PatchOperation::increment("/visits", 1i64)]),
+        "from c where c.visits = 1",
+        PatchStrategy::ServerSide,
+    )
+    .await
+    .expect("explicit unsafe ServerSide with a matching predicate must commit");
+
+    assert_eq!(response_json(response)["visits"], 2);
+    assert_eq!(recorder.data_plane_methods(), vec![Method::Patch]);
+    assert_eq!(read_stored(&driver, &container).await["visits"], 2);
+}
+
+#[tokio::test]
+async fn malformed_server_side_filter_predicate_returns_bad_request() {
+    let recorder = MethodRecorder::new();
+    let (driver, container) = build_driver(Some(recorder.clone())).await;
+    create_item(&driver, &container, &seed_document()).await;
+    let before = read_stored_raw(&driver, &container).await;
+    recorder.clear();
+
+    let error = execute_conditional_patch(
+        &driver,
+        &container,
+        &set_operations(1),
+        "from c where",
+        PatchStrategy::ServerSide,
+    )
+    .await
+    .expect_err("malformed predicates must be rejected by the service");
+
+    assert_eq!(
+        error.status().status_code(),
+        azure_core::http::StatusCode::BadRequest
+    );
+    assert!(error.status().sub_status().is_none());
+    assert_eq!(recorder.data_plane_methods(), vec![Method::Patch]);
+    let diagnostics = error
+        .diagnostics()
+        .expect("a service response must carry diagnostics");
+    assert_eq!(diagnostics.operation_name(), Some("patch_item"));
+    assert_eq!(diagnostics.requests().len(), 1);
+    assert_eq!(read_stored_raw(&driver, &container).await, before);
+
+    recorder.clear();
+    let error = execute_conditional_patch(
+        &driver,
+        &container,
+        &set_operations(1),
+        "   ",
+        PatchStrategy::ServerSide,
+    )
+    .await
+    .expect_err("empty predicates must be rejected before I/O");
+    assert_eq!(
+        error.status(),
+        azure_data_cosmos_driver::error::status_codes::CLIENT_BAD_REQUEST
+    );
+    assert!(error.diagnostics().is_none());
+    assert!(recorder.data_plane_methods().is_empty());
+    assert_eq!(read_stored_raw(&driver, &container).await, before);
+}
+
+#[tokio::test]
+async fn server_side_if_match_is_checked_before_filter_predicate() {
+    let (driver, container) = build_driver(None).await;
+    create_item(&driver, &container, &seed_document()).await;
+    let initial = read_stored_raw(&driver, &container).await;
+    let initial_etag = initial["_etag"].as_str().unwrap().to_owned();
+    let instructions = PatchInstructions::from(vec![PatchOperation::set(
+        "/name",
+        serde_json::json!("matched"),
+    )]);
+    let options = OperationOptionsBuilder::new()
+        .with_patch_strategy(PatchStrategy::ServerSide)
+        .build();
+
+    driver
+        .execute_singleton_operation(
+            CosmosOperation::patch_item(item(&container))
+                .with_body(patch_body(&instructions, "from c where c.name = 'before'"))
+                .with_precondition(Precondition::if_match(Etag::from(initial_etag.clone()))),
+            options.clone(),
+        )
+        .await
+        .expect("matching If-Match and filter predicate must commit");
+
+    let committed = read_stored_raw(&driver, &container).await;
+    assert_eq!(committed["name"], "matched");
+    let false_condition_body = patch_body(
+        &PatchInstructions::from(vec![PatchOperation::set(
+            "/deleted",
+            serde_json::json!(true),
+        )]),
+        "from c where c.name = 'before'",
+    );
+    let error = driver
+        .execute_singleton_operation(
+            CosmosOperation::patch_item(item(&container))
+                .with_body(false_condition_body.clone())
+                .with_precondition(Precondition::if_match(Etag::from(initial_etag))),
+            options.clone(),
+        )
+        .await
+        .expect_err("a stale If-Match must fail before predicate evaluation");
+
+    assert_eq!(
+        error.status().status_code(),
+        azure_core::http::StatusCode::PreconditionFailed
+    );
+    assert!(error.status().sub_status().is_none());
+    assert_eq!(read_stored_raw(&driver, &container).await, committed);
+
+    let error = driver
+        .execute_singleton_operation(
+            CosmosOperation::patch_item(item(&container))
+                .with_body(false_condition_body)
+                .with_precondition(Precondition::if_match(Etag::from(
+                    committed["_etag"].as_str().unwrap().to_owned(),
+                ))),
+            options,
+        )
+        .await
+        .expect_err("a current If-Match must reach the same false predicate");
+    assert_eq!(
+        error.status().status_code(),
+        azure_core::http::StatusCode::PreconditionFailed
+    );
+    assert_eq!(
+        error.status().sub_status(),
+        Some(azure_data_cosmos_driver::error::SubStatusCode::new(1110))
+    );
+    assert_eq!(read_stored_raw(&driver, &container).await, committed);
 }
 
 #[tokio::test]

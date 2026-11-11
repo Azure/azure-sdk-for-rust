@@ -42,13 +42,14 @@ before transport selection and dispatches ordinary Read and Replace helpers.
 | Field                                         | Source                                              | Notes                                                             |
 | --------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------- |
 | `CosmosOperation` with `OperationType::Patch` | `CosmosOperation::patch_item(ItemReference)`        | Required.                                                         |
-| Body                                          | `with_body(serde_json::to_vec(&PatchInstructions))` | Required. The handler re-parses it as `PatchInstructions`.        |
+| Body                                          | `with_body(PATCH envelope)`                         | Required. Contains `operations` and optional `condition`.         |
 | Partition key                                 | `with_partition_key(...)`                           | Required. Used to issue the internal Read.                        |
 | `patch_strategy`                              | `OperationOptions.patch_strategy`                   | Optional. Layered; defaults to `PatchStrategy::Auto`.             |
 | `patch_max_attempts`                          | `with_patch_max_attempts(NonZeroU8)`                | Optional. Defaults to `DEFAULT_PATCH_MAX_ATTEMPTS` (currently 5). |
 | `patch_tracking_id`                           | `with_patch_tracking_id(PatchTrackingId)`           | Optional. Generated once per invocation for unsafe instructions.  |
 | `patch_tracking_capacity`                     | `with_patch_tracking_capacity(NonZeroU16)`          | Optional. Defaults to 1024 entries; oldest is evicted when full.  |
 | `patch_tracking_retention_seconds`            | `with_patch_tracking_retention_seconds(NonZeroU32)` | Optional. Defaults to 300 seconds; whole-second granularity.      |
+| Filter predicate                              | `PatchInstructions::filter_predicate()`             | Optional SQL FROM/WHERE fragment serialized as `condition`.       |
 
 ## Strategy resolution
 
@@ -74,6 +75,15 @@ strategy resolution selects client-side RMW. They do not influence strategy
 resolution and are ignored whenever `Auto` or explicit `ServerSide` selects the
 server path; the service does not persist the client's marker and the request
 receives no marker-backed duplicate suppression.
+
+A filter predicate likewise does not influence strategy resolution. It is
+supported only when the resolved execution is server-side. Explicit
+`ClientSide`, `Auto` with an unsafe list, and `Auto` with more than 10
+instructions return client-generated HTTP 400 with no sub-status before any
+Read, Replace, or wire PATCH is dispatched. The error has no request
+diagnostics or tracking ID because no request or tracking protocol began.
+Callers that need a predicate with an otherwise client-selected list must use
+explicit `ServerSide` and accept that path's limits and retry semantics.
 
 ## Client-side RMW algorithm
 
@@ -196,10 +206,30 @@ and lists containing more than 10 instructions. `patch_max_attempts` and the
 tracking ID/capacity/retention settings apply only to client-side RMW. No
 `_azsdkPatchTracking` property is written by server-side PATCH.
 
-Retry-safe server PATCH can use normal ambiguous-outcome retries. For an unsafe
-list selected explicitly with `ServerSide`, both retry layers stop after an
-ambiguous result. Statuses that prove the operation was rejected before
-execution retain their normal retry policy.
+The optional top-level `condition` property contains a SQL FROM/WHERE fragment,
+for example `from c where c.status = 'pending'`. Set it on the instruction
+payload with `PatchInstructions::with_filter_predicate(...)`, not on
+`PatchItemOptions`. An absent predicate is omitted from serialization; empty
+and whitespace-only values are preserved for boundary validation. The service evaluates it in
+the same transaction as the patch operations. A true condition proceeds, while
+a false condition returns HTTP 412 with sub-status 1110
+(`PatchConditionNotMet`) and leaves the item and ETag unchanged. If both an
+`If-Match` ETag and a filter predicate are present, the ETag is checked first.
+Invalid condition syntax returns service HTTP 400. An empty condition returns
+client-generated HTTP 400 before dispatch, with no request diagnostics. Service
+responses carry the normal one-request `patch_item` diagnostics, including
+activity ID and request charge.
+
+Unconditional server PATCH with retry-safe instructions can use normal
+ambiguous-outcome retries. For an unsafe list selected explicitly with
+`ServerSide`, or any server-side PATCH with a filter predicate (including
+`Auto`), both retry layers stop after an ambiguous result. A committed mutation
+can make its predicate false, so replay could incorrectly report HTTP 412/1110
+instead of the original failure. Conditional PATCH returns that
+failure without a reconciliation Read or marker-backed recovery. Callers must
+read the item to reconcile the outcome before deciding whether to submit
+another patch. Definitively unsent requests and statuses that prove rejection
+before execution retain their normal retry policy.
 
 ### Intentional implementation and test boundaries
 
@@ -486,6 +516,14 @@ as a JSON number without precision loss.
 
 ## Errors
 
+- A filter predicate on effective client-side execution returns a synthetic
+  HTTP 400 with no sub-status before I/O. It carries no request diagnostics or
+  tracking ID, and the item is unchanged.
+- A false server-side filter predicate returns the service's HTTP 412/1110
+  response with one `patch_item` request in diagnostics. Invalid predicate
+  syntax returns service HTTP 400 with no sub-status. Neither response mutates
+  the item.
+
 - Sub-operation errors preserve the failing error's status, sub-status, raw
   response, and source. The attached diagnostics are re-stamped with the
   virtual PATCH operation's `patch_item` name before the error is surfaced.
@@ -520,12 +558,13 @@ as a JSON number without precision loss.
 
 - Server-side PATCH costs one request and preserves path-level conflict
   resolution, but accepts no more than 10 instructions and cannot safely retry
-  an unsafe list after an ambiguous outcome.
+  an unsafe list or a request with a filter predicate after an ambiguous outcome.
 - Client-side RMW supports longer lists and uses the tracking protocol for
   bounded duplicate suppression, at the cost of at least one Read plus one
   Replace and document-level ETag contention.
-- `Auto` selects the server path only when it retains the same retry safety and
-  falls back to RMW where the service limit or instruction semantics require it.
+- `Auto` selects the server path for retry-safe, service-sized instruction
+  lists and falls back to RMW otherwise. A filter predicate does not change
+  selection, but disables ambiguous-outcome retries on the server path.
 
 ## Invariants
 
@@ -539,15 +578,16 @@ as a JSON number without precision loss.
 - The handler owns the `If-Match` precondition on the internal Replace.
   A caller-set ETag `Precondition` is evaluated against every authoritative
   Read before the handler applies operations; the internal Replace still uses
-  the corresponding Read ETag as its lost-update guard. The PATCH wire format
-  (`PatchInstructions`) has no SQL `condition` field,
-  so a SQL filter predicate (peer SDKs' `FilterPredicate`) cannot be
-  attached to a PATCH request in this preview.
+  the corresponding Read ETag as its lost-update guard. A SQL filter predicate
+  is serialized in the PATCH envelope's `condition` field and is valid only on
+  resolved server-side execution. The client-side handler never parses or
+  evaluates the predicate.
 - 412 stays non-retryable in the global retry-evaluation policy. PATCH's
   RMW retry is internal and never depends on the global policy.
 - An unresolved server PATCH fails closed for ambiguous-outcome retry.
-  Strategy resolution marks only a retry-safe server instruction list as
-  eligible; an explicit unsafe `ServerSide` request remains at-most-once.
+  Strategy resolution marks only a retry-safe server instruction list without
+  a filter predicate as eligible; unsafe or conditional server requests cannot
+  be replayed after possible execution.
 - Every internal Read prefers the PPAF partition writer or account write
   endpoints, forces `LatestCommitted`, and suppresses hedging. It carries the
   caller's explicit session token for possible fallback, but preferred-writer
