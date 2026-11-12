@@ -3,7 +3,11 @@
 
 //! The spec harness's own command-line options, separated from libtest's.
 
-use crate::{config::CONFIG_ARG, pool::NO_CLEANUP_ARG, results::RESULTS_DIR_ARG};
+use crate::{
+    config::CONFIG_ARG,
+    pool::NO_CLEANUP_ARG,
+    results::{NO_PRUNE_ARG, RESULTS_DIR_ARG},
+};
 use std::{ffi::OsString, path::PathBuf};
 
 /// Command-line options for the spec harness.
@@ -15,6 +19,8 @@ pub(crate) struct HarnessArgs {
     pub config: Option<PathBuf>,
     /// `--no-cleanup`: keep every database and container the run creates.
     pub no_cleanup: bool,
+    /// `--no-prune`: keep every earlier run's results.
+    pub no_prune: bool,
     /// Everything else, for `libtest-mimic`.
     pub libtest: Vec<OsString>,
 }
@@ -29,6 +35,10 @@ impl HarnessArgs {
             let text = arg.to_string_lossy().into_owned();
             if text == NO_CLEANUP_ARG {
                 parsed.no_cleanup = true;
+                continue;
+            }
+            if text == NO_PRUNE_ARG {
+                parsed.no_prune = true;
                 continue;
             }
             let mut matched = false;
@@ -73,10 +83,12 @@ mod tests {
             "--config",
             "run.toml",
             "--no-cleanup",
+            "--no-prune",
             "x",
         ]))
         .unwrap();
         assert!(parsed.no_cleanup);
+        assert!(parsed.no_prune);
         assert_eq!(parsed.results_dir, Some(PathBuf::from("out")));
         assert_eq!(parsed.config, Some(PathBuf::from("run.toml")));
         assert_eq!(parsed.libtest, args(&["spec", "--exact", "x"]));
@@ -103,6 +115,7 @@ mod tests {
         assert_eq!(parsed.results_dir, None);
         assert_eq!(parsed.config, None);
         assert!(!parsed.no_cleanup);
+        assert!(!parsed.no_prune);
         assert_eq!(parsed.libtest, args(&["spec", "--list"]));
     }
 }

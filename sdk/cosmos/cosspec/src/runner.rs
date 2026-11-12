@@ -155,6 +155,9 @@ fn selected_profiles() -> Option<Vec<ServiceProfile>> {
 ///   skip deleting leftovers from earlier runs.
 /// * `--results-dir <dir>`: the directory to write one result file per executed
 ///   trial to. Defaults to `<target>/cosspec-results/<run-id>`.
+/// * `--no-prune`: keep every earlier run in `<target>/cosspec-results`. By
+///   default, a run that writes results there keeps only the newest ten runs.
+///   A custom `--results-dir` is never pruned.
 ///
 /// Results print as a tree: backend, then spec, then service profile.
 pub fn main() {
@@ -169,6 +172,8 @@ pub fn main() {
     };
     let backends = config.backends().unwrap_or_else(|e| exit(&e));
     let args = Arguments::from_iter(harness.libtest);
+    let prune_root =
+        (harness.results_dir.is_none() && !harness.no_prune).then(results::default_root);
     let results_dir = harness
         .results_dir
         .unwrap_or_else(|| results::default_dir(pool::run_id()));
@@ -219,6 +224,11 @@ pub fn main() {
     }
     if let Some(dir) = results::dir().filter(|dir| !list_only && dir.exists()) {
         eprintln!("spec results: {}", dir.display());
+        if let Some(root) = prune_root {
+            if let Err(e) = results::prune(&root, results::KEEP_RUNS) {
+                eprintln!("warning: failed to prune {}: {e}", root.display());
+            }
+        }
     }
     std::process::exit(if passed { 0 } else { 101 });
 }

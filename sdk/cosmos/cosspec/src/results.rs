@@ -24,6 +24,7 @@ use std::{
     },
     time::Instant,
 };
+use uuid::Uuid;
 
 /// The version of the result file format.
 pub const RESULT_VERSION: u32 = 1;
@@ -130,11 +131,45 @@ static RESULTS_DIR: OnceLock<PathBuf> = OnceLock::new();
 
 /// The default results directory: `<target>/cosspec-results/<run-id>`.
 pub(crate) fn default_dir(run_id: &str) -> PathBuf {
+    default_root().join(run_id)
+}
+
+/// The directory holding one `<run-id>` directory per run: `<target>/cosspec-results`.
+pub(crate) fn default_root() -> PathBuf {
     let target = std::env::current_exe()
         .ok()
         .and_then(|exe| exe.ancestors().nth(3).map(Path::to_path_buf))
         .unwrap_or_else(std::env::temp_dir);
-    target.join("cosspec-results").join(run_id)
+    target.join("cosspec-results")
+}
+
+/// The command-line flag that keeps every earlier run's results.
+pub const NO_PRUNE_ARG: &str = "--no-prune";
+
+/// How many runs [`prune`] keeps, including the current one.
+pub(crate) const KEEP_RUNS: usize = 10;
+
+/// Deletes all but the `keep` newest run directories in `root`.
+///
+/// Only directories named by a UUIDv7 run ID are considered; they sort by
+/// creation time. Anything else in `root` is left alone. Returns how many
+/// directories were deleted.
+pub(crate) fn prune(root: &Path, keep: usize) -> std::io::Result<usize> {
+    let mut runs: Vec<(Uuid, PathBuf)> = std::fs::read_dir(root)?
+        .filter_map(Result::ok)
+        .filter(|entry| entry.file_type().is_ok_and(|t| t.is_dir()))
+        .filter_map(|entry| {
+            let id = Uuid::parse_str(entry.file_name().to_str()?).ok()?;
+            (id.get_version_num() == 7).then(|| (id, entry.path()))
+        })
+        .collect();
+    runs.sort_by_key(|run| std::cmp::Reverse(run.0));
+    let mut deleted = 0;
+    for (_, path) in runs.into_iter().skip(keep) {
+        std::fs::remove_dir_all(path)?;
+        deleted += 1;
+    }
+    Ok(deleted)
 }
 
 /// Sets the directory result files are written to.
@@ -342,5 +377,41 @@ impl TrialRecord {
         let json = serde_json::to_vec_pretty(&self.file())?;
         std::fs::write(&path, json)
             .map_err(|e| format!("failed to write spec result {}: {e}", path.display()).into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{prune, Uuid};
+
+    #[test]
+    fn prune_keeps_newest_runs_and_ignores_other_entries() {
+        let root = std::env::temp_dir().join(format!("cosspec-prune-{}", Uuid::new_v4()));
+        let runs: Vec<String> = (0..4).map(|_| Uuid::now_v7().to_string()).collect();
+        for run in &runs {
+            std::fs::create_dir_all(root.join(run)).unwrap();
+        }
+        let v4 = Uuid::new_v4().to_string();
+        for other in ["notes", v4.as_str()] {
+            std::fs::create_dir_all(root.join(other)).unwrap();
+        }
+        std::fs::write(root.join("README.txt"), "keep me").unwrap();
+
+        assert_eq!(prune(&root, 2).unwrap(), 2);
+        let mut left: Vec<String> = std::fs::read_dir(&root)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().into_string().unwrap())
+            .collect();
+        left.sort();
+        let mut expected = vec![
+            runs[2].clone(),
+            runs[3].clone(),
+            "README.txt".to_owned(),
+            "notes".to_owned(),
+            v4.clone(),
+        ];
+        expected.sort();
+        assert_eq!(left, expected);
+        std::fs::remove_dir_all(root).unwrap();
     }
 }

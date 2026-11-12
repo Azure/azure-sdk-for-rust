@@ -61,6 +61,10 @@ the pool, and every HTTP request made for it. Results go to
 cargo test -p cosspec --test spec -- --results-dir ./spec-results
 ```
 
+Runs that use the default location keep only the 10 newest run directories
+there. Pass `--no-prune` to keep them all. A `--results-dir` directory is never
+pruned.
+
 ### Choose backends
 
 Pass a TOML configuration file with `--config` to choose the backends and the

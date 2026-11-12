@@ -583,6 +583,12 @@ go to the directory passed with `--results-dir <dir>`, or by default to
 unique directory per run to keep runs apart. Trials that are skipped or
 ignored don't run, so they don't write a file.
 
+After a run writes to the default location, it prunes
+`<target>/cosspec-results/` to the 10 newest run directories, so results
+don't pile up. Only directories named by a UUIDv7 are counted or deleted, and
+UUIDv7s sort by creation time. `--no-prune` skips pruning. A custom
+`--results-dir` is never pruned, because its siblings aren't the framework's.
+
 The format is versioned. This is version `1`. Adding fields doesn't change
 the version. Removing, renaming, or changing the meaning of a field does.
 
@@ -650,7 +656,8 @@ Cargo runs tests from the package root.
 | `AZURE_COSMOS_SPEC_UPDATE_CATALOG` | `1` rewrites `CATALOG.md` and `catalog.json` |
 
 Pass `-- --results-dir <dir>` to choose where result files go. See
-[Spec results](#spec-results). Pass `-- --no-cleanup` to keep every database
+[Spec results](#spec-results). Runs that use the default location prune it
+to the 10 newest run directories; pass `-- --no-prune` to keep them all. Pass `-- --no-cleanup` to keep every database
 and container the run creates.
 
 ## Migration from 0028
