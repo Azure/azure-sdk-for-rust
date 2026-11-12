@@ -18,15 +18,15 @@ use serde_json::value::RawValue;
 
 use crate::{
     error::{status_codes, CosmosError},
-    models::{CosmosOperation, FeedRange, MaxItemCountHint, ResponseBody, SessionToken},
+    models::{CosmosOperation, FeedRange, MaxItemCountHint, SessionToken},
     options::FullTextScoreScope,
 };
 
 use super::{
     query_plan::{HybridSearchQueryInfo, SortOrder},
-    query_response::{self, normalize_page_body, PageAggregator},
-    PageResult, PipelineContext, PipelineNode, PipelineNodeState, Request, RequestTarget,
-    SequentialDrain,
+    query_response::{self, normalize_page_body, EnvelopePayload, PageAggregator},
+    PageResult, PipelineBody, PipelineContext, PipelineNode, PipelineNodeState, Request,
+    RequestTarget, SequentialDrain,
 };
 
 const RRF_CONSTANT: f64 = 60.0;
@@ -88,13 +88,13 @@ struct FeedPage {
     documents: Vec<Box<RawValue>>,
 }
 
-fn parse_feed(body: &ResponseBody) -> crate::error::Result<Vec<Box<RawValue>>> {
+fn parse_feed(body: &PipelineBody) -> crate::error::Result<Vec<Box<RawValue>>> {
     match body {
-        ResponseBody::NoPayload => Ok(Vec::new()),
-        ResponseBody::Items(_) => Err(invalid_page(
+        PipelineBody::NoPayload => Ok(Vec::new()),
+        PipelineBody::Items(_) | PipelineBody::ContextualItems(_) => Err(invalid_page(
             "hybrid search backend returned split items instead of a raw feed page",
         )),
-        ResponseBody::Bytes(bytes) => {
+        PipelineBody::Bytes(bytes) => {
             let bytes = normalize_page_body(bytes)?;
             let page: FeedPage = serde_json::from_slice(&bytes).map_err(|error| {
                 invalid_page_json("failed to parse hybrid search backend feed page", error)
@@ -360,7 +360,7 @@ pub(crate) struct HybridSearch {
     take: usize,
     page_size: usize,
     emit_binary: bool,
-    results: VecDeque<Box<RawValue>>,
+    results: VecDeque<EnvelopePayload>,
     aggregator: Option<PageAggregator>,
     session_token: Option<SessionToken>,
     buffered: bool,
@@ -535,7 +535,7 @@ impl HybridSearch {
         })
     }
 
-    fn collect_statistics(&mut self, body: &ResponseBody) -> crate::error::Result<()> {
+    fn collect_statistics(&mut self, body: &PipelineBody) -> crate::error::Result<()> {
         for raw in parse_feed(body)? {
             let part: GlobalStatistics = serde_json::from_str(raw.get()).map_err(|error| {
                 invalid_page_json("failed to parse hybrid search statistics", error)
@@ -566,7 +566,7 @@ impl HybridSearch {
         Ok(())
     }
 
-    fn collect_results(&mut self, body: &ResponseBody) -> crate::error::Result<()> {
+    fn collect_results(&mut self, body: &PipelineBody) -> crate::error::Result<()> {
         for raw in parse_feed(body)? {
             self.candidate_count += 1;
             if self.candidate_count > self.max_candidates {
@@ -622,7 +622,7 @@ impl HybridSearch {
             .into_iter()
             .skip(self.skip)
             .take(self.take)
-            .map(|row| row.payload)
+            .map(|row| EnvelopePayload::Text(row.payload))
             .collect();
         self.session_token = self
             .aggregator
@@ -784,11 +784,11 @@ mod tests {
                 MockRequestExecutor, MockTopologyProvider, NoopTopologyProvider,
             },
             query_plan::QueryInfo,
-            PartitionRoutingRefresh, PipelineContext, ResolvedRange,
+            PartitionRoutingRefresh, PipelineContext, PipelineResponse, ResolvedRange,
         },
         models::{
             effective_partition_key::EffectivePartitionKey, AccountReference, ContainerProperties,
-            ContainerReference, FeedRange, MaxItemCountHint, PartitionKeyDefinition,
+            ContainerReference, FeedRange, MaxItemCountHint, PartitionKeyDefinition, ResponseBody,
             SystemProperties,
         },
     };
@@ -858,15 +858,15 @@ mod tests {
         info
     }
 
-    fn page(documents: Value, charge: f64) -> crate::models::CosmosResponse {
+    fn page(documents: Value, charge: f64) -> PipelineResponse {
         response_with_charge(
             &serde_json::to_vec(&json!({"Documents": documents})).unwrap(),
             charge,
         )
     }
 
-    fn ids(response: &crate::models::CosmosResponse) -> Vec<String> {
-        let ResponseBody::Items(items) = response.body() else {
+    fn ids(response: &PipelineResponse) -> Vec<String> {
+        let PipelineBody::Items(items) = response.body() else {
             panic!("expected split items");
         };
         items
@@ -910,7 +910,7 @@ mod tests {
             else {
                 panic!("expected ranked page");
             };
-            let ResponseBody::Items(items) = response.body() else {
+            let PipelineBody::Items(items) = response.body() else {
                 panic!("expected split items");
             };
             assert_eq!(items.len(), 1);
@@ -921,6 +921,66 @@ mod tests {
             node.next_page(&mut context).await.unwrap(),
             PageResult::Drained
         ));
+    }
+
+    #[tokio::test]
+    async fn private_pipeline_preserves_ranked_output_encoding() {
+        let feed = json!({"Documents": [
+            {"_rid": "a", "componentScores": [1], "payload": {"id": "a"}},
+            {"_rid": "b", "componentScores": [0.5], "payload": null},
+        ]});
+        for binary_input in [false, true] {
+            for (negotiate_binary, text_response) in [(false, false), (true, false), (true, true)] {
+                let mut operation = operation().as_ref().clone();
+                if negotiate_binary {
+                    operation = operation.with_supported_serialization_formats("CosmosBinary");
+                }
+                if text_response {
+                    operation = operation.transcoding_response_to_text();
+                }
+                let emit_binary = operation.emits_binary_payload();
+                let mut node = HybridSearch::new(
+                    Arc::new(operation),
+                    &single_component_plan(),
+                    vec![epk_range_target().unwrap()],
+                    vec![],
+                    FullTextScoreScope::Local,
+                    0,
+                    2,
+                )
+                .unwrap();
+                let bytes = if binary_input {
+                    crate::binary_json::encode(&feed)
+                } else {
+                    serde_json::to_vec(&feed).unwrap()
+                };
+                let mut executor =
+                    MockRequestExecutor::new(vec![Ok(response_with_charge(&bytes, 1.0))]);
+                let mut context = PipelineContext::new(&mut executor, None);
+                let mut actual = Vec::new();
+                for terminal in [false, true] {
+                    let PageResult::Page {
+                        response,
+                        is_terminal,
+                    } = node.next_page(&mut context).await.unwrap()
+                    else {
+                        panic!("expected ranked output");
+                    };
+                    assert_eq!(is_terminal, terminal);
+                    let public = response
+                        .into_response(text_response, emit_binary, Default::default())
+                        .unwrap();
+                    let ResponseBody::Items(items) = public.into_body() else {
+                        panic!("expected standalone ranked items");
+                    };
+                    assert!(items
+                        .iter()
+                        .all(|item| crate::binary_json::is_binary(item) == emit_binary));
+                    actual.extend(ResponseBody::Items(items).into_items::<Value>().unwrap());
+                }
+                assert_eq!(actual, [json!({"id": "a"}), Value::Null]);
+            }
+        }
     }
 
     #[test]

@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 use super::{
-    build, normalize, query_body, selectors, ItemScope, ReadManyRequest, MAX_BATCH_BYTES,
-    MAX_BATCH_SELECTIONS,
+    build, normalize, query_body, selectors, ItemScope, ReadManyDrain, ReadManyRequest,
+    MAX_BATCH_BYTES, MAX_BATCH_SELECTIONS,
 };
 use crate::{
     diagnostics::{
@@ -12,15 +12,17 @@ use crate::{
     },
     driver::dataflow::{
         mocks::{
-            gone_error, response, response_with_charge, response_with_continuation,
+            gone_error, response, response_with_charge, response_with_continuation, MockLeaf,
             MockRequestExecutor, MockTopologyProvider, NoopRequestExecutor, NoopTopologyProvider,
         },
-        PartitionRoutingRefresh, PipelineContext, RequestExecutor, RequestTarget, ResolvedRange,
+        query_response::{parse_envelope_page, EnvelopePayload},
+        PageResult, PartitionRoutingRefresh, PipelineBody, PipelineContext, PipelineNode,
+        PipelineResponse, RequestExecutor, RequestTarget, ResolvedRange, SequentialDrain,
     },
     models::{
         AccountReference, ActivityId, ContainerProperties, ContainerReference, CosmosOperation,
         CosmosResponse, CosmosStatus, FeedRange, PartitionKeyDefinition, PartitionKeyValue,
-        RequestCharge,
+        RequestCharge, ResponseBody,
     },
     options::DiagnosticsOptions,
 };
@@ -80,7 +82,7 @@ impl RequestExecutor for OperationAddressRecorder {
         target: RequestTarget,
         _refresh: PartitionRoutingRefresh,
         _continuation: Option<String>,
-    ) -> BoxFuture<'a, crate::Result<CosmosResponse>> {
+    ) -> BoxFuture<'a, crate::Result<PipelineResponse>> {
         self.addresses.push((
             std::ptr::from_ref(operation) as usize,
             operation.body().unwrap().as_ptr() as usize,
@@ -438,6 +440,177 @@ async fn id_partition_singleton_keeps_point_read_optimization() {
     );
     assert!(pipeline.next_page(&mut context).await.unwrap().is_none());
     assert_eq!(executor.query_bodies, vec![None]);
+}
+
+#[tokio::test]
+async fn query_and_singleton_preserve_output_encoding_and_diagnostics() {
+    let expected = json!({"id": "item", "pk": "pk", "nested": [true, null, "value"]});
+    for singleton in [false, true] {
+        for (negotiate_binary, text_response, binary_input) in [
+            (false, false, false),
+            (true, false, true),
+            (true, false, false),
+            (true, true, true),
+            (true, true, false),
+        ] {
+            let scope = if singleton {
+                ItemScope::Items(vec![("pk".into(), "item".into())])
+            } else {
+                ItemScope::Partitions(vec!["pk".into()])
+            };
+            let mut operation = read_many_operation(container(), scope, None);
+            if negotiate_binary {
+                operation = operation.with_supported_serialization_formats("CosmosBinary");
+            }
+            if text_response {
+                operation = operation.transcoding_response_to_text();
+            }
+            let emit_binary = operation.emits_binary_payload();
+            let operation = Arc::new(operation);
+            let mut topology = MockTopologyProvider::new(vec![Ok(vec![full_range()])]);
+            let mut pipeline = build(
+                operation.clone(),
+                operation.read_many.as_ref().unwrap(),
+                &mut topology,
+            )
+            .await
+            .unwrap();
+            let value = if singleton {
+                expected.clone()
+            } else {
+                json!({"Documents": [expected]})
+            };
+            let bytes = if binary_input {
+                crate::binary_json::encode(&value)
+            } else {
+                serde_json::to_vec(&value).unwrap()
+            };
+            let wire = response_with_charge(&bytes, 2.5);
+            let diagnostics = charged_error(CosmosStatus::new(StatusCode::Ok), 2.5)
+                .diagnostics()
+                .unwrap();
+            let headers = wire.headers().clone();
+            let response = PipelineResponse::new(
+                wire.into_body(),
+                headers,
+                CosmosStatus::new(StatusCode::Ok),
+                diagnostics.clone(),
+            );
+            let mut executor = MockRequestExecutor::new(vec![Ok(response)]);
+            let mut context = PipelineContext::new(&mut executor, None);
+            let page = pipeline.next_page(&mut context).await.unwrap().unwrap();
+            assert_eq!(page.diagnostics().operation_name(), Some("read_many"));
+            assert_eq!(page.diagnostics().activity_id(), diagnostics.activity_id());
+            assert_eq!(page.diagnostics().request_count(), 1);
+            assert_eq!(page.diagnostics().total_request_charge().value(), 2.5);
+            assert_eq!(page.headers().request_charge.unwrap().value(), 2.5);
+            assert!(page.headers().continuation.is_none());
+            assert!(pipeline.next_page(&mut context).await.unwrap().is_none());
+            let ResponseBody::Items(items) = page
+                .into_response(text_response, emit_binary, Default::default())
+                .unwrap()
+                .into_body()
+            else {
+                panic!("expected standalone read-many output");
+            };
+            assert_eq!(items.len(), 1);
+            let binary_output =
+                !text_response && if singleton { binary_input } else { emit_binary };
+            assert_eq!(crate::binary_json::is_binary(&items[0]), binary_output);
+            assert_eq!(
+                ResponseBody::Items(items).into_items::<Value>().unwrap(),
+                std::slice::from_ref(&expected)
+            );
+        }
+    }
+}
+
+#[tokio::test]
+async fn drain_preserves_contextual_items_until_the_public_boundary() {
+    for text_response in [false, true] {
+        let source = crate::binary_json::test_support::reference_rows(&[("a", 0)], "shared");
+        let items = parse_envelope_page(&PipelineBody::Bytes(source.clone()), 1)
+            .unwrap()
+            .into_iter()
+            .map(|row| match row.payload {
+                EnvelopePayload::Binary(item) => item,
+                _ => panic!("expected a page-backed payload"),
+            })
+            .collect();
+        let wire = response(b"");
+        let private = PipelineResponse::new(
+            PipelineBody::from_item_views(items),
+            wire.headers().clone(),
+            wire.status(),
+            wire.diagnostics(),
+        );
+        let mut node = ReadManyDrain {
+            inner: SequentialDrain::new(vec![Box::new(MockLeaf::with_responses([(
+                private, true,
+            )]))]),
+            width: 1,
+            emit_binary: !text_response,
+            failure: None,
+        };
+        let mut executor = NoopRequestExecutor;
+        let mut context = PipelineContext::new(&mut executor, None);
+        let PageResult::Page { response, .. } = node.next_page(&mut context).await.unwrap() else {
+            panic!("expected read-many output");
+        };
+        let PipelineBody::ContextualItems(items) = response.body() else {
+            panic!("read-many drain must preserve private views");
+        };
+        assert_eq!(items[0].source_page().as_ptr(), source.as_ptr());
+        drop(node);
+        let public = response
+            .into_response(text_response, !text_response, Default::default())
+            .unwrap();
+        drop(source);
+        let ResponseBody::Items(items) = public.into_body() else {
+            panic!("expected standalone public buffers");
+        };
+        assert_eq!(items.len(), 1);
+        assert_eq!(crate::binary_json::is_binary(&items[0]), !text_response);
+        assert_eq!(
+            ResponseBody::Items(items).into_items::<Value>().unwrap(),
+            [json!({"id": "a", "shared": "shared"})]
+        );
+    }
+}
+
+#[tokio::test]
+async fn malformed_feed_failure_keeps_diagnostics_and_does_not_poll_again() {
+    let operation = Arc::new(read_many_operation(
+        container(),
+        ItemScope::Partitions(vec!["pk".into()]),
+        None,
+    ));
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![full_range()])]);
+    let mut pipeline = build(
+        operation.clone(),
+        operation.read_many.as_ref().unwrap(),
+        &mut topology,
+    )
+    .await
+    .unwrap();
+    let mut executor = MockRequestExecutor::new(vec![Ok(response_with_charge(b"{", 2.5))]);
+    let mut context = PipelineContext::new(&mut executor, None);
+    let error = pipeline.next_page(&mut context).await.unwrap_err();
+    assert_eq!(
+        error.status(),
+        crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
+    );
+    let diagnostics = error
+        .diagnostics()
+        .expect("retain the consumed page diagnostics");
+    assert_eq!(diagnostics.operation_name(), Some("read_many"));
+    let repeated = pipeline.next_page(&mut context).await.unwrap_err();
+    assert_eq!(repeated.status(), error.status());
+    assert_eq!(
+        repeated.diagnostics().unwrap().activity_id(),
+        diagnostics.activity_id()
+    );
+    assert_eq!(executor.query_bodies.len(), 1);
 }
 
 #[tokio::test]
@@ -887,7 +1060,7 @@ async fn accepted_split_at_retry_limit_counts_prior_attempts_only_once() {
         .collect::<Vec<_>>();
     for charge in [3.0, 4.0] {
         let response = response_with_charge(br#"{"Documents":[]}"#, charge);
-        responses.push(Ok(CosmosResponse::new(
+        responses.push(Ok(PipelineResponse::new(
             response.body().clone(),
             response.headers().clone(),
             CosmosStatus::new(StatusCode::Ok),
@@ -997,7 +1170,7 @@ async fn singleton_topology_retry_preserves_attempts_on_missing_and_terminal_err
             crate::CosmosError::builder()
                 .with_message("terminal retry response")
                 .with_response(CosmosResponse::new(
-                    wire.into_body(),
+                    ResponseBody::Bytes(wire.into_body().single().unwrap()),
                     headers.clone(),
                     terminal,
                     terminal_error.diagnostics().unwrap(),
