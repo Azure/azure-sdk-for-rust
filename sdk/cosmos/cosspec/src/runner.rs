@@ -151,6 +151,8 @@ fn selected_profiles() -> Option<Vec<ServiceProfile>> {
 ///
 /// * `--config <path>`: the TOML [`SpecConfig`] naming the backends and service
 ///   profiles to run. Defaults to [`SpecConfig::default`].
+/// * `--no-cleanup`: keep every database and container the run creates, and
+///   skip deleting leftovers from earlier runs.
 /// * `--results-dir <dir>`: the directory to write one result file per executed
 ///   trial to. Defaults to `<target>/cosspec-results/<run-id>`.
 ///
@@ -171,6 +173,9 @@ pub fn main() {
         .results_dir
         .unwrap_or_else(|| results::default_dir(pool::run_id()));
     results::set_dir(results_dir);
+    if harness.no_cleanup {
+        pool::disable_cleanup();
+    }
     results::install_panic_hook();
     let strict = std::env::var(STRICT_ENV).as_deref() == Ok("1");
     let only = selected_profiles();
@@ -200,8 +205,17 @@ pub fn main() {
 
     let list_only = args.list;
     let passed = console::run(&args, jobs);
-    if let Err(e) = runtime().block_on(pool::close_all()) {
-        eprintln!("warning: failed to delete pooled spec databases: {e}");
+    match runtime().block_on(pool::close_all()) {
+        Ok(kept) if !kept.is_empty() && !list_only => {
+            eprintln!(
+                "--no-cleanup: kept the pooled databases below; result files list every resource."
+            );
+            for (backend, profile, database) in kept {
+                eprintln!("  {backend}.{profile}: {database}");
+            }
+        }
+        Ok(_) => {}
+        Err(e) => eprintln!("warning: failed to delete pooled spec databases: {e}"),
     }
     if let Some(dir) = results::dir().filter(|dir| !list_only && dir.exists()) {
         eprintln!("spec results: {}", dir.display());

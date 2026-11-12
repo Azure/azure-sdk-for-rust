@@ -226,6 +226,7 @@ struct ResultFile {
     service_profile: &'static str,
     backend: String,
     backend_kind: &'static str,
+    cleanup: bool,
     requires: Vec<&'static str>,
     known_issue: Option<KnownIssueJson>,
     started_at: String,
@@ -304,6 +305,7 @@ impl TrialRecord {
             service_profile: self.profile.name(),
             backend_kind: self.backend_kind,
             backend: self.backend,
+            cleanup: crate::pool::cleanup(),
             requires: spec.requires.iter().map(|c| c.name()).collect(),
             known_issue: spec
                 .known_issue

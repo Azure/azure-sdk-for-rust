@@ -3,7 +3,7 @@
 
 //! The spec harness's own command-line options, separated from libtest's.
 
-use crate::{config::CONFIG_ARG, results::RESULTS_DIR_ARG};
+use crate::{config::CONFIG_ARG, pool::NO_CLEANUP_ARG, results::RESULTS_DIR_ARG};
 use std::{ffi::OsString, path::PathBuf};
 
 /// Command-line options for the spec harness.
@@ -13,17 +13,24 @@ pub(crate) struct HarnessArgs {
     pub results_dir: Option<PathBuf>,
     /// `--config <path>`: the TOML run configuration.
     pub config: Option<PathBuf>,
+    /// `--no-cleanup`: keep every database and container the run creates.
+    pub no_cleanup: bool,
     /// Everything else, for `libtest-mimic`.
     pub libtest: Vec<OsString>,
 }
 
 impl HarnessArgs {
-    /// Removes the harness options (`--name <value>` or `--name=<value>`) from `args`.
+    /// Removes the harness options (`--name <value>`, `--name=<value>`, or a
+    /// bare flag) from `args`.
     pub fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Self, String> {
         let mut parsed = Self::default();
         let mut args = args.into_iter();
         while let Some(arg) = args.next() {
             let text = arg.to_string_lossy().into_owned();
+            if text == NO_CLEANUP_ARG {
+                parsed.no_cleanup = true;
+                continue;
+            }
             let mut matched = false;
             for (name, slot) in [
                 (RESULTS_DIR_ARG, &mut parsed.results_dir),
@@ -65,9 +72,11 @@ mod tests {
             "--exact",
             "--config",
             "run.toml",
+            "--no-cleanup",
             "x",
         ]))
         .unwrap();
+        assert!(parsed.no_cleanup);
         assert_eq!(parsed.results_dir, Some(PathBuf::from("out")));
         assert_eq!(parsed.config, Some(PathBuf::from("run.toml")));
         assert_eq!(parsed.libtest, args(&["spec", "--exact", "x"]));
@@ -93,6 +102,7 @@ mod tests {
         let parsed = HarnessArgs::parse(args(&["spec", "--list"])).unwrap();
         assert_eq!(parsed.results_dir, None);
         assert_eq!(parsed.config, None);
+        assert!(!parsed.no_cleanup);
         assert_eq!(parsed.libtest, args(&["spec", "--list"]));
     }
 }

@@ -347,6 +347,9 @@ Dedicated account (in-memory only)
   - Exclusive resources are deleted when their spec ends, even if the spec
     panicked.
   - Cell databases are deleted when the run ends.
+  - `--no-cleanup` turns all of this off, and the sweep below, so every
+    resource survives for inspection. The run prints the kept cell databases
+    when it ends, and result files record `"cleanup": false`.
 - **Sweep.** When a cell opens, it deletes `spec-<UUIDv7>` databases whose
   UUID timestamp is more than two hours old. This cleans up after crashed
   runs on long-lived accounts. Databases with other names are never touched.
@@ -588,6 +591,7 @@ the version. Removing, renaming, or changing the meaning of a field does.
 | `version` | Format version, `1` |
 | `id`, `test_name`, `summary`, `source` | Spec identity, the doc-comment summary, and `file:line` |
 | `service_profile`, `backend`, `backend_kind`, `requires`, `known_issue` | How the trial was composed. `backend` is the configured name; `backend_kind` is `inmemory`, `emulator`, or `live` |
+| `cleanup` | `false` when the run used `--no-cleanup`, so the trial's resources still exist |
 | `started_at`, `duration_ms` | Wall-clock start (RFC 3339) and duration |
 | `status` | `passed` or `failed` |
 | `error` | The spec body's error, if it returned one |
@@ -646,7 +650,8 @@ Cargo runs tests from the package root.
 | `AZURE_COSMOS_SPEC_UPDATE_CATALOG` | `1` rewrites `CATALOG.md` and `catalog.json` |
 
 Pass `-- --results-dir <dir>` to choose where result files go. See
-[Spec results](#spec-results).
+[Spec results](#spec-results). Pass `-- --no-cleanup` to keep every database
+and container the run creates.
 
 ## Migration from 0028
 

@@ -102,6 +102,18 @@ or use `auth = { kind = "entra" }` to sign in with the Azure CLI. Specs create
 `spec-<UUIDv7>` databases in these accounts and delete them afterward. Leftovers
 older than two hours are deleted by later runs.
 
+To inspect what a run created, pass `--no-cleanup`. The run then deletes
+nothing: not spec resources, not its pooled databases, and not leftovers from
+earlier runs. It prints the kept pooled databases when it ends, and each result
+file lists the spec's resources:
+
+```sh
+cargo test -p cosspec --test spec -- --config ./configs/emulator.toml --no-cleanup
+```
+
+Delete the kept databases yourself, or let a later run sweep them after two
+hours.
+
 ## Key concepts
 
 - **Spec**: an `async fn` marked `#[spec_test]` whose doc comment states the

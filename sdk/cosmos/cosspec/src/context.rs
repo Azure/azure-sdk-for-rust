@@ -268,9 +268,13 @@ impl SpecContext {
         self.shared.lock().unwrap().push(container.to_owned());
     }
 
-    /// Deletes exclusive resources and checks that no shared container was written.
+    /// Deletes exclusive resources (unless `--no-cleanup`) and checks that no
+    /// shared container was written.
     pub(crate) async fn finish(&self) -> SpecResult {
-        let cleanups = std::mem::take(&mut *self.cleanups.lock().unwrap());
+        let mut cleanups = std::mem::take(&mut *self.cleanups.lock().unwrap());
+        if !crate::pool::cleanup() {
+            cleanups.clear();
+        }
         for cleanup in cleanups.into_iter().rev() {
             match cleanup {
                 Cleanup::Container {

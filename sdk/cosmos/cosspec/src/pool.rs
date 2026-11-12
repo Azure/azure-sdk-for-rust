@@ -8,6 +8,8 @@
 //! * The cell database holds every `SharedContainer` and every
 //!   `ExclusiveContainer` of the cell. It is deleted when the process exits
 //!   normally and swept on a later run otherwise.
+//! * With `--no-cleanup` ([`NO_CLEANUP_ARG`]), the run deletes nothing: not
+//!   exclusive resources, not cell databases, and not old leftovers.
 //! * Shared containers are created and seeded once per profile, then reused by
 //!   every spec that asks for them.
 //!
@@ -24,7 +26,10 @@ use crate::{
 use azure_data_cosmos::{ContainerClient, CosmosClient};
 use std::{
     collections::HashMap,
-    sync::{Arc, Mutex, OnceLock},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex, OnceLock,
+    },
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tokio::sync::OnceCell;
@@ -32,6 +37,21 @@ use uuid::Uuid;
 
 /// Prefix of every resource the framework creates.
 pub(crate) const RESOURCE_PREFIX: &str = "spec-";
+
+/// The command-line flag that keeps every resource the run creates.
+pub const NO_CLEANUP_ARG: &str = "--no-cleanup";
+
+static CLEANUP: AtomicBool = AtomicBool::new(true);
+
+/// Turns cleanup off for the rest of the run.
+pub(crate) fn disable_cleanup() {
+    CLEANUP.store(false, Ordering::Relaxed);
+}
+
+/// Whether the run deletes the resources it creates. `false` with `--no-cleanup`.
+pub(crate) fn cleanup() -> bool {
+    CLEANUP.load(Ordering::Relaxed)
+}
 
 /// Leftover databases older than this are deleted when a cell opens.
 const SWEEP_AGE: Duration = Duration::from_secs(2 * 60 * 60);
@@ -97,7 +117,9 @@ pub(crate) async fn cell(
 async fn open_cell(backend: Arc<dyn Backend>, profile: ServiceProfile) -> SpecResult<Arc<Cell>> {
     let account = backend.open_account(profile).await?;
     let admin = account.client(ClientOptions::default()).await?;
-    sweep(account.as_ref(), &admin).await?;
+    if cleanup() {
+        sweep(account.as_ref(), &admin).await?;
+    }
     let database = resource_name();
     account
         .provisioner()
@@ -112,21 +134,33 @@ async fn open_cell(backend: Arc<dyn Backend>, profile: ServiceProfile) -> SpecRe
     }))
 }
 
-/// Deletes the cell database of every opened cell.
-pub(crate) async fn close_all() -> SpecResult {
-    let opened: Vec<Arc<Cell>> = cells()
+/// Deletes the cell database of every opened cell, unless cleanup is off.
+///
+/// Returns the kept cell databases as `(backend, profile, database)`, sorted.
+pub(crate) async fn close_all() -> SpecResult<Vec<(String, ServiceProfile, String)>> {
+    let mut opened: Vec<(String, ServiceProfile, Arc<Cell>)> = cells()
         .lock()
         .unwrap()
-        .values()
-        .filter_map(|slot| slot.get().cloned())
+        .iter()
+        .filter_map(|((backend, profile), slot)| {
+            slot.get()
+                .map(|cell| (backend.clone(), *profile, cell.clone()))
+        })
         .collect();
-    for cell in opened {
+    if !cleanup() {
+        opened.sort_by(|a, b| (&a.0, a.1).cmp(&(&b.0, b.1)));
+        return Ok(opened
+            .into_iter()
+            .map(|(backend, profile, cell)| (backend, profile, cell.database.clone()))
+            .collect());
+    }
+    for (_, _, cell) in opened {
         cell.account
             .provisioner()
             .delete_database(&cell.admin, &cell.database)
             .await?;
     }
-    Ok(())
+    Ok(Vec::new())
 }
 
 /// Deletes framework databases left behind by runs that did not clean up.
