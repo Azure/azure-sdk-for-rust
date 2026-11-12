@@ -114,7 +114,7 @@
       "ExclusiveAccount",
       "HttpTap"
     ],
-    "known_issue": "with the single write region offline, the read surfaces 503 even after the next region answers 200 (MultiRead)",
+    "known_issue": "the read passes, but deleting the database at teardown is a write and hits the write_fails_over_when_write_region_offline issue (MultiRead)",
     "source": "tests/spec/resilience.rs"
   },
   {
@@ -130,6 +130,25 @@
       "SharedContainer(basic_items)",
       "HttpTap"
     ],
+    "source": "tests/spec/resilience.rs"
+  },
+  {
+    "id": "resilience.write_fails_over_when_write_region_offline",
+    "summary": "When the write region goes offline, the account promotes the next region to accept writes, and a write succeeds there without surfacing an error.",
+    "service_profiles": [
+      "MultiRead",
+      "MultiWrite"
+    ],
+    "requires": [
+      "AccountIsolation",
+      "RegionControl",
+      "MultiRegion"
+    ],
+    "resources": [
+      "ExclusiveAccount",
+      "HttpTap"
+    ],
+    "known_issue": "the SDK keeps sending the write to the offline region and surfaces 503 instead of refreshing the account to find the new write region (MultiRead)",
     "source": "tests/spec/resilience.rs"
   }
 ]

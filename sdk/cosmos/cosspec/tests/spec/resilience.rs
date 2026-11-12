@@ -78,7 +78,7 @@ pub async fn throttled_read_is_retried(
 #[spec_test]
 #[service_profiles(MultiRead, MultiWrite)]
 #[requires(AccountIsolation, RegionControl, MultiRegion)]
-#[known_issue("with the single write region offline, the read surfaces 503 even after the next region answers 200", MultiRead)]
+#[known_issue("the read passes, but deleting the database at teardown is a write and hits the write_fails_over_when_write_region_offline issue", MultiRead)]
 pub async fn read_fails_over_when_region_offline(
     account: ExclusiveAccount,
     tap: HttpTap,
@@ -96,6 +96,32 @@ pub async fn read_fails_over_when_region_offline(
     assert_eq!(response.into_model::<Item>()?, expected);
     let reads = tap.operation("ReadItem");
     let last = reads.last().expect("at least one read");
+    assert_eq!(last.region.as_deref(), Some(Region::WEST_US.as_str()));
+    Ok(())
+}
+
+/// When the write region goes offline, the account promotes the next region to
+/// accept writes, and a write succeeds there without surfacing an error.
+#[spec_test]
+#[service_profiles(MultiRead, MultiWrite)]
+#[requires(AccountIsolation, RegionControl, MultiRegion)]
+#[known_issue("the SDK keeps sending the write to the offline region and surfaces 503 instead of refreshing the account to find the new write region", MultiRead)]
+pub async fn write_fails_over_when_write_region_offline(
+    account: ExclusiveAccount,
+    tap: HttpTap,
+) -> SpecResult {
+    let container = account.create_container(profiles::basic_items()).await?;
+    let item = Item::new("after-offline", "pk-0", 1);
+
+    account.take_region_offline(&Region::EAST_US).await?;
+    tap.clear();
+    container
+        .client()
+        .create_item(item.partition_key(), &item.id, &item, None)
+        .await?;
+
+    let writes = tap.operation("CreateItem");
+    let last = writes.last().expect("at least one write");
     assert_eq!(last.region.as_deref(), Some(Region::WEST_US.as_str()));
     Ok(())
 }

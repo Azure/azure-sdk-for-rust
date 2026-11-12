@@ -13,9 +13,11 @@
 | `resilience.hedge_races_alternate_region` | When the preferred region is slow, a hedged read sends a second request to the next region while the first is still in flight, returns the faster response, and abandons the slow request. | MultiRead, MultiWrite | MultiRegion | SharedContainer(basic_items), HttpTap |
 | `resilience.read_fails_over_when_region_offline` | When the preferred region goes offline, reads are served by the next preferred region without surfacing an error. | MultiRead, MultiWrite | AccountIsolation, RegionControl, MultiRegion | ExclusiveAccount, HttpTap |
 | `resilience.throttled_read_is_retried` | A read throttled with 429 Too Many Requests is retried until it succeeds, each retry being a new HTTP request. | SingleRegion, MultiRead, MultiWrite | - | SharedContainer(basic_items), HttpTap |
+| `resilience.write_fails_over_when_write_region_offline` | When the write region goes offline, the account promotes the next region to accept writes, and a write succeeds there without surfacing an error. | MultiRead, MultiWrite | AccountIsolation, RegionControl, MultiRegion | ExclusiveAccount, HttpTap |
 
 ## Known issues
 
 The SDK does not meet these specs yet.
 
-- `resilience.read_fails_over_when_region_offline`: with the single write region offline, the read surfaces 503 even after the next region answers 200 (MultiRead)
+- `resilience.read_fails_over_when_region_offline`: the read passes, but deleting the database at teardown is a write and hits the write_fails_over_when_write_region_offline issue (MultiRead)
+- `resilience.write_fails_over_when_write_region_offline`: the SDK keeps sending the write to the offline region and surfaces 503 instead of refreshing the account to find the new write region (MultiRead)

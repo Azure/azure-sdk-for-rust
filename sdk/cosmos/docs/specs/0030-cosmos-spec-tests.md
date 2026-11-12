@@ -450,12 +450,19 @@ injected resources, known issues, and source location.
 ## Known issues
 
 `#[known_issue]` keeps a spec that the SDK fails today visible without
-blocking CI. The prototype found two problems. One is still open:
+blocking CI. The prototype found two problems. One is still open, and
+two specs are marked for it:
 
-- `resilience.read_fails_over_when_region_offline` (`MultiRead` only): after
-  the single write region goes offline, a read retries in the next region and
-  gets 200 OK, but the SDK still surfaces the original 503. The failure
-  reproduces without `HttpTap`.
+- `resilience.write_fails_over_when_write_region_offline` (`MultiRead`
+  only): after the single write region goes offline, the account promotes the
+  next region to accept writes, but the SDK keeps sending the write to the
+  offline region and surfaces 503. It marks the endpoint unavailable but
+  doesn't refresh the account to learn the new write region. The fix belongs
+  in the driver's retry policy.
+- `resilience.read_fails_over_when_region_offline` (`MultiRead` only): the
+  read itself fails over and passes. The spec fails because its teardown
+  deletes the database, which is a write and hits the issue above. It's
+  marked so it doesn't block CI and should clear with the same fix.
 
 `query.continuation_survives_split` exposed a fidelity bug in the in-memory
 emulator, not in the SDK. The emulator's ORDER BY continuations were row
