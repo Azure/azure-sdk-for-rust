@@ -15,7 +15,7 @@ use crate::{
         TransportHttpVersion, TransportSecurity,
     },
     driver::{
-        cache::{PartitionKeyRangeCache, PkRangeFetchResult},
+        cache::{ContainerRoutingMap, PartitionKeyRangeCache, PkRangeFetchResult},
         dataflow::{
             planner, CachedTopologyProvider, DrainedLeaf, OperationPlan, PartitionRoutingRefresh,
             Pipeline, PipelineContext, PipelineNodeState, RequestExecutor, RequestTarget,
@@ -2531,6 +2531,32 @@ impl CosmosDriver {
     /// the `continuation.is_none()` branch below and clears the pin. Both halves
     /// of the region-affine state therefore die together, so an unreachable
     /// pinned region cannot wedge later force-refreshes.
+    pub(crate) async fn load_session_token_routing_map(
+        &self,
+        container: &ContainerReference,
+        operation_options: OperationOptions,
+        absolute_deadline: Option<Instant>,
+    ) -> crate::error::Result<Option<Arc<ContainerRoutingMap>>> {
+        let lookup = self.pk_range_cache.try_lookup_result(
+            container,
+            false,
+            self.pk_range_page_fetcher(operation_options, absolute_deadline),
+        );
+        await_planning_or_deadline(lookup, absolute_deadline)
+            .await
+            .ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::models::CosmosStatus::from_parts(
+                        azure_core::http::StatusCode::RequestTimeout,
+                        Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
+                    ))
+                    .with_message(
+                        "end-to-end operation timeout exceeded while loading session topology",
+                    )
+                    .build()
+            })?
+    }
+
     fn pk_range_page_fetcher<'a>(
         &'a self,
         options: OperationOptions,
@@ -3477,12 +3503,21 @@ impl CosmosDriver {
             return false;
         }
 
+        let explicit_session_token = operation.request_headers().session_token.is_some()
+            || options.custom_headers.as_ref().is_some_and(|headers| {
+                headers.contains_key(&azure_core::http::headers::HeaderName::from_static(
+                    crate::models::request_header_names::SESSION_TOKEN,
+                ))
+            });
+        if explicit_session_token {
+            return true;
+        }
+
         let effective = self.operation_options_view(options);
         if effective
             .session_capturing_disabled()
             .copied()
             .unwrap_or(false)
-            || operation.request_headers().session_token.is_some()
             || !operation_allows_automatic_session_token_resolution(
                 operation,
                 location.account.multiple_write_locations_enabled,
