@@ -14,6 +14,7 @@
 use azure_data_cosmos_driver::transport_observer::{
     HttpExchange, HttpOutcome, HttpOutcomeKind, TransportObserver,
 };
+use bytes::Bytes;
 use std::{
     sync::{Arc, Mutex},
     time::{Duration, Instant},
@@ -43,6 +44,10 @@ pub struct HttpRecord {
     pub completed_at: Option<Instant>,
     /// How the exchange finished. `None` while still in flight.
     pub outcome: Option<HttpOutcomeKind>,
+    /// The request body, when the request had one.
+    pub request_body: Option<Bytes>,
+    /// The response body, when a response arrived.
+    pub response_body: Option<Bytes>,
 }
 
 impl HttpRecord {
@@ -138,6 +143,8 @@ impl HttpTap {
             started_at: exchange.started_at(),
             completed_at: None,
             outcome: None,
+            request_body: exchange.body().cloned(),
+            response_body: None,
         });
     }
 
@@ -150,6 +157,7 @@ impl HttpTap {
         {
             record.completed_at = Some(outcome.completed_at());
             record.outcome = Some(outcome.kind().clone());
+            record.response_body = outcome.body().cloned();
         }
     }
 }

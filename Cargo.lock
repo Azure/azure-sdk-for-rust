@@ -1584,6 +1584,7 @@ dependencies = [
  "azure_data_cosmos",
  "azure_data_cosmos_driver",
  "azure_identity 1.0.0",
+ "bytes",
  "cosspec_macros",
  "futures",
  "libtest-mimic",

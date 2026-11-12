@@ -25,6 +25,7 @@ use std::{
 
 use async_trait::async_trait;
 use azure_core::http::{headers::HeaderName, Method, Url};
+use bytes::Bytes;
 
 use crate::{
     pipeline::transport::{
@@ -67,6 +68,7 @@ pub struct HttpExchange {
     operation: Option<String>,
     region: Option<String>,
     activity_id: Option<String>,
+    body: Option<Bytes>,
 }
 
 impl HttpExchange {
@@ -105,6 +107,11 @@ impl HttpExchange {
     pub fn activity_id(&self) -> Option<&str> {
         self.activity_id.as_deref()
     }
+
+    /// The request body, when the request has one.
+    pub fn body(&self) -> Option<&Bytes> {
+        self.body.as_ref()
+    }
 }
 
 /// How an HTTP exchange finished.
@@ -112,6 +119,7 @@ impl HttpExchange {
 pub struct HttpOutcome {
     completed_at: Instant,
     kind: HttpOutcomeKind,
+    body: Option<Bytes>,
 }
 
 /// The terminal state of an HTTP exchange.
@@ -141,6 +149,11 @@ impl HttpOutcome {
     /// The terminal state.
     pub fn kind(&self) -> &HttpOutcomeKind {
         &self.kind
+    }
+
+    /// The response body, when a response arrived.
+    pub fn body(&self) -> Option<&Bytes> {
+        self.body.as_ref()
     }
 }
 
@@ -198,13 +211,14 @@ struct CompletionGuard<'a> {
 }
 
 impl CompletionGuard<'_> {
-    fn complete(mut self, kind: HttpOutcomeKind) {
+    fn complete(mut self, kind: HttpOutcomeKind, body: Option<Bytes>) {
         self.done = true;
         self.observer.on_complete(
             &self.exchange,
             &HttpOutcome {
                 completed_at: Instant::now(),
                 kind,
+                body,
             },
         );
     }
@@ -218,6 +232,7 @@ impl Drop for CompletionGuard<'_> {
                 &HttpOutcome {
                     completed_at: Instant::now(),
                     kind: HttpOutcomeKind::Cancelled,
+                    body: None,
                 },
             );
         }
@@ -236,6 +251,7 @@ impl TransportClient for ObservingClient {
             operation: header(&HeaderName::from_static(FAULT_INJECTION_OPERATION)),
             region: header(&HeaderName::from_static(FAULT_INJECTION_REGION)),
             activity_id: header(&ACTIVITY_ID),
+            body: request.body.clone(),
         };
         self.observer.on_start(&exchange);
         let guard = CompletionGuard {
@@ -261,17 +277,20 @@ impl TransportClient for ObservingClient {
             self.inner.send(request).await
         };
 
-        let kind = match &result {
-            Ok(response) => HttpOutcomeKind::Response {
-                status: response.status,
-                sub_status: response
-                    .headers
-                    .get_optional_str(&SUB_STATUS)
-                    .and_then(|v| v.parse().ok()),
-            },
-            Err(_) => HttpOutcomeKind::TransportError,
+        let (kind, body) = match &result {
+            Ok(response) => (
+                HttpOutcomeKind::Response {
+                    status: response.status,
+                    sub_status: response
+                        .headers
+                        .get_optional_str(&SUB_STATUS)
+                        .and_then(|v| v.parse().ok()),
+                },
+                Some(Bytes::copy_from_slice(&response.body)),
+            ),
+            Err(_) => (HttpOutcomeKind::TransportError, None),
         };
-        guard.complete(kind);
+        guard.complete(kind, body);
         result
     }
 }
@@ -283,7 +302,10 @@ mod tests {
     use std::{sync::Mutex, time::Duration};
 
     #[derive(Debug, Default)]
-    struct Recorder(Mutex<Vec<(u64, Option<HttpOutcomeKind>)>>);
+    struct Recorder(
+        Mutex<Vec<(u64, Option<HttpOutcomeKind>)>>,
+        Mutex<Vec<Option<Bytes>>>,
+    );
 
     impl TransportObserver for Recorder {
         fn on_start(&self, exchange: &HttpExchange) {
@@ -296,6 +318,9 @@ mod tests {
                 .find(|(seq, _)| *seq == exchange.sequence())
                 .unwrap();
             entry.1 = Some(outcome.kind().clone());
+            let mut bodies = self.1.lock().unwrap();
+            bodies.push(exchange.body().cloned());
+            bodies.push(outcome.body().cloned());
         }
     }
 
@@ -314,7 +339,7 @@ mod tests {
                     h.insert(SUB_STATUS, "3200");
                     h
                 },
-                body: Vec::new(),
+                body: b"{\"id\":\"1\"}".to_vec(),
             })
         }
     }
@@ -327,7 +352,7 @@ mod tests {
             url: Url::parse("https://example.documents.azure.com/dbs/db").unwrap(),
             method: Method::Get,
             headers,
-            body: None,
+            body: Some(Bytes::from_static(b"{}")),
             timeout: None,
             evaluation_collector: None,
         }
@@ -351,6 +376,13 @@ mod tests {
                 status: 429,
                 sub_status: Some(3200)
             })
+        );
+        assert_eq!(
+            *recorder.1.lock().unwrap(),
+            [
+                Some(Bytes::from_static(b"{}")),
+                Some(Bytes::from_static(b"{\"id\":\"1\"}"))
+            ]
         );
         let forwarded = inner.0.lock().unwrap().clone().unwrap();
         assert!(forwarded

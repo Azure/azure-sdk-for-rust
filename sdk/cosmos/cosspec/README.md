@@ -179,7 +179,9 @@ AZURE_COSMOS_SPEC_UPDATE_CATALOG=1 cargo test -p cosspec --test spec
 - To see why a spec failed, open its result file. `error` is the spec body's
   failure and `teardown_error` is a cleanup failure. In `http`, requests
   labeled `spec` came from the spec's clients and requests labeled `harness`
-  came from the framework's setup and teardown.
+  came from the framework's setup and teardown. Each exchange includes up to
+  1 KiB of its request and response bodies, as `text` or, for binary bodies,
+  `base64`.
 - If an `emulator` trial fails with `error sending request`, check that the
   emulator is running and reachable at the configured `endpoint`.
 - If a `live` trial fails with `environment variable ... is not set`, export

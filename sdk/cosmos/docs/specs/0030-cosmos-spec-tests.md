@@ -503,10 +503,10 @@ proof from the wire. For example, hedged requests must actually overlap.
 `__internal_transport_observer`):
 
 - `on_start(&HttpExchange)` reports the sequence number, a monotonic start
-  `Instant`, method, URL, operation, region, and activity ID.
+  `Instant`, method, URL, operation, region, activity ID, and request body.
 - `on_complete(&HttpExchange, &HttpOutcome)` reports a monotonic end
-  `Instant` and the outcome: a response (status and sub-status), a transport
-  error, or cancellation.
+  `Instant`, the outcome (a response with status and sub-status, a transport
+  error, or cancellation), and the response body when a response arrived.
 
 The observer wraps the transport's HTTP client factory **outside** fault
 injection. Injected delays therefore count as wire time, and injected
@@ -604,12 +604,16 @@ the version. Removing, renaming, or changing the meaning of a field does.
 | `teardown_error` | A cleanup failure, reported separately from the body |
 | `panic` | Message, location, and backtrace if the body panicked |
 | `resources` | Each account, database, and container the spec used: `kind`, `origin` (`created` or `pooled`), `name`, and where known `database`, `profile`, and `parameter` |
-| `http` | Every HTTP exchange of the spec's clients (`label: "spec"`) and of its harness clients (`label: "harness"`), in start order: method, URL, operation, region, activity ID, `start_ms` from the trial start, `duration_ms`, and `outcome` |
+| `http` | Every HTTP exchange of the spec's clients (`label: "spec"`) and of its harness clients (`label: "harness"`), in start order: method, URL, operation, region, activity ID, `start_ms` from the trial start, `duration_ms`, `outcome`, `request_body`, and `response_body` |
 
 The recording isn't affected by `HttpTap::clear()`. Traffic to set up pooled
 resources is shared by many specs, so it isn't attributed to any one of them.
-Headers and bodies aren't recorded yet; adding them later is an additive
-change.
+Each body has its full `length` in bytes and keeps at most the first 1 KiB
+(`cosspec::results::BODY_LIMIT`); `truncated` says whether bytes were cut.
+UTF-8 bodies, such as JSON, appear as `text`. Binary bodies, such as Cosmos DB
+binary encoding, appear as `base64`. A body field is `null` when the request
+had no body or no response arrived. Headers aren't recorded yet; adding them
+later is an additive change.
 
 ## Known issues
 

@@ -29,6 +29,9 @@ use uuid::Uuid;
 /// The version of the result file format.
 pub const RESULT_VERSION: u32 = 1;
 
+/// The most bytes of each HTTP request or response body a result file keeps.
+pub const BODY_LIMIT: usize = 1024;
+
 /// The command-line option that sets the results directory.
 pub const RESULTS_DIR_ARG: &str = "--results-dir";
 
@@ -218,6 +221,49 @@ struct HttpJson {
     duration_ms: Option<f64>,
     /// `None` if the exchange never finished.
     outcome: Option<OutcomeJson>,
+    /// `None` if the request had no body.
+    request_body: Option<BodyJson>,
+    /// `None` if no response arrived.
+    response_body: Option<BodyJson>,
+}
+
+/// An HTTP body, cut to at most [`BODY_LIMIT`] bytes.
+///
+/// Exactly one of `text` and `base64` is set.
+#[derive(Debug, PartialEq, Serialize)]
+struct BodyJson {
+    /// The body's full length in bytes.
+    length: usize,
+    /// Whether only the first part of the body was kept.
+    truncated: bool,
+    /// The kept bytes, when they are UTF-8 text such as JSON.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    text: Option<String>,
+    /// The kept bytes, base64-encoded, when they are binary, such as Cosmos DB
+    /// binary encoding.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    base64: Option<String>,
+}
+
+impl BodyJson {
+    fn new(body: &[u8]) -> Self {
+        let kept = &body[..body.len().min(BODY_LIMIT)];
+        let truncated = kept.len() < body.len();
+        let text = match std::str::from_utf8(kept) {
+            Ok(text) => Some(text),
+            // The cut split a multi-byte character; drop its first bytes.
+            Err(e) if truncated && e.error_len().is_none() => {
+                std::str::from_utf8(&kept[..e.valid_up_to()]).ok()
+            }
+            Err(_) => None,
+        };
+        Self {
+            length: body.len(),
+            truncated,
+            text: text.map(str::to_owned),
+            base64: text.is_none().then(|| azure_core::base64::encode(kept)),
+        }
+    }
 }
 
 impl HttpJson {
@@ -234,6 +280,8 @@ impl HttpJson {
                 HttpOutcomeKind::Cancelled => OutcomeJson::Cancelled,
                 _ => OutcomeJson::Unknown,
             }),
+            request_body: record.request_body.as_deref().map(BodyJson::new),
+            response_body: record.response_body.as_deref().map(BodyJson::new),
             label: record.label,
             sequence: record.sequence,
             method: record.method,
@@ -382,7 +430,44 @@ impl TrialRecord {
 
 #[cfg(test)]
 mod tests {
-    use super::{prune, Uuid};
+    use super::{prune, BodyJson, Uuid, BODY_LIMIT};
+
+    #[test]
+    fn body_keeps_short_bodies_whole() {
+        assert_eq!(
+            BodyJson::new(br#"{"id":"1"}"#),
+            BodyJson {
+                length: 10,
+                truncated: false,
+                text: Some(r#"{"id":"1"}"#.to_owned()),
+                base64: None,
+            }
+        );
+    }
+
+    #[test]
+    fn body_encodes_binary_as_base64() {
+        let body = vec![0x80u8; BODY_LIMIT + 1];
+        let json = BodyJson::new(&body);
+        assert!(json.truncated);
+        assert_eq!(json.text, None);
+        assert_eq!(
+            json.base64,
+            Some(azure_core::base64::encode(&body[..BODY_LIMIT]))
+        );
+    }
+
+    #[test]
+    fn body_truncates_on_a_char_boundary() {
+        // 'é' is two bytes, so the cut lands inside one at BODY_LIMIT.
+        let body = format!("a{}", "é".repeat(BODY_LIMIT));
+        let json = BodyJson::new(body.as_bytes());
+        assert_eq!(json.length, body.len());
+        assert!(json.truncated);
+        let text = json.text.unwrap();
+        assert_eq!(text.len(), BODY_LIMIT - 1);
+        assert!(body.starts_with(&text));
+    }
 
     #[test]
     fn prune_keeps_newest_runs_and_ignores_other_entries() {

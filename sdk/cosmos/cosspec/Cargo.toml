@@ -21,6 +21,7 @@ azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", features = [
   "__internal_in_memory_emulator",
   "__internal_transport_observer",
 ] }
+bytes.workspace = true
 cosspec_macros = { path = "../cosspec_macros" }
 futures.workspace = true
 libtest-mimic.workspace = true
