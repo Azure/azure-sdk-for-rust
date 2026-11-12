@@ -674,16 +674,19 @@ Each partition key component is serialized with a leading type marker byte:
 #### Component Serialization for Hashing
 
 **`write_for_hashing_v2`** (used by V2 and MultiHash):
+
 - Bool/Null/Undefined/Infinity: type marker only.
 - Number: marker `0x05` + 8 bytes (f64 LE).
 - String: marker `0x08` + full UTF-8 bytes (no truncation) + suffix `0xFF`.
 
 **`write_for_hashing_v1`** (used by V1):
+
 - Same as V2 except: string suffix is `0x00`, strings truncated to 100 bytes.
 
 #### Component Serialization for Binary Encoding (V1)
 
 Used to build the final EPK binary for V1 after the hash-as-number prefix:
+
 - Number: marker `0x05` + variable-length ordering-preserving encoding of `f64`
   (sign-magnitude to unsigned conversion, 7-bit continuation encoding).
 - String: marker `0x08` + each byte `+1` (wrapping), up to 100 bytes if short
@@ -719,6 +722,7 @@ For hierarchical PK with N components, the EPK is `N * 32` hex characters long.
 #### EPK Range Boundaries
 
 EPK ranges use `Epk` comparison (lexicographic on the underlying uppercase hex string):
+
 - **Min inclusive**: `Epk::MIN` — empty string, corresponds to empty partition key
 - **Max exclusive**: `Epk::MAX` — `"FF"`, corresponds to infinity partition key
 
@@ -1382,6 +1386,7 @@ by setting `locked_until` to `now + min_lock_duration + large_buffer`, then clea
 the lock once the work completes.
 
 This allows tests to:
+
 - Use `Duration::ZERO` for instant split/merge in fast tests
 - Use `Duration::from_millis(500)` to test that the driver retries on 410/1007 during
   the lock window
@@ -1389,6 +1394,7 @@ This allows tests to:
 ### PKRanges Feed After Split/Merge
 
 The `GET /dbs/{db}/colls/{coll}/pkranges` feed reflects the updated topology:
+
 - Child partitions include their `parents` list (e.g., `["0"]` after split, `["0", "1"]`
   after merge)
 - `vectorClockVersion` reflects the current version
@@ -1414,6 +1420,51 @@ hosted emulator (`0027-hosted-emulator.md`) supports the documented subset of
 Gateway 2.0 over HTTP/2.
 
 Query support is intentionally scoped to the local SQL evaluator and local query-plan analyzer used by the SDK tests. Transactional batch supports document operations within one logical partition and rolls back the whole batch on failure.
+
+### Aggregate query support
+
+The emulator generates service-style rewrites and partition-local partials for
+COUNT, SUM, AVG, MIN, MAX, and GROUP BY. SELECT VALUE and SELECT-list projections
+with multiple independent aggregate aliases are supported. Canonical
+`SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.category FROM c) AS t`
+queries send inner distinct values through the driver's global DISTINCT and
+DCount stages; local distinct counts are never summed.
+
+Ordinary VALUE aggregate rows are arrays containing an aggregate cell.
+SELECT-list rows carry alias-to-cell projections under `payload`. Grouped rows
+carry an ordered `groupByItems` array of item wrappers and a `payload` projection.
+AVG cells contain sum/count state rather than a partition average. MIN/MAX cells
+include count-bearing `item2` state, distinguishing an empty input from an
+undefined nonempty partial. Missing group keys use `{}` wrappers; explicit null
+uses `{"item":null}`. Undefined projected properties are omitted. Numeric-equivalent
+keys and structurally equivalent objects group together.
+
+Unordered partial queries execute bounded consecutive slices of documents in
+EPK/item-ID order. Their versioned `partial_query_cursor_v1` continuation records
+the last completely scanned document, container identity, and query fingerprint.
+Each split child applies the inherited cursor within its own EPK bounds, so
+already consumed input is not replayed or skipped. Empty filtered slices may
+return empty pages with a progressing continuation. MaxItemCount still bounds
+returned rows. No query snapshot or global aggregation state is retained by the
+emulator.
+
+This cursor and scan order are emulator implementation choices, not a claim about
+undocumented server token encoding. The observable contract follows the public
+.NET query-plan baselines and per-continuation partial aggregation behavior.
+The production driver owns final aggregation, grouped result paging, and its
+existing continuation restrictions: ordinary aggregates and GROUP BY cannot
+export live checkpoints. Production local-planner eligibility is unchanged;
+advanced queries still use native/Gateway planning.
+
+General FROM subqueries, composite aggregate projections such as
+`ABS(AVG(c.v))`, aggregate ORDER BY combinations, and hybrid queries remain outside
+this emulator feature. A canonical distinct-count inner source with matching
+ORDER BY reuses the existing ordered rewrite path. See
+`specs/0013-query-engine.md` for the production planning boundary.
+
+DISTINCT combined with GROUP BY is supported only when it is redundant over
+the complete grouping-key projection without aggregates. Other combinations
+need a different production stage composition and are rejected explicitly.
 
 Distributed-transaction PATCH post-mutation validation of `/id` and partition-key
 paths predates the PR2 E2E work and remains outside its scope. PR2 ensures that
@@ -1536,6 +1587,7 @@ Differences are classified as:
 ### Test Categories and Assertions
 
 **Point Operations** (create, read, replace, upsert, delete):
+
 - Status code matches expected.
 - All required response headers present (see Section 8).
 - ETag format is valid (quoted string).
@@ -1544,12 +1596,14 @@ Differences are classified as:
 - Document body contains all system properties on reads/writes.
 
 **Error Cases** (404, 409, 412, 1002):
+
 - Status code and sub-status code match.
 - Error response body has `code` and `message` fields.
 - RU charge is still reported (even on errors).
 - Session token is still returned (even on errors).
 
 **Multi-Region** (write forbidden, replication, failover):
+
 - Write to non-write region returns 403/3.
 - Write to write region succeeds.
 - Replicated documents are readable in other regions (after configured delay).
@@ -1557,6 +1611,7 @@ Differences are classified as:
   the target region's LSN.
 
 **Dynamic Topology** (region add/remove, write-mode and write-region changes):
+
 - Removing the client's top preferred region moves traffic to the next preferred one, and
   re-adding it restores the original order.
 - A request to a removed region returns 403/1008, with the service's body shape.
@@ -1569,6 +1624,7 @@ Differences are classified as:
   Both are pinned by explicit expectations in the tests themselves.
 
 **Control Plane** (database/container CRUD):
+
 - Create returns 201 with system properties.
 - Duplicate create returns 409.
 - Read returns stored metadata including partition key definition.

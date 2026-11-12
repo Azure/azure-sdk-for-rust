@@ -282,12 +282,17 @@ async fn unsupported_families_fall_back_to_gateway_once() {
         (
             "aggregate",
             "SELECT VALUE COUNT(1) FROM c",
-            FallbackOutcome::Error,
+            FallbackOutcome::Plan,
         ),
         (
             "group_by",
             "SELECT c.pk, COUNT(1) FROM c GROUP BY c.pk",
-            FallbackOutcome::Error,
+            FallbackOutcome::Plan,
+        ),
+        (
+            "canonical_dcount",
+            "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.pk FROM c) AS t",
+            FallbackOutcome::Plan,
         ),
         (
             "dcount",

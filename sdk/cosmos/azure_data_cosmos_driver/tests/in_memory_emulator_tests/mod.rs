@@ -4,6 +4,7 @@
 //! Shared test helpers for the in-memory emulator integration tests.
 
 pub mod account_metadata_refresh;
+pub mod aggregate;
 pub mod batch;
 pub mod binary_response_format;
 #[cfg(feature = "fault_injection")]

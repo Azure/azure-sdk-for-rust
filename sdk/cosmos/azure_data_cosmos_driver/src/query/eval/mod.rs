@@ -8,8 +8,9 @@
 //! This evaluator interprets the SQL AST directly against `serde_json::Value` documents.
 //! It supports the most commonly used scalar expressions, comparisons, and built-in functions.
 
-use std::{cmp::Ordering, collections::HashMap};
+use std::{cmp::Ordering, collections::BTreeMap};
 
+use crate::driver::dataflow::order_by::OrderByItem;
 use crate::query::ast::{
     SqlBinaryOp, SqlCollection, SqlCollectionExpression, SqlLimitSpec, SqlLiteral, SqlOffsetSpec,
     SqlOrderByClause, SqlPathSegment, SqlQuery, SqlScalarExpression, SqlSelectSpec, SqlSortOrder,
@@ -125,6 +126,22 @@ pub fn project(
             Ok(serde_json::Value::Object(obj))
         }
     }
+}
+
+pub(crate) fn project_defined(
+    document: &serde_json::Value,
+    query: &SqlQuery,
+    parameters: &Params,
+) -> Result<Option<serde_json::Value>, EvalError> {
+    if let SqlSelectSpec::Value(expression) = &query.select.spec {
+        let alias = get_root_alias(query);
+        let value = eval_scalar(expression, document, alias.as_deref(), parameters)?;
+        if value.is_undefined() {
+            return Ok(None);
+        }
+        return Ok(Some(value.to_json()));
+    }
+    project(document, query, parameters).map(Some)
 }
 
 // ─── JOIN expansion ──────────────────────────────────────────────────────────
@@ -312,7 +329,6 @@ fn eval_aggregate(
             let mut int_sum: i64 = 0;
             let mut float_sum: f64 = 0.0;
             let mut all_integer = true;
-            let mut has_value = false;
             for doc in group {
                 match eval_scalar(arg, doc, root_alias, params)? {
                     CosmosValue::Integer(n) => {
@@ -327,7 +343,6 @@ fn eval_aggregate(
                         } else {
                             float_sum += n as f64;
                         }
-                        has_value = true;
                     }
                     CosmosValue::Number(n) => {
                         if all_integer {
@@ -336,14 +351,12 @@ fn eval_aggregate(
                         } else {
                             float_sum += n;
                         }
-                        has_value = true;
                     }
-                    _ => {}
+                    CosmosValue::Undefined => {}
+                    _ => return Ok(CosmosValue::Undefined),
                 }
             }
-            if !has_value {
-                Ok(CosmosValue::Undefined)
-            } else if all_integer {
+            if all_integer {
                 Ok(CosmosValue::Integer(int_sum))
             } else {
                 Ok(CosmosValue::Number(float_sum))
@@ -368,7 +381,8 @@ fn eval_aggregate(
                         sum += n as f64;
                         count += 1;
                     }
-                    _ => {}
+                    CosmosValue::Undefined => {}
+                    _ => return Ok(CosmosValue::Undefined),
                 }
             }
             if count > 0 {
@@ -377,10 +391,10 @@ fn eval_aggregate(
                 Ok(CosmosValue::Undefined)
             }
         }
-        "MIN" => {
+        "MIN" | "MAX" => {
             let arg = args
                 .first()
-                .ok_or_else(|| EvalError::TypeError("MIN requires an argument".into()))?;
+                .ok_or_else(|| EvalError::TypeError("MIN/MAX requires an argument".into()))?;
             // use Cosmos' cross-type total-ordering (`null<bool<num<str<arr<obj`)
             // so MIN over a heterogeneous group returns the smallest value
             // under that ordering rather than "the first non-undefined value
@@ -394,7 +408,17 @@ fn eval_aggregate(
                 min_val = Some(match min_val {
                     None => val,
                     Some(current) => {
-                        if total_cmp_for_sort(&val, &current) == Ordering::Less {
+                        if matches!(val, CosmosValue::Array(_) | CosmosValue::Object(_))
+                            || matches!(current, CosmosValue::Array(_) | CosmosValue::Object(_))
+                        {
+                            return Ok(CosmosValue::Undefined);
+                        }
+                        let desired = if name.eq_ignore_ascii_case("MIN") {
+                            Ordering::Less
+                        } else {
+                            Ordering::Greater
+                        };
+                        if total_cmp_for_sort(&val, &current) == desired {
                             val
                         } else {
                             current
@@ -403,30 +427,6 @@ fn eval_aggregate(
                 });
             }
             Ok(min_val.unwrap_or(CosmosValue::Undefined))
-        }
-        "MAX" => {
-            let arg = args
-                .first()
-                .ok_or_else(|| EvalError::TypeError("MAX requires an argument".into()))?;
-            // same cross-type ordering as MIN.
-            let mut max_val: Option<CosmosValue> = None;
-            for doc in group {
-                let val = eval_scalar(arg, doc, root_alias, params)?;
-                if val.is_undefined() {
-                    continue;
-                }
-                max_val = Some(match max_val {
-                    None => val,
-                    Some(current) => {
-                        if total_cmp_for_sort(&val, &current) == Ordering::Greater {
-                            val
-                        } else {
-                            current
-                        }
-                    }
-                });
-            }
-            Ok(max_val.unwrap_or(CosmosValue::Undefined))
         }
         _ => Err(EvalError::UnknownFunction(name.to_string())),
     }
@@ -494,6 +494,31 @@ fn eval_scalar_with_group(
             } else {
                 Ok(val)
             }
+        }
+        SqlScalarExpression::ArrayCreate(items) => {
+            let values = items
+                .iter()
+                .map(|item| eval_scalar_with_group(item, representative, root_alias, params, group))
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(CosmosValue::Array(values))
+        }
+        SqlScalarExpression::ObjectCreate(properties) => {
+            let values = properties
+                .iter()
+                .map(|property| {
+                    Ok((
+                        property.name.clone(),
+                        eval_scalar_with_group(
+                            &property.expression,
+                            representative,
+                            root_alias,
+                            params,
+                            group,
+                        )?,
+                    ))
+                })
+                .collect::<Result<Vec<_>, EvalError>>()?;
+            Ok(CosmosValue::Object(values))
         }
         _ => eval_scalar(expr, representative, root_alias, params),
     }
@@ -850,23 +875,31 @@ pub fn query_documents(
         if let Some(group_by) = &query.group_by {
             // Explicit GROUP BY — partition rows into groups by key.
             let mut groups: Vec<Vec<serde_json::Value>> = Vec::new();
-            let mut key_map: HashMap<String, usize> = HashMap::new();
+            let mut key_map: BTreeMap<OrderByItem, usize> = BTreeMap::new();
 
             for row in &filtered_rows {
                 let key_parts: Result<Vec<serde_json::Value>, _> = group_by
                     .expressions
                     .iter()
-                    .map(|e| eval_scalar(e, row, eval_alias, parameters).map(|v| v.to_json()))
+                    .map(|e| {
+                        eval_scalar(e, row, eval_alias, parameters).map(|v| {
+                            if v.is_undefined() {
+                                serde_json::json!({})
+                            } else {
+                                serde_json::json!({"item": v.to_json()})
+                            }
+                        })
+                    })
                     .collect();
-                let key = serde_json::to_string(&key_parts.map_err(|e| {
-                    crate::error::CosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::new(
-                            azure_core::http::StatusCode::BadRequest,
-                        ))
-                        .with_message(e.to_string())
-                        .build()
-                })?)
-                .unwrap_or_default();
+                let key =
+                    OrderByItem::from_json(&serde_json::Value::Array(key_parts.map_err(|e| {
+                        crate::error::CosmosError::builder()
+                            .with_status(crate::error::CosmosStatus::new(
+                                azure_core::http::StatusCode::BadRequest,
+                            ))
+                            .with_message(e.to_string())
+                            .build()
+                    })?));
 
                 if let Some(&idx) = key_map.get(&key) {
                     groups[idx].push(row.clone());
