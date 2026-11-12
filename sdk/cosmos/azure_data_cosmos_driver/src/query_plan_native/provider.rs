@@ -9,7 +9,7 @@
 
 use std::ffi::CString;
 
-use crate::driver::dataflow::query_plan::QueryPlan;
+use crate::driver::dataflow::query_plan::RawQueryPlan;
 use crate::query_plan_native::error::QueryPlanError;
 use crate::query_plan_native::native::{
     self as query_plan_native, GeospatialType, PartitionKeyRangesApiOptions, PartitionKind, WChar,
@@ -76,16 +76,15 @@ impl QueryPlanProvider {
 
     /// Generates a partitioned query execution plan.
     ///
-    /// Returns the driver's [`QueryPlan`] type, which is the same JSON format
-    /// that the Cosmos DB Gateway returns. The native DLL serializes to
-    /// compatible JSON, so we deserialize directly into the driver's model.
+    /// Returns the wire-format plan. Resolve its partition bounds against the
+    /// container's partition key definition before constructing a pipeline.
     pub fn get_partition_key_ranges(
         &self,
         query_spec_json: &str,
         partition_key_paths: &[&str],
         options: &QueryPlanOptions,
         vector_embedding_policy_json: Option<&str>,
-    ) -> Result<QueryPlan, QueryPlanError> {
+    ) -> Result<RawQueryPlan, QueryPlanError> {
         let lib = query_plan_native::query_plan_native_lib()?;
 
         let query_spec_native = to_native_string(query_spec_json);
@@ -154,7 +153,7 @@ impl QueryPlanProvider {
             }
         })?;
 
-        let info: QueryPlan = serde_json::from_str(payload)?;
+        let info: RawQueryPlan = serde_json::from_str(payload)?;
         Ok(info)
     }
 }

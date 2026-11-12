@@ -21,7 +21,7 @@ use azure_data_cosmos::feed::FeedScope;
 use azure_data_cosmos::models::{ContainerProperties, PartitionKeyKind};
 #[cfg(feature = "unstable_patch")]
 use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
-use azure_data_cosmos::{PartitionKey, Query, SubStatusCode, TransactionalBatch};
+use azure_data_cosmos::{PartitionKey, Query, TransactionalBatch};
 use framework::{TestClient, TestOptions, TestRunContext};
 use futures::{StreamExt, TryStreamExt};
 use serde::de::DeserializeOwned;
@@ -807,15 +807,8 @@ pub async fn hpk_query_single_partition_order_by_servable() -> Result<(), Box<dy
 
 /// B9: cross-partition advanced query operators over a hierarchical container.
 ///
-/// The SDK advertises only the features it has a client-side pipeline for (see
-/// `query::SUPPORTED_QUERY_FEATURES`), and the service rejects any query needing
-/// one it did not advertise with 400 BadRequest / 1004
-/// CrossPartitionQueryNotServable. HPK fan-out itself already works (see B6),
-/// so these cases turn on operator support alone.
-///
-/// `DISTINCT` and `OFFSET`/`LIMIT`/`TOP` are servable now that their stages
-/// landed; aggregates and `GROUP BY` are still pipeline-less and remain
-/// rejected.
+/// DISTINCT, ordinary aggregates, and GROUP BY must preserve their global
+/// results when queries fan out over hierarchical partition keys.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
@@ -825,9 +818,10 @@ pub async fn hpk_query_single_partition_order_by_servable() -> Result<(), Box<dy
     test_category = "emulator_vnext",
     ignore = "vnext emulator returns aggregate query plans without advertised aggregate support: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/383"
 )]
-pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box<dyn Error>> {
+pub async fn hpk_query_cross_partition_aggregates_and_group_by() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
+            println!("Aggregate validation database: {}", run_context.db_name());
             let container = seed_three_level(run_context, db_client).await?;
 
             // Servable: DISTINCT has a client-side stage, and it must
@@ -848,46 +842,30 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
                 "cross-partition DISTINCT over an HPK container must return each country once"
             );
 
-            // Still rejected: no client-side pipeline for these yet.
-            let advanced = [
+            let counts = collect_query::<u64>(
+                &container,
                 "SELECT VALUE COUNT(1) FROM c",
+                FeedScope::full_container(),
+            )
+            .await?;
+            assert_eq!(counts, vec![9]);
+
+            let mut groups = collect_query::<serde_json::Value>(
+                &container,
                 "SELECT c.state, COUNT(1) AS n FROM c GROUP BY c.state",
-            ];
-
-            for query in advanced {
-                let err = collect_query::<serde_json::Value>(
-                    &container,
-                    query,
-                    FeedScope::full_container(),
-                )
-                .await
-                .expect_err(&format!(
-                    "cross-partition query should not be servable on an HPK container: {query}"
-                ));
-
-                let status = err
-                    .downcast_ref::<azure_data_cosmos::CosmosError>()
-                    .map(|e| e.status())
-                    .unwrap_or_else(|| panic!("expected a CosmosError for {query}, got: {err}"));
-                // The semantic contract is "cross-partition advanced operators are rejected on
-                // an HPK container". The gateway surfaces this as HTTP 400; most account
-                // versions attach sub-status 1004 (CrossPartitionQueryNotServable), but some
-                // gateway builds emit the same rejection with sub-status 0 (e.g. for
-                // `SELECT VALUE COUNT(1) FROM c`). Both encode the same product behavior, so
-                // this test asserts only on the HTTP status and tolerates either sub-status.
-                assert_eq!(
-                    status.status_code(),
-                    StatusCode::BadRequest,
-                    "expected HTTP 400 (cross-partition advanced query rejected) for {query}, got {status:?}"
-                );
-                if let Some(sub) = status.sub_status() {
-                    assert!(
-                        sub == azure_data_cosmos_driver::error::status_codes::substatus::CROSS_PARTITION_QUERY_NOT_SERVABLE
-                            || sub == SubStatusCode::new(0),
-                        "expected sub-status 1004 or 0 for {query}, got {sub:?}"
-                    );
-                }
-            }
+                FeedScope::full_container(),
+            )
+            .await?;
+            groups.sort_by(|left, right| left["state"].as_str().cmp(&right["state"].as_str()));
+            assert_eq!(
+                groups,
+                vec![
+                    serde_json::json!({"state": "CA", "n": 5}),
+                    serde_json::json!({"state": "NY", "n": 1}),
+                    serde_json::json!({"state": "ON", "n": 1}),
+                    serde_json::json!({"state": "WA", "n": 2}),
+                ]
+            );
 
             Ok(())
         },

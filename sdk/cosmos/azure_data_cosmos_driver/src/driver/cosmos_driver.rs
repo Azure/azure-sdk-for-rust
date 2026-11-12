@@ -4663,6 +4663,19 @@ impl CosmosDriver {
             return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
         }
 
+        if query_plan.query_info.as_ref().is_some_and(|info| {
+            info.has_aggregates() || info.has_group_by() || info.d_count_info.is_some()
+        }) {
+            let pipeline = planner::build_advanced_query_pipeline(
+                &query_plan,
+                &mut topology,
+                &operation,
+                resume_state,
+            )
+            .await?;
+            return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
+        }
+
         // Route streaming ORDER BY queries to the k-way merge instead of
         // the natural-order sequential drain.
         if query_plan

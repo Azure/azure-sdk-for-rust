@@ -44,7 +44,6 @@ impl Pipeline {
     }
 
     /// Consumes the pipeline and returns the root node.
-    #[cfg(test)]
     pub(crate) fn into_root(self) -> Box<dyn PipelineNode> {
         self.root
     }

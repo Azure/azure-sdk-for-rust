@@ -28,10 +28,8 @@ pub(crate) use parser::parse;
 /// advertises to the Cosmos DB Gateway via
 /// `x-ms-cosmos-supported-query-features`.
 ///
-/// Advertises `Distinct`, `HybridSearch`, `MultipleOrderBy`,
-/// `NonStreamingOrderBy`, `OffsetAndLimit`, `OrderBy`, `Top`, and
-/// `WeightedRankFusion`. The production pipeline supports streaming
-/// single- and multi-column `ORDER BY` rewrites
+/// The production pipeline supports ordinary aggregate and GROUP BY partials,
+/// globally deduplicated distinct counts, streaming single- and multi-column `ORDER BY` rewrites
 /// (`OrderBy,MultipleOrderBy`) and the result-window rewrite shapes
 /// `OffsetAndLimit,Top` through [`driver::dataflow::SkipTake`]. Advertising
 /// these lets the Gateway return the per-partition rewritten query the
@@ -41,8 +39,7 @@ pub(crate) use parser::parse;
 /// `HybridSearch` and `WeightedRankFusion` enable the bounded ranked full-text
 /// and hybrid search pipeline.
 ///
-/// Other advanced rewrite shapes (Aggregate, CompositeAggregate, CountIf,
-/// DCount, GroupBy, MultipleAggregates, NonValueAggregate) remain
+/// Other advanced rewrite shapes (CompositeAggregate, CountIf) remain
 /// unadvertised until their corresponding pipeline stages are implemented;
 /// advertising one prematurely would cause the Gateway to return a plan we
 /// cannot execute.
@@ -55,7 +52,7 @@ pub(crate) use parser::parse;
 /// Java/.NET advertise) so plan-shape parity against the live Gateway is
 /// validated end-to-end across the full feature surface.
 pub(crate) const SUPPORTED_QUERY_FEATURES: &str =
-    "Distinct,HybridSearch,MultipleOrderBy,NonStreamingOrderBy,OffsetAndLimit,OrderBy,Top,WeightedRankFusion";
+    "Aggregate,DCount,Distinct,GroupBy,HybridSearch,MultipleAggregates,MultipleOrderBy,NonStreamingOrderBy,NonValueAggregate,OffsetAndLimit,OrderBy,Top,WeightedRankFusion";
 
 /// Whether a query requires hybrid planning even when scoped to one logical partition.
 pub(crate) fn uses_ranked_search(body: Option<&[u8]>) -> bool {

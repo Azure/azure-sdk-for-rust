@@ -25,19 +25,23 @@ use crate::{
     error::{CosmosErrorCode, COSMOS_STATUS_SUCCESS},
     feed_range::{cosmos_feed_range_for_partition_key, cosmos_feed_range_free},
     op_request::cosmos_operation_options_default,
-    partition_key::{cosmos_partition_key_free, PartitionKeyHandle},
-    partition_key::{CosmosPartitionKeyComponent, CosmosPartitionKeyComponentValue},
+    partition_key::{
+        cosmos_partition_key_free, CosmosPartitionKeyComponent, CosmosPartitionKeyComponentValue,
+        PartitionKeyHandle,
+    },
     read_many::{
         cosmos_read_many_open_submit, cosmos_read_many_request_init, CosmosReadManyIdentity,
         CosmosReadManyParameter, CosmosReadManyRequest,
     },
+    response_header::{CosmosHeaderId, CosmosValueKind},
     runtime::{cosmos_runtime_free, RuntimeContext},
     string::view,
 };
 use azure_data_cosmos_driver::options::OperationOptions;
 use std::{
     mem::MaybeUninit,
-    ptr,
+    ops::Deref,
+    ptr::{self, NonNull},
     sync::{atomic::Ordering, Arc},
     time::Duration,
 };
@@ -488,6 +492,29 @@ struct Fixture {
     partition_key: *mut PartitionKeyHandle,
 }
 
+struct OwnedCompletion(NonNull<CosmosCursorCompletion>);
+
+impl OwnedCompletion {
+    fn as_ptr(&self) -> *mut CosmosCursorCompletion {
+        self.0.as_ptr()
+    }
+}
+
+impl Deref for OwnedCompletion {
+    type Target = CosmosCursorCompletion;
+
+    fn deref(&self) -> &Self::Target {
+        // SAFETY: this owner retains the transferred completion until Drop.
+        unsafe { self.0.as_ref() }
+    }
+}
+
+impl Drop for OwnedCompletion {
+    fn drop(&mut self) {
+        cosmos_cursor_completion_free(self.as_ptr());
+    }
+}
+
 impl Fixture {
     fn new(capacity: u32) -> Self {
         Self::from_handles(fixture::create(true).unwrap(), capacity)
@@ -808,9 +835,18 @@ impl Fixture {
             COSMOS_STATUS_SUCCESS
         );
         assert_eq!(count, 1);
+        assert!(
+            !completion.is_null(),
+            "delivered completion must be non-null"
+        );
         cosmos_operation_handle_free(op);
-        assert!(!completion.is_null());
         completion
+    }
+
+    fn receive_owned(&self, op: *mut OperationHandle) -> OwnedCompletion {
+        OwnedCompletion(
+            NonNull::new(self.receive(op)).expect("delivered completion must be non-null"),
+        )
     }
 
     fn open(&self, request: &CosmosCursorRequest) -> *mut CursorHandle {
@@ -871,6 +907,180 @@ fn documents(completion: *const CosmosCursorCompletion) -> Vec<serde_json::Value
             kind => panic!("unexpected body kind {kind}"),
         }
     }
+}
+
+fn assert_reduced_query(
+    query: &str,
+    mut expected: Vec<serde_json::Value>,
+    expected_requests: [u32; 2],
+    retained_checkpoint_unsupported: bool,
+) {
+    for (page_size, requests) in [1, 2].into_iter().zip(expected_requests) {
+        for binary in [1, 2] {
+            let fixture = Fixture::scripted();
+            let mut request = fixture.request();
+            request.operation.partition_key = ptr::null_mut();
+            let body = serde_json::to_vec(&serde_json::json!({"query":query})).unwrap();
+            request.operation.body = body.as_ptr();
+            request.operation.body_len = body.len();
+            request.operation.max_item_count = page_size;
+            let mut options = cosmos_operation_options_default();
+            options.query_plan_mode = 2;
+            options.binary_encoding_enabled = binary;
+            options.binary_encoding_request_text_response = 2;
+            request.operation.options = &options;
+            let cursor = fixture.open(&request);
+            let mut values = Vec::new();
+            let mut retained = Vec::new();
+            let mut charge = 0.0;
+            let mut ended = false;
+            let mut unsupported = false;
+            if retained_checkpoint_unsupported {
+                let checkpoint = fixture.receive_owned(cosmos_cursor_checkpoint_submit(
+                    cursor,
+                    0,
+                    ptr::null_mut(),
+                ));
+                assert_eq!(checkpoint.common.status.0 & 0xffff, 20124, "{query}");
+                unsupported = true;
+            }
+            for _ in 0..20 {
+                let page =
+                    fixture.receive_owned(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
+                assert_eq!(page.common.status, COSMOS_STATUS_SUCCESS, "{query}");
+                let common = &page.common;
+                // SAFETY: all header entries are owned by this live completion.
+                unsafe {
+                    if common.headers_len > 0 {
+                        for header in std::slice::from_raw_parts(common.headers, common.headers_len)
+                        {
+                            if header.id == CosmosHeaderId::CosmosHeaderIdRequestCharge {
+                                assert_eq!(header.value.kind, CosmosValueKind::F64.0);
+                                charge += header.value.payload.f64_value;
+                            }
+                        }
+                    }
+                }
+                if page.result_kind == 4 {
+                    ended = true;
+                    break;
+                }
+                assert_eq!(page.result_kind, 2);
+                values.extend(documents(page.as_ptr()));
+                retained.push(page);
+                let checkpoint = fixture.receive_owned(cosmos_cursor_checkpoint_submit(
+                    cursor,
+                    0,
+                    ptr::null_mut(),
+                ));
+                let status = checkpoint.common.status;
+                if retained_checkpoint_unsupported && values.len() < expected.len() {
+                    assert_eq!(status.0 & 0xffff, 20124, "{query}");
+                    unsupported = true;
+                } else {
+                    assert_eq!(status, COSMOS_STATUS_SUCCESS, "{query}");
+                }
+            }
+            assert!(ended, "query did not drain: {query}");
+            assert_eq!(unsupported, retained_checkpoint_unsupported);
+            assert_eq!(charge, f64::from(requests) * 1.5, "{query}");
+            let checkpoint =
+                fixture.receive_owned(cosmos_cursor_checkpoint_submit(cursor, 0, ptr::null_mut()));
+            assert_eq!(checkpoint.common.status, COSMOS_STATUS_SUCCESS);
+            if !retained_checkpoint_unsupported {
+                request.operation.continuation_token = checkpoint.checkpoint;
+                let resumed = fixture.open(&request);
+                let end =
+                    fixture.receive_owned(cosmos_cursor_next_submit(resumed, 0, ptr::null_mut()));
+                assert_eq!(end.common.status, COSMOS_STATUS_SUCCESS);
+                assert_eq!(end.result_kind, 4);
+                cosmos_cursor_free(resumed);
+            }
+            drop(checkpoint);
+            cosmos_cursor_free(cursor);
+            assert_eq!(
+                retained
+                    .iter()
+                    .flat_map(|page| documents(page.as_ptr()))
+                    .collect::<Vec<_>>(),
+                values,
+                "completion bodies must outlive the cursor"
+            );
+            drop(retained);
+            values.sort_by_key(serde_json::Value::to_string);
+            expected.sort_by_key(serde_json::Value::to_string);
+            assert_eq!(
+                values, expected,
+                "{query}, page size {page_size}, binary {binary}"
+            );
+        }
+    }
+}
+
+#[test]
+fn cross_partition_aggregate_cursor_outputs_and_charges() {
+    for (operator, expected) in [
+        ("COUNT(1)", serde_json::json!(6)),
+        ("SUM(c.amount)", serde_json::json!(180)),
+        ("MIN(c.amount)", serde_json::json!(5)),
+        ("MAX(c.amount)", serde_json::json!(100)),
+        ("AVG(c.amount)", serde_json::json!(30)),
+    ] {
+        assert_reduced_query(
+            &format!("SELECT VALUE {operator} FROM c"),
+            vec![expected],
+            [4, 2],
+            true,
+        );
+    }
+    assert_reduced_query(
+        "SELECT COUNT(1) AS count, SUM(c.amount) AS total, MIN(c.amount) AS min, MAX(c.amount) AS max, AVG(c.amount) AS avg FROM c",
+        vec![serde_json::json!({"count":6,"total":180,"min":5,"max":100,"avg":30})],
+        [4, 2],
+        true,
+    );
+    assert_reduced_query(
+        "SELECT VALUE COUNT(1) FROM c WHERE false",
+        vec![serde_json::json!(0)],
+        [2, 2],
+        true,
+    );
+}
+
+#[test]
+fn cross_partition_group_by_cursor_retains_groups_after_checkpoint_rejection() {
+    assert_reduced_query(
+        "SELECT c.category AS category, COUNT(1) AS count, SUM(c.amount) AS total, MIN(c.amount) AS min, MAX(c.amount) AS max, AVG(c.amount) AS avg FROM c GROUP BY c.category",
+        vec![
+            serde_json::json!({"category":"a","count":3,"total":60,"min":10,"max":30,"avg":20}),
+            serde_json::json!({"category":"b","count":2,"total":20,"min":5,"max":15,"avg":10}),
+            serde_json::json!({"category":"c","count":1,"total":100,"min":100,"max":100,"avg":100}),
+        ],
+        [5, 3],
+        true,
+    );
+    assert_reduced_query(
+        "SELECT c.category AS category, COUNT(1) AS count FROM c WHERE false GROUP BY c.category",
+        vec![],
+        [2, 2],
+        true,
+    );
+}
+
+#[test]
+fn cross_partition_distinct_count_cursor_is_terminal_and_supports_checkpoints() {
+    assert_reduced_query(
+        "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.category FROM c) AS t",
+        vec![serde_json::json!(3)],
+        [6, 4],
+        false,
+    );
+    assert_reduced_query(
+        "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.category FROM c WHERE false) AS t",
+        vec![serde_json::json!(0)],
+        [2, 2],
+        false,
+    );
 }
 
 #[test]

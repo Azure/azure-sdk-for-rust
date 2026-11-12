@@ -1,5 +1,17 @@
 # Release History
 
+## 0.4.0 (Unreleased)
+
+### Features Added
+
+- Added cross-partition aggregate, `GROUP BY`, and distinct-count queries to live query cursors; aggregate and grouped cursors reject external checkpoints until drained. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.3.0 (2026-11-11)
 
 ### Features Added
