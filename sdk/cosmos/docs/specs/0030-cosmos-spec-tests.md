@@ -181,7 +181,9 @@ The spec binary uses a custom harness (`harness = false`):
   multi-threaded Tokio runtime.
 - `libtest-mimic` parses the command line and applies libtest's filters. The
   default output is a tree grouped by backend, then spec, then service
-  profile, with a two-space indent per level. A spec's group prints once all
+  profile, with a two-space indent per level. Statuses (`ok`, `FAILED`,
+  `ignored`, `skipped`) line up in one column, sized from every trial's label
+  before any trial runs. A spec's group prints once all
   its trials and every earlier group finish, so the order is stable. The
   failures section and the `test result:` line match libtest's. `--list`,
   `--format json`, `--format terse`, and `--quiet` fall back to

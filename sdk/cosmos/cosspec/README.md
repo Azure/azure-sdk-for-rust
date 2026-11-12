@@ -30,7 +30,8 @@ Standard `libtest` filters and flags apply. For example, `-- split` runs only
 specs whose name contains `split`, and `-- --include-ignored` also runs
 skipped specs and specs with known issues.
 
-Results print as a tree: backend, then spec, then service profile. Each spec's
+Results print as a tree: backend, then spec, then service profile, with every
+status in one aligned column. Each spec's
 group prints once all its trials finish, so the order is stable even though
 trials run in parallel. `--list`, `--format json`, `--format terse`, and
 `--quiet` use the standard libtest output instead.
@@ -38,11 +39,11 @@ trials run in parallel. `--list`, `--format json`, `--format terse`, and
 ```text
 inmemory
   query.continuation_survives_split
-    SingleRegion ... ok
-    MultiRead ... ok
+    SingleRegion  ok
+    MultiRead     ok
 emulator
   query.continuation_survives_split
-    SingleRegion ... skipped (emulator lacks SimpleSplitMerge)
+    SingleRegion  skipped (emulator lacks SimpleSplitMerge)
 ```
 
 | Variable | Effect |

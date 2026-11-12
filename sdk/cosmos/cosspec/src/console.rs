@@ -5,15 +5,17 @@
 //! Console output for spec runs: a tree grouped by backend, then spec.
 //!
 //! ```text
-//! catalog::up_to_date ... ok
+//! catalog::up_to_date  ok
 //! inmemory
 //!   query.continuation_survives_split
-//!     SingleRegion ... ok
-//!     MultiRead ... ok
+//!     SingleRegion       ok
+//!     MultiRead          ok
 //! emulator
 //!   query.continuation_survives_split
-//!     SingleRegion ... skipped (emulator lacks SimpleSplitMerge)
+//!     SingleRegion       skipped (emulator lacks SimpleSplitMerge)
 //! ```
+//!
+//! Statuses line up in one column, sized from every label before trials start.
 //!
 //! Trials run in parallel, but each spec's group prints once all of its trials
 //! and every group before it have finished, so the output is in a stable order.
@@ -162,6 +164,9 @@ pub(crate) fn run(args: &Arguments, jobs: Vec<Job>) -> bool {
     printer.finish(filtered_out, started.elapsed())
 }
 
+const LEAF_INDENT: &str = "    ";
+const COLUMN_GAP: &str = "  ";
+
 struct Entry {
     name: String,
     place: Place,
@@ -174,6 +179,8 @@ struct Printer {
     entries: Vec<Entry>,
     /// Index of the first entry not yet printed.
     cursor: usize,
+    /// The width of the widest label that has a status, including its indent.
+    width: usize,
     backend: Option<String>,
 }
 
@@ -188,11 +195,17 @@ impl Printer {
             color,
             entries: Vec::new(),
             cursor: 0,
+            width: 0,
             backend: None,
         }
     }
 
     fn add(&mut self, name: String, place: Place, ignore: Option<Ignore>) {
+        let label = match &place {
+            Place::TopLevel => name.chars().count(),
+            Place::Leaf { profile, .. } => LEAF_INDENT.len() + profile.chars().count(),
+        };
+        self.width = self.width.max(label);
         self.entries.push(Entry {
             name,
             place,
@@ -237,7 +250,7 @@ impl Printer {
             Place::TopLevel => {
                 self.backend = None;
                 let entry = &self.entries[start];
-                lines.push_str(&format!("{} ... {}\n", entry.name, self.status(entry)));
+                lines.push_str(&self.row("", &entry.name, entry));
             }
             Place::Leaf { backend, spec, .. } => {
                 if self.backend.as_ref() != Some(backend) {
@@ -247,12 +260,22 @@ impl Printer {
                 lines.push_str(&format!("  {spec}\n"));
                 for entry in &self.entries[start..end] {
                     if let Place::Leaf { profile, .. } = &entry.place {
-                        lines.push_str(&format!("    {profile} ... {}\n", self.status(entry)));
+                        lines.push_str(&self.row(LEAF_INDENT, profile, entry));
                     }
                 }
             }
         }
         print!("{lines}");
+    }
+
+    /// One status row, with the status in the aligned column.
+    fn row(&self, indent: &str, label: &str, entry: &Entry) -> String {
+        let pad = self.width - indent.len() - label.chars().count();
+        format!(
+            "{indent}{label}{:pad$}{COLUMN_GAP}{}\n",
+            "",
+            self.status(entry)
+        )
     }
 
     fn status(&self, entry: &Entry) -> String {
