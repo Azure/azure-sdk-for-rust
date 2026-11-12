@@ -11,7 +11,10 @@ use crate::error::{status_codes, CosmosError, Result};
 use serde_json::{Map, Number, Value};
 use std::{cmp::Ordering, collections::BTreeMap};
 
-/// Reduces partition partials; `None` represents Cosmos undefined, not JSON null.
+/// Combines partition-local aggregate results into one VALUE or SELECT-list result.
+///
+/// Missing input cells and `None` results represent Cosmos undefined.
+/// JSON null remains a distinct value.
 pub(crate) struct SingleGroupAggregator {
     projection: Projection,
 }
@@ -31,10 +34,8 @@ enum Accumulator {
         sum: Option<f64>,
         count: i64,
     },
-    MinMax {
-        minimum: bool,
-        value: Extremum,
-    },
+    Min(Extremum),
+    Max(Extremum),
     Scalar {
         initialized: bool,
         value: Option<Value>,
@@ -47,13 +48,66 @@ enum Extremum {
     Value(Value),
 }
 
+enum AggregateOperator {
+    Scalar,
+    Count,
+    Sum,
+    Average,
+    Min,
+    Max,
+}
+
+impl TryFrom<Option<&str>> for AggregateOperator {
+    type Error = CosmosError;
+
+    fn try_from(operator: Option<&str>) -> Result<Self> {
+        match operator {
+            None => Ok(Self::Scalar),
+            Some("Count") => Ok(Self::Count),
+            Some("Sum") => Ok(Self::Sum),
+            Some("Average") => Ok(Self::Average),
+            Some("Min") => Ok(Self::Min),
+            Some("Max") => Ok(Self::Max),
+            Some("CountIf" | "MakeList" | "MakeSet") => {
+                Err(unsupported("aggregate operator is not supported"))
+            }
+            Some(_) => Err(unsupported("unknown aggregate operator")),
+        }
+    }
+}
+
+impl TryFrom<&Value> for AggregateOperator {
+    type Error = CosmosError;
+
+    fn try_from(operator: &Value) -> Result<Self> {
+        match operator {
+            Value::Null => Self::try_from(None),
+            Value::String(operator) if operator.is_empty() => Self::try_from(None),
+            Value::String(operator) => Self::try_from(Some(operator.as_str())),
+            _ => Err(invalid("aggregate operator must be a string or null")),
+        }
+    }
+}
+
 impl SingleGroupAggregator {
+    /// Validates aggregate operators without allocating per-group state.
+    pub(crate) fn validate(info: &QueryInfo) -> Result<()> {
+        if info.has_select_value {
+            AggregateOperator::try_from(info.aggregates.first().map(String::as_str))?;
+        } else {
+            for operator in info.group_by_alias_to_aggregate_type.values() {
+                AggregateOperator::try_from(operator)?;
+            }
+        }
+        Ok(())
+    }
+
     /// Creates the slots described by a query plan.
     pub(crate) fn new(info: &QueryInfo) -> Result<Self> {
         let projection = if info.has_select_value {
-            Projection::Value(Accumulator::new(
+            Projection::Value(Accumulator::new(AggregateOperator::try_from(
                 info.aggregates.first().map(String::as_str),
-            )?)
+            )?))
         } else {
             let mut aliases = info.group_by_aliases.clone();
             if aliases.is_empty() {
@@ -62,18 +116,15 @@ impl SingleGroupAggregator {
             }
             let mut slots = BTreeMap::new();
             for (alias, operator) in &info.group_by_alias_to_aggregate_type {
-                let operator = match operator {
-                    Value::Null => None,
-                    Value::String(operator) if operator.is_empty() => None,
-                    Value::String(operator) => Some(operator.as_str()),
-                    _ => return Err(invalid("aggregate operator must be a string or null")),
-                };
-                slots.insert(alias.clone(), Accumulator::new(operator)?);
+                slots.insert(
+                    alias.clone(),
+                    Accumulator::new(AggregateOperator::try_from(operator)?),
+                );
             }
             for alias in &aliases {
                 slots
                     .entry(alias.clone())
-                    .or_insert(Accumulator::new(None)?);
+                    .or_insert_with(|| Accumulator::new(AggregateOperator::Scalar));
             }
             Projection::List { slots, aliases }
         };
@@ -117,31 +168,21 @@ impl SingleGroupAggregator {
 }
 
 impl Accumulator {
-    fn new(operator: Option<&str>) -> Result<Self> {
-        Ok(match operator {
-            None => Self::Scalar {
+    fn new(operator: AggregateOperator) -> Self {
+        match operator {
+            AggregateOperator::Scalar => Self::Scalar {
                 initialized: false,
                 value: None,
             },
-            Some("Count") => Self::Count(0),
-            Some("Sum") => Self::Sum(Some(0.0)),
-            Some("Average") => Self::Average {
+            AggregateOperator::Count => Self::Count(0),
+            AggregateOperator::Sum => Self::Sum(Some(0.0)),
+            AggregateOperator::Average => Self::Average {
                 sum: Some(0.0),
                 count: 0,
             },
-            Some("Min") => Self::MinMax {
-                minimum: true,
-                value: Extremum::Empty,
-            },
-            Some("Max") => Self::MinMax {
-                minimum: false,
-                value: Extremum::Empty,
-            },
-            Some("CountIf" | "MakeList" | "MakeSet") => {
-                return Err(unsupported("aggregate operator is not supported"))
-            }
-            Some(_) => return Err(unsupported("unknown aggregate operator")),
-        })
+            AggregateOperator::Min => Self::Min(Extremum::Empty),
+            AggregateOperator::Max => Self::Max(Extremum::Empty),
+        }
     }
 
     fn add(&mut self, payload: Option<&Value>) -> Result<()> {
@@ -183,46 +224,8 @@ impl Accumulator {
                 *sum = new_sum;
                 *total = new_count;
             }
-            Self::MinMax { minimum, value } => {
-                if matches!(value, Extremum::Undefined) {
-                    return Ok(());
-                }
-                let mut partial = partial;
-                if let Some(object) = partial.and_then(Value::as_object) {
-                    if let Some(local_count) = object.get("count") {
-                        if count(Some(local_count))? == 0 {
-                            return Ok(());
-                        }
-                        // The .NET partial envelope prefers min even for MAX.
-                        partial = object.get("min").or_else(|| object.get("max"));
-                    }
-                }
-                let Some(partial) = partial else {
-                    *value = Extremum::Undefined;
-                    return Ok(());
-                };
-                match value {
-                    Extremum::Empty => *value = Extremum::Value(partial.clone()),
-                    Extremum::Value(current) => {
-                        // .NET accepts a first non-primitive but poisons on any comparison.
-                        if !primitive(partial) || !primitive(current) {
-                            *value = Extremum::Undefined;
-                        } else {
-                            let order = compare_json_values(partial, current);
-                            if order
-                                == if *minimum {
-                                    Ordering::Less
-                                } else {
-                                    Ordering::Greater
-                                }
-                            {
-                                *current = partial.clone();
-                            }
-                        }
-                    }
-                    Extremum::Undefined => {}
-                }
-            }
+            Self::Min(value) => value.add(partial, Ordering::Less)?,
+            Self::Max(value) => value.add(partial, Ordering::Greater)?,
             Self::Scalar { .. } => unreachable!(),
         }
         Ok(())
@@ -239,7 +242,7 @@ impl Accumulator {
                     sum.map(|sum| number(sum / *count as f64)).transpose()
                 }
             }
-            Self::MinMax { value, .. } => Ok(match value {
+            Self::Min(value) | Self::Max(value) => Ok(match value {
                 Extremum::Empty | Extremum::Undefined => None,
                 Extremum::Value(value) => Some(value.clone()),
             }),
@@ -251,6 +254,40 @@ impl Accumulator {
                 initialized: false, ..
             } => Err(invalid("scalar aggregate slot has not received a value")),
         }
+    }
+}
+
+impl Extremum {
+    fn add(&mut self, mut partial: Option<&Value>, preferred: Ordering) -> Result<()> {
+        if matches!(self, Self::Undefined) {
+            return Ok(());
+        }
+        if let Some(object) = partial.and_then(Value::as_object) {
+            if let Some(local_count) = object.get("count") {
+                if count(Some(local_count))? == 0 {
+                    return Ok(());
+                }
+                // The .NET partial envelope prefers min even for MAX.
+                partial = object.get("min").or_else(|| object.get("max"));
+            }
+        }
+        let Some(partial) = partial else {
+            *self = Self::Undefined;
+            return Ok(());
+        };
+        match self {
+            Self::Empty => *self = Self::Value(partial.clone()),
+            Self::Value(current) => {
+                // .NET accepts a first non-primitive but poisons on any comparison.
+                if !primitive(partial) || !primitive(current) {
+                    *self = Self::Undefined;
+                } else if compare_json_values(partial, current) == preferred {
+                    *current = partial.clone();
+                }
+            }
+            Self::Undefined => {}
+        }
+        Ok(())
     }
 }
 
@@ -755,23 +792,29 @@ mod tests {
     #[test]
     fn unsupported_operators_and_invalid_alias_plans_are_rejected() {
         for operator in ["CountIf", "MakeList", "MakeSet", "Unknown"] {
-            let error = SingleGroupAggregator::new(&QueryInfo {
+            let info = QueryInfo {
                 has_select_value: true,
                 aggregates: vec![operator.into()],
                 ..Default::default()
-            })
-            .err()
-            .unwrap();
+            };
+            let error = SingleGroupAggregator::new(&info).err().unwrap();
             assert_eq!(
                 error.status(),
                 status_codes::CROSS_PARTITION_QUERY_NOT_SERVABLE
+            );
+            assert_eq!(
+                SingleGroupAggregator::validate(&info).unwrap_err().status(),
+                error.status()
             );
         }
         let info: QueryInfo = serde_json::from_value(json!({
             "groupByAliasToAggregateType": {"bad": 1}
         }))
         .unwrap();
-        assert!(SingleGroupAggregator::new(&info).is_err());
+        assert_eq!(
+            SingleGroupAggregator::validate(&info).unwrap_err().status(),
+            SingleGroupAggregator::new(&info).err().unwrap().status()
+        );
         let mut aggregator = SingleGroupAggregator::new(&QueryInfo {
             group_by_aliases: vec!["x".into()],
             ..Default::default()

@@ -79,7 +79,7 @@ impl GroupBy {
         emit_binary: bool,
     ) -> Result<Self> {
         // Validate even when no input rows will create an actual group.
-        SingleGroupAggregator::new(info)?;
+        SingleGroupAggregator::validate(info)?;
         let page_size = match max_item_count {
             Some(MaxItemCountHint::Limit(value)) => value.get() as usize,
             Some(MaxItemCountHint::ServerDecides) | None => DEFAULT_PAGE_SIZE,
@@ -596,6 +596,34 @@ mod tests {
         groups.insert(second, 2);
         assert_eq!(groups.len(), 2);
         assert_eq!(groups.get(&equivalent), Some(&1));
+    }
+
+    #[test]
+    fn invalid_plans_are_rejected_even_without_input_groups() {
+        for (plan, expected_status) in [
+            (
+                json!({"hasSelectValue": true, "aggregates": ["CountIf"]}),
+                status_codes::CROSS_PARTITION_QUERY_NOT_SERVABLE,
+            ),
+            (
+                json!({
+                    "groupByAliases": ["key"],
+                    "groupByAliasToAggregateType": {"key": null, "hidden": "MakeList"}
+                }),
+                status_codes::CROSS_PARTITION_QUERY_NOT_SERVABLE,
+            ),
+            (
+                json!({"groupByAliasToAggregateType": {"total": 1}}),
+                status_codes::SERIALIZATION_RESPONSE_BODY_INVALID,
+            ),
+        ] {
+            let info = serde_json::from_value(plan).unwrap();
+            let child = MockLeaf::with_pages(vec![Ok(PageResult::Drained)]);
+            let error = GroupBy::new(Box::new(child), &info, None, false)
+                .err()
+                .unwrap();
+            assert_eq!(error.status(), expected_status);
+        }
     }
 
     #[tokio::test]
