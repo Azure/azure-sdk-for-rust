@@ -190,7 +190,7 @@ AZURE_COSMOS_SPEC_UPDATE_CATALOG=1 cargo test -p cosspec --test spec
   failure and `teardown_error` is a cleanup failure. In `http`, requests
   labeled `spec` came from the spec's clients and requests labeled `harness`
   came from the framework's setup and teardown. Each exchange includes up to
-  1 KiB of its request and response bodies, as `text` or, for binary bodies,
+  4 KiB of its request and response bodies, as `text` or, for binary bodies,
   `base64`.
 - If an `emulator` trial fails with `error sending request`, check that the
   emulator is running and reachable at the configured `endpoint`.

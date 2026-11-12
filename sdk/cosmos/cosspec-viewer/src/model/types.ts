@@ -79,7 +79,7 @@ export type OutcomeJson =
     | { kind: "cancelled" }
     | { kind: "unknown" };
 
-/** An HTTP body, cut to the first 1 KiB. Exactly one of `text` and `base64` is set. */
+/** An HTTP body, cut to the first `BODY_LIMIT` bytes (4 KiB; 1 KiB in older runs). Exactly one of `text` and `base64` is set. */
 export interface BodyJson {
     length: number;
     truncated: boolean;

@@ -608,7 +608,7 @@ the version. Removing, renaming, or changing the meaning of a field does.
 
 The recording isn't affected by `HttpTap::clear()`. Traffic to set up pooled
 resources is shared by many specs, so it isn't attributed to any one of them.
-Each body has its full `length` in bytes and keeps at most the first 1 KiB
+Each body has its full `length` in bytes and keeps at most the first 4 KiB
 (`cosspec::results::BODY_LIMIT`); `truncated` says whether bytes were cut.
 UTF-8 bodies, such as JSON, appear as `text`. Binary bodies, such as Cosmos DB
 binary encoding, appear as `base64`. A body field is `null` when the request

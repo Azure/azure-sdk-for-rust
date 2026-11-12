@@ -84,7 +84,7 @@ Otherwise the folder is a snapshot.
     dashed. Scroll to zoom, drag to pan, and double-click to fit. Below it, a
     sortable table of the same requests. Select a request in either to see
     its URL, timing, activity ID, and bodies. JSON is pretty-printed, binary
-    bodies are shown as hex, and bodies cut at 1 KiB are marked.
+    bodies are shown as hex, and bodies cosspec cut short are marked.
   - **Resources**: each account, database, and container, and whether it
     was created or borrowed from the pool.
   - **Logs**: shown when a result file has captured logs. Logs also appear as

@@ -30,7 +30,7 @@ use uuid::Uuid;
 pub const RESULT_VERSION: u32 = 1;
 
 /// The most bytes of each HTTP request or response body a result file keeps.
-pub const BODY_LIMIT: usize = 1024;
+pub const BODY_LIMIT: usize = 4096;
 
 /// The command-line option that sets the results directory.
 pub const RESULTS_DIR_ARG: &str = "--results-dir";

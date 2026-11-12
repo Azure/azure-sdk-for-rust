@@ -81,8 +81,8 @@ export function BodyView(props: { title: string; body: BodyJson | null | undefin
             </h4>
             {body.truncated ? (
                 <div className="banner warn small">
-                    Showing the first {shown} of {body.length} bytes; cosspec keeps the first 1 KiB
-                    of each body.
+                    Showing the first {shown} of {body.length} bytes; cosspec didn't record the
+                    rest.
                 </div>
             ) : null}
             <pre className="code">{text}</pre>
