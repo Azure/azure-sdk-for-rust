@@ -30,6 +30,7 @@ pub mod backend;
 mod capability;
 pub mod catalog;
 pub mod config;
+mod console;
 mod context;
 pub mod faults;
 pub mod http_tap;

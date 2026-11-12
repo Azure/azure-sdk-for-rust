@@ -18,7 +18,10 @@ use std::{
     backtrace::Backtrace,
     cell::RefCell,
     path::{Path, PathBuf},
-    sync::OnceLock,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        OnceLock,
+    },
     time::Instant,
 };
 
@@ -87,6 +90,13 @@ thread_local! {
 
 /// Installs a panic hook that remembers the current thread's last panic, then
 /// runs the previous hook so the usual output still appears.
+static QUIET_PANICS: AtomicBool = AtomicBool::new(false);
+
+/// Stops panics from printing to stderr; the console prints them with the failures.
+pub(crate) fn quiet_panics() {
+    QUIET_PANICS.store(true, Ordering::Relaxed);
+}
+
 pub(crate) fn install_panic_hook() {
     static INSTALLED: OnceLock<()> = OnceLock::new();
     INSTALLED.get_or_init(|| {
@@ -104,7 +114,9 @@ pub(crate) fn install_panic_hook() {
                 backtrace: Backtrace::force_capture().to_string(),
             };
             LAST_PANIC.with(|last| *last.borrow_mut() = Some(record));
-            previous(info);
+            if !QUIET_PANICS.load(Ordering::Relaxed) {
+                previous(info);
+            }
         }));
     });
 }
@@ -267,7 +279,10 @@ impl TrialRecord {
     /// The trial's result: the body's error, else the teardown's.
     pub fn result(&self) -> Result<(), String> {
         match (&self.panic, &self.error, &self.teardown_error) {
-            (Some(panic), _, _) => Err(panic.message.clone()),
+            (Some(panic), _, _) => Err(match &panic.location {
+                Some(location) => format!("panicked at {location}:\n{}", panic.message),
+                None => panic.message.clone(),
+            }),
             (_, Some(e), _) | (_, _, Some(e)) => Err(e.to_string()),
             _ => Ok(()),
         }

@@ -175,10 +175,17 @@ The spec binary uses a custom harness (`harness = false`):
   slice.
 - `cosspec::main()` reads the run configuration (see
   [Run configuration](#run-configuration)). For each enabled backend, in a
-  fixed order, and each service profile that backend runs, it adds one
-  `libtest-mimic` trial per spec that selects the profile.
+  fixed order, it adds one trial per spec and service profile that the
+  backend runs and the spec selects.
 - One process can run several backends. Trials run in parallel on a shared
   multi-threaded Tokio runtime.
+- `libtest-mimic` parses the command line and applies libtest's filters. The
+  default output is a tree grouped by backend, then spec, then service
+  profile, with a two-space indent per level. A spec's group prints once all
+  its trials and every earlier group finish, so the order is stable. The
+  failures section and the `test result:` line match libtest's. `--list`,
+  `--format json`, `--format terse`, and `--quiet` fall back to
+  `libtest-mimic`'s own output, so IDEs and test runners keep working.
 - Each trial:
   1. obtains the pooled cell;
   2. builds a `SpecContext`;

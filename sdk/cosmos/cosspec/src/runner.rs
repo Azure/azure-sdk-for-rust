@@ -1,13 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Spec registration and the `libtest-mimic` runner.
+//! Spec registration and the spec runner.
 
 use crate::{
     args::HarnessArgs,
     backend::Backend,
     catalog,
     config::SpecConfig,
+    console::{self, Ignore, Job, Place},
     context::{ParamKind, SpecContext},
     pool,
     profiles::ContainerProfile,
@@ -15,7 +16,7 @@ use crate::{
     Capability, ServiceProfile, SpecResult,
 };
 use futures::FutureExt;
-use libtest_mimic::{Arguments, Failed, Trial};
+use libtest_mimic::{Arguments, Failed};
 use linkme::distributed_slice;
 use std::{
     future::Future,
@@ -153,7 +154,7 @@ fn selected_profiles() -> Option<Vec<ServiceProfile>> {
 /// * `--results-dir <dir>`: the directory to write one result file per executed
 ///   trial to. Defaults to `<target>/cosspec-results/<run-id>`.
 ///
-/// Trials run backend by backend, and within each backend, profile by profile.
+/// Results print as a tree: backend, then spec, then service profile.
 pub fn main() {
     let exit = |e: &dyn std::fmt::Display| -> ! {
         eprintln!("error: {e}");
@@ -175,39 +176,51 @@ pub fn main() {
     let only = selected_profiles();
 
     let specs = specs();
-    let mut trials = vec![catalog::trial()];
+    let mut jobs = vec![Job {
+        name: catalog::TEST_NAME.to_owned(),
+        place: Place::TopLevel,
+        ignore: None,
+        run: Box::new(catalog::check_or_update),
+    }];
     for backend in &backends {
-        for profile in backend.profiles() {
-            if only.as_ref().is_some_and(|only| !only.contains(&profile)) {
-                continue;
-            }
-            for &spec in specs
+        let profiles: Vec<_> = backend
+            .profiles()
+            .into_iter()
+            .filter(|profile| only.as_ref().is_none_or(|only| only.contains(profile)))
+            .collect();
+        for &spec in &specs {
+            for &profile in profiles
                 .iter()
-                .filter(|spec| spec.service_profiles.contains(&profile))
+                .filter(|profile| spec.service_profiles.contains(profile))
             {
-                trials.push(trial(backend, spec, profile, strict));
+                jobs.push(job(backend, spec, profile, strict));
             }
         }
     }
 
     let list_only = args.list;
-    let conclusion = libtest_mimic::run(&args, trials);
+    let passed = console::run(&args, jobs);
     if let Err(e) = runtime().block_on(pool::close_all()) {
         eprintln!("warning: failed to delete pooled spec databases: {e}");
     }
     if let Some(dir) = results::dir().filter(|dir| !list_only && dir.exists()) {
         eprintln!("spec results: {}", dir.display());
     }
-    conclusion.exit();
+    std::process::exit(if passed { 0 } else { 101 });
 }
 
-fn trial(
+fn job(
     backend: &Arc<dyn Backend>,
     spec: &'static SpecDescriptor,
     profile: ServiceProfile,
     strict: bool,
-) -> Trial {
+) -> Job {
     let name = spec.test_name(backend.name(), profile);
+    let place = Place::Leaf {
+        backend: backend.name().to_owned(),
+        spec: spec.id(),
+        profile: profile.name().to_owned(),
+    };
     let available = backend.capabilities(profile);
     let missing: Vec<_> = spec
         .requires
@@ -218,30 +231,29 @@ fn trial(
     if !missing.is_empty() {
         let reason = format!("{} lacks {}", backend.name(), missing.join(", "));
         let backend = backend.clone();
-        let trial = Trial::test(name, move || {
-            let mut record = TrialRecord::start(spec, profile, backend.as_ref());
-            record.error = Some(format!("skipped: {reason}").into());
-            finish_trial(record)
-        });
-        return if strict {
-            trial
-        } else {
-            trial.with_ignored_flag(true).with_kind("skip")
+        let message = format!("skipped: {reason}");
+        return Job {
+            name,
+            place,
+            ignore: (!strict).then_some(Ignore::Skip(reason)),
+            run: Box::new(move || {
+                let mut record = TrialRecord::start(spec, profile, backend.as_ref());
+                record.error = Some(message.into());
+                finish_trial(record)
+            }),
         };
     }
 
-    let backend = backend.clone();
-    let trial = Trial::test(name, move || {
-        finish_trial(runtime().block_on(run_spec(backend, spec, profile)))
-    });
-    if spec
+    let known_issue = spec
         .known_issue
         .as_ref()
-        .is_some_and(|issue| issue.affects(profile))
-    {
-        trial.with_ignored_flag(true).with_kind("known-issue")
-    } else {
-        trial
+        .is_some_and(|issue| issue.affects(profile));
+    let backend = backend.clone();
+    Job {
+        name,
+        place,
+        ignore: known_issue.then_some(Ignore::KnownIssue),
+        run: Box::new(move || finish_trial(runtime().block_on(run_spec(backend, spec, profile)))),
     }
 }
 
@@ -292,7 +304,7 @@ async fn run_spec(
     record
 }
 
-fn panic_message(payload: &(dyn std::any::Any + Send)) -> String {
+pub(crate) fn panic_message(payload: &(dyn std::any::Any + Send)) -> String {
     payload
         .downcast_ref::<String>()
         .cloned()

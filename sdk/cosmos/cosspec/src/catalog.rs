@@ -11,7 +11,7 @@
 //! ```
 
 use crate::runner::{specs, SpecDescriptor};
-use libtest_mimic::{Failed, Trial};
+use libtest_mimic::Failed;
 use serde::Serialize;
 use std::{fmt::Write, path::PathBuf};
 
@@ -125,7 +125,7 @@ pub fn json() -> String {
     out
 }
 
-fn check_or_update() -> Result<(), Failed> {
+pub(crate) fn check_or_update() -> Result<(), Failed> {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let update = std::env::var(UPDATE_ENV).as_deref() == Ok("1");
     for (file, expected) in [("CATALOG.md", markdown()), ("catalog.json", json())] {
@@ -148,6 +148,5 @@ fn check_or_update() -> Result<(), Failed> {
     Ok(())
 }
 
-pub(crate) fn trial() -> Trial {
-    Trial::test("catalog::up_to_date", check_or_update)
-}
+/// The name of the catalog check in test output.
+pub(crate) const TEST_NAME: &str = "catalog::up_to_date";
