@@ -3,7 +3,7 @@
 
 //! Request policy types.
 
-use crate::{driver::transport::is_emulator_host, models::AccountEndpoint, options::Region};
+use crate::{emulator::is_emulator_host, models::AccountEndpoint, options::Region};
 use std::time::Duration;
 
 const MIN_END_TO_END_OPERATION_TIMEOUT: Duration = Duration::from_secs(1);

@@ -14,15 +14,16 @@ use serde_json::{value::RawValue, Value};
 
 use crate::{
     error::{CosmosError, Result},
-    models::{FeedRange, ResponseBody},
+    models::FeedRange,
 };
 
 use super::{
     aggregate_values::SingleGroupAggregator,
     query_plan::QueryInfo,
-    query_response::{normalize_page_body, PageAggregator},
+    query_response::{normalize_page_body, EnvelopePayload, PageAggregator},
     recovery_diagnostics::RecoveryDiagnostics,
-    skip_take_page, PageResult, PipelineContext, PipelineNode, PipelineNodeState,
+    skip_take_page, ItemView, PageResult, PipelineBody, PipelineContext, PipelineNode,
+    PipelineNodeState, PipelineResponse,
 };
 
 /// Combines all partition-local aggregates before emitting one terminal page.
@@ -51,7 +52,7 @@ impl Aggregate {
         })
     }
 
-    fn add_page(&mut self, response: &crate::models::CosmosResponse) -> Result<()> {
+    fn add_page(&mut self, response: &PipelineResponse) -> Result<()> {
         // Absorb first so a malformed row still reports the current page's
         // attempts, as well as all preceding pages' attempts.
         self.pages
@@ -111,7 +112,7 @@ impl Aggregate {
                 .pages
                 .as_ref()
                 .expect("active aggregate has page metadata")
-                .encode_item(0, &raw)?;
+                .encode_item(0, &EnvelopePayload::Text(raw))?;
             Ok(vec![item])
         })();
         let items = encoded.map_err(|error| self.fail(error))?;
@@ -132,11 +133,12 @@ impl Aggregate {
 ///
 /// Unlike the general trimming helper, a raw feed envelope must explicitly
 /// contain `Documents`; a missing field is not an empty aggregate input.
-pub(crate) fn parse_rows(body: &ResponseBody) -> Result<Vec<Value>> {
+pub(crate) fn parse_rows(body: &PipelineBody) -> Result<Vec<Value>> {
     match body {
-        ResponseBody::NoPayload => Ok(Vec::new()),
-        ResponseBody::Items(items) => items.iter().map(|item| parse_row(item)).collect(),
-        ResponseBody::Bytes(bytes) => {
+        PipelineBody::NoPayload => Ok(Vec::new()),
+        PipelineBody::Items(items) => items.iter().map(|item| parse_row(item)).collect(),
+        PipelineBody::ContextualItems(items) => items.iter().map(ItemView::decoded_value).collect(),
+        PipelineBody::Bytes(bytes) => {
             let text = normalize_page_body(bytes)?;
             // Borrow values instead of materializing the whole page twice.
             // Deserializing a map also rejects arrays and scalar envelopes.
@@ -266,7 +268,7 @@ impl PipelineNode for Aggregate {
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_rows, Aggregate};
+    use super::{parse_rows, Aggregate, ItemView};
     use crate::{
         driver::dataflow::{
             drain::SequentialDrain,
@@ -277,10 +279,11 @@ mod tests {
             },
             node::SplitReplacements,
             query_plan::QueryInfo,
-            PageResult, PipelineContext, PipelineNode, PipelineNodeState,
+            PageResult, PipelineBody, PipelineContext, PipelineNode, PipelineNodeState,
+            PipelineResponse,
         },
         error::{CosmosError, Result},
-        models::{CosmosResponse, RequestCharge, ResponseBody, SessionToken},
+        models::{RequestCharge, SessionToken},
     };
     use bytes::Bytes;
     use serde_json::{json, Value};
@@ -301,13 +304,13 @@ mod tests {
         }
     }
 
-    fn feed(rows: Value, charge: f64, attempts: usize, token: Option<&str>) -> CosmosResponse {
+    fn feed(rows: Value, charge: f64, attempts: usize, token: Option<&str>) -> PipelineResponse {
         let template = response_with_request_diagnostics(attempts);
         let mut headers = template.headers().clone();
         headers.request_charge = Some(RequestCharge::new(charge));
         headers.continuation = Some("backend-token-must-not-leak".to_owned());
         headers.session_token = token.map(|token| SessionToken::new(token.to_owned()));
-        CosmosResponse::new(
+        PipelineResponse::new(
             serde_json::to_vec(&json!({"Documents": rows})).unwrap(),
             headers,
             template.status(),
@@ -329,7 +332,7 @@ mod tests {
         node.next_page(&mut context).await
     }
 
-    fn result_items(response: &CosmosResponse) -> Vec<Value> {
+    fn result_items(response: &PipelineResponse) -> Vec<Value> {
         parse_rows(response.body()).unwrap()
     }
 
@@ -446,8 +449,8 @@ mod tests {
         let template = feed(json!([]), 2.0, 2, None);
         let child = MockLeaf::with_pages(vec![
             Ok(PageResult::Page {
-                response: CosmosResponse::new(
-                    ResponseBody::NoPayload,
+                response: PipelineResponse::new(
+                    PipelineBody::NoPayload,
                     template.headers().clone(),
                     template.status(),
                     template.diagnostics(),
@@ -467,14 +470,19 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn accepts_standalone_binary_and_text_items_and_obeys_emitted_encoding() {
+    async fn accepts_standalone_and_contextual_items_and_obeys_emitted_encoding() {
         for emit_binary in [false, true] {
             let template = response(b"");
+            let binary = Bytes::from(crate::binary_json::encode(&json!([{"item": 4}])));
+            let contextual = ItemView::from_binary_page(binary.clone(), 1..binary.len()).unwrap();
             let child = MockLeaf::with_pages(vec![Ok(PageResult::Page {
-                response: CosmosResponse::new(
-                    ResponseBody::from_items(vec![
-                        Bytes::from_static(br#"[{"item":2}]"#),
-                        Bytes::from(crate::binary_json::to_vec(&json!([{"item": 3}])).unwrap()),
+                response: PipelineResponse::new(
+                    PipelineBody::from_item_views(vec![
+                        ItemView::standalone(Bytes::from_static(br#"[{"item":2}]"#)),
+                        ItemView::standalone(Bytes::from(
+                            crate::binary_json::to_vec(&json!([{"item": 3}])).unwrap(),
+                        )),
+                        contextual,
                     ]),
                     template.headers().clone(),
                     template.status(),
@@ -485,12 +493,25 @@ mod tests {
             let mut node =
                 Aggregate::new(Box::new(child), &info("Count", true), emit_binary).unwrap();
             let output = unwrap_page(pull(&mut node).await);
-            assert_eq!(result_items(&output), vec![json!(5)]);
-            let ResponseBody::Items(items) = output.body() else {
+            assert_eq!(result_items(&output), vec![json!(9)]);
+            let PipelineBody::Items(items) = output.body() else {
                 panic!("aggregate must emit standalone items");
             };
             assert_eq!(crate::binary_json::is_binary(&items[0]), emit_binary);
         }
+    }
+
+    #[test]
+    fn row_parser_resolves_page_backed_references_and_rejects_invalid_ones() {
+        let page = Bytes::from_static(&[0x80, 0xE2, 6, 0x83, b'f', b'o', b'o', 0xC3, 3]);
+        let item = ItemView::from_binary_page(page, 7..9).unwrap();
+        assert_eq!(
+            parse_rows(&PipelineBody::from_item_views(vec![item])).unwrap(),
+            vec![json!("foo")]
+        );
+        let invalid = Bytes::from_static(&[0x80, 0xC3, 255]);
+        let item = ItemView::from_binary_page(invalid, 1..3).unwrap();
+        assert!(parse_rows(&PipelineBody::from_item_views(vec![item])).is_err());
     }
 
     #[test]
@@ -504,16 +525,16 @@ mod tests {
             br#"null"#,
             b"",
         ] {
-            assert!(parse_rows(&ResponseBody::Bytes(Bytes::copy_from_slice(malformed))).is_err());
+            assert!(parse_rows(&PipelineBody::Bytes(Bytes::copy_from_slice(malformed))).is_err());
         }
         let rows = json!([[{"item": 2}], [{"item2": 3}]]);
         let binary = crate::binary_json::to_vec(&json!({"Documents": rows})).unwrap();
         assert_eq!(
-            parse_rows(&ResponseBody::Bytes(binary.into())).unwrap(),
+            parse_rows(&PipelineBody::Bytes(binary.into())).unwrap(),
             rows.as_array().unwrap().clone()
         );
         assert_eq!(
-            parse_rows(&ResponseBody::NoPayload).unwrap(),
+            parse_rows(&PipelineBody::NoPayload).unwrap(),
             Vec::<Value>::new()
         );
     }
@@ -545,7 +566,7 @@ mod tests {
             (json!({"Documents": [{"payload": null}]}), false),
         ] {
             let template = feed(json!([]), 1.0, 2, None);
-            let bad = CosmosResponse::new(
+            let bad = PipelineResponse::new(
                 serde_json::to_vec(&body).unwrap(),
                 template.headers().clone(),
                 template.status(),

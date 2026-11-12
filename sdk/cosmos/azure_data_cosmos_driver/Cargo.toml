@@ -66,6 +66,7 @@ serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = [
   "rt-multi-thread",
   "macros",
+  "sync",
   "time",
   "test-util",
 ] }

@@ -3,10 +3,11 @@
 
 //! [`Pipeline`] (driver-internal) and [`OperationPlan`] (driver-public).
 
+use crate::driver::dataflow::PipelineResponse;
 use std::{sync::Arc, time::Instant};
 
 use crate::{
-    models::{ContinuationToken, CosmosOperation, CosmosResponse},
+    models::{ContinuationToken, CosmosOperation},
     options::PlanOptions,
 };
 
@@ -53,7 +54,7 @@ impl Pipeline {
     pub(crate) async fn next_page(
         &mut self,
         context: &mut PipelineContext<'_>,
-    ) -> crate::error::Result<Option<CosmosResponse>> {
+    ) -> crate::error::Result<Option<PipelineResponse>> {
         match self.root.next_page(context).await? {
             PageResult::Page { response, .. } => Ok(Some(response)),
             PageResult::Drained => Ok(None),
@@ -140,11 +141,15 @@ impl OperationPlan {
         self.initial_execution_deadline.take()
     }
 
-    /// Clears deadlines retained by an internal replan after the current
-    /// `execute_plan` call has already adopted that budget.
-    pub(crate) fn clear_execution_deadlines(&mut self) {
+    /// Drops a replan's temporary budget without losing a caller-pinned deadline.
+    pub(crate) fn reset_replan_deadlines(&mut self, persistent: Option<Instant>) {
         self.initial_execution_deadline = None;
-        self.operation = Arc::new(self.operation.as_ref().clone().with_absolute_deadline(None));
+        self.operation = Arc::new(
+            self.operation
+                .as_ref()
+                .clone()
+                .with_absolute_deadline(persistent),
+        );
     }
 
     /// Records that a page advanced the pipeline but never reached the caller.
@@ -210,7 +215,8 @@ impl OperationPlan {
     /// correctly.
     ///
     /// The same applies when a page was produced but could not be delivered to
-    /// the caller — a binary response body that failed to transcode to text.
+    /// the caller — a binary response body that failed standalone materialization
+    /// or text conversion.
     /// Reported as
     /// [`CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE`](crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE).
     /// That failure also stops the plan being executed again — see

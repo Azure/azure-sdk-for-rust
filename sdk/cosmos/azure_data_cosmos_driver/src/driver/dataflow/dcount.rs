@@ -11,13 +11,15 @@ use serde_json::Value;
 
 use crate::{
     error::{CosmosError, Result},
-    models::{CosmosResponse, FeedRange},
+    models::FeedRange,
 };
 
 use super::{
-    aggregate::parse_rows, query_plan::DCountInfo, query_response::PageAggregator,
-    recovery_diagnostics::RecoveryDiagnostics, PageResult, PipelineContext, PipelineNode,
-    PipelineNodeState,
+    aggregate::parse_rows,
+    query_plan::DCountInfo,
+    query_response::{EnvelopePayload, PageAggregator},
+    recovery_diagnostics::RecoveryDiagnostics,
+    PageResult, PipelineContext, PipelineNode, PipelineNodeState, PipelineResponse,
 };
 
 /// Counts every row from its already deduplicated child and emits one result.
@@ -45,7 +47,7 @@ impl DCount {
         }
     }
 
-    fn add_page(&mut self, response: &CosmosResponse) -> Result<()> {
+    fn add_page(&mut self, response: &PipelineResponse) -> Result<()> {
         // Absorb first so parse and overflow errors retain this page's attempts.
         self.pages
             .as_mut()
@@ -97,7 +99,7 @@ impl DCount {
             self.pages
                 .as_ref()
                 .expect("active distinct count has page metadata")
-                .encode_item(0, &raw)
+                .encode_item(0, &EnvelopePayload::Text(raw))
         })();
         let item = encoded.map_err(|error| self.fail(error))?;
         let response = self
@@ -234,10 +236,11 @@ mod tests {
             node::SplitReplacements,
             query_plan::{DCountInfo, DistinctType},
             skip_take::SkipTake,
-            DrainedLeaf, PageResult, PipelineContext, PipelineNode, PipelineNodeState,
+            DrainedLeaf, ItemView, PageResult, PipelineBody, PipelineContext, PipelineNode,
+            PipelineNodeState, PipelineResponse,
         },
         error::{status_codes, Result},
-        models::{CosmosResponse, RequestCharge, ResponseBody, SessionToken},
+        models::{RequestCharge, SessionToken},
     };
     use bytes::Bytes;
     use serde_json::{json, Value};
@@ -248,13 +251,13 @@ mod tests {
         }
     }
 
-    fn feed(rows: Value, charge: f64, attempts: usize, token: Option<&str>) -> CosmosResponse {
+    fn feed(rows: Value, charge: f64, attempts: usize, token: Option<&str>) -> PipelineResponse {
         let template = response_with_request_diagnostics(attempts);
         let mut headers = template.headers().clone();
         headers.request_charge = Some(RequestCharge::new(charge));
         headers.continuation = Some("backend-token-must-not-leak".to_owned());
         headers.session_token = token.map(|token| SessionToken::new(token.to_owned()));
-        CosmosResponse::new(
+        PipelineResponse::new(
             serde_json::to_vec(&json!({"Documents": rows})).unwrap(),
             headers,
             template.status(),
@@ -275,7 +278,7 @@ mod tests {
         node.next_page(&mut context).await
     }
 
-    fn rows(response: &CosmosResponse) -> Vec<Value> {
+    fn rows(response: &PipelineResponse) -> Vec<Value> {
         parse_rows(response.body()).unwrap()
     }
 
@@ -499,8 +502,8 @@ mod tests {
         let mut final_headers = final_page.headers().clone();
         final_headers.query_metrics = Some("latest-query-metrics".to_owned());
         final_headers.index_metrics = Some("latest-index-metrics".to_owned());
-        final_page = CosmosResponse::new(
-            ResponseBody::NoPayload,
+        final_page = PipelineResponse::new(
+            PipelineBody::NoPayload,
             final_headers,
             final_page.status(),
             final_page.diagnostics(),
@@ -551,23 +554,26 @@ mod tests {
     async fn binary_and_text_feeds_and_items_obey_requested_output_encoding() {
         for emit_binary in [false, true] {
             let template = response(b"");
+            let binary = Bytes::from(crate::binary_json::encode(&json!(7)));
+            let contextual = ItemView::from_binary_page(binary.clone(), 1..binary.len()).unwrap();
             let bodies = vec![
-                ResponseBody::Bytes(Bytes::from_static(br#"{"Documents":[1,2]}"#)),
-                ResponseBody::Bytes(
+                PipelineBody::Bytes(Bytes::from_static(br#"{"Documents":[1,2]}"#)),
+                PipelineBody::Bytes(
                     crate::binary_json::to_vec(&json!({"Documents": [3, 4]}))
                         .unwrap()
                         .into(),
                 ),
-                ResponseBody::from_items(vec![
+                PipelineBody::from_items(vec![
                     Bytes::from_static(b"5"),
                     crate::binary_json::to_vec(&json!(6)).unwrap().into(),
                 ]),
+                PipelineBody::from_item_views(vec![contextual]),
             ];
             let pages = bodies
                 .into_iter()
                 .map(|body| {
                     Ok(PageResult::Page {
-                        response: CosmosResponse::new(
+                        response: PipelineResponse::new(
                             body,
                             template.headers().clone(),
                             template.status(),
@@ -584,8 +590,8 @@ mod tests {
                 emit_binary,
             );
             let output = unwrap_page(pull(&mut node).await);
-            assert_eq!(rows(&output), vec![json!(6)]);
-            let ResponseBody::Items(items) = output.body() else {
+            assert_eq!(rows(&output), vec![json!(7)]);
+            let PipelineBody::Items(items) = output.body() else {
                 panic!("DCOUNT must emit standalone items");
             };
             assert_eq!(items.len(), 1);
@@ -702,19 +708,19 @@ mod tests {
     #[tokio::test]
     async fn malformed_input_keeps_prior_current_and_deferred_diagnostics() {
         for body in [
-            ResponseBody::Bytes(Bytes::from_static(b"{")),
-            ResponseBody::Bytes(Bytes::from_static(br#"{}"#)),
-            ResponseBody::Bytes(Bytes::from_static(br#"{"Documents":null}"#)),
-            ResponseBody::Bytes(Bytes::from_static(br#"{"Documents":{}}"#)),
-            ResponseBody::Bytes(Bytes::from_static(br#"[]"#)),
-            ResponseBody::from_items(vec![Bytes::from_static(b"{")]),
-            ResponseBody::from_items(vec![Bytes::from_static(&[0x80])]),
+            PipelineBody::Bytes(Bytes::from_static(b"{")),
+            PipelineBody::Bytes(Bytes::from_static(br#"{}"#)),
+            PipelineBody::Bytes(Bytes::from_static(br#"{"Documents":null}"#)),
+            PipelineBody::Bytes(Bytes::from_static(br#"{"Documents":{}}"#)),
+            PipelineBody::Bytes(Bytes::from_static(br#"[]"#)),
+            PipelineBody::from_items(vec![Bytes::from_static(b"{")]),
+            PipelineBody::from_items(vec![Bytes::from_static(&[0x80])]),
         ] {
             let template = feed(json!([]), 2.0, 2, None);
             let child = MockLeaf::with_pages(vec![
                 page(json!(["red"]), false),
                 Ok(PageResult::Page {
-                    response: CosmosResponse::new(
+                    response: PipelineResponse::new(
                         body,
                         template.headers().clone(),
                         template.status(),

@@ -84,9 +84,8 @@ impl ResponseBody {
         }
     }
 
-    /// Returns the single payload, or an error if the body is a feed
-    /// [`Items`](Self::Items) response. A [`NoPayload`](Self::NoPayload) body
-    /// yields an empty [`Bytes`].
+    /// Returns the single payload, or an error if the body is a feed response.
+    /// A [`NoPayload`](Self::NoPayload) body yields an empty [`Bytes`].
     ///
     /// Used by single-document response paths (point reads/writes, batch, etc.).
     pub fn single(self) -> crate::error::Result<Bytes> {
@@ -105,13 +104,12 @@ impl ResponseBody {
         }
     }
 
-    /// Returns the per-item raw buffers of a feed response, or wraps a
+    /// Returns standalone per-item raw buffers of a feed response, or wraps a
     /// single-payload body as a one-element vector. A
     /// [`NoPayload`](Self::NoPayload) body yields an empty `Vec`.
     ///
-    /// This is the raw-bytes counterpart to
-    /// [`into_items`](Self::into_items); use it when callers want to decode
-    /// each item themselves instead of going through JSON.
+    /// Each buffer is independently decodable, including binary documents
+    /// materialized from an `ORDER BY` source page.
     pub fn items(self) -> crate::error::Result<Vec<Bytes>> {
         match self {
             Self::NoPayload => Ok(Vec::new()),
@@ -138,8 +136,8 @@ impl ResponseBody {
     /// Deserializes every item in a feed response, or the single payload, as
     /// type `T`. A [`NoPayload`](Self::NoPayload) body yields an empty `Vec`.
     ///
-    /// Each buffer is decoded transparently as either Cosmos binary JSON or
-    /// UTF-8 text JSON (auto-detected by the `0x80` preamble).
+    /// Each standalone buffer is decoded as Cosmos binary JSON or UTF-8 text
+    /// JSON (detected by the `0x80` preamble).
     pub fn into_items<T: DeserializeOwned>(self) -> crate::error::Result<Vec<T>> {
         match self {
             Self::NoPayload => Ok(Vec::new()),

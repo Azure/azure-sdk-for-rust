@@ -16,7 +16,7 @@ use serde_json::Value;
 
 use crate::{
     error::{status_codes, CosmosError, Result},
-    models::{CosmosResponse, FeedRange, MaxItemCountHint, SessionToken},
+    models::{FeedRange, MaxItemCountHint, SessionToken},
 };
 
 use super::{
@@ -25,9 +25,9 @@ use super::{
     distinct_hash::{hash_value, Hash128},
     order_by::OrderByItem,
     query_plan::QueryInfo,
-    query_response::PageAggregator,
+    query_response::{EnvelopePayload, PageAggregator},
     recovery_diagnostics::RecoveryDiagnostics,
-    PageResult, PipelineContext, PipelineNode, PipelineNodeState,
+    PageResult, PipelineContext, PipelineNode, PipelineNodeState, PipelineResponse,
 };
 
 const DEFAULT_PAGE_SIZE: usize = 100;
@@ -99,7 +99,7 @@ impl GroupBy {
         })
     }
 
-    fn add_page(&mut self, response: &CosmosResponse) -> Result<()> {
+    fn add_page(&mut self, response: &PipelineResponse) -> Result<()> {
         // Malformed rows must retain the current page's diagnostics too.
         self.pages
             .as_mut()
@@ -199,7 +199,7 @@ impl GroupBy {
                             .with_source(error)
                             .build()
                     })?;
-                    items.push(pages.encode_item(items.len(), &raw)?);
+                    items.push(pages.encode_item(items.len(), &EnvelopePayload::Text(raw))?);
                 }
             }
             Ok(items)
@@ -320,10 +320,11 @@ mod tests {
             node::SplitReplacements,
             order_by::OrderByItem,
             query_plan::QueryInfo,
-            PageResult, PipelineContext, PipelineNode, PipelineNodeState,
+            ItemView, PageResult, PipelineBody, PipelineContext, PipelineNode, PipelineNodeState,
+            PipelineResponse,
         },
         error::{status_codes, Result},
-        models::{CosmosResponse, MaxItemCountHint, RequestCharge, ResponseBody, SessionToken},
+        models::{MaxItemCountHint, RequestCharge, SessionToken},
     };
     use bytes::Bytes;
     use serde_json::{json, Value};
@@ -353,13 +354,13 @@ mod tests {
         json!({"groupByItems": [{"item": key}], "payload": payload})
     }
 
-    fn feed(rows: Value, charge: f64, attempts: usize, token: Option<&str>) -> CosmosResponse {
+    fn feed(rows: Value, charge: f64, attempts: usize, token: Option<&str>) -> PipelineResponse {
         let template = response_with_request_diagnostics(attempts);
         let mut headers = template.headers().clone();
         headers.request_charge = Some(RequestCharge::new(charge));
         headers.continuation = Some("backend-continuation-must-not-leak".to_owned());
         headers.session_token = token.map(|token| SessionToken::new(token.to_owned()));
-        CosmosResponse::new(
+        PipelineResponse::new(
             serde_json::to_vec(&json!({"Documents": rows})).unwrap(),
             headers,
             template.status(),
@@ -381,7 +382,7 @@ mod tests {
         node.next_page(&mut context).await
     }
 
-    fn items(response: &CosmosResponse) -> Vec<Value> {
+    fn items(response: &PipelineResponse) -> Vec<Value> {
         parse_rows(response.body()).unwrap()
     }
 
@@ -632,8 +633,8 @@ mod tests {
             let template = response_with_request_diagnostics(2);
             let child = MockLeaf::with_pages(vec![
                 Ok(PageResult::Page {
-                    response: CosmosResponse::new(
-                        ResponseBody::NoPayload,
+                    response: PipelineResponse::new(
+                        PipelineBody::NoPayload,
                         template.headers().clone(),
                         template.status(),
                         template.diagnostics(),
@@ -733,17 +734,23 @@ mod tests {
     async fn mixed_item_and_feed_encodings_obey_explicit_output_encoding() {
         for emit_binary in [false, true] {
             let template = response(b"");
+            let binary = Bytes::from(crate::binary_json::encode(&row(
+                json!(1),
+                json!({"item": 5}),
+            )));
+            let contextual = ItemView::from_binary_page(binary.clone(), 1..binary.len()).unwrap();
             let child = MockLeaf::with_pages(vec![
                 Ok(PageResult::Page {
-                    response: CosmosResponse::new(
-                        ResponseBody::from_items(vec![
-                            Bytes::from(
+                    response: PipelineResponse::new(
+                        PipelineBody::from_item_views(vec![
+                            ItemView::standalone(Bytes::from(
                                 serde_json::to_vec(&row(json!(1), json!({"item": 2}))).unwrap(),
-                            ),
-                            Bytes::from(
+                            )),
+                            ItemView::standalone(Bytes::from(
                                 crate::binary_json::to_vec(&row(json!(1.0), json!({"item": 3})))
                                     .unwrap(),
-                            ),
+                            )),
+                            contextual,
                         ]),
                         template.headers().clone(),
                         template.status(),
@@ -752,7 +759,7 @@ mod tests {
                     is_terminal: false,
                 }),
                 Ok(PageResult::Page {
-                    response: CosmosResponse::new(
+                    response: PipelineResponse::new(
                         crate::binary_json::to_vec(&json!({
                             "Documents": [row(json!(1), json!({"item": 4}))]
                         }))
@@ -772,8 +779,8 @@ mod tests {
             )
             .unwrap();
             let output = unwrap_page(pull(&mut node).await);
-            assert_eq!(items(&output), vec![json!(9)]);
-            let ResponseBody::Items(items) = output.body() else {
+            assert_eq!(items(&output), vec![json!(14)]);
+            let PipelineBody::Items(items) = output.body() else {
                 panic!("GROUP BY must emit standalone items");
             };
             assert_eq!(crate::binary_json::is_binary(&items[0]), emit_binary);

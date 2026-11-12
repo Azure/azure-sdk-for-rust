@@ -12,6 +12,8 @@
 //! [`QueryPlan`](super::query_plan::QueryPlan) and resolves the query's EPK
 //! ranges against the current topology to produce a fan-out pipeline.
 
+#[cfg(test)]
+use crate::driver::dataflow::PipelineResponse;
 use std::sync::Arc;
 
 use crate::{
@@ -2213,14 +2215,13 @@ mod tests {
     use super::*;
     use crate::{
         driver::dataflow::{
-            mocks::*, query_plan::QueryRange, PageResult, PipelineContext, RangedToken,
-            ResolvedRange,
+            mocks::*, query_plan::QueryRange, PageResult, PipelineBody, PipelineContext,
+            RangedToken, ResolvedRange,
         },
         models::{
             effective_partition_key::EffectivePartitionKey, AccountReference, ContainerProperties,
-            ContainerReference, CosmosResponse, DatabaseReference, ItemReference, MaxItemCountHint,
-            OperationType, PartitionKey, PartitionKeyDefinition, RequestCharge, ResourceType,
-            ResponseBody, SystemProperties,
+            ContainerReference, DatabaseReference, ItemReference, MaxItemCountHint, OperationType,
+            PartitionKey, PartitionKeyDefinition, RequestCharge, ResourceType, SystemProperties,
         },
     };
 
@@ -3528,7 +3529,7 @@ mod tests {
                 .next_page(&mut context)
                 .await?
                 .expect("aggregate page");
-            let ResponseBody::Items(items) = page.body() else {
+            let PipelineBody::Items(items) = page.body() else {
                 panic!("aggregate output must contain public payload items");
             };
             assert_eq!(items.len(), 1);
@@ -3649,7 +3650,7 @@ mod tests {
         ]);
             let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
             let page = pipeline.next_page(&mut context).await?.unwrap();
-            let ResponseBody::Items(items) = page.body() else {
+            let PipelineBody::Items(items) = page.body() else {
                 panic!("expected reduced items");
             };
             assert_eq!(items.len(), 1);
@@ -3788,7 +3789,7 @@ mod tests {
         ))]);
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
         let page = resumed.next_page(&mut context).await?.unwrap();
-        let ResponseBody::Items(items) = page.body() else {
+        let PipelineBody::Items(items) = page.body() else {
             panic!("expected reduced items");
         };
         assert_eq!(items.len(), 1);
@@ -4970,22 +4971,23 @@ mod tests {
                         let mut headers = response.headers().clone();
                         headers.request_charge = Some(RequestCharge::new(1.25));
                         headers.session_token = Some(crate::models::SessionToken::new(session));
-                        Ok(CosmosResponse::new(body, headers, response.status(), response.diagnostics()))
+                        Ok(PipelineResponse::new(body, headers, response.status(), response.diagnostics()))
                     }).collect();
                     let mut executor = MockRequestExecutor::new(responses);
                     let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
                     let mut actual = Vec::new();
                     let mut charge = 0.0;
                     while let Some(page) = pipeline.next_page(&mut context).await.unwrap() {
+                        let page = page
+                            .into_response(false, output_binary, Default::default())
+                            .unwrap();
                         charge += page.headers().request_charge.unwrap().value();
                         let session = page.headers().session_token.as_ref().unwrap().to_string();
                         assert!(session.contains("a:1#4"), "{session}");
                         assert!(session.contains("b:1#5"), "{session}");
-                        let ResponseBody::Items(items) = page.body() else {
-                            panic!("expected items")
-                        };
+                        let items = page.body().clone().items().unwrap();
                         assert!(items.len() <= 2);
-                        for item in items {
+                        for item in &items {
                             assert_eq!(crate::binary_json::is_binary(item), output_binary);
                             let value: String = if output_binary {
                                 crate::binary_json::from_slice(item).unwrap()

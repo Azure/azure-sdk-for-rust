@@ -3,19 +3,17 @@
 
 //! [`PipelineNode`] trait and [`PageResult`] returned from each pull.
 
+use crate::driver::dataflow::PipelineResponse;
 use async_trait::async_trait;
 use std::sync::Arc;
 
-use crate::{
-    diagnostics::DiagnosticsContext,
-    models::{CosmosResponse, FeedRange},
-};
+use crate::{diagnostics::DiagnosticsContext, models::FeedRange};
 
 use super::{context::PipelineContext, snapshot::PipelineNodeState};
 
 /// Result of a single `next_page` call on a pipeline node.
 ///
-/// The `Page` variant contains a large `CosmosResponse` inline, but boxing it
+/// The `Page` variant contains a large `PipelineResponse` inline, but boxing it
 /// would add a heap allocation on every page fetch — the hot path. The `SplitRequired`
 /// variant is rare (only on partition splits), so the size difference is acceptable.
 #[must_use = "a PageResult carries the next page, drain signal, or a split request that the caller must act on"]
@@ -30,7 +28,7 @@ pub(crate) enum PageResult {
     /// drained children eagerly so that snapshots of the pipeline do not
     /// include children that are already done.
     Page {
-        response: CosmosResponse,
+        response: PipelineResponse,
         is_terminal: bool,
     },
     /// This node has no more pages to emit.

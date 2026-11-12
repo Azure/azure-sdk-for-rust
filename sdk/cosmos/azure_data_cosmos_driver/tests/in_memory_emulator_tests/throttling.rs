@@ -437,7 +437,7 @@ async fn create_container_honors_offer_throughput_header() {
 /// This is the in-memory analog of the live-emulator test
 /// `emulator_tests::driver_fault_injection::fault_injection_429_honors_configurable_throttle_retry_count`
 /// and the unit-level
-/// `transport_pipeline::tests::execute_transport_pipeline_honors_configured_max_throttle_attempts`.
+/// `pipeline::transport::execution::tests::throttling::execute_transport_pipeline_honors_configured_max_throttle_attempts`.
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
 async fn fault_injection_429_honors_configurable_throttle_retry_count() {
