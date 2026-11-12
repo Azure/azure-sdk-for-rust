@@ -23,28 +23,22 @@ const EMULATOR_KEY: &str =
 /// [`SingleRegion`](ServiceProfile::SingleRegion), and no capabilities beyond it.
 #[derive(Debug)]
 pub struct EmulatorBackend {
-    name: String,
     endpoint: String,
     profiles: Vec<ServiceProfile>,
 }
 
 impl EmulatorBackend {
-    /// Creates a backend named `name` from its configuration.
-    pub fn new(name: impl Into<String>, config: &EmulatorConfig) -> SpecResult<Self> {
-        Ok(Self {
-            name: name.into(),
+    /// Creates a backend from its configuration.
+    pub fn new(config: &EmulatorConfig) -> Self {
+        Self {
             endpoint: config.endpoint().to_owned(),
             profiles: config.profiles(),
-        })
+        }
     }
 }
 
 #[async_trait]
 impl Backend for EmulatorBackend {
-    fn name(&self) -> &str {
-        &self.name
-    }
-
     fn kind(&self) -> &'static str {
         "emulator"
     }

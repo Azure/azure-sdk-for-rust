@@ -174,8 +174,8 @@ The spec binary uses a custom harness (`harness = false`):
 - `#[spec_test]` registers a `SpecDescriptor` into a `linkme` distributed
   slice.
 - `cosspec::main()` reads the run configuration (see
-  [Run configuration](#run-configuration)). For each configured backend, in
-  order, and each service profile that backend runs, it adds one
+  [Run configuration](#run-configuration)). For each enabled backend, in a
+  fixed order, and each service profile that backend runs, it adds one
   `libtest-mimic` trial per spec that selects the profile.
 - One process can run several backends. Trials run in parallel on a shared
   multi-threaded Tokio runtime.
@@ -408,7 +408,7 @@ as `FeedRange`s, so a spec-level operation never depends on a backend's
 partition IDs. `simple_split_merge()` defaults to `ViaTopology`, which builds
 both operations on `TopologyControl`.
 
-| Backend (`kind`) | Profiles | Capabilities beyond the profile's | Accounts |
+| Backend | Profiles | Capabilities beyond the profile's | Accounts |
 | --- | --- | --- | --- |
 | In-memory emulator (`inmemory`) | All | `TopologyControl`, `SimpleSplitMerge`, `RegionControl`, `AccountIsolation` | A new in-process emulator per cell and per `ExclusiveAccount` |
 | Azure Cosmos DB Emulator (`emulator`) | `SingleRegion` only | None | An already running emulator, Windows or Linux |
@@ -439,35 +439,46 @@ both operations on `TopologyControl`.
 `--config <path>` names a TOML file that deserializes into
 `cosspec::config::SpecConfig`. Without it, the run uses
 `SpecConfig::default()`: every service profile on the in-memory emulator.
-Unknown keys, unknown profiles, duplicate backend names, and profiles a
-backend can't provide are rejected when the file is read, before any trial
-runs.
+Unknown keys, unknown backends, unknown profiles, and profiles a backend
+can't provide are rejected when the file is read, before any trial runs.
+Disabled backends are validated too.
+
+The backends are well known, so each has a fixed table under `[backends]`,
+and every setting is per backend:
+
+- `backends.<backend>.enabled` turns the backend on or off. Only `inmemory`
+  is on by default, so a file enables the others explicitly and can turn
+  `inmemory` off.
+- `backends.<backend>.profiles.<Profile>` holds that profile's settings on
+  that backend. Each profile table also takes `enabled` (default `true`).
+- `inmemory` runs every profile unless a profile table disables it.
+  `emulator` runs `SingleRegion`; any other profile table is an error. `live`
+  runs only the profiles that have an account table, and enabling `live`
+  without one is an error.
 
 ```toml
-[[backends]]
-kind = "inmemory"
-profiles = ["SingleRegion", "MultiWrite"]   # optional; default is all
+[backends.inmemory.profiles.MultiRead]
+enabled = false                             # every other profile still runs
 
-[[backends]]
-kind = "emulator"                           # SingleRegion only
+[backends.emulator]
+enabled = true                              # SingleRegion only
 # endpoint = "https://localhost:8081/"
 
-[[backends]]
-kind = "live"
-# name = "live-westeurope"                  # optional; default is the kind
+[backends.live]
+enabled = true
 
-[backends.profiles.SingleRegion]
+[backends.live.profiles.SingleRegion]
 endpoint = "https://my-single-region.documents.azure.com:443/"
 auth = { kind = "key", key_env = "COSSPEC_SINGLE_REGION_KEY" }
 
-[backends.profiles.MultiWrite]
+[backends.live.profiles.MultiWrite]
 endpoint = "https://my-multi-write.documents.azure.com:443/"
 auth = { kind = "entra" }
 ```
 
-Backends run in file order. A backend's `name` appears in trial names and
-result files, and must be unique. That allows two backends of one kind, such
-as two sets of live accounts. `cosspec/configs/` has example files.
+Enabled backends run in a fixed order: `inmemory`, `emulator`, then `live`.
+The backend key appears in trial names and result files. `cosspec/configs/`
+has example files.
 
 ## HTTP evidence: `HttpTap`
 

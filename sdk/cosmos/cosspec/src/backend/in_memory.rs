@@ -38,33 +38,25 @@ const KEY: &str = "dGVzdGtleQ==";
 /// every capability.
 #[derive(Debug)]
 pub struct InMemoryBackend {
-    name: String,
     profiles: Vec<ServiceProfile>,
 }
 
 impl InMemoryBackend {
-    /// Creates a backend named `name` that runs `profiles`.
-    pub fn new(name: impl Into<String>, profiles: Vec<ServiceProfile>) -> Self {
-        Self {
-            name: name.into(),
-            profiles,
-        }
+    /// Creates a backend that runs `profiles`.
+    pub fn new(profiles: Vec<ServiceProfile>) -> Self {
+        Self { profiles }
     }
 }
 
 impl Default for InMemoryBackend {
-    /// The `inmemory` backend with every service profile.
+    /// Every service profile.
     fn default() -> Self {
-        Self::new("inmemory", ServiceProfile::ALL.to_vec())
+        Self::new(ServiceProfile::ALL.to_vec())
     }
 }
 
 #[async_trait]
 impl Backend for InMemoryBackend {
-    fn name(&self) -> &str {
-        &self.name
-    }
-
     fn kind(&self) -> &'static str {
         "inmemory"
     }

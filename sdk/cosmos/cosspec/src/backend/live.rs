@@ -25,17 +25,15 @@ use std::{collections::BTreeMap, sync::Arc};
 /// provides only the capabilities of each profile itself.
 #[derive(Debug)]
 pub struct LiveBackend {
-    name: String,
     accounts: BTreeMap<ServiceProfile, LiveAccountConfig>,
 }
 
 impl LiveBackend {
-    /// Creates a backend named `name` from its configuration.
-    pub fn new(name: impl Into<String>, config: &LiveConfig) -> SpecResult<Self> {
-        Ok(Self {
-            name: name.into(),
-            accounts: config.profiles.clone(),
-        })
+    /// Creates a backend from its configuration.
+    pub fn new(config: &LiveConfig) -> Self {
+        Self {
+            accounts: config.accounts(),
+        }
     }
 
     fn credential(auth: &LiveAuth) -> SpecResult<Credential> {
@@ -60,10 +58,6 @@ impl LiveBackend {
 
 #[async_trait]
 impl Backend for LiveBackend {
-    fn name(&self) -> &str {
-        &self.name
-    }
-
     fn kind(&self) -> &'static str {
         "live"
     }
@@ -77,12 +71,10 @@ impl Backend for LiveBackend {
     }
 
     async fn open_account(&self, profile: ServiceProfile) -> SpecResult<Arc<dyn BackendAccount>> {
-        let account = self.accounts.get(&profile).ok_or_else(|| {
-            format!(
-                "live backend '{}' has no account configured for {profile}",
-                self.name
-            )
-        })?;
+        let account = self
+            .accounts
+            .get(&profile)
+            .ok_or_else(|| format!("no enabled [backends.live.profiles.{profile}] account"))?;
         Ok(Arc::new(RemoteAccount {
             profile,
             endpoint: account.endpoint.clone(),

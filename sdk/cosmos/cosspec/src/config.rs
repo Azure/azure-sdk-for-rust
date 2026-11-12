@@ -7,21 +7,27 @@
 //! Without one, it uses [`SpecConfig::default`]: every service profile on the
 //! in-memory emulator.
 //!
+//! The backends are well known, so each has its own table under `[backends]`.
+//! `enabled` turns a backend on or off; only `inmemory` is on by default. Each
+//! backend's `profiles.<Profile>` tables hold that profile's settings, and a
+//! profile's own `enabled` (default `true`) turns it off without removing it.
+//! Enabled backends run in a fixed order: `inmemory`, `emulator`, then `live`.
+//!
 //! ```toml
-//! [[backends]]
-//! kind = "inmemory"
+//! [backends.inmemory.profiles.MultiRead]
+//! enabled = false                    # every other profile still runs
 //!
-//! [[backends]]
-//! kind = "emulator"
+//! [backends.emulator]
+//! enabled = true                     # SingleRegion only
 //!
-//! [[backends]]
-//! kind = "live"
+//! [backends.live]
+//! enabled = true
 //!
-//! [backends.profiles.SingleRegion]
+//! [backends.live.profiles.SingleRegion]
 //! endpoint = "https://my-single-region.documents.azure.com:443/"
 //! auth = { kind = "key", key_env = "COSSPEC_SINGLE_REGION_KEY" }
 //!
-//! [backends.profiles.MultiWrite]
+//! [backends.live.profiles.MultiWrite]
 //! endpoint = "https://my-multi-write.documents.azure.com:443/"
 //! auth = { kind = "entra" }
 //! ```
@@ -40,21 +46,17 @@ pub const CONFIG_ARG: &str = "--config";
 /// The default Azure Cosmos DB Emulator endpoint.
 pub const EMULATOR_ENDPOINT: &str = "https://localhost:8081/";
 
-/// How to run the specs: the backends, in order, each with its service profiles.
-#[derive(Clone, Debug, Deserialize, PartialEq)]
-#[serde(deny_unknown_fields)]
-pub struct SpecConfig {
-    /// The backends to run, in order.
-    pub backends: Vec<BackendConfig>,
+fn enabled() -> bool {
+    true
 }
 
-impl Default for SpecConfig {
-    /// Every service profile on the in-memory emulator.
-    fn default() -> Self {
-        Self {
-            backends: vec![BackendConfig::InMemory(InMemoryConfig::default())],
-        }
-    }
+/// How to run the specs: the backends and their service profiles.
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct SpecConfig {
+    /// One table per backend.
+    #[serde(default)]
+    pub backends: BackendsConfig,
 }
 
 impl SpecConfig {
@@ -74,124 +76,110 @@ impl SpecConfig {
     }
 
     /// Checks the rules TOML deserialization can't express.
+    ///
+    /// Disabled backends are validated too, so a mistake doesn't wait until
+    /// someone enables them.
     pub fn validate(&self) -> SpecResult {
-        if self.backends.is_empty() {
-            return Err("at least one backend is required".into());
-        }
-        let mut names = Vec::new();
-        for backend in &self.backends {
-            let name = backend.name();
-            if name.is_empty()
-                || !name
-                    .chars()
-                    .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || c == '-')
-            {
-                return Err(format!(
-                    "backend name '{name}' must be lowercase letters, digits, '_', or '-'"
-                )
-                .into());
-            }
-            if names.contains(&name) {
-                return Err(format!(
-                    "backend name '{name}' is used twice; give one of them a distinct `name`"
-                )
-                .into());
-            }
-            names.push(name);
-            backend.validate()?;
+        let backends = &self.backends;
+        backends.emulator.validate()?;
+        backends.live.validate()?;
+        if !(backends.inmemory.enabled || backends.emulator.enabled || backends.live.enabled) {
+            return Err("every backend is disabled; set `enabled = true` on one".into());
         }
         Ok(())
     }
 
-    /// Builds the configured backends, in order.
+    /// Builds the enabled backends, in run order.
     pub fn backends(&self) -> SpecResult<Vec<Arc<dyn Backend>>> {
-        self.backends.iter().map(BackendConfig::build).collect()
+        let config = &self.backends;
+        let mut backends: Vec<Arc<dyn Backend>> = Vec::new();
+        if config.inmemory.enabled {
+            backends.push(Arc::new(InMemoryBackend::new(config.inmemory.profiles())));
+        }
+        if config.emulator.enabled {
+            backends.push(Arc::new(EmulatorBackend::new(&config.emulator)));
+        }
+        if config.live.enabled {
+            backends.push(Arc::new(LiveBackend::new(&config.live)));
+        }
+        Ok(backends)
     }
 }
 
-/// One backend to run. The `kind` key selects the variant.
+/// The backend tables. Each backend is optional and has its own defaults.
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct BackendsConfig {
+    /// The in-process in-memory emulator. Enabled by default.
+    #[serde(default)]
+    pub inmemory: InMemoryConfig,
+    /// A running Azure Cosmos DB Emulator (Windows or Linux). Disabled by default.
+    #[serde(default)]
+    pub emulator: EmulatorConfig,
+    /// Existing live Azure Cosmos DB accounts, one per service profile. Disabled by default.
+    #[serde(default)]
+    pub live: LiveConfig,
+}
+
+/// A service profile with no settings beyond whether it runs.
 #[derive(Clone, Debug, Deserialize, PartialEq)]
-#[serde(tag = "kind", rename_all = "lowercase")]
-pub enum BackendConfig {
-    /// The in-process in-memory emulator.
-    #[serde(rename = "inmemory")]
-    InMemory(InMemoryConfig),
-    /// A running Azure Cosmos DB Emulator (Windows or Linux).
-    Emulator(EmulatorConfig),
-    /// Existing live Azure Cosmos DB accounts, one per service profile.
-    Live(LiveConfig),
-}
-
-impl BackendConfig {
-    /// The backend kind, as written in `kind`.
-    pub fn kind(&self) -> &'static str {
-        match self {
-            BackendConfig::InMemory(_) => "inmemory",
-            BackendConfig::Emulator(_) => "emulator",
-            BackendConfig::Live(_) => "live",
-        }
-    }
-
-    /// The backend name used in test names: `name` if set, else the kind.
-    pub fn name(&self) -> &str {
-        let name = match self {
-            BackendConfig::InMemory(c) => c.name.as_deref(),
-            BackendConfig::Emulator(c) => c.name.as_deref(),
-            BackendConfig::Live(c) => c.name.as_deref(),
-        };
-        name.unwrap_or(self.kind())
-    }
-
-    fn validate(&self) -> SpecResult {
-        match self {
-            BackendConfig::InMemory(_) => Ok(()),
-            BackendConfig::Emulator(c) => c.validate(),
-            BackendConfig::Live(c) => c.validate(self.name()),
-        }
-    }
-
-    fn build(&self) -> SpecResult<Arc<dyn Backend>> {
-        let name = self.name().to_owned();
-        Ok(match self {
-            BackendConfig::InMemory(c) => Arc::new(InMemoryBackend::new(name, c.profiles())),
-            BackendConfig::Emulator(c) => Arc::new(EmulatorBackend::new(name, c)?),
-            BackendConfig::Live(c) => Arc::new(LiveBackend::new(name, c)?),
-        })
-    }
+#[serde(deny_unknown_fields)]
+pub struct ProfileToggle {
+    /// Whether the profile runs. Defaults to `true`.
+    #[serde(default = "enabled")]
+    pub enabled: bool,
 }
 
 /// Configuration for the in-memory emulator backend.
-#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+///
+/// Every service profile runs unless its table sets `enabled = false`.
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct InMemoryConfig {
-    /// The backend name; defaults to `inmemory`.
-    pub name: Option<String>,
-    /// The service profiles to run; defaults to all of them.
-    pub profiles: Option<Vec<ServiceProfile>>,
+    /// Whether the backend runs. Defaults to `true`.
+    #[serde(default = "enabled")]
+    pub enabled: bool,
+    /// Per-profile settings.
+    #[serde(default)]
+    pub profiles: BTreeMap<ServiceProfile, ProfileToggle>,
+}
+
+impl Default for InMemoryConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            profiles: BTreeMap::new(),
+        }
+    }
 }
 
 impl InMemoryConfig {
     /// The service profiles to run.
     pub fn profiles(&self) -> Vec<ServiceProfile> {
-        self.profiles
-            .clone()
-            .unwrap_or_else(|| ServiceProfile::ALL.to_vec())
+        ServiceProfile::ALL
+            .iter()
+            .copied()
+            .filter(|p| self.profiles.get(p).is_none_or(|t| t.enabled))
+            .collect()
     }
 }
 
 /// Configuration for a running Azure Cosmos DB Emulator.
 ///
-/// Everything is optional. The emulator only provides
-/// [`SingleRegion`](ServiceProfile::SingleRegion).
+/// Everything but `enabled` is optional. The emulator only provides
+/// [`SingleRegion`](ServiceProfile::SingleRegion); any other profile table is
+/// an error.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct EmulatorConfig {
-    /// The backend name; defaults to `emulator`.
-    pub name: Option<String>,
+    /// Whether the backend runs. Defaults to `false`.
+    #[serde(default)]
+    pub enabled: bool,
     /// The emulator endpoint; defaults to [`EMULATOR_ENDPOINT`].
     pub endpoint: Option<String>,
-    /// The service profiles to run. Only `SingleRegion` is allowed, and it's the default.
-    pub profiles: Option<Vec<ServiceProfile>>,
+    /// Per-profile settings. Only `SingleRegion` is allowed.
+    #[serde(default)]
+    pub profiles: BTreeMap<ServiceProfile, ProfileToggle>,
 }
 
 impl EmulatorConfig {
@@ -202,19 +190,33 @@ impl EmulatorConfig {
 
     /// The service profiles to run.
     pub fn profiles(&self) -> Vec<ServiceProfile> {
-        self.profiles
-            .clone()
-            .unwrap_or_else(|| vec![ServiceProfile::SingleRegion])
+        let single = ServiceProfile::SingleRegion;
+        if self.profiles.get(&single).is_none_or(|t| t.enabled) {
+            vec![single]
+        } else {
+            Vec::new()
+        }
     }
 
     fn validate(&self) -> SpecResult {
         if let Some(other) = self
-            .profiles()
-            .into_iter()
-            .find(|p| *p != ServiceProfile::SingleRegion)
+            .profiles
+            .keys()
+            .find(|p| **p != ServiceProfile::SingleRegion)
         {
             return Err(format!(
-                "the emulator backend only provides SingleRegion, but {other} was configured"
+                "the emulator backend only provides SingleRegion, but [backends.emulator.profiles.{other}] was configured"
+            )
+            .into());
+        }
+        if self
+            .endpoint()
+            .parse::<azure_data_cosmos::AccountEndpoint>()
+            .is_err()
+        {
+            return Err(format!(
+                "emulator endpoint '{}' is not a valid account endpoint",
+                self.endpoint()
             )
             .into());
         }
@@ -224,30 +226,41 @@ impl EmulatorConfig {
 
 /// Configuration for existing live accounts.
 ///
-/// Each configured service profile names an account shaped like that profile,
-/// for example one deployed by `infra/main.bicep`. Only configured profiles run.
+/// Each `profiles.<Profile>` table names an account shaped like that profile,
+/// for example one deployed by `infra/main.bicep`. Only configured, enabled
+/// profiles run.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct LiveConfig {
-    /// The backend name; defaults to `live`.
-    pub name: Option<String>,
-    /// The account for each service profile to run.
+    /// Whether the backend runs. Defaults to `false`.
+    #[serde(default)]
+    pub enabled: bool,
+    /// The account for each service profile.
     #[serde(default)]
     pub profiles: BTreeMap<ServiceProfile, LiveAccountConfig>,
 }
 
 impl LiveConfig {
-    fn validate(&self, name: &str) -> SpecResult {
-        if self.profiles.is_empty() {
-            return Err(format!(
-                "live backend '{name}' needs at least one [backends.profiles.<Profile>] table"
-            )
-            .into());
-        }
+    /// The service profiles to run, with their accounts.
+    pub fn accounts(&self) -> BTreeMap<ServiceProfile, LiveAccountConfig> {
+        self.profiles
+            .iter()
+            .filter(|(_, a)| a.enabled)
+            .map(|(p, a)| (*p, a.clone()))
+            .collect()
+    }
+
+    fn validate(&self) -> SpecResult {
         for (profile, account) in &self.profiles {
             account
                 .validate()
-                .map_err(|e| format!("live backend '{name}', profile {profile}: {e}"))?;
+                .map_err(|e| format!("[backends.live.profiles.{profile}]: {e}"))?;
+        }
+        if self.enabled && self.accounts().is_empty() {
+            return Err(
+                "the live backend is enabled but has no enabled [backends.live.profiles.<Profile>] table"
+                    .into(),
+            );
         }
         Ok(())
     }
@@ -257,6 +270,9 @@ impl LiveConfig {
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct LiveAccountConfig {
+    /// Whether the profile runs. Defaults to `true`.
+    #[serde(default = "enabled")]
+    pub enabled: bool,
     /// The account endpoint, for example `https://my-account.documents.azure.com:443/`.
     pub endpoint: String,
     /// How to authenticate.
@@ -310,100 +326,114 @@ impl fmt::Debug for LiveAuth {
 
 #[cfg(test)]
 mod tests {
-    use super::{BackendConfig, LiveAuth, ServiceProfile, SpecConfig};
+    use super::{LiveAuth, ServiceProfile, SpecConfig};
+
+    fn kinds(config: &SpecConfig) -> Vec<&'static str> {
+        config
+            .backends()
+            .unwrap()
+            .iter()
+            .map(|b| b.kind())
+            .collect()
+    }
 
     #[test]
     fn default_runs_every_profile_in_memory() {
         let config = SpecConfig::default();
-        assert_eq!(config.backends.len(), 1);
-        let BackendConfig::InMemory(in_memory) = &config.backends[0] else {
-            panic!("expected the in-memory backend");
-        };
-        assert_eq!(in_memory.profiles(), ServiceProfile::ALL);
-        assert_eq!(config.backends[0].name(), "inmemory");
+        assert_eq!(kinds(&config), ["inmemory"]);
+        assert_eq!(config.backends.inmemory.profiles(), ServiceProfile::ALL);
+        assert_eq!(SpecConfig::parse("").unwrap(), config);
     }
 
     #[test]
-    fn parses_every_backend_kind() {
+    fn parses_every_backend() {
         let config = SpecConfig::parse(
             r#"
-            [[backends]]
-            kind = "inmemory"
-            profiles = ["SingleRegion", "MultiWrite"]
+            [backends.inmemory.profiles.MultiRead]
+            enabled = false
 
-            [[backends]]
-            kind = "emulator"
+            [backends.emulator]
+            enabled = true
 
-            [[backends]]
-            kind = "live"
-            [backends.profiles.SingleRegion]
+            [backends.live]
+            enabled = true
+            [backends.live.profiles.SingleRegion]
             endpoint = "https://a.documents.azure.com:443/"
             auth = { kind = "key", key_env = "A_KEY" }
-            [backends.profiles.MultiRead]
+            [backends.live.profiles.MultiRead]
             endpoint = "https://b.documents.azure.com:443/"
+            auth = { kind = "entra" }
+            [backends.live.profiles.MultiWrite]
+            enabled = false
+            endpoint = "https://c.documents.azure.com:443/"
             auth = { kind = "entra" }
             "#,
         )
         .unwrap();
-        let names: Vec<_> = config.backends.iter().map(BackendConfig::name).collect();
-        assert_eq!(names, ["inmemory", "emulator", "live"]);
-        let BackendConfig::Live(live) = &config.backends[2] else {
-            panic!("expected the live backend");
-        };
+        assert_eq!(kinds(&config), ["inmemory", "emulator", "live"]);
+        let backends = config.backends().unwrap();
+        assert!(!backends[0].profiles().contains(&ServiceProfile::MultiRead));
+        assert_eq!(backends[1].profiles(), [ServiceProfile::SingleRegion]);
         assert_eq!(
-            live.profiles.keys().copied().collect::<Vec<_>>(),
+            backends[2].profiles(),
             [ServiceProfile::SingleRegion, ServiceProfile::MultiRead]
         );
         assert_eq!(
-            live.profiles[&ServiceProfile::MultiRead].auth,
+            config.backends.live.profiles[&ServiceProfile::MultiRead].auth,
             LiveAuth::Entra
         );
     }
 
     #[test]
-    fn emulator_rejects_profiles_other_than_single_region() {
-        let error = SpecConfig::parse(
-            r#"
-            [[backends]]
-            kind = "emulator"
-            profiles = ["SingleRegion", "MultiRead"]
-            "#,
-        )
-        .unwrap_err();
-        assert!(error.to_string().contains("only provides SingleRegion"));
-    }
-
-    #[test]
-    fn rejects_unknown_fields_and_profiles() {
-        assert!(SpecConfig::parse("[[backends]]\nkind = \"inmemory\"\nprofile = []\n").is_err());
-        assert!(
-            SpecConfig::parse("[[backends]]\nkind = \"inmemory\"\nprofiles = [\"Nope\"]\n")
-                .is_err()
-        );
-        assert!(SpecConfig::parse("[[backends]]\nkind = \"hosted\"\n").is_err());
-    }
-
-    #[test]
-    fn rejects_duplicate_backend_names() {
-        let error = SpecConfig::parse(
-            "[[backends]]\nkind = \"inmemory\"\n[[backends]]\nkind = \"inmemory\"\n",
-        )
-        .unwrap_err();
-        assert!(error.to_string().contains("used twice"));
-        SpecConfig::parse(
-            "[[backends]]\nkind = \"inmemory\"\n[[backends]]\nkind = \"inmemory\"\nname = \"inmemory-2\"\n",
+    fn enabled_switches_backends() {
+        let config = SpecConfig::parse(
+            "[backends.inmemory]\nenabled = false\n[backends.emulator]\nenabled = true\n",
         )
         .unwrap();
+        assert_eq!(kinds(&config), ["emulator"]);
+        // Configured but not enabled: the live backend doesn't run.
+        let config = SpecConfig::parse(
+            r#"
+            [backends.live.profiles.SingleRegion]
+            endpoint = "https://a.documents.azure.com:443/"
+            auth = { kind = "entra" }
+            "#,
+        )
+        .unwrap();
+        assert_eq!(kinds(&config), ["inmemory"]);
+        let error = SpecConfig::parse("[backends.inmemory]\nenabled = false\n").unwrap_err();
+        assert!(error.to_string().contains("every backend is disabled"));
+    }
+
+    #[test]
+    fn emulator_rejects_profiles_other_than_single_region() {
+        let error = SpecConfig::parse("[backends.emulator.profiles.MultiRead]\n").unwrap_err();
+        assert!(error.to_string().contains("only provides SingleRegion"));
+        let config = SpecConfig::parse(
+            "[backends.emulator]\nenabled = true\n[backends.emulator.profiles.SingleRegion]\nenabled = false\n",
+        )
+        .unwrap();
+        assert!(config.backends.emulator.profiles().is_empty());
+    }
+
+    #[test]
+    fn rejects_unknown_backends_fields_and_profiles() {
+        assert!(SpecConfig::parse("[backends.hosted]\nenabled = true\n").is_err());
+        assert!(SpecConfig::parse("[backends.inmemory]\nenable = true\n").is_err());
+        assert!(SpecConfig::parse("[backends.inmemory.profiles.Nope]\n").is_err());
+        assert!(
+            SpecConfig::parse("[backends.inmemory.profiles.SingleRegion]\nendpoint = \"x\"\n")
+                .is_err()
+        );
     }
 
     #[test]
     fn live_needs_profiles_and_one_key_source() {
-        assert!(SpecConfig::parse("[[backends]]\nkind = \"live\"\n").is_err());
+        let error = SpecConfig::parse("[backends.live]\nenabled = true\n").unwrap_err();
+        assert!(error.to_string().contains("no enabled"));
         let error = SpecConfig::parse(
             r#"
-            [[backends]]
-            kind = "live"
-            [backends.profiles.SingleRegion]
+            [backends.live.profiles.SingleRegion]
             endpoint = "https://a.documents.azure.com:443/"
             auth = { kind = "key" }
             "#,
@@ -430,9 +460,7 @@ mod tests {
     fn debug_hides_inline_keys() {
         let config = SpecConfig::parse(
             r#"
-            [[backends]]
-            kind = "live"
-            [backends.profiles.SingleRegion]
+            [backends.live.profiles.SingleRegion]
             endpoint = "https://a.documents.azure.com:443/"
             auth = { kind = "key", key = "super-secret" }
             "#,

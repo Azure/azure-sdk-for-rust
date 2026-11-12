@@ -41,11 +41,13 @@ pub struct ClientOptions {
 /// A place specs can run: the in-memory emulator, the Azure Cosmos DB Emulator, or live accounts.
 #[async_trait]
 pub trait Backend: Send + Sync + Debug {
-    /// The configured name, used in test names and result files.
-    fn name(&self) -> &str;
-
-    /// The backend kind, as written in the configuration's `kind` key.
+    /// The backend's key under `[backends]` in the run configuration, such as `inmemory`.
     fn kind(&self) -> &'static str;
+
+    /// The name used in test names and result files. Defaults to [`kind`](Backend::kind).
+    fn name(&self) -> &str {
+        self.kind()
+    }
 
     /// The service profiles this backend runs, in order.
     fn profiles(&self) -> Vec<ServiceProfile>;

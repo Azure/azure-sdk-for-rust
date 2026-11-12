@@ -1,19 +1,23 @@
-# Runs specs on the live accounts deployed by infra/main.bicep.
+# Runs specs on the live accounts deployed by infra/main.bicep only.
 # Replace the endpoints with the deployment's `endpoints` output, and export the
 # keys (`az cosmosdb keys list --name <account> --resource-group <group>`) into
-# the environment variables named by `key_env`.
+# the environment variables named by `key_env`. Set a profile's `enabled = false`
+# to skip it.
 
-[[backends]]
-kind = "live"
+[backends.inmemory]
+enabled = false
 
-[backends.profiles.SingleRegion]
+[backends.live]
+enabled = true
+
+[backends.live.profiles.SingleRegion]
 endpoint = "https://your-prefix-single-region.documents.azure.com:443/"
 auth = { kind = "key", key_env = "COSSPEC_SINGLE_REGION_KEY" }
 
-[backends.profiles.MultiRead]
+[backends.live.profiles.MultiRead]
 endpoint = "https://your-prefix-multi-read.documents.azure.com:443/"
 auth = { kind = "key", key_env = "COSSPEC_MULTI_READ_KEY" }
 
-[backends.profiles.MultiWrite]
+[backends.live.profiles.MultiWrite]
 endpoint = "https://your-prefix-multi-write.documents.azure.com:443/"
 auth = { kind = "key", key_env = "COSSPEC_MULTI_WRITE_KEY" }

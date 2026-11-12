@@ -48,8 +48,10 @@ cargo test -p cosspec --test spec -- --results-dir ./spec-results
 ### Choose backends
 
 Pass a TOML configuration file with `--config` to choose the backends and the
-service profiles each one runs. Backends run in file order. Relative paths are
-resolved from this directory. `configs/` has examples:
+service profiles each one runs. Each backend has its own `[backends.<backend>]`
+table with an `enabled` switch and per-profile `profiles.<Profile>` tables. Only
+`inmemory` is enabled by default. Relative paths are resolved from this
+directory. `configs/` has examples:
 
 ```sh
 # A running Azure Cosmos DB Emulator; SingleRegion only.
@@ -59,11 +61,11 @@ cargo test -p cosspec --test spec -- --config ./configs/emulator.toml
 cargo test -p cosspec --test spec -- --config ./configs/live.toml
 ```
 
-| Backend (`kind`) | Profiles | Capabilities beyond the profile's |
+| Backend (`[backends.<key>]`) | Profiles | Capabilities beyond the profile's |
 | --- | --- | --- |
 | `inmemory` (default) | All | `TopologyControl`, `SimpleSplitMerge`, `RegionControl`, `AccountIsolation` |
 | `emulator` | `SingleRegion` only | None |
-| `live` | One account per configured profile | None |
+| `live` | Each profile with a `[backends.live.profiles.<Profile>]` account | None |
 
 Specs that need a capability the backend lacks are skipped. Trial names
 include the backend and profile, such as `[emulator.SingleRegion]`, so
@@ -77,7 +79,8 @@ endpoints:
 az deployment group create --resource-group <group> --template-file infra/main.bicep
 ```
 
-Put the endpoints in a copy of `configs/live.toml`. Export each account's key
+Put the endpoints in a copy of `configs/live.toml`, one
+`[backends.live.profiles.<Profile>]` table per account. Export each account's key
 (`az cosmosdb keys list`) into the environment variable its `key_env` names,
 or use `auth = { kind = "entra" }` to sign in with the Azure CLI. Specs create
 `spec-<UUIDv7>` databases in these accounts and delete them afterward. Leftovers
