@@ -111,6 +111,9 @@ __internal_in_memory_emulator = [
   "dep:percent-encoding",
 ]
 __internal_mocking = []
+# Exposes `transport_observer`, an unsupported hook that reports every HTTP
+# exchange to a test harness. NOT a stable API.
+__internal_transport_observer = ["fault_injection"]
 # Enables test-only DiagnosticsContext construction used by SDK unit tests. NOT a stable API.
 __internal_test_diagnostics_construction = []
 # `__internal_backtrace_bench` exposes [`error::Backtrace`], its capture/

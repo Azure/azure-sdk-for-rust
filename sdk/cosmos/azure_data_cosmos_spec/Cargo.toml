@@ -1,0 +1,38 @@
+[package]
+name = "azure_data_cosmos_spec"
+version = "0.0.0"
+description = "Backend-agnostic specification tests for the Azure Cosmos DB SDK for Rust."
+publish = false
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+azure_core = { workspace = true, default-features = false }
+azure_data_cosmos = { path = "../azure_data_cosmos", features = [
+  "__internal_in_memory_emulator",
+  "__internal_transport_observer",
+] }
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", features = [
+  "__internal_in_memory_emulator",
+  "__internal_transport_observer",
+] }
+azure_data_cosmos_spec_macros = { path = "../azure_data_cosmos_spec_macros" }
+futures.workspace = true
+libtest-mimic.workspace = true
+linkme.workspace = true
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time"] }
+uuid = { workspace = true, features = ["v4", "fast-rng"] }
+
+[[test]]
+name = "spec"
+path = "tests/spec/main.rs"
+harness = false
+
+[lints]
+workspace = true

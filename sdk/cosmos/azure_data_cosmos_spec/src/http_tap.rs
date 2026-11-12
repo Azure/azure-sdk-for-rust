@@ -1,0 +1,141 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+//! `HttpTap`: wire-level evidence of what the SDK actually sent.
+//!
+//! Diagnostics report what the SDK *believes* happened. A tap records every HTTP
+//! exchange as it crosses the transport boundary, with real start and completion
+//! instants, so specs can prove properties such as "the hedge request was in flight
+//! at the same time as the primary".
+//!
+//! This module depends only on `std` and the driver's `transport_observer` hook so
+//! it can move into its own crate later.
+
+use azure_data_cosmos_driver::transport_observer::{
+    HttpExchange, HttpOutcome, HttpOutcomeKind, TransportObserver,
+};
+use std::{
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
+};
+
+/// One recorded HTTP exchange.
+#[derive(Clone, Debug)]
+pub struct HttpRecord {
+    /// Order in which the exchange started, unique per client.
+    pub sequence: u64,
+    /// HTTP method, for example `GET`.
+    pub method: String,
+    /// Full request URL.
+    pub url: String,
+    /// Logical operation, for example `ReadItem`, when the SDK tagged one.
+    pub operation: Option<String>,
+    /// Target region name, for example `East US`, when the SDK tagged one.
+    pub region: Option<String>,
+    /// When the request was handed to the transport.
+    pub started_at: Instant,
+    /// When the exchange finished. `None` while still in flight.
+    pub completed_at: Option<Instant>,
+    /// How the exchange finished. `None` while still in flight.
+    pub outcome: Option<HttpOutcomeKind>,
+}
+
+impl HttpRecord {
+    /// Whether this exchange and `other` were in flight at the same time.
+    ///
+    /// An exchange still in flight is treated as open-ended.
+    pub fn overlaps(&self, other: &HttpRecord) -> bool {
+        let end = |r: &HttpRecord| r.completed_at.unwrap_or_else(Instant::now);
+        self.started_at < end(other) && other.started_at < end(self)
+    }
+
+    /// The exchange's duration, if it finished.
+    pub fn duration(&self) -> Option<Duration> {
+        self.completed_at.map(|end| end - self.started_at)
+    }
+
+    /// The HTTP status code, if a response arrived.
+    pub fn status(&self) -> Option<u16> {
+        match self.outcome {
+            Some(HttpOutcomeKind::Response { status, .. }) => Some(status),
+            _ => None,
+        }
+    }
+
+    /// Whether the caller dropped the request before it finished.
+    pub fn was_cancelled(&self) -> bool {
+        matches!(self.outcome, Some(HttpOutcomeKind::Cancelled))
+    }
+
+    /// Whether the record is for `operation`, for example `ReadItem`.
+    pub fn is(&self, operation: &str) -> bool {
+        self.operation.as_deref() == Some(operation)
+    }
+}
+
+/// Records every HTTP exchange of the clients it is attached to.
+///
+/// Cloning a tap is cheap; clones share the same recording.
+#[derive(Clone, Debug, Default)]
+pub struct HttpTap {
+    records: Arc<Mutex<Vec<HttpRecord>>>,
+}
+
+impl HttpTap {
+    /// Creates an empty tap.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Every exchange recorded so far, in start order.
+    pub fn records(&self) -> Vec<HttpRecord> {
+        let mut records = self.records.lock().unwrap().clone();
+        records.sort_by_key(|r| r.started_at);
+        records
+    }
+
+    /// The exchanges for one operation, for example `ReadItem`, in start order.
+    pub fn operation(&self, operation: &str) -> Vec<HttpRecord> {
+        self.records()
+            .into_iter()
+            .filter(|r| r.is(operation))
+            .collect()
+    }
+
+    /// Forgets every recorded exchange, for example after setup traffic.
+    pub fn clear(&self) {
+        self.records.lock().unwrap().clear();
+    }
+
+    /// Wraps the tap as a transport observer for a client builder.
+    pub fn observer(&self) -> Arc<dyn TransportObserver> {
+        Arc::new(self.clone())
+    }
+}
+
+impl TransportObserver for HttpTap {
+    fn on_start(&self, exchange: &HttpExchange) {
+        self.records.lock().unwrap().push(HttpRecord {
+            sequence: exchange.sequence(),
+            method: exchange.method().to_string(),
+            url: exchange.url().to_string(),
+            operation: exchange.operation().map(str::to_owned),
+            region: exchange.region().map(str::to_owned),
+            started_at: exchange.started_at(),
+            completed_at: None,
+            outcome: None,
+        });
+    }
+
+    fn on_complete(&self, exchange: &HttpExchange, outcome: &HttpOutcome) {
+        let mut records = self.records.lock().unwrap();
+        if let Some(record) = records
+            .iter_mut()
+            .rev()
+            .find(|r| r.sequence == exchange.sequence() && r.started_at == exchange.started_at())
+        {
+            record.completed_at = Some(outcome.completed_at());
+            record.outcome = Some(outcome.kind().clone());
+        }
+    }
+}

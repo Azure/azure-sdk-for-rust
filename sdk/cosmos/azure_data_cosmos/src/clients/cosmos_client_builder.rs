@@ -93,6 +93,10 @@ pub struct CosmosClientBuilder {
     /// Empty by default.
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
+    /// Observer notified of every HTTP exchange this client's driver dispatches.
+    #[cfg(feature = "__internal_transport_observer")]
+    transport_observer:
+        Option<Arc<dyn azure_data_cosmos_driver::transport_observer::TransportObserver>>,
     /// Fallback endpoints tried when the primary endpoint is unavailable.
     backup_endpoints: Vec<azure_core::http::Url>,
     /// Options to use for per-partition failover (PPAF, PPCB)
@@ -251,6 +255,19 @@ impl CosmosClientBuilder {
         Ok(self)
     }
 
+    /// Installs an observer notified of every HTTP exchange this client dispatches.
+    ///
+    /// **Unsupported internal API** for spec-test harnesses; no stability guarantees.
+    #[cfg(feature = "__internal_transport_observer")]
+    #[doc(hidden)]
+    pub fn with_transport_observer(
+        mut self,
+        observer: Arc<dyn azure_data_cosmos_driver::transport_observer::TransportObserver>,
+    ) -> Self {
+        self.transport_observer = Some(observer);
+        self
+    }
+
     /// Sets backup endpoints for resilience when the primary global endpoint
     /// is unavailable during initialization.
     ///
@@ -327,6 +344,8 @@ impl CosmosClientBuilder {
             resource_name_validation: self.resource_name_validation,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: self.fault_injection_rules,
+            #[cfg(feature = "__internal_transport_observer")]
+            transport_observer: self.transport_observer,
         }
         .build()?;
         let driver = runtime.into_inner().create_driver(driver_options).await?;
@@ -361,6 +380,9 @@ struct DriverOptionsInput {
     resource_name_validation: Option<bool>,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
+    #[cfg(feature = "__internal_transport_observer")]
+    transport_observer:
+        Option<Arc<dyn azure_data_cosmos_driver::transport_observer::TransportObserver>>,
 }
 
 impl DriverOptionsInput {
@@ -393,6 +415,10 @@ impl DriverOptionsInput {
         #[cfg(feature = "fault_injection")]
         if !self.fault_injection_rules.is_empty() {
             builder = builder.with_fault_injection_rules(self.fault_injection_rules)?;
+        }
+        #[cfg(feature = "__internal_transport_observer")]
+        if let Some(observer) = self.transport_observer {
+            builder = builder.with_transport_observer(observer);
         }
         Ok(builder.build())
     }
@@ -495,6 +521,8 @@ mod tests {
             resource_name_validation: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: Vec::new(),
+            #[cfg(feature = "__internal_transport_observer")]
+            transport_observer: None,
         }
     }
 

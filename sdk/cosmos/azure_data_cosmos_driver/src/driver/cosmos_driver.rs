@@ -1741,9 +1741,18 @@ impl CosmosDriver {
         // construction time) is never wrapped, so rules targeting the
         // initial account-metadata probe only take effect on post-bootstrap
         // refreshes — matching the previous runtime-level FI semantics.
-        #[cfg(feature = "fault_injection")]
+        #[cfg(all(
+            feature = "fault_injection",
+            not(feature = "__internal_transport_observer")
+        ))]
         let fault_injection_enabled =
             options.fault_injection_rules().is_some() || runtime.fault_injection_enabled();
+        // An observer reads the operation/region tags that the pipeline only
+        // stamps when fault injection is enabled.
+        #[cfg(feature = "__internal_transport_observer")]
+        let fault_injection_enabled = options.fault_injection_rules().is_some()
+            || runtime.fault_injection_enabled()
+            || options.transport_observer().is_some();
         let http_client_factory: Arc<
             dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
         > = {
@@ -1764,6 +1773,17 @@ impl CosmosDriver {
             {
                 Arc::clone(runtime.http_client_factory())
             }
+        };
+        #[cfg(feature = "__internal_transport_observer")]
+        let http_client_factory: Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        > = match options.transport_observer() {
+            Some(observer) => Arc::new(crate::transport_observer::ObservingHttpClientFactory::new(
+                http_client_factory,
+                Arc::clone(observer),
+                options.fault_injection_rules().is_none() && !runtime.fault_injection_enabled(),
+            )),
+            None => http_client_factory,
         };
 
         // Shared transport holder — used by both the driver and the refresh callback.

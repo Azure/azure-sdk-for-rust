@@ -1,0 +1,136 @@
+[
+  {
+    "id": "framework.shared_container_rejects_writes",
+    "summary": "Writing to a shared container is rejected with 403 Forbidden before it reaches the service.",
+    "service_profiles": [
+      "SingleRegion"
+    ],
+    "requires": [],
+    "resources": [
+      "SharedContainer(basic_items)",
+      "HttpTap"
+    ],
+    "source": "tests/spec/framework.rs"
+  },
+  {
+    "id": "framework.undeclared_capability_is_rejected",
+    "summary": "Using a capability the spec did not declare fails as an invalid configuration.",
+    "service_profiles": [
+      "SingleRegion"
+    ],
+    "requires": [],
+    "resources": [
+      "ExclusiveContainer"
+    ],
+    "source": "tests/spec/framework.rs"
+  },
+  {
+    "id": "items.crud_lifecycle",
+    "summary": "An item can be created, read, replaced, and deleted; reading it after the delete returns 404 Not Found.",
+    "service_profiles": [
+      "SingleRegion",
+      "MultiRead",
+      "MultiWrite"
+    ],
+    "requires": [],
+    "resources": [
+      "ExclusiveContainer"
+    ],
+    "source": "tests/spec/items.rs"
+  },
+  {
+    "id": "items.point_read_returns_stored_item",
+    "summary": "A point read returns the stored item unchanged.",
+    "service_profiles": [
+      "SingleRegion",
+      "MultiRead",
+      "MultiWrite"
+    ],
+    "requires": [],
+    "resources": [
+      "SharedContainer(basic_items)"
+    ],
+    "source": "tests/spec/items.rs"
+  },
+  {
+    "id": "query.continuation_resumes_without_loss",
+    "summary": "A query resumed from a continuation token returns the remaining items, with none lost or repeated.",
+    "service_profiles": [
+      "SingleRegion",
+      "MultiRead",
+      "MultiWrite"
+    ],
+    "requires": [],
+    "resources": [
+      "SharedContainer(basic_items)"
+    ],
+    "source": "tests/spec/query.rs"
+  },
+  {
+    "id": "query.continuation_survives_split",
+    "summary": "A continuation token taken before a partition split still resumes the query after the split, with no item lost or repeated.",
+    "service_profiles": [
+      "SingleRegion",
+      "MultiRead",
+      "MultiWrite"
+    ],
+    "requires": [
+      "TopologyControl"
+    ],
+    "resources": [
+      "ExclusiveContainer(basic_items)"
+    ],
+    "known_issue": "ORDER BY resume on a client with a pre-split routing cache drops the first page of one child range after 410/1002",
+    "source": "tests/spec/query.rs"
+  },
+  {
+    "id": "resilience.hedge_races_alternate_region",
+    "summary": "When the preferred region is slow, a hedged read sends a second request to the next region while the first is still in flight, returns the faster response, and abandons the slow request.",
+    "service_profiles": [
+      "MultiRead",
+      "MultiWrite"
+    ],
+    "requires": [
+      "MultiRegion"
+    ],
+    "resources": [
+      "SharedContainer(basic_items)",
+      "HttpTap"
+    ],
+    "source": "tests/spec/resilience.rs"
+  },
+  {
+    "id": "resilience.read_fails_over_when_region_offline",
+    "summary": "When the preferred region goes offline, reads are served by the next preferred region without surfacing an error.",
+    "service_profiles": [
+      "MultiRead",
+      "MultiWrite"
+    ],
+    "requires": [
+      "AccountIsolation",
+      "RegionControl",
+      "MultiRegion"
+    ],
+    "resources": [
+      "ExclusiveAccount",
+      "HttpTap"
+    ],
+    "known_issue": "with the single write region offline, the read surfaces 503 even after the next region answers 200 (MultiRead)",
+    "source": "tests/spec/resilience.rs"
+  },
+  {
+    "id": "resilience.throttled_read_is_retried",
+    "summary": "A read throttled with 429 Too Many Requests is retried until it succeeds, each retry being a new HTTP request.",
+    "service_profiles": [
+      "SingleRegion",
+      "MultiRead",
+      "MultiWrite"
+    ],
+    "requires": [],
+    "resources": [
+      "SharedContainer(basic_items)",
+      "HttpTap"
+    ],
+    "source": "tests/spec/resilience.rs"
+  }
+]
