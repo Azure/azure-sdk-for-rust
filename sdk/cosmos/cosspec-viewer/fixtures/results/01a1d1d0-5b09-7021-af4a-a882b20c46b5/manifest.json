@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "kind": "cosspec-run",
+  "run_id": "01a1d1d0-5b09-7021-af4a-a882b20c46b5",
+  "started_at": "2026-11-12T22:10:55.369165723Z",
+  "finished_at": "2026-11-12T22:10:55.495668518Z",
+  "status": "completed",
+  "args": [
+    "--config",
+    "configs/emulator.toml",
+    "fails_over",
+    "--results-dir",
+    "/tmp/fx/c"
+  ],
+  "cleanup": true,
+  "result_version": 1,
+  "backends": [
+    {
+      "name": "inmemory",
+      "kind": "inmemory",
+      "profiles": [
+        "SingleRegion",
+        "MultiRead",
+        "MultiWrite"
+      ]
+    },
+    {
+      "name": "emulator",
+      "kind": "emulator",
+      "profiles": [
+        "SingleRegion"
+      ]
+    }
+  ],
+  "totals": {
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "ignored": 2,
+    "not_run": 0,
+    "pending": 0
+  },
+  "checks": [],
+  "trials": [
+    {
+      "test_name": "spec::resilience::read_fails_over_when_region_offline[inmemory.MultiRead]",
+      "spec_id": "resilience.read_fails_over_when_region_offline",
+      "summary": "When the preferred region goes offline, reads are served by the next preferred region without surfacing an error.",
+      "source": "sdk/cosmos/cosspec/tests/spec/resilience.rs:78",
+      "backend": "inmemory",
+      "backend_kind": "inmemory",
+      "service_profile": "MultiRead",
+      "requires": [
+        "AccountIsolation",
+        "RegionControl",
+        "MultiRegion"
+      ],
+      "status": "ignored",
+      "reason": "the read passes, but deleting the database at teardown is a write and hits the write_fails_over_when_write_region_offline issue",
+      "duration_ms": null,
+      "error": null,
+      "result_file": null
+    },
+    {
+      "test_name": "spec::resilience::read_fails_over_when_region_offline[inmemory.MultiWrite]",
+      "spec_id": "resilience.read_fails_over_when_region_offline",
+      "summary": "When the preferred region goes offline, reads are served by the next preferred region without surfacing an error.",
+      "source": "sdk/cosmos/cosspec/tests/spec/resilience.rs:78",
+      "backend": "inmemory",
+      "backend_kind": "inmemory",
+      "service_profile": "MultiWrite",
+      "requires": [
+        "AccountIsolation",
+        "RegionControl",
+        "MultiRegion"
+      ],
+      "status": "passed",
+      "reason": null,
+      "duration_ms": 123.225905,
+      "error": null,
+      "result_file": "resilience.read_fails_over_when_region_offline[inmemory.MultiWrite].json"
+    },
+    {
+      "test_name": "spec::resilience::write_fails_over_when_write_region_offline[inmemory.MultiRead]",
+      "spec_id": "resilience.write_fails_over_when_write_region_offline",
+      "summary": "When the write region goes offline, the account promotes the next region to accept writes, and a write succeeds there without surfacing an error.",
+      "source": "sdk/cosmos/cosspec/tests/spec/resilience.rs:105",
+      "backend": "inmemory",
+      "backend_kind": "inmemory",
+      "service_profile": "MultiRead",
+      "requires": [
+        "AccountIsolation",
+        "RegionControl",
+        "MultiRegion"
+      ],
+      "status": "ignored",
+      "reason": "the SDK keeps sending the write to the offline region and surfaces 503 instead of refreshing the account to find the new write region",
+      "duration_ms": null,
+      "error": null,
+      "result_file": null
+    },
+    {
+      "test_name": "spec::resilience::write_fails_over_when_write_region_offline[inmemory.MultiWrite]",
+      "spec_id": "resilience.write_fails_over_when_write_region_offline",
+      "summary": "When the write region goes offline, the account promotes the next region to accept writes, and a write succeeds there without surfacing an error.",
+      "source": "sdk/cosmos/cosspec/tests/spec/resilience.rs:105",
+      "backend": "inmemory",
+      "backend_kind": "inmemory",
+      "service_profile": "MultiWrite",
+      "requires": [
+        "AccountIsolation",
+        "RegionControl",
+        "MultiRegion"
+      ],
+      "status": "passed",
+      "reason": null,
+      "duration_ms": 123.067606,
+      "error": null,
+      "result_file": "resilience.write_fails_over_when_write_region_offline[inmemory.MultiWrite].json"
+    }
+  ]
+}

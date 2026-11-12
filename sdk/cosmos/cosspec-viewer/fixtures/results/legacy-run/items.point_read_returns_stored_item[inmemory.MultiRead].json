@@ -1,0 +1,151 @@
+{
+  "version": 1,
+  "id": "items.point_read_returns_stored_item",
+  "test_name": "spec::items::point_read_returns_stored_item[inmemory.MultiRead]",
+  "summary": "A point read returns the stored item unchanged.",
+  "source": "sdk/cosmos/cosspec/tests/spec/items.rs:9",
+  "service_profile": "MultiRead",
+  "backend": "inmemory",
+  "backend_kind": "inmemory",
+  "cleanup": true,
+  "requires": [],
+  "known_issue": null,
+  "started_at": "2026-11-12T22:10:39.602994431Z",
+  "duration_ms": 122.904296,
+  "status": "passed",
+  "error": null,
+  "teardown_error": null,
+  "panic": null,
+  "resources": [
+    {
+      "kind": "account",
+      "origin": "pooled",
+      "name": "https://eastus.spec.local/"
+    },
+    {
+      "kind": "database",
+      "origin": "pooled",
+      "name": "spec-01a1d1d0-1dc8-72a2-988f-d65b265a1eb3"
+    },
+    {
+      "kind": "container",
+      "origin": "pooled",
+      "name": "spec-01a1d1d0-1dc9-7272-9275-c19e6f8f9ab6",
+      "database": "spec-01a1d1d0-1dc8-72a2-988f-d65b265a1eb3",
+      "profile": "basic_items",
+      "parameter": "container"
+    }
+  ],
+  "http": [
+    {
+      "label": "spec",
+      "sequence": 48,
+      "method": "GET",
+      "url": "https://eastus.spec.local/",
+      "operation": "MetadataReadDatabaseAccount",
+      "region": null,
+      "activity_id": null,
+      "start_ms": 119.11940799999999,
+      "duration_ms": 0.306599,
+      "outcome": {
+        "kind": "response",
+        "status": 200,
+        "sub_status": null
+      },
+      "request_body": null,
+      "response_body": {
+        "length": 910,
+        "truncated": false,
+        "text": "{\"_dbs\":\"//dbs/\",\"_rid\":\"eastus.sql.cosmos.azure.com\",\"_self\":\"\",\"addresses\":\"//addresses/\",\"continuousBackupEnabled\":false,\"disableCrossRegionalHedging\":false,\"enableMultipleWriteLocations\":false,\"enableNRegionSynchronousCommit\":false,\"enablePerPartitionFailoverBehavior\":false,\"id\":\"eastus\",\"media\":\"//media/\",\"queryEngineConfiguration\":\"{}\",\"readPolicy\":{\"primaryReadCoefficient\":1,\"secondaryReadCoefficient\":1},\"readableLocations\":[{\"databaseAccountEndpoint\":\"https://eastus.spec.local/\",\"name\":\"East US\"},{\"databaseAccountEndpoint\":\"https://westus.spec.local/\",\"name\":\"West US\"}],\"systemReplicationPolicy\":{\"maxReplicasetSize\":4,\"minReplicaSetSize\":3},\"userConsistencyPolicy\":{\"defaultConsistencyLevel\":\"Session\"},\"userReplicationPolicy\":{\"asyncReplication\":false,\"maxReplicasetSize\":4,\"minReplicaSetSize\":3},\"writableLocations\":[{\"databaseAccountEndpoint\":\"https://eastus.spec.local/\",\"name\":\"East US\"}]}"
+      }
+    },
+    {
+      "label": "spec",
+      "sequence": 51,
+      "method": "GET",
+      "url": "https://eastus.spec.local/dbs/spec-01a1d1d0-1dc8-72a2-988f-d65b265a1eb3/colls/spec-01a1d1d0-1dc9-7272-9275-c19e6f8f9ab6",
+      "operation": "MetadataReadContainer",
+      "region": "eastus",
+      "activity_id": "86c633b0-d1ba-44a6-bda2-8a052e1286c6",
+      "start_ms": 120.05650499999999,
+      "duration_ms": 0.301699,
+      "outcome": {
+        "kind": "response",
+        "status": 200,
+        "sub_status": null
+      },
+      "request_body": null,
+      "response_body": {
+        "length": 640,
+        "truncated": false,
+        "text": "{\"_conflicts\":\"conflicts/\",\"_docs\":\"docs/\",\"_etag\":\"\\\"06e8084a-767b-425a-b198-ce405d8f0b4b\\\"\",\"_rid\":\"AAAAAYAAAAE=\",\"_self\":\"dbs/AAAAAQ==/colls/AAAAAYAAAAE=/\",\"_sprocs\":\"sprocs/\",\"_triggers\":\"triggers/\",\"_ts\":1794521439,\"_udfs\":\"udfs/\",\"conflictResolutionPolicy\":{\"conflictResolutionPath\":\"/_ts\",\"conflictResolutionProcedure\":\"\",\"mode\":\"LastWriterWins\"},\"geospatialConfig\":{\"type\":\"Geography\"},\"id\":\"spec-01a1d1d0-1dc9-7272-9275-c19e6f8f9ab6\",\"indexingPolicy\":{\"automatic\":true,\"excludedPaths\":[{\"path\":\"/\\\"_etag\\\"/?\"}],\"includedPaths\":[{\"path\":\"/*\"}],\"indexingMode\":\"consistent\"},\"partitionKey\":{\"kind\":\"Hash\",\"paths\":[\"/pk\"],\"version\":2}}"
+      }
+    },
+    {
+      "label": "spec",
+      "sequence": 54,
+      "method": "GET",
+      "url": "https://eastus.spec.local/dbs/spec-01a1d1d0-1dc8-72a2-988f-d65b265a1eb3/colls/spec-01a1d1d0-1dc9-7272-9275-c19e6f8f9ab6/pkranges",
+      "operation": "MetadataPartitionKeyRanges",
+      "region": "eastus",
+      "activity_id": "bae62d8b-15e2-4eeb-8b48-8ef2933a72d2",
+      "start_ms": 120.843903,
+      "duration_ms": 0.30299899999999996,
+      "outcome": {
+        "kind": "response",
+        "status": 200,
+        "sub_status": null
+      },
+      "request_body": null,
+      "response_body": {
+        "length": 365,
+        "truncated": false,
+        "text": "{\"PartitionKeyRanges\":[{\"_etag\":\"\\\"06e8084a-767b-425a-b198-ce405d8f0b4b\\\"\",\"_lsn\":24,\"_rid\":\"AAAAAYAAAAEAAAAAAAAAUA==\",\"_self\":\"dbs/AAAAAQ==/colls/AAAAAYAAAAE=/pkranges/0/\",\"_ts\":1794521439,\"id\":\"0\",\"maxExclusive\":\"FF\",\"minInclusive\":\"\",\"parents\":[],\"ridPrefix\":0,\"status\":\"online\",\"throughputFraction\":1.0,\"vectorClockVersion\":0}],\"_count\":1,\"_rid\":\"AAAAAYAAAAE=\"}"
+      }
+    },
+    {
+      "label": "spec",
+      "sequence": 57,
+      "method": "GET",
+      "url": "https://eastus.spec.local/dbs/spec-01a1d1d0-1dc8-72a2-988f-d65b265a1eb3/colls/spec-01a1d1d0-1dc9-7272-9275-c19e6f8f9ab6/pkranges",
+      "operation": "MetadataPartitionKeyRanges",
+      "region": "eastus",
+      "activity_id": "6336cb1d-5a7c-4cb7-8927-6358f2bc14f7",
+      "start_ms": 121.6091,
+      "duration_ms": 0.2078,
+      "outcome": {
+        "kind": "response",
+        "status": 304,
+        "sub_status": null
+      },
+      "request_body": null,
+      "response_body": {
+        "length": 0,
+        "truncated": false,
+        "text": ""
+      }
+    },
+    {
+      "label": "spec",
+      "sequence": 59,
+      "method": "GET",
+      "url": "https://eastus.spec.local/dbs/spec-01a1d1d0-1dc8-72a2-988f-d65b265a1eb3/colls/spec-01a1d1d0-1dc9-7272-9275-c19e6f8f9ab6/docs/item-07",
+      "operation": "ReadItem",
+      "region": "eastus",
+      "activity_id": "40a30d32-2265-478e-8381-c100b15f07d0",
+      "start_ms": 122.219598,
+      "duration_ms": 0.264199,
+      "outcome": {
+        "kind": "response",
+        "status": 200,
+        "sub_status": null
+      },
+      "request_body": null,
+      "response_body": {
+        "length": 213,
+        "truncated": false,
+        "base64": "gO3RCIxfYXR0YWNobWVudHOMYXR0YWNobWVudHMvhV9ldGFnpiIzOWUyNzJhMC0xY2Q1LTRjODYtYWFmYi0zODcwNWZhMzc0N2MihF9yaWSYQUFBQUFZQUFBQUVJQUFBQUFBQUFBQT09hV9zZWxmvmRicy9BQUFBQVE9PS9jb2xscy9BQUFBQVlBQUFBRT0vZG9jcy9BQUFBQVlBQUFBRUlBQUFBQUFBQUFBPT0vg190c8tfOfZqAAAAAIJpZIdpdGVtLTA3gnBrhHBrLTGFdmFsdWUH"
+      }
+    }
+  ]
+}

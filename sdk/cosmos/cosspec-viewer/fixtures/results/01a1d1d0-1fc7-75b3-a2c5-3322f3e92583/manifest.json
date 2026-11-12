@@ -1,0 +1,193 @@
+{
+  "version": 1,
+  "kind": "cosspec-run",
+  "run_id": "01a1d1d0-1fc7-75b3-a2c5-3322f3e92583",
+  "started_at": "2026-11-12T22:10:40.199511471Z",
+  "finished_at": "2026-11-12T22:10:40.395545527Z",
+  "status": "completed",
+  "args": [
+    "resilience",
+    "--include-ignored",
+    "--results-dir",
+    "/tmp/fx/b"
+  ],
+  "cleanup": true,
+  "result_version": 1,
+  "backends": [
+    {
+      "name": "inmemory",
+      "kind": "inmemory",
+      "profiles": [
+        "SingleRegion",
+        "MultiRead",
+        "MultiWrite"
+      ]
+    }
+  ],
+  "totals": {
+    "passed": 7,
+    "failed": 2,
+    "skipped": 0,
+    "ignored": 0,
+    "not_run": 0,
+    "pending": 0
+  },
+  "checks": [],
+  "trials": [
+    {
+      "test_name": "spec::resilience::hedge_races_alternate_region[inmemory.MultiRead]",
+      "spec_id": "resilience.hedge_races_alternate_region",
+      "summary": "When the preferred region is slow, a hedged read sends a second request to the next region while the first is still in flight, returns the faster response, and abandons the slow request.",
+      "source": "sdk/cosmos/cosspec/tests/spec/resilience.rs:29",
+      "backend": "inmemory",
+      "backend_kind": "inmemory",
+      "service_profile": "MultiRead",
+      "requires": [
+        "MultiRegion"
+      ],
+      "status": "passed",
+      "reason": null,
+      "duration_ms": 167.94774800000002,
+      "error": null,
+      "result_file": "resilience.hedge_races_alternate_region[inmemory.MultiRead].json"
+    },
+    {
+      "test_name": "spec::resilience::hedge_races_alternate_region[inmemory.MultiWrite]",
+      "spec_id": "resilience.hedge_races_alternate_region",
+      "summary": "When the preferred region is slow, a hedged read sends a second request to the next region while the first is still in flight, returns the faster response, and abandons the slow request.",
+      "source": "sdk/cosmos/cosspec/tests/spec/resilience.rs:29",
+      "backend": "inmemory",
+      "backend_kind": "inmemory",
+      "service_profile": "MultiWrite",
+      "requires": [
+        "MultiRegion"
+      ],
+      "status": "passed",
+      "reason": null,
+      "duration_ms": 167.44775,
+      "error": null,
+      "result_file": "resilience.hedge_races_alternate_region[inmemory.MultiWrite].json"
+    },
+    {
+      "test_name": "spec::resilience::read_fails_over_when_region_offline[inmemory.MultiRead]",
+      "spec_id": "resilience.read_fails_over_when_region_offline",
+      "summary": "When the preferred region goes offline, reads are served by the next preferred region without surfacing an error.",
+      "source": "sdk/cosmos/cosspec/tests/spec/resilience.rs:78",
+      "backend": "inmemory",
+      "backend_kind": "inmemory",
+      "service_profile": "MultiRead",
+      "requires": [
+        "AccountIsolation",
+        "RegionControl",
+        "MultiRegion"
+      ],
+      "status": "failed",
+      "reason": "the read passes, but deleting the database at teardown is a write and hits the write_fails_over_when_write_region_offline issue",
+      "duration_ms": 117.59371300000001,
+      "error": "503/20003 (TransportGenerated503): Cosmos DB transport failure HTTP 503/20003: TransportGenerated503. Details: 503/20012: in-memory emulator: region 'East US' is offline; its endpoint does not resolve",
+      "result_file": "resilience.read_fails_over_when_region_offline[inmemory.MultiRead].json"
+    },
+    {
+      "test_name": "spec::resilience::read_fails_over_when_region_offline[inmemory.MultiWrite]",
+      "spec_id": "resilience.read_fails_over_when_region_offline",
+      "summary": "When the preferred region goes offline, reads are served by the next preferred region without surfacing an error.",
+      "source": "sdk/cosmos/cosspec/tests/spec/resilience.rs:78",
+      "backend": "inmemory",
+      "backend_kind": "inmemory",
+      "service_profile": "MultiWrite",
+      "requires": [
+        "AccountIsolation",
+        "RegionControl",
+        "MultiRegion"
+      ],
+      "status": "passed",
+      "reason": null,
+      "duration_ms": 116.72461700000001,
+      "error": null,
+      "result_file": "resilience.read_fails_over_when_region_offline[inmemory.MultiWrite].json"
+    },
+    {
+      "test_name": "spec::resilience::throttled_read_is_retried[inmemory.SingleRegion]",
+      "spec_id": "resilience.throttled_read_is_retried",
+      "summary": "A read throttled with 429 Too Many Requests is retried until it succeeds, each retry being a new HTTP request.",
+      "source": "sdk/cosmos/cosspec/tests/spec/resilience.rs:58",
+      "backend": "inmemory",
+      "backend_kind": "inmemory",
+      "service_profile": "SingleRegion",
+      "requires": [],
+      "status": "passed",
+      "reason": null,
+      "duration_ms": 153.254296,
+      "error": null,
+      "result_file": "resilience.throttled_read_is_retried[inmemory.SingleRegion].json"
+    },
+    {
+      "test_name": "spec::resilience::throttled_read_is_retried[inmemory.MultiRead]",
+      "spec_id": "resilience.throttled_read_is_retried",
+      "summary": "A read throttled with 429 Too Many Requests is retried until it succeeds, each retry being a new HTTP request.",
+      "source": "sdk/cosmos/cosspec/tests/spec/resilience.rs:58",
+      "backend": "inmemory",
+      "backend_kind": "inmemory",
+      "service_profile": "MultiRead",
+      "requires": [],
+      "status": "passed",
+      "reason": null,
+      "duration_ms": 153.285797,
+      "error": null,
+      "result_file": "resilience.throttled_read_is_retried[inmemory.MultiRead].json"
+    },
+    {
+      "test_name": "spec::resilience::throttled_read_is_retried[inmemory.MultiWrite]",
+      "spec_id": "resilience.throttled_read_is_retried",
+      "summary": "A read throttled with 429 Too Many Requests is retried until it succeeds, each retry being a new HTTP request.",
+      "source": "sdk/cosmos/cosspec/tests/spec/resilience.rs:58",
+      "backend": "inmemory",
+      "backend_kind": "inmemory",
+      "service_profile": "MultiWrite",
+      "requires": [],
+      "status": "passed",
+      "reason": null,
+      "duration_ms": 153.118897,
+      "error": null,
+      "result_file": "resilience.throttled_read_is_retried[inmemory.MultiWrite].json"
+    },
+    {
+      "test_name": "spec::resilience::write_fails_over_when_write_region_offline[inmemory.MultiRead]",
+      "spec_id": "resilience.write_fails_over_when_write_region_offline",
+      "summary": "When the write region goes offline, the account promotes the next region to accept writes, and a write succeeds there without surfacing an error.",
+      "source": "sdk/cosmos/cosspec/tests/spec/resilience.rs:105",
+      "backend": "inmemory",
+      "backend_kind": "inmemory",
+      "service_profile": "MultiRead",
+      "requires": [
+        "AccountIsolation",
+        "RegionControl",
+        "MultiRegion"
+      ],
+      "status": "failed",
+      "reason": "the SDK keeps sending the write to the offline region and surfaces 503 instead of refreshing the account to find the new write region",
+      "duration_ms": 118.81361,
+      "error": "503/20003 (TransportGenerated503): Cosmos DB transport failure HTTP 503/20003: TransportGenerated503. Details: 503/20012: in-memory emulator: region 'East US' is offline; its endpoint does not resolve",
+      "result_file": "resilience.write_fails_over_when_write_region_offline[inmemory.MultiRead].json"
+    },
+    {
+      "test_name": "spec::resilience::write_fails_over_when_write_region_offline[inmemory.MultiWrite]",
+      "spec_id": "resilience.write_fails_over_when_write_region_offline",
+      "summary": "When the write region goes offline, the account promotes the next region to accept writes, and a write succeeds there without surfacing an error.",
+      "source": "sdk/cosmos/cosspec/tests/spec/resilience.rs:105",
+      "backend": "inmemory",
+      "backend_kind": "inmemory",
+      "service_profile": "MultiWrite",
+      "requires": [
+        "AccountIsolation",
+        "RegionControl",
+        "MultiRegion"
+      ],
+      "status": "passed",
+      "reason": null,
+      "duration_ms": 113.969925,
+      "error": null,
+      "result_file": "resilience.write_fails_over_when_write_region_offline[inmemory.MultiWrite].json"
+    }
+  ]
+}
