@@ -2,7 +2,7 @@
 
 **Status:** Draft (prototype implemented)
 **Date:** 2026-11-11
-**Crates:** `azure_data_cosmos_spec`, `azure_data_cosmos_spec_macros`,
+**Crates:** `cosspec`, `cosspec_macros`,
 `azure_data_cosmos` (`__internal_transport_observer`),
 `azure_data_cosmos_driver` (`__internal_transport_observer`)
 
@@ -106,14 +106,14 @@ pub async fn continuation_survives_split(
 | `#[service_profiles(all)]`, `#[service_profiles(MultiRead, MultiWrite)]` | Selects the service profiles. The default is `all`. |
 | `#[requires(TopologyControl, ...)]` | Declares the capabilities the spec needs. |
 | `#[known_issue("reason")]`, `#[known_issue("reason", MultiRead)]` | Records that the SDK doesn't meet the spec yet, optionally only for some profiles. Affected trials are reported as ignored with kind `known-issue`. |
-| `#[profile(basic_items)]` (parameter) | Selects the container profile for a container parameter. A bare name resolves to `azure_data_cosmos_spec::profiles::<name>`; a path is used as written. |
+| `#[profile(basic_items)]` (parameter) | Selects the container profile for a container parameter. A bare name resolves to `cosspec::profiles::<name>`; a path is used as written. |
 
 ### Identity and naming
 
 - Spec ID: `<module path without the crate>.<fn>`, for example
   `resilience.hedge_races_alternate_region`.
 - Trial name: `spec::<module>::<fn>[<service_profile>]`. Standard `libtest`
-  filters apply: `cargo test -p azure_data_cosmos_spec --test spec -- split`.
+  filters apply: `cargo test -p cosspec --test spec -- split`.
 
 ## Architecture
 
@@ -122,7 +122,7 @@ flowchart TB
   subgraph Specs["Spec tests (what reviewers read)"]
     T["#[spec_test] fns"]
   end
-  subgraph DSL["azure_data_cosmos_spec"]
+  subgraph DSL["cosspec"]
     R[Registry and runner]
     DI[Injectables]
     C[Capabilities]
@@ -133,7 +133,7 @@ flowchart TB
     TAP[HttpTap]
     B[[Backend]]
   end
-  M[azure_data_cosmos_spec_macros]
+  M[cosspec_macros]
   IM[In-memory emulator]
   FUT[Hosted, vNext, legacy, live: later]
   SDK[azure_data_cosmos]
@@ -151,10 +151,12 @@ The design has five layers:
 
 1. **Specs** use only `azure_data_cosmos` public APIs and the DSL. They never
    import the driver, the emulator, or backend internals.
-2. **The DSL crate** `azure_data_cosmos_spec` (`publish = false`) is the only
-   adapter between specs and internals.
-3. **The macro crate** `azure_data_cosmos_spec_macros` (`publish = false`)
-   implements `#[spec_test]`.
+2. **The DSL crate** `cosspec` (`publish = false`) holds the high-level
+   specification tests for the Cosmos DB SDK. It is the only adapter between
+   specs and internals. Being unpublished, it uses a short name rather than
+   the `azure_data_cosmos_*` convention.
+3. **The macro crate** `cosspec_macros` (`publish = false`) implements
+   `#[spec_test]`.
 4. **Backends** implement the `Backend` trait. Each one realizes accounts,
    provisioning, and topology or region demands in whatever way it can.
 5. **The product hook** is the driver `TransportObserver` (feature
@@ -167,7 +169,7 @@ The spec binary uses a custom harness (`harness = false`):
 
 - `#[spec_test]` registers a `SpecDescriptor` into a `linkme` distributed
   slice.
-- `azure_data_cosmos_spec::main()` expands each spec into one `libtest-mimic`
+- `cosspec::main()` expands each spec into one `libtest-mimic`
   trial per selected service profile.
 - One process runs against one backend. Trials run in parallel on a shared
   multi-threaded Tokio runtime.
@@ -180,7 +182,7 @@ The spec binary uses a custom harness (`harness = false`):
 
 ### Where specs live
 
-Specs live in `sdk/cosmos/azure_data_cosmos_spec/tests/spec/`, not in
+Specs live in `sdk/cosmos/cosspec/tests/spec/`, not in
 `azure_data_cosmos/tests`. The DSL crate depends on `azure_data_cosmos`. If
 `azure_data_cosmos` took the DSL crate as a dev-dependency, Cargo would build
 two instances of `azure_data_cosmos` in its test binaries, and their types
@@ -391,7 +393,7 @@ only when the feature is on.
 
 ### `http_tap` module
 
-`azure_data_cosmos_spec::http_tap` depends only on the driver hook types and
+`cosspec::http_tap` depends only on the driver hook types and
 `std`, so it can later become its own crate. `HttpTap` records every exchange
 as an `HttpRecord`. Records support interval math (`overlaps`, `duration`)
 and outcome checks (`status`, `was_cancelled`).
@@ -434,7 +436,7 @@ removes setup noise that obscures the behavior under test.
 ## Generated catalog
 
 The registry produces `CATALOG.md` and `catalog.json` in the
-`azure_data_cosmos_spec` crate directory. For each spec they list the ID, the
+`cosspec` crate directory. For each spec they list the ID, the
 behavior (from the doc comment), service profiles, required capabilities,
 injected resources, known issues, and source location.
 
@@ -463,13 +465,13 @@ first N rows, which dropped a page. The emulator now issues position-based
 ORDER BY continuations (sort keys, then `_rid`), so the spec passes.
 
 Run them with
-`cargo test -p azure_data_cosmos_spec --test spec -- --include-ignored`.
+`cargo test -p cosspec --test spec -- --include-ignored`.
 Remove the attribute in the change that fixes the behavior.
 
 ## Running
 
 ```sh
-cargo test -p azure_data_cosmos_spec --test spec
+cargo test -p cosspec --test spec
 ```
 
 | Variable | Effect |

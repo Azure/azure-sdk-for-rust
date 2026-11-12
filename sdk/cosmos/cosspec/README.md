@@ -1,8 +1,9 @@
-# Azure Cosmos DB spec tests
+# cosspec
 
-Spec tests are short, backend-agnostic end-to-end tests. Each one is a
-human-verifiable specification of one behavior of the Azure Cosmos DB Rust SDK.
-This crate contains the spec-test DSL and runner, and the specs themselves in
+`cosspec` holds the high-level specification tests for the Azure Cosmos DB
+Rust SDK. Spec tests are short, backend-agnostic end-to-end tests. Each one is
+a human-verifiable specification of one behavior of the SDK. This crate
+contains the spec-test DSL and runner, and the specs themselves in
 `tests/spec`.
 
 This crate is test infrastructure (`publish = false`); it is not part of the
@@ -21,7 +22,7 @@ in-memory emulator.
 ### Run the specs
 
 ```sh
-cargo test -p azure_data_cosmos_spec --test spec
+cargo test -p cosspec --test spec
 ```
 
 Standard `libtest` filters and flags apply. For example, `-- split` runs only
@@ -56,7 +57,7 @@ skipped specs and specs with known issues.
 ### Write a spec
 
 ```rust ignore
-use azure_data_cosmos_spec::{spec_test, testdata::Item, SharedContainer, SpecResult};
+use cosspec::{spec_test, testdata::Item, SharedContainer, SpecResult};
 
 /// A point read returns the stored item unchanged.
 #[spec_test]
@@ -78,7 +79,7 @@ pub async fn point_read_returns_stored_item(
 Add the spec to a module under `tests/spec`, then regenerate the catalog:
 
 ```sh
-AZURE_COSMOS_SPEC_UPDATE_CATALOG=1 cargo test -p azure_data_cosmos_spec --test spec
+AZURE_COSMOS_SPEC_UPDATE_CATALOG=1 cargo test -p cosspec --test spec
 ```
 
 ## Troubleshooting

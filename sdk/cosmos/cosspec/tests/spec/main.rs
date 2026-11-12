@@ -16,5 +16,5 @@ mod query;
 mod resilience;
 
 fn main() {
-    azure_data_cosmos_spec::main();
+    cosspec::main();
 }

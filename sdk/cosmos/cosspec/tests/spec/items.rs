@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_data_cosmos_spec::{
+use cosspec::{
     assert_status, spec_test, testdata::Item, ExclusiveContainer, SharedContainer, SpecResult,
 };
 

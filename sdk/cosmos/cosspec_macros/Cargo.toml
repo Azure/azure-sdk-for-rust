@@ -1,5 +1,5 @@
 [package]
-name = "azure_data_cosmos_spec_macros"
+name = "cosspec_macros"
 version = "0.0.0"
 description = "Procedural macros for Azure Cosmos DB SDK spec tests."
 publish = false

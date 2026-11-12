@@ -5,7 +5,7 @@ use azure_data_cosmos::options::{
     AvailabilityStrategy, HedgeThreshold, HedgingStrategy, ItemReadOptions,
     OperationOptionsBuilder, Region,
 };
-use azure_data_cosmos_spec::{
+use cosspec::{
     assert_http_count, assert_http_overlap, assert_http_regions,
     faults::{self, Op},
     profiles, spec_test,

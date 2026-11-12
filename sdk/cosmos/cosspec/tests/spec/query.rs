@@ -5,7 +5,7 @@ use azure_data_cosmos::{
     options::{MaxItemCountHint, QueryOptions},
     FeedScope, Query,
 };
-use azure_data_cosmos_spec::{
+use cosspec::{
     assert_feed_ranges, spec_test, testdata::Item, ExclusiveContainer, SharedContainer, SpecResult,
 };
 use futures::{StreamExt, TryStreamExt};

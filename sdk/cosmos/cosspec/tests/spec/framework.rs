@@ -3,7 +3,7 @@
 
 //! Specs for the spec framework itself.
 
-use azure_data_cosmos_spec::{
+use cosspec::{
     assert_status, spec_test, testdata::Item, ExclusiveContainer, HttpTap, InvalidConfiguration,
     SharedContainer, SpecResult,
 };

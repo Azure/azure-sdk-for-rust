@@ -1,5 +1,5 @@
 [package]
-name = "azure_data_cosmos_spec"
+name = "cosspec"
 version = "0.0.0"
 description = "Backend-agnostic specification tests for the Azure Cosmos DB SDK for Rust."
 publish = false
@@ -20,7 +20,7 @@ azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", features = [
   "__internal_in_memory_emulator",
   "__internal_transport_observer",
 ] }
-azure_data_cosmos_spec_macros = { path = "../azure_data_cosmos_spec_macros" }
+cosspec_macros = { path = "../cosspec_macros" }
 futures.workspace = true
 libtest-mimic.workspace = true
 linkme.workspace = true

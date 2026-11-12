@@ -1,11 +1,11 @@
-# Azure Cosmos DB spec test macros
+# cosspec_macros
 
-Procedural macros for the Azure Cosmos DB spec-test DSL in
-`azure_data_cosmos_spec`. `#[spec_test]` checks the shape of a spec at compile
-time and registers it with the spec runner.
+Procedural macros for `cosspec`, the Azure Cosmos DB spec-test DSL.
+`#[spec_test]` checks the shape of a spec at compile time and registers it
+with the spec runner.
 
 This crate is test infrastructure (`publish = false`); it is not part of the
-supported SDK surface. Use it through `azure_data_cosmos_spec::spec_test`. See
+supported SDK surface. Use it through `cosspec::spec_test`. See
 [spec 0030] for the design.
 
 ## Key concepts

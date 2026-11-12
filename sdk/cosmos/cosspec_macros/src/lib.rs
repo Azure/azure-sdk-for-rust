@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Procedural macros for `azure_data_cosmos_spec`.
+//! Procedural macros for `cosspec`.
 //!
-//! Use these through the re-exports in `azure_data_cosmos_spec`; the generated code
+//! Use these through the re-exports in `cosspec`; the generated code
 //! refers to that crate by absolute path.
 
 use proc_macro::TokenStream;
@@ -116,7 +116,7 @@ impl Parse for IdentList {
 }
 
 fn expand(args: SpecArgs, mut function: ItemFn) -> syn::Result<TokenStream2> {
-    let krate = quote!(::azure_data_cosmos_spec);
+    let krate = quote!(::cosspec);
     let private = quote!(#krate::__private);
     let fn_name = function.sig.ident.clone();
 

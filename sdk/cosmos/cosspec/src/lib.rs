@@ -8,7 +8,7 @@
 //! composes every spec with every compatible service profile on the selected backend.
 //!
 //! ```rust,ignore
-//! use azure_data_cosmos_spec::{assert_items_unordered, spec_test, testdata, ExclusiveContainer, SpecResult};
+//! use cosspec::{assert_items_unordered, spec_test, testdata, ExclusiveContainer, SpecResult};
 //!
 //! /// A full-container query returns every item exactly once.
 //! #[spec_test]
@@ -37,9 +37,9 @@ mod resources;
 mod runner;
 pub mod testdata;
 
-pub use azure_data_cosmos_spec_macros::spec_test;
 pub use capability::Capability;
 pub use context::SpecContext;
+pub use cosspec_macros::spec_test;
 pub use http_tap::HttpTap;
 pub use profiles::{ContainerProfile, ServiceProfile};
 pub use resources::{ExclusiveAccount, ExclusiveContainer, ExclusiveDatabase, SharedContainer};

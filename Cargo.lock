@@ -849,33 +849,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "azure_data_cosmos_spec"
-version = "0.0.0"
-dependencies = [
- "async-trait",
- "azure_core 1.1.0",
- "azure_data_cosmos",
- "azure_data_cosmos_driver",
- "azure_data_cosmos_spec_macros",
- "futures",
- "libtest-mimic",
- "linkme",
- "serde",
- "serde_json",
- "tokio",
- "uuid",
-]
-
-[[package]]
-name = "azure_data_cosmos_spec_macros"
-version = "0.0.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.119",
-]
-
-[[package]]
 name = "azure_data_cosmos_test"
 version = "0.0.0"
 dependencies = [
@@ -1601,6 +1574,33 @@ name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
+
+[[package]]
+name = "cosspec"
+version = "0.0.0"
+dependencies = [
+ "async-trait",
+ "azure_core 1.1.0",
+ "azure_data_cosmos",
+ "azure_data_cosmos_driver",
+ "cosspec_macros",
+ "futures",
+ "libtest-mimic",
+ "linkme",
+ "serde",
+ "serde_json",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "cosspec_macros"
+version = "0.0.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
 
 [[package]]
 name = "cpufeatures"
