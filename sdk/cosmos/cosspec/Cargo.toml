@@ -12,6 +12,7 @@ rust-version.workspace = true
 [dependencies]
 async-trait.workspace = true
 azure_core = { workspace = true, default-features = false }
+azure_identity.workspace = true
 azure_data_cosmos = { path = "../azure_data_cosmos", features = [
   "__internal_in_memory_emulator",
   "__internal_transport_observer",
@@ -26,6 +27,7 @@ libtest-mimic.workspace = true
 linkme.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
+toml.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time"] }
 uuid = { workspace = true, features = ["v4", "v7", "fast-rng"] }
 

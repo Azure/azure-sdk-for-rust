@@ -8,13 +8,16 @@ use crate::{
     Capability,
 };
 use azure_data_cosmos::options::Region;
+use serde::Deserialize;
 use std::fmt;
 
 /// The shape of the account a spec runs against.
 ///
 /// Service profiles say nothing about consistency: specs that depend on a
 /// consistency level set it on the request.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+///
+/// In configuration files, a profile is written as its variant name.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Deserialize)]
 pub enum ServiceProfile {
     /// One region that accepts reads and writes.
     SingleRegion,

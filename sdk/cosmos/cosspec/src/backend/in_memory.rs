@@ -5,6 +5,7 @@
 
 use super::{Backend, BackendAccount, ClientOptions, RegionControl, TopologyControl};
 use crate::{
+    pool,
     profiles::ContainerProfile,
     provision::{ControlPlaneProvisioner, Provisioner},
     Capability, ServiceProfile, SpecResult,
@@ -12,12 +13,15 @@ use crate::{
 use async_trait::async_trait;
 use azure_core::{credentials::Secret, http::Url};
 use azure_data_cosmos::{
-    options::Region, AccountEndpoint, AccountReference, CosmosClient, CosmosClientBuilder,
-    CosmosRuntimeBuilder, RoutingStrategy,
+    feed::FeedRange, options::Region, AccountEndpoint, AccountReference, CosmosClient,
+    CosmosClientBuilder, CosmosRuntimeBuilder, RoutingStrategy,
 };
-use azure_data_cosmos_driver::in_memory_emulator::{
-    ContainerConfig, InMemoryEmulatorHttpClient, ReplicationConfig, VirtualAccountConfig,
-    VirtualRegion, WriteMode,
+use azure_data_cosmos_driver::{
+    in_memory_emulator::{
+        ContainerConfig, InMemoryEmulatorHttpClient, ReplicationConfig, VirtualAccountConfig,
+        VirtualRegion, WriteMode,
+    },
+    models::EffectivePartitionKey,
 };
 use std::{
     collections::HashMap,
@@ -30,23 +34,49 @@ const KEY: &str = "dGVzdGtleQ==";
 /// Runs specs against an in-process in-memory emulator.
 ///
 /// Every account is a fresh emulator with immediate replication, so specs are
-/// deterministic and need no network.
+/// deterministic and need no network. It provides every service profile and
+/// every capability.
 #[derive(Debug)]
-pub struct InMemoryBackend;
+pub struct InMemoryBackend {
+    name: String,
+    profiles: Vec<ServiceProfile>,
+}
+
+impl InMemoryBackend {
+    /// Creates a backend named `name` that runs `profiles`.
+    pub fn new(name: impl Into<String>, profiles: Vec<ServiceProfile>) -> Self {
+        Self {
+            name: name.into(),
+            profiles,
+        }
+    }
+}
+
+impl Default for InMemoryBackend {
+    /// The `inmemory` backend with every service profile.
+    fn default() -> Self {
+        Self::new("inmemory", ServiceProfile::ALL.to_vec())
+    }
+}
 
 #[async_trait]
 impl Backend for InMemoryBackend {
-    fn name(&self) -> &'static str {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn kind(&self) -> &'static str {
         "inmemory"
     }
 
-    fn supports(&self, _profile: ServiceProfile) -> bool {
-        true
+    fn profiles(&self) -> Vec<ServiceProfile> {
+        self.profiles.clone()
     }
 
     fn capabilities(&self, profile: ServiceProfile) -> Vec<Capability> {
         let mut capabilities = vec![
             Capability::TopologyControl,
+            Capability::SimpleSplitMerge,
             Capability::RegionControl,
             Capability::AccountIsolation,
         ];
@@ -90,8 +120,39 @@ struct InMemoryAccount {
     regions: Vec<Region>,
     endpoint: String,
     emulator: Arc<InMemoryEmulatorHttpClient>,
-    /// Current physical partition IDs per `(database, container)`.
-    partitions: Mutex<HashMap<(String, String), Vec<u32>>>,
+    /// Current physical partitions per `(database, container)`, in EPK order.
+    partitions: Mutex<HashMap<(String, String), Vec<Partition>>>,
+}
+
+/// An emulator physical partition: its store ID and EPK range.
+#[derive(Clone, Debug)]
+struct Partition {
+    id: u32,
+    range: FeedRange,
+}
+
+impl InMemoryAccount {
+    fn key(database: &str, container: &str) -> (String, String) {
+        (database.to_owned(), container.to_owned())
+    }
+
+    fn tracked(&self, database: &str, container: &str) -> SpecResult<Vec<Partition>> {
+        self.partitions
+            .lock()
+            .unwrap()
+            .get(&Self::key(database, container))
+            .cloned()
+            .ok_or_else(|| {
+                format!("container '{container}' was not created by this backend").into()
+            })
+    }
+
+    fn find(partitions: &[Partition], range: &FeedRange) -> SpecResult<usize> {
+        partitions
+            .iter()
+            .position(|p| p.range == *range)
+            .ok_or_else(|| format!("no physical partition has the range {range}").into())
+    }
 }
 
 #[async_trait]
@@ -154,7 +215,7 @@ impl Provisioner for InMemoryAccount {
     /// partition count is exact.
     async fn create_container(
         &self,
-        _client: &CosmosClient,
+        client: &CosmosClient,
         database: &str,
         container: &str,
         profile: &ContainerProfile,
@@ -173,10 +234,19 @@ impl Provisioner for InMemoryAccount {
             partition_key,
             config,
         );
-        self.partitions.lock().unwrap().insert(
-            (database.to_owned(), container.to_owned()),
-            (0..profile.physical_partitions).collect(),
-        );
+        // The store numbers a new container's partitions from 0 in EPK order.
+        let mut ranges = Box::pin(
+            pool::container_client(client, database, container)
+                .await?
+                .read_feed_ranges(None),
+        )
+        .await?;
+        ranges.sort_by(|a, b| a.min_inclusive().cmp(b.min_inclusive()));
+        let partitions = (0..).zip(ranges).map(|(id, range)| Partition { id, range });
+        self.partitions
+            .lock()
+            .unwrap()
+            .insert(Self::key(database, container), partitions.collect());
         Ok(())
     }
 
@@ -189,7 +259,7 @@ impl Provisioner for InMemoryAccount {
         self.partitions
             .lock()
             .unwrap()
-            .remove(&(database.to_owned(), container.to_owned()));
+            .remove(&Self::key(database, container));
         ControlPlaneProvisioner
             .delete_container(client, database, container)
             .await
@@ -202,26 +272,93 @@ impl Provisioner for InMemoryAccount {
 
 #[async_trait]
 impl TopologyControl for InMemoryAccount {
-    async fn split_all(&self, database: &str, container: &str) -> SpecResult {
-        let key = (database.to_owned(), container.to_owned());
-        let parents = self
-            .partitions
+    async fn partitions(&self, database: &str, container: &str) -> SpecResult<Vec<FeedRange>> {
+        Ok(self
+            .tracked(database, container)?
+            .into_iter()
+            .map(|p| p.range)
+            .collect())
+    }
+
+    async fn split(
+        &self,
+        database: &str,
+        container: &str,
+        partition: &FeedRange,
+        at: Option<EffectivePartitionKey>,
+    ) -> SpecResult {
+        let mut partitions = self.tracked(database, container)?;
+        let index = Self::find(&partitions, partition)?;
+        let parent = partitions[index].id;
+        let store = self.emulator.store();
+        let boundary = match at {
+            Some(at) => {
+                store.validate_split_epk(database, container, parent, &at)?;
+                at
+            }
+            None => store.midpoint_split_epk(database, container, parent)?,
+        };
+        let children = store
+            .split_partition_and_wait(
+                database,
+                container,
+                parent,
+                boundary.clone(),
+                Duration::ZERO,
+            )
+            .await?;
+        // The first child takes the lower half of the parent's range.
+        let [lower, upper] = children.as_slice() else {
+            return Err(format!("split produced {} partitions, not 2", children.len()).into());
+        };
+        let lower = Partition {
+            id: *lower,
+            range: FeedRange::new(partition.min_inclusive().clone(), boundary.clone())?,
+        };
+        let upper = Partition {
+            id: *upper,
+            range: FeedRange::new(boundary, partition.max_exclusive().clone())?,
+        };
+        partitions.splice(index..=index, [lower, upper]);
+        self.partitions
             .lock()
             .unwrap()
-            .get(&key)
-            .cloned()
-            .ok_or_else(|| format!("container '{container}' was not created by this backend"))?;
-        let store = self.emulator.store();
-        let mut children = Vec::with_capacity(parents.len() * 2);
-        for parent in parents {
-            let boundary = store.midpoint_split_epk(database, container, parent)?;
-            children.extend(
-                store
-                    .split_partition_and_wait(database, container, parent, boundary, Duration::ZERO)
-                    .await?,
-            );
+            .insert(Self::key(database, container), partitions);
+        Ok(())
+    }
+
+    async fn merge(
+        &self,
+        database: &str,
+        container: &str,
+        left: &FeedRange,
+        right: &FeedRange,
+    ) -> SpecResult {
+        let mut partitions = self.tracked(database, container)?;
+        let index = Self::find(&partitions, left)?;
+        if partitions.get(index + 1).map(|p| &p.range) != Some(right) {
+            return Err(format!("{left} and {right} are not adjacent physical partitions").into());
         }
-        self.partitions.lock().unwrap().insert(key, children);
+        let child = self
+            .emulator
+            .store()
+            .merge_partitions_and_wait(
+                database,
+                container,
+                partitions[index].id,
+                partitions[index + 1].id,
+                Duration::ZERO,
+            )
+            .await?;
+        let merged = Partition {
+            id: child,
+            range: FeedRange::new(left.min_inclusive().clone(), right.max_exclusive().clone())?,
+        };
+        partitions.splice(index..=index + 1, [merged]);
+        self.partitions
+            .lock()
+            .unwrap()
+            .insert(Self::key(database, container), partitions);
         Ok(())
     }
 }

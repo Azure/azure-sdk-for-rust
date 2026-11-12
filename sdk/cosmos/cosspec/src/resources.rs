@@ -4,7 +4,7 @@
 //! Injectable resources: what a spec receives through its parameters.
 
 use crate::{
-    backend::BackendAccount,
+    backend::{BackendAccount, SimpleSplitMerge},
     context::{Inject, ParamKind, SpecContext, WRITE_OPERATIONS},
     faults::Fault,
     pool::{self, resource_name},
@@ -255,6 +255,36 @@ impl ExclusiveContainer {
             .topology()
             .ok_or_else(|| InvalidConfiguration("the backend has no topology control".into()))?;
         topology.split_all(&self.database, &self.name).await
+    }
+
+    /// Splits the container's one physical partition into two and waits until
+    /// the split is done.
+    ///
+    /// Requires `#[requires(SimpleSplitMerge)]` and a container with one physical
+    /// partition.
+    pub async fn simple_partition_split(&self) -> SpecResult {
+        self.ctx.demand(Capability::SimpleSplitMerge)?;
+        self.simple_split_merge()?
+            .simple_partition_split(&self.database, &self.name)
+            .await
+    }
+
+    /// Merges the container's two physical partitions into one and waits until
+    /// the merge is done.
+    ///
+    /// Requires `#[requires(SimpleSplitMerge)]` and a container with two physical
+    /// partitions.
+    pub async fn simple_partition_merge(&self) -> SpecResult {
+        self.ctx.demand(Capability::SimpleSplitMerge)?;
+        self.simple_split_merge()?
+            .simple_partition_merge(&self.database, &self.name)
+            .await
+    }
+
+    fn simple_split_merge(&self) -> SpecResult<Box<dyn SimpleSplitMerge + '_>> {
+        self.account.simple_split_merge().ok_or_else(|| {
+            InvalidConfiguration("the backend has no simple split or merge".into()).into()
+        })
     }
 
     /// The number of feed ranges the service reports, read with a fresh client so

@@ -15,8 +15,12 @@ use std::fmt;
 ///   [`InvalidConfiguration`](crate::InvalidConfiguration) unless the spec declared it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Capability {
-    /// Split or merge physical partitions on demand.
+    /// Split or merge physical partitions arbitrarily, by EPK range.
     TopologyControl,
+    /// Split a one-partition container into two, or merge a two-partition
+    /// container back into one. Every backend with `TopologyControl` provides it,
+    /// and backends without arbitrary control can too.
+    SimpleSplitMerge,
     /// Take regions offline or bring them back. Only usable on an
     /// [`ExclusiveAccount`](crate::ExclusiveAccount).
     RegionControl,
@@ -32,6 +36,7 @@ impl Capability {
     /// Every capability, in declaration order.
     pub const ALL: &'static [Capability] = &[
         Capability::TopologyControl,
+        Capability::SimpleSplitMerge,
         Capability::RegionControl,
         Capability::MultiRegion,
         Capability::MultiWrite,
@@ -42,6 +47,7 @@ impl Capability {
     pub fn name(self) -> &'static str {
         match self {
             Capability::TopologyControl => "TopologyControl",
+            Capability::SimpleSplitMerge => "SimpleSplitMerge",
             Capability::RegionControl => "RegionControl",
             Capability::MultiRegion => "MultiRegion",
             Capability::MultiWrite => "MultiWrite",

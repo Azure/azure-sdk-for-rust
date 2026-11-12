@@ -17,7 +17,8 @@ and the roadmap.
 - The Rust toolchain pinned by this repository.
 
 No Azure resources are needed. By default, specs run against the in-process
-in-memory emulator.
+in-memory emulator. To run them on the [Azure Cosmos DB Emulator] or on live
+accounts, see [Choose backends](#choose-backends).
 
 ### Run the specs
 
@@ -31,8 +32,7 @@ skipped specs and specs with known issues.
 
 | Variable | Effect |
 | --- | --- |
-| `AZURE_COSMOS_SPEC_BACKEND` | Backend name; the default is `inmemory` |
-| `AZURE_COSMOS_SPEC_PROFILES` | Comma-separated service profiles to run, such as `SingleRegion,MultiRead` |
+| `AZURE_COSMOS_SPEC_PROFILES` | Comma-separated service profiles to run on every backend, such as `SingleRegion,MultiRead` |
 | `AZURE_COSMOS_SPEC_STRICT` | `1` turns skips for missing capabilities into failures |
 | `AZURE_COSMOS_SPEC_UPDATE_CATALOG` | `1` rewrites `CATALOG.md` and `catalog.json` |
 
@@ -45,13 +45,53 @@ the pool, and every HTTP request made for it. Results go to
 cargo test -p cosspec --test spec -- --results-dir ./spec-results
 ```
 
+### Choose backends
+
+Pass a TOML configuration file with `--config` to choose the backends and the
+service profiles each one runs. Backends run in file order. Relative paths are
+resolved from this directory. `configs/` has examples:
+
+```sh
+# A running Azure Cosmos DB Emulator; SingleRegion only.
+cargo test -p cosspec --test spec -- --config ./configs/emulator.toml
+
+# Live accounts, one per service profile.
+cargo test -p cosspec --test spec -- --config ./configs/live.toml
+```
+
+| Backend (`kind`) | Profiles | Capabilities beyond the profile's |
+| --- | --- | --- |
+| `inmemory` (default) | All | `TopologyControl`, `SimpleSplitMerge`, `RegionControl`, `AccountIsolation` |
+| `emulator` | `SingleRegion` only | None |
+| `live` | One account per configured profile | None |
+
+Specs that need a capability the backend lacks are skipped. Trial names
+include the backend and profile, such as `[emulator.SingleRegion]`, so
+`-- emulator.` runs only the emulator's trials.
+
+To create live accounts, deploy `infra/main.bicep`. It creates one account
+per service profile, in the regions the profiles expect, and outputs their
+endpoints:
+
+```sh
+az deployment group create --resource-group <group> --template-file infra/main.bicep
+```
+
+Put the endpoints in a copy of `configs/live.toml`. Export each account's key
+(`az cosmosdb keys list`) into the environment variable its `key_env` names,
+or use `auth = { kind = "entra" }` to sign in with the Azure CLI. Specs create
+`spec-<UUIDv7>` databases in these accounts and delete them afterward. Leftovers
+older than two hours are deleted by later runs.
+
 ## Key concepts
 
 - **Spec**: an `async fn` marked `#[spec_test]` whose doc comment states the
   behavior and whose body demonstrates it.
 - **Service profile**: an account shape (`SingleRegion`, `MultiRead`, or
   `MultiWrite`). Each spec runs once per selected profile.
-- **Capability**: something a backend can do, such as `TopologyControl`. A
+- **Backend**: where specs run: the in-memory emulator, the Azure Cosmos DB
+  Emulator, or live accounts. A run can use several.
+- **Capability**: something a backend can do, such as `SimpleSplitMerge`. A
   spec declares the capabilities it needs with `#[requires(..)]`. Specs that
   need a missing capability are skipped. A spec that uses a capability it
   didn't declare fails.
@@ -105,6 +145,10 @@ AZURE_COSMOS_SPEC_UPDATE_CATALOG=1 cargo test -p cosspec --test spec
   failure and `teardown_error` is a cleanup failure. In `http`, requests
   labeled `spec` came from the spec's clients and requests labeled `harness`
   came from the framework's setup and teardown.
+- If an `emulator` trial fails with `error sending request`, check that the
+  emulator is running and reachable at the configured `endpoint`.
+- If a `live` trial fails with `environment variable ... is not set`, export
+  the key named by that profile's `key_env`.
 
 ## Contributing
 
@@ -120,4 +164,5 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 [CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
 [Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
+[Azure Cosmos DB Emulator]: https://learn.microsoft.com/azure/cosmos-db/emulator
 [spec 0030]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0030-cosmos-spec-tests.md

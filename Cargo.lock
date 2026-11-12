@@ -1583,6 +1583,7 @@ dependencies = [
  "azure_core 1.1.0",
  "azure_data_cosmos",
  "azure_data_cosmos_driver",
+ "azure_identity 1.0.0",
  "cosspec_macros",
  "futures",
  "libtest-mimic",
@@ -1590,6 +1591,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "toml",
  "uuid",
 ]
 

@@ -67,6 +67,38 @@
     "source": "tests/spec/query.rs"
   },
   {
+    "id": "query.continuation_survives_merge",
+    "summary": "A continuation token taken before two partitions merge still resumes the query after the merge, with no item lost or repeated.",
+    "service_profiles": [
+      "SingleRegion",
+      "MultiRead",
+      "MultiWrite"
+    ],
+    "requires": [
+      "SimpleSplitMerge"
+    ],
+    "resources": [
+      "ExclusiveContainer(basic_items)"
+    ],
+    "source": "tests/spec/query.rs"
+  },
+  {
+    "id": "query.continuation_survives_repeated_splits",
+    "summary": "A continuation token survives the partition it points into splitting twice, with no item lost or repeated.",
+    "service_profiles": [
+      "SingleRegion",
+      "MultiRead",
+      "MultiWrite"
+    ],
+    "requires": [
+      "TopologyControl"
+    ],
+    "resources": [
+      "ExclusiveContainer(basic_items)"
+    ],
+    "source": "tests/spec/query.rs"
+  },
+  {
     "id": "query.continuation_survives_split",
     "summary": "A continuation token taken before a partition split still resumes the query after the split, with no item lost or repeated.",
     "service_profiles": [
@@ -75,7 +107,7 @@
       "MultiWrite"
     ],
     "requires": [
-      "TopologyControl"
+      "SimpleSplitMerge"
     ],
     "resources": [
       "ExclusiveContainer(basic_items)"

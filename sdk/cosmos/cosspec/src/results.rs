@@ -7,14 +7,16 @@
 //! breaking change; renaming, removing, or changing the meaning of a field is,
 //! and bumps the version.
 
-use crate::{http_tap::HttpRecord, runner::SpecDescriptor, ServiceProfile, SpecError, SpecResult};
+use crate::{
+    backend::Backend, http_tap::HttpRecord, runner::SpecDescriptor, ServiceProfile, SpecError,
+    SpecResult,
+};
 use azure_core::time::{to_rfc3339, OffsetDateTime};
 use azure_data_cosmos_driver::transport_observer::HttpOutcomeKind;
 use serde::Serialize;
 use std::{
     backtrace::Backtrace,
     cell::RefCell,
-    ffi::OsString,
     path::{Path, PathBuf},
     sync::OnceLock,
     time::Instant,
@@ -114,31 +116,6 @@ pub(crate) fn take_panic() -> Option<PanicRecord> {
 
 static RESULTS_DIR: OnceLock<PathBuf> = OnceLock::new();
 
-/// Removes `--results-dir <dir>` or `--results-dir=<dir>` from `args`.
-///
-/// Returns the directory, if given, and the remaining arguments for `libtest-mimic`.
-pub(crate) fn split_args(
-    args: impl IntoIterator<Item = OsString>,
-) -> Result<(Option<PathBuf>, Vec<OsString>), String> {
-    let mut dir = None;
-    let mut rest = Vec::new();
-    let mut args = args.into_iter();
-    while let Some(arg) = args.next() {
-        let text = arg.to_string_lossy();
-        if text == RESULTS_DIR_ARG {
-            let value = args
-                .next()
-                .ok_or_else(|| format!("{RESULTS_DIR_ARG} needs a directory"))?;
-            dir = Some(PathBuf::from(value));
-        } else if let Some(value) = text.strip_prefix(&format!("{RESULTS_DIR_ARG}=")) {
-            dir = Some(PathBuf::from(value));
-        } else {
-            rest.push(arg);
-        }
-    }
-    Ok((dir, rest))
-}
-
 /// The default results directory: `<target>/cosspec-results/<run-id>`.
 pub(crate) fn default_dir(run_id: &str) -> PathBuf {
     let target = std::env::current_exe()
@@ -235,7 +212,8 @@ struct ResultFile {
     summary: &'static str,
     source: String,
     service_profile: &'static str,
-    backend: &'static str,
+    backend: String,
+    backend_kind: &'static str,
     requires: Vec<&'static str>,
     known_issue: Option<KnownIssueJson>,
     started_at: String,
@@ -253,7 +231,8 @@ struct ResultFile {
 pub(crate) struct TrialRecord {
     pub spec: &'static SpecDescriptor,
     pub profile: ServiceProfile,
-    pub backend: &'static str,
+    pub backend: String,
+    pub backend_kind: &'static str,
     pub started_at: OffsetDateTime,
     pub started: Instant,
     pub error: Option<SpecError>,
@@ -268,12 +247,13 @@ impl TrialRecord {
     pub fn start(
         spec: &'static SpecDescriptor,
         profile: ServiceProfile,
-        backend: &'static str,
+        backend: &dyn Backend,
     ) -> Self {
         Self {
             spec,
             profile,
-            backend,
+            backend: backend.name().to_owned(),
+            backend_kind: backend.kind(),
             started_at: OffsetDateTime::now_utc(),
             started: Instant::now(),
             error: None,
@@ -303,10 +283,11 @@ impl TrialRecord {
         ResultFile {
             version: RESULT_VERSION,
             id: spec.id(),
-            test_name: spec.test_name(self.profile),
+            test_name: spec.test_name(&self.backend, self.profile),
             summary: spec.summary,
             source: format!("{}:{}", spec.file, spec.line),
             service_profile: self.profile.name(),
+            backend_kind: self.backend_kind,
             backend: self.backend,
             requires: spec.requires.iter().map(|c| c.name()).collect(),
             known_issue: spec
@@ -332,9 +313,9 @@ impl TrialRecord {
         }
     }
 
-    /// The result file name, for example `query.split[SingleRegion].json`.
+    /// The result file name, for example `query.split[inmemory.SingleRegion].json`.
     pub fn file_name(&self) -> String {
-        format!("{}[{}].json", self.spec.id(), self.profile)
+        format!("{}[{}.{}].json", self.spec.id(), self.backend, self.profile)
     }
 
     /// Writes the result file into `dir`.
@@ -344,41 +325,5 @@ impl TrialRecord {
         let json = serde_json::to_vec_pretty(&self.file())?;
         std::fs::write(&path, json)
             .map_err(|e| format!("failed to write spec result {}: {e}", path.display()).into())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{split_args, OsString, PathBuf};
-
-    fn args(list: &[&str]) -> Vec<OsString> {
-        list.iter().map(OsString::from).collect()
-    }
-
-    #[test]
-    fn results_dir_is_removed_from_libtest_args() {
-        let (dir, rest) =
-            split_args(args(&["spec", "--results-dir", "out", "--exact", "x"])).unwrap();
-        assert_eq!(dir, Some(PathBuf::from("out")));
-        assert_eq!(rest, args(&["spec", "--exact", "x"]));
-    }
-
-    #[test]
-    fn results_dir_accepts_equals_form() {
-        let (dir, rest) = split_args(args(&["spec", "--results-dir=a/b"])).unwrap();
-        assert_eq!(dir, Some(PathBuf::from("a/b")));
-        assert_eq!(rest, args(&["spec"]));
-    }
-
-    #[test]
-    fn results_dir_needs_a_value() {
-        assert!(split_args(args(&["spec", "--results-dir"])).is_err());
-    }
-
-    #[test]
-    fn results_dir_is_optional() {
-        let (dir, rest) = split_args(args(&["spec", "--list"])).unwrap();
-        assert_eq!(dir, None);
-        assert_eq!(rest, args(&["spec", "--list"]));
     }
 }

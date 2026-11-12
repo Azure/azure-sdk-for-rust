@@ -1,0 +1,6 @@
+# Runs SingleRegion specs on a running Azure Cosmos DB Emulator.
+# The emulator provides only SingleRegion and no extra capabilities.
+
+[[backends]]
+kind = "emulator"
+# endpoint = "https://localhost:8081/"

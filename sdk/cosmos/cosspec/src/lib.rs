@@ -5,7 +5,8 @@
 //!
 //! A spec test is a short `async fn` that states one SDK behavior. Resources are
 //! injected through parameters, capabilities are declared up front, and the runner
-//! composes every spec with every compatible service profile on the selected backend.
+//! composes every spec with every compatible service profile on each configured
+//! backend (see [`config::SpecConfig`]).
 //!
 //! ```rust,ignore
 //! use cosspec::{assert_items_unordered, spec_test, testdata, ExclusiveContainer, SpecResult};
@@ -23,10 +24,12 @@
 //!
 //! See `sdk/cosmos/docs/specs/0030-cosmos-spec-tests.md` for the design.
 
+mod args;
 mod assertions;
 pub mod backend;
 mod capability;
 pub mod catalog;
+pub mod config;
 mod context;
 pub mod faults;
 pub mod http_tap;

@@ -56,7 +56,7 @@ catalog or `e2e_test_cases` is retired by this design.
 /// A continuation token taken before a partition split still resumes the query
 /// after the split, with no item lost or repeated.
 #[spec_test]
-#[requires(TopologyControl)]
+#[requires(SimpleSplitMerge)]
 pub async fn continuation_survives_split(
     #[profile(basic_items)] container: ExclusiveContainer,
 ) -> SpecResult {
@@ -71,7 +71,7 @@ pub async fn continuation_survives_split(
     let token = pages.to_continuation_token()?;
     drop(pages);
 
-    container.split().await?;
+    container.simple_partition_split().await?;
     assert_feed_ranges!(container, 2);
 
     let options = pages_of(5).with_continuation_token(token);
@@ -104,7 +104,7 @@ pub async fn continuation_survives_split(
 | `#[spec_test]` | Registers the function as a spec. Its ID is `<module>.<fn>`, for example `query.continuation_survives_split`. |
 | `#[spec_test(id = "...")]` | Overrides the stable ID. Renaming a spec is a visible ID change in the catalog. |
 | `#[service_profiles(all)]`, `#[service_profiles(MultiRead, MultiWrite)]` | Selects the service profiles. The default is `all`. |
-| `#[requires(TopologyControl, ...)]` | Declares the capabilities the spec needs. |
+| `#[requires(SimpleSplitMerge, ...)]` | Declares the capabilities the spec needs. |
 | `#[known_issue("reason")]`, `#[known_issue("reason", MultiRead)]` | Records that the SDK doesn't meet the spec yet, optionally only for some profiles. Affected trials are reported as ignored with kind `known-issue`. |
 | `#[profile(basic_items)]` (parameter) | Selects the container profile for a container parameter. A bare name resolves to `cosspec::profiles::<name>`; a path is used as written. |
 
@@ -112,8 +112,9 @@ pub async fn continuation_survives_split(
 
 - Spec ID: `<module path without the crate>.<fn>`, for example
   `resilience.hedge_races_alternate_region`.
-- Trial name: `spec::<module>::<fn>[<service_profile>]`. Standard `libtest`
-  filters apply: `cargo test -p cosspec --test spec -- split`.
+- Trial name: `spec::<module>::<fn>[<backend>.<service_profile>]`, for
+  example `spec::query::continuation_survives_split[inmemory.SingleRegion]`.
+  Standard `libtest` filters apply: `-- split` or `-- emulator.`.
 
 ## Architecture
 
@@ -134,15 +135,18 @@ flowchart TB
     B[[Backend]]
   end
   M[cosspec_macros]
+  CFG[SpecConfig TOML]
   IM[In-memory emulator]
-  FUT[Hosted, vNext, legacy, live: later]
+  EMU[Azure Cosmos DB Emulator]
+  LIVE[Live accounts]
   SDK[azure_data_cosmos]
   DRV[Driver TransportObserver hook]
   T --> M --> R
+  CFG --> R
   T --> DI & P & A
   DI --> C
   DI --> POOL --> PV
-  DI --> B --> IM & FUT
+  DI --> B --> IM & EMU & LIVE
   DI --> SDK --> DRV
   DRV -. HTTP events .-> TAP
 ```
@@ -169,9 +173,11 @@ The spec binary uses a custom harness (`harness = false`):
 
 - `#[spec_test]` registers a `SpecDescriptor` into a `linkme` distributed
   slice.
-- `cosspec::main()` expands each spec into one `libtest-mimic`
-  trial per selected service profile.
-- One process runs against one backend. Trials run in parallel on a shared
+- `cosspec::main()` reads the run configuration (see
+  [Run configuration](#run-configuration)). For each configured backend, in
+  order, and each service profile that backend runs, it adds one
+  `libtest-mimic` trial per spec that selects the profile.
+- One process can run several backends. Trials run in parallel on a shared
   multi-threaded Tokio runtime.
 - Each trial:
   1. obtains the pooled cell;
@@ -251,13 +257,21 @@ needs with `#[requires(..)]`. The declaration has two effects:
 
 | Capability | Meaning | Gates |
 | --- | --- | --- |
-| `TopologyControl` | Partitions can be split on demand. | `ExclusiveContainer::split` |
+| `TopologyControl` | Physical partitions can be split and merged arbitrarily, by EPK range. | `ExclusiveContainer::split` |
+| `SimpleSplitMerge` | A one-partition container can split into two, and a two-partition container can merge into one. | `ExclusiveContainer::simple_partition_split` and `simple_partition_merge` |
 | `RegionControl` | Regions can be taken offline and brought back. | `ExclusiveAccount::take_region_offline` and `bring_region_online` |
 | `MultiRegion` | The account has two or more regions. | Multi-region routing and hedging specs |
 | `MultiWrite` | The account accepts writes in more than one region. | Multi-write specs |
 | `AccountIsolation` | The backend can create dedicated accounts. | `ExclusiveAccount` |
 
-Planned capabilities include `merge`, `replication_control` (pause and resume
+`SimpleSplitMerge` is deliberately narrow. A backend without arbitrary
+`TopologyControl` can still provide it; a live backend could split by raising
+throughput and merge with the partition merge API. Prefer it over
+`TopologyControl` whenever a one-to-two split or two-to-one merge is enough, so
+the spec can run on more backends. Every backend with `TopologyControl` gets it
+through the `ViaTopology` adapter.
+
+Planned capabilities include `replication_control` (pause and resume
 replication), `write_failover`, and `server_faults`. A cost class (`cheap`,
 `slow`, `expensive`) per capability is also planned, so cells can filter with
 a maximum cost. A live split is `expensive` because it means raising
@@ -307,7 +321,7 @@ Account (pooled per cell)
 │   ├── spec-<UUIDv7>              SharedContainer: created and seeded once
 │   └── spec-<UUIDv7>              ExclusiveContainer: deleted after the spec
 └── spec-<UUIDv7>                  ExclusiveDatabase: deleted after the spec
-Dedicated account (in-memory) or account pool (live)
+Dedicated account (in-memory only)
 └── spec-<UUIDv7>                  ExclusiveAccount database
 ```
 
@@ -317,7 +331,7 @@ Dedicated account (in-memory) or account pool (live)
   cleanup straightforward in durable environments such as pre-configured
   live accounts. The result file maps each name to its role.
 
-- **Pooling.** One cell per service profile, created lazily through a global
+- **Pooling.** One cell per backend and service profile, created lazily through a global
   `OnceCell`. Concurrent trials share creation of the account, the cell
   database, and each shared container.
 - **Cleanup.**
@@ -339,7 +353,8 @@ harness client, so provisioning requests appear in the spec's result file.
   key authentication. It treats 409 Conflict on create and 404 Not Found on
   delete as success. It sets throughput only when a profile asks for more
   than one physical partition. The in-memory backend overrides container
-  creation so it can pin the exact partition count.
+  creation so it can pin the exact partition count. The emulator and live
+  backends use it unchanged.
 - **Soon.** Entra ID–only accounts disable data-plane control operations.
   Planned options for them:
   - an `ArmProvisioner` using the management plane with Entra ID
@@ -354,32 +369,105 @@ harness client, so provisioning requests appear in the spec's result file.
 
 ```rust
 trait Backend: Send + Sync {
-    fn name(&self) -> &'static str;
-    fn supports(&self, profile: ServiceProfile) -> bool;
+    fn name(&self) -> &str;
+    fn kind(&self) -> &'static str;
+    fn profiles(&self) -> Vec<ServiceProfile>;
     fn capabilities(&self, profile: ServiceProfile) -> Vec<Capability>;
     async fn open_account(&self, profile: ServiceProfile) -> SpecResult<Arc<dyn BackendAccount>>;
 }
 
 trait BackendAccount: Send + Sync {
     fn profile(&self) -> ServiceProfile;
+    fn endpoint(&self) -> String;
     async fn client(&self, options: ClientOptions) -> SpecResult<CosmosClient>;
     fn provisioner(&self) -> &dyn Provisioner;
     fn topology(&self) -> Option<&dyn TopologyControl>;
+    fn simple_split_merge(&self) -> Option<Box<dyn SimpleSplitMerge + '_>>;
     fn regions(&self) -> Option<&dyn RegionControl>;
+}
+
+trait TopologyControl: Send + Sync {
+    async fn partitions(&self, database: &str, container: &str) -> SpecResult<Vec<FeedRange>>;
+    async fn split(&self, database: &str, container: &str, partition: &FeedRange,
+        at: Option<EffectivePartitionKey>) -> SpecResult;
+    async fn merge(&self, database: &str, container: &str, left: &FeedRange,
+        right: &FeedRange) -> SpecResult;
+    async fn split_all(&self, database: &str, container: &str) -> SpecResult; // provided
+}
+
+trait SimpleSplitMerge: Send + Sync {
+    async fn simple_partition_split(&self, database: &str, container: &str) -> SpecResult;
+    async fn simple_partition_merge(&self, database: &str, container: &str) -> SpecResult;
 }
 ```
 
 A backend must advertise only capabilities it can honor. If a demand fails
 for an advertised capability, that is a backend bug and is reported as a
-failure. `AZURE_COSMOS_SPEC_BACKEND` selects the backend; the default is
-`inmemory`.
+failure. `TopologyControl` identifies physical partitions by their EPK ranges
+as `FeedRange`s, so a spec-level operation never depends on a backend's
+partition IDs. `simple_split_merge()` defaults to `ViaTopology`, which builds
+both operations on `TopologyControl`.
 
-| Backend | Status | `split()` | Regions | `ExclusiveAccount` |
-| --- | --- | --- | --- | --- |
-| In-memory emulator (in process) | Prototype | Emulator split API | Virtual regions; offline and online | New in-process emulator |
-| Hosted in-memory emulator | Planned | Management REST API | Same as in-memory | New hosted instance |
-| vNext and legacy emulators | Planned | Not advertised | Single region | Not advertised |
-| Live | Planned | Throughput increase plus polling (`expensive`) | Profile accounts | Small account pool |
+| Backend (`kind`) | Profiles | Capabilities beyond the profile's | Accounts |
+| --- | --- | --- | --- |
+| In-memory emulator (`inmemory`) | All | `TopologyControl`, `SimpleSplitMerge`, `RegionControl`, `AccountIsolation` | A new in-process emulator per cell and per `ExclusiveAccount` |
+| Azure Cosmos DB Emulator (`emulator`) | `SingleRegion` only | None | An already running emulator, Windows or Linux |
+| Live (`live`) | The configured ones | None | Existing accounts, one per configured profile |
+| Hosted in-memory emulator | Planned | Same as in-memory | A new hosted instance |
+
+- **Emulator.** The emulator is a single region, so configuring any other
+  profile is a configuration error. It needs no configuration: it uses
+  `https://localhost:8081/` and the emulator's well-known key, and accepts the
+  emulator's self-signed certificate. `endpoint` can point elsewhere, for
+  example at a container.
+- **Live.** The run never creates or deletes accounts, only databases and
+  containers in them. Each account must match its profile: the profile's
+  regions in order, and its write regions. `cosspec/infra/main.bicep` deploys
+  one account per profile. Specs that need `TopologyControl`,
+  `SimpleSplitMerge`, `RegionControl`, or `AccountIsolation` are skipped. A
+  future change can add `SimpleSplitMerge` by raising throughput to split and
+  using partition merge.
+- **Authentication.** Live accounts use an account key, from the config or
+  preferably from an environment variable, or Microsoft Entra ID through the
+  developer's Azure CLI or Azure Developer CLI sign-in. Provisioning still
+  uses control-plane operations on the data-plane endpoint (see
+  [Provisioning](#provisioning)). Those operations need key authentication,
+  so Entra ID works only where the identity may create databases.
+
+### Run configuration
+
+`--config <path>` names a TOML file that deserializes into
+`cosspec::config::SpecConfig`. Without it, the run uses
+`SpecConfig::default()`: every service profile on the in-memory emulator.
+Unknown keys, unknown profiles, duplicate backend names, and profiles a
+backend can't provide are rejected when the file is read, before any trial
+runs.
+
+```toml
+[[backends]]
+kind = "inmemory"
+profiles = ["SingleRegion", "MultiWrite"]   # optional; default is all
+
+[[backends]]
+kind = "emulator"                           # SingleRegion only
+# endpoint = "https://localhost:8081/"
+
+[[backends]]
+kind = "live"
+# name = "live-westeurope"                  # optional; default is the kind
+
+[backends.profiles.SingleRegion]
+endpoint = "https://my-single-region.documents.azure.com:443/"
+auth = { kind = "key", key_env = "COSSPEC_SINGLE_REGION_KEY" }
+
+[backends.profiles.MultiWrite]
+endpoint = "https://my-multi-write.documents.azure.com:443/"
+auth = { kind = "entra" }
+```
+
+Backends run in file order. A backend's `name` appears in trial names and
+result files, and must be unique. That allows two backends of one kind, such
+as two sets of live accounts. `cosspec/configs/` has example files.
 
 ## HTTP evidence: `HttpTap`
 
@@ -464,7 +552,8 @@ injected resources, known issues, and source location.
 
 ## Spec results
 
-Every executed trial writes one JSON file, `<spec-id>[<profile>].json`, so a
+Every executed trial writes one JSON file,
+`<spec-id>[<backend>.<profile>].json`, so a
 person or a tool can see what happened without rerunning the spec. Results
 go to the directory passed with `--results-dir <dir>`, or by default to
 `<target>/cosspec-results/<run-id>/`, where the run ID is a UUIDv7. Pass a
@@ -478,7 +567,7 @@ the version. Removing, renaming, or changing the meaning of a field does.
 | --- | --- |
 | `version` | Format version, `1` |
 | `id`, `test_name`, `summary`, `source` | Spec identity, the doc-comment summary, and `file:line` |
-| `service_profile`, `backend`, `requires`, `known_issue` | How the trial was composed |
+| `service_profile`, `backend`, `backend_kind`, `requires`, `known_issue` | How the trial was composed. `backend` is the configured name; `backend_kind` is `inmemory`, `emulator`, or `live` |
 | `started_at`, `duration_ms` | Wall-clock start (RFC 3339) and duration |
 | `status` | `passed` or `failed` |
 | `error` | The spec body's error, if it returned one |
@@ -524,12 +613,15 @@ Remove the attribute in the change that fixes the behavior.
 
 ```sh
 cargo test -p cosspec --test spec
+cargo test -p cosspec --test spec -- --config ./configs/emulator.toml
 ```
+
+Relative `--config` paths are resolved from the `cosspec` directory, because
+Cargo runs tests from the package root.
 
 | Variable | Effect |
 | --- | --- |
-| `AZURE_COSMOS_SPEC_BACKEND` | Backend name; the default is `inmemory` |
-| `AZURE_COSMOS_SPEC_PROFILES` | Comma-separated service profiles to run |
+| `AZURE_COSMOS_SPEC_PROFILES` | Comma-separated service profiles to run, on every backend |
 | `AZURE_COSMOS_SPEC_STRICT` | `1` turns capability skips into failures |
 | `AZURE_COSMOS_SPEC_UPDATE_CATALOG` | `1` rewrites `CATALOG.md` and `catalog.json` |
 
@@ -554,8 +646,10 @@ CRUD, throttling, region-failover, and framework self-tests.
   list of capabilities that may be skipped?
 - Should a live `SharedContainer` be reused across runs, identified by a
   dataset fingerprint, to save seeding time?
-- Should merge, write failover, and replication pause be backend demands or
+- Should write failover and replication pause be backend demands or
   account-level operations?
+- Should a live backend provide `SimpleSplitMerge` by raising throughput, given
+  the time and cost of a live split?
 - Should spec IDs be frozen in a lock file so that renames require explicit
   acknowledgement?
 - How should compile-fail tests for `#[spec_test]` diagnostics be added

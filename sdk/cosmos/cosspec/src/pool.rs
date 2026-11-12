@@ -71,8 +71,10 @@ pub(crate) struct Cell {
 
 type CellSlot = Arc<OnceCell<Arc<Cell>>>;
 
-fn cells() -> &'static Mutex<HashMap<ServiceProfile, CellSlot>> {
-    static CELLS: OnceLock<Mutex<HashMap<ServiceProfile, CellSlot>>> = OnceLock::new();
+type CellKey = (String, ServiceProfile);
+
+fn cells() -> &'static Mutex<HashMap<CellKey, CellSlot>> {
+    static CELLS: OnceLock<Mutex<HashMap<CellKey, CellSlot>>> = OnceLock::new();
     CELLS.get_or_init(Mutex::default)
 }
 
@@ -81,7 +83,12 @@ pub(crate) async fn cell(
     backend: &Arc<dyn Backend>,
     profile: ServiceProfile,
 ) -> SpecResult<Arc<Cell>> {
-    let slot = cells().lock().unwrap().entry(profile).or_default().clone();
+    let slot = cells()
+        .lock()
+        .unwrap()
+        .entry((backend.name().to_owned(), profile))
+        .or_default()
+        .clone();
     slot.get_or_try_init(|| open_cell(backend.clone(), profile))
         .await
         .cloned()

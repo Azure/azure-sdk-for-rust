@@ -4,8 +4,10 @@
 //! Spec registration and the `libtest-mimic` runner.
 
 use crate::{
-    backend::{self, Backend},
+    args::HarnessArgs,
+    backend::Backend,
     catalog,
+    config::SpecConfig,
     context::{ParamKind, SpecContext},
     pool,
     profiles::ContainerProfile,
@@ -103,10 +105,10 @@ impl SpecDescriptor {
         parts.join(".")
     }
 
-    /// The test name for one service profile, for example
-    /// `spec::query::continuation_survives_split[SingleRegion]`.
-    pub fn test_name(&self, profile: ServiceProfile) -> String {
-        format!("{}::{}[{profile}]", self.module, self.function)
+    /// The test name for one backend and service profile, for example
+    /// `spec::query::continuation_survives_split[inmemory.SingleRegion]`.
+    pub fn test_name(&self, backend: &str, profile: ServiceProfile) -> String {
+        format!("{}::{}[{backend}.{profile}]", self.module, self.function)
     }
 }
 
@@ -144,29 +146,47 @@ fn selected_profiles() -> Option<Vec<ServiceProfile>> {
 
 /// Runs every registered spec. Call this from a `harness = false` test's `main`.
 ///
-/// Accepts the usual libtest arguments plus `--results-dir <dir>`, the directory
-/// to write one result file per executed trial to. It defaults to
-/// `<target>/cosspec-results/<run-id>`.
+/// Accepts the usual libtest arguments plus:
+///
+/// * `--config <path>`: the TOML [`SpecConfig`] naming the backends and service
+///   profiles to run. Defaults to [`SpecConfig::default`].
+/// * `--results-dir <dir>`: the directory to write one result file per executed
+///   trial to. Defaults to `<target>/cosspec-results/<run-id>`.
+///
+/// Trials run backend by backend, and within each backend, profile by profile.
 pub fn main() {
-    let (results_dir, args) = results::split_args(std::env::args_os()).unwrap_or_else(|e| {
+    let exit = |e: &dyn std::fmt::Display| -> ! {
         eprintln!("error: {e}");
         std::process::exit(2);
-    });
-    let args = Arguments::from_iter(args);
-    let results_dir = results_dir.unwrap_or_else(|| results::default_dir(pool::run_id()));
+    };
+    let harness = HarnessArgs::parse(std::env::args_os()).unwrap_or_else(|e| exit(&e));
+    let config = match &harness.config {
+        Some(path) => SpecConfig::load(path).unwrap_or_else(|e| exit(&e)),
+        None => SpecConfig::default(),
+    };
+    let backends = config.backends().unwrap_or_else(|e| exit(&e));
+    let args = Arguments::from_iter(harness.libtest);
+    let results_dir = harness
+        .results_dir
+        .unwrap_or_else(|| results::default_dir(pool::run_id()));
     results::set_dir(results_dir);
     results::install_panic_hook();
-    let backend = backend::selected().unwrap_or_else(|e| panic!("{e}"));
     let strict = std::env::var(STRICT_ENV).as_deref() == Ok("1");
     let only = selected_profiles();
 
+    let specs = specs();
     let mut trials = vec![catalog::trial()];
-    for spec in specs() {
-        for &profile in spec.service_profiles {
+    for backend in &backends {
+        for profile in backend.profiles() {
             if only.as_ref().is_some_and(|only| !only.contains(&profile)) {
                 continue;
             }
-            trials.push(trial(&backend, spec, profile, strict));
+            for &spec in specs
+                .iter()
+                .filter(|spec| spec.service_profiles.contains(&profile))
+            {
+                trials.push(trial(backend, spec, profile, strict));
+            }
         }
     }
 
@@ -187,28 +207,19 @@ fn trial(
     profile: ServiceProfile,
     strict: bool,
 ) -> Trial {
-    let name = spec.test_name(profile);
-    let available = if backend.supports(profile) {
-        backend.capabilities(profile)
-    } else {
-        Vec::new()
-    };
+    let name = spec.test_name(backend.name(), profile);
+    let available = backend.capabilities(profile);
     let missing: Vec<_> = spec
         .requires
         .iter()
         .filter(|capability| !available.contains(capability))
         .map(|capability| capability.name())
         .collect();
-    let unsupported = !backend.supports(profile);
-    if unsupported || !missing.is_empty() {
-        let reason = if unsupported {
-            format!("{} cannot provide {profile}", backend.name())
-        } else {
-            format!("{} lacks {}", backend.name(), missing.join(", "))
-        };
-        let backend_name = backend.name();
+    if !missing.is_empty() {
+        let reason = format!("{} lacks {}", backend.name(), missing.join(", "));
+        let backend = backend.clone();
         let trial = Trial::test(name, move || {
-            let mut record = TrialRecord::start(spec, profile, backend_name);
+            let mut record = TrialRecord::start(spec, profile, backend.as_ref());
             record.error = Some(format!("skipped: {reason}").into());
             finish_trial(record)
         });
@@ -250,7 +261,7 @@ async fn run_spec(
     spec: &'static SpecDescriptor,
     profile: ServiceProfile,
 ) -> TrialRecord {
-    let mut record = TrialRecord::start(spec, profile, backend.name());
+    let mut record = TrialRecord::start(spec, profile, backend.as_ref());
     let cell = match pool::cell(&backend, profile).await {
         Ok(cell) => cell,
         Err(e) => {
