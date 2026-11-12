@@ -21,6 +21,9 @@ param githubRef string = 'refs/heads/main'
 @description('The location of the resource. By default, this is the same as the resource group.')
 param location string = resourceGroup().location
 
+@description('The AKS cluster location. Defaults to eastus2 to avoid capacity constraints in the resource group region.')
+param aksLocation string = 'eastus2'
+
 param sshPubKey string = ''
 
 // https://learn.microsoft.com/azure/role-based-access-control/built-in-roles
@@ -101,7 +104,7 @@ resource acrPullContainerInstance 'Microsoft.Authorization/roleAssignments@2022-
 
 resource aks 'Microsoft.ContainerService/managedClusters@2023-06-01' = if (deployResources) {
   name: baseName
-  location: location
+  location: aksLocation
   identity: {
     type: 'SystemAssigned'
   }
@@ -118,7 +121,7 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-06-01' = if (deplo
         osSKU: 'Ubuntu'
         osType: 'Linux'
         type: 'VirtualMachineScaleSets'
-        vmSize: 'Standard_D2s_v3'
+        vmSize: 'Standard_D2s_v5'
       }
     ]
     dnsPrefix: 'identitytest'
