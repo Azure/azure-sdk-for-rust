@@ -34,6 +34,7 @@ mod console;
 mod context;
 pub mod faults;
 pub mod http_tap;
+pub mod manifest;
 mod pool;
 pub mod profiles;
 pub mod provision;

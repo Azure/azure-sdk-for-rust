@@ -84,6 +84,11 @@ impl Job {
     }
 }
 
+/// Whether `args` select `job`, ignoring whether it is ignored.
+pub(crate) fn is_selected(args: &Arguments, job: &Job) -> bool {
+    !args.is_filtered_out(&job.probe())
+}
+
 enum Outcome {
     Passed(Duration),
     Failed(String, Duration),

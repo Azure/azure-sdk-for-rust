@@ -322,6 +322,12 @@ struct ResultFile {
     http: Vec<HttpJson>,
 }
 
+/// The result file name of one trial, for example
+/// `query.split[inmemory.SingleRegion].json`.
+pub(crate) fn file_name(spec: &SpecDescriptor, backend: &str, profile: ServiceProfile) -> String {
+    format!("{}[{}.{}].json", spec.id(), backend, profile)
+}
+
 /// Everything collected while one trial ran.
 #[derive(Debug)]
 pub(crate) struct TrialRecord {
@@ -415,7 +421,7 @@ impl TrialRecord {
 
     /// The result file name, for example `query.split[inmemory.SingleRegion].json`.
     pub fn file_name(&self) -> String {
-        format!("{}[{}.{}].json", self.spec.id(), self.backend, self.profile)
+        file_name(self.spec, &self.backend, self.profile)
     }
 
     /// Writes the result file into `dir`.

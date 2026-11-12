@@ -615,6 +615,43 @@ binary encoding, appear as `base64`. A body field is `null` when the request
 had no body or no response arrived. Headers aren't recorded yet; adding them
 later is an additive change.
 
+### Run manifest
+
+Each run directory also holds `manifest.json`, so tools can list a run's
+trials without parsing file names or opening every result. The harness
+writes it before the first trial, rewrites it after each trial (write to a
+temporary file, then rename), and finishes it when the run ends. A reader can
+open a run that is still going. `--list` doesn't write a manifest.
+
+The manifest has its own version, also `1`, and follows the same additive
+rule as result files.
+
+| Field | Contents |
+| --- | --- |
+| `version`, `kind` | Manifest version, `1`, and `"cosspec-run"`, which identifies the file |
+| `run_id` | The run directory's name |
+| `started_at`, `finished_at` | RFC 3339 times; `finished_at` is `null` while the run is going |
+| `status` | `running`, or `completed` once every trial has finished. A run that stays `running` was interrupted |
+| `args` | The harness's command-line arguments |
+| `cleanup`, `result_version` | Whether resources were deleted, and the result file version |
+| `backends` | Each backend that ran: `name`, `kind`, and its `profiles` |
+| `totals` | Trial counts by status |
+| `checks` | Checks that aren't trials, such as the catalog check: `name`, `status`, `duration_ms`, `error` |
+| `trials` | Every selected trial, in run order |
+
+Each trial has `test_name`, `spec_id`, `summary`, `source`, `backend`,
+`backend_kind`, `service_profile`, `requires`, `status`, `reason`,
+`duration_ms`, `error`, and `result_file`. `status` is `pending` until the
+trial finishes, then `passed` or `failed`. When the run completes, trials that
+never ran become `skipped` (missing capabilities), `ignored` (known issues), or
+`not_run`. `reason` holds the skip reason or known-issue text. `result_file` is
+the result file's name within the run directory, or `null` when the trial
+wrote none. Filtered-out trials aren't listed.
+
+[`cosspec-viewer`](../../cosspec-viewer/README.md) is a browser app that
+shows runs, trials, and each trial's requests on a timeline. It opens a run
+directory or a directory of runs, using `manifest.json` to find runs.
+
 ## Known issues
 
 `#[known_issue]` keeps a spec that the SDK fails today visible without

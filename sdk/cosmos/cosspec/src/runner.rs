@@ -10,6 +10,7 @@ use crate::{
     config::SpecConfig,
     console::{self, Ignore, Job, Place},
     context::{ParamKind, SpecContext},
+    manifest::{self, Manifest, Planned, Slot, TrialEntry},
     pool,
     profiles::ContainerProfile,
     results::{self, TrialRecord},
@@ -186,30 +187,61 @@ pub fn main() {
     let only = selected_profiles();
 
     let specs = specs();
-    let mut jobs = vec![Job {
-        name: catalog::TEST_NAME.to_owned(),
-        place: Place::TopLevel,
-        ignore: None,
-        run: Box::new(catalog::check_or_update),
-    }];
+    let mut jobs = vec![(
+        Job {
+            name: catalog::TEST_NAME.to_owned(),
+            place: Place::TopLevel,
+            ignore: None,
+            run: Box::new(catalog::check_or_update),
+        },
+        None,
+    )];
+    let mut manifest = Manifest::new(
+        pool::run_id(),
+        std::env::args().skip(1).collect(),
+        pool::cleanup(),
+    );
     for backend in &backends {
         let profiles: Vec<_> = backend
             .profiles()
             .into_iter()
             .filter(|profile| only.as_ref().is_none_or(|only| only.contains(profile)))
             .collect();
+        manifest.add_backend(backend.as_ref(), &profiles);
         for &spec in &specs {
             for &profile in profiles
                 .iter()
                 .filter(|profile| spec.service_profiles.contains(profile))
             {
-                jobs.push(job(backend, spec, profile, strict));
+                let (job, entry) = job(backend, spec, profile, strict);
+                jobs.push((job, Some(entry)));
             }
         }
     }
 
     let list_only = args.list;
+    let jobs = if list_only {
+        jobs.into_iter().map(|(job, _)| job).collect()
+    } else {
+        let mut tracked = Vec::with_capacity(jobs.len());
+        for (job, entry) in jobs {
+            if !console::is_selected(&args, &job) {
+                tracked.push(job);
+                continue;
+            }
+            let slot = match entry {
+                Some(entry) => manifest.add_trial(entry),
+                None => manifest.add_check(&job.name),
+            };
+            tracked.push(track(job, slot));
+        }
+        if let Some(dir) = results::dir() {
+            manifest::begin(dir.to_owned(), manifest);
+        }
+        tracked
+    };
     let passed = console::run(&args, jobs);
+    manifest::finish();
     match runtime().block_on(pool::close_all()) {
         Ok(kept) if !kept.is_empty() && !list_only => {
             eprintln!(
@@ -233,12 +265,32 @@ pub fn main() {
     std::process::exit(if passed { 0 } else { 101 });
 }
 
+/// Wraps `job` so its outcome is recorded in the run manifest.
+fn track(job: Job, slot: Slot) -> Job {
+    let run = job.run;
+    Job {
+        run: Box::new(move || {
+            let start = std::time::Instant::now();
+            let result = std::panic::catch_unwind(AssertUnwindSafe(run));
+            let duration_ms = start.elapsed().as_secs_f64() * 1000.0;
+            let recorded = match &result {
+                Ok(Ok(())) => Ok(()),
+                Ok(Err(failed)) => Err(failed.message().unwrap_or_default().to_owned()),
+                Err(payload) => Err(panic_message(payload.as_ref())),
+            };
+            manifest::record(slot, &recorded, duration_ms);
+            result.unwrap_or_else(|payload| std::panic::resume_unwind(payload))
+        }),
+        ..job
+    }
+}
+
 fn job(
     backend: &Arc<dyn Backend>,
     spec: &'static SpecDescriptor,
     profile: ServiceProfile,
     strict: bool,
-) -> Job {
+) -> (Job, TrialEntry) {
     let name = spec.test_name(backend.name(), profile);
     let place = Place::Leaf {
         backend: backend.name().to_owned(),
@@ -254,31 +306,53 @@ fn job(
         .collect();
     if !missing.is_empty() {
         let reason = format!("{} lacks {}", backend.name(), missing.join(", "));
+        let entry = TrialEntry::new(
+            spec,
+            backend.as_ref(),
+            profile,
+            if strict { Planned::Run } else { Planned::Skip },
+            Some(reason.clone()),
+        );
         let backend = backend.clone();
         let message = format!("skipped: {reason}");
-        return Job {
-            name,
-            place,
-            ignore: (!strict).then_some(Ignore::Skip(reason)),
-            run: Box::new(move || {
-                let mut record = TrialRecord::start(spec, profile, backend.as_ref());
-                record.error = Some(message.into());
-                finish_trial(record)
-            }),
-        };
+        return (
+            Job {
+                name,
+                place,
+                ignore: (!strict).then_some(Ignore::Skip(reason)),
+                run: Box::new(move || {
+                    let mut record = TrialRecord::start(spec, profile, backend.as_ref());
+                    record.error = Some(message.into());
+                    finish_trial(record)
+                }),
+            },
+            entry,
+        );
     }
 
     let known_issue = spec
         .known_issue
         .as_ref()
-        .is_some_and(|issue| issue.affects(profile));
+        .filter(|issue| issue.affects(profile));
+    let entry = TrialEntry::new(
+        spec,
+        backend.as_ref(),
+        profile,
+        if known_issue.is_some() {
+            Planned::KnownIssue
+        } else {
+            Planned::Run
+        },
+        known_issue.map(|issue| issue.reason.to_owned()),
+    );
     let backend = backend.clone();
-    Job {
+    let job = Job {
         name,
         place,
-        ignore: known_issue.then_some(Ignore::KnownIssue),
+        ignore: known_issue.is_some().then_some(Ignore::KnownIssue),
         run: Box::new(move || finish_trial(runtime().block_on(run_spec(backend, spec, profile)))),
-    }
+    };
+    (job, entry)
 }
 
 /// Writes the trial's result file and converts it to a libtest outcome.

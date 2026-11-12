@@ -65,6 +65,16 @@ Runs that use the default location keep only the 10 newest run directories
 there. Pass `--no-prune` to keep them all. A `--results-dir` directory is never
 pruned.
 
+Each run directory also has a `manifest.json` that lists every trial with its
+backend, service profile, status, and result file. To browse results, use
+[`cosspec-viewer`](../cosspec-viewer/README.md):
+
+```sh
+cd sdk/cosmos/cosspec-viewer
+bun install
+bun run start -- --open
+```
+
 ### Choose backends
 
 Pass a TOML configuration file with `--config` to choose the backends and the
