@@ -11,8 +11,6 @@ use cosspec::{
 use futures::{StreamExt, TryStreamExt};
 use std::num::NonZeroU32;
 
-const BY_ID: &str = "SELECT * FROM c ORDER BY c.id";
-
 fn pages_of(size: u32) -> QueryOptions {
     QueryOptions::default()
         .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(size).unwrap()))
@@ -27,7 +25,11 @@ pub async fn continuation_resumes_without_loss(
     let client = container.client();
 
     let mut pages = client
-        .query_items::<Item>(BY_ID, FeedScope::full_container(), Some(pages_of(5)))
+        .query_items::<Item>(
+            "SELECT * FROM c ORDER BY c.id",
+            FeedScope::full_container(),
+            Some(pages_of(5)),
+        )
         .await?
         .into_pages();
     let mut items = pages.next().await.expect("a first page")?.into_items();
@@ -37,7 +39,7 @@ pub async fn continuation_resumes_without_loss(
     let options = pages_of(5).with_continuation_token(token);
     let resumed = client
         .query_items::<Item>(
-            Query::from(BY_ID),
+            Query::from("SELECT * FROM c ORDER BY c.id"),
             FeedScope::full_container(),
             Some(options),
         )
@@ -59,7 +61,11 @@ pub async fn continuation_survives_split(
     assert_feed_ranges!(container, 1);
 
     let mut pages = client
-        .query_items::<Item>(BY_ID, FeedScope::full_container(), Some(pages_of(5)))
+        .query_items::<Item>(
+            "SELECT * FROM c ORDER BY c.id",
+            FeedScope::full_container(),
+            Some(pages_of(5)),
+        )
         .await?
         .into_pages();
     let mut items = pages.next().await.expect("a first page")?.into_items();
@@ -71,7 +77,11 @@ pub async fn continuation_survives_split(
 
     let options = pages_of(5).with_continuation_token(token);
     let resumed = client
-        .query_items::<Item>(BY_ID, FeedScope::full_container(), Some(options))
+        .query_items::<Item>(
+            "SELECT * FROM c ORDER BY c.id",
+            FeedScope::full_container(),
+            Some(options),
+        )
         .await?;
     items.extend(resumed.try_collect::<Vec<_>>().await?);
 
