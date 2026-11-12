@@ -12,7 +12,7 @@ This troubleshooting guide covers failure investigation techniques, common error
 - [Troubleshoot AzurePipelinesCredential authentication issues](#troubleshoot-azurepipelinescredential-authentication-issues)
 - [Troubleshoot ClientCertificateCredential authentication issues](#troubleshoot-clientcertificatecredential-authentication-issues)
 - [Troubleshoot ClientSecretCredential authentication issues](#troubleshoot-clientsecretcredential-authentication-issues)
-- [Troubleshoot GitHubActionsCredential authentication issues](#troubleshoot-clientsecretcredential-authentication-issues)
+- [Troubleshoot GitHubActionsCredential authentication issues](#troubleshoot-githubactionscredential-authentication-issues)
 - [Troubleshoot ManagedIdentityCredential authentication issues](#troubleshoot-managedidentitycredential-authentication-issues)
   - [Azure App Service and Azure Functions managed identity](#azure-app-service-and-azure-functions-managed-identity)
   - [Azure Virtual Machine managed identity](#azure-virtual-machine-managed-identity)
