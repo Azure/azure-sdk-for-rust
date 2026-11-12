@@ -34,6 +34,7 @@ mod pool;
 pub mod profiles;
 pub mod provision;
 mod resources;
+pub mod results;
 mod runner;
 pub mod testdata;
 

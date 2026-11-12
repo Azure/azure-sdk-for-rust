@@ -1,12 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Per-spec state: declared capabilities, the spec's `HttpTap`, and teardown.
+//! Per-spec state: declared capabilities, the spec's `HttpTap`, the full HTTP
+//! recording, the resources used, and teardown.
 
 use crate::{
     backend::{BackendAccount, ClientOptions},
+    http_tap::{self, HttpRecord},
     pool::Cell,
     profiles::{self, ContainerProfile},
+    results::{Origin, ResourceKind, ResourceRecord},
     runner::SpecDescriptor,
     Capability, HttpTap, InvalidConfiguration, ServiceProfile, SpecResult,
 };
@@ -15,6 +18,14 @@ use std::{
     future::Future,
     sync::{Arc, Mutex},
 };
+use tokio::sync::OnceCell;
+
+/// The recording label for requests from clients the spec uses.
+pub(crate) const SPEC_LABEL: &str = "spec";
+
+/// The recording label for requests the framework makes for the spec, such as
+/// seeding and teardown.
+pub(crate) const HARNESS_LABEL: &str = "harness";
 
 /// The write operations a `SharedContainer` must never see.
 pub(crate) const WRITE_OPERATIONS: &[&str] = &[
@@ -67,11 +78,13 @@ pub trait Inject: Sized {
 enum Cleanup {
     Container {
         account: Arc<dyn BackendAccount>,
+        client: CosmosClient,
         database: String,
         container: String,
     },
     Database {
         account: Arc<dyn BackendAccount>,
+        client: CosmosClient,
         database: String,
     },
 }
@@ -83,6 +96,9 @@ pub struct SpecContext {
     pub(crate) descriptor: &'static SpecDescriptor,
     pub(crate) service_profile: ServiceProfile,
     tap: HttpTap,
+    recording: HttpTap,
+    harness: OnceCell<CosmosClient>,
+    resources: Mutex<Vec<ResourceRecord>>,
     cleanups: Mutex<Vec<Cleanup>>,
     shared: Mutex<Vec<String>>,
 }
@@ -98,6 +114,9 @@ impl SpecContext {
             descriptor,
             service_profile,
             tap: HttpTap::new(),
+            recording: HttpTap::new(),
+            harness: OnceCell::new(),
+            resources: Mutex::default(),
             cleanups: Mutex::default(),
             shared: Mutex::default(),
         }
@@ -133,28 +152,100 @@ impl SpecContext {
             .unwrap_or_else(profiles::empty)
     }
 
-    /// Builds a spec-facing client: tapped, with optional faults.
+    /// Builds a spec-facing client: tapped, recorded, with optional faults.
     pub(crate) async fn client(
         &self,
         account: &dyn BackendAccount,
         faults: Vec<Arc<FaultInjectionRule>>,
     ) -> SpecResult<CosmosClient> {
+        let observer = http_tap::fan_out(vec![
+            self.tap.observer(),
+            self.recording.labeled_observer(SPEC_LABEL),
+        ]);
         account
             .client(ClientOptions {
-                observer: Some(self.tap.observer()),
+                observer: Some(observer),
                 faults,
             })
             .await
     }
 
+    /// Builds a new framework client for `account`. Its requests are recorded
+    /// but hidden from the spec's `HttpTap`.
+    pub(crate) async fn harness_client(
+        &self,
+        account: &dyn BackendAccount,
+    ) -> SpecResult<CosmosClient> {
+        account
+            .client(ClientOptions {
+                observer: Some(self.recording.labeled_observer(HARNESS_LABEL)),
+                faults: Vec::new(),
+            })
+            .await
+    }
+
+    /// The framework client for the pooled account, built on first use.
+    pub(crate) async fn cell_harness_client(&self) -> SpecResult<CosmosClient> {
+        self.harness
+            .get_or_try_init(|| self.harness_client(self.cell.account.as_ref()))
+            .await
+            .cloned()
+    }
+
+    /// Records a resource the spec used, once.
+    pub(crate) fn record_resource(&self, record: ResourceRecord) {
+        let mut resources = self.resources.lock().unwrap();
+        if !resources.contains(&record) {
+            resources.push(record);
+        }
+    }
+
+    /// Records an account the spec used.
+    pub(crate) fn record_account(&self, account: &dyn BackendAccount, origin: Origin) {
+        self.record_resource(ResourceRecord {
+            kind: ResourceKind::Account,
+            origin,
+            name: account.endpoint(),
+            database: None,
+            profile: None,
+            parameter: None,
+        });
+    }
+
+    /// Records that the spec uses the pooled account and cell database.
+    pub(crate) fn record_cell_database(&self) {
+        self.record_account(self.cell.account.as_ref(), Origin::Pooled);
+        self.record_resource(ResourceRecord {
+            kind: ResourceKind::Database,
+            origin: Origin::Pooled,
+            name: self.cell.database.clone(),
+            database: None,
+            profile: None,
+            parameter: None,
+        });
+    }
+
+    /// The resources the spec created or borrowed, in the order it first used them.
+    pub(crate) fn resources(&self) -> Vec<ResourceRecord> {
+        self.resources.lock().unwrap().clone()
+    }
+
+    /// Every HTTP exchange of the spec and of the framework on its behalf, in
+    /// start order. Unlike the spec's `HttpTap`, it is never cleared.
+    pub(crate) fn recording(&self) -> Vec<HttpRecord> {
+        self.recording.records()
+    }
+
     pub(crate) fn on_teardown_delete_container(
         &self,
         account: Arc<dyn BackendAccount>,
+        client: CosmosClient,
         database: &str,
         container: &str,
     ) {
         self.cleanups.lock().unwrap().push(Cleanup::Container {
             account,
+            client,
             database: database.to_owned(),
             container: container.to_owned(),
         });
@@ -163,10 +254,12 @@ impl SpecContext {
     pub(crate) fn on_teardown_delete_database(
         &self,
         account: Arc<dyn BackendAccount>,
+        client: CosmosClient,
         database: &str,
     ) {
         self.cleanups.lock().unwrap().push(Cleanup::Database {
             account,
+            client,
             database: database.to_owned(),
         });
     }
@@ -182,16 +275,24 @@ impl SpecContext {
             match cleanup {
                 Cleanup::Container {
                     account,
+                    client,
                     database,
                     container,
                 } => {
                     account
                         .provisioner()
-                        .delete_container(&database, &container)
+                        .delete_container(&client, &database, &container)
                         .await?
                 }
-                Cleanup::Database { account, database } => {
-                    account.provisioner().delete_database(&database).await?
+                Cleanup::Database {
+                    account,
+                    client,
+                    database,
+                } => {
+                    account
+                        .provisioner()
+                        .delete_database(&client, &database)
+                        .await?
                 }
             }
         }

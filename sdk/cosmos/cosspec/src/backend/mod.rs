@@ -52,6 +52,9 @@ pub trait BackendAccount: Send + Sync + Debug {
     /// The account's service profile.
     fn profile(&self) -> ServiceProfile;
 
+    /// The account endpoint, recorded in spec results.
+    fn endpoint(&self) -> String;
+
     /// Builds a new client for this account.
     async fn client(&self, options: ClientOptions) -> SpecResult<CosmosClient>;
 

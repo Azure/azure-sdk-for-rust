@@ -6,6 +6,10 @@
 //! [`ControlPlaneProvisioner`] uses the SDK's `control_plane` APIs and therefore
 //! needs key-based auth. Entra ID-only accounts need a provisioner backed by Azure
 //! Resource Manager; that is a planned addition behind the same trait.
+//!
+//! Every method takes the harness client to provision through, so the requests
+//! are recorded with the spec that caused them. Provisioners that don't use the
+//! data plane may ignore it.
 
 use crate::{profiles::ContainerProfile, SpecResult};
 use async_trait::async_trait;
@@ -25,38 +29,35 @@ pub const RU_PER_PHYSICAL_PARTITION: u64 = 10_000;
 #[async_trait]
 pub trait Provisioner: Send + Sync + Debug {
     /// Creates a database. Succeeds if it already exists.
-    async fn create_database(&self, database: &str) -> SpecResult;
+    async fn create_database(&self, client: &CosmosClient, database: &str) -> SpecResult;
 
     /// Deletes a database and everything in it. Succeeds if it does not exist.
-    async fn delete_database(&self, database: &str) -> SpecResult;
+    async fn delete_database(&self, client: &CosmosClient, database: &str) -> SpecResult;
 
     /// Creates a container shaped by `profile`. Does not seed data.
     async fn create_container(
         &self,
+        client: &CosmosClient,
         database: &str,
         container: &str,
         profile: &ContainerProfile,
     ) -> SpecResult;
 
     /// Deletes a container. Succeeds if it does not exist.
-    async fn delete_container(&self, database: &str, container: &str) -> SpecResult;
+    async fn delete_container(
+        &self,
+        client: &CosmosClient,
+        database: &str,
+        container: &str,
+    ) -> SpecResult;
 
     /// Lists the IDs of every database in the account.
-    async fn list_databases(&self) -> SpecResult<Vec<String>>;
+    async fn list_databases(&self, client: &CosmosClient) -> SpecResult<Vec<String>>;
 }
 
 /// A [`Provisioner`] that uses the SDK's `control_plane` APIs.
-#[derive(Debug)]
-pub struct ControlPlaneProvisioner {
-    client: CosmosClient,
-}
-
-impl ControlPlaneProvisioner {
-    /// Creates a provisioner that issues control-plane requests through `client`.
-    pub fn new(client: CosmosClient) -> Self {
-        Self { client }
-    }
-}
+#[derive(Debug, Default)]
+pub struct ControlPlaneProvisioner;
 
 fn ignore_status(result: azure_data_cosmos::Result<()>, status: u16) -> SpecResult {
     match result {
@@ -67,15 +68,15 @@ fn ignore_status(result: azure_data_cosmos::Result<()>, status: u16) -> SpecResu
 
 #[async_trait]
 impl Provisioner for ControlPlaneProvisioner {
-    async fn create_database(&self, database: &str) -> SpecResult {
-        let result = Box::pin(self.client.create_database(database, None))
+    async fn create_database(&self, client: &CosmosClient, database: &str) -> SpecResult {
+        let result = Box::pin(client.create_database(database, None))
             .await
             .map(drop);
         ignore_status(result, 409)
     }
 
-    async fn delete_database(&self, database: &str) -> SpecResult {
-        let result = Box::pin(self.client.database_client(database).delete(None))
+    async fn delete_database(&self, client: &CosmosClient, database: &str) -> SpecResult {
+        let result = Box::pin(client.database_client(database).delete(None))
             .await
             .map(drop);
         ignore_status(result, 404)
@@ -83,6 +84,7 @@ impl Provisioner for ControlPlaneProvisioner {
 
     async fn create_container(
         &self,
+        client: &CosmosClient,
         database: &str,
         container: &str,
         profile: &ContainerProfile,
@@ -97,7 +99,7 @@ impl Provisioner for ControlPlaneProvisioner {
             ))
         });
         let result = Box::pin(
-            self.client
+            client
                 .database_client(database)
                 .create_container(properties, options),
         )
@@ -106,9 +108,14 @@ impl Provisioner for ControlPlaneProvisioner {
         ignore_status(result, 409)
     }
 
-    async fn delete_container(&self, database: &str, container: &str) -> SpecResult {
+    async fn delete_container(
+        &self,
+        client: &CosmosClient,
+        database: &str,
+        container: &str,
+    ) -> SpecResult {
         let client = Box::pin(
-            self.client
+            client
                 .database_client(database)
                 .container_client(container, None),
         )
@@ -120,12 +127,9 @@ impl Provisioner for ControlPlaneProvisioner {
         ignore_status(result, 404)
     }
 
-    async fn list_databases(&self) -> SpecResult<Vec<String>> {
-        let iterator = Box::pin(
-            self.client
-                .query_databases(Query::from("SELECT * FROM root"), None),
-        )
-        .await?;
+    async fn list_databases(&self, client: &CosmosClient) -> SpecResult<Vec<String>> {
+        let iterator =
+            Box::pin(client.query_databases(Query::from("SELECT * FROM root"), None)).await?;
         let databases: Vec<DatabaseProperties> = Box::pin(iterator.try_collect()).await?;
         Ok(databases.into_iter().filter_map(|db| db.id).collect())
     }

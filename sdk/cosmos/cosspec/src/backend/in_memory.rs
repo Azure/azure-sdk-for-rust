@@ -74,17 +74,13 @@ impl Backend for InMemoryBackend {
             .with_write_mode(write_mode)
             .with_replication_config(ReplicationConfig::immediate());
         let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
-        let mut account = InMemoryAccount {
+        Ok(Arc::new(InMemoryAccount {
             profile,
             regions,
             endpoint,
             emulator,
-            control_plane: None,
             partitions: Mutex::default(),
-        };
-        let admin = account.client(ClientOptions::default()).await?;
-        account.control_plane = Some(ControlPlaneProvisioner::new(admin));
-        Ok(Arc::new(account))
+        }))
     }
 }
 
@@ -94,23 +90,18 @@ struct InMemoryAccount {
     regions: Vec<Region>,
     endpoint: String,
     emulator: Arc<InMemoryEmulatorHttpClient>,
-    control_plane: Option<ControlPlaneProvisioner>,
     /// Current physical partition IDs per `(database, container)`.
     partitions: Mutex<HashMap<(String, String), Vec<u32>>>,
-}
-
-impl InMemoryAccount {
-    fn control_plane(&self) -> &ControlPlaneProvisioner {
-        self.control_plane
-            .as_ref()
-            .expect("control plane is set when the account opens")
-    }
 }
 
 #[async_trait]
 impl BackendAccount for InMemoryAccount {
     fn profile(&self) -> ServiceProfile {
         self.profile
+    }
+
+    fn endpoint(&self) -> String {
+        self.endpoint.clone()
     }
 
     async fn client(&self, options: ClientOptions) -> SpecResult<CosmosClient> {
@@ -147,18 +138,23 @@ impl BackendAccount for InMemoryAccount {
 
 #[async_trait]
 impl Provisioner for InMemoryAccount {
-    async fn create_database(&self, database: &str) -> SpecResult {
-        self.control_plane().create_database(database).await
+    async fn create_database(&self, client: &CosmosClient, database: &str) -> SpecResult {
+        ControlPlaneProvisioner
+            .create_database(client, database)
+            .await
     }
 
-    async fn delete_database(&self, database: &str) -> SpecResult {
-        self.control_plane().delete_database(database).await
+    async fn delete_database(&self, client: &CosmosClient, database: &str) -> SpecResult {
+        ControlPlaneProvisioner
+            .delete_database(client, database)
+            .await
     }
 
     /// Creates the container directly in the emulator store so the physical
     /// partition count is exact.
     async fn create_container(
         &self,
+        _client: &CosmosClient,
         database: &str,
         container: &str,
         profile: &ContainerProfile,
@@ -184,18 +180,23 @@ impl Provisioner for InMemoryAccount {
         Ok(())
     }
 
-    async fn delete_container(&self, database: &str, container: &str) -> SpecResult {
+    async fn delete_container(
+        &self,
+        client: &CosmosClient,
+        database: &str,
+        container: &str,
+    ) -> SpecResult {
         self.partitions
             .lock()
             .unwrap()
             .remove(&(database.to_owned(), container.to_owned()));
-        self.control_plane()
-            .delete_container(database, container)
+        ControlPlaneProvisioner
+            .delete_container(client, database, container)
             .await
     }
 
-    async fn list_databases(&self) -> SpecResult<Vec<String>> {
-        self.control_plane().list_databases().await
+    async fn list_databases(&self, client: &CosmosClient) -> SpecResult<Vec<String>> {
+        ControlPlaneProvisioner.list_databases(client).await
     }
 }
 

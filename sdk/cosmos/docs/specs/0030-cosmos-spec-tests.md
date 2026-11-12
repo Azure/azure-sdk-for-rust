@@ -177,8 +177,9 @@ The spec binary uses a custom harness (`harness = false`):
   1. obtains the pooled cell;
   2. builds a `SpecContext`;
   3. injects parameters;
-  4. runs the body, catching panics; and
-  5. always runs teardown.
+  4. runs the body, catching panics;
+  5. always runs teardown; and
+  6. writes its result file (see [Spec results](#spec-results)).
 
 ### Where specs live
 
@@ -194,15 +195,20 @@ A parameter's type determines what the spec receives.
 
 | Type | Lifetime and isolation | Surface |
 | --- | --- | --- |
-| `SharedContainer` | Pooled container `shared-<profile>` in the cell database. Created and seeded once per run and reused by every spec. Requires `#[profile]`. | `client()`, `client_with_faults(..)`, `dataset()`, `query_all(..)`. Read-only. |
-| `ExclusiveContainer` | New container `x-<profile>-<id>` in the pooled cell database. Deleted after the spec. | `client()`, `client_with_faults(..)`, `dataset()`, `query_all(..)`, `split()`, `feed_range_count()` |
-| `ExclusiveDatabase` | New database `<cell-db>-db-<id>`. Deleted (wiped) after the spec. | `client()`, `create_container(profile)` |
-| `ExclusiveAccount` | Dedicated account with a database `<cell-db>-acct-<id>`. Implies `AccountIsolation`. | `client()`, `regions()`, `create_container(profile)`, `take_region_offline(..)`, `bring_region_online(..)` |
+| `SharedContainer` | Pooled container in the cell database. Created and seeded once per run and reused by every spec. Requires `#[profile]`. | `client()`, `client_with_faults(..)`, `dataset()`, `query_all(..)`. Read-only. |
+| `ExclusiveContainer` | New container in the pooled cell database. Deleted after the spec. | `client()`, `client_with_faults(..)`, `dataset()`, `query_all(..)`, `split()`, `feed_range_count()` |
+| `ExclusiveDatabase` | New database. Deleted (wiped) after the spec. | `client()`, `create_container(profile)` |
+| `ExclusiveAccount` | Dedicated account with a new database. Implies `AccountIsolation`. | `client()`, `regions()`, `create_container(profile)`, `take_region_offline(..)`, `bring_region_online(..)` |
 | `HttpTap` | One per spec. Every client the framework builds for the spec reports to it. | `records()`, `operation(..)`, `clear()` |
 
 Every spec gets its **own clients**, built on the pooled account. As a result,
 the spec's `HttpTap` and faults see only that spec's traffic, even when the
 container is shared.
+
+The framework also builds per-spec **harness clients** for work it does on
+the spec's behalf: creating and seeding exclusive resources, reading feed
+ranges, and teardown. Their requests go to the spec's result file but not to
+its `HttpTap`, so harness traffic never shows up in a spec's assertions.
 
 ### Shared-container protection
 
@@ -297,13 +303,19 @@ model and implements `Ord`. A `Dataset` provides `all()` (sorted by ID),
 
 ```text
 Account (pooled per cell)
-└── spec-<run-id>                  cell database, pooled for the run
-    ├── shared-<profile>           SharedContainer: created and seeded once
-    └── x-<profile>-<id>           ExclusiveContainer: deleted after the spec
-spec-<run-id>-db-<id>              ExclusiveDatabase: deleted after the spec
+├── spec-<UUIDv7>                  cell database, pooled for the run
+│   ├── spec-<UUIDv7>              SharedContainer: created and seeded once
+│   └── spec-<UUIDv7>              ExclusiveContainer: deleted after the spec
+└── spec-<UUIDv7>                  ExclusiveDatabase: deleted after the spec
 Dedicated account (in-memory) or account pool (live)
-└── spec-<run-id>-acct-<id>        ExclusiveAccount database
+└── spec-<UUIDv7>                  ExclusiveAccount database
 ```
+
+- **Naming.** Every database and container the framework creates is named
+  `spec-<UUIDv7>`. A UUIDv7 starts with its creation time in milliseconds, so
+  any tool can read a leftover resource's age from its name. That makes
+  cleanup straightforward in durable environments such as pre-configured
+  live accounts. The result file maps each name to its role.
 
 - **Pooling.** One cell per service profile, created lazily through a global
   `OnceCell`. Concurrent trials share creation of the account, the cell
@@ -312,15 +324,16 @@ Dedicated account (in-memory) or account pool (live)
   - Exclusive resources are deleted when their spec ends, even if the spec
     panicked.
   - Cell databases are deleted when the run ends.
-- **Sweep.** When a cell opens, it deletes `spec-*` databases older than two
-  hours. Run IDs are `<unix-seconds>-<8 hex>`, so a database's age can be
-  read from its name. This cleans up after crashed runs on long-lived
-  accounts.
+- **Sweep.** When a cell opens, it deletes `spec-<UUIDv7>` databases whose
+  UUID timestamp is more than two hours old. This cleans up after crashed
+  runs on long-lived accounts. Databases with other names are never touched.
 
 ## Provisioning
 
 Backends provision resources through a `Provisioner` trait: create and delete
-databases and containers, and list databases for the sweep.
+databases and containers, and list databases for the sweep. Every method
+takes the client to provision through. For a spec's resources, that's a
+harness client, so provisioning requests appear in the spec's result file.
 
 - **Now.** `ControlPlaneProvisioner` uses the SDK `control_plane` APIs with
   key authentication. It treats 409 Conflict on create and 404 Not Found on
@@ -396,7 +409,9 @@ only when the feature is on.
 `cosspec::http_tap` depends only on the driver hook types and
 `std`, so it can later become its own crate. `HttpTap` records every exchange
 as an `HttpRecord`. Records support interval math (`overlaps`, `duration`)
-and outcome checks (`status`, `was_cancelled`).
+and outcome checks (`status`, `was_cancelled`). `labeled_observer(label)`
+stamps records with a label so one tap can tell clients apart, and
+`fan_out(..)` lets one client report to several taps.
 
 ### Future proxy tier
 
@@ -447,6 +462,36 @@ injected resources, known issues, and source location.
 - Other language SDKs can consume `catalog.json` as a language-neutral list of
   scenarios. The 0028 JSON catalog is unchanged.
 
+## Spec results
+
+Every executed trial writes one JSON file, `<spec-id>[<profile>].json`, so a
+person or a tool can see what happened without rerunning the spec. Results
+go to the directory passed with `--results-dir <dir>`, or by default to
+`<target>/cosspec-results/<run-id>/`, where the run ID is a UUIDv7. Pass a
+unique directory per run to keep runs apart. Trials that are skipped or
+ignored don't run, so they don't write a file.
+
+The format is versioned. This is version `1`. Adding fields doesn't change
+the version. Removing, renaming, or changing the meaning of a field does.
+
+| Field | Contents |
+| --- | --- |
+| `version` | Format version, `1` |
+| `id`, `test_name`, `summary`, `source` | Spec identity, the doc-comment summary, and `file:line` |
+| `service_profile`, `backend`, `requires`, `known_issue` | How the trial was composed |
+| `started_at`, `duration_ms` | Wall-clock start (RFC 3339) and duration |
+| `status` | `passed` or `failed` |
+| `error` | The spec body's error, if it returned one |
+| `teardown_error` | A cleanup failure, reported separately from the body |
+| `panic` | Message, location, and backtrace if the body panicked |
+| `resources` | Each account, database, and container the spec used: `kind`, `origin` (`created` or `pooled`), `name`, and where known `database`, `profile`, and `parameter` |
+| `http` | Every HTTP exchange of the spec's clients (`label: "spec"`) and of its harness clients (`label: "harness"`), in start order: method, URL, operation, region, activity ID, `start_ms` from the trial start, `duration_ms`, and `outcome` |
+
+The recording isn't affected by `HttpTap::clear()`. Traffic to set up pooled
+resources is shared by many specs, so it isn't attributed to any one of them.
+Headers and bodies aren't recorded yet; adding them later is an additive
+change.
+
 ## Known issues
 
 `#[known_issue]` keeps a spec that the SDK fails today visible without
@@ -487,6 +532,9 @@ cargo test -p cosspec --test spec
 | `AZURE_COSMOS_SPEC_PROFILES` | Comma-separated service profiles to run |
 | `AZURE_COSMOS_SPEC_STRICT` | `1` turns capability skips into failures |
 | `AZURE_COSMOS_SPEC_UPDATE_CATALOG` | `1` rewrites `CATALOG.md` and `catalog.json` |
+
+Pass `-- --results-dir <dir>` to choose where result files go. See
+[Spec results](#spec-results).
 
 ## Migration from 0028
 

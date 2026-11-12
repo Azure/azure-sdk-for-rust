@@ -36,6 +36,15 @@ skipped specs and specs with known issues.
 | `AZURE_COSMOS_SPEC_STRICT` | `1` turns skips for missing capabilities into failures |
 | `AZURE_COSMOS_SPEC_UPDATE_CATALOG` | `1` rewrites `CATALOG.md` and `catalog.json` |
 
+Every spec that runs writes a JSON result file. The file records whether the
+spec passed, any error or panic, the resources it created or borrowed from
+the pool, and every HTTP request made for it. Results go to
+`target/cosspec-results/<run-id>/` unless you pass a directory:
+
+```sh
+cargo test -p cosspec --test spec -- --results-dir ./spec-results
+```
+
 ## Key concepts
 
 - **Spec**: an `async fn` marked `#[spec_test]` whose doc comment states the
@@ -92,6 +101,10 @@ AZURE_COSMOS_SPEC_UPDATE_CATALOG=1 cargo test -p cosspec --test spec
   capability it didn't declare. Add the capability to `#[requires(..)]`.
 - If a spec fails after writing to a `SharedContainer`, use an
   `ExclusiveContainer` for specs that write.
+- To see why a spec failed, open its result file. `error` is the spec body's
+  failure and `teardown_error` is a cleanup failure. In `http`, requests
+  labeled `spec` came from the spec's clients and requests labeled `harness`
+  came from the framework's setup and teardown.
 
 ## Contributing
 

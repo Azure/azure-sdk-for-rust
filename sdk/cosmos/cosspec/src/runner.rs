@@ -9,6 +9,7 @@ use crate::{
     context::{ParamKind, SpecContext},
     pool,
     profiles::ContainerProfile,
+    results::{self, TrialRecord},
     Capability, ServiceProfile, SpecResult,
 };
 use futures::FutureExt;
@@ -142,8 +143,19 @@ fn selected_profiles() -> Option<Vec<ServiceProfile>> {
 }
 
 /// Runs every registered spec. Call this from a `harness = false` test's `main`.
+///
+/// Accepts the usual libtest arguments plus `--results-dir <dir>`, the directory
+/// to write one result file per executed trial to. It defaults to
+/// `<target>/cosspec-results/<run-id>`.
 pub fn main() {
-    let args = Arguments::from_args();
+    let (results_dir, args) = results::split_args(std::env::args_os()).unwrap_or_else(|e| {
+        eprintln!("error: {e}");
+        std::process::exit(2);
+    });
+    let args = Arguments::from_iter(args);
+    let results_dir = results_dir.unwrap_or_else(|| results::default_dir(pool::run_id()));
+    results::set_dir(results_dir);
+    results::install_panic_hook();
     let backend = backend::selected().unwrap_or_else(|e| panic!("{e}"));
     let strict = std::env::var(STRICT_ENV).as_deref() == Ok("1");
     let only = selected_profiles();
@@ -158,9 +170,13 @@ pub fn main() {
         }
     }
 
+    let list_only = args.list;
     let conclusion = libtest_mimic::run(&args, trials);
     if let Err(e) = runtime().block_on(pool::close_all()) {
         eprintln!("warning: failed to delete pooled spec databases: {e}");
+    }
+    if let Some(dir) = results::dir().filter(|dir| !list_only && dir.exists()) {
+        eprintln!("spec results: {}", dir.display());
     }
     conclusion.exit();
 }
@@ -190,8 +206,11 @@ fn trial(
         } else {
             format!("{} lacks {}", backend.name(), missing.join(", "))
         };
+        let backend_name = backend.name();
         let trial = Trial::test(name, move || {
-            Err(Failed::from(format!("skipped: {reason}")))
+            let mut record = TrialRecord::start(spec, profile, backend_name);
+            record.error = Some(format!("skipped: {reason}").into());
+            finish_trial(record)
         });
         return if strict {
             trial
@@ -202,9 +221,7 @@ fn trial(
 
     let backend = backend.clone();
     let trial = Trial::test(name, move || {
-        runtime()
-            .block_on(run_spec(backend, spec, profile))
-            .map_err(|e| Failed::from(e.to_string()))
+        finish_trial(runtime().block_on(run_spec(backend, spec, profile)))
     });
     if spec
         .known_issue
@@ -217,26 +234,57 @@ fn trial(
     }
 }
 
+/// Writes the trial's result file and converts it to a libtest outcome.
+fn finish_trial(record: TrialRecord) -> Result<(), Failed> {
+    let result = record.result();
+    let written = match results::dir() {
+        Some(dir) => record.write(dir),
+        None => Ok(()),
+    };
+    result.map_err(Failed::from)?;
+    written.map_err(|e| Failed::from(e.to_string()))
+}
+
 async fn run_spec(
     backend: Arc<dyn Backend>,
     spec: &'static SpecDescriptor,
     profile: ServiceProfile,
-) -> SpecResult {
-    let cell = pool::cell(&backend, profile).await?;
+) -> TrialRecord {
+    let mut record = TrialRecord::start(spec, profile, backend.name());
+    let cell = match pool::cell(&backend, profile).await {
+        Ok(cell) => cell,
+        Err(e) => {
+            record.error = Some(e);
+            return record;
+        }
+    };
     let ctx = Arc::new(SpecContext::new(cell, spec, profile));
+    results::take_panic();
     let outcome = AssertUnwindSafe((spec.run)(ctx.clone()))
         .catch_unwind()
         .await;
-    let teardown = ctx.finish().await;
     match outcome {
-        Ok(result) => result.and(teardown),
-        Err(panic) => {
-            let message = panic
-                .downcast_ref::<String>()
-                .cloned()
-                .or_else(|| panic.downcast_ref::<&str>().map(|s| (*s).to_owned()))
-                .unwrap_or_else(|| "spec panicked".to_owned());
-            Err(message.into())
+        Ok(result) => record.error = result.err(),
+        Err(payload) => {
+            record.panic = Some(
+                results::take_panic().unwrap_or_else(|| results::PanicRecord {
+                    message: panic_message(payload.as_ref()),
+                    location: None,
+                    backtrace: String::new(),
+                }),
+            )
         }
     }
+    record.teardown_error = ctx.finish().await.err();
+    record.resources = ctx.resources();
+    record.http = ctx.recording();
+    record
+}
+
+fn panic_message(payload: &(dyn std::any::Any + Send)) -> String {
+    payload
+        .downcast_ref::<String>()
+        .cloned()
+        .or_else(|| payload.downcast_ref::<&str>().map(|s| (*s).to_owned()))
+        .unwrap_or_else(|| "spec panicked".to_owned())
 }

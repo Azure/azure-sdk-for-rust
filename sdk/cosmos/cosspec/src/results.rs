@@ -1,0 +1,384 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+//! Spec results: one JSON file per executed trial, describing what happened.
+//!
+//! The format is versioned by [`RESULT_VERSION`]. Adding fields is not a
+//! breaking change; renaming, removing, or changing the meaning of a field is,
+//! and bumps the version.
+
+use crate::{http_tap::HttpRecord, runner::SpecDescriptor, ServiceProfile, SpecError, SpecResult};
+use azure_core::time::{to_rfc3339, OffsetDateTime};
+use azure_data_cosmos_driver::transport_observer::HttpOutcomeKind;
+use serde::Serialize;
+use std::{
+    backtrace::Backtrace,
+    cell::RefCell,
+    ffi::OsString,
+    path::{Path, PathBuf},
+    sync::OnceLock,
+    time::Instant,
+};
+
+/// The version of the result file format.
+pub const RESULT_VERSION: u32 = 1;
+
+/// The command-line option that sets the results directory.
+pub const RESULTS_DIR_ARG: &str = "--results-dir";
+
+/// What kind of resource a spec used.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ResourceKind {
+    /// A Cosmos DB account.
+    Account,
+    /// A database.
+    Database,
+    /// A container.
+    Container,
+}
+
+/// Where a resource came from.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Origin {
+    /// Created from scratch for this spec.
+    Created,
+    /// Borrowed from the run's resource pool.
+    Pooled,
+}
+
+/// One resource a spec created or borrowed.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct ResourceRecord {
+    /// The resource kind.
+    pub kind: ResourceKind,
+    /// Whether the resource was created for the spec or borrowed from the pool.
+    pub origin: Origin,
+    /// The resource name. For an account, its endpoint.
+    pub name: String,
+    /// The parent database of a container.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub database: Option<String>,
+    /// The container profile the container was shaped and seeded by.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub profile: Option<&'static str>,
+    /// The spec parameter the resource was injected into.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parameter: Option<&'static str>,
+}
+
+/// A panic caught while running a spec.
+#[derive(Clone, Debug, Serialize)]
+pub struct PanicRecord {
+    /// The panic message.
+    pub message: String,
+    /// Where the panic happened, as `file:line:column`.
+    pub location: Option<String>,
+    /// The captured backtrace.
+    pub backtrace: String,
+}
+
+thread_local! {
+    static LAST_PANIC: RefCell<Option<PanicRecord>> = const { RefCell::new(None) };
+}
+
+/// Installs a panic hook that remembers the current thread's last panic, then
+/// runs the previous hook so the usual output still appears.
+pub(crate) fn install_panic_hook() {
+    static INSTALLED: OnceLock<()> = OnceLock::new();
+    INSTALLED.get_or_init(|| {
+        let previous = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |info| {
+            let payload = info.payload();
+            let message = payload
+                .downcast_ref::<String>()
+                .cloned()
+                .or_else(|| payload.downcast_ref::<&str>().map(|s| (*s).to_owned()))
+                .unwrap_or_else(|| "spec panicked".to_owned());
+            let record = PanicRecord {
+                message,
+                location: info.location().map(ToString::to_string),
+                backtrace: Backtrace::force_capture().to_string(),
+            };
+            LAST_PANIC.with(|last| *last.borrow_mut() = Some(record));
+            previous(info);
+        }));
+    });
+}
+
+/// Takes the current thread's last panic, if any.
+pub(crate) fn take_panic() -> Option<PanicRecord> {
+    LAST_PANIC.with(|last| last.borrow_mut().take())
+}
+
+static RESULTS_DIR: OnceLock<PathBuf> = OnceLock::new();
+
+/// Removes `--results-dir <dir>` or `--results-dir=<dir>` from `args`.
+///
+/// Returns the directory, if given, and the remaining arguments for `libtest-mimic`.
+pub(crate) fn split_args(
+    args: impl IntoIterator<Item = OsString>,
+) -> Result<(Option<PathBuf>, Vec<OsString>), String> {
+    let mut dir = None;
+    let mut rest = Vec::new();
+    let mut args = args.into_iter();
+    while let Some(arg) = args.next() {
+        let text = arg.to_string_lossy();
+        if text == RESULTS_DIR_ARG {
+            let value = args
+                .next()
+                .ok_or_else(|| format!("{RESULTS_DIR_ARG} needs a directory"))?;
+            dir = Some(PathBuf::from(value));
+        } else if let Some(value) = text.strip_prefix(&format!("{RESULTS_DIR_ARG}=")) {
+            dir = Some(PathBuf::from(value));
+        } else {
+            rest.push(arg);
+        }
+    }
+    Ok((dir, rest))
+}
+
+/// The default results directory: `<target>/cosspec-results/<run-id>`.
+pub(crate) fn default_dir(run_id: &str) -> PathBuf {
+    let target = std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.ancestors().nth(3).map(Path::to_path_buf))
+        .unwrap_or_else(std::env::temp_dir);
+    target.join("cosspec-results").join(run_id)
+}
+
+/// Sets the directory result files are written to.
+pub(crate) fn set_dir(dir: PathBuf) {
+    RESULTS_DIR
+        .set(dir)
+        .expect("the results directory is set once");
+}
+
+/// The directory result files are written to.
+pub(crate) fn dir() -> Option<&'static Path> {
+    RESULTS_DIR.get().map(PathBuf::as_path)
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum Status {
+    Passed,
+    Failed,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+enum OutcomeJson {
+    Response {
+        status: u16,
+        sub_status: Option<u32>,
+    },
+    TransportError,
+    Cancelled,
+    Unknown,
+}
+
+#[derive(Debug, Serialize)]
+struct HttpJson {
+    label: Option<String>,
+    sequence: u64,
+    method: String,
+    url: String,
+    operation: Option<String>,
+    region: Option<String>,
+    activity_id: Option<String>,
+    /// Milliseconds from the spec's start to the request.
+    start_ms: f64,
+    /// `None` if the exchange never finished.
+    duration_ms: Option<f64>,
+    /// `None` if the exchange never finished.
+    outcome: Option<OutcomeJson>,
+}
+
+impl HttpJson {
+    fn new(record: HttpRecord, base: Instant) -> Self {
+        let millis = |d: std::time::Duration| d.as_secs_f64() * 1000.0;
+        Self {
+            start_ms: millis(record.started_at.saturating_duration_since(base)),
+            duration_ms: record.duration().map(millis),
+            outcome: record.outcome.map(|kind| match kind {
+                HttpOutcomeKind::Response { status, sub_status } => {
+                    OutcomeJson::Response { status, sub_status }
+                }
+                HttpOutcomeKind::TransportError => OutcomeJson::TransportError,
+                HttpOutcomeKind::Cancelled => OutcomeJson::Cancelled,
+                _ => OutcomeJson::Unknown,
+            }),
+            label: record.label,
+            sequence: record.sequence,
+            method: record.method,
+            url: record.url,
+            operation: record.operation,
+            region: record.region,
+            activity_id: record.activity_id,
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct KnownIssueJson {
+    reason: &'static str,
+    profiles: Vec<&'static str>,
+}
+
+#[derive(Debug, Serialize)]
+struct ResultFile {
+    version: u32,
+    id: String,
+    test_name: String,
+    summary: &'static str,
+    source: String,
+    service_profile: &'static str,
+    backend: &'static str,
+    requires: Vec<&'static str>,
+    known_issue: Option<KnownIssueJson>,
+    started_at: String,
+    duration_ms: f64,
+    status: Status,
+    error: Option<String>,
+    teardown_error: Option<String>,
+    panic: Option<PanicRecord>,
+    resources: Vec<ResourceRecord>,
+    http: Vec<HttpJson>,
+}
+
+/// Everything collected while one trial ran.
+#[derive(Debug)]
+pub(crate) struct TrialRecord {
+    pub spec: &'static SpecDescriptor,
+    pub profile: ServiceProfile,
+    pub backend: &'static str,
+    pub started_at: OffsetDateTime,
+    pub started: Instant,
+    pub error: Option<SpecError>,
+    pub teardown_error: Option<SpecError>,
+    pub panic: Option<PanicRecord>,
+    pub resources: Vec<ResourceRecord>,
+    pub http: Vec<HttpRecord>,
+}
+
+impl TrialRecord {
+    /// Starts recording a trial.
+    pub fn start(
+        spec: &'static SpecDescriptor,
+        profile: ServiceProfile,
+        backend: &'static str,
+    ) -> Self {
+        Self {
+            spec,
+            profile,
+            backend,
+            started_at: OffsetDateTime::now_utc(),
+            started: Instant::now(),
+            error: None,
+            teardown_error: None,
+            panic: None,
+            resources: Vec::new(),
+            http: Vec::new(),
+        }
+    }
+
+    /// The trial's result: the body's error, else the teardown's.
+    pub fn result(&self) -> Result<(), String> {
+        match (&self.panic, &self.error, &self.teardown_error) {
+            (Some(panic), _, _) => Err(panic.message.clone()),
+            (_, Some(e), _) | (_, _, Some(e)) => Err(e.to_string()),
+            _ => Ok(()),
+        }
+    }
+
+    fn file(self) -> ResultFile {
+        let spec = self.spec;
+        let status = if self.result().is_ok() {
+            Status::Passed
+        } else {
+            Status::Failed
+        };
+        ResultFile {
+            version: RESULT_VERSION,
+            id: spec.id(),
+            test_name: spec.test_name(self.profile),
+            summary: spec.summary,
+            source: format!("{}:{}", spec.file, spec.line),
+            service_profile: self.profile.name(),
+            backend: self.backend,
+            requires: spec.requires.iter().map(|c| c.name()).collect(),
+            known_issue: spec
+                .known_issue
+                .as_ref()
+                .filter(|issue| issue.affects(self.profile))
+                .map(|issue| KnownIssueJson {
+                    reason: issue.reason,
+                    profiles: issue.profiles.iter().map(|p| p.name()).collect(),
+                }),
+            started_at: to_rfc3339(&self.started_at),
+            duration_ms: self.started.elapsed().as_secs_f64() * 1000.0,
+            status,
+            error: self.error.map(|e| e.to_string()),
+            teardown_error: self.teardown_error.map(|e| e.to_string()),
+            panic: self.panic,
+            resources: self.resources,
+            http: self
+                .http
+                .into_iter()
+                .map(|record| HttpJson::new(record, self.started))
+                .collect(),
+        }
+    }
+
+    /// The result file name, for example `query.split[SingleRegion].json`.
+    pub fn file_name(&self) -> String {
+        format!("{}[{}].json", self.spec.id(), self.profile)
+    }
+
+    /// Writes the result file into `dir`.
+    pub fn write(self, dir: &Path) -> SpecResult {
+        std::fs::create_dir_all(dir)?;
+        let path = dir.join(self.file_name());
+        let json = serde_json::to_vec_pretty(&self.file())?;
+        std::fs::write(&path, json)
+            .map_err(|e| format!("failed to write spec result {}: {e}", path.display()).into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{split_args, OsString, PathBuf};
+
+    fn args(list: &[&str]) -> Vec<OsString> {
+        list.iter().map(OsString::from).collect()
+    }
+
+    #[test]
+    fn results_dir_is_removed_from_libtest_args() {
+        let (dir, rest) =
+            split_args(args(&["spec", "--results-dir", "out", "--exact", "x"])).unwrap();
+        assert_eq!(dir, Some(PathBuf::from("out")));
+        assert_eq!(rest, args(&["spec", "--exact", "x"]));
+    }
+
+    #[test]
+    fn results_dir_accepts_equals_form() {
+        let (dir, rest) = split_args(args(&["spec", "--results-dir=a/b"])).unwrap();
+        assert_eq!(dir, Some(PathBuf::from("a/b")));
+        assert_eq!(rest, args(&["spec"]));
+    }
+
+    #[test]
+    fn results_dir_needs_a_value() {
+        assert!(split_args(args(&["spec", "--results-dir"])).is_err());
+    }
+
+    #[test]
+    fn results_dir_is_optional() {
+        let (dir, rest) = split_args(args(&["spec", "--list"])).unwrap();
+        assert_eq!(dir, None);
+        assert_eq!(rest, args(&["spec", "--list"]));
+    }
+}

@@ -7,8 +7,9 @@ use crate::{
     backend::BackendAccount,
     context::{Inject, ParamKind, SpecContext, WRITE_OPERATIONS},
     faults::Fault,
-    pool::{self, short_id},
+    pool::{self, resource_name},
     profiles::ContainerProfile,
+    results::{Origin, ResourceKind, ResourceRecord},
     testdata::Dataset,
     Capability, InvalidConfiguration, SpecResult,
 };
@@ -135,6 +136,15 @@ impl Inject for SharedContainer {
         }
         let profile = ctx.container_profile(index);
         let name = ctx.cell.shared_container(&profile).await?;
+        ctx.record_cell_database();
+        ctx.record_resource(ResourceRecord {
+            kind: ResourceKind::Container,
+            origin: Origin::Pooled,
+            name: name.clone(),
+            database: Some(ctx.cell.database.clone()),
+            profile: Some(profile.name),
+            parameter: Some(ctx.descriptor.params[index].name),
+        });
         let client = ctx
             .client(ctx.cell.account.as_ref(), write_guard(&name))
             .await?;
@@ -167,20 +177,29 @@ impl ExclusiveContainer {
     async fn create(
         ctx: &Arc<SpecContext>,
         account: Arc<dyn BackendAccount>,
-        admin: &CosmosClient,
+        harness: &CosmosClient,
         database: &str,
         profile: ContainerProfile,
+        parameter: Option<&'static str>,
         delete_on_teardown: bool,
     ) -> SpecResult<Self> {
-        let name = format!("x-{}-{}", profile.name.replace('_', "-"), short_id());
+        let name = resource_name();
         account
             .provisioner()
-            .create_container(database, &name, &profile)
+            .create_container(harness, database, &name, &profile)
             .await?;
+        ctx.record_resource(ResourceRecord {
+            kind: ResourceKind::Container,
+            origin: Origin::Created,
+            name: name.clone(),
+            database: Some(database.to_owned()),
+            profile: Some(profile.name),
+            parameter,
+        });
         if delete_on_teardown {
-            ctx.on_teardown_delete_container(account.clone(), database, &name);
+            ctx.on_teardown_delete_container(account.clone(), harness.clone(), database, &name);
         }
-        pool::seed(admin, database, &name, &(profile.dataset)()).await?;
+        pool::seed(harness, database, &name, &(profile.dataset)()).await?;
         let client = ctx.client(account.as_ref(), Vec::new()).await?;
         let client = pool::container_client(&client, database, &name).await?;
         Ok(Self {
@@ -241,7 +260,7 @@ impl ExclusiveContainer {
     /// The number of feed ranges the service reports, read with a fresh client so
     /// no cached routing state is involved.
     pub async fn feed_range_count(&self) -> SpecResult<usize> {
-        let client = self.account.client(Default::default()).await?;
+        let client = self.ctx.harness_client(self.account.as_ref()).await?;
         let client = pool::container_client(&client, &self.database, &self.name).await?;
         Ok(Box::pin(client.read_feed_ranges(None)).await?.len())
     }
@@ -251,13 +270,15 @@ impl Inject for ExclusiveContainer {
     const KIND: ParamKind = ParamKind::ExclusiveContainer;
 
     async fn inject(ctx: &Arc<SpecContext>, index: usize) -> SpecResult<Self> {
-        let cell = &ctx.cell;
+        ctx.record_cell_database();
+        let harness = ctx.cell_harness_client().await?;
         Self::create(
             ctx,
-            cell.account.clone(),
-            &cell.admin,
-            &cell.database,
+            ctx.cell.account.clone(),
+            &harness,
+            &ctx.cell.database,
             ctx.container_profile(index),
+            Some(ctx.descriptor.params[index].name),
             true,
         )
         .await
@@ -288,13 +309,14 @@ impl ExclusiveDatabase {
         &self,
         profile: ContainerProfile,
     ) -> SpecResult<ExclusiveContainer> {
-        let cell = &self.ctx.cell;
+        let harness = self.ctx.cell_harness_client().await?;
         ExclusiveContainer::create(
             &self.ctx,
-            cell.account.clone(),
-            &cell.admin,
+            self.ctx.cell.account.clone(),
+            &harness,
             &self.name,
             profile,
+            None,
             false,
         )
         .await
@@ -304,11 +326,24 @@ impl ExclusiveDatabase {
 impl Inject for ExclusiveDatabase {
     const KIND: ParamKind = ParamKind::ExclusiveDatabase;
 
-    async fn inject(ctx: &Arc<SpecContext>, _index: usize) -> SpecResult<Self> {
+    async fn inject(ctx: &Arc<SpecContext>, index: usize) -> SpecResult<Self> {
         let account = ctx.cell.account.clone();
-        let name = format!("{}-db-{}", ctx.cell.database, short_id());
-        account.provisioner().create_database(&name).await?;
-        ctx.on_teardown_delete_database(account.clone(), &name);
+        ctx.record_account(account.as_ref(), Origin::Pooled);
+        let harness = ctx.cell_harness_client().await?;
+        let name = resource_name();
+        account
+            .provisioner()
+            .create_database(&harness, &name)
+            .await?;
+        ctx.record_resource(ResourceRecord {
+            kind: ResourceKind::Database,
+            origin: Origin::Created,
+            name: name.clone(),
+            database: None,
+            profile: None,
+            parameter: Some(ctx.descriptor.params[index].name),
+        });
+        ctx.on_teardown_delete_database(account.clone(), harness, &name);
         let client = ctx.client(account.as_ref(), Vec::new()).await?;
         Ok(Self {
             ctx: ctx.clone(),
@@ -353,6 +388,7 @@ impl ExclusiveAccount {
             &self.admin,
             &self.database,
             profile,
+            None,
             false,
         )
         .await
@@ -379,13 +415,25 @@ impl ExclusiveAccount {
 impl Inject for ExclusiveAccount {
     const KIND: ParamKind = ParamKind::ExclusiveAccount;
 
-    async fn inject(ctx: &Arc<SpecContext>, _index: usize) -> SpecResult<Self> {
+    async fn inject(ctx: &Arc<SpecContext>, index: usize) -> SpecResult<Self> {
         ctx.demand(Capability::AccountIsolation)?;
         let account = ctx.cell.backend.open_account(ctx.service_profile()).await?;
-        let database = format!("{}-acct-{}", ctx.cell.database, short_id());
-        account.provisioner().create_database(&database).await?;
-        ctx.on_teardown_delete_database(account.clone(), &database);
-        let admin = account.client(Default::default()).await?;
+        ctx.record_account(account.as_ref(), Origin::Created);
+        let admin = ctx.harness_client(account.as_ref()).await?;
+        let database = resource_name();
+        account
+            .provisioner()
+            .create_database(&admin, &database)
+            .await?;
+        ctx.record_resource(ResourceRecord {
+            kind: ResourceKind::Database,
+            origin: Origin::Created,
+            name: database.clone(),
+            database: None,
+            profile: None,
+            parameter: Some(ctx.descriptor.params[index].name),
+        });
+        ctx.on_teardown_delete_database(account.clone(), admin.clone(), &database);
         let client = ctx.client(account.as_ref(), Vec::new()).await?;
         Ok(Self {
             ctx: ctx.clone(),

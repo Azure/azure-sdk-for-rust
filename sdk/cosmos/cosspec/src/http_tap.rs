@@ -32,6 +32,11 @@ pub struct HttpRecord {
     pub operation: Option<String>,
     /// Target region name, for example `East US`, when the SDK tagged one.
     pub region: Option<String>,
+    /// The request's activity ID, when present.
+    pub activity_id: Option<String>,
+    /// The label of the observer that recorded the exchange, from
+    /// [`HttpTap::labeled_observer`].
+    pub label: Option<String>,
     /// When the request was handed to the transport.
     pub started_at: Instant,
     /// When the exchange finished. `None` while still in flight.
@@ -111,23 +116,32 @@ impl HttpTap {
     pub fn observer(&self) -> Arc<dyn TransportObserver> {
         Arc::new(self.clone())
     }
-}
 
-impl TransportObserver for HttpTap {
-    fn on_start(&self, exchange: &HttpExchange) {
+    /// Wraps the tap as a transport observer that stamps every record with
+    /// `label`, so one tap can tell several clients apart.
+    pub fn labeled_observer(&self, label: impl Into<String>) -> Arc<dyn TransportObserver> {
+        Arc::new(Labeled {
+            tap: self.clone(),
+            label: label.into(),
+        })
+    }
+
+    fn start(&self, exchange: &HttpExchange, label: Option<&str>) {
         self.records.lock().unwrap().push(HttpRecord {
             sequence: exchange.sequence(),
             method: exchange.method().to_string(),
             url: exchange.url().to_string(),
             operation: exchange.operation().map(str::to_owned),
             region: exchange.region().map(str::to_owned),
+            activity_id: exchange.activity_id().map(str::to_owned),
+            label: label.map(str::to_owned),
             started_at: exchange.started_at(),
             completed_at: None,
             outcome: None,
         });
     }
 
-    fn on_complete(&self, exchange: &HttpExchange, outcome: &HttpOutcome) {
+    fn complete(&self, exchange: &HttpExchange, outcome: &HttpOutcome) {
         let mut records = self.records.lock().unwrap();
         if let Some(record) = records
             .iter_mut()
@@ -136,6 +150,54 @@ impl TransportObserver for HttpTap {
         {
             record.completed_at = Some(outcome.completed_at());
             record.outcome = Some(outcome.kind().clone());
+        }
+    }
+}
+
+impl TransportObserver for HttpTap {
+    fn on_start(&self, exchange: &HttpExchange) {
+        self.start(exchange, None);
+    }
+
+    fn on_complete(&self, exchange: &HttpExchange, outcome: &HttpOutcome) {
+        self.complete(exchange, outcome);
+    }
+}
+
+#[derive(Debug)]
+struct Labeled {
+    tap: HttpTap,
+    label: String,
+}
+
+impl TransportObserver for Labeled {
+    fn on_start(&self, exchange: &HttpExchange) {
+        self.tap.start(exchange, Some(&self.label));
+    }
+
+    fn on_complete(&self, exchange: &HttpExchange, outcome: &HttpOutcome) {
+        self.tap.complete(exchange, outcome);
+    }
+}
+
+/// Combines observers so one client can report to several taps.
+pub fn fan_out(observers: Vec<Arc<dyn TransportObserver>>) -> Arc<dyn TransportObserver> {
+    Arc::new(FanOut(observers))
+}
+
+#[derive(Debug)]
+struct FanOut(Vec<Arc<dyn TransportObserver>>);
+
+impl TransportObserver for FanOut {
+    fn on_start(&self, exchange: &HttpExchange) {
+        for observer in &self.0 {
+            observer.on_start(exchange);
+        }
+    }
+
+    fn on_complete(&self, exchange: &HttpExchange, outcome: &HttpOutcome) {
+        for observer in &self.0 {
+            observer.on_complete(exchange, outcome);
         }
     }
 }
