@@ -136,6 +136,9 @@ See [Service principal authentication](https://learn.microsoft.com/entra/identit
 | [`ClientAssertionCredential`][assert_cred_ref] | Authenticate a service principal with client assertions.
 | [`ClientCertificateCredential`][cert_cred_ref] | Authenticate a service principal with a certificate.
 | [`ClientSecretCredential`][secret_cred_ref] | Authenticate a service principal with a secret.
+| [`GitHubActionsCredential`][github_actions_cred_ref] | Authenticate a service principal using GitHub Actions workload identity federation. Requires workflow `permissions: id-token: write`.
+
+`GitHubActionsCredential` requires the `AZURE_TENANT_ID` and `AZURE_CLIENT_ID` environment variables to specify the tenant and client IDs.
 
 ## Next steps
 
@@ -166,6 +169,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [cert_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ClientCertificateCredential.html
 [cli_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.AzureCliCredential.html
 [devtool_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.DeveloperToolsCredential.html
+[github_actions_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.GitHubActionsCredential.html
 [managed_id_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ManagedIdentityCredential.html
 [Microsoft Entra ID documentation]: https://learn.microsoft.com/entra/identity/
 [API reference documentation]: https://docs.rs/azure_identity/latest/azure_identity/

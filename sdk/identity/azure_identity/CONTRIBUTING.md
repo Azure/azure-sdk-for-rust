@@ -168,6 +168,35 @@ This parsing check does not validate trust against a server; that requires the e
 Both tests read real CA material from `AZURE_KUBERNETES_CA_FILE` or `AZURE_KUBERNETES_CA_DATA`.
 Do not generate test CAs or copy CAs, projected tokens, or credentials into source files, images, or recordings.
 
+### GitHub Actions credential
+
+Provision the identity resources with GitHub OIDC trust for the repository and ref that will run the workflow:
+
+```powershell
+./eng/common/TestResources/New-TestResources.ps1 `
+    -ServiceDirectory identity `
+    -SubscriptionId "<subscription-id>" `
+    -ResourceGroupName "<resource-group>" `
+    -AdditionalParameters @{
+        deployResources = $true
+        githubRepository = 'Azure/azure-sdk-for-rust'
+        githubRef = 'refs/heads/main'
+    }
+```
+
+Use the deployment's `AZURE_TENANT_ID` and `AZURE_CLIENT_ID` outputs to dispatch the [credential test workflow](https://github.com/Azure/azure-sdk-for-rust/blob/main/.github/workflows/github-actions-credential-test.yml):
+
+```sh
+gh workflow run github-actions-credential-test.yml --repo Azure/azure-sdk-for-rust \
+  --ref main -f tenant-id="<AZURE_TENANT_ID>" -f client-id="<AZURE_CLIENT_ID>" \
+  -f scope="https://management.azure.com/.default"
+```
+
+For a fork or another branch, update both the provisioning parameters and the workflow repository/ref.
+The workflow sets `AZURE_TEST_MODE=live` and `TEST_SCOPE`, then runs `cargo test --manifest-path sdk/identity/azure_identity/Cargo.toml --test github_actions_credential --all-features`.
+The `#[recorded::test(live)]` test requests a token using `GitHubActionsCredential`; it needs GitHub's runner-provided OIDC environment variables and cannot authenticate from a local shell.
+No recordings are created.
+
 ### Recording and playback
 
 There are currently no recorded identity tests or identity recording assets to publish.
