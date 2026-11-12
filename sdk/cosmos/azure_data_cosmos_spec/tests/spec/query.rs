@@ -52,7 +52,6 @@ pub async fn continuation_resumes_without_loss(
 /// after the split, with no item lost or repeated.
 #[spec_test]
 #[requires(TopologyControl)]
-#[known_issue("ORDER BY resume on a client with a pre-split routing cache drops the first page of one child range after 410/1002")]
 pub async fn continuation_survives_split(
     #[profile(basic_items)] container: ExclusiveContainer,
 ) -> SpecResult {

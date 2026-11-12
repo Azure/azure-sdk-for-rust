@@ -80,7 +80,6 @@
     "resources": [
       "ExclusiveContainer(basic_items)"
     ],
-    "known_issue": "ORDER BY resume on a client with a pre-split routing cache drops the first page of one child range after 410/1002",
     "source": "tests/spec/query.rs"
   },
   {

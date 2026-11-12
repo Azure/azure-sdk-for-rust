@@ -448,17 +448,19 @@ injected resources, known issues, and source location.
 ## Known issues
 
 `#[known_issue]` keeps a spec that the SDK fails today visible without
-blocking CI. The prototype found two:
+blocking CI. The prototype found two problems. One is still open:
 
-- `query.continuation_survives_split`: an ORDER BY query resumed after a split
-  drops the first page of one child range. The resume must run on a client
-  whose routing cache predates the split, so it goes through 410/1002
-  (PartitionKeyRangeGone) recovery. Unordered queries, and clients with a
-  refreshed cache, return every item.
 - `resilience.read_fails_over_when_region_offline` (`MultiRead` only): after
   the single write region goes offline, a read retries in the next region and
-  gets 200 OK, but the SDK still surfaces the original 503. Both failures
-  reproduce without `HttpTap`.
+  gets 200 OK, but the SDK still surfaces the original 503. The failure
+  reproduces without `HttpTap`.
+
+`query.continuation_survives_split` exposed a fidelity bug in the in-memory
+emulator, not in the SDK. The emulator's ORDER BY continuations were row
+offsets. After a split, the driver forwards the parent's continuation to each
+child range, as the Cosmos contract allows. Each child then skipped its own
+first N rows, which dropped a page. The emulator now issues position-based
+ORDER BY continuations (sort keys, then `_rid`), so the spec passes.
 
 Run them with
 `cargo test -p azure_data_cosmos_spec --test spec -- --include-ignored`.

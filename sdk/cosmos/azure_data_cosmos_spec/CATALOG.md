@@ -18,5 +18,4 @@
 
 The SDK does not meet these specs yet.
 
-- `query.continuation_survives_split`: ORDER BY resume on a client with a pre-split routing cache drops the first page of one child range after 410/1002
 - `resilience.read_fails_over_when_region_offline`: with the single write region offline, the read surfaces 503 even after the next region answers 200 (MultiRead)

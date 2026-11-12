@@ -161,7 +161,7 @@ impl CosmosValue {
     /// Cosmos SQL semantics: in object property positions and array element
     /// positions, `Undefined` is omitted entirely. Callers that need a
     /// top-level representation should fall back to `Value::Null`.
-    fn to_json_opt(&self) -> Option<serde_json::Value> {
+    pub(crate) fn to_json_opt(&self) -> Option<serde_json::Value> {
         match self {
             Self::Undefined => None,
             Self::Null => Some(serde_json::Value::Null),

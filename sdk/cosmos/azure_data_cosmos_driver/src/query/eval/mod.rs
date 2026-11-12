@@ -633,6 +633,116 @@ fn order_by_rid_tiebreak(
     }
 }
 
+/// One projected row of a plain ORDER BY query, with the metadata needed to
+/// position a resumable cursor on it.
+pub(crate) struct OrderByRow {
+    /// The projected row.
+    pub value: serde_json::Value,
+    /// The evaluated ORDER BY keys, one per ORDER BY item (`None` is
+    /// `undefined`).
+    pub keys: Vec<Option<serde_json::Value>>,
+    /// Index of the source document in the input slice.
+    pub source: usize,
+    /// Expansion index of this row within its source document (non-zero only
+    /// for JOIN/array-iterator queries).
+    pub ordinal: usize,
+}
+
+/// Evaluates a plain ORDER BY query and returns its rows *unsorted*, each
+/// carrying its ORDER BY keys and source position.
+///
+/// Returns `Ok(None)` when the query is not a plain ORDER BY (no ORDER BY, or
+/// any of DISTINCT, TOP, GROUP BY, aggregates, or OFFSET/LIMIT), since those
+/// shapes cannot be resumed from a per-row position.
+pub(crate) fn order_by_rows(
+    query: &SqlQuery,
+    parameters: &Params,
+    documents: &[&serde_json::Value],
+) -> Result<Option<Vec<OrderByRow>>, EvalError> {
+    let Some(order_by) = &query.order_by else {
+        return Ok(None);
+    };
+    if query.select.distinct
+        || query.select.top.is_some()
+        || query.group_by.is_some()
+        || query.offset_limit.is_some()
+        || select_has_aggregates(query)
+    {
+        return Ok(None);
+    }
+
+    let root_alias = get_root_alias(query);
+    let binding_from = query
+        .from
+        .as_ref()
+        .map(|from| &from.collection)
+        .filter(|collection| !is_plain_root_from(collection));
+    let eval_alias = if binding_from.is_some() {
+        None
+    } else {
+        root_alias.as_deref()
+    };
+
+    let mut rows = Vec::new();
+    for (source, doc) in documents.iter().enumerate() {
+        let contexts = match binding_from {
+            Some(collection) => expand_from(doc, collection, &serde_json::Map::new())?
+                .into_iter()
+                .map(serde_json::Value::Object)
+                .collect(),
+            None => vec![(*doc).clone()],
+        };
+        for (ordinal, ctx) in contexts.into_iter().enumerate() {
+            if !eval_where(&ctx, &query.where_clause, eval_alias, parameters)? {
+                continue;
+            }
+            let keys = order_by
+                .items
+                .iter()
+                .map(|item| {
+                    eval_scalar(&item.expression, &ctx, eval_alias, parameters)
+                        .map(|v| v.to_json_opt())
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let value = project_row(&ctx, query, eval_alias, parameters)?;
+            rows.push(OrderByRow {
+                value,
+                keys,
+                source,
+                ordinal,
+            });
+        }
+    }
+    Ok(Some(rows))
+}
+
+/// Compares two ORDER BY key tuples using the same ordering as
+/// [`query_documents`] (Cosmos cross-type order, per-item direction).
+pub(crate) fn compare_order_by_keys(
+    a: &[Option<serde_json::Value>],
+    b: &[Option<serde_json::Value>],
+    order_by: &SqlOrderByClause,
+) -> Ordering {
+    for (idx, item) in order_by.items.iter().enumerate() {
+        let (Some(va), Some(vb)) = (a.get(idx), b.get(idx)) else {
+            break;
+        };
+        let to_value = |v: &Option<serde_json::Value>| {
+            v.as_ref()
+                .map_or(CosmosValue::Undefined, CosmosValue::from_json)
+        };
+        let (va, vb) = (&to_value(va), &to_value(vb));
+        let cmp = match item.order {
+            SqlSortOrder::Descending => total_cmp_for_sort(va, vb).reverse(),
+            _ => total_cmp_for_sort(va, vb),
+        };
+        if cmp != Ordering::Equal {
+            return cmp;
+        }
+    }
+    Ordering::Equal
+}
+
 /// Compare two documents according to an ORDER BY clause.
 ///
 /// F20 note: superseded by inline pre-computed-keys sort in `query_documents`
