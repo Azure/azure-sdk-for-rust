@@ -40,7 +40,8 @@ use crate::{
 use azure_data_cosmos_driver::options::OperationOptions;
 use std::{
     mem::MaybeUninit,
-    ptr,
+    ops::Deref,
+    ptr::{self, NonNull},
     sync::{atomic::Ordering, Arc},
     time::Duration,
 };
@@ -491,6 +492,29 @@ struct Fixture {
     partition_key: *mut PartitionKeyHandle,
 }
 
+struct OwnedCompletion(NonNull<CosmosCursorCompletion>);
+
+impl OwnedCompletion {
+    fn as_ptr(&self) -> *mut CosmosCursorCompletion {
+        self.0.as_ptr()
+    }
+}
+
+impl Deref for OwnedCompletion {
+    type Target = CosmosCursorCompletion;
+
+    fn deref(&self) -> &Self::Target {
+        // SAFETY: this owner retains the transferred completion until Drop.
+        unsafe { self.0.as_ref() }
+    }
+}
+
+impl Drop for OwnedCompletion {
+    fn drop(&mut self) {
+        cosmos_cursor_completion_free(self.as_ptr());
+    }
+}
+
 impl Fixture {
     fn new(capacity: u32) -> Self {
         Self::from_handles(fixture::create(true).unwrap(), capacity)
@@ -819,6 +843,12 @@ impl Fixture {
         completion
     }
 
+    fn receive_owned(&self, op: *mut OperationHandle) -> OwnedCompletion {
+        OwnedCompletion(
+            NonNull::new(self.receive(op)).expect("delivered completion must be non-null"),
+        )
+    }
+
     fn open(&self, request: &CosmosCursorRequest) -> *mut CursorHandle {
         let mut error = COSMOS_STATUS_SUCCESS;
         let op = cosmos_cursor_open_submit(self.driver, request, self.queue, 123, &mut error);
@@ -906,21 +936,21 @@ fn assert_reduced_query(
             let mut ended = false;
             let mut unsupported = false;
             if retained_checkpoint_unsupported {
-                let checkpoint =
-                    fixture.receive(cosmos_cursor_checkpoint_submit(cursor, 0, ptr::null_mut()));
-                // SAFETY: checkpoint is owned and live.
-                unsafe {
-                    assert_eq!((*checkpoint).common.status.0 & 0xffff, 20124, "{query}");
-                }
-                cosmos_cursor_completion_free(checkpoint);
+                let checkpoint = fixture.receive_owned(cosmos_cursor_checkpoint_submit(
+                    cursor,
+                    0,
+                    ptr::null_mut(),
+                ));
+                assert_eq!(checkpoint.common.status.0 & 0xffff, 20124, "{query}");
                 unsupported = true;
             }
             for _ in 0..20 {
-                let page = fixture.receive(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
+                let page =
+                    fixture.receive_owned(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
+                assert_eq!(page.common.status, COSMOS_STATUS_SUCCESS, "{query}");
+                let common = &page.common;
                 // SAFETY: all header entries are owned by this live completion.
                 unsafe {
-                    assert_eq!((*page).common.status, COSMOS_STATUS_SUCCESS, "{query}");
-                    let common = &(*page).common;
                     if common.headers_len > 0 {
                         for header in std::slice::from_raw_parts(common.headers, common.headers_len)
                         {
@@ -930,61 +960,53 @@ fn assert_reduced_query(
                             }
                         }
                     }
-                    if (*page).result_kind == 4 {
-                        ended = true;
-                        cosmos_cursor_completion_free(page);
-                        break;
-                    }
-                    assert_eq!((*page).result_kind, 2);
                 }
-                values.extend(documents(page));
+                if page.result_kind == 4 {
+                    ended = true;
+                    break;
+                }
+                assert_eq!(page.result_kind, 2);
+                values.extend(documents(page.as_ptr()));
                 retained.push(page);
-                let checkpoint =
-                    fixture.receive(cosmos_cursor_checkpoint_submit(cursor, 0, ptr::null_mut()));
-                // SAFETY: checkpoint is owned and live.
-                unsafe {
-                    let status = (*checkpoint).common.status;
-                    if retained_checkpoint_unsupported && values.len() < expected.len() {
-                        assert_eq!(status.0 & 0xffff, 20124, "{query}");
-                        unsupported = true;
-                    } else {
-                        assert_eq!(status, COSMOS_STATUS_SUCCESS, "{query}");
-                    }
+                let checkpoint = fixture.receive_owned(cosmos_cursor_checkpoint_submit(
+                    cursor,
+                    0,
+                    ptr::null_mut(),
+                ));
+                let status = checkpoint.common.status;
+                if retained_checkpoint_unsupported && values.len() < expected.len() {
+                    assert_eq!(status.0 & 0xffff, 20124, "{query}");
+                    unsupported = true;
+                } else {
+                    assert_eq!(status, COSMOS_STATUS_SUCCESS, "{query}");
                 }
-                cosmos_cursor_completion_free(checkpoint);
             }
             assert!(ended, "query did not drain: {query}");
             assert_eq!(unsupported, retained_checkpoint_unsupported);
             assert_eq!(charge, f64::from(requests) * 1.5, "{query}");
             let checkpoint =
-                fixture.receive(cosmos_cursor_checkpoint_submit(cursor, 0, ptr::null_mut()));
-            // SAFETY: checkpoint is owned and live; the cursor is now fully drained.
-            unsafe {
-                assert_eq!((*checkpoint).common.status, COSMOS_STATUS_SUCCESS);
-                if !retained_checkpoint_unsupported {
-                    request.operation.continuation_token = (*checkpoint).checkpoint;
-                    let resumed = fixture.open(&request);
-                    let end =
-                        fixture.receive(cosmos_cursor_next_submit(resumed, 0, ptr::null_mut()));
-                    assert_eq!((*end).common.status, COSMOS_STATUS_SUCCESS);
-                    assert_eq!((*end).result_kind, 4);
-                    cosmos_cursor_completion_free(end);
-                    cosmos_cursor_free(resumed);
-                }
+                fixture.receive_owned(cosmos_cursor_checkpoint_submit(cursor, 0, ptr::null_mut()));
+            assert_eq!(checkpoint.common.status, COSMOS_STATUS_SUCCESS);
+            if !retained_checkpoint_unsupported {
+                request.operation.continuation_token = checkpoint.checkpoint;
+                let resumed = fixture.open(&request);
+                let end =
+                    fixture.receive_owned(cosmos_cursor_next_submit(resumed, 0, ptr::null_mut()));
+                assert_eq!(end.common.status, COSMOS_STATUS_SUCCESS);
+                assert_eq!(end.result_kind, 4);
+                cosmos_cursor_free(resumed);
             }
-            cosmos_cursor_completion_free(checkpoint);
+            drop(checkpoint);
             cosmos_cursor_free(cursor);
             assert_eq!(
                 retained
                     .iter()
-                    .flat_map(|page| documents(*page))
+                    .flat_map(|page| documents(page.as_ptr()))
                     .collect::<Vec<_>>(),
                 values,
                 "completion bodies must outlive the cursor"
             );
-            for page in retained {
-                cosmos_cursor_completion_free(page);
-            }
+            drop(retained);
             values.sort_by_key(serde_json::Value::to_string);
             expected.sort_by_key(serde_json::Value::to_string);
             assert_eq!(
