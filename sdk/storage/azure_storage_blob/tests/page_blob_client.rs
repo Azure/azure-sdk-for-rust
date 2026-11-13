@@ -3,7 +3,10 @@
 
 mod common;
 
-use azure_core::http::{headers::CONTENT_TYPE, RequestContent, StatusCode};
+use azure_core::http::{
+    headers::{HeaderName, CONTENT_TYPE},
+    RequestContent, StatusCode,
+};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     BlobClientGetPropertiesResultHeaders, BlobType, HttpRange, PageBlobClientCreateOptions,
@@ -15,6 +18,38 @@ use azure_storage_blob::models::{
 use common::{get_blob_name, get_container_client, StorageAccount};
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error};
+
+#[recorded::test]
+async fn test_page_blob_client_request_priority(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let page_blob_client = container_client
+        .blob_client(&get_blob_name(recording))
+        .page_blob_client();
+    let result = async {
+        page_blob_client.create(512, None).await?;
+        let response = page_blob_client
+            .upload_pages(
+                RequestContent::from(vec![b'A'; 512]),
+                512,
+                HttpRange::new(0, 512),
+                Some(PageBlobClientUploadPagesOptions {
+                    request_priority: Some(1),
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        response
+            .headers()
+            .get_optional_as::<i32, _>(&HeaderName::from_static("x-ms-request-priority"))
+    }
+    .await;
+
+    container_client.delete(None).await?;
+    assert_eq!(result?, Some(1));
+    Ok(())
+}
 
 #[recorded::test]
 async fn test_create_page_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {

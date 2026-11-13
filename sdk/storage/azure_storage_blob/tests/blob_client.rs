@@ -137,6 +137,50 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
 }
 
 #[recorded::test]
+async fn test_blob_client_request_priority(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    let result = async {
+        create_test_blob(&blob_client, None, None).await?;
+        let mut priorities = Vec::new();
+        for (requested, expected) in [
+            (None, 3),
+            (Some(1), 1),
+            (None, 3),
+            (Some(0), 0),
+            (Some(7), 7),
+            (Some(-1), 3),
+            (Some(8), 3),
+        ] {
+            let response = blob_client
+                .get_properties(requested.map(|priority| BlobClientGetPropertiesOptions {
+                    request_priority: Some(priority),
+                    ..Default::default()
+                }))
+                .await?;
+            priorities.push((
+                requested,
+                expected,
+                response
+                    .headers()
+                    .get_optional_as::<i32, _>(&HeaderName::from_static("x-ms-request-priority"))?,
+            ));
+        }
+        azure_core::Result::Ok(priorities)
+    }
+    .await;
+
+    container_client.delete(None).await?;
+    for (requested, expected, actual) in result? {
+        assert_eq!(actual, Some(expected), "requested priority {requested:?}");
+    }
+    Ok(())
+}
+
+#[recorded::test]
 async fn test_set_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();

@@ -136,6 +136,7 @@ impl BlockBlobClient {
             legal_hold: options.legal_hold,
             metadata: options.metadata.clone(),
             method_options: options.method_options.clone(),
+            request_priority: options.request_priority,
             structured_body_type: None,
             structured_content_length: None,
             tier: options.tier.clone(),
@@ -150,6 +151,7 @@ impl BlockBlobClient {
             encryption_scope: options.encryption_scope.clone(),
             lease_id: options.lease_id.clone(),
             method_options: options.method_options.clone(),
+            request_priority: options.request_priority,
             timeout: options.per_request_timeout,
             transactional_content_crc64: None,
             transactional_content_md5: None,
@@ -177,6 +179,7 @@ impl BlockBlobClient {
             legal_hold: options.legal_hold,
             metadata: options.metadata,
             method_options: options.method_options,
+            request_priority: options.request_priority,
             tier: options.tier,
             timeout: options.per_request_timeout,
             transactional_content_crc64: None,
@@ -326,6 +329,93 @@ impl PartitionedUploadBehavior for BlockBlobClientUploadBehavior<'_, '_> {
             version_id: rsp.version_id()?,
             raw_response: rsp.to_raw_response(),
         });
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{BlockBlobClient, BlockBlobClientOptions, BlockBlobClientUploadOptions};
+    use azure_core::{
+        http::{
+            headers::{HeaderName, Headers},
+            AsyncRawResponse, ClientOptions, Method, RequestContent, StatusCode, Transport, Url,
+        },
+        Bytes,
+    };
+    use azure_core_test::http::MockHttpClient;
+    use futures::FutureExt;
+    use std::{
+        num::NonZero,
+        sync::{Arc, Mutex},
+    };
+
+    #[tokio::test]
+    async fn upload_request_priority_forwarding() -> azure_core::Result<()> {
+        for request_priority in [None, Some(0), Some(1), Some(7), Some(-1), Some(8)] {
+            for partition_size in [2, 8] {
+                let requests = Arc::new(Mutex::new(Vec::new()));
+                let observed = requests.clone();
+                let transport = Transport::new(Arc::new(MockHttpClient::new(move |request| {
+                    assert_eq!(request.method(), Method::Put);
+                    let expected = request_priority.map(|value| value.to_string());
+                    assert_eq!(
+                        request
+                            .headers()
+                            .get_optional_str(&HeaderName::from_static("x-ms-request-priority")),
+                        expected.as_deref()
+                    );
+                    observed.lock().unwrap().push(
+                        request
+                            .url()
+                            .query_pairs()
+                            .find(|(name, _)| name == "comp")
+                            .map(|(_, value)| value.into_owned()),
+                    );
+                    async {
+                        Ok(AsyncRawResponse::from_bytes(
+                            StatusCode::Created,
+                            Headers::new(),
+                            Bytes::new(),
+                        ))
+                    }
+                    .boxed()
+                })));
+                let client = BlockBlobClient::new(
+                    Url::parse("https://example.blob.core.windows.net/container/blob")?,
+                    None,
+                    Some(BlockBlobClientOptions {
+                        client_options: ClientOptions {
+                            transport: Some(transport),
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    }),
+                )?;
+                client
+                    .upload(
+                        RequestContent::from(b"data".to_vec()),
+                        Some(BlockBlobClientUploadOptions {
+                            request_priority,
+                            partition_size: NonZero::new(partition_size),
+                            parallel: NonZero::new(1),
+                            ..Default::default()
+                        }),
+                    )
+                    .await?;
+
+                let requests = requests.lock().unwrap();
+                if partition_size == 8 {
+                    assert_eq!(*requests, vec![None]);
+                } else {
+                    assert_eq!(requests.len(), 3);
+                    for operation in &requests[..2] {
+                        assert_eq!(operation.as_deref(), Some("block"));
+                    }
+                    assert_eq!(requests[2].as_deref(), Some("blocklist"));
+                }
+            }
+        }
         Ok(())
     }
 }

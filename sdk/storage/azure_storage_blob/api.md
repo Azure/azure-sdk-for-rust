@@ -281,6 +281,7 @@ pub mod models {
         pub lease_id: Option<String>,
         pub max_size: Option<i64>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub source_content_crc64: Option<Vec<u8>>,
         pub source_content_md5: Option<Vec<u8>>,
         pub source_encryption_algorithm: Option<super::EncryptionAlgorithmType>,
@@ -311,6 +312,7 @@ pub mod models {
         pub lease_id: Option<String>,
         pub max_size: Option<i64>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
         pub transactional_content_crc64: Option<Vec<u8>>,
         pub transactional_content_md5: Option<Vec<u8>>,
@@ -341,6 +343,7 @@ pub mod models {
         pub legal_hold: Option<bool>,
         pub metadata: Option<std::collections::HashMap<String, String>>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     impl crate::models::AppendBlobClientCreateOptions<'_> {
@@ -360,6 +363,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -381,6 +385,7 @@ pub mod models {
     pub struct BlobClientAbortCopyOptions<'a> {
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
@@ -392,6 +397,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub proposed_lease_id: Option<String>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -405,6 +411,7 @@ pub mod models {
         pub if_tags: Option<String>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -417,6 +424,7 @@ pub mod models {
         pub if_tags: Option<String>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -435,6 +443,7 @@ pub mod models {
         pub lease_id: Option<String>,
         pub metadata: Option<std::collections::HashMap<String, String>>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -442,6 +451,7 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientDeleteImmutabilityPolicyOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
@@ -459,6 +469,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
@@ -487,6 +498,7 @@ pub mod models {
         pub range: Option<crate::models::HttpRange>,
         pub range_get_content_crc64: Option<bool>,
         pub range_get_content_md5: Option<bool>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
@@ -500,6 +512,7 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientGetAccountInfoOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -516,6 +529,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
@@ -531,6 +545,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
@@ -543,6 +558,7 @@ pub mod models {
         pub if_tags: Option<String>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -555,6 +571,7 @@ pub mod models {
         pub if_tags: Option<String>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -564,6 +581,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub immutability_policy_mode: Option<super::ImmutabilityPolicyMode>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
@@ -571,6 +589,7 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientSetLegalHoldOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
@@ -588,6 +607,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
@@ -605,6 +625,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
@@ -616,6 +637,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
         pub transactional_content_crc64: Option<Vec<u8>>,
         pub transactional_content_md5: Option<Vec<u8>>,
@@ -627,6 +649,7 @@ pub mod models {
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub rehydrate_priority: Option<super::RehydratePriority>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
         pub version_id: Option<String>,
@@ -646,6 +669,7 @@ pub mod models {
         pub metadata: Option<std::collections::HashMap<String, String>>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub rehydrate_priority: Option<super::RehydratePriority>,
+        pub request_priority: Option<i32>,
         pub seal_blob: Option<bool>,
         pub source_if_match: Option<azure_core::http::Etag>,
         pub source_if_modified_since: Option<azure_core::time::OffsetDateTime>,
@@ -660,6 +684,7 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientUndeleteOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
@@ -668,6 +693,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub proposed_lease_id: Option<String>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -678,6 +704,7 @@ pub mod models {
         pub if_modified_since: Option<azure_core::time::OffsetDateTime>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -687,6 +714,7 @@ pub mod models {
         pub if_modified_since: Option<azure_core::time::OffsetDateTime>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -698,6 +726,7 @@ pub mod models {
         pub metadata: Option<std::collections::HashMap<String, String>>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub prevent_encryption_scope_override: Option<bool>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
@@ -706,6 +735,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
@@ -714,6 +744,7 @@ pub mod models {
         pub marker: Option<String>,
         pub maxresults: Option<i32>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     impl BlobContainerClientFindBlobsByTagsOptions<'_> {
@@ -723,11 +754,13 @@ pub mod models {
     pub struct BlobContainerClientGetAccessPolicyOptions<'a> {
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct BlobContainerClientGetAccountInfoOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -736,6 +769,7 @@ pub mod models {
     pub struct BlobContainerClientGetPropertiesOptions<'a> {
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -749,6 +783,7 @@ pub mod models {
         pub maxresults: Option<i32>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
         pub prefix: Option<String>,
+        pub request_priority: Option<i32>,
         pub start_from: Option<String>,
         pub timeout: Option<i32>,
     }
@@ -764,6 +799,7 @@ pub mod models {
         pub maxresults: Option<i32>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
         pub prefix: Option<String>,
+        pub request_priority: Option<i32>,
         pub start_from: Option<String>,
         pub timeout: Option<i32>,
     }
@@ -775,6 +811,7 @@ pub mod models {
         pub if_modified_since: Option<azure_core::time::OffsetDateTime>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -784,6 +821,7 @@ pub mod models {
         pub if_modified_since: Option<azure_core::time::OffsetDateTime>,
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -795,6 +833,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
@@ -802,6 +841,7 @@ pub mod models {
         pub if_modified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -998,6 +1038,7 @@ pub mod models {
         pub marker: Option<String>,
         pub maxresults: Option<i32>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     impl BlobServiceClientFindBlobsByTagsOptions<'_> {
@@ -1006,6 +1047,7 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct BlobServiceClientGetAccountInfoOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -1013,16 +1055,19 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct BlobServiceClientGetPropertiesOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct BlobServiceClientGetStatisticsOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct BlobServiceClientGetUserDelegationKeyOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default)]
@@ -1032,6 +1077,7 @@ pub mod models {
         pub maxresults: Option<i32>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
         pub prefix: Option<String>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     impl BlobServiceClientListContainersOptions<'_> {
@@ -1040,6 +1086,7 @@ pub mod models {
     #[derive(Clone, Debug, Default)]
     pub struct BlobServiceClientSetPropertiesOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
@@ -1120,6 +1167,7 @@ pub mod models {
         pub legal_hold: Option<bool>,
         pub metadata: Option<std::collections::HashMap<String, String>>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub tier: Option<super::AccessTier>,
         pub timeout: Option<i32>,
         pub transactional_content_crc64: Option<Vec<u8>>,
@@ -1135,6 +1183,7 @@ pub mod models {
         pub if_tags: Option<String>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
     }
@@ -1148,6 +1197,7 @@ pub mod models {
         pub file_request_intent: Option<super::FileShareTokenIntent>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub source_content_crc64: Option<Vec<u8>>,
         pub source_content_md5: Option<Vec<u8>>,
         pub source_encryption_algorithm: Option<super::EncryptionAlgorithmType>,
@@ -1170,6 +1220,7 @@ pub mod models {
         pub encryption_scope: Option<String>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
         pub transactional_content_crc64: Option<Vec<u8>>,
         pub transactional_content_md5: Option<Vec<u8>>,
@@ -1201,6 +1252,7 @@ pub mod models {
         pub lease_id: Option<String>,
         pub metadata: Option<std::collections::HashMap<String, String>>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub source_content_md5: Option<Vec<u8>>,
         pub source_encryption_algorithm: Option<super::EncryptionAlgorithmType>,
         pub source_encryption_key: Option<String>,
@@ -1249,6 +1301,7 @@ pub mod models {
         pub parallel: Option<std::num::NonZero<usize>>,
         pub partition_size: Option<std::num::NonZero<u64>>,
         pub per_request_timeout: Option<i32>,
+        pub request_priority: Option<i32>,
         pub tier: Option<crate::models::AccessTier>,
     }
     impl crate::models::BlockBlobClientUploadOptions<'_> {
@@ -1601,6 +1654,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -1630,6 +1684,7 @@ pub mod models {
         pub legal_hold: Option<bool>,
         pub metadata: Option<std::collections::HashMap<String, String>>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub tier: Option<super::PremiumPageBlobAccessTier>,
         pub timeout: Option<i32>,
     }
@@ -1653,6 +1708,7 @@ pub mod models {
         pub maxresults: Option<i32>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
         pub range: Option<crate::models::HttpRange>,
+        pub request_priority: Option<i32>,
         pub snapshot: Option<String>,
         pub timeout: Option<i32>,
     }
@@ -1672,6 +1728,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -1686,6 +1743,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
     }
     #[derive(Debug)]
@@ -1708,6 +1766,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub source_content_crc64: Option<Vec<u8>>,
         pub source_content_md5: Option<Vec<u8>>,
         pub source_encryption_algorithm: Option<super::EncryptionAlgorithmType>,
@@ -1737,6 +1796,7 @@ pub mod models {
         pub if_unmodified_since: Option<azure_core::time::OffsetDateTime>,
         pub lease_id: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub request_priority: Option<i32>,
         pub timeout: Option<i32>,
         pub transactional_content_crc64: Option<Vec<u8>>,
         pub transactional_content_md5: Option<Vec<u8>>,

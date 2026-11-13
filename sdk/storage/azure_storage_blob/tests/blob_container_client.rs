@@ -4,7 +4,7 @@
 mod common;
 
 use azure_core::{
-    http::{RequestContent, StatusCode},
+    http::{headers::HeaderName, RequestContent, StatusCode},
     time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
 };
 use azure_core_test::{recorded, Matcher, TestContext, VarOptions};
@@ -13,9 +13,9 @@ use azure_storage_blob::models::{
     AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
     BlobContainerClientBreakLeaseOptions, BlobContainerClientChangeLeaseResultHeaders,
     BlobContainerClientCreateOptions, BlobContainerClientFindBlobsByTagsOptions,
-    BlobContainerClientGetAccountInfoResultHeaders, BlobContainerClientGetPropertiesResultHeaders,
-    BlobContainerClientSetMetadataOptions, BlockBlobClientUploadOptions, LeaseState,
-    SignedIdentifiers, StorageErrorCode,
+    BlobContainerClientGetAccountInfoResultHeaders, BlobContainerClientGetPropertiesOptions,
+    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientSetMetadataOptions,
+    BlockBlobClientUploadOptions, LeaseState, SignedIdentifiers, StorageErrorCode,
 };
 use azure_storage_blob::StorageError;
 use common::{
@@ -25,6 +25,31 @@ use common::{
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
+
+#[recorded::test]
+async fn test_blob_container_client_request_priority(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let result = async {
+        let response = container_client
+            .get_properties(Some(BlobContainerClientGetPropertiesOptions {
+                request_priority: Some(1),
+                ..Default::default()
+            }))
+            .await?;
+        response
+            .headers()
+            .get_optional_as::<i32, _>(&HeaderName::from_static("x-ms-request-priority"))
+    }
+    .await;
+
+    container_client.delete(None).await?;
+    assert_eq!(result?, Some(1));
+    Ok(())
+}
 
 #[recorded::test]
 async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
