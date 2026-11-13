@@ -17,6 +17,7 @@
 
 ### Bugs Fixed
 
+- Preserve complete single-partition emulator aggregate, GROUP BY, and DISTINCT results across pages, and retain quoted aliases and floating-point literals in query rewrites. ([#5552](https://github.com/Azure/azure-sdk-for-rust/pull/5552))
 - Apply `DISTINCT` to completed `GROUP BY` projections before result windows, preserving identical partition-local aggregate contributions and deduplicating equal final projections. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Preserve session tokens from query pages suppressed by `DISTINCT` or `OFFSET`, including terminal distinct-count results and empty-page flushes. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Normalize native query-plan partition bounds using the container's partition key kind and version, preventing malformed EPK errors during cross-partition queries. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
