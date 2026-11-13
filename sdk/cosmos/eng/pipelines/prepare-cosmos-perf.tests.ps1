@@ -182,7 +182,8 @@ Set-Item Function:\Invoke-RestMethod $mockMetadata
 $temporary = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "cosmos-perf-script-$([Guid]::NewGuid())")
 $savedEnvironment = @{}
 foreach ($name in @('COSMOS_PERF_OUTPUT', 'AZURE_COSMOS_ENDPOINT', 'AZURE_COSMOS_KEY', 'BUILD_BUILDID',
-    'COSMOS_PERF_BASELINE_COMMIT', 'COSMOS_PERF_CALIBRATE', 'COSMOS_PERF_WEEKLY', 'BUILD_SOURCEVERSION', 'BUILD_SOURCEBRANCH')) {
+    'COSMOS_PERF_BASELINE_COMMIT', 'COSMOS_PERF_CALIBRATE', 'COSMOS_PERF_WEEKLY', 'COSMOS_PERF_AUTO_CALIBRATE',
+    'SYSTEM_PULLREQUEST_PULLREQUESTNUMBER', 'SYSTEM_PULLREQUEST_SOURCECOMMITID', 'BUILD_SOURCEVERSION', 'BUILD_SOURCEBRANCH')) {
     $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name)
 }
 try {
@@ -232,8 +233,9 @@ try {
     Write-Host 'PASS: cleanup deletes only this run database, never the account or other databases'
 
     $env:COSMOS_PERF_BASELINE_COMMIT = '$(cosmos-perf-baseline-commit)'
-    $env:COSMOS_PERF_CALIBRATE = 'True'
+    $env:COSMOS_PERF_CALIBRATE = 'False'
     $env:COSMOS_PERF_WEEKLY = 'False'
+    $env:COSMOS_PERF_AUTO_CALIBRATE = 'True'
     $env:BUILD_SOURCEVERSION = (& git rev-parse HEAD)
     if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve the test checkout commit.' }
     $sourceProfileJson = & git show "$($env:BUILD_SOURCEVERSION):sdk/cosmos/eng/pipelines/perf-profile.json"
@@ -260,7 +262,7 @@ try {
         $recordedMode.calibrate -ne $true) {
         throw 'Pipeline-style invocation did not execute and persist verified preflight.'
     }
-    Write-Host 'PASS: PowerShell task-style dot-sourcing executes preflight and writes required manifests'
+    Write-Host 'PASS: standalone pipeline defaults execute preflight and bootstrap calibration without manual flags'
 } finally {
     Remove-Item Function:\Invoke-WebRequest
     Remove-Item Function:\Invoke-RestMethod
@@ -268,4 +270,62 @@ try {
         [Environment]::SetEnvironmentVariable($name, $savedEnvironment[$name])
     }
     if (Test-Path -LiteralPath $temporary) { Remove-Item -LiteralPath $temporary -Recurse }
+}
+
+$sourceFixture = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "cosmos-perf-source-$([Guid]::NewGuid())")
+New-Item -ItemType Directory -Path $sourceFixture | Out-Null
+Push-Location $sourceFixture
+try {
+    & git init --quiet
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot initialize source-selection test repository.' }
+    & git config core.hooksPath .git/no-hooks
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot isolate test repository hooks.' }
+    $tree = '' | & git mktree --batch
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot create source-selection test tree.' }
+    function New-SourceFixtureCommit([string] $Message, [string[]] $Parents = @()) {
+        $parentArguments = @()
+        foreach ($parent in $Parents) { $parentArguments += @('-p', $parent) }
+        $commit = $Message | & git -c user.name=PerfTest -c user.email=perf-test@example.invalid commit-tree $tree @parentArguments
+        if ($LASTEXITCODE -ne 0) { throw 'Cannot create source-selection test commit.' }
+        return $commit.Trim()
+    }
+    $base = New-SourceFixtureCommit 'base'
+    $target = New-SourceFixtureCommit 'target branch' @($base)
+    $source = New-SourceFixtureCommit 'PR head' @($base)
+    $merge = New-SourceFixtureCommit 'synthetic merge' @($target, $source)
+    & git checkout --quiet --detach $merge
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot check out source-selection test merge.' }
+    foreach ($case in @(
+        @{ Number = '123'; Commit = '' },
+        @{ Number = '124'; Commit = $source },
+        @{ Number = '123'; Commit = $target },
+        @{ Number = '123'; Commit = $base }
+    )) {
+        $rejected = $false
+        try { Select-CosmosPerfSource 'refs/pull/123/merge' $merge $case.Number $case.Commit | Out-Null } catch { $rejected = $true }
+        if (-not $rejected -or (& git rev-parse HEAD) -ne $merge) {
+            throw 'Invalid PR metadata changed the checkout or was accepted.'
+        }
+    }
+    Set-Content -LiteralPath 'unsaved.txt' -Value 'preserve me'
+    $rejected = $false
+    try { Select-CosmosPerfSource 'refs/pull/123/merge' $merge '123' $source | Out-Null } catch { $rejected = $true }
+    if (-not $rejected -or (& git rev-parse HEAD) -ne $merge) { throw 'Dirty checkout was not preserved.' }
+    Remove-Item -LiteralPath 'unsaved.txt'
+
+    $selected = Select-CosmosPerfSource 'refs/pull/123/merge' $merge '123' $source
+    if ($selected -ne $source -or (& git rev-parse HEAD) -ne $source) {
+        throw 'PR comment build did not select its verified source commit.'
+    }
+    if ((Select-CosmosPerfSource 'refs/pull/123/head' $source '' '') -ne $source -or
+        (Select-CosmosPerfSource 'refs/heads/main' $source '' '') -ne $source) {
+        throw 'Existing head/branch source selection changed.'
+    }
+    $rejected = $false
+    try { Select-CosmosPerfSource 'refs/heads/main' $merge '' '' | Out-Null } catch { $rejected = $true }
+    if (-not $rejected) { throw 'Unexpected checkout SHA was accepted.' }
+    Write-Host 'PASS: PR comment builds select verified head commits and reject mismatched or dirty checkouts'
+} finally {
+    Pop-Location
+    Remove-Item -LiteralPath $sourceFixture -Recurse -Force
 }

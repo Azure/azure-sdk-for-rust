@@ -145,6 +145,11 @@ per operation in one process and a shared SDK client. Existing CLI workloads
 and Cosmos result publishing are unchanged when `--perf-profile` is omitted.
 The feature enables the SDK's opt-in patch API.
 
+The standalone `sdk/cosmos/perf.yml` entry point reuses the perf stage without
+the functional-test matrix. Once registered in ADO with comment-required PR
+validation as `rust - cosmos - perf`, an authorized PR comment
+`/azp run rust - cosmos - perf` runs it on the verified PR-head commit.
+
 The internal weekly pipeline runs this workload automatically. Until a reviewed
 baseline is configured, it collects calibration results and reports
 `SucceededWithIssues`, not a threshold pass. After approval, weekly runs enforce

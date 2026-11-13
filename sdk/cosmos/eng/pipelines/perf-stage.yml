@@ -10,6 +10,9 @@ parameters:
 - name: Weekly
   type: boolean
   default: false
+- name: AutoCalibrate
+  type: boolean
+  default: false
 - name: DependsOn
   type: object
   default: []
@@ -45,9 +48,6 @@ stages:
       displayName: Initialize performance artifact directory
       env:
         COSMOS_PERF_OUTPUT: $(PerfOutput)
-    - template: /eng/pipelines/templates/steps/use-rust.yml
-      parameters:
-        Toolchain: stable
     - task: PowerShell@2
       displayName: Verify source, baseline, fixed account, and VM region
       inputs:
@@ -58,8 +58,12 @@ stages:
         COSMOS_PERF_BASELINE_COMMIT: $(cosmos-perf-baseline-commit)
         COSMOS_PERF_CALIBRATE: ${{ parameters.Calibrate }}
         COSMOS_PERF_WEEKLY: ${{ parameters.Weekly }}
+        COSMOS_PERF_AUTO_CALIBRATE: ${{ parameters.AutoCalibrate }}
         AZURE_COSMOS_ENDPOINT: $(cosmos-rust-perf-endpoint)
         AZURE_COSMOS_KEY: $(cosmos-rust-perf-key)
+    - template: /eng/pipelines/templates/steps/use-rust.yml
+      parameters:
+        Toolchain: stable
     - pwsh: |
         . ./eng/common/scripts/common.ps1
         . ./eng/scripts/shared/common.ps1

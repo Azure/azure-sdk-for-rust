@@ -17,17 +17,54 @@ function Assert-CosmosPerfSourceRef([string] $SourceRef) {
     }
 }
 
-function Get-CosmosPerfCalibration([bool] $Weekly, [bool] $Requested, [bool] $HasBaseline, $Thresholds) {
+function Select-CosmosPerfSource(
+    [string] $SourceRef,
+    [string] $SourceCommit,
+    [string] $PullRequestNumber,
+    [string] $PullRequestCommit
+) {
+    if ($SourceCommit -notmatch '^[a-fA-F0-9]{40}$') { throw 'Source commit must be a full SHA.' }
+    $head = & git rev-parse HEAD
+    if ($LASTEXITCODE -ne 0 -or $head.Trim() -ne $SourceCommit) {
+        throw 'Checkout does not match Build.SourceVersion.'
+    }
+    if ($SourceRef -match '^refs/pull/([0-9]+)/merge$') {
+        $number = $Matches[1]
+        if ($PullRequestNumber -ne $number -or $PullRequestCommit -notmatch '^[a-fA-F0-9]{40}$') {
+            throw 'PR merge checkout requires matching Azure Pipelines PR number and source commit metadata.'
+        }
+        $parents = & git show -s --format=%P HEAD
+        if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect PR merge parents.' }
+        $parents = @($parents.Trim() -split ' ')
+        if ($parents.Count -ne 2 -or $parents[1] -ne $PullRequestCommit) {
+            throw 'PR source commit does not match the synthetic merge commit second parent.'
+        }
+        $dirty = & git status --porcelain
+        if ($LASTEXITCODE -ne 0 -or $dirty) { throw 'Refusing to switch a modified perf checkout.' }
+        & git checkout --detach $PullRequestCommit
+        if ($LASTEXITCODE -ne 0) { throw 'Cannot check out the verified PR head commit.' }
+        $head = & git rev-parse HEAD
+        if ($LASTEXITCODE -ne 0 -or $head.Trim() -ne $PullRequestCommit) {
+            throw 'Checkout does not match the verified PR head commit.'
+        }
+        Write-Host "Perf source: PR $number head $PullRequestCommit (queued merge $SourceCommit)."
+        return $PullRequestCommit
+    }
+    Assert-CosmosPerfSourceRef $SourceRef
+    return $SourceCommit
+}
+
+function Get-CosmosPerfCalibration([bool] $AutoCalibrate, [bool] $Requested, [bool] $HasBaseline, $Thresholds) {
     if ($Requested) { return $true }
     if (-not $HasBaseline) {
-        if ($Weekly) { return $true }
+        if ($AutoCalibrate) { return $true }
         throw 'A reviewed baseline commit is required for manual performance validation.'
     }
     if ($Thresholds.version -ne 1 -or $Thresholds.approved -isnot [bool]) {
         throw 'Invalid performance threshold document version or approval flag.'
     }
     if ($Thresholds.approved) { return $false }
-    if ($Weekly -and $null -eq $Thresholds.profile -and
+    if ($AutoCalibrate -and $null -eq $Thresholds.profile -and
         $Thresholds.thresholds -is [array] -and $Thresholds.thresholds.Count -eq 0) {
         return $true
     }
@@ -76,12 +113,13 @@ foreach ($name in @('COSMOS_PERF_OUTPUT',
 $output = $env:COSMOS_PERF_OUTPUT
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 $baseline = $env:COSMOS_PERF_BASELINE_COMMIT
-$source = $env:BUILD_SOURCEVERSION
-$weekly = $env:COSMOS_PERF_WEEKLY -eq 'True'
+$source = Select-CosmosPerfSource $env:BUILD_SOURCEBRANCH $env:BUILD_SOURCEVERSION `
+    $env:SYSTEM_PULLREQUEST_PULLREQUESTNUMBER $env:SYSTEM_PULLREQUEST_SOURCECOMMITID
+$autoCalibrate = $env:COSMOS_PERF_WEEKLY -eq 'True' -or $env:COSMOS_PERF_AUTO_CALIBRATE -eq 'True'
 $requested = $env:COSMOS_PERF_CALIBRATE -eq 'True'
 $hasBaseline = -not [string]::IsNullOrWhiteSpace($baseline) -and -not $baseline.StartsWith('$(')
 if (-not $hasBaseline) {
-    if (-not ($weekly -or $requested)) {
+    if (-not ($autoCalibrate -or $requested)) {
         throw 'COSMOS_PERF_BASELINE_COMMIT is required for manual performance validation.'
     }
     $baseline = $source
@@ -89,9 +127,6 @@ if (-not $hasBaseline) {
 if ($baseline -notmatch '^[a-fA-F0-9]{40}$' -or $source -notmatch '^[a-fA-F0-9]{40}$') {
     throw 'Source and reviewed baseline must be full commit SHAs.'
 }
-$head = & git rev-parse HEAD
-if ($LASTEXITCODE -ne 0 -or $head.Trim() -ne $source) { throw 'Checkout does not match Build.SourceVersion.' }
-Assert-CosmosPerfSourceRef $env:BUILD_SOURCEBRANCH
 foreach ($file in @('perf-profile.json', 'perf-thresholds.json')) {
     $content = & git show "${baseline}:sdk/cosmos/eng/pipelines/$file"
     if ($LASTEXITCODE -ne 0) { throw "Cannot read reviewed $file from the pinned baseline commit." }
@@ -100,9 +135,9 @@ foreach ($file in @('perf-profile.json', 'perf-thresholds.json')) {
 $profile = Get-Content -Raw ([System.IO.Path]::Combine($output, 'perf-profile.json')) | ConvertFrom-Json
 $thresholds = Get-Content -Raw ([System.IO.Path]::Combine($output, 'perf-thresholds.json')) | ConvertFrom-Json
 if ($profile.duration_seconds -ne 2700 -or $profile.warmup_seconds -ne 300) {
-    throw 'Weekly runs require exactly 2700 seconds with 300 seconds of discarded warm-up.'
+    throw 'Performance runs require exactly 2700 seconds with 300 seconds of discarded warm-up.'
 }
-$calibrate = Get-CosmosPerfCalibration $weekly $requested $hasBaseline $thresholds
+$calibrate = Get-CosmosPerfCalibration $autoCalibrate $requested $hasBaseline $thresholds
 if ($calibrate) {
     $reason = if (-not $hasBaseline) {
         'No reviewed baseline commit is configured; collecting calibration using the source profile.'
