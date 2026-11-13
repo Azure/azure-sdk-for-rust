@@ -140,8 +140,8 @@ needs in `#[requires(..)]`, which does two things:
 `cosspec::faults` builds client-side fault rules for `client_with_faults`:
 
 ```rust ignore
-let slow_primary =
-    faults::delay(Op::ReadItem, Duration::from_secs(2)).in_region(PrimaryReadWrite);
+let slow_primary = faults::delay(Op::ReadItem, Duration::from_secs(2))
+    .in_region(RegionAlias::PrimaryReadWrite);
 let client = container.client_with_faults([slow_primary]).await?;
 ```
 
@@ -168,8 +168,8 @@ Diagnostics can supplement this evidence but never replace it.
   with a fresh client.
 - `assert_http_count!(tap, "ReadItem", n)`: how many exchanges an operation
   made.
-- `assert_http_regions!(tap, "ReadItem", [PrimaryReadWrite, ..])`: the region
-  aliases an operation was sent to, in order.
+- `assert_http_regions!(tap, "ReadItem", [RegionAlias::PrimaryReadWrite, ..])`:
+  the region aliases an operation was sent to, in order.
 - `assert_http_overlap!(a, b)`: two exchanges were in flight at the same time.
 
 ## Lifecycle

@@ -9,9 +9,7 @@ use cosspec::{
     faults::{self, Op},
     profiles, spec_test,
     testdata::Item,
-    ExclusiveAccount, HttpTap,
-    RegionAlias::PrimaryReadWrite,
-    SharedContainer, SpecResult,
+    ExclusiveAccount, HttpTap, RegionAlias, SharedContainer, SpecResult,
 };
 use std::time::Duration;
 
@@ -35,8 +33,8 @@ pub async fn hedge_races_alternate_region(
     tap: HttpTap,
 ) -> SpecResult {
     let secondary = container.regions()[1];
-    let slow_primary =
-        faults::delay(Op::ReadItem, Duration::from_secs(2)).in_region(PrimaryReadWrite);
+    let slow_primary = faults::delay(Op::ReadItem, Duration::from_secs(2))
+        .in_region(RegionAlias::PrimaryReadWrite);
     let client = container.client_with_faults([slow_primary]).await?;
     let expected = container.dataset().get("item-03");
 
@@ -49,7 +47,7 @@ pub async fn hedge_races_alternate_region(
         .await?;
 
     assert_eq!(response.into_model::<Item>()?, expected);
-    assert_http_regions!(tap, "ReadItem", [PrimaryReadWrite, secondary]);
+    assert_http_regions!(tap, "ReadItem", [RegionAlias::PrimaryReadWrite, secondary]);
     let reads = tap.operation("ReadItem");
     assert_http_overlap!(reads[0], reads[1]);
     assert!(reads[0].was_cancelled(), "the slow request is abandoned");
@@ -90,7 +88,9 @@ pub async fn read_fails_over_when_region_offline(
     let expected = container.dataset().get("item-05");
     let secondary = account.regions()[1];
 
-    account.take_region_offline(PrimaryReadWrite).await?;
+    account
+        .take_region_offline(RegionAlias::PrimaryReadWrite)
+        .await?;
     tap.clear();
     let response = container
         .client()
@@ -118,7 +118,9 @@ pub async fn write_fails_over_when_write_region_offline(
     let item = Item::new("after-offline", "pk-0", 1);
     let secondary = account.regions()[1];
 
-    account.take_region_offline(PrimaryReadWrite).await?;
+    account
+        .take_region_offline(RegionAlias::PrimaryReadWrite)
+        .await?;
     tap.clear();
     container
         .client()

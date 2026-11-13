@@ -43,8 +43,10 @@ These rules are strict. When a change can't follow them, stop and ask.
 - Keep specs backend-agnostic. Declare needed capabilities with
   `#[requires(..)]` and profiles with `#[service_profiles(..)]`; never branch
   on the backend in a spec body.
-- Name regions only by `RegionAlias`, such as `PrimaryReadWrite`. Never use
-  real region names in specs; live accounts can be deployed anywhere.
+- Name regions only by `RegionAlias`, such as `RegionAlias::PrimaryReadWrite`.
+  Never use real region names in specs; live accounts can be deployed anywhere.
+- Always qualify enum variants, such as `RegionAlias::PrimaryReadWrite`. Never
+  import variants, individually or with `*`.
 
 ### 2. Use and grow the framework to keep specs concise
 

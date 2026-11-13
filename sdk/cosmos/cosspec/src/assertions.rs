@@ -104,7 +104,7 @@ macro_rules! assert_http_count {
 /// start order. An exchange to a region without an alias shows its real name.
 ///
 /// ```rust,ignore
-/// assert_http_regions!(tap, "ReadItem", [PrimaryReadWrite, SecondaryReadOnly]);
+/// assert_http_regions!(tap, "ReadItem", [RegionAlias::PrimaryReadWrite, RegionAlias::SecondaryReadOnly]);
 /// ```
 #[macro_export]
 macro_rules! assert_http_regions {

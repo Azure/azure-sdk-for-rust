@@ -51,11 +51,16 @@ impl ServiceProfile {
     /// The account's regions, by alias, in preference order. The first one is
     /// the write region.
     pub fn regions(self) -> &'static [RegionAlias] {
-        use RegionAlias::*;
         match self {
-            ServiceProfile::SingleRegion => &[PrimaryReadWrite],
-            ServiceProfile::MultiRead => &[PrimaryReadWrite, SecondaryReadOnly],
-            ServiceProfile::MultiWrite => &[PrimaryReadWrite, SecondaryReadWrite],
+            ServiceProfile::SingleRegion => &[RegionAlias::PrimaryReadWrite],
+            ServiceProfile::MultiRead => &[
+                RegionAlias::PrimaryReadWrite,
+                RegionAlias::SecondaryReadOnly,
+            ],
+            ServiceProfile::MultiWrite => &[
+                RegionAlias::PrimaryReadWrite,
+                RegionAlias::SecondaryReadWrite,
+            ],
         }
     }
 

@@ -4,7 +4,7 @@
 //! Short constructors for client-side fault injection rules.
 //!
 //! ```rust,ignore
-//! let slow = faults::delay(Op::ReadItem, Duration::from_millis(500)).in_region(PrimaryReadWrite);
+//! let slow = faults::delay(Op::ReadItem, Duration::from_millis(500)).in_region(RegionAlias::PrimaryReadWrite);
 //! let client = container.client_with_faults([slow]).await?;
 //! ```
 

@@ -241,7 +241,7 @@ Client-side faults use the SDK's fault-injection rules. Faults are fixed when
 a client is built, so specs request a separate faulted client:
 
 ```rust
-let slow_primary = faults::delay(Op::ReadItem, Duration::from_secs(2)).in_region(PrimaryReadWrite);
+let slow_primary = faults::delay(Op::ReadItem, Duration::from_secs(2)).in_region(RegionAlias::PrimaryReadWrite);
 let client = container.client_with_faults([slow_primary]).await?;
 ```
 
