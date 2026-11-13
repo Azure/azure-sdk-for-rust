@@ -165,23 +165,6 @@ Setup and cleanup reject unowned containers.
 For V1 regression coverage, also run the `emulator` target for
 `azure_data_cosmos` and `azure_data_cosmos_driver` before finalization.
 
-### Known gaps
-
-- The helper pins EN20261008. Its V2 connectivity probe failed on ARM64;
-  verify a compatible image and all enabled scenarios on CI before merging.
-  Do not bypass the probe or weaken transport assertions.
-- Ordered-pagination tests are ignored in both gateways:
-  [Azure/azure-cosmos-db-emulator-docker#387](https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/387).
-- Batch tests are ignored only in V2 pending emulator JSON batch-read support;
-  SDK batch atomicity tokens are also required.
-
-Both ignores apply to text and binary. After fixes, run the regressions with
-the selected cell active, then remove the corresponding ignores:
-
-```powershell
-cargo test -p azure_data_cosmos --all-features --test vnext -- --ignored --test-threads=1
-```
-
 ## Gateway V2 multi-range prefix change feed
 
 The `gateway_v2_prefix_change_feed_across_physical_ranges` test exercises
