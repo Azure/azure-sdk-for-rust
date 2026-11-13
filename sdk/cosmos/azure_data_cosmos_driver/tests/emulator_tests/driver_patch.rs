@@ -36,7 +36,10 @@ use std::error::Error;
 
 fn patch_test_options() -> OperationOptions {
     OperationOptionsBuilder::new()
-        .with_binary_encoding(BinaryEncodingOptions::new().with_enabled(false))
+        .with_binary_encoding(BinaryEncodingOptions::new().with_enabled(cfg!(all(
+            test_category = "emulator_vnext",
+            test_category = "emulator_vnext_binary"
+        ))))
         .build()
 }
 

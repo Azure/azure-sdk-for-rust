@@ -39,6 +39,12 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     }
 }
 
+elseif ($env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'vnext') {
+    . ([System.IO.Path]::Combine($PSScriptRoot, 'CosmosVNext.ps1'))
+    Complete-CosmosVNext
+    $env:AZURE_COSMOS_CONNECTION_STRING = $null
+    $env:AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED = $null
+}
 elseif ($IsWindows) {
     $EmulatorPath = & "$PSScriptRoot\Get-CosmosEmulatorPath.ps1"
     if ($null -eq $EmulatorPath) {

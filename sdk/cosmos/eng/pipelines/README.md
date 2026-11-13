@@ -132,7 +132,40 @@ without changing the existing suites. Ordinary emulator, vnext, in-memory,
 and codec-fuzz jobs do not use that resolver and do not enable the live gate.
 Legacy ARM/AAD jobs retain their existing categories.
 
-### Gateway V2 multi-range prefix change feed
+## vNext emulator conformance
+
+`Cosmos_vnext_emulator` is a blocking, Build-only Linux matrix:
+`AZURE_COSMOS_VNEXT_GATEWAY` (`v1`/`v2`) ×
+`AZURE_COSMOS_VNEXT_ENCODING` (`text`/`binary`).
+Tests assert actual transport and encoding, not just successful operations.
+
+Docker is required. Start in a fresh shell without cloud credentials,
+`ACCOUNT_HOST`, non-key `AZURE_COSMOS_AUTH_MODE`, `CARGO_ENCODED_RUSTFLAGS`, or
+existing test-category `RUSTFLAGS`. The helper configures local HTTPS and
+emulator-only certificate handling. Run from the repository root in PowerShell 7:
+
+```powershell
+. ./sdk/cosmos/eng/scripts/CosmosVNext.ps1
+try {
+    Start-CosmosVNext -Gateway v1 -Encoding binary
+    cargo test -p azure_data_cosmos --all-features --test vnext -- --test-threads=1
+    if ($LASTEXITCODE) { throw "vNext conformance failed: $LASTEXITCODE" }
+}
+finally {
+    Complete-CosmosVNext
+}
+```
+
+Change the gateway and encoding arguments for another cell, using a fresh
+shell each time. Finalize in the same PowerShell process as setup.
+CI starts the emulator per crate; the crate cleanup hook collects logs and
+removes it. Build or test failures can exit before that hook runs.
+Setup and cleanup reject unowned containers.
+
+For V1 regression coverage, also run the `emulator` target for
+`azure_data_cosmos` and `azure_data_cosmos_driver` before finalization.
+
+## Gateway V2 multi-range prefix change feed
 
 The `gateway_v2_prefix_change_feed_across_physical_ranges` test exercises
 hierarchical-prefix fan-out and checkpoint/resume on an **existing** topology.
