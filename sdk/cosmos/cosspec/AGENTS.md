@@ -1,7 +1,7 @@
 # cosspec agent instructions
 
-These rules add to the [Cosmos SDK instructions](../AGENTS.md). Read
-[spec 0030] for the design and the [README](README.md) to run specs.
+These rules add to the [Cosmos SDK instructions](../AGENTS.md). See the
+[README](README.md) to run specs.
 
 ## Approach
 
@@ -36,8 +36,8 @@ These rules are strict. When a change can't follow them, stop and ask.
   evidence, not instead of it.
 - Never weaken, loosen, or delete an assertion to make a spec pass. If the
   SDK is wrong, mark the spec `#[known_issue("<accurate reason>", ..)]`,
-  scoped to the affected profiles, and record it under Known issues in
-  [spec 0030]. Remove the attribute in the change that fixes the behavior.
+  scoped to the affected profiles. Remove the attribute in the change that
+  fixes the behavior.
 - When behavior changes on purpose, update the spec's doc comment and body in
   the same change so the diff reads as a change to the specification.
 - Keep specs backend-agnostic. Declare needed capabilities with
@@ -61,9 +61,9 @@ These rules are strict. When a change can't follow them, stop and ask.
 ### 3. Keep the framework simple enough to review
 
 - Keep the DSL small enough that a reviewer can hold all of it in their head.
-  Respect the [helper budget]: every attribute, injectable method, `faults`
-  builder, profile, dataset, and assertion is listed in [spec 0030], and a new
-  one must be added there in the same change.
+  Add a new attribute, injectable method, `faults` builder, profile,
+  dataset, or assertion only when it removes noise that obscures the
+  behavior under test.
 - Give each helper one obvious meaning that matches its name. No hidden
   retries, sleeps, or tolerance that could mask SDK behavior.
 - Fail loudly on misuse. Using a capability a spec didn't declare is an
@@ -74,8 +74,4 @@ These rules are strict. When a change can't follow them, stop and ask.
 - Prefer plain, explicit code over clever abstractions, macros, or generics.
   Document every public item.
 - Treat the result file format as versioned. Additive changes keep version
-  `1`; anything breaking needs a new version and an update to [spec 0030].
-
-<!-- LINKS -->
-[spec 0030]: ../docs/specs/0030-cosmos-spec-tests.md
-[helper budget]: ../docs/specs/0030-cosmos-spec-tests.md#helper-budget
+  `1`; anything breaking needs a new version.
