@@ -188,7 +188,7 @@ function TrialBody(props: {
     runId: string;
 }) {
     const { result, route, tab } = props;
-    const [showHarness, setShowHarness] = useState(route.query.get("harness") !== "0");
+    const [showHarness, setShowHarness] = useState(route.query.get("harness") === "1");
     const logs = result.logs ?? [];
     const http = useMemo(
         () => result.http.filter((r) => showHarness || r.label !== "harness"),
