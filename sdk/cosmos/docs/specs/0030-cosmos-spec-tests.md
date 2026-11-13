@@ -604,10 +604,14 @@ the version. Removing, renaming, or changing the meaning of a field does.
 | `teardown_error` | A cleanup failure, reported separately from the body |
 | `panic` | Message, location, and backtrace if the body panicked |
 | `resources` | Each account, database, and container the spec used: `kind`, `origin` (`created` or `pooled`), `name`, and where known `database`, `profile`, and `parameter` |
+| `phases` | Named spans of the trial, each with `start_ms` and `end_ms` from the trial start: `pool` (waiting for the pooled account and database), `body` (the spec itself), and `teardown` |
 | `http` | Every HTTP exchange of the spec's clients (`label: "spec"`) and of its harness clients (`label: "harness"`), in start order: method, URL, operation, region, activity ID, `start_ms` from the trial start, `duration_ms`, `outcome`, `request_body`, and `response_body` |
 
 The recording isn't affected by `HttpTap::clear()`. Traffic to set up pooled
 resources is shared by many specs, so it isn't attributed to any one of them.
+Trials start together and wait on the same pool setup, so a spec's first
+request can come hundreds of milliseconds after the trial start; the `pool`
+phase shows that wait.
 Each body has its full `length` in bytes and keeps at most the first 4 KiB
 (`cosspec::results::BODY_LIMIT`); `truncated` says whether bytes were cut.
 UTF-8 bodies, such as JSON, appear as `text`. Binary bodies, such as Cosmos DB
@@ -698,8 +702,8 @@ Cargo runs tests from the package root.
 
 Pass `-- --results-dir <dir>` to choose where result files go. See
 [Spec results](#spec-results). Runs that use the default location prune it
-to the 10 newest run directories; pass `-- --no-prune` to keep them all. Pass `-- --no-cleanup` to keep every database
-and container the run creates.
+to the 10 newest run directories; pass `-- --no-prune` to keep them all.
+Pass `-- --no-cleanup` to keep every database and container the run creates.
 
 ## Migration from 0028
 

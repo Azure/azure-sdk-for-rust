@@ -266,9 +266,12 @@ impl BodyJson {
     }
 }
 
+fn millis(d: std::time::Duration) -> f64 {
+    d.as_secs_f64() * 1000.0
+}
+
 impl HttpJson {
     fn new(record: HttpRecord, base: Instant) -> Self {
-        let millis = |d: std::time::Duration| d.as_secs_f64() * 1000.0;
         Self {
             start_ms: millis(record.started_at.saturating_duration_since(base)),
             duration_ms: record.duration().map(millis),
@@ -291,6 +294,17 @@ impl HttpJson {
             activity_id: record.activity_id,
         }
     }
+}
+
+/// A named stretch of a trial, such as acquiring pooled resources or running
+/// the spec body.
+#[derive(Debug, Serialize)]
+struct PhaseJson {
+    name: &'static str,
+    /// Milliseconds from the trial start.
+    start_ms: f64,
+    /// Milliseconds from the trial start.
+    end_ms: f64,
 }
 
 #[derive(Debug, Serialize)]
@@ -319,6 +333,7 @@ struct ResultFile {
     teardown_error: Option<String>,
     panic: Option<PanicRecord>,
     resources: Vec<ResourceRecord>,
+    phases: Vec<PhaseJson>,
     http: Vec<HttpJson>,
 }
 
@@ -341,6 +356,7 @@ pub(crate) struct TrialRecord {
     pub teardown_error: Option<SpecError>,
     pub panic: Option<PanicRecord>,
     pub resources: Vec<ResourceRecord>,
+    pub phases: Vec<(&'static str, Instant, Instant)>,
     pub http: Vec<HttpRecord>,
 }
 
@@ -362,8 +378,14 @@ impl TrialRecord {
             teardown_error: None,
             panic: None,
             resources: Vec::new(),
+            phases: Vec::new(),
             http: Vec::new(),
         }
+    }
+
+    /// Records that the phase `name` ran from `start` until now.
+    pub fn phase(&mut self, name: &'static str, start: Instant) {
+        self.phases.push((name, start, Instant::now()));
     }
 
     /// The trial's result: the body's error, else the teardown's.
@@ -405,12 +427,21 @@ impl TrialRecord {
                     profiles: issue.profiles.iter().map(|p| p.name()).collect(),
                 }),
             started_at: to_rfc3339(&self.started_at),
-            duration_ms: self.started.elapsed().as_secs_f64() * 1000.0,
+            duration_ms: millis(self.started.elapsed()),
             status,
             error: self.error.map(|e| e.to_string()),
             teardown_error: self.teardown_error.map(|e| e.to_string()),
             panic: self.panic,
             resources: self.resources,
+            phases: self
+                .phases
+                .into_iter()
+                .map(|(name, start, end)| PhaseJson {
+                    name,
+                    start_ms: millis(start.saturating_duration_since(self.started)),
+                    end_ms: millis(end.saturating_duration_since(self.started)),
+                })
+                .collect(),
             http: self
                 .http
                 .into_iter()

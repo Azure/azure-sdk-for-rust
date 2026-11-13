@@ -24,6 +24,7 @@ use std::{
     panic::AssertUnwindSafe,
     pin::Pin,
     sync::{Arc, OnceLock},
+    time::Instant,
 };
 
 /// Every spec in the binary, registered by `#[spec_test]`.
@@ -270,7 +271,7 @@ fn track(job: Job, slot: Slot) -> Job {
     let run = job.run;
     Job {
         run: Box::new(move || {
-            let start = std::time::Instant::now();
+            let start = Instant::now();
             let result = std::panic::catch_unwind(AssertUnwindSafe(run));
             let duration_ms = start.elapsed().as_secs_f64() * 1000.0;
             let recorded = match &result {
@@ -372,7 +373,9 @@ async fn run_spec(
     profile: ServiceProfile,
 ) -> TrialRecord {
     let mut record = TrialRecord::start(spec, profile, backend.as_ref());
-    let cell = match pool::cell(&backend, profile).await {
+    let cell = pool::cell(&backend, profile).await;
+    record.phase("pool", record.started);
+    let cell = match cell {
         Ok(cell) => cell,
         Err(e) => {
             record.error = Some(e);
@@ -381,9 +384,11 @@ async fn run_spec(
     };
     let ctx = Arc::new(SpecContext::new(cell, spec, profile));
     results::take_panic();
+    let body = Instant::now();
     let outcome = AssertUnwindSafe((spec.run)(ctx.clone()))
         .catch_unwind()
         .await;
+    record.phase("body", body);
     match outcome {
         Ok(result) => record.error = result.err(),
         Err(payload) => {
@@ -396,7 +401,9 @@ async fn run_spec(
             )
         }
     }
+    let teardown = Instant::now();
     record.teardown_error = ctx.finish().await.err();
+    record.phase("teardown", teardown);
     record.resources = ctx.resources();
     record.http = ctx.recording();
     record
