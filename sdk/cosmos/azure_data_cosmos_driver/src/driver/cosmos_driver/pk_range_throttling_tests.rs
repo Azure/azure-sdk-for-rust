@@ -1,15 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{pk_range_retry_delay, CosmosDriver, ThrottleRetryState};
+use super::{pk_range_retry_delay, CosmosDriver};
 use crate::{
     driver::{
         pipeline::operation_pipeline::{OperationOverrides, RegionPin},
         routing::CosmosEndpoint,
-        transport::{
-            cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
-            http_client_factory::{HttpClientConfig, HttpClientFactory},
-        },
         CosmosDriverRuntime,
     },
     models::{AccountReference, ContainerProperties, ContainerReference, CosmosOperation},
@@ -17,6 +13,10 @@ use crate::{
         AvailabilityStrategy, ConnectionPoolOptions, DriverOptions, HedgeThreshold,
         HedgingStrategy, OperationOptions, PartitionFailoverOptions, PartitionTopologyCacheMode,
         Region, ThrottlingRetryOptions,
+    },
+    pipeline::transport::{
+        cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
+        http_client_factory::{HttpClientConfig, HttpClientFactory},
     },
 };
 use async_trait::async_trait;
@@ -604,11 +604,9 @@ async fn cold_capacity_throttle_fails_over_but_continuation_stays_pinned() {
 
 #[test]
 fn retry_delay_is_positive_bounded_and_saturates() {
-    let mut state = ThrottleRetryState::with_limits(0, Duration::ZERO, Duration::from_secs(5));
     for count in [0, 9, 64, i32::MAX as u32, u32::MAX] {
-        state.attempt_count = count;
         for retry_after in [None, Some(0), Some(1), Some(u64::MAX)] {
-            let delay = pk_range_retry_delay(&state, retry_after);
+            let delay = pk_range_retry_delay(count, retry_after);
             assert!(delay >= Duration::from_millis(5) && delay <= Duration::from_secs(5));
         }
     }

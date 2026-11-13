@@ -49,7 +49,7 @@ pub use rule::{FaultInjectionRule, FaultInjectionRuleBuilder};
 
 /// Shared collector for fault injection evaluations.
 ///
-/// Created by the transport pipeline and attached to [`HttpRequest`](crate::driver::transport::cosmos_transport_client::HttpRequest).
+/// Created by the transport pipeline and attached to [`HttpRequest`](crate::pipeline::transport::cosmos_transport_client::HttpRequest).
 /// [`FaultClient`] writes evaluations into the collector during `send()`, and
 /// the transport pipeline reads them after the request completes.
 #[derive(Clone, Debug, Default)]

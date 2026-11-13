@@ -435,6 +435,26 @@ pub struct ItemWriteOptions {
 | `session_token` | `Option<SessionToken>` | Session token for session-consistent writes. Operation-only.                                      |
 | `precondition`  | `Option<Precondition>` | Conditional ETag check. For writes, typically `IfMatch` (optimistic concurrency). Operation-only. |
 
+#### Point PATCH options and payload
+
+`PatchItemOptions` configures point-PATCH execution strategy, ETag preconditions,
+session tokens, and client-side tracking. SQL filter predicates belong to
+`PatchInstructions`, which serializes them as the optional `condition` body
+property. They do not participate in layered option resolution or change
+strategy selection. Predicates require effective server-side execution.
+
+```rust
+use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
+use azure_data_cosmos::options::{PatchItemOptions, PatchStrategy};
+
+let patch = PatchInstructions::from(vec![
+    PatchOperation::set("/status", serde_json::json!("done")),
+]).with_filter_predicate("from c where c.status = 'pending'");
+let options = PatchItemOptions::default().with_strategy(PatchStrategy::ServerSide);
+
+container.patch_item(partition_key, "item-id", patch, Some(options)).await?;
+```
+
 ### 5.3 `QueryOptions`
 
 Options for query operations (`query_items`, `query_items_single_partition`).

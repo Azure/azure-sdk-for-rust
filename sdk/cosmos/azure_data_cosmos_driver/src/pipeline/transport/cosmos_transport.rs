@@ -1,0 +1,518 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+//! HTTP transport layer for Cosmos DB driver.
+//!
+//! This module provides connection pooling and transport management for HTTP
+//! requests to Azure Cosmos DB. It maintains separate connection pools for:
+//!
+//! - **Metadata operations**: REST/JSON requests for account, database, and
+//!   container management. Uses HTTP/2 when allowed.
+//! - **Data plane operations**: Point read/write operations and queries.
+//!   Uses HTTP/2 when allowed.
+//! - **Emulator operations**: Lazily-initialized pools for local emulator
+//!   with certificate validation disabled.
+
+use crate::{
+    models::{AccountEndpoint, OperationType, ResourceType},
+    options::ConnectionPoolOptions,
+    pipeline::transport::types::TransportMode,
+};
+use std::sync::{Arc, OnceLock};
+
+use super::{
+    adaptive_transport::AdaptiveTransport,
+    http_client_factory::{HttpClientConfig, HttpClientFactory},
+};
+use crate::diagnostics::TransportHttpVersion;
+
+#[cfg(test)]
+use super::http_client_factory::DefaultHttpClientFactory;
+
+/// Determines whether the dataplane pipeline should be used for a given operation.
+///
+/// The dataplane pipeline is optimized for document operations and stored procedure
+/// execution. All other operations use the metadata pipeline.
+///
+/// # Returns
+///
+/// Returns `true` for:
+/// - Any operation on `ResourceType::Document`
+/// - `OperationType::Execute` on `ResourceType::StoredProcedure`
+///
+/// Returns `false` for all other combinations.
+pub(crate) fn uses_dataplane_pipeline(
+    resource_type: ResourceType,
+    operation_type: OperationType,
+) -> bool {
+    match resource_type {
+        ResourceType::Document => true,
+        ResourceType::StoredProcedure => matches!(operation_type, OperationType::Execute),
+        #[cfg(feature = "unstable_dtx")]
+        ResourceType::DistributedTransactionBatch => true,
+        _ => false,
+    }
+}
+
+/// HTTP transport manager for a single Cosmos DB account.
+///
+/// Each `CosmosDriver` instance (one per account) owns its own transport.
+/// The transport type (sharded HTTP/2 vs unsharded HTTP/1.1) is determined
+/// by an HTTP/2 probe during initialization and may be updated on periodic
+/// metadata refreshes.
+///
+/// # Transport Selection
+///
+/// - **HTTP/2 confirmed**: Sharded transport with HTTP/2 PING keepalive.
+///   No TCP keepalive needed — HTTP/2 PING frames serve that role.
+/// - **HTTP/1.1 fallback**: Unsharded transport with TCP keepalive for
+///   connection liveness detection.
+/// - **Gateway 2.0**: Always HTTP/2 (unchanged).
+/// - **Emulator**: Lazily created with insecure TLS.
+#[derive(Debug)]
+pub(crate) struct CosmosTransport {
+    /// Connection pool configuration.
+    connection_pool: ConnectionPoolOptions,
+
+    /// Factory used to create protocol-specific HTTP transports.
+    http_client_factory: Arc<dyn HttpClientFactory>,
+
+    /// The detected HTTP version for this account's gateway.
+    negotiated_version: TransportHttpVersion,
+
+    /// Transport for metadata operations.
+    metadata_transport: AdaptiveTransport,
+
+    /// Transport for dataplane gateway operations.
+    dataplane_gateway_transport: AdaptiveTransport,
+
+    /// Lazily-initialized transport for dataplane Gateway 2.0 operations.
+    dataplane_gateway_v2_transport: OnceLock<AdaptiveTransport>,
+
+    /// Lazily-initialized transport for emulator metadata operations.
+    insecure_emulator_metadata_transport: OnceLock<AdaptiveTransport>,
+
+    /// Lazily-initialized transport for emulator dataplane operations.
+    insecure_emulator_dataplane_transport: OnceLock<AdaptiveTransport>,
+}
+
+impl CosmosTransport {
+    /// Creates a transport for an account with the given negotiated HTTP version.
+    ///
+    /// The `negotiated_version` should be determined by probing the gateway
+    /// during `CosmosDriver::initialize()`.
+    #[cfg(test)]
+    pub(crate) fn for_tests(
+        connection_pool: ConnectionPoolOptions,
+        negotiated_version: TransportHttpVersion,
+    ) -> crate::error::Result<Self> {
+        let http_client_factory: Arc<dyn HttpClientFactory> =
+            Arc::new(DefaultHttpClientFactory::new());
+
+        Self::with_factory(connection_pool, http_client_factory, negotiated_version)
+    }
+
+    /// Creates a transport with a custom HTTP client factory (for testing).
+    pub(crate) fn with_factory(
+        connection_pool: ConnectionPoolOptions,
+        http_client_factory: Arc<dyn HttpClientFactory>,
+        negotiated_version: TransportHttpVersion,
+    ) -> crate::error::Result<Self> {
+        let metadata_config = HttpClientConfig::metadata(&connection_pool, negotiated_version);
+        let metadata_transport = AdaptiveTransport::from_config(
+            &connection_pool,
+            http_client_factory.clone(),
+            metadata_config,
+        )?;
+
+        let gateway_config =
+            HttpClientConfig::dataplane_gateway(&connection_pool, negotiated_version);
+        let dataplane_gateway_transport = AdaptiveTransport::from_config(
+            &connection_pool,
+            http_client_factory.clone(),
+            gateway_config,
+        )?;
+
+        Ok(Self {
+            connection_pool,
+            http_client_factory,
+            negotiated_version,
+            metadata_transport,
+            dataplane_gateway_transport,
+            dataplane_gateway_v2_transport: OnceLock::new(),
+            insecure_emulator_metadata_transport: OnceLock::new(),
+            insecure_emulator_dataplane_transport: OnceLock::new(),
+        })
+    }
+
+    /// Creates a lightweight bootstrap transport for one-shot metadata probes.
+    ///
+    /// Uses a single unsharded HTTP client for metadata (no per-endpoint shard
+    /// pools, no background health sweep). The dataplane gateway transport is
+    /// created lazily only if somehow needed, keeping the bootstrap footprint
+    /// minimal.
+    pub(crate) fn bootstrap_metadata_only(
+        connection_pool: ConnectionPoolOptions,
+        http_client_factory: Arc<dyn HttpClientFactory>,
+        negotiated_version: TransportHttpVersion,
+    ) -> crate::error::Result<Self> {
+        let metadata_config = HttpClientConfig::metadata(&connection_pool, negotiated_version);
+        let metadata_transport = AdaptiveTransport::unsharded(
+            &connection_pool,
+            http_client_factory.clone(),
+            metadata_config,
+        )?;
+
+        // Dataplane transport is unused for bootstrap probes. Create a
+        // minimal unsharded instance to satisfy the struct layout; the
+        // overhead is a single HTTP client with no background tasks.
+        let gateway_config =
+            HttpClientConfig::dataplane_gateway(&connection_pool, negotiated_version);
+        let dataplane_gateway_transport = AdaptiveTransport::unsharded(
+            &connection_pool,
+            http_client_factory.clone(),
+            gateway_config,
+        )?;
+
+        Ok(Self {
+            connection_pool,
+            http_client_factory,
+            negotiated_version,
+            metadata_transport,
+            dataplane_gateway_transport,
+            dataplane_gateway_v2_transport: OnceLock::new(),
+            insecure_emulator_metadata_transport: OnceLock::new(),
+            insecure_emulator_dataplane_transport: OnceLock::new(),
+        })
+    }
+
+    /// Returns the negotiated HTTP version for this account.
+    pub(crate) fn negotiated_version(&self) -> TransportHttpVersion {
+        self.negotiated_version
+    }
+
+    pub(crate) fn metadata_request_timeout(&self) -> std::time::Duration {
+        self.connection_pool.max_metadata_request_timeout()
+    }
+
+    /// Returns the transport for metadata operations.
+    pub(crate) fn get_metadata_transport(
+        &self,
+        endpoint: &AccountEndpoint,
+    ) -> crate::error::Result<AdaptiveTransport> {
+        let transport = if self
+            .connection_pool
+            .server_certificate_validation()
+            .allows_insecure_connection(endpoint)
+        {
+            match self.insecure_emulator_metadata_transport.get() {
+                Some(t) => t.clone(),
+                None => {
+                    let config =
+                        HttpClientConfig::metadata(&self.connection_pool, self.negotiated_version)
+                            .with_allow_invalid_cert();
+                    let t = AdaptiveTransport::from_config(
+                        &self.connection_pool,
+                        self.http_client_factory.clone(),
+                        config,
+                    )?;
+                    self.insecure_emulator_metadata_transport
+                        .get_or_init(|| t)
+                        .clone()
+                }
+            }
+        } else {
+            self.metadata_transport.clone()
+        };
+        Ok(transport)
+    }
+
+    /// Returns the transport for a dataplane attempt based on the routed endpoint kind.
+    pub(crate) fn get_dataplane_transport(
+        &self,
+        endpoint: &AccountEndpoint,
+        transport_mode: TransportMode,
+    ) -> crate::error::Result<AdaptiveTransport> {
+        let allow_invalid_cert = self
+            .connection_pool
+            .server_certificate_validation()
+            .allows_insecure_connection(endpoint);
+
+        if matches!(transport_mode, TransportMode::GatewayV2)
+            && !self.connection_pool.gateway_v2_disabled()
+        {
+            let transport = match self.dataplane_gateway_v2_transport.get() {
+                Some(t) => t.clone(),
+                None => {
+                    let mut config = HttpClientConfig::dataplane_gateway_v2(&self.connection_pool);
+                    if allow_invalid_cert {
+                        config = config.with_allow_invalid_cert();
+                    }
+                    let t = AdaptiveTransport::gateway_v2(
+                        &self.connection_pool,
+                        self.http_client_factory.clone(),
+                        config,
+                    );
+                    self.dataplane_gateway_v2_transport
+                        .get_or_init(|| t)
+                        .clone()
+                }
+            };
+            return Ok(transport);
+        }
+
+        if allow_invalid_cert {
+            let transport = match self.insecure_emulator_dataplane_transport.get() {
+                Some(t) => t.clone(),
+                None => {
+                    let config = HttpClientConfig::dataplane_gateway(
+                        &self.connection_pool,
+                        self.negotiated_version,
+                    )
+                    .with_allow_invalid_cert();
+                    let t = AdaptiveTransport::from_config(
+                        &self.connection_pool,
+                        self.http_client_factory.clone(),
+                        config,
+                    )?;
+                    self.insecure_emulator_dataplane_transport
+                        .get_or_init(|| t)
+                        .clone()
+                }
+            };
+            return Ok(transport);
+        }
+
+        Ok(self.dataplane_gateway_transport.clone())
+    }
+}
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use super::*;
+    use crate::diagnostics::TransportHttpVersion;
+    use crate::options::ConnectionPoolOptionsBuilder;
+    use crate::pipeline::transport::types::TransportMode;
+
+    #[test]
+    fn metadata_transport_is_sharded_when_http2_negotiated() {
+        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
+
+        assert!(matches!(
+            transport.get_metadata_transport(&endpoint).unwrap(),
+            AdaptiveTransport::ShardedGateway(_)
+        ));
+    }
+
+    #[test]
+    fn metadata_transport_is_unsharded_when_http11_negotiated() {
+        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http11).unwrap();
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
+
+        assert!(matches!(
+            transport.get_metadata_transport(&endpoint).unwrap(),
+            AdaptiveTransport::Gateway(_)
+        ));
+    }
+
+    #[test]
+    fn dataplane_transport_is_unsharded_when_http11_negotiated() {
+        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http11).unwrap();
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
+
+        let ctx = transport
+            .get_dataplane_transport(&endpoint, TransportMode::Gateway)
+            .unwrap();
+        assert!(matches!(ctx, AdaptiveTransport::Gateway(_)));
+    }
+
+    #[test]
+    fn dataplane_transport_uses_gateway_v2_when_selected() {
+        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
+
+        let ctx = transport
+            .get_dataplane_transport(&endpoint, TransportMode::GatewayV2)
+            .unwrap();
+        assert!(matches!(ctx, AdaptiveTransport::ShardedGatewayV2(_)));
+    }
+
+    #[test]
+    fn dataplane_transport_uses_gateway_v2_for_insecure_emulator_endpoint() {
+        let pool = ConnectionPoolOptionsBuilder::new()
+            .with_server_certificate_validation(
+                crate::options::ServerCertificateValidation::RequiredUnlessEmulator,
+            )
+            .build()
+            .unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
+        let endpoint = AccountEndpoint::try_from("http://127.0.0.1:10250/").unwrap();
+
+        let ctx = transport
+            .get_dataplane_transport(&endpoint, TransportMode::GatewayV2)
+            .unwrap();
+        assert!(matches!(ctx, AdaptiveTransport::ShardedGatewayV2(_)));
+    }
+
+    #[test]
+    fn dataplane_transport_skips_gateway_v2_when_explicitly_disabled() {
+        let pool = ConnectionPoolOptionsBuilder::new()
+            .with_gateway_v2_disabled(true)
+            .build()
+            .unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
+
+        let ctx = transport
+            .get_dataplane_transport(&endpoint, TransportMode::GatewayV2)
+            .unwrap();
+        assert!(matches!(ctx, AdaptiveTransport::ShardedGateway(_)));
+    }
+
+    #[test]
+    fn dataplane_transport_falls_back_to_sharded_gateway_when_endpoint_is_standard() {
+        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
+
+        let ctx = transport
+            .get_dataplane_transport(&endpoint, TransportMode::Gateway)
+            .unwrap();
+        assert!(matches!(ctx, AdaptiveTransport::ShardedGateway(_)));
+    }
+
+    #[test]
+    fn dataplane_transport_skips_gateway_v2_when_http2_disabled() {
+        // HTTP/2 is a hard prerequisite for Gateway 2.0. With HTTP/2 disabled the
+        // pool reports gateway_v2 unavailable, so even a GatewayV2-mode request
+        // falls back to the standard gateway transport.
+        let pool = ConnectionPoolOptionsBuilder::new()
+            .with_is_http2_allowed(false)
+            .build()
+            .unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http11).unwrap();
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
+
+        let ctx = transport
+            .get_dataplane_transport(&endpoint, TransportMode::GatewayV2)
+            .unwrap();
+        assert!(matches!(ctx, AdaptiveTransport::Gateway(_)));
+    }
+
+    #[test]
+    fn uses_dataplane_for_document_operations() {
+        // Document operations always use dataplane
+        assert!(uses_dataplane_pipeline(
+            ResourceType::Document,
+            OperationType::Read
+        ));
+        assert!(uses_dataplane_pipeline(
+            ResourceType::Document,
+            OperationType::Create
+        ));
+        assert!(uses_dataplane_pipeline(
+            ResourceType::Document,
+            OperationType::Replace
+        ));
+        assert!(uses_dataplane_pipeline(
+            ResourceType::Document,
+            OperationType::Delete
+        ));
+        assert!(uses_dataplane_pipeline(
+            ResourceType::Document,
+            OperationType::Upsert
+        ));
+    }
+
+    #[test]
+    fn uses_dataplane_for_stored_procedure_execute() {
+        // StoredProcedure Execute uses dataplane
+        assert!(uses_dataplane_pipeline(
+            ResourceType::StoredProcedure,
+            OperationType::Execute
+        ));
+
+        // Other StoredProcedure operations use metadata
+        assert!(!uses_dataplane_pipeline(
+            ResourceType::StoredProcedure,
+            OperationType::Read
+        ));
+        assert!(!uses_dataplane_pipeline(
+            ResourceType::StoredProcedure,
+            OperationType::Create
+        ));
+        assert!(!uses_dataplane_pipeline(
+            ResourceType::StoredProcedure,
+            OperationType::Delete
+        ));
+    }
+
+    #[test]
+    fn uses_metadata_for_other_resources() {
+        // Database operations use metadata
+        assert!(!uses_dataplane_pipeline(
+            ResourceType::Database,
+            OperationType::Read
+        ));
+        assert!(!uses_dataplane_pipeline(
+            ResourceType::Database,
+            OperationType::Create
+        ));
+        assert!(!uses_dataplane_pipeline(
+            ResourceType::Database,
+            OperationType::Delete
+        ));
+
+        // Container operations use metadata
+        assert!(!uses_dataplane_pipeline(
+            ResourceType::DocumentCollection,
+            OperationType::Read
+        ));
+        assert!(!uses_dataplane_pipeline(
+            ResourceType::DocumentCollection,
+            OperationType::Create
+        ));
+        assert!(!uses_dataplane_pipeline(
+            ResourceType::DocumentCollection,
+            OperationType::Delete
+        ));
+
+        // Account operations use metadata
+        assert!(!uses_dataplane_pipeline(
+            ResourceType::DatabaseAccount,
+            OperationType::Read
+        ));
+
+        // Trigger, UDF use metadata for CRUD
+        assert!(!uses_dataplane_pipeline(
+            ResourceType::Trigger,
+            OperationType::Read
+        ));
+        assert!(!uses_dataplane_pipeline(
+            ResourceType::UserDefinedFunction,
+            OperationType::Create
+        ));
+
+        // Offer uses metadata
+        assert!(!uses_dataplane_pipeline(
+            ResourceType::Offer,
+            OperationType::Read
+        ));
+        assert!(!uses_dataplane_pipeline(
+            ResourceType::Offer,
+            OperationType::Replace
+        ));
+    }
+}

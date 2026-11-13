@@ -16,12 +16,12 @@ use super::dispatch::{parse_request, resolve_region};
 use super::observer::RequestObserver;
 use super::operations::{database_account_not_found_response, handle_operation};
 use super::store::EmulatorStore;
-use crate::driver::transport::cosmos_transport_client::{
+use crate::options::ConnectionPoolOptions;
+use crate::pipeline::transport::cosmos_transport_client::{
     HttpRequest as DriverHttpRequest, HttpResponse as DriverHttpResponse, TransportClient,
     TransportError,
 };
-use crate::driver::transport::http_client_factory::{HttpClientConfig, HttpClientFactory};
-use crate::options::ConnectionPoolOptions;
+use crate::pipeline::transport::http_client_factory::{HttpClientConfig, HttpClientFactory};
 
 /// An HTTP client that intercepts all requests and serves them from an in-memory store.
 ///
