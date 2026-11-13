@@ -13,6 +13,7 @@
 
 ### Bugs Fixed
 
+- Preserve complete single-partition emulator aggregate, GROUP BY, and DISTINCT results across pages, and retain quoted aliases and floating-point literals in query rewrites. ([#5552](https://github.com/Azure/azure-sdk-for-rust/pull/5552))
 - Normalize native query-plan partition bounds using the container's partition key kind and version, preventing malformed EPK errors during cross-partition queries. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Honor the emulator certificate-validation policy in Gateway V2 connectivity probes so self-signed emulator certificates do not prevent Gateway V2 connectivity when validation is disabled for emulator hosts. ([#5484](https://github.com/Azure/azure-sdk-for-rust/pull/5484))
 - Preserve Gateway 2.0 batch atomicity and continue-on-error controls, preventing partial commits in failed transactional batches. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))

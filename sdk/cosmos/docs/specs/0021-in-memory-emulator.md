@@ -1448,6 +1448,13 @@ return empty pages with a progressing continuation. MaxItemCount still bounds
 returned rows. No query snapshot or global aggregation state is retained by the
 emulator.
 
+Source-slice paging is restricted to range-scoped backend aggregate/GROUP BY
+projections and unordered DISTINCT sources that the client merges. Original
+queries targeting a complete logical partition, and unscoped requests, evaluate
+the entire selected input before paging final results. This avoids exposing
+partial counts or repeated groups/distinct values when no reduction stage runs.
+Rewrites preserve quoted collection aliases and floating-point literal syntax.
+
 This cursor and scan order are emulator implementation choices, not a claim about
 undocumented server token encoding. The observable contract follows the public
 .NET query-plan baselines and per-continuation partial aggregation behavior.

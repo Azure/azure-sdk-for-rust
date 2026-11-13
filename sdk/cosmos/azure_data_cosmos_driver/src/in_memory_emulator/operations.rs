@@ -2906,27 +2906,6 @@ fn execute_document_query_feed(
         Ok(v) => v,
         Err(response) => return response,
     };
-    let program = match crate::query::parse(&query) {
-        Ok(program) => program,
-        Err(error) => {
-            return invalid_continuation_response(&format!("failed to parse query: {error}"), start)
-        }
-    };
-    if supports_partial_cursor(&program.query) {
-        let rid = rid.into();
-        return match query_partial_page(&query, &parameters, &documents, &rid, parsed, start) {
-            Ok((page, next)) => feed_page_response(
-                envelope_name,
-                rid,
-                page,
-                next,
-                feed_headers,
-                ResponseFormat::from(parsed.binary_response),
-                start,
-            ),
-            Err(response) => response,
-        };
-    }
     match query_document_feed_items(&query, &parameters, &documents) {
         Ok(Some(results)) => success_document_feed_response(
             envelope_name,
@@ -3032,20 +3011,32 @@ struct PartialQueryCursor {
 
 const PARTIAL_QUERY_CURSOR_KIND: &str = "partial_query_cursor_v1";
 
-fn supports_partial_cursor(query: &SqlQuery) -> bool {
-    is_plain_root_from(query)
+fn supports_partial_cursor(
+    query: &SqlQuery,
+    parsed: &ParsedRequest,
+    logical_partition: bool,
+) -> bool {
+    let range_scoped = parsed.partition_key_range_id.is_some()
+        || parsed.start_epk.is_some()
+        || parsed.routing_start_epk.is_some();
+    let partial_projection = match &query.select.spec {
+        SqlSelectSpec::Value(value) => {
+            matches!(value.as_ref(), SqlScalarExpression::ArrayCreate(_))
+                && contains_aggregate_expression(value)
+        }
+        SqlSelectSpec::List(items) => items.iter().any(|item| {
+            item.alias.as_deref() == Some("payload")
+                && (query.group_by.is_some() || contains_aggregate_expression(&item.expression))
+        }),
+        SqlSelectSpec::Star => false,
+    };
+    !logical_partition
+        && range_scoped
+        && is_plain_root_from(query)
         && query.order_by.is_none()
         && query.select.top.is_none()
         && query.offset_limit.is_none()
-        && (query.group_by.is_some()
-            || query.select.distinct
-            || match &query.select.spec {
-                SqlSelectSpec::Value(value) => contains_aggregate_expression(value),
-                SqlSelectSpec::List(items) => items
-                    .iter()
-                    .any(|item| contains_aggregate_expression(&item.expression)),
-                SqlSelectSpec::Star => false,
-            })
+        && (partial_projection || (query.select.distinct && query.group_by.is_none()))
 }
 
 fn query_partial_page(
@@ -3515,7 +3506,16 @@ fn collect_item_documents(
     region_name: &str,
     parsed: &ParsedRequest,
     start: Instant,
-) -> Result<(String, Vec<DocumentFeedItem>, String, FeedResponseHeaders), AsyncRawResponse> {
+) -> Result<
+    (
+        String,
+        Vec<DocumentFeedItem>,
+        String,
+        FeedResponseHeaders,
+        bool,
+    ),
+    AsyncRawResponse,
+> {
     let db_id = parsed.db_id.as_deref().unwrap_or("");
     let coll_id = parsed.coll_id.as_deref().unwrap_or("");
     let region_ref = match store.region(region_name) {
@@ -3750,6 +3750,7 @@ fn collect_item_documents(
                 partition_key_range_id,
                 internal_partition_id,
             },
+            requested_epk.is_some(),
         ))
     });
 
@@ -3777,7 +3778,7 @@ fn handle_read_feed_items(
         }
     }
     match collect_item_documents(store, region_name, parsed, start) {
-        Ok((rid, docs, token, mut headers)) => {
+        Ok((rid, docs, token, mut headers, _)) => {
             // Both public change-feed modes deserialize `ChangeFeedItem<T>`
             // envelopes. The in-memory store currently retains only the latest
             // document state, so it synthesizes one minimal `create` envelope
@@ -3904,8 +3905,37 @@ fn handle_query_items(
     start: Instant,
 ) -> AsyncRawResponse {
     match collect_item_documents(store, region_name, parsed, start) {
-        Ok((rid, docs, token, mut headers)) => {
+        Ok((rid, docs, token, mut headers, logical_partition)) => {
             headers.session_token = token;
+            let (query, parameters) = match parse_query_spec(request_body, start) {
+                Ok(query) => query,
+                Err(response) => return response,
+            };
+            let program = match crate::query::parse(&query) {
+                Ok(program) => program,
+                Err(error) => {
+                    return invalid_continuation_response(
+                        &format!("failed to parse query: {error}"),
+                        start,
+                    )
+                }
+            };
+            // Logical-partition queries bypass client reduction. Only scoped
+            // backend projections may be divided into mergeable source slices.
+            if supports_partial_cursor(&program.query, parsed, logical_partition) {
+                return match query_partial_page(&query, &parameters, &docs, &rid, parsed, start) {
+                    Ok((page, next)) => feed_page_response(
+                        "Documents",
+                        rid,
+                        page,
+                        next,
+                        headers,
+                        ResponseFormat::from(parsed.binary_response),
+                        start,
+                    ),
+                    Err(response) => response,
+                };
+            }
             execute_document_query_feed(
                 "Documents",
                 rid,
