@@ -28,7 +28,6 @@ mod args;
 mod assertions;
 pub mod backend;
 mod capability;
-pub mod catalog;
 pub mod config;
 mod console;
 mod context;

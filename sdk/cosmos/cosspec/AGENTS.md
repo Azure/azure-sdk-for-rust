@@ -57,9 +57,6 @@ These rules are strict. When a change can't follow them, stop and ask.
   hide the SDK call being specified.
 - Use `SharedContainer` only for read-only specs; use the `Exclusive*`
   injectables for anything that writes or changes topology.
-- After adding, renaming, or changing a spec, regenerate the catalog with
-  `AZURE_COSMOS_SPEC_UPDATE_CATALOG=1 cargo test -p cosspec --test spec`
-  and commit `CATALOG.md` and `catalog.json`.
 
 ### 3. Keep the framework simple enough to review
 

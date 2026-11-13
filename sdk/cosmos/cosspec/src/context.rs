@@ -52,19 +52,6 @@ pub enum ParamKind {
     HttpTap,
 }
 
-impl ParamKind {
-    /// The type name used in the catalog.
-    pub fn name(self) -> &'static str {
-        match self {
-            ParamKind::SharedContainer => "SharedContainer",
-            ParamKind::ExclusiveContainer => "ExclusiveContainer",
-            ParamKind::ExclusiveDatabase => "ExclusiveDatabase",
-            ParamKind::ExclusiveAccount => "ExclusiveAccount",
-            ParamKind::HttpTap => "HttpTap",
-        }
-    }
-}
-
 /// A type the framework can create for a spec parameter.
 pub trait Inject: Sized {
     /// The kind of resource.

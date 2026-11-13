@@ -76,14 +76,6 @@ pub(crate) struct BackendEntry {
     profiles: Vec<&'static str>,
 }
 
-#[derive(Clone, Debug, Serialize)]
-pub(crate) struct CheckEntry {
-    name: String,
-    status: Status,
-    duration_ms: Option<f64>,
-    error: Option<String>,
-}
-
 /// Why a planned trial won't run unless ignored trials are selected.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Planned {
@@ -156,7 +148,9 @@ pub(crate) struct Manifest {
     result_version: u32,
     backends: Vec<BackendEntry>,
     totals: Totals,
-    checks: Vec<CheckEntry>,
+    /// Checks that aren't trials. None exist today; the field stays so the
+    /// manifest format doesn't change.
+    checks: [(); 0],
     trials: Vec<TrialEntry>,
 }
 
@@ -174,7 +168,7 @@ impl Manifest {
             result_version: RESULT_VERSION,
             backends: Vec::new(),
             totals: Totals::default(),
-            checks: Vec::new(),
+            checks: [],
             trials: Vec::new(),
         }
     }
@@ -187,58 +181,32 @@ impl Manifest {
         });
     }
 
-    /// Adds a check, such as the catalog check. Returns its slot.
-    pub(crate) fn add_check(&mut self, name: &str) -> Slot {
-        self.checks.push(CheckEntry {
-            name: name.to_owned(),
-            status: Status::Pending,
-            duration_ms: None,
-            error: None,
-        });
-        Slot::Check(self.checks.len() - 1)
-    }
-
-    /// Adds a trial. Returns its slot.
-    pub(crate) fn add_trial(&mut self, trial: TrialEntry) -> Slot {
+    /// Adds a trial. Returns its index.
+    pub(crate) fn add_trial(&mut self, trial: TrialEntry) -> usize {
         self.trials.push(trial);
-        Slot::Trial(self.trials.len() - 1)
+        self.trials.len() - 1
     }
 
-    /// Records the outcome of the job in `slot`.
-    fn record(&mut self, slot: Slot, result: &Result<(), String>, duration_ms: f64, dir: &Path) {
+    /// Records the outcome of the trial at `index`.
+    fn record(&mut self, index: usize, result: &Result<(), String>, duration_ms: f64, dir: &Path) {
         let (status, error) = match result {
             Ok(()) => (Status::Passed, None),
             Err(e) => (Status::Failed, Some(e.clone())),
         };
-        match slot {
-            Slot::Check(i) => {
-                let check = &mut self.checks[i];
-                check.status = status;
-                check.duration_ms = Some(duration_ms);
-                check.error = error;
-            }
-            Slot::Trial(i) => {
-                let trial = &mut self.trials[i];
-                trial.status = status;
-                trial.duration_ms = Some(duration_ms);
-                trial.error = error;
-                trial.result_file = dir
-                    .join(&trial.file_name)
-                    .exists()
-                    .then(|| trial.file_name.clone());
-            }
-        }
+        let trial = &mut self.trials[index];
+        trial.status = status;
+        trial.duration_ms = Some(duration_ms);
+        trial.error = error;
+        trial.result_file = dir
+            .join(&trial.file_name)
+            .exists()
+            .then(|| trial.file_name.clone());
     }
 
     /// Marks the run finished; jobs that never ran get their final status.
     fn complete(&mut self) {
         self.finished_at = Some(to_rfc3339(&OffsetDateTime::now_utc()));
         self.status = RunStatus::Completed;
-        for check in &mut self.checks {
-            if check.status == Status::Pending {
-                check.status = Status::NotRun;
-            }
-        }
         for trial in &mut self.trials {
             if trial.status == Status::Pending {
                 trial.status = match trial.planned {
@@ -277,13 +245,6 @@ impl Manifest {
     }
 }
 
-/// Where a job's outcome goes in the manifest.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Slot {
-    Check(usize),
-    Trial(usize),
-}
-
 struct Live {
     dir: PathBuf,
     manifest: Mutex<Manifest>,
@@ -305,13 +266,13 @@ pub(crate) fn begin(dir: PathBuf, mut manifest: Manifest) {
     }
 }
 
-/// Records a job's outcome and rewrites the manifest.
-pub(crate) fn record(slot: Slot, result: &Result<(), String>, duration_ms: f64) {
+/// Records the outcome of the trial at `index` and rewrites the manifest.
+pub(crate) fn record(index: usize, result: &Result<(), String>, duration_ms: f64) {
     let Some(live) = LIVE.get() else {
         return;
     };
     let mut manifest = live.manifest.lock().unwrap_or_else(|e| e.into_inner());
-    manifest.record(slot, result, duration_ms, &live.dir);
+    manifest.record(index, result, duration_ms, &live.dir);
     if let Err(e) = manifest.write(&live.dir) {
         eprintln!("warning: failed to update the run manifest: {e}");
     }
@@ -331,7 +292,7 @@ pub(crate) fn finish() {
 
 #[cfg(test)]
 mod tests {
-    use super::{Manifest, Planned, Slot, Status, TrialEntry, MANIFEST_FILE};
+    use super::{Manifest, Planned, Status, TrialEntry, MANIFEST_FILE};
     use crate::{backend::InMemoryBackend, runner::SpecDescriptor, ServiceProfile, SpecContext};
     use std::sync::Arc;
     use uuid::Uuid;
@@ -362,7 +323,6 @@ mod tests {
         let spec = &SPEC;
         let mut manifest = Manifest::new("run", vec!["--no-cleanup".to_owned()], false);
         manifest.add_backend(&backend, &[profile]);
-        let check = manifest.add_check("catalog");
         let ran = manifest.add_trial(TrialEntry::new(spec, &backend, profile, Planned::Run, None));
         manifest.add_trial(TrialEntry::new(
             spec,
@@ -374,12 +334,8 @@ mod tests {
         manifest.add_trial(TrialEntry::new(spec, &backend, profile, Planned::Run, None));
         manifest.write(&dir).unwrap();
 
-        let Slot::Trial(index) = ran else {
-            unreachable!()
-        };
-        let file = dir.join(&manifest.trials[index].file_name);
+        let file = dir.join(&manifest.trials[ran].file_name);
         std::fs::write(&file, "{}").unwrap();
-        manifest.record(check, &Ok(()), 1.0, &dir);
         manifest.record(ran, &Err("boom".to_owned()), 2.0, &dir);
         manifest.complete();
         manifest.write(&dir).unwrap();
@@ -390,7 +346,7 @@ mod tests {
         assert_eq!(json["version"], 1);
         assert_eq!(json["kind"], "cosspec-run");
         assert_eq!(json["status"], "completed");
-        assert_eq!(json["checks"][0]["status"], "passed");
+        assert_eq!(json["checks"], serde_json::json!([]));
         let trials = json["trials"].as_array().unwrap();
         assert_eq!(trials[0]["status"], "failed");
         assert_eq!(trials[0]["error"], "boom");

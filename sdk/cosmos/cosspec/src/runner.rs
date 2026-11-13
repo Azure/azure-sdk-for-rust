@@ -6,11 +6,10 @@
 use crate::{
     args::HarnessArgs,
     backend::Backend,
-    catalog,
     config::SpecConfig,
     console::{self, Ignore, Job, Place},
     context::{ParamKind, SpecContext},
-    manifest::{self, Manifest, Planned, Slot, TrialEntry},
+    manifest::{self, Manifest, Planned, TrialEntry},
     pool,
     profiles::ContainerProfile,
     results::{self, TrialRecord},
@@ -188,15 +187,7 @@ pub fn main() {
     let only = selected_profiles();
 
     let specs = specs();
-    let mut jobs = vec![(
-        Job {
-            name: catalog::TEST_NAME.to_owned(),
-            place: Place::TopLevel,
-            ignore: None,
-            run: Box::new(catalog::check_or_update),
-        },
-        None,
-    )];
+    let mut jobs = Vec::new();
     let mut manifest = Manifest::new(
         pool::run_id(),
         std::env::args().skip(1).collect(),
@@ -215,7 +206,7 @@ pub fn main() {
                 .filter(|profile| spec.service_profiles.contains(profile))
             {
                 let (job, entry) = job(backend, spec, profile, strict);
-                jobs.push((job, Some(entry)));
+                jobs.push((job, entry));
             }
         }
     }
@@ -230,11 +221,8 @@ pub fn main() {
                 tracked.push(job);
                 continue;
             }
-            let slot = match entry {
-                Some(entry) => manifest.add_trial(entry),
-                None => manifest.add_check(&job.name),
-            };
-            tracked.push(track(job, slot));
+            let index = manifest.add_trial(entry);
+            tracked.push(track(job, index));
         }
         if let Some(dir) = results::dir() {
             manifest::begin(dir.to_owned(), manifest);
@@ -267,7 +255,7 @@ pub fn main() {
 }
 
 /// Wraps `job` so its outcome is recorded in the run manifest.
-fn track(job: Job, slot: Slot) -> Job {
+fn track(job: Job, index: usize) -> Job {
     let run = job.run;
     Job {
         run: Box::new(move || {
@@ -279,7 +267,7 @@ fn track(job: Job, slot: Slot) -> Job {
                 Ok(Err(failed)) => Err(failed.message().unwrap_or_default().to_owned()),
                 Err(payload) => Err(panic_message(payload.as_ref())),
             };
-            manifest::record(slot, &recorded, duration_ms);
+            manifest::record(index, &recorded, duration_ms);
             result.unwrap_or_else(|payload| std::panic::resume_unwind(payload))
         }),
         ..job
@@ -293,7 +281,7 @@ fn job(
     strict: bool,
 ) -> (Job, TrialEntry) {
     let name = spec.test_name(backend.name(), profile);
-    let place = Place::Leaf {
+    let place = Place {
         backend: backend.name().to_owned(),
         spec: spec.id(),
         profile: profile.name().to_owned(),

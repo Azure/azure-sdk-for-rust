@@ -89,7 +89,7 @@ pub async fn continuation_survives_split(
 
 - The function must be `async`.
 - It must have a `///` doc comment. The first paragraph is the normative
-  statement of behavior and is copied into the generated catalog.
+  statement of behavior.
 - It must declare a return type, normally `SpecResult`. The body isn't
   rewritten; `?` works on any error that converts into `SpecError`.
 - Every parameter must be an injectable type (see Dependency
@@ -102,7 +102,7 @@ pub async fn continuation_survives_split(
 | Attribute | Meaning |
 | --- | --- |
 | `#[spec_test]` | Registers the function as a spec. Its ID is `<module>.<fn>`, for example `query.continuation_survives_split`. |
-| `#[spec_test(id = "...")]` | Overrides the stable ID. Renaming a spec is a visible ID change in the catalog. |
+| `#[spec_test(id = "...")]` | Overrides the stable ID, so renaming the function doesn't change it. |
 | `#[service_profiles(all)]`, `#[service_profiles(MultiRead, MultiWrite)]` | Selects the service profiles. The default is `all`. |
 | `#[requires(SimpleSplitMerge, ...)]` | Declares the capabilities the spec needs. |
 | `#[known_issue("reason")]`, `#[known_issue("reason", MultiRead)]` | Records that the SDK doesn't meet the spec yet, optionally only for some profiles. Affected trials are reported as ignored with kind `known-issue`. |
@@ -559,20 +559,6 @@ The DSL then stays small enough for a reviewer to know all of it. Prefer
 plain SDK calls in the body over a new helper, and add a helper only when it
 removes setup noise that obscures the behavior under test.
 
-## Generated catalog
-
-The registry produces `CATALOG.md` and `catalog.json` in the
-`cosspec` crate directory. For each spec they list the ID, the
-behavior (from the doc comment), service profiles, required capabilities,
-injected resources, known issues, and source location.
-
-- The trial `catalog::up_to_date` fails if the committed files are out of
-  date. Behavior changes therefore show up in pull request diffs as changed
-  sentences.
-- Run with `AZURE_COSMOS_SPEC_UPDATE_CATALOG=1` to regenerate both files.
-- Other language SDKs can consume `catalog.json` as a language-neutral list of
-  scenarios. The 0028 JSON catalog is unchanged.
-
 ## Spec results
 
 Every executed trial writes one JSON file,
@@ -640,7 +626,7 @@ rule as result files.
 | `cleanup`, `result_version` | Whether resources were deleted, and the result file version |
 | `backends` | Each backend that ran: `name`, `kind`, and its `profiles` |
 | `totals` | Trial counts by status |
-| `checks` | Checks that aren't trials, such as the catalog check: `name`, `status`, `duration_ms`, `error` |
+| `checks` | Reserved for checks that aren't trials; always empty |
 | `trials` | Every selected trial, in run order |
 
 Each trial has `test_name`, `spec_id`, `summary`, `source`, `backend`,
@@ -698,7 +684,6 @@ Cargo runs tests from the package root.
 | --- | --- |
 | `AZURE_COSMOS_SPEC_PROFILES` | Comma-separated service profiles to run, on every backend |
 | `AZURE_COSMOS_SPEC_STRICT` | `1` turns capability skips into failures |
-| `AZURE_COSMOS_SPEC_UPDATE_CATALOG` | `1` rewrites `CATALOG.md` and `catalog.json` |
 
 Pass `-- --results-dir <dir>` to choose where result files go. See
 [Spec results](#spec-results). Runs that use the default location prune it
@@ -710,7 +695,7 @@ Pass `-- --no-cleanup` to keep every database and container the run creates.
 1. New behavioral coverage is written as spec tests.
 2. Existing 0028 scenarios are ported one area at a time. A port is complete
    when the spec states the same behavior and runs in the same cells.
-3. Once the spec-test catalog covers an area, its 0028 scenarios and
+3. Once spec tests cover an area, its 0028 scenarios and
    `e2e_test_cases` can be retired in a separate, reviewed change.
 
 The prototype ports the core of three 0028 scenarios: query pagination resume,

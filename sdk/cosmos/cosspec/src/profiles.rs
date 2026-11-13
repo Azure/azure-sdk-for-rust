@@ -78,7 +78,7 @@ impl fmt::Display for ServiceProfile {
 /// The shape and contents of a container a spec asks for with `#[profile(...)]`.
 #[derive(Clone, Copy, Debug)]
 pub struct ContainerProfile {
-    /// The profile name, used in container names and the catalog.
+    /// The profile name, used in container names.
     pub name: &'static str,
     /// The partition key path, for example `/pk`.
     pub partition_key_path: &'static str,

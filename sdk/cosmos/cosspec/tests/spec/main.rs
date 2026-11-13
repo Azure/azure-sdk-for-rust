@@ -4,8 +4,7 @@
 //! Cosmos DB SDK spec tests.
 //!
 //! Each spec states one SDK behavior in a few lines. See
-//! `sdk/cosmos/docs/specs/0030-cosmos-spec-tests.md` for the DSL and
-//! `CATALOG.md` next to this crate for the generated index.
+//! `sdk/cosmos/docs/specs/0030-cosmos-spec-tests.md` for the DSL.
 
 // Specs favor plain `.await` over boxing large futures so they read as specifications.
 #![allow(clippy::large_futures)]

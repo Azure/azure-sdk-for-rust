@@ -50,7 +50,6 @@ emulator
 | --- | --- |
 | `AZURE_COSMOS_SPEC_PROFILES` | Comma-separated service profiles to run on every backend, such as `SingleRegion,MultiRead` |
 | `AZURE_COSMOS_SPEC_STRICT` | `1` turns skips for missing capabilities into failures |
-| `AZURE_COSMOS_SPEC_UPDATE_CATALOG` | `1` rewrites `CATALOG.md` and `catalog.json` |
 
 Every spec that runs writes a JSON result file. The file records whether the
 spec passed, any error or panic, the resources it created or borrowed from
@@ -143,8 +142,6 @@ hours.
 - **Injectables**: `SharedContainer`, `ExclusiveContainer`,
   `ExclusiveDatabase`, `ExclusiveAccount`, and `HttpTap` parameters are
   provisioned by the framework and cleaned up after the spec.
-- **Catalog**: `CATALOG.md` and `catalog.json` list every spec. They are
-  generated from the specs and checked by the `catalog::up_to_date` trial.
 
 ## Examples
 
@@ -170,18 +167,13 @@ pub async fn point_read_returns_stored_item(
 }
 ```
 
-Add the spec to a module under `tests/spec`, then regenerate the catalog:
-
-```sh
-AZURE_COSMOS_SPEC_UPDATE_CATALOG=1 cargo test -p cosspec --test spec
-```
+Add the spec to a module under `tests/spec`. `#[spec_test]` registers it, so
+it runs on every selected backend and service profile without further setup.
 
 ## Troubleshooting
 
 ### General
 
-- If `catalog::up_to_date` fails, regenerate the catalog as shown above and
-  commit `CATALOG.md` and `catalog.json`.
 - If a spec fails with `InvalidConfiguration`, it called a method that needs a
   capability it didn't declare. Add the capability to `#[requires(..)]`.
 - If a spec fails after writing to a `SharedContainer`, use an

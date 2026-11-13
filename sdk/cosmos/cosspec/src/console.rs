@@ -5,7 +5,6 @@
 //! Console output for spec runs: a tree grouped by backend, then spec.
 //!
 //! ```text
-//! catalog::up_to_date  ok
 //! inmemory
 //!   query.continuation_survives_split
 //!     SingleRegion       ok
@@ -33,15 +32,11 @@ use std::{
 };
 
 /// Where a job's result appears in the tree.
-pub(crate) enum Place {
-    /// A line of its own, above the backends.
-    TopLevel,
-    /// One service profile of one spec on one backend.
-    Leaf {
-        backend: String,
-        spec: String,
-        profile: String,
-    },
+/// One service profile of one spec on one backend.
+pub(crate) struct Place {
+    pub backend: String,
+    pub spec: String,
+    pub profile: String,
 }
 
 /// Why a job is ignored unless `--ignored` or `--include-ignored` is passed.
@@ -206,11 +201,9 @@ impl Printer {
     }
 
     fn add(&mut self, name: String, place: Place, ignore: Option<Ignore>) {
-        let label = match &place {
-            Place::TopLevel => name.chars().count(),
-            Place::Leaf { profile, .. } => LEAF_INDENT.len() + profile.chars().count(),
-        };
-        self.width = self.width.max(label);
+        self.width = self
+            .width
+            .max(LEAF_INDENT.len() + place.profile.chars().count());
         self.entries.push(Entry {
             name,
             place,
@@ -234,41 +227,27 @@ impl Printer {
         }
     }
 
-    /// The end of the group that starts at `start`: one top-level entry, or
-    /// every adjacent leaf of the same backend and spec.
+    /// The end of the group that starts at `start`: every adjacent entry of
+    /// the same backend and spec.
     fn group_end(&self, start: usize) -> usize {
-        let Place::Leaf { backend, spec, .. } = &self.entries[start].place else {
-            return start + 1;
-        };
+        let Place { backend, spec, .. } = &self.entries[start].place;
         start
             + self.entries[start..]
                 .iter()
-                .take_while(|e| {
-                    matches!(&e.place, Place::Leaf { backend: b, spec: s, .. } if b == backend && s == spec)
-                })
+                .take_while(|e| &e.place.backend == backend && &e.place.spec == spec)
                 .count()
     }
 
     fn print_group(&mut self, start: usize, end: usize) {
         let mut lines = String::new();
-        match &self.entries[start].place {
-            Place::TopLevel => {
-                self.backend = None;
-                let entry = &self.entries[start];
-                lines.push_str(&self.row("", &entry.name, entry));
-            }
-            Place::Leaf { backend, spec, .. } => {
-                if self.backend.as_ref() != Some(backend) {
-                    lines.push_str(&format!("{}\n", self.paint("1", backend)));
-                    self.backend = Some(backend.clone());
-                }
-                lines.push_str(&format!("  {spec}\n"));
-                for entry in &self.entries[start..end] {
-                    if let Place::Leaf { profile, .. } = &entry.place {
-                        lines.push_str(&self.row(LEAF_INDENT, profile, entry));
-                    }
-                }
-            }
+        let Place { backend, spec, .. } = &self.entries[start].place;
+        if self.backend.as_ref() != Some(backend) {
+            lines.push_str(&format!("{}\n", self.paint("1", backend)));
+            self.backend = Some(backend.clone());
+        }
+        lines.push_str(&format!("  {spec}\n"));
+        for entry in &self.entries[start..end] {
+            lines.push_str(&self.row(LEAF_INDENT, &entry.place.profile, entry));
         }
         print!("{lines}");
     }
