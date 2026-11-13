@@ -2,15 +2,16 @@
 // Licensed under the MIT License.
 
 use azure_data_cosmos::options::{
-    AvailabilityStrategy, HedgeThreshold, HedgingStrategy, ItemReadOptions,
-    OperationOptionsBuilder, Region,
+    AvailabilityStrategy, HedgeThreshold, HedgingStrategy, ItemReadOptions, OperationOptionsBuilder,
 };
 use cosspec::{
     assert_http_count, assert_http_overlap, assert_http_regions,
     faults::{self, Op},
     profiles, spec_test,
     testdata::Item,
-    ExclusiveAccount, HttpTap, SharedContainer, SpecResult,
+    ExclusiveAccount, HttpTap,
+    RegionAlias::PrimaryReadWrite,
+    SharedContainer, SpecResult,
 };
 use std::time::Duration;
 
@@ -33,8 +34,10 @@ pub async fn hedge_races_alternate_region(
     #[profile(basic_items)] container: SharedContainer,
     tap: HttpTap,
 ) -> SpecResult {
-    let slow_east = faults::delay(Op::ReadItem, Duration::from_secs(2)).in_region(Region::EAST_US);
-    let client = container.client_with_faults([slow_east]).await?;
+    let secondary = container.regions()[1];
+    let slow_primary =
+        faults::delay(Op::ReadItem, Duration::from_secs(2)).in_region(PrimaryReadWrite);
+    let client = container.client_with_faults([slow_primary]).await?;
     let expected = container.dataset().get("item-03");
 
     let response = client
@@ -46,7 +49,7 @@ pub async fn hedge_races_alternate_region(
         .await?;
 
     assert_eq!(response.into_model::<Item>()?, expected);
-    assert_http_regions!(tap, "ReadItem", [Region::EAST_US, Region::WEST_US]);
+    assert_http_regions!(tap, "ReadItem", [PrimaryReadWrite, secondary]);
     let reads = tap.operation("ReadItem");
     assert_http_overlap!(reads[0], reads[1]);
     assert!(reads[0].was_cancelled(), "the slow request is abandoned");
@@ -85,8 +88,9 @@ pub async fn read_fails_over_when_region_offline(
 ) -> SpecResult {
     let container = account.create_container(profiles::basic_items()).await?;
     let expected = container.dataset().get("item-05");
+    let secondary = account.regions()[1];
 
-    account.take_region_offline(&Region::EAST_US).await?;
+    account.take_region_offline(PrimaryReadWrite).await?;
     tap.clear();
     let response = container
         .client()
@@ -96,7 +100,7 @@ pub async fn read_fails_over_when_region_offline(
     assert_eq!(response.into_model::<Item>()?, expected);
     let reads = tap.operation("ReadItem");
     let last = reads.last().expect("at least one read");
-    assert_eq!(last.region.as_deref(), Some(Region::WEST_US.as_str()));
+    assert_eq!(last.region_alias.as_deref(), Some(secondary.name()));
     Ok(())
 }
 
@@ -112,8 +116,9 @@ pub async fn write_fails_over_when_write_region_offline(
 ) -> SpecResult {
     let container = account.create_container(profiles::basic_items()).await?;
     let item = Item::new("after-offline", "pk-0", 1);
+    let secondary = account.regions()[1];
 
-    account.take_region_offline(&Region::EAST_US).await?;
+    account.take_region_offline(PrimaryReadWrite).await?;
     tap.clear();
     container
         .client()
@@ -122,6 +127,6 @@ pub async fn write_fails_over_when_write_region_offline(
 
     let writes = tap.operation("CreateItem");
     let last = writes.last().expect("at least one write");
-    assert_eq!(last.region.as_deref(), Some(Region::WEST_US.as_str()));
+    assert_eq!(last.region_alias.as_deref(), Some(secondary.name()));
     Ok(())
 }

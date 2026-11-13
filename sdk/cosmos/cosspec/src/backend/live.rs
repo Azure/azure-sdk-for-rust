@@ -9,7 +9,7 @@ use super::{
 };
 use crate::{
     config::{LiveAccountConfig, LiveAuth, LiveConfig},
-    Capability, ServiceProfile, SpecResult,
+    Capability, RegionMap, ServiceProfile, SpecResult,
 };
 use async_trait::async_trait;
 use azure_core::credentials::{Secret, TokenCredential};
@@ -19,8 +19,10 @@ use std::{collections::BTreeMap, sync::Arc};
 
 /// Runs specs against existing live accounts, one per configured service profile.
 ///
-/// Each account must already be shaped like its profile: the same regions, in the
-/// same order, with the same write regions. `infra/main.bicep` deploys them. The
+/// Each account must already be shaped like its profile: one region per region
+/// alias, in the same order, with the same write regions. The account's
+/// `regions` table maps each alias to the real region it was deployed to.
+/// `infra/main.bicep` deploys them. The
 /// backend can't change topology, take regions offline, or create accounts, so it
 /// provides only the capabilities of each profile itself.
 #[derive(Debug)]
@@ -75,11 +77,14 @@ impl Backend for LiveBackend {
             .accounts
             .get(&profile)
             .ok_or_else(|| format!("no enabled [backends.live.profiles.{profile}] account"))?;
+        let regions = RegionMap::new(profile, |alias| account.regions.get(&alias).cloned())
+            .map_err(|e| format!("[backends.live.profiles.{profile}] regions: {e}"))?;
         Ok(Arc::new(RemoteAccount {
             profile,
+            routing: RoutingStrategy::PreferredRegions(regions.preferred()),
+            regions,
             endpoint: account.endpoint.clone(),
             credential: Self::credential(&account.auth)?,
-            routing: RoutingStrategy::PreferredRegions(profile.regions()),
             emulator_certificates: false,
         }))
     }

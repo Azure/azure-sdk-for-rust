@@ -19,7 +19,9 @@ pub use emulator::EmulatorBackend;
 pub use in_memory::InMemoryBackend;
 pub use live::LiveBackend;
 
-use crate::{provision::Provisioner, Capability, InvalidConfiguration, ServiceProfile, SpecResult};
+use crate::{
+    provision::Provisioner, Capability, InvalidConfiguration, RegionMap, ServiceProfile, SpecResult,
+};
 use async_trait::async_trait;
 use azure_data_cosmos::{
     fault_injection::FaultInjectionRule, feed::FeedRange, options::Region, CosmosClient,
@@ -93,8 +95,11 @@ pub trait BackendAccount: Send + Sync + Debug {
             .map(|topology| Box::new(ViaTopology(topology)) as Box<dyn SimpleSplitMerge + '_>)
     }
 
+    /// The real region behind each of the account's region aliases.
+    fn regions(&self) -> &RegionMap;
+
     /// Region control, if the backend supports it.
-    fn regions(&self) -> Option<&dyn RegionControl> {
+    fn region_control(&self) -> Option<&dyn RegionControl> {
         None
     }
 }

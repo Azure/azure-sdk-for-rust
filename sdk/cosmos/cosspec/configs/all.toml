@@ -10,3 +10,4 @@ enabled = true
 [backends.live.profiles.SingleRegion]
 endpoint = "https://your-prefix-single-region.documents.azure.com:443/"
 auth = { kind = "key", key_env = "COSSPEC_SINGLE_REGION_KEY" }
+regions = { PrimaryReadWrite = "East US" }

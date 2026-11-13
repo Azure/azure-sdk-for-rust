@@ -8,7 +8,7 @@ use crate::{
     pool,
     profiles::ContainerProfile,
     provision::{ControlPlaneProvisioner, Provisioner},
-    Capability, ServiceProfile, SpecResult,
+    Capability, RegionAlias, RegionMap, ServiceProfile, SpecResult,
 };
 use async_trait::async_trait;
 use azure_core::{credentials::Secret, http::Url};
@@ -46,6 +46,14 @@ impl InMemoryBackend {
     pub fn new(profiles: Vec<ServiceProfile>) -> Self {
         Self { profiles }
     }
+
+    /// The emulated region behind `alias`. The names are arbitrary but fixed.
+    fn region(alias: RegionAlias) -> Region {
+        match alias {
+            RegionAlias::PrimaryReadWrite => Region::EAST_US,
+            RegionAlias::SecondaryReadOnly | RegionAlias::SecondaryReadWrite => Region::WEST_US,
+        }
+    }
 }
 
 impl Default for InMemoryBackend {
@@ -77,8 +85,9 @@ impl Backend for InMemoryBackend {
     }
 
     async fn open_account(&self, profile: ServiceProfile) -> SpecResult<Arc<dyn BackendAccount>> {
-        let regions = profile.regions();
+        let regions = RegionMap::new(profile, |alias| Some(Self::region(alias)))?;
         let virtual_regions = regions
+            .preferred()
             .iter()
             .map(|region| {
                 Ok(VirtualRegion::new(
@@ -109,7 +118,7 @@ impl Backend for InMemoryBackend {
 #[derive(Debug)]
 struct InMemoryAccount {
     profile: ServiceProfile,
-    regions: Vec<Region>,
+    regions: RegionMap,
     endpoint: String,
     emulator: Arc<InMemoryEmulatorHttpClient>,
     /// Current physical partitions per `(database, container)`, in EPK order.
@@ -172,7 +181,7 @@ impl BackendAccount for InMemoryAccount {
             self.endpoint.parse::<AccountEndpoint>()?,
             Secret::new(KEY),
         );
-        let routing = RoutingStrategy::PreferredRegions(self.regions.clone());
+        let routing = RoutingStrategy::PreferredRegions(self.regions.preferred());
         Ok(Box::pin(builder.build(account, routing)).await?)
     }
 
@@ -184,7 +193,11 @@ impl BackendAccount for InMemoryAccount {
         Some(self)
     }
 
-    fn regions(&self) -> Option<&dyn RegionControl> {
+    fn regions(&self) -> &RegionMap {
+        &self.regions
+    }
+
+    fn region_control(&self) -> Option<&dyn RegionControl> {
         Some(self)
     }
 }

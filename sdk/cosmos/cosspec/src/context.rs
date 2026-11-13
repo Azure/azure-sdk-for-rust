@@ -11,7 +11,7 @@ use crate::{
     profiles::{self, ContainerProfile},
     results::{Origin, ResourceKind, ResourceRecord},
     runner::SpecDescriptor,
-    Capability, HttpTap, InvalidConfiguration, ServiceProfile, SpecResult,
+    Capability, HttpTap, InvalidConfiguration, RegionAlias, RegionMap, ServiceProfile, SpecResult,
 };
 use azure_data_cosmos::{fault_injection::FaultInjectionRule, CosmosClient};
 use std::{
@@ -96,12 +96,19 @@ impl SpecContext {
         descriptor: &'static SpecDescriptor,
         service_profile: ServiceProfile,
     ) -> Self {
+        let aliases = || {
+            cell.account
+                .regions()
+                .iter()
+                .map(|(alias, region)| (region.as_str().to_owned(), alias.name().to_owned()))
+                .collect::<Vec<_>>()
+        };
         Self {
+            tap: HttpTap::with_region_aliases(aliases()),
+            recording: HttpTap::with_region_aliases(aliases()),
             cell,
             descriptor,
             service_profile,
-            tap: HttpTap::new(),
-            recording: HttpTap::new(),
             harness: OnceCell::new(),
             resources: Mutex::default(),
             cleanups: Mutex::default(),
@@ -112,6 +119,17 @@ impl SpecContext {
     /// The service profile this spec is running under.
     pub fn service_profile(&self) -> ServiceProfile {
         self.service_profile
+    }
+
+    /// The account's region aliases, in preference order.
+    pub fn regions(&self) -> &'static [RegionAlias] {
+        self.service_profile.regions()
+    }
+
+    /// The real region behind each region alias. Every account of a backend
+    /// and service profile has the same map.
+    pub(crate) fn region_map(&self) -> &RegionMap {
+        self.cell.account.regions()
     }
 
     /// Fails unless the spec declared `capability` with `#[requires(...)]`.

@@ -213,7 +213,7 @@ A parameter's type determines what the spec receives.
 | `SharedContainer` | Pooled container in the cell database. Created and seeded once per run and reused by every spec. Requires `#[profile]`. | `client()`, `client_with_faults(..)`, `dataset()`, `query_all(..)`. Read-only. |
 | `ExclusiveContainer` | New container in the pooled cell database. Deleted after the spec. | `client()`, `client_with_faults(..)`, `dataset()`, `query_all(..)`, `split()`, `feed_range_count()` |
 | `ExclusiveDatabase` | New database. Deleted (wiped) after the spec. | `client()`, `create_container(profile)` |
-| `ExclusiveAccount` | Dedicated account with a new database. Implies `AccountIsolation`. | `client()`, `regions()`, `create_container(profile)`, `take_region_offline(..)`, `bring_region_online(..)` |
+| `ExclusiveAccount` | Dedicated account with a new database. Implies `AccountIsolation`. | `client()`, `regions()`, `create_container(profile)`, `take_region_offline(alias)`, `bring_region_online(alias)` |
 | `HttpTap` | One per spec. Every client the framework builds for the spec reports to it. | `records()`, `operation(..)`, `clear()` |
 
 Every spec gets its **own clients**, built on the pooled account. As a result,
@@ -241,12 +241,12 @@ Client-side faults use the SDK's fault-injection rules. Faults are fixed when
 a client is built, so specs request a separate faulted client:
 
 ```rust
-let slow_east = faults::delay(Op::ReadItem, Duration::from_secs(2)).in_region(Region::EAST_US);
-let client = container.client_with_faults([slow_east]).await?;
+let slow_primary = faults::delay(Op::ReadItem, Duration::from_secs(2)).in_region(PrimaryReadWrite);
+let client = container.client_with_faults([slow_primary]).await?;
 ```
 
 `faults::delay`, `faults::error`, and `faults::throttle` build a `Fault`.
-`.in_region(..)` and `.times(n)` refine it. Server-side faults are a
+`.in_region(alias)` and `.times(n)` refine it. Server-side faults are a
 future `Backend` demand.
 
 ## Capabilities
@@ -294,11 +294,30 @@ A service profile describes the shape of an account. It does **not** set a
 consistency level: a spec that cares about consistency sets it on its client
 or request.
 
-| Profile | Regions | Contributes |
+| Profile | Regions, in preference order | Contributes |
 | --- | --- | --- |
-| `SingleRegion` | East US | — |
-| `MultiRead` | East US (write), West US | `MultiRegion` |
-| `MultiWrite` | East US, West US (both writable) | `MultiRegion`, `MultiWrite` |
+| `SingleRegion` | `PrimaryReadWrite` | — |
+| `MultiRead` | `PrimaryReadWrite`, `SecondaryReadOnly` | `MultiRegion` |
+| `MultiWrite` | `PrimaryReadWrite`, `SecondaryReadWrite` | `MultiRegion`, `MultiWrite` |
+
+#### Region aliases
+
+Specs name regions only by `RegionAlias`, never by real region name, because
+live accounts are deployed wherever there's capacity or developers are close.
+Each backend account resolves aliases to real regions with a `RegionMap`:
+
+- The in-memory emulator uses fixed virtual regions (East US and West US).
+- The Azure Cosmos DB Emulator maps `PrimaryReadWrite` to the region it
+  reports (South Central US).
+- Live accounts map aliases in each profile's `regions` table, which must
+  name exactly the profile's aliases, each in a different region.
+
+Faults, `ExclusiveAccount::take_region_offline`, and `assert_http_regions!`
+take aliases. `HttpTap` stamps every record with its `region_alias`, and
+result files include it. Each resource's `regions()` lists the aliases in
+preference order, so a spec that runs on both multi-region profiles names the
+second region `regions()[1]`. An alias the profile lacks fails the trial as
+an invalid configuration.
 
 Because capability filtering removes cells that don't fit, combining `all`
 with `#[requires(MultiRegion)]` is idiomatic.
@@ -433,8 +452,9 @@ both operations on `TopologyControl`.
   emulator's self-signed certificate. `endpoint` can point elsewhere, for
   example at a container.
 - **Live.** The run never creates or deletes accounts, only databases and
-  containers in them. Each account must match its profile: the profile's
-  regions in order, and its write regions. `cosspec/infra/main.bicep` deploys
+  containers in them. Each account must match its profile: one region per
+  region alias, in order, with the profile's write regions. Its `regions`
+  table maps each alias to the real region. `cosspec/infra/main.bicep` deploys
   one account per profile. Specs that need `TopologyControl`,
   `SimpleSplitMerge`, `RegionControl`, or `AccountIsolation` are skipped. A
   future change can add `SimpleSplitMerge` by raising throughput to split and
@@ -482,10 +502,12 @@ enabled = true
 [backends.live.profiles.SingleRegion]
 endpoint = "https://my-single-region.documents.azure.com:443/"
 auth = { kind = "key", key_env = "COSSPEC_SINGLE_REGION_KEY" }
+regions = { PrimaryReadWrite = "East US 2" }
 
 [backends.live.profiles.MultiWrite]
 endpoint = "https://my-multi-write.documents.azure.com:443/"
 auth = { kind = "entra" }
+regions = { PrimaryReadWrite = "UK South", SecondaryReadWrite = "UK West" }
 ```
 
 Enabled backends run in a fixed order: `inmemory`, `emulator`, then `live`.
@@ -541,7 +563,7 @@ their meaning. Nothing is built yet.
 | `assert_feed_ranges!(container, n)` | Partition topology, read with a new client |
 | `assert_status!(result, status[, sub_status])` | Error contract |
 | `assert_http_count!(tap, op, n)` | Number of HTTP requests for an operation, including retries |
-| `assert_http_regions!(tap, op, [regions])` | Region of each HTTP request, in order |
+| `assert_http_regions!(tap, op, [aliases])` | Region alias of each HTTP request, in order |
 | `assert_http_overlap!(a, b)` | Two exchanges were in flight at the same time |
 
 ## Helper budget
@@ -591,7 +613,7 @@ the version. Removing, renaming, or changing the meaning of a field does.
 | `panic` | Message, location, and backtrace if the body panicked |
 | `resources` | Each account, database, and container the spec used: `kind`, `origin` (`created` or `pooled`), `name`, and where known `database`, `profile`, and `parameter` |
 | `phases` | Named spans of the trial, each with `start_ms` and `end_ms` from the trial start: `pool` (waiting for the pooled account and database), `body` (the spec itself), and `teardown` |
-| `http` | Every HTTP exchange of the spec's clients (`label: "spec"`) and of its harness clients (`label: "harness"`), in start order: method, URL, operation, region, activity ID, `start_ms` from the trial start, `duration_ms`, `outcome`, `request_body`, and `response_body` |
+| `http` | Every HTTP exchange of the spec's clients (`label: "spec"`) and of its harness clients (`label: "harness"`), in start order: method, URL, operation, `region`, `region_alias`, activity ID, `start_ms` from the trial start, `duration_ms`, `outcome`, `request_body`, and `response_body` |
 
 The recording isn't affected by `HttpTap::clear()`. Traffic to set up pooled
 resources is shared by many specs, so it isn't attributed to any one of them.

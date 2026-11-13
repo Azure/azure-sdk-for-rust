@@ -7,7 +7,7 @@
 use super::{BackendAccount, ClientOptions};
 use crate::{
     provision::{ControlPlaneProvisioner, Provisioner},
-    ServiceProfile, SpecResult,
+    RegionMap, ServiceProfile, SpecResult,
 };
 use async_trait::async_trait;
 use azure_core::credentials::{Secret, TokenCredential};
@@ -39,6 +39,7 @@ impl fmt::Debug for Credential {
 #[derive(Debug)]
 pub(super) struct RemoteAccount {
     pub profile: ServiceProfile,
+    pub regions: RegionMap,
     pub endpoint: String,
     pub credential: Credential,
     pub routing: RoutingStrategy,
@@ -54,6 +55,10 @@ impl BackendAccount for RemoteAccount {
 
     fn endpoint(&self) -> String {
         self.endpoint.clone()
+    }
+
+    fn regions(&self) -> &RegionMap {
+        &self.regions
     }
 
     async fn client(&self, options: ClientOptions) -> SpecResult<CosmosClient> {

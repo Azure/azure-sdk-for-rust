@@ -94,6 +94,8 @@ export interface HttpJson {
     url: string;
     operation: string | null;
     region: string | null;
+    /** The region's alias, such as `PrimaryReadWrite`. Absent in older runs. */
+    region_alias?: string | null;
     activity_id: string | null;
     start_ms: number;
     duration_ms: number | null;

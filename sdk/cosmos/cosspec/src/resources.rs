@@ -11,7 +11,7 @@ use crate::{
     profiles::ContainerProfile,
     results::{Origin, ResourceKind, ResourceRecord},
     testdata::Dataset,
-    Capability, InvalidConfiguration, SpecResult,
+    Capability, InvalidConfiguration, RegionAlias, SpecResult,
 };
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
@@ -19,7 +19,6 @@ use azure_data_cosmos::{
         CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionResultBuilder,
         FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType,
     },
-    options::Region,
     ContainerClient, CosmosClient, DatabaseClient, FeedScope, Query,
 };
 use futures::TryStreamExt;
@@ -67,6 +66,12 @@ impl SharedContainer {
         (self.profile.dataset)()
     }
 
+    /// The account's region aliases, in preference order. The first is
+    /// always [`PrimaryReadWrite`](RegionAlias::PrimaryReadWrite).
+    pub fn regions(&self) -> &'static [RegionAlias] {
+        self.ctx.regions()
+    }
+
     /// Builds a new tapped, write-guarded client for this container with
     /// client-side faults.
     pub async fn client_with_faults(
@@ -74,7 +79,7 @@ impl SharedContainer {
         faults: impl IntoIterator<Item = Fault>,
     ) -> SpecResult<ContainerClient> {
         let mut rules = write_guard(&self.name);
-        rules.extend(faults.into_iter().map(Fault::build));
+        rules.extend(build_faults(&self.ctx, faults)?);
         let client = self
             .ctx
             .client(self.ctx.cell.account.as_ref(), rules)
@@ -89,6 +94,16 @@ impl SharedContainer {
     ) -> SpecResult<Vec<T>> {
         drain_query(&self.client, query).await
     }
+}
+
+fn build_faults(
+    ctx: &SpecContext,
+    faults: impl IntoIterator<Item = Fault>,
+) -> SpecResult<Vec<Arc<FaultInjectionRule>>> {
+    faults
+        .into_iter()
+        .map(|fault| fault.build(ctx.region_map()))
+        .collect()
 }
 
 fn write_guard(container: &str) -> Vec<Arc<FaultInjectionRule>> {
@@ -227,12 +242,18 @@ impl ExclusiveContainer {
         (self.profile.dataset)()
     }
 
+    /// The account's region aliases, in preference order. The first is
+    /// always [`PrimaryReadWrite`](RegionAlias::PrimaryReadWrite).
+    pub fn regions(&self) -> &'static [RegionAlias] {
+        self.ctx.regions()
+    }
+
     /// Builds a new tapped client for this container with client-side faults.
     pub async fn client_with_faults(
         &self,
         faults: impl IntoIterator<Item = Fault>,
     ) -> SpecResult<ContainerClient> {
-        let faults = faults.into_iter().map(Fault::build).collect();
+        let faults = build_faults(&self.ctx, faults)?;
         let client = self.ctx.client(self.account.as_ref(), faults).await?;
         pool::container_client(&client, &self.database, &self.name).await
     }
@@ -402,9 +423,10 @@ impl ExclusiveAccount {
         &self.client
     }
 
-    /// The account's regions, in preference order.
-    pub fn regions(&self) -> Vec<Region> {
-        self.account.profile().regions()
+    /// The account's region aliases, in preference order. The first is
+    /// always [`PrimaryReadWrite`](RegionAlias::PrimaryReadWrite).
+    pub fn regions(&self) -> &'static [RegionAlias] {
+        self.ctx.regions()
     }
 
     /// Creates a container shaped and seeded by `profile`.
@@ -424,20 +446,26 @@ impl ExclusiveAccount {
         .await
     }
 
-    /// Takes `region` offline. Requires `#[requires(RegionControl)]`.
-    pub async fn take_region_offline(&self, region: &Region) -> SpecResult {
-        self.region_control()?.set_offline(region).await
+    /// Takes the region behind `region` offline. Requires `#[requires(RegionControl)]`.
+    pub async fn take_region_offline(&self, region: RegionAlias) -> SpecResult {
+        let control = self.region_control()?;
+        control
+            .set_offline(&self.account.regions().region(region)?)
+            .await
     }
 
-    /// Brings `region` back online. Requires `#[requires(RegionControl)]`.
-    pub async fn bring_region_online(&self, region: &Region) -> SpecResult {
-        self.region_control()?.set_online(region).await
+    /// Brings the region behind `region` back online. Requires `#[requires(RegionControl)]`.
+    pub async fn bring_region_online(&self, region: RegionAlias) -> SpecResult {
+        let control = self.region_control()?;
+        control
+            .set_online(&self.account.regions().region(region)?)
+            .await
     }
 
     fn region_control(&self) -> SpecResult<&dyn crate::backend::RegionControl> {
         self.ctx.demand(Capability::RegionControl)?;
         self.account
-            .regions()
+            .region_control()
             .ok_or_else(|| InvalidConfiguration("the backend has no region control".into()).into())
     }
 }

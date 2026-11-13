@@ -101,15 +101,31 @@ Specs that need a capability the backend lacks are skipped. Trial names
 include the backend and profile, such as `[emulator.SingleRegion]`, so
 `-- emulator.` runs only the emulator's trials.
 
-To create live accounts, deploy `infra/main.bicep`. It creates one account
-per service profile, in the regions the profiles expect, and outputs their
-endpoints:
+Specs never name real regions. Each service profile names its regions with
+aliases: `SingleRegion` has `PrimaryReadWrite`, `MultiRead` adds
+`SecondaryReadOnly`, and `MultiWrite` adds `SecondaryReadWrite`. The in-memory
+emulator and the Azure Cosmos DB Emulator map them to fixed regions. Live
+accounts can be in any regions, so each live profile maps its aliases in a
+`regions` table:
 
-```sh
-az deployment group create --resource-group <group> --template-file infra/main.bicep
+```toml
+[backends.live.profiles.MultiRead]
+endpoint = "https://my-multi-read.documents.azure.com:443/"
+auth = { kind = "entra" }
+regions = { PrimaryReadWrite = "UK South", SecondaryReadOnly = "UK West" }
 ```
 
-Put the endpoints in a copy of `configs/live.toml`, one
+To create live accounts, deploy `infra/main.bicep`. It creates one account
+per service profile, in `primaryLocation` and `secondaryLocation` (East US and
+West US by default), and outputs their endpoints and `regions` tables:
+
+```sh
+az deployment group create --resource-group <group> \
+  --template-file infra/main.bicep \
+  --parameters primaryLocation=uksouth secondaryLocation=ukwest
+```
+
+Put the endpoints and `regions` in a copy of `configs/live.toml`, one
 `[backends.live.profiles.<Profile>]` table per account. Export each account's key
 (`az cosmosdb keys list`) into the environment variable its `key_env` names,
 or use `auth = { kind = "entra" }` to sign in with the Azure CLI. Specs create

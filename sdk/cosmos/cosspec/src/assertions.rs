@@ -100,10 +100,11 @@ macro_rules! assert_http_count {
     }};
 }
 
-/// Asserts the regions an operation's HTTP exchanges were sent to, in start order.
+/// Asserts the region aliases an operation's HTTP exchanges were sent to, in
+/// start order. An exchange to a region without an alias shows its real name.
 ///
 /// ```rust,ignore
-/// assert_http_regions!(tap, "ReadItem", [Region::EAST_US, Region::WEST_US]);
+/// assert_http_regions!(tap, "ReadItem", [PrimaryReadWrite, SecondaryReadOnly]);
 /// ```
 #[macro_export]
 macro_rules! assert_http_regions {
@@ -111,10 +112,10 @@ macro_rules! assert_http_regions {
         let regions: ::std::vec::Vec<::std::string::String> = $tap
             .operation($operation)
             .into_iter()
-            .map(|r| r.region.unwrap_or_default())
+            .map(|r| r.region_alias.or(r.region).unwrap_or_default())
             .collect();
         let expected: ::std::vec::Vec<::std::string::String> =
-            ::std::vec![$($region.as_str().to_owned()),*];
+            ::std::vec![$($crate::RegionAlias::name($region).to_owned()),*];
         ::std::assert_eq!(regions, expected, "unexpected regions for {}", $operation);
     }};
 }

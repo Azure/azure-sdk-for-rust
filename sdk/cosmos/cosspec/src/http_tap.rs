@@ -16,6 +16,7 @@ use azure_data_cosmos_driver::transport_observer::{
 };
 use bytes::Bytes;
 use std::{
+    collections::HashMap,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
@@ -31,8 +32,10 @@ pub struct HttpRecord {
     pub url: String,
     /// Logical operation, for example `ReadItem`, when the SDK tagged one.
     pub operation: Option<String>,
-    /// Target region name, for example `East US`, when the SDK tagged one.
+    /// Target region name as the SDK tagged it, for example `eastus`.
     pub region: Option<String>,
+    /// The alias of [`region`](Self::region), from [`HttpTap::with_region_aliases`].
+    pub region_alias: Option<String>,
     /// The request's activity ID, when present.
     pub activity_id: Option<String>,
     /// The label of the observer that recorded the exchange, from
@@ -89,12 +92,23 @@ impl HttpRecord {
 #[derive(Clone, Debug, Default)]
 pub struct HttpTap {
     records: Arc<Mutex<Vec<HttpRecord>>>,
+    region_aliases: Arc<HashMap<String, String>>,
 }
 
 impl HttpTap {
     /// Creates an empty tap.
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Creates an empty tap that stamps each record with an alias for its
+    /// region. `aliases` maps region names, exactly as the SDK tags them, to
+    /// aliases.
+    pub fn with_region_aliases(aliases: impl IntoIterator<Item = (String, String)>) -> Self {
+        Self {
+            records: Arc::default(),
+            region_aliases: Arc::new(aliases.into_iter().collect()),
+        }
     }
 
     /// Every exchange recorded so far, in start order.
@@ -138,6 +152,9 @@ impl HttpTap {
             url: exchange.url().to_string(),
             operation: exchange.operation().map(str::to_owned),
             region: exchange.region().map(str::to_owned),
+            region_alias: exchange
+                .region()
+                .and_then(|region| self.region_aliases.get(region).cloned()),
             activity_id: exchange.activity_id().map(str::to_owned),
             label: label.map(str::to_owned),
             started_at: exchange.started_at(),

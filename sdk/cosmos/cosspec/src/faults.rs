@@ -4,29 +4,28 @@
 //! Short constructors for client-side fault injection rules.
 //!
 //! ```rust,ignore
-//! let rules = [faults::delay(FaultOperationType::ReadItem, Duration::from_millis(500)).in_region(Region::EAST_US)];
-//! let client = container.client_with_faults(rules).await?;
+//! let slow = faults::delay(Op::ReadItem, Duration::from_millis(500)).in_region(PrimaryReadWrite);
+//! let client = container.client_with_faults([slow]).await?;
 //! ```
 
-use azure_data_cosmos::{
-    fault_injection::{
-        FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
-        FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType,
-    },
-    options::Region,
+use crate::{RegionAlias, RegionMap, SpecResult};
+use azure_data_cosmos::fault_injection::{
+    FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+    FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType,
 };
 use std::{sync::Arc, time::Duration};
 
 pub use azure_data_cosmos::fault_injection::FaultOperationType as Op;
 
-/// A fault under construction. Convert it with [`Fault::build`] or pass it to
-/// [`ExclusiveContainer::client_with_faults`](crate::ExclusiveContainer::client_with_faults).
+/// A fault under construction. Pass it to
+/// [`ExclusiveContainer::client_with_faults`](crate::ExclusiveContainer::client_with_faults)
+/// or [`SharedContainer::client_with_faults`](crate::SharedContainer::client_with_faults).
 #[derive(Clone, Debug)]
 pub struct Fault {
     operation: FaultOperationType,
     error: Option<FaultInjectionErrorType>,
     delay: Option<Duration>,
-    region: Option<Region>,
+    region: Option<RegionAlias>,
     times: Option<u32>,
 }
 
@@ -58,8 +57,8 @@ pub fn throttle(operation: FaultOperationType) -> Fault {
 }
 
 impl Fault {
-    /// Only matches requests sent to `region`.
-    pub fn in_region(mut self, region: Region) -> Self {
+    /// Only matches requests sent to the region behind `region`.
+    pub fn in_region(mut self, region: RegionAlias) -> Self {
         self.region = Some(region);
         self
     }
@@ -70,8 +69,8 @@ impl Fault {
         self
     }
 
-    /// Builds the driver rule.
-    pub fn build(self) -> Arc<FaultInjectionRule> {
+    /// Builds the driver rule, resolving the region alias with `regions`.
+    pub(crate) fn build(self, regions: &RegionMap) -> SpecResult<Arc<FaultInjectionRule>> {
         let mut result = FaultInjectionResultBuilder::new().with_probability(1.0);
         if let Some(error) = self.error {
             result = result.with_error(error);
@@ -81,8 +80,8 @@ impl Fault {
         }
         let mut condition =
             FaultInjectionConditionBuilder::new().with_operation_type(self.operation);
-        if let Some(region) = self.region {
-            condition = condition.with_region(region);
+        if let Some(alias) = self.region {
+            condition = condition.with_region(regions.region(alias)?);
         }
         let id = format!("spec-{}", uuid::Uuid::new_v4());
         let mut rule =
@@ -90,12 +89,6 @@ impl Fault {
         if let Some(n) = self.times {
             rule = rule.with_hit_limit(n);
         }
-        Arc::new(rule.build())
-    }
-}
-
-impl From<Fault> for Arc<FaultInjectionRule> {
-    fn from(fault: Fault) -> Self {
-        fault.build()
+        Ok(Arc::new(rule.build()))
     }
 }

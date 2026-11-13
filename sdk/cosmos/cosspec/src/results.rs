@@ -214,6 +214,8 @@ struct HttpJson {
     url: String,
     operation: Option<String>,
     region: Option<String>,
+    /// The region's alias, such as `PrimaryReadWrite`.
+    region_alias: Option<String>,
     activity_id: Option<String>,
     /// Milliseconds from the spec's start to the request.
     start_ms: f64,
@@ -291,6 +293,7 @@ impl HttpJson {
             url: record.url,
             operation: record.operation,
             region: record.region,
+            region_alias: record.region_alias,
             activity_id: record.activity_id,
         }
     }

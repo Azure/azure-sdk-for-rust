@@ -3,6 +3,12 @@
 
 import type { HttpJson, OutcomeJson } from "../model/types";
 
+/** The region an exchange went to: its alias with the real name, when known. */
+export function region(r: Pick<HttpJson, "region" | "region_alias">): string | null {
+    if (r.region_alias && r.region) return `${r.region_alias} (${r.region})`;
+    return r.region_alias ?? r.region;
+}
+
 export function ms(value: number | null | undefined): string {
     if (value === null || value === undefined) return "–";
     if (value < 1) return `${value.toFixed(2)} ms`;
@@ -93,6 +99,6 @@ export function urlPath(url: string): string {
 
 export function requestLabel(r: HttpJson): string {
     return `#${r.sequence} ${r.operation ?? r.method} ${outcomeText(r.outcome)} · ${ms(r.duration_ms)}${
-        r.region ? ` · ${r.region}` : ""
+        region(r) ? ` · ${region(r)}` : ""
     }`;
 }

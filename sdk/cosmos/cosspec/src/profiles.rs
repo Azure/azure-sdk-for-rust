@@ -5,9 +5,8 @@
 
 use crate::{
     testdata::{self, Dataset},
-    Capability,
+    Capability, RegionAlias,
 };
-use azure_data_cosmos::options::Region;
 use serde::Deserialize;
 use std::fmt;
 
@@ -19,11 +18,11 @@ use std::fmt;
 /// In configuration files, a profile is written as its variant name.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Deserialize)]
 pub enum ServiceProfile {
-    /// One region that accepts reads and writes.
+    /// One region that accepts reads and writes: `PrimaryReadWrite`.
     SingleRegion,
-    /// Two regions: East US accepts writes, West US is read-only.
+    /// Two regions: `PrimaryReadWrite` accepts writes, `SecondaryReadOnly` doesn't.
     MultiRead,
-    /// Two regions that both accept writes.
+    /// Two regions that both accept writes: `PrimaryReadWrite` and `SecondaryReadWrite`.
     MultiWrite,
 }
 
@@ -49,13 +48,14 @@ impl ServiceProfile {
         Self::ALL.iter().copied().find(|p| p.name() == name)
     }
 
-    /// The account's regions, in preference order. The first one is the write region.
-    pub fn regions(self) -> Vec<Region> {
+    /// The account's regions, by alias, in preference order. The first one is
+    /// the write region.
+    pub fn regions(self) -> &'static [RegionAlias] {
+        use RegionAlias::*;
         match self {
-            ServiceProfile::SingleRegion => vec![Region::EAST_US],
-            ServiceProfile::MultiRead | ServiceProfile::MultiWrite => {
-                vec![Region::EAST_US, Region::WEST_US]
-            }
+            ServiceProfile::SingleRegion => &[PrimaryReadWrite],
+            ServiceProfile::MultiRead => &[PrimaryReadWrite, SecondaryReadOnly],
+            ServiceProfile::MultiWrite => &[PrimaryReadWrite, SecondaryReadWrite],
         }
     }
 

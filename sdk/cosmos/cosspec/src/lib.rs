@@ -37,6 +37,7 @@ pub mod manifest;
 mod pool;
 pub mod profiles;
 pub mod provision;
+mod regions;
 mod resources;
 pub mod results;
 mod runner;
@@ -47,6 +48,7 @@ pub use context::SpecContext;
 pub use cosspec_macros::spec_test;
 pub use http_tap::HttpTap;
 pub use profiles::{ContainerProfile, ServiceProfile};
+pub use regions::{RegionAlias, RegionMap};
 pub use resources::{ExclusiveAccount, ExclusiveContainer, ExclusiveDatabase, SharedContainer};
 pub use runner::main;
 

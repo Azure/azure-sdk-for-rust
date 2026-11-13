@@ -86,15 +86,24 @@ Key methods:
 - `query_all(query)` on containers runs a query across the whole container.
 - Topology on `ExclusiveContainer`: `simple_partition_split()`,
   `simple_partition_merge()`, `split()`, and `feed_range_count()`.
-- Regions on `ExclusiveAccount`: `regions()`, `take_region_offline(..)`, and
-  `bring_region_online(..)`.
+- `regions()` on every resource lists the account's region aliases in
+  preference order.
+- Regions on `ExclusiveAccount`: `take_region_offline(alias)` and
+  `bring_region_online(alias)`.
 
 ## Profiles and test data
 
 - **Service profiles** describe the account: `SingleRegion` has one region,
-  `MultiRead` has a write region (East US) and a read region (West US), and
-  `MultiWrite` has two writable regions. They don't fix a consistency level;
-  specs that depend on one set it on the request.
+  `MultiRead` has a write region and a read region, and `MultiWrite` has two
+  writable regions. They don't fix a consistency level; specs that depend on
+  one set it on the request.
+- **Region aliases** (`RegionAlias`) name a profile's regions, because live
+  accounts can be deployed anywhere. Every profile starts with
+  `PrimaryReadWrite`; `MultiRead` adds `SecondaryReadOnly` and `MultiWrite`
+  adds `SecondaryReadWrite`. Each backend maps aliases to real regions. Specs
+  use only aliases. A spec that runs on both multi-region profiles names the
+  second region `regions()[1]`. Using an alias the profile lacks fails the
+  trial as an invalid configuration.
 - **Container profiles** (`cosspec::profiles`) describe a container: its
   partition key path, starting physical partition count, and seed data.
   `empty` and `basic_items` are built in.
@@ -131,23 +140,23 @@ needs in `#[requires(..)]`, which does two things:
 `cosspec::faults` builds client-side fault rules for `client_with_faults`:
 
 ```rust ignore
-let slow_east =
-    faults::delay(Op::ReadItem, Duration::from_secs(2)).in_region(Region::EAST_US);
-let client = container.client_with_faults([slow_east]).await?;
+let slow_primary =
+    faults::delay(Op::ReadItem, Duration::from_secs(2)).in_region(PrimaryReadWrite);
+let client = container.client_with_faults([slow_primary]).await?;
 ```
 
-`delay`, `error`, and `throttle` choose the fault. `in_region(..)` and
+`delay`, `error`, and `throttle` choose the fault. `in_region(alias)` and
 `times(n)` narrow it.
 
 ## Evidence and assertions
 
 Prove behavior with what actually happened, not with what the SDK says
 happened. `HttpTap` records every HTTP exchange from the spec's clients, with
-its operation, region, timing, and outcome. Framework setup traffic isn't
-included. Use `tap.operation("ReadItem")` to get one operation's exchanges in
-start order. Each `HttpRecord` has `status()`, `duration()`,
-`was_cancelled()`, and `overlaps(&other)`. Use `tap.clear()` to drop traffic
-the spec made during its own setup.
+its operation, region and region alias, timing, and outcome. Framework setup
+traffic isn't included. Use `tap.operation("ReadItem")` to get one
+operation's exchanges in start order. Each `HttpRecord` has `status()`,
+`duration()`, `was_cancelled()`, and `overlaps(&other)`. Use `tap.clear()` to
+drop traffic the spec made during its own setup.
 
 Diagnostics can supplement this evidence but never replace it.
 
@@ -159,8 +168,8 @@ Diagnostics can supplement this evidence but never replace it.
   with a fresh client.
 - `assert_http_count!(tap, "ReadItem", n)`: how many exchanges an operation
   made.
-- `assert_http_regions!(tap, "ReadItem", [..])`: the regions an operation was
-  sent to, in order.
+- `assert_http_regions!(tap, "ReadItem", [PrimaryReadWrite, ..])`: the region
+  aliases an operation was sent to, in order.
 - `assert_http_overlap!(a, b)`: two exchanges were in flight at the same time.
 
 ## Lifecycle
@@ -193,6 +202,7 @@ SDK. Run known issues with `-- --include-ignored`.
   only reads.
 - Do `#[requires(..)]` and `#[service_profiles(..)]` match what the spec does,
   without branching on the backend?
+- Does it name regions only by alias, never by real region name?
 - If behavior changed on purpose, do the doc comment and body change together?
 - If there's a `#[known_issue]`, is its reason accurate and scoped to the
   right profiles?

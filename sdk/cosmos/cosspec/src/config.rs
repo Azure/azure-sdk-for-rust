@@ -26,17 +26,20 @@
 //! [backends.live.profiles.SingleRegion]
 //! endpoint = "https://my-single-region.documents.azure.com:443/"
 //! auth = { kind = "key", key_env = "COSSPEC_SINGLE_REGION_KEY" }
+//! regions = { PrimaryReadWrite = "East US 2" }
 //!
 //! [backends.live.profiles.MultiWrite]
 //! endpoint = "https://my-multi-write.documents.azure.com:443/"
 //! auth = { kind = "entra" }
+//! regions = { PrimaryReadWrite = "UK South", SecondaryReadWrite = "UK West" }
 //! ```
 
 use crate::{
     backend::{Backend, EmulatorBackend, InMemoryBackend, LiveBackend},
-    ServiceProfile, SpecResult,
+    RegionAlias, RegionMap, ServiceProfile, SpecResult,
 };
 use azure_core::credentials::Secret;
+use azure_data_cosmos::options::Region;
 use serde::Deserialize;
 use std::{collections::BTreeMap, fmt, path::Path, sync::Arc};
 
@@ -253,7 +256,7 @@ impl LiveConfig {
     fn validate(&self) -> SpecResult {
         for (profile, account) in &self.profiles {
             account
-                .validate()
+                .validate(*profile)
                 .map_err(|e| format!("[backends.live.profiles.{profile}]: {e}"))?;
         }
         if self.enabled && self.accounts().is_empty() {
@@ -277,10 +280,22 @@ pub struct LiveAccountConfig {
     pub endpoint: String,
     /// How to authenticate.
     pub auth: LiveAuth,
+    /// The real region behind each of the profile's region aliases, for
+    /// example `{ PrimaryReadWrite = "East US 2", SecondaryReadOnly = "West US 3" }`.
+    pub regions: BTreeMap<RegionAlias, Region>,
 }
 
 impl LiveAccountConfig {
-    fn validate(&self) -> SpecResult {
+    fn validate(&self, profile: ServiceProfile) -> SpecResult {
+        if let Some(extra) = self
+            .regions
+            .keys()
+            .find(|alias| !profile.regions().contains(alias))
+        {
+            return Err(format!("{profile} has no {extra} region").into());
+        }
+        RegionMap::new(profile, |alias| self.regions.get(&alias).cloned())
+            .map_err(|e| format!("regions: {e}"))?;
         if self
             .endpoint
             .parse::<azure_data_cosmos::AccountEndpoint>()
@@ -326,7 +341,7 @@ impl fmt::Debug for LiveAuth {
 
 #[cfg(test)]
 mod tests {
-    use super::{LiveAuth, ServiceProfile, SpecConfig};
+    use super::{LiveAuth, Region, RegionAlias, ServiceProfile, SpecConfig};
 
     fn kinds(config: &SpecConfig) -> Vec<&'static str> {
         config
@@ -360,13 +375,16 @@ mod tests {
             [backends.live.profiles.SingleRegion]
             endpoint = "https://a.documents.azure.com:443/"
             auth = { kind = "key", key_env = "A_KEY" }
+            regions = { PrimaryReadWrite = "East US" }
             [backends.live.profiles.MultiRead]
             endpoint = "https://b.documents.azure.com:443/"
             auth = { kind = "entra" }
+            regions = { PrimaryReadWrite = "East US", SecondaryReadOnly = "West US" }
             [backends.live.profiles.MultiWrite]
             enabled = false
             endpoint = "https://c.documents.azure.com:443/"
             auth = { kind = "entra" }
+            regions = { PrimaryReadWrite = "East US", SecondaryReadWrite = "West US" }
             "#,
         )
         .unwrap();
@@ -397,6 +415,7 @@ mod tests {
             [backends.live.profiles.SingleRegion]
             endpoint = "https://a.documents.azure.com:443/"
             auth = { kind = "entra" }
+            regions = { PrimaryReadWrite = "East US" }
             "#,
         )
         .unwrap();
@@ -436,10 +455,42 @@ mod tests {
             [backends.live.profiles.SingleRegion]
             endpoint = "https://a.documents.azure.com:443/"
             auth = { kind = "key" }
+            regions = { PrimaryReadWrite = "East US" }
             "#,
         )
         .unwrap_err();
         assert!(error.to_string().contains("exactly one"));
+    }
+
+    #[test]
+    fn live_maps_exactly_the_profile_region_aliases() {
+        let parse = |regions: &str| {
+            SpecConfig::parse(&format!(
+                r#"
+                [backends.live.profiles.MultiRead]
+                endpoint = "https://a.documents.azure.com:443/"
+                auth = {{ kind = "entra" }}
+                regions = {regions}
+                "#
+            ))
+        };
+        let config =
+            parse(r#"{ PrimaryReadWrite = "North Europe", SecondaryReadOnly = "West Europe" }"#)
+                .unwrap();
+        assert_eq!(
+            config.backends.live.profiles[&ServiceProfile::MultiRead].regions
+                [&RegionAlias::SecondaryReadOnly],
+            Region::WEST_EUROPE
+        );
+        let error = parse(r#"{ PrimaryReadWrite = "North Europe" }"#).unwrap_err();
+        assert!(error
+            .to_string()
+            .contains("needs a region for SecondaryReadOnly"));
+        let error = parse(r#"{ PrimaryReadWrite = "A", SecondaryReadWrite = "B" }"#).unwrap_err();
+        assert!(error.to_string().contains("has no SecondaryReadWrite"));
+        let error = parse(r#"{ PrimaryReadWrite = "A", SecondaryReadOnly = "a" }"#).unwrap_err();
+        assert!(error.to_string().contains("both mapped"));
+        assert!(parse(r#"{ Nowhere = "A" }"#).is_err());
     }
 
     #[test]
@@ -463,6 +514,7 @@ mod tests {
             [backends.live.profiles.SingleRegion]
             endpoint = "https://a.documents.azure.com:443/"
             auth = { kind = "key", key = "super-secret" }
+            regions = { PrimaryReadWrite = "East US" }
             "#,
         )
         .unwrap();

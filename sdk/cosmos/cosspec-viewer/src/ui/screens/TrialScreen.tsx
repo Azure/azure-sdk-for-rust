@@ -8,7 +8,16 @@ import { BodyView } from "../components/BodyView";
 import { StatusBadge } from "../components/Status";
 import { host, Timeline } from "../components/Timeline";
 import { concurrency, type Concurrency } from "../../timeline/layout";
-import { ms, outcomeClass, outcomeSymbol, outcomeText, rel, urlPath, when } from "../format";
+import {
+    ms,
+    outcomeClass,
+    outcomeSymbol,
+    outcomeText,
+    region,
+    rel,
+    urlPath,
+    when,
+} from "../format";
 import { href, setQuery, type Route } from "../router";
 
 type Tab = "requests" | "resources" | "logs" | "raw";
@@ -358,7 +367,7 @@ function RequestTable(props: {
                             <td className="num">{rel(r.start_ms, props.origin)}</td>
                             <td className="num">{ms(r.duration_ms)}</td>
                             <td>{r.operation ?? r.method}</td>
-                            <td>{r.region ?? <span className="muted">{host(r.url)}</span>}</td>
+                            <td>{region(r) ?? <span className="muted">{host(r.url)}</span>}</td>
                             <td>
                                 <Outcome request={r} />
                             </td>
@@ -421,7 +430,7 @@ function RequestDrawer(props: {
                 <dt>Client</dt>
                 <dd>{r.label ?? "–"}</dd>
                 <dt>Region</dt>
-                <dd>{r.region ?? "–"}</dd>
+                <dd>{region(r) ?? "–"}</dd>
                 <dt>Start</dt>
                 <dd>
                     {rel(r.start_ms, props.origin)}

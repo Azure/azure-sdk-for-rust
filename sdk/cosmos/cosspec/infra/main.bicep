@@ -2,14 +2,17 @@
 // Licensed under the MIT License.
 
 // Deploys one Azure Cosmos DB account per cosspec service profile, for the
-// `live` backend. Each account matches ServiceProfile::regions() and the
-// profile's write regions:
+// `live` backend. Each account has one region per region alias of its profile
+// (ServiceProfile::regions()), with the profile's write regions:
 //
-//   SingleRegion: East US
-//   MultiRead:    East US (writes), West US (reads)
-//   MultiWrite:   East US and West US (both write)
+//   SingleRegion: PrimaryReadWrite = primaryLocation
+//   MultiRead:    PrimaryReadWrite = primaryLocation (writes),
+//                 SecondaryReadOnly = secondaryLocation (reads)
+//   MultiWrite:   PrimaryReadWrite = primaryLocation,
+//                 SecondaryReadWrite = secondaryLocation (both write)
 //
-// The deployment outputs only endpoints. Read keys with
+// Pick any locations with capacity. The `regions` output is each profile's
+// `regions` table for the cosspec config. Keys aren't output: read them with
 // `az cosmosdb keys list` and put them in the environment variables your
 // cosspec config names in `key_env`.
 
@@ -18,10 +21,10 @@
 @maxLength(30)
 param namePrefix string = 'cosspec-${uniqueString(resourceGroup().id)}'
 
-@description('The first (write) region. Must match ServiceProfile::regions().')
+@description('The PrimaryReadWrite region of every account.')
 param primaryLocation string = 'eastus'
 
-@description('The second region. Must match ServiceProfile::regions().')
+@description('The SecondaryReadOnly or SecondaryReadWrite region of the multi-region accounts.')
 param secondaryLocation string = 'westus'
 
 @description('Optional Microsoft Entra principal (object ID) to grant data-plane access, for `auth = { kind = "entra" }`. Leave empty to skip.')
@@ -97,4 +100,11 @@ output accountNames object = {
   SingleRegion: accounts[0].name
   MultiRead: accounts[1].name
   MultiWrite: accounts[2].name
+}
+
+@description('The region alias map for each service profile: the `regions` table of its cosspec config.')
+output regions object = {
+  SingleRegion: { PrimaryReadWrite: primaryLocation }
+  MultiRead: { PrimaryReadWrite: primaryLocation, SecondaryReadOnly: secondaryLocation }
+  MultiWrite: { PrimaryReadWrite: primaryLocation, SecondaryReadWrite: secondaryLocation }
 }

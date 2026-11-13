@@ -9,6 +9,7 @@ import {
     outcomeClass,
     outcomeSymbol,
     outcomeText,
+    region,
     rel,
     requestLabel,
     urlPath,
@@ -66,7 +67,7 @@ export function Timeline(props: {
                 http.map((r) => ({
                     key: r.sequence,
                     label: r.label ?? "client",
-                    region: r.region ?? host(r.url),
+                    region: region(r) ?? host(r.url),
                     start: r.start_ms,
                     end: r.duration_ms === null ? null : r.start_ms + r.duration_ms,
                 })),
