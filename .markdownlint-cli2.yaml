@@ -8,6 +8,14 @@ config:
   line-length: false
   no-bare-urls: false
   no-duplicate-heading: false
+  no-inline-html:
+    allowed_elements:
+      - "a"
+      - "br"
+      # Allowed for use in markdown tables.
+      - "ol"
+      - "ul"
+      - "li"
   ol-prefix:
     style: ordered
   ul-style:
