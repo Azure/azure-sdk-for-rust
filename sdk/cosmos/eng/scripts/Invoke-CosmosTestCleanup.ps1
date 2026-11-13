@@ -40,7 +40,9 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
 }
 
 elseif ($env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'vnext') {
-    Write-Host 'Keeping the owned vNext container for subsequent crates; the job finalizer removes it.'
+    . ([System.IO.Path]::Combine($PSScriptRoot, 'CosmosVNext.ps1'))
+    Complete-CosmosVNext
+    $env:AZURE_COSMOS_CONNECTION_STRING = $null
     $env:AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED = $null
 }
 elseif ($IsWindows) {

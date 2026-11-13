@@ -476,7 +476,6 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     return
 }
 
-# Reuse the owned container across crates; the job finalizer collects logs and removes it.
 if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'vnext') {
     . ([System.IO.Path]::Combine($PSScriptRoot, 'CosmosVNext.ps1'))
     Start-CosmosVNext -Gateway $env:AZURE_COSMOS_VNEXT_GATEWAY -Encoding $env:AZURE_COSMOS_VNEXT_ENCODING

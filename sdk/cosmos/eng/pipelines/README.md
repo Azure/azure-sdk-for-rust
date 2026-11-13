@@ -67,8 +67,9 @@ finally {
 
 Change the gateway and encoding arguments for another cell, using a fresh
 shell each time. Finalize in the same PowerShell process as setup.
-CI reuses one owned container across crates, then collects logs and removes
-it even after failure. Setup rejects unowned or incompatible containers.
+CI starts the emulator per crate; the crate cleanup hook collects logs and
+removes it. Build or test failures can exit before that hook runs.
+Setup and cleanup reject unowned containers.
 
 For V1 regression coverage, also run the `emulator` target for
 `azure_data_cosmos` and `azure_data_cosmos_driver` before finalization.
