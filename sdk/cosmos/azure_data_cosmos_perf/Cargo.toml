@@ -40,8 +40,12 @@ uuid.workspace = true
 # Optional: tokio runtime metrics (scheduling delay, poll times, worker utilization)
 tokio-metrics = { workspace = true, optional = true }
 
+[dev-dependencies]
+azure_data_cosmos = { path = "../azure_data_cosmos", features = ["__internal_in_memory_emulator"] }
+
 [features]
 default = []
+weekly-gate = ["azure_data_cosmos/unstable_patch"]
 tokio-console = ["dep:console-subscriber", "tokio/tracing"]
 tokio-metrics = ["dep:tokio-metrics"]
 # Opt-in only. `__internal_mocking` exposes

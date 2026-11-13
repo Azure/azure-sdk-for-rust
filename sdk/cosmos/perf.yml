@@ -1,0 +1,28 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+# Register as "rust - cosmos - perf" with comment-required PR validation in ADO.
+trigger: none
+pr: none
+
+parameters:
+- name: PerfPool
+  displayName: Performance agent pool (region and SKU verified at runtime)
+  type: string
+  default: azsdk-pool-mms-ubuntu-2204-perf
+- name: CalibratePerf
+  displayName: Collect calibration even when an approved baseline exists
+  type: boolean
+  default: false
+
+extends:
+  template: /eng/pipelines/templates/stages/1es-redirect.yml
+  parameters:
+    stages:
+    - ${{ if eq(variables['System.TeamProject'], 'internal') }}:
+      - template: /sdk/cosmos/eng/pipelines/perf-stage.yml
+        parameters:
+          Pool: ${{ parameters.PerfPool }}
+          Calibrate: ${{ parameters.CalibratePerf }}
+          AutoCalibrate: true
+          DependsOn: []
