@@ -4,7 +4,10 @@
 mod common;
 
 use azure_core::{
-    http::{headers::CONTENT_TYPE, RequestContent, StatusCode},
+    http::{
+        headers::{HeaderName, CONTENT_TYPE},
+        RequestContent, StatusCode,
+    },
     Bytes,
 };
 use azure_core_test::{recorded, TestContext};
@@ -34,6 +37,37 @@ use std::{
     },
     time::Duration,
 };
+
+#[recorded::test]
+async fn test_block_blob_client_request_priority(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let block_blob_client = container_client
+        .blob_client(&get_blob_name(recording))
+        .block_blob_client();
+    let result = async {
+        let response = block_blob_client
+            .stage_block(
+                b"1",
+                5,
+                RequestContent::from(b"hello".to_vec()),
+                Some(BlockBlobClientStageBlockOptions {
+                    request_priority: Some(1),
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        response
+            .headers()
+            .get_optional_as::<i32, _>(&HeaderName::from_static("x-ms-request-priority"))
+    }
+    .await;
+
+    container_client.delete(None).await?;
+    assert_eq!(result?, Some(1));
+    Ok(())
+}
 
 #[recorded::test]
 async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {

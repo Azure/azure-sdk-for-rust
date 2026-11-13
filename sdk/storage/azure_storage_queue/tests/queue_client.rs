@@ -6,6 +6,7 @@ mod common;
 use azure_core::{
     error::ErrorKind,
     http::{
+        headers::HeaderName,
         policies::{Policy, PolicyResult},
         Context, FixedRetryOptions, Response, RetryOptions, StatusCode, Url,
     },
@@ -15,10 +16,11 @@ use azure_core::{
 use azure_core_test::{recorded, Recording, TestContext, VarOptions};
 use azure_storage_queue::{
     models::{
-        AccessPolicy, QueueClientCreateOptions, QueueClientGetPropertiesResultHeaders,
-        QueueClientPeekMessagesOptions, QueueClientReceiveMessagesOptions,
-        QueueClientSendMessageOptions, QueueClientUpdateMessageOptions, QueueMessage, SentMessage,
-        SignedIdentifier, SignedIdentifiers,
+        AccessPolicy, QueueClientCreateOptions, QueueClientGetPropertiesOptions,
+        QueueClientGetPropertiesResultHeaders, QueueClientPeekMessagesOptions,
+        QueueClientReceiveMessagesOptions, QueueClientSendMessageOptions,
+        QueueClientUpdateMessageOptions, QueueMessage, SentMessage, SignedIdentifier,
+        SignedIdentifiers,
     },
     QueueClient, QueueClientOptions,
 };
@@ -29,6 +31,48 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
+
+#[recorded::test]
+async fn test_queue_client_request_priority(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, &get_queue_name(recording)).await?;
+    queue_client.create(None).await?;
+
+    let test_result = async {
+        let mut priorities = Vec::new();
+        for (requested, expected) in [
+            (None, 3),
+            (Some(1), 1),
+            (None, 3),
+            (Some(0), 0),
+            (Some(7), 7),
+            (Some(-1), 3),
+            (Some(8), 3),
+        ] {
+            let response = queue_client
+                .get_properties(requested.map(|priority| QueueClientGetPropertiesOptions {
+                    request_priority: Some(priority),
+                    ..Default::default()
+                }))
+                .await?;
+            priorities.push((
+                requested,
+                expected,
+                response
+                    .headers()
+                    .get_optional_as::<i32, _>(&HeaderName::from_static("x-ms-request-priority"))?,
+            ));
+        }
+        Ok::<_, azure_core::Error>(priorities)
+    }
+    .await;
+
+    queue_client.delete(None).await?;
+    for (requested, expected, actual) in test_result? {
+        assert_eq!(actual, Some(expected), "requested priority {requested:?}");
+    }
+    Ok(())
+}
 
 /// Creates a new queue under the given account.
 #[recorded::test]
