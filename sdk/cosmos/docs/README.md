@@ -8,6 +8,8 @@ documentation for the Azure Cosmos DB SDK for Rust.
 - Project overview (`Project.md`) explains the project's purpose and boundaries.
 - Architecture overview (`Architecture.md`) explains the SDK, driver, execution
   pipelines, and shared state at a high level.
+- Spec tests (`SpecTests.md`) explains how to write and review `cosspec` spec
+  tests.
 
 ## Directory layout
 
@@ -15,6 +17,7 @@ documentation for the Azure Cosmos DB SDK for Rust.
 docs/
 ├── Project.md
 ├── Architecture.md
+├── SpecTests.md
 ├── README.md
 ├── AGENTS.md
 ├── specs/       # Numbered, mutable feature specifications
