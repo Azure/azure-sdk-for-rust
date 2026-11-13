@@ -389,7 +389,7 @@ fn quoted(value: &str) -> String {
 
 fn identifier(name: &str) -> String {
     let tokens = Lexer::tokenize(name);
-    if tokens.len() == 1 && tokens[0].kind == TokenKind::Identifier && tokens[0].text == name {
+    if tokens.len() == 2 && tokens[0].kind == TokenKind::Identifier && tokens[0].text == name {
         name.to_owned()
     } else {
         format!("\"{name}\"")
@@ -588,6 +588,7 @@ mod tests {
     }
 
     #[test]
+<<<<<<< HEAD
     fn rewritten_queries_preserve_quoted_collection_aliases_and_strings() {
         for (query, expected) in [
             (
@@ -595,6 +596,11 @@ mod tests {
                 json!([[{"item": 4}]]),
             ),
             (
+=======
+    fn rewritten_queries_preserve_quoted_collection_aliases() {
+        for (query, expected) in [
+            (
+>>>>>>> f0ccf1c (Fix emulator query paging and rewrites)
                 r#"SELECT VALUE COUNT(1) FROM c AS "my alias""#,
                 json!([[{"item": 2}]]),
             ),
