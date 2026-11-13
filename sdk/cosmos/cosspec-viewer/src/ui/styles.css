@@ -258,7 +258,8 @@ main {
 
 .totals-bar {
     display: flex;
-    height: 8px;
+    gap: 1px;
+    height: 10px;
     border-radius: 4px;
     overflow: hidden;
     min-width: 160px;
@@ -268,13 +269,15 @@ main {
     background: var(--passed);
 }
 .totals-bar > span.st-failed {
-    background: var(--failed);
+    background: repeating-linear-gradient(45deg, #fff6 0 2px, transparent 2px 5px), var(--failed);
 }
 .totals-bar > span.st-skipped {
-    background: var(--skipped);
+    background:
+        radial-gradient(#fff9 1px, transparent 1.5px) 0 0 / 4px 4px,
+        var(--skipped);
 }
 .totals-bar > span.st-ignored {
-    background: var(--ignored);
+    background: repeating-linear-gradient(90deg, #fff6 0 2px, transparent 2px 5px), var(--ignored);
 }
 .totals-bar > span.st-not_run {
     background: var(--not_run);
@@ -330,6 +333,18 @@ tr.link-row {
 tr.link-row:hover,
 tr.selected {
     background: var(--sel);
+}
+tr.selected td:first-child {
+    box-shadow: inset 3px 0 var(--accent);
+}
+tr.partner td {
+    border-top: 1px dashed var(--fg);
+    border-bottom: 1px dashed var(--fg);
+}
+.overlaps {
+    font-family: var(--mono);
+    font-size: 12px;
+    white-space: nowrap;
 }
 td.spec {
     font-family: var(--mono);
@@ -446,9 +461,18 @@ table.matrix th {
 }
 .dot {
     display: inline-block;
-    width: 14px;
-    height: 14px;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
     border-radius: 50%;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+}
+.dot:hover {
+    text-decoration: none;
+    outline: 2px solid var(--fg);
 }
 .dot.st-passed {
     background: var(--passed);
@@ -569,62 +593,116 @@ pre.raw {
 .bar {
     cursor: pointer;
 }
-.bar rect:first-of-type {
+.bar .fill {
     stroke: transparent;
     stroke-width: 2;
 }
-.bar.selected rect:first-of-type {
+.bar.selected .fill {
     stroke: var(--fg);
+    stroke-width: 3;
 }
-.bar.open rect:first-of-type {
+.bar.open .fill {
     stroke-dasharray: 4 2;
     stroke: var(--fg);
     opacity: 0.7;
 }
 .bar-label {
     fill: #fff;
+    font-weight: 600;
     font-size: 10.5px;
     pointer-events: none;
 }
-.hatch-line {
-    stroke: #fff;
-    stroke-width: 2;
-    opacity: 0.6;
-}
-.bar.o-ok rect,
-.swatch.o-ok {
+.bar.o-ok .fill,
+.swatch.o-ok .fill {
     fill: var(--o-ok);
-    background: var(--o-ok);
 }
-.bar.o-client rect,
-.swatch.o-client {
+.bar.o-client .fill,
+.swatch.o-client .fill {
     fill: var(--o-client);
-    background: var(--o-client);
 }
-.bar.o-throttled rect,
-.swatch.o-throttled {
+.bar.o-throttled .fill,
+.swatch.o-throttled .fill {
     fill: var(--o-throttled);
-    background: var(--o-throttled);
 }
-.bar.o-server rect,
-.swatch.o-server {
+.bar.o-server .fill,
+.swatch.o-server .fill {
     fill: var(--o-server);
-    background: var(--o-server);
 }
-.bar.o-transport rect,
-.swatch.o-transport {
+.bar.o-transport .fill,
+.swatch.o-transport .fill {
     fill: var(--o-transport);
-    background: var(--o-transport);
 }
-.bar.o-cancelled rect:first-of-type,
-.swatch.o-cancelled {
+.bar.o-cancelled .fill,
+.swatch.o-cancelled .fill {
     fill: var(--o-cancelled);
-    background: var(--o-cancelled);
 }
-.bar.o-pending rect,
-.swatch.o-pending {
+.bar.o-pending .fill,
+.swatch.o-pending .fill {
     fill: var(--o-pending);
-    background: var(--o-pending);
+}
+.swatch.o-pending .fill {
+    stroke: var(--fg);
+    stroke-dasharray: 3 2;
+}
+.pattern-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+}
+.pattern-line {
+    stroke: #fff;
+    stroke-width: 1.6;
+    opacity: 0.75;
+}
+.pattern-dot {
+    fill: #fff;
+    opacity: 0.85;
+}
+.overlap rect:first-child,
+.swatch.overlap rect:first-child {
+    fill: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.overlap-line {
+    stroke: var(--accent);
+    stroke-width: 1;
+    opacity: 0.35;
+}
+.overlap rect,
+.overlap-label {
+    pointer-events: none;
+}
+.overlap-label {
+    fill: var(--accent);
+    font-size: 10px;
+    font-weight: 600;
+}
+.bar.focus .fill,
+.bar.partner .fill {
+    stroke: var(--fg);
+    stroke-width: 2;
+}
+.bar.partner .fill {
+    stroke-dasharray: 4 2;
+}
+.bar.dim {
+    opacity: 0.3;
+}
+.phase rect {
+    fill: var(--bg-alt);
+    stroke: var(--border);
+}
+.phase-pool rect {
+    fill: color-mix(in srgb, var(--muted) 15%, transparent);
+    stroke-dasharray: 3 2;
+}
+.phase-label {
+    fill: var(--muted);
+    font-size: 10.5px;
+}
+.tick.origin {
+    stroke: var(--fg);
+    stroke-dasharray: none;
+    opacity: 0.5;
 }
 .legend {
     display: inline-flex;
@@ -634,10 +712,6 @@ pre.raw {
     flex-wrap: wrap;
 }
 .swatch {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    border-radius: 2px;
     vertical-align: middle;
 }
 .log-tick {

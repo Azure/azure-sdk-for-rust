@@ -21,6 +21,16 @@ const STATUS_TEXT: Record<TrialStatus, string> = {
     pending: "pending",
 };
 
+/** Symbols that tell statuses apart without relying on color. */
+export const STATUS_SYMBOL: Record<TrialStatus, string> = {
+    passed: "✓",
+    failed: "✗",
+    skipped: "⊘",
+    ignored: "⚠",
+    not_run: "–",
+    pending: "…",
+};
+
 export function statusText(status: TrialStatus): string {
     return STATUS_TEXT[status];
 }
@@ -28,6 +38,7 @@ export function statusText(status: TrialStatus): string {
 export function StatusBadge(props: { status: TrialStatus; title?: string }) {
     return (
         <span className={`badge st-${props.status}`} title={props.title ?? undefined}>
+            <span aria-hidden="true">{STATUS_SYMBOL[props.status]} </span>
             {STATUS_TEXT[props.status]}
         </span>
     );
@@ -58,7 +69,7 @@ export function TotalsText(props: { totals: Totals }) {
         <span className="totals-text">
             {STATUS_ORDER.filter((s) => props.totals[s]).map((s) => (
                 <span key={s} className={`fg-${s}`}>
-                    {props.totals[s]} {STATUS_TEXT[s]}
+                    {STATUS_SYMBOL[s]} {props.totals[s]} {STATUS_TEXT[s]}
                 </span>
             ))}
         </span>

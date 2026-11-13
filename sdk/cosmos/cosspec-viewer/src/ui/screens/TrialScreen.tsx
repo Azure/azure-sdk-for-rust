@@ -7,7 +7,8 @@ import type { ResultSource } from "../../sources/source";
 import { BodyView } from "../components/BodyView";
 import { StatusBadge } from "../components/Status";
 import { host, Timeline } from "../components/Timeline";
-import { ms, outcomeClass, outcomeText, urlPath, when } from "../format";
+import { concurrency, type Concurrency } from "../../timeline/layout";
+import { ms, outcomeClass, outcomeSymbol, outcomeText, rel, urlPath, when } from "../format";
 import { href, setQuery, type Route } from "../router";
 
 type Tab = "requests" | "resources" | "logs" | "raw";
@@ -78,6 +79,16 @@ export function TrialScreen(props: {
                     </dd>
                     <dt>Duration</dt>
                     <dd>{ms(entry.duration_ms)}</dd>
+                    {result?.phases?.length ? (
+                        <>
+                            <dt>Phases</dt>
+                            <dd>
+                                {result.phases
+                                    .map((p) => `${p.name} ${ms(p.end_ms - p.start_ms)}`)
+                                    .join(" · ")}
+                            </dd>
+                        </>
+                    ) : null}
                     <dt>Started</dt>
                     <dd>{when(result?.started_at)}</dd>
                     <dt>Source</dt>
@@ -174,6 +185,22 @@ function TrialBody(props: {
         () => result.http.filter((r) => showHarness || r.label !== "harness"),
         [result.http, showHarness],
     );
+    const phases = result.phases ?? [];
+    // Times count from the start of the spec body, not from when the trial
+    // began waiting for pooled resources.
+    const origin = phases.find((p) => p.name === "body")?.start_ms ?? 0;
+    const overlap = useMemo(
+        () =>
+            concurrency(
+                http.map((r) => ({
+                    key: r.sequence,
+                    start: r.start_ms,
+                    end: r.duration_ms === null ? null : r.start_ms + r.duration_ms,
+                })),
+                Math.max(result.duration_ms, ...http.map((r) => r.start_ms)),
+            ),
+        [http, result.duration_ms],
+    );
     const selected = props.selected === null ? null : Number(props.selected);
     const request = result.http.find((r) => r.sequence === selected) ?? null;
     const select = (seq: number | null) =>
@@ -214,6 +241,9 @@ function TrialBody(props: {
                         <Timeline
                             http={http}
                             duration={result.duration_ms}
+                            origin={origin}
+                            phases={phases}
+                            concurrency={overlap}
                             logs={logs}
                             selected={selected}
                             onSelect={(s) => select(s === selected ? null : s)}
@@ -222,9 +252,21 @@ function TrialBody(props: {
                         <div className="center muted">No requests.</div>
                     )}
                     <div className={`split ${request ? "with-drawer" : ""}`}>
-                        <RequestTable http={http} selected={selected} onSelect={select} />
+                        <RequestTable
+                            http={http}
+                            origin={origin}
+                            concurrency={overlap}
+                            selected={selected}
+                            onSelect={select}
+                        />
                         {request ? (
-                            <RequestDrawer request={request} onClose={() => select(null)} />
+                            <RequestDrawer
+                                request={request}
+                                origin={origin}
+                                overlaps={overlap.partners.get(request.sequence) ?? []}
+                                onSelect={select}
+                                onClose={() => select(null)}
+                            />
                         ) : null}
                     </div>
                 </>
@@ -250,6 +292,8 @@ type SortKey = "sequence" | "start" | "duration" | "status";
 
 function RequestTable(props: {
     http: HttpJson[];
+    origin: number;
+    concurrency: Concurrency;
     selected: number | null;
     onSelect: (s: number) => void;
 }) {
@@ -293,47 +337,75 @@ function RequestTable(props: {
                     <th>Operation</th>
                     <th>Region</th>
                     {th("status", "Status")}
+                    <th title="Requests in flight at the same time">Overlaps</th>
                     <th>Path</th>
                 </tr>
             </thead>
             <tbody>
-                {rows.map((r) => (
-                    <tr
-                        key={r.sequence}
-                        className={`link-row ${props.selected === r.sequence ? "selected" : ""}`}
-                        onClick={() => props.onSelect(r.sequence)}
-                    >
-                        <td className="num">{r.sequence}</td>
-                        <td className={`label-${r.label ?? "client"}`}>{r.label ?? "–"}</td>
-                        <td className="num">{ms(r.start_ms)}</td>
-                        <td className="num">{ms(r.duration_ms)}</td>
-                        <td>{r.operation ?? r.method}</td>
-                        <td>{r.region ?? <span className="muted">{host(r.url)}</span>}</td>
-                        <td>
-                            <span className={`outcome o-${outcomeClass(r.outcome)}`}>
-                                {outcomeText(r.outcome)}
-                            </span>
-                        </td>
-                        <td className="path" title={r.url}>
-                            {urlPath(r.url)}
-                        </td>
-                    </tr>
-                ))}
+                {rows.map((r) => {
+                    const others = props.concurrency.partners.get(r.sequence) ?? [];
+                    const partner =
+                        props.selected !== null &&
+                        (props.concurrency.partners.get(props.selected) ?? []).includes(r.sequence);
+                    return (
+                        <tr
+                            key={r.sequence}
+                            className={`link-row ${props.selected === r.sequence ? "selected" : ""} ${partner ? "partner" : ""}`}
+                            onClick={() => props.onSelect(r.sequence)}
+                        >
+                            <td className="num">{r.sequence}</td>
+                            <td className={`label-${r.label ?? "client"}`}>{r.label ?? "–"}</td>
+                            <td className="num">{rel(r.start_ms, props.origin)}</td>
+                            <td className="num">{ms(r.duration_ms)}</td>
+                            <td>{r.operation ?? r.method}</td>
+                            <td>{r.region ?? <span className="muted">{host(r.url)}</span>}</td>
+                            <td>
+                                <Outcome request={r} />
+                            </td>
+                            <td>
+                                {others.length ? (
+                                    <span
+                                        className="overlaps"
+                                        title={`In flight with ${others.map((s) => `#${s}`).join(", ")}`}
+                                    >
+                                        ∥ {others.map((s) => `#${s}`).join(" ")}
+                                    </span>
+                                ) : null}
+                            </td>
+                            <td className="path" title={r.url}>
+                                {urlPath(r.url)}
+                            </td>
+                        </tr>
+                    );
+                })}
             </tbody>
         </table>
     );
 }
 
-function RequestDrawer(props: { request: HttpJson; onClose: () => void }) {
+function Outcome(props: { request: HttpJson }) {
+    const o = props.request.outcome;
+    return (
+        <span className={`outcome o-${outcomeClass(o)}`}>
+            <span aria-hidden="true">{outcomeSymbol(o)} </span>
+            {outcomeText(o)}
+        </span>
+    );
+}
+
+function RequestDrawer(props: {
+    request: HttpJson;
+    origin: number;
+    overlaps: number[];
+    onSelect: (s: number) => void;
+    onClose: () => void;
+}) {
     const r = props.request;
     return (
         <aside className="drawer">
             <header>
                 <h3>
-                    #{r.sequence} {r.operation ?? r.method}{" "}
-                    <span className={`outcome o-${outcomeClass(r.outcome)}`}>
-                        {outcomeText(r.outcome)}
-                    </span>
+                    #{r.sequence} {r.operation ?? r.method} <Outcome request={r} />
                 </h3>
                 <button onClick={props.onClose} title="Close">
                     ✕
@@ -351,9 +423,24 @@ function RequestDrawer(props: { request: HttpJson; onClose: () => void }) {
                 <dt>Region</dt>
                 <dd>{r.region ?? "–"}</dd>
                 <dt>Start</dt>
-                <dd>{ms(r.start_ms)}</dd>
+                <dd>
+                    {rel(r.start_ms, props.origin)}
+                    {props.origin ? (
+                        <span className="muted"> ({ms(r.start_ms)} from the trial start)</span>
+                    ) : null}
+                </dd>
                 <dt>Duration</dt>
                 <dd>{r.duration_ms === null ? "never finished" : ms(r.duration_ms)}</dd>
+                <dt>Overlaps</dt>
+                <dd>
+                    {props.overlaps.length
+                        ? props.overlaps.map((s) => (
+                              <button key={s} className="small" onClick={() => props.onSelect(s)}>
+                                  #{s}
+                              </button>
+                          ))
+                        : "–"}
+                </dd>
                 <dt>Activity ID</dt>
                 <dd>{r.activity_id ? <code>{r.activity_id}</code> : "–"}</dd>
             </dl>

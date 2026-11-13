@@ -10,8 +10,8 @@
   "cleanup": true,
   "requires": [],
   "known_issue": null,
-  "started_at": "2026-11-12T22:10:40.211216732Z",
-  "duration_ms": 126.880883,
+  "started_at": "2026-11-12T23:06:55.509246979Z",
+  "duration_ms": 155.250954,
   "status": "passed",
   "error": null,
   "teardown_error": null,
@@ -25,28 +25,45 @@
     {
       "kind": "database",
       "origin": "pooled",
-      "name": "spec-01a1d1d0-201b-7112-bccb-d977a1a3b1cf"
+      "name": "spec-01a1d203-a0fa-7e91-95ac-92e09ee64e94"
     },
     {
       "kind": "container",
       "origin": "pooled",
-      "name": "spec-01a1d1d0-201c-7900-a94e-40228b138e89",
-      "database": "spec-01a1d1d0-201b-7112-bccb-d977a1a3b1cf",
+      "name": "spec-01a1d203-a0fa-7e91-95ac-93177377f0ac",
+      "database": "spec-01a1d203-a0fa-7e91-95ac-92e09ee64e94",
       "profile": "basic_items",
       "parameter": "container"
+    }
+  ],
+  "phases": [
+    {
+      "name": "pool",
+      "start_ms": 0.0,
+      "end_ms": 130.452225
+    },
+    {
+      "name": "body",
+      "start_ms": 130.463725,
+      "end_ms": 155.172954
+    },
+    {
+      "name": "teardown",
+      "start_ms": 155.173854,
+      "end_ms": 155.196554
     }
   ],
   "http": [
     {
       "label": "spec",
-      "sequence": 116,
+      "sequence": 213,
       "method": "GET",
       "url": "https://eastus.spec.local/",
       "operation": "MetadataReadDatabaseAccount",
       "region": null,
       "activity_id": null,
-      "start_ms": 98.07057800000001,
-      "duration_ms": 0.430599,
+      "start_ms": 131.25282299999998,
+      "duration_ms": 0.378199,
       "outcome": {
         "kind": "response",
         "status": 200,
@@ -61,14 +78,14 @@
     },
     {
       "label": "spec",
-      "sequence": 133,
+      "sequence": 214,
       "method": "GET",
-      "url": "https://eastus.spec.local/dbs/spec-01a1d1d0-201b-7112-bccb-d977a1a3b1cf/colls/spec-01a1d1d0-201c-7900-a94e-40228b138e89",
+      "url": "https://eastus.spec.local/dbs/spec-01a1d203-a0fa-7e91-95ac-92e09ee64e94/colls/spec-01a1d203-a0fa-7e91-95ac-93177377f0ac",
       "operation": "MetadataReadContainer",
       "region": "eastus",
-      "activity_id": "2ff26492-8338-4ba8-b0be-f802e0dacfa6",
-      "start_ms": 99.96557200000001,
-      "duration_ms": 0.41069799999999995,
+      "activity_id": "ea71db1d-baed-4527-bebe-3b03f530e6e6",
+      "start_ms": 132.34042,
+      "duration_ms": 0.312199,
       "outcome": {
         "kind": "response",
         "status": 200,
@@ -78,19 +95,19 @@
       "response_body": {
         "length": 640,
         "truncated": false,
-        "text": "{\"_conflicts\":\"conflicts/\",\"_docs\":\"docs/\",\"_etag\":\"\\\"7d044ca7-a2d4-4b00-a0ca-25e71a23b534\\\"\",\"_rid\":\"AAAAAYAAAAE=\",\"_self\":\"dbs/AAAAAQ==/colls/AAAAAYAAAAE=/\",\"_sprocs\":\"sprocs/\",\"_triggers\":\"triggers/\",\"_ts\":1794521440,\"_udfs\":\"udfs/\",\"conflictResolutionPolicy\":{\"conflictResolutionPath\":\"/_ts\",\"conflictResolutionProcedure\":\"\",\"mode\":\"LastWriterWins\"},\"geospatialConfig\":{\"type\":\"Geography\"},\"id\":\"spec-01a1d1d0-201c-7900-a94e-40228b138e89\",\"indexingPolicy\":{\"automatic\":true,\"excludedPaths\":[{\"path\":\"/\\\"_etag\\\"/?\"}],\"includedPaths\":[{\"path\":\"/*\"}],\"indexingMode\":\"consistent\"},\"partitionKey\":{\"kind\":\"Hash\",\"paths\":[\"/pk\"],\"version\":2}}"
+        "text": "{\"_conflicts\":\"conflicts/\",\"_docs\":\"docs/\",\"_etag\":\"\\\"3ea28c07-0ed4-43be-b48c-3acb3fc00388\\\"\",\"_rid\":\"AAAAAYAAAAE=\",\"_self\":\"dbs/AAAAAQ==/colls/AAAAAYAAAAE=/\",\"_sprocs\":\"sprocs/\",\"_triggers\":\"triggers/\",\"_ts\":1794524815,\"_udfs\":\"udfs/\",\"conflictResolutionPolicy\":{\"conflictResolutionPath\":\"/_ts\",\"conflictResolutionProcedure\":\"\",\"mode\":\"LastWriterWins\"},\"geospatialConfig\":{\"type\":\"Geography\"},\"id\":\"spec-01a1d203-a0fa-7e91-95ac-93177377f0ac\",\"indexingPolicy\":{\"automatic\":true,\"excludedPaths\":[{\"path\":\"/\\\"_etag\\\"/?\"}],\"includedPaths\":[{\"path\":\"/*\"}],\"indexingMode\":\"consistent\"},\"partitionKey\":{\"kind\":\"Hash\",\"paths\":[\"/pk\"],\"version\":2}}"
       }
     },
     {
       "label": "spec",
-      "sequence": 142,
+      "sequence": 215,
       "method": "GET",
-      "url": "https://eastus.spec.local/dbs/spec-01a1d1d0-201b-7112-bccb-d977a1a3b1cf/colls/spec-01a1d1d0-201c-7900-a94e-40228b138e89/pkranges",
+      "url": "https://eastus.spec.local/dbs/spec-01a1d203-a0fa-7e91-95ac-92e09ee64e94/colls/spec-01a1d203-a0fa-7e91-95ac-93177377f0ac/pkranges",
       "operation": "MetadataPartitionKeyRanges",
       "region": "eastus",
-      "activity_id": "12533e8d-c2ce-46cc-a1be-caae07976602",
-      "start_ms": 100.844269,
-      "duration_ms": 0.485798,
+      "activity_id": "5d0b997b-a716-4cc7-afcf-3062b1d69e3c",
+      "start_ms": 133.025118,
+      "duration_ms": 0.21749900000000003,
       "outcome": {
         "kind": "response",
         "status": 200,
@@ -100,19 +117,19 @@
       "response_body": {
         "length": 365,
         "truncated": false,
-        "text": "{\"PartitionKeyRanges\":[{\"_etag\":\"\\\"7d044ca7-a2d4-4b00-a0ca-25e71a23b534\\\"\",\"_lsn\":24,\"_rid\":\"AAAAAYAAAAEAAAAAAAAAUA==\",\"_self\":\"dbs/AAAAAQ==/colls/AAAAAYAAAAE=/pkranges/0/\",\"_ts\":1794521440,\"id\":\"0\",\"maxExclusive\":\"FF\",\"minInclusive\":\"\",\"parents\":[],\"ridPrefix\":0,\"status\":\"online\",\"throughputFraction\":1.0,\"vectorClockVersion\":0}],\"_count\":1,\"_rid\":\"AAAAAYAAAAE=\"}"
+        "text": "{\"PartitionKeyRanges\":[{\"_etag\":\"\\\"3ea28c07-0ed4-43be-b48c-3acb3fc00388\\\"\",\"_lsn\":24,\"_rid\":\"AAAAAYAAAAEAAAAAAAAAUA==\",\"_self\":\"dbs/AAAAAQ==/colls/AAAAAYAAAAE=/pkranges/0/\",\"_ts\":1794524815,\"id\":\"0\",\"maxExclusive\":\"FF\",\"minInclusive\":\"\",\"parents\":[],\"ridPrefix\":0,\"status\":\"online\",\"throughputFraction\":1.0,\"vectorClockVersion\":0}],\"_count\":1,\"_rid\":\"AAAAAYAAAAE=\"}"
       }
     },
     {
       "label": "spec",
-      "sequence": 152,
+      "sequence": 216,
       "method": "GET",
-      "url": "https://eastus.spec.local/dbs/spec-01a1d1d0-201b-7112-bccb-d977a1a3b1cf/colls/spec-01a1d1d0-201c-7900-a94e-40228b138e89/pkranges",
+      "url": "https://eastus.spec.local/dbs/spec-01a1d203-a0fa-7e91-95ac-92e09ee64e94/colls/spec-01a1d203-a0fa-7e91-95ac-93177377f0ac/pkranges",
       "operation": "MetadataPartitionKeyRanges",
       "region": "eastus",
-      "activity_id": "c07b12f3-ab15-4b93-ac0e-efb738f0106d",
-      "start_ms": 101.681966,
-      "duration_ms": 0.220399,
+      "activity_id": "01db5b2f-c1fc-4483-bcbc-00bfc044c3cf",
+      "start_ms": 133.502816,
+      "duration_ms": 0.1965,
       "outcome": {
         "kind": "response",
         "status": 304,
@@ -127,14 +144,14 @@
     },
     {
       "label": "spec",
-      "sequence": 160,
+      "sequence": 217,
       "method": "GET",
       "url": "https://eastus.spec.local/",
       "operation": "MetadataReadDatabaseAccount",
       "region": null,
       "activity_id": null,
-      "start_ms": 102.410664,
-      "duration_ms": 0.331199,
+      "start_ms": 134.07771499999998,
+      "duration_ms": 0.209599,
       "outcome": {
         "kind": "response",
         "status": 200,
@@ -149,14 +166,14 @@
     },
     {
       "label": "spec",
-      "sequence": 178,
+      "sequence": 218,
       "method": "GET",
-      "url": "https://eastus.spec.local/dbs/spec-01a1d1d0-201b-7112-bccb-d977a1a3b1cf/colls/spec-01a1d1d0-201c-7900-a94e-40228b138e89",
+      "url": "https://eastus.spec.local/dbs/spec-01a1d203-a0fa-7e91-95ac-92e09ee64e94/colls/spec-01a1d203-a0fa-7e91-95ac-93177377f0ac",
       "operation": "MetadataReadContainer",
       "region": "eastus",
-      "activity_id": "5e0c4a05-c771-42a8-b5ce-e93ed6968fc2",
-      "start_ms": 103.56906000000001,
-      "duration_ms": 0.372799,
+      "activity_id": "f8a6b527-92a0-406c-8126-b017350b4896",
+      "start_ms": 134.768013,
+      "duration_ms": 0.28009900000000004,
       "outcome": {
         "kind": "response",
         "status": 200,
@@ -166,19 +183,19 @@
       "response_body": {
         "length": 640,
         "truncated": false,
-        "text": "{\"_conflicts\":\"conflicts/\",\"_docs\":\"docs/\",\"_etag\":\"\\\"7d044ca7-a2d4-4b00-a0ca-25e71a23b534\\\"\",\"_rid\":\"AAAAAYAAAAE=\",\"_self\":\"dbs/AAAAAQ==/colls/AAAAAYAAAAE=/\",\"_sprocs\":\"sprocs/\",\"_triggers\":\"triggers/\",\"_ts\":1794521440,\"_udfs\":\"udfs/\",\"conflictResolutionPolicy\":{\"conflictResolutionPath\":\"/_ts\",\"conflictResolutionProcedure\":\"\",\"mode\":\"LastWriterWins\"},\"geospatialConfig\":{\"type\":\"Geography\"},\"id\":\"spec-01a1d1d0-201c-7900-a94e-40228b138e89\",\"indexingPolicy\":{\"automatic\":true,\"excludedPaths\":[{\"path\":\"/\\\"_etag\\\"/?\"}],\"includedPaths\":[{\"path\":\"/*\"}],\"indexingMode\":\"consistent\"},\"partitionKey\":{\"kind\":\"Hash\",\"paths\":[\"/pk\"],\"version\":2}}"
+        "text": "{\"_conflicts\":\"conflicts/\",\"_docs\":\"docs/\",\"_etag\":\"\\\"3ea28c07-0ed4-43be-b48c-3acb3fc00388\\\"\",\"_rid\":\"AAAAAYAAAAE=\",\"_self\":\"dbs/AAAAAQ==/colls/AAAAAYAAAAE=/\",\"_sprocs\":\"sprocs/\",\"_triggers\":\"triggers/\",\"_ts\":1794524815,\"_udfs\":\"udfs/\",\"conflictResolutionPolicy\":{\"conflictResolutionPath\":\"/_ts\",\"conflictResolutionProcedure\":\"\",\"mode\":\"LastWriterWins\"},\"geospatialConfig\":{\"type\":\"Geography\"},\"id\":\"spec-01a1d203-a0fa-7e91-95ac-93177377f0ac\",\"indexingPolicy\":{\"automatic\":true,\"excludedPaths\":[{\"path\":\"/\\\"_etag\\\"/?\"}],\"includedPaths\":[{\"path\":\"/*\"}],\"indexingMode\":\"consistent\"},\"partitionKey\":{\"kind\":\"Hash\",\"paths\":[\"/pk\"],\"version\":2}}"
       }
     },
     {
       "label": "spec",
-      "sequence": 191,
+      "sequence": 219,
       "method": "GET",
-      "url": "https://eastus.spec.local/dbs/spec-01a1d1d0-201b-7112-bccb-d977a1a3b1cf/colls/spec-01a1d1d0-201c-7900-a94e-40228b138e89/pkranges",
+      "url": "https://eastus.spec.local/dbs/spec-01a1d203-a0fa-7e91-95ac-92e09ee64e94/colls/spec-01a1d203-a0fa-7e91-95ac-93177377f0ac/pkranges",
       "operation": "MetadataPartitionKeyRanges",
       "region": "eastus",
-      "activity_id": "bedaff17-dba0-45de-8d1e-2bf90f519c64",
-      "start_ms": 104.389657,
-      "duration_ms": 0.399499,
+      "activity_id": "44fcbe3b-cd15-4a81-9d44-c795438119c6",
+      "start_ms": 135.375111,
+      "duration_ms": 0.230799,
       "outcome": {
         "kind": "response",
         "status": 200,
@@ -188,19 +205,19 @@
       "response_body": {
         "length": 365,
         "truncated": false,
-        "text": "{\"PartitionKeyRanges\":[{\"_etag\":\"\\\"7d044ca7-a2d4-4b00-a0ca-25e71a23b534\\\"\",\"_lsn\":24,\"_rid\":\"AAAAAYAAAAEAAAAAAAAAUA==\",\"_self\":\"dbs/AAAAAQ==/colls/AAAAAYAAAAE=/pkranges/0/\",\"_ts\":1794521440,\"id\":\"0\",\"maxExclusive\":\"FF\",\"minInclusive\":\"\",\"parents\":[],\"ridPrefix\":0,\"status\":\"online\",\"throughputFraction\":1.0,\"vectorClockVersion\":0}],\"_count\":1,\"_rid\":\"AAAAAYAAAAE=\"}"
+        "text": "{\"PartitionKeyRanges\":[{\"_etag\":\"\\\"3ea28c07-0ed4-43be-b48c-3acb3fc00388\\\"\",\"_lsn\":24,\"_rid\":\"AAAAAYAAAAEAAAAAAAAAUA==\",\"_self\":\"dbs/AAAAAQ==/colls/AAAAAYAAAAE=/pkranges/0/\",\"_ts\":1794524815,\"id\":\"0\",\"maxExclusive\":\"FF\",\"minInclusive\":\"\",\"parents\":[],\"ridPrefix\":0,\"status\":\"online\",\"throughputFraction\":1.0,\"vectorClockVersion\":0}],\"_count\":1,\"_rid\":\"AAAAAYAAAAE=\"}"
       }
     },
     {
       "label": "spec",
-      "sequence": 200,
+      "sequence": 220,
       "method": "GET",
-      "url": "https://eastus.spec.local/dbs/spec-01a1d1d0-201b-7112-bccb-d977a1a3b1cf/colls/spec-01a1d1d0-201c-7900-a94e-40228b138e89/pkranges",
+      "url": "https://eastus.spec.local/dbs/spec-01a1d203-a0fa-7e91-95ac-92e09ee64e94/colls/spec-01a1d203-a0fa-7e91-95ac-93177377f0ac/pkranges",
       "operation": "MetadataPartitionKeyRanges",
       "region": "eastus",
-      "activity_id": "77e4351d-f0a8-4e88-aee6-2bab160d959c",
-      "start_ms": 105.23085499999999,
-      "duration_ms": 0.26319899999999996,
+      "activity_id": "3d278312-bf60-4333-b068-bb8acd3763b8",
+      "start_ms": 135.85931000000002,
+      "duration_ms": 0.155799,
       "outcome": {
         "kind": "response",
         "status": 304,
@@ -215,14 +232,14 @@
     },
     {
       "label": "spec",
-      "sequence": 209,
+      "sequence": 221,
       "method": "GET",
-      "url": "https://eastus.spec.local/dbs/spec-01a1d1d0-201b-7112-bccb-d977a1a3b1cf/colls/spec-01a1d1d0-201c-7900-a94e-40228b138e89/docs/item-11",
+      "url": "https://eastus.spec.local/dbs/spec-01a1d203-a0fa-7e91-95ac-92e09ee64e94/colls/spec-01a1d203-a0fa-7e91-95ac-93177377f0ac/docs/item-11",
       "operation": "ReadItem",
       "region": "eastus",
-      "activity_id": "77f4cf2e-8897-4bc6-bfb8-22319225dba3",
-      "start_ms": 105.935752,
-      "duration_ms": 0.0808,
+      "activity_id": "bf1679b4-e465-4102-a866-d49d8117635a",
+      "start_ms": 136.498908,
+      "duration_ms": 0.0533,
       "outcome": {
         "kind": "response",
         "status": 429,
@@ -237,14 +254,14 @@
     },
     {
       "label": "spec",
-      "sequence": 222,
+      "sequence": 223,
       "method": "GET",
-      "url": "https://eastus.spec.local/dbs/spec-01a1d1d0-201b-7112-bccb-d977a1a3b1cf/colls/spec-01a1d1d0-201c-7900-a94e-40228b138e89/docs/item-11",
+      "url": "https://eastus.spec.local/dbs/spec-01a1d203-a0fa-7e91-95ac-92e09ee64e94/colls/spec-01a1d203-a0fa-7e91-95ac-93177377f0ac/docs/item-11",
       "operation": "ReadItem",
       "region": "eastus",
-      "activity_id": "77f4cf2e-8897-4bc6-bfb8-22319225dba3",
-      "start_ms": 112.78883,
-      "duration_ms": 0.0468,
+      "activity_id": "bf1679b4-e465-4102-a866-d49d8117635a",
+      "start_ms": 142.183391,
+      "duration_ms": 0.0379,
       "outcome": {
         "kind": "response",
         "status": 429,
@@ -261,12 +278,12 @@
       "label": "spec",
       "sequence": 225,
       "method": "GET",
-      "url": "https://eastus.spec.local/dbs/spec-01a1d1d0-201b-7112-bccb-d977a1a3b1cf/colls/spec-01a1d1d0-201c-7900-a94e-40228b138e89/docs/item-11",
+      "url": "https://eastus.spec.local/dbs/spec-01a1d203-a0fa-7e91-95ac-92e09ee64e94/colls/spec-01a1d203-a0fa-7e91-95ac-93177377f0ac/docs/item-11",
       "operation": "ReadItem",
       "region": "eastus",
-      "activity_id": "77f4cf2e-8897-4bc6-bfb8-22319225dba3",
-      "start_ms": 125.947586,
-      "duration_ms": 0.389999,
+      "activity_id": "bf1679b4-e465-4102-a866-d49d8117635a",
+      "start_ms": 154.428256,
+      "duration_ms": 0.35199899999999995,
       "outcome": {
         "kind": "response",
         "status": 200,
@@ -276,7 +293,7 @@
       "response_body": {
         "length": 213,
         "truncated": false,
-        "base64": "gO3RCIxfYXR0YWNobWVudHOMYXR0YWNobWVudHMvhV9ldGFnpiI0YzdhYzkyOC05Mzc5LTQwOTEtOWY4Mi1kZjExYjgyYTIwMjUihF9yaWSYQUFBQUFZQUFBQUVNQUFBQUFBQUFBQT09hV9zZWxmvmRicy9BQUFBQVE9PS9jb2xscy9BQUFBQVlBQUFBRT0vZG9jcy9BQUFBQVlBQUFBRU1BQUFBQUFBQUFBPT0vg190c8tgOfZqAAAAAIJpZIdpdGVtLTExgnBrhHBrLTWFdmFsdWUL"
+        "base64": "gO3RCIxfYXR0YWNobWVudHOMYXR0YWNobWVudHMvhV9ldGFnpiIxZDNjZTlmZi01YjBkLTQ5ZTgtOWU3My0zMWIzYjk4MjI2MGMihF9yaWSYQUFBQUFZQUFBQUVNQUFBQUFBQUFBQT09hV9zZWxmvmRicy9BQUFBQVE9PS9jb2xscy9BQUFBQVlBQUFBRT0vZG9jcy9BQUFBQVlBQUFBRU1BQUFBQUFBQUFBPT0vg190c8uPRvZqAAAAAIJpZIdpdGVtLTExgnBrhHBrLTWFdmFsdWUL"
       }
     }
   ]

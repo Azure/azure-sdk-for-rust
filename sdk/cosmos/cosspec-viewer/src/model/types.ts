@@ -132,6 +132,15 @@ export interface LogJson {
     activity_id?: string;
 }
 
+/** A named stretch of a trial, such as `pool`, `body`, or `teardown`. */
+export interface PhaseJson {
+    name: string;
+    /** Milliseconds from the trial start. */
+    start_ms: number;
+    /** Milliseconds from the trial start. */
+    end_ms: number;
+}
+
 export interface ResultFile {
     version: number;
     id: string;
@@ -151,6 +160,8 @@ export interface ResultFile {
     teardown_error: string | null;
     panic: PanicJson | null;
     resources: ResourceJson[];
+    /** Absent in results written before phases were recorded. */
+    phases?: PhaseJson[];
     http: HttpJson[];
     logs?: LogJson[];
 }

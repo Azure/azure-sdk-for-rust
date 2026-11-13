@@ -79,17 +79,26 @@ Otherwise the folder is a snapshot.
   Tabs show:
   - **Requests**: a timeline with one lane per client (`spec` or `harness`)
     and region, where requests in flight together get separate rows, so
-    parallel requests such as hedges are visible. Colors show the outcome.
-    Cancelled requests are hatched and requests that never finished are
-    dashed. Scroll to zoom, drag to pan, and double-click to fit. Below it, a
-    sortable table of the same requests. Select a request in either to see
-    its URL, timing, activity ID, and bodies. JSON is pretty-printed, binary
-    bodies are shown as hex, and bodies cosspec cut short are marked.
+    parallel requests such as hedges are visible. Times count from the start
+    of the spec body, and a band above the lanes shows the trial's phases:
+    waiting for pooled resources, the body, and teardown. **Fit** shows the
+    body and **All** the whole trial. Scroll to zoom, drag to pan, and
+    double-click to fit. **Overlaps** shades spans where requests were in
+    flight together and labels how many; hover or select a request to
+    outline the requests it overlaps and dim the rest. Below it, a sortable
+    table of the same requests lists each one's overlaps. Select a request in
+    either to see its URL, timing, overlaps, activity ID, and bodies. JSON is
+    pretty-printed, binary bodies are shown as hex, and bodies cosspec cut
+    short are marked.
   - **Resources**: each account, database, and container, and whether it
     was created or borrowed from the pool.
   - **Logs**: shown when a result file has captured logs. Logs also appear as
     ticks in a lane under the timeline.
   - **Raw JSON**: the whole result file.
+
+Outcomes never rely on color alone. Statuses carry a symbol (✓ passed,
+✗ failed, ⊘ skipped, ⚠ ignored), requests show their status code and a
+symbol, and each request outcome and status total has its own fill pattern.
 
 Every screen has its own URL, such as
 `#/run/<run-id>/trial/<test-name>?req=12`, so you can share a link to a

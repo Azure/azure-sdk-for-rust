@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { describe, expect, test } from "bun:test";
-import { layout, ticks, type Span } from "./layout";
+import { concurrency, layout, ticks, type Span } from "./layout";
 
 const span = (
     key: number,
@@ -55,5 +55,46 @@ describe("ticks", () => {
     test("picks round steps", () => {
         expect(ticks(0, 100, 5)).toEqual([0, 20, 40, 60, 80, 100]);
         expect(ticks(3, 9, 3)).toEqual([4, 6, 8]);
+    });
+});
+
+describe("concurrency", () => {
+    test("finds requests in flight together", () => {
+        const { overlaps, partners } = concurrency(
+            [
+                { key: 1, start: 0, end: 10 },
+                { key: 2, start: 4, end: 6 },
+                { key: 3, start: 5, end: 12 },
+                { key: 4, start: 12, end: 15 },
+            ],
+            20,
+        );
+        expect(overlaps).toEqual([{ start: 4, end: 10, peak: 3 }]);
+        expect(partners.get(1)).toEqual([2, 3]);
+        expect(partners.get(3)).toEqual([1, 2]);
+        expect(partners.get(4)).toEqual([]);
+    });
+
+    test("requests that only touch don't overlap", () => {
+        const { overlaps } = concurrency(
+            [
+                { key: 1, start: 0, end: 5 },
+                { key: 2, start: 5, end: 9 },
+            ],
+            10,
+        );
+        expect(overlaps).toEqual([]);
+    });
+
+    test("unfinished requests stay in flight until the horizon", () => {
+        const { overlaps, partners } = concurrency(
+            [
+                { key: 1, start: 0, end: null },
+                { key: 2, start: 8, end: 9 },
+            ],
+            10,
+        );
+        expect(overlaps).toEqual([{ start: 8, end: 9, peak: 2 }]);
+        expect(partners.get(2)).toEqual([1]);
     });
 });

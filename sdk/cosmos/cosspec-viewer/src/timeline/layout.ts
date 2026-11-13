@@ -112,3 +112,67 @@ export function ticks(from: number, to: number, target = 8): number[] {
     }
     return result;
 }
+
+/** A stretch of time when two or more requests were in flight together. */
+export interface Overlap {
+    start: number;
+    end: number;
+    /** The most requests in flight at once during the stretch. */
+    peak: number;
+}
+
+export interface Concurrency {
+    /** Stretches with two or more requests in flight, in time order. */
+    overlaps: Overlap[];
+    /** For each request, the requests in flight at the same time as it. */
+    partners: Map<number, number[]>;
+}
+
+/**
+ * Finds requests that were in flight at the same time, such as a hedged read
+ * and the request it races. Requests that only touch (one ends as the next
+ * starts) don't overlap. `end` is `null` for a request that never finished;
+ * it counts as in flight until `horizon`.
+ */
+export function concurrency(
+    spans: { key: number; start: number; end: number | null }[],
+    horizon: number,
+): Concurrency {
+    const closed = spans.map((s) => ({ ...s, end: Math.max(s.end ?? horizon, s.start) }));
+    const partners = new Map<number, number[]>(closed.map((s) => [s.key, []]));
+    const byStart = [...closed].sort((a, b) => a.start - b.start || a.key - b.key);
+    for (let i = 0; i < byStart.length; i++) {
+        const a = byStart[i]!;
+        for (let j = i + 1; j < byStart.length && byStart[j]!.start < a.end; j++) {
+            const b = byStart[j]!;
+            if (b.end > a.start && b.start < a.end) {
+                partners.get(a.key)!.push(b.key);
+                partners.get(b.key)!.push(a.key);
+            }
+        }
+    }
+    for (const list of partners.values()) list.sort((a, b) => a - b);
+
+    // Sweep the start and end events; ends sort before starts at the same time.
+    const events = closed
+        .flatMap((s) => [
+            { t: s.start, d: 1 },
+            { t: s.end, d: -1 },
+        ])
+        .sort((a, b) => a.t - b.t || a.d - b.d);
+    const overlaps: Overlap[] = [];
+    let live = 0;
+    let open: Overlap | null = null;
+    for (const { t, d } of events) {
+        live += d;
+        if (live >= 2) {
+            if (open) open.peak = Math.max(open.peak, live);
+            else open = { start: t, end: t, peak: live };
+        } else if (open) {
+            open.end = t;
+            if (open.end > open.start) overlaps.push(open);
+            open = null;
+        }
+    }
+    return { overlaps, partners };
+}

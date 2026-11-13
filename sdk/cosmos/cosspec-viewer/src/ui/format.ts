@@ -11,6 +11,12 @@ export function ms(value: number | null | undefined): string {
     return `${Math.floor(value / 60_000)}m ${((value % 60_000) / 1000).toFixed(0)}s`;
 }
 
+/** A time relative to `origin`, signed when before it. */
+export function rel(value: number, origin: number): string {
+    const d = value - origin;
+    return d < -0.0005 ? `−${ms(-d)}` : ms(Math.max(0, d));
+}
+
 export function when(iso: string | null | undefined): string {
     if (!iso) return "–";
     const date = new Date(iso);
@@ -41,6 +47,22 @@ export function outcomeClass(outcome: OutcomeJson | null): OutcomeClass {
             return "cancelled";
         default:
             return "pending";
+    }
+}
+
+/**
+ * A symbol for an outcome, so success and failure don't rely on color alone.
+ */
+export function outcomeSymbol(outcome: OutcomeJson | null): string {
+    switch (outcomeClass(outcome)) {
+        case "ok":
+            return "✓";
+        case "cancelled":
+            return "⊘";
+        case "pending":
+            return "…";
+        default:
+            return "✗";
     }
 }
 

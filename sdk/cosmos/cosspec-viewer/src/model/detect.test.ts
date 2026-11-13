@@ -9,7 +9,7 @@ import { fsTree } from "./fs-tree";
 
 const root = join(import.meta.dir, "../../fixtures/results");
 const items = "01a1d1d0-1d68-7053-b49f-137f00c471c0";
-const resilience = "01a1d1d0-1fc7-75b3-a2c5-3322f3e92583";
+const resilience = "01a1d203-a08c-7e10-921b-e4ce084eccc3";
 
 describe("detect", () => {
     test("a directory of runs lists every run, newest first", async () => {

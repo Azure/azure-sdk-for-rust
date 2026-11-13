@@ -4,7 +4,14 @@
 import { useMemo } from "react";
 import { runState } from "../../model/detect";
 import type { RunSummary, TrialEntry, TrialStatus } from "../../model/types";
-import { StatusBadge, STATUS_ORDER, statusText, TotalsBar, TotalsText } from "../components/Status";
+import {
+    StatusBadge,
+    STATUS_ORDER,
+    STATUS_SYMBOL,
+    statusText,
+    TotalsBar,
+    TotalsText,
+} from "../components/Status";
 import { between, ms, when } from "../format";
 import { href, setQuery, type Route } from "../router";
 
@@ -140,7 +147,7 @@ export function RunScreen(props: { run: RunSummary; route: Route }) {
                                 checked={statuses.has(s)}
                                 onChange={() => toggleStatus(s)}
                             />
-                            {statusText(s)} {m.totals[s]}
+                            {STATUS_SYMBOL[s]} {statusText(s)} {m.totals[s]}
                         </label>
                     ))}
                 </span>
@@ -265,7 +272,10 @@ function Matrix(props: { run: RunSummary; trials: TrialEntry[] }) {
                                                 className={`dot st-${t.status}`}
                                                 href={trialHref(props.run, t)}
                                                 title={`${statusText(t.status)}${t.reason ? `: ${t.reason}` : ""}`}
-                                            />
+                                                aria-label={statusText(t.status)}
+                                            >
+                                                {STATUS_SYMBOL[t.status]}
+                                            </a>
                                         ) : null}
                                     </td>
                                 );
