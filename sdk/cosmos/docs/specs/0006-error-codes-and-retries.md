@@ -211,11 +211,12 @@ responses use the ordinary cross-region failover path.
 
 ### 429 — Too Many Requests (Throttling)
 
-| Request class | Substatus | Action                                        | Default local budget                                   |
-| ------------- | --------- | --------------------------------------------- | ------------------------------------------------------ |
-| Data plane    | Any       | Local retry with backoff                      | 18 retries / 270s cumulative wait / 15s per retry      |
-| Metadata      | Any       | Local retry with backoff                      | 9 retries / 30s cumulative wait / 5s per retry         |
-| Any           | 3092      | Fail over after local budget is exhausted     | 3 failover retries after the local budget is exhausted |
+| Request class             | Substatus | Action                                          | Default local budget                                   |
+| ------------------------- | --------- | ----------------------------------------------- | ------------------------------------------------------ |
+| Data plane                | Any       | Local retry with backoff                        | 18 retries / 270s cumulative wait / 15s per retry      |
+| Other metadata            | Any       | Local retry with backoff                        | 9 retries / 30s cumulative wait / 5s per retry         |
+| Partition-key-range pages | Any       | Retry the same page in bounded internal batches | No count or cumulative-wait cap / 5s per retry         |
+| Any                       | 3092      | Fail over after local budget is exhausted       | 3 failover retries after the local budget is exhausted |
 
 The transport pipeline first applies the local throttle policy to every 429,
 including 3092. It honors `x-ms-retry-after-ms`; when that header is absent it
@@ -228,7 +229,17 @@ invocation, so each operation-level failover leg starts a fresh throttle
 budget. If the wait budget is exhausted before the count budget, the driver
 may make one final retry while the operation deadline still permits it.
 
-After local retries are exhausted, a standard 429 is surfaced. A 429/3092 is
+Partition-key-range page reads ignore both configured budgets, including zero,
+and retain continuation, region affinity, accumulated pages, and the same
+client-generated request ID across physical retries. Each batch bounds live
+diagnostics; zero retry-after values have a positive delay floor. Retries stop
+on success, a non-429 result, the operation's absolute deadline, or cancellation
+by dropping the future. Without either deadline or cancellation, persistent
+throttling can wait indefinitely. The cache publishes only complete routing
+maps. Joined callers honor their own deadlines and may take over abandoned
+initialization; a caller timeout never becomes another caller's cached failure.
+
+For other requests, after local retries are exhausted, a standard 429 is surfaced. A 429/3092 is
 instead escalated to the operation pipeline and treated like 503, including
 cross-region failover and location-health effects.
 

@@ -14,6 +14,8 @@
 
 ### Bugs Fixed
 
+- Retain partition-key-range pages across 429 retries regardless of throttling caps, until success, a non-429 result, deadline, or cancellation; persistent throttling can wait indefinitely without a deadline or cancellation.
+- Allow topology waiters to honor their own deadlines and recover abandoned initialization without publishing partial maps or discarding last-known-good topology.
 - Replace stale change-feed start headers, retain starts and polling positions in checkpoints, and preserve hierarchical-prefix leaf bounds on both gateway transports. Invalid keyed change feeds return errors instead of panicking during planning. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - A checkpoint's saved start takes precedence over a newly supplied change-feed start. Omit the continuation token to start a new feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 

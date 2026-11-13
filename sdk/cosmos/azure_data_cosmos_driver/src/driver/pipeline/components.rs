@@ -744,8 +744,12 @@ impl ThrottleRetryState {
 
     /// Computes the pure exponential fallback delay without jitter.
     fn fallback_exponential_delay(&self) -> Duration {
-        let multiplier = self.backoff_factor.powi(self.attempt_count as i32);
-        self.fallback_base_delay.mul_f64(multiplier)
+        let multiplier = self
+            .backoff_factor
+            .powi(self.attempt_count.min(i32::MAX as u32) as i32);
+        let seconds = (self.fallback_base_delay.as_secs_f64() * multiplier)
+            .min(self.max_per_retry_delay.as_secs_f64());
+        Duration::from_secs_f64(seconds)
     }
 
     /// Computes the fallback delay (used when the service does not send
@@ -777,7 +781,7 @@ impl ThrottleRetryState {
             .unwrap_or_else(|| self.fallback_delay())
             .min(self.max_per_retry_delay);
 
-        let new_cumulative = self.cumulative_delay + delay;
+        let new_cumulative = self.cumulative_delay.saturating_add(delay);
         if new_cumulative > self.max_wait_time {
             return None;
         }

@@ -5,6 +5,8 @@
 
 #[cfg(test)]
 mod lazy_topology_tests;
+#[cfg(test)]
+mod pk_range_throttling_tests;
 mod query_planning;
 #[cfg(all(test, feature = "reqwest", feature = "__internal_mocking"))]
 mod session_scope_live_tests;
@@ -15,7 +17,7 @@ use crate::{
         TransportHttpVersion, TransportSecurity,
     },
     driver::{
-        cache::{PartitionKeyRangeCache, PkRangeFetchResult},
+        cache::{ContainerRoutingMap, PartitionKeyRangeCache, PkRangeFetchResult},
         dataflow::{
             planner, CachedTopologyProvider, DrainedLeaf, OperationPlan, PartitionRoutingRefresh,
             Pipeline, PipelineContext, PipelineNodeState, RequestExecutor, RequestTarget,
@@ -57,7 +59,7 @@ use futures::future::{select, BoxFuture, Either};
 use query_planning::ResolvedQueryPlan;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, Weak};
 use std::time::{Duration, Instant};
 use url::Url;
 use uuid::Uuid;
@@ -69,6 +71,13 @@ const GATEWAY_V2_DISCOVERY_OPT_IN: azure_core::http::headers::HeaderName =
     azure_core::http::headers::HeaderName::from_static(
         crate::models::cosmos_headers::request_header_names::USE_THINCLIENT,
     );
+
+fn pk_range_retry_delay(state: &ThrottleRetryState, retry_after_ms: Option<u64>) -> Duration {
+    retry_after_ms
+        .map(Duration::from_millis)
+        .unwrap_or_else(|| state.fallback_delay())
+        .clamp(Duration::from_millis(5), METADATA_MAX_PER_RETRY_DELAY)
+}
 
 fn await_planning_or_deadline<F, T>(
     planning: F,
@@ -212,9 +221,37 @@ struct DriverRequestExecutor<'a> {
 /// routing on the next refresh, so the pin lives at driver scope alongside the
 /// cache whose entries it protects.
 ///
-/// A cold read (no carried continuation) starts a brand new ETag chain, so it
-/// clears any existing pin and installs the region that served it.
-type PkRangeRegionPins = Mutex<HashMap<ContainerReference, CosmosEndpoint>>;
+/// Keep the cached map's pin separate from an unfinished cold drain's pin.
+/// Cancellation must not orphan the last-known-good map's continuation.
+type PkRangeRegionPins = Mutex<HashMap<ContainerReference, PkRangeRegionPin>>;
+
+#[derive(Debug, Default)]
+struct PkRangeRegionPin {
+    cached: Option<(Weak<ContainerRoutingMap>, CosmosEndpoint)>,
+    staged: Option<CosmosEndpoint>,
+    generation: Arc<()>,
+}
+
+struct PkRangeDrainPin {
+    endpoint: Option<CosmosEndpoint>,
+    generation: Arc<()>,
+}
+
+struct PkRangeDrainPinGuard {
+    pin: Arc<Mutex<Option<PkRangeDrainPin>>>,
+    keep: bool,
+}
+
+impl Drop for PkRangeDrainPinGuard {
+    fn drop(&mut self) {
+        if !self.keep {
+            self.pin
+                .lock()
+                .expect("pk-range drain pin mutex poisoned")
+                .take();
+        }
+    }
+}
 
 fn request_target_overrides(
     target: RequestTarget,
@@ -2311,12 +2348,10 @@ impl CosmosDriver {
     ///
     /// # Retry Policy
     ///
-    /// The request is dispatched through the standard `execute_operation`
-    /// pipeline, which performs in-flight cross-region failover on transient
-    /// errors (503, 410, 408, 429, 403/3) by routing successive retries to
-    /// the next preferred read region. A single call therefore traverses
-    /// every preferred region before giving up — no additional outer retry
-    /// loop is needed here.
+    /// Bounded pipeline batches preserve cold-read hedging and regional
+    /// failover, including 429/3092. Continuation pages stay region-pinned.
+    /// An outer loop retries throttled pages with the same continuation,
+    /// activity ID, and absolute deadline, dropping batch diagnostics each time.
     ///
     /// Permanent errors (401 Unauthorized, 403 Forbidden, 404 NotFound) are
     /// terminal and returned to the caller.
@@ -2335,10 +2370,16 @@ impl CosmosDriver {
         crate::error::Result<Option<PkRangeFetchResult>>,
         Option<CosmosEndpoint>,
     ) {
+        let absolute_deadline = absolute_deadline.or_else(|| {
+            self.operation_options_view(&options)
+                .end_to_end_latency_policy()
+                .map(|policy| Instant::now() + policy.timeout())
+        });
         // Build the operation through the standard pipeline to get correct
         // URL construction, signing, and cross-region retry behavior.
         let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone())
-            .with_absolute_deadline(absolute_deadline);
+            .with_absolute_deadline(absolute_deadline)
+            .with_activity_id(ActivityId::new_uuid());
 
         // Set changefeed If-None-Match precondition for continuation.
         if let Some(token) = continuation.as_deref() {
@@ -2366,10 +2407,45 @@ impl CosmosDriver {
             ..Default::default()
         };
 
-        match self
-            .execute_operation_direct(&operation, overrides, &options)
-            .await
-        {
+        let mut throttle = ThrottleRetryState::with_limits(
+            METADATA_MAX_THROTTLE_ATTEMPTS,
+            METADATA_MAX_THROTTLE_WAIT,
+            METADATA_MAX_PER_RETRY_DELAY,
+        );
+        let result = loop {
+            let result = self
+                .execute_operation_direct(&operation, overrides.clone(), &options)
+                .await;
+            let Err(error) = &result else {
+                break result;
+            };
+            if !error.status().is_throttled() {
+                break result;
+            }
+
+            let delay = pk_range_retry_delay(
+                &throttle,
+                error.response().and_then(|r| r.headers().retry_after_ms),
+            );
+            throttle.attempt_count = throttle.attempt_count.saturating_add(1);
+            tracing::debug!(
+                container = %container.name(),
+                activity_id = %operation.request_headers().activity_id.as_ref().expect("page activity ID"),
+                attempt = throttle.attempt_count,
+                ?delay,
+                "Partition key range page throttled; retrying the same page"
+            );
+            // Drop this batch's finalized diagnostics before waiting or retrying.
+            drop(result);
+            let delay = absolute_deadline
+                .map(|deadline| delay.min(deadline.saturating_duration_since(Instant::now())))
+                .unwrap_or(delay);
+            azure_core::sleep(
+                azure_core::time::Duration::try_from(delay).expect("metadata delay is at most 5s"),
+            )
+            .await;
+        };
+        match result {
             Ok(response) => {
                 // Capture the region that served this page before the response
                 // body is consumed, so the caller can pin subsequent
@@ -2492,10 +2568,9 @@ impl CosmosDriver {
     /// drives page-by-page.
     ///
     /// Encapsulates the change-feed hedging policy. A **cold** call (no carried
-    /// continuation) starts a fresh ETag chain, so it drops any existing pin for
-    /// the container and is hedge-eligible; whichever region serves it — the
-    /// primary or a hedge-winning alternate — is recorded as the container's
-    /// pin. Every call that carries a continuation is region-pinned instead:
+    /// continuation) starts a fresh, hedge-eligible ETag chain; whichever region
+    /// serves it is recorded separately from the cached map's pin. Every call
+    /// that carries a continuation is region-pinned instead:
     /// hedging is suppressed, and the call is routed back to the recorded region
     /// so neither a hedge nor a mid-page failover can carry the region-affine
     /// ETag somewhere it means nothing.
@@ -2504,11 +2579,9 @@ impl CosmosDriver {
     /// cache persists the continuation past the closure's lifetime — see
     /// [`PkRangeRegionPins`].
     ///
-    /// A pinned chain that fails is not left pinned: the cache discards the
-    /// failed continuation and retries the fetch cold, which routes back through
-    /// the `continuation.is_none()` branch below and clears the pin. Both halves
-    /// of the region-affine state therefore die together, so an unreachable
-    /// pinned region cannot wedge later force-refreshes.
+    /// A failed pinned chain can restart cold without changing the cached map's
+    /// pin. Promote the staged pin only when a later drain observes a newly
+    /// published map, so cancellation preserves both halves of the cached state.
     fn pk_range_page_fetcher<'a>(
         &'a self,
         options: OperationOptions,
@@ -2519,23 +2592,53 @@ impl CosmosDriver {
     ) -> BoxFuture<'a, crate::error::Result<Option<PkRangeFetchResult>>>
            + Send
            + 'a {
+        let drain_pin = Arc::new(Mutex::new(None::<PkRangeDrainPin>));
         move |container, continuation| {
             let options = options.clone();
+            let drain_pin = drain_pin.clone();
             Box::pin(async move {
-                let region_pin = {
+                let mut guard = PkRangeDrainPinGuard {
+                    pin: drain_pin.clone(),
+                    keep: false,
+                };
+                let cached_map = self.pk_range_cache.cached_routing_map(&container).await?;
+                let (region_pin, generation) = {
+                    let mut drain = drain_pin.lock().expect("pk-range drain pin mutex poisoned");
                     let mut pins = self
                         .pk_range_region_pins
                         .lock()
                         .expect("pk-range region pin mutex poisoned");
+                    let pin = pins.entry(container.clone()).or_default();
+                    let drain = drain.get_or_insert_with(|| {
+                        let same_map = cached_map.as_ref().is_some_and(|map| {
+                            pin.cached.as_ref().is_some_and(|(cached, _)| {
+                                Weak::ptr_eq(cached, &Arc::downgrade(map))
+                            })
+                        });
+                        if !same_map {
+                            pin.cached = cached_map.as_ref().and_then(|map| {
+                                pin.staged
+                                    .clone()
+                                    .map(|endpoint| (Arc::downgrade(map), endpoint))
+                            });
+                        }
+                        pin.generation = Arc::new(());
+                        pin.staged = pin.cached.as_ref().map(|(_, endpoint)| endpoint.clone());
+                        PkRangeDrainPin {
+                            endpoint: pin.staged.clone(),
+                            generation: pin.generation.clone(),
+                        }
+                    });
                     if continuation.is_none() {
-                        // A cold read starts a new ETag chain, so the previous
-                        // chain's pin no longer applies and must not outlive it.
-                        pins.remove(&container);
-                        None
+                        drain.endpoint = None;
+                        (None, drain.generation.clone())
                     } else {
-                        Some(RegionPin {
-                            endpoint: pins.get(&container).cloned(),
-                        })
+                        (
+                            Some(RegionPin {
+                                endpoint: drain.endpoint.clone(),
+                            }),
+                            drain.generation.clone(),
+                        )
                     }
                 };
                 let is_cold = region_pin.is_none();
@@ -2548,16 +2651,26 @@ impl CosmosDriver {
                     absolute_deadline,
                 ))
                 .await;
-                // Record the serving region for every successful cold page, so
-                // the continuation pages that follow are pinned to it. Pages
-                // that already carry a pin leave it untouched: the chain must
-                // stay on the region that opened it.
                 if let Some(endpoint) = serving_endpoint.filter(|_| is_cold) {
-                    self.pk_range_region_pins
+                    drain_pin
                         .lock()
-                        .expect("pk-range region pin mutex poisoned")
-                        .insert(container, endpoint);
+                        .expect("pk-range drain pin mutex poisoned")
+                        .as_mut()
+                        .expect("pk-range drain pin initialized")
+                        .endpoint = Some(endpoint.clone());
+                    let mut pins = self
+                        .pk_range_region_pins
+                        .lock()
+                        .expect("pk-range region pin mutex poisoned");
+                    if let Some(pin) = pins.get_mut(&container) {
+                        if Arc::ptr_eq(&pin.generation, &generation) {
+                            pin.staged = Some(endpoint);
+                        }
+                    }
                 }
+                // Keep affinity only between successful pages of this chain.
+                // A reused fetcher must rebind after completion or cancellation.
+                guard.keep = matches!(&result, Ok(Some(page)) if !page.not_modified);
                 result
             })
         }
@@ -3524,6 +3637,7 @@ impl CosmosDriver {
                 container,
                 self.pk_range_page_fetcher(options.clone(), absolute_deadline),
             )
+            .with_absolute_deadline(absolute_deadline)
             .with_cache_only(cache_only)
         });
         let mut context = PipelineContext::new(
@@ -3654,7 +3768,11 @@ impl CosmosDriver {
         };
 
         // Initialize the operation activity ID.
-        let activity_id = ActivityId::new_uuid();
+        let activity_id = operation
+            .request_headers()
+            .activity_id
+            .clone()
+            .unwrap_or_else(ActivityId::new_uuid);
 
         // Get authentication, guaranteed to be present by AccountReference.
         let account = operation.resource_reference().account().clone();
@@ -4180,13 +4298,8 @@ impl CosmosDriver {
         }
 
         let routing_map = self
-            .pk_range_cache
-            .try_lookup(
-                container,
-                false,
-                self.pk_range_page_fetcher(operation_options, None),
-            )
-            .await;
+            .lookup_partition_topology(container, false, operation_options)
+            .await?;
 
         if routing_map.is_some() {
             return Ok(());
@@ -4200,6 +4313,36 @@ impl CosmosDriver {
                 container.rid()
             ))
             .build())
+    }
+
+    async fn lookup_partition_topology(
+        &self,
+        container: &ContainerReference,
+        force_refresh: bool,
+        options: OperationOptions,
+    ) -> crate::error::Result<Option<Arc<crate::driver::cache::ContainerRoutingMap>>> {
+        let deadline = self
+            .operation_options_view(&options)
+            .end_to_end_latency_policy()
+            .map(|policy| Instant::now() + policy.timeout());
+        match self
+            .pk_range_cache
+            .try_lookup_result_with_deadline(
+                container,
+                force_refresh,
+                self.pk_range_page_fetcher(options, deadline),
+                deadline,
+            )
+            .await
+        {
+            Err(error)
+                if error.status().sub_status()
+                    == Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT) =>
+            {
+                Err(error)
+            }
+            result => Ok(result.ok().flatten()),
+        }
     }
 
     /// Plans the execution of a Cosmos DB operation.
@@ -4417,7 +4560,8 @@ impl CosmosDriver {
                 &self.pk_range_cache,
                 container,
                 self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
-            );
+            )
+            .with_absolute_deadline(operation.absolute_deadline());
             let pipeline =
                 super::dataflow::read_many::build(operation.clone(), &request, &mut topology)
                     .await?;
@@ -4476,6 +4620,7 @@ impl CosmosDriver {
                     container,
                     self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
                 )
+                .with_absolute_deadline(operation.absolute_deadline())
                 .with_cache_only(cache_only)
             });
             let pipeline = planner::build_trivial_pipeline(
@@ -4509,7 +4654,8 @@ impl CosmosDriver {
                 cache,
                 container_ref,
                 self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
-            );
+            )
+            .with_absolute_deadline(operation.absolute_deadline());
             let pipeline = planner::build_unordered_merge(
                 &feed_range,
                 &mut topology,
@@ -4563,7 +4709,8 @@ impl CosmosDriver {
             cache,
             container_ref,
             self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
-        );
+        )
+        .with_absolute_deadline(operation.absolute_deadline());
 
         if query_plan.hybrid_search_query_info.is_some() {
             let pipeline = planner::build_hybrid_search(
@@ -4629,13 +4776,8 @@ impl CosmosDriver {
     ) -> crate::error::Result<Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>>
     {
         let routing_map = self
-            .pk_range_cache
-            .try_lookup(
-                container,
-                force_refresh,
-                self.pk_range_page_fetcher(OperationOptions::default(), None),
-            )
-            .await;
+            .lookup_partition_topology(container, force_refresh, OperationOptions::default())
+            .await?;
 
         let Some(routing_map) = routing_map else {
             return Ok(None);
@@ -4666,7 +4808,6 @@ impl CosmosDriver {
         force_refresh: bool,
     ) -> crate::error::Result<Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>>
     {
-        let cache = &self.pk_range_cache;
         if partition_key.is_empty() {
             return Ok(None);
         }
@@ -4682,13 +4823,9 @@ impl CosmosDriver {
 
         if epk_range.start == epk_range.end {
             // Full key — point lookup
-            let routing_map = cache
-                .try_lookup(
-                    container,
-                    force_refresh,
-                    self.pk_range_page_fetcher(OperationOptions::default(), None),
-                )
-                .await;
+            let routing_map = self
+                .lookup_partition_topology(container, force_refresh, OperationOptions::default())
+                .await?;
             let Some(routing_map) = routing_map else {
                 return Ok(None);
             };
@@ -4703,14 +4840,15 @@ impl CosmosDriver {
             ))
         } else {
             // Prefix key — overlapping range lookup
-            Ok(cache
-                .resolve_overlapping_ranges(
-                    container,
-                    &epk_range.start..&epk_range.end,
-                    force_refresh,
-                    self.pk_range_page_fetcher(OperationOptions::default(), None),
-                )
-                .await)
+            let routing_map = self
+                .lookup_partition_topology(container, force_refresh, OperationOptions::default())
+                .await?;
+            Ok(routing_map.map(|map| {
+                map.get_overlapping_ranges(&epk_range.start..&epk_range.end)
+                    .into_iter()
+                    .cloned()
+                    .collect()
+            }))
         }
     }
 }
