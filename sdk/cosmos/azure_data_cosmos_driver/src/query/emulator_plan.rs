@@ -13,6 +13,7 @@ use crate::{
             SqlSelectSpec,
         },
         common::{infer_property_name, Params},
+        lexer::{Lexer, TokenKind},
         local_plan_adapter::{emulator_query_info_to_dataflow, query_ranges_from_pk_filter},
         plan::generate_query_plan_with_parameters,
     },
@@ -342,7 +343,7 @@ fn root_source(query: &SqlQuery) -> Result<String> {
             collection: SqlCollection::Path { root, path },
             alias,
         }) if path.is_empty() => Ok(match alias {
-            Some(alias) => format!("{root} AS {alias}"),
+            Some(alias) => format!("{root} AS {}", identifier(alias)),
             None => root.clone(),
         }),
         _ => Err(invalid(
@@ -386,19 +387,28 @@ fn quoted(value: &str) -> String {
     format!("'{}'", value.replace('\'', "''"))
 }
 
+fn identifier(name: &str) -> String {
+    let tokens = Lexer::tokenize(name);
+    if tokens.len() == 2 && tokens[0].kind == TokenKind::Identifier && tokens[0].text == name {
+        name.to_owned()
+    } else {
+        format!("\"{name}\"")
+    }
+}
+
 fn scalar(expression: &SqlScalarExpression) -> Result<String> {
     use SqlScalarExpression as E;
     Ok(match expression {
         E::Literal(value) => match value {
             SqlLiteral::String(value) => quoted(value),
             SqlLiteral::Integer(value) => value.to_string(),
-            SqlLiteral::Number(value) if value.is_finite() => value.to_string(),
+            SqlLiteral::Number(value) if value.is_finite() => format!("{value:?}"),
             SqlLiteral::Boolean(value) => value.to_string(),
             SqlLiteral::Null => "null".into(),
             SqlLiteral::Undefined => "undefined".into(),
             _ => return Err(invalid("non-finite query literal")),
         },
-        E::PropertyRef(name) => name.clone(),
+        E::PropertyRef(name) => identifier(name),
         E::ParameterRef(name) => format!("@{name}"),
         E::MemberRef { source, member } => {
             if member.starts_with(|c: char| c.is_ascii_alphabetic() || c == '_')
@@ -523,7 +533,8 @@ fn invalid(message: &str) -> CosmosError {
 
 #[cfg(test)]
 mod tests {
-    use super::{generate, PartitionKeyDefinition, Value};
+    use super::{generate, scalar, PartitionKeyDefinition, Value};
+    use crate::query::ast::{SqlLiteral, SqlScalarExpression, SqlSelectSpec};
     use serde_json::json;
 
     #[test]
@@ -573,6 +584,74 @@ mod tests {
             );
             assert_ne!(plan.query_ranges[0].min, "");
             assert!(info.rewritten_query.unwrap().contains("@pk"));
+        }
+    }
+
+    #[test]
+    fn rewritten_queries_preserve_quoted_collection_aliases() {
+        for (query, expected) in [
+            (
+                r#"SELECT VALUE COUNT(1) FROM c AS "my alias""#,
+                json!([[{"item": 2}]]),
+            ),
+            (
+                r#"SELECT VALUE SUM("my alias".v) FROM c AS "my alias" WHERE "my alias".v > 1"#,
+                json!([[{"item": 3}]]),
+            ),
+            (
+                r#"SELECT "my alias".key, COUNT(1) AS n FROM c AS "my alias" GROUP BY "my alias".key"#,
+                json!([{"groupByItems":[{"item":"shared"}],"payload":{"key":"shared","n":{"item":2}}}]),
+            ),
+            (
+                r#"SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE "my alias".key FROM c AS "my alias") AS t"#,
+                json!(["shared"]),
+            ),
+        ] {
+            let ast = crate::query::parse(query).unwrap();
+            let plan =
+                generate(&ast.query, query, &[], &PartitionKeyDefinition::from("/pk")).unwrap();
+            let rewrite = plan.query_info.unwrap().rewritten_query.unwrap();
+            let rows = crate::query::eval::query_documents(
+                &rewrite,
+                &[],
+                &[json!({"key":"shared","v":1}), json!({"key":"shared","v":3})],
+            )
+            .unwrap();
+            assert_eq!(json!(rows), expected, "{query}: {rewrite}");
+        }
+    }
+
+    #[test]
+    fn scalar_float_literals_round_trip_as_finite_floats() {
+        for value in [1e20, 1e-20, 1.0, -0.0, f64::MAX, f64::MIN_POSITIVE] {
+            let rendered =
+                scalar(&SqlScalarExpression::Literal(SqlLiteral::Number(value))).unwrap();
+            let parsed = crate::query::parse(&format!("SELECT VALUE {rendered}")).unwrap();
+            let SqlSelectSpec::Value(expression) = parsed.query.select.spec else {
+                panic!("expected VALUE projection");
+            };
+            // Negative zero is parsed as a unary expression; evaluating it
+            // verifies its sign as well as representation-independent value.
+            let rows = crate::query::eval::query_documents(
+                &format!("SELECT VALUE {rendered} FROM c"),
+                &[],
+                &[json!({})],
+            )
+            .unwrap();
+            assert_eq!(
+                rows[0].as_f64().unwrap().to_bits(),
+                value.to_bits(),
+                "{rendered}"
+            );
+            if value >= 0.0 && !value.is_sign_negative() {
+                assert!(
+                    matches!(
+                        expression.as_ref(),
+                        SqlScalarExpression::Literal(SqlLiteral::Number(_))
+                    ),
+                    "float literal must remain a float: {rendered}"
+                );
+            }
         }
     }
 

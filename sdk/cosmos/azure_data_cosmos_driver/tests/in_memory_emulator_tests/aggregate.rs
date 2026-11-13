@@ -233,12 +233,20 @@ async fn execute(
     size: u32,
     binary: bool,
 ) -> Vec<Value> {
+    execute_operation(context, operation(context, query, parameters, size), binary).await
+}
+
+async fn execute_operation(
+    context: &Context,
+    operation: CosmosOperation,
+    binary: bool,
+) -> Vec<Value> {
     context.recorder.queries.lock().unwrap().clear();
     let options = options(binary);
     let mut plan = context
         .driver
         .plan_operation(
-            operation(context, query, parameters, size),
+            operation,
             &options,
             None,
             &PlanOptions::default().with_query_plan_mode(QueryPlanMode::GatewayOnly),
@@ -280,6 +288,123 @@ async fn execute(
         normalize_numbers(value);
     }
     values
+}
+
+#[tokio::test]
+async fn logical_partition_small_pages_return_complete_query_results() {
+    let context = setup(vec![]).await;
+    for (id, pk, key, v) in [
+        ("a", "target", "shared", 1),
+        ("b", "target", "shared", 3),
+        ("c", "target", "other", 5),
+        ("excluded", "different", "shared", 100),
+    ] {
+        context
+            .driver
+            .execute_singleton_operation(
+                CosmosOperation::create_item(ItemReference::from_name(
+                    &context.container,
+                    PartitionKey::from(pk),
+                    id,
+                ))
+                .with_body(serde_json::to_vec(&json!({"id":id,"pk":pk,"key":key,"v":v})).unwrap()),
+                OperationOptions::default(),
+            )
+            .await
+            .unwrap();
+    }
+    for binary in [false, true] {
+        for size in [1, 2, 100] {
+            for (query, expected) in [
+                ("SELECT VALUE COUNT(1) FROM c", vec![json!(3)]),
+                ("SELECT VALUE SUM(c.v) FROM c", vec![json!(9)]),
+                ("SELECT VALUE AVG(c.v) FROM c", vec![json!(3)]),
+                ("SELECT VALUE MIN(c.v) FROM c", vec![json!(1)]),
+                ("SELECT VALUE MAX(c.v) FROM c", vec![json!(5)]),
+                (
+                    "SELECT c.key, COUNT(1) AS n FROM c GROUP BY c.key",
+                    vec![json!({"key":"shared","n":2}), json!({"key":"other","n":1})],
+                ),
+                (
+                    "SELECT DISTINCT VALUE c.key FROM c",
+                    vec![json!("shared"), json!("other")],
+                ),
+            ] {
+                let operation = CosmosOperation::query_items(
+                    context.container.clone(),
+                    Some(FeedRange::for_partition(
+                        PartitionKey::from("target"),
+                        context.container.partition_key_definition(),
+                    )),
+                )
+                .with_body(serde_json::to_vec(&json!({"query":query,"parameters":[]})).unwrap())
+                .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(size).unwrap()));
+                assert!(
+                    operation.is_trivial(),
+                    "regression must exercise the unreduced logical-partition path"
+                );
+                let rows = execute_operation(&context, operation, binary).await;
+                assert_eq!(
+                    sorted(rows),
+                    sorted(expected),
+                    "{query}, size={size}, binary={binary}"
+                );
+                assert!(
+                    context
+                        .recorder
+                        .queries
+                        .lock()
+                        .unwrap()
+                        .iter()
+                        .filter_map(|(_, token, _)| token.as_deref())
+                        .all(|token| !token.contains("partial_query_cursor")),
+                    "unreduced queries must not receive partial continuations"
+                );
+            }
+        }
+    }
+}
+
+#[tokio::test]
+async fn quoted_aliases_and_float_predicates_execute_in_both_formats() {
+    let context = setup(vec![
+        (0, json!({"v":1e20,"key":"shared"})),
+        (1, json!({"v":2e20,"key":"shared"})),
+        (1, json!({"v":1,"key":"other"})),
+    ])
+    .await;
+    for binary in [false, true] {
+        for size in [1, 100] {
+            for (query, expected) in [
+                (
+                    r#"SELECT VALUE COUNT(1) FROM c AS "my alias""#,
+                    vec![json!(3)],
+                ),
+                (
+                    r#"SELECT VALUE COUNT(1) FROM c AS "my alias" WHERE "my alias".v >= 1e20"#,
+                    vec![json!(2)],
+                ),
+                (
+                    r#"SELECT "my alias".key, COUNT(1) AS n FROM c AS "my alias" WHERE "my alias".v >= 1e20 GROUP BY "my alias".key"#,
+                    vec![json!({"key":"shared","n":2})],
+                ),
+                (
+                    r#"SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE "my alias".key FROM c AS "my alias" WHERE "my alias".v >= 1e20) AS t"#,
+                    vec![json!(1)],
+                ),
+                (
+                    "SELECT VALUE COUNT(1) FROM c WHERE c.v >= 1e20",
+                    vec![json!(2)],
+                ),
+            ] {
+                assert_eq!(
+                    execute(&context, query, json!([]), size, binary).await,
+                    expected,
+                    "{query}"
+                );
+            }
+        }
+    }
 }
 
 fn normalize_numbers(value: &mut Value) {
@@ -705,6 +830,43 @@ async fn raw_page(
     let rows = body["Documents"].as_array().unwrap().clone();
     assert!(rows.len() <= size as usize);
     (rows, next)
+}
+
+#[tokio::test]
+async fn original_unscoped_queries_page_final_results_not_partial_rows() {
+    let context = setup(vec![
+        (0, json!({"key":"shared"})),
+        (0, json!({"key":"shared"})),
+        (0, json!({"key":"other"})),
+    ])
+    .await;
+    for binary in [false, true] {
+        for (query, expected) in [
+            ("SELECT VALUE COUNT(1) FROM c", vec![json!(3)]),
+            (
+                "SELECT c.key, COUNT(1) AS n FROM c GROUP BY c.key",
+                vec![json!({"key":"shared","n":2}), json!({"key":"other","n":1})],
+            ),
+            (
+                "SELECT DISTINCT VALUE c.key FROM c",
+                vec![json!("shared"), json!("other")],
+            ),
+        ] {
+            let mut continuation = None;
+            let mut results = Vec::new();
+            loop {
+                let mut request = raw_request(query, "0", 1, continuation.as_deref(), binary);
+                request.headers_mut().remove(RANGE.clone());
+                let (mut page, next) = raw_page(&context, &request, 1, binary).await;
+                page.iter_mut().for_each(normalize_numbers);
+                results.extend(page);
+                let Some(next) = next else { break };
+                assert!(!next.contains("partial_query_cursor"));
+                continuation = Some(next);
+            }
+            assert_eq!(sorted(results), sorted(expected), "{query}");
+        }
+    }
 }
 
 #[tokio::test]
