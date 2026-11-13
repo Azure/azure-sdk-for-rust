@@ -1,6 +1,39 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+function Initialize-CosmosPerfCredentials {
+    try {
+        $config = $env:COSMOS_TEST_ACCOUNTS_JSON | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+    } catch {
+        throw 'rust-ci must contain valid JSON; credential contents are omitted.'
+    }
+    if ($config -isnot [System.Collections.IDictionary] -or $config.version -ne 1 -or
+        $config.accounts -isnot [System.Collections.IDictionary] -or
+        $config.accounts['perf-gateway-v2'] -isnot [System.Collections.IDictionary]) {
+        throw 'rust-ci version 1 must contain accounts.perf-gateway-v2; no functional-account fallback is allowed.'
+    }
+    $account = $config.accounts['perf-gateway-v2']
+    if ($account.endpoint -isnot [string] -or $account.key -isnot [string] -or
+        [string]::IsNullOrWhiteSpace($account.key) -or $account.key -notmatch '^[A-Za-z0-9+/]+={0,2}$') {
+        throw 'rust-ci accounts.perf-gateway-v2 requires an HTTPS endpoint and a base64 account key.'
+    }
+    Get-CosmosPerfEndpoint $account.endpoint | Out-Null
+    try {
+        [Convert]::FromBase64String($account.key) | Out-Null
+    } catch {
+        throw 'rust-ci accounts.perf-gateway-v2 has an invalid base64 account key.'
+    }
+    # Mask the extracted key separately: ADO does not mask substrings of JSON secrets.
+    if ($env:TF_BUILD -eq 'True') { Write-Host "##vso[task.setsecret]$($account.key)" }
+    $env:AZURE_COSMOS_ENDPOINT = $account.endpoint
+    $env:AZURE_COSMOS_KEY = $account.key
+    $baseline = $config['perfBaselineCommit']
+    if ($null -ne $baseline -and ($baseline -isnot [string] -or $baseline -notmatch '^[a-fA-F0-9]{40}$')) {
+        throw 'rust-ci perfBaselineCommit must be a full reviewed commit SHA when present.'
+    }
+    $env:COSMOS_PERF_BASELINE_COMMIT = $baseline
+}
+
 function Get-CosmosPerfEndpoint([string] $Endpoint) {
     $uri = $null
     if (-not [Uri]::TryCreate($Endpoint, [UriKind]::Absolute, [ref]$uri) -or

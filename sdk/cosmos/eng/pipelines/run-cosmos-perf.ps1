@@ -3,6 +3,8 @@
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+. ([System.IO.Path]::Combine($PSScriptRoot, 'cosmos-perf-data-plane.ps1'))
+Initialize-CosmosPerfCredentials
 $output = $env:COSMOS_PERF_OUTPUT
 $environment = Get-Content -Raw ([System.IO.Path]::Combine($output, 'environment.json')) | ConvertFrom-Json
 $mode = Get-Content -Raw ([System.IO.Path]::Combine($output, 'execution-mode.json')) | ConvertFrom-Json

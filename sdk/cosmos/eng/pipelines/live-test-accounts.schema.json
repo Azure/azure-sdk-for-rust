@@ -7,6 +7,11 @@
   "required": ["version", "accounts"],
   "additionalProperties": false,
   "properties": {
+    "perfBaselineCommit": {
+      "type": "string",
+      "description": "Optional full reviewed commit SHA containing the perf profile and approved thresholds. Omit before calibration. Does not affect functional live-test selectors.",
+      "pattern": "^[a-fA-F0-9]{40}$"
+    },
     "version": {
       "type": "integer",
       "description": "Schema version. resolve-cosmos-test-account.ps1 rejects versions it does not understand.",

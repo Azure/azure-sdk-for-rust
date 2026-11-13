@@ -105,6 +105,7 @@ function Get-CosmosPerfPlacement($Account, $Vm, $Profile, [string] $Endpoint) {
 
 if ($FunctionsOnly) { return }
 
+Initialize-CosmosPerfCredentials
 foreach ($name in @('COSMOS_PERF_OUTPUT',
     'AZURE_COSMOS_ENDPOINT', 'AZURE_COSMOS_KEY', 'BUILD_SOURCEVERSION')) {
     $value = [Environment]::GetEnvironmentVariable($name)

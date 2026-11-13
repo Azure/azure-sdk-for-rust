@@ -98,6 +98,30 @@ foreach ($property in $accounts.PSObject.Properties) {
 }
 
 Write-Host ""
+Write-Host "Test 11: adding a perf selector leaves every functional account unchanged"
+$extended = $sampleJson | ConvertFrom-Json -AsHashtable
+$extended.perfBaselineCommit = 'a' * 40
+$extended.accounts['perf-gateway-v2'] = @{
+    endpoint = 'https://perf.documents.azure.com:443/'
+    key = 'cGVyZi10ZXN0LWtleQ=='
+    consistency = 'Session'
+    testCategory = 'perf'
+}
+$extendedJson = $extended | ConvertTo-Json -Depth 10
+if (-not (Test-Json -Json $extendedJson -SchemaFile ([System.IO.Path]::Combine($here, 'live-test-accounts.schema.json')))) {
+    Test-Fail 'perf entry must fit the existing version 1 schema'
+}
+foreach ($property in $accounts.PSObject.Properties) {
+    $before = Invoke-Resolver $property.Name $sampleJson
+    $after = Invoke-Resolver $property.Name $extendedJson
+    if ($before.ExitCode -eq 0 -and $after.ExitCode -eq 0 -and $before.Output -ceq $after.Output) {
+        Test-Ok "$($property.Name) unchanged with perf entry present"
+    } else {
+        Test-Fail "$($property.Name) changed after adding perf entry"
+    }
+}
+
+Write-Host ""
 Write-Host "Results: $script:pass passed, $script:fail failed"
 if ($script:fail -ne 0) { exit 1 }
 exit 0

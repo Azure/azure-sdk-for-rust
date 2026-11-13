@@ -3,8 +3,9 @@
 This directory implements fixed, self-owned Cosmos DB accounts for the
 `Cosmos_live_test` CI leg.
 
-The automatic weekly performance workload uses the separate existing Gateway V2
-account credentials. See [the performance runbook](perf.md) for colocated
+The performance workload selects the dedicated Gateway V2 account from
+`accounts.perf-gateway-v2` in the same `rust-ci` secret, without changing any
+functional matrix selectors. See [the performance runbook](perf.md) for colocated
 runner setup, shared-account locking, calibration, and manual PR-commit runs.
 
 ## Why

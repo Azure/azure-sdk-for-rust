@@ -64,14 +64,14 @@ resources. The initial
 measurements until a reviewed baseline is configured, without reporting a
 performance-gate pass. Confirm these prerequisites:
 
-1. Verify the dedicated Gateway V2 perf account referenced by
-   `cosmos-rust-perf-endpoint` / `cosmos-rust-perf-key` in
-   `Test Secrets for Cosmos Live Tests - user administered`. These are the only
-   Azure credentials needed. Do not use the unrelated `rust-ci` fixed-account
-   catalog or repoint the functional `thinclient-test-*` credentials.
-   Both perf secrets must exist in `TestSecrets-Cosmos` and be selected in the
-   Key Vault mapping for variable group **96**; creating secrets alone does not
-   add them to the group. A variable-group administrator must add that mapping.
+1. Add the dedicated Gateway V2 account under `accounts.perf-gateway-v2` in the
+   existing `rust-ci` JSON secret in `TestSecrets-Cosmos`. Variable group **96**
+   already maps that secret: no new ADO variables or Key Vault mappings are needed.
+   Preserve the existing version and every functional account entry, including
+   its keys. Do not repoint the functional `thinclient-test-*` credentials.
+   Perf selects only `perf-gateway-v2`; a missing entry fails without falling
+   back to a functional account. Each perf task extracts the credentials in
+   memory and masks the extracted key, without writing the secret JSON to artifacts.
    Single- and multi-region accounts are
    supported, provided the agent's region is advertised for both reads and writes.
 2. Authorize the pipeline to use the existing Linux perf pool.
@@ -98,8 +98,8 @@ performance-gate pass. Confirm these prerequisites:
    Untrusted PR code must not automatically run with these credentials or on a
    privileged persistent agent. Review the source SHA, use an isolated/reset
    runner, and restrict network/identity access before approving such a run.
-5. After calibration, add `cosmos-perf-baseline-commit` to the protected variable
-   group via its Key Vault mapping: a full reviewed commit SHA containing the
+5. After calibration, add the optional top-level `perfBaselineCommit` field to
+   the existing `rust-ci` JSON: a full reviewed commit SHA containing the
    workload profile and approved threshold file, available in the checkout.
    Without it, weekly runs collect calibration using the source commit's profile.
    The next weekly run enforces the pinned approved thresholds automatically.
@@ -123,11 +123,30 @@ and `thinClientWritableLocations`; the workload's point-read probe additionally
 verifies actual Gateway V2 transport. DNS or ARM provisioning status alone is
 not sufficient proof of readiness.
 
-When rotating this account, update only `cosmos-rust-perf-endpoint` and
-`cosmos-rust-perf-key` in `TestSecrets-Cosmos` with the verified replacement.
-Never put the account key in this repository or reuse the functional-test secret
-names. Each perf invocation continues to create and remove only its own database
-and containers, not the dedicated account.
+When rotating this account, update only `accounts.perf-gateway-v2` inside
+`rust-ci` with the verified replacement. Merge into the **current** secret
+value, not an old exported copy, and verify that every other entry is unchanged.
+The existing version 1 schema accepts this extra selector:
+
+```json
+{
+  "endpoint": "https://f380-rust-perf-tc-session.documents.azure.com:443/",
+  "key": "<account key>",
+  "consistency": "Session",
+  "testCategory": "perf",
+  "multiWrite": false,
+  "multiRegion": false,
+  "regions": ["West US"]
+}
+```
+
+This is the value of `accounts.perf-gateway-v2`, **not** a replacement for the
+whole secret. Do not add it to the functional live-test matrix. Existing PRs
+select their original account names and ignore this new entry.
+Preserve the perf entry when refreshing the six functional accounts with the
+provisioning/export tooling, which does not provision this dedicated account.
+Never put real keys in this repository. Each perf invocation creates and removes
+only its own database and containers, not the dedicated account.
 
 ## Calibration and execution
 
@@ -159,7 +178,7 @@ For the reviewed `perf-thresholds.json`, set `approved` to true, copy the exact
 
 These numbers illustrate the schema only; **they are not recommended thresholds**.
 Repeat the entry with measured, reviewed values for every operation. Commit
-the configuration through normal review and pin `cosmos-perf-baseline-commit`
+the configuration through normal review and pin `rust-ci.perfBaselineCommit`
 to that revision. In validation mode, missing entries, duplicates, unapproved
 baselines, and profile mismatches are errors, not implicit skips. Candidate threshold edits
 cannot enable gating without a separately configured reviewed baseline revision.

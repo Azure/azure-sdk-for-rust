@@ -80,14 +80,14 @@ Write-Host 'PASS: all performance scripts parse'
 
 $stageYaml = Get-Content -Raw ([System.IO.Path]::Combine($PSScriptRoot, 'perf-stage.yml'))
 foreach ($mapping in @(
-    'AZURE_COSMOS_ENDPOINT: $(cosmos-rust-perf-endpoint)',
-    'AZURE_COSMOS_KEY: $(cosmos-rust-perf-key)'
+    'COSMOS_TEST_ACCOUNTS_JSON: $(rust-ci)'
 )) {
     if ([regex]::Matches($stageYaml, [regex]::Escape($mapping)).Count -ne 3) {
         throw "Preflight, workload, and cleanup must all use the dedicated perf mapping: $mapping"
     }
 }
-if ($stageYaml.Contains('$(thinclient-test-')) {
+if ($stageYaml.Contains('$(thinclient-test-') -or $stageYaml.Contains('$(cosmos-rust-perf-') -or
+    $stageYaml.Contains('$(cosmos-perf-baseline-commit)')) {
     throw 'The perf stage must not consume functional-test account credentials.'
 }
 $ciYaml = Get-Content -Raw ([System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'ci.yml'))
@@ -181,12 +181,55 @@ $mockMetadata = {
 Set-Item Function:\Invoke-RestMethod $mockMetadata
 $temporary = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "cosmos-perf-script-$([Guid]::NewGuid())")
 $savedEnvironment = @{}
-foreach ($name in @('COSMOS_PERF_OUTPUT', 'AZURE_COSMOS_ENDPOINT', 'AZURE_COSMOS_KEY', 'BUILD_BUILDID',
+foreach ($name in @('COSMOS_PERF_OUTPUT', 'AZURE_COSMOS_ENDPOINT', 'AZURE_COSMOS_KEY', 'BUILD_BUILDID', 'COSMOS_TEST_ACCOUNTS_JSON',
     'COSMOS_PERF_BASELINE_COMMIT', 'COSMOS_PERF_CALIBRATE', 'COSMOS_PERF_WEEKLY', 'COSMOS_PERF_AUTO_CALIBRATE',
     'SYSTEM_PULLREQUEST_PULLREQUESTNUMBER', 'SYSTEM_PULLREQUEST_SOURCECOMMITID', 'BUILD_SOURCEVERSION', 'BUILD_SOURCEBRANCH')) {
     $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name)
 }
 try {
+    $env:COSMOS_TEST_ACCOUNTS_JSON = @{
+        version = 1
+        accounts = @{
+            'session-singlewrite' = @{ endpoint = 'https://functional.documents.azure.com/'; key = 'do-not-select' }
+            'perf-gateway-v2' = @{ endpoint = 'https://perf.documents.azure.com/'; key = $key }
+        }
+    } | ConvertTo-Json -Depth 5
+    Initialize-CosmosPerfCredentials
+    if ($env:AZURE_COSMOS_ENDPOINT -ne 'https://perf.documents.azure.com/' -or $env:AZURE_COSMOS_KEY -ne $key) {
+        throw 'Perf must select only its dedicated entry from rust-ci.'
+    }
+    $validAccounts = $env:COSMOS_TEST_ACCOUNTS_JSON
+    $withBaseline = $validAccounts | ConvertFrom-Json -AsHashtable
+    $withBaseline.perfBaselineCommit = 'a' * 40
+    $env:COSMOS_TEST_ACCOUNTS_JSON = $withBaseline | ConvertTo-Json -Depth 5
+    Initialize-CosmosPerfCredentials
+    if ($env:COSMOS_PERF_BASELINE_COMMIT -ne ('a' * 40)) { throw 'Baseline must come from rust-ci.' }
+    $withBaseline.perfBaselineCommit = 'not-a-commit'
+    $env:COSMOS_TEST_ACCOUNTS_JSON = $withBaseline | ConvertTo-Json -Depth 5
+    $rejected = $false
+    try { Initialize-CosmosPerfCredentials } catch { $rejected = $true }
+    if (-not $rejected) { throw 'Malformed configured baseline must fail instead of calibrating.' }
+    foreach ($invalid in @(
+        '', '$(rust-ci)', '{"sensitive-marker":',
+        '{"version":2,"accounts":{}}',
+        '{"version":1,"accounts":{"session-singlewrite":{"endpoint":"https://functional.documents.azure.com/","key":"sensitive-marker"}}}',
+        '{"version":1,"accounts":{"perf-gateway-v2":{"endpoint":"http://perf.documents.azure.com/","key":"a2V5"}}}',
+        '{"version":1,"accounts":{"perf-gateway-v2":{"endpoint":"https://perf.documents.azure.com/","key":"sensitive-marker"}}}',
+        '{"version":1,"accounts":{"perf-gateway-v2":{"endpoint":"https://perf.documents.azure.com/"}}}'
+    )) {
+        $env:COSMOS_TEST_ACCOUNTS_JSON = $invalid
+        $rejected = $false
+        try { Initialize-CosmosPerfCredentials } catch {
+            $rejected = $true
+            if ($_.Exception.Message.Contains('sensitive-marker')) { throw 'Credential parsing leaked secret JSON.' }
+        }
+        if (-not $rejected) { throw 'Invalid perf credentials were accepted or fell back to another account.' }
+    }
+    $env:COSMOS_TEST_ACCOUNTS_JSON = $validAccounts
+    Initialize-CosmosPerfCredentials
+    if ($env:COSMOS_PERF_BASELINE_COMMIT) { throw 'Missing baseline must clear stale environment configuration.' }
+    Write-Host 'PASS: rust-ci selects only the perf account and rejects malformed secrets without exposing contents'
+
     $account = Get-CosmosPerfAccount 'https://perf.documents.azure.com/' $key
     if ($account.id -ne 'perf' -or $http.Requests.Count -ne 1 -or
         $http.Requests[0].Method -ne 'Get' -or $http.Requests[0].Uri.AbsolutePath -ne '/' -or

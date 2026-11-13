@@ -14,6 +14,7 @@ if ($owned.database -notmatch '^cosmos-perf-[a-f0-9-]{36}$' -or
     $owned.workload_id -ne $env:BUILD_BUILDID) {
     throw 'Refusing cleanup of a database not owned by this pipeline run.'
 }
+Initialize-CosmosPerfCredentials
 $endpoint = Get-CosmosPerfEndpoint $env:AZURE_COSMOS_ENDPOINT
 $resource = "dbs/$($owned.database)"
 $headers = New-CosmosPerfHeaders -Method delete -ResourceType dbs -ResourceLink $resource -Key $env:AZURE_COSMOS_KEY
