@@ -76,6 +76,9 @@ impl BlobClient {
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -167,6 +170,9 @@ impl BlobClient {
         if let Some(proposed_lease_id) = options.proposed_lease_id.as_ref() {
             request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -253,6 +259,9 @@ impl BlobClient {
         request.insert_header("x-ms-lease-action", "break");
         if let Some(break_period) = options.break_period {
             request.insert_header("x-ms-lease-break-period", break_period.to_string());
+        }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
@@ -344,6 +353,9 @@ impl BlobClient {
         request.insert_header("x-ms-lease-action", "change");
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -452,6 +464,9 @@ impl BlobClient {
                 request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -531,6 +546,9 @@ impl BlobClient {
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -574,6 +592,9 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Delete);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -733,6 +754,9 @@ impl BlobClient {
                 range_get_content_md5.to_string(),
             );
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         if let Some(structured_body_type) = options.structured_body_type.as_ref() {
             request.insert_header("x-ms-structured-body", structured_body_type);
         }
@@ -806,6 +830,9 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -982,6 +1009,9 @@ impl BlobClient {
                 if let Some(lease_id) = options.lease_id.as_ref() {
                     request.insert_header("x-ms-lease-id", lease_id);
                 }
+                if let Some(request_priority) = options.request_priority {
+                    request.insert_header("x-ms-request-priority", request_priority.to_string());
+                }
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
                 Box::pin(async move {
@@ -1142,6 +1172,9 @@ impl BlobClient {
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -1209,6 +1242,9 @@ impl BlobClient {
         }
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
+        }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
@@ -1293,6 +1329,9 @@ impl BlobClient {
         }
         request.insert_header("x-ms-lease-action", "release");
         request.insert_header("x-ms-lease-id", lease_id);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -1380,6 +1419,9 @@ impl BlobClient {
         }
         request.insert_header("x-ms-lease-action", "renew");
         request.insert_header("x-ms-lease-id", lease_id);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -1435,6 +1477,9 @@ impl BlobClient {
             );
         }
         request.insert_header("x-ms-immutability-policy-until-date", to_rfc7231(expiry));
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -1481,6 +1526,9 @@ impl BlobClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
         request.insert_header("x-ms-legal-hold", legal_hold.to_string());
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -1556,6 +1604,9 @@ impl BlobClient {
         for (k, v) in metadata {
             request.insert_header(format!("x-ms-meta-{k}"), v);
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -1628,6 +1679,9 @@ impl BlobClient {
         }
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
+        }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
@@ -1705,6 +1759,9 @@ impl BlobClient {
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(tags);
         let rsp = self
@@ -1760,6 +1817,9 @@ impl BlobClient {
         }
         if let Some(rehydrate_priority) = options.rehydrate_priority.as_ref() {
             request.insert_header("x-ms-rehydrate-priority", rehydrate_priority.to_string());
+        }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
@@ -1878,6 +1938,9 @@ impl BlobClient {
         if let Some(rehydrate_priority) = options.rehydrate_priority.as_ref() {
             request.insert_header("x-ms-rehydrate-priority", rehydrate_priority.to_string());
         }
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         if let Some(seal_blob) = options.seal_blob {
             request.insert_header("x-ms-seal-blob", seal_blob.to_string());
         }
@@ -1945,6 +2008,9 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
+        if let Some(request_priority) = options.request_priority {
+            request.insert_header("x-ms-request-priority", request_priority.to_string());
+        }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
@@ -1964,7 +2030,7 @@ impl BlobClient {
 }
 
 /// Default value for [`BlobClientOptions::version`].
-pub(crate) const DEFAULT_VERSION: &str = "2027-03-07";
+pub(crate) const DEFAULT_VERSION: &str = "2027-05-07";
 
 impl Default for BlobClientOptions {
     fn default() -> Self {
