@@ -29,9 +29,11 @@ These rules are strict. When a change can't follow them, stop and ask.
 - Make specs complete. Cover the behavior's observable outcomes, including
   errors, retries, and the HTTP traffic that matters, and add specs for
   missing cases instead of stretching an existing one.
-- Assert observable behavior only: responses, items, status codes, feed
-  ranges, and `HttpTap` evidence. Never assert on SDK internals, logs, or
-  diagnostics text when stronger evidence exists.
+- Assert observable behavior: responses, items, status codes, feed ranges,
+  and `HttpTap` evidence. Never assert on SDK internals.
+- Never rely on SDK diagnostics to prove behavior; use real evidence from
+  types like `HttpTap`. Diagnostics assertions may be added alongside that
+  evidence, not instead of it.
 - Never weaken, loosen, or delete an assertion to make a spec pass. If the
   SDK is wrong, mark the spec `#[known_issue("<accurate reason>", ..)]`,
   scoped to the affected profiles, and record it under Known issues in
