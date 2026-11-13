@@ -1,35 +1,117 @@
-# Cosmos test pipelines
+# Cosmos live-test fixed accounts
 
-## Fixed live-test accounts
+This directory implements fixed, self-owned Cosmos DB accounts for the
+`Cosmos_live_test` CI leg.
 
-`Cosmos_live_test` uses fixed, key-authenticated accounts rather than deploying
-accounts per run. AAD and partition-merge jobs still require federated Azure
-authentication and per-run ARM provisioning.
+## Why
 
-Account selectors in `sdk/cosmos/live-platform-matrix.json` map to entries in
-the `rust-ci` Key Vault secret, exposed through the
-`Test Secrets for Cosmos Live Tests - user administered` ADO variable group.
-`resolve-test-account-steps.yml` invokes `resolve-cosmos-test-account.ps1` to
-export credentials, test categories, and account metadata.
-Rotate the Key Vault secret, not the variable-group value.
+`Cosmos_live_test` previously deployed a fresh Cosmos account per CI run (via
+`sdk/cosmos/test-resources.bicep`) into whatever Azure tenant the
+`azure-sdk-tests-cosmos` service connection happened to be federated to. That
+tenant is ephemeral and rotates periodically; rotating it requires recreating
+the ADO service connection, which is an administrative action outside of what
+a pipeline change can do on its own.
 
-For account provisioning and rotation, see the
-[provisioning runbook](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/eng/pipelines/account-provisioning/README.md).
-The JSON schema and sample are in this directory.
+Since these are key-based tests (they don't need Entra ID / AAD), they don't
+need to run against that tenant at all. Instead, `Cosmos_live_test` now runs
+against a small set of **fixed accounts** that live permanently in a
+separate, self-owned subscription/resource group (`sdk-ci`) that the SDK team
+controls directly. Because that subscription never expires or rotates, the
+account endpoints and keys - stored once in an ADO secret - keep working
+indefinitely, with no per-run Azure authentication and no service-connection
+dependency at all for this leg.
+
+`Cosmos_live_test_aad` and `Cosmos_live_federated_aad` are intentionally not
+fixed-account jobs. They deploy fresh accounts through `test-resources.bicep`,
+set `disableLocalAuth`, and use the federated pipeline identity for both Cosmos
+data-plane RBAC and ARM resource management. Thin-client/GatewayV2 legs retain
+their existing configuration.
+
+## How it fits together
+
+1. `live-test-accounts.schema.json` defines
+   the shape of a single JSON blob describing every fixed account
+   (endpoint, key, consistency, region info, etc.), keyed by a logical
+   **account selector**.
+2. `live-test-accounts.sample.json` is a
+   placeholder-filled example matching the current
+   `sdk/cosmos/live-platform-matrix.json` selectors, used by the local
+   resolver tests.
+3. `account-provisioning/` contains the one-time /
+   per-rotation script (`New-CosmosLiveTestAccounts.ps1`) that creates the
+   accounts in the `sdk-ci` resource group and prints the JSON to store in
+   the ADO secret. See its README for the full runbook.
+4. That JSON is stored as the `rust-ci` **Key Vault secret**, which is linked
+   (read-through) into the `Test Secrets for Cosmos Live Tests - user
+   administered` ADO variable group (already wired into `sdk/cosmos/ci.yml`).
+   Because the variable group is a KV-backed mapping, rotation happens on the
+   Key Vault secret itself - editing the variable-group value in ADO has no
+   effect.
+5. `resolve-cosmos-test-account.ps1` is a
+   cross-platform (pwsh) script that, given a selector and the JSON secret,
+   resolves and exports (via Azure DevOps `##vso[task.setvariable]` logging
+   commands):
+   - `AZURE_COSMOS_CONNECTION_STRING` (secret - masked in logs)
+   - `AZURE_COSMOS_SECONDARY_KEY` (secret, only if the account defines one)
+   - `ACCOUNT_HOST`, `DATABASE_NAME`, `AZURE_COSMOS_DEFAULT_CONSISTENCY`, `COSMOS_RUSTFLAGS`
+   - `AZURE_COSMOS_E2E_BACKEND`, `AZURE_COSMOS_ACCOUNT_WRITE_MODE`, `AZURE_COSMOS_ACCOUNT_MULTI_REGION`, `AZURE_COSMOS_ACCOUNT_REGIONS`, and `AZURE_COSMOS_ACCOUNT_FULL_FIDELITY_CHANGE_FEED`
+
+   The first group matches the environment variables that
+   `sdk/cosmos/test-resources.bicep` used to produce as ARM deployment
+   outputs. The second group lets catalog-driven E2E setup validate that a
+   selected fixed account satisfies its profile before any required scenario
+   starts. The Rust client also compares the live account-properties response
+   with the selected profile, so stale secret metadata cannot mask consistency,
+   write-mode, or topology drift.
+6. `resolve-test-account-steps.yml` is a
+   reusable ADO step template that invokes the resolver script with the
+   current job's `$(AccountSelector)` matrix variable.
+7. `sdk/cosmos/live-platform-matrix.json` adds an `AccountSelector` string
+   next to each leg's existing `ArmTemplateParameters` (left in place for
+   documentation/reference, but no longer used to deploy anything for this
+   leg).
+8. `eng/pipelines/templates/jobs/live.tests.yml` gained a
+   `DisableAzureResourceCreation` parameter that skips
+   `build-test-resource-config.yml`/`deploy-test-resources.yml` (no ARM
+   deployment, no tenant/service-connection auth at all) and a
+   `PreTestRunSteps` hook that runs in their place.
+   `eng/pipelines/templates/stages/archetype-sdk-client.yml` gained a
+   `FixedAccountMatrixConfigs` parameter (a second, independent
+   `LiveTestMatrixConfigs`-like list) so this only applies to the matrix
+   configs that opt in. Federated AAD jobs keep deploying real ARM resources.
+9. `sdk/cosmos/ci.yml` wires `Cosmos_live_test` through
+   `FixedAccountMatrixConfigs` with `PreTestRunSteps` pointing at
+   `resolve-test-account-steps.yml`, while the AAD matrices remain on
+   `LiveTestMatrixConfigs`.
 
 ## Local testing
 
-Run commands from the repository root in PowerShell 7.
-The resolver tests require no Azure access:
+Run the resolver's local test suite (no ADO, no Azure access required):
 
 ```powershell
 pwsh sdk/cosmos/eng/pipelines/resolve-cosmos-test-account.tests.ps1
 ```
 
+You can also invoke the resolver directly against the sample JSON. Dot-source
+it (note the leading `.` followed by a space) so the resolved variables land
+directly in your current shell instead of just being printed:
+
+```powershell
+$env:COSMOS_ACCOUNTS_LOCAL = 'true'
+$env:COSMOS_ACCOUNT_SELECTOR = 'session-singlewrite'
+$env:COSMOS_TEST_ACCOUNTS_JSON = Get-Content -Raw sdk/cosmos/eng/pipelines/live-test-accounts.sample.json
+. ./sdk/cosmos/eng/pipelines/resolve-cosmos-test-account.ps1
+```
+
 ### Live-only query tests
 
-Set `AZURE_COSMOS_CONNECTION_STRING` securely to a real account with permission
-to create and delete databases and containers, then run:
+The SDK's `live` test target shares the integration-test framework but keeps
+live-only DISTINCT coverage separate from emulator-compatible query tests.
+It requires the `key_auth`, `control_plane`, and `fault_injection` features
+and is ignored by default.
+
+To run it locally, set `AZURE_COSMOS_CONNECTION_STRING` to a real account's
+connection string, then run from the repository root:
 
 ```powershell
 $env:AZURE_COSMOS_TEST_MODE = 'required'
@@ -37,9 +119,18 @@ $env:RUSTFLAGS = '--cfg=test_category="live"'
 cargo test -p azure_data_cosmos --all-features --test live live_distinct_admission_and_per_query_options
 ```
 
-The test cleans up its unique database. It is ignored without the `live`
-category; explicit execution rejects missing configuration and emulator
-endpoints. Fixed-account CI enables this category automatically.
+The test creates and cleans up a unique database, so the account key must
+permit database and container management. Explicit selection (including
+`--ignored`) fails on missing/invalid connection strings, local emulator
+endpoints, or `AZURE_COSMOS_TEST_MODE=skipped`; it never reports a skipped
+live scenario as a pass.
+
+The fixed-account resolver appends `test_category="live"` alongside each
+account's existing category. Test setup propagates these flags before its
+preconfigured-connection early return, so `Cosmos_live_test` runs this target
+without changing the existing suites. Ordinary emulator, vnext, in-memory,
+and codec-fuzz jobs do not use that resolver and do not enable the live gate.
+Legacy ARM/AAD jobs retain their existing categories.
 
 ## vNext emulator conformance
 
@@ -51,7 +142,7 @@ Tests assert actual transport and encoding, not just successful operations.
 Docker is required. Start in a fresh shell without cloud credentials,
 `ACCOUNT_HOST`, non-key `AZURE_COSMOS_AUTH_MODE`, `CARGO_ENCODED_RUSTFLAGS`, or
 existing test-category `RUSTFLAGS`. The helper configures local HTTPS and
-emulator-only certificate handling:
+emulator-only certificate handling. Run from the repository root in PowerShell 7:
 
 ```powershell
 . ./sdk/cosmos/eng/scripts/CosmosVNext.ps1
@@ -93,10 +184,20 @@ cargo test -p azure_data_cosmos --all-features --test vnext -- --ignored --test-
 
 ## Gateway V2 multi-range prefix change feed
 
-Use an existing Gateway V2 container with MultiHash V2 keys
-`/tenant`, `/user`, `/device` and a tenant prefix spanning at least two physical
-ranges. The test validates this topology; it does not provision or split it.
-Set `AZURE_COSMOS_GW_V2_ENDPOINT` and `AZURE_COSMOS_GW_V2_KEY` securely, then run:
+The `gateway_v2_prefix_change_feed_across_physical_ranges` test exercises
+hierarchical-prefix fan-out and checkpoint/resume on an **existing** topology.
+It does not change throughput, seed a large dataset, or trigger a partition
+split. Split-during-read recovery remains covered by the separate `split` suite.
+
+Use an existing Gateway V2 container with MultiHash V2 partition key paths
+`/tenant`, `/user`, `/device`. The selected tenant prefix must overlap at least
+two physical ranges; a container having multiple ranges is not sufficient.
+The test checks the actual range map and dynamically chooses two complete keys
+for that tenant on distinct ranges. Missing configuration or an unsuitable
+fixture fails explicitly.
+
+Set `AZURE_COSMOS_GW_V2_ENDPOINT` and `AZURE_COSMOS_GW_V2_KEY` securely, then run
+from the repository root:
 
 ```powershell
 $env:AZURE_COSMOS_GW_V2_PREFIX_DATABASE = '<existing-database>'
@@ -106,7 +207,39 @@ $env:RUSTFLAGS = '--cfg=test_category="gateway_v2_prefix"'
 cargo test -p azure_data_cosmos --all-features --test gateway_v2 gateway_v2_prefix_change_feed_across_physical_ranges
 ```
 
-Run serially with no other writers on that prefix. The test checks fan-out,
-checkpoint/resume, exact membership, and V2 transport, then deletes only its
-three items, not the fixture. It is ignored without the explicit category.
-Split-during-read recovery belongs to the separate `split` suite.
+This explicit category enables the test without `--ignored`. Ordinary builds
+and the general Gateway V2 categories leave it ignored because credentials
+alone do not establish the required fixture. Automated execution still needs
+the fixture variables and category configured in the live-test job.
+
+Run serially for each selected tenant: no other writer or concurrent test may
+use that prefix. The test starts from Now, pins every leaf before writing,
+and creates two in-prefix items and an outside-prefix sentinel. It recreates
+the reader from a serialized checkpoint after every page, checks exact
+membership and no duplicates, verifies actual Gateway V2 transport, and deletes
+only its own three items. It does not delete the fixture database or container.
+
+For one-time fixture preparation, a live experiment reproduced a suitable
+topology by creating a one-range container at 1,000 RU/s, inserting 1,024 small
+items with tenant `prefix-control`, user `user-{i % 256}`, and device
+`device-{i % 1024}` for `i = 0..1023`, then raising throughput to 13,000 RU/s.
+Each item had a unique ID and 4,096 characters of padding excluded from
+indexing, totaling about 4 MB. A boundary inside that tenant appeared after
+approximately 5.5-6 minutes. Split timing and placement are not guaranteed:
+always verify the actual prefix overlap before retaining a reusable fixture.
+Provisioning is separate from routine test execution; scale down or delete
+temporary fixtures when they are no longer needed.
+
+## Adding or rotating an account
+
+See `account-provisioning/README.md`.
+
+## What this does *not* solve
+
+This mechanism only covers **key-based** tests. The fixed-account job generator
+explicitly sets `UseFederatedAuth: false`, so it cannot run the AAD integration,
+binary round-trip, or partition-merge legs. Those jobs require a real Entra ID
+identity and remain on the per-run ARM path through the
+`azure-sdk-tests-cosmos` service connection. Partition merge additionally
+requires a preview-enabled account and an ARM token for the merge operation,
+which is why it is not assigned to a fixed account.
