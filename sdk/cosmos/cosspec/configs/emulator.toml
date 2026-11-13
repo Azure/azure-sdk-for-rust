@@ -1,8 +1,8 @@
-# Runs SingleRegion specs on a running Azure Cosmos DB Emulator only.
-# The emulator provides only SingleRegion and no extra capabilities.
+# Runs tests against both in-memory and public emulators.
+# Note that the public emulators are limited in their ability to provide topology control, so some tests will be ignored.
 
 [backends.inmemory]
-enabled = false
+enabled = true
 
 [backends.emulator]
 enabled = true

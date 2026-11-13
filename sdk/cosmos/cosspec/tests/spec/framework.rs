@@ -9,7 +9,7 @@ use cosspec::{
 };
 
 /// Using a capability the spec did not declare fails as an invalid configuration.
-#[spec_test(id = "framework.undeclared_capability_is_rejected")]
+#[spec_test]
 #[service_profiles(SingleRegion)]
 pub async fn undeclared_capability_is_rejected(container: ExclusiveContainer) -> SpecResult {
     let error = container

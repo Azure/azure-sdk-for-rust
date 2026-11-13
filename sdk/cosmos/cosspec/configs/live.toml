@@ -1,11 +1,8 @@
-# Runs specs on the live accounts deployed by infra/main.bicep only.
-# Replace the endpoints with the deployment's `endpoints` output, and export the
-# keys (`az cosmosdb keys list --name <account> --resource-group <group>`) into
-# the environment variables named by `key_env`. Set a profile's `enabled = false`
-# to skip it.
+# Runs specs against the in-memory emulator and a live account.
+# Allows comparing in-memory behaviour against live accounts, and validating real behaviour against live accounts.
 
 [backends.inmemory]
-enabled = false
+enabled = true
 
 [backends.live]
 enabled = true
