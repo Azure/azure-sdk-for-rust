@@ -23,6 +23,7 @@ use std::{
 pub(crate) struct AsyncLazy<T> {
     /// The lazily initialized value, protected by an async read-write lock.
     value: RwLock<Option<Arc<T>>>,
+    previous: Option<Arc<T>>,
 }
 
 impl<T> AsyncLazy<T> {
@@ -30,6 +31,7 @@ impl<T> AsyncLazy<T> {
     pub(crate) fn new() -> Self {
         Self {
             value: RwLock::new(None),
+            previous: None,
         }
     }
 
@@ -37,6 +39,14 @@ impl<T> AsyncLazy<T> {
     pub(crate) fn from_arc(value: Arc<T>) -> Self {
         Self {
             value: RwLock::new(Some(value)),
+            previous: None,
+        }
+    }
+
+    pub(crate) fn refreshing(previous: Option<Arc<T>>) -> Self {
+        Self {
+            value: RwLock::new(None),
+            previous,
         }
     }
 
@@ -46,10 +56,21 @@ impl<T> AsyncLazy<T> {
     /// If the value is not yet initialized, a write lock is acquired and the
     /// value is checked again before running the initialization future.
     /// This ensures minimal contention on the common (already-initialized) path.
+    #[cfg(test)]
     pub(crate) async fn get_or_init<F, Fut>(&self, init: F) -> Arc<T>
     where
         F: FnOnce() -> Fut,
         Fut: Future<Output = T>,
+    {
+        self.get_or_init_if(init, |_| true).await
+    }
+
+    /// Shares successful initialization without caching caller-local failures.
+    pub(crate) async fn get_or_init_if<F, Fut, P>(&self, init: F, cacheable: P) -> Arc<T>
+    where
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = T>,
+        P: FnOnce(&T) -> bool,
     {
         // Fast path: read lock only
         {
@@ -67,14 +88,20 @@ impl<T> AsyncLazy<T> {
 
         // Initialize
         let value = Arc::new(init().await);
-        *guard = Some(value.clone());
+        if cacheable(&value) {
+            *guard = Some(value.clone());
+        }
         value
     }
 
-    /// Gets the value if it has been initialized, without blocking.
+    /// Gets the initialized value or the previous value during refresh.
     ///
-    /// Returns `None` if initialization has not completed or is in progress.
+    /// Returns `None` if neither value is available.
     pub(crate) fn try_get(&self) -> Option<Arc<T>> {
+        self.try_get_initialized().or_else(|| self.previous.clone())
+    }
+
+    pub(crate) fn try_get_initialized(&self) -> Option<Arc<T>> {
         // Use try_read to avoid blocking - if write-locked, initialization may be in progress
         self.value.try_read().and_then(|guard| guard.clone())
     }
