@@ -213,7 +213,7 @@ azd auth token --output json --scope https://management.core.windows.net/.defaul
 
 |Error Code|Issue|Mitigation|
 |---|---|---|
-|AADSTS700213|No matching federated identity record found for presented assertion subject|The "GitHub Actions deploying Azure resources" federated credential scenario in Azure uses a format that some older GitHub repositories do not match. Ensure that __Use default template__ and __Use immutable subject claim__ are checked in your project's __Actions__ -> __OIDC__ settings [as described in GitHub Actions documentation](https://docs.github.com/actions/reference/security/oidc).|
+|AADSTS700213|No matching federated identity record found for presented assertion subject|The "GitHub Actions deploying Azure resources" federated credential scenario in Azure uses a format that some older GitHub repositories do not match by default.<ul><li>Ensure that __Use default template__ and __Use immutable subject claim__ are checked in your project's __Actions__ -> __OIDC__ settings [as described in GitHub Actions documentation](https://docs.github.com/actions/reference/security/oidc#immutable-subject-claims) and that the __Default subject claim prefix__ exactly matches the prefix of the __Subject identifier__ in Azure for the federated credential.</li><li>Ensure the __Entity__ configured in Azure for the federated credential matches the GitHub environment, branch, pull request, or tag that is attempting to authenticate.</li></ul>|
 
 <a id="workload"></a>
 
