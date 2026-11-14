@@ -440,46 +440,6 @@ so the SDK starts a new recovery episode with a new retry count and a new budget
   every level.
 - `err` - the error that the operation returns.
 
-### Link attachment during recovery
-
-Connection recovery can replace a session while a sender or receiver prepares
-to attach. The SDK checks that preparation still belongs to the current recovery
-generation before attaching the link. Superseded preparation restarts against the
-current session, avoiding a duplicate link-name attachment on that session.
-
-## Contributing
-
-See the [CONTRIBUTING.md] for details on building, testing, and contributing to these libraries.
-
-This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit <https://opensource.microsoft.com/cla/>.
-
-When you submit a pull request, a CLA-bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions provided by the bot. You will only need to do this once across all repos using our CLA.
-
-This project has adopted the [Microsoft Open Source Code of Conduct]. For more information see the [Code of Conduct FAQ] or contact <opencode@microsoft.com> with any additional questions or comments.
-
-### Reporting security issues and security bugs
-
-Security issues and bugs should be reported privately, via email, to the Microsoft Security Response Center (MSRC) <secure@microsoft.com>. You should receive a response within 24 hours. If for some reason you do not, please follow up via email to ensure we received your original message. Further information, including the MSRC PGP key, can be found in the [Security TechCenter](https://www.microsoft.com/msrc/faqs-report-an-issue).
-
-### License
-
-Azure SDK for Rust is licensed under the [MIT](https://github.com/Azure/azure-sdk-for-cpp/blob/main/LICENSE.txt) license.
-
-<!-- LINKS -->
-[producer_client]: https://docs.rs/azure_messaging_eventhubs/latest/azure_messaging_eventhubs/struct.ProducerClient.html
-[consumer_client]: https://docs.rs/azure_messaging_eventhubs/latest/azure_messaging_eventhubs/struct.ConsumerClient.html
-[API reference documentation]: https://docs.rs/azure_messaging_eventhubs/latest/azure_messaging_eventhubs
-[Azure CLI]: https://learn.microsoft.com/cli/azure
-[Azure subscription]: https://azure.microsoft.com/free/
-[Azure Identity]: https://aka.ms/azsdk/rust/identity/docs
-[Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
-[Product documentation]: https://learn.microsoft.com/azure/event-hubs/
-[Cargo]: https://crates.io/
-[Package (crates.io)]: https://crates.io/crates/azure_messaging_eventhubs
-[Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure_messaging_eventhubs/src
-[CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
-[Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
-
 ### OpenTelemetry traces, logs, and metrics
 
 Set `with_tracing_provider` on `ProducerClientBuilder`, `ConsumerClientBuilder`, or
@@ -563,3 +523,43 @@ a consumer can receive an event again after recovery.
 For an OTLP/HTTP exporter setup, provider shutdown, a local collector configuration,
 and a no-Azure smoke run, see the
 [OpenTelemetry example](examples/opentelemetry/README.md).
+
+### Link attachment during recovery
+
+Connection recovery can replace a session while a sender or receiver prepares
+to attach. The SDK checks that preparation still belongs to the current recovery
+generation before attaching the link. Superseded preparation restarts against the
+current session, avoiding a duplicate link-name attachment on that session.
+
+## Contributing
+
+See the [CONTRIBUTING.md] for details on building, testing, and contributing to these libraries.
+
+This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit <https://opensource.microsoft.com/cla/>.
+
+When you submit a pull request, a CLA-bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions provided by the bot. You will only need to do this once across all repos using our CLA.
+
+This project has adopted the [Microsoft Open Source Code of Conduct]. For more information see the [Code of Conduct FAQ] or contact <opencode@microsoft.com> with any additional questions or comments.
+
+### Reporting security issues and security bugs
+
+Security issues and bugs should be reported privately, via email, to the Microsoft Security Response Center (MSRC) <secure@microsoft.com>. You should receive a response within 24 hours. If for some reason you do not, please follow up via email to ensure we received your original message. Further information, including the MSRC PGP key, can be found in the [Security TechCenter](https://www.microsoft.com/msrc/faqs-report-an-issue).
+
+### License
+
+Azure SDK for Rust is licensed under the [MIT](https://github.com/Azure/azure-sdk-for-cpp/blob/main/LICENSE.txt) license.
+
+<!-- LINKS -->
+[producer_client]: https://docs.rs/azure_messaging_eventhubs/latest/azure_messaging_eventhubs/struct.ProducerClient.html
+[consumer_client]: https://docs.rs/azure_messaging_eventhubs/latest/azure_messaging_eventhubs/struct.ConsumerClient.html
+[API reference documentation]: https://docs.rs/azure_messaging_eventhubs/latest/azure_messaging_eventhubs
+[Azure CLI]: https://learn.microsoft.com/cli/azure
+[Azure subscription]: https://azure.microsoft.com/free/
+[Azure Identity]: https://aka.ms/azsdk/rust/identity/docs
+[Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
+[Product documentation]: https://learn.microsoft.com/azure/event-hubs/
+[Cargo]: https://crates.io/
+[Package (crates.io)]: https://crates.io/crates/azure_messaging_eventhubs
+[Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure_messaging_eventhubs/src
+[CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
+[Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
