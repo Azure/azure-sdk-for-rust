@@ -338,7 +338,7 @@ impl Metrics {
         Self {
             operations: meter.u64_counter("az.eventhubs.operations").with_description("Completed logical send and receive operations, including failures and cancellation").with_unit("{operation}").build(),
             events: meter.u64_counter("az.eventhubs.events").with_description("Successfully sent or received events").with_unit("{event}").build(),
-            duration: meter.f64_histogram("az.eventhubs.operation.duration").with_description("Logical operation duration including retries").with_unit("s").build(),
+            duration: meter.f64_histogram("az.eventhubs.operation.duration").with_description("Logical operation duration including retries").with_unit("s").with_boundaries(vec![0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0]).build(),
             lifecycle: meter.u64_counter("az.eventhubs.amqp.lifecycle").with_description("AMQP creation attempts and recovery invalidations").with_unit("{transition}").build(),
         }
     }
@@ -356,7 +356,14 @@ pub(crate) mod tests {
     };
     use azure_core_opentelemetry::OpenTelemetryTracerProvider;
     use futures::{future, FutureExt};
+    #[cfg(feature = "metrics")]
+    use opentelemetry::metrics::MeterProvider;
     use opentelemetry::trace::Status;
+    #[cfg(feature = "metrics")]
+    use opentelemetry_sdk::metrics::{
+        data::{AggregatedMetrics, MetricData},
+        InMemoryMetricExporter, SdkMeterProvider,
+    };
     use opentelemetry_sdk::trace::{InMemorySpanExporter, SdkTracerProvider};
     use std::sync::Arc;
 
@@ -502,11 +509,6 @@ pub(crate) mod tests {
     #[cfg(feature = "metrics")]
     #[tokio::test]
     async fn metrics_count_logical_operations_without_attempt_or_identity_labels() {
-        use opentelemetry::metrics::MeterProvider;
-        use opentelemetry_sdk::metrics::{
-            data::{AggregatedMetrics, MetricData},
-            InMemoryMetricExporter, SdkMeterProvider,
-        };
         let exporter = InMemoryMetricExporter::default();
         let provider = SdkMeterProvider::builder()
             .with_periodic_exporter(exporter.clone())
@@ -564,6 +566,39 @@ pub(crate) mod tests {
             panic!("expected histogram")
         };
         assert_eq!(histogram.data_points().map(|p| p.count()).sum::<u64>(), 3);
+        provider.shutdown().unwrap();
+    }
+    #[cfg(feature = "metrics")]
+    #[tokio::test]
+    async fn duration_histogram_distinguishes_operations_less_than_one_second() {
+        let exporter = InMemoryMetricExporter::default();
+        let provider = SdkMeterProvider::builder()
+            .with_periodic_exporter(exporter.clone())
+            .build();
+        let metrics = Metrics::with_meter(provider.meter("test"));
+        // Record deterministic durations through the SDK's actual instrument.
+        metrics.duration.record(0.002, &[]);
+        metrics.duration.record(0.2, &[]);
+        provider.force_flush().unwrap();
+        let exported = exporter.get_finished_metrics().unwrap();
+        let metric = exported
+            .iter()
+            .flat_map(|r| r.scope_metrics())
+            .flat_map(|s| s.metrics())
+            .find(|m| m.name() == "az.eventhubs.operation.duration")
+            .unwrap();
+        assert_eq!(metric.unit(), "s");
+        let AggregatedMetrics::F64(MetricData::Histogram(histogram)) = metric.data() else {
+            panic!("expected histogram")
+        };
+        let point = histogram.data_points().next().unwrap();
+        assert_eq!(point.count(), 2);
+        assert_eq!(
+            point.bucket_counts().filter(|count| *count > 0).count(),
+            2,
+            "millisecond and hundreds-of-milliseconds operations need distinct buckets"
+        );
+        assert!(point.bounds().any(|bound| bound > 0.0 && bound < 1.0));
         provider.shutdown().unwrap();
     }
     #[test]
