@@ -58,33 +58,42 @@ impl Diagnostics {
         parent: Option<Arc<dyn Span>>,
     ) -> Operation<'_> {
         let span = self.tracer.as_ref().map(|tracer| {
-            let entity = if operation == "receive" {
-                "messaging.source.name"
-            } else {
-                "messaging.destination.name"
-            };
-            let attributes = vec![
+            let mut attributes = vec![
                 Attribute {
                     key: "az.namespace".into(),
-                    value: ("Microsoft.EventHub").into(),
+                    value: "Microsoft.EventHub".into(),
                 },
                 Attribute {
                     key: "messaging.system".into(),
-                    value: ("eventhubs").into(),
-                },
-                Attribute {
-                    key: entity.into(),
-                    value: (self.hub.clone()).into(),
-                },
-                Attribute {
-                    key: "messaging.operation".into(),
-                    value: (operation).into(),
+                    value: "eventhubs".into(),
                 },
                 Attribute {
                     key: "server.address".into(),
-                    value: (self.host.clone()).into(),
+                    value: self.host.clone().into(),
                 },
             ];
+            if matches!(operation, "send" | "receive") {
+                let entity = if operation == "receive" {
+                    "messaging.source.name"
+                } else {
+                    "messaging.destination.name"
+                };
+                attributes.push(Attribute {
+                    key: entity.into(),
+                    value: self.hub.clone().into(),
+                });
+                attributes.push(Attribute {
+                    key: "messaging.operation".into(),
+                    value: operation.into(),
+                });
+            } else {
+                // Connections and sessions serve both directions. Opening either
+                // is a transport operation, not a message send or receive.
+                attributes.push(Attribute {
+                    key: "az.eventhubs.amqp.operation".into(),
+                    value: operation.into(),
+                });
+            }
             match parent {
                 Some(parent) => {
                     tracer.start_span_with_parent(name.into(), kind, attributes, parent)
@@ -145,10 +154,11 @@ impl Diagnostics {
             "session" => "EventHubs.session.begin",
             _ => "EventHubs.connection.open",
         };
-        let operation = if component == "receiver" {
-            "receive"
-        } else {
-            "send"
+        let operation = match component {
+            "receiver" => "receive",
+            "sender" => "send",
+            "session" => "begin",
+            _ => "open",
         };
         let mut guard = self.start(name, operation, SpanKind::Client, parent);
         if let Some(span) = &guard.span {
@@ -223,10 +233,12 @@ impl Operation<'_> {
         self.outcome = if result.is_ok() { "success" } else { "error" };
         self.count = if result.is_ok() { count } else { 0 };
         if let Some(span) = &self.span {
-            span.set_attribute(
-                "messaging.batch.message_count",
-                (self.message_count.unwrap_or(self.count) as i64).into(),
-            );
+            // Producer counts were set when the operation started. Only a
+            // logical receive learns its message count at completion; control
+            // and transport spans do not claim an unknown message count.
+            if self.logical && self.message_count.is_none() {
+                span.set_attribute("messaging.batch.message_count", (self.count as i64).into());
+            }
             if let Err(error) = result {
                 span.record_error(error);
                 // Avoid adding service messages or payloads to the status description.
@@ -534,5 +546,32 @@ pub(crate) mod tests {
         };
         assert_eq!(histogram.data_points().map(|p| p.count()).sum::<u64>(), 3);
         provider.shutdown().unwrap();
+    }
+    #[test]
+    fn control_spans_do_not_claim_message_sends() {
+        let (provider, exporter, _sdk) = provider();
+        let diagnostics = diagnostics(Some(provider));
+        let url = Url::parse("amqps://example.servicebus.windows.net/hub/ConsumerGroups/$Default")
+            .unwrap();
+        for component in ["connection", "session"] {
+            let mut span = diagnostics.lifecycle(component, &url, 0, None);
+            span.finish(&Ok::<(), std::io::Error>(()), 0);
+        }
+        let spans = exporter.get_finished_spans().unwrap();
+        assert_eq!(spans.len(), 2);
+        for (span, operation) in spans.iter().zip(["open", "begin"]) {
+            assert!(!span.attributes.iter().any(|a| matches!(
+                a.key.as_str(),
+                "messaging.operation"
+                    | "messaging.source.name"
+                    | "messaging.destination.name"
+                    | "messaging.batch.message_count"
+            )));
+            assert!(span
+                .attributes
+                .iter()
+                .any(|a| a.key.as_str() == "az.eventhubs.amqp.operation"
+                    && a.value == operation.into()));
+        }
     }
 }

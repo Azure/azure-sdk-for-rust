@@ -578,8 +578,9 @@ impl RecoverableConnection {
         receiver_options: AmqpReceiverOptions,
         partition_id: &str,
         timeout: Option<Duration>,
+        parent: Option<Arc<dyn Span>>,
     ) -> Result<RecoverableReceiver> {
-        self.ensure_receiver(source_url, &message_source, &receiver_options)
+        self.ensure_receiver(source_url, &message_source, &receiver_options, parent)
             .await?;
 
         Ok(RecoverableReceiver::new(
@@ -962,16 +963,6 @@ impl RecoverableConnection {
         ),
     )]
     pub(super) async fn ensure_receiver(
-        self: &Arc<Self>,
-        source_url: &Url,
-        message_source: &AmqpSource,
-        receiver_options: &AmqpReceiverOptions,
-    ) -> azure_core_amqp::Result<Arc<AmqpReceiver>> {
-        self.ensure_receiver_traced(source_url, message_source, receiver_options, None)
-            .await
-    }
-
-    pub(super) async fn ensure_receiver_traced(
         self: &Arc<Self>,
         source_url: &Url,
         message_source: &AmqpSource,

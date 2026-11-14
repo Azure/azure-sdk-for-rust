@@ -6,12 +6,12 @@ use crate::common::retry::{
     recover_with_policy, DeliveryWait, ErrorRecoveryAction, RecoveryClock, RecoveryLogContext,
     RecoveryOperation, RecoveryPolicy, SystemClock,
 };
-use azure_core::{error::ErrorKind as AzureErrorKind, http::Url, time::Duration};
+use azure_core::{error::ErrorKind as AzureErrorKind, http::Url, time::Duration, tracing::Span};
 use azure_core_amqp::{
     error::Result, AmqpError, AmqpReceiverApis, AmqpReceiverOptions, AmqpSession, AmqpSource,
 };
 use futures::{select, FutureExt};
-use std::sync::Weak;
+use std::sync::{Arc, Weak};
 use tracing::{debug, instrument, trace};
 
 pub(crate) struct RecoverableReceiver {
@@ -45,11 +45,31 @@ impl RecoverableReceiver {
         }
     }
 
+    /// Waits for a delivery under the caller's logical receive span.
+    #[instrument(level = "trace", skip_all, fields(source_url = %self.source_url))]
+    pub(crate) async fn receive_delivery_with_parent(
+        &self,
+        parent: Option<Arc<dyn Span>>,
+    ) -> Result<azure_core_amqp::AmqpDelivery> {
+        let wait = DeliveryWait::new(&SystemClock);
+        self.receive_with_recovery(
+            || self.receive_once(&wait, parent.clone()),
+            |connection: Weak<RecoverableConnection>, reason| {
+                Box::pin(RecoverableConnection::recover_from_error(
+                    connection, reason,
+                ))
+            },
+            self.recoverable_connection.clone(),
+            &wait,
+        )
+        .await
+    }
+
     /// Attaches the receiver if needed, marks `wait`, then waits for one delivery.
     async fn receive_once(
         &self,
         wait: &DeliveryWait<'_, SystemClock>,
-        parent: Option<std::sync::Arc<dyn azure_core::tracing::Span>>,
+        parent: Option<Arc<dyn Span>>,
     ) -> Result<azure_core_amqp::AmqpDelivery> {
         trace!(source_url = %self.source_url, "Starting receive_delivery operation.");
         let connection = self
@@ -63,7 +83,7 @@ impl RecoverableReceiver {
             connection.get_forced_error()?;
 
             connection
-                .ensure_receiver_traced(
+                .ensure_receiver(
                     &self.source_url,
                     &self.message_source,
                     &self.receiver_options,
@@ -212,20 +232,7 @@ impl AmqpReceiverApis for RecoverableReceiver {
                 "receive",
                 azure_core::tracing::SpanKind::Client,
                 1,
-                |parent| async move {
-                    let wait = DeliveryWait::new(&SystemClock);
-                    self.receive_with_recovery(
-                        || self.receive_once(&wait, parent.clone()),
-                        |connection: Weak<RecoverableConnection>, reason| {
-                            Box::pin(RecoverableConnection::recover_from_error(
-                                connection, reason,
-                            ))
-                        },
-                        self.recoverable_connection.clone(),
-                        &wait,
-                    )
-                    .await
-                },
+                |parent| self.receive_delivery_with_parent(parent),
             )
             .await
     }

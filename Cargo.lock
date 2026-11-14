@@ -934,6 +934,7 @@ dependencies = [
  "rand 0.10.2",
  "rand_chacha 0.10.0",
  "rustc_version",
+ "serde_amqp 0.18.0",
  "sha2",
  "tokio",
  "tracing",
