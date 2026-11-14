@@ -89,6 +89,7 @@ async fn run(live: bool, provider: Arc<dyn TracerProvider>) -> Result<(), Box<dy
         // Port zero cannot host a service. This creates a real SDK connection
         // failure span, lifecycle logs, and lifecycle metrics without credentials.
         let result = ProducerClient::builder().with_tracing_provider(provider)
+            .with_custom_endpoint("amqp://127.0.0.1:0".to_owned())
             .with_retry_options(RetryOptions { max_retries: 0, max_total_elapsed: Duration::seconds(1), ..Default::default() })
             .open_with_connection_string("Endpoint=sb://127.0.0.1:0;SharedAccessKeyName=sample;SharedAccessKey=c2FtcGxl;EntityPath=smoke", None).await;
         if result.is_ok() {
