@@ -524,7 +524,7 @@ a consumer can receive an event again after recovery.
 
 For an OTLP/HTTP exporter setup, provider shutdown, a local collector configuration,
 and a no-Azure smoke run, see the
-[OpenTelemetry example](examples/opentelemetry/README.md).
+[OpenTelemetry example](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/eventhubs/azure_messaging_eventhubs/examples/opentelemetry/README.md).
 
 ### Link attachment during recovery
 

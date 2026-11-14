@@ -1,6 +1,6 @@
 # Export Event Hubs telemetry
 
-The [example](../eventhubs_opentelemetry.rs) exports SDK traces, diagnostic logs,
+The [example](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/eventhubs/azure_messaging_eventhubs/examples/eventhubs_opentelemetry.rs) exports SDK traces, diagnostic logs,
 and native metrics to an OpenTelemetry Collector over OTLP/HTTP. It configures
 providers at application startup and shuts them down even when the SDK call fails.
 
