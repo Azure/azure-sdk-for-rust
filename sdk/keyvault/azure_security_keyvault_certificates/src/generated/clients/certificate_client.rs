@@ -72,6 +72,15 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_backup_certificate(
+                &mut options.method_options.context,
+                (*(certificate_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/certificates/{certificate-name}/backup");
@@ -120,6 +129,15 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_delete_certificate(
+                &mut options.method_options.context,
+                (*(certificate_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/certificates/{certificate-name}");
@@ -168,6 +186,15 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_delete_certificate_operation(
+                &mut options.method_options.context,
+                (*(certificate_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/certificates/{certificate-name}/pending");
@@ -254,6 +281,15 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_delete_issuer(
+                &mut options.method_options.context,
+                (*(issuer_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/certificates/issuers/{issuer-name}");
@@ -301,6 +337,16 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_get_certificate(
+                &mut options.method_options.context,
+                (*(certificate_name)).to_owned(),
+                (options.certificate_version).clone(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/certificates/{certificate-name}/{certificate-version}");
@@ -352,6 +398,15 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_get_certificate_operation(
+                &mut options.method_options.context,
+                (*(certificate_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/certificates/{certificate-name}/pending");
@@ -400,6 +455,15 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_get_certificate_policy(
+                &mut options.method_options.context,
+                (*(certificate_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/certificates/{certificate-name}/policy");
@@ -487,6 +551,15 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_get_deleted_certificate(
+                &mut options.method_options.context,
+                (*(certificate_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/deletedcertificates/{certificate-name}");
@@ -535,6 +608,15 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_get_issuer(
+                &mut options.method_options.context,
+                (*(issuer_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/certificates/issuers/{issuer-name}");
@@ -587,6 +669,15 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_import_certificate(
+                &mut options.method_options.context,
+                (*(certificate_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/certificates/{certificate-name}/import");
@@ -629,6 +720,16 @@ impl CertificateClient {
         options: Option<CertificateClientListCertificatePropertiesOptions<'_>>,
     ) -> Result<Pager<ListCertificatePropertiesResult>> {
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_list_certificate_properties(
+                &mut options.method_options.context,
+                options.maxresults,
+                options.include_pending,
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         first_url.append_path("/certificates");
@@ -720,6 +821,16 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_list_certificate_properties_versions(
+                &mut options.method_options.context,
+                (*(certificate_name)).to_owned(),
+                options.maxresults,
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         let mut path = String::from("/certificates/{certificate-name}/versions");
@@ -803,6 +914,16 @@ impl CertificateClient {
         options: Option<CertificateClientListDeletedCertificatePropertiesOptions<'_>>,
     ) -> Result<Pager<ListDeletedCertificatePropertiesResult>> {
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_list_deleted_certificate_properties(
+                &mut options.method_options.context,
+                options.maxresults,
+                options.include_pending,
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         first_url.append_path("/deletedcertificates");
@@ -886,6 +1007,15 @@ impl CertificateClient {
         options: Option<CertificateClientListIssuerPropertiesOptions<'_>>,
     ) -> Result<Pager<ListIssuerPropertiesResult>> {
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_list_issuer_properties(
+                &mut options.method_options.context,
+                options.maxresults,
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         first_url.append_path("/certificates/issuers");
@@ -976,6 +1106,15 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_merge_certificate(
+                &mut options.method_options.context,
+                (*(certificate_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/certificates/{certificate-name}/pending/merge");
@@ -1027,6 +1166,15 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_purge_deleted_certificate(
+                &mut options.method_options.context,
+                (*(certificate_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/deletedcertificates/{certificate-name}");
@@ -1075,6 +1223,15 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_recover_deleted_certificate(
+                &mut options.method_options.context,
+                (*(certificate_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/deletedcertificates/{certificate-name}/recover");
@@ -1208,6 +1365,15 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_set_issuer(
+                &mut options.method_options.context,
+                (*(issuer_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/certificates/issuers/{issuer-name}");
@@ -1260,6 +1426,15 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_update_certificate_operation(
+                &mut options.method_options.context,
+                (*(certificate_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/certificates/{certificate-name}/pending");
@@ -1312,6 +1487,15 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_update_certificate_policy(
+                &mut options.method_options.context,
+                (*(certificate_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/certificates/{certificate-name}/policy");
@@ -1364,6 +1548,16 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_update_certificate_properties(
+                &mut options.method_options.context,
+                (*(certificate_name)).to_owned(),
+                (options.certificate_version).clone(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/certificates/{certificate-name}/{certificate-version}");
@@ -1420,6 +1614,15 @@ impl CertificateClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_certificate_client_update_issuer(
+                &mut options.method_options.context,
+                (*(issuer_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/certificates/issuers/{issuer-name}");
@@ -1456,4 +1659,4 @@ impl CertificateClient {
 /// SDK author provides a custom options type and should reference this constant
 /// in their `Default` implementation rather than hardcoding the value.
 #[allow(dead_code)]
-pub(crate) const DEFAULT_API_VERSION: &str = "2026-03-01-preview";
+pub(crate) const DEFAULT_API_VERSION: &str = "2026-07-01-preview";

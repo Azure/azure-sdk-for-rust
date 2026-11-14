@@ -6,7 +6,8 @@
 use crate::generated::clients::{
     KeyVaultKeysClient, KeyVaultMHSMPrivateEndpointConnectionsClient,
     KeyVaultMHSMPrivateLinkResourcesClient, KeyVaultMHSMRegionsClient,
-    KeyVaultManagedHsmKeysClient, KeyVaultManagedHsmsClient, KeyVaultOperationsClient,
+    KeyVaultManagedHsmKeysClient, KeyVaultManagedHsmsClient,
+    KeyVaultNetworkSecurityPerimeterConfigurationsClient, KeyVaultOperationsClient,
     KeyVaultPrivateEndpointConnectionsClient, KeyVaultPrivateLinkResourcesClient,
     KeyVaultSecretsClient, KeyVaultVaultsClient,
 };
@@ -44,13 +45,6 @@ pub struct KeyVaultClientOptions {
 impl KeyVaultClient {
     /// Creates a new KeyVaultClient, using Entra ID authentication.
     ///
-    /// # Arguments
-    ///
-    /// * `subscription_id` - The ID of the target subscription. The value must be an UUID.
-    /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
-    ///   Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    ///
     /// Public cloud is used when no cloud configuration is supplied. For a custom cloud,
     /// set [`CustomConfiguration::endpoint`](azure_core::cloud::CustomConfiguration::endpoint)
     /// and register its authentication audience using the shared
@@ -61,6 +55,13 @@ impl KeyVaultClient {
     ///
     /// Returns an error if a custom cloud has no endpoint or Resource Manager audience,
     /// or if its endpoint URL is invalid.
+    ///
+    /// # Arguments
+    ///
+    /// * `subscription_id` - The ID of the target subscription. The value must be an UUID.
+    /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
+    ///   Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
     #[tracing::new("Microsoft.KeyVault")]
     pub fn new(
         subscription_id: String,
@@ -74,8 +75,10 @@ impl KeyVaultClient {
             .ok_or_else(|| Error::new(ErrorKind::Other, "missing Resource Manager endpoint"))?;
         let endpoint = Url::parse(endpoint)?;
         let scope = cloud.default_scope()?.into_owned();
-        let auth_policy: Arc<dyn Policy> =
-            Arc::new(BearerTokenAuthorizationPolicy::new(credential, vec![scope]));
+        let auth_policy: Arc<dyn Policy> = Arc::new(
+            BearerTokenAuthorizationPolicy::new(credential, vec![scope])
+                .with_options((&options.client_options).into()),
+        );
         Ok(Self {
             endpoint,
             subscription_id,
@@ -166,6 +169,19 @@ impl KeyVaultClient {
         }
     }
 
+    /// Returns a new instance of KeyVaultNetworkSecurityPerimeterConfigurationsClient.
+    #[tracing::subclient]
+    pub fn get_key_vault_network_security_perimeter_configurations_client(
+        &self,
+    ) -> KeyVaultNetworkSecurityPerimeterConfigurationsClient {
+        KeyVaultNetworkSecurityPerimeterConfigurationsClient {
+            api_version: self.api_version.clone(),
+            endpoint: self.endpoint.clone(),
+            pipeline: self.pipeline.clone(),
+            subscription_id: self.subscription_id.clone(),
+        }
+    }
+
     /// Returns a new instance of KeyVaultOperationsClient.
     #[tracing::subclient]
     pub fn get_key_vault_operations_client(&self) -> KeyVaultOperationsClient {
@@ -226,7 +242,7 @@ impl KeyVaultClient {
 }
 
 /// Default value for [`KeyVaultClientOptions::api_version`].
-pub(crate) const DEFAULT_API_VERSION: &str = "2026-05-15";
+pub(crate) const DEFAULT_API_VERSION: &str = "2026-10-01-preview";
 
 impl Default for KeyVaultClientOptions {
     fn default() -> Self {

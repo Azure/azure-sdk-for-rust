@@ -12,6 +12,19 @@ pub enum AccessPolicyUpdateKind {
     Replace,
 }
 
+/// Direction of Access Rule
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum AccessRuleDirection {
+    /// Applies to inbound network traffic to the secured resources.
+    Inbound,
+
+    /// Applies to outbound network traffic from the secured resources
+    Outbound,
+
+    /// Any other value not defined in `AccessRuleDirection`.
+    UnknownValue(String),
+}
+
 /// A message indicating if changes on the service provider require any updates on the consumer.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ActionsRequired {
@@ -142,6 +155,28 @@ pub enum GeoReplicationRegionProvisioningState {
     UnknownValue(String),
 }
 
+/// Type of issue
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum IssueType {
+    /// An error occurred while applying the network security perimeter (NSP) configuration.
+    ConfigurationPropagationFailure,
+
+    /// An managed identity hasn't been associated with the resource. The resource will still be able to validate inbound traffic
+    /// from the network security perimeter (NSP) or matching inbound access rules, but it won't be able to perform outbound access
+    /// as a member of the NSP.
+    MissingIdentityConfiguration,
+
+    /// A network connectivity issue is happening on the resource which could be addressed either by adding new resources to the
+    /// network security perimeter (NSP) or by modifying access rules.
+    MissingPerimeterConfiguration,
+
+    /// Unknown issue type
+    Unknown,
+
+    /// Any other value not defined in `IssueType`.
+    UnknownValue(String),
+}
+
 /// The elliptic curve name. For valid values, see JsonWebKeyCurveName. Default for EC and EC-HSM keys is P-256
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum JsonWebKeyCurveName {
@@ -245,7 +280,6 @@ pub enum KeyPermissions {
     UnknownValue(String),
 }
 
-/// The type of action.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum KeyRotationPolicyActionType {
     Notify,
@@ -343,6 +377,34 @@ pub enum NetworkRuleBypassOptions {
     UnknownValue(String),
 }
 
+/// Provisioning state of a network security perimeter configuration that is being created or updated.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum NetworkSecurityPerimeterConfigurationProvisioningState {
+    /// The configuration request was accepted and provisioning has not started yet.
+    Accepted,
+
+    /// The configuration provisioning was canceled.
+    Canceled,
+
+    /// The configuration is being created.
+    Creating,
+
+    /// The configuration is being deleted.
+    Deleting,
+
+    /// The configuration failed to provision.
+    Failed,
+
+    /// The configuration was provisioned successfully.
+    Succeeded,
+
+    /// The configuration is being updated.
+    Updating,
+
+    /// Any other value not defined in `NetworkSecurityPerimeterConfigurationProvisioningState`.
+    UnknownValue(String),
+}
+
 /// The current provisioning state.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PrivateEndpointConnectionProvisioningState {
@@ -430,6 +492,22 @@ pub enum Reason {
     UnknownValue(String),
 }
 
+/// Access mode of the resource association
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ResourceAssociationAccessMode {
+    /// Audit access mode - traffic to the resource that fails access checks is logged but not blocked
+    Audit,
+
+    /// Enforced access mode - traffic to the resource that failed access checks is blocked
+    Enforced,
+
+    /// Learning access mode - traffic to the resource is enabled for analysis but not blocked
+    Learning,
+
+    /// Any other value not defined in `ResourceAssociationAccessMode`.
+    UnknownValue(String),
+}
+
 /// The provisioning state of a resource type.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ResourceProvisioningState {
@@ -467,6 +545,19 @@ pub enum SecretPermissions {
     Set,
 
     /// Any other value not defined in `SecretPermissions`.
+    UnknownValue(String),
+}
+
+/// Severity of the issue.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Severity {
+    /// The issue is an error and prevents the configuration from being applied.
+    Error,
+
+    /// The issue is a warning and does not prevent the configuration from being applied.
+    Warning,
+
+    /// Any other value not defined in `Severity`.
     UnknownValue(String),
 }
 
@@ -520,6 +611,41 @@ pub enum StoragePermissions {
     Update,
 
     /// Any other value not defined in `StoragePermissions`.
+    UnknownValue(String),
+}
+
+/// This specifies whether token binding is disabled, enabled or enforced.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum TokenBindingMode {
+    /// Token binding is enforced for the vault. Only bounded tokens will be accepted. Bearer tokens will be rejected.
+    Enforced,
+
+    /// Token binding is not enforced for the vault. Bounded tokens will be rejected.
+    NotEnforced,
+
+    /// Any other value not defined in `TokenBindingMode`.
+    UnknownValue(String),
+}
+
+/// Must be one of the following values "NoValidation", "Unattested", "AttestedTrustedLaunch", "AttestedConfidential". Strength
+/// of the token binding increases with each value in that order.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum TokenBindingStrength {
+    /// Bounded Entra token must originate from a confidential VM with attestation proof from the attestation authority like Microsoft
+    /// Azure Attestation.
+    AttestedConfidential,
+
+    /// Bounded Entra token must originate from a trusted launch VM with attestation proof from the attestation authority like
+    /// Microsoft Azure Attestation.
+    AttestedTrustedLaunch,
+
+    /// This is default when token binding is not enabled.
+    NoValidation,
+
+    /// No attestation proof is required for the bounded token.
+    Unattested,
+
+    /// Any other value not defined in `TokenBindingStrength`.
     UnknownValue(String),
 }
 

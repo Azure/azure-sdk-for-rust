@@ -53,6 +53,16 @@ impl KeyVaultPrivateLinkResourcesClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_private_link_resources_client_list_by_vault(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(vault_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}/privateLinkResources");

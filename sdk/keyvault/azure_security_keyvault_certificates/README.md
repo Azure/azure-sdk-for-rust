@@ -18,9 +18,9 @@ cargo add azure_security_keyvault_certificates
 
 ### Prerequisites
 
-* An [Azure subscription].
-* An existing Azure Key Vault. If you need to create an Azure Key Vault, you can use the Azure Portal or [Azure CLI].
-* Authorization to an existing Azure Key Vault using either [RBAC] (recommended) or [access control].
+- An [Azure subscription].
+- An existing Azure Key Vault. If you need to create an Azure Key Vault, you can use the Azure Portal or [Azure CLI].
+- Authorization to an existing Azure Key Vault using either [RBAC] (recommended) or [access control].
 
 If you use the Azure CLI, replace `<your-resource-group-name>` and `<your-key-vault-name>` with your own, unique names:
 
@@ -81,6 +81,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+## Features
+
+- `test`: enables test support.
+- `unstable_fake`: enables experimental fake server transports and the `test` feature. These APIs are subject to change.
+
 ## Key concepts
 
 ### Certificate
@@ -99,12 +104,12 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 The following section provides several code snippets using a `CertificateClient` like we [instantiated above](#instantiate-a-client):
 
-* [Create a certificate](#create-a-certificate)
-* [Retrieve a certificate](#retrieve-a-certificate)
-* [Update an existing certificate](#update-an-existing-certificate)
-* [Delete a certificate](#delete-a-certificate)
-* [List certificates](#list-certificates)
-* [Key operations using certificates](#key-operations-using-certificates)
+- [Create a certificate](#create-a-certificate)
+- [Retrieve a certificate](#retrieve-a-certificate)
+- [Update an existing certificate](#update-an-existing-certificate)
+- [Delete a certificate](#delete-a-certificate)
+- [List certificates](#list-certificates)
+- [Key operations using certificates](#key-operations-using-certificates)
 
 ### Create a certificate
 
@@ -282,6 +287,7 @@ let digest = sha256(plaintext.as_bytes()).to_vec();
 let body = SignParameters {
     algorithm: Some(SignatureAlgorithm::Es256),
     value: Some(digest),
+    ..Default::default()
 };
 
 let signature = key_client
@@ -299,6 +305,81 @@ let signature = key_client
 if let Some(signature) = signature.result.map(base64::encode_url_safe) {
     println!("Signature: {}", signature);
 }
+```
+
+## Testing with fakes
+
+Enable the crate's `test` and `unstable_fake` features in your test dependencies.
+`unstable_fake` enables `test` automatically, but both are shown explicitly below.
+The fake APIs are experimental and subject to change:
+
+```toml
+[dependencies]
+azure_security_keyvault_certificates = "1"
+
+[dev-dependencies]
+azure_core = { version = "1", features = ["test", "unstable_fake"] }
+azure_security_keyvault_certificates = { version = "1", features = ["test", "unstable_fake"] }
+async-trait = "0.1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+```
+
+Then implement just the fake server operations your test needs:
+
+```rust ignore testing_with_fakes
+use azure_core::{
+    http::{fake::ResponseExt as _, headers::Headers, AsyncRawResponse, StatusCode},
+    Result,
+};
+use azure_security_keyvault_certificates::{
+    clients::fake::CertificateServer,
+    models::CertificateClientGetCertificateOptions,
+    CertificateClient,
+};
+use std::sync::Arc;
+
+#[derive(Debug)]
+struct FakeCertificateServer;
+
+#[async_trait::async_trait]
+impl CertificateServer for FakeCertificateServer {
+    async fn get_certificate(
+        &self,
+        certificate_name: &str,
+        _options: Option<CertificateClientGetCertificateOptions<'_>>,
+    ) -> Result<AsyncRawResponse> {
+        assert_eq!(certificate_name, "my-certificate");
+        Ok(AsyncRawResponse::fake_with_bytes(
+            StatusCode::Ok,
+            Headers::new(),
+            r#"{"id":"https://my-vault.vault.azure.net/certificates/my-certificate"}"#,
+        ))
+    }
+}
+
+let client = CertificateClient::with_fake(
+    "https://my-vault.vault.azure.net",
+    Arc::new(FakeCertificateServer),
+    None,
+)?;
+let certificate = client
+    .get_certificate("my-certificate", None)
+    .await?
+    .into_model()?;
+assert_eq!(
+    certificate.id.as_deref(),
+    Some("https://my-vault.vault.azure.net/certificates/my-certificate"),
+);
+```
+
+### Fake service responses
+
+The experimental [fake server example] retrieves a certificate and simulates a service error
+without credentials or network access. Implement only the `CertificateServer` operations
+your application needs; the client uses its normal response and error handling.
+
+```sh
+cargo run -p azure_security_keyvault_certificates --example certificate_client_fake --features test,unstable_fake
 ```
 
 ## Troubleshooting
@@ -357,3 +438,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
 [access control]: https://learn.microsoft.com/azure/key-vault/general/assign-access-policy
 [RBAC]: https://learn.microsoft.com/azure/key-vault/general/rbac-guide
+[fake server example]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_certificates/examples/certificate_client_fake.rs

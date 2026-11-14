@@ -16,6 +16,8 @@ exclude.workspace = true
 
 [features]
 default = ["azure_core/default"]
+test = ["azure_core/test"]
+unstable_fake = ["test", "azure_core/unstable_fake"]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -46,3 +48,7 @@ rustc_version.workspace = true
 
 [lints]
 workspace = true
+
+[[example]]
+name = "certificate_client_fake"
+required-features = ["test", "unstable_fake"]

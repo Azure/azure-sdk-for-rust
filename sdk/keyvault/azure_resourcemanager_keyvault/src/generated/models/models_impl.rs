@@ -16,8 +16,9 @@ use super::{
     KeyVaultVaultsClientBeginPurgeDeletedOperationStatus, MHSMGeoReplicatedRegion,
     MHSMPrivateEndpointConnection, MHSMPrivateEndpointConnectionsListResult, MHSMRegionsListResult,
     ManagedHsm, ManagedHsmKey, ManagedHsmKeyCreateParameters, ManagedHsmKeyListResult,
-    ManagedHsmListResult, Operation, OperationListResult, PrivateEndpointConnection,
-    PrivateEndpointConnectionListResult, ResourceListResult, Secret,
+    ManagedHsmListResult, NetworkSecurityPerimeterConfiguration,
+    NetworkSecurityPerimeterConfigurationListResult, Operation, OperationListResult,
+    PrivateEndpointConnection, PrivateEndpointConnectionListResult, ResourceListResult, Secret,
     SecretCreateOrUpdateParameters, SecretListResult, SecretPatchParameters, TrackedResource,
     Vault, VaultAccessPolicyParameters, VaultCheckNameAvailabilityParameters,
     VaultCreateOrUpdateParameters, VaultListResult, VaultPatchParameters,
@@ -91,6 +92,15 @@ impl Page for ManagedHsmKeyListResult {
 impl Page for ManagedHsmListResult {
     type Item = ManagedHsm;
     type IntoIter = <Vec<ManagedHsm> as IntoIterator>::IntoIter;
+    async fn into_items(self) -> Result<Self::IntoIter> {
+        Ok(self.value.into_iter())
+    }
+}
+
+#[async_trait]
+impl Page for NetworkSecurityPerimeterConfigurationListResult {
+    type Item = NetworkSecurityPerimeterConfiguration;
+    type IntoIter = <Vec<NetworkSecurityPerimeterConfiguration> as IntoIterator>::IntoIter;
     async fn into_items(self) -> Result<Self::IntoIter> {
         Ok(self.value.into_iter())
     }
