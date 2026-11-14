@@ -479,3 +479,84 @@ Azure SDK for Rust is licensed under the [MIT](https://github.com/Azure/azure-sd
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure_messaging_eventhubs/src
 [CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
+
+### OpenTelemetry traces, logs, and metrics
+
+Set `with_tracing_provider` on `ProducerClientBuilder`, `ConsumerClientBuilder`, or
+`BufferedProducerClientBuilder` to enable distributed tracing. The SDK uses the
+provider-neutral `azure_core::tracing` API. An application using OpenTelemetry can
+adapt its provider with `azure_core_opentelemetry::OpenTelemetryTracerProvider`.
+The application owns the providers and must flush or shut them down before exit.
+
+```rust no_run
+use azure_core_opentelemetry::OpenTelemetryTracerProvider;
+use azure_messaging_eventhubs::ProducerClient;
+use std::sync::Arc;
+
+# async fn example() -> Result<(), Box<dyn std::error::Error>> {
+let sdk = opentelemetry_sdk::trace::SdkTracerProvider::builder().build();
+let provider = OpenTelemetryTracerProvider::new(Arc::new(sdk.clone()));
+let credential = azure_identity::DeveloperToolsCredential::new(None)?;
+let producer = ProducerClient::builder()
+    .with_tracing_provider(provider)
+    .open("example.servicebus.windows.net", "events", credential)
+    .await?;
+producer.send_event("hello", None).await?;
+producer.close().await?;
+sdk.shutdown()?;
+# Ok(()) }
+```
+
+`ProducerClient.send` covers one logical send, including preparation and retries.
+`send_event` and `send_message` share a span. Background batch sends from a buffered
+producer have their own spans; enqueue time is excluded. `EventReceiver.receive`
+covers each delivery request, including recovery. It ends before yielding the
+event, so application processing time is excluded. Child spans measure sender and
+receiver attachment, send disposition, and blocking receive waits. Connection open
+and session begin also emit spans. Failed attempts mark their child span as an
+error; a successful retry leaves the logical span successful. Dropping a pending
+operation ends its span with a cancellation status.
+
+Trace attributes include `az.namespace=Microsoft.EventHub`,
+`messaging.system=eventhubs`, the destination or source name, the server address,
+the operation, and the message count. The Rust OpenTelemetry adapter uses schema
+1.23.0. These spans do not inject or extract message trace context or link batches
+to remote producer spans.
+
+Structured AMQP lifecycle records use the `tracing` module target
+`azure_messaging_eventhubs::common::diagnostics`. Records identify the client,
+component type, component ID, creation-attempt generation, and connection recovery
+generation. IDs remain the same between an attempt's `started` and terminal
+`success`, `error`, or `cancelled` record. Every creation attempt receives a new
+ID and generation, including attempts that fail. `invalidated` records identify
+the connection recovery generation and component scope being retired. Generations
+are diagnostic values, not partition ownership epochs. Bridge these records and
+the SDK's other diagnostic logs with
+`opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge`.
+
+Enable the optional `metrics` feature to emit native OpenTelemetry metrics. Install
+the application's global meter provider **before creating clients**. Without a
+provider, instruments are no-ops. Exporters and the OpenTelemetry SDK are application
+dependencies; the library depends only on the OpenTelemetry API for metrics.
+
+| Instrument | Type | Unit | Meaning |
+| --- | --- | --- | --- |
+| `az.eventhubs.operations` | Counter | `{operation}` | Completed logical send/receive operations, including errors and cancellation |
+| `az.eventhubs.events` | Counter | `{event}` | Events in accepted sends and successful receives |
+| `az.eventhubs.operation.duration` | Histogram | `s` | Logical duration including preparation, waits, and retries |
+| `az.eventhubs.amqp.lifecycle` | Counter | `{transition}` | Completed component creation attempts and recovery invalidations |
+
+Operation metrics use server, Event Hub, operation (`send` or `receive`), and
+outcome (`success`, `error`, or `cancelled`) labels. Lifecycle metrics use component
+and outcome labels. Client IDs, component IDs, generations, message bodies,
+partition keys, and error text are excluded from metric labels. Retry attempts
+and child spans do not increment the logical operation counters. The unbuffered
+producer retains its existing success return for `Modified` and `Released`
+dispositions, but those outcomes add no delivered events. Buffered sends report
+those dispositions as errors in both the callback and telemetry. Counts describe SDK
+observations, not exactly-once delivery: an unacknowledged send can be retried and
+a consumer can receive an event again after recovery.
+
+For an OTLP/HTTP exporter setup, provider shutdown, a local collector configuration,
+and a no-Azure smoke run, see the
+[OpenTelemetry example](examples/opentelemetry/README.md).

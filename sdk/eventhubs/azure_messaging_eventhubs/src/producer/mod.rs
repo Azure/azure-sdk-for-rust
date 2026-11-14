@@ -247,68 +247,90 @@ impl ProducerClient {
     where
         M: Into<AmqpMessage> + Debug + Send,
     {
-        let options = options.unwrap_or_default();
-        let mut target = self.endpoint.clone();
-        if let Some(partition_id) = options.partition_id {
-            let target_url = format!("{}/Partitions/{}", self.base_url(), partition_id);
-            target = Url::parse(&target_url).map_err(azure_core::Error::from)?;
-        }
-        let sender = self.connection.get_sender(target.clone()).await?;
+        let mut telemetry = self.connection.diagnostics().logical(
+            "ProducerClient.send",
+            "send",
+            azure_core::tracing::SpanKind::Producer,
+        );
+        telemetry.set_message_count(1);
+        let parent = telemetry.span.clone();
+        let mut count = 0;
+        let result = async {
+            let options = options.unwrap_or_default();
+            let mut target = self.endpoint.clone();
+            if let Some(partition_id) = options.partition_id {
+                let target_url = format!("{}/Partitions/{}", self.base_url(), partition_id);
+                target = Url::parse(&target_url).map_err(azure_core::Error::from)?;
+            }
+            let sender = self
+                .connection
+                .get_sender(target.clone())
+                .await?
+                .with_parent(parent);
 
-        let message: AmqpMessage = message.into();
-        let link_max_size = sender.max_message_size().await?;
-        let encoded_size = AmqpMessage::serialize(&message)?.len() as u64;
-        Self::check_message_size(encoded_size, link_max_size)?;
+            let message: AmqpMessage = message.into();
+            let link_max_size = sender.max_message_size().await?;
+            let encoded_size = AmqpMessage::serialize(&message)?.len() as u64;
+            Self::check_message_size(encoded_size, link_max_size)?;
 
-        let outcome = sender
-            .send(
-                message,
-                Some(AmqpSendOptions {
-                    message_format: None,
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        match outcome {
-            AmqpSendOutcome::Accepted => Ok(()),
-            AmqpSendOutcome::Rejected(reason) => {
-                if let Some(reason) = reason {
+            let outcome = sender
+                .send(
+                    message,
+                    Some(AmqpSendOptions {
+                        message_format: None,
+                        ..Default::default()
+                    }),
+                )
+                .await?;
+            match outcome {
+                AmqpSendOutcome::Accepted => {
+                    count = 1;
+                    Ok(())
+                }
+                AmqpSendOutcome::Rejected(reason) => {
+                    if let Some(reason) = reason {
+                        warn!(
+                            path = %target,
+                            condition = ?reason.condition,
+                            description = reason.description.as_deref().unwrap_or_default(),
+                            "Send was rejected by the Event Hub."
+                        );
+                        return Err(
+                            AmqpError::from(AmqpErrorKind::AmqpDescribedError(reason)).into()
+                        );
+                    }
                     warn!(
                         path = %target,
-                        condition = ?reason.condition,
-                        description = reason.description.as_deref().unwrap_or_default(),
-                        "Send was rejected by the Event Hub."
+                        "Send was rejected by the Event Hub with no described error."
                     );
-                    return Err(AmqpError::from(AmqpErrorKind::AmqpDescribedError(reason)).into());
+                    Err(EventHubsError::with_message(
+                        "Send was rejected by the Event Hub.",
+                    ))
                 }
-                warn!(
-                    path = %target,
-                    "Send was rejected by the Event Hub with no described error."
-                );
-                Err(EventHubsError::with_message(
-                    "Send was rejected by the Event Hub.",
-                ))
-            }
-            AmqpSendOutcome::Modified(reason) => {
-                // Modified is treated as success (the return type is unchanged), but the
-                // message was not durably accepted as sent, so surface it for diagnosis.
-                warn!(
-                    path = %target,
-                    modification = ?reason,
-                    "Send was modified by the Event Hub; not durably accepted."
-                );
-                Ok(())
-            }
-            AmqpSendOutcome::Released => {
-                // Released is treated as success (the return type is unchanged), but the
-                // message was released without being durably accepted; surface it.
-                warn!(
-                    path = %target,
-                    "Send was released by the Event Hub; not durably accepted."
-                );
-                Ok(())
+                AmqpSendOutcome::Modified(reason) => {
+                    // Modified is treated as success (the return type is unchanged), but the
+                    // message was not durably accepted as sent, so surface it for diagnosis.
+                    warn!(
+                        path = %target,
+                        modification = ?reason,
+                        "Send was modified by the Event Hub; not durably accepted."
+                    );
+                    Ok(())
+                }
+                AmqpSendOutcome::Released => {
+                    // Released is treated as success (the return type is unchanged), but the
+                    // message was released without being durably accepted; surface it.
+                    warn!(
+                        path = %target,
+                        "Send was released by the Event Hub; not durably accepted."
+                    );
+                    Ok(())
+                }
             }
         }
+        .await;
+        telemetry.finish(&result, count);
+        result
     }
 
     /// Makes sure the encoded message fits the maximum the sender link reports.
@@ -452,51 +474,70 @@ impl ProducerClient {
         batch: EventDataBatch<'_>,
         #[allow(unused_variables)] options: Option<SendBatchOptions>,
     ) -> Result<()> {
-        let path = batch.get_batch_path()?;
-        let messages = batch.get_messages();
-        let outcome = self.send_batch_envelope(path.clone(), messages).await?;
-        match outcome {
-            AmqpSendOutcome::Accepted => Ok(()),
-            AmqpSendOutcome::Rejected(reason) => {
-                if let Some(reason) = reason {
+        let batch_count = batch.len() as u64;
+        let mut telemetry = self.connection.diagnostics().logical(
+            "ProducerClient.send",
+            "send",
+            azure_core::tracing::SpanKind::Producer,
+        );
+        telemetry.set_message_count(batch_count);
+        let parent = telemetry.span.clone();
+        let mut count = 0;
+        let result = async {
+            let path = batch.get_batch_path()?;
+            let messages = batch.get_messages();
+            let outcome = self
+                .send_batch_envelope_traced(path.clone(), messages, parent)
+                .await?;
+            match outcome {
+                AmqpSendOutcome::Accepted => {
+                    count = batch_count;
+                    Ok(())
+                }
+                AmqpSendOutcome::Rejected(reason) => {
+                    if let Some(reason) = reason {
+                        warn!(
+                            path = %path,
+                            condition = ?reason.condition,
+                            description = reason.description.as_deref().unwrap_or_default(),
+                            "Batch was rejected by the Event Hub."
+                        );
+                        return Err(EventHubsError::from(AmqpError::from(
+                            AmqpErrorKind::AmqpDescribedError(reason),
+                        )));
+                    }
                     warn!(
                         path = %path,
-                        condition = ?reason.condition,
-                        description = reason.description.as_deref().unwrap_or_default(),
-                        "Batch was rejected by the Event Hub."
+                        "Batch was rejected by the Event Hub with no described error."
                     );
-                    return Err(EventHubsError::from(AmqpError::from(
-                        AmqpErrorKind::AmqpDescribedError(reason),
-                    )));
+                    Err(EventHubsError::with_message(
+                        "Batch was rejected by the Event Hub.",
+                    ))
                 }
-                warn!(
-                    path = %path,
-                    "Batch was rejected by the Event Hub with no described error."
-                );
-                Err(EventHubsError::with_message(
-                    "Batch was rejected by the Event Hub.",
-                ))
-            }
-            AmqpSendOutcome::Modified(reason) => {
-                // Modified is treated as success (the return type is unchanged), but the
-                // batch was not durably accepted as sent, so surface it for diagnosis.
-                warn!(
-                    path = %path,
-                    modification = ?reason,
-                    "Batch was modified by the Event Hub; not durably accepted."
-                );
-                Ok(())
-            }
-            AmqpSendOutcome::Released => {
-                // Released is treated as success (the return type is unchanged), but the
-                // batch was released without being durably accepted; surface it.
-                warn!(
-                    path = %path,
-                    "Batch was released by the Event Hub; not durably accepted."
-                );
-                Ok(())
+                AmqpSendOutcome::Modified(reason) => {
+                    // Modified is treated as success (the return type is unchanged), but the
+                    // batch was not durably accepted as sent, so surface it for diagnosis.
+                    warn!(
+                        path = %path,
+                        modification = ?reason,
+                        "Batch was modified by the Event Hub; not durably accepted."
+                    );
+                    Ok(())
+                }
+                AmqpSendOutcome::Released => {
+                    // Released is treated as success (the return type is unchanged), but the
+                    // batch was released without being durably accepted; surface it.
+                    warn!(
+                        path = %path,
+                        "Batch was released by the Event Hub; not durably accepted."
+                    );
+                    Ok(())
+                }
             }
         }
+        .await;
+        telemetry.finish(&result, count);
+        result
     }
 
     /// Sends a batch envelope to a path and returns the raw AMQP outcome.
@@ -515,7 +556,38 @@ impl ProducerClient {
         path: Url,
         envelope: AmqpMessage,
     ) -> Result<AmqpSendOutcome> {
-        let sender = self.connection.get_sender(path).await?;
+        let count = match &envelope.body {
+            azure_core_amqp::message::AmqpMessageBody::Binary(data) => data.len() as u64,
+            _ => 1,
+        };
+        let mut telemetry = self.connection.diagnostics().logical(
+            "ProducerClient.send",
+            "send",
+            azure_core::tracing::SpanKind::Producer,
+        );
+        telemetry.set_message_count(count);
+        let result = self
+            .send_batch_envelope_traced(path, envelope, telemetry.span.clone())
+            .await;
+        match &result {
+            Ok(AmqpSendOutcome::Accepted) | Err(_) => telemetry.finish(&result, count),
+            Ok(_) => telemetry.finish(
+                &Err::<(), _>(EventHubsError::from(ErrorKind::SendNotAccepted(
+                    "the service did not accept the buffered batch".into(),
+                ))),
+                0,
+            ),
+        }
+        result
+    }
+
+    async fn send_batch_envelope_traced(
+        &self,
+        path: Url,
+        envelope: AmqpMessage,
+        parent: Option<Arc<dyn azure_core::tracing::Span>>,
+    ) -> Result<AmqpSendOutcome> {
+        let sender = self.connection.get_sender(path).await?.with_parent(parent);
         let outcome = sender
             .send(
                 envelope,
@@ -667,6 +739,7 @@ pub mod builders {
     /// ```
     #[derive(Default)]
     pub struct ProducerClientBuilder {
+        tracing_provider: Option<Arc<dyn azure_core::tracing::TracerProvider>>,
         /// The application id that will be used to identify the client.
         application_id: Option<String>,
 
@@ -684,6 +757,17 @@ pub mod builders {
     }
 
     impl ProducerClientBuilder {
+        /// Sets the provider used to trace Event Hubs operations and AMQP links.
+        ///
+        /// Tracing is disabled by default. The application owns provider shutdown.
+        pub fn with_tracing_provider(
+            mut self,
+            provider: Arc<dyn azure_core::tracing::TracerProvider>,
+        ) -> Self {
+            self.tracing_provider = Some(provider);
+            self
+        }
+
         ///
         /// # Arguments
         ///
@@ -814,6 +898,7 @@ pub mod builders {
             );
 
             // Open a connection to the Event Hub to ensure that the client is ready to send messages.
+            client.connection.configure_tracing(self.tracing_provider);
             client.ensure_connection().await?;
             Ok(client)
         }
@@ -892,6 +977,7 @@ pub mod builders {
                 self.idle_timeout,
             );
 
+            client.connection.configure_tracing(self.tracing_provider);
             client.ensure_connection().await?;
             Ok(client)
         }
@@ -900,6 +986,12 @@ pub mod builders {
 
 #[cfg(test)]
 mod tests {
+    use super::{EventDataBatch, RetryOptions};
+    use crate::common::diagnostics::tests::provider;
+    use azure_core::http::Url;
+    use azure_core_test::credentials::MockCredential;
+    use opentelemetry::trace::Status;
+
     use crate::common::tests::force_errors;
     use crate::{
         error::ErrorKind, models::EventData, EventDataBatchOptions, ProducerClient, Result,
@@ -1425,5 +1517,47 @@ mod tests {
             .expect("with no link maximum the check is skipped, per AMQP 1.0 section 2.7.3");
         ProducerClient::check_message_size(u64::MAX, None)
             .expect("with no link maximum the check is skipped, per AMQP 1.0 section 2.7.3");
+    }
+    #[tokio::test]
+    async fn telemetry_send_entry_points_record_preparation_failures_once() {
+        let (provider, exporter, _sdk) = provider();
+        let producer = ProducerClient::new(
+            Url::parse("amqps://example.servicebus.windows.net/hub").unwrap(),
+            "hub".into(),
+            Arc::new(MockCredential),
+            None,
+            RetryOptions {
+                max_retries: 0,
+                ..Default::default()
+            },
+            None,
+            None,
+            AmqpTransport::default(),
+            None,
+        );
+        producer.connection.configure_tracing(Some(provider));
+        producer.connection.close_connection().await.unwrap();
+        assert!(producer.send_event("hello", None).await.is_err());
+        let batch = EventDataBatch::new(&producer, None, 1024);
+        batch.try_add_event_data("hello", None).unwrap();
+        assert!(producer.send_batch(batch, None).await.is_err());
+        let spans = exporter.get_finished_spans().unwrap();
+        let sends: Vec<_> = spans
+            .iter()
+            .filter(|s| s.name == "ProducerClient.send")
+            .collect();
+        assert_eq!(sends.len(), 2);
+        assert!(sends
+            .iter()
+            .all(|s| matches!(s.status, Status::Error { .. })));
+        assert!(sends
+            .iter()
+            .all(|span| span
+                .attributes
+                .iter()
+                .any(
+                    |attribute| attribute.key.as_str() == "messaging.batch.message_count"
+                        && attribute.value == 1_i64.into()
+                )));
     }
 }

@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `with_tracing_provider` to producer, consumer, and buffered producer builders for operation and AMQP tracing, structured lifecycle logs, and an optional `metrics` feature for native OpenTelemetry counters and duration histograms.
+
 - Added the `ErrorKind::MessageSizeExceeded { requested, max_allowed }` error variant. `send_event` and `send_message` report it when the encoded message is larger than the maximum the sender link allows, so a caller can branch on the kind instead of the message. This matches the `EventHubsException` with `FailureReason.MessageSizeExceeded` that .NET reports for the same message.
 - Added `ConsumerClientBuilder::with_idle_timeout` and `ProducerClientBuilder::with_idle_timeout` to configure the AMQP connection idle timeout and enable peer heartbeat negotiation.
 
