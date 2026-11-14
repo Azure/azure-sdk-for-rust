@@ -453,18 +453,20 @@ use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use azure_messaging_eventhubs::ProducerClient;
 use std::sync::Arc;
 
-# async fn example() -> Result<(), Box<dyn std::error::Error>> {
-let sdk = opentelemetry_sdk::trace::SdkTracerProvider::builder().build();
-let provider = OpenTelemetryTracerProvider::new(Arc::new(sdk.clone()));
-let credential = azure_identity::DeveloperToolsCredential::new(None)?;
-let producer = ProducerClient::builder()
-    .with_tracing_provider(provider)
-    .open("example.servicebus.windows.net", "events", credential)
-    .await?;
-producer.send_event("hello", None).await?;
-producer.close().await?;
-sdk.shutdown()?;
-# Ok(()) }
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let sdk = opentelemetry_sdk::trace::SdkTracerProvider::builder().build();
+    let provider = OpenTelemetryTracerProvider::new(Arc::new(sdk.clone()));
+    let credential = azure_identity::DeveloperToolsCredential::new(None)?;
+    let producer = ProducerClient::builder()
+        .with_tracing_provider(provider)
+        .open("example.servicebus.windows.net", "events", credential)
+        .await?;
+    producer.send_event("hello", None).await?;
+    producer.close().await?;
+    sdk.shutdown()?;
+    Ok(())
+}
 ```
 
 `ProducerClient.send` covers one logical send, including preparation and retries.
