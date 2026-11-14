@@ -269,7 +269,17 @@ impl AmqpSenderApis for RecoverableSender {
                             }
                             _ => Ok(outcome),
                         };
-                        telemetry.finish(&result, 0);
+                        match &result {
+                            Ok(AmqpSendOutcome::Modified(_) | AmqpSendOutcome::Released) => {
+                                // These dispositions did not accept the delivery. Preserve
+                                // the outcome for the caller, but report a failed send span.
+                                telemetry.finish(
+                                    &Err::<(), _>(AmqpError::with_message("Send was not accepted")),
+                                    0,
+                                );
+                            }
+                            _ => telemetry.finish(&result, 0),
+                        }
                         result
                     })
                     .await
