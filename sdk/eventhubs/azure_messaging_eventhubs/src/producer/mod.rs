@@ -5,6 +5,7 @@
 
 use crate::{
     common::{
+        diagnostics::Diagnostics,
         recoverable::{RecoverableConnection, RecoverableSender},
         ManagementInstance,
     },
@@ -540,48 +541,14 @@ impl ProducerClient {
         result
     }
 
-    /// Sends a batch envelope to a path and returns the raw AMQP outcome.
-    ///
-    /// The caller decides what each outcome means. [`ProducerClient::send_batch`]
-    /// treats `Modified` and `Released` as success with a warning, for backward
-    /// compatibility. The buffered producer treats them as a delivery failure,
-    /// because neither outcome means the service stored the events.
-    ///
-    /// An `Err` from this method means the retry policy is exhausted, or the
-    /// error is not retryable. [`RecoverableSender`] applies the retry policy and
-    /// the connection recovery, and it converts a `Rejected` outcome into an
-    /// error inside the retry loop.
-    pub(crate) async fn send_batch_envelope(
-        &self,
-        path: Url,
-        envelope: AmqpMessage,
-    ) -> Result<AmqpSendOutcome> {
-        let count = match &envelope.body {
-            azure_core_amqp::message::AmqpMessageBody::Binary(data) => data.len() as u64,
-            _ => 1,
-        };
-        let mut telemetry = self.connection.diagnostics().logical(
-            "ProducerClient.send",
-            "send",
-            azure_core::tracing::SpanKind::Producer,
-        );
-        telemetry.set_message_count(count);
-        let result = self
-            .send_batch_envelope_traced(path, envelope, telemetry.span.clone())
-            .await;
-        match &result {
-            Ok(AmqpSendOutcome::Accepted) | Err(_) => telemetry.finish(&result, count),
-            Ok(_) => telemetry.finish(
-                &Err::<(), _>(EventHubsError::from(ErrorKind::SendNotAccepted(
-                    "the service did not accept the buffered batch".into(),
-                ))),
-                0,
-            ),
-        }
-        result
+    pub(crate) fn diagnostics(&self) -> &Arc<Diagnostics> {
+        self.connection.diagnostics()
     }
 
-    async fn send_batch_envelope_traced(
+    /// Sends an envelope using the caller's logical scope. The recoverable
+    /// sender applies retries and turns rejection into an error. Callers decide
+    /// whether Modified and Released dispositions are successful outcomes.
+    pub(crate) async fn send_batch_envelope_traced(
         &self,
         path: Url,
         envelope: AmqpMessage,
@@ -694,8 +661,10 @@ impl ProducerClient {
     pub(crate) async fn max_message_size(
         &self,
         target: Url,
+        parent: Option<Arc<dyn azure_core::tracing::Span>>,
     ) -> azure_core_amqp::Result<Option<u64>> {
         RecoverableSender::new(Arc::downgrade(&self.connection), target)
+            .with_parent(parent)
             .max_message_size()
             .await
     }

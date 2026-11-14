@@ -13,7 +13,7 @@ use std::{
         atomic::{AtomicU64, Ordering},
         Arc,
     },
-    time::Instant,
+    time::{Duration as StdDuration, Instant},
 };
 
 /// Shared by a client and all its recovered transports. No thread-local span guard
@@ -107,6 +107,8 @@ impl Diagnostics {
             span,
             operation,
             started: Instant::now(),
+            excluded: StdDuration::ZERO,
+            paused_at: None,
             outcome: "cancelled",
             count: 0,
             message_count: None,
@@ -229,6 +231,8 @@ pub(crate) struct Operation<'a> {
     pub span: Option<Arc<dyn Span>>,
     operation: &'static str,
     started: Instant,
+    excluded: StdDuration,
+    paused_at: Option<Instant>,
     outcome: &'static str,
     count: u64,
     message_count: Option<u64>,
@@ -237,6 +241,24 @@ pub(crate) struct Operation<'a> {
 }
 
 impl Operation<'_> {
+    /// Excludes queue/fill waits and callbacks from active operation metrics.
+    /// The span retains real wall-clock timestamps, including gaps between work.
+    pub fn pause(&mut self) {
+        self.paused_at.get_or_insert_with(Instant::now);
+    }
+
+    pub fn resume(&mut self) {
+        if let Some(paused_at) = self.paused_at.take() {
+            self.excluded += paused_at.elapsed();
+        }
+    }
+
+    fn active_duration(&self) -> StdDuration {
+        self.started.elapsed().saturating_sub(
+            self.excluded + self.paused_at.map_or(StdDuration::ZERO, |p| p.elapsed()),
+        )
+    }
+
     pub fn set_message_count(&mut self, count: u64) {
         self.message_count = Some(count);
         if let Some(span) = &self.span {
@@ -307,12 +329,12 @@ impl Drop for Operation<'_> {
                 self.diagnostics
                     .metrics
                     .duration
-                    .record(self.started.elapsed().as_secs_f64(), &attributes);
+                    .record(self.active_duration().as_secs_f64(), &attributes);
                 self.diagnostics.metrics.events.add(self.count, &attributes);
             }
         }
         #[cfg(not(feature = "metrics"))]
-        let _ = (&self.operation, &self.started);
+        let _ = (&self.operation, self.active_duration());
     }
 }
 
@@ -381,6 +403,15 @@ pub(crate) mod tests {
             exporter,
             sdk,
         )
+    }
+
+    #[cfg(feature = "metrics")]
+    pub(crate) fn with_meter(
+        mut diagnostics: Diagnostics,
+        meter: opentelemetry::metrics::Meter,
+    ) -> Diagnostics {
+        diagnostics.metrics = Metrics::with_meter(meter);
+        diagnostics
     }
 
     fn diagnostics(provider: Option<Arc<dyn TracerProvider>>) -> Diagnostics {

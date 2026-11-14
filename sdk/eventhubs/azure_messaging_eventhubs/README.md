@@ -471,7 +471,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 `ProducerClient.send` covers one logical send, including preparation and retries.
 `send_event` and `send_message` share a span. Background batch sends from a buffered
-producer have their own spans; enqueue time is excluded. `EventReceiver.receive`
+producer start their spans when the worker begins link and batch preparation.
+Enqueue time and the wait before the worker starts are excluded. A buffered span
+uses real timestamps, so its elapsed time can include subsequent waits to fill
+the batch. Its duration metric excludes those waits and callback time, while
+including active preparation, sending, and retries. Preparation failures also
+complete a logical send with an error. `EventReceiver.receive`
 covers each delivery request, including recovery. It ends before yielding the
 event, so application processing time is excluded. Child spans measure sender and
 receiver attachment, send disposition, and blocking receive waits. Connection open
@@ -508,7 +513,7 @@ dependencies; the library depends only on the OpenTelemetry API for metrics.
 | --- | --- | --- | --- |
 | `az.eventhubs.operations` | Counter | `{operation}` | Completed logical send/receive operations, including errors and cancellation |
 | `az.eventhubs.events` | Counter | `{event}` | Events in accepted sends and successful receives |
-| `az.eventhubs.operation.duration` | Histogram | `s` | Logical duration including preparation, waits, and retries |
+| `az.eventhubs.operation.duration` | Histogram | `s` | Logical duration including preparation and retries; buffered queue and batch-fill waits excluded |
 | `az.eventhubs.amqp.lifecycle` | Counter | `{transition}` | Completed component creation attempts and recovery invalidations |
 
 Operation metrics use server, Event Hub, operation (`send` or `receive`), and
