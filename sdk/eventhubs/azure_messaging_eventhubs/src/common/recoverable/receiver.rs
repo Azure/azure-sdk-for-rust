@@ -6,12 +6,12 @@ use crate::common::retry::{
     recover_with_policy, DeliveryWait, ErrorRecoveryAction, RecoveryClock, RecoveryLogContext,
     RecoveryOperation, RecoveryPolicy, SystemClock,
 };
-use azure_core::{error::ErrorKind as AzureErrorKind, http::Url, time::Duration};
+use azure_core::{error::ErrorKind as AzureErrorKind, http::Url, time::Duration, tracing::Span};
 use azure_core_amqp::{
     error::Result, AmqpError, AmqpReceiverApis, AmqpReceiverOptions, AmqpSession, AmqpSource,
 };
 use futures::{select, FutureExt};
-use std::sync::Weak;
+use std::sync::{Arc, Weak};
 use tracing::{debug, instrument, trace};
 
 pub(crate) struct RecoverableReceiver {
@@ -45,18 +45,39 @@ impl RecoverableReceiver {
         }
     }
 
+    /// Waits for a delivery under the caller's logical receive span.
+    #[instrument(level = "trace", skip_all, fields(source_url = %self.source_url))]
+    pub(crate) async fn receive_delivery_with_parent(
+        &self,
+        parent: Option<Arc<dyn Span>>,
+    ) -> Result<azure_core_amqp::AmqpDelivery> {
+        let wait = DeliveryWait::new(&SystemClock);
+        self.receive_with_recovery(
+            || self.receive_once(&wait, parent.clone()),
+            |connection: Weak<RecoverableConnection>, reason| {
+                Box::pin(RecoverableConnection::recover_from_error(
+                    connection, reason,
+                ))
+            },
+            self.recoverable_connection.clone(),
+            &wait,
+        )
+        .await
+    }
+
     /// Attaches the receiver if needed, marks `wait`, then waits for one delivery.
     async fn receive_once(
         &self,
         wait: &DeliveryWait<'_, SystemClock>,
+        parent: Option<Arc<dyn Span>>,
     ) -> Result<azure_core_amqp::AmqpDelivery> {
         trace!(source_url = %self.source_url, "Starting receive_delivery operation.");
+        let connection = self
+            .recoverable_connection
+            .upgrade()
+            .ok_or_else(|| AmqpError::with_message("Missing connection"))?;
+        let diagnostics = connection.diagnostics().clone();
         let receiver = {
-            let connection = self
-                .recoverable_connection
-                .upgrade()
-                .ok_or_else(|| AmqpError::with_message("Missing connection"))?;
-
             // Check for forced error.
             #[cfg(test)]
             connection.get_forced_error()?;
@@ -66,21 +87,31 @@ impl RecoverableReceiver {
                     &self.source_url,
                     &self.message_source,
                     &self.receiver_options,
+                    parent.clone(),
                 )
                 .await
                 .map_err(Self::ensure_receiver_error)?
         };
+        drop(connection);
         wait.start();
-        if let Some(delivery_timeout) = self.timeout {
+        let mut telemetry = diagnostics.start(
+            "EventHubs.receive.wait",
+            "receive",
+            azure_core::tracing::SpanKind::Client,
+            parent,
+        );
+        let result = if let Some(delivery_timeout) = self.timeout {
             select! {
-                delivery = receiver.receive_delivery().fuse() => Ok(delivery),
+                delivery = receiver.receive_delivery().fuse() => delivery,
                 _ = azure_core::sleep::sleep(delivery_timeout).fuse() => {
                      Err(Self::receive_timeout_error())
                 },
-            }?
+            }
         } else {
             receiver.receive_delivery().await
-        }
+        };
+        telemetry.finish(&result, 0);
+        result
     }
 
     /// Runs `attempt` under the receive recovery policy.
@@ -189,18 +220,21 @@ impl AmqpReceiverApis for RecoverableReceiver {
     // error spam; carry only the partition source URL for correlation.
     #[instrument(level = "trace", skip_all, fields(source_url = %self.source_url))]
     async fn receive_delivery(&self) -> Result<azure_core_amqp::AmqpDelivery> {
-        let wait = DeliveryWait::new(&SystemClock);
-        self.receive_with_recovery(
-            || self.receive_once(&wait),
-            |connection: Weak<RecoverableConnection>, reason| {
-                Box::pin(RecoverableConnection::recover_from_error(
-                    connection, reason,
-                ))
-            },
-            self.recoverable_connection.clone(),
-            &wait,
-        )
-        .await
+        let connection = self
+            .recoverable_connection
+            .upgrade()
+            .ok_or_else(|| AmqpError::with_message("Missing connection"))?;
+        let diagnostics = connection.diagnostics().clone();
+        drop(connection);
+        diagnostics
+            .run(
+                "EventReceiver.receive",
+                "receive",
+                azure_core::tracing::SpanKind::Client,
+                1,
+                |parent| self.receive_delivery_with_parent(parent),
+            )
+            .await
     }
 
     async fn accept_delivery(&self, _delivery: &azure_core_amqp::AmqpDelivery) -> Result<()> {
@@ -1010,5 +1044,26 @@ mod tests {
                 "partition_id=7",
             ],
         );
+    }
+    #[tokio::test]
+    async fn telemetry_receive_failure_ends_one_logical_span() {
+        let harness = Harness::new(
+            RetryOptions {
+                max_retries: 0,
+                ..Default::default()
+            },
+            StdDuration::ZERO,
+        );
+        let (provider, exporter, _sdk) = crate::common::diagnostics::tests::provider();
+        harness._connection.configure_tracing(Some(provider));
+        harness._connection.force_error(stolen()).unwrap();
+        assert!(harness.receiver.receive_delivery().await.is_err());
+        let spans = exporter.get_finished_spans().unwrap();
+        assert_eq!(spans.len(), 1);
+        assert_eq!(spans[0].name, "EventReceiver.receive");
+        assert!(matches!(
+            spans[0].status,
+            opentelemetry::trace::Status::Error { .. }
+        ));
     }
 }

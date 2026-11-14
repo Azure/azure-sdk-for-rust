@@ -639,6 +639,7 @@ pub mod builders {
     /// ```
     #[derive(Default)]
     pub struct ConsumerClientBuilder {
+        tracing_provider: Option<Arc<dyn azure_core::tracing::TracerProvider>>,
         consumer_group: Option<String>,
         application_id: Option<String>,
         instance_id: Option<String>,
@@ -649,6 +650,25 @@ pub mod builders {
     }
 
     impl ConsumerClientBuilder {
+        /// Sets the provider used to trace Event Hubs operations and AMQP links.
+        ///
+        /// Tracing is disabled by default. For OpenTelemetry, wrap the application's
+        /// `opentelemetry_sdk::trace::SdkTracerProvider` with
+        /// [`OpenTelemetryTracerProvider::new`](https://docs.rs/azure_core_opentelemetry/latest/azure_core_opentelemetry/struct.OpenTelemetryTracerProvider.html#method.new),
+        /// which implements [`TracerProvider`](azure_core::tracing::TracerProvider).
+        /// The application owns provider flushing and shutdown.
+        ///
+        /// This setting configures traces only. Configure a `tracing` subscriber
+        /// separately to export logs. With the `metrics` feature, install the
+        /// application's global OpenTelemetry meter provider before creating clients.
+        pub fn with_tracing_provider(
+            mut self,
+            provider: Arc<dyn azure_core::tracing::TracerProvider>,
+        ) -> Self {
+            self.tracing_provider = Some(provider);
+            self
+        }
+
         pub(super) fn new() -> Self {
             Self {
                 ..Default::default()
@@ -820,6 +840,9 @@ pub mod builders {
                     idle_timeout: self.idle_timeout,
                 },
             )?;
+            consumer
+                .recoverable_connection
+                .configure_tracing(self.tracing_provider);
             consumer.ensure_connection().await?;
             Ok(consumer)
         }
@@ -895,6 +918,9 @@ pub mod builders {
                     idle_timeout: self.idle_timeout,
                 },
             )?;
+            consumer
+                .recoverable_connection
+                .configure_tracing(self.tracing_provider);
             consumer.ensure_connection().await?;
             Ok(consumer)
         }
