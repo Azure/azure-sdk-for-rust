@@ -535,7 +535,10 @@ the SDK's other diagnostic logs with
 `opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge`.
 
 Enable the optional `metrics` feature to emit native OpenTelemetry metrics. Install
-the application's global meter provider **before creating clients**. Without a
+the application's global meter provider **before creating clients**. Register it
+through `opentelemetry` 0.32, the version used by this library, and select a
+compatible `opentelemetry_sdk` version. Incompatible `opentelemetry` versions have
+separate global providers; registering one does not configure the other. Without a
 provider, instruments are no-ops. Exporters and the OpenTelemetry SDK are application
 dependencies; the library depends only on the OpenTelemetry API for metrics.
 
