@@ -7,6 +7,7 @@ use azure_core::{
     Uuid,
 };
 use std::{
+    fmt,
     future::Future,
     sync::{
         atomic::{AtomicU64, Ordering},
@@ -209,6 +210,20 @@ struct Lifecycle {
     recovery_generation: u64,
 }
 
+// Never retain the original error or expose its source chain to a tracer.
+// Broker descriptions, info maps, and arbitrary custom error text may contain
+// application data. The caller still receives the original error unchanged.
+#[derive(Debug)]
+struct OperationFailed;
+
+impl fmt::Display for OperationFailed {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("Event Hubs operation failed")
+    }
+}
+
+impl std::error::Error for OperationFailed {}
+
 pub(crate) struct Operation<'a> {
     diagnostics: &'a Diagnostics,
     pub span: Option<Arc<dyn Span>>,
@@ -239,8 +254,8 @@ impl Operation<'_> {
             if self.logical && self.message_count.is_none() {
                 span.set_attribute("messaging.batch.message_count", (self.count as i64).into());
             }
-            if let Err(error) = result {
-                span.record_error(error);
+            if result.is_err() {
+                span.record_error(&OperationFailed);
                 // Avoid adding service messages or payloads to the status description.
                 span.set_status(SpanStatus::Error {
                     description: "Event Hubs operation failed".into(),
@@ -335,6 +350,10 @@ pub(crate) mod tests {
     use super::Metrics;
     use super::{Diagnostics, SpanKind, TracerProvider};
     use azure_core::http::Url;
+    use azure_core_amqp::{
+        error::{AmqpDescribedError, AmqpErrorCondition, AmqpErrorKind},
+        AmqpError,
+    };
     use azure_core_opentelemetry::OpenTelemetryTracerProvider;
     use futures::{future, FutureExt};
     use opentelemetry::trace::Status;
@@ -572,6 +591,47 @@ pub(crate) mod tests {
                 .iter()
                 .any(|a| a.key.as_str() == "az.eventhubs.amqp.operation"
                     && a.value == operation.into()));
+        }
+    }
+    #[tokio::test]
+    async fn broker_error_details_are_not_exported() {
+        let (provider, exporter, _sdk) = provider();
+        let diagnostics = diagnostics(Some(provider));
+        let error = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::InternalError,
+            Some("private-description-marker".into()),
+            vec![("private-info-key".into(), "private-info-marker".into())].into(),
+        )));
+        let expected = error.to_string();
+        assert!(expected.contains("private-description-marker"));
+        assert!(expected.contains("private-info-marker"));
+        let result: Result<(), AmqpError> = diagnostics
+            .run("send", "send", SpanKind::Producer, 1, |_| async {
+                Err(error)
+            })
+            .await;
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            expected,
+            "caller retains the original error"
+        );
+        let spans = exporter.get_finished_spans().unwrap();
+        assert_eq!(spans.len(), 1);
+        assert!(matches!(spans[0].status, Status::Error { .. }));
+        assert!(
+            !spans[0].events.events.is_empty(),
+            "failure still emits an exception event"
+        );
+        let exported = format!("{:?}", spans[0]);
+        for marker in [
+            "private-description-marker",
+            "private-info-key",
+            "private-info-marker",
+        ] {
+            assert!(
+                !exported.contains(marker),
+                "exported private error detail: {marker}"
+            );
         }
     }
 }
