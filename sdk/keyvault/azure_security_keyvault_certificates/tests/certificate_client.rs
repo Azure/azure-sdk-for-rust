@@ -360,6 +360,7 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
     let body = SignParameters {
         algorithm: Some(SignatureAlgorithm::Es256),
         value: Some(digest),
+        ..Default::default()
     };
     let signature = key_client
         .sign(

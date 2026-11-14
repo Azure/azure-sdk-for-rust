@@ -70,6 +70,17 @@ impl KeyVaultKeysClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_keys_client_create_if_not_exist(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(vault_name)).to_owned(),
+                (*(key_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}/keys/{keyName}");
@@ -136,6 +147,17 @@ impl KeyVaultKeysClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_keys_client_get(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(vault_name)).to_owned(),
+                (*(key_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}/keys/{keyName}");
@@ -208,6 +230,18 @@ impl KeyVaultKeysClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_keys_client_get_version(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(vault_name)).to_owned(),
+                (*(key_name)).to_owned(),
+                (*(key_version)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}/keys/{keyName}/versions/{keyVersion}");
@@ -265,6 +299,16 @@ impl KeyVaultKeysClient {
             ));
         }
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_keys_client_list(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(vault_name)).to_owned(),
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}/keys");
@@ -366,6 +410,17 @@ impl KeyVaultKeysClient {
             ));
         }
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_keys_client_list_versions(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(vault_name)).to_owned(),
+                (*(key_name)).to_owned(),
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}/keys/{keyName}/versions");

@@ -15,3 +15,24 @@ where
 {
     serializer.serialize_str("Microsoft.KeyVault/vaults")
 }
+
+#[allow(non_snake_case)]
+pub(crate) fn serialize_string_literal_ServiceIdentity<S>(
+    _ignored: &Option<String>,
+    serializer: S,
+) -> std::result::Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_str("ServiceIdentity")
+}
+
+pub(crate) fn serialize_string_literal_oct<S>(
+    _ignored: &Option<String>,
+    serializer: S,
+) -> std::result::Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_str("oct")
+}

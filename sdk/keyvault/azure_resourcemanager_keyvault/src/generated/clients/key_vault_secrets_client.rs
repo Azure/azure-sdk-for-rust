@@ -33,7 +33,7 @@ impl KeyVaultSecretsClient {
     }
 
     /// Create or update a secret in a key vault in the specified subscription. NOTE: This API is intended for internal use in
-    /// Resource Manager deployments. Users should use the data-plane REST service for interaction with vault secrets.
+    /// ARM deployments. Users should use the data-plane REST service for interaction with vault secrets.
     ///
     /// # Arguments
     ///
@@ -70,6 +70,17 @@ impl KeyVaultSecretsClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_secrets_client_create_or_update(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(vault_name)).to_owned(),
+                (*(secret_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}/secrets/{secretName}");
@@ -101,7 +112,7 @@ impl KeyVaultSecretsClient {
         Ok(rsp.into())
     }
 
-    /// Gets the specified secret. NOTE: This API is intended for internal use in Resource Manager deployments. Users should use the data-plane
+    /// Gets the specified secret. NOTE: This API is intended for internal use in ARM deployments. Users should use the data-plane
     /// REST service for interaction with vault secrets.
     ///
     /// # Arguments
@@ -137,6 +148,17 @@ impl KeyVaultSecretsClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_secrets_client_get(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(vault_name)).to_owned(),
+                (*(secret_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}/secrets/{secretName}");
@@ -166,7 +188,7 @@ impl KeyVaultSecretsClient {
         Ok(rsp.into())
     }
 
-    /// The List operation gets information about the secrets in a vault. NOTE: This API is intended for internal use in Resource Manager deployments.
+    /// The List operation gets information about the secrets in a vault. NOTE: This API is intended for internal use in ARM deployments.
     /// Users should use the data-plane REST service for interaction with vault secrets.
     ///
     /// # Arguments
@@ -194,6 +216,17 @@ impl KeyVaultSecretsClient {
             ));
         }
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_secrets_client_list(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(vault_name)).to_owned(),
+                options.top,
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}/secrets");
@@ -263,7 +296,7 @@ impl KeyVaultSecretsClient {
         ))
     }
 
-    /// Update a secret in the specified subscription. NOTE: This API is intended for internal use in Resource Manager deployments. Users should
+    /// Update a secret in the specified subscription. NOTE: This API is intended for internal use in ARM deployments. Users should
     /// use the data-plane REST service for interaction with vault secrets.
     ///
     /// # Arguments
@@ -301,6 +334,17 @@ impl KeyVaultSecretsClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_secrets_client_update(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(vault_name)).to_owned(),
+                (*(secret_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}/secrets/{secretName}");

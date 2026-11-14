@@ -21,7 +21,7 @@ use azure_core::{
     error::CheckSuccessOptions,
     http::{
         pager::{PagerContinuation, PagerResult, PagerState},
-        poller::resource_manager::{new_poller, FinalStateVia},
+        poller::resource_manager::new_poller,
         Method, NoFormat, Pager, Pipeline, PipelineSendOptions, Poller, RawResponse, Request,
         RequestContent, Response, Url, UrlExt,
     },
@@ -86,7 +86,17 @@ impl KeyVaultVaultsClient {
         options: Option<KeyVaultVaultsClientBeginCreateOrUpdateOptions<'_>>,
     ) -> Result<Poller<KeyVaultVaultsClientBeginCreateOrUpdateOperationStatus>> {
         let options = options.unwrap_or_default().into_owned();
-        let pipeline = self.pipeline.clone();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_vaults_client_begin_create_or_update(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(vault_name)).to_owned(),
+                options.method_options.frequency,
+            );
+            options
+        };
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}");
         path = path.replace("{resourceGroupName}", resource_group_name);
@@ -101,9 +111,9 @@ impl KeyVaultVaultsClient {
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
         Ok(new_poller(
-            pipeline,
+            self.pipeline.clone(),
             request,
-            Some(FinalStateVia::Location),
+            None,
             Some(options.method_options),
         ))
     }
@@ -150,7 +160,17 @@ impl KeyVaultVaultsClient {
         options: Option<KeyVaultVaultsClientBeginPurgeDeletedOptions<'_>>,
     ) -> Result<Poller<KeyVaultVaultsClientBeginPurgeDeletedOperationStatus>> {
         let options = options.unwrap_or_default().into_owned();
-        let pipeline = self.pipeline.clone();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_vaults_client_begin_purge_deleted(
+                &mut options.method_options.context,
+                (*(location)).to_owned(),
+                (*(vault_name)).to_owned(),
+                options.method_options.frequency,
+            );
+            options
+        };
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/providers/Microsoft.KeyVault/locations/{location}/deletedVaults/{vaultName}/purge");
         path = path.replace("{location}", location);
@@ -162,9 +182,9 @@ impl KeyVaultVaultsClient {
         query_builder.build();
         let request = Request::new(url, Method::Post);
         Ok(new_poller(
-            pipeline,
+            self.pipeline.clone(),
             request,
-            Some(FinalStateVia::Location),
+            None,
             Some(options.method_options),
         ))
     }
@@ -239,6 +259,16 @@ impl KeyVaultVaultsClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_vaults_client_delete(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(vault_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}");
@@ -293,6 +323,16 @@ impl KeyVaultVaultsClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_vaults_client_get(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(vault_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}");
@@ -348,6 +388,16 @@ impl KeyVaultVaultsClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_vaults_client_get_deleted(
+                &mut options.method_options.context,
+                (*(location)).to_owned(),
+                (*(vault_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/providers/Microsoft.KeyVault/locations/{location}/deletedVaults/{vaultName}");
@@ -387,6 +437,15 @@ impl KeyVaultVaultsClient {
         options: Option<KeyVaultVaultsClientListOptions<'_>>,
     ) -> Result<Pager<ResourceListResult>> {
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_vaults_client_list(
+                &mut options.method_options.context,
+                options.top,
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resources");
@@ -468,6 +527,16 @@ impl KeyVaultVaultsClient {
             ));
         }
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_vaults_client_list_by_resource_group(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                options.top,
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults");
@@ -548,6 +617,15 @@ impl KeyVaultVaultsClient {
         options: Option<KeyVaultVaultsClientListBySubscriptionOptions<'_>>,
     ) -> Result<Pager<VaultListResult>> {
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_vaults_client_list_by_subscription(
+                &mut options.method_options.context,
+                options.top,
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         let mut path =
@@ -723,6 +801,16 @@ impl KeyVaultVaultsClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_vaults_client_update(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(vault_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}");
@@ -784,6 +872,17 @@ impl KeyVaultVaultsClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_vaults_client_update_access_policy(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(vault_name)).to_owned(),
+                operation_kind,
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}/accessPolicies/{operationKind}");

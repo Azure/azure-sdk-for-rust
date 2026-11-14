@@ -373,6 +373,7 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
     let parameters = SignParameters {
         algorithm: ALG,
         value: Some(digest.clone()),
+        ..Default::default()
     };
     let signed = client
         .sign(
@@ -392,6 +393,7 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
         algorithm: ALG,
         digest: Some(digest),
         signature: signed.result,
+        ..Default::default()
     };
     let verified = client
         .verify(NAME, &key_version, parameters.try_into()?, None)

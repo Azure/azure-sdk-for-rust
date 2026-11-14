@@ -73,6 +73,15 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_backup_key(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/backup");
@@ -125,6 +134,15 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_create_key(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/create");
@@ -187,6 +205,16 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_decrypt(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+                (*(key_version)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/decrypt");
@@ -239,6 +267,15 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_delete_key(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}");
@@ -298,6 +335,16 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_encrypt(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+                (options.key_version).clone(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/encrypt");
@@ -352,6 +399,15 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_get_deleted_key(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/deletedkeys/{key-name}");
@@ -400,6 +456,16 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_get_key(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+                (options.key_version).clone(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}");
@@ -452,6 +518,16 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_get_key_attestation(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+                (options.key_version).clone(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/attestation");
@@ -504,6 +580,15 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_get_key_rotation_policy(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/rotationpolicy");
@@ -596,6 +681,15 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_import_key(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}");
@@ -640,6 +734,15 @@ impl KeyClient {
         options: Option<KeyClientListDeletedKeyPropertiesOptions<'_>>,
     ) -> Result<Pager<ListDeletedKeyPropertiesResult>> {
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_list_deleted_key_properties(
+                &mut options.method_options.context,
+                options.maxresults,
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         first_url.append_path("/deletedkeys");
@@ -720,6 +823,15 @@ impl KeyClient {
         options: Option<KeyClientListKeyPropertiesOptions<'_>>,
     ) -> Result<Pager<ListKeyPropertiesResult>> {
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_list_key_properties(
+                &mut options.method_options.context,
+                options.maxresults,
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         first_url.append_path("/keys");
@@ -806,6 +918,16 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_list_key_properties_versions(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+                options.maxresults,
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/versions");
@@ -895,6 +1017,15 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_purge_deleted_key(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/deletedkeys/{key-name}");
@@ -943,6 +1074,15 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_recover_deleted_key(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/deletedkeys/{key-name}/recover");
@@ -993,6 +1133,16 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_release(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+                (options.key_version).clone(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/release");
@@ -1094,6 +1244,15 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_rotate_key(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/rotate");
@@ -1153,6 +1312,16 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_secure_unwrap_key(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+                (*(key_version)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/secureunwrapkey");
@@ -1214,6 +1383,16 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_secure_wrap_key(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+                (options.key_version).clone(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/securewrapkey");
@@ -1275,6 +1454,16 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_sign(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+                (options.key_version).clone(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/sign");
@@ -1337,6 +1526,16 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_unwrap_key(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+                (*(key_version)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/unwrapkey");
@@ -1391,6 +1590,16 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_update_key_properties(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+                (options.key_version).clone(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}");
@@ -1446,6 +1655,15 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_update_key_rotation_policy(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/rotationpolicy");
@@ -1505,6 +1723,16 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_verify(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+                (*(key_version)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/verify");
@@ -1566,6 +1794,16 @@ impl KeyClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_client_wrap_key(
+                &mut options.method_options.context,
+                (*(key_name)).to_owned(),
+                (options.key_version).clone(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/keys/{key-name}/{key-version}/wrapkey");
@@ -1606,4 +1844,4 @@ impl KeyClient {
 /// SDK author provides a custom options type and should reference this constant
 /// in their `Default` implementation rather than hardcoding the value.
 #[allow(dead_code)]
-pub(crate) const DEFAULT_API_VERSION: &str = "2026-03-01-preview";
+pub(crate) const DEFAULT_API_VERSION: &str = "2026-07-01-preview";
