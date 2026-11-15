@@ -148,12 +148,12 @@ async fn consume<T, Fut>(
     Fut: Future<Output = crate::Result<()>> + Send + 'static,
 {
     while let Some(batch) = driver.read_next_change_feed_batch().await {
-        dispatch::<T, Fut>(container.clone(), handler, batch).await;
+        dispatch::<T, Fut>(&container, handler, batch).await;
     }
 }
 
 async fn dispatch<T, Fut>(
-    container: ContainerClient,
+    container: &ContainerClient,
     handler: ChangeFeedHandler<T, Fut>,
     batch: ChangeFeedBatch,
 ) where

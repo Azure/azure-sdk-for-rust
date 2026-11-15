@@ -150,9 +150,13 @@ is the driver's receive method; `dispatch()` handles one returned batch:
 
 ```rust
 while let Some(batch) = driver.read_next_change_feed_batch().await {
-    dispatch::<T, Fut>(container.clone(), handler, batch).await;
+    dispatch::<T, Fut>(&container, handler, batch).await;
 }
 ```
+
+`consume()` owns the container client and awaits each dispatch, so `dispatch()`
+borrows that client as `&ContainerClient` instead of cloning a handle per batch.
+Dispatch is not separately spawned; the borrow remains valid until it returns.
 
 **Invoke the handler in the SDK:** deserialization converts returned data to
 application types. The SDK passes those items and batch context (lease identity
