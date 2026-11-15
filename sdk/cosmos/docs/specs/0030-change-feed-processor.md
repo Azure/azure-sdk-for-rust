@@ -817,6 +817,64 @@ Implementation anchors: the `idle` branch, throttle-error branch, and
 `session.deliver(...)` in `poll_feed()`; the response-channel retry loop in
 `ChangeFeedRequestDistributor::read_next_change_feed_batch()`.
 
+### Visualizing the waiting list and read outcomes
+
+The queue contains waiting registrations, not batches. With A and B ready,
+the front is on the left:
+
+```text
+SDK requests one batch
+        |
+        v
+Queue [A, B] -- select A --> Queue [B]
+                                |
+                                v
+                         A: Fetching
+                                |
+              +-----------------+------------------+
+              |                 |                  |
+             DATA              304                429
+              |                 |                  |
+              v                 v                  v
+ Send ONE batch to SDK    Handle idle progress   Drop demand
+ A: AwaitingAcknowledgment Drop demand           Wait cooldown
+              |           Wait poll delay       A stays Fetching
+              |           A stays Fetching          |
+              v                 |                  |
+ Callback success               +--------+---------+
+ -> acknowledge                          |
+ -> persist if required                  v
+ -> A: Idle                   Same SDK receive can select B
+ -> re-register A             A re-registers after delay/cooldown
+              |               if permitted, without reading yet
+              v
+ Queue [B, A] if B has not already been selected
+```
+
+Eager persists before acknowledgment completes; Deferred may re-register with
+progress pending in memory. A 304 needs no callback. An ordinary 429 accepts
+no new progress, and retry exhaustion ends the acquisition rather than
+re-registering. Delay and cooldown are not separate delivery-state variants.
+
+Ownership loss changes the waiting list only after the old worker detects it:
+
+```text
+Queue [A/X, B] -- remote takeover --> Queue [A/X, B] (not notified yet)
+      |
+      +-- detect loss, cancel/join, close X --> Queue [B]
+
+Later reacquire A with fresh session Z
+      |
+      +-- register Z --> Queue [B, A/Z]
+
+Old X cleanup removes X's entries, never Z's.
+```
+
+`X` and `Z` identify different delivery objects for the same lease A.
+If the old acquisition already left the queue to read or deliver, cancellation
+and receipt handling govern that in-flight work. The next subsection explains
+the ownership checks; external callback effects cannot be undone.
+
 ### How ownership loss affects queue membership
 
 The [ownership checks](#preventing-stale-or-competing-ownership-writes)
