@@ -41,7 +41,7 @@ async fn records(leases: &ContainerClient, processor: &str) -> TestResult<Vec<Va
 async fn exercise_start(
     source: &ContainerClient,
     leases: &ContainerClient,
-    processor_name: &str,
+    workload_name: &str,
     mode: ChangeFeedMode,
     incompatible: ChangeFeedMode,
     expected_mode: &str,
@@ -52,20 +52,20 @@ async fn exercise_start(
         mode,
         source.clone(),
         leases.clone(),
-        processor_name,
+        workload_name,
         "sdk-initializer",
+        |_, _: Vec<ChangeFeedItem<Value>>| {
+            CALLS.fetch_add(1, Ordering::SeqCst);
+            async { Ok(()) }
+        },
     )
-    .handle_change_feed(|_, _: Vec<ChangeFeedItem<Value>>| {
-        CALLS.fetch_add(1, Ordering::SeqCst);
-        async { Ok(()) }
-    })
     .build()?;
-    assert!(records(leases, processor_name).await?.is_empty());
+    assert!(records(leases, workload_name).await?.is_empty());
     processor.start().await?;
     assert!(processor.is_started());
     processor.stop().await?;
     assert!(!processor.is_started());
-    let stored = records(leases, processor_name).await?;
+    let stored = records(leases, workload_name).await?;
     for suffix in [".definition", ".plan", ".info"] {
         let matching: Vec<_> = stored
             .iter()
@@ -87,7 +87,7 @@ async fn exercise_start(
         .all(|lease| lease.get("owner").is_none()));
     processor.start().await?;
     processor.stop().await?;
-    let before = records(leases, processor_name).await?;
+    let before = records(leases, workload_name).await?;
     for previous in initial_leases {
         if let Some(continuation) = previous.get("continuation") {
             let current = before
@@ -102,17 +102,17 @@ async fn exercise_start(
         incompatible,
         source.clone(),
         leases.clone(),
-        processor_name,
+        workload_name,
         "incompatible-worker",
+        |_, _: Vec<ChangeFeedItem<Value>>| async { Ok(()) },
     )
-    .handle_change_feed(|_, _: Vec<ChangeFeedItem<Value>>| async { Ok(()) })
     .build()?;
     assert_eq!(
         other.start().await.unwrap_err().status().status_code(),
         StatusCode::Conflict
     );
     assert!(!other.is_started());
-    assert_eq!(records(leases, processor_name).await?, before);
+    assert_eq!(records(leases, workload_name).await?, before);
     assert_eq!(CALLS.load(Ordering::SeqCst), 0);
     Ok(())
 }

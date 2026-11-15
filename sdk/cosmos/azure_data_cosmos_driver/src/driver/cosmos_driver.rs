@@ -10,7 +10,7 @@ mod query_planning;
 mod session_scope_live_tests;
 
 use crate::{
-    change_feed_processor::ChangeFeedProcessorBootstrapCoalescer,
+    change_feed_processor::BootstrapCoalescer,
     diagnostics::{
         DiagnosticsContextBuilder, ExecutionContext, PipelineKind, RequestSentStatus,
         TransportHttpVersion, TransportSecurity,
@@ -380,7 +380,7 @@ impl std::fmt::Debug for TestEndpointProbeFn {
 #[derive(Debug)]
 pub struct CosmosDriver {
     /// Driver-local in-flight change feed initialization.
-    bootstrap_coalescer: OnceLock<Arc<ChangeFeedProcessorBootstrapCoalescer>>,
+    bootstrap_coalescer: OnceLock<Arc<BootstrapCoalescer>>,
     /// Weak link to factory ownership for internal bootstrap lifetime retention.
     bootstrap_owner: OnceLock<Weak<CosmosDriver>>,
     /// Reference to the parent runtime.
@@ -1953,9 +1953,9 @@ impl CosmosDriver {
         self.bootstrap_owner.get().and_then(Weak::upgrade)
     }
 
-    pub(crate) fn bootstrap_coalescer(&self) -> &Arc<ChangeFeedProcessorBootstrapCoalescer> {
+    pub(crate) fn bootstrap_coalescer(&self) -> &Arc<BootstrapCoalescer> {
         self.bootstrap_coalescer
-            .get_or_init(|| Arc::new(ChangeFeedProcessorBootstrapCoalescer::default()))
+            .get_or_init(|| Arc::new(BootstrapCoalescer::default()))
     }
 
     /// **Internal test hook -- not part of the public API.**

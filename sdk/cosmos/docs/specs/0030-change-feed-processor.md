@@ -1,2883 +1,1551 @@
-# Rust change feed processor: design proposal
+# Rust Change Feed Processor design
 
-<!-- cspell:ignore bootstrapper checkpointing -->
+## Problem
 
-**Status:** Implementation-backed draft
+We are building a Rust-based Cosmos DB Change Feed Processor that also provides
+a shared engine for language shims to build their own Change Feed Processor
+abstractions.
 
-**Updated:** 2026-11-10
+A **language shim** adapts the shared engine to a language's SDK types and
+execution model.
 
-## Table of contents
+The [public Change Feed Processor documentation](https://learn.microsoft.com/en-us/azure/cosmos-db/change-feed-processor)
+describes its purpose:
 
-1. [Public API](#1-public-api)
-2. [Goals and architecture](#2-goals-and-architecture)
-3. [Startup and bootstrap](#3-startup-and-bootstrap)
-4. [Lease liveness and coordination](#4-lease-liveness-and-coordination)
-5. [Feed polling and callback dispatch](#5-feed-polling-and-callback-dispatch)
-6. [Checkpointing pipeline](#6-checkpointing-pipeline)
-7. [Shutdown and topology recovery](#7-shutdown-and-topology-recovery)
-8. [Validation and live workload](#8-validation-and-live-workload)
-9. [Compatibility and rollout](#9-compatibility-and-rollout)
-10. [Open questions](#10-open-questions)
+> "simplify the process of reading the change feed and distribute the event processing across multiple consumers effectively."
 
----
+## Functional requirements
 
-## 1. Public API
+- Deliver changes from each physical partition with **at-least-once delivery
+  semantics**.
+- Monitor **all physical partitions within the configured scope**, including
+  replacement partitions after topology changes.
 
-`processor.start()` automatically initializes or resumes the workload before
-processing begins. Initialization failure fails startup. Usage examples use
-authenticated `source`/`leases` clients and an async `handle` callback;
-implementation excerpts below show the actual Rust types and functions, with
-their surrounding module imports omitted.
+## Non-functional requirements
+
+- Distribute processing load equally across cooperating workers.
+
+## How would SDKs process changes using the shared Rust engine?
+
+The **SDK** is the application-facing library; the **driver** is the shared
+engine beneath it. A **workload** is the cooperating processors reading one
+source container under a shared workload name.
+
+The **application handler** is the callback supplied by the application to
+process a batch of changes. An **internal processing pipeline** is the SDK's
+sequence of steps that reads changes, invokes that handler, and records progress.
+
+Here, **progress** means how far the application has successfully processed
+the change feed. A **checkpoint** saves a resume position durably; the
+**checkpoint policy** determines when that save is required.
+
+A **worker** is one running Change Feed Processor instance. Multiple workers
+can cooperate on the same workload; a worker is not necessarily a separate
+process, machine, or thread.
+
+A **partition range** is a portion of the source container's partition key
+space. Workers divide processing by these ranges; the progress and ownership
+records are described in the next sections.
+
+- Existing .NET and Java CFP implementations pass the application handler into
+  their internal processing pipelines and invoke it within the same language
+  runtime.
+- A shared Rust driver cannot directly invoke a Java, Go, or other language's
+  callback object using that language's types, exception handling, and async
+  execution model.
+- Supporting foreign callbacks inside the driver would require an explicit
+  foreign-function interface (FFI) adapter for callback lifetime, runtime dispatch, and completion. Callbacks
+  can cross FFI, but the Java model cannot be reused unchanged.
+- Instead, each SDK or shim invokes its application handler and acknowledges
+  successful processing to the shared driver.
+
+### Existing callback implementations
+
+The following excerpts show direct handler invocation, not complete methods.
+
+**.NET:** [`ChangeFeedObserverFactoryCore<T>`](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/ab37d0a240f0c2f858d7c2f4bcdb71fa80195361/Microsoft.Azure.Cosmos/src/ChangeFeedProcessor/Observers/ChangeFeedObserverFactoryCore.cs)
+invokes the supplied delegate and returns its task:
+
+```csharp
+if (this.onChanges != null)
+{
+    return this.onChanges(context, changes, cancellationToken);
+}
+```
+
+**Java:** [`DefaultObserver<T>`](https://github.com/Azure/azure-sdk-for-java/blob/0f3b0113dab92249963ee1bb3b1b62433143f80c/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/changefeed/common/DefaultObserver.java#L43)
+invokes the supplied consumer within the observer:
+
+```java
+if (consumer != null) {
+    consumer.accept(docs);
+} else if (biConsumer != null) {
+    biConsumer.accept(docs, new ChangeFeedProcessorContextImpl<>(context));
+}
+```
+
+These handlers execute inside their SDKs' CFP pipelines, not a separate
+cross-language driver.
+
+### Shared Rust engine
+
+The SDK owns application callback execution. The shared driver engine owns
+lease coordination, feed reads, and checkpoint persistence.
+
+1. **SDK requests work:** request a batch of changes.
+2. **Driver reads changes:** select an eligible partition range owned by the
+   worker and read its change feed, or wait until a range is eligible.
+3. **Driver returns a batch:** deliver changes to the SDK.
+4. **SDK processes changes:** deserialize the items, invoke the application
+   handler, and wait for it to complete.
+5. **SDK acknowledges success:** acknowledge only successfully processed changes.
+6. **Driver records progress:** record safe progress and persist it according
+   to the checkpoint policy.
+7. **SDK requests another batch:** repeat after handling the current batch.
 
 ```mermaid
 flowchart LR
-    subgraph Startup["SDK worker startup"]
-        direction TB
-        Start["processor.start()"] -->|Ensure initialization| Ready["Ready workload"]
-        Ready -->|Join| Poll["Demand-driven processing"]
-        Start -->|Initialization fails| Failed["Return startup error"]
+    subgraph SDK["SDK / language shim boundary"]
+        Request["1. Request a batch"]
+        Handle["4. Deserialize changes<br/>and await application handler"]
+        Ack["5. Acknowledge successful processing"]
+        Next["7. Request another batch"]
+        Handle -->|Success| Ack
+        Next --> Request
     end
+
+    subgraph Driver["Shared driver boundary"]
+        Read["2. Select an eligible owned range<br/>and read its change feed"]
+        Return["3. Return changes to the SDK"]
+        Progress["6. Record safe progress<br/>and apply persistence policy"]
+        Read --> Return
+    end
+
+    Request -->|Batch request| Read
+    Return -->|Batch of changes| Handle
+    Ack -->|Processing acknowledgment| Progress
+    Progress -->|Acknowledgment result| Next
 ```
 
-### 1.1 Automatic bootstrap in start
+Requests, batches, and acknowledgments cross the SDK/driver boundary.
+The application handler does not: it executes inside the SDK or language shim.
+The driver performs source reads and persists checkpoint progress in Cosmos DB.
+
+**Parallelism comes from multiple workers running this flow concurrently**,
+with the driver coordinating which partition ranges each worker owns. Within
+each SDK worker, batch handling remains sequential.
+
+The Rust SDK implements this boundary in
+`azure_data_cosmos/src/change_feed_processor/execution.rs`. These are focused
+implementation excerpts, not standalone examples.
+
+In these snippets, `T` is the application's document type and `Fut` is its
+handler's returned **future**, an object representing asynchronous work.
+`.await` waits for that work without blocking an executor thread while it is
+pending.
+
+**Request and process a batch:** the SDK waits for one batch from the driver,
+then waits for SDK-side processing before requesting another. `read_next_change_feed_batch()`
+is the driver's receive method; `dispatch()` handles one returned batch:
+
+```rust
+while let Some(batch) = driver.read_next_change_feed_batch().await {
+    dispatch::<T, Fut>(container.clone(), handler, batch).await;
+}
+```
+
+**Invoke the handler in the SDK:** deserialization converts returned data to
+application types. The SDK passes those items and batch context (lease identity
+and read diagnostics) to the handler and awaits its completion:
+
+```rust
+let items = container.deserialize_processor_batch::<T>(response)?;
+if !items.is_empty() {
+    handler(
+        ChangeFeedProcessorContext {
+            lease_token: lease_token.clone(),
+            diagnostics,
+        },
+        items,
+    )
+    .await?;
+}
+```
+
+**Acknowledge successful processing:** the batch includes a **receipt**, a
+single-use acknowledgment handle, which
+lets the SDK report success back to the driver without supplying a callback
+or an arbitrary progress position:
+
+```rust
+Some(Ok(Ok(()))) => {
+    if let Err(err) = receipt.acknowledge().await {
+        tracing::warn!(lease = %lease_token, error = %err, "Callback succeeded but acknowledgment failed");
+    }
+}
+```
+
+This match arm runs only after deserialization and handler execution succeed
+without an unwinding panic. The persistence sequence is explained in
+[delivery and checkpointing](#how-would-batch-requests-delivery-and-checkpointing-stay-coordinated);
+failure outcomes are collected in [failure handling](#how-would-failures-be-handled-and-exposed-to-the-application).
+
+## How is progress tracked in the Change Feed Processor?
+
+**Progress is the position in each partition range's change feed up to which
+changes have been successfully processed.**
+
+The processor must:
+
+- Distinguish the **read position** (changes fetched) from the **processed
+  position** (changes successfully handled by the application).
+- Persist a **saved position** so a restarting or replacement worker knows
+  where to resume.
+- Never advance the saved position past successfully processed changes.
+- Allow the saved position to lag behind processed changes; interruption can
+  therefore cause those changes to replay.
+
+A **lease document** stores the range, current worker owner, and saved position
+in a separate Cosmos DB **lease container**. This shared record lets workers
+coordinate responsibility and resume after restart or ownership change rather
+than rely only on a worker's memory.
+
+## How would a workload be initialized before processing?
+
+### Startup initialization requirements
+
+**Bootstrap prepares a workload so workers can begin processing safely.**
+It must:
+
+- Identify the source container and workload.
+- Establish complete initial partition-range coverage to process.
+- Ensure coordination and progress records exist for that coverage.
+- Preserve existing ownership and saved progress on restart.
+- Allow interrupted initialization to be completed by a later attempt.
+- Report initialization failure rather than declare readiness prematurely.
+
+### Current implementation
+
+During startup, the driver initializes the workload:
+it discovers the source's partition ranges and ensures a lease document exists
+for each range in the initial plan before starting worker coordination.
+
+New leases have no owner or saved position. Workers acquire them, read changes
+using the configured starting position, and persist successfully processed
+progress. Existing lease progress is preserved when the workload resumes.
+
+### How would workers coordinate bootstrap?
+
+#### Identify the workload
+
+Within the supplied lease container, the workload namespace combines the
+source account origin, source container RID, and workload name. A durable
+`.definition` record validates the feed mode and schema. Worker names do not
+split the workload into separate bootstrap operations.
+
+The **container RID** is its service-assigned resource identifier, rather
+than its application-facing name.
+
+`namespace()` encodes the shared workload key; it excludes worker identity:
+
+```rust
+let key = serde_json::to_vec(&(
+    &identity.account,
+    &identity.container_rid,
+    &identity.workload_name,
+))?;
+Ok(format!("cfp1.{}", URL_SAFE_NO_PAD.encode(key)))
+```
+
+These Rust snippets are focused excerpts from
+`azure_data_cosmos_driver/src/change_feed_processor/bootstrap.rs`, not
+standalone programs.
+
+#### Elect a designated initializer and check completion
+
+An **ETag** is a document-version token supplied by Cosmos DB. A conditional
+write or delete can require that version still match, preventing it from
+overwriting a change made after the read. An initialization **claim** is the
+winning attempt's local lock version and time limit.
+
+Each starter first checks the workload's `.info` completion marker. If it is
+compatible, bootstrap is complete and no election is necessary.
+
+Otherwise, workers compete to create `.lock`. The winner reads the lock back
+and verifies its unique attempt ID before initializing. Other workers wait,
+check completion, and can retry election if the lock expires.
+
+`try_claim()` constructs and attempts to create the lock:
+
+```rust
+let started = Instant::now();
+let mut record = self.record("lock");
+record.ttl = LOCK_TTL_SECONDS;
+let lock = InitializationLock {
+    record,
+    attempt: Uuid::new_v4().to_string(),
+    owner: self.worker_name.clone(),
+};
+self.store.create(&lock.record.id, &lock).await?;
+```
+
+Creation success alone does not grant a local claim. After reading the lock
+back, the initializer checks its identity and attempt ID:
+
+```rust
+self.validate(&current.0.record, &lock.record)?;
+if current.0.attempt != lock.attempt {
+    return Ok(None);
+}
+Ok(Some(InitializationClaim {
+    etag: current.1,
+    deadline: (started + ATTEMPT_TIMEOUT).min(self.store.deadline),
+}))
+```
+
+The intervening read returns `None` if no lock is visible. The ETag retained
+in the claim is used for subsequent claim checks and conditional release.
+
+The following is an illustrative lock document. Placeholder strings stand
+for the actual namespace, account origin, container RID, and attempt UUID:
+
+```json
+{
+  "id": "<workload-namespace>.lock",
+  "workload": {
+    "version": 1,
+    "account": "<source-account-origin>",
+    "containerRid": "<source-container-rid>",
+    "processorName": "orders",
+    "mode": "latestVersion"
+  },
+  "ttl": 30,
+  "attempt": "<attempt-uuid>",
+  "owner": "worker-01"
+}
+```
+
+`processorName` is the existing stored field for the workload name. The lock
+identifies the initializer; processing leases separately track ownership of
+source ranges.
+
+**The intent is one active initializer per workload. TTL election is not
+strict mutual exclusion:** delayed operations from an expired initializer
+can overlap a replacement.
+
+`run_attempt()` checks completion before competing for that claim:
+
+```rust
+self.validate_container().await?;
+self.ensure_record(&self.record("definition")).await?;
+if self.ready().await? {
+    return Ok(true);
+}
+let Some(claim) = self.try_claim().await? else {
+    return Ok(false);
+};
+```
+
+```mermaid
+flowchart TD
+    Start["SDK worker starts"] --> Definition["Ensure compatible workload definition"]
+    Definition --> Ready{"Compatible completion marker exists?"}
+    Ready -->|Yes| Done["Bootstrap complete; start worker coordination"]
+    Ready -->|No| Claim["Attempt to create expiring initialization lock"]
+    Claim --> Won{"Read back lock: this attempt won?"}
+    Won -->|No| Wait["Wait within caller budget"]
+    Wait --> Ready
+    Won -->|Yes| Recheck{"Completion marker now exists?"}
+    Recheck -->|Yes| Release["Conditionally release initialization lock"]
+    Recheck -->|No| Plan["Persist or reuse initial partition plan"]
+    Plan --> Leases["Ensure planned leases using create-only writes"]
+    Leases --> ClaimCheck["Verify initialization claim"]
+    ClaimCheck --> Publish["Publish completion marker"]
+    Publish --> Release
+    Release --> Done
+    Plan -.->|Failure or interruption| Partial["Preserve completed writes; attempt lock release"]
+    Leases -.->|Failure or interruption| Partial
+    Partial --> Retry["Later attempt reuses plan and existing leases"]
+    Retry --> Ready
+```
+
+The diagram summarizes coordination, not a transaction. Claim expiry,
+service failures, or the caller deadline can end an attempt.
+
+#### Publish readiness only after initialization
+
+The current ordering in `bootstrap.rs` is:
+
+```rust
+self.create_leases(&plan, claim).await?;
+self.check_claim(claim).await?;
+self.ensure_record(&self.record("info")).await
+```
+
+An unresolved failure prevents new readiness publication. Existing
+lease-create conflicts are accepted without reading or validating the
+conflicting lease's contents; this assumes a managed namespace and compatible
+deterministic IDs. Later starts trust `.info` rather than automatically
+auditing every lease.
+
+Inside `create_leases()`, each range gets a deterministic ID based on its
+boundaries:
+
+```rust
+record: self.record(&format!(
+    "lease.{}-{}",
+    range.min_inclusive(),
+    range.max_exclusive()
+)),
+```
+
+After preparing the unowned lease document, creation is guarded by the
+initialization claim:
+
+```rust
+self.check_claim(claim).await?;
+if !self.store.create(&expected.record.id, &expected).await? {
+    tracing::debug!(lease = %expected.record.id, "Processing lease already exists; preserving it");
+}
+```
+
+The storage helper returns `false` for a create conflict; other failures
+propagate through `?`. No existing lease is overwritten.
+
+#### Allocate time for large workloads
+
+**Requirement: the overall bootstrap time budget should scale with the number
+of lease documents that need to be created**, rather than require customers
+to predict a fixed total duration.
+
+**This proportional budget is not implemented today:** the current attempt
+and lock limits remain fixed, as shown below.
+
+| Current limit | Purpose |
+| --- | --- |
+| Caller budget: configurable, default 120 seconds | Total wait across attempts and retry delays. |
+| Claimed attempt: at most 25 seconds | Bounds one initializer's work, also subject to the caller deadline. |
+| Lock TTL: 30 seconds, without renewal | Allows takeover after an initializer disappears. |
+
+The fixed limits are defined explicitly:
+
+```rust
+const LOCK_TTL_SECONDS: i32 = 30;
+const ATTEMPT_TIMEOUT: Duration = Duration::from_secs(25);
+pub(super) const BOOTSTRAP_TIMEOUT: Duration = Duration::from_secs(120);
+```
+
+The claim-deadline calculation shown above uses the earlier of the attempt
+deadline and caller deadline. There is no lease-count multiplier in it.
+
+Increasing the caller budget allows more attempts, not a longer claim.
+Attempts reuse the persisted plan but traverse it again, checking the claim and
+attempting creation even for existing leases. A large plan can repeatedly
+exhaust the attempt window on the same prefix without completing.
+
+**Open design:** resumable chunks and/or renewable initialization ownership
+could permit continued work while measurable progress is made. Individual
+operations still need bounds, and progress, stalls, throttling, and takeover
+rules need explicit definitions. No proportional-duration formula or scalable
+completion guarantee is currently implemented.
+
+#### Relationship to the partition key range cache
+
+The **partition key range cache** is the driver's shared routing inventory of
+the source container's physical partition ranges. Bootstrap uses it to build
+the initial plan; it does not maintain a separate partition inventory.
+
+When no persisted plan exists, `plan()` requests a refresh:
+
+```rust
+self.source_driver
+    .resolve_all_partition_key_ranges_with_options(self.source, true, operation_options())
+    .await?
+```
+
+The cache fetches partition metadata through the `/pkranges` feed and builds
+the routing map. Bootstrap converts the physical ranges into feed ranges,
+checks coverage, and persists that snapshot as `.plan`.
+
+After obtaining `topology`, the conversion and create-only persistence are:
+
+```rust
+let ranges = topology
+    .iter()
+    .map(FeedRange::try_from)
+    .collect::<Result<Vec<_>>>()?;
+validate_ranges(&ranges)?;
+let plan = RangePlan { record, ranges };
+self.check_claim(claim).await?;
+if self.store.create(&plan.record.id, &plan).await? {
+    return Ok(Some(plan));
+}
+```
+
+If creation conflicts, the following code reads and validates the persisted
+plan rather than replacing it.
+
+- The refresh uses the same cache as other source-container operations, so
+  bootstrap metadata traffic and cache updates affect shared routing state.
+- A later initialization attempt reuses `.plan`; it does not refresh the
+  inventory merely because it is a new attempt.
+- A compatible `.info` marker skips bootstrap inventory discovery entirely.
+- **A requested refresh is not a strict freshness guarantee:** the cache can
+  return an older map after a fetch failure. Full keyspace coverage does not
+  prove that every current physical partition is represented individually.
+
+Consequently, bootstrap readiness describes the persisted initial plan, not
+an atomic inventory of all physical partitions at the instant readiness is
+published. Subsequent source topology changes are handled by processing
+recovery.
+
+#### Recover when the initializer fails
+
+The persisted plan and successfully created leases survive the designated
+initializer. A later contender can become initializer and reuse that state,
+preserving existing lease ownership and saved progress.
+
+This supports recovery from partial initialization, but it is not a saved
+cursor: the replacement traverses the plan again. Inventory freshness has the
+[cache limitation](#relationship-to-the-partition-key-range-cache) described above.
+
+`initialize_and_release()` attempts lock release after the bounded
+initialization result, including initialization failure:
+
+```rust
+let result = catch_bootstrap_panic(bounded(initialization, claim.deadline)).await;
+let release = catch_bootstrap_panic(Box::pin(
+    self.store
+        .release(&self.record("lock").id, claim.etag.clone()),
+))
+.await;
+```
+
+The following result handling preserves the original initialization error
+and logs a cleanup error if release also fails. If initialization succeeded,
+a release error is returned instead.
+
+#### Why the initialization lock needs TTL
+
+A crashed initializer cannot release its lock. Document TTL prevents an
+abandoned lock from blocking initialization indefinitely and allows the next
+potential initializer to compete.
+
+**TTL supplies eventual takeover, not proof that the old initializer stopped.**
+Long-running bootstrap needs renewal and safe claim validation, rather than
+simply extending an attempt beyond the lock TTL. Persistent partial recovery
+is implemented; progress-aware duration and stronger initialization fencing
+remain open.
+
+## How would leases be allocated across workers?
+
+### Worker lifecycle
+
+1. **Construct:** the application supplies the source and lease containers,
+   workload name, worker name, handler, and processing options.
+2. **Start:** initialize or resume the workload, then launch driver
+   coordination and the SDK's batch-consumption loop. Startup does not wait
+   for the worker to acquire a lease or deliver a batch.
+3. **Acquire:** obtain ownership of ranges to process. A running worker can
+   own zero leases and wait for work.
+4. **Process:** read changes and keep ownership alive. The SDK handles one
+   batch at a time; the driver records successful progress.
+5. **Lose or change ownership:** stop processing the affected range and clean
+   up without changing another worker's ownership. Continue coordinating
+   other ranges; source topology changes can require replacement leases.
+6. **Stop gracefully:** drain issued work and release ownership.
+7. **Cancel or crash:** end processing without a confirmed graceful drain.
+
+The detailed completion and restart rules appear in
+[shutdown and restart](#how-would-a-worker-stop-and-resume-processing).
+
+### Recording ownership
+
+To **acquire** a lease, a worker conditionally writes its own name as owner in
+the lease document. Only after that write succeeds does it start processing
+the range. Cooperating workers share the workload name and use distinct worker
+names; the SDK constructor inputs are listed in the [public API](#how-would-an-application-configure-and-control-the-rust-processor).
+
+The following are focused implementation excerpts, not standalone programs.
+
+### Preventing stale or competing ownership writes
+
+A lease replacement uses the ETag condition introduced during bootstrap.
+`If-Match` is the request condition requiring the stored ETag to match the
+version just read.
+
+An **ownership turn** is one acquisition of a lease. The driver records a new
+UUID, stored as `incarnation`, for each successful acquisition. This distinguishes
+old work from new work even if the same named worker loses and reacquires the
+lease.
+
+Before renewal, checkpoint, or release, `transition_lease()` compares fresh
+stored ownership with the acquisition's expected ownership:
+
+```rust
+if current.owner != observed.owner || current.incarnation != observed.incarnation {
+    return Err(lost());
+}
+```
+
+`modify_lease()` then writes with the ETag obtained from that fresh read:
+
+```rust
+self.store().replace(id, &next, etag).await
+```
+
+Source: `azure_data_cosmos_driver/src/change_feed_processor/processing.rs`.
+Owner/incarnation checks reject stale ownership turns; the ETag prevents
+changes racing the write. Retried write conflicts recheck ownership. These
+checks are called **fencing**: an old ownership turn cannot mutate replacement
+ownership or saved progress.
+
+### Selecting leases across workers
+
+Workers periodically read the workload's lease documents, count leases held
+by healthy owners, and calculate their target share. They prefer available
+leases: unowned, expired, or eligible for processing-inactivity takeover.
+If none are available, a worker below its target can select a donor lease
+according to the balancing policy.
+
+An **expired lease** has not been renewed within the expiration budget.
+**Processing-inactivity takeover** permits another worker to select a lease
+whose processing deadline has passed, even if renewal continues.
+
+Driver `balance()` reads current leases and selects acquisition candidates:
+
+```rust
+let active = context.list().await?;
+let mut acquired = Vec::new();
+let selected = balancing::select(&active, &context.options, now_millis());
+```
+
+For each selected lease, it attempts acquisition:
+
+```rust
+match context.acquire_tracked(&active[index], Some(&state)).await {
+    Ok(lease) => acquired.push(lease),
+    Err(err) if err.status().is_precondition_failed() => {
+        tracing::debug!(error = %err, "Lease acquisition lost a race");
+    }
+    Err(err) => state.failed(Some(&active[index].record.id), err),
+}
+```
+
+Source: `processing.rs`; selection policy:
+`processing/balancing.rs`, `select()`.
+The first balancing pass has no initial delay; later passes use the acquisition
+interval. An empty result does not stop the worker.
+
+### Maintaining ownership while processing
+
+**Renewal** is a periodic conditional lease update that keeps the owner's claim
+alive. It does not advance the saved change feed position. Successful checkpoint
+writes also refresh lease timing.
+
+The **supervisor** coordinates one acquired lease's processing and renewal.
+`LeaseState` holds its local document copy, ETag, renewal timing, and pending
+checkpoint progress. A **mutex** permits only one mutation of that local state
+at a time.
+It polls both asynchronous operations concurrently, so renewal can continue
+while processing waits for a source read or application acknowledgment.
+Renewal and checkpoint writes use the same lease-state mutex and are serialized.
+
+`.fuse()` supports use in
+`select!`, which waits for either operation to finish; `pin_mut!` pins those
+futures for polling. These are not separately spawned tasks.
+
+Driver `supervise()` prepares its processing and renewal futures for concurrent
+polling:
+
+```rust
+let renewing = renew(context.clone(), lease.clone(), cancelled).fuse();
+futures::pin_mut!(processing, renewing);
+```
+
+Source: `processing.rs`, `supervise()` and `renew()`.
+
+### Detecting ownership loss and cleaning up
+
+Ownership loss is not immediately pushed to the old worker. Its next fenced
+lease operation discovers a different owner or ownership-turn identifier.
+
+The supervisor then signals cancellation to the processing operation and waits
+for it to finish before release cleanup. Release uses the same ownership checks,
+so it cannot clear the replacement owner's claim. The coordinator continues balancing. The local delivery session and its queue
+cleanup are explained in the next section.
+
+In the renewal-completion branch, `cancel` is the local cancellation sender;
+dropping it wakes cancellation waiters. `processing.await` joins the issued
+work. `PollError::Other` preserves the fact that renewal errors are not
+source-feed topology signals:
+
+```rust
+result = renewing => {
+    // Renewal ended: cancel processing and join its issued work before releasing the lease.
+    drop(cancel.take());
+    let processed = processing.await;
+    result.map_err(PollError::Other).and(processed)
+},
+```
+
+Only an explicit source-feed topology failure can initiate source-range recovery.
+Cancellation cannot undo application effects already performed.
+
+### How start and stop affect rebalancing
+
+Starting launches a new worker's balancing loop. Stopping prevents that worker
+from acquiring more leases and eventually releases its existing ownership.
+Other workers periodically inspect lease documents to discover those changes.
+There is no fleet-wide join/leave notification or atomic redistribution.
+
+With the default 60-second lease expiration budget, acquisition checks run
+every one sixth of that budget: 10 seconds.
+
+Released leases become available on subsequent balancing passes, not by direct
+assignment from `stop()`. Forced cancellation attempts cleanup; after a crash,
+workers must wait until eligibility rules permit takeover. The shutdown API
+and cleanup sequence are shown once in
+[shutdown and restart](#how-would-a-worker-stop-and-resume-processing).
+
+## How would batch requests, delivery, and checkpointing stay coordinated?
+
+The SDK requests one batch using the driver's
+`read_next_change_feed_batch()` method. Each acquired partition range registers
+when its feed poller can accept another read turn. These registrations form a
+waiting list; the driver selects one when an SDK request is pending.
+
+**The waiting list contains no fetched changes.** This request-matching
+component is named `ChangeFeedRequestDistributor`: it distributes read
+requests, not lease ownership. Below, "distributor" refers to that component
+and "eligibility queue" to its waiting list.
+
+Each acquisition has a separate **delivery session**, its local state and
+cleanup scope. Its delivery state controls whether it may register, read, or
+deliver again.
+
+### Register readiness and grant one read turn
+
+The SDK's `consume()` loop shown in the first section waits on `read_next_change_feed_batch()`.
+Meanwhile, the acquired lease's **feed poller**, the driver operation that
+reads changes for that range, calls `wait_for_demand()`. That
+registers its delivery state in the queue. Registration and the SDK request can
+arrive in either order; **both are required before a read turn is granted**.
+
+The distributor selects a waiting registration, removes it from the queue, and
+sends read permission with a one-shot reply channel. A **one-shot channel**
+carries one value to its waiting receiver; it does not invoke the application
+handler. The poller uses the reply sender to return the batch.
+
+A one-shot channel fits because each read permission expects **one batch
+response**, and each acknowledgment expects **one completion result**. It ties
+the reply directly to the waiting request without a request-ID lookup,
+transfers ownership of the value, and wakes the receiver without repeated
+polling. If the sender is dropped without replying, the receiver observes
+cancellation.
+
+Each turn creates a new channel pair. **The channel provides in-memory
+coordination, not durable delivery or a timeout.**
+
+### Track the acquisition's delivery state
+
+| State | Meaning | Next action |
+| --- | --- | --- |
+| `Idle` | No outstanding delivery or demand registration. | Register readiness. |
+| `WaitingForDemand` | Registered in the eligibility queue. | Distributor grants a read turn. |
+| `Fetching` | A read turn has been granted. | Read and deliver, or yield after an idle/throttled turn. |
+| `AwaitingAcknowledgment` | A batch has been handed to the receiver. | Wait for successful processing and acknowledgment completion. |
+| `Closed` | This acquisition's delivery session has ended. | Remove or skip its queue entries. |
+
+These are delivery states, not persisted lease lifecycle states. `Fetching`
+also remains in use during an idle delay or throttle cooldown, until the
+poller registers again. `AwaitingAcknowledgment` covers SDK deserialization,
+handler execution, and any required checkpoint write; it does not distinguish
+those activities diagnostically.
+
+### How source-read outcomes change delivery state
+
+**Each SDK `read_next_change_feed_batch()` call returns at most one batch.**
+For an authorized range turn, the poller executes the read plan once and
+handles that response; it does not drain multiple pages from that partition
+range into a single delivery. Another data page requires successful
+acknowledgment and a new read turn.
+
+This is a page/delivery count, not an item-count limit. A returned batch can
+contain multiple changes; `with_max_item_count()` is a service item-count hint.
+One pending SDK call can authorize several sequential idle or throttled turns
+while seeking a batch, and request-level retries can issue additional service
+requests.
+
+```mermaid
+flowchart TD
+    Waiting["WaitingForDemand: queued registration"] -->|SDK request grants permission| Fetching["Fetching: one authorized range read turn"]
+    Fetching --> Outcome{"Source-read outcome"}
+    Outcome -->|Data| Delivered["AwaitingAcknowledgment: send one batch and receipt"]
+    Delivered --> Success{"Successful processing and required persistence?"}
+    Success -->|Yes| Idle["Idle"]
+    Idle -->|Register another turn| Waiting
+    Success -->|No| Closed["End acquisition and close delivery"]
+    Outcome -->|304: no changes| NoChanges["Remain Fetching: record safe idle position and drop demand"]
+    NoChanges --> PollDelay["Await poll delay while servicing checkpoint deadlines"]
+    PollDelay -->|Register again| Waiting
+    Outcome -->|Ordinary 429| Throttled["Remain Fetching: drop demand before cooldown"]
+    Throttled --> Cooldown["Await cooldown while servicing checkpoint deadlines"]
+    Cooldown --> Retry{"Retry budget remains?"}
+    Retry -->|Yes: register again| Waiting
+    Retry -->|No| Closed
+    Outcome -->|Other remaining source error| Closed
+```
+
+The delay/cooldown boxes describe work done while the actual state remains
+`Fetching`; they are not additional enum variants.
+
+| Outcome | State and channel handling | Effect on the pending SDK receive |
+| --- | --- | --- |
+| Data | Move the response to its original receiver and enter `AwaitingAcknowledgment`. Do not register another turn until receipt completion succeeds. | Return this batch, then SDK dispatch handles it. |
+| 304 | Drop the response, record safe idle continuation according to policy, and drop demand before waiting. Remain `Fetching` until readiness is registered again. | Reply sender closes without a batch; the request matcher tries another eligible acquisition. |
+| Ordinary 429 | Drop demand before the lease-local cooldown. Keep retry state across turns; register again only when cooldown permits retry. | Reply sender closes without a batch; another eligible range can serve the same receive. |
+| Remaining source error | Propagate the error to supervision and end the affected delivery session during cleanup. Explicit source-topology failures can initiate range recovery. | No error batch is returned; the receive can seek another eligible acquisition. |
+
+Idle progress needs no application callback because no changes were returned.
+Eager can persist that position immediately; Deferred does not force a write
+merely because the result was idle. Checkpoint failures while handling idle,
+cooldown, or acknowledgment remain maintenance failures, not source-read 429
+or topology signals.
+
+Implementation anchors: the `idle` branch, throttle-error branch, and
+`session.deliver(...)` in `poll_feed()`; the response-channel retry loop in
+`ChangeFeedRequestDistributor::read_next_change_feed_batch()`.
+
+### How ownership loss affects queue membership
+
+The [ownership checks](#preventing-stale-or-competing-ownership-writes)
+operate at lease-document writes, not queue selection. When a fenced operation
+detects loss, supervision cancels
+processing and ends that session.
+
+The old delivery session is closed and its queue entries are removed by
+**delivery-object identity**, not lease ID. A later acquisition of the same
+lease creates a fresh object, so old cleanup cannot remove its registration.
+If the old session was already selected or its batch delivered, cancellation
+and receipt handling govern that in-flight work.
+
+**Queue selection does not read Cosmos DB to revalidate ownership before
+every source read.** Stale reads and callback overlap are possible before
+ownership loss is detected. Fencing protects stored ownership and progress;
+it cannot undo external application effects.
+
+### Tie successful processing to the next delivery
+
+The SDK completes the batch's receipt only after successful deserialization
+and handler execution.
+The driver already holds the continuation for that batch; the SDK does not
+choose an arbitrary saved position.
+
+Checkpoint policy determines what acknowledgment completion requires:
+
+- **Eager:** persist the successfully processed position before completing
+  acknowledgment and permitting another read from that acquisition.
+- **Deferred:** accept safe progress in memory and permit another read; attempt
+  persistence when the configured interval since the first unsaved progress
+  expires, or at an explicit/lifecycle barrier. Saved progress can therefore
+  lag behind processed progress.
+
+#### How acknowledgment records safe progress
+
+After the handler succeeds, SDK dispatch calls:
+
+```rust
+receipt.acknowledge().await
+```
+
+The receipt sends an acknowledgment to the waiting driver poller and waits
+for its completion result. It does not itself write to Cosmos DB. The poller
+already knows the continuation associated with the delivered batch:
+
+```rust
+lease.acknowledge(token, handled_changes);
+```
+
+Here, `lease` is the local `LeaseState`. Its pending checkpoint records the
+latest safe token, handled-change count, and time of the first unsaved
+progress. Later successful acknowledgments update the token and count without
+resetting that timestamp. No completed batch payload is retained.
+
+#### How Eager persists progress
+
+Inside `poll_feed()`, the policy branch and delivery transition are:
+
+```rust
+let result = if acknowledgment.durable
+    || context.options.checkpoint_policy == CheckpointPolicy::Eager
+{
+    context.flush(&mut lease).await
+} else {
+    Ok(())
+};
+let result = result.and_then(|()| session.acknowledged());
+```
+
+The receipt's `checkpoint()` method requests durable persistence explicitly
+under either policy; this sets the `acknowledgment.durable` flag in the excerpt.
+`and_then` reopens delivery only if the required work succeeded:
+`AwaitingAcknowledgment` becomes `Idle`. The poller replies to the SDK and
+can register for another turn; after dispatch completes, the SDK requests
+another batch. Neither side must register first.
+
+`flush()` writes only pending safe progress:
+
+```rust
+if let Some(pending) = lease.pending.clone() {
+    if let Err(err) = self.update(lease, Update::Checkpoint(&pending.token)).await {
+        if let Some(pending) = &mut lease.pending {
+            pending.failed = true;
+        }
+        return Err(err);
+    }
+}
+```
+
+This is a focused excerpt. `update()` reads fresh lease state, validates
+ownership, and replaces the document using its ETag. A successful checkpoint
+installs updated local state and clears the pending progress. With no pending
+progress, `flush()` makes no write.
+
+#### How Deferred schedules persistence
+
+Deferred may acknowledge in memory before that write. `checkpoint_delay()`
+computes the time remaining from the first unsaved progress:
+
+```rust
+Some(max_interval.saturating_sub(now.saturating_duration_since(pending.since)))
+```
+
+An overdue checkpoint produces zero delay. `wait_with_checkpoint()` polls
+the current operation alongside that deadline and cancellation signals.
+When the deadline fires, it awaits the same `flush()` operation, then resumes
+waiting on the original operation rather than recreating it.
+
+An explicit durable receipt or eligible final cleanup can flush sooner.
+The current default Deferred interval is five minutes; the SDK allows callers
+to choose a policy and interval.
+
+```text
+Eager:    callback success → pending progress → durable write → acknowledgment result
+Deferred: callback success → pending progress → acknowledgment result
+                                           → deadline or barrier → durable write
+```
+
+#### Failure and replay boundaries
+
+A required persistence failure returns an error and ends the affected
+acquisition rather than permitting its next batch through the success path.
+For either policy, a timeout can be ambiguous: the server may have committed
+the write before the caller observed failure.
+
+The saved position and initial-start limitation are discussed in
+[restart and saved positions](#restart-and-saved-positions); application
+failure behavior is detailed in [failure handling](#how-would-failures-be-handled-and-exposed-to-the-application).
+
+```mermaid
+sequenceDiagram
+    participant SDK as SDK consumer
+    participant D as Driver distributor
+    participant P as Feed poller for owned lease
+    participant L as Lease container
+    Note over SDK,P: SDK demand and readiness registration may arrive in either order
+    SDK->>D: Request one batch
+    P->>D: Register readiness: WaitingForDemand
+    D->>P: Grant read turn: Fetching
+    Note over P: Read the source change feed
+    P->>D: Send batch and receipt: AwaitingAcknowledgment
+    D->>SDK: Return batch
+    Note over SDK: Deserialize and await application handler
+    SDK->>P: Acknowledge successful processing
+    Note over P: Record safe pending progress
+    alt Eager or explicit durable receipt
+        P->>L: Ownership-validated checkpoint write
+        L-->>P: Write succeeds
+    else Deferred
+        Note over P,L: Accept in memory and persist at deadline or barrier
+    end
+    Note over P: Reopen delivery: Idle
+    P-->>SDK: Acknowledgment result
+    Note over SDK,P: SDK requests again and poller re-registers for another turn
+```
+
+### Preserve the ordering during failures
+
+Idle or throttled source reads release demand without invoking the handler,
+allowing the same pending receive to try another eligible acquisition.
+Handler and checkpoint failures follow the outcomes described in
+[failure handling](#how-would-failures-be-handled-and-exposed-to-the-application).
+
+Queue changes and delivery transitions are protected by mutexes. Network reads
+and callbacks run outside those short queue locks; lease renewal and checkpoint
+writes serialize through the lease-state mutex. Deferred deadline handling can
+persist earlier safe progress while another operation is pending, without
+accepting an unfinished batch.
+
+**The invariant is one outstanding unacknowledged batch per acquisition, not
+one global batch and not a global memory limit.** Different workers progress
+independently. A replacement acquisition gets new delivery state, and stale
+ownership turns cannot update its saved progress.
+
+## How would partition splits and merges affect processing?
+
+A **physical partition split** replaces one source partition with smaller
+partitions. A **merge** combines physical partitions. The processor's leases
+represent partition key ranges, so their saved positions must remain valid
+as the physical layout changes.
+
+**Recovery is triggered by a source-feed topology failure, not by a lease
+checkpoint error or a background scan.** It affects the failed acquisition,
+not every worker or the workload's bootstrap records.
+
+### Stop the affected acquisition and settle safe progress
+
+When source planning or execution reports a topology change, `poll_feed()`
+returns an explicitly tagged `PollError::SourceTopologyChange`. Its enclosing
+`poll()` attempts to flush eligible acknowledged progress. A failed flush
+prevents recovery from proceeding with unpersisted progress.
+
+The supervisor settles processing and renewal before dispatching recovery.
+It does not initiate recovery during shutdown. A renewal failure remains a
+lease-operation failure, even if its status describes topology change.
+
+Other acquisitions remain coordinated independently. The pending SDK receive
+can try another eligible acquisition when the failed read drops its reply
+sender.
+
+### Discover replacement ranges
+
+`recover()` refreshes physical ranges overlapping the affected lease and
+intersects them with that lease's boundaries. It sorts the intersections and
+checks exact coverage, rejecting gaps or overlaps.
+
+If several ranges cover the scope, the split path ensures corresponding child
+leases. If just one remains, `recover()` returns `false`: there is no child
+replacement. Normal cleanup releases the logical lease, which can be
+reacquired and replanned.
+
+**A physical merge does not merge saved lease progress.** Separate logical
+range leases can remain inside the merged physical partition, preserving
+their independent positions.
+
+### Ensure children before deleting the parent
+
+`split()` validates parent identity and child coverage, requires no pending
+checkpoint progress, and conditionally renews the parent:
+
+```rust
+self.validate(&parent.value)?;
+validate_children(&parent.value.range, children)?;
+if parent.pending.is_some() {
+    return Err(error(
+        StatusCode::Conflict,
+        "Split requires durable progress.",
+    ));
+}
+self.update(parent, Update::Renew).await?;
+```
+
+For each child, the driver projects the parent's saved continuation onto the
+child's range, then creates the missing lease unowned. Existing child ownership
+and progress are preserved. Creation is followed by read-back validation;
+this is stronger than bootstrap's lease-create conflict handling.
+
+Child validation requires the expected range and a continuation, not equality
+with the newly projected token: an existing child may already have advanced.
+If further splits have occurred, existing replacement coverage can satisfy
+the child range.
+
+Only after every child is ensured does the driver conditionally delete the
+parent:
+
+```rust
+self.store().delete(&id, parent.etag.clone()).await
+```
+
+Normal balancing discovers and acquires the children. Recovery does not bypass
+ownership acquisition to start their pollers.
+
+```text
+Source-feed topology failure
+→ settle acknowledged progress and processing/renewal
+→ refresh affected physical ranges and validate coverage
+→ validate ownership and renew parent conditionally
+→ ensure children with projected saved positions
+→ delete parent conditionally
+→ acquire children through normal balancing
+```
+
+### How ownership checks constrain recovery, checkpoints, and queue readiness
+
+| Activity | Enforcement and effect |
+| --- | --- |
+| Parent preparation for split | Conditional renewal validates ownership before creating replacement leases. |
+| Parent deletion | Uses the parent's ETag. A competing parent mutation causes deletion to fail rather than deleting unconditionally. |
+| Detected ownership loss | Cancel and join old processing, close its delivery session, and remove its queue entries by object identity. A replacement session remains separate. |
+
+The general [queue and ownership rules](#how-ownership-loss-affects-queue-membership)
+still apply during recovery: readiness is not proof of current ownership,
+and checkpoint writes use the previously described fencing.
+
+If ownership changes during recovery, the final conditional parent deletion
+must not remove the changed document. Child creation is create-only and
+preserves existing state, but the entire recovery is not one transaction or
+an uninterrupted ownership lock.
+
+### Interrupted recovery and replay
+
+If a child operation fails, the parent is not deleted by this attempt. Already
+created children remain. If parent deletion fails, parent and children can
+coexist until a later acquisition retries recovery.
+
+**Children-first ordering supports resumable recovery; it does not make all
+steps atomic.** Overlapping documents during partial recovery, repeated
+topology changes, and ownership races need explicit test coverage.
+Application-effect and replay limitations are collected in
+[failure handling](#how-would-failures-be-handled-and-exposed-to-the-application).
+
+Implementation: `azure_data_cosmos_driver/src/change_feed_processor/processing/topology.rs`,
+`recover()`, `split()`, `checkpoint()`, and `has_replacements()`, together with
+`poll()` and `supervise()` in `processing.rs`.
+
+## How would a worker stop and resume processing?
+
+**Requesting shutdown is different from confirming cleanup has finished.**
+The Rust SDK provides an awaitable graceful `stop()`; dropping the processor
+requests cancellation without waiting.
+
+### Graceful shutdown
+
+1. The SDK requests driver shutdown.
+2. The driver stops granting new read turns and acquiring new leases.
+3. Issued work settles. A batch already handed to the SDK can finish its
+   handler and acknowledgment; a read not yet delivered can be discarded.
+4. Lease renewal continues while processing drains.
+5. Each poller attempts to persist eligible acknowledged progress, including
+   pending Deferred progress. It does not acknowledge unfinished or failed
+   application work.
+6. Supervisors join processing and renewal, then conditionally release leases.
+7. The coordinator joins outstanding acquisition work and supervisors, and
+   retries recorded ownership cleanup without clearing a replacement owner.
+8. The SDK waits for its dispatcher to finish and returns the shutdown result.
+
+The public SDK method waits for both driver and SDK completion:
+
+```rust
+let result = driver.stop().await;
+let dispatched = stopped.await;
+result.and(dispatched)
+```
+
+There is no implicit callback or overall graceful-stop timeout. A handler
+that never completes can prevent graceful drain. Canceling the application's
+wait does not mean cleanup has completed or stopped.
+
+### Forced cancellation and process failure
+
+Dropping SDK lifecycle state explicitly requests forced driver shutdown:
+
+```rust
+impl Drop for Running {
+    fn drop(&mut self) {
+        self.driver.request_stop();
+    }
+}
+```
+
+Forced cancellation ends outstanding receipt waits rather than waiting for
+application callbacks. SDK dispatch races the callback against lease
+cancellation. Already-issued service operations or application side effects
+cannot be undone.
+
+The driver still attempts conditional lease cleanup. The SDK's destructor
+does not await it, and a process crash cannot reliably run cleanup at all.
+Leases left owned become eligible for another worker according to expiration
+and processing-inactivity rules.
+
+The driver exposes awaitable `abort()` for forced cleanup; the Rust SDK does
+not expose that method. A graceful stop interrupted by forced shutdown reports
+the forced outcome rather than claiming a successful drain.
+
+### Restart and saved positions
+
+After its previous processing and cleanup finish, the SDK processor can be
+started again. Startup checks workload initialization and preserves existing
+lease documents. A replacement acquisition uses saved lease progress before
+the configured initial position.
+
+Successfully processed changes whose position was not persisted may replay.
+Recovery uses the stored position, including after the
+[ambiguous checkpoint outcomes](#failure-and-replay-boundaries) described above.
+
+**Current limitation:** with an initial `Now` start and no durable continuation,
+a restart can choose a later starting position. The default Deferred policy
+does not yet establish a durable initial anchor before relying on restart.
+
+Stopping one worker does not stop the workload's other workers.
+[Rebalancing](#how-start-and-stop-affect-rebalancing) explains when they discover
+released leases.
+
+## How would failures be handled and exposed to the application?
+
+Failures are handled at the stage that can distinguish their meaning.
+**An error is not an instruction to skip changes or advance a checkpoint.**
+
+### Source reads and lease maintenance
+
+| Failure | Current handling | Application-facing effect |
+| --- | --- | --- |
+| Ordinary source-read throttling | Release receive demand, apply lease-local cooldown, and retry within the throttle budget. | The pending receive can try another eligible acquisition. |
+| Slow source read | Planning/read execution is bounded to five seconds or a shorter configured driver deadline. A remaining timeout ends the acquisition. | The pending receive can continue seeking a batch elsewhere. |
+| Other service/transport errors | Applicable driver request/routing policies run first; remaining errors propagate to supervision. | Report failure and end the affected acquisition as appropriate. |
+| Source-feed topology change | Preserve explicit source origin and attempt range-local recovery after safe-progress handling. | No topology-error batch is sent to the handler. |
+| Lost ownership | Reject stale lease mutations, cancel/join processing, and attempt fenced cleanup. | The callback can be canceled; already-performed effects remain. |
+| Checkpoint failure | Return an error to the receipt waiter when applicable and end affected processing. | Callback success may be followed by acknowledgment failure and replay. |
+| Lease release failure | Report it and retain cleanup state for the coordinator's final attempt. | Shutdown can fail; unreleased ownership can later expire. |
+
+Metadata and lease writes keep their normal request retries. Ordinary CFP
+page-read throttle retries are instead handled outside the request pipeline
+so cooldown does not occupy the pending receive.
+
+Deferred deadline failures are maintenance failures, not source-read throttling
+or source-topology signals. A failed checkpoint must not cause recovery of an
+unrelated source partition.
+
+### Application handler failures
+
+SDK dispatch acknowledges only successful deserialization and handler completion.
+
+- Deserialization or handler errors are logged; the receipt is abandoned.
+- An unwinding handler panic is caught and logged without acknowledgment.
+- Lease cancellation can end the callback wait without acknowledgment.
+- If the callback succeeds but acknowledgment fails, that failure is logged;
+  application side effects are not rolled back.
+
+An abandoned receipt ends the acquisition without accepting that batch's
+progress. The SDK consumer can request another batch. Previously acknowledged
+safe progress may still be eligible for persistence during cleanup.
+
+The handler must report success only after its required effects have completed
+and must tolerate replay and possible overlap. Fencing protects stored progress,
+not external effects already performed. Repeatedly failing items are not
+automatically skipped.
+
+### What the application observes
+
+- SDK `start()` returns initialization errors and rejects duplicate startup on
+  the same running processor object.
+- SDK `stop()` returns graceful-cleanup errors.
+- Later per-lease failures are logged. The SDK has no separate asynchronous
+  error callback.
+- The driver has an optional synchronous error observer for adapters or advanced
+  callers; it must return promptly.
+- `read_next_change_feed_batch()` returns a batch or end-of-delivery, not a read-error result:
+
+  ```rust
+  pub async fn read_next_change_feed_batch(&self) -> Option<ChangeFeedBatch>
+  ```
+
+Channel closure for a failed or idle read causes the distributor to seek
+another eligible acquisition. If every acquisition repeatedly fails, receiving
+can remain pending while errors are logged; an application must not interpret
+that wait as proof of healthy processing.
+
+### Persistent failures and limits
+
+The current worker can release and later reacquire a failing lease. There is
+no general acquisition-level suspension/backoff policy for deterministic
+handler, authorization, or invalid-continuation failures.
+
+Request-level retry budgets therefore do not guarantee that the workload stops
+repeating the same failure. Defining persistent-failure behavior and operational
+signals remains open design work.
+
+Handling unwinding panics, cancellation, request deadlines, and TTL recovery
+do not cover process aborts or non-yielding application code.
+
+## How would background tasks coordinate polling, renewal, and balancing?
+
+A **spawned task** is asynchronous work scheduled by the runtime. Within one
+worker, the SDK spawns a consumer task and the driver spawns a coordinator
+task. The coordinator polls a balancing future and the supervisor futures for
+its acquired leases. Each supervisor polls feed processing and renewal
+together; **there is no separately spawned task or thread per lease**.
+
+```mermaid
+flowchart TB
+    subgraph SDKTask["SDK consumer task"]
+        Consumer["Request batch"]
+        Handler["Deserialize and await handler"]
+        Ack["Await acknowledgment result"]
+        Consumer --> Handler --> Ack --> Consumer
+    end
+    subgraph DriverTask["Driver coordinator task"]
+        Coordinator["run: poll balancing and supervisors"]
+        Balance["balance: wait interval, list leases, acquire candidates"]
+        subgraph Lease["Supervisor future for each acquired lease"]
+            Supervisor["supervise: poll both activities"]
+            Feed["poll: demand, source read, receipt wait, safe-progress flush"]
+            Renew["renew: wait until due, validate ownership, update lease"]
+            Supervisor --> Feed
+            Supervisor --> Renew
+        end
+        Coordinator --> Balance
+        Coordinator --> Supervisor
+    end
+    Delivery["Distributor: demand and response channels"]
+    State["Per-lease mutex: serialize renewal and checkpoint writes"]
+    Consumer -->|Demand| Delivery
+    Delivery -->|Read permission| Feed
+    Feed -->|Batch through distributor| Handler
+    Ack -->|Successful processing signal| Feed
+    Feed -->|Checkpoint mutation| State
+    Renew -->|Renewal mutation| State
+    Feed -->|Acknowledgment result| Ack
+```
+
+The arrows describe coordination, not one synchronous call chain. While an
+operation is asynchronously pending, the coordinator can poll other ready
+futures. Concurrency does not require each activity to run simultaneously on
+a separate OS thread.
+
+### During normal feed processing
+
+| Activity | What makes it run? | Interaction with other work |
+| --- | --- | --- |
+| Load balancing | First pass starts immediately; later passes wait the acquisition interval. | Can discover and acquire leases while existing supervisors await reads or receipts. Does not wait for an entire feed backlog to drain. |
+| Feed processing | A pending SDK receive grants a read turn to an eligible acquisition. | A delivered batch waits for receipt completion before that acquisition can read another batch. |
+| Application handling | The SDK consumer receives a batch. | Sequential within this SDK worker; a slow handler prevents that consumer from requesting another batch, but does not itself stop driver balancing or renewal. |
+| Lease renewal | Renewal becomes due after the latest successful lease write. | Continues while processing awaits demand, reads, or acknowledgment. Successful checkpoint writes also refresh renewal timing. |
+| Deferred persistence | The first unsaved safe progress reaches its deadline, or a barrier requires a flush. | Can flush earlier acknowledged progress while current work remains pending. It cannot checkpoint an unfinished batch. |
+
+The default lease-expiration budget is 60 seconds. Balancing checks use one
+sixth of that budget (10 seconds); renewal is scheduled after one third
+(20 seconds) without a successful lease write. These are independent of the
+source's idle poll delay and application handler duration.
+
+**Renewal and checkpoint mutations for the same lease are serialized by its
+mutex.** Source reads and SDK handlers do not hold that mutation lock.
+A slow lease-store write can therefore delay another mutation of that lease,
+even though its futures are polled concurrently.
+
+### During graceful feed-processing drain
+
+Here, **drain** means finishing already-issued work during shutdown, not
+prefetching all remaining changes in the source container.
+
+1. Stop accepting new acquisitions and granting new read turns.
+2. Let issued delivery and acknowledgment work settle. The SDK may complete
+   a handler for a batch it already received; undelivered read results can be
+   discarded.
+3. Keep renewing each lease while its processing drains.
+4. Flush eligible safe progress when that poller exits.
+5. The supervisor cancels and joins renewal, then conditionally releases the
+   lease.
+6. The coordinator joins in-flight acquisition work rather than forgetting a
+   successful ownership write, joins all supervisors, and performs final
+   ownership cleanup.
+
+```text
+Normal operation:
+balancing continues | feed waits/reads/acknowledges | renewal continues
+
+Graceful stop:
+close new demand/acquisition
+→ finish issued processing while renewing
+→ flush safe progress
+→ stop and join renewal
+→ release ownership
+→ coordinator and SDK consumer finish
+```
+
+This is coordinated completion, not a periodic global barrier. Each lease's
+supervisor settles its own work; the coordinator waits for all of them at
+shutdown. If renewal ends first, it cancels and joins processing before
+cleanup, using the [ownership-loss path](#detecting-ownership-loss-and-cleaning-up).
+Forced cancellation and failures follow the
+[shutdown rules](#how-would-a-worker-stop-and-resume-processing), not the
+successful-drain sequence.
+
+Implementation anchors: `run()`, `balance()`, `supervise()`, `renew()`, and
+`poll()` in `azure_data_cosmos_driver/src/change_feed_processor/processing.rs`;
+SDK `consume()` in `azure_data_cosmos/src/change_feed_processor/execution.rs`.
+
+## How would an application configure and control the Rust processor?
+
+The public API is defined in
+`azure_data_cosmos/src/change_feed_processor.rs`; lifecycle methods are
+implemented in its private `execution.rs` module.
+
+### Supply the workload and application handler
+
+`ChangeFeedProcessorBuilder::new` requires six inputs:
+
+| Input | Meaning |
+| --- | --- |
+| `mode` | `LatestVersion` or `AllVersionsAndDeletes`. |
+| `monitored_container` | Source container whose change feed is read. |
+| `lease_container` | Container storing workload coordination and progress. Requires `/id` partitioning and default TTL `-1`. |
+| `workload_name` | Shared name for workers cooperating on this source and lease storage. |
+| `worker_name` | Distinct name for this running worker; uniqueness is the caller's responsibility. |
+| `handler` | Required async function-pointer callback for typed changes. |
+
+The handler accepts batch context and a vector of change-feed items:
+
+```rust
+pub type ChangeFeedHandler<T, Fut> = fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut;
+```
+
+`T` is the application's deserializable document type. `Fut` is the future
+returned by the callback; it must resolve to `crate::Result<()>`.
+The current API accepts function pointers, not closures capturing application
+state. This is a callback-shape restriction, separate from keeping callback
+execution in the SDK rather than the shared driver.
+
+### Choose processing options
+
+Builder setters return the builder so they can be chained. They configure
+behavior without starting processing.
+
+| Setter | Default and behavior |
+| --- | --- |
+| `with_checkpoint_policy(policy)` | Default `ChangeFeedCheckpointPolicy::deferred()`, with a five-minute interval. Choose `Eager` or `Deferred { max_interval }`; Deferred intervals must be positive and representable. |
+| `with_max_item_count(hint)` | Default hint of 100 items per lease read. `MaxItemCountHint::ServerDecides` lets the service choose. This is not a hard payload or memory limit. |
+| `with_feed_poll_delay(delay)` | Default five seconds after an idle read, independently per lease. Zero disables the delay; nonempty batches do not incur it. |
+| `with_bootstrap_timeout(timeout)` | Default 120-second caller wait budget. Must be positive and representable; does not extend claims or cover optional restart verification. |
+| `with_min_scale_count(minimum)` | Default zero. Sets the worker's minimum lease target, not a number of processes or threads. |
+| `with_max_scale_count(maximum)` | Default zero means uncapped lease count. A nonzero maximum must not be below the minimum. |
+| `with_lease_verification_enabled_on_restart(enabled)` | Default false. Check the persisted initial coverage and recreate missing leases while preserving existing progress and replacement coverage. Invalid coverage fails startup. |
+
+There is no SDK callback-concurrency setter; the
+[processing flow](#shared-rust-engine) describes worker-level parallelism.
+
+### Choose where new leases begin reading
+
+Saved lease progress takes precedence over all initial-start options.
+For leases without saved progress, the last start setter wins:
+
+| Setter | Behavior |
+| --- | --- |
+| `with_start_from_now()` | Default: start from now. Clears an earlier initial continuation. |
+| `with_start_from_beginning()` | Start from the beginning; requires `LatestVersion`. Clears an earlier initial continuation. |
+| `with_start_time(start_time)` | Start after the supplied time; requires `LatestVersion`. Clears an earlier initial continuation. |
+| `with_start_continuation(continuation)` | Set an initial continuation and replace earlier start settings. Blank tokens are rejected; driver validation checks applicability to the source/range/mode. |
+
+`AllVersionsAndDeletes` does not support beginning or time-based starts.
+Initial `Now` without a durable saved position has the
+[restart limitation](#restart-and-saved-positions) described above.
+
+### Build, then start
+
+The following is a usage excerpt. `source`, `leases`, and `handle_changes`
+represent an application's configured container clients and async handler:
 
 ```rust
 let processor = ChangeFeedProcessorBuilder::new(
     ChangeFeedMode::LatestVersion,
     source,
     leases,
-    "order-projection",
+    "orders",
     "worker-01",
+    handle_changes,
 )
-.with_start_from_now()
-.handle_change_feed(handle)
+.with_checkpoint_policy(ChangeFeedCheckpointPolicy::Eager)
+.with_feed_poll_delay(Duration::from_secs(5))
 .build()?;
 
-processor.start().await?; // Ensure workload is ready, then start polling.
+processor.start().await?;
+```
 
-// Application runs; stop during application shutdown.
+`build()` consumes the builder and validates local configuration without I/O.
+`start()` then performs the initialization and lifecycle behavior below.
+
+### Inspect batch context and lifecycle
+
+The handler's `ChangeFeedProcessorContext` exposes:
+
+- `lease_token()`: the batch's lease identity.
+- `diagnostics()`: an owning `Arc<DiagnosticsContext>` that can be retained
+  after response consumption. Retention is not proof of current ownership
+  and does not authorize checkpoints.
+
+The processor exposes these lifecycle methods:
+
+| Method | Behavior |
+| --- | --- |
+| `start().await` | Initialize/resume and launch processing; does not wait for the first batch or ownership acquisition. |
+| `is_started()` | Read local running state; not proof of ownership or service connectivity. |
+| `stop().await` | Gracefully drain callbacks, persist eligible progress, and release leases. Returns cleanup errors; no implicit overall timeout. |
+| `current_state().await` | Currently unimplemented: returns `NotImplemented` without I/O. |
+
+When the application is ready to shut down:
+
+```rust
 processor.stop().await?;
 ```
 
-### 1.2 Configuration surface
+For drop/cancellation semantics, see [shutdown and restart](#how-would-a-worker-stop-and-resume-processing).
+The Rust SDK does not expose `abort()` or a separate asynchronous error-handler
+registration method.
 
-| Scope | Settings |
-| --- | --- |
-| Workload | Source, lease storage, processor name, feed mode. |
-| Worker | Unique instance name, start policy/continuation, callback, max concurrency, error observer, page hint, poll delay, checkpoint policy, lease counts. |
-| Defaults | One batch poller per worker; no error observer; `Now`; page hint 100; idle delay 5s; read turn at most 5s; `EveryBatch`; min/max leases 0/0 (uncapped). |
-| Validation | Names neither empty nor whitespace-only; beginning/time only in latest-version mode; continuation matches source/mode/ranges. Local checks at construction; service checks at startup. |
-| Lifecycle | Reject duplicate start; `is_started()` is local only. |
-| Callback | `Send + 'static` future returning Cosmos `Result<()>`; acknowledgment follows success. |
+## Open questions and scope limits
 
-```rust
-let processor = builder
-    .with_max_concurrency(std::num::NonZeroU32::new(4).unwrap())
-    .with_checkpoint_policy(ChangeFeedCheckpointPolicy::coalesced()) // Five minutes.
-    .handle_error(on_error) // async fn(Option<ChangeFeedProcessorContext>, CosmosError) -> ()
-    .handle_change_feed(on_changes)
-    .build()?;
-```
+- **Partition-key prefix scope:** should a customer be able to restrict a
+  workload to a partition-key prefix rather than the whole source container?
+- **Process-until timestamp:** should a customer be able to specify a timestamp
+  up to which changes are processed, then have the workload finish?
+- **Alternate lease stores:** this design considers Cosmos DB lease storage
+  only. Alternate lease stores are not currently being considered.
+- **Initial restart position:** how should an initial `Now` position remain
+  stable across restart before the first durable Deferred checkpoint, so
+  changes are not missed?
+- **Persistent failures:** should repeatedly failing acquisitions back off or
+  suspend, and how should the application observe failure when batch receives
+  remain pending?
 
-**Open:** callback capture.
+Prefix scope and process-until behavior are proposed use cases, not implemented
+processor options.
 
-The SDK checkpoint policy and its five-minute constructor are defined in
-`azure_data_cosmos/src/change_feed_processor.rs`:
+## How would we iterate on and review changes?
 
-```rust
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-#[non_exhaustive]
-pub enum ChangeFeedCheckpointPolicy {
-    /// Persists each successful callback before reading its lease's next batch.
-    #[default]
-    EveryBatch,
-    /// Coalesces successful callbacks until the interval since the first
-    /// unpersisted success elapses. Idle reads do not trigger persistence.
-    ///
-    /// Successful callbacks can replay after a crash or ownership loss. Graceful
-    /// shutdown and topology recovery flush without waiting for the interval.
-    /// The interval schedules a write, not a storage-availability guarantee.
-    Coalesced {
-        /// Positive maximum interval for deferring persistence of successful progress.
-        max_interval: Duration,
-    },
-}
+Build confidence through progressively harder scenarios, rather than reviewing
+every component at once. **Start with Eager to isolate delivery and ownership
+correctness; add Deferred after those contracts are established.**
 
-impl ChangeFeedCheckpointPolicy {
-    /// Coalesces successful progress for up to five minutes.
-    ///
-    /// Use [`Self::Coalesced`] to select a different interval. Graceful cleanup
-    /// and explicit checkpoints can persist progress earlier.
-    pub fn coalesced() -> Self {
-        Self::Coalesced {
-            max_interval: Duration::from_secs(300),
-        }
-    }
-}
-```
-
-### 1.3 Batch diagnostics
-
-`ChangeFeedProcessorContext::diagnostics()` returns
-`Option<Arc<DiagnosticsContext>>`. Batch callbacks carry the completed read
-diagnostics; error notifications carry diagnostics when their error provides them.
-The context also exposes the opaque lease identifier for correlation.
-
-```rust
-#[derive(Clone, SafeDebug)]
-pub struct ChangeFeedProcessorContext {
-    lease_token: String,
-    #[safe(false)]
-    diagnostics: Option<Arc<DiagnosticsContext>>,
-}
-
-impl ChangeFeedProcessorContext {
-    /// Returns the opaque identifier of the lease associated with this batch.
-    ///
-    /// This is not a continuation token or a physical partition identifier.
-    /// Treat it as meaningful within the processor's lease namespace.
-    pub fn lease_token(&self) -> &str {
-        &self.lease_token
-    }
-
-    /// Returns operation diagnostics associated with this notification.
-    ///
-    /// For change callbacks, these describe the read that produced the batch,
-    /// not subsequent callback execution or checkpoint writes. Error notifications
-    /// may have no diagnostics. Retaining this handle does not retain the batch
-    /// payload, and does not render or log the diagnostics.
-    pub fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>> {
-        self.diagnostics.clone()
-    }
-}
-```
-
-- **Scope:** diagnostics for the read that produced the batch: status, latency,
-  request charge, attempts, and available request correlation. Not the entire
-  processor history or later callback, acknowledgment, and checkpoint outcomes.
-- **Lifetime:** Rust retains diagnostics independently of the batch payload.
-  Applications may retain the handle after the callback and processor shutdown.
-  A future Go CFP adapter must copy diagnostics into Go-owned memory before
-  releasing the native completion, following the existing operation adapter.
-- **Emission:** applications choose whether to inspect or log the diagnostics;
-  no automatic logging or eager JSON serialization.
-- **Before delivery:** read/deserialization failures still use the error observer
-  with diagnostics when available; there may be no batch callback or completed
-  read to attach them to.
-
-**Checks:** retained callback diagnostics survive processor shutdown; malformed
-document errors retain read diagnostics; batch callbacks receive diagnostics in
-both modes and checkpoint policies. Accessing the handle does not render JSON.
-
-### 1.4 Debuggability: exploratory design
-
-**Logging decision:** driver logs and SDK/application logs may coexist through
-their own configured sinks. No driver-to-SDK log export or FFI log-forwarding
-bridge is required. Shared correlation identifiers and centralized collection
-connect the streams. Operation diagnostics and error notifications remain
-separate data contracts, not log forwarding.
-
-**Exploratory; API details open.** Build on those logging pipelines with an optional
-lease-status snapshot and richer context on the existing error hook, rather than
-a new monitoring service.
-`current_state()` currently returns `NotImplemented`; a Go equivalent through
-Rust FFI would also need implementation.
-
-- **Snapshot:** include unowned leases; owner/acquisition, state and waiting
-  reason, state age, separate last renewal/read/processed-batch times, pending
-  checkpoint age, last checkpoint outcome, and last failure. Distinguish an
-  empty successful read from successful batch processing.
-- **Failures:** correlate lease + acquisition + failed stage + error, retaining
-  status/substatus and activity ID when available. Status explains absent
-  progress; errors explain failed operations.
-- **Viewing:** customers configure native driver and SDK/application logging,
-  then search by workload and lease. Centralized collection provides the fleet
-  view; no new application polling loop or SDK dashboard. Applications may also
-  print snapshots or expose them through an existing internal diagnostics endpoint.
-
-#### Log-first end-to-end diagnostics
-
-Proposed correlated stages:
-
-```text
-discover -> acquire -> read -> decode -> callback -> acknowledge -> checkpoint
-```
-
-Driver logs cover ownership, renewal, reads, checkpoints, and recovery. Rust/Go
-adapters log decoding and callback outcomes through their own logging pipelines.
-Correlation metadata may cross FFI with batches or diagnostics; log records need
-not cross it. Include workload, lease, acquisition, batch identity when applicable,
-stage, outcome, reason, duration, and next action. Identify source versus lease-store
-failures; retain status/substatus, retry timing, and activity ID when available.
-
-| Log evidence | Customer interpretation |
-| --- | --- |
-| Unowned lease summary + acquisition failure or eligibility reason | Lease not picked up; investigate permissions, capacity, or coordination. |
-| Renewals continue + prolonged callback wait | Ownership is healthy; application processing is not completing. |
-| Read retry + next retry time | Throttling or another retryable failure, not unexplained inactivity. |
-| Acknowledged in memory + checkpoint deferred | Processing succeeded; durability is pending, so replay remains possible. |
-| Checkpoint failure + recovery action | Persistence failed; distinguish retry from release/reacquisition. |
-
-Log failures and lifecycle transitions, plus periodic summaries of prolonged
-waits and worker health; a stuck operation may never return an error. Rate-limit
-repeated records while retaining counts; make per-batch success traces opt-in.
-Missing or sampled logs are not proof that a change was never processed.
-
-Live phase details are local. For other workers, expose persisted lease metadata
-and observation timestamps; unavailable phase details remain unknown. Keep phase
-state in memory, without lease-store writes for every transition.
-
-Snapshots and bounded error notifications are not a delivery audit. Suspected
-missed changes may require application event/version IDs and reconciliation;
-callback success should mean durable handling of the whole batch. Avoid logging
-raw payloads or continuation tokens.
-
----
-
-## 2. Goals and architecture
-
-### 2.1 Goals and design principles
-
-The processor distributes change-feed work across application instances and
-resumes from durable progress after failures. One driver engine provides these
-mechanics for language SDKs, in both latest-version and all-versions-and-deletes
-modes.
-
-- **Separate application processing from coordination.** The SDK owns typed
-  callbacks; the driver owns leases, service interaction, and recovery.
-- **Read only on demand.** A free SDK batch poller requests work; the driver does not
-  prefetch batches for busy callbacks.
-- **Separate acknowledgment from durability.** Callback success makes progress
-  eligible for checkpointing. The policy determines when it is persisted.
-- **Keep failures local where possible.** An idle or throttled acquisition yields
-  demand to other eligible work. Maintenance continues independently.
-
-Exactly-once application side effects, a global payload-memory limit, and a
-monitoring service are not goals of this design.
-
-### 2.2 Ownership boundary
-
-**The SDK owns application processing; the driver owns lease coordination and
-durable progress.** The SDK requests batches, not particular leases.
-
-| Term | Meaning |
-| --- | --- |
-| Worker | One started change-feed processor instance, identified by its instance name. Multiple workers can run in one process. |
-| SDK batch poller | One receive -> callback -> acknowledgment loop inside a worker. `with_max_concurrency` controls this count, not the number of workers. |
-| Driver lease poller | The supervised polling task for one acquired lease, with independent renewal. Its source reads require demand from a batch poller. |
-
-| Concern | SDK responsibility | Driver responsibility |
+| Stage | Scenario | Review and test focus |
 | --- | --- | --- |
-| Configuration and startup | Expose language-specific options and invoke startup. | Validate the workload, perform bootstrap, and begin lease coordination. |
-| Demand and concurrency | Run N batch pollers; request another batch only when a poller is free. | Select an eligible acquisition for each receive; do not start feed reads without demand. |
-| Empty reads and read failures | Await the next deliverable batch; do not select leases or implement service retries. | Handle idle responses, retry budgets, and lease-local cooldown waits; let other eligible acquisitions serve demand. Report failures and manage acquisition cleanup. |
-| Batch processing | Deserialize into application types and invoke the callback. Report failures; abandon the receipt on unsuccessful processing. | Deliver the page with an opaque receipt; allow replay when the receipt is abandoned. Never invoke the application callback. |
-| Checkpointing | Acknowledge the receipt after successful processing; select the configured policy or request an explicit durable checkpoint. | Track contiguous successful progress and persist according to policy. Reject stale receipts; acknowledgment is not necessarily durable. |
-| Lease liveness | Pass configuration and opaque diagnostic identifiers; do not acquire, renew, steal, rebalance, or release leases. | Own those operations and their timers, ownership fencing, and serialized mutations. Ownership changes preserve stored checkpoints. |
-| Splits and merges | Continue consuming batches without topology-specific application logic. | Repair affected coverage, project safe continuations, and clean up split parents. Preserve independent logical leases on merges. |
-| Shutdown | Request stop; finish issued callbacks and settle receipts during graceful drain, or cancel on forced shutdown. | Stop new read admission, maintain ownership during drain, flush safe progress when permitted, and release leases. |
-| Diagnostics and logging | Expose batch-read diagnostics through the callback context and log SDK/callback outcomes. | Produce read diagnostics and log driver activity. Driver log records need not be forwarded to the SDK. |
-
-Rust calls the driver directly. The native wrapper adapts handles, completions,
-and memory ownership for other SDKs; it adds no lease policy. The same split is
-intended for Go through FFI; the Go CFP adapter is deferred. SDK public types
-remain separate from driver types.
-
-### 2.3 Architectural overview
-
-The boundary carries configuration, receive demand, batches with receipts, and
-processing outcomes. Lease selection and continuation persistence stay inside
-the driver.
-
-```mermaid
-flowchart TD
-    subgraph Host["Rust SDK or native adapter"]
-        Lifecycle["Configure and start"]
-        Consumer["Receive, process, and acknowledge"]
-    end
-    subgraph Driver["Rust driver"]
-        Bootstrap["bootstrap()"]
-        Processor["Worker driver: coordinator and lease pollers"]
-    end
-    Lifecycle -->|Initialize workload| Bootstrap
-    Bootstrap -->|Persist metadata and initial leases| Store[("Workload and leases")]
-    Bootstrap -->|Workload ready| Processor
-    Processor -->|Direct response with receipt| Consumer
-    Consumer -->|Receive demand| Processor
-    Consumer -->|Successful acknowledgment| Processor
-    Processor -->|Ownership and checkpoints| Store
-```
-
-The implementation follows this call sequence. Spawning coordination and SDK
-batch pollers creates concurrent task trees; returning a processor handle does not
-mean every lease has already been acquired.
-
-```text
-ChangeFeedProcessor::start
-  -> execution::start
-     -> ContainerClient::start_change_feed_processor
-        -> Processor::start
-           -> validate options
-           -> bootstrap: definition -> claim -> plan -> leases -> ready
-           -> optional lease verification
-           -> spawn run: balance -> acquire -> supervise
-                                  supervise polls poll and renew concurrently
-     -> spawn SDK batch-poller pool
-        -> consume
-           -> Processor::next_batch -> BatchDistributor::next_batch
-              -> grant demand -> poll_feed -> execute_plan
-              -> AcquisitionDelivery::deliver
-           -> dispatch -> application callback
-           -> BatchReceipt::acknowledge
-              -> poll_feed accepts progress -> optional Context::flush
-
-ChangeFeedProcessor::stop
-  -> execution::stop -> Processor::stop
-     -> close admission -> settle issued receipts
-     -> poll flushes safe progress -> supervise releases
-     -> run joins acquisitions and finishes cleanup
-  -> finish SDK dispatch/error reporting -> return
-```
-
-### 2.4 Component state model
-
-A **lease** survives the process. An **acquisition** is one owner's temporary
-right to process it. The implementation represents these lifetimes separately.
-
-The actual `Lease` flattens the bootstrap `ProcessingLease` record, which contains
-workload identity, range, owner, and continuation. It contains only persisted
-fields. `Acquisition` is not serializable: it owns the lease view and ETag together
-with the local renewal clock and pending checkpoint. Persisting `value` does not
-serialize those runtime fields or implicitly promote the pending checkpoint:
-
-```rust
-#[derive(Clone, Serialize, Deserialize)]
-struct Lease {
-    #[serde(flatten)]
-    base: ProcessingLease,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    incarnation: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    renewed_at: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    last_processed_at: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    processing_deadline: Option<i64>,
-}
-
-struct Acquisition {
-    value: Lease,
-    etag: Etag,
-    renewed: Option<Instant>,
-    pending: Option<PendingCheckpoint>,
-}
-
-#[derive(Clone)]
-struct PendingCheckpoint {
-    token: ContinuationToken,
-    since: Instant,
-    handled_changes: u64,
-    failed: bool,
-}
-```
-
-Delivery is a separate local state machine. Only `WaitingForDemand` can contain
-the one-shot demand sender; `Idle`, `Fetching`, `AwaitingAcknowledgment`, and
-`Closed` cannot retain one. This replaces independent phase and optional-channel
-fields with a data-bearing enum. The channel carries demand, not a batch payload:
-
-```rust
-#[derive(Default)]
-enum DeliveryState {
-    #[default]
-    Idle,
-    WaitingForDemand(oneshot::Sender<ReadDemand>),
-    Fetching,
-    AwaitingAcknowledgment,
-    Closed,
-}
-
-#[derive(Default)]
-struct Delivery {
-    state: Mutex<DeliveryState>,
-}
-```
-
-The surrounding acquisition task owns its read plan, retry budget, cancellation
-signals, and receipt channel. The latest stored ETag accompanies the lease view
-for conditional writes. The scheduler owns only weak eligible handles; the
-requesting receive owns the delivered response and receipt.
-
-The data/behavior boundary is explicit: `transition_lease` transforms records
-using supplied time and identity, while `Context` performs storage I/O and retries.
-Neither separation introduces a new public API or changes the lease wire format.
-
-There are three different positions:
-
-| Position | Meaning | Restart authority? |
-| --- | --- | --- |
-| Read-plan position | Position reached by the source read, possibly before the callback succeeds. | No. Never persist an unacknowledged data page from this position. |
-| Pending successful position | Latest contiguous acknowledged progress, or safe progress from an empty response. | No. It is local until a checkpoint succeeds. |
-| Persisted continuation | Last confirmed lease-store checkpoint. | Yes. A replacement acquisition starts from stored progress. |
-
-Tokens are opaque: these are causal stages, not values to sort or compare
-numerically. At most one data page per acquisition awaits acknowledgment, which
-prevents out-of-order callback completion within that acquisition.
-
-Owned writes use this internal mutation enum; selecting a variant does not itself perform I/O:
-
-```rust
-enum Update<'a> {
-    Acquire(&'a str),
-    Renew,
-    Checkpoint(&'a ContinuationToken),
-    Release,
-}
-```
-
----
-
-## 3. Startup and bootstrap
-
-Bootstrap makes a workload safe to join. Its inputs are the source, lease storage,
-processor identity, and feed mode; its output is compatible metadata and lease
-coverage. It does not choose starting feed positions.
-
-**Original bootstrap retained:** readiness means metadata and coverage, not a
-container-wide feed snapshot.
-
-### 3.1 SDK startup and batch-poller construction
-
-The SDK maps its public options into driver options and awaits driver startup.
-Only then does it spawn N consumer futures and the serial error dispatcher:
-
-```rust
-pub(super) async fn start<T, H, Fut>(processor: &ChangeFeedProcessor<T, H>) -> crate::Result<()>
-where
-    T: DeserializeOwned + Send + 'static,
-    H: Fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut + Send + Sync + 'static,
-    Fut: Future<Output = crate::Result<()>> + Send + 'static,
-{
-    let mut running = processor.running.lock().await;
-    if processor.is_started() {
-        return Err(CosmosError::builder()
-            .with_status(CosmosStatus::new(StatusCode::Conflict))
-            .with_message("Change feed processor is already running.")
-            .build());
-    }
-    let config = &processor.configuration;
-    let (errors, notifications, error_canceled) =
-        ErrorReporter::new(config.error_handler.is_some());
-    let mode = match config.mode {
-        ChangeFeedMode::LatestVersion => DriverMode::Incremental,
-        ChangeFeedMode::AllVersionsAndDeletes => DriverMode::FullFidelity,
-    };
-    let mut options = ProcessorOptions::new(mode, &config.processor_name, &config.instance_name)
-        .with_lease_verification_enabled_on_restart(config.lease_verification_on_restart_enabled)
-        .with_checkpoint_policy(match config.checkpoint_policy {
-            ChangeFeedCheckpointPolicy::EveryBatch => CheckpointPolicy::EveryBatch,
-            ChangeFeedCheckpointPolicy::Coalesced { max_interval } => {
-                CheckpointPolicy::Coalesced { max_interval }
-            }
-        })
-        .with_max_item_count(config.max_item_count)
-        .with_poll_delay(config.feed_poll_delay)
-        .with_lease_counts(config.min_scale_count, config.max_scale_count);
-    options = match &config.start_from {
-        ProcessorStartFrom::Now => options.with_start(ChangeFeedStartFrom::Now),
-        ProcessorStartFrom::Beginning => options.with_start(ChangeFeedStartFrom::Beginning),
-        ProcessorStartFrom::PointInTime(time) => {
-            options.with_start(ChangeFeedStartFrom::PointInTime(*time))
-        }
-        ProcessorStartFrom::Continuation(token) => options.with_continuation(token.clone()),
-    };
-    if config.error_handler.is_some() {
-        let errors = errors.clone();
-        options = options.with_error_observer(move |lease, error| {
-            errors.report(lease, error);
-        });
-    }
-    let driver = config
-        .monitored_container
-        .start_change_feed_processor(&config.lease_container, options)
-        .await?;
-    let dispatcher = driver.clone();
-    let container = config.monitored_container.clone();
-    let handler = config.handler.clone();
-    let started = processor.started.clone();
-    let concurrency = config.max_concurrency.get();
-    let error_handler = config.error_handler.clone();
-    let reporting = errors.clone();
-    started.store(true, Ordering::Release);
-    let (done, stopped) = oneshot::channel();
-    let task = get_async_runtime().spawn(Box::pin(async move {
-        let processing = async {
-            let dispatching = async {
-                let mut batch_pollers = FuturesUnordered::new();
-                for _ in 0..concurrency {
-                    batch_pollers.push(consume::<T, H, Fut>(
-                        dispatcher.clone(),
-                        container.clone(),
-                        handler.clone(),
-                        reporting.clone(),
-                    ));
-                }
-                while batch_pollers.next().await.is_some() {}
-            };
-            let result = AssertUnwindSafe(dispatching)
-                .catch_unwind()
-                .await
-                .map_err(|_| {
-                    dispatcher.request_stop();
-                    reporting.cancel();
-                    CosmosError::builder()
-                        .with_status(CosmosStatus::new(StatusCode::InternalServerError))
-                        .with_message("Change feed dispatcher panicked.")
-                        .build()
-                });
-            if let Err(err) = dispatcher.stop().await {
-                tracing::debug!(error = %err, "Processor shutdown completed with an error");
-            }
-            reporting.close();
-            result
-        };
-        let (result, ()) = futures::join!(
-            processing,
-            report_errors(error_handler, notifications, error_canceled),
-        );
-        started.store(false, Ordering::Release);
-        let _ = done.send(result);
-    }));
-    drop(task);
-    *running = Some(Running {
-        driver,
-        errors,
-        stopped: async move {
-            stopped.await.map_err(|_| {
-                CosmosError::builder()
-                    .with_status(CosmosStatus::new(StatusCode::InternalServerError))
-                    .with_message("Change feed dispatcher did not complete.")
-                    .build()
-            })?
-        }
-        .boxed()
-        .shared(),
-    });
-    Ok(())
-}
-```
-
-### 3.2 Driver startup
-
-The implemented entry point is `Processor::start`. It validates local options,
-awaits the shared bootstrap routine, optionally verifies lease coverage, and only
-then spawns coordination. It does not start application callbacks:
-
-```rust
-pub async fn start(
-    source_driver: Arc<CosmosDriver>,
-    source: ContainerReference,
-    lease_driver: Arc<CosmosDriver>,
-    leases: ContainerReference,
-    options: ProcessorOptions,
-) -> Result<Self> {
-    if (options.max_leases > 0 && options.min_leases > options.max_leases)
-        || (options.mode == ChangeFeedFactoryMode::FullFidelity
-            && options.continuation.is_none()
-            && !matches!(options.start, ChangeFeedStartFrom::Now))
-        || options
-            .continuation
-            .as_ref()
-            .is_some_and(|t| t.as_str().trim().is_empty())
-    {
-        return Err(error(
-            StatusCode::BadRequest,
-            "Invalid processor start or lease-count configuration.",
-        ));
-    }
-    azure_core::time::Duration::try_from(options.poll_delay)
-        .map_err(|_| error(StatusCode::BadRequest, "Poll delay is not representable."))?;
-    options.checkpoint_policy.validate()?;
-    bootstrap(
-        &source_driver,
-        &source,
-        &lease_driver,
-        &leases,
-        options.mode,
-        &options.processor_name,
-        &options.instance_name,
-    )
-    .await?;
-    let identity = Identity {
-        version: SCHEMA_VERSION,
-        account: source.account().endpoint().origin().ascii_serialization(),
-        container_rid: source.rid().to_owned(),
-        processor_name: options.processor_name.clone(),
-        mode: options.mode,
-    };
-    let context = Arc::new(Context {
-        namespace: namespace(&identity)?,
-        identity,
-        source_driver,
-        source,
-        lease_driver,
-        leases,
-        options,
-    });
-    if context.options.verify_leases_on_restart {
-        context.verify_leases().await?;
-    }
-    let state = Arc::new(SharedState {
-        error_observer: context.options.error_observer.clone(),
-        ..Default::default()
-    });
-    let (stop, stopping) = signal();
-    let (force, forced) = signal();
-    let (done, stopped) = oneshot::channel();
-    let owner = Arc::new(Owner {
-        stop: StdMutex::new(Some(stop)),
-        force: StdMutex::new(Some(force)),
-        stopped: async move {
-            stopped.await.map_err(|_| {
-                error(
-                    StatusCode::InternalServerError,
-                    "Processor task did not complete.",
-                )
-            })?
-        }
-        .boxed()
-        .shared(),
-        state: state.clone(),
-    });
-    // The task holds shared state, not Owner, so the last handle closes stop.
-    let task = azure_core::async_runtime::get_async_runtime().spawn(Box::pin(async move {
-        let result = AssertUnwindSafe(run(context, state.clone(), stopping, forced))
-            .catch_unwind()
-            .await
-            .unwrap_or_else(|_| {
-                let err = error(StatusCode::InternalServerError, "Processor task panicked.");
-                state.failed(None, err.clone());
-                Err(err)
-            });
-        state.distributor.close();
-        let _ = done.send(result);
-    }));
-    drop(task);
-    Ok(Self { owner })
-}
-```
-
-### 3.3 Bootstrap initialization flow
-
-```mermaid
-flowchart TD
-    Caller["SDK processor startup"] -->|Initialize| Validate
-    subgraph Bootstrapper["Driver: bootstrap()"]
-        Validate["Validate workload and lease storage"] -->|Validation succeeds| Ready{"Compatible ready workload?"}
-        Ready -->|Yes| Done["Ready"]
-        Ready -->|No| Claim["Acquire initialization claim"]
-        Claim -->|Claim granted| Ensure["Ensure initial range plan and missing unowned leases"]
-        Ensure -->|Coverage complete| Complete["Publish readiness and release claim"]
-        Complete -->|Claim released| Done
-    end
-    Done -->|Return success| CallerReady["Caller may start polling"]
-```
-
-### 3.4 Persisted bootstrap state
-
-Lease container: `/id`, `defaultTtl = -1`. Shared document identity:
-
-```json
-{
-  "workload": {
-    "account": "<source-account-origin>",
-    "containerRid": "<source-container-rid>",
-    "processorName": "order-projection",
-    "mode": "latestVersion"
-  }
-}
-```
-
-Separate record fragments; shared identity/schema/service fields omitted:
-
-```json
-[
-  { "id": "<namespace>.definition", "ttl": -1 },
-  {
-    "id": "<namespace>.lock",
-    "owner": "initializer-01",
-    "attempt": "<attempt-id>",
-    "ttl": 30
-  },
-  {
-    "id": "<namespace>.plan",
-    "ttl": -1,
-    "ranges": [
-      { "Range": { "min": "", "max": "FF", "isMinInclusive": true, "isMaxInclusive": false } }
-    ]
-  },
-  {
-    "id": "<namespace>.lease.-FF",
-    "ttl": -1,
-    "range": { "Range": { "min": "", "max": "FF", "isMinInclusive": true, "isMaxInclusive": false } }
-  },
-  { "id": "<namespace>.info", "ttl": -1 }
-]
-```
-
-### 3.5 Idempotency and recovery
-
-| Boundary | Contract |
-| --- | --- |
-| Identity | Namespace = account origin + container RID + processor name; records bind mode/schema. Incompatibility fails. |
-| Fresh lease | No owner/continuation. Acquisition adds owner/incarnation/renewal; requested reads establish positions. |
-| Retry | Reuse initial plan; create missing leases only; validate existing records; conditionally release claims. Never reset progress. |
-| Restart | Completion marker skips inventory. Optional verification accepts replacement coverage; never recreate deleted parents over descendants. Partial coverage fails. |
-| Start policy | Not persisted/enforced by bootstrap; configure workers consistently. No feed probes. Unpinned `Now` may move on retry; no global snapshot. |
-| Concurrent callers | Shared compatible attempts; independent bounded deadlines. Canceling one waiter preserves others; sent requests may finish. |
-
-**Checks:** concurrent/crashed initialization preserves plan/progress; fresh leases
-lack continuations; delayed `Now` resolves on reads; restart resumes checkpoints;
-startup initializes or resumes a compatible workload before processing.
-
----
-
-## 4. Lease liveness and coordination
-
-Driver-owned acquisition, renewal, rebalancing, and release. Ownership mutations
-preserve stored checkpoints; flushing follows the [checkpointing pipeline](#6-checkpointing-pipeline).
-
-A lease is the persisted coordination record. An acquisition is one ownership
-incarnation of that lease, with its own cancellation and delivery state. A worker
-may own several acquisitions; batch pollers are not permanently assigned to
-them.
-
-Owned writes validate owner, incarnation, and ETag. Renewal, checkpoint, and
-release mutations serialize so an old acquisition cannot overwrite a new owner.
-
-### 4.1 Coordinator loop
-
-The driver polls balancing and owned-acquisition futures together. Completed
-acquisitions leave the local ownership set; stop joins issued work before retrying
-unreleased ownership. This is the actual `run` function:
-
-```rust
-async fn run(
-    context: Arc<Context>,
-    state: Arc<SharedState>,
-    stop: Signal,
-    force: Signal,
-) -> Result<bool> {
-    let mut lease_pollers = FuturesUnordered::<BoxFuture<'static, String>>::new();
-    let mut owned = HashSet::new();
-    let mut balancing = balance(
-        context.clone(),
-        state.clone(),
-        owned.clone(),
-        Duration::ZERO,
-        stop.clone(),
-        force.clone(),
-    )
-    .boxed();
-    loop {
-        futures::select! {
-            _ = force.clone().fuse() => break,
-            _ = stop.clone().fuse() => break,
-            id = async {
-                if lease_pollers.is_empty() {
-                    futures::future::pending().await
-                } else {
-                    lease_pollers.next().await
-                }
-            }.fuse() => {
-                if let Some(id) = id { owned.remove(&id); }
-            },
-            leases = balancing.as_mut().fuse() => {
-                for lease in leases {
-                    let id = lease.value.base.record.id.clone();
-                    if owned.insert(id.clone()) {
-                        let context = context.clone();
-                        let state = state.clone();
-                        let stop = stop.clone();
-                        let force = force.clone();
-                        lease_pollers.push(supervise(context, state, lease, stop, force).map(move |()| id).boxed());
-                    }
-                }
-                balancing = balance(context.clone(), state.clone(), owned.clone(), context.options.acquire_interval(), stop.clone(), force.clone()).boxed();
-            },
-        }
-    }
-    // Finish acquisition writes and retain every acquired lease for cleanup.
-    for lease in balancing.await {
-        let context = context.clone();
-        let state = state.clone();
-        let stop = stop.clone();
-        let force = force.clone();
-        let id = lease.value.base.record.id.clone();
-        lease_pollers.push(
-            supervise(context, state, lease, stop, force)
-                .map(move |()| id)
-                .boxed(),
-        );
-    }
-    while lease_pollers.next().await.is_some() {}
-    let unreleased =
-        std::mem::take(&mut *state.unreleased.lock().unwrap_or_else(|e| e.into_inner()));
-    for observed in unreleased.into_values() {
-        let result = async {
-            let Some(current) = context
-                .store()
-                .read::<Lease>(&observed.base.record.id)
-                .await?
-            else {
-                return Ok(());
-            };
-            context.validate(&current.value)?;
-            if current.value.base.owner == observed.base.owner
-                && current.value.incarnation == observed.incarnation
-            {
-                context.update(&mut current.into(), Update::Release).await?;
-            }
-            Ok(())
-        }
-        .await;
-        if let Err(err) = result {
-            state.failed(Some(&observed.base.record.id), err);
-        }
-    }
-    match state
-        .failure
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .take()
-    {
-        Some(err) => Err(err),
-        None => Ok(state.forced.load(Ordering::Acquire)),
-    }
-}
-```
-
-### 4.2 Balancing and acquisition
-
-`balance` reads current leases and attempts the leases selected by the balancing
-policy. It does not schedule split cleanup. Acquisition races do not become SDK
-retry decisions:
-
-```rust
-async fn balance(
-    context: Arc<Context>,
-    state: Arc<SharedState>,
-    owned: HashSet<String>,
-    delay: Duration,
-    stop: Signal,
-    force: Signal,
-) -> Vec<Acquisition> {
-    futures::select! {
-        _ = sleep(delay).fuse() => {},
-        _ = stop.fuse() => return Vec::new(),
-        _ = force.fuse() => return Vec::new(),
-    }
-    if state.stopping.load(Ordering::Acquire) {
-        return Vec::new();
-    }
-    let result = async {
-        let active = context.list().await?;
-        let mut acquired = Vec::new();
-        let selected = balancing::select(&active, &context.options, now_millis());
-        for index in selected {
-            if state.stopping.load(Ordering::Acquire) {
-                break;
-            }
-            if owned.contains(&active[index].base.record.id) {
-                continue;
-            }
-            match context.acquire_tracked(&active[index], Some(&state)).await {
-                Ok(lease) => acquired.push(lease),
-                Err(err) if err.status().is_precondition_failed() => {
-                    tracing::debug!(error = %err, "Lease acquisition lost a race");
-                }
-                Err(err) => state.failed(Some(&active[index].base.record.id), err),
-            }
-        }
-        Ok::<_, crate::CosmosError>(acquired)
-    }
-    .await;
-    match result {
-        Ok(acquired) => acquired,
-        Err(err) => {
-            state.failed(None, err);
-            Vec::new()
-        }
-    }
-}
-```
-
-| Event | Rule |
-| --- | --- |
-| Renewal | Expiration 60s; renewal 1/3; acquisition 1/6. Checkpoints refresh renewal; transient retries stay within budget. |
-| Rebalancing | Balance lease counts across workers within configured min/max limits; max 0 is uncapped. |
-| Stealing | Acquire directly with a new owner/incarnation; no intermediate unowned state. |
-| Ownership loss | Cancel old receipts; never mutate replacement ownership. |
-
-Processing inactivity can also make a lease stealable while renewal is healthy.
-Each acquisition persists a fresh `processing_deadline`: ten minutes for
-`EveryBatch`, or twice the owner's configured coalescing interval. Other workers
-use that stored deadline, not their own checkpoint policy.
-
-Acknowledgment of a nonempty batch updates local `last_processed_at` and the
-deadline. Renewal/checkpoint/release writes publish those values while preserving
-fresh stored progress and newer activity. Idle responses, absent demand, and
-cooldown periods do not refresh the clock; takeover is not proof of worker failure.
-An owner still counts its own expired-but-held leases toward its scale limit.
-
-Published activity can lag local processing until the next lease write. A
-takeover based on an expired snapshot is rejected if the fresh record shows
-processing recovery and healthy renewal. Ownership changes fence old writes and
-give the new acquisition a full grace period. Legacy records without a processing
-deadline remain governed by renewal until reacquired. Drain and upgrade workers
-together; old writers do not preserve the new activity fields.
-
-The deadline calculation is `CheckpointPolicy::processing_deadline`; it uses
-milliseconds in the persisted record and rejects overflow:
-
-```rust
-fn processing_deadline(self, now: i64) -> Result<i64> {
-    let duration = match self {
-        Self::EveryBatch => Some(Duration::from_secs(600)),
-        Self::Coalesced { max_interval } => max_interval.checked_mul(2),
-    };
-    duration
-        .and_then(|duration| i64::try_from(duration.as_nanos().div_ceil(1_000_000)).ok())
-        .and_then(|millis| now.checked_add(millis))
-        .ok_or_else(|| {
-            error(
-                StatusCode::BadRequest,
-                "Processing inactivity interval is not representable.",
-            )
-        })
-}
-```
-
-`balancing::select` determines which observed leases to attempt. It treats another
-owner's expired processing deadline as availability, retains the current owner's
-held leases in its scale count, and otherwise balances from a donor with excess leases:
-
-```rust
-pub(super) fn select(leases: &[Lease], options: &ProcessorOptions, now: i64) -> Vec<usize> {
-    let mut owners = BTreeMap::new();
-    let mut available = Vec::new();
-    for (index, lease) in leases.iter().enumerate() {
-        match (&lease.base.owner, lease.renewed_at) {
-            (Some(owner), Some(updated))
-                if !owner.is_empty()
-                    && now.saturating_sub(updated) <= options.expiration.as_millis() as i64
-                    && (owner == &options.instance_name
-                        || lease
-                            .processing_deadline
-                            .is_none_or(|deadline| now < deadline)) =>
-            {
-                *owners.entry(owner.as_str()).or_insert(0usize) += 1;
-            }
-            _ => available.push(index),
-        }
-    }
-    let mine = *owners.entry(options.instance_name.as_str()).or_insert(0);
-    if leases.is_empty() {
-        return Vec::new();
-    }
-    let mut target = leases.len().div_ceil(owners.len()).max(1);
-    if options.max_leases != 0 {
-        target = target.min(options.max_leases as usize);
-    }
-    target = target.max(options.min_leases as usize);
-    let needed = target.saturating_sub(mine);
-    if !available.is_empty() {
-        let mut take = if options.max_leases == 0 {
-            needed.max(1)
-        } else {
-            needed
-        };
-        if owners.len() > 1 {
-            take = take.min(1);
-        }
-        available.shuffle(&mut rand::rng());
-        available.truncate(take);
-        return available;
-    }
-    if needed == 0 {
-        return Vec::new();
-    }
-    let Some((donor, count)) = owners.iter().max_by_key(|(_, count)| **count) else {
-        return Vec::new();
-    };
-    if *count > target - usize::from(needed > 1) {
-        return leases
-            .iter()
-            .position(|lease| lease.base.owner.as_deref() == Some(*donor))
-            .into_iter()
-            .collect();
-    }
-    Vec::new()
-}
-```
-
-### 4.3 Owned mutations and fencing
-
-```mermaid
-flowchart TD
-    Available["Available lease"] -->|Acquire with new incarnation| Owned
-    subgraph Acquisition["Driver: current acquisition"]
-        Owned["Owned"] -->|Renew or checkpoint| Owned
-        Owned -->|Stop| Draining["Draining"]
-        Owned -->|Failure or disposal| Cleanup["Cleanup"]
-        Draining -->|Drain failure or disposal| Cleanup
-    end
-    Draining -->|Flush and release| Available
-    Cleanup -->|Release succeeds| Available
-    Cleanup -->|Release fails| Expiring["Expiring ownership"]
-    Owned -->|Process dies or renewal expires| Expiring
-    Expiring -->|New acquisition| Owned
-    Owned -->|Split error; children established; conditional delete| Deleted["Parent deleted"]
-```
-
-| Event | Rule |
-| --- | --- |
-| Release | Clear owner through a fenced write; leave the stored continuation unchanged. |
-| Graceful stop | Close admission -> drain with renewal -> flush -> release. Incomplete drain/cleanup returns errors. |
-| Stop waiter canceled | Cleanup continues. Drop requests cancellation without waiting. No implicit callback/drain timeout; cancellation cannot undo external effects. |
-| Ambiguous acquire/failed release | Track for cleanup; process death recovers through expiration/checkpoints. |
-
-Acquisition, renewal, checkpoint, and release share `Context::modify_lease`. It
-reads fresh state, verifies owner/incarnation, preserves newer activity, applies
-only the requested field changes, and writes conditionally with the freshly read
-ETag. Split handling uses this ownership check before creating children, then
-conditionally deletes the parent; it does not add another lease mutation state.
-The record transition is independent of storage, clocks, and random identity generation.
-Its inputs include the fresh record, observed acquisition, requested update, options,
-and a supplied timestamp. Acquisition carries its new identity in `Update::Acquire`:
-
-```rust
-fn transition_lease(
-    mut current: Lease,
-    observed: &Lease,
-    update: &Update<'_>,
-    options: &ProcessorOptions,
-    now: i64,
-) -> Result<Lease> {
-    if current.base.owner != observed.base.owner || current.incarnation != observed.incarnation {
-        return Err(lost());
-    }
-    if matches!(update, Update::Acquire(_))
-        && observed
-            .processing_deadline
-            .is_some_and(|deadline| now >= deadline)
-        && current
-            .processing_deadline
-            .is_some_and(|deadline| now < deadline)
-        && current.renewed_at.is_some_and(|renewed| {
-            now.saturating_sub(renewed) <= options.expiration.as_millis() as i64
-        })
-    {
-        return Err(error(
-            StatusCode::PreconditionFailed,
-            "Lease processing resumed before acquisition.",
-        ));
-    }
-    if !matches!(update, Update::Acquire(_)) {
-        current.last_processed_at = current.last_processed_at.max(observed.last_processed_at);
-        current.processing_deadline = current
-            .processing_deadline
-            .max(observed.processing_deadline);
-    }
-    match update {
-        Update::Acquire(incarnation) => {
-            current.base.owner = Some(options.instance_name.clone());
-            current.incarnation = Some((*incarnation).to_owned());
-            current.last_processed_at = None;
-            current.processing_deadline = Some(options.checkpoint_policy.processing_deadline(now)?);
-        }
-        Update::Renew => {}
-        Update::Checkpoint(token) => current.base.continuation = Some((*token).clone()),
-        Update::Release => current.base.owner = None,
-    }
-    current.renewed_at = Some(now);
-    Ok(current)
-}
-```
-
-The storage adapter below performs reads, conditional writes, retries, and
-ambiguous-acquisition tracking. Acquisition races fail immediately; owned write
-conflicts have a bounded retry:
-
-```rust
-async fn modify_lease(
-    &self,
-    observed: &Lease,
-    update: Update<'_>,
-    acquisition_state: Option<&SharedState>,
-) -> Result<Acquisition> {
-    let id = &observed.base.record.id;
-    let retry_conflicts = !matches!(update, Update::Acquire(_));
-    let attempts = if retry_conflicts { 5 } else { 1 };
-    for _ in 0..attempts {
-        let current = self.store().read::<Lease>(id).await?.ok_or_else(lost)?;
-        self.validate(&current.value)?;
-        let next = transition_lease(
-            current.value,
-            observed,
-            &update,
-            &self.options,
-            now_millis(),
-        )?;
-        let renewed = Instant::now();
-        let key = (id.clone(), next.incarnation.clone());
-        if let Some(state) = acquisition_state {
-            state
-                .unreleased
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .insert(key.clone(), next.clone());
-        }
-        match self.store().replace(id, &next, current.etag).await {
-            Ok(updated) => {
-                if let Some(state) = acquisition_state {
-                    state
-                        .unreleased
-                        .lock()
-                        .unwrap_or_else(|e| e.into_inner())
-                        .remove(&key);
-                }
-                return Ok(Acquisition {
-                    renewed: Some(renewed),
-                    ..updated.into()
-                });
-            }
-            Err(err) if retry_conflicts && err.status().is_precondition_failed() => continue,
-            Err(err) => return Err(err),
-        }
-    }
-    Err(error(
-        StatusCode::PreconditionFailed,
-        "Lease update conflicts exhausted the retry budget.",
-    ))
-}
-```
-
-### 4.4 Acquisition supervision and renewal
-
-Two tasks; per-acquisition futures, not per-lease threads/tasks.
-
-```mermaid
-flowchart TD
-    Worker["Worker instance"] -->|Start| Coordinator
-    Worker -->|Start| Dispatcher
-    subgraph Driver["Rust driver"]
-        Coordinator["Coordinator task"] -->|Poll| Balance["Balancing and acquisition future"]
-        Coordinator -->|Poll owned acquisitions| Leases
-        subgraph Acquisition["One acquisition: owned state"]
-            Leases["Supervisor future"] -->|Poll| Poll["Demand-gated read, receipt, and checkpoint future"]
-            Leases -->|Poll concurrently| Renew["Lease renewal future"]
-        end
-    end
-    subgraph SDK["Rust SDK"]
-        Dispatcher["Dispatcher task"] -->|Run N batch pollers| Receive["Receive -> callback -> acknowledge"]
-        Dispatcher -->|Poll independently| Errors["Serial async error observer"]
-    end
-    Receive -.->|Authorize a read| Poll
-    Poll -->|Direct response; policy completion| Receive
-    Receive -.->|Acknowledge successful processing| Poll
-    Poll -.->|Bounded failure notifications| Errors
-```
-
-When either acquisition child ends, the supervisor cancels the peer, joins both,
-and attempts conditional release.
-
-`supervise` runs the normal processing/renewal futures, then handles a topology
-error for that acquisition after renewal has stopped. Cleanup reports failed
-releases and retains them for later shutdown handling:
-
-```rust
-async fn supervise(
-    context: Arc<Context>,
-    state: Arc<SharedState>,
-    lease: Acquisition,
-    stop: Signal,
-    force: Signal,
-) {
-    let token = lease.value.base.record.id.clone();
-    let session = state
-        .distributor
-        .acquire(token.clone(), lease.value.incarnation.clone());
-    let lease = Arc::new(Mutex::new(lease));
-    let (cancel, cancelled) = signal();
-    let mut cancel = Some(cancel);
-    let result = match session {
-        Ok(session) => {
-            let processing = poll(
-                context.clone(),
-                state.clone(),
-                &session,
-                lease.clone(),
-                cancelled.clone(),
-                stop,
-                force,
-            )
-            .boxed()
-            .fuse();
-            let renewing = renew(context.clone(), lease.clone(), cancelled).fuse();
-            futures::pin_mut!(processing, renewing);
-            futures::select! {
-                result = processing => {
-                    drop(cancel.take());
-                    let renewed = renewing.await;
-                    result.and(renewed)
-                },
-                result = renewing => {
-                    drop(cancel.take());
-                    let processed = processing.await;
-                    result.and(processed)
-                },
-            }
-        }
-        Err(err) => Err(err),
-    };
-    drop(cancel);
-    let result = match result {
-        Err(err)
-            if err.status().is_partition_topology_change()
-                && !state.stopping.load(Ordering::Acquire) =>
-        {
-            match context.recover(lease.clone()).await {
-                Ok(true) => return,
-                Ok(false) => Err(err),
-                Err(err) => Err(err),
-            }
-        }
-        result => result,
-    };
-    if let Err(err) = result {
-        tracing::warn!(lease = %token, error = %err, "Lease processing stopped");
-        state.failed(Some(&token), err);
-    }
-    let mut lease = lease.lock().await;
-    if let Err(err) = context.update(&mut lease, Update::Release).await {
-        tracing::warn!(lease = %token, error = %err, "Lease release failed; ownership will expire");
-        state.failed(Some(&token), err);
-        state
-            .unreleased
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .insert(
-                (token, lease.value.incarnation.clone()),
-                lease.value.clone(),
-            );
-    }
-}
-```
-
-`renew` runs independently of demand and callback completion. Successful
-checkpoint writes also refresh the renewal clock, so the loop recalculates its
-delay from the last successful lease mutation:
-
-```rust
-async fn renew(
-    context: Arc<Context>,
-    lease: Arc<Mutex<Acquisition>>,
-    stopped: Signal,
-) -> Result<()> {
-    let interval = context.options.renew_interval();
-    loop {
-        let delay = {
-            let lease = lease.lock().await;
-            interval.saturating_sub(
-                lease
-                    .renewed
-                    .map(|updated| updated.elapsed())
-                    .unwrap_or_default(),
-            )
-        };
-        futures::select_biased! {
-            _ = stopped.clone().fuse() => return Ok(()),
-            _ = sleep(delay).fuse() => {},
-        }
-        let mut lease = lease.lock().await;
-        if stopped.clone().now_or_never().is_some() {
-            return Ok(());
-        }
-        let elapsed = lease
-            .renewed
-            .map(|updated| updated.elapsed())
-            .unwrap_or(context.options.expiration);
-        if elapsed < interval {
-            continue;
-        }
-        if elapsed >= context.options.expiration {
-            return Err(error(
-                StatusCode::RequestTimeout,
-                "Lease renewal budget expired.",
-            ));
-        }
-        match context.update(&mut lease, Update::Renew).await {
-            Ok(()) => {}
-            Err(err) if err.status().is_precondition_failed() || err.status().is_not_found() => {
-                return Err(err)
-            }
-            Err(err) => {
-                tracing::warn!(error = %err, "Lease renewal failed; retrying within the expiration budget");
-                drop(lease);
-                futures::select_biased! {
-                    _ = stopped.clone().fuse() => return Ok(()),
-                    _ = sleep(interval).fuse() => {},
-                }
-            }
-        }
-    }
-}
-```
-
----
-
-## 5. Feed polling and callback dispatch
-
-The poller connects SDK demand to one acquired lease at a time. Its output is a
-page plus a one-use receipt, not a checkpoint. Only successful receipt completion
-can authorize progress for a delivered page.
-
-The following implementation excerpts use the actual types, signatures, and
-branches in the current Rust SDK and driver. No `ReadOutcome` enum or generic
-`maintained` helper is assumed: the code shows where responses are classified,
-which futures remain alive, and where errors leave an acquisition.
-
-### 5.1 SDK receive loop
-
-Each SDK batch poller receives, processes, and settles one receipt before asking for
-more work. It does not choose a lease, maintain retry counters, or write a token.
-
-The SDK's `consume` function in
-`azure_data_cosmos/src/change_feed_processor/execution.rs` issues demand.
-The `dispatch` call is expanded after the driver read and handoff below:
-
-```rust
-async fn consume<T, H, Fut>(
-    driver: Processor,
-    container: ContainerClient,
-    handler: Arc<H>,
-    errors: Arc<ErrorReporter>,
-) where
-    T: DeserializeOwned + Send + 'static,
-    H: Fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut + Send + Sync + 'static,
-    Fut: Future<Output = crate::Result<()>> + Send + 'static,
-{
-    while let Some(batch) = driver.next_batch().await {
-        dispatch::<T, H, Fut>(container.clone(), handler.clone(), batch, &errors).await;
-    }
-}
-```
-
-`dispatch` catches callback panics, skips the callback for an empty
-decoded collection, and reports success only after all application processing
-finishes. It races processing against receipt cancellation; there is no implicit
-callback timeout. Enqueuing an error does not await the application's error hook.
-
-Run N such batch-poller futures for configured concurrency N, default one. A slow
-cooperative callback occupies one slot; other slots remain usable. A blocking
-callback can stall their shared dispatcher. Go would implement this application
-loop around native completions; its CFP adapter is deferred.
-
-`None` means delivery has ended, not that a read was empty or no lease is currently
-owned. Another receive is new demand, **never implicit acknowledgment**.
-
-### 5.2 Demand selection and read authorization
-
-```text
-Batch poller 1: next_batch() -------------------------------------+
-Batch poller 2: next_batch() ----------------------+              |
-                                                  v              v
-                                 Driver scheduler: eligible acquisitions
-                                 FIFO weak handles, no batch payload queue
-                                      |                     |
-                                  grant R2              grant R1
-                                      v                     v
-                                Acquisition A          Acquisition B
-                                read -> receipt        read -> receipt
-                                renew independently    renew independently
-                                      |                     |
-                                      +--> original requesting batch poller
-```
-
-Each receive authorizes only one acquisition read at a time. If A returns idle or
-enters a throttle cooldown, it releases that grant; the **same pending receive**
-can select B. A waits locally before becoming eligible again. It cannot start a
-read just because its delay elapsed.
-
-```text
-Receive R1 -> A: read -> 429 -> release grant -> R1 selects B -> deliver B
-                         |
-                         +-> A waits Retry-After, with renewal/checkpoint work
-                                      |
-                                      +-> eligible again, still needs demand
-```
-
-No eligible acquisition means the receive sleeps on a scheduler notification,
-not an empty-result spin loop. No demand means no new feed planning or reads.
-Lease acquisition, renewal, checkpoint deadlines, and cleanup remain active.
-
-The driver implements that contract in `BatchDistributor::next_batch`, in
-`azure_data_cosmos_driver/src/change_feed_processor/processing/distribution.rs`. The
-receiver mutex serializes selection, not the subsequent read. Dropping a demand
-sender on an idle/error turn wakes the same receive to select again:
-
-```rust
-pub(super) async fn next_batch(&self) -> Option<ChangeFeedBatch> {
-    loop {
-        let received = {
-            // Only queue selection is serialized, not the authorized reads.
-            let _receiver = self.receiver.lock().await;
-            poll_fn(|cx| {
-                self.waker.register(cx.waker());
-                let mut scheduler = self.scheduler();
-                if scheduler.closed || scheduler.stopping {
-                    return Poll::Ready(None);
-                }
-                while let Some(available) = scheduler.available.pop_front() {
-                    let Some(delivery) = available.upgrade() else {
-                        continue;
-                    };
-                    let mut state = delivery.state();
-                    let request = match std::mem::replace(&mut *state, DeliveryState::Fetching)
-                    {
-                        DeliveryState::WaitingForDemand(request) => request,
-                        previous => {
-                            *state = previous;
-                            continue;
-                        }
-                    };
-                    let (response, received) = oneshot::channel();
-                    if request.send(ReadDemand { response }).is_ok() {
-                        return Poll::Ready(Some(received));
-                    }
-                    *state = DeliveryState::Idle;
-                }
-                Poll::Pending
-            })
-            .await
-        };
-        let received = received?;
-        // Idle reads and ended acquisitions drop the sender; try another acquisition.
-        if let Ok(batch) = received.await {
-            let scheduler = self.scheduler();
-            if !scheduler.closed && !scheduler.forced && !batch.receipt.sender.is_canceled() {
-                return Some(batch);
-            }
-        }
-    }
-}
-```
-
-### 5.3 Acquisition read loop
-
-The loop below belongs to **one acquisition**, not the whole processor. Errors
-returned here go to its supervisor for reporting and cleanup; they do not
-instruct the SDK to terminate all batch pollers.
-
-Read `poll_feed` in five stages:
-
-1. Register demand and check shutdown/cancellation.
-2. Plan lazily and execute one bounded read turn.
-3. Handle throttle and idle results without invoking the application.
-4. Transfer a data response and wait for its one-use receipt.
-5. Accept successful progress, enforce the checkpoint policy, and complete the
-   receipt before the acquisition becomes eligible again.
-
-The full `poll_feed` function in
-`azure_data_cosmos_driver/src/change_feed_processor/processing.rs` makes the
-ordering explicit:
-
-```rust
-async fn poll_feed(
-    context: Arc<Context>,
-    state: Arc<SharedState>,
-    session: &AcquisitionDelivery,
-    lease: Arc<Mutex<Acquisition>>,
-    cancelled: Signal,
-    stop: Signal,
-    force: Signal,
-) -> Result<()> {
-    if state.stopping.load(Ordering::Acquire) {
-        return Ok(());
-    }
-    let initial = lease.lock().await.value.clone();
-    let operation = context
-        .operation(&initial.base.range)
-        .with_max_item_count(context.options.page_size);
-    let checkpoint = context.checkpoint(&initial, &initial.base.range)?;
-    let plan_options = PlanOptions {
-        change_feed_processor: true,
-        ..Default::default()
-    };
-    let (mut retry, read_options, read_timeout) = ReadRetry::for_driver(&context.source_driver);
-    let mut planning_options = operation_options();
-    planning_options.end_to_end_latency_policy = Some(read_timeout.into());
-    let mut plan = None;
-    loop {
-        if cancelled.clone().now_or_never().is_some() {
-            return Err(lost());
-        }
-        if state.stopping.load(Ordering::Acquire) {
-            return Ok(());
-        }
-        let Some(Some(demand)) = context
-            .wait_with_checkpoint(&lease, &cancelled, &force, session.wait_for_demand())
-            .await?
-        else {
-            return Ok(());
-        };
-        if state.stopping.load(Ordering::Acquire) {
-            return Ok(());
-        }
-        if demand.is_canceled() {
-            continue;
-        }
-        let deadline = Instant::now() + read_timeout;
-        if plan.is_none() {
-            plan = context
-                .wait_with_checkpoint(
-                    &lease,
-                    &cancelled,
-                    &force,
-                    ReadRetry::bounded(
-                        deadline,
-                        context.source_driver.plan_operation(
-                            operation.clone(),
-                            &planning_options,
-                            Some(&checkpoint),
-                            &plan_options,
-                        ),
-                    ),
-                )
-                .await?;
-        }
-        let Some(plan) = plan.as_mut() else {
-            return Ok(());
-        };
-        if state.stopping.load(Ordering::Acquire) {
-            return Ok(());
-        }
-        if demand.is_canceled() {
-            continue;
-        }
-        let response = context
-            .wait_with_checkpoint(
-                &lease,
-                &cancelled,
-                &force,
-                ReadRetry::bounded(
-                    deadline,
-                    context.source_driver.execute_plan(
-                        plan,
-                        Some(context.source.clone()),
-                        read_options.clone(),
-                    ),
-                ),
-            )
-            .await;
-        let response = match response {
-            Err(err) if ReadRetry::is_throttled(&err) => {
-                let cooldown = retry.cooldown(
-                    err.response()
-                        .and_then(|response| response.headers().retry_after_ms),
-                    Instant::now(),
-                )?;
-                let failure = (!cooldown.retry).then_some(err);
-                drop(demand);
-                tracing::debug!(lease = %initial.base.record.id, retry = cooldown.retry,
-                    delay_ms = cooldown.until.saturating_duration_since(Instant::now()).as_millis(),
-                    "Deferring throttled change feed acquisition");
-                let waiting = async {
-                    futures::select_biased! {
-                        _ = stop.clone().fuse() => Ok(false),
-                        _ = sleep(cooldown.until.saturating_duration_since(Instant::now())).fuse() => Ok(true),
-                    }
-                };
-                if context
-                    .wait_with_checkpoint(&lease, &cancelled, &force, waiting)
-                    .await?
-                    != Some(true)
-                {
-                    return Ok(());
-                }
-                if let Some(err) = failure {
-                    return Err(err);
-                }
-                continue;
-            }
-            result => result?,
-        };
-        let Some(response) = response else {
-            return Ok(());
-        };
-        let response = response.ok_or_else(|| {
-            error(
-                StatusCode::InternalServerError,
-                "Change feed unexpectedly drained.",
-            )
-        })?;
-        retry.reset();
-        if state.stopping.load(Ordering::Acquire) {
-            return Ok(());
-        }
-        if response.headers().etag.is_none() {
-            return Err(error(
-                StatusCode::InternalServerError,
-                "Change feed response has no checkpoint ETag.",
-            ));
-        }
-        let idle = response.status().status_code() == StatusCode::NotModified;
-        let token = plan.to_continuation_token()?;
-        if idle {
-            drop(response);
-            let mut stored = lease.lock().await;
-            if stored
-                .value
-                .base
-                .continuation
-                .as_ref()
-                .map(ContinuationToken::as_str)
-                != Some(token.as_str())
-            {
-                stored.acknowledge(token, 0);
-                if context.options.checkpoint_policy == CheckpointPolicy::EveryBatch {
-                    context.flush(&mut stored).await?;
-                }
-            }
-            drop(stored);
-            drop(demand);
-            let waiting = async {
-                futures::select! {
-                _ = sleep(context.options.poll_delay).fuse() => {},
-                _ = stop.clone().fuse() => {},
-                }
-                Ok(())
-            };
-            if context
-                .wait_with_checkpoint(&lease, &cancelled, &force, waiting)
-                .await?
-                .is_none()
-            {
-                return Ok(());
-            }
-            continue;
-        }
-        let handled_changes = match response.body() {
-            ResponseBody::NoPayload => 0,
-            ResponseBody::Items(items) => items.len() as u64,
-            ResponseBody::Bytes(body) => split_feed_envelope(body)?.len() as u64,
-        };
-        let (sender, received) = oneshot::channel();
-        if !session.deliver(
-            demand,
-            response,
-            BatchReceipt {
-                sender,
-                cancelled: cancelled.clone(),
-            },
-        )? {
-            return Ok(());
-        }
-        let acknowledgment = context
-            .wait_with_checkpoint(&lease, &cancelled, &force, async {
-                received.await.map_err(|_| {
-                    error(
-                        StatusCode::Conflict,
-                        "Batch was abandoned without successful processing.",
-                    )
-                })
-            })
-            .await?;
-        let Some(acknowledgment) = acknowledgment else {
-            return Ok(());
-        };
-        let mut lease = lease.lock().await;
-        if cancelled.clone().now_or_never().is_some() || state.forced.load(Ordering::Acquire) {
-            return Err(lost());
-        }
-        lease.acknowledge(token, handled_changes);
-        if handled_changes > 0 {
-            lease
-                .value
-                .processed(context.options.checkpoint_policy, now_millis())?;
-        }
-        let result = if acknowledgment.durable
-            || context.options.checkpoint_policy == CheckpointPolicy::EveryBatch
-        {
-            context.flush(&mut lease).await
-        } else {
-            Ok(())
-        };
-        let result = result.and_then(|()| session.acknowledged());
-        let failed = result.is_err();
-        let _ = acknowledgment.result.send(result);
-        if failed {
-            return Err(error(
-                StatusCode::ServiceUnavailable,
-                "Checkpoint failed; abandoning the lease.",
-            ));
-        }
-    }
-}
-```
-
-The important implementation boundaries are:
-
-- **Read:** resolve saved lease continuation, then supplied continuation, then
-  configured start. Never replace a failed resume with fresh `Now`. Planning
-  plus the page read is bounded to five seconds or a shorter configured driver
-  deadline. The page-size setting is an item-count hint, not a byte limit.
-- **Classify:** retain errors and require a valid continuation/ETag. A missing
-  ETag or unexpected end of a change-feed plan is a failure, not an idle page.
-  The ordinary-429 check currently examines the shared wait result; read and
-  maintenance errors are not separate result variants.
-- **Hand off:** move response ownership directly to the original receive and
-  set `AwaitingAcknowledgment`. Failed transfer/abandoned receipt ends the
-  acquisition without accepting the page. There is no retained ready-batch slot.
-- **Accept:** check acquisition cancellation/ownership, then update pending
-  successful progress. Flush for `EveryBatch` or an explicit durable receipt;
-  otherwise accept in memory. Report a required flush failure to the receipt
-  waiter and supervisor. Only policy success makes delivery eligible again.
-- **Wait:** keep the same read or receipt future pinned across checkpoint timer
-  events; do not cancel/restart it on each renewal or flush. Graceful stop also
-  interrupts idle/cooldown waits.
-
-Source reads and application callbacks do not hold the lease-mutation lock.
-Renewal, checkpoint, and release writes do serialize through it. Concurrently
-polled maintenance is not a promise that a slow lease-store write cannot delay
-another mutation of that same lease.
-
-### 5.4 Read outcomes and control-flow decisions
-
-The normal driver pipeline still handles transport/routing retries. CFP adds
-lease-local ordinary-429 cooldown and takes control of topology recovery.
-CFP plans disable transparent topology repair: multi-partition plans and topology
-errors return to [lease recovery](#73-splits-and-merges), not application callbacks.
-
-```mermaid
-flowchart TD
-    subgraph Driver["Driver: one acquisition turn"]
-        Eligible["Await demand: eligible weak handle"] -->|Receive grant| Read["Fetching: plan and read one page"]
-        Read -->|Page or error| Classify{"Classify outcome"}
-        Classify -->|304 with ETag| Idle["Accept safe idle progress"]
-        Idle -->|Release receive grant| Delay["Wait poll delay with maintenance"]
-        Delay -->|Delay elapsed, not stopped| Next["Return to demand wait, no prefetch"]
-        Classify -->|Ordinary 429| Yield["Release receive grant, keep ownership and position"]
-        Yield -->|Honor Retry-After| Cooldown["Wait with renewal and checkpoint deadlines"]
-        Cooldown --> Budget{"Retry budget remains?"}
-        Budget -->|Yes, new demand still required| Next
-        Budget -->|No, final delay completed| End["End acquisition and report error"]
-        Classify -->|Split or merge| Topology["Flush safe progress and repair affected coverage"]
-        Classify -->|Read failure or missing ETag| End
-        Classify -->|Data page| Handoff["Set AwaitingAcknowledgment, transfer payload and receipt"]
-        Receipt["Await receipt result, retain token only"] -->|Successful receipt| Policy{"Required durable barrier?"}
-        Policy -->|EveryBatch or explicit| Save["Fenced checkpoint write"]
-        Save -->|Success| Next
-        Save -->|Failure, reply with error| End
-        Policy -->|Coalesced| Pending["Accept in memory, retain latest safe token"]
-        Pending -->|Complete receipt| Next
-        Receipt -->|Abandoned or canceled| End
-    end
-    subgraph SDK["SDK: no lease decisions"]
-        Process["Deserialize and invoke application callback"]
-    end
-    Handoff -->|Direct response to original receive| Process
-    Process -->|Acknowledge or abandon| Receipt
-    Yield -.->|Same receive can select another acquisition| Scheduler["Driver demand scheduler"]
-    Idle -.->|Same receive can select another acquisition| Scheduler
-    Topology -->|Children or retained logical slices| Reacquire["Normal acquisition with a new incarnation"]
-    End -->|After cleanup or expiry, later balancing may retry| Reacquire
-```
-
-An idle response does not prove that the whole container or every lease is
-caught up. A `200` response with
-an empty decoded collection may still take the receipt path: skip the application
-callback, but settle the receipt. Do not equate an empty collection with `None`.
-
-Changed idle tokens become safe pending progress. `EveryBatch` persists them;
-coalescing waits for its deadline or an explicit/lifecycle barrier, including
-for the initial position. Neither an idle response nor a complete idle round
-forces a coalesced write. Until a first checkpoint succeeds, a restart with
-unpinned `Now` can resolve a later starting position; a supplied continuation
-avoids choosing a new start.
-
-Retry exhaustion ends an acquisition only after its final cooldown. A later
-balancing cycle may reacquire it. This is not a poison-document skip policy.
-**Open:** repeated deterministic failures need an explicit suspension/backoff
-policy; automatic release/reacquisition alone can repeat the same failure.
-
-**Implementation gap:** `wait_with_checkpoint` can return a checkpoint error
-through the same result used for a source read. Because the following throttle
-check is status-based, a checkpoint 429 can enter the read-cooldown branch.
-Stage-specific error classification is not implemented; the excerpts preserve
-this distinction between current code and the intended failure boundary.
-
-### 5.5 Response handoff and delivery phases
-
-The persisted lease remains owned while local delivery moves through the cycle:
-
-```mermaid
-flowchart TD
-    subgraph Live["Local acquisition state, not lease-document fields"]
-        Idle["Idle"] -->|Register a demand sender| Demand["WaitingForDemand"]
-        Demand -->|Receive consumes sender and grants one read| Fetch["Fetching"]
-        Fetch -->|Page transferred to requester| Ack["AwaitingAcknowledgment"]
-        Ack -->|Receipt accepted under policy| Idle
-        Fetch -->|Idle or 429, release demand| Delay["Local delay, not eligible"]
-        Delay -->|Timer elapsed, register again| Demand
-        Fetch -->|Read failure or unclaimed response| Closed["Closed"]
-        Fetch -->|Ownership loss or forced cancellation| Closed
-        Ack -->|Abandonment, failed required checkpoint| Closed
-        Demand -->|Ownership loss or shutdown cleanup| Closed
-        Idle -->|Acquisition ends| Closed
-        Delay -->|Ownership loss or shutdown cleanup| Closed
-        Ack -->|Ownership loss or forced cancellation| Closed
-    end
-    Closed -->|Supervisor handles persistence separately| Cleanup["Release, expire, or recover topology"]
-```
-
-`Local delay` is a reason for ineligibility, not an additional delivery enum variant:
-the current implementation retains `Fetching` until demand is registered again.
-`Closed` is only the terminal state of local delivery. It is not a persisted
-lease lifecycle or a signal to schedule split cleanup.
-
-These transitions are made by `AcquisitionDelivery`. Eligibility stores a weak
-handle, delivery moves the response to its original requester, and receipt
-completion changes the phase without writing the lease:
-
-```rust
-impl AcquisitionDelivery {
-    pub(super) async fn wait_for_demand(&self) -> Result<Option<ReadDemand>> {
-        let received = {
-            let mut scheduler = self.distributor.scheduler();
-            if scheduler.stopping || scheduler.closed {
-                return Ok(None);
-            }
-            let mut state = self.delivery.state();
-            match &*state {
-                DeliveryState::Closed => return Err(lost()),
-                DeliveryState::Idle | DeliveryState::Fetching => {}
-                _ => {
-                    return Err(error(
-                        StatusCode::Conflict,
-                        "Acquisition already has pending demand or an outstanding batch.",
-                    ))
-                }
-            }
-            let (request, received) = oneshot::channel();
-            *state = DeliveryState::WaitingForDemand(request);
-            scheduler
-                .available
-                .push_back(Arc::downgrade(&self.delivery));
-            received
-        };
-        self.distributor.waker.wake();
-        match received.await {
-            Ok(demand) => Ok(Some(demand)),
-            Err(_) if self.distributor.scheduler().stopping => Ok(None),
-            Err(_) => Err(lost()),
-        }
-    }
-
-    pub(super) fn deliver(
-        &self,
-        demand: ReadDemand,
-        response: CosmosResponse,
-        receipt: BatchReceipt,
-    ) -> Result<bool> {
-        let scheduler = self.distributor.scheduler();
-        if scheduler.stopping && !scheduler.closed {
-            return Ok(false);
-        }
-        let mut state = self.delivery.state();
-        if scheduler.closed || matches!(*state, DeliveryState::Closed) {
-            return Err(lost());
-        }
-        if !matches!(*state, DeliveryState::Fetching) {
-            return Err(error(
-                StatusCode::Conflict,
-                "Acquisition already has an outstanding batch.",
-            ));
-        }
-        let batch = ChangeFeedBatch {
-            lease_token: self.lease_token.clone(),
-            response,
-            receipt,
-        };
-        *state = DeliveryState::AwaitingAcknowledgment;
-        let sent = demand.response.send(batch);
-        if sent.is_err() {
-            *state = DeliveryState::Closed;
-        }
-        drop(state);
-        drop(scheduler);
-        sent.map_err(|_| {
-            error(
-                StatusCode::Conflict,
-                "Batch receive was canceled before delivery; abandoning the acquisition.",
-            )
-        })?;
-        Ok(true)
-    }
-
-    pub(super) fn acknowledged(&self) -> Result<()> {
-        let mut state = self.delivery.state();
-        match &*state {
-            DeliveryState::AwaitingAcknowledgment => {
-                *state = DeliveryState::Idle;
-                Ok(())
-            }
-            DeliveryState::Closed => Err(lost()),
-            _ => Err(error(
-                StatusCode::Conflict,
-                "Acquisition has no delivered batch to acknowledge.",
-            )),
-        }
-    }
-
-    fn close(&self) {
-        let pending = {
-            let mut scheduler = self.distributor.scheduler();
-            let delivery = Arc::downgrade(&self.delivery);
-            scheduler.available.retain(|ready| !ready.ptr_eq(&delivery));
-            self.delivery.close()
-        };
-        drop(pending);
-        self.distributor.waker.wake();
-    }
-}
-```
-
-Graceful stop closes admission but lets already-issued batches settle while
-renewal continues. A read may be discarded if delivery has not occurred before
-stop. Forced cancellation or ownership loss ends receipt waits; stale receipts
-cannot affect a replacement acquisition.
-
-### 5.6 SDK callback dispatch
-
-`dispatch` owns application-facing decoding, callback execution, and receipt
-completion. Errors are reported independently of demand; the SDK does not select
-leases or retry service requests:
-
-```rust
-async fn dispatch<T, H, Fut>(
-    container: ContainerClient,
-    handler: Arc<H>,
-    batch: ChangeFeedBatch,
-    errors: &ErrorReporter,
-) where
-    T: DeserializeOwned + Send + 'static,
-    H: Fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut + Send + Sync + 'static,
-    Fut: Future<Output = crate::Result<()>> + Send + 'static,
-{
-    let (lease_token, response, receipt) = batch.into_parts();
-    let diagnostics = response.diagnostics();
-    let work = async {
-        let items = container.deserialize_processor_batch::<T>(response)?;
-        if !items.is_empty() {
-            handler(
-                ChangeFeedProcessorContext {
-                    lease_token: lease_token.clone(),
-                    diagnostics: Some(diagnostics),
-                },
-                items,
-            )
-            .await?;
-        }
-        Ok::<_, CosmosError>(())
-    };
-    let result = {
-        let work = AssertUnwindSafe(work).catch_unwind().fuse();
-        let cancelled = receipt.cancelled().fuse();
-        futures::pin_mut!(work, cancelled);
-        futures::select! {
-            result = work => Some(result),
-            _ = cancelled => None,
-        }
-    };
-    match result {
-        Some(Ok(Ok(()))) => {
-            if let Err(err) = receipt.acknowledge().await {
-                tracing::warn!(lease = %lease_token, error = %err, "Callback succeeded but acknowledgment failed");
-                errors.report(Some(lease_token), err);
-            }
-        }
-        Some(Ok(Err(err))) => {
-            tracing::warn!(lease = %lease_token, error = %err, "Change feed callback or deserialization failed; batch will be replayed");
-            drop(receipt);
-            errors.report(Some(lease_token), err);
-        }
-        Some(Err(_)) => {
-            tracing::error!(lease = %lease_token, "Change feed callback panicked; batch will be replayed");
-            drop(receipt);
-            errors.report(
-                Some(lease_token),
-                CosmosError::builder()
-                    .with_status(CosmosStatus::new(StatusCode::InternalServerError))
-                    .with_message("Change feed callback panicked.")
-                    .build(),
-            );
-        }
-        None => {
-            tracing::debug!(lease = %lease_token, "Change feed callback canceled with its lease")
-        }
-    }
-}
-```
-
-### 5.7 Retry and maintenance boundaries
-
-`ReadRetry`, in
-`azure_data_cosmos_driver/src/change_feed_processor/processing/retry.rs`,
-holds the effective source-driver retry budget across turns. It
-disables transparent ordinary-429 retries only for CFP page reads, preserves
-positive Retry-After delays, and bounds the planning/read turn:
-
-```rust
-const READ_TURN_TIMEOUT: Duration = Duration::from_secs(5);
-
-pub(super) struct ReadRetry {
-    state: ThrottleRetryState,
-}
-
-pub(super) struct Cooldown {
-    pub until: Instant,
-    pub retry: bool,
-}
-
-impl ReadRetry {
-    pub fn for_driver(driver: &CosmosDriver) -> (Self, OperationOptions, Duration) {
-        let mut options = operation_options();
-        let view = driver.operation_options_view(&options);
-        let throttling = view.throttling_retry_options();
-        let state = ThrottleRetryState::with_limits(
-            throttling
-                .max_retry_count()
-                .copied()
-                .unwrap_or(DATA_PLANE_MAX_THROTTLE_ATTEMPTS),
-            throttling
-                .max_retry_wait_time()
-                .copied()
-                .unwrap_or(DATA_PLANE_MAX_THROTTLE_WAIT),
-            DATA_PLANE_MAX_PER_RETRY_DELAY,
-        );
-        let timeout = view
-            .end_to_end_latency_policy()
-            .map(|policy| policy.timeout().min(READ_TURN_TIMEOUT))
-            .unwrap_or(READ_TURN_TIMEOUT);
-        // Only CFP page reads defer throttling; metadata and lease writes keep their retries.
-        options.throttling_retry_options = Some(ThrottlingRetryOptions {
-            max_retry_count: Some(0),
-            ..Default::default()
-        });
-        options.end_to_end_latency_policy = Some(timeout.into());
-        (Self { state }, options, timeout)
-    }
-
-    pub fn is_throttled(error: &CosmosError) -> bool {
-        error.status().is_throttled()
-            && error.status().sub_status() != Some(SYSTEM_RESOURCE_UNAVAILABLE)
-    }
-
-    pub fn cooldown(&mut self, retry_after_ms: Option<u64>, now: Instant) -> Result<Cooldown> {
-        let delay = match retry_after_ms.filter(|delay| *delay > 0) {
-            Some(delay) => Duration::from_millis(delay),
-            None => {
-                let mut fallback = self.state.clone();
-                fallback.attempt_count = fallback.attempt_count.min(32);
-                fallback
-                    .fallback_delay()
-                    .min(DATA_PLANE_MAX_PER_RETRY_DELAY)
-            }
-        };
-        let delay_ms = u64::try_from(delay.as_millis())
-            .map_err(|_| {
-                error(
-                    StatusCode::BadRequest,
-                    "Change feed retry delay is not representable.",
-                )
-            })?
-            .max(1);
-        let delay = Duration::from_millis(delay_ms);
-        let until = now.checked_add(delay).ok_or_else(|| {
-            error(
-                StatusCode::BadRequest,
-                "Change feed retry delay is not representable.",
-            )
-        })?;
-        // Cooldown does not occupy receive demand, so do not shorten a service Retry-After.
-        let mut policy = self.state.clone();
-        policy.max_per_retry_delay = delay;
-        let next = policy
-            .cumulative_delay
-            .checked_add(delay)
-            .and_then(|_| policy.next_throttle_retry(Some(delay_ms)));
-        let retry = next.is_some();
-        if let Some((_, next)) = next {
-            self.state = next;
-        }
-        Ok(Cooldown { until, retry })
-    }
-
-    pub fn reset(&mut self) {
-        self.state.attempt_count = 0;
-        self.state.cumulative_delay = Duration::ZERO;
-    }
-
-    pub async fn bounded<T>(deadline: Instant, work: impl Future<Output = Result<T>>) -> Result<T> {
-        let work = work.fuse();
-        let elapsed = sleep(deadline.saturating_duration_since(Instant::now())).fuse();
-        futures::pin_mut!(work, elapsed);
-        futures::select_biased! {
-            _ = elapsed => Err(CosmosError::builder()
-                .with_status(CosmosStatus::from_parts(
-                    StatusCode::RequestTimeout, Some(status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
-                ))
-                .with_message("Change feed read turn timed out.")
-                .build()),
-            result = work => result,
-        }
-    }
-}
-```
-
-`Context::wait_with_checkpoint` pins the supplied future once. Timer events can
-flush earlier accepted progress while that future is pending. Forced cancellation
-and known ownership loss take priority over a due timer:
-
-```rust
-async fn wait_with_checkpoint<T>(
-    &self,
-    lease: &Mutex<Acquisition>,
-    cancelled: &Signal,
-    force: &Signal,
-    work: impl Future<Output = Result<T>>,
-) -> Result<Option<T>> {
-    let work = work.fuse();
-    futures::pin_mut!(work);
-    loop {
-        let delay = lease
-            .lock()
-            .await
-            .checkpoint_delay(self.options.checkpoint_policy, Instant::now());
-        let deadline = async {
-            match delay {
-                Some(delay) => sleep(delay).await,
-                None => futures::future::pending().await,
-            }
-        }
-        .fuse();
-        futures::pin_mut!(deadline);
-        futures::select_biased! {
-            _ = force.clone().fuse() => return Ok(None),
-            _ = cancelled.clone().fuse() => return Err(lost()),
-            _ = deadline => {
-                let mut lease = lease.lock().await;
-                if force.clone().now_or_never().is_some() {
-                    return Ok(None);
-                }
-                if cancelled.clone().now_or_never().is_some() {
-                    return Err(lost());
-                }
-                self.flush(&mut lease).await?;
-            },
-            result = work => return result.map(Some),
-        }
-    }
-}
-```
-
-| Boundary | Contract |
-| --- | --- |
-| Throttle scope | CFP page reads only; 429/3092 retains routing recovery. Bootstrap and ordinary requests unchanged. |
-| Delay | Honor positive Retry-After; missing/zero uses bounded exponential backoff with jitter. |
-| Budget | Inherit driver retry-count/wait limits; retain across turns; reset after successful read. |
-| Maintenance | Renewal and prior-success checkpoint deadlines continue during demand, I/O, receipt, and delay waits. |
-| Errors | Report failures with available lease/operation diagnostics; cleanup is driver-owned. Structured stage/acquisition fields remain proposed in section 1.4. SDK error observers do not decide recovery. |
-| Error observer | Async, serial, bounded queue; overflow and observer panics logged. Graceful stop drains reports; forced stop/drop cancels them. Never await processor stop inside the observer. |
-| Memory | No shared driver batch-count/heap limit. HTTP and requested-result handoff memory remain. Page hints do not bound bytes; consumers may retain payloads. |
-| Native | Data capacity bounds concurrent requests; independent control admission keeps acknowledgment/stop usable. Drain issued work during stop. |
-| Diagnostics | `ChangeFeedProcessor` user-agent tag; no indiscriminate credential/payload/token logging. |
-
-Processing activity is a separate clock from renewal. The owner publishes it
-through existing lease writes, not an extra write on every acknowledgment;
-see section 4.
-
----
-
-## 6. Checkpointing pipeline
-
-The driver receives a one-use receipt completion, not an arbitrary continuation
-chosen by the SDK. It validates the acquisition before accepting the associated
-page's progress.
-
-**Invariant:** only contiguous successful progress is eligible. A checkpoint
-cannot commit atomically with application side effects.
-
-### 6.1 Policy contract
-
-The table describes the current implementation.
-
-| | `EveryBatch` | `Coalesced { max_interval }` |
-| --- | --- | --- |
-| Selection | Default. | Opt-in; `coalesced()` selects five minutes, or configure a positive, representable interval explicitly. |
-| Acknowledgment | Persist before next batch. | In-memory acceptance; persistence deferred. |
-| `checkpoint()` | Durable barrier. | Durable barrier, including latest success. |
-| Flush | Every success. | Deadline; explicit barrier; before graceful release/topology recovery. Not ordinary idle reads. |
-| Retained state | No unpersisted success. | Token, original dirty time, diagnostic count, failure state; no payloads. |
-
-Coalescing is time-only. No `max_batches` limit; replay exposure depends on traffic
-since the last durable checkpoint. The five-minute constructor does not change
-the default `EveryBatch` policy. Initial `Now` positioning is also deferred under
-coalescing, so a crash before any checkpoint may choose a new `Now` on restart.
-
-### 6.2 Receipt completion
-
-The receipt carries a one-shot acknowledgment channel, not a caller-selected
-continuation. `checkpoint()` requests a durable barrier; `acknowledge()` follows
-the configured policy:
-
-```rust
-struct Acknowledgment {
-    result: oneshot::Sender<Result<()>>,
-    durable: bool,
-}
-
-/// A delivery receipt tied to one batch and one acquisition of its lease.
-///
-/// Dropping this receipt without acknowledging it abandons the lease without
-/// acknowledging this batch. It cannot authorize arbitrary continuations.
-pub struct BatchReceipt {
-    sender: oneshot::Sender<Acknowledgment>,
-    cancelled: Signal,
-}
-
-impl BatchReceipt {
-    /// Persists this batch's progress after the application callback succeeds.
-    ///
-    /// Consumes the receipt. The next poll for this lease remains blocked until
-    /// persistence succeeds. Delivery is at least once: callback effects cannot
-    /// be committed atomically with this write.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error for lost ownership, shutdown, or a failed checkpoint.
-    /// An error does not prove that a timed-out service write was not committed.
-    pub async fn checkpoint(self) -> Result<()> {
-        self.complete(true).await
-    }
-
-    /// Acknowledges successful processing according to the checkpoint policy.
-    ///
-    /// Consumes the receipt and permits the next batch after acknowledgment.
-    /// With [`CheckpointPolicy::Coalesced`], success can mean only in-memory
-    /// acceptance, not persistence. Multiple successful batches may replay.
-    /// Use [`checkpoint()`](Self::checkpoint) to require durable persistence.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the lease session ends or a required checkpoint fails.
-    pub async fn acknowledge(self) -> Result<()> {
-        self.complete(false).await
-    }
-
-    async fn complete(self, durable: bool) -> Result<()> {
-        let (tx, rx) = oneshot::channel();
-        self.sender
-            .send(Acknowledgment {
-                result: tx,
-                durable,
-            })
-            .map_err(|_| lost())?;
-        rx.await.map_err(|_| lost())?
-    }
-
-    /// Waits until this lease session ends, including ownership loss or forced shutdown.
-    ///
-    /// Consumers can race their callback against this signal. Cancellation
-    /// cannot undo application side effects already performed.
-    pub async fn cancelled(&self) {
-        self.cancelled.clone().await;
-    }
-}
-```
-
-### 6.3 Local progress and lease-write effects
-
-`Lease::acknowledge` updates pending progress, `Lease::processed` updates
-processing activity, and `Lease::checkpoint_delay` computes the remaining dirty
-interval. None of these methods writes storage. The call site in `poll_feed`
-invokes `processed` only for an acknowledged nonempty page:
-
-```rust
-impl Lease {
-    fn processed(&mut self, policy: CheckpointPolicy, now: i64) -> Result<()> {
-        let now = self
-            .last_processed_at
-            .map_or(now, |previous| previous.max(now));
-        self.processing_deadline = Some(policy.processing_deadline(now)?);
-        self.last_processed_at = Some(now);
-        Ok(())
-    }
-}
-
-impl Acquisition {
-    fn acknowledge(&mut self, token: ContinuationToken, handled_changes: u64) {
-        if let Some(pending) = &mut self.pending {
-            pending.token = token;
-            pending.handled_changes = pending.handled_changes.saturating_add(handled_changes);
-        } else {
-            self.pending = Some(PendingCheckpoint {
-                token,
-                since: Instant::now(),
-                handled_changes,
-                failed: false,
-            });
-        }
-    }
-
-    fn checkpoint_delay(&self, policy: CheckpointPolicy, now: Instant) -> Option<Duration> {
-        match (policy, &self.pending) {
-            (CheckpointPolicy::Coalesced { max_interval }, Some(pending)) => {
-                Some(max_interval.saturating_sub(now.saturating_duration_since(pending.since)))
-            }
-            _ => None,
-        }
-    }
-}
-```
-
-In-memory acceptance is not a new service-side ownership check. A remote takeover
-may first be detected by the next owned write. Every checkpoint reads fresh lease
-state, verifies owner/incarnation, and conditionally replaces it using the current
-ETag. A rejected or ambiguous write never becomes confirmed durability; the
-caller propagates or classifies the error through the branches shown above.
-This fences stored progress, not external application effects that already happened.
-
-| Event | In-memory state | Persisted lease effect |
-| --- | --- | --- |
-| Acquire | Create new acquisition, cancellation signal, and empty delivery state. | Set owner/new incarnation, renewal time, and processing deadline; clear per-acquisition last-processed time; preserve stored continuation. |
-| Register/receive demand | `Idle -> WaitingForDemand(sender) -> Fetching`; consume the sender once. | None. |
-| Data read succeeds | Plan reaches next token; hand response to SDK; await receipt. | None for this data page. |
-| Callback succeeds, coalesced acknowledgment | Replace pending token; preserve the first pending-success time; refresh processing activity for nonempty batches; release payload. | No immediate write. Renewal can publish activity without saving the pending token. |
-| Callback succeeds, `EveryBatch` or explicit checkpoint | Accept pending token; keep next delivery blocked until write result. | Conditionally persist successful continuation. |
-| Coalesced timer fires | Flush latest safe pending token, even while a later callback is outstanding. | Persist only earlier accepted progress, never the outstanding page. |
-| Checkpoint succeeds | Clear the corresponding pending progress; retain confirmed durable position. | Continuation and renewal time updated under owner/incarnation/ETag fencing. |
-| Changed idle token | Advance safe empty-response progress, never over an outstanding batch; do not refresh processing activity. | Persist under `EveryBatch`; defer under coalescing until deadline or barrier. |
-| 429 or failed data read | Update retry state or end acquisition. | No progress for the failed page. Earlier successes may flush independently. |
-| Renewal | Refresh local renewal deadline. | Refresh renewal time and publish latest processing activity; preserve freshest stored continuation. |
-| Callback failure/receipt drop | End acquisition; failed page never becomes pending success. | Cleanup may flush earlier successes, not the failed page. |
-| Release or steal | Close old delivery state; new acquisition rejects old receipts. | Change ownership through fenced mutation; preserve stored continuation. |
-| Split/merge | End/rebuild the affected plan; retain safe progress. | Follow topology recovery, not ordinary acknowledgment; see section 7. |
-
-These are field-level effects. Ownership mutations currently read fresh state and
-conditionally replace the document, so the unchanged continuation may still be
-present in the request body. They must never write an older snapshot over newer
-stored progress.
-
-A concrete coalesced example, with P0/P1/P2 denoting successive opaque positions:
-
-```text
-Event                           Read position    Pending success    Stored
-Start from P0                   P0               -                  P0
-Read batch 1                    P1               -                  P0
-Callback 1 succeeds + ack       P1               P1                 P0
-Read batch 2, callback waits     P2               P1                 P0
-Checkpoint timer succeeds       P2               -                  P1
-Callback 2 fails                P2 discarded     -                  P1
-Replacement acquisition         resumes P1       -                  P1
-```
-
-The second batch can replay. If the checkpoint write had failed or its outcome
-were ambiguous, recovery reads the stored continuation rather than assuming P1.
-Renewal during any row must not copy P2 into the lease.
-
-### 6.4 Durable persistence
-
-The storage barrier itself is `Context::flush`. A successful owned write clears
-pending progress through `Update::Checkpoint`; a failed write marks the pending
-checkpoint as failed and returns the original error:
-
-```rust
-async fn flush(&self, lease: &mut Acquisition) -> Result<()> {
-    if let Some(pending) = lease.pending.clone() {
-        if let Err(err) = self.update(lease, Update::Checkpoint(&pending.token)).await {
-            if let Some(pending) = &mut lease.pending {
-                pending.failed = true;
-            }
-            return Err(err);
-        }
-        if matches!(
-            self.options.checkpoint_policy,
-            CheckpointPolicy::Coalesced { .. }
-        ) {
-            tracing::debug!(
-                handled_changes = pending.handled_changes,
-                elapsed_ms = pending.since.elapsed().as_millis() as u64,
-                "Persisted coalesced checkpoint"
-            );
-        }
-    }
-    Ok(())
-}
-```
-
-### 6.5 End-to-end acknowledgment sequence
-
-```mermaid
-sequenceDiagram
-    box rgb(235, 245, 255) SDK and application
-        participant SDK as SDK batch poller
-        participant App as Application callback
-    end
-    box rgb(240, 250, 240) Shared engine
-        participant Driver as Rust driver
-    end
-    box rgb(250, 245, 235) Cosmos DB
-        participant Source as Source container
-        participant Leases as Lease container
-    end
-    SDK->>Driver: Configure checkpoint policy at startup
-    SDK->>Driver: next_batch() supplies demand
-    Driver->>Source: Read one page from an eligible acquisition
-    Source-->>Driver: Page and continuation
-    Driver->>Driver: Associate continuation and acquisition with receipt
-    Driver-->>SDK: Page and opaque receipt
-    Note over SDK,Driver: Delivery alone does not acknowledge this page
-    SDK->>SDK: Deserialize
-    opt Deserialization succeeds
-        SDK->>App: Invoke callback
-        App-->>SDK: Success or failure
-    end
-    alt Processing succeeds
-        alt Policy acknowledgment
-            SDK->>Driver: receipt.acknowledge()
-        else Explicit durable barrier
-            SDK->>Driver: receipt.checkpoint()
-        end
-        Note over SDK,Driver: Stale ownership rejects completion without advancing progress
-        Driver->>Driver: Validate receipt and accept successful continuation
-        alt EveryBatch or explicit durable barrier
-            Driver->>Leases: Fenced write of successful progress
-            Leases-->>Driver: Write success or error
-            Driver-->>SDK: Durable completion or error
-        else Coalesced acknowledgment
-            Driver->>Driver: Retain latest successful token, not payload
-            Driver-->>SDK: Accepted in memory, not yet durable
-            opt Policy flush or graceful shutdown / topology barrier
-                Driver->>Leases: Fenced write of latest successful progress
-                Leases-->>Driver: Write success or error
-                Note over Driver,Leases: Report flush failures, never claim unconfirmed durability
-            end
-        end
-    else Decode / callback failure or cancellation
-        SDK->>Driver: Abandon receipt without acknowledgment
-        Driver->>Driver: End acquisition and permit replay of unsaved changes
-    end
-    Note over SDK,Driver: Next demand is not acknowledgment<br/>This acquisition cannot deliver another batch before receipt completion
-```
-
-The native adapter uses the same receipt. Its shared submission helper in
-`azure_data_cosmos_driver_native/src/processor.rs` reserves control admission before
-taking the one-use receipt, then publishes distinct durable-checkpoint and
-policy-acknowledgment completions:
-
-```rust
-fn submit_acknowledgment(
-    receipt: *const ProcessorReceipt,
-    user_data: isize,
-    out: *mut CosmosStatusCode,
-    durable: bool,
-) -> *mut OperationHandle {
-    // SAFETY: caller keeps the receipt handle live during this call.
-    let Some(receipt) = (unsafe { receipt.as_ref() }) else {
-        pre_error(
-            out,
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code(),
-        );
-        return std::ptr::null_mut();
-    };
-    let prepare = || {
-        let queue = receipt
-            .queue
-            .upgrade()
-            .ok_or(CosmosErrorCode::CosmosErrorCodeQueueShutdown)?;
-        let mut value = receipt.receipt.lock_recover();
-        if value.is_none() {
-            return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
-        }
-        queue.deliveries.reserve_control()?;
-        Ok((queue, value.take().expect("receipt checked under lock")))
-    };
-    let (queue, receipt) = match prepare() {
-        Ok(value) => value,
-        Err(code) => {
-            pre_error(out, code.as_status_code());
-            return std::ptr::null_mut();
-        }
-    };
-    pre_error(out, COSMOS_STATUS_SUCCESS);
-    launch(queue, user_data, None, true, async move {
-        if durable {
-            receipt.checkpoint().await?;
-            Ok(ResultData::CheckpointSaved)
-        } else {
-            receipt.acknowledge().await?;
-            Ok(ResultData::Acknowledged)
-        }
-    })
-}
-```
-
-### 6.6 Failure and replay boundaries
-
-| Boundary | Rule |
-| --- | --- |
-| Dirty clock | Never reset by acknowledgment/renewal. Deadline stays active during I/O/waits/delays; promises an attempt, not completion. |
-| Callback failure | Flush earlier successes only. |
-| Flush failure | No durability claim or dirty-age reset. |
-| Forced cancellation | No final flush; in-flight writes may finish. All writes fenced. |
-| Native completion | Kind 6 = policy acknowledgment; kind 3 = durable checkpoint. Payload ownership independent. |
-| Replay | Crash/retry may replay successful callbacks; timed-out writes may have committed. Require idempotent handlers. |
-| History | Retention applies; latest-version mode does not guarantee every version/delete. |
-
----
-
-## 7. Shutdown and topology recovery
-
-Shutdown and topology errors leave the normal read loop. They reuse the same
-fenced lease mutations; neither path acknowledges an unsuccessful callback.
-
-### 7.1 SDK shutdown
-
-The SDK requests driver shutdown, then waits for dispatch and error reporting:
-
-```rust
-pub(super) async fn stop<T, H>(
-    processor: &ChangeFeedProcessor<T, H>,
-    force: bool,
-) -> crate::Result<()> {
-    let running = processor.running.lock().await.as_ref().map(|running| {
-        (
-            running.driver.clone(),
-            running.stopped.clone(),
-            running.errors.clone(),
-        )
-    });
-    let Some((driver, stopped, errors)) = running else {
-        return Ok(());
-    };
-    let result = if force {
-        errors.cancel();
-        driver.abort().await
-    } else {
-        driver.stop().await
-    };
-    let dispatched = stopped.await;
-    result.and(dispatched)
-}
-```
-
-### 7.2 Acquisition cleanup and recovery dispatch
-
-The enclosing `poll` function performs final safe-progress flushing and returns
-the polling result. It does not create child leases or delete the parent.
-`supervise` settles the processing/renewal pair, then dispatches a recognized
-topology error to range-local recovery unless shutdown has started. The supervisor
-implementation is shown in section 4.4:
-
-```rust
-async fn poll(
-    context: Arc<Context>,
-    state: Arc<SharedState>,
-    session: &AcquisitionDelivery,
-    lease: Arc<Mutex<Acquisition>>,
-    cancelled: Signal,
-    stop: Signal,
-    force: Signal,
-) -> Result<()> {
-    let result = poll_feed(
-        context.clone(),
-        state.clone(),
-        session,
-        lease.clone(),
-        cancelled.clone(),
-        stop,
-        force,
-    )
-    .await;
-    if !state.forced.load(Ordering::Acquire) {
-        let mut lease = lease.lock().await;
-        if !state.forced.load(Ordering::Acquire)
-            && !lease.pending.as_ref().is_some_and(|pending| pending.failed)
-        {
-            if cancelled.clone().now_or_never().is_some() {
-                return Err(lost());
-            }
-            context.flush(&mut lease).await?;
-        }
-    }
-    result
-}
-```
-
-### 7.3 Splits and merges
-
-**Design rule: split cleanup is a response to a change-feed poll's split error,
-not a separate lease lifecycle.** A topology refresh, balancing pass, or application
-callback failure alone must not initiate it. A split is not delivered as an
-application batch. Recovery affects only that acquisition's lease; it does not
-rerun bootstrap or restart the worker.
-
-The ordering follows the Java `FeedRangeGoneHandler` pattern: establish child
-leases from the last safe continuation, then remove the parent after successful
-handling. There is no persisted `Retiring` state.
-
-```mermaid
-flowchart TD
-    Changed["Change-feed poll returns a topology error"] -->|Return from polling| Flush["Flush acknowledged progress"]
-    Flush -->|Success; polling and renewal settled| Stopping{"Shutdown started?"}
-    Stopping -->|Yes| Release["Normal release; retain parent"]
-    Stopping -->|No| Refresh
-    subgraph Recovery["Driver: affected lease range"]
-        Refresh["Refresh affected ranges"] -->|Ranges refreshed| Coverage["Intersect with lease bounds; validate exact coverage"]
-        Coverage -->|Coverage valid| Split{"Multiple physical ranges?"}
-        Split -->|Yes: split| Fence["Validate ownership and conditionally renew parent"]
-        Fence -->|Owned lease| Children["Create missing children with projected continuations"]
-        Split -->|No: merge or transition| Keep["Keep logical lease and checkpoint"]
-    end
-    Children -->|Children available| Acquire["Acquire child leases normally"]
-    Children -->|All replacements confirmed| Delete["Conditionally delete parent"]
-    Keep -->|Retry through acquisition| Retry["Reacquire and rebuild the read plan"]
-    Flush -->|Failure| Release
-    Children -->|Failure| Release
-    Delete -->|Failure| Release
-    Release -->|Released or expired| Retry
-    Retry -->|Next poll reports a split| Changed
-```
-
-- **Split:** reject gaps/overlaps and flush successes. The split-error handler
-  creates children from durable progress, then conditionally deletes the parent.
-  Until deletion succeeds, the parent stays an ordinary lease. Failed handling
-  is retried when normal reacquisition encounters the split again; no retirement
-  record, split-completion flag, or background repair task is used.
-  Child creation is idempotent and never resets existing progress. Partial
-  creation can permit replay; it is not a cross-document transaction.
-- **Merge:** independent EPK slices/checkpoints; never min/max opaque tokens.
-- **Outstanding batch:** topology never acknowledges it; failure permits replay.
-
-| Outcome | Parent and child handling |
-| --- | --- |
-| Earlier batch is still outstanding | Do not advance past it. Only successful acknowledgment contributes to the continuation used for children. |
-| Safe-progress flush fails | Do not create children or delete the parent. Surface the failure and use ordinary acquisition cleanup. |
-| Refresh reports one covering range | Keep the logical lease and its checkpoint; rebuild through normal acquisition. This includes merges and unfinished transitions. |
-| Child creation fails partway | Keep the ordinary parent and already-created children. A later source split error retries create-if-absent; existing owners and checkpoints are never reset. |
-| All replacements exist, parent deletion fails | Keep the parent. A later split-error handler revalidates replacements and retries conditional deletion; balancing does not schedule cleanup. |
-| Ownership changed | Reject the stale mutation or deletion with the owner/incarnation and ETag checks. Do not clear the replacement owner's state. |
-| Parent deletion succeeds | End the parent acquisition without a release write to the deleted document. Child leases are acquired normally. |
-
-The actual recovery entry point refreshes ranges for the affected lease, validates
-coverage, and distinguishes one retained logical slice from a split requiring
-child creation. `split` creates or confirms replacements and deletes the parent
-with its ETag only after they exist:
-
-```rust
-pub(super) async fn recover(&self, lease: Arc<Mutex<Acquisition>>) -> Result<bool> {
-    let scope = lease.lock().await.value.base.range.clone();
-    let topology = self
-        .source_driver
-        .resolve_partition_key_ranges_for_feed_range(
-            &self.source,
-            &scope,
-            true,
-            operation_options(),
-        )
-        .await?;
-    let mut children = Vec::new();
-    for physical in topology.iter() {
-        if let Some(range) = intersect_feed_ranges(&scope, physical) {
-            children.push(range);
-        }
-    }
-    children.sort_by(|left, right| left.min_inclusive().cmp(right.min_inclusive()));
-    validate_exact_coverage(&scope, children.iter())?;
-    if children.len() == 1 {
-        return Ok(false);
-    }
-    let mut lease = lease.lock().await;
-    self.split(&mut lease, &children).await?;
-    tracing::info!(lease = %lease.value.base.record.id, children = children.len(), "Created child leases and deleted the split parent");
-    Ok(true)
-}
-```
-
-**Checks:** topology changes alone do not mutate a held batch's lease; balancing
-does not repair incomplete child creation; no new lease contains `children` or
-`split_complete`; parent absent after success and retained on failure; nested
-splits and restart verification preserve complete coverage and checkpoints.
-
-**Open:** storage consistency, multi-write routing, clock skew. TTL/ETag alone
-does not prove global fencing.
-
-### 7.4 Driver drain result
-
-`Processor::stop` closes admission and awaits coordinator cleanup. Forced shutdown
-cannot be mistaken for a successful graceful drain:
-
-```rust
-pub async fn stop(&self) -> Result<()> {
-    self.owner.state.close(false);
-    if let Some(stop) = self
-        .owner
-        .stop
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .take()
-    {
-        let _ = stop.send(());
-    }
-    if self.owner.stopped.clone().await? {
-        return Err(error(
-            StatusCode::Conflict,
-            "Processor shutdown was forced; batches may replay.",
-        ));
-    }
-    Ok(())
-}
-```
-
----
-
-## 8. Validation and live workload
-
-### 8.1 Contract checks
-
-These are contract assertions, not claims of a new test execution:
-
-1. **Demand:** zero new reads without receives; N receives authorize at most N
-   acquisition reads concurrently, not N reads per lease.
-2. **Isolation:** with N = 1, throttle A and deliver B before A's cooldown ends;
-   A becomes readable again only when a receive grants demand.
-3. **Receipt:** read P1 but fail/cancel its callback; stored progress cannot
-   become P1 because of that page. Canceled/unclaimed handoffs also replay.
-4. **Maintenance:** hold a receipt while renewal and an earlier-success
-   checkpoint deadline run; neither may acknowledge the held page.
-5. **Fencing:** steal/reacquire while an old receipt exists; old renewal,
-   acknowledgment, and checkpoint attempts cannot mutate the replacement owner.
-6. **Recovery:** honor final throttle cooldown, propagate read deadlines, and
-   preserve child coverage/continuations during split and merge recovery.
-   Trigger split cleanup from the source poll error, not inventory or maintenance
-   failures. Inject partial child-creation and parent-deletion failures; retry
-   through normal acquisition without resetting established children.
-7. **Shutdown:** graceful drain settles issued receipts and surfaces failed
-   cleanup; forced cancellation never fabricates callback success.
-8. **Data boundaries:** record serialization is unchanged when acquisition-local
-   progress changes. Pure transition tests supply time/identity, reject stale
-   ownership, and preserve fresh stored checkpoints and newer activity. Duplicate
-   demand registration must leave the original waiter usable.
-
-Exercise both feed modes and checkpoint policies. Keep local in-memory execution,
-compiled-only integration coverage, and real-service validation distinct.
-
-### 8.2 Ten-minute AVAD processor scenario
-
-The opt-in test `cfp_live_avad_fixed_schedule_ten_minutes` runs five
-`ChangeFeedProcessor` instances in one local test process, not a pull-reader loop.
-They share a workload and lease container, use distinct worker names, and each
-own two physical ranges with one SDK consumer. Readiness requires all ten assigned
-ranges to have durable initial `Now` positions before ingestion or timing begins.
-
-The workload uses 100 namespaced document identities, ten per selected physical
-range, with `EveryBatch` checkpoints:
-
-| Minute | Scheduled mutation |
-| --- | --- |
-| 0 | Create all 100 at revision 1. |
-| 1 | Upsert all to revision 2. |
-| 2 | Upsert all to revision 3. |
-| 3 | Delete the 50 even-numbered documents. |
-| 4 | Upsert those 50 back at revision 4; expect creates. |
-| 5 | Upsert all to revision 5. |
-| 6 | Delete the 50 odd-numbered documents. |
-| 7 | Upsert those 50 back at revision 6; expect creates. |
-| 8 | Upsert all to revision 7. |
-| 9 | Delete all 100. |
-| 10 | Assert collection, then stop workers and clean up this workload. |
-
-An independent per-document oracle requires eight unique changes per identity:
-200 creates, 400 replacements, and 200 deletes in total. It checks revision/order,
-LSN monotonicity, range placement, and 160 unique changes per worker. Identical
-replay duplicates are counted separately; contradictory duplicates, missing
-metadata, missing changes, unexpected test identities, or topology changes fail.
-Logs record ingestion phases and each drained test event. Existing source data
-outside the run's identity prefix is neither mutated nor included in its oracle.
-
-Use the existing explicit live opt-ins and isolated `cfp-bootstrap-*` lease
-database. Optional `COSMOS_SCHEDULE_LIVE_SOURCE_DATABASE` and
-`COSMOS_SCHEDULE_LIVE_SOURCE_CONTAINER` select a separate approved source; the
-defaults are the lease database and `source`. Bootstrap still initializes the
-source's full range inventory, even when the five workers own only ten ranges.
-An isolated ten-partition source avoids unrelated workload traffic and reduces
-startup work.
-
-Setup, final shutdown, and cleanup are outside the 600-second schedule. Local
-tests validate the fixed schedule and rejection cases independently of Azure.
-The in-memory emulator currently synthesizes create-only AVAD envelopes without
-version/delete history or LSNs; it cannot yet validate this full mutation sequence.
-Do not present local oracle checks as a passing full-fidelity emulator run.
-
-**Executed live validation, 2026-11-10:** five local CFP instances, two leases
-each, drained the complete schedule on an isolated ten-physical-partition source
-using AVAD, `Now`, and `EveryBatch`. The run collected 800 unique changes
-(200 creates, 400 replacements, 200 deletes), 80 per partition and 160 per worker,
-through 146 callbacks over 600.681 seconds, with no replay duplicates or reported
-failures. Source and lease stores were independently verified empty before the
-temporary database was deleted. An earlier attempt against a 167-partition source
-timed out during bootstrap before ingestion; worker lease limits do not reduce
-bootstrap's full-container inventory work. This run does not establish coalesced,
-process-crash, or regional-failover behavior.
-
----
-
-## 9. Compatibility and rollout
-
-### 9.1 Upgrade boundary
-
-**Compatibility:** bootstrap and workload identity/version are unchanged; SDK
-concurrency now defaults to one. New lease records omit the former `children`
-and `split_complete` lifecycle fields. No replacement retirement marker is added.
-Drain/upgrade all workers together: older verification can recreate deleted
-parents, and mixed lifecycle implementations are not a supported rollout.
-**Open:** schema migration/rollback; `c1.`-only readers cannot assume `c2.` support.
-
-### 9.2 Publication gates
-
-Upgrade cooperating workers together and validate both feed modes and checkpoint
-policies before rollout. Keep native acknowledgment and durable-completion semantics
-distinct. The Go CFP adapter is not implemented; this document does not imply it
-is ready to publish.
-
----
-
-## 10. Open questions
-
-### 10.1 API and diagnostics
-
-- Callback capture, fleet status, and structured stage/acquisition error context remain open.
-- Driver and SDK logs may coexist; a general-purpose FFI log-forwarding bridge is not required.
-
-### 10.2 Recovery and validation limits
-
-- Read and maintenance errors share a result path; checkpoint 429 classification still needs a regression and fix.
-- The same shared error path must distinguish source-feed topology errors from
-  lease-store maintenance errors. Maintenance failures are not evidence that
-  the source lease split; a dedicated classification regression remains required.
-- Repeated deterministic failures need a defined suspension/backoff policy rather than endless reacquisition.
-- Multi-write routing, clock skew, and mixed-version rollback require explicit guarantees and validation.
-- The in-memory emulator lacks retained AVAD history; local oracle tests are not full-fidelity service evidence.
+| 1 | One worker, fixed leases, Eager | Read, handler success, durable checkpoint, and next batch. Verify restart from saved progress and failure without checkpoint advancement. |
+| 2 | One worker, partition splits, Eager | Exact replacement coverage, continuation projection, and children-before-parent deletion. Inject interrupted child creation and failed parent deletion. |
+| 3 | Multiple workers, partition splits, Eager | Balancing, competing acquisition, ownership loss, stale acknowledgments, and recovery races. |
+| 4 | Multiple workers, partition splits, Deferred | Safe pending progress, deadline/barrier flushes, permitted replay, and topology recovery with delayed persistence. |
+
+Before stage 3, test workers joining, leaving gracefully, and crashing with
+fixed topology. This separates ownership failures from split recovery failures.
+Before stage 4, test one-worker Deferred deadline and graceful-stop flushes
+without topology changes.
+
+Include merges in the topology stages and exercise both feed modes where the
+scenario is supported. Document unsupported scenarios rather than weakening
+their expected results.
+
+### Review each increment against its contract
+
+For each scenario:
+
+1. State expected behavior before deriving assertions from the implementation.
+2. Run a deterministic normal path and focused failure-injection cases.
+3. Review the code needed to explain delivery, ownership, and persistence.
+4. Establish explicit pass criteria before introducing the next interaction.
+
+Pass criteria must cover delivered changes, permitted replay, durable progress,
+lease-range coverage, and cleanup. Distinguish missed changes from duplicates
+that are allowed by replay; do not assume exactly-once callback side effects.
+
+Use existing in-memory and fault-injection harnesses first. Report compiled,
+executed, ignored, emulator, and live-service coverage separately. The stages
+above are an iteration strategy, not a claim that all scenarios have already
+passed.

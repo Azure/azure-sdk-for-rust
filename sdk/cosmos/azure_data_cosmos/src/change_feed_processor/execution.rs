@@ -2,222 +2,94 @@
 // Licensed under the MIT License.
 
 use super::{
-    ChangeFeedCheckpointPolicy, ChangeFeedProcessor, ChangeFeedProcessorContext, ErrorHandler,
-    ProcessorStartFrom,
+    ChangeFeedCheckpointPolicy, ChangeFeedHandler, ChangeFeedProcessor, ChangeFeedProcessorContext,
 };
-use crate::{
-    models::ChangeFeedItem, options::ChangeFeedMode, ContainerClient, CosmosError, CosmosStatus,
-};
+use crate::{options::ChangeFeedMode, ContainerClient, CosmosError, CosmosStatus};
 use azure_core::{async_runtime::get_async_runtime, http::StatusCode};
 use azure_data_cosmos_driver::{
     change_feed_processor::{ChangeFeedBatch, CheckpointPolicy, Processor, ProcessorOptions},
-    models::{ChangeFeedFactoryMode as DriverMode, ChangeFeedStartFrom},
+    models::ChangeFeedFactoryMode as DriverMode,
 };
 use futures::{
-    channel::{mpsc, oneshot},
+    channel::oneshot,
     future::{BoxFuture, Shared},
-    stream::FuturesUnordered,
-    FutureExt, StreamExt,
+    FutureExt,
 };
 use serde::de::DeserializeOwned;
-use std::{
-    future::Future,
-    panic::AssertUnwindSafe,
-    sync::{atomic::Ordering, Arc, Mutex},
-};
-
-const ERROR_QUEUE_CAPACITY: usize = 64;
-type ErrorNotification = (Option<ChangeFeedProcessorContext>, CosmosError);
-
-struct ErrorReporter {
-    sender: Mutex<Option<mpsc::Sender<ErrorNotification>>>,
-    cancel: Mutex<Option<oneshot::Sender<()>>>,
-}
-
-impl ErrorReporter {
-    fn new(
-        enabled: bool,
-    ) -> (
-        Arc<Self>,
-        mpsc::Receiver<ErrorNotification>,
-        oneshot::Receiver<()>,
-    ) {
-        // The single sender reserves one additional slot.
-        let (sender, received) = mpsc::channel(ERROR_QUEUE_CAPACITY - 1);
-        let (cancel, canceled) = oneshot::channel();
-        (
-            Arc::new(Self {
-                sender: Mutex::new(enabled.then_some(sender)),
-                cancel: Mutex::new(Some(cancel)),
-            }),
-            received,
-            canceled,
-        )
-    }
-
-    fn report(&self, lease: Option<String>, error: CosmosError) {
-        let mut sender = self.sender.lock().unwrap_or_else(|err| {
-            tracing::error!("Recovering poisoned error notification sender");
-            err.into_inner()
-        });
-        if let Some(sender) = sender.as_mut() {
-            let context = lease.map(|lease_token| ChangeFeedProcessorContext {
-                lease_token,
-                diagnostics: error.diagnostics(),
-            });
-            if let Err(err) = sender.try_send((context, error)) {
-                tracing::warn!(error = %err, "Processor error notification was dropped; error dispatcher is full or closed");
-            }
-        }
-    }
-
-    fn close(&self) {
-        self.sender
-            .lock()
-            .unwrap_or_else(|err| {
-                tracing::error!("Recovering poisoned error notification sender");
-                err.into_inner()
-            })
-            .take();
-    }
-
-    fn cancel(&self) {
-        if let Some(cancel) = self
-            .cancel
-            .lock()
-            .unwrap_or_else(|err| {
-                tracing::error!("Recovering poisoned error observer cancellation");
-                err.into_inner()
-            })
-            .take()
-        {
-            let _ = cancel.send(());
-        }
-    }
-}
-
-async fn report_errors(
-    handler: Option<Arc<ErrorHandler>>,
-    mut received: mpsc::Receiver<ErrorNotification>,
-    canceled: oneshot::Receiver<()>,
-) {
-    let Some(handler) = handler else { return };
-    let canceled = canceled.fuse();
-    futures::pin_mut!(canceled);
-    loop {
-        let notification = futures::select_biased! {
-            _ = canceled => return,
-            notification = received.next().fuse() => notification,
-        };
-        let Some((context, error)) = notification else {
-            return;
-        };
-        let reporting = AssertUnwindSafe(async { handler(context, error).await })
-            .catch_unwind()
-            .fuse();
-        futures::pin_mut!(reporting);
-        futures::select_biased! {
-            _ = canceled => return,
-            result = reporting => {
-                if result.is_err() {
-                    tracing::error!("Processor error callback panicked");
-                }
-            },
-        }
-    }
-}
+use std::{future::Future, panic::AssertUnwindSafe, sync::atomic::Ordering};
 
 pub(super) struct Running {
     driver: Processor,
     stopped: Shared<BoxFuture<'static, crate::Result<()>>>,
-    errors: Arc<ErrorReporter>,
 }
 
 impl Drop for Running {
     fn drop(&mut self) {
         self.driver.request_stop();
-        self.errors.cancel();
     }
 }
 
-pub(super) async fn start<T, H, Fut>(processor: &ChangeFeedProcessor<T, H>) -> crate::Result<()>
-where
-    T: DeserializeOwned + Send + 'static,
-    H: Fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut + Send + Sync + 'static,
-    Fut: Future<Output = crate::Result<()>> + Send + 'static,
-{
-    let mut running = processor.running.lock().await;
-    if processor.is_started() {
-        return Err(CosmosError::builder()
-            .with_status(CosmosStatus::new(StatusCode::Conflict))
-            .with_message("Change feed processor is already running.")
-            .build());
-    }
-    let config = &processor.configuration;
-    let (errors, notifications, error_canceled) =
-        ErrorReporter::new(config.error_handler.is_some());
-    let mode = match config.mode {
-        ChangeFeedMode::LatestVersion => DriverMode::Incremental,
-        ChangeFeedMode::AllVersionsAndDeletes => DriverMode::FullFidelity,
-    };
-    let mut options = ProcessorOptions::new(mode, &config.processor_name, &config.instance_name)
-        .with_lease_verification_enabled_on_restart(config.lease_verification_on_restart_enabled)
-        .with_checkpoint_policy(match config.checkpoint_policy {
-            ChangeFeedCheckpointPolicy::EveryBatch => CheckpointPolicy::EveryBatch,
-            ChangeFeedCheckpointPolicy::Coalesced { max_interval } => {
-                CheckpointPolicy::Coalesced { max_interval }
-            }
-        })
-        .with_max_item_count(config.max_item_count)
-        .with_poll_delay(config.feed_poll_delay)
-        .with_lease_counts(config.min_scale_count, config.max_scale_count);
-    options = match &config.start_from {
-        ProcessorStartFrom::Now => options.with_start(ChangeFeedStartFrom::Now),
-        ProcessorStartFrom::Beginning => options.with_start(ChangeFeedStartFrom::Beginning),
-        ProcessorStartFrom::PointInTime(time) => {
-            options.with_start(ChangeFeedStartFrom::PointInTime(*time))
+impl<T, Fut> ChangeFeedProcessor<T, Fut> {
+    /// Initializes the workload and starts processing; the lease container requires `/id` and default TTL `-1`.
+    /// Returns startup errors or [`StatusCode::Conflict`] if already running; later per-lease failures are logged.
+    // 1. Borrow this processor; T is the document type and Fut is the callback future.
+    pub async fn start(&self) -> crate::Result<()>
+    where
+        T: DeserializeOwned + Send + 'static,
+        Fut: Future<Output = crate::Result<()>> + Send + 'static,
+    {
+        // 2. Serialize lifecycle changes, reject duplicate startup, and map SDK options.
+        let mut running = self.running.lock().await;
+        if self.is_started() {
+            return Err(CosmosError::builder()
+                .with_status(CosmosStatus::new(StatusCode::Conflict))
+                .with_message("Change feed processor is already running.")
+                .build());
         }
-        ProcessorStartFrom::Continuation(token) => options.with_continuation(token.clone()),
-    };
-    if config.error_handler.is_some() {
-        let errors = errors.clone();
-        options = options.with_error_observer(move |lease, error| {
-            errors.report(lease, error);
-        });
-    }
-    let driver = config
-        .monitored_container
-        .start_change_feed_processor(&config.lease_container, options)
-        .await?;
-    let dispatcher = driver.clone();
-    let container = config.monitored_container.clone();
-    let handler = config.handler.clone();
-    let started = processor.started.clone();
-    let concurrency = config.max_concurrency.get();
-    let error_handler = config.error_handler.clone();
-    let reporting = errors.clone();
-    started.store(true, Ordering::Release);
-    let (done, stopped) = oneshot::channel();
-    let task = get_async_runtime().spawn(Box::pin(async move {
-        let processing = async {
-            let dispatching = async {
-                let mut batch_pollers = FuturesUnordered::new();
-                for _ in 0..concurrency {
-                    batch_pollers.push(consume::<T, H, Fut>(
-                        dispatcher.clone(),
-                        container.clone(),
-                        handler.clone(),
-                        reporting.clone(),
-                    ));
+        let config = &self.configuration;
+        let mode = match config.mode {
+            ChangeFeedMode::LatestVersion => DriverMode::Incremental,
+            ChangeFeedMode::AllVersionsAndDeletes => DriverMode::FullFidelity,
+        };
+        let mut options = ProcessorOptions::new(mode, &config.workload_name, &config.worker_name)
+            .with_start(config.start_from.clone())
+            .with_lease_verification_enabled_on_restart(
+                config.lease_verification_on_restart_enabled,
+            )
+            .with_checkpoint_policy(match config.checkpoint_policy {
+                ChangeFeedCheckpointPolicy::Eager => CheckpointPolicy::Eager,
+                ChangeFeedCheckpointPolicy::Deferred { max_interval } => {
+                    CheckpointPolicy::Deferred { max_interval }
                 }
-                while batch_pollers.next().await.is_some() {}
-            };
+            })
+            .with_max_item_count(config.max_item_count)
+            .with_poll_delay(config.feed_poll_delay)
+            .with_bootstrap_timeout(config.bootstrap_timeout)
+            .with_lease_counts(config.min_scale_count, config.max_scale_count);
+        if let Some(token) = &config.start_continuation {
+            options = options.with_continuation(token.clone());
+        }
+        // 3. Await driver startup, including bootstrap; propagate failures before launching SDK processing.
+        let driver = config
+            .monitored_container
+            .start_change_feed_processor(&config.lease_container, options)
+            .await?;
+        // 4. Prepare owned task inputs: shared handles and a copied callback pointer.
+        let dispatcher = driver.clone();
+        let container = config.monitored_container.clone();
+        let handler = config.handler;
+        let started = self.started.clone();
+        self.mark_started();
+        // 5. Create a one-shot completion signal for shutdown callers.
+        let (done, stopped) = oneshot::channel();
+        // 6. Run processing and cleanup in the background, then signal completion.
+        let dispatcher_task = get_async_runtime().spawn(Box::pin(async move {
+            let dispatching = consume::<T, Fut>(dispatcher.clone(), container, handler);
             let result = AssertUnwindSafe(dispatching)
                 .catch_unwind()
                 .await
                 .map_err(|_| {
                     dispatcher.request_stop();
-                    reporting.cancel();
                     CosmosError::builder()
                         .with_status(CosmosStatus::new(StatusCode::InternalServerError))
                         .with_message("Change feed dispatcher panicked.")
@@ -226,57 +98,66 @@ where
             if let Err(err) = dispatcher.stop().await {
                 tracing::debug!(error = %err, "Processor shutdown completed with an error");
             }
-            reporting.close();
-            result
-        };
-        let (result, ()) = futures::join!(
-            processing,
-            report_errors(error_handler, notifications, error_canceled),
-        );
-        started.store(false, Ordering::Release);
-        let _ = done.send(result);
-    }));
-    drop(task);
-    *running = Some(Running {
-        driver,
-        errors,
-        stopped: async move {
-            stopped.await.map_err(|_| {
-                CosmosError::builder()
-                    .with_status(CosmosStatus::new(StatusCode::InternalServerError))
-                    .with_message("Change feed dispatcher did not complete.")
-                    .build()
-            })?
-        }
-        .boxed()
-        .shared(),
-    });
-    Ok(())
-}
+            started.store(false, Ordering::Release);
+            let _ = done.send(result);
+        }));
+        // Discard the handle, not the running task: awaiting it here would block startup until processing ends.
+        // Shutdown uses the driver; the saved completion future below confirms dispatcher cleanup.
+        drop(dispatcher_task);
+        // 7. Save the driver and shared shutdown future; return without waiting for processing to finish.
+        *running = Some(Running {
+            driver,
+            stopped: async move {
+                stopped.await.map_err(|_| {
+                    CosmosError::builder()
+                        .with_status(CosmosStatus::new(StatusCode::InternalServerError))
+                        .with_message("Change feed dispatcher did not complete.")
+                        .build()
+                })?
+            }
+            .boxed()
+            .shared(),
+        });
+        Ok(())
+    }
 
-async fn consume<T, H, Fut>(
-    driver: Processor,
-    container: ContainerClient,
-    handler: Arc<H>,
-    errors: Arc<ErrorReporter>,
-) where
-    T: DeserializeOwned + Send + 'static,
-    H: Fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut + Send + Sync + 'static,
-    Fut: Future<Output = crate::Result<()>> + Send + 'static,
-{
-    while let Some(batch) = driver.next_batch().await {
-        dispatch::<T, H, Fut>(container.clone(), handler.clone(), batch, &errors).await;
+    /// Drains callbacks, persists progress, and releases leases; cleanup failures return errors and unsaved work may replay.
+    /// Has no implicit timeout; canceling this wait leaves shutdown running.
+    pub async fn stop(&self) -> crate::Result<()> {
+        let running = self
+            .running
+            .lock()
+            .await
+            .as_ref()
+            .map(|running| (running.driver.clone(), running.stopped.clone()));
+        let Some((driver, stopped)) = running else {
+            return Ok(());
+        };
+        let result = driver.stop().await;
+        let dispatched = stopped.await;
+        result.and(dispatched)
     }
 }
 
-async fn dispatch<T, H, Fut>(
+async fn consume<T, Fut>(
+    driver: Processor,
     container: ContainerClient,
-    handler: Arc<H>,
-    batch: ChangeFeedBatch,
-    errors: &ErrorReporter,
+    handler: ChangeFeedHandler<T, Fut>,
 ) where
     T: DeserializeOwned + Send + 'static,
-    H: Fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut + Send + Sync + 'static,
+    Fut: Future<Output = crate::Result<()>> + Send + 'static,
+{
+    while let Some(batch) = driver.read_next_change_feed_batch().await {
+        dispatch::<T, Fut>(container.clone(), handler, batch).await;
+    }
+}
+
+async fn dispatch<T, Fut>(
+    container: ContainerClient,
+    handler: ChangeFeedHandler<T, Fut>,
+    batch: ChangeFeedBatch,
+) where
+    T: DeserializeOwned + Send + 'static,
     Fut: Future<Output = crate::Result<()>> + Send + 'static,
 {
     let (lease_token, response, receipt) = batch.into_parts();
@@ -287,7 +168,7 @@ async fn dispatch<T, H, Fut>(
             handler(
                 ChangeFeedProcessorContext {
                     lease_token: lease_token.clone(),
-                    diagnostics: Some(diagnostics),
+                    diagnostics,
                 },
                 items,
             )
@@ -308,54 +189,16 @@ async fn dispatch<T, H, Fut>(
         Some(Ok(Ok(()))) => {
             if let Err(err) = receipt.acknowledge().await {
                 tracing::warn!(lease = %lease_token, error = %err, "Callback succeeded but acknowledgment failed");
-                errors.report(Some(lease_token), err);
             }
         }
         Some(Ok(Err(err))) => {
             tracing::warn!(lease = %lease_token, error = %err, "Change feed callback or deserialization failed; batch will be replayed");
-            drop(receipt);
-            errors.report(Some(lease_token), err);
         }
         Some(Err(_)) => {
             tracing::error!(lease = %lease_token, "Change feed callback panicked; batch will be replayed");
-            drop(receipt);
-            errors.report(
-                Some(lease_token),
-                CosmosError::builder()
-                    .with_status(CosmosStatus::new(StatusCode::InternalServerError))
-                    .with_message("Change feed callback panicked.")
-                    .build(),
-            );
         }
         None => {
             tracing::debug!(lease = %lease_token, "Change feed callback canceled with its lease")
         }
     }
 }
-
-pub(super) async fn stop<T, H>(
-    processor: &ChangeFeedProcessor<T, H>,
-    force: bool,
-) -> crate::Result<()> {
-    let running = processor.running.lock().await.as_ref().map(|running| {
-        (
-            running.driver.clone(),
-            running.stopped.clone(),
-            running.errors.clone(),
-        )
-    });
-    let Some((driver, stopped, errors)) = running else {
-        return Ok(());
-    };
-    let result = if force {
-        errors.cancel();
-        driver.abort().await
-    } else {
-        driver.stop().await
-    };
-    let dispatched = stopped.await;
-    result.and(dispatched)
-}
-
-#[cfg(test)]
-mod tests;

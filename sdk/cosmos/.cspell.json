@@ -68,6 +68,7 @@
     "CFLAGS",
     "cgo",
     "cgroupv",
+    "checkpointing",
     "cgroupv2",
     "changedfiles",
     "changefeed",

@@ -48,9 +48,9 @@ pub struct CosmosProcessorRequest {
     /// Must be 1.
     pub abi_version: u32,
     /// Workload name; copied during submission.
-    pub processor_name: CosmosStringView,
+    pub workload_name: CosmosStringView,
     /// Worker identity; copied during submission.
-    pub instance_name: CosmosStringView,
+    pub worker_name: CosmosStringView,
     /// 1: latest version; 2: all versions and deletes.
     pub mode: u32,
     /// 1: beginning; 2: now; 3: RFC 3339 time. Resume takes precedence.
@@ -69,8 +69,10 @@ pub struct CosmosProcessorRequest {
     pub max_leases: u32,
     /// 0: fast restart; 1: verify initial leases in the processing runtime.
     pub verify_on_restart: u32,
+    /// Caller bootstrap wait budget in milliseconds; zero selects 120 seconds. Claim limits are unchanged.
+    pub bootstrap_timeout_ms: u32,
     /// Must be zero.
-    pub reserved: [u32; 4],
+    pub reserved: [u32; 3],
 }
 
 /// A format-isolated processor completion queue.
@@ -340,8 +342,8 @@ pub extern "C" fn cosmos_processor_request_init(out: *mut CosmosProcessorRequest
         out.write(CosmosProcessorRequest {
             struct_size_bytes: std::mem::size_of::<CosmosProcessorRequest>() as u32,
             abi_version: 1,
-            processor_name: CosmosStringView::default(),
-            instance_name: CosmosStringView::default(),
+            workload_name: CosmosStringView::default(),
+            worker_name: CosmosStringView::default(),
             mode: 1,
             start_from: 2,
             start_time: CosmosStringView::default(),
@@ -351,7 +353,8 @@ pub extern "C" fn cosmos_processor_request_init(out: *mut CosmosProcessorRequest
             min_leases: 0,
             max_leases: 0,
             verify_on_restart: 0,
-            reserved: [0; 4],
+            bootstrap_timeout_ms: 0,
+            reserved: [0; 3],
         });
     }
 }
@@ -382,7 +385,7 @@ unsafe fn options(
         )
     };
     if extension.iter().any(|b| *b != 0)
-        || request.reserved != [0; 4]
+        || request.reserved != [0; 3]
         || request.verify_on_restart > 1
     {
         return Err(invalid);
@@ -390,8 +393,8 @@ unsafe fn options(
     // SAFETY: counted input views remain readable through submission.
     let (name, instance, timestamp, continuation) = unsafe {
         (
-            required_text(request.processor_name, invalid)?,
-            required_text(request.instance_name, invalid)?,
+            required_text(request.workload_name, invalid)?,
+            required_text(request.worker_name, invalid)?,
             optional_text(request.start_time, invalid)?,
             optional_text(request.continuation, invalid)?,
         )
@@ -425,6 +428,11 @@ unsafe fn options(
     if let Some(token) = continuation {
         options = options.with_continuation(ContinuationToken::from_string(token));
     }
+    if request.bootstrap_timeout_ms != 0 {
+        options = options.with_bootstrap_timeout(Duration::from_millis(u64::from(
+            request.bootstrap_timeout_ms,
+        )));
+    }
     Ok(options)
 }
 
@@ -454,6 +462,9 @@ pub extern "C" fn cosmos_processor_queue_create(
 
 /// Starts a processor asynchronously. All input strings are copied during this call.
 ///
+/// Uses deferred checkpointing with a five-minute interval. Use
+/// `cosmos_processor_start_with_policy_submit` for eager persistence or a different interval.
+///
 /// Handles and input allocations must be live for the call. The completion owns the
 /// started handle until `cosmos_processor_completion_take_processor` detaches it.
 #[no_mangle]
@@ -473,8 +484,8 @@ pub extern "C" fn cosmos_processor_start_submit(
         lease_driver,
         leases,
         request,
-        0,
-        0,
+        1,
+        300_000,
         queue,
         user_data,
         out_pre_error,
@@ -483,13 +494,13 @@ pub extern "C" fn cosmos_processor_start_submit(
 
 /// Starts a processor with an explicit checkpoint policy.
 ///
-/// `checkpoint_policy` is 0 for every batch (interval must be zero), or 1 for
-/// coalescing (interval must be positive). `checkpoint_interval_ms` bounds the
+/// `checkpoint_policy` is 0 for eager persistence (interval must be zero), or 1 for
+/// deferred persistence (interval must be positive). `checkpoint_interval_ms` bounds the
 /// delay before attempting persistence; use 300000 for five minutes. Idle reads
-/// do not flush coalesced progress. Coalescing can replay acknowledged batches.
+/// do not flush deferred progress. Deferred checkpointing can replay acknowledged batches.
 ///
-/// Processing inactivity permits takeover after ten minutes with every-batch
-/// checkpoints, or twice the coalescing interval. Renewal and idle reads do not
+/// Processing inactivity permits takeover after ten minutes with eager
+/// checkpoints, or twice the deferral interval. Renewal and idle reads do not
 /// reset that deadline. Each acquisition starts a fresh grace period.
 ///
 /// All handles and request allocations must remain readable for this call.
@@ -510,7 +521,7 @@ pub extern "C" fn cosmos_processor_start_with_policy_submit(
 ) -> *mut OperationHandle {
     let prepare = || {
         let policy = match (checkpoint_policy, checkpoint_interval_ms) {
-            (0, 0) => CheckpointPolicy::EveryBatch,
+            (0, 0) => CheckpointPolicy::Eager,
             (1, millis) if millis > 0 => {
                 let max_interval = Duration::from_millis(millis);
                 if std::time::Instant::now()
@@ -520,7 +531,7 @@ pub extern "C" fn cosmos_processor_start_with_policy_submit(
                 {
                     return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
                 }
-                CheckpointPolicy::Coalesced { max_interval }
+                CheckpointPolicy::Deferred { max_interval }
             }
             _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
         };
@@ -680,7 +691,7 @@ fn submit_processor(
         } else {
             Ok(processor
                 .driver
-                .next_batch()
+                .read_next_change_feed_batch()
                 .await
                 .map_or(ResultData::End, |batch| ResultData::Batch(Box::new(batch))))
         }

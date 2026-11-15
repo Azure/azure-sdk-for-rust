@@ -12,17 +12,12 @@ use crate::{
     change_feed_processor::{
         bootstrap,
         bootstrap::{
-            error, namespace,
-            store::{
-                ChangeFeedProcessorBootstrapStore as Store,
-                ChangeFeedProcessorBootstrapStoredRecord as Stored,
-            },
-            ChangeFeedProcessorBootstrapIdentity as Identity,
-            ChangeFeedProcessorBootstrapProcessingLease as ProcessingLease, SCHEMA_VERSION,
+            error, namespace, store::LeaseStore as Store, LeaseDocument,
+            WorkloadIdentity as Identity, SCHEMA_VERSION,
         },
         operation_options,
         processing::{
-            distribution::{AcquisitionDelivery, BatchDistributor},
+            distribution::{AcquisitionDelivery, ChangeFeedRequestDistributor},
             retry::ReadRetry,
         },
     },
@@ -45,7 +40,6 @@ use futures::{
     stream::FuturesUnordered,
     FutureExt, StreamExt,
 };
-use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, HashSet},
     future::Future,
@@ -64,13 +58,13 @@ type ErrorObserver = dyn Fn(Option<String>, crate::CosmosError) + Send + Sync;
 
 /// Controls persistence of successfully acknowledged change feed batches.
 ///
+/// Defaults to deferred persistence with a five-minute interval.
 /// This policy does not change callback page sizes or lease renewal schedules.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum CheckpointPolicy {
     /// Persists each successful acknowledgment before polling the next batch.
-    #[default]
-    EveryBatch,
+    Eager,
     /// Retains acknowledged progress in memory until the interval since its
     /// first unpersisted acknowledgment elapses.
     ///
@@ -79,25 +73,31 @@ pub enum CheckpointPolicy {
     /// Idle reads do not trigger persistence. Graceful shutdown and topology
     /// recovery flush without waiting for the interval.
     /// A crash can replay multiple successfully handled batches.
-    Coalesced {
+    Deferred {
         /// Maximum time to defer attempting persistence of acknowledged progress.
         max_interval: Duration,
     },
 }
 
+impl Default for CheckpointPolicy {
+    fn default() -> Self {
+        Self::deferred()
+    }
+}
+
 impl CheckpointPolicy {
-    /// Coalesces successful progress for up to five minutes.
+    /// Defers persistence of successful progress for up to five minutes.
     ///
-    /// Use [`Self::Coalesced`] to select a different interval. Explicit
+    /// Use [`Self::Deferred`] to select a different interval. Explicit
     /// checkpoints and graceful cleanup can persist progress earlier.
-    pub fn coalesced() -> Self {
-        Self::Coalesced {
+    pub fn deferred() -> Self {
+        Self::Deferred {
             max_interval: Duration::from_secs(300),
         }
     }
 
     fn validate(self) -> Result<()> {
-        if let Self::Coalesced { max_interval } = self {
+        if let Self::Deferred { max_interval } = self {
             if max_interval.is_zero()
                 || Instant::now().checked_add(max_interval).is_none()
                 || azure_core::time::Duration::try_from(max_interval).is_err()
@@ -114,8 +114,8 @@ impl CheckpointPolicy {
 
     fn processing_deadline(self, now: i64) -> Result<i64> {
         let duration = match self {
-            Self::EveryBatch => Some(Duration::from_secs(600)),
-            Self::Coalesced { max_interval } => max_interval.checked_mul(2),
+            Self::Eager => Some(Duration::from_secs(600)),
+            Self::Deferred { max_interval } => max_interval.checked_mul(2),
         };
         duration
             .and_then(|duration| i64::try_from(duration.as_nanos().div_ceil(1_000_000)).ok())
@@ -142,20 +142,21 @@ impl CheckpointPolicy {
 ///
 /// Other workers may also acquire a lease whose processing deadline has expired:
 /// ten minutes without an acknowledged nonempty batch with
-/// [`CheckpointPolicy::EveryBatch`], or twice the coalescing interval.
+/// [`CheckpointPolicy::Eager`], or twice the deferral interval.
 /// Acquisition starts a fresh grace period. Idle reads, missing demand, and
 /// throttling do not refresh processing activity. Activity is published by
 /// existing lease writes, independently of checkpoint progress.
 #[derive(Clone, SafeDebug)]
 pub struct ProcessorOptions {
     mode: ChangeFeedFactoryMode,
-    processor_name: String,
-    instance_name: String,
+    workload_name: String,
+    worker_name: String,
     verify_leases_on_restart: bool,
     start: ChangeFeedStartFrom,
     continuation: Option<ContinuationToken>,
     page_size: MaxItemCountHint,
     poll_delay: Duration,
+    bootstrap_timeout: Duration,
     min_leases: u32,
     max_leases: u32,
     expiration: Duration,
@@ -173,22 +174,23 @@ impl ProcessorOptions {
     /// Fresh feeds start from now, request 100 items, and wait five seconds
     /// after idle responses. Lease counts are uncapped.
     ///
-    /// Workers sharing the source, lease storage, and `processor_name` cooperate.
-    /// `instance_name` identifies the worker. Names are validated during bootstrap.
+    /// Workers sharing the source, lease storage, and `workload_name` cooperate.
+    /// `worker_name` identifies the worker. Names are validated during bootstrap.
     pub fn new(
         mode: ChangeFeedFactoryMode,
-        processor_name: impl Into<String>,
-        instance_name: impl Into<String>,
+        workload_name: impl Into<String>,
+        worker_name: impl Into<String>,
     ) -> Self {
         Self {
             mode,
-            processor_name: processor_name.into(),
-            instance_name: instance_name.into(),
+            workload_name: workload_name.into(),
+            worker_name: worker_name.into(),
             verify_leases_on_restart: false,
             start: ChangeFeedStartFrom::Now,
             continuation: None,
             page_size: MaxItemCountHint::Limit(std::num::NonZeroU32::new(100).unwrap()),
             poll_delay: Duration::from_secs(5),
+            bootstrap_timeout: bootstrap::BOOTSTRAP_TIMEOUT,
             min_leases: 0,
             max_leases: 0,
             expiration: Duration::from_secs(60),
@@ -241,9 +243,11 @@ impl ProcessorOptions {
 
     /// Sets how [`BatchReceipt::acknowledge()`] persists successful progress.
     ///
-    /// Defaults to [`CheckpointPolicy::EveryBatch`]. Explicit
+    /// Defaults to [`CheckpointPolicy::deferred()`], with a five-minute interval. Explicit
     /// [`BatchReceipt::checkpoint()`] calls always wait for durable persistence.
     /// Invalid intervals are rejected by [`Processor::start()`] before I/O.
+    /// With a `Now` start, restarting before the first durable checkpoint can
+    /// resolve a later starting position.
     pub fn with_checkpoint_policy(mut self, policy: CheckpointPolicy) -> Self {
         self.checkpoint_policy = policy;
         self
@@ -252,6 +256,13 @@ impl ProcessorOptions {
     /// Sets the delay after an idle feed response. Zero is allowed.
     pub fn with_poll_delay(mut self, delay: Duration) -> Self {
         self.poll_delay = delay;
+        self
+    }
+
+    /// Sets the caller's bootstrap wait budget (default 120 seconds); invalid values fail before I/O.
+    /// Attempt and lock limits are unchanged; optional restart verification is outside this budget.
+    pub fn with_bootstrap_timeout(mut self, timeout: Duration) -> Self {
+        self.bootstrap_timeout = timeout;
         self
     }
 
@@ -285,32 +296,19 @@ impl ProcessorOptions {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-struct Lease {
-    #[serde(flatten)]
-    base: ProcessingLease,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    incarnation: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    renewed_at: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    last_processed_at: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    processing_deadline: Option<i64>,
-}
-
-struct Acquisition {
-    value: Lease,
+/// Local lease document and ETag, renewal timing, and acknowledged progress awaiting persistence.
+struct LeaseState {
+    value: LeaseDocument,
     etag: Etag,
     renewed: Option<Instant>,
     pending: Option<PendingCheckpoint>,
 }
 
-impl From<Stored<Lease>> for Acquisition {
-    fn from(stored: Stored<Lease>) -> Self {
+impl From<(LeaseDocument, Etag)> for LeaseState {
+    fn from((value, etag): (LeaseDocument, Etag)) -> Self {
         Self {
-            value: stored.value,
-            etag: stored.etag,
+            value,
+            etag,
             renewed: None,
             pending: None,
         }
@@ -325,7 +323,7 @@ struct PendingCheckpoint {
     failed: bool,
 }
 
-impl Lease {
+impl LeaseDocument {
     fn processed(&mut self, policy: CheckpointPolicy, now: i64) -> Result<()> {
         let now = self
             .last_processed_at
@@ -336,9 +334,11 @@ impl Lease {
     }
 }
 
-impl Acquisition {
+impl LeaseState {
     fn acknowledge(&mut self, token: ContinuationToken, handled_changes: u64) {
+        // Both policies record safe progress locally first; this does not write the lease document.
         if let Some(pending) = &mut self.pending {
+            // Advance the token without resetting the first-unsaved-progress deadline.
             pending.token = token;
             pending.handled_changes = pending.handled_changes.saturating_add(handled_changes);
         } else {
@@ -352,8 +352,9 @@ impl Acquisition {
     }
 
     fn checkpoint_delay(&self, policy: CheckpointPolicy, now: Instant) -> Option<Duration> {
+        // Only Deferred needs a timer; Eager flushes in the acknowledgment path.
         match (policy, &self.pending) {
-            (CheckpointPolicy::Coalesced { max_interval }, Some(pending)) => {
+            (CheckpointPolicy::Deferred { max_interval }, Some(pending)) => {
                 Some(max_interval.saturating_sub(now.saturating_duration_since(pending.since)))
             }
             _ => None,
@@ -380,26 +381,26 @@ impl Context {
         }
     }
 
-    fn validate(&self, lease: &Lease) -> Result<()> {
-        bootstrap::validate_lease(&lease.base, &self.identity, &self.namespace)
+    fn validate(&self, lease: &LeaseDocument) -> Result<()> {
+        bootstrap::validate_lease(&lease, &self.identity, &self.namespace)
     }
 
     #[cfg(all(test, feature = "__internal_in_memory_emulator"))]
-    async fn acquire(&self, observed: &Lease) -> Result<Acquisition> {
+    async fn acquire(&self, observed: &LeaseDocument) -> Result<LeaseState> {
         self.acquire_tracked(observed, None).await
     }
 
     async fn acquire_tracked(
         &self,
-        observed: &Lease,
+        observed: &LeaseDocument,
         state: Option<&SharedState>,
-    ) -> Result<Acquisition> {
+    ) -> Result<LeaseState> {
         let incarnation = Uuid::new_v4().to_string();
         self.modify_lease(observed, Update::Acquire(&incarnation), state)
             .await
     }
 
-    async fn update(&self, lease: &mut Acquisition, update: Update<'_>) -> Result<()> {
+    async fn update(&self, lease: &mut LeaseState, update: Update<'_>) -> Result<()> {
         let preserve_pending = matches!(update, Update::Renew);
         let mut updated = self.modify_lease(&lease.value, update, None).await?;
         if preserve_pending {
@@ -413,23 +414,21 @@ impl Context {
     /// Acquisition races fail immediately; owned mutations retry only write conflicts.
     async fn modify_lease(
         &self,
-        observed: &Lease,
+        observed: &LeaseDocument,
         update: Update<'_>,
         acquisition_state: Option<&SharedState>,
-    ) -> Result<Acquisition> {
-        let id = &observed.base.record.id;
+    ) -> Result<LeaseState> {
+        let id = &observed.record.id;
         let retry_conflicts = !matches!(update, Update::Acquire(_));
         let attempts = if retry_conflicts { 5 } else { 1 };
         for _ in 0..attempts {
-            let current = self.store().read::<Lease>(id).await?.ok_or_else(lost)?;
-            self.validate(&current.value)?;
-            let next = transition_lease(
-                current.value,
-                observed,
-                &update,
-                &self.options,
-                now_millis(),
-            )?;
+            let (current, etag) = self
+                .store()
+                .read::<LeaseDocument>(id)
+                .await?
+                .ok_or_else(lost)?;
+            self.validate(&current)?;
+            let next = transition_lease(current, observed, &update, &self.options, now_millis())?;
             let renewed = Instant::now();
             let key = (id.clone(), next.incarnation.clone());
             if let Some(state) = acquisition_state {
@@ -439,7 +438,7 @@ impl Context {
                     .unwrap_or_else(|e| e.into_inner())
                     .insert(key.clone(), next.clone());
             }
-            match self.store().replace(id, &next, current.etag).await {
+            match self.store().replace(id, &next, etag).await {
                 Ok(updated) => {
                     if let Some(state) = acquisition_state {
                         state
@@ -448,7 +447,7 @@ impl Context {
                             .unwrap_or_else(|e| e.into_inner())
                             .remove(&key);
                     }
-                    return Ok(Acquisition {
+                    return Ok(LeaseState {
                         renewed: Some(renewed),
                         ..updated.into()
                     });
@@ -463,9 +462,11 @@ impl Context {
         ))
     }
 
-    async fn flush(&self, lease: &mut Acquisition) -> Result<()> {
+    async fn flush(&self, lease: &mut LeaseState) -> Result<()> {
+        // Both Eager and Deferred use the same ownership-fenced write of acknowledged progress.
         if let Some(pending) = lease.pending.clone() {
             if let Err(err) = self.update(lease, Update::Checkpoint(&pending.token)).await {
+                // Preserve failed progress for cleanup decisions; never reinterpret this as a feed error.
                 if let Some(pending) = &mut lease.pending {
                     pending.failed = true;
                 }
@@ -473,12 +474,12 @@ impl Context {
             }
             if matches!(
                 self.options.checkpoint_policy,
-                CheckpointPolicy::Coalesced { .. }
+                CheckpointPolicy::Deferred { .. }
             ) {
                 tracing::debug!(
                     handled_changes = pending.handled_changes,
                     elapsed_ms = pending.since.elapsed().as_millis() as u64,
-                    "Persisted coalesced checkpoint"
+                    "Persisted deferred checkpoint"
                 );
             }
         }
@@ -487,7 +488,7 @@ impl Context {
 
     async fn wait_with_checkpoint<T>(
         &self,
-        lease: &Mutex<Acquisition>,
+        lease: &Mutex<LeaseState>,
         cancelled: &Signal,
         force: &Signal,
         work: impl Future<Output = Result<T>>,
@@ -518,6 +519,8 @@ impl Context {
                     if cancelled.clone().now_or_never().is_some() {
                         return Err(lost());
                     }
+                    // Deferred deadline: persist prior safe progress while the current work stays pinned.
+                    // Failures leave through the maintenance result, not source cooldown or recovery.
                     self.flush(&mut lease).await?;
                 },
                 result = work => return result.map(Some),
@@ -534,13 +537,13 @@ enum Update<'a> {
 }
 
 fn transition_lease(
-    mut current: Lease,
-    observed: &Lease,
+    mut current: LeaseDocument,
+    observed: &LeaseDocument,
     update: &Update<'_>,
     options: &ProcessorOptions,
     now: i64,
-) -> Result<Lease> {
-    if current.base.owner != observed.base.owner || current.incarnation != observed.incarnation {
+) -> Result<LeaseDocument> {
+    if current.owner != observed.owner || current.incarnation != observed.incarnation {
         return Err(lost());
     }
     if matches!(update, Update::Acquire(_))
@@ -567,14 +570,14 @@ fn transition_lease(
     }
     match update {
         Update::Acquire(incarnation) => {
-            current.base.owner = Some(options.instance_name.clone());
+            current.owner = Some(options.worker_name.clone());
             current.incarnation = Some((*incarnation).to_owned());
             current.last_processed_at = None;
             current.processing_deadline = Some(options.checkpoint_policy.processing_deadline(now)?);
         }
         Update::Renew => {}
-        Update::Checkpoint(token) => current.base.continuation = Some((*token).clone()),
-        Update::Release => current.base.owner = None,
+        Update::Checkpoint(token) => current.continuation = Some((*token).clone()),
+        Update::Release => current.owner = None,
     }
     current.renewed_at = Some(now);
     Ok(current)
@@ -642,7 +645,7 @@ impl BatchReceipt {
     /// Acknowledges successful processing according to the checkpoint policy.
     ///
     /// Consumes the receipt and permits the next batch after acknowledgment.
-    /// With [`CheckpointPolicy::Coalesced`], success can mean only in-memory
+    /// With [`CheckpointPolicy::Deferred`], success can mean only in-memory
     /// acceptance, not persistence. Multiple successful batches may replay.
     /// Use [`checkpoint()`](Self::checkpoint) to require durable persistence.
     ///
@@ -692,11 +695,11 @@ impl ChangeFeedBatch {
 
 #[derive(Default)]
 struct SharedState {
-    distributor: Arc<BatchDistributor>,
+    distributor: Arc<ChangeFeedRequestDistributor>,
     stopping: AtomicBool,
     forced: AtomicBool,
     failure: StdMutex<Option<crate::CosmosError>>,
-    unreleased: StdMutex<HashMap<(String, Option<String>), Lease>>,
+    unreleased: StdMutex<HashMap<(String, Option<String>), LeaseDocument>>,
     error_observer: Option<Arc<ErrorObserver>>,
 }
 
@@ -756,7 +759,7 @@ impl Drop for Owner {
 /// and their checkpoints. Split parents are deleted after their children are
 /// established; incomplete transitions and failed deletions are retried.
 ///
-/// Splits and merges are recovered automatically while processor instances
+/// Splits and merges are recovered automatically while processor workers
 /// remain running. Only the affected lease's processing session is replaced;
 /// no application stop or restart is required.
 #[derive(Clone)]
@@ -768,7 +771,7 @@ impl Processor {
     /// Bootstraps the workload and starts lease coordination.
     ///
     /// Source and lease containers may use different drivers. Consumers control
-    /// feed-read concurrency through concurrent [`next_batch()`](Self::next_batch) calls. Background
+    /// feed-read concurrency through concurrent [`read_next_change_feed_batch()`](Self::read_next_change_feed_batch) calls. Background
     /// lease/feed failures are logged and isolated to the affected lease.
     ///
     /// # Errors
@@ -797,7 +800,7 @@ impl Processor {
     ///         ChangeFeedFactoryMode::Incremental, "orders", "worker-01",
     ///     );
     ///     let processor = Processor::start(driver.clone(), source, driver, leases, options).await?;
-    ///     if let Some(batch) = processor.next_batch().await {
+    ///     if let Some(batch) = processor.read_next_change_feed_batch().await {
     ///         let (_lease, response, receipt) = batch.into_parts();
     ///         process(response).await?;
     ///         receipt.checkpoint().await?;
@@ -813,6 +816,7 @@ impl Processor {
         leases: ContainerReference,
         options: ProcessorOptions,
     ) -> Result<Self> {
+        // 1. Reject invalid lease bounds, feed start positions, and checkpoint settings.
         if (options.max_leases > 0 && options.min_leases > options.max_leases)
             || (options.mode == ChangeFeedFactoryMode::FullFidelity
                 && options.continuation.is_none()
@@ -830,21 +834,24 @@ impl Processor {
         azure_core::time::Duration::try_from(options.poll_delay)
             .map_err(|_| error(StatusCode::BadRequest, "Poll delay is not representable."))?;
         options.checkpoint_policy.validate()?;
-        bootstrap(
+        // 2. Finish bootstrap before starting coordination; failures return without spawning a task.
+        bootstrap::bootstrap_with_timeout(
             &source_driver,
             &source,
             &lease_driver,
             &leases,
             options.mode,
-            &options.processor_name,
-            &options.instance_name,
+            &options.workload_name,
+            &options.worker_name,
+            options.bootstrap_timeout,
         )
         .await?;
+        // 3. Share workload identity, clients, and configuration with runtime operations.
         let identity = Identity {
             version: SCHEMA_VERSION,
             account: source.account().endpoint().origin().ascii_serialization(),
             container_rid: source.rid().to_owned(),
-            processor_name: options.processor_name.clone(),
+            workload_name: options.workload_name.clone(),
             mode: options.mode,
         };
         let context = Arc::new(Context {
@@ -856,6 +863,7 @@ impl Processor {
             leases,
             options,
         });
+        // 4. Optionally verify existing leases before launching the worker.
         if context.options.verify_leases_on_restart {
             context.verify_leases().await?;
         }
@@ -863,9 +871,11 @@ impl Processor {
             error_observer: context.options.error_observer.clone(),
             ..Default::default()
         });
+        // 5. Create graceful-stop, forced-cancellation, and final-result channels.
         let (stop, stopping) = signal();
         let (force, forced) = signal();
         let (done, stopped) = oneshot::channel();
+        // 6. Keep shutdown senders in Owner; callers share the same completion future.
         let owner = Arc::new(Owner {
             stop: StdMutex::new(Some(stop)),
             force: StdMutex::new(Some(force)),
@@ -881,6 +891,7 @@ impl Processor {
             .shared(),
             state: state.clone(),
         });
+        // 7. Launch lease coordination and supervision; convert task panics into processor errors.
         // The task holds shared state, not Owner, so the last handle closes stop.
         let task = azure_core::async_runtime::get_async_runtime().spawn(Box::pin(async move {
             let result = AssertUnwindSafe(run(context, state.clone(), stopping, forced))
@@ -894,6 +905,8 @@ impl Processor {
             state.distributor.close();
             let _ = done.send(result);
         }));
+        // 8. Dropping the task handle leaves it running; return control through our own lifecycle handle.
+        // Startup does not wait for lease acquisition or batch delivery, and invokes no SDK callbacks.
         drop(task);
         Ok(Self { owner })
     }
@@ -925,8 +938,12 @@ impl Processor {
     ///
     /// During graceful shutdown, continue consuming already-issued batches and
     /// completing their receipts. `None` does not mean all receipts are settled.
-    pub async fn next_batch(&self) -> Option<ChangeFeedBatch> {
-        self.owner.state.distributor.next_batch().await
+    pub async fn read_next_change_feed_batch(&self) -> Option<ChangeFeedBatch> {
+        self.owner
+            .state
+            .distributor
+            .read_next_change_feed_batch()
+            .await
     }
 
     /// Drains issued batches, saves acknowledged progress, and releases owned leases.
@@ -997,6 +1014,7 @@ async fn run(
     stop: Signal,
     force: Signal,
 ) -> Result<bool> {
+    // 1. Track concurrent lease supervisors and their IDs; begin balancing without an initial delay.
     let mut lease_pollers = FuturesUnordered::<BoxFuture<'static, String>>::new();
     let mut owned = HashSet::new();
     let mut balancing = balance(
@@ -1009,21 +1027,25 @@ async fn run(
     )
     .boxed();
     loop {
+        // 2. Poll balancing and supervisors together; either shutdown signal begins cleanup.
         futures::select! {
             _ = force.clone().fuse() => break,
             _ = stop.clone().fuse() => break,
             id = async {
                 if lease_pollers.is_empty() {
+                    // Disable this branch until a supervisor exists, rather than spinning on an empty stream.
                     futures::future::pending().await
                 } else {
                     lease_pollers.next().await
                 }
             }.fuse() => {
+                // 3. A finished supervisor no longer counts as locally owned in later balancing passes.
                 if let Some(id) = id { owned.remove(&id); }
             },
             leases = balancing.as_mut().fuse() => {
+                // 4. Supervise each newly acquired lease once; SDK callbacks run outside this loop.
                 for lease in leases {
-                    let id = lease.value.base.record.id.clone();
+                    let id = lease.value.record.id.clone();
                     if owned.insert(id.clone()) {
                         let context = context.clone();
                         let state = state.clone();
@@ -1032,48 +1054,51 @@ async fn run(
                         lease_pollers.push(supervise(context, state, lease, stop, force).map(move |()| id).boxed());
                     }
                 }
+                // Use the current ownership snapshot and acquisition interval for the next pass.
                 balancing = balance(context.clone(), state.clone(), owned.clone(), context.options.acquire_interval(), stop.clone(), force.clone()).boxed();
             },
         }
     }
-    // Finish acquisition writes and retain every acquired lease for cleanup.
+    // 5. Finish in-flight acquisition writes and supervise their results with shutdown already signaled.
+    // Dropping balancing here could forget a lease whose ownership write succeeded.
     for lease in balancing.await {
         let context = context.clone();
         let state = state.clone();
         let stop = stop.clone();
         let force = force.clone();
-        let id = lease.value.base.record.id.clone();
+        let id = lease.value.record.id.clone();
         lease_pollers.push(
             supervise(context, state, lease, stop, force)
                 .map(move |()| id)
                 .boxed(),
         );
     }
+    // 6. Join every supervisor so its processing and lease cleanup finish before final release retries.
     while lease_pollers.next().await.is_some() {}
+    // 7. Retry recorded release failures, but never release ownership taken over by a replacement.
     let unreleased =
         std::mem::take(&mut *state.unreleased.lock().unwrap_or_else(|e| e.into_inner()));
     for observed in unreleased.into_values() {
         let result = async {
             let Some(current) = context
                 .store()
-                .read::<Lease>(&observed.base.record.id)
+                .read::<LeaseDocument>(&observed.record.id)
                 .await?
             else {
                 return Ok(());
             };
-            context.validate(&current.value)?;
-            if current.value.base.owner == observed.base.owner
-                && current.value.incarnation == observed.incarnation
-            {
+            context.validate(&current.0)?;
+            if current.0.owner == observed.owner && current.0.incarnation == observed.incarnation {
                 context.update(&mut current.into(), Update::Release).await?;
             }
             Ok(())
         }
         .await;
         if let Err(err) = result {
-            state.failed(Some(&observed.base.record.id), err);
+            state.failed(Some(&observed.record.id), err);
         }
     }
+    // 8. Return a recorded failure, or whether shutdown was forced when cleanup otherwise succeeded.
     match state
         .failure
         .lock()
@@ -1092,7 +1117,7 @@ async fn balance(
     delay: Duration,
     stop: Signal,
     force: Signal,
-) -> Vec<Acquisition> {
+) -> Vec<LeaseState> {
     futures::select! {
         _ = sleep(delay).fuse() => {},
         _ = stop.fuse() => return Vec::new(),
@@ -1109,7 +1134,7 @@ async fn balance(
             if state.stopping.load(Ordering::Acquire) {
                 break;
             }
-            if owned.contains(&active[index].base.record.id) {
+            if owned.contains(&active[index].record.id) {
                 continue;
             }
             match context.acquire_tracked(&active[index], Some(&state)).await {
@@ -1117,7 +1142,7 @@ async fn balance(
                 Err(err) if err.status().is_precondition_failed() => {
                     tracing::debug!(error = %err, "Lease acquisition lost a race");
                 }
-                Err(err) => state.failed(Some(&active[index].base.record.id), err),
+                Err(err) => state.failed(Some(&active[index].record.id), err),
             }
         }
         Ok::<_, crate::CosmosError>(acquired)
@@ -1132,22 +1157,56 @@ async fn balance(
     }
 }
 
+/// Distinguishes source-feed topology failures from lease maintenance and processing failures.
+#[derive(Debug)]
+enum PollError {
+    SourceTopologyChange(crate::CosmosError),
+    Other(crate::CosmosError),
+}
+
+impl PollError {
+    fn from_source(err: crate::CosmosError) -> Self {
+        if err.status().is_partition_topology_change() {
+            Self::SourceTopologyChange(err)
+        } else {
+            Self::Other(err)
+        }
+    }
+}
+
+impl From<crate::CosmosError> for PollError {
+    fn from(err: crate::CosmosError) -> Self {
+        Self::Other(err)
+    }
+}
+
+impl From<PollError> for crate::CosmosError {
+    fn from(err: PollError) -> Self {
+        match err {
+            PollError::SourceTopologyChange(err) | PollError::Other(err) => err,
+        }
+    }
+}
+
 async fn supervise(
     context: Arc<Context>,
     state: Arc<SharedState>,
-    lease: Acquisition,
+    lease: LeaseState,
     stop: Signal,
     force: Signal,
 ) {
-    let token = lease.value.base.record.id.clone();
+    // 1. Create delivery state for this ownership turn and share lease mutations under one mutex.
+    let token = lease.value.record.id.clone();
     let session = state
         .distributor
         .acquire(token.clone(), lease.value.incarnation.clone());
     let lease = Arc::new(Mutex::new(lease));
+    // Dropping this sender signals local cancellation to both processing and renewal.
     let (cancel, cancelled) = signal();
     let mut cancel = Some(cancel);
     let result = match session {
         Ok(session) => {
+            // 2. Poll processing and renewal concurrently in this supervisor, without spawning tasks.
             let processing = poll(
                 context.clone(),
                 state.clone(),
@@ -1163,39 +1222,41 @@ async fn supervise(
             futures::pin_mut!(processing, renewing);
             futures::select! {
                 result = processing => {
+                    // 3. Processing ended: cancel renewal and join it before touching ownership cleanup.
                     drop(cancel.take());
                     let renewed = renewing.await;
-                    result.and(renewed)
+                    result.and(renewed.map_err(PollError::Other))
                 },
                 result = renewing => {
+                    // Renewal ended: cancel processing and join its issued work before releasing the lease.
                     drop(cancel.take());
                     let processed = processing.await;
-                    result.and(processed)
+                    result.map_err(PollError::Other).and(processed)
                 },
             }
         }
-        Err(err) => Err(err),
+        Err(err) => Err(PollError::Other(err)),
     };
     drop(cancel);
+    // 4. Only an explicit source-feed topology failure can trigger recovery, never a lease-store error.
     let result = match result {
-        Err(err)
-            if err.status().is_partition_topology_change()
-                && !state.stopping.load(Ordering::Acquire) =>
-        {
+        Err(PollError::SourceTopologyChange(err)) if !state.stopping.load(Ordering::Acquire) => {
             match context.recover(lease.clone()).await {
                 Ok(true) => return,
                 Ok(false) => Err(err),
                 Err(err) => Err(err),
             }
         }
-        result => result,
+        result => result.map_err(crate::CosmosError::from),
     };
+    // 5. Report the combined processing/renewal or recovery failure before attempting fenced release.
     if let Err(err) = result {
         tracing::warn!(lease = %token, error = %err, "Lease processing stopped");
         state.failed(Some(&token), err);
     }
     let mut lease = lease.lock().await;
     if let Err(err) = context.update(&mut lease, Update::Release).await {
+        // 6. Preserve failed release state for the coordinator's final ownership-checked cleanup.
         tracing::warn!(lease = %token, error = %err, "Lease release failed; ownership will expire");
         state.failed(Some(&token), err);
         state
@@ -1211,7 +1272,7 @@ async fn supervise(
 
 async fn renew(
     context: Arc<Context>,
-    lease: Arc<Mutex<Acquisition>>,
+    lease: Arc<Mutex<LeaseState>>,
     stopped: Signal,
 ) -> Result<()> {
     let interval = context.options.renew_interval();
@@ -1267,11 +1328,12 @@ async fn poll(
     context: Arc<Context>,
     state: Arc<SharedState>,
     session: &AcquisitionDelivery,
-    lease: Arc<Mutex<Acquisition>>,
+    lease: Arc<Mutex<LeaseState>>,
     cancelled: Signal,
     stop: Signal,
     force: Signal,
-) -> Result<()> {
+) -> std::result::Result<(), PollError> {
+    // Run this acquisition's read loop, then settle only its previously acknowledged progress.
     let result = poll_feed(
         context.clone(),
         state.clone(),
@@ -1284,12 +1346,14 @@ async fn poll(
     .await;
     if !state.forced.load(Ordering::Acquire) {
         let mut lease = lease.lock().await;
+        // Do not flush after forced cancellation, a failed checkpoint, or lost ownership.
         if !state.forced.load(Ordering::Acquire)
             && !lease.pending.as_ref().is_some_and(|pending| pending.failed)
         {
             if cancelled.clone().now_or_never().is_some() {
-                return Err(lost());
+                return Err(lost().into());
             }
+            // Final safe-progress barrier for either policy; write failures remain PollError::Other.
             context.flush(&mut lease).await?;
         }
     }
@@ -1300,19 +1364,20 @@ async fn poll_feed(
     context: Arc<Context>,
     state: Arc<SharedState>,
     session: &AcquisitionDelivery,
-    lease: Arc<Mutex<Acquisition>>,
+    lease: Arc<Mutex<LeaseState>>,
     cancelled: Signal,
     stop: Signal,
     force: Signal,
-) -> Result<()> {
+) -> std::result::Result<(), PollError> {
     if state.stopping.load(Ordering::Acquire) {
         return Ok(());
     }
+    // 1. Prepare the lease-scoped operation and resume anchor; saved progress takes precedence.
     let initial = lease.lock().await.value.clone();
     let operation = context
-        .operation(&initial.base.range)
+        .operation(&initial.range)
         .with_max_item_count(context.options.page_size);
-    let checkpoint = context.checkpoint(&initial, &initial.base.range)?;
+    let checkpoint = context.checkpoint(&initial, &initial.range)?;
     let plan_options = PlanOptions {
         change_feed_processor: true,
         ..Default::default()
@@ -1320,14 +1385,16 @@ async fn poll_feed(
     let (mut retry, read_options, read_timeout) = ReadRetry::for_driver(&context.source_driver);
     let mut planning_options = operation_options();
     planning_options.end_to_end_latency_policy = Some(read_timeout.into());
+    // Keep the evolving read plan locally; creating it is deferred until a receiver requests data.
     let mut plan = None;
     loop {
         if cancelled.clone().now_or_never().is_some() {
-            return Err(lost());
+            return Err(lost().into());
         }
         if state.stopping.load(Ordering::Acquire) {
             return Ok(());
         }
+        // 2. Wait for receiver demand while servicing deferred-checkpoint deadlines and cancellation.
         let Some(Some(demand)) = context
             .wait_with_checkpoint(&lease, &cancelled, &force, session.wait_for_demand())
             .await?
@@ -1340,14 +1407,12 @@ async fn poll_feed(
         if demand.is_canceled() {
             continue;
         }
+        // 3. Share one read-turn deadline across initial planning and execution.
         let deadline = Instant::now() + read_timeout;
         if plan.is_none() {
             plan = context
-                .wait_with_checkpoint(
-                    &lease,
-                    &cancelled,
-                    &force,
-                    ReadRetry::bounded(
+                .wait_with_checkpoint(&lease, &cancelled, &force, async {
+                    Ok(ReadRetry::bounded(
                         deadline,
                         context.source_driver.plan_operation(
                             operation.clone(),
@@ -1355,9 +1420,12 @@ async fn poll_feed(
                             Some(&checkpoint),
                             &plan_options,
                         ),
-                    ),
-                )
-                .await?;
+                    )
+                    .await)
+                })
+                .await?
+                .transpose()
+                .map_err(PollError::from_source)?;
         }
         let Some(plan) = plan.as_mut() else {
             return Ok(());
@@ -1368,23 +1436,32 @@ async fn poll_feed(
         if demand.is_canceled() {
             continue;
         }
+        // Execute the existing plan once; renewal continues independently in the supervisor.
         let response = context
             .wait_with_checkpoint(
                 &lease,
                 &cancelled,
                 &force,
-                ReadRetry::bounded(
-                    deadline,
-                    context.source_driver.execute_plan(
-                        plan,
-                        Some(context.source.clone()),
-                        read_options.clone(),
-                    ),
-                ),
+                // Keep source errors inside the result so maintenance errors retain their own origin.
+                async {
+                    Ok(ReadRetry::bounded(
+                        deadline,
+                        context.source_driver.execute_plan(
+                            plan,
+                            Some(context.source.clone()),
+                            read_options.clone(),
+                        ),
+                    )
+                    .await)
+                },
             )
-            .await;
+            .await?;
+        let Some(response) = response else {
+            return Ok(());
+        };
         let response = match response {
             Err(err) if ReadRetry::is_throttled(&err) => {
+                // 4. Release this receiver to other eligible leases before waiting for cooldown.
                 let cooldown = retry.cooldown(
                     err.response()
                         .and_then(|response| response.headers().retry_after_ms),
@@ -1392,7 +1469,7 @@ async fn poll_feed(
                 )?;
                 let failure = (!cooldown.retry).then_some(err);
                 drop(demand);
-                tracing::debug!(lease = %initial.base.record.id, retry = cooldown.retry,
+                tracing::debug!(lease = %initial.record.id, retry = cooldown.retry,
                     delay_ms = cooldown.until.saturating_duration_since(Instant::now()).as_millis(),
                     "Deferring throttled change feed acquisition");
                 let waiting = async {
@@ -1409,14 +1486,12 @@ async fn poll_feed(
                     return Ok(());
                 }
                 if let Some(err) = failure {
-                    return Err(err);
+                    // Exhausted retries end this acquisition after its cooldown, not the whole worker.
+                    return Err(err.into());
                 }
                 continue;
             }
-            result => result?,
-        };
-        let Some(response) = response else {
-            return Ok(());
+            result => result.map_err(PollError::from_source)?,
         };
         let response = response.ok_or_else(|| {
             error(
@@ -1432,27 +1507,30 @@ async fn poll_feed(
             return Err(error(
                 StatusCode::InternalServerError,
                 "Change feed response has no checkpoint ETag.",
-            ));
+            )
+            .into());
         }
         let idle = response.status().status_code() == StatusCode::NotModified;
+        // The plan's read position is not durable application progress until this turn is safe.
         let token = plan.to_continuation_token()?;
         if idle {
+            // 5. Idle progress needs no callback; Eager persists it and Deferred retains only its token.
             drop(response);
             let mut stored = lease.lock().await;
             if stored
                 .value
-                .base
                 .continuation
                 .as_ref()
                 .map(ContinuationToken::as_str)
                 != Some(token.as_str())
             {
                 stored.acknowledge(token, 0);
-                if context.options.checkpoint_policy == CheckpointPolicy::EveryBatch {
+                if context.options.checkpoint_policy == CheckpointPolicy::Eager {
                     context.flush(&mut stored).await?;
                 }
             }
             drop(stored);
+            // Yield demand before this lease's idle delay so other leases can serve the receiver.
             drop(demand);
             let waiting = async {
                 futures::select! {
@@ -1476,6 +1554,7 @@ async fn poll_feed(
             ResponseBody::Bytes(body) => split_feed_envelope(body)?.len() as u64,
         };
         let (sender, received) = oneshot::channel();
+        // 6. Move the response to its original receiver with a one-use acknowledgment receipt.
         if !session.deliver(
             demand,
             response,
@@ -1486,6 +1565,7 @@ async fn poll_feed(
         )? {
             return Ok(());
         }
+        // 7. Do not read another batch until receipt completion; dropped receipts abandon the lease.
         let acknowledgment = context
             .wait_with_checkpoint(&lease, &cancelled, &force, async {
                 received.await.map_err(|_| {
@@ -1501,21 +1581,26 @@ async fn poll_feed(
         };
         let mut lease = lease.lock().await;
         if cancelled.clone().now_or_never().is_some() || state.forced.load(Ordering::Acquire) {
-            return Err(lost());
+            return Err(lost().into());
         }
+        // 8. Only successful processing advances pending progress; nonempty batches update activity.
         lease.acknowledge(token, handled_changes);
         if handled_changes > 0 {
             lease
                 .value
                 .processed(context.options.checkpoint_policy, now_millis())?;
         }
+        // 9. Eager and explicit checkpoints wait for persistence; Deferred may acknowledge in memory.
         let result = if acknowledgment.durable
-            || context.options.checkpoint_policy == CheckpointPolicy::EveryBatch
+            || context.options.checkpoint_policy == CheckpointPolicy::Eager
         {
+            // Eager (or an explicit durable receipt) must finish the lease write before acknowledging.
             context.flush(&mut lease).await
         } else {
+            // Deferred accepts progress in memory; a deadline or final barrier performs the later write.
             Ok(())
         };
+        // 10. Reopen delivery only after the required checkpoint succeeds, then complete the receipt.
         let result = result.and_then(|()| session.acknowledged());
         let failed = result.is_err();
         let _ = acknowledgment.result.send(result);
@@ -1523,7 +1608,8 @@ async fn poll_feed(
             return Err(error(
                 StatusCode::ServiceUnavailable,
                 "Checkpoint failed; abandoning the lease.",
-            ));
+            )
+            .into());
         }
     }
 }

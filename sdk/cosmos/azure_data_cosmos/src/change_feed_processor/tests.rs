@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{ChangeFeedProcessorBuilder, ChangeFeedProcessorContext, ProcessorStartFrom};
+use super::{ChangeFeedProcessorBuilder, ChangeFeedProcessorContext, ChangeFeedStartFrom};
 use crate::{
+    diagnostics::DiagnosticsContext,
     feed::{ContinuationToken, FeedScope},
     models::{ChangeFeedItem, TimeToLive},
     options::{ChangeFeedMode, MaxItemCountHint, Region},
@@ -18,6 +19,7 @@ use azure_data_cosmos_driver::{
         ContainerConfig, InMemoryEmulatorHttpClient, RequestObserver, VirtualAccountConfig,
         VirtualRegion,
     },
+    models::ActivityId,
 };
 use futures::TryStreamExt;
 use serde_json::Value;
@@ -33,11 +35,6 @@ async fn on_changes(
     _changes: Vec<ChangeFeedItem<String>>,
 ) -> crate::Result<()> {
     Ok(())
-}
-
-async fn on_error(context: Option<ChangeFeedProcessorContext>, error: crate::CosmosError) {
-    assert_eq!(context.unwrap().lease_token(), "failed-lease");
-    assert_eq!(error.status().status_code(), StatusCode::ServiceUnavailable);
 }
 
 async fn containers() -> Result<(ContainerClient, ContainerClient), Box<dyn Error>> {
@@ -115,21 +112,23 @@ async fn containers_with_runtime(
     Ok((database.container_client("monitored", None).await?, leases))
 }
 
-fn assert_defaults<T, H>(builder: &ChangeFeedProcessorBuilder<T, H>) {
-    assert!(matches!(builder.start_from, ProcessorStartFrom::Now));
+fn assert_defaults<T, Fut>(builder: &ChangeFeedProcessorBuilder<T, Fut>) {
+    assert!(matches!(builder.start_from, ChangeFeedStartFrom::Now));
+    assert!(builder.start_continuation.is_none());
     assert_eq!(
         builder.max_item_count,
         MaxItemCountHint::Limit(NonZeroU32::new(100).unwrap())
     );
     assert_eq!(builder.feed_poll_delay, Duration::from_secs(5));
+    assert_eq!(builder.bootstrap_timeout, Duration::from_secs(120));
     assert_eq!(
         builder.checkpoint_policy,
-        super::ChangeFeedCheckpointPolicy::EveryBatch
+        super::ChangeFeedCheckpointPolicy::Deferred {
+            max_interval: Duration::from_secs(300),
+        }
     );
     assert_eq!(builder.min_scale_count, 0);
     assert_eq!(builder.max_scale_count, 0);
-    assert_eq!(builder.max_concurrency, NonZeroU32::MIN);
-    assert!(builder.error_handler.is_none());
     assert!(!builder.lease_verification_on_restart_enabled);
 }
 
@@ -140,12 +139,19 @@ async fn pin_start(
     name: &str,
     partitions: usize,
 ) -> Result<(), Box<dyn Error>> {
-    let warm = ChangeFeedProcessorBuilder::new(mode, source.clone(), leases.clone(), name, "warm")
-        .with_feed_poll_delay(Duration::from_millis(5))
-        .handle_change_feed(|_, _: Vec<ChangeFeedItem<Value>>| async {
+    let warm = ChangeFeedProcessorBuilder::new(
+        mode,
+        source.clone(),
+        leases.clone(),
+        name,
+        "warm",
+        |_, _: Vec<ChangeFeedItem<Value>>| async {
             panic!("source must be empty while pinning its initial position")
-        })
-        .build()?;
+        },
+    )
+    .with_checkpoint_policy(super::ChangeFeedCheckpointPolicy::Eager)
+    .with_feed_poll_delay(Duration::from_millis(5))
+    .build()?;
     warm.start().await?;
     tokio::time::timeout(Duration::from_secs(5), async {
         loop {
@@ -169,18 +175,19 @@ async fn pin_start(
     Ok(())
 }
 
-fn configure<T, H>(builder: ChangeFeedProcessorBuilder<T, H>) -> ChangeFeedProcessorBuilder<T, H> {
+fn configure<T, Fut>(
+    builder: ChangeFeedProcessorBuilder<T, Fut>,
+) -> ChangeFeedProcessorBuilder<T, Fut> {
     builder
         .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(237).unwrap()))
         .with_feed_poll_delay(Duration::from_millis(1234))
-        .with_checkpoint_policy(super::ChangeFeedCheckpointPolicy::Coalesced {
+        .with_bootstrap_timeout(Duration::from_secs(600))
+        .with_checkpoint_policy(super::ChangeFeedCheckpointPolicy::Deferred {
             max_interval: Duration::from_secs(7),
         })
         .with_start_continuation(ContinuationToken::from_string("saved-position".into()))
         .with_min_scale_count(2)
         .with_max_scale_count(7)
-        .with_max_concurrency(NonZeroU32::new(3).unwrap())
-        .handle_error(on_error)
         .with_lease_verification_enabled_on_restart(true)
 }
 
@@ -196,92 +203,72 @@ async fn configuration_round_trip(mode: ChangeFeedMode) -> Result<(), Box<dyn Er
     }
 
     let (monitored, leases) = containers().await?;
-    for register_first in [false, true] {
-        let builder = ChangeFeedProcessorBuilder::new(
-            mode,
-            monitored.clone(),
-            leases.clone(),
-            "order-projection",
-            "worker-01",
-        );
-        assert_defaults(&builder);
-        let builder = if register_first {
-            let builder = builder.handle_change_feed(on_changes);
-            assert_defaults(&builder);
-            configure(builder)
-        } else {
-            configure(builder).handle_change_feed(on_changes)
-        };
-        let processor = builder.build()?;
-        // Exhaustive destructuring makes added configuration fields visible to this test.
-        let ChangeFeedProcessorBuilder {
-            monitored_container,
-            lease_container,
-            processor_name,
-            instance_name,
-            mode: stored_mode,
-            start_from,
-            max_item_count,
-            feed_poll_delay,
-            checkpoint_policy,
-            max_concurrency,
-            error_handler,
-            min_scale_count,
-            max_scale_count,
-            lease_verification_on_restart_enabled,
-            handler,
-            item: _,
-        } = processor.configuration;
-        assert_eq!(stored_mode, mode);
+    let builder = ChangeFeedProcessorBuilder::new(
+        mode,
+        monitored.clone(),
+        leases.clone(),
+        "order-projection",
+        "worker-01",
+        on_changes,
+    );
+    assert_defaults(&builder);
+    let builder = configure(builder);
+    let processor = builder.build()?;
+    // Exhaustive destructuring makes added configuration fields visible to this test.
+    let ChangeFeedProcessorBuilder {
+        monitored_container,
+        lease_container,
+        workload_name,
+        worker_name,
+        mode: stored_mode,
+        start_from,
+        start_continuation,
+        max_item_count,
+        feed_poll_delay,
+        bootstrap_timeout,
+        checkpoint_policy,
+        min_scale_count,
+        max_scale_count,
+        lease_verification_on_restart_enabled,
+        handler,
+    } = processor.configuration;
+    assert_eq!(stored_mode, mode);
 
-        assert_eq!(
-            monitored_container.read(None).await?.into_model()?.id,
-            "monitored"
-        );
-        assert_eq!(lease_container.read(None).await?.into_model()?.id, "leases");
-        assert_eq!(processor_name, "order-projection");
-        assert_eq!(instance_name, "worker-01");
-        assert_eq!(
-            max_item_count,
-            MaxItemCountHint::Limit(NonZeroU32::new(237).unwrap())
-        );
-        assert_eq!(feed_poll_delay, Duration::from_millis(1234));
-        assert_eq!(
-            checkpoint_policy,
-            super::ChangeFeedCheckpointPolicy::Coalesced {
-                max_interval: Duration::from_secs(7),
-            }
-        );
-        assert_eq!(min_scale_count, 2);
-        assert_eq!(max_scale_count, 7);
-        assert_eq!(max_concurrency.get(), 3);
-        error_handler.unwrap()(
-            Some(ChangeFeedProcessorContext {
-                lease_token: "failed-lease".into(),
-                diagnostics: None,
-            }),
-            crate::CosmosError::builder()
-                .with_status(crate::CosmosStatus::new(StatusCode::ServiceUnavailable))
-                .build(),
-        )
-        .await;
-        assert!(lease_verification_on_restart_enabled);
-        let ProcessorStartFrom::Continuation(token) = start_from else {
-            panic!("initial continuation was not preserved");
-        };
-        assert_eq!(token.as_str(), "saved-position");
+    assert_eq!(
+        monitored_container.read(None).await?.into_model()?.id,
+        "monitored"
+    );
+    assert_eq!(lease_container.read(None).await?.into_model()?.id, "leases");
+    assert_eq!(workload_name, "order-projection");
+    assert_eq!(worker_name, "worker-01");
+    assert_eq!(
+        max_item_count,
+        MaxItemCountHint::Limit(NonZeroU32::new(237).unwrap())
+    );
+    assert_eq!(feed_poll_delay, Duration::from_millis(1234));
+    assert_eq!(bootstrap_timeout, Duration::from_secs(600));
+    assert_eq!(
+        checkpoint_policy,
+        super::ChangeFeedCheckpointPolicy::Deferred {
+            max_interval: Duration::from_secs(7),
+        }
+    );
+    assert_eq!(min_scale_count, 2);
+    assert_eq!(max_scale_count, 7);
+    assert!(lease_verification_on_restart_enabled);
+    assert_eq!(start_from, ChangeFeedStartFrom::Now);
+    assert_eq!(start_continuation.unwrap().as_str(), "saved-position");
 
-        handler(
-            ChangeFeedProcessorContext {
-                lease_token: "lease-token".into(),
-                diagnostics: None,
-            },
-            vec![serde_json::from_value(serde_json::json!({
-                "current": "order-42"
-            }))?],
-        )
-        .await?;
-    }
+    handler(
+        ChangeFeedProcessorContext {
+            lease_token: "lease-token".into(),
+            diagnostics: Arc::new(DiagnosticsContext::for_testing(ActivityId::new_uuid())),
+        },
+        vec![serde_json::from_value(serde_json::json!({
+            "current": "order-42"
+        }))?],
+    )
+    .await?;
     Ok(())
 }
 
@@ -296,48 +283,66 @@ async fn all_versions_and_deletes_configuration_round_trip() -> Result<(), Box<d
 }
 
 #[tokio::test]
-async fn latest_version_start_positions_round_trip() -> Result<(), Box<dyn Error>> {
+async fn start_setters_use_last_value_in_both_modes() -> Result<(), Box<dyn Error>> {
     let (monitored, leases) = containers().await?;
     let timestamp = OffsetDateTime::from_unix_timestamp(1_700_000_000)?;
-    for expected in [
-        ProcessorStartFrom::Now,
-        ProcessorStartFrom::Beginning,
-        ProcessorStartFrom::PointInTime(timestamp),
-        ProcessorStartFrom::Continuation(ContinuationToken::from_string("initial-position".into())),
-    ] {
-        let builder = ChangeFeedProcessorBuilder::new(
-            ChangeFeedMode::LatestVersion,
-            monitored.clone(),
-            leases.clone(),
-            "orders",
-            "worker",
-        )
-        .with_start_continuation(ContinuationToken::from_string(String::new()));
-        let builder = match &expected {
-            ProcessorStartFrom::Now => builder.with_start_from_now(),
-            ProcessorStartFrom::Beginning => builder.with_start_from_beginning(),
-            ProcessorStartFrom::PointInTime(time) => builder.with_start_time(*time),
-            ProcessorStartFrom::Continuation(token) => builder
-                .with_start_from_beginning()
-                .with_start_continuation(token.clone()),
+    let set =
+        |builder: ChangeFeedProcessorBuilder<_, _>, selection: &str, token: &str| match selection {
+            "now" => builder.with_start_from_now(),
+            "beginning" => builder.with_start_from_beginning(),
+            "time" => builder.with_start_time(timestamp),
+            "continuation" => {
+                builder.with_start_continuation(ContinuationToken::from_string(token.into()))
+            }
+            _ => unreachable!("unknown test start setting"),
         };
-        let processor = builder.handle_change_feed(on_changes).build()?;
-        match (expected, processor.configuration.start_from) {
-            (ProcessorStartFrom::Now, ProcessorStartFrom::Now)
-            | (ProcessorStartFrom::Beginning, ProcessorStartFrom::Beginning) => {}
-            (
-                ProcessorStartFrom::PointInTime(expected),
-                ProcessorStartFrom::PointInTime(actual),
-            ) => {
-                assert_eq!(actual, expected);
+    for mode in [
+        ChangeFeedMode::LatestVersion,
+        ChangeFeedMode::AllVersionsAndDeletes,
+    ] {
+        for previous in ["now", "beginning", "time", "continuation"] {
+            for last in ["now", "beginning", "time", "continuation"] {
+                let builder = ChangeFeedProcessorBuilder::new(
+                    mode,
+                    monitored.clone(),
+                    leases.clone(),
+                    "orders",
+                    "worker",
+                    on_changes,
+                )
+                .with_start_continuation(ContinuationToken::from_string(String::new()));
+                let builder = set(builder, previous, "previous-position");
+                let result = set(builder, last, "final-position").build();
+                if mode == ChangeFeedMode::AllVersionsAndDeletes
+                    && matches!(last, "beginning" | "time")
+                {
+                    assert_eq!(
+                        result
+                            .err()
+                            .expect("unsupported start must fail")
+                            .status()
+                            .status_code(),
+                        StatusCode::BadRequest
+                    );
+                    continue;
+                }
+                let processor = result?;
+                let expected_start = match last {
+                    "now" | "continuation" => ChangeFeedStartFrom::Now,
+                    "beginning" => ChangeFeedStartFrom::Beginning,
+                    "time" => ChangeFeedStartFrom::PointInTime(timestamp),
+                    _ => unreachable!("unknown test start setting"),
+                };
+                assert_eq!(processor.configuration.start_from, expected_start);
+                assert_eq!(
+                    processor
+                        .configuration
+                        .start_continuation
+                        .as_ref()
+                        .map(ContinuationToken::as_str),
+                    (last == "continuation").then_some("final-position"),
+                );
             }
-            (
-                ProcessorStartFrom::Continuation(expected),
-                ProcessorStartFrom::Continuation(actual),
-            ) => {
-                assert_eq!(actual, expected);
-            }
-            _ => panic!("initial start position was not preserved"),
         }
     }
     Ok(())
@@ -345,6 +350,21 @@ async fn latest_version_start_positions_round_trip() -> Result<(), Box<dyn Error
 
 async fn build_validation(mode: ChangeFeedMode) -> Result<(), Box<dyn Error>> {
     let (monitored, leases) = containers().await?;
+    for timeout in [Duration::ZERO, Duration::MAX] {
+        let result = ChangeFeedProcessorBuilder::new(
+            mode,
+            monitored.clone(),
+            leases.clone(),
+            "orders",
+            "worker",
+            on_changes,
+        )
+        .with_bootstrap_timeout(timeout)
+        .build();
+        let error = result.err().expect("invalid bootstrap timeout");
+        assert_eq!(error.status().status_code(), StatusCode::BadRequest);
+        assert!(error.to_string().contains("Invalid bootstrap timeout."));
+    }
     for max_interval in [Duration::ZERO, Duration::MAX] {
         let result = ChangeFeedProcessorBuilder::new(
             mode,
@@ -352,9 +372,9 @@ async fn build_validation(mode: ChangeFeedMode) -> Result<(), Box<dyn Error>> {
             leases.clone(),
             "orders",
             "worker",
+            |_, _: Vec<ChangeFeedItem<String>>| async { Ok(()) },
         )
-        .with_checkpoint_policy(super::ChangeFeedCheckpointPolicy::Coalesced { max_interval })
-        .handle_change_feed(|_, _: Vec<ChangeFeedItem<String>>| async { Ok(()) })
+        .with_checkpoint_policy(super::ChangeFeedCheckpointPolicy::Deferred { max_interval })
         .build();
         assert_eq!(
             result.err().unwrap().status().status_code(),
@@ -372,7 +392,7 @@ async fn build_validation(mode: ChangeFeedMode) -> Result<(), Box<dyn Error>> {
             0,
             0,
             None,
-            Some("processor_name must not be blank."),
+            Some("workload_name must not be blank."),
         ),
         (
             " \t\n",
@@ -380,7 +400,7 @@ async fn build_validation(mode: ChangeFeedMode) -> Result<(), Box<dyn Error>> {
             0,
             0,
             None,
-            Some("processor_name must not be blank."),
+            Some("workload_name must not be blank."),
         ),
         (
             "orders",
@@ -388,7 +408,7 @@ async fn build_validation(mode: ChangeFeedMode) -> Result<(), Box<dyn Error>> {
             0,
             0,
             None,
-            Some("instance_name must not be blank."),
+            Some("worker_name must not be blank."),
         ),
         (
             "orders",
@@ -396,7 +416,7 @@ async fn build_validation(mode: ChangeFeedMode) -> Result<(), Box<dyn Error>> {
             0,
             0,
             None,
-            Some("instance_name must not be blank."),
+            Some("worker_name must not be blank."),
         ),
         (
             "orders",
@@ -423,20 +443,20 @@ async fn build_validation(mode: ChangeFeedMode) -> Result<(), Box<dyn Error>> {
             Some("start_continuation must not be blank."),
         ),
     ];
-    for (processor_name, instance_name, minimum, maximum, continuation, expected_error) in cases {
+    for (workload_name, worker_name, minimum, maximum, continuation, expected_error) in cases {
         let mut builder = ChangeFeedProcessorBuilder::new(
             mode,
             monitored.clone(),
             leases.clone(),
-            processor_name,
-            instance_name,
+            workload_name,
+            worker_name,
+            on_changes,
         )
         .with_min_scale_count(minimum);
         if let Some(token) = continuation {
             builder = builder.with_start_continuation(ContinuationToken::from_string(token.into()));
         }
         let result = builder
-            .handle_change_feed(on_changes)
             .with_max_scale_count(maximum)
             .with_max_item_count(MaxItemCountHint::ServerDecides)
             .with_feed_poll_delay(Duration::ZERO)
@@ -452,8 +472,8 @@ async fn build_validation(mode: ChangeFeedMode) -> Result<(), Box<dyn Error>> {
             }
             (Ok(processor), None) => {
                 assert!(!processor.is_started());
-                assert_eq!(processor.configuration.processor_name, processor_name);
-                assert_eq!(processor.configuration.instance_name, instance_name);
+                assert_eq!(processor.configuration.workload_name, workload_name);
+                assert_eq!(processor.configuration.worker_name, worker_name);
                 assert_eq!(processor.configuration.feed_poll_delay, Duration::ZERO);
                 assert_eq!(processor.configuration.min_scale_count, minimum);
                 assert_eq!(processor.configuration.max_scale_count, maximum);
@@ -461,13 +481,15 @@ async fn build_validation(mode: ChangeFeedMode) -> Result<(), Box<dyn Error>> {
                     processor.configuration.max_item_count,
                     MaxItemCountHint::ServerDecides
                 );
-                match (&processor.configuration.start_from, continuation) {
-                    (ProcessorStartFrom::Now, None) => {}
-                    (ProcessorStartFrom::Continuation(actual), Some(expected)) => {
-                        assert_eq!(actual.as_str(), expected);
-                    }
-                    _ => panic!("validation changed the initial start position"),
-                }
+                assert_eq!(processor.configuration.start_from, ChangeFeedStartFrom::Now);
+                assert_eq!(
+                    processor
+                        .configuration
+                        .start_continuation
+                        .as_ref()
+                        .map(ContinuationToken::as_str),
+                    continuation,
+                );
             }
             (Err(error), None) => panic!("valid configuration was rejected: {error}"),
             (Ok(_), Some(message)) => panic!("invalid configuration was accepted: {message}"),
@@ -487,12 +509,11 @@ async fn all_versions_and_deletes_build_validates_configuration() -> Result<(), 
 }
 
 #[tokio::test]
-async fn mode_start_validation_before_and_after_handler_registration() -> Result<(), Box<dyn Error>>
-{
-    fn select_start<T, H>(
-        builder: ChangeFeedProcessorBuilder<T, H>,
+async fn mode_start_validation_with_required_handler() -> Result<(), Box<dyn Error>> {
+    fn select_start<T, Fut>(
+        builder: ChangeFeedProcessorBuilder<T, Fut>,
         start: u8,
-    ) -> ChangeFeedProcessorBuilder<T, H> {
+    ) -> ChangeFeedProcessorBuilder<T, Fut> {
         match start {
             0 => builder.with_start_from_now(),
             1 => builder.with_start_from_beginning(),
@@ -507,43 +528,38 @@ async fn mode_start_validation_before_and_after_handler_registration() -> Result
         ChangeFeedMode::AllVersionsAndDeletes,
     ] {
         let (monitored, leases) = containers().await?;
-        for register_first in [false, true] {
-            for start in 0..4 {
-                let builder = ChangeFeedProcessorBuilder::new(
-                    mode,
-                    monitored.clone(),
-                    leases.clone(),
-                    "orders",
-                    "worker",
+        for start in 0..4 {
+            let builder = ChangeFeedProcessorBuilder::new(
+                mode,
+                monitored.clone(),
+                leases.clone(),
+                "orders",
+                "worker",
+                on_changes,
+            );
+            let builder = select_start(builder, start);
+            let result = builder.build();
+            if mode == ChangeFeedMode::AllVersionsAndDeletes && matches!(start, 1 | 2) {
+                let error = result.err().expect("unsupported start must be rejected");
+                assert_eq!(error.status().status_code(), StatusCode::BadRequest);
+                assert!(error.response().is_none());
+                assert!(error.to_string().contains(
+                    "AllVersionsAndDeletes mode does not support beginning or time-based starts."
+                ));
+            } else {
+                let processor = result?;
+                assert_eq!(processor.configuration.mode, mode);
+                assert!(!processor.is_started());
+                processor.stop().await?;
+                assert_eq!(
+                    processor
+                        .current_state()
+                        .await
+                        .unwrap_err()
+                        .status()
+                        .status_code(),
+                    StatusCode::NotImplemented,
                 );
-                let builder = if register_first {
-                    select_start(builder.handle_change_feed(on_changes), start)
-                } else {
-                    select_start(builder, start).handle_change_feed(on_changes)
-                };
-                let result = builder.build();
-                if mode == ChangeFeedMode::AllVersionsAndDeletes && matches!(start, 1 | 2) {
-                    let error = result.err().expect("unsupported start must be rejected");
-                    assert_eq!(error.status().status_code(), StatusCode::BadRequest);
-                    assert!(error.response().is_none());
-                    assert!(error.to_string().contains(
-                        "AllVersionsAndDeletes mode does not support beginning or time-based starts."
-                    ));
-                } else {
-                    let processor = result?;
-                    assert_eq!(processor.configuration.mode, mode);
-                    assert!(!processor.is_started());
-                    processor.stop().await?;
-                    assert_eq!(
-                        processor
-                            .current_state()
-                            .await
-                            .unwrap_err()
-                            .status()
-                            .status_code(),
-                        StatusCode::NotImplemented,
-                    );
-                }
             }
         }
     }
@@ -560,9 +576,9 @@ async fn all_versions_and_deletes_validates_final_start_position() -> Result<(),
             leases.clone(),
             "orders",
             "worker",
+            on_changes,
         )
         .with_start_from_beginning()
-        .handle_change_feed(on_changes)
         .with_start_time(OffsetDateTime::UNIX_EPOCH);
         let builder = if use_continuation {
             builder.with_start_continuation(ContinuationToken::from_string("resume".into()))
@@ -570,11 +586,15 @@ async fn all_versions_and_deletes_validates_final_start_position() -> Result<(),
             builder.with_start_from_now()
         };
         let processor = builder.build()?;
-        match (&processor.configuration.start_from, use_continuation) {
-            (ProcessorStartFrom::Now, false) => {}
-            (ProcessorStartFrom::Continuation(token), true) => assert_eq!(token.as_str(), "resume"),
-            _ => panic!("the final start position was not preserved"),
-        }
+        assert_eq!(processor.configuration.start_from, ChangeFeedStartFrom::Now);
+        assert_eq!(
+            processor
+                .configuration
+                .start_continuation
+                .as_ref()
+                .map(ContinuationToken::as_str),
+            use_continuation.then_some("resume"),
+        );
     }
     Ok(())
 }
@@ -591,17 +611,83 @@ async fn lease_records(leases: &ContainerClient) -> Result<Vec<Value>, Box<dyn E
     Ok(records)
 }
 
+#[tokio::test]
+async fn configured_bootstrap_timeout_leaves_waiting_worker_stopped() -> Result<(), Box<dyn Error>>
+{
+    let (source, leases) = containers().await?;
+    let build = |worker| {
+        ChangeFeedProcessorBuilder::new(
+            ChangeFeedMode::LatestVersion,
+            source.clone(),
+            leases.clone(),
+            "timeout",
+            worker,
+            |_, _: Vec<ChangeFeedItem<Value>>| async {
+                panic!("empty source cannot deliver changes")
+            },
+        )
+    };
+    let initial = build("initial").build()?;
+    initial.start().await?;
+    initial.stop().await?;
+    let records = lease_records(&leases).await?;
+    let info = records
+        .iter()
+        .find(|r| r["id"].as_str().unwrap().ends_with(".info"))
+        .unwrap();
+    let info_id = info["id"].as_str().unwrap();
+    let lock_id = format!("{}.lock", info_id.strip_suffix(".info").unwrap());
+    leases
+        .delete_item(info_id.to_owned(), info_id, None)
+        .await?;
+    leases
+        .create_item(
+            lock_id.clone(),
+            &lock_id,
+            serde_json::json!({
+                "id": lock_id,
+                "workload": info["workload"],
+                "ttl": 30,
+                "owner": "other-initializer",
+                "attempt": "held-attempt"
+            }),
+            None,
+        )
+        .await?;
+    let waiting = build("waiting")
+        .with_bootstrap_timeout(Duration::from_millis(50))
+        .build()?;
+    let error = tokio::time::timeout(Duration::from_secs(2), waiting.start())
+        .await?
+        .expect_err("another initializer still holds the lock");
+    assert_eq!(error.status().status_code(), StatusCode::RequestTimeout);
+    assert!(!waiting.is_started());
+    waiting.stop().await?;
+    let after = lease_records(&leases).await?;
+    assert!(!after.iter().any(|r| r["id"] == info_id));
+    assert_eq!(
+        after.iter().find(|r| r["id"] == lock_id).unwrap()["attempt"],
+        "held-attempt"
+    );
+    Ok(())
+}
+
 async fn start_bootstraps_and_runs(
     mode: ChangeFeedMode,
     expected_mode: &str,
 ) -> Result<(), Box<dyn Error>> {
     let (source, leases) = containers().await?;
-    let processor =
-        ChangeFeedProcessorBuilder::new(mode, source, leases.clone(), "orders", "worker")
-            .handle_change_feed(|_, _: Vec<ChangeFeedItem<String>>| async {
-                panic!("bootstrap must not invoke callbacks");
-            })
-            .build()?;
+    let processor = ChangeFeedProcessorBuilder::new(
+        mode,
+        source,
+        leases.clone(),
+        "orders",
+        "worker",
+        |_, _: Vec<ChangeFeedItem<String>>| async {
+            panic!("bootstrap must not invoke callbacks");
+        },
+    )
+    .build()?;
     assert!(lease_records(&leases).await?.is_empty());
     processor.start().await?;
     assert!(processor.is_started());
@@ -657,8 +743,8 @@ async fn start_does_not_repair_completed_workloads() -> Result<(), Box<dyn Error
         leases.clone(),
         "orders",
         "first",
+        on_changes,
     )
-    .handle_change_feed(on_changes)
     .build()?;
     first.start().await?;
     first.stop().await?;
@@ -677,8 +763,8 @@ async fn start_does_not_repair_completed_workloads() -> Result<(), Box<dyn Error
         leases.clone(),
         "orders",
         "later",
+        on_changes,
     )
-    .handle_change_feed(on_changes)
     .build()?;
     later.start().await?;
     later.stop().await?;
@@ -696,8 +782,8 @@ async fn start_propagates_bootstrap_mode_conflict() -> Result<(), Box<dyn Error>
         leases.clone(),
         "orders",
         "first",
+        |_, _: Vec<ChangeFeedItem<String>>| async { Ok(()) },
     )
-    .handle_change_feed(|_, _: Vec<ChangeFeedItem<String>>| async { Ok(()) })
     .build()?;
     first.start().await?;
     first.stop().await?;
@@ -708,8 +794,8 @@ async fn start_propagates_bootstrap_mode_conflict() -> Result<(), Box<dyn Error>
         leases.clone(),
         "orders",
         "other",
+        |_, _: Vec<ChangeFeedItem<String>>| async { Ok(()) },
     )
-    .handle_change_feed(|_, _: Vec<ChangeFeedItem<String>>| async { Ok(()) })
     .build()?;
     assert_eq!(
         other.start().await.unwrap_err().status().status_code(),

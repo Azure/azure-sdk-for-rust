@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{
     collections::BTreeSet,
+    future::Future,
     io,
     num::NonZeroU32,
     sync::{Arc, Mutex},
@@ -471,7 +472,10 @@ async fn exercise(
     source: &ContainerClient,
     leases: &ContainerClient,
     workload: &Workload,
-    builder: ChangeFeedProcessorBuilder,
+    builder: ChangeFeedProcessorBuilder<
+        Document,
+        impl Future<Output = azure_data_cosmos::Result<()>> + Send + 'static,
+    >,
     page_size: u32,
     initial: &[Event],
 ) -> TestResult {
@@ -485,11 +489,11 @@ async fn exercise(
         fence_id: workload.id("fence"),
     }));
     let processor = builder
+        .with_checkpoint_policy(ChangeFeedCheckpointPolicy::Eager)
         .with_max_item_count(MaxItemCountHint::Limit(
             NonZeroU32::new(page_size).ok_or("Page hint must be positive.")?,
         ))
         .with_feed_poll_delay(Duration::from_millis(100))
-        .handle_change_feed(observe_changes)
         .build()?;
     let result = async {
         processor.start().await?;
@@ -613,11 +617,10 @@ async fn exercise(
         verify_source(source, workload).await
     }
     .await;
-    let cleanup = if result.is_ok() {
-        processor.stop().await
-    } else {
-        processor.abort().await
-    };
+    let cleanup = tokio::time::timeout(WAIT, processor.stop())
+        .await
+        .map_err(|error| io::Error::other(format!("Processor shutdown unconfirmed: {error}")))
+        .and_then(|result| result.map_err(io::Error::other));
     let result = combine(result, cleanup.map_err(Into::into));
     CALLBACK.lock().unwrap().take();
     result
@@ -668,6 +671,7 @@ async fn latest_case(
             leases.clone(),
             &workload.name,
             &workload.name,
+            observe_changes,
         );
         let builder = match start {
             Start::Now => builder.with_start_from_now(),
@@ -679,7 +683,14 @@ async fn latest_case(
         exercise(&source, &leases, &workload, builder, page_size, &initial).await
     }
     .await;
-    combine(result, workload.cleanup(&source, &leases).await)
+    if let Err(error) = result {
+        return Err(format!(
+            "{error}; skipped resource cleanup after failed workload {}.",
+            workload.name
+        )
+        .into());
+    }
+    workload.cleanup(&source, &leases).await
 }
 
 async fn all_versions_case(
@@ -712,24 +723,34 @@ async fn all_versions_case(
             leases.clone(),
             &workload.name,
             &workload.name,
+            observe_changes,
         );
         exercise(&source, &leases, &workload, builder, page_size, &initial).await
     }
     .await;
-    combine(result, workload.cleanup(&source, &leases).await)
+    if let Err(error) = result {
+        return Err(format!(
+            "{error}; skipped resource cleanup after failed workload {}.",
+            workload.name
+        )
+        .into());
+    }
+    workload.cleanup(&source, &leases).await
 }
 
 async fn drain_restart_stage(
     leases: &ContainerClient,
     workload: &Workload,
-    builder: ChangeFeedProcessorBuilder,
+    builder: ChangeFeedProcessorBuilder<
+        Document,
+        impl Future<Output = azure_data_cosmos::Result<()>> + Send + 'static,
+    >,
     expected: &[&str],
 ) -> TestResult {
     let processor = builder
         .with_start_from_beginning()
         .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()))
         .with_feed_poll_delay(INTERVAL)
-        .handle_change_feed(observe_changes)
         .build()?;
     let (sender, mut receiver) = mpsc::unbounded();
     *CALLBACK.lock().unwrap() = Some(Arc::new(CallbackObserver {
@@ -757,11 +778,10 @@ async fn drain_restart_stage(
         .map_err(|_| io::Error::other("Timed out draining the restart workload."))?
     }
     .await;
-    let cleanup = if result.is_ok() {
-        processor.stop().await
-    } else {
-        processor.abort().await
-    };
+    let cleanup = tokio::time::timeout(WAIT, processor.stop())
+        .await
+        .map_err(|error| io::Error::other(format!("Processor shutdown unconfirmed: {error}")))
+        .and_then(|result| result.map_err(io::Error::other));
     CALLBACK.lock().unwrap().take();
     combine(result, cleanup.map_err(Into::into))?;
     receiver.close();
@@ -804,7 +824,7 @@ async fn restart_case(
     validate_source(&source).await?;
     let workload = Workload::new(Semantics::Latest);
     let fresh = new_workload.then(|| Workload::new(Semantics::Latest));
-    let result = async {
+    let result: TestResult = async {
         for name in ["created", "upserted"] {
             source
                 .create_item(
@@ -822,6 +842,7 @@ async fn restart_case(
                 leases.clone(),
                 name,
                 worker,
+                observe_changes,
             )
             .with_checkpoint_policy(policy)
         };
@@ -890,7 +911,14 @@ async fn restart_case(
         Ok(())
     }
     .await;
-    let mut result = combine(result, workload.cleanup(&source, &leases).await);
+    if let Err(error) = result {
+        return Err(format!(
+            "{error}; skipped resource cleanup after failed workload {}.",
+            workload.name
+        )
+        .into());
+    }
+    let mut result = workload.cleanup(&source, &leases).await;
     if let Some(fresh) = fresh {
         result = combine(result, fresh.cleanup(&source, &leases).await);
     }
@@ -901,8 +929,8 @@ async fn restart_case(
 #[ignore = "Requires explicit live opt-in; source /pk, leases /id with defaultTtl -1."]
 async fn cfp_live_new_instance_resumes_existing_workload() -> TestResult {
     for policy in [
-        ChangeFeedCheckpointPolicy::EveryBatch,
-        ChangeFeedCheckpointPolicy::Coalesced {
+        ChangeFeedCheckpointPolicy::Eager,
+        ChangeFeedCheckpointPolicy::Deferred {
             max_interval: Duration::from_secs(60),
         },
     ] {
@@ -916,8 +944,8 @@ async fn cfp_live_new_instance_resumes_existing_workload() -> TestResult {
 #[ignore = "Requires explicit live opt-in; source /pk, leases /id with defaultTtl -1."]
 async fn cfp_live_new_workload_replays_without_changing_existing_leases() -> TestResult {
     for policy in [
-        ChangeFeedCheckpointPolicy::EveryBatch,
-        ChangeFeedCheckpointPolicy::Coalesced {
+        ChangeFeedCheckpointPolicy::Eager,
+        ChangeFeedCheckpointPolicy::Deferred {
             max_interval: Duration::from_secs(60),
         },
     ] {

@@ -1,13 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{Acquisition, Context, Lease, Update};
+use super::{Context, LeaseState, Update};
 use crate::{
     change_feed_processor::bootstrap::{
-        error, lease_id, validate_ranges,
-        ChangeFeedProcessorBootstrapProcessingLease as ProcessingLease,
-        ChangeFeedProcessorBootstrapRangePlan as RangePlan,
-        ChangeFeedProcessorBootstrapRecord as Record,
+        error, lease_id, validate_ranges, LeaseDocument, RangePlan, Record,
     },
     change_feed_processor::operation_options,
     driver::dataflow::{
@@ -58,10 +55,13 @@ impl Context {
         operation.with_change_feed_start(self.options.start.clone())
     }
 
-    pub(super) fn checkpoint(&self, lease: &Lease, range: &FeedRange) -> Result<ContinuationToken> {
-        let operation = self.operation(&lease.base.range);
+    pub(super) fn checkpoint(
+        &self,
+        lease: &LeaseDocument,
+        range: &FeedRange,
+    ) -> Result<ContinuationToken> {
+        let operation = self.operation(&lease.range);
         let state = match lease
-            .base
             .continuation
             .as_ref()
             .or(self.options.continuation.as_ref())
@@ -86,18 +86,18 @@ impl Context {
         };
         let projected = project_change_feed_state(
             state,
-            &lease.base.range,
+            &lease.range,
             range,
             operation.request_headers().full_fidelity_feed,
         )?;
         ContinuationToken::encode(&operation, &projected)
     }
 
-    pub(super) async fn list(&self) -> Result<Vec<Lease>> {
+    pub(super) async fn list(&self) -> Result<Vec<LeaseDocument>> {
         self.list_overlapping(None).await
     }
 
-    async fn list_overlapping(&self, range: Option<&FeedRange>) -> Result<Vec<Lease>> {
+    async fn list_overlapping(&self, range: Option<&FeedRange>) -> Result<Vec<LeaseDocument>> {
         let mut query =
             "SELECT * FROM c WHERE STARTSWITH(c.id, @prefix) AND IS_DEFINED(c.range)".to_owned();
         let mut parameters = vec![
@@ -137,24 +137,19 @@ impl Context {
                 }
                 body => body,
             };
-            for lease in body.into_items::<Lease>()? {
+            for lease in body.into_items::<LeaseDocument>()? {
                 self.validate(&lease)?;
                 leases.push(lease);
             }
         }
-        leases.sort_by(|left, right| {
-            left.base
-                .range
-                .min_inclusive()
-                .cmp(right.base.range.min_inclusive())
-        });
+        leases.sort_by(|left, right| left.range.min_inclusive().cmp(right.range.min_inclusive()));
         Ok(leases)
     }
 
     async fn has_replacements(&self, range: &FeedRange) -> Result<bool> {
         let mut replacements = Vec::new();
         for lease in self.list_overlapping(Some(range)).await? {
-            let candidate = &lease.base.range;
+            let candidate = &lease.range;
             if candidate == range {
                 continue;
             }
@@ -177,32 +172,25 @@ impl Context {
             return Ok(false);
         }
         replacements.sort_by(|left, right| {
-            left.base
-                .range
+            left.range
                 .min_inclusive()
-                .cmp(right.base.range.min_inclusive())
-                .then_with(|| {
-                    right
-                        .base
-                        .range
-                        .max_exclusive()
-                        .cmp(left.base.range.max_exclusive())
-                })
+                .cmp(right.range.min_inclusive())
+                .then_with(|| right.range.max_exclusive().cmp(left.range.max_exclusive()))
         });
         let mut cursor = range.min_inclusive();
-        let mut covering: Option<&Lease> = None;
+        let mut covering: Option<&LeaseDocument> = None;
         for lease in &replacements {
-            let candidate = &lease.base.range;
+            let candidate = &lease.range;
             if candidate.min_inclusive() < cursor {
                 // A split parent can coexist with its children until deletion succeeds.
-                if covering.is_some_and(|parent| {
-                    candidate.max_exclusive() <= parent.base.range.max_exclusive()
-                }) {
+                if covering
+                    .is_some_and(|parent| candidate.max_exclusive() <= parent.range.max_exclusive())
+                {
                     continue;
                 }
                 return Err(error(StatusCode::Conflict, "Replacement leases overlap."));
             }
-            if candidate.min_inclusive() != cursor || lease.base.continuation.is_none() {
+            if candidate.min_inclusive() != cursor || lease.continuation.is_none() {
                 return Err(error(
                     StatusCode::Conflict,
                     "Replacement lease coverage or progress is incomplete.",
@@ -220,58 +208,60 @@ impl Context {
         Ok(true)
     }
 
-    pub(super) async fn verify_leases(&self) -> Result<Vec<Lease>> {
+    pub(super) async fn verify_leases(&self) -> Result<Vec<LeaseDocument>> {
         let plan_id = format!("{}.plan", self.namespace);
         let plan = self
             .store()
             .read::<RangePlan>(&plan_id)
             .await?
             .ok_or_else(|| error(StatusCode::NotFound, "Bootstrap range plan is missing."))?;
-        if plan.value.record.workload != self.identity
-            || plan.value.record.id != plan_id
-            || plan.value.record.ttl != -1
+        if plan.0.record.workload != self.identity
+            || plan.0.record.id != plan_id
+            || plan.0.record.ttl != -1
         {
             return Err(error(
                 StatusCode::Conflict,
                 "Incompatible bootstrap range plan.",
             ));
         }
-        validate_ranges(&plan.value.ranges)?;
-        for range in plan.value.ranges {
+        validate_ranges(&plan.0.ranges)?;
+        for range in plan.0.ranges {
             let id = lease_id(&self.namespace, &range);
-            let stored = match self.store().read::<Lease>(&id).await? {
+            let stored = match self.store().read::<LeaseDocument>(&id).await? {
                 Some(stored) => stored,
                 None => {
                     if self.has_replacements(&range).await? {
                         continue;
                     }
-                    let lease = Lease {
-                        base: ProcessingLease {
-                            record: Record {
-                                id: id.clone(),
-                                workload: self.identity.clone(),
-                                ttl: -1,
-                            },
-                            range: range.clone(),
-                            owner: None,
-                            continuation: None,
+                    let lease = LeaseDocument {
+                        record: Record {
+                            id: id.clone(),
+                            workload: self.identity.clone(),
+                            ttl: -1,
                         },
+                        range: range.clone(),
+                        owner: None,
+                        continuation: None,
+
                         incarnation: None,
                         renewed_at: None,
                         last_processed_at: None,
                         processing_deadline: None,
                     };
                     self.store().create(&id, &lease).await?;
-                    self.store().read::<Lease>(&id).await?.ok_or_else(|| {
-                        error(
-                            StatusCode::ServiceUnavailable,
-                            "Created initial lease is not yet readable.",
-                        )
-                    })?
+                    self.store()
+                        .read::<LeaseDocument>(&id)
+                        .await?
+                        .ok_or_else(|| {
+                            error(
+                                StatusCode::ServiceUnavailable,
+                                "Created initial lease is not yet readable.",
+                            )
+                        })?
                 }
             };
-            self.validate(&stored.value)?;
-            if stored.value.base.range != range {
+            self.validate(&stored.0)?;
+            if stored.0.range != range {
                 return Err(error(
                     StatusCode::Conflict,
                     "Processing lease range does not match its initial plan.",
@@ -283,11 +273,11 @@ impl Context {
 
     pub(super) async fn split(
         &self,
-        parent: &mut Acquisition,
+        parent: &mut LeaseState,
         children: &[FeedRange],
     ) -> Result<()> {
         self.validate(&parent.value)?;
-        validate_children(&parent.value.base.range, children)?;
+        validate_children(&parent.value.range, children)?;
         if parent.pending.is_some() {
             return Err(error(
                 StatusCode::Conflict,
@@ -295,43 +285,45 @@ impl Context {
             ));
         }
         self.update(parent, Update::Renew).await?;
-        let id = parent.value.base.record.id.clone();
+        let id = parent.value.record.id.clone();
         for range in children {
             let id = lease_id(&self.namespace, range);
             let continuation = self.checkpoint(&parent.value, range)?;
-            let stored = match self.store().read::<Lease>(&id).await? {
+            let stored = match self.store().read::<LeaseDocument>(&id).await? {
                 Some(stored) => stored,
                 None => {
                     if self.has_replacements(range).await? {
                         continue;
                     }
-                    let child = Lease {
-                        base: ProcessingLease {
-                            record: Record {
-                                id: id.clone(),
-                                workload: self.identity.clone(),
-                                ttl: -1,
-                            },
-                            range: range.clone(),
-                            owner: None,
-                            continuation: Some(continuation),
+                    let child = LeaseDocument {
+                        record: Record {
+                            id: id.clone(),
+                            workload: self.identity.clone(),
+                            ttl: -1,
                         },
+                        range: range.clone(),
+                        owner: None,
+                        continuation: Some(continuation),
+
                         incarnation: None,
                         renewed_at: None,
                         last_processed_at: None,
                         processing_deadline: None,
                     };
                     self.store().create(&id, &child).await?;
-                    self.store().read::<Lease>(&id).await?.ok_or_else(|| {
-                        error(
-                            StatusCode::ServiceUnavailable,
-                            "Created child lease is not yet readable.",
-                        )
-                    })?
+                    self.store()
+                        .read::<LeaseDocument>(&id)
+                        .await?
+                        .ok_or_else(|| {
+                            error(
+                                StatusCode::ServiceUnavailable,
+                                "Created child lease is not yet readable.",
+                            )
+                        })?
                 }
             };
-            self.validate(&stored.value)?;
-            if stored.value.base.range != *range || stored.value.base.continuation.is_none() {
+            self.validate(&stored.0)?;
+            if stored.0.range != *range || stored.0.continuation.is_none() {
                 return Err(error(
                     StatusCode::Conflict,
                     "Child lease range or continuation does not match its parent.",
@@ -341,8 +333,8 @@ impl Context {
         self.store().delete(&id, parent.etag.clone()).await
     }
 
-    pub(super) async fn recover(&self, lease: Arc<Mutex<Acquisition>>) -> Result<bool> {
-        let scope = lease.lock().await.value.base.range.clone();
+    pub(super) async fn recover(&self, lease: Arc<Mutex<LeaseState>>) -> Result<bool> {
+        let scope = lease.lock().await.value.range.clone();
         let topology = self
             .source_driver
             .resolve_partition_key_ranges_for_feed_range(
@@ -365,7 +357,7 @@ impl Context {
         }
         let mut lease = lease.lock().await;
         self.split(&mut lease, &children).await?;
-        tracing::info!(lease = %lease.value.base.record.id, children = children.len(), "Created child leases and deleted the split parent");
+        tracing::info!(lease = %lease.value.record.id, children = children.len(), "Created child leases and deleted the split parent");
         Ok(true)
     }
 }

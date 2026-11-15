@@ -641,17 +641,6 @@ fn worker_name(name: &str, worker: usize) -> String {
     format!("{name}-worker-{worker}")
 }
 
-async fn on_error(context: Option<ChangeFeedProcessorContext>, error: CosmosError) {
-    let message = format!(
-        "CFP failure for {:?}: {error}",
-        context.map(|context| context.lease_token().to_owned())
-    );
-    eprintln!("{message}");
-    if let Some(active) = ACTIVE.lock().unwrap().clone() {
-        active.failure(message);
-    }
-}
-
 async fn ready(leases: &ContainerClient, collector: &Collector) -> TestResult<Vec<Value>> {
     tokio::time::timeout(CONTROL_WAIT, async {
         loop {
@@ -855,16 +844,14 @@ async fn run_case(
                 leases.clone(),
                 &collector.name,
                 worker_name(&collector.name, worker),
+                handler,
             )
             .with_start_from_now()
-            .with_checkpoint_policy(ChangeFeedCheckpointPolicy::EveryBatch)
-            .with_max_concurrency(NonZeroU32::MIN)
+            .with_checkpoint_policy(ChangeFeedCheckpointPolicy::Eager)
             .with_min_scale_count(LEASES_PER_WORKER as u32)
             .with_max_scale_count(LEASES_PER_WORKER as u32)
             .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(10).unwrap()))
             .with_feed_poll_delay(POLL_DELAY)
-            .handle_error(on_error)
-            .handle_change_feed(handler)
             .build()?,
         );
     }
@@ -885,14 +872,11 @@ async fn run_case(
     }
     .await;
     let mut failures = Vec::new();
-    let succeeded = result.is_ok();
-    let stopping = futures::future::join_all(processors.iter().map(|processor| async {
-        if succeeded {
-            tokio::time::timeout(CONTROL_WAIT, processor.stop()).await
-        } else {
-            tokio::time::timeout(CONTROL_WAIT, processor.abort()).await
-        }
-    }))
+    let stopping = futures::future::join_all(
+        processors
+            .iter()
+            .map(|processor| async { tokio::time::timeout(CONTROL_WAIT, processor.stop()).await }),
+    )
     .await;
     if let Err(error) = result {
         failures.push(error.to_string());

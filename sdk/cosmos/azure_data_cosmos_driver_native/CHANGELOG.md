@@ -4,13 +4,16 @@
 
 ### Features Added
 
-- Added `cosmos_processor_start_with_policy_submit` and `cosmos_processor_acknowledge_submit` for opt-in checkpoint coalescing, with distinct acknowledged and durably saved completion results.
+- Added `bootstrap_timeout_ms` in the processor request's first reserved slot; zero keeps the 120-second default, and nonzero values require a supporting native library. Request size and ABI version are unchanged. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
+- Added `cosmos_processor_start_with_policy_submit` and `cosmos_processor_acknowledge_submit` for policy-controlled checkpointing, with distinct acknowledged and durably saved completion results.
 - Added `cosmos_processor_*` completion-queue APIs for driver-owned change feed processing and explicit post-callback checkpoint acknowledgments.
 - Added a driver option for disabling default-on resource-name validation, including item names supplied to Create and Upsert, when compatibility requires it. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
 
 ### Breaking Changes
 
-- Processor leases now permit takeover after processing inactivity, and idle reads no longer flush coalesced checkpoints; the processor ABI is unchanged.
+- Renamed processor request fields to `workload_name` and `worker_name`; native consumers must update source field accesses. Field order, layout, and ABI version are unchanged. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
+- `cosmos_processor_start_submit` now defaults to deferred checkpointing with a five-minute interval; use policy `0` with `cosmos_processor_start_with_policy_submit` for eager persistence. Explicit checkpoint submission remains a durable barrier; ABI signatures and policy values are unchanged. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
+- Processor leases now permit takeover after processing inactivity, and idle reads no longer flush deferred checkpoints; the processor ABI is unchanged.
 - Expanded `cosmos_driver_options_config_v2_t`; native hosts must rebuild against the 0.3.0 header and library. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
 
 ### Bugs Fixed

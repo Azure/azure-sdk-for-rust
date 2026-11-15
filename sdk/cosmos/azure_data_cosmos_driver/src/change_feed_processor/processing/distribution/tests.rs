@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{AcquisitionDelivery, BatchDistributor, ReadDemand};
+use super::{AcquisitionDelivery, ChangeFeedRequestDistributor, ReadDemand};
 use crate::{
     change_feed_processor::processing::{Acknowledgment, BatchReceipt, ChangeFeedBatch},
     diagnostics::DiagnosticsContextBuilder,
@@ -59,7 +59,7 @@ fn delivery(
     (response, receipt, received)
 }
 
-fn acquire(distributor: &Arc<BatchDistributor>, lease: &str) -> AcquisitionDelivery {
+fn acquire(distributor: &Arc<ChangeFeedRequestDistributor>, lease: &str) -> AcquisitionDelivery {
     distributor
         .acquire(lease.into(), Some("incarnation".into()))
         .unwrap()
@@ -71,9 +71,11 @@ fn waiting(session: &AcquisitionDelivery) -> BoxFuture<'_, Result<Option<ReadDem
     waiting
 }
 
-fn receive(distributor: &Arc<BatchDistributor>) -> BoxFuture<'static, Option<ChangeFeedBatch>> {
+fn receive(
+    distributor: &Arc<ChangeFeedRequestDistributor>,
+) -> BoxFuture<'static, Option<ChangeFeedBatch>> {
     let distributor = distributor.clone();
-    async move { distributor.next_batch().await }.boxed()
+    async move { distributor.read_next_change_feed_batch().await }.boxed()
 }
 
 fn authorize(
@@ -116,7 +118,7 @@ fn acknowledge(
 
 #[test]
 fn acquisition_waits_for_demand_and_idle_reads_rotate() {
-    let distributor = Arc::new(BatchDistributor::default());
+    let distributor = Arc::new(ChangeFeedRequestDistributor::default());
     let a = acquire(&distributor, "a");
     let b = acquire(&distributor, "b");
     let mut a_waiting = waiting(&a);
@@ -141,7 +143,7 @@ fn acquisition_waits_for_demand_and_idle_reads_rotate() {
 
 #[test]
 fn concurrent_receives_authorize_only_the_requested_parallelism() {
-    let distributor = Arc::new(BatchDistributor::default());
+    let distributor = Arc::new(ChangeFeedRequestDistributor::default());
     let a = acquire(&distributor, "a");
     let b = acquire(&distributor, "b");
     let c = acquire(&distributor, "c");
@@ -168,7 +170,7 @@ fn concurrent_receives_authorize_only_the_requested_parallelism() {
 
 #[test]
 fn response_wakes_only_its_requester_and_cannot_be_taken_by_another_receive() {
-    let distributor = Arc::new(BatchDistributor::default());
+    let distributor = Arc::new(ChangeFeedRequestDistributor::default());
     let session = acquire(&distributor, "lease");
     let (demand, mut receiving) = authorize(&session);
     let wakes = Arc::new(Wakes::default());
@@ -185,7 +187,7 @@ fn response_wakes_only_its_requester_and_cannot_be_taken_by_another_receive() {
 
 #[test]
 fn cancellation_after_response_transfer_drops_the_unclaimed_batch() {
-    let distributor = Arc::new(BatchDistributor::default());
+    let distributor = Arc::new(ChangeFeedRequestDistributor::default());
     let session = acquire(&distributor, "lease");
     let (demand, receiving) = authorize(&session);
     let received = publish(&session, demand, "unclaimed");
@@ -196,7 +198,7 @@ fn cancellation_after_response_transfer_drops_the_unclaimed_batch() {
 
 #[test]
 fn response_after_receive_cancellation_is_rejected_without_buffering() {
-    let distributor = Arc::new(BatchDistributor::default());
+    let distributor = Arc::new(ChangeFeedRequestDistributor::default());
     let session = acquire(&distributor, "lease");
     let (demand, receiving) = authorize(&session);
     drop(receiving);
@@ -221,7 +223,7 @@ fn response_after_receive_cancellation_is_rejected_without_buffering() {
 
 #[test]
 fn canceled_demand_is_visible_before_a_read_starts() {
-    let distributor = Arc::new(BatchDistributor::default());
+    let distributor = Arc::new(ChangeFeedRequestDistributor::default());
     let session = acquire(&distributor, "lease");
     let (demand, receiving) = authorize(&session);
     assert!(!demand.is_canceled());
@@ -234,7 +236,7 @@ fn canceled_demand_is_visible_before_a_read_starts() {
 
 #[test]
 fn delivery_requires_demand_and_the_previous_acknowledgment() {
-    let distributor = Arc::new(BatchDistributor::default());
+    let distributor = Arc::new(ChangeFeedRequestDistributor::default());
     let session = acquire(&distributor, "lease");
     let (sender, _receiver) = oneshot::channel();
     let (response, receipt, rejected) = delivery("unsolicited");
@@ -259,7 +261,7 @@ fn delivery_requires_demand_and_the_previous_acknowledgment() {
 
 #[test]
 fn duplicate_demand_registration_preserves_the_original_waiter() {
-    let distributor = Arc::new(BatchDistributor::default());
+    let distributor = Arc::new(ChangeFeedRequestDistributor::default());
     let session = acquire(&distributor, "lease");
     let original = waiting(&session);
     assert_eq!(
@@ -284,7 +286,7 @@ fn duplicate_demand_registration_preserves_the_original_waiter() {
 
 #[test]
 fn canceled_producer_is_skipped_without_blocking_another_acquisition() {
-    let distributor = Arc::new(BatchDistributor::default());
+    let distributor = Arc::new(ChangeFeedRequestDistributor::default());
     let a = acquire(&distributor, "a");
     let (demand, mut receiving) = authorize(&a);
     drop(publish(&a, demand, "canceled"));
@@ -300,7 +302,7 @@ fn canceled_producer_is_skipped_without_blocking_another_acquisition() {
 
 #[test]
 fn scheduler_does_not_retain_acquisition_state() {
-    let distributor = Arc::new(BatchDistributor::default());
+    let distributor = Arc::new(ChangeFeedRequestDistributor::default());
     let session = acquire(&distributor, "lease");
     let weak = Arc::downgrade(&session.delivery);
     drop(waiting(&session));
@@ -313,7 +315,7 @@ fn scheduler_does_not_retain_acquisition_state() {
 
 #[test]
 fn stale_demand_cannot_deliver_acknowledge_or_close_a_replacement() {
-    let distributor = Arc::new(BatchDistributor::default());
+    let distributor = Arc::new(ChangeFeedRequestDistributor::default());
     let old = acquire(&distributor, "lease");
     let (stale, receiving) = authorize(&old);
     old.close();
@@ -341,7 +343,7 @@ fn stale_demand_cannot_deliver_acknowledge_or_close_a_replacement() {
 
 #[test]
 fn graceful_shutdown_drains_transferred_batches_and_ends_demand_waits() {
-    let distributor = Arc::new(BatchDistributor::default());
+    let distributor = Arc::new(ChangeFeedRequestDistributor::default());
     let session = acquire(&distributor, "requested");
     let (demand, receiving) = authorize(&session);
     let received = publish(&session, demand, "requested");
@@ -372,7 +374,7 @@ fn graceful_shutdown_drains_transferred_batches_and_ends_demand_waits() {
 
 #[test]
 fn force_during_drain_rejects_unclaimed_responses_without_reopening() {
-    let distributor = Arc::new(BatchDistributor::default());
+    let distributor = Arc::new(ChangeFeedRequestDistributor::default());
     let session = acquire(&distributor, "lease");
     let (demand, receiving) = authorize(&session);
     let unclaimed = publish(&session, demand, "unclaimed");
@@ -385,7 +387,7 @@ fn force_during_drain_rejects_unclaimed_responses_without_reopening() {
 
 #[test]
 fn shutdown_wakes_waiters_and_rejects_late_acquisitions() {
-    let distributor = Arc::new(BatchDistributor::default());
+    let distributor = Arc::new(ChangeFeedRequestDistributor::default());
     let mut first = receive(&distributor);
     let mut second = receive(&distributor);
     assert!(first.as_mut().now_or_never().is_none());

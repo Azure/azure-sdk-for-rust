@@ -4,10 +4,11 @@
 
 ### Features Added
 
-- Added `CheckpointPolicy::coalesced()` for five-minute checkpoint coalescing; idle reads no longer trigger coalesced persistence.
+- Added `ProcessorOptions::with_bootstrap_timeout()` to configure each caller's bootstrap wait without extending shared attempts or initialization claims. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
+- Added `CheckpointPolicy::deferred()` for five-minute deferred checkpointing; idle reads do not trigger deferred persistence.
 - Processor reads now defer throttled acquisitions without blocking other eligible leases, preserve retry budgets across turns, and finish the final cooldown before reporting exhaustion and releasing ownership.
 - Added `ProcessorOptions::with_error_observer()` for observing background coordination and lease-processing failures without changing recovery.
-- Added coalesced checkpoint policies and `BatchReceipt::acknowledge()` for deferred persistence of successful batches; `checkpoint()` remains a durable barrier and renewal schedules are unchanged.
+- Added deferred checkpointing and `BatchReceipt::acknowledge()` for deferred persistence of successful batches; `checkpoint()` remains a durable barrier and renewal schedules are unchanged.
 - Added `change_feed_processor::Processor` with equal lease balancing, renewal, and schema-agnostic batch receipts that gate durable checkpoints and subsequent polls.
 - Added automatic online processor split recovery with range-local child creation, conditional parent deletion, independent merge checkpoints, and balanced child acquisition. ([#5476](https://github.com/Azure/azure-sdk-for-rust/pull/5476))
 - Added driver-owned change feed workload bootstrap with mode binding, create-only initial lease coverage, bounded initialization claims, and progress-preserving recovery of incomplete workloads. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
@@ -16,6 +17,11 @@
 
 ### Breaking Changes
 
+- Renamed `Processor::next_batch()` to `Processor::read_next_change_feed_batch()` to describe the demand-driven batch receive.
+- Bootstrap now creates leases directly and accepts HTTP 409 as already existing without lease reads or content validation, matching Java; other create failures still prevent readiness and existing lease documents are not overwritten. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
+- Renamed CFP `processor_name` and `instance_name` parameters to `workload_name` and `worker_name`; schema-1 `processorName`, stored owners, and lease IDs are unchanged. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
+- `CheckpointPolicy::default()` and new processor options now use `Deferred` with a five-minute interval; select `Eager` for durable-per-batch acknowledgment. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
+- Renamed checkpoint policies to `Eager` and `Deferred`, and the five-minute constructor to `CheckpointPolicy::deferred()`; checkpoint behavior and native policy values are unchanged. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
 - Lease balancing now considers processing inactivity using a persisted owner deadline; acquisition grants a fresh grace period, and existing lease writes publish activity without advancing checkpoints.
 - Completed split parent leases are now deleted after replacement leases are established; restart verification preserves descendant coverage. Drain and upgrade all workers together to avoid older versions recreating deleted parents.
 - Removed persisted split-retirement state and background split repair. Child creation and conditional parent deletion now run only after a change-feed topology error; failed handling retries through normal lease acquisition. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))

@@ -4,9 +4,9 @@
 #[cfg(feature = "fault_injection")]
 use super::{balance, signal, supervise, SharedState};
 use super::{
-    balancing, bootstrap, namespace, now_millis, transition_lease, Acquisition, ChangeFeedBatch,
-    ChangeFeedFactoryMode, CheckpointPolicy, Context, Identity, Lease, ProcessingLease, Processor,
-    ProcessorOptions, Update, SCHEMA_VERSION,
+    balancing, bootstrap, namespace, now_millis, transition_lease, ChangeFeedBatch,
+    ChangeFeedFactoryMode, CheckpointPolicy, Context, Identity, LeaseDocument, LeaseState,
+    Processor, ProcessorOptions, Update, SCHEMA_VERSION,
 };
 #[cfg(feature = "fault_injection")]
 use crate::fault_injection::{
@@ -14,11 +14,7 @@ use crate::fault_injection::{
     FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType,
 };
 use crate::{
-    change_feed_processor::bootstrap::{
-        store::ChangeFeedProcessorBootstrapStoredRecord as Stored,
-        ChangeFeedProcessorBootstrapRangePlan as RangePlan,
-        ChangeFeedProcessorBootstrapRecord as Record,
-    },
+    change_feed_processor::bootstrap::{RangePlan, Record},
     driver::CosmosDriverRuntimeBuilder,
     in_memory_emulator::{
         ContainerConfig, InMemoryEmulatorHttpClient, RequestObserver, VirtualAccountConfig,
@@ -55,6 +51,7 @@ const ENDPOINT: &str = "https://eastus.emulator.local";
 
 fn options(worker: &str) -> ProcessorOptions {
     let mut options = ProcessorOptions::new(ChangeFeedFactoryMode::Incremental, "workload", worker)
+        .with_checkpoint_policy(CheckpointPolicy::Eager)
         .with_start(ChangeFeedStartFrom::Beginning);
     options.expiration = Duration::from_millis(600);
     options.poll_delay = Duration::from_millis(10);
@@ -150,15 +147,15 @@ async fn fixture_with_runtime(
         &driver,
         &leases,
         options.mode,
-        &options.processor_name,
-        &options.instance_name,
+        &options.workload_name,
+        &options.worker_name,
     )
     .await?;
     let identity = Identity {
         version: SCHEMA_VERSION,
         account: source.account().endpoint().origin().ascii_serialization(),
         container_rid: source.rid().into(),
-        processor_name: "workload".into(),
+        workload_name: "workload".into(),
         mode,
     };
     Ok(Arc::new(Context {
@@ -239,17 +236,20 @@ async fn insert(context: &Context, id: &str) -> Result<()> {
 }
 
 async fn next(processor: &Processor) -> ChangeFeedBatch {
-    tokio::time::timeout(Duration::from_secs(5), processor.next_batch())
-        .await
-        .expect("batch timeout")
-        .expect("processor stopped")
+    tokio::time::timeout(
+        Duration::from_secs(5),
+        processor.read_next_change_feed_batch(),
+    )
+    .await
+    .expect("batch timeout")
+    .expect("processor stopped")
 }
 
 async fn poll_until<T>(processor: &Processor, completed: impl Future<Output = T>) -> T {
     tokio::select! {
         biased;
         result = completed => result,
-        _ = processor.next_batch() => panic!("Unexpected delivery while waiting for idle processing"),
+        _ = processor.read_next_change_feed_batch() => panic!("Unexpected delivery while waiting for idle processing"),
     }
 }
 
@@ -259,7 +259,7 @@ async fn pin_start(context: &Context) -> Result<()> {
         context
             .options
             .clone()
-            .with_checkpoint_policy(CheckpointPolicy::EveryBatch),
+            .with_checkpoint_policy(CheckpointPolicy::Eager),
     )
     .await?;
     poll_until(
@@ -271,7 +271,7 @@ async fn pin_start(context: &Context) -> Result<()> {
                     .await
                     .unwrap()
                     .iter()
-                    .all(|lease| lease.base.continuation.is_some())
+                    .all(|lease| lease.continuation.is_some())
                 {
                     break;
                 }
@@ -288,8 +288,8 @@ async fn pin_start(context: &Context) -> Result<()> {
 async fn more_than_one_hundred_leases_deliver_without_a_shared_batch_cap() -> Result<()> {
     const LEASE_COUNT: u32 = 128;
     for policy in [
-        CheckpointPolicy::EveryBatch,
-        CheckpointPolicy::Coalesced {
+        CheckpointPolicy::Eager,
+        CheckpointPolicy::Deferred {
             max_interval: Duration::from_secs(60),
         },
     ] {
@@ -299,7 +299,7 @@ async fn more_than_one_hundred_leases_deliver_without_a_shared_batch_cap() -> Re
             .list()
             .await?
             .into_iter()
-            .map(|lease| lease.base.range)
+            .map(|lease| lease.range)
             .collect::<Vec<_>>();
         assert_eq!(ranges.len(), LEASE_COUNT as usize);
         let keys = topology::keys(&ranges);
@@ -322,20 +322,21 @@ async fn more_than_one_hundred_leases_deliver_without_a_shared_batch_cap() -> Re
             held.push((id, response, receipt));
         }
         assert_eq!(held.len(), LEASE_COUNT as usize);
-        assert!(
-            tokio::time::timeout(Duration::from_millis(50), processor.next_batch())
-                .await
-                .is_err()
-        );
+        assert!(tokio::time::timeout(
+            Duration::from_millis(50),
+            processor.read_next_change_feed_batch()
+        )
+        .await
+        .is_err());
         let (id, response, receipt) = held.pop().unwrap();
         drop(response);
         receipt.acknowledge().await?;
         let (next_id, response, receipt) = next(&processor).await.into_parts();
         assert_eq!(next_id, id);
-        let saved = context.store().read::<Lease>(&id).await?.unwrap();
+        let saved = context.store().read::<LeaseDocument>(&id).await?.unwrap();
         assert_eq!(
-            saved.value.base.continuation.is_some(),
-            policy == CheckpointPolicy::EveryBatch
+            saved.0.continuation.is_some(),
+            policy == CheckpointPolicy::Eager
         );
         held.push((next_id, response, receipt));
         let mut stopping = Box::pin(processor.stop());
@@ -349,7 +350,7 @@ async fn more_than_one_hundred_leases_deliver_without_a_shared_batch_cap() -> Re
             .list()
             .await?
             .iter()
-            .all(|lease| { lease.base.owner.is_none() && lease.base.continuation.is_some() }));
+            .all(|lease| { lease.owner.is_none() && lease.continuation.is_some() }));
     }
     Ok(())
 }
@@ -358,13 +359,13 @@ async fn more_than_one_hundred_leases_deliver_without_a_shared_batch_cap() -> Re
 async fn concurrent_restart_verification_preserves_existing_progress() -> Result<()> {
     let context = fixture().await?;
     let before = context.list().await?;
-    let kept_id = &before[0].base.record.id;
-    let missing_id = &before[1].base.record.id;
+    let kept_id = &before[0].record.id;
+    let missing_id = &before[1].record.id;
     let store = context.store();
-    let mut kept = store.read::<Lease>(kept_id).await?.unwrap();
-    kept.value.base.owner = Some("existing-worker".into());
-    kept.value.base.continuation = Some(ContinuationToken::from_string("saved-position".into()));
-    let kept = store.replace(kept_id, &kept.value, kept.etag).await?;
+    let mut kept = store.read::<LeaseDocument>(kept_id).await?.unwrap();
+    kept.0.owner = Some("existing-worker".into());
+    kept.0.continuation = Some(ContinuationToken::from_string("saved-position".into()));
+    let kept = store.replace(kept_id, &kept.0, kept.1).await?;
     store
         .execute(CosmosOperation::delete_item(ItemReference::from_name(
             &context.leases,
@@ -380,16 +381,16 @@ async fn concurrent_restart_verification_preserves_existing_progress() -> Result
             serde_json::to_value(
                 leases
                     .iter()
-                    .find(|lease| &lease.base.record.id == kept_id)
+                    .find(|lease| &lease.record.id == kept_id)
                     .unwrap()
             )?,
-            serde_json::to_value(&kept.value)?,
+            serde_json::to_value(&kept.0)?,
         );
         assert_eq!(
             serde_json::to_value(
                 leases
                     .iter()
-                    .find(|lease| &lease.base.record.id == missing_id)
+                    .find(|lease| &lease.record.id == missing_id)
                     .unwrap()
             )?,
             serde_json::to_value(&before[1])?,
@@ -404,8 +405,8 @@ async fn restart_verification_rejects_incomplete_range_plan() -> Result<()> {
     let id = format!("{}.plan", context.namespace);
     let store = context.store();
     let mut plan = store.read::<RangePlan>(&id).await?.unwrap();
-    plan.value.ranges.pop();
-    store.replace(&id, &plan.value, plan.etag).await?;
+    plan.0.ranges.pop();
+    store.replace(&id, &plan.0, plan.1).await?;
     assert!(context
         .verify_leases()
         .await
@@ -416,27 +417,26 @@ async fn restart_verification_rejects_incomplete_range_plan() -> Result<()> {
     Ok(())
 }
 
-fn leases(owners: &[Option<&str>]) -> Vec<Lease> {
+fn leases(owners: &[Option<&str>]) -> Vec<LeaseDocument> {
     owners
         .iter()
         .enumerate()
-        .map(|(index, owner)| Lease {
-            base: ProcessingLease {
-                record: Record {
-                    id: index.to_string(),
-                    workload: Identity {
-                        version: 1,
-                        account: "account".into(),
-                        container_rid: "rid".into(),
-                        processor_name: "workload".into(),
-                        mode: ChangeFeedFactoryMode::Incremental,
-                    },
-                    ttl: -1,
+        .map(|(index, owner)| LeaseDocument {
+            record: Record {
+                id: index.to_string(),
+                workload: Identity {
+                    version: 1,
+                    account: "account".into(),
+                    container_rid: "rid".into(),
+                    workload_name: "workload".into(),
+                    mode: ChangeFeedFactoryMode::Incremental,
                 },
-                range: FeedRange::full(),
-                owner: owner.map(str::to_owned),
-                continuation: None,
+                ttl: -1,
             },
+            range: FeedRange::full(),
+            owner: owner.map(str::to_owned),
+            continuation: None,
+
             incarnation: Some(index.to_string()),
             renewed_at: Some(1000),
             last_processed_at: None,
@@ -450,7 +450,7 @@ fn equal_balancing_scale_out_down_and_limits() {
     let all = leases(&[Some("a"), Some("a"), Some("a"), Some("a")]);
     let selected = balancing::select(&all, &options("b"), 1000);
     assert_eq!(selected.len(), 1);
-    assert_eq!(all[selected[0]].base.owner.as_deref(), Some("a"));
+    assert_eq!(all[selected[0]].owner.as_deref(), Some("a"));
     let balanced = leases(&[Some("a"), Some("a"), Some("b"), Some("b")]);
     assert!(balancing::select(&balanced, &options("a"), 1000).is_empty());
     let mut expired = balanced;
@@ -489,12 +489,9 @@ fn persisted_lease_schema_is_independent_of_acquisition_progress() -> Result<()>
         (ChangeFeedFactoryMode::FullFidelity, "allVersionsAndDeletes"),
     ] {
         let mut lease = leases(&[Some("worker")]).remove(0);
-        lease.base.record.workload.mode = mode;
-        lease.base.continuation = Some(ContinuationToken::from_string("durable".into()));
-        let mut acquisition = Acquisition::from(Stored {
-            value: lease,
-            etag: "stored-etag".into(),
-        });
+        lease.record.workload.mode = mode;
+        lease.continuation = Some(ContinuationToken::from_string("durable".into()));
+        let mut acquisition = LeaseState::from((lease, "stored-etag".into()));
         acquisition.renewed = Some(Instant::now());
         acquisition.acknowledge(ContinuationToken::from_string("unpersisted".into()), 7);
         assert_eq!(
@@ -523,11 +520,11 @@ fn persisted_lease_schema_is_independent_of_acquisition_progress() -> Result<()>
 fn owned_transitions_preserve_fresh_progress_and_merge_local_activity() -> Result<()> {
     let options = options("worker");
     let mut observed = leases(&[Some("worker")]).remove(0);
-    observed.base.continuation = Some(ContinuationToken::from_string("old".into()));
+    observed.continuation = Some(ContinuationToken::from_string("old".into()));
     observed.last_processed_at = Some(3000);
     observed.processing_deadline = Some(9000);
     let mut current = observed.clone();
-    current.base.continuation = Some(ContinuationToken::from_string("fresh".into()));
+    current.continuation = Some(ContinuationToken::from_string("fresh".into()));
     current.last_processed_at = Some(2000);
     current.processing_deadline = Some(10000);
     let checkpoint = ContinuationToken::from_string("acknowledged".into());
@@ -542,25 +539,25 @@ fn owned_transitions_preserve_fresh_progress_and_merge_local_activity() -> Resul
         expected.renewed_at = Some(5000);
         match update {
             Update::Renew => {}
-            Update::Release => expected.base.owner = None,
-            Update::Checkpoint(token) => expected.base.continuation = Some(token.clone()),
+            Update::Release => expected.owner = None,
+            Update::Checkpoint(token) => expected.continuation = Some(token.clone()),
             Update::Acquire(_) => unreachable!(),
         }
         assert_eq!(serde_json::to_value(next)?, serde_json::to_value(expected)?);
     }
-    assert_eq!(observed.base.continuation.unwrap().as_str(), "old");
+    assert_eq!(observed.continuation.unwrap().as_str(), "old");
     Ok(())
 }
 
 #[test]
 fn acquisition_transition_uses_supplied_identity_and_time() -> Result<()> {
     let mut current = leases(&[Some("old-worker")]).remove(0);
-    current.base.continuation = Some(ContinuationToken::from_string("durable".into()));
+    current.continuation = Some(ContinuationToken::from_string("durable".into()));
     current.last_processed_at = Some(500);
     for (policy, deadline) in [
-        (CheckpointPolicy::EveryBatch, 601000),
+        (CheckpointPolicy::Eager, 601000),
         (
-            CheckpointPolicy::Coalesced {
+            CheckpointPolicy::Deferred {
                 max_interval: Duration::from_secs(30),
             },
             61000,
@@ -575,7 +572,7 @@ fn acquisition_transition_uses_supplied_identity_and_time() -> Result<()> {
             1000,
         )?;
         let mut expected = current.clone();
-        expected.base.owner = Some("new-worker".into());
+        expected.owner = Some("new-worker".into());
         expected.incarnation = Some("new-acquisition".into());
         expected.last_processed_at = None;
         expected.processing_deadline = Some(deadline);
@@ -593,7 +590,7 @@ fn lease_transitions_reject_owner_or_incarnation_changes() {
     for different_owner in [false, true] {
         let mut current = observed.clone();
         if different_owner {
-            current.base.owner = Some("replacement".into());
+            current.owner = Some("replacement".into());
         } else {
             current.incarnation = Some("replacement".into());
         }
@@ -644,7 +641,7 @@ fn acquisition_transition_rechecks_processing_and_renewal_deadlines() -> Result<
 
 #[test]
 fn original_schema_lease_deserializes_without_runtime_progress() -> Result<()> {
-    let lease: Lease = serde_json::from_str(
+    let lease: LeaseDocument = serde_json::from_str(
         r#"{
             "id": "original-lease",
             "workload": {
@@ -658,27 +655,20 @@ fn original_schema_lease_deserializes_without_runtime_progress() -> Result<()> {
             "continuation": "saved-before-upgrade"
         }"#,
     )?;
-    assert_eq!(lease.base.record.id, "original-lease");
+    assert_eq!(lease.record.id, "original-lease");
     assert_eq!(
-        lease.base.record.workload.mode,
+        lease.record.workload.mode,
         ChangeFeedFactoryMode::FullFidelity
     );
-    assert_eq!(lease.base.range, FeedRange::full());
+    assert_eq!(lease.range, FeedRange::full());
     assert_eq!(
-        lease
-            .base
-            .continuation
-            .as_ref()
-            .map(ContinuationToken::as_str),
+        lease.continuation.as_ref().map(ContinuationToken::as_str),
         Some("saved-before-upgrade")
     );
-    assert!(lease.base.owner.is_none());
+    assert!(lease.owner.is_none());
     assert!(lease.incarnation.is_none());
     assert!(lease.renewed_at.is_none());
-    let acquisition = Acquisition::from(Stored {
-        value: lease,
-        etag: "stored-etag".into(),
-    });
+    let acquisition = LeaseState::from((lease, "stored-etag".into()));
     assert!(acquisition.renewed.is_none());
     assert!(acquisition.pending.is_none());
     Ok(())
@@ -690,10 +680,7 @@ async fn acquisition_failure_does_not_skip_other_selected_leases() -> Result<()>
     let (context, rule) =
         fault_fixture(FaultOperationType::ReplaceItem, StatusCode::BadRequest, 1).await?;
     let roots = context.list().await?;
-    let expected: BTreeSet<_> = roots
-        .iter()
-        .map(|lease| lease.base.record.id.clone())
-        .collect();
+    let expected: BTreeSet<_> = roots.iter().map(|lease| lease.record.id.clone()).collect();
     let state = Arc::new(SharedState::default());
     let (_stop, stopping) = signal();
     let (_force, forced) = signal();
@@ -711,7 +698,7 @@ async fn acquisition_failure_does_not_skip_other_selected_leases() -> Result<()>
     assert_eq!(acquired.len(), roots.len() - 1);
     let owned = acquired
         .iter()
-        .map(|lease| lease.value.base.record.id.clone())
+        .map(|lease| lease.value.record.id.clone())
         .collect();
     let recovered = balance(
         context.clone(),
@@ -727,7 +714,7 @@ async fn acquisition_failure_does_not_skip_other_selected_leases() -> Result<()>
     assert_eq!(
         acquired
             .iter()
-            .map(|lease| lease.value.base.record.id.clone())
+            .map(|lease| lease.value.record.id.clone())
             .collect::<BTreeSet<_>>(),
         expected
     );
@@ -749,7 +736,7 @@ async fn feed_read_failure_releases_without_saving_progress_or_creating_children
     .await?;
     let root = context.list().await?.remove(0);
     let mut owned = context.acquire(&root).await?;
-    let checkpoint = context.checkpoint(&owned.value, &owned.value.base.range)?;
+    let checkpoint = context.checkpoint(&owned.value, &owned.value.range)?;
     context
         .update(&mut owned, Update::Checkpoint(&checkpoint))
         .await?;
@@ -760,21 +747,21 @@ async fn feed_read_failure_releases_without_saving_progress_or_creating_children
     tokio::time::timeout(Duration::from_secs(5), async {
         tokio::select! {
             () = supervise(context.clone(), state.clone(), owned, stopping, forced) => {},
-            _ = state.distributor.next_batch() => panic!("Faulted feed unexpectedly delivered"),
+            _ = state.distributor.read_next_change_feed_batch() => panic!("Faulted feed unexpectedly delivered"),
         }
     })
     .await
     .unwrap();
     assert_eq!(rule.hit_count(), 1);
-    assert!(futures::poll!(Box::pin(state.distributor.next_batch())).is_pending());
+    assert!(futures::poll!(Box::pin(state.distributor.read_next_change_feed_batch())).is_pending());
     let stored = context
         .store()
-        .read::<Lease>(&root.base.record.id)
+        .read::<LeaseDocument>(&root.record.id)
         .await?
         .unwrap()
-        .value;
-    assert_eq!(stored.base.continuation, Some(checkpoint));
-    assert!(stored.base.owner.is_none());
+        .0;
+    assert_eq!(stored.continuation, Some(checkpoint));
+    assert!(stored.owner.is_none());
     Ok(())
 }
 
@@ -784,17 +771,22 @@ async fn renewal_not_found_cancels_pending_receipt_and_preserves_progress() -> R
     let (context, rule) =
         fault_fixture(FaultOperationType::ReplaceItem, StatusCode::NotFound, 1).await?;
     let roots = context.list().await?;
-    let ranges: Vec<_> = roots.iter().map(|lease| lease.base.range.clone()).collect();
+    let ranges: Vec<_> = roots.iter().map(|lease| lease.range.clone()).collect();
     let keys = topology::keys(&ranges);
     topology::publish(&context, &keys[..1], 0..1, &mut Default::default()).await?;
     let owned = context.acquire(&roots[0]).await?;
-    let id = owned.value.base.record.id.clone();
+    let id = owned.value.record.id.clone();
     let state = Arc::new(SharedState::default());
     let (_stop, stopping) = signal();
     let (_force, forced) = signal();
     tokio::time::timeout(Duration::from_secs(5), async {
         let observing = async {
-            let (_, _, receipt) = state.distributor.next_batch().await.unwrap().into_parts();
+            let (_, _, receipt) = state
+                .distributor
+                .read_next_change_feed_batch()
+                .await
+                .unwrap()
+                .into_parts();
             rule.enable();
             receipt.cancelled().await;
             assert!(receipt
@@ -812,9 +804,9 @@ async fn renewal_not_found_cancels_pending_receipt_and_preserves_progress() -> R
     .await
     .unwrap();
     assert_eq!(rule.hit_count(), 1);
-    let saved = context.store().read::<Lease>(&id).await?.unwrap().value;
-    assert!(saved.base.continuation.is_none());
-    assert!(saved.base.owner.is_none());
+    let saved = context.store().read::<LeaseDocument>(&id).await?.unwrap().0;
+    assert!(saved.continuation.is_none());
+    assert!(saved.owner.is_none());
     Ok(())
 }
 
@@ -832,11 +824,11 @@ async fn workers_converge_on_scale_out_and_reclaim_on_scale_down() -> Result<()>
                     let leases = context.list().await.unwrap();
                     let first = leases
                         .iter()
-                        .filter(|lease| lease.base.owner.as_deref() == Some("first"))
+                        .filter(|lease| lease.owner.as_deref() == Some("first"))
                         .count();
                     let second = leases
                         .iter()
-                        .filter(|lease| lease.base.owner.as_deref() == Some("second"))
+                        .filter(|lease| lease.owner.as_deref() == Some("second"))
                         .count();
                     if (first, second) == (first_count, second_count) {
                         break;
@@ -892,16 +884,16 @@ async fn stealing_fences_old_renewal_and_checkpoint() -> Result<()> {
     }
     let stored = context
         .store()
-        .read::<Lease>(&observed.base.record.id)
+        .read::<LeaseDocument>(&observed.record.id)
         .await?
         .unwrap();
-    assert_eq!(stored.etag, second.etag);
+    assert_eq!(stored.1, second.etag);
     assert_eq!(
-        serde_json::to_value(&stored.value)?,
+        serde_json::to_value(&stored.0)?,
         serde_json::to_value(&second.value)?
     );
-    // Reacquiring under the old instance name must not revive the old receipt.
-    second_context.options.instance_name = "first".into();
+    // Reacquiring under the old worker name must not revive the old receipt.
+    second_context.options.worker_name = "first".into();
     let third = second_context.acquire(&second.value).await?;
     assert_ne!(first.value.incarnation, third.value.incarnation);
     for update in [
@@ -920,12 +912,12 @@ async fn stealing_fences_old_renewal_and_checkpoint() -> Result<()> {
     assert_eq!(serde_json::to_value(&first.value)?, original);
     let stored = context
         .store()
-        .read::<Lease>(&observed.base.record.id)
+        .read::<LeaseDocument>(&observed.record.id)
         .await?
         .unwrap();
-    assert_eq!(stored.etag, third.etag);
+    assert_eq!(stored.1, third.etag);
     assert_eq!(
-        serde_json::to_value(&stored.value)?,
+        serde_json::to_value(&stored.0)?,
         serde_json::to_value(&third.value)?
     );
     Ok(())
@@ -935,24 +927,21 @@ async fn stealing_fences_old_renewal_and_checkpoint() -> Result<()> {
 async fn lease_mutations_preserve_fresh_progress() -> Result<()> {
     let context = fixture().await?;
     let observed = context.list().await?.remove(0);
-    let id = &observed.base.record.id;
+    let id = &observed.record.id;
     let store = context.store();
-    let mut stored = store.read::<Lease>(id).await?.unwrap();
-    stored.value.base.continuation = Some(ContinuationToken::from_string("saved".into()));
-    let saved = store.replace(id, &stored.value, stored.etag).await?;
+    let mut stored = store.read::<LeaseDocument>(id).await?.unwrap();
+    stored.0.continuation = Some(ContinuationToken::from_string("saved".into()));
+    let saved = store.replace(id, &stored.0, stored.1).await?;
     let mut owned = context.acquire(&observed).await?;
-    assert_ne!(owned.etag, saved.etag);
-    assert_eq!(
-        owned.value.base.continuation.as_ref().unwrap().as_str(),
-        "saved"
-    );
+    assert_ne!(owned.etag, saved.1);
+    assert_eq!(owned.value.continuation.as_ref().unwrap().as_str(), "saved");
 
     let mut concurrent = owned.value.clone();
-    concurrent.base.continuation = Some(ContinuationToken::from_string("newer".into()));
+    concurrent.continuation = Some(ContinuationToken::from_string("newer".into()));
     let concurrent = store.replace(id, &concurrent, owned.etag.clone()).await?;
     context.update(&mut owned, Update::Renew).await?;
-    assert_ne!(owned.etag, concurrent.etag);
-    let mut expected = concurrent.value;
+    assert_ne!(owned.etag, concurrent.1);
+    let mut expected = concurrent.0;
     expected.renewed_at = owned.value.renewed_at;
     assert_eq!(
         serde_json::to_value(&owned.value)?,
@@ -963,7 +952,7 @@ async fn lease_mutations_preserve_fresh_progress() -> Result<()> {
     context
         .update(&mut owned, Update::Checkpoint(&checkpoint))
         .await?;
-    expected.base.continuation = Some(checkpoint);
+    expected.continuation = Some(checkpoint);
     expected.renewed_at = owned.value.renewed_at;
     assert_eq!(
         serde_json::to_value(&owned.value)?,
@@ -971,16 +960,16 @@ async fn lease_mutations_preserve_fresh_progress() -> Result<()> {
     );
 
     context.update(&mut owned, Update::Release).await?;
-    expected.base.owner = None;
+    expected.owner = None;
     expected.renewed_at = owned.value.renewed_at;
     assert_eq!(
         serde_json::to_value(&owned.value)?,
         serde_json::to_value(&expected)?
     );
-    let persisted = store.read::<Lease>(id).await?.unwrap();
-    assert_eq!(persisted.etag, owned.etag);
+    let persisted = store.read::<LeaseDocument>(id).await?.unwrap();
+    assert_eq!(persisted.1, owned.etag);
     assert_eq!(
-        serde_json::to_value(&persisted.value)?,
+        serde_json::to_value(&persisted.0)?,
         serde_json::to_value(&expected)?
     );
     Ok(())
@@ -996,13 +985,13 @@ async fn lease_mutations_reject_incompatible_records() -> Result<()> {
         let original_etag = owned.etag.clone();
         let mut invalid = owned.value.clone();
         if invalid_ttl {
-            invalid.base.record.ttl = 30;
+            invalid.record.ttl = 30;
         } else {
-            invalid.base.record.workload.processor_name = "another-workload".into();
+            invalid.record.workload.workload_name = "another-workload".into();
         }
         let stored = context
             .store()
-            .replace(&invalid.base.record.id, &invalid, owned.etag.clone())
+            .replace(&invalid.record.id, &invalid, owned.etag.clone())
             .await?;
         assert_eq!(
             context
@@ -1034,12 +1023,12 @@ async fn lease_mutations_reject_incompatible_records() -> Result<()> {
         assert_eq!(serde_json::to_value(&owned.value)?, original);
         let persisted = context
             .store()
-            .read::<Lease>(&invalid.base.record.id)
+            .read::<LeaseDocument>(&invalid.record.id)
             .await?
             .unwrap();
-        assert_eq!(persisted.etag, stored.etag);
+        assert_eq!(persisted.1, stored.1);
         assert_eq!(
-            serde_json::to_value(&persisted.value)?,
+            serde_json::to_value(&persisted.0)?,
             serde_json::to_value(&invalid)?
         );
     }
@@ -1058,7 +1047,7 @@ async fn acquisition_does_not_retry_write_conflicts() -> Result<()> {
     let observed = context.list().await?.remove(0);
     let before = context
         .store()
-        .read::<Lease>(&observed.base.record.id)
+        .read::<LeaseDocument>(&observed.record.id)
         .await?
         .unwrap();
     rule.enable();
@@ -1069,13 +1058,13 @@ async fn acquisition_does_not_retry_write_conflicts() -> Result<()> {
     assert_eq!(rule.hit_count(), 1);
     let after = context
         .store()
-        .read::<Lease>(&observed.base.record.id)
+        .read::<LeaseDocument>(&observed.record.id)
         .await?
         .unwrap();
-    assert_eq!(after.etag, before.etag);
+    assert_eq!(after.1, before.1);
     assert_eq!(
-        serde_json::to_value(&after.value)?,
-        serde_json::to_value(&before.value)?
+        serde_json::to_value(&after.0)?,
+        serde_json::to_value(&before.0)?
     );
     Ok(())
 }
@@ -1126,8 +1115,8 @@ async fn owned_mutations_retry_only_conditional_write_conflicts() -> Result<()> 
             let before_etag = owned.etag.clone();
             let mut expected = owned.value.clone();
             match update {
-                Update::Checkpoint(token) => expected.base.continuation = Some(token.clone()),
-                Update::Release => expected.base.owner = None,
+                Update::Checkpoint(token) => expected.continuation = Some(token.clone()),
+                Update::Release => expected.owner = None,
                 Update::Renew => {}
                 Update::Acquire(_) => unreachable!(),
             }
@@ -1158,12 +1147,12 @@ async fn owned_mutations_retry_only_conditional_write_conflicts() -> Result<()> 
             }
             let persisted = context
                 .store()
-                .read::<Lease>(&owned.value.base.record.id)
+                .read::<LeaseDocument>(&owned.value.record.id)
                 .await?
                 .unwrap();
-            assert_eq!(persisted.etag, owned.etag);
+            assert_eq!(persisted.1, owned.etag);
             assert_eq!(
-                serde_json::to_value(&persisted.value)?,
+                serde_json::to_value(&persisted.0)?,
                 serde_json::to_value(&owned.value)?
             );
         }
@@ -1180,21 +1169,21 @@ async fn callback_receipt_gates_next_page_and_saved_progress() -> Result<()> {
         options("first").with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));
     let processor = start(&context, opts).await?;
     let (id, _, receipt) = next(&processor).await.into_parts();
-    let stored = context.store().read::<Lease>(&id).await?.unwrap();
-    assert!(stored.value.base.continuation.is_none());
-    assert!(
-        tokio::time::timeout(Duration::from_millis(60), processor.next_batch())
-            .await
-            .is_err()
-    );
+    let stored = context.store().read::<LeaseDocument>(&id).await?.unwrap();
+    assert!(stored.0.continuation.is_none());
+    assert!(tokio::time::timeout(
+        Duration::from_millis(60),
+        processor.read_next_change_feed_batch()
+    )
+    .await
+    .is_err());
     receipt.checkpoint().await?;
     let saved = context
         .store()
-        .read::<Lease>(&id)
+        .read::<LeaseDocument>(&id)
         .await?
         .unwrap()
-        .value
-        .base
+        .0
         .continuation
         .unwrap();
     let (second_id, _, second_receipt) = next(&processor).await.into_parts();
@@ -1202,11 +1191,10 @@ async fn callback_receipt_gates_next_page_and_saved_progress() -> Result<()> {
     assert_eq!(
         context
             .store()
-            .read::<Lease>(&id)
+            .read::<LeaseDocument>(&id)
             .await?
             .unwrap()
-            .value
-            .base
+            .0
             .continuation
             .unwrap()
             .as_str(),
@@ -1245,11 +1233,10 @@ async fn forced_stop_cancels_receipt_without_saving_progress() -> Result<()> {
         .is_precondition_failed());
     assert!(context
         .store()
-        .read::<Lease>(&id)
+        .read::<LeaseDocument>(&id)
         .await?
         .unwrap()
-        .value
-        .base
+        .0
         .continuation
         .is_none());
     assert!(processor.stop().await.is_err());
@@ -1270,7 +1257,7 @@ async fn now_start_pins_idle_position_before_new_changes() -> Result<()> {
         tokio::time::timeout(Duration::from_secs(5), async {
             loop {
                 let all = context.list().await.unwrap();
-                if all.iter().all(|lease| lease.base.continuation.is_some()) {
+                if all.iter().all(|lease| lease.continuation.is_some()) {
                     break;
                 }
                 tokio::time::sleep(Duration::from_millis(5)).await;
@@ -1279,11 +1266,12 @@ async fn now_start_pins_idle_position_before_new_changes() -> Result<()> {
     )
     .await
     .unwrap();
-    assert!(
-        tokio::time::timeout(Duration::from_millis(30), processor.next_batch())
-            .await
-            .is_err()
-    );
+    assert!(tokio::time::timeout(
+        Duration::from_millis(30),
+        processor.read_next_change_feed_batch()
+    )
+    .await
+    .is_err());
     insert(&context, "after").await?;
     let (_, response, receipt) = next(&processor).await.into_parts();
     let envelope: serde_json::Value = response.into_body().into_single()?;
@@ -1298,7 +1286,7 @@ async fn now_start_pins_idle_position_before_new_changes() -> Result<()> {
         .list()
         .await?
         .iter()
-        .all(|lease| lease.base.owner.is_none()));
+        .all(|lease| lease.owner.is_none()));
     assert!(now_millis() > 0);
     Ok(())
 }

@@ -17,7 +17,7 @@ use futures::{
     channel::{mpsc, oneshot},
     StreamExt,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use serde_json::{json, Value};
 use std::{
     collections::HashSet,
@@ -31,13 +31,21 @@ use std::{
 };
 
 type Entered = (String, oneshot::Sender<()>);
-type ReportedError = (Option<String>, String);
-type ReportedStatus = (Option<String>, StatusCode);
+
+static DESERIALIZATION_FAILURES: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Deserialize)]
 struct NumericId {
-    #[serde(rename = "id")]
+    #[serde(rename = "id", deserialize_with = "numeric_id")]
     _id: u64,
+}
+
+fn numeric_id<'de, D: Deserializer<'de>>(deserializer: D) -> Result<u64, D::Error> {
+    let result = u64::deserialize(deserializer);
+    if result.is_err() {
+        DESERIALIZATION_FAILURES.fetch_add(1, Ordering::SeqCst);
+    }
+    result
 }
 
 #[tokio::test]
@@ -55,72 +63,84 @@ async fn callback_read_diagnostics_survive_processor_shutdown() -> Result<(), Bo
         leases,
         "diagnostics",
         "worker",
+        |context, changes: Vec<ChangeFeedItem<Value>>| async move {
+            assert_eq!(changes.len(), 1);
+            if let Some(sent) = OBSERVED.lock().unwrap().take() {
+                sent.send(context).unwrap();
+            }
+            Ok(())
+        },
     )
     .with_start_from_beginning()
-    .handle_change_feed(|context, changes: Vec<ChangeFeedItem<Value>>| async move {
-        assert_eq!(changes.len(), 1);
-        if let Some(sent) = OBSERVED.lock().unwrap().take() {
-            sent.send(context).unwrap();
-        }
-        Ok(())
-    })
     .build()?;
     processor.start().await?;
     let context = tokio::time::timeout(Duration::from_secs(5), received).await??;
-    let diagnostics = context.diagnostics().expect("batch diagnostics");
+    let diagnostics = context.diagnostics();
     let activity = diagnostics.activity_id().clone();
     processor.stop().await?;
     drop(processor);
     assert!(diagnostics.is_completed());
     assert!(!diagnostics.is_failure());
     assert!(!diagnostics.requests().is_empty());
-    let retained = context.diagnostics().unwrap();
+    let retained = context.diagnostics();
     assert!(Arc::ptr_eq(&diagnostics, &retained));
     assert_eq!(retained.activity_id(), &activity);
+    let weak = Arc::downgrade(&diagnostics);
+    drop(retained);
+    drop(diagnostics);
+    drop(context);
+    assert!(
+        weak.upgrade().is_none(),
+        "completed diagnostics must not be retained by the processor"
+    );
     Ok(())
 }
 
 #[tokio::test]
-async fn deserialization_failure_reports_without_invoking_callback() -> Result<(), Box<dyn Error>> {
-    static ERRORS: Mutex<Option<oneshot::Sender<ChangeFeedProcessorContext>>> = Mutex::new(None);
+async fn deserialization_failure_releases_lease_without_invoking_callback(
+) -> Result<(), Box<dyn Error>> {
     static CALLS: AtomicUsize = AtomicUsize::new(0);
     let (source, leases) = containers().await?;
     source
         .create_item("one", "one", json!({"id":"one"}), None)
         .await?;
-    let (error, reported) = oneshot::channel();
-    *ERRORS.lock().unwrap() = Some(error);
+    DESERIALIZATION_FAILURES.store(0, Ordering::SeqCst);
+    CALLS.store(0, Ordering::SeqCst);
     let processor = ChangeFeedProcessorBuilder::new(
         ChangeFeedMode::LatestVersion,
         source,
         leases.clone(),
         "decode",
         "worker",
+        |_, _: Vec<ChangeFeedItem<NumericId>>| async {
+            CALLS.fetch_add(1, Ordering::SeqCst);
+            Ok(())
+        },
     )
     .with_start_from_beginning()
-    .handle_error(|context, _| async move {
-        if let Some(error) = ERRORS.lock().unwrap().take() {
-            error.send(context.unwrap()).unwrap();
-        }
-    })
-    .handle_change_feed(|_, _: Vec<ChangeFeedItem<NumericId>>| async {
-        CALLS.fetch_add(1, Ordering::SeqCst);
-        Ok(())
-    })
     .build()?;
     processor.start().await?;
-    let context = tokio::time::timeout(Duration::from_secs(5), reported).await??;
-    processor.abort().await?;
-    let diagnostics = context
-        .diagnostics()
-        .expect("failed decode retains the read diagnostics");
-    assert!(diagnostics.is_completed());
-    assert!(!diagnostics.requests().is_empty());
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            if DESERIALIZATION_FAILURES.load(Ordering::SeqCst) > 0
+                && lease_records(&leases)
+                    .await
+                    .unwrap()
+                    .iter()
+                    .any(|r| r.get("range").is_some() && r.get("owner").is_none())
+            {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await?;
+    processor.stop().await?;
     assert_eq!(CALLS.load(Ordering::SeqCst), 0);
     assert!(lease_records(&leases)
         .await?
         .iter()
-        .find(|r| r["id"] == context.lease_token())
+        .find(|r| r.get("range").is_some())
         .unwrap()
         .get("continuation")
         .is_none());
@@ -128,36 +148,32 @@ async fn deserialization_failure_reports_without_invoking_callback() -> Result<(
 }
 
 #[tokio::test]
-async fn callback_panic_is_reported_without_saving_progress() -> Result<(), Box<dyn Error>> {
-    static ERRORS: Mutex<Option<oneshot::Sender<String>>> = Mutex::new(None);
+async fn callback_panic_does_not_save_progress() -> Result<(), Box<dyn Error>> {
+    static ENTERED: Mutex<Option<oneshot::Sender<String>>> = Mutex::new(None);
     let (source, leases) = containers().await?;
     source
         .create_item("one", "one", json!({"id":"one"}), None)
         .await?;
-    let (error, reported) = oneshot::channel();
-    *ERRORS.lock().unwrap() = Some(error);
+    let (entered, received) = oneshot::channel();
+    *ENTERED.lock().unwrap() = Some(entered);
     let processor = ChangeFeedProcessorBuilder::new(
         ChangeFeedMode::LatestVersion,
         source,
         leases.clone(),
         "panic",
         "worker",
+        |context, _: Vec<ChangeFeedItem<Value>>| async move {
+            if let Some(entered) = ENTERED.lock().unwrap().take() {
+                entered.send(context.lease_token().to_owned()).unwrap();
+            }
+            panic!("application panic")
+        },
     )
     .with_start_from_beginning()
-    .handle_error(|context, error| async move {
-        if error.to_string().contains("Change feed callback panicked.") {
-            if let Some(error) = ERRORS.lock().unwrap().take() {
-                error
-                    .send(context.unwrap().lease_token().to_owned())
-                    .unwrap();
-            }
-        }
-    })
-    .handle_change_feed(|_, _: Vec<ChangeFeedItem<Value>>| async { panic!("application panic") })
     .build()?;
     processor.start().await?;
-    let lease = tokio::time::timeout(Duration::from_secs(5), reported).await??;
-    processor.abort().await?;
+    let lease = tokio::time::timeout(Duration::from_secs(5), received).await??;
+    processor.stop().await?;
     assert!(lease_records(&leases)
         .await?
         .iter()
@@ -186,60 +202,61 @@ impl RequestObserver for FeedReads {
 }
 
 #[tokio::test]
-async fn poller_limit_covers_receive_callback_and_drain_in_both_modes() -> Result<(), Box<dyn Error>>
-{
+async fn instances_process_independently_with_one_callback_each_in_both_modes(
+) -> Result<(), Box<dyn Error>> {
     static ENTERED: Mutex<Option<mpsc::UnboundedSender<Entered>>> = Mutex::new(None);
     for mode in [
         ChangeFeedMode::LatestVersion,
         ChangeFeedMode::AllVersionsAndDeletes,
     ] {
         for policy in [
-            ChangeFeedCheckpointPolicy::EveryBatch,
-            ChangeFeedCheckpointPolicy::Coalesced {
+            ChangeFeedCheckpointPolicy::Eager,
+            ChangeFeedCheckpointPolicy::Deferred {
                 max_interval: Duration::from_secs(60),
             },
         ] {
-            for limit in [1, 2] {
+            for instance_count in [1, 2] {
                 let reads = Arc::new(FeedReads::default());
-                let (source, leases) = containers_with_observer(4, Some(reads.clone())).await?;
-                if policy != ChangeFeedCheckpointPolicy::EveryBatch {
-                    pin_start(mode, &source, &leases, "pool", 4).await?;
+                let (source, leases) = containers_with_observer(2, Some(reads.clone())).await?;
+                if policy != ChangeFeedCheckpointPolicy::Eager {
+                    pin_start(mode, &source, &leases, "pool", 2).await?;
                 }
                 let (entered, mut callbacks) = mpsc::unbounded();
                 *ENTERED.lock().unwrap() = Some(entered);
-                let mut builder = ChangeFeedProcessorBuilder::new(
-                    mode,
-                    source.clone(),
-                    leases.clone(),
-                    "pool",
-                    "worker",
-                )
-                .with_feed_poll_delay(Duration::from_millis(5))
-                .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::MIN))
-                .with_checkpoint_policy(policy);
-                if limit > 1 {
-                    builder = builder.with_max_concurrency(NonZeroU32::new(limit).unwrap());
-                }
-                let processor = builder
-                    .handle_change_feed(|context, changes: Vec<ChangeFeedItem<Value>>| async move {
-                        assert_eq!(changes.len(), 1);
-                        let diagnostics = context.diagnostics().expect("batch read diagnostics");
-                        assert!(diagnostics.is_completed());
-                        assert!(!diagnostics.is_failure());
-                        assert!(!diagnostics.requests().is_empty());
-                        let (release, released) = oneshot::channel();
-                        ENTERED
-                            .lock()
-                            .unwrap()
-                            .as_ref()
-                            .unwrap()
-                            .unbounded_send((context.lease_token().to_owned(), release))
-                            .unwrap();
-                        released.await.unwrap();
-                        Ok(())
-                    })
+                let mut processors = Vec::new();
+                for instance in 0..instance_count {
+                    let processor = ChangeFeedProcessorBuilder::new(
+                        mode,
+                        source.clone(),
+                        leases.clone(),
+                        "pool",
+                        format!("worker-{instance}"),
+                        |context, changes: Vec<ChangeFeedItem<Value>>| async move {
+                            assert_eq!(changes.len(), 1);
+                            let diagnostics = context.diagnostics();
+                            assert!(diagnostics.is_completed());
+                            assert!(!diagnostics.is_failure());
+                            assert!(!diagnostics.requests().is_empty());
+                            let (release, released) = oneshot::channel();
+                            ENTERED
+                                .lock()
+                                .unwrap()
+                                .as_ref()
+                                .unwrap()
+                                .unbounded_send((context.lease_token().to_owned(), release))
+                                .unwrap();
+                            released.await.unwrap();
+                            Ok(())
+                        },
+                    )
+                    .with_feed_poll_delay(Duration::from_millis(5))
+                    .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::MIN))
+                    .with_max_scale_count(2 / instance_count)
+                    .with_checkpoint_policy(policy)
                     .build()?;
-                processor.start().await?;
+                    processor.start().await?;
+                    processors.push(processor);
+                }
                 tokio::time::timeout(Duration::from_secs(5), async {
                     loop {
                         let records = lease_records(&leases).await.unwrap();
@@ -247,7 +264,14 @@ async fn poller_limit_covers_receive_callback_and_drain_in_both_modes() -> Resul
                             .iter()
                             .filter(|r| r.get("range").is_some())
                             .collect();
-                        if owned.len() == 4 && owned.iter().all(|r| r.get("continuation").is_some())
+                        if owned.len() == 2
+                            && owned.iter().all(|r| r.get("continuation").is_some())
+                            && owned
+                                .iter()
+                                .filter_map(|r| r["owner"].as_str())
+                                .collect::<HashSet<_>>()
+                                .len()
+                                == instance_count as usize
                         {
                             break;
                         }
@@ -262,7 +286,7 @@ async fn poller_limit_covers_receive_callback_and_drain_in_both_modes() -> Resul
                         .await?;
                 }
                 let mut held = Vec::new();
-                for _ in 0..limit {
+                for _ in 0..instance_count {
                     held.push(
                         tokio::time::timeout(Duration::from_secs(5), callbacks.next())
                             .await?
@@ -271,8 +295,18 @@ async fn poller_limit_covers_receive_callback_and_drain_in_both_modes() -> Resul
                 }
                 assert_eq!(
                     held.iter().map(|(id, _)| id).collect::<HashSet<_>>().len(),
-                    limit as usize
+                    instance_count as usize
                 );
+                let records = lease_records(&leases).await?;
+                let owners: HashSet<_> = held
+                    .iter()
+                    .map(|(id, _)| {
+                        records.iter().find(|r| r["id"] == *id).unwrap()["owner"]
+                            .as_str()
+                            .unwrap()
+                    })
+                    .collect();
+                assert_eq!(owners.len(), instance_count as usize);
                 let reads_while_full = reads.0.load(Ordering::SeqCst);
                 assert!(
                     tokio::time::timeout(Duration::from_millis(50), callbacks.next())
@@ -282,24 +316,31 @@ async fn poller_limit_covers_receive_callback_and_drain_in_both_modes() -> Resul
                 assert_eq!(
                     reads.0.load(Ordering::SeqCst),
                     reads_while_full,
-                    "busy SDK pollers must not prefetch"
+                    "instances with busy callbacks must not prefetch"
                 );
-                if limit > 1 {
+                if instance_count > 1 {
                     let slow = held[0].0.clone();
                     held.pop().unwrap().1.send(()).unwrap();
                     let next = tokio::time::timeout(Duration::from_secs(5), callbacks.next())
                         .await?
                         .unwrap();
-                    assert_ne!(next.0, slow, "a held lease must not consume another poller");
+                    assert_ne!(
+                        next.0, slow,
+                        "another instance must progress while a callback is held"
+                    );
                     held.push(next);
                 }
-                let mut stopping = Box::pin(processor.stop());
+                let mut stopping = Box::pin(futures::future::join_all(
+                    processors.iter().map(|processor| processor.stop()),
+                ));
                 assert!(futures::poll!(stopping.as_mut()).is_pending());
                 for (_, release) in held {
                     release.send(()).unwrap();
                 }
-                tokio::time::timeout(Duration::from_secs(5), stopping).await??;
-                assert!(!processor.is_started());
+                for result in tokio::time::timeout(Duration::from_secs(5), stopping).await? {
+                    result?;
+                }
+                assert!(processors.iter().all(|processor| !processor.is_started()));
                 assert!(callbacks.try_recv().is_err());
                 assert!(lease_records(&leases)
                     .await?
@@ -314,10 +355,8 @@ async fn poller_limit_covers_receive_callback_and_drain_in_both_modes() -> Resul
 }
 
 #[tokio::test]
-async fn slow_error_hook_does_not_block_data_and_graceful_stop_drains_it(
-) -> Result<(), Box<dyn Error>> {
-    static ERRORS: Mutex<Option<mpsc::UnboundedSender<ReportedError>>> = Mutex::new(None);
-    static ERROR_GATE: Mutex<Option<oneshot::Receiver<()>>> = Mutex::new(None);
+async fn callback_error_does_not_block_other_leases() -> Result<(), Box<dyn Error>> {
+    static FAILED: Mutex<Option<oneshot::Sender<String>>> = Mutex::new(None);
     static CALLBACKS: Mutex<Option<mpsc::UnboundedSender<Entered>>> = Mutex::new(None);
     static CALLS: AtomicUsize = AtomicUsize::new(0);
     let (source, leases) = containers_with_partitions(4).await?;
@@ -327,12 +366,10 @@ async fn slow_error_hook_does_not_block_data_and_graceful_stop_drains_it(
             .create_item(id.clone(), &id, json!({"id":id}), None)
             .await?;
     }
-    let (errors, mut reported) = mpsc::unbounded();
+    let (failed, received) = oneshot::channel();
     let (entered, mut callbacks) = mpsc::unbounded();
-    let (release_error, error_gate) = oneshot::channel();
-    *ERRORS.lock().unwrap() = Some(errors);
+    *FAILED.lock().unwrap() = Some(failed);
     *CALLBACKS.lock().unwrap() = Some(entered);
-    *ERROR_GATE.lock().unwrap() = Some(error_gate);
     CALLS.store(0, Ordering::SeqCst);
     let processor = ChangeFeedProcessorBuilder::new(
         ChangeFeedMode::LatestVersion,
@@ -340,50 +377,37 @@ async fn slow_error_hook_does_not_block_data_and_graceful_stop_drains_it(
         leases.clone(),
         "errors",
         "worker",
+        |context, _: Vec<ChangeFeedItem<Value>>| async move {
+            if CALLS.fetch_add(1, Ordering::SeqCst) == 0 {
+                FAILED
+                    .lock()
+                    .unwrap()
+                    .take()
+                    .unwrap()
+                    .send(context.lease_token().to_owned())
+                    .unwrap();
+                return Err(CosmosError::builder()
+                    .with_status(CosmosStatus::new(StatusCode::BadRequest))
+                    .with_message("Application rejected this batch.")
+                    .build());
+            }
+            let (release, released) = oneshot::channel();
+            CALLBACKS
+                .lock()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .unbounded_send((context.lease_token().to_owned(), release))
+                .unwrap();
+            let _ = released.await;
+            Ok(())
+        },
     )
     .with_start_from_beginning()
     .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::MIN))
-    .handle_error(|context, error| async move {
-        ERRORS
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .unbounded_send((
-                context.map(|c| c.lease_token().to_owned()),
-                error.to_string(),
-            ))
-            .unwrap();
-        let gate = ERROR_GATE.lock().unwrap().take();
-        if let Some(gate) = gate {
-            let _ = gate.await;
-        }
-    })
-    .handle_change_feed(|context, _: Vec<ChangeFeedItem<Value>>| async move {
-        if CALLS.fetch_add(1, Ordering::SeqCst) == 0 {
-            return Err(CosmosError::builder()
-                .with_status(CosmosStatus::new(StatusCode::BadRequest))
-                .with_message("Application rejected this batch.")
-                .build());
-        }
-        let (release, released) = oneshot::channel();
-        CALLBACKS
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .unbounded_send((context.lease_token().to_owned(), release))
-            .unwrap();
-        let _ = released.await;
-        Ok(())
-    })
     .build()?;
     processor.start().await?;
-    let (failed_lease, error) = tokio::time::timeout(Duration::from_secs(5), reported.next())
-        .await?
-        .unwrap();
-    assert!(error.contains("Application rejected this batch."));
-    let failed_lease = failed_lease.unwrap();
+    let failed_lease = tokio::time::timeout(Duration::from_secs(5), received).await??;
     let (successful_lease, release) =
         tokio::time::timeout(Duration::from_secs(5), callbacks.next())
             .await?
@@ -403,12 +427,6 @@ async fn slow_error_hook_does_not_block_data_and_graceful_stop_drains_it(
     let mut stopping = Box::pin(processor.stop());
     assert!(futures::poll!(stopping.as_mut()).is_pending());
     release.send(()).unwrap();
-    assert!(
-        tokio::time::timeout(Duration::from_millis(50), stopping.as_mut())
-            .await
-            .is_err()
-    );
-    release_error.send(()).unwrap();
     tokio::time::timeout(Duration::from_secs(5), stopping).await??;
     let records = lease_records(&leases).await?;
     assert!(records
@@ -423,54 +441,52 @@ async fn slow_error_hook_does_not_block_data_and_graceful_stop_drains_it(
         .unwrap()
         .get("continuation")
         .is_some());
-    *ERRORS.lock().unwrap() = None;
     *CALLBACKS.lock().unwrap() = None;
     Ok(())
 }
 
 #[tokio::test]
-async fn driver_errors_reach_async_hook_and_forced_stop_cancels_it() -> Result<(), Box<dyn Error>> {
-    static ENTERED: Mutex<Option<oneshot::Sender<ReportedStatus>>> = Mutex::new(None);
-    static GATE: Mutex<Option<oneshot::Receiver<()>>> = Mutex::new(None);
+async fn invalid_continuation_releases_lease_without_invoking_callback(
+) -> Result<(), Box<dyn Error>> {
+    static CALLS: AtomicUsize = AtomicUsize::new(0);
     let (source, leases) = containers().await?;
-    let (entered, reported) = oneshot::channel();
-    let (release, gate) = oneshot::channel();
-    *ENTERED.lock().unwrap() = Some(entered);
-    *GATE.lock().unwrap() = Some(gate);
+    CALLS.store(0, Ordering::SeqCst);
     let processor = ChangeFeedProcessorBuilder::new(
         ChangeFeedMode::LatestVersion,
         source,
-        leases,
+        leases.clone(),
         "driver-errors",
         "worker",
+        |_, _: Vec<ChangeFeedItem<Value>>| async {
+            CALLS.fetch_add(1, Ordering::SeqCst);
+            Ok(())
+        },
     )
     .with_start_continuation(ContinuationToken::from_string(
         "invalid-continuation".into(),
     ))
-    .handle_change_feed(|_, _: Vec<ChangeFeedItem<Value>>| async {
-        panic!("invalid continuation cannot deliver data")
-    })
-    .handle_error(|context, error| async move {
-        if let Some(entered) = ENTERED.lock().unwrap().take() {
-            entered
-                .send((
-                    context.map(|c| c.lease_token().to_owned()),
-                    error.status().status_code(),
-                ))
-                .unwrap();
-        }
-        let gate = GATE.lock().unwrap().take();
-        if let Some(gate) = gate {
-            let _ = gate.await;
-        }
-    })
     .build()?;
     processor.start().await?;
-    let (lease, status) = tokio::time::timeout(Duration::from_secs(5), reported).await??;
-    assert!(lease.is_some());
-    assert_eq!(status, StatusCode::BadRequest);
-    tokio::time::timeout(Duration::from_secs(5), processor.abort()).await??;
-    assert!(release.is_canceled());
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            if lease_records(&leases).await.unwrap().iter().any(|r| {
+                r.get("range").is_some()
+                    && r.get("renewed_at").is_some()
+                    && r.get("owner").is_none()
+            }) {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await?;
+    processor.stop().await?;
+    assert_eq!(CALLS.load(Ordering::SeqCst), 0);
+    assert!(lease_records(&leases)
+        .await?
+        .iter()
+        .filter(|r| r.get("range").is_some())
+        .all(|r| r.get("continuation").is_none()));
     assert!(!processor.is_started());
     Ok(())
 }

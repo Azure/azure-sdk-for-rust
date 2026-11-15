@@ -79,6 +79,20 @@ It does not invoke application callbacks from native code. The shared driver own
 bootstrap, lease acquisition/stealing, renewal, feed polling, and checkpoint writes;
 the host SDK owns deserialization and callback execution.
 
+`workload_name` identifies the shared logical consumer. Cooperating change feed
+workers use the same workload name and distinct `worker_name` values. A worker
+is one running processor, not necessarily a process, pod, or thread.
+The request field names changed without changing their order, layout, or ABI
+version; existing bindings must update their source field accesses.
+
+`bootstrap_timeout_ms` configures the caller's bootstrap budget; zero keeps the
+120-second default. It occupies the first formerly reserved `u32`, preserving
+request size and existing field offsets. Old zero-filled requests keep their
+behavior; an older library rejects a nonzero value in that slot. Use matching
+headers and libraries when configuring it. The 25-second attempt deadline and
+30-second lock TTL are unchanged; optional restart verification is outside this
+budget. A longer wait alone does not solve large-workload initialization.
+
 1. Create a `cosmos_processor_queue_t` and initialize a
    `cosmos_processor_request_t`. Supply resolved source/lease container and driver
    handles to `cosmos_processor_start_submit`.
@@ -89,9 +103,9 @@ the host SDK owns deserialization and callback execution.
    Detach the receipt before freeing the completion. Keep the completion alive
    as long as its borrowed payload views are in use.
 4. Invoke and await the application's callback in the host language.
-5. On success, submit `cosmos_processor_checkpoint_submit`. A successful
-   checkpoint result means the lease write completed, not merely that the driver
-   received the acknowledgment. On failure, free the receipt without submitting;
+5. On success, submit `cosmos_processor_acknowledge_submit` to follow the selected
+   policy, or `cosmos_processor_checkpoint_submit` for a durable barrier.
+   On failure, free the receipt without submitting;
    its lease is abandoned without advancing progress.
 6. Free receipt and operation handles. On shutdown, submit
    `cosmos_processor_stop_submit`, drain results, and free the processor and queue.
@@ -99,28 +113,33 @@ the host SDK owns deserialization and callback execution.
 Only one undelivered Next is admitted per processor. After transferring it, the
 host may request other leases' batches while callbacks run concurrently. Each
 active lease session still has one outstanding batch; it cannot advance until
-acknowledgment succeeds. By default acknowledgment waits for durable persistence.
+acknowledgment succeeds. By default acknowledgment accepts progress in memory,
+with persistence deferred for up to five minutes.
 Receipts are one-use and tied to the acquisition incarnation. Receipts from ended
 sessions cannot authorize later checkpoints.
 
-To coalesce checkpoints, start with `cosmos_processor_start_with_policy_submit`,
-policy `1`, and a positive interval in milliseconds. Use
+The default start uses policy `1` and a five-minute interval. To override it,
+start with `cosmos_processor_start_with_policy_submit`: policy `0` and interval
+`0` select eager persistence; policy `1` and a positive interval in milliseconds
+select deferred persistence. Use
 `cosmos_processor_acknowledge_submit` after each successful callback. Its result
 kind `6` means acknowledgment, not necessarily persistence; the existing
 `cosmos_processor_checkpoint_submit` always persists and returns kind `3`.
-The original start function and request layout remain unchanged.
+The start function signatures and request layout remain unchanged.
 
 There is no shared batch-count cap across leases or processors. Each lease can
 hold one outstanding batch, so buffered data can grow with owned lease count.
 The completion queue's capacity does not limit all batches held by the driver.
 Renewal and checkpoint deadlines continue while receipts are outstanding.
 
-Coalescing stores only the latest successfully handled continuation and counters,
-not past payloads. It flushes at observed lease-idle or the interval since the
-first unpersisted acknowledgment, whichever occurs first. A local `304` is not
-enough to establish idleness for a multi-slice lease. A deadline can flush earlier
+Deferred checkpointing stores only the latest successfully handled continuation
+and counters, not past payloads. It flushes at the interval since the first
+unpersisted acknowledgment or an explicit/lifecycle barrier, not on idle reads.
+A deadline can flush earlier
 successes while another callback runs, but never includes that unfinished batch.
 Crashes and forced cancellation can replay multiple successful callbacks.
+With a `Now` start, restarting before the first durable checkpoint can resolve
+a later starting position.
 
 Queue capacity bounds admitted Start/Next results, including in-flight requests.
 Acknowledgment, Checkpoint, and Stop use control admission independently of that data capacity:
@@ -135,7 +154,7 @@ Neither shutdown nor checkpoint writes can roll back callback side effects; cons
 must tolerate at-least-once delivery.
 
 Graceful Stop drains issued receipts and flushes all successfully acknowledged
-progress before release, without waiting for the coalescing interval. Continue
+progress before release, without waiting for the deferral interval. Continue
 receiving batches and acknowledging them while waiting; keep the queue and
 runtime alive. Incomplete drain or failed persistence/release produces an error.
 Abort and disposal instead request forced cancellation. Already-started writes

@@ -13,7 +13,7 @@ mod bootstrap;
 mod processing;
 
 pub use bootstrap::bootstrap;
-pub(crate) use bootstrap::ChangeFeedProcessorBootstrapCoalescer;
+pub(crate) use bootstrap::BootstrapCoalescer;
 pub use processing::{
     BatchReceipt, ChangeFeedBatch, CheckpointPolicy, Processor, ProcessorOptions,
 };

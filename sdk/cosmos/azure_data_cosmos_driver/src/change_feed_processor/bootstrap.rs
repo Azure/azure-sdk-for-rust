@@ -4,12 +4,10 @@
 mod coalescing;
 pub(super) mod store;
 
-pub(crate) use coalescing::ChangeFeedProcessorBootstrapCoalescer;
+pub(crate) use coalescing::BootstrapCoalescer;
 
 use crate::{
-    change_feed_processor::{
-        bootstrap::coalescing::ChangeFeedProcessorBootstrapCoalescingKey, operation_options,
-    },
+    change_feed_processor::{bootstrap::coalescing::AttemptKey, operation_options},
     models::{
         effective_partition_key::EffectivePartitionKey, ChangeFeedFactoryMode, ContainerReference,
         ContinuationToken, CosmosOperation, FeedRange,
@@ -31,19 +29,19 @@ use std::{
     panic::AssertUnwindSafe,
     time::{Duration, Instant},
 };
-use store::ChangeFeedProcessorBootstrapStore;
+use store::LeaseStore;
 use uuid::Uuid;
 
 pub(super) const SCHEMA_VERSION: u32 = 1;
 const LOCK_TTL_SECONDS: i32 = 30;
 const ATTEMPT_TIMEOUT: Duration = Duration::from_secs(25);
-const BOOTSTRAP_TIMEOUT: Duration = Duration::from_secs(120);
+pub(super) const BOOTSTRAP_TIMEOUT: Duration = Duration::from_secs(120);
 const RETRY_DELAY: Duration = Duration::from_secs(1);
 
 /// Initializes a workload's metadata and unowned processing leases.
 ///
 /// The namespace combines the monitored account endpoint's origin, container RID,
-/// and `processor_name` within the supplied lease container. `instance_name`
+/// and `workload_name` within the supplied lease container. `worker_name`
 /// identifies the worker, not the workload. Names must not be blank and are not
 /// trimmed. Source and lease containers may belong to different accounts.
 ///
@@ -61,8 +59,8 @@ const RETRY_DELAY: Duration = Duration::from_secs(1);
 ///
 /// Claims expire after 30 seconds; each claimed attempt is bounded to 25 seconds.
 /// TTL election is not strict fencing: delayed attempts can overlap after expiry.
-/// Attempts use a persisted plan, create missing leases only, and validate
-/// conflicts without replacing existing progress. The claim does not provide
+/// Attempts use a persisted plan and create-only lease writes; lease-create
+/// conflicts mean "already exists" without read-back validation or progress replacement. The claim does not provide
 /// global fencing across write regions; visibility and conflict resolution follow
 /// the lease account's consistency and conflict resolution policies.
 ///
@@ -70,7 +68,7 @@ const RETRY_DELAY: Duration = Duration::from_secs(1);
 /// in-flight attempts. Each caller has its own two-minute budget, including retry
 /// delays. Joining never extends an existing attempt's deadline. A caller with
 /// remaining time re-registers after a retryable failure, even if the previous
-/// attempt exhausted another caller's budget. Instance names do not split work.
+/// attempt exhausted another caller's budget. Worker names do not split work.
 /// Dropping one waiting future does not cancel other waiters; dropping all
 /// waiters cancels local work but cannot undo requests already sent. Driver
 /// values unwrapped from their shared handles retain inline execution.
@@ -121,18 +119,48 @@ pub async fn bootstrap(
     lease_driver: &CosmosDriver,
     leases: &ContainerReference,
     mode: ChangeFeedFactoryMode,
-    processor_name: &str,
-    instance_name: &str,
+    workload_name: &str,
+    worker_name: &str,
 ) -> Result<()> {
-    let context = ChangeFeedProcessorBootstrapContext::new(
+    bootstrap_with_timeout(
         source_driver,
         source,
         lease_driver,
         leases,
         mode,
-        processor_name,
-        instance_name,
+        workload_name,
+        worker_name,
+        BOOTSTRAP_TIMEOUT,
+    )
+    .await
+}
+
+// Keep the existing public bootstrap signature while letting processor options set the caller budget.
+#[allow(clippy::too_many_arguments)]
+pub(super) async fn bootstrap_with_timeout(
+    source_driver: &CosmosDriver,
+    source: &ContainerReference,
+    lease_driver: &CosmosDriver,
+    leases: &ContainerReference,
+    mode: ChangeFeedFactoryMode,
+    workload_name: &str,
+    worker_name: &str,
+    timeout: Duration,
+) -> Result<()> {
+    let deadline = Instant::now()
+        .checked_add(timeout)
+        .filter(|_| !timeout.is_zero() && azure_core::time::Duration::try_from(timeout).is_ok())
+        .ok_or_else(|| error(StatusCode::BadRequest, "Invalid bootstrap timeout."))?;
+    let mut context = Context::new(
+        source_driver,
+        source,
+        lease_driver,
+        leases,
+        mode,
+        workload_name,
+        worker_name,
     )?;
+    context.store.deadline = deadline;
     let (Some(source_owner), Some(lease_owner)) = (
         source_driver.retain_for_bootstrap(),
         lease_driver.retain_for_bootstrap(),
@@ -140,7 +168,7 @@ pub async fn bootstrap(
         tracing::debug!("Running bootstrap inline for drivers without shared ownership");
         return context.run().await;
     };
-    let key = ChangeFeedProcessorBootstrapCoalescingKey {
+    let key = AttemptKey {
         namespace: context.namespace.clone(),
         lease_container: leases.rid().to_owned(),
         lease_driver: std::ptr::from_ref(lease_driver) as usize,
@@ -151,7 +179,7 @@ pub async fn bootstrap(
     let deadline = context.store.deadline;
     let identity = context.identity;
     let namespace = context.namespace;
-    let instance_name = context.instance_name;
+    let worker_name = context.worker_name;
     let retry_delay = context.retry_delay;
     retry_bootstrap(
         || {
@@ -161,22 +189,22 @@ pub async fn bootstrap(
             let leases = leases.clone();
             let identity = identity.clone();
             let namespace = namespace.clone();
-            let instance_name = instance_name.clone();
+            let worker_name = worker_name.clone();
             source_driver
                 .bootstrap_coalescer()
                 .start_or_join(key.clone(), deadline, move || {
                     async move {
-                        let context = ChangeFeedProcessorBootstrapContext {
+                        let context = Context {
                             source_driver: &source_owner,
                             source: &source,
-                            store: ChangeFeedProcessorBootstrapStore {
+                            store: LeaseStore {
                                 driver: &lease_owner,
                                 container: &leases,
                                 deadline,
                             },
                             identity,
                             namespace,
-                            instance_name,
+                            worker_name,
                             retry_delay,
                         };
                         Box::pin(context.run_attempt()).await
@@ -190,13 +218,16 @@ pub async fn bootstrap(
     .await
 }
 
+/// Persisted workload identity used to reject incompatible source, mode, or schema records.
+/// Worker identity is excluded so another worker can initialize or resume the same workload.
 #[derive(Clone, SafeDebug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(super) struct ChangeFeedProcessorBootstrapIdentity {
+pub(super) struct WorkloadIdentity {
     pub(super) version: u32,
     pub(super) account: String,
     pub(super) container_rid: String,
-    pub(super) processor_name: String,
+    #[serde(rename = "processorName")]
+    pub(super) workload_name: String,
     #[serde(
         serialize_with = "serialize_mode",
         deserialize_with = "deserialize_mode"
@@ -233,67 +264,81 @@ where
     }
 }
 
+/// Common identity and TTL fields for bootstrap documents; also the definition and ready-marker shape.
 #[derive(Clone, SafeDebug, Serialize, Deserialize)]
-pub(super) struct ChangeFeedProcessorBootstrapRecord {
+pub(super) struct Record {
     pub(super) id: String,
-    pub(super) workload: ChangeFeedProcessorBootstrapIdentity,
+    pub(super) workload: WorkloadIdentity,
     pub(super) ttl: i32,
 }
 
+/// Persisted initial partition ranges that replacement initializers reuse to finish lease creation.
 #[derive(Clone, SafeDebug, Serialize, Deserialize)]
-pub(super) struct ChangeFeedProcessorBootstrapRangePlan {
+pub(super) struct RangePlan {
     #[serde(flatten)]
-    pub(super) record: ChangeFeedProcessorBootstrapRecord,
+    pub(super) record: Record,
     pub(super) ranges: Vec<FeedRange>,
 }
 
+/// Persisted processing lease, including its range, ownership, durable progress, and liveness timestamps.
 #[derive(Clone, SafeDebug, Serialize, Deserialize)]
-pub(super) struct ChangeFeedProcessorBootstrapProcessingLease {
+pub(super) struct LeaseDocument {
     #[serde(flatten)]
-    pub(super) record: ChangeFeedProcessorBootstrapRecord,
+    pub(super) record: Record,
     pub(super) range: FeedRange,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) owner: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) continuation: Option<ContinuationToken>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) incarnation: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) renewed_at: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) last_processed_at: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) processing_deadline: Option<i64>,
 }
 
+/// Expiring initialization-lock document identifying the worker and its unique attempt.
 #[derive(SafeDebug, Serialize, Deserialize)]
-struct ChangeFeedProcessorBootstrapLockRecord {
+struct InitializationLock {
     #[serde(flatten)]
-    record: ChangeFeedProcessorBootstrapRecord,
+    record: Record,
     attempt: String,
     owner: String,
 }
 
-struct ChangeFeedProcessorBootstrapClaim {
+/// Local lock ETag and attempt deadline used to detect lost ownership and conditionally release the lock.
+struct InitializationClaim {
     etag: Etag,
     deadline: Instant,
 }
 
-struct ChangeFeedProcessorBootstrapContext<'a> {
+/// Borrowed drivers, storage, identity, and timing for one caller's initialization work; not persisted.
+struct Context<'a> {
     source_driver: &'a CosmosDriver,
     source: &'a ContainerReference,
-    store: ChangeFeedProcessorBootstrapStore<'a>,
-    identity: ChangeFeedProcessorBootstrapIdentity,
+    store: LeaseStore<'a>,
+    identity: WorkloadIdentity,
     namespace: String,
-    instance_name: String,
+    worker_name: String,
     retry_delay: Duration,
 }
 
-impl<'a> ChangeFeedProcessorBootstrapContext<'a> {
+impl<'a> Context<'a> {
     fn new(
         source_driver: &'a CosmosDriver,
         source: &'a ContainerReference,
         lease_driver: &'a CosmosDriver,
         leases: &'a ContainerReference,
         mode: ChangeFeedFactoryMode,
-        processor_name: &str,
-        instance_name: &str,
+        workload_name: &str,
+        worker_name: &str,
     ) -> Result<Self> {
         for (name, value) in [
-            ("processor_name", processor_name),
-            ("instance_name", instance_name),
+            ("workload_name", workload_name),
+            ("worker_name", worker_name),
         ] {
             if value.trim().is_empty() {
                 return Err(error(
@@ -309,25 +354,25 @@ impl<'a> ChangeFeedProcessorBootstrapContext<'a> {
                 "Container and driver accounts must match.",
             ));
         }
-        let identity = ChangeFeedProcessorBootstrapIdentity {
+        let identity = WorkloadIdentity {
             version: SCHEMA_VERSION,
             account: source.account().endpoint().origin().ascii_serialization(),
             container_rid: source.rid().to_owned(),
-            processor_name: processor_name.to_owned(),
+            workload_name: workload_name.to_owned(),
             mode,
         };
         let namespace = namespace(&identity)?;
         Ok(Self {
             source_driver,
             source,
-            store: ChangeFeedProcessorBootstrapStore {
+            store: LeaseStore {
                 driver: lease_driver,
                 container: leases,
                 deadline: Instant::now() + BOOTSTRAP_TIMEOUT,
             },
             identity,
             namespace,
-            instance_name: instance_name.to_owned(),
+            worker_name: worker_name.to_owned(),
             retry_delay: RETRY_DELAY,
         })
     }
@@ -341,19 +386,15 @@ impl<'a> ChangeFeedProcessorBootstrapContext<'a> {
         .await
     }
 
-    fn record(&self, suffix: &str) -> ChangeFeedProcessorBootstrapRecord {
-        ChangeFeedProcessorBootstrapRecord {
+    fn record(&self, suffix: &str) -> Record {
+        Record {
             id: format!("{}.{suffix}", self.namespace),
             workload: self.identity.clone(),
             ttl: -1,
         }
     }
 
-    fn validate(
-        &self,
-        actual: &ChangeFeedProcessorBootstrapRecord,
-        expected: &ChangeFeedProcessorBootstrapRecord,
-    ) -> Result<()> {
+    fn validate(&self, actual: &Record, expected: &Record) -> Result<()> {
         if actual.id != expected.id
             || actual.workload != expected.workload
             || actual.ttl != expected.ttl
@@ -366,20 +407,16 @@ impl<'a> ChangeFeedProcessorBootstrapContext<'a> {
         Ok(())
     }
 
-    async fn ensure_record(&self, record: &ChangeFeedProcessorBootstrapRecord) -> Result<()> {
-        if let Some(existing) = self
-            .store
-            .read::<ChangeFeedProcessorBootstrapRecord>(&record.id)
-            .await?
-        {
-            return self.validate(&existing.value, record);
+    async fn ensure_record(&self, record: &Record) -> Result<()> {
+        if let Some(existing) = self.store.read::<Record>(&record.id).await? {
+            return self.validate(&existing.0, record);
         }
         if self.store.create(&record.id, record).await? {
             return Ok(());
         }
         let existing = self
             .store
-            .read::<ChangeFeedProcessorBootstrapRecord>(&record.id)
+            .read::<Record>(&record.id)
             .await?
             .ok_or_else(|| {
                 error(
@@ -387,18 +424,14 @@ impl<'a> ChangeFeedProcessorBootstrapContext<'a> {
                     "Conflicting bootstrap record is not yet readable.",
                 )
             })?;
-        self.validate(&existing.value, record)
+        self.validate(&existing.0, record)
     }
 
     async fn ready(&self) -> Result<bool> {
         let expected = self.record("info");
-        match self
-            .store
-            .read::<ChangeFeedProcessorBootstrapRecord>(&expected.id)
-            .await?
-        {
+        match self.store.read::<Record>(&expected.id).await? {
             Some(existing) => {
-                self.validate(&existing.value, &expected)?;
+                self.validate(&existing.0, &expected)?;
                 Ok(true)
             }
             None => Ok(false),
@@ -427,34 +460,34 @@ impl<'a> ChangeFeedProcessorBootstrapContext<'a> {
         Ok(())
     }
 
-    async fn try_claim(&self) -> Result<Option<ChangeFeedProcessorBootstrapClaim>> {
+    async fn try_claim(&self) -> Result<Option<InitializationClaim>> {
         let started = Instant::now();
         let mut record = self.record("lock");
         record.ttl = LOCK_TTL_SECONDS;
-        let lock = ChangeFeedProcessorBootstrapLockRecord {
+        let lock = InitializationLock {
             record,
             attempt: Uuid::new_v4().to_string(),
-            owner: self.instance_name.clone(),
+            owner: self.worker_name.clone(),
         };
         self.store.create(&lock.record.id, &lock).await?;
         let Some(current) = self
             .store
-            .read::<ChangeFeedProcessorBootstrapLockRecord>(&lock.record.id)
+            .read::<InitializationLock>(&lock.record.id)
             .await?
         else {
             return Ok(None);
         };
-        self.validate(&current.value.record, &lock.record)?;
-        if current.value.attempt != lock.attempt {
+        self.validate(&current.0.record, &lock.record)?;
+        if current.0.attempt != lock.attempt {
             return Ok(None);
         }
-        Ok(Some(ChangeFeedProcessorBootstrapClaim {
-            etag: current.etag,
+        Ok(Some(InitializationClaim {
+            etag: current.1,
             deadline: (started + ATTEMPT_TIMEOUT).min(self.store.deadline),
         }))
     }
 
-    async fn check_claim(&self, claim: &ChangeFeedProcessorBootstrapClaim) -> Result<()> {
+    async fn check_claim(&self, claim: &InitializationClaim) -> Result<()> {
         if Instant::now() >= claim.deadline {
             return Err(error(
                 StatusCode::RequestTimeout,
@@ -463,12 +496,9 @@ impl<'a> ChangeFeedProcessorBootstrapContext<'a> {
         }
         let current = self
             .store
-            .read::<ChangeFeedProcessorBootstrapLockRecord>(&self.record("lock").id)
+            .read::<InitializationLock>(&self.record("lock").id)
             .await?;
-        if current
-            .as_ref()
-            .is_none_or(|record| record.etag != claim.etag)
-        {
+        if current.as_ref().is_none_or(|record| record.1 != claim.etag) {
             return Err(error(
                 StatusCode::PreconditionFailed,
                 "Bootstrap initialization claim was lost.",
@@ -477,23 +507,18 @@ impl<'a> ChangeFeedProcessorBootstrapContext<'a> {
         Ok(())
     }
 
-    async fn plan(
-        &self,
-        claim: &ChangeFeedProcessorBootstrapClaim,
-    ) -> Result<Option<ChangeFeedProcessorBootstrapRangePlan>> {
+    async fn plan(&self, claim: &InitializationClaim) -> Result<Option<RangePlan>> {
         let record = self.record("plan");
-        if let Some(existing) = self
-            .store
-            .read::<ChangeFeedProcessorBootstrapRangePlan>(&record.id)
-            .await?
-        {
-            self.validate(&existing.value.record, &record)?;
-            validate_ranges(&existing.value.ranges)?;
-            return Ok(Some(existing.value));
+        if let Some(existing) = self.store.read::<RangePlan>(&record.id).await? {
+            self.validate(&existing.0.record, &record)?;
+            validate_ranges(&existing.0.ranges)?;
+            return Ok(Some(existing.0));
         }
         if self.ready().await? {
             return Ok(None);
         }
+        // Refresh through the shared routing cache's /pkranges metadata feed.
+        // Cache fallback can still return an older map; strict bootstrap freshness is not guaranteed.
         let topology = self
             .source_driver
             .resolve_all_partition_key_ranges_with_options(self.source, true, operation_options())
@@ -509,14 +534,14 @@ impl<'a> ChangeFeedProcessorBootstrapContext<'a> {
             .map(FeedRange::try_from)
             .collect::<Result<Vec<_>>>()?;
         validate_ranges(&ranges)?;
-        let plan = ChangeFeedProcessorBootstrapRangePlan { record, ranges };
+        let plan = RangePlan { record, ranges };
         self.check_claim(claim).await?;
         if self.store.create(&plan.record.id, &plan).await? {
             return Ok(Some(plan));
         }
         let existing = self
             .store
-            .read::<ChangeFeedProcessorBootstrapRangePlan>(&plan.record.id)
+            .read::<RangePlan>(&plan.record.id)
             .await?
             .ok_or_else(|| {
                 error(
@@ -524,18 +549,15 @@ impl<'a> ChangeFeedProcessorBootstrapContext<'a> {
                     "Conflicting bootstrap range plan is not yet readable.",
                 )
             })?;
-        self.validate(&existing.value.record, &plan.record)?;
-        validate_ranges(&existing.value.ranges)?;
-        Ok(Some(existing.value))
+        self.validate(&existing.0.record, &plan.record)?;
+        validate_ranges(&existing.0.ranges)?;
+        Ok(Some(existing.0))
     }
 
-    async fn create_leases(
-        &self,
-        plan: &ChangeFeedProcessorBootstrapRangePlan,
-        claim: &ChangeFeedProcessorBootstrapClaim,
-    ) -> Result<()> {
+    async fn create_leases(&self, plan: &RangePlan, claim: &InitializationClaim) -> Result<()> {
+        // Create each planned lease directly; a 409 preserves the existing document without reading it.
         for range in &plan.ranges {
-            let expected = ChangeFeedProcessorBootstrapProcessingLease {
+            let expected = LeaseDocument {
                 record: self.record(&format!(
                     "lease.{}-{}",
                     range.min_inclusive(),
@@ -544,41 +566,21 @@ impl<'a> ChangeFeedProcessorBootstrapContext<'a> {
                 range: range.clone(),
                 owner: None,
                 continuation: None,
+
+                incarnation: None,
+                renewed_at: None,
+                last_processed_at: None,
+                processing_deadline: None,
             };
             self.check_claim(claim).await?;
-            let existing = match self
-                .store
-                .read::<ChangeFeedProcessorBootstrapProcessingLease>(&expected.record.id)
-                .await?
-            {
-                Some(existing) => existing,
-                None => {
-                    if self.store.create(&expected.record.id, &expected).await? {
-                        continue;
-                    }
-                    self.store
-                        .read::<ChangeFeedProcessorBootstrapProcessingLease>(&expected.record.id)
-                        .await?
-                        .ok_or_else(|| {
-                            error(
-                                StatusCode::ServiceUnavailable,
-                                "Conflicting processing lease is not yet readable.",
-                            )
-                        })?
-                }
-            };
-            validate_lease(&existing.value, &self.identity, &self.namespace)?;
-            if existing.value.range != expected.range {
-                return Err(error(
-                    StatusCode::Conflict,
-                    "Existing processing lease has an incompatible range.",
-                ));
+            if !self.store.create(&expected.record.id, &expected).await? {
+                tracing::debug!(lease = %expected.record.id, "Processing lease already exists; preserving it");
             }
         }
         Ok(())
     }
 
-    async fn initialize(&self, claim: &ChangeFeedProcessorBootstrapClaim) -> Result<()> {
+    async fn initialize(&self, claim: &InitializationClaim) -> Result<()> {
         if self.ready().await? {
             return Ok(());
         }
@@ -587,12 +589,13 @@ impl<'a> ChangeFeedProcessorBootstrapContext<'a> {
         };
         self.create_leases(&plan, claim).await?;
         self.check_claim(claim).await?;
+        // Any unresolved lease error prevents publishing readiness for this plan.
         self.ensure_record(&self.record("info")).await
     }
 
     async fn initialize_and_release(
         &self,
-        claim: &ChangeFeedProcessorBootstrapClaim,
+        claim: &InitializationClaim,
         initialization: impl Future<Output = Result<()>>,
     ) -> Result<()> {
         let result = catch_bootstrap_panic(bounded(initialization, claim.deadline)).await;
@@ -678,28 +681,29 @@ async fn catch_bootstrap_panic<T>(future: impl Future<Output = Result<T>>) -> Re
             Err(CosmosError::builder()
                 .with_status(CosmosStatus::new(StatusCode::InternalServerError))
                 .with_message("Change feed bootstrap attempt panicked.")
-                .with_source(ChangeFeedProcessorBootstrapPanic)
+                .with_source(BootstrapPanic)
                 .build())
         }
     }
 }
 
+/// Error-source marker that lets retry classification recognize a caught bootstrap panic.
 #[derive(Debug)]
-struct ChangeFeedProcessorBootstrapPanic;
+struct BootstrapPanic;
 
-impl fmt::Display for ChangeFeedProcessorBootstrapPanic {
+impl fmt::Display for BootstrapPanic {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("bootstrap attempt unwound")
     }
 }
 
-impl StdError for ChangeFeedProcessorBootstrapPanic {}
+impl StdError for BootstrapPanic {}
 
-pub(super) fn namespace(identity: &ChangeFeedProcessorBootstrapIdentity) -> Result<String> {
+pub(super) fn namespace(identity: &WorkloadIdentity) -> Result<String> {
     let key = serde_json::to_vec(&(
         &identity.account,
         &identity.container_rid,
-        &identity.processor_name,
+        &identity.workload_name,
     ))?;
     Ok(format!("cfp1.{}", URL_SAFE_NO_PAD.encode(key)))
 }
@@ -713,8 +717,8 @@ pub(super) fn lease_id(namespace: &str, range: &FeedRange) -> String {
 }
 
 pub(super) fn validate_lease(
-    lease: &ChangeFeedProcessorBootstrapProcessingLease,
-    identity: &ChangeFeedProcessorBootstrapIdentity,
+    lease: &LeaseDocument,
+    identity: &WorkloadIdentity,
     namespace: &str,
 ) -> Result<()> {
     if lease.record.workload != *identity
@@ -785,7 +789,7 @@ fn retryable(error: &CosmosError) -> bool {
         || error.status().is_precondition_failed()
         || error
             .source()
-            .is_some_and(|source| source.is::<ChangeFeedProcessorBootstrapPanic>())
+            .is_some_and(|source| source.is::<BootstrapPanic>())
 }
 
 #[cfg(all(test, feature = "__internal_in_memory_emulator"))]

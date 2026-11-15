@@ -53,14 +53,13 @@ type Callback = (String, oneshot::Sender<()>);
 async fn one_sdk_worker_skips_throttled_lease_and_recovers_only_on_new_demand(
 ) -> Result<(), Box<dyn Error>> {
     static CALLBACKS: Mutex<Option<mpsc::UnboundedSender<Callback>>> = Mutex::new(None);
-    static ERRORS: AtomicUsize = AtomicUsize::new(0);
     for mode in [
         ChangeFeedMode::LatestVersion,
         ChangeFeedMode::AllVersionsAndDeletes,
     ] {
         for policy in [
-            ChangeFeedCheckpointPolicy::EveryBatch,
-            ChangeFeedCheckpointPolicy::Coalesced {
+            ChangeFeedCheckpointPolicy::Eager,
+            ChangeFeedCheckpointPolicy::Deferred {
                 max_interval: Duration::from_secs(60),
             },
         ] {
@@ -100,29 +99,30 @@ async fn one_sdk_worker_skips_throttled_lease_and_recovers_only_on_new_demand(
             }
             let (sender, mut callbacks) = mpsc::unbounded();
             *CALLBACKS.lock().unwrap() = Some(sender);
-            ERRORS.store(0, Ordering::SeqCst);
-            let processor =
-                ChangeFeedProcessorBuilder::new(mode, source, leases.clone(), "cooldown", "worker")
-                    .with_checkpoint_policy(policy)
-                    .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::MIN))
-                    .with_feed_poll_delay(Duration::from_millis(5))
-                    .handle_error(|_, _| async {
-                        ERRORS.fetch_add(1, Ordering::SeqCst);
-                    })
-                    .handle_change_feed(|context, changes: Vec<ChangeFeedItem<Value>>| async move {
-                        assert_eq!(changes.len(), 1);
-                        let (release, released) = oneshot::channel();
-                        CALLBACKS
-                            .lock()
-                            .unwrap()
-                            .as_ref()
-                            .unwrap()
-                            .unbounded_send((context.lease_token().to_owned(), release))
-                            .unwrap();
-                        let _ = released.await;
-                        Ok(())
-                    })
-                    .build()?;
+            let processor = ChangeFeedProcessorBuilder::new(
+                mode,
+                source,
+                leases.clone(),
+                "cooldown",
+                "worker",
+                |context, changes: Vec<ChangeFeedItem<Value>>| async move {
+                    assert_eq!(changes.len(), 1);
+                    let (release, released) = oneshot::channel();
+                    CALLBACKS
+                        .lock()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .unbounded_send((context.lease_token().to_owned(), release))
+                        .unwrap();
+                    let _ = released.await;
+                    Ok(())
+                },
+            )
+            .with_checkpoint_policy(policy)
+            .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::MIN))
+            .with_feed_poll_delay(Duration::from_millis(5))
+            .build()?;
             rule.enable();
             processor.start().await?;
             let (healthy, release) = tokio::time::timeout(Duration::from_secs(1), callbacks.next())
@@ -166,7 +166,6 @@ async fn one_sdk_worker_skips_throttled_lease_and_recovers_only_on_new_demand(
                 .iter()
                 .filter(|r| r.get("range").is_some())
                 .all(|r| r.get("owner").is_none()));
-            assert_eq!(ERRORS.load(Ordering::SeqCst), 0);
             *CALLBACKS.lock().unwrap() = None;
         }
     }

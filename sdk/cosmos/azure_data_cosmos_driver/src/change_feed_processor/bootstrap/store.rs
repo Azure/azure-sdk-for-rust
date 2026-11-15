@@ -13,18 +13,14 @@ use azure_core::http::{Etag, StatusCode};
 use serde::{de::DeserializeOwned, Serialize};
 use std::time::Instant;
 
-pub(in crate::change_feed_processor) struct ChangeFeedProcessorBootstrapStoredRecord<T> {
-    pub value: T,
-    pub etag: Etag,
-}
-
-pub(in crate::change_feed_processor) struct ChangeFeedProcessorBootstrapStore<'a> {
+/// Lease-container I/O adapter applying the caller's overall deadline and CFP operation options.
+pub(in crate::change_feed_processor) struct LeaseStore<'a> {
     pub driver: &'a CosmosDriver,
     pub container: &'a ContainerReference,
     pub deadline: Instant,
 }
 
-impl ChangeFeedProcessorBootstrapStore<'_> {
+impl LeaseStore<'_> {
     fn item(&self, id: &str) -> Result<ItemReference> {
         if id.len() > 1023 {
             return Err(error(
@@ -54,7 +50,7 @@ impl ChangeFeedProcessorBootstrapStore<'_> {
     pub(in crate::change_feed_processor) async fn read<T: DeserializeOwned>(
         &self,
         id: &str,
-    ) -> Result<Option<ChangeFeedProcessorBootstrapStoredRecord<T>>> {
+    ) -> Result<Option<(T, Etag)>> {
         match self
             .execute(CosmosOperation::read_item(self.item(id)?))
             .await
@@ -66,10 +62,7 @@ impl ChangeFeedProcessorBootstrapStore<'_> {
                         "Bootstrap item response has no ETag.",
                     )
                 })?;
-                Ok(Some(ChangeFeedProcessorBootstrapStoredRecord {
-                    etag,
-                    value: response.into_body().into_single()?,
-                }))
+                Ok(Some((response.into_body().into_single()?, etag)))
             }
             Err(err) if err.status().is_not_found() => Ok(None),
             Err(err) => Err(err),
@@ -95,7 +88,7 @@ impl ChangeFeedProcessorBootstrapStore<'_> {
         id: &str,
         value: &T,
         etag: Etag,
-    ) -> Result<ChangeFeedProcessorBootstrapStoredRecord<T>> {
+    ) -> Result<(T, Etag)> {
         let response = self
             .execute(
                 CosmosOperation::replace_item(self.item(id)?)
@@ -109,10 +102,7 @@ impl ChangeFeedProcessorBootstrapStore<'_> {
                 "Lease response has no ETag.",
             )
         })?;
-        Ok(ChangeFeedProcessorBootstrapStoredRecord {
-            etag,
-            value: value.clone(),
-        })
+        Ok((value.clone(), etag))
     }
 
     pub(in crate::change_feed_processor) async fn delete(

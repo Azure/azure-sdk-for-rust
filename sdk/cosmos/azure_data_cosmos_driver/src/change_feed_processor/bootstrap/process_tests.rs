@@ -2,10 +2,8 @@
 // Licensed under the MIT License.
 
 use super::{
-    bootstrap, namespace, ChangeFeedFactoryMode, ChangeFeedProcessorBootstrapContext,
-    ChangeFeedProcessorBootstrapIdentity, ChangeFeedProcessorBootstrapLockRecord,
-    ChangeFeedProcessorBootstrapRangePlan, ChangeFeedProcessorBootstrapRecord,
-    ChangeFeedProcessorBootstrapStore, LOCK_TTL_SECONDS, SCHEMA_VERSION,
+    bootstrap, namespace, ChangeFeedFactoryMode, Context, InitializationLock, LeaseStore,
+    RangePlan, Record, WorkloadIdentity, LOCK_TTL_SECONDS, SCHEMA_VERSION,
 };
 use crate::{
     models::{
@@ -210,8 +208,8 @@ async fn run_worker(driver: Arc<CosmosDriver>, timeout: Duration) -> TestResult 
     let leases = driver
         .resolve_container(&database, "leases", OperationOptions::default())
         .await?;
-    let processor_name = std::env::var(PROCESSOR_ENV)?;
-    let instance_name = format!("process-{}", std::process::id());
+    let workload_name = std::env::var(PROCESSOR_ENV)?;
+    let worker_name = format!("process-{}", std::process::id());
     let result = tokio::time::timeout(
         timeout,
         bootstrap(
@@ -220,8 +218,8 @@ async fn run_worker(driver: Arc<CosmosDriver>, timeout: Duration) -> TestResult 
             &driver,
             &leases,
             mode,
-            &processor_name,
-            &instance_name,
+            &workload_name,
+            &worker_name,
         ),
     )
     .await?;
@@ -310,12 +308,12 @@ fn identity(
     source: &ContainerReference,
     processor: &str,
     mode: ChangeFeedFactoryMode,
-) -> ChangeFeedProcessorBootstrapIdentity {
-    ChangeFeedProcessorBootstrapIdentity {
+) -> WorkloadIdentity {
+    WorkloadIdentity {
         version: SCHEMA_VERSION,
         account: source.account().endpoint().origin().ascii_serialization(),
         container_rid: source.rid().to_owned(),
-        processor_name: processor.into(),
+        workload_name: processor.into(),
         mode,
     }
 }
@@ -340,16 +338,16 @@ async fn exercise_workers(
         .await?;
     let identity = identity(&source, processor, mode);
     let prefix = namespace(&identity)?;
-    let store = ChangeFeedProcessorBootstrapStore {
+    let store = LeaseStore {
         driver,
         container: &leases,
         deadline: Instant::now() + Duration::from_secs(60),
     };
     let plan = store
-        .read::<ChangeFeedProcessorBootstrapRangePlan>(&format!("{prefix}.plan"))
+        .read::<RangePlan>(&format!("{prefix}.plan"))
         .await?
         .unwrap()
-        .value;
+        .0;
     let topology = driver
         .resolve_all_partition_key_ranges(&source, true)
         .await?
@@ -366,8 +364,8 @@ async fn exercise_workers(
             range.max_exclusive()
         );
         let lease = store.read::<serde_json::Value>(&id).await?.unwrap();
-        assert!(lease.value.get("continuation").is_none());
-        assert!(lease.value.get("owner").is_none());
+        assert!(lease.0.get("continuation").is_none());
+        assert!(lease.0.get("owner").is_none());
     }
     let range = &plan.ranges[0];
     let id = format!(
@@ -376,8 +374,8 @@ async fn exercise_workers(
         range.max_exclusive()
     );
     let original = store.read::<serde_json::Value>(&id).await?.unwrap();
-    assert!(original.value.get("continuation").is_none());
-    let mut saved_lease = original.value;
+    assert!(original.0.get("continuation").is_none());
+    let mut saved_lease = original.0;
     saved_lease["owner"] = "existing-worker".into();
     saved_lease["continuation"] = "saved-progress".into();
     store
@@ -387,7 +385,7 @@ async fn exercise_workers(
                 PartitionKey::from(id.clone()),
                 id.clone(),
             ))
-            .with_precondition(Precondition::if_match(original.etag))
+            .with_precondition(Precondition::if_match(original.1))
             .with_body(serde_json::to_vec(&saved_lease)?),
         )
         .await?;
@@ -395,8 +393,8 @@ async fn exercise_workers(
     Workers::spawn(worker_test, database, processor, mode_name, false, 2)?.wait()?;
     Workers::spawn(worker_test, database, processor, other_mode, true, 2)?.wait()?;
     let after = store.read::<serde_json::Value>(&id).await?.unwrap();
-    assert_eq!(after.etag, before.etag);
-    assert_eq!(after.value, before.value);
+    assert_eq!(after.1, before.1);
+    assert_eq!(after.0, before.0);
     Ok(())
 }
 
@@ -435,16 +433,16 @@ async fn exercise_live_workers(driver: &CosmosDriver, database: &str) -> TestRes
         .await?;
     let identity = identity(&source, "ttl-recovery", ChangeFeedFactoryMode::Incremental);
     let prefix = namespace(&identity)?;
-    let store = ChangeFeedProcessorBootstrapStore {
+    let store = LeaseStore {
         driver,
         container: &leases,
         deadline: Instant::now() + Duration::from_secs(180),
     };
     let abandoned = store
-        .read::<ChangeFeedProcessorBootstrapLockRecord>(&format!("{prefix}.lock"))
+        .read::<InitializationLock>(&format!("{prefix}.lock"))
         .await?
         .unwrap();
-    assert_eq!(abandoned.value.record.ttl, LOCK_TTL_SECONDS);
+    assert_eq!(abandoned.0.record.ttl, LOCK_TTL_SECONDS);
     let started = Instant::now();
     Workers::spawn(
         LIVE_WORKER_TEST,
@@ -460,22 +458,22 @@ async fn exercise_live_workers(driver: &CosmosDriver, database: &str) -> TestRes
         started.elapsed().as_secs_f64()
     );
     assert!(store
-        .read::<ChangeFeedProcessorBootstrapLockRecord>(&format!("{prefix}.lock"))
+        .read::<InitializationLock>(&format!("{prefix}.lock"))
         .await?
         .is_none());
     for suffix in ["definition", "plan", "info"] {
         let record = store
-            .read::<ChangeFeedProcessorBootstrapRecord>(&format!("{prefix}.{suffix}"))
+            .read::<Record>(&format!("{prefix}.{suffix}"))
             .await?
             .unwrap();
-        assert_eq!(record.value.workload, identity);
-        assert_eq!(record.value.ttl, -1);
+        assert_eq!(record.0.workload, identity);
+        assert_eq!(record.0.ttl, -1);
     }
     let plan = store
-        .read::<ChangeFeedProcessorBootstrapRangePlan>(&format!("{prefix}.plan"))
+        .read::<RangePlan>(&format!("{prefix}.plan"))
         .await?
         .unwrap()
-        .value;
+        .0;
     for range in plan.ranges {
         let id = format!(
             "{prefix}.lease.{}-{}",
@@ -483,8 +481,8 @@ async fn exercise_live_workers(driver: &CosmosDriver, database: &str) -> TestRes
             range.max_exclusive()
         );
         let lease = store.read::<serde_json::Value>(&id).await?.unwrap();
-        assert!(lease.value.get("continuation").is_none());
-        assert!(lease.value.get("owner").is_none());
+        assert!(lease.0.get("continuation").is_none());
+        assert!(lease.0.get("owner").is_none());
     }
     Ok(())
 }
@@ -501,7 +499,7 @@ async fn live_crashed_initializer() -> TestResult {
     let leases = driver
         .resolve_container(&database, "leases", OperationOptions::default())
         .await?;
-    let context = ChangeFeedProcessorBootstrapContext::new(
+    let context = Context::new(
         &driver,
         &source,
         &driver,

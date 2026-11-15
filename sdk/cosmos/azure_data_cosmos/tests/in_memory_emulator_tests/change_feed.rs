@@ -357,17 +357,33 @@ mod processor_lifecycle_tests {
         Ok(records)
     }
 
+    async fn wait_released(leases: &ContainerClient, id: &str) -> Result<(), Box<dyn Error>> {
+        tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                if records(leases)
+                    .await?
+                    .iter()
+                    .any(|r| r["id"] == id && r.get("owner").is_none())
+                {
+                    return Ok::<_, Box<dyn Error>>(());
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await?
+    }
+
     #[tokio::test]
     async fn processor_callbacks_are_independent_across_workers() -> Result<(), Box<dyn Error>> {
         type Entered = (String, oneshot::Sender<bool>);
         static ENTERED: Mutex<Option<mpsc::UnboundedSender<Entered>>> = Mutex::new(None);
         for policy in [
-            ChangeFeedCheckpointPolicy::EveryBatch,
-            ChangeFeedCheckpointPolicy::Coalesced {
+            ChangeFeedCheckpointPolicy::Eager,
+            ChangeFeedCheckpointPolicy::Deferred {
                 max_interval: Duration::from_secs(60),
             },
         ] {
-            for outcome in ["success", "failure", "abort"] {
+            for outcome in ["success", "failure", "drop"] {
                 let (source, leases) = setup_processor().await?;
                 source
                     .create_item(PARTITION_KEY, "one", TestItem::new("one", 1), None)
@@ -381,11 +397,6 @@ mod processor_lifecycle_tests {
                         leases.clone(),
                         name,
                         "worker",
-                    )
-                    .with_start_from_beginning()
-                    .with_feed_poll_delay(Duration::from_millis(1))
-                    .with_checkpoint_policy(policy)
-                    .handle_change_feed(
                         |context, changes: Vec<ChangeFeedItem<TestItem>>| async move {
                             let (release, released) = oneshot::channel();
                             ENTERED
@@ -409,6 +420,9 @@ mod processor_lifecycle_tests {
                             }
                         },
                     )
+                    .with_start_from_beginning()
+                    .with_feed_poll_delay(Duration::from_millis(1))
+                    .with_checkpoint_policy(policy)
                     .build()
                 };
                 let first = build("first")?;
@@ -439,15 +453,18 @@ mod processor_lifecycle_tests {
                         .await
                         .is_err()
                 );
-                if outcome == "abort" {
-                    first.abort().await?;
+                if outcome == "drop" {
+                    drop(first);
+                    wait_released(&leases, &first_id).await?;
                     assert!(release.is_canceled());
                 } else {
                     release.send(outcome == "success").unwrap();
+                    drop(first);
+                    wait_released(&leases, &first_id).await?;
                 }
-                first.abort().await?;
                 assert!(!second_release.is_canceled());
-                second.abort().await?;
+                drop(second);
+                wait_released(&leases, &second_id).await?;
                 assert!(second_release.is_canceled());
                 *ENTERED.lock().unwrap() = None;
             }
@@ -456,13 +473,13 @@ mod processor_lifecycle_tests {
     }
 
     #[tokio::test]
-    async fn coalesced_callbacks_advance_without_persistence_and_flush_on_stop(
+    async fn default_callbacks_advance_without_persistence_and_flush_on_stop(
     ) -> Result<(), Box<dyn Error>> {
-        exercise_coalesced(ChangeFeedMode::LatestVersion).await?;
-        exercise_coalesced(ChangeFeedMode::AllVersionsAndDeletes).await
+        exercise_deferred(ChangeFeedMode::LatestVersion).await?;
+        exercise_deferred(ChangeFeedMode::AllVersionsAndDeletes).await
     }
 
-    async fn exercise_coalesced(mode: ChangeFeedMode) -> Result<(), Box<dyn Error>> {
+    async fn exercise_deferred(mode: ChangeFeedMode) -> Result<(), Box<dyn Error>> {
         type Delivery = (String, Vec<String>, oneshot::Sender<()>);
         static ENTERED: Mutex<Option<mpsc::UnboundedSender<Delivery>>> = Mutex::new(None);
         let (source, leases) = setup_processor().await?;
@@ -470,13 +487,14 @@ mod processor_lifecycle_tests {
             mode,
             source.clone(),
             leases.clone(),
-            "coalesced",
+            "deferred",
             "warm",
+            |_, _: Vec<ChangeFeedItem<TestItem>>| async {
+                panic!("source must be idle while pinning its initial position")
+            },
         )
+        .with_checkpoint_policy(ChangeFeedCheckpointPolicy::Eager)
         .with_feed_poll_delay(Duration::from_millis(1))
-        .handle_change_feed(|_, _: Vec<ChangeFeedItem<TestItem>>| async {
-            panic!("source must be idle while pinning its initial position")
-        })
         .build()?;
         warm.start().await?;
         tokio::time::timeout(Duration::from_secs(5), async {
@@ -497,19 +515,12 @@ mod processor_lifecycle_tests {
             mode,
             source.clone(),
             leases.clone(),
-            "coalesced",
+            "deferred",
             "worker",
-        )
-        .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()))
-        .with_feed_poll_delay(Duration::from_millis(1))
-        .with_checkpoint_policy(ChangeFeedCheckpointPolicy::Coalesced {
-            max_interval: Duration::from_secs(60),
-        })
-        .handle_change_feed(
             |context: ChangeFeedProcessorContext, changes: Vec<ChangeFeedItem<TestItem>>| {
                 let entered = ENTERED.lock().unwrap().as_ref().unwrap().clone();
                 async move {
-                    let diagnostics = context.diagnostics().expect("batch-read diagnostics");
+                    let diagnostics = context.diagnostics();
                     assert!(diagnostics.is_completed());
                     assert!(!diagnostics.is_failure());
                     let (release, released) = oneshot::channel();
@@ -525,6 +536,8 @@ mod processor_lifecycle_tests {
                 }
             },
         )
+        .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()))
+        .with_feed_poll_delay(Duration::from_millis(1))
         .build()?;
         processor.start().await?;
         for id in ["one", "two"] {
@@ -594,13 +607,6 @@ mod processor_lifecycle_tests {
             leases.clone(),
             "processor",
             "worker-01",
-        )
-        .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(200).unwrap()))
-        .with_feed_poll_delay(Duration::from_millis(5))
-        .with_min_scale_count(1)
-        .with_max_scale_count(4)
-        .with_lease_verification_enabled_on_restart(true)
-        .handle_change_feed(
             |context: ChangeFeedProcessorContext, items: Vec<ChangeFeedItem<TestItem>>| async move {
                 OBSERVED.lock().unwrap().push((
                     context.lease_token().to_owned(),
@@ -616,6 +622,12 @@ mod processor_lifecycle_tests {
                 Ok(())
             },
         )
+        .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(200).unwrap()))
+        .with_checkpoint_policy(ChangeFeedCheckpointPolicy::Eager)
+        .with_feed_poll_delay(Duration::from_millis(5))
+        .with_min_scale_count(1)
+        .with_max_scale_count(4)
+        .with_lease_verification_enabled_on_restart(true)
         .with_max_item_count(MaxItemCountHint::ServerDecides)
         .with_feed_poll_delay(Duration::from_millis(5))
         .with_min_scale_count(0)
@@ -750,8 +762,8 @@ mod processor_lifecycle_tests {
             leases.clone(),
             "orders",
             "first",
+            |_, _: Vec<ChangeFeedItem<TestItem>>| async { Ok(()) },
         )
-        .handle_change_feed(|_, _: Vec<ChangeFeedItem<TestItem>>| async { Ok(()) })
         .build()?;
         first.start().await?;
         first.stop().await?;
@@ -762,8 +774,8 @@ mod processor_lifecycle_tests {
             leases.clone(),
             "orders",
             "other",
+            |_, _: Vec<ChangeFeedItem<TestItem>>| async { Ok(()) },
         )
-        .handle_change_feed(|_, _: Vec<ChangeFeedItem<TestItem>>| async { Ok(()) })
         .build()?;
         assert_eq!(
             other.start().await.unwrap_err().status().status_code(),
@@ -797,8 +809,8 @@ mod processor_lifecycle_tests {
             source,
             "orders",
             "worker",
+            |_, _: Vec<ChangeFeedItem<TestItem>>| async { Ok(()) },
         )
-        .handle_change_feed(|_, _: Vec<ChangeFeedItem<TestItem>>| async { Ok(()) })
         .build()?;
         let error = processor.start().await.unwrap_err();
         assert_eq!(error.status().status_code(), StatusCode::BadRequest);
@@ -816,8 +828,8 @@ mod processor_lifecycle_tests {
             leases.clone(),
             "orders",
             "first",
+            |_, _: Vec<ChangeFeedItem<TestItem>>| async { Ok(()) },
         )
-        .handle_change_feed(|_, _: Vec<ChangeFeedItem<TestItem>>| async { Ok(()) })
         .build()?;
         first.start().await?;
         first.stop().await?;
@@ -840,9 +852,9 @@ mod processor_lifecycle_tests {
             leases.clone(),
             "orders",
             "verifier",
+            |_, _: Vec<ChangeFeedItem<TestItem>>| async { Ok(()) },
         )
         .with_lease_verification_enabled_on_restart(true)
-        .handle_change_feed(|_, _: Vec<ChangeFeedItem<TestItem>>| async { Ok(()) })
         .build()?;
         verifying.start().await?;
         verifying.stop().await?;
@@ -872,9 +884,6 @@ mod processor_lifecycle_tests {
             leases.clone(),
             "orders",
             "worker",
-        )
-        .with_start_from_beginning()
-        .handle_change_feed(
             |context: ChangeFeedProcessorContext, items: Vec<ChangeFeedItem<TestItem>>| {
                 assert_eq!(items.len(), 1);
                 assert_eq!(items[0].current().unwrap().id, "replay");
@@ -894,6 +903,7 @@ mod processor_lifecycle_tests {
                 }
             },
         )
+        .with_start_from_beginning()
         .build()?;
         processor.start().await?;
         tokio::time::timeout(Duration::from_secs(5), async {
@@ -923,26 +933,31 @@ mod processor_lifecycle_tests {
         processor.start().await?;
         tokio::time::timeout(Duration::from_secs(5), async {
             loop {
-                if calls.load(Ordering::SeqCst) == 2
-                    && records(&leases)
-                        .await
-                        .unwrap()
-                        .iter()
-                        .any(|r| r["id"] == id && r.get("continuation").is_some())
-                {
+                if calls.load(Ordering::SeqCst) == 2 {
                     break;
                 }
                 tokio::time::sleep(Duration::from_millis(5)).await;
             }
         })
         .await?;
+        assert!(records(&leases)
+            .await?
+            .iter()
+            .find(|r| r["id"] == id)
+            .unwrap()
+            .get("continuation")
+            .is_none());
         processor.stop().await?;
+        assert!(records(&leases)
+            .await?
+            .iter()
+            .any(|r| r["id"] == id && r.get("continuation").is_some()));
         assert_eq!(calls.load(Ordering::SeqCst), 2);
         Ok(())
     }
 
     #[tokio::test]
-    async fn abort_cancels_pending_callback_without_checkpoint() -> Result<(), Box<dyn Error>> {
+    async fn drop_cancels_pending_callback_without_checkpoint() -> Result<(), Box<dyn Error>> {
         let (source, leases) = setup_processor().await?;
         source
             .create_item(PARTITION_KEY, "pending", TestItem::new("pending", 1), None)
@@ -957,15 +972,13 @@ mod processor_lifecycle_tests {
             leases.clone(),
             "orders",
             "worker",
-        )
-        .with_start_from_beginning()
-        .handle_change_feed(
             |context: ChangeFeedProcessorContext, _: Vec<ChangeFeedItem<TestItem>>| {
                 *LEASE_TOKEN.lock().unwrap() = context.lease_token().to_owned();
                 CALLS.fetch_add(1, Ordering::SeqCst);
                 futures::future::pending::<azure_data_cosmos::Result<()>>()
             },
         )
+        .with_start_from_beginning()
         .build()?;
         processor.start().await?;
         tokio::time::timeout(Duration::from_secs(5), async {
@@ -974,10 +987,10 @@ mod processor_lifecycle_tests {
             }
         })
         .await?;
-        tokio::time::timeout(Duration::from_secs(5), processor.abort()).await??;
-        assert!(!processor.is_started());
-        let stored = records(&leases).await?;
         let id = lease_token.lock().unwrap().clone();
+        drop(processor);
+        wait_released(&leases, &id).await?;
+        let stored = records(&leases).await?;
         assert!(stored
             .iter()
             .find(|r| r["id"] == id)
@@ -1022,9 +1035,6 @@ mod processor_lifecycle_tests {
             leases.clone(),
             "drain",
             "worker",
-        )
-        .with_start_from_beginning()
-        .handle_change_feed(
             |context: ChangeFeedProcessorContext, _: Vec<ChangeFeedItem<TestItem>>| {
                 let DrainCallback {
                     entered,
@@ -1046,6 +1056,7 @@ mod processor_lifecycle_tests {
                 }
             },
         )
+        .with_start_from_beginning()
         .build()?;
         processor.start().await?;
         let id = tokio::time::timeout(Duration::from_secs(5), entered_rx).await??;
@@ -1103,19 +1114,19 @@ mod processor_lifecycle_tests {
             leases.clone(),
             "orders",
             "worker",
+            |_, items: Vec<ChangeFeedItem<TestItem>>| {
+                assert_eq!(
+                    items
+                        .iter()
+                        .map(|item| item.current().unwrap().id.as_str())
+                        .collect::<Vec<_>>(),
+                    vec!["after-time"]
+                );
+                CALLS.fetch_add(1, Ordering::SeqCst);
+                async { Ok(()) }
+            },
         )
         .with_start_time(time::OffsetDateTime::from_unix_timestamp(1_700_000_000)?)
-        .handle_change_feed(|_, items: Vec<ChangeFeedItem<TestItem>>| {
-            assert_eq!(
-                items
-                    .iter()
-                    .map(|item| item.current().unwrap().id.as_str())
-                    .collect::<Vec<_>>(),
-                vec!["after-time"]
-            );
-            CALLS.fetch_add(1, Ordering::SeqCst);
-            async { Ok(()) }
-        })
         .build()?;
         processor.start().await?;
         tokio::time::timeout(Duration::from_secs(5), async {

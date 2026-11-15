@@ -1,10 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{
-    ChangeFeedProcessorBootstrapCoalescer, ChangeFeedProcessorBootstrapCoalescingCleanup,
-    ChangeFeedProcessorBootstrapCoalescingEntry, ChangeFeedProcessorBootstrapCoalescingKey,
-};
+use super::{AttemptCleanup, AttemptEntry, AttemptKey, BootstrapCoalescer};
 use crate::{
     change_feed_processor::bootstrap::{error, retry_bootstrap},
     models::ChangeFeedFactoryMode,
@@ -25,8 +22,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-fn key() -> ChangeFeedProcessorBootstrapCoalescingKey {
-    ChangeFeedProcessorBootstrapCoalescingKey {
+fn key() -> AttemptKey {
+    AttemptKey {
         namespace: "source-and-processor".into(),
         lease_container: "leases".into(),
         lease_driver: 1,
@@ -39,7 +36,7 @@ fn attempt_deadline() -> Instant {
 }
 
 struct FactoryDropProbe {
-    coalescer: Arc<ChangeFeedProcessorBootstrapCoalescer>,
+    coalescer: Arc<BootstrapCoalescer>,
     lock_available: Arc<AtomicBool>,
 }
 
@@ -52,7 +49,7 @@ impl Drop for FactoryDropProbe {
 
 #[tokio::test]
 async fn overlapping_waiters_share_one_execution() -> Result<()> {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let executions = Arc::new(AtomicUsize::new(0));
     let waiters: Vec<_> = (0..4)
         .map(|_| {
@@ -77,7 +74,7 @@ async fn overlapping_waiters_share_one_execution() -> Result<()> {
 
 #[tokio::test]
 async fn later_waiter_survives_initiating_caller_cancellation() -> Result<()> {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let (started_tx, started_rx) = oneshot::channel();
     let (release_tx, release_rx) = oneshot::channel();
     let first = coalescer.start_or_join(key(), attempt_deadline(), move || {
@@ -105,7 +102,7 @@ async fn later_waiter_survives_initiating_caller_cancellation() -> Result<()> {
 
 #[tokio::test]
 async fn follower_cancellation_does_not_cancel_initiator() -> Result<()> {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let (started_tx, started_rx) = oneshot::channel();
     let (release_tx, release_rx) = oneshot::channel();
     let first = coalescer.start_or_join(key(), attempt_deadline(), move || {
@@ -131,7 +128,7 @@ async fn follower_cancellation_does_not_cancel_initiator() -> Result<()> {
 
 #[tokio::test]
 async fn last_waiter_cancellation_releases_unpolled_work() {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let retained = Arc::new(());
     let weak = Arc::downgrade(&retained);
     let first = coalescer.start_or_join(key(), attempt_deadline(), move || {
@@ -153,7 +150,7 @@ async fn last_waiter_cancellation_releases_unpolled_work() {
 
 #[tokio::test]
 async fn errors_are_shared_and_later_calls_retry() -> Result<()> {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let first = coalescer.start_or_join(key(), attempt_deadline(), move || {
         async { Err(error(StatusCode::Conflict, "incompatible workload")) }.boxed()
     });
@@ -178,7 +175,7 @@ async fn errors_are_shared_and_later_calls_retry() -> Result<()> {
 
 #[tokio::test]
 async fn successes_are_not_permanently_cached() -> Result<()> {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     coalescer
         .start_or_join(key(), attempt_deadline(), move || {
             async { Ok(true) }.boxed()
@@ -197,7 +194,7 @@ async fn successes_are_not_permanently_cached() -> Result<()> {
 
 #[tokio::test]
 async fn incompatible_keys_do_not_coalesce() -> Result<()> {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let executions = Arc::new(AtomicUsize::new(0));
     let original = key();
     let mut keys = vec![original.clone()];
@@ -237,7 +234,7 @@ async fn incompatible_keys_do_not_coalesce() -> Result<()> {
 
 #[tokio::test]
 async fn joining_does_not_extend_the_original_deadline() {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let first =
         coalescer.start_or_join(key(), Instant::now(), || pending::<Result<bool>>().boxed());
     let follower = coalescer.start_or_join(key(), attempt_deadline(), || {
@@ -257,7 +254,7 @@ async fn joining_does_not_extend_the_original_deadline() {
 
 #[tokio::test]
 async fn panics_release_waiters_and_allow_a_new_attempt() -> Result<()> {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let first = coalescer.start_or_join(key(), attempt_deadline(), move || {
         async { panic!("simulated bootstrap panic") }.boxed()
     });
@@ -281,9 +278,9 @@ async fn panics_release_waiters_and_allow_a_new_attempt() -> Result<()> {
 
 #[test]
 fn stale_cleanup_preserves_a_replacement_flight() {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let key = key();
-    let old_cleanup = ChangeFeedProcessorBootstrapCoalescingCleanup {
+    let old_cleanup = AttemptCleanup {
         coalescer: Arc::clone(&coalescer),
         key: key.clone(),
         generation: Arc::new(()),
@@ -292,7 +289,7 @@ fn stale_cleanup_preserves_a_replacement_flight() {
     let generation = Arc::new(());
     coalescer.entries().insert(
         key.clone(),
-        ChangeFeedProcessorBootstrapCoalescingEntry {
+        AttemptEntry {
             generation: Arc::clone(&generation),
             future: replacement.downgrade().unwrap(),
         },
@@ -306,7 +303,7 @@ fn stale_cleanup_preserves_a_replacement_flight() {
 
 #[tokio::test]
 async fn retryable_failure_re_registers_with_a_small_remaining_budget() -> Result<()> {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let executions = Arc::new(AtomicUsize::new(0));
     retry_bootstrap(
         || {
@@ -333,7 +330,7 @@ async fn retryable_failure_re_registers_with_a_small_remaining_budget() -> Resul
 
 #[tokio::test]
 async fn panic_re_registers_automatically() -> Result<()> {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let executions = Arc::new(AtomicUsize::new(0));
     retry_bootstrap(
         || {
@@ -358,7 +355,7 @@ async fn panic_re_registers_automatically() -> Result<()> {
 
 #[tokio::test]
 async fn permanent_failure_does_not_re_register() {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let executions = Arc::new(AtomicUsize::new(0));
     let result = retry_bootstrap(
         || {
@@ -385,7 +382,7 @@ async fn permanent_failure_does_not_re_register() {
 
 #[tokio::test]
 async fn repeated_failures_do_not_reset_the_caller_deadline() {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let executions = Arc::new(AtomicUsize::new(0));
     let deadline = Instant::now() + Duration::from_millis(100);
     let result = tokio::time::timeout(
@@ -417,7 +414,7 @@ async fn repeated_failures_do_not_reset_the_caller_deadline() {
 
 #[tokio::test]
 async fn expired_caller_never_registers_an_attempt() {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let mut registrations = 0;
     let result = retry_bootstrap(
         || {
@@ -440,7 +437,7 @@ async fn expired_caller_never_registers_an_attempt() {
 
 #[tokio::test]
 async fn later_caller_re_registers_after_originating_deadline() -> Result<()> {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let first_deadline = Instant::now() + Duration::from_millis(100);
     let mut first = Box::pin(retry_bootstrap(
         || coalescer.start_or_join(key(), first_deadline, || pending::<Result<bool>>().boxed()),
@@ -478,7 +475,7 @@ async fn later_caller_re_registers_after_originating_deadline() -> Result<()> {
 
 #[tokio::test]
 async fn caller_timeout_does_not_cancel_another_waiter() -> Result<()> {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let (release_tx, release_rx) = oneshot::channel();
     let mut receiver = Some(release_rx);
     let mut survivor = Box::pin(retry_bootstrap(
@@ -538,7 +535,7 @@ async fn service_internal_error_is_not_treated_as_a_caught_panic() {
 
 #[tokio::test]
 async fn selected_factory_is_lazy_and_runs_outside_the_registry_lock() -> Result<()> {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let constructions = Arc::new(AtomicUsize::new(0));
     let lock_available = Arc::new(AtomicBool::new(false));
     let retained = coalescer.clone();
@@ -565,7 +562,7 @@ async fn selected_factory_is_lazy_and_runs_outside_the_registry_lock() -> Result
 
 #[tokio::test]
 async fn constructor_panic_is_shared_without_poisoning_registration() -> Result<()> {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let constructions = Arc::new(AtomicUsize::new(0));
     let observed = constructions.clone();
     let first = coalescer.start_or_join(key(), attempt_deadline(), move || {
@@ -594,7 +591,7 @@ async fn constructor_panic_is_shared_without_poisoning_registration() -> Result<
 
 #[tokio::test]
 async fn attempt_expiring_before_poll_does_not_invoke_its_factory() {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let constructions = Arc::new(AtomicUsize::new(0));
     let observed = constructions.clone();
     let attempt = coalescer.start_or_join(
@@ -617,7 +614,7 @@ async fn attempt_expiring_before_poll_does_not_invoke_its_factory() {
 
 #[tokio::test]
 async fn unused_factory_is_dropped_without_the_registry_lock() {
-    let coalescer = Arc::new(ChangeFeedProcessorBootstrapCoalescer::default());
+    let coalescer = Arc::new(BootstrapCoalescer::default());
     let first = coalescer.start_or_join(key(), attempt_deadline(), || {
         pending::<Result<bool>>().boxed()
     });

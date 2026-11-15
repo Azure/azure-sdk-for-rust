@@ -6,8 +6,9 @@ use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     models::ChangeFeedItem,
     options::{ChangeFeedMode, MaxItemCountHint},
-    ChangeFeedProcessor, ChangeFeedProcessorBuilder, ChangeFeedProcessorContext, ContainerClient,
-    CosmosError, CosmosStatus, FeedScope, TransactionalBatch,
+    ChangeFeedCheckpointPolicy, ChangeFeedProcessor, ChangeFeedProcessorBuilder,
+    ChangeFeedProcessorContext, ContainerClient, CosmosError, CosmosStatus, FeedScope,
+    TransactionalBatch,
 };
 use futures::{
     channel::{mpsc, oneshot},
@@ -30,11 +31,7 @@ const CONTROL_WAIT: Duration = Duration::from_secs(120);
 const DRAIN_WAIT: Duration = Duration::from_secs(240);
 const INTERVAL: Duration = Duration::from_millis(100);
 
-type Handler = fn(
-    ChangeFeedProcessorContext,
-    Vec<ChangeFeedItem<Value>>,
-) -> BoxFuture<'static, azure_data_cosmos::Result<()>>;
-type Processor = ChangeFeedProcessor<Value, Handler>;
+type Processor = ChangeFeedProcessor<Value, BoxFuture<'static, azure_data_cosmos::Result<()>>>;
 
 type RegisteredCallback = Option<(String, Arc<Sink>)>;
 static CALLBACKS: Mutex<[RegisteredCallback; 2]> = Mutex::new([None, None]);
@@ -532,6 +529,7 @@ fn processor<const SLOT: usize>(
         leases.clone(),
         &sink.workload.name,
         worker,
+        handle_changes::<SLOT>,
     );
     let builder = if resume_with_now {
         builder.with_start_from_now()
@@ -539,11 +537,11 @@ fn processor<const SLOT: usize>(
         builder.with_start_from_beginning()
     };
     Ok(builder
+        .with_checkpoint_policy(ChangeFeedCheckpointPolicy::Eager)
         .with_max_item_count(MaxItemCountHint::Limit(
             NonZeroU32::new(hint).ok_or("Invalid page hint.")?,
         ))
         .with_feed_poll_delay(INTERVAL)
-        .handle_change_feed(handle_changes::<SLOT>)
         .build()?)
 }
 
@@ -748,18 +746,18 @@ async fn exercise(
         Scenario::Restart => 2,
         Scenario::Scale => 4,
     };
-    let first = processor::<0>(&source, &leases, &sink, &a, hint, false)?;
-    let second = processor::<1>(
+    let mut first = Some(processor::<0>(&source, &leases, &sink, &a, hint, false)?);
+    let mut second = Some(processor::<1>(
         &source,
         &leases,
         &sink,
         &b,
         hint,
         matches!(scenario, Scenario::Restart),
-    )?;
+    )?);
     let result = async {
         workload.publish(&source, 0, GROUPS).await?;
-        first.start().await?;
+        first.as_ref().unwrap().start().await?;
         match scenario {
             Scenario::Drain => {}
             Scenario::Restart => {
@@ -767,12 +765,12 @@ async fn exercise(
                 if held.worker != a || !held.fences.is_empty() { return Err("Unexpected restart hold.".into()); }
                 wait_owned(&leases, &sink, &BTreeSet::from([a.clone()]), true).await?;
                 let before = progress(&leases, &held.lease).await?;
-                first.abort().await?;
+                drop(first.take());
                 wait_canceled(&held, &sink).await?;
                 if progress(&leases, &held.lease).await?.continuation != before.continuation {
-                    return Err("Aborting advanced an unfinished callback's checkpoint.".into());
+                    return Err("Dropping advanced an unfinished callback's checkpoint.".into());
                 }
-                second.start().await?;
+                second.as_ref().unwrap().start().await?;
                 workload.publish_fences(&source).await?;
                 drain(&leases, &sink, &mut receiver).await?;
                 let state = sink.state.lock().unwrap();
@@ -802,7 +800,7 @@ async fn exercise(
                     && workload.keys.iter().any(|key| key.range != 0 && key.pk == doc.pk)) {
                     return Err("Other ranges did not progress while one callback was blocked.".into());
                 }
-                second.start().await?;
+                second.as_ref().unwrap().start().await?;
                 wait_owned(&leases, &sink, &BTreeSet::from([a.clone(), b.clone()]), false).await?;
                 let stolen = progress(&leases, &held.lease).await?;
                 if stolen.owner.as_deref() != Some(b.as_str()) || stolen.incarnation == before.incarnation {
@@ -812,7 +810,7 @@ async fn exercise(
                 workload.publish(&source, GROUPS, groups).await?;
                 let departing = gate(&mut receiver, &sink).await?;
                 if departing.worker != b || !departing.fences.is_empty() { return Err("Expected a blocked tail callback on the departing worker.".into()); }
-                second.abort().await?;
+                drop(second.take());
                 wait_canceled(&departing, &sink).await?;
                 wait_owned(&leases, &sink, &BTreeSet::from([a.clone()]), true).await?;
             }
@@ -824,19 +822,25 @@ async fn exercise(
     if let Err(error) = result {
         failures.push(error.to_string());
     }
-    for worker in [&first, &second] {
-        let cleanup = if failures.is_empty() && worker.is_started() {
-            worker.stop().await
-        } else {
-            worker.abort().await
-        };
-        if let Err(error) = cleanup {
-            failures.push(format!("Stop failed: {error}"));
+    if failures.is_empty() {
+        for worker in first.iter().chain(second.iter()) {
+            match tokio::time::timeout(CONTROL_WAIT, worker.stop()).await {
+                Ok(Ok(())) => {}
+                Ok(Err(error)) => failures.push(format!("Stop failed: {error}")),
+                Err(error) => failures.push(format!("Shutdown unconfirmed: {error}")),
+            }
         }
     }
+    drop(first);
+    drop(second);
     *CALLBACKS.lock().unwrap() = [None, None];
-    if let Err(error) = workload.cleanup(&source, &leases).await {
-        failures.push(error.to_string());
+    if failures.is_empty() {
+        if let Err(error) = workload.cleanup(&source, &leases).await {
+            failures.push(error.to_string());
+        }
+    } else {
+        failures
+            .push("Skipped resource cleanup after failed workload or unconfirmed shutdown.".into());
     }
     if failures.is_empty() {
         Ok(())

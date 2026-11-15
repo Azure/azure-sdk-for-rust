@@ -4,7 +4,7 @@
 use super::{
     emulator, fixture_with_runtime, start,
     topology::{keys, publish},
-    ChangeFeedFactoryMode, CheckpointPolicy, Context, Lease,
+    ChangeFeedFactoryMode, CheckpointPolicy, Context, LeaseDocument,
 };
 use crate::{
     change_feed_processor::processing::retry::ReadRetry,
@@ -69,20 +69,20 @@ async fn fixture(
         .list()
         .await?
         .into_iter()
-        .map(|l| l.base.range)
+        .map(|l| l.range)
         .collect::<Vec<_>>();
     publish(&context, &keys(&ranges), 0..1, &mut BTreeMap::new()).await?;
     Ok(context)
 }
 
-async fn record(context: &Context, id: &str) -> Lease {
+async fn record(context: &Context, id: &str) -> LeaseDocument {
     context
         .store()
-        .read::<Lease>(id)
+        .read::<LeaseDocument>(id)
         .await
         .unwrap()
         .unwrap()
-        .value
+        .0
 }
 
 #[tokio::test]
@@ -91,18 +91,21 @@ async fn throttled_lease_renews_while_single_receive_serves_another_and_stop_int
     let rule = throttle(10_000, 1);
     let context = fixture(rule.clone(), OperationOptions::default(), 2).await?;
     let processor = start(&context, context.options.clone()).await?;
-    let batch = tokio::time::timeout(Duration::from_secs(1), processor.next_batch())
-        .await
-        .unwrap()
-        .unwrap();
+    let batch = tokio::time::timeout(
+        Duration::from_secs(1),
+        processor.read_next_change_feed_batch(),
+    )
+    .await
+    .unwrap()
+    .unwrap();
     assert_eq!(rule.hit_count(), 1);
     let (healthy, _, receipt) = batch.into_parts();
     let leases = context.list().await?;
-    let slow = leases.iter().find(|l| l.base.record.id != healthy).unwrap();
-    let id = slow.base.record.id.clone();
+    let slow = leases.iter().find(|l| l.record.id != healthy).unwrap();
+    let id = slow.record.id.clone();
     let renewed = slow.renewed_at;
-    assert!(slow.base.owner.is_some());
-    assert!(slow.base.continuation.is_none());
+    assert!(slow.owner.is_some());
+    assert!(slow.continuation.is_none());
     tokio::time::timeout(Duration::from_secs(1), async {
         while record(&context, &id).await.renewed_at == renewed {
             tokio::task::yield_now().await;
@@ -111,15 +114,15 @@ async fn throttled_lease_renews_while_single_receive_serves_another_and_stop_int
     .await
     .unwrap();
     assert_eq!(rule.hit_count(), 1);
-    assert!(record(&context, &id).await.base.continuation.is_none());
+    assert!(record(&context, &id).await.continuation.is_none());
     let mut stopping = Box::pin(processor.stop());
     assert!(futures::poll!(stopping.as_mut()).is_pending());
     receipt.checkpoint().await?;
     tokio::time::timeout(Duration::from_secs(1), stopping)
         .await
         .unwrap()?;
-    assert!(record(&context, &id).await.base.owner.is_none());
-    assert!(record(&context, &id).await.base.continuation.is_none());
+    assert!(record(&context, &id).await.owner.is_none());
+    assert!(record(&context, &id).await.continuation.is_none());
     Ok(())
 }
 
@@ -150,7 +153,7 @@ async fn exhausted_budget_finishes_final_cooldown_before_reporting_and_releasing
     )
     .await?;
     let started = Instant::now();
-    let mut receiving = Box::pin(processor.next_batch());
+    let mut receiving = Box::pin(processor.read_next_change_feed_batch());
     let (id, status, ended) = tokio::time::timeout(Duration::from_secs(3), async {
         tokio::select! {
             _ = &mut receiving => panic!("a throttled page must not be delivered"),
@@ -168,8 +171,8 @@ async fn exhausted_budget_finishes_final_cooldown_before_reporting_and_releasing
     processor.stop().await?;
     assert!(receiving.await.is_none());
     let lease = record(&context, &id.unwrap()).await;
-    assert!(lease.base.owner.is_none());
-    assert!(lease.base.continuation.is_none());
+    assert!(lease.owner.is_none());
+    assert!(lease.continuation.is_none());
     Ok(())
 }
 
@@ -181,33 +184,39 @@ async fn cooldown_keeps_prior_success_checkpoint_deadline_active() -> Result<()>
     let options = context
         .options
         .clone()
-        .with_checkpoint_policy(CheckpointPolicy::Coalesced {
+        .with_checkpoint_policy(CheckpointPolicy::Deferred {
             max_interval: Duration::from_millis(50),
         });
     let processor = start(&context, options).await?;
-    let (id, _, receipt) = processor.next_batch().await.unwrap().into_parts();
+    let (id, _, receipt) = processor
+        .read_next_change_feed_batch()
+        .await
+        .unwrap()
+        .into_parts();
     receipt.acknowledge().await?;
     rule.enable();
-    let mut receiving = Box::pin(processor.next_batch());
+    let mut receiving = Box::pin(processor.read_next_change_feed_batch());
     tokio::time::timeout(Duration::from_secs(1), async {
         tokio::select! {
             _ = &mut receiving => panic!("cooldown must not deliver the next page"),
             () = async {
                 loop {
-                    if rule.hit_count() == 1 && record(&context, &id).await.base.continuation.is_some() {
+                    if rule.hit_count() == 1 && record(&context, &id).await.continuation.is_some() {
                         break;
                     }
                     tokio::task::yield_now().await;
                 }
             } => {},
         }
-    }).await.unwrap();
-    let saved = record(&context, &id).await.base.continuation;
+    })
+    .await
+    .unwrap();
+    let saved = record(&context, &id).await.continuation;
     drop(receiving);
     tokio::time::timeout(Duration::from_secs(1), processor.stop())
         .await
         .unwrap()?;
-    assert_eq!(record(&context, &id).await.base.continuation, saved);
+    assert_eq!(record(&context, &id).await.continuation, saved);
     assert_eq!(rule.hit_count(), 1);
     Ok(())
 }
@@ -253,10 +262,13 @@ async fn read_deadline_yields_demand_and_preserves_failed_acquisitions_progress(
                 }),
         )
         .await?;
-        let batch = tokio::time::timeout(timeout + Duration::from_secs(2), processor.next_batch())
-            .await
-            .unwrap()
-            .unwrap();
+        let batch = tokio::time::timeout(
+            timeout + Duration::from_secs(2),
+            processor.read_next_change_feed_batch(),
+        )
+        .await
+        .unwrap()
+        .unwrap();
         assert_eq!(rule.hit_count(), 1);
         let (healthy, _, receipt) = batch.into_parts();
         let (slow, status) = reported
@@ -268,7 +280,7 @@ async fn read_deadline_yields_demand_and_preserves_failed_acquisitions_progress(
         let slow = slow.unwrap();
         assert_ne!(healthy, slow);
         assert_eq!(status.status_code(), StatusCode::RequestTimeout);
-        assert!(record(&context, &slow).await.base.continuation.is_none());
+        assert!(record(&context, &slow).await.continuation.is_none());
         let mut stopping = Box::pin(processor.stop());
         assert!(futures::poll!(stopping.as_mut()).is_pending());
         receipt.checkpoint().await?;
@@ -284,7 +296,7 @@ async fn processor_throttle_override_does_not_change_ordinary_feed_retries() -> 
     let rule = throttle(10, 1);
     let context = fixture(rule.clone(), OperationOptions::default(), 1).await?;
     let lease = context.list().await?.remove(0);
-    let operation = context.operation(&lease.base.range);
+    let operation = context.operation(&lease.range);
     let mut plan = context
         .source_driver
         .plan_operation(

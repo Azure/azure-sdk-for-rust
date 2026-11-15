@@ -134,7 +134,7 @@ unfinished transition retains the lease and retries through normal acquisition.
 
 Each lease permits one outstanding batch. A topology transition cannot advance
 past that batch until it is successfully acknowledged and its checkpoint is
-persisted. Coalesced progress is flushed before topology recovery. Full-fidelity processor
+persisted. Deferred progress is flushed before topology recovery. Full-fidelity processor
 reads expose the initial `304` before fetching data, allowing its starting ETag
 to be persisted independently of the first application batch. A response without
 an ETag is an error, not a usable checkpoint.
@@ -211,7 +211,8 @@ another receive cannot take that result. The acquisition retains progress and
 acknowledgment state, not the transferred payload.
 Acknowledgment makes the acquisition eligible; it does not authorize another read.
 Feed planning and reads require a pending consumer receive. Each receive permits
-one acquisition read at a time; concurrent receives determine read parallelism.
+one acquisition read at a time. The Rust SDK submits only one receive per worker,
+and does not submit the next until callback processing and acknowledgment finish.
 Idle reads release demand to other eligible acquisitions. A canceled receive
 does not start further reads. An already-started read may finish, but an unclaimed
 batch is discarded without acknowledgment, even if it reached the response
@@ -221,12 +222,16 @@ acquisition ends and unsaved changes can replay.
 Renewal, checkpoint deadlines, acquisition, and cleanup continue without data
 demand. Automatic bootstrap, start-option precedence, and persisted lease records
 are unchanged; a fresh feed position is resolved only on a requested read.
-One worker is one started change-feed processor instance. The Rust SDK defaults
-to one batch poller per worker. `with_max_concurrency` sets the number of concurrent
-receive/callback/acknowledgment cycles; each batch poller keeps
-its slot until policy completion, with no prefetched batch backlog.
-Native hosts choose concurrency through admitted next requests; queue capacity
-still bounds data admission, separately from acknowledgment and stop.
+One worker is one started change-feed processor instance. The Rust SDK runs
+exactly one batch poller per worker, with no concurrency setting. It completes
+each receive/callback/acknowledgment cycle before requesting another batch.
+For concurrent processing, start additional workers sharing the workload
+and lease store, with the same workload name and distinct worker names.
+There is no prefetched batch backlog.
+This is sequential async processing, not a guarantee of OS-thread affinity.
+Separately, direct native callers can submit concurrent next requests; that
+lower-level capability is not used to parallelize Rust SDK polling. Native queue
+capacity still bounds data admission, separately from acknowledgment and stop.
 
 Ordinary read throttles (429, except system-resource 429/3092) release the current
 receive demand and keep the affected acquisition out of the eligible queue until
@@ -244,13 +249,10 @@ checkpoint deadlines continue; shutdown/cancellation interrupts the wait. These 
 not limit application callback duration or the overall wait for the next batch.
 Normal non-processor retry behavior and bootstrap are unchanged.
 
-The optional asynchronous SDK error observer receives driver, decode, callback,
-panic, and acknowledgment failures through an independent bounded dispatcher.
-One observer invocation runs at a time; excess notifications are dropped with a
-warning rather than blocking data processing or lease maintenance. Graceful
-shutdown drains accepted notifications; forced shutdown/drop cancels them.
-Observers cannot acknowledge failed batches or alter recovery. Startup failures
-remain return values, and error-observer panics are logged without recursion.
+The SDK logs decode, callback, caught panic, and acknowledgment failures. The
+driver logs coordination and read failures. There is no SDK error callback or
+notification queue; startup and shutdown failures remain returned errors.
+Logging does not acknowledge failed batches or alter recovery.
 
 The driver owns both graceful draining and forced cancellation. Language wrappers
 adapt this lifecycle without exposing Rust queues, futures, or receipts across
@@ -281,10 +283,12 @@ ownership, not any replacement owner's ownership: another worker may have
 already acquired the lease when stop returns.
 
 Concurrent stop callers observe the same completion. Canceling a Rust stop wait
-does not discard cleanup or the ability to await it again. Starting an instance
+does not discard cleanup or the ability to await it again. Starting a worker
 still shutting down returns a conflict. There is no implicit callback or drain
-timeout. `abort()` requests explicit cancellation and waits for local cleanup;
-an interrupted graceful waiter receives an error. Started service writes may
+timeout. The SDK exposes graceful `stop()`, not an abort method. Dropping the
+processor requests cancellation without waiting for cleanup. The lower-level
+driver retains `abort()`; an interrupted graceful waiter receives an error.
+Started service writes may
 still complete. Callback cancellation cannot undo external effects or terminate
 separately spawned application work.
 
@@ -301,10 +305,10 @@ expiration and resume its durable checkpoint. Conditional writes and acquisition
 incarnations fence stale owners and receipts. None of these paths promises
 exactly-once external side effects.
 
-### Processor checkpoint coalescing
+### Processor deferred checkpointing
 
 Checkpoint policy is independent of feed mode, service page size, and lease
-renewal. `EveryBatch` remains the default. Opt-in `Coalesced { max_interval }`
+renewal. `Deferred { max_interval }` is the default with a five-minute interval. It
 acknowledges each successful callback in memory, permitting the next page for
 that lease without waiting for a lease-storage write. It retains one latest
 contiguous successful continuation, a handled-change count, and the time of the
@@ -318,9 +322,9 @@ requested page size, or all source writes in latest-version mode. Count is
 tracked for checkpoint diagnostics, not used as an implicit threshold.
 
 Flush occurs at the deadline, not merely because the lease becomes idle.
-`CheckpointPolicy::coalesced()` and the corresponding SDK constructor select five
+`CheckpointPolicy::deferred()` and the corresponding SDK constructor select five
 minutes; callers can still configure another positive interval. Changed idle
-positions, including initial `Now` positioning, are deferred under coalescing.
+positions, including initial `Now` positioning, are deferred under deferred checkpointing.
 A restart before the first durable checkpoint can therefore resolve a later
 `Now`; use a supplied continuation when the initial position must survive that
 window. Repeated unchanged positions do not cause writes. Neither a `304` nor an
@@ -353,7 +357,7 @@ recovery still permits replay. Split handling requires durable progress;
 merged EPK-slice leases keep independent checkpoints.
 
 Each successful checkpoint write also refreshes the lease renewal timestamp.
-Fewer checkpoints can therefore require more renewal-only writes; coalescing
+Fewer checkpoints can therefore require more renewal-only writes; deferred checkpointing
 does not suppress renewal or extend expiration. Local A/B tests count checkpoint,
 renewal, acquisition, release, and creation requests separately.
 They assert identical ordered create-only coverage in both modes and fewer
@@ -363,7 +367,7 @@ all-versions-and-deletes correctness still requires separately authorized
 real-service validation.
 
 Processing inactivity is independent of renewal. Each acquisition stores a
-processing deadline: ten minutes for `EveryBatch`, or twice the owner's coalescing
+processing deadline: ten minutes for `Eager`, or twice the owner's deferred checkpointing
 interval. Acknowledged nonempty batches refresh the local last-processed time and
 deadline; existing lease writes publish them without advancing pending checkpoints.
 Idle reads, no demand, and retry delays do not refresh processing activity.
@@ -390,13 +394,13 @@ lease-discovery delay; they are scheduling policies, not callback deadlines.
 
 Shared local and opt-in live scenarios adapt the Java
 [customer CFP workflows](https://github.com/Azure/azure-sdk-for-java/blob/903b47a8b4e6c547a003b48e2a9eb8419ebd1b5f/sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/workflows/customer/CustomerWorkflowChangeFeedProcessorTest.java).
-Rust's processor name provides the isolation tested by Java's lease prefix.
+Rust's workload name provides the isolation tested by Java's lease prefix.
 A newly constructed worker with the same name resumes durable progress even
 when configured to start from the beginning. A different name replays the
 source backlog through an independent lease set without changing the first
 workload's records.
 
-Both scenarios cover `EveryBatch` and `Coalesced`, inspect stored checkpoints
+Both scenarios cover `Eager` and `Deferred`, inspect stored checkpoints
 after graceful stop, and compare exact callback events, including duplicates.
 They use latest-version mode; they do not establish full-fidelity history,
 process-crash recovery, or admission fairness. Local versions use the in-memory

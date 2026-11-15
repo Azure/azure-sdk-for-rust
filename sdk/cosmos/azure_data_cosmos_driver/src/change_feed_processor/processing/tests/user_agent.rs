@@ -3,8 +3,8 @@
 
 use super::super::CheckpointPolicy;
 use super::{
-    bootstrap, fixture_with_runtime, insert, next, poll_until, start, ChangeFeedFactoryMode, Lease,
-    RequestObserver, ENDPOINT,
+    bootstrap, fixture_with_runtime, insert, next, poll_until, start, ChangeFeedFactoryMode,
+    LeaseDocument, RequestObserver, ENDPOINT,
 };
 use crate::{
     in_memory_emulator::{InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion},
@@ -107,7 +107,7 @@ async fn processor_wire_format_is_preserved_on_fresh_and_resumed_reads() -> Resu
                 poll_until(
                     &processor,
                     tokio::time::timeout(Duration::from_secs(5), async {
-                        while context.list().await.unwrap()[0].base.continuation.is_none() {
+                        while context.list().await.unwrap()[0].continuation.is_none() {
                             tokio::task::yield_now().await;
                         }
                     }),
@@ -140,8 +140,8 @@ async fn processor_wire_format_is_preserved_on_fresh_and_resumed_reads() -> Resu
 async fn processor_user_agent_covers_bootstrap_polling_maintenance_and_topology_only() -> Result<()>
 {
     for policy in [
-        CheckpointPolicy::EveryBatch,
-        CheckpointPolicy::Coalesced {
+        CheckpointPolicy::Eager,
+        CheckpointPolicy::Deferred {
             max_interval: Duration::from_secs(60),
         },
     ] {
@@ -207,7 +207,7 @@ async fn processor_user_agent_covers_bootstrap_polling_maintenance_and_topology_
         let lease = context.list().await?.remove(0);
         let stored = context
             .store()
-            .read::<Lease>(&lease.base.record.id)
+            .read::<LeaseDocument>(&lease.record.id)
             .await?
             .unwrap();
         assert!(

@@ -18,10 +18,11 @@ use std::{
     time::Instant,
 };
 
-type ChangeFeedProcessorBootstrapFuture = Shared<BoxFuture<'static, Result<bool>>>;
+type AttemptFuture = Shared<BoxFuture<'static, Result<bool>>>;
 
+/// Identifies compatible in-process attempts that may share one future; not a distributed lock.
 #[derive(Clone, PartialEq, Eq, Hash)]
-pub(super) struct ChangeFeedProcessorBootstrapCoalescingKey {
+pub(super) struct AttemptKey {
     pub(super) namespace: String,
     pub(super) lease_container: String,
     // In-process identity; the shared operation retains this driver.
@@ -29,44 +30,33 @@ pub(super) struct ChangeFeedProcessorBootstrapCoalescingKey {
     pub(super) mode: Discriminant<ChangeFeedFactoryMode>,
 }
 
-struct ChangeFeedProcessorBootstrapCoalescingEntry {
+/// Weak reference to an in-flight attempt plus a generation marker that protects replacement entries.
+struct AttemptEntry {
     generation: Arc<()>,
     future: WeakShared<BoxFuture<'static, Result<bool>>>,
 }
 
+/// Driver-local registry for joining compatible bootstrap attempts without caching completed results.
 #[derive(Default)]
-pub(crate) struct ChangeFeedProcessorBootstrapCoalescer {
-    entries: Mutex<
-        HashMap<
-            ChangeFeedProcessorBootstrapCoalescingKey,
-            ChangeFeedProcessorBootstrapCoalescingEntry,
-        >,
-    >,
+pub(crate) struct BootstrapCoalescer {
+    entries: Mutex<HashMap<AttemptKey, AttemptEntry>>,
 }
 
-impl fmt::Debug for ChangeFeedProcessorBootstrapCoalescer {
+impl fmt::Debug for BootstrapCoalescer {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter
-            .debug_struct("ChangeFeedProcessorBootstrapCoalescer")
+            .debug_struct("BootstrapCoalescer")
             .finish_non_exhaustive()
     }
 }
 
-impl ChangeFeedProcessorBootstrapCoalescer {
+impl BootstrapCoalescer {
     #[cfg(test)]
     pub(super) fn active_count(&self) -> usize {
         self.entries().len()
     }
 
-    fn entries(
-        &self,
-    ) -> MutexGuard<
-        '_,
-        HashMap<
-            ChangeFeedProcessorBootstrapCoalescingKey,
-            ChangeFeedProcessorBootstrapCoalescingEntry,
-        >,
-    > {
+    fn entries(&self) -> MutexGuard<'_, HashMap<AttemptKey, AttemptEntry>> {
         self.entries.lock().unwrap_or_else(|poisoned| {
             tracing::error!("Recovering poisoned bootstrap coalescing registry");
             poisoned.into_inner()
@@ -75,10 +65,10 @@ impl ChangeFeedProcessorBootstrapCoalescer {
 
     pub(super) fn start_or_join<F>(
         self: &Arc<Self>,
-        key: ChangeFeedProcessorBootstrapCoalescingKey,
+        key: AttemptKey,
         deadline: Instant,
         make_attempt: F,
-    ) -> ChangeFeedProcessorBootstrapFuture
+    ) -> AttemptFuture
     where
         F: FnOnce() -> BoxFuture<'static, Result<bool>> + Send + 'static,
     {
@@ -89,7 +79,7 @@ impl ChangeFeedProcessorBootstrapCoalescer {
         }
 
         let generation = Arc::new(());
-        let cleanup = ChangeFeedProcessorBootstrapCoalescingCleanup {
+        let cleanup = AttemptCleanup {
             coalescer: Arc::clone(self),
             key: key.clone(),
             generation: Arc::clone(&generation),
@@ -107,7 +97,7 @@ impl ChangeFeedProcessorBootstrapCoalescer {
         .shared();
         entries.insert(
             key,
-            ChangeFeedProcessorBootstrapCoalescingEntry {
+            AttemptEntry {
                 generation,
                 future: future
                     .downgrade()
@@ -118,13 +108,14 @@ impl ChangeFeedProcessorBootstrapCoalescer {
     }
 }
 
-struct ChangeFeedProcessorBootstrapCoalescingCleanup {
-    coalescer: Arc<ChangeFeedProcessorBootstrapCoalescer>,
-    key: ChangeFeedProcessorBootstrapCoalescingKey,
+/// Removes only its own registry generation when the shared attempt completes or is dropped.
+struct AttemptCleanup {
+    coalescer: Arc<BootstrapCoalescer>,
+    key: AttemptKey,
     generation: Arc<()>,
 }
 
-impl Drop for ChangeFeedProcessorBootstrapCoalescingCleanup {
+impl Drop for AttemptCleanup {
     fn drop(&mut self) {
         let mut entries = self.coalescer.entries();
         // A dead weak entry may have been replaced before its old future finished dropping.

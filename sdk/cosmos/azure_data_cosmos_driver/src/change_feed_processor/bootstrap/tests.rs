@@ -2,12 +2,16 @@
 // Licensed under the MIT License.
 
 use super::{
-    bootstrap, namespace, ChangeFeedFactoryMode, ChangeFeedProcessorBootstrapCoalescingKey,
-    ChangeFeedProcessorBootstrapContext, ChangeFeedProcessorBootstrapLockRecord,
-    ChangeFeedProcessorBootstrapProcessingLease, ChangeFeedProcessorBootstrapRangePlan,
-    ChangeFeedProcessorBootstrapRecord, LOCK_TTL_SECONDS,
+    bootstrap, namespace, AttemptKey, ChangeFeedFactoryMode, Context, InitializationLock,
+    LeaseDocument, RangePlan, Record, WorkloadIdentity, LOCK_TTL_SECONDS,
+};
+#[cfg(feature = "fault_injection")]
+use crate::fault_injection::{
+    CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionResultBuilder,
+    FaultInjectionRuleBuilder, FaultOperationType,
 };
 use crate::{
+    change_feed_processor::{Processor, ProcessorOptions},
     in_memory_emulator::{
         ContainerConfig, InMemoryEmulatorHttpClient, RequestObserver, VirtualAccountConfig,
         VirtualRegion, WriteMode,
@@ -132,11 +136,8 @@ impl Fixture {
             .await
     }
 
-    fn context(
-        &self,
-        mode: ChangeFeedFactoryMode,
-    ) -> Result<ChangeFeedProcessorBootstrapContext<'_>> {
-        let mut context = ChangeFeedProcessorBootstrapContext::new(
+    fn context(&self, mode: ChangeFeedFactoryMode) -> Result<Context<'_>> {
+        let mut context = Context::new(
             &self.driver,
             &self.source,
             &self.driver,
@@ -151,18 +152,16 @@ impl Fixture {
     }
 }
 
-async fn plan(
-    context: &ChangeFeedProcessorBootstrapContext<'_>,
-) -> Result<ChangeFeedProcessorBootstrapRangePlan> {
+async fn plan(context: &Context<'_>) -> Result<RangePlan> {
     Ok(context
         .store
-        .read::<ChangeFeedProcessorBootstrapRangePlan>(&context.record("plan").id)
+        .read::<RangePlan>(&context.record("plan").id)
         .await?
         .unwrap()
-        .value)
+        .0)
 }
 
-fn lease_id(context: &ChangeFeedProcessorBootstrapContext<'_>, range: &FeedRange) -> String {
+fn lease_id(context: &Context<'_>, range: &FeedRange) -> String {
     context
         .record(&format!(
             "lease.{}-{}",
@@ -201,6 +200,7 @@ async fn concurrent_workers_create_unowned_leases_without_reading_changes() -> R
     for result in results {
         result?;
     }
+    assert_eq!(fixture.requests.lease_reads.load(Ordering::SeqCst), 0);
     let context = fixture.context(ChangeFeedFactoryMode::Incremental)?;
     assert!(context.ready().await?);
     let plan = plan(&context).await?;
@@ -211,16 +211,15 @@ async fn concurrent_workers_create_unowned_leases_without_reading_changes() -> R
             .read::<serde_json::Value>(&lease_id(&context, &range))
             .await?
             .unwrap();
-        assert_eq!(item.value["ttl"], -1);
-        assert!(item.value.get("continuation").is_none());
-        assert!(item.value.get("owner").is_none());
-        let lease: ChangeFeedProcessorBootstrapProcessingLease =
-            serde_json::from_value(item.value)?;
+        assert_eq!(item.0["ttl"], -1);
+        assert!(item.0.get("continuation").is_none());
+        assert!(item.0.get("owner").is_none());
+        let lease: LeaseDocument = serde_json::from_value(item.0)?;
         assert_eq!(lease.range, range);
     }
     assert!(context
         .store
-        .read::<ChangeFeedProcessorBootstrapLockRecord>(&context.record("lock").id)
+        .read::<InitializationLock>(&context.record("lock").id)
         .await?
         .is_none());
     assert_eq!(fixture.requests.change_feed_reads.load(Ordering::SeqCst), 0);
@@ -245,11 +244,11 @@ async fn exactly_one_concurrent_claim_succeeds() -> Result<()> {
     assert_eq!(winners.len(), 1);
     let stored = context
         .store
-        .read::<ChangeFeedProcessorBootstrapLockRecord>(&context.record("lock").id)
+        .read::<InitializationLock>(&context.record("lock").id)
         .await?
         .unwrap();
-    assert_eq!(stored.value.record.ttl, LOCK_TTL_SECONDS);
-    assert_eq!(stored.etag, winners[0].etag);
+    assert_eq!(stored.0.record.ttl, LOCK_TTL_SECONDS);
+    assert_eq!(stored.1, winners[0].etag);
     Ok(())
 }
 
@@ -271,10 +270,10 @@ async fn competing_modes_cannot_initialize_the_same_workload() -> Result<()> {
     );
     let definition = context
         .store
-        .read::<ChangeFeedProcessorBootstrapRecord>(&context.record("definition").id)
+        .read::<Record>(&context.record("definition").id)
         .await?
         .unwrap();
-    assert_eq!(definition.value.workload.mode, context.identity.mode);
+    assert_eq!(definition.0.workload.mode, context.identity.mode);
     assert!(context.ready().await?);
     Ok(())
 }
@@ -329,6 +328,7 @@ async fn stored_schema_one_modes_remain_compatible() -> Result<()> {
                 },
                 "ttl": -1
             });
+            assert_eq!(serde_json::to_value(context.record(suffix))?, stored);
             assert!(context.store.create(&id, &stored).await?);
         }
         let writes = fixture.requests.writes.load(Ordering::SeqCst);
@@ -336,6 +336,30 @@ async fn stored_schema_one_modes_remain_compatible() -> Result<()> {
         assert!(context.ready().await?);
         assert_eq!(fixture.requests.writes.load(Ordering::SeqCst), writes);
     }
+    Ok(())
+}
+
+#[test]
+fn renamed_workload_identity_preserves_schema_one_namespace_and_lease_ids() -> Result<()> {
+    let identity: WorkloadIdentity = serde_json::from_value(serde_json::json!({
+        "version": 1,
+        "account": ENDPOINT,
+        "containerRid": "container-rid",
+        "processorName": "orders",
+        "mode": "latestVersion"
+    }))?;
+    assert_eq!(identity.workload_name, "orders");
+    let namespace = namespace(&identity)?;
+    assert_eq!(
+        namespace,
+        "cfp1.WyJodHRwczovL2Vhc3R1cy5lbXVsYXRvci5sb2NhbCIsImNvbnRhaW5lci1yaWQiLCJvcmRlcnMiXQ"
+    );
+    let range = FeedRange::full();
+    assert_eq!(
+        super::lease_id(&namespace, &range),
+        format!("cfp1.WyJodHRwczovL2Vhc3R1cy5lbXVsYXRvci5sb2NhbCIsImNvbnRhaW5lci1yaWQiLCJvcmRlcnMiXQ.lease.{}-{}",
+            range.min_inclusive().to_hex(), range.max_exclusive().to_hex())
+    );
     Ok(())
 }
 
@@ -347,8 +371,8 @@ async fn recovery_creates_only_missing_leases_and_preserves_progress() -> Result
     let claim = context.try_claim().await?.unwrap();
     let plan = context.plan(&claim).await?.unwrap();
     let id = lease_id(&context, &plan.ranges[0]);
-    let lease = ChangeFeedProcessorBootstrapProcessingLease {
-        record: ChangeFeedProcessorBootstrapRecord {
+    let lease = LeaseDocument {
+        record: Record {
             id: id.clone(),
             workload: context.identity.clone(),
             ttl: -1,
@@ -356,6 +380,11 @@ async fn recovery_creates_only_missing_leases_and_preserves_progress() -> Result
         range: plan.ranges[0].clone(),
         owner: Some("existing-owner".into()),
         continuation: Some(ContinuationToken::from_string("saved-position".into())),
+
+        incarnation: None,
+        renewed_at: None,
+        last_processed_at: None,
+        processing_deadline: None,
     };
     assert!(context.store.create(&id, &lease).await?);
     let before = context.store.read::<serde_json::Value>(&id).await?.unwrap();
@@ -365,14 +394,19 @@ async fn recovery_creates_only_missing_leases_and_preserves_progress() -> Result
         .store
         .release(&context.record("lock").id, claim.etag)
         .await?;
+    let lease_reads = fixture.requests.lease_reads.load(Ordering::SeqCst);
     context.run().await?;
+    assert_eq!(
+        fixture.requests.lease_reads.load(Ordering::SeqCst),
+        lease_reads
+    );
     let after = context.store.read::<serde_json::Value>(&id).await?.unwrap();
-    assert_eq!(after.etag, before.etag);
-    assert_eq!(after.value, before.value);
+    assert_eq!(after.1, before.1);
+    assert_eq!(after.0, before.0);
     for range in &plan.ranges {
         assert!(context
             .store
-            .read::<ChangeFeedProcessorBootstrapProcessingLease>(&lease_id(&context, range))
+            .read::<LeaseDocument>(&lease_id(&context, range))
             .await?
             .is_some());
     }
@@ -396,10 +430,10 @@ async fn stale_release_cannot_delete_replacement_claim() -> Result<()> {
         .await?;
     let current = context
         .store
-        .read::<ChangeFeedProcessorBootstrapLockRecord>(&context.record("lock").id)
+        .read::<InitializationLock>(&context.record("lock").id)
         .await?
         .unwrap();
-    assert_eq!(current.etag, replacement.etag);
+    assert_eq!(current.1, replacement.etag);
     Ok(())
 }
 
@@ -420,16 +454,88 @@ async fn waiting_worker_has_a_bounded_timeout() -> Result<()> {
     );
     let current = context
         .store
-        .read::<ChangeFeedProcessorBootstrapLockRecord>(&context.record("lock").id)
+        .read::<InitializationLock>(&context.record("lock").id)
         .await?
         .unwrap();
-    assert_eq!(current.etag, claim.etag);
+    assert_eq!(current.1, claim.etag);
     assert!(!context.ready().await?);
     assert!(context
         .store
-        .read::<ChangeFeedProcessorBootstrapRangePlan>(&context.record("plan").id)
+        .read::<RangePlan>(&context.record("plan").id)
         .await?
         .is_none());
+    Ok(())
+}
+
+#[tokio::test]
+async fn configured_caller_timeouts_are_independent_and_do_not_release_another_claim() -> Result<()>
+{
+    let fixture = Fixture::new(Some(-1), "/id").await?;
+    let context = fixture.context(ChangeFeedFactoryMode::Incremental)?;
+    context.ensure_record(&context.record("definition")).await?;
+    let claim = context.try_claim().await?.unwrap();
+    let start = |worker, timeout| {
+        Processor::start(
+            fixture.driver.clone(),
+            fixture.source.clone(),
+            fixture.driver.clone(),
+            fixture.leases.clone(),
+            ProcessorOptions::new(ChangeFeedFactoryMode::Incremental, "orders", worker)
+                .with_bootstrap_timeout(timeout),
+        )
+    };
+    let mut short = Box::pin(start("short", Duration::from_millis(100)));
+    assert!(poll!(short.as_mut()).is_pending());
+    let mut long = Box::pin(start("long", Duration::from_secs(5)));
+    assert!(poll!(long.as_mut()).is_pending());
+    let timed_out = tokio::time::timeout(Duration::from_secs(2), short)
+        .await
+        .expect("short caller must finish within its own budget")
+        .err()
+        .expect("lock is held");
+    assert_eq!(timed_out.status().status_code(), StatusCode::RequestTimeout);
+    assert!(!context.ready().await?);
+    let current = context
+        .store
+        .read::<InitializationLock>(&context.record("lock").id)
+        .await?
+        .unwrap();
+    assert_eq!(current.1, claim.etag);
+    context
+        .store
+        .release(&context.record("lock").id, claim.etag)
+        .await?;
+    let processor = tokio::time::timeout(Duration::from_secs(6), long)
+        .await
+        .expect("long caller should retry after short caller expires")?;
+    assert!(context.ready().await?);
+    processor.stop().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn invalid_configured_bootstrap_timeouts_fail_without_creating_records() -> Result<()> {
+    let fixture = Fixture::new(Some(-1), "/id").await?;
+    for timeout in [Duration::ZERO, Duration::MAX] {
+        let result = Processor::start(
+            fixture.driver.clone(),
+            fixture.source.clone(),
+            fixture.driver.clone(),
+            fixture.leases.clone(),
+            ProcessorOptions::new(ChangeFeedFactoryMode::Incremental, "orders", "worker")
+                .with_bootstrap_timeout(timeout),
+        )
+        .await;
+        assert_eq!(
+            result
+                .err()
+                .expect("invalid timeout")
+                .status()
+                .status_code(),
+            StatusCode::BadRequest
+        );
+    }
+    assert_eq!(fixture.requests.writes.load(Ordering::SeqCst), 0);
     Ok(())
 }
 
@@ -468,10 +574,10 @@ async fn completed_workload_does_not_read_or_recreate_leases() -> Result<()> {
     let removed_id = lease_id(&context, &plan.ranges[1]);
     let removed = context
         .store
-        .read::<ChangeFeedProcessorBootstrapProcessingLease>(&removed_id)
+        .read::<LeaseDocument>(&removed_id)
         .await?
         .unwrap();
-    context.store.release(&removed_id, removed.etag).await?;
+    context.store.release(&removed_id, removed.1).await?;
     let writes = fixture.requests.writes.load(Ordering::SeqCst);
     let lease_reads = fixture.requests.lease_reads.load(Ordering::SeqCst);
     let plan_reads = fixture.requests.plan_reads.load(Ordering::SeqCst);
@@ -487,7 +593,7 @@ async fn completed_workload_does_not_read_or_recreate_leases() -> Result<()> {
     );
     assert!(context
         .store
-        .read::<ChangeFeedProcessorBootstrapProcessingLease>(&removed_id)
+        .read::<LeaseDocument>(&removed_id)
         .await?
         .is_none());
     let after = context
@@ -495,8 +601,8 @@ async fn completed_workload_does_not_read_or_recreate_leases() -> Result<()> {
         .read::<serde_json::Value>(&preserved_id)
         .await?
         .unwrap();
-    assert_eq!(after.etag, preserved.etag);
-    assert_eq!(after.value, preserved.value);
+    assert_eq!(after.1, preserved.1);
+    assert_eq!(after.0, preserved.0);
     Ok(())
 }
 
@@ -517,15 +623,16 @@ async fn invalid_lease_container_configuration_fails_before_writing() -> Result<
 }
 
 #[tokio::test]
-async fn conflicting_existing_range_is_not_overwritten_or_marked_ready() -> Result<()> {
+async fn lease_create_conflict_is_accepted_without_reading_or_overwriting_the_document(
+) -> Result<()> {
     let fixture = Fixture::new(Some(-1), "/id").await?;
     let context = fixture.context(ChangeFeedFactoryMode::Incremental)?;
     context.ensure_record(&context.record("definition")).await?;
     let claim = context.try_claim().await?.unwrap();
     let plan = context.plan(&claim).await?.unwrap();
     let id = lease_id(&context, &plan.ranges[0]);
-    let lease = ChangeFeedProcessorBootstrapProcessingLease {
-        record: ChangeFeedProcessorBootstrapRecord {
+    let lease = LeaseDocument {
+        record: Record {
             id: id.clone(),
             workload: context.identity.clone(),
             ttl: -1,
@@ -533,6 +640,11 @@ async fn conflicting_existing_range_is_not_overwritten_or_marked_ready() -> Resu
         range: FeedRange::full(),
         owner: Some("owner".into()),
         continuation: Some(ContinuationToken::from_string("keep-me".into())),
+
+        incarnation: None,
+        renewed_at: None,
+        last_processed_at: None,
+        processing_deadline: None,
     };
     assert!(context.store.create(&id, &lease).await?);
     context
@@ -540,12 +652,102 @@ async fn conflicting_existing_range_is_not_overwritten_or_marked_ready() -> Resu
         .release(&context.record("lock").id, claim.etag)
         .await?;
     let before = context.store.read::<serde_json::Value>(&id).await?.unwrap();
-    let error = context.run().await.unwrap_err();
-    assert_eq!(error.status().status_code(), StatusCode::Conflict);
-    assert!(!context.ready().await?);
+    let reads = fixture.requests.lease_reads.load(Ordering::SeqCst);
+    context.run().await?;
+    assert_eq!(fixture.requests.lease_reads.load(Ordering::SeqCst), reads);
+    assert!(context.ready().await?);
     let after = context.store.read::<serde_json::Value>(&id).await?.unwrap();
-    assert_eq!(after.value, before.value);
-    assert_eq!(after.etag, before.etag);
+    assert_eq!(after.0, before.0);
+    assert_eq!(after.1, before.1);
+    for range in &plan.ranges {
+        assert!(context
+            .store
+            .read::<LeaseDocument>(&lease_id(&context, range))
+            .await?
+            .is_some());
+    }
+    Ok(())
+}
+
+#[cfg(feature = "fault_injection")]
+#[tokio::test]
+async fn non_conflict_lease_create_failure_does_not_mark_ready_and_can_resume() -> Result<()> {
+    let mut fixture = Fixture::new(Some(-1), "/id").await?;
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new(
+            "bootstrap-lease-create",
+            FaultInjectionResultBuilder::new()
+                .with_custom_response(
+                    CustomResponseBuilder::new(StatusCode::Forbidden)
+                        .with_body(br#"{"message":"injected lease create failure"}"#.to_vec())
+                        .build(),
+                )
+                .build(),
+        )
+        .with_condition(
+            FaultInjectionConditionBuilder::new()
+                .with_operation_type(FaultOperationType::CreateItem)
+                .build(),
+        )
+        .build(),
+    );
+    rule.disable();
+    fixture.driver = fixture
+        .emulator
+        .runtime_builder_with_fault_rules(vec![rule.clone()])
+        .build()
+        .await?
+        .create_driver(
+            DriverOptions::builder(AccountReference::with_account_key(
+                ENDPOINT.parse()?,
+                "dGVzdGtleQ==",
+            ))
+            .build(),
+        )
+        .await?;
+    let context = fixture.context(ChangeFeedFactoryMode::Incremental)?;
+    context.ensure_record(&context.record("definition")).await?;
+    let claim = context.try_claim().await?.unwrap();
+    let plan = context.plan(&claim).await?.unwrap();
+    let partial = RangePlan {
+        record: plan.record.clone(),
+        ranges: vec![plan.ranges[0].clone()],
+    };
+    context.create_leases(&partial, &claim).await?;
+    let first = lease_id(&context, &plan.ranges[0]);
+    let before = context
+        .store
+        .read::<serde_json::Value>(&first)
+        .await?
+        .unwrap();
+    rule.enable();
+    let error = context.initialize(&claim).await.unwrap_err();
+    assert_eq!(error.status().status_code(), StatusCode::Forbidden);
+    assert!(rule.hit_count() > 0);
+    assert!(!context.ready().await?);
+    rule.disable();
+    let reads = fixture.requests.lease_reads.load(Ordering::SeqCst);
+    context.initialize(&claim).await?;
+    assert_eq!(fixture.requests.lease_reads.load(Ordering::SeqCst), reads);
+    assert!(context.ready().await?);
+    let after = context
+        .store
+        .read::<serde_json::Value>(&first)
+        .await?
+        .unwrap();
+    assert_eq!(after.0, before.0);
+    assert_eq!(after.1, before.1);
+    for range in &plan.ranges {
+        assert!(context
+            .store
+            .read::<LeaseDocument>(&lease_id(&context, range))
+            .await?
+            .is_some());
+    }
+    context
+        .store
+        .release(&context.record("lock").id, claim.etag)
+        .await?;
     Ok(())
 }
 
@@ -559,7 +761,7 @@ async fn names_and_source_rids_isolate_workloads_but_modes_do_not() -> Result<()
     different.container_rid.push('x');
     assert_ne!(namespace(&different)?, context.namespace);
     different = context.identity.clone();
-    different.processor_name = "other-orders".into();
+    different.workload_name = "other-orders".into();
     assert_ne!(namespace(&different)?, context.namespace);
     different = context.identity.clone();
     different.account = "https://another-account.documents.azure.com".into();
@@ -571,7 +773,7 @@ async fn names_and_source_rids_isolate_workloads_but_modes_do_not() -> Result<()
 async fn local_invalid_configuration_does_not_issue_requests() -> Result<()> {
     let fixture = Fixture::new(Some(-1), "/id").await?;
     let writes = fixture.requests.writes.load(Ordering::SeqCst);
-    for (processor_name, instance_name) in [(" ", "worker"), ("orders", "")] {
+    for (workload_name, worker_name) in [(" ", "worker"), ("orders", "")] {
         assert_eq!(
             bootstrap(
                 &fixture.driver,
@@ -579,8 +781,8 @@ async fn local_invalid_configuration_does_not_issue_requests() -> Result<()> {
                 &fixture.driver,
                 &fixture.leases,
                 ChangeFeedFactoryMode::Incremental,
-                processor_name,
-                instance_name,
+                workload_name,
+                worker_name,
             )
             .await
             .unwrap_err()
@@ -599,12 +801,8 @@ async fn completed_workload_does_not_require_its_initial_plan() -> Result<()> {
     let context = fixture.context(ChangeFeedFactoryMode::Incremental)?;
     context.run().await?;
     let id = context.record("plan").id;
-    let existing = context
-        .store
-        .read::<ChangeFeedProcessorBootstrapRangePlan>(&id)
-        .await?
-        .unwrap();
-    context.store.release(&id, existing.etag).await?;
+    let existing = context.store.read::<RangePlan>(&id).await?.unwrap();
+    context.store.release(&id, existing.1).await?;
     let claim = context.try_claim().await?.unwrap();
     let writes = fixture.requests.writes.load(Ordering::SeqCst);
     assert!(context.plan(&claim).await?.is_none());
@@ -623,11 +821,7 @@ async fn completed_workload_does_not_require_its_initial_plan() -> Result<()> {
         fixture.requests.plan_reads.load(Ordering::SeqCst),
         plan_reads
     );
-    assert!(context
-        .store
-        .read::<ChangeFeedProcessorBootstrapRangePlan>(&id)
-        .await?
-        .is_none());
+    assert!(context.store.read::<RangePlan>(&id).await?.is_none());
     context
         .store
         .release(&context.record("lock").id, claim.etag)
@@ -660,17 +854,17 @@ async fn superseded_claim_does_not_create_leases_or_mark_completion() -> Result<
     for range in &plan.ranges {
         assert!(context
             .store
-            .read::<ChangeFeedProcessorBootstrapProcessingLease>(&lease_id(&context, range))
+            .read::<LeaseDocument>(&lease_id(&context, range))
             .await?
             .is_none());
     }
     assert_eq!(
         context
             .store
-            .read::<ChangeFeedProcessorBootstrapLockRecord>(&context.record("lock").id)
+            .read::<InitializationLock>(&context.record("lock").id)
             .await?
             .unwrap()
-            .etag,
+            .1,
         replacement.etag,
     );
     Ok(())
@@ -704,7 +898,7 @@ async fn multi_write_lease_account_can_bootstrap() -> Result<()> {
             "worker",
         )
         .await?;
-        let context = ChangeFeedProcessorBootstrapContext::new(
+        let context = Context::new(
             &fixture.driver,
             &fixture.source,
             &lease_driver,
@@ -719,13 +913,13 @@ async fn multi_write_lease_account_can_bootstrap() -> Result<()> {
         for range in &plan.ranges {
             let lease = context
                 .store
-                .read::<ChangeFeedProcessorBootstrapProcessingLease>(&lease_id(&context, range))
+                .read::<LeaseDocument>(&lease_id(&context, range))
                 .await?
                 .unwrap();
-            assert_eq!(lease.value.record.workload, context.identity);
-            assert_eq!(&lease.value.range, range);
-            assert!(lease.value.owner.is_none());
-            assert!(lease.value.continuation.is_none());
+            assert_eq!(lease.0.record.workload, context.identity);
+            assert_eq!(&lease.0.range, range);
+            assert!(lease.0.owner.is_none());
+            assert!(lease.0.continuation.is_none());
         }
         assert_eq!(fixture.requests.change_feed_reads.load(Ordering::SeqCst), 0);
     }
@@ -742,7 +936,7 @@ async fn waiting_worker_exits_on_completion_without_acquiring_the_lock() -> Resu
     let claim = initializer.try_claim().await?.unwrap();
     let mut waiting = fixture.context(ChangeFeedFactoryMode::Incremental)?;
     waiting.store.deadline = Instant::now() + Duration::from_secs(1);
-    waiting.instance_name = "waiting-worker".into();
+    waiting.worker_name = "waiting-worker".into();
     assert!(waiting.try_claim().await?.is_none());
 
     initializer.initialize(&claim).await?;
@@ -751,10 +945,10 @@ async fn waiting_worker_exits_on_completion_without_acquiring_the_lock() -> Resu
     assert!(waiting.ready().await?);
     let still_held = waiting
         .store
-        .read::<ChangeFeedProcessorBootstrapLockRecord>(&waiting.record("lock").id)
+        .read::<InitializationLock>(&waiting.record("lock").id)
         .await?
         .unwrap();
-    assert_eq!(still_held.etag, claim.etag);
+    assert_eq!(still_held.1, claim.etag);
     Ok(())
 }
 
@@ -863,25 +1057,17 @@ async fn completed_flight_does_not_replace_the_durable_marker() -> Result<()> {
         for range in &plan.ranges {
             assert!(context
                 .store
-                .read::<ChangeFeedProcessorBootstrapProcessingLease>(&lease_id(&context, range))
+                .read::<LeaseDocument>(&lease_id(&context, range))
                 .await?
                 .is_some());
         }
         if worker == "first" {
             let marker_id = context.record("info").id;
-            let marker = context
-                .store
-                .read::<ChangeFeedProcessorBootstrapRecord>(&marker_id)
-                .await?
-                .unwrap();
-            context.store.release(&marker_id, marker.etag).await?;
+            let marker = context.store.read::<Record>(&marker_id).await?.unwrap();
+            context.store.release(&marker_id, marker.1).await?;
             let id = lease_id(&context, &plan.ranges[0]);
-            let lease = context
-                .store
-                .read::<ChangeFeedProcessorBootstrapProcessingLease>(&id)
-                .await?
-                .unwrap();
-            context.store.release(&id, lease.etag).await?;
+            let lease = context.store.read::<LeaseDocument>(&id).await?.unwrap();
+            context.store.release(&id, lease.1).await?;
         }
     }
     Ok(())
@@ -938,7 +1124,7 @@ async fn unwrapped_driver_preserves_borrowed_bootstrap_contract() -> Result<()> 
     )
     .await?;
     assert!(
-        ChangeFeedProcessorBootstrapContext::new(
+        Context::new(
             &driver,
             &source,
             &driver,
@@ -957,7 +1143,7 @@ async fn unwrapped_driver_preserves_borrowed_bootstrap_contract() -> Result<()> 
 async fn joined_workers_re_register_after_partial_initialization_panics() -> Result<()> {
     let fixture = Arc::new(Fixture::new(Some(-1), "/id").await?);
     let context = fixture.context(ChangeFeedFactoryMode::Incremental)?;
-    let key = ChangeFeedProcessorBootstrapCoalescingKey {
+    let key = AttemptKey {
         namespace: context.namespace.clone(),
         lease_container: fixture.leases.rid().to_owned(),
         lease_driver: Arc::as_ptr(&fixture.driver) as usize,
@@ -979,7 +1165,7 @@ async fn joined_workers_re_register_after_partial_initialization_panics() -> Res
                         &claim,
                         Box::pin(async {
                             let plan = context.plan(&claim).await?.unwrap();
-                            let partial = ChangeFeedProcessorBootstrapRangePlan {
+                            let partial = RangePlan {
                                 record: plan.record.clone(),
                                 ranges: vec![plan.ranges[0].clone()],
                             };
@@ -1028,7 +1214,7 @@ async fn joined_workers_re_register_after_partial_initialization_panics() -> Res
     assert_eq!(fixture.driver.bootstrap_coalescer().active_count(), 0);
     assert!(context
         .store
-        .read::<ChangeFeedProcessorBootstrapLockRecord>(&context.record("lock").id)
+        .read::<InitializationLock>(&context.record("lock").id)
         .await?
         .is_none());
     assert!(!context.ready().await?);
@@ -1048,14 +1234,14 @@ async fn joined_workers_re_register_after_partial_initialization_panics() -> Res
         result?;
     }
     let after = context.store.read::<serde_json::Value>(&id).await?.unwrap();
-    assert_eq!(after.etag, before.etag);
-    assert_eq!(after.value, before.value);
+    assert_eq!(after.1, before.1);
+    assert_eq!(after.0, before.0);
     let plan = plan(&context).await?;
     assert_eq!(plan.ranges.len(), 3);
     for range in &plan.ranges {
         assert!(context
             .store
-            .read::<ChangeFeedProcessorBootstrapProcessingLease>(&lease_id(&context, range))
+            .read::<LeaseDocument>(&lease_id(&context, range))
             .await?
             .is_some());
     }

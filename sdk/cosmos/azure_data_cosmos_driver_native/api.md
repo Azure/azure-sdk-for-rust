@@ -732,8 +732,8 @@ pub mod processor {
     pub struct CosmosProcessorRequest {
         pub struct_size_bytes: u32,
         pub abi_version: u32,
-        pub processor_name: crate::string::CosmosStringView,
-        pub instance_name: crate::string::CosmosStringView,
+        pub workload_name: crate::string::CosmosStringView,
+        pub worker_name: crate::string::CosmosStringView,
         pub mode: u32,
         pub start_from: u32,
         pub start_time: crate::string::CosmosStringView,
@@ -743,7 +743,8 @@ pub mod processor {
         pub min_leases: u32,
         pub max_leases: u32,
         pub verify_on_restart: u32,
-        pub reserved: [u32; 4],
+        pub bootstrap_timeout_ms: u32,
+        pub reserved: [u32; 3],
     }
     pub struct ProcessorCompletionBacking {
     }

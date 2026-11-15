@@ -2135,11 +2135,11 @@ typedef struct cosmos_processor_request_t {
   /**
    * Workload name; copied during submission.
    */
-  struct cosmos_string_view_t processor_name;
+  struct cosmos_string_view_t workload_name;
   /**
    * Worker identity; copied during submission.
    */
-  struct cosmos_string_view_t instance_name;
+  struct cosmos_string_view_t worker_name;
   /**
    * 1: latest version; 2: all versions and deletes.
    */
@@ -2177,9 +2177,13 @@ typedef struct cosmos_processor_request_t {
    */
   uint32_t verify_on_restart;
   /**
+   * Caller bootstrap wait budget in milliseconds; zero selects 120 seconds. Claim limits are unchanged.
+   */
+  uint32_t bootstrap_timeout_ms;
+  /**
    * Must be zero.
    */
-  uint32_t reserved[4];
+  uint32_t reserved[3];
 } cosmos_processor_request_t;
 
 /**
@@ -3082,6 +3086,9 @@ struct cosmos_processor_queue_t *cosmos_processor_queue_create(const struct cosm
 /**
  * Starts a processor asynchronously. All input strings are copied during this call.
  *
+ * Uses deferred checkpointing with a five-minute interval. Use
+ * `cosmos_processor_start_with_policy_submit` for eager persistence or a different interval.
+ *
  * Handles and input allocations must be live for the call. The completion owns the
  * started handle until `cosmos_processor_completion_take_processor` detaches it.
  */
@@ -3097,13 +3104,13 @@ struct cosmos_operation_handle_t *cosmos_processor_start_submit(const struct cos
 /**
  * Starts a processor with an explicit checkpoint policy.
  *
- * `checkpoint_policy` is 0 for every batch (interval must be zero), or 1 for
- * coalescing (interval must be positive). `checkpoint_interval_ms` bounds the
+ * `checkpoint_policy` is 0 for eager persistence (interval must be zero), or 1 for
+ * deferred persistence (interval must be positive). `checkpoint_interval_ms` bounds the
  * delay before attempting persistence; use 300000 for five minutes. Idle reads
- * do not flush coalesced progress. Coalescing can replay acknowledged batches.
+ * do not flush deferred progress. Deferred checkpointing can replay acknowledged batches.
  *
- * Processing inactivity permits takeover after ten minutes with every-batch
- * checkpoints, or twice the coalescing interval. Renewal and idle reads do not
+ * Processing inactivity permits takeover after ten minutes with eager
+ * checkpoints, or twice the deferral interval. Renewal and idle reads do not
  * reset that deadline. Each acquisition starts a fresh grace period.
  *
  * All handles and request allocations must remain readable for this call.

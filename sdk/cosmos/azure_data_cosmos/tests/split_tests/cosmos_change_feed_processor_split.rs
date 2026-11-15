@@ -13,8 +13,9 @@ use azure_data_cosmos::{
     feed::FeedRange,
     models::{ChangeFeedItem, ContainerProperties, ThroughputProperties, TimeToLive},
     options::{ChangeFeedMode, MaxItemCountHint, ReadFeedRangesOptions, Region},
-    ChangeFeedProcessor, ChangeFeedProcessorBuilder, ChangeFeedProcessorContext, ContainerClient,
-    CosmosError, CosmosStatus, DatabaseClient, FeedScope,
+    ChangeFeedCheckpointPolicy, ChangeFeedProcessor, ChangeFeedProcessorBuilder,
+    ChangeFeedProcessorContext, ContainerClient, CosmosError, CosmosStatus, DatabaseClient,
+    FeedScope,
 };
 use futures::{
     channel::{mpsc, oneshot},
@@ -46,7 +47,7 @@ type Handler = fn(
     ChangeFeedProcessorContext,
     Vec<ChangeFeedItem<Item>>,
 ) -> BoxFuture<'static, azure_data_cosmos::Result<()>>;
-type Processor = ChangeFeedProcessor<Item, Handler>;
+type Processor = ChangeFeedProcessor<Item, BoxFuture<'static, azure_data_cosmos::Result<()>>>;
 
 static CALLBACK: Mutex<Option<Arc<Sink>>> = Mutex::new(None);
 static CALLBACK_SERIAL: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
@@ -236,12 +237,13 @@ fn processor(
         leases.clone(),
         NAME,
         worker,
+        handler,
     )
+    .with_checkpoint_policy(ChangeFeedCheckpointPolicy::Eager)
     .with_start_from_beginning()
     .with_max_scale_count(1)
     .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(4).unwrap()))
     .with_feed_poll_delay(INTERVAL)
-    .handle_change_feed(handler)
     .build()?)
 }
 
@@ -422,11 +424,7 @@ async fn exercise(
     }.await;
     let mut outcome = result;
     for worker in &workers {
-        let cleanup = if outcome.is_ok() {
-            worker.stop().await
-        } else {
-            worker.abort().await
-        };
+        let cleanup = worker.stop().await;
         if let Err(error) = cleanup {
             eprintln!("Processor cleanup failed: {error}");
             if outcome.is_ok() {

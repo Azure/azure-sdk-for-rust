@@ -19,7 +19,7 @@
 pub use account_endpoint::AccountEndpoint;
 pub use account_reference::AccountReference;
 pub use change_feed_processor::{
-    ChangeFeedCheckpointPolicy, ChangeFeedProcessor, ChangeFeedProcessorBuilder,
+    ChangeFeedCheckpointPolicy, ChangeFeedHandler, ChangeFeedProcessor, ChangeFeedProcessorBuilder,
     ChangeFeedProcessorContext, ChangeFeedProcessorState,
 };
 #[doc(inline)]

@@ -1,19 +1,19 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{Lease, ProcessorOptions};
+use super::{LeaseDocument, ProcessorOptions};
 use rand::seq::SliceRandom;
 use std::collections::BTreeMap;
 
-pub(super) fn select(leases: &[Lease], options: &ProcessorOptions, now: i64) -> Vec<usize> {
+pub(super) fn select(leases: &[LeaseDocument], options: &ProcessorOptions, now: i64) -> Vec<usize> {
     let mut owners = BTreeMap::new();
     let mut available = Vec::new();
     for (index, lease) in leases.iter().enumerate() {
-        match (&lease.base.owner, lease.renewed_at) {
+        match (&lease.owner, lease.renewed_at) {
             (Some(owner), Some(updated))
                 if !owner.is_empty()
                     && now.saturating_sub(updated) <= options.expiration.as_millis() as i64
-                    && (owner == &options.instance_name
+                    && (owner == &options.worker_name
                         || lease
                             .processing_deadline
                             .is_none_or(|deadline| now < deadline)) =>
@@ -23,7 +23,7 @@ pub(super) fn select(leases: &[Lease], options: &ProcessorOptions, now: i64) -> 
             _ => available.push(index),
         }
     }
-    let mine = *owners.entry(options.instance_name.as_str()).or_insert(0);
+    let mine = *owners.entry(options.worker_name.as_str()).or_insert(0);
     if leases.is_empty() {
         return Vec::new();
     }
@@ -55,7 +55,7 @@ pub(super) fn select(leases: &[Lease], options: &ProcessorOptions, now: i64) -> 
     if *count > target - usize::from(needed > 1) {
         return leases
             .iter()
-            .position(|lease| lease.base.owner.as_deref() == Some(*donor))
+            .position(|lease| lease.owner.as_deref() == Some(*donor))
             .into_iter()
             .collect();
     }

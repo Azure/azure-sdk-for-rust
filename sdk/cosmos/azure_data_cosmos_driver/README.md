@@ -23,23 +23,25 @@ Any driver APIs which are re-exported through the public SDK (e.g., `azure_data_
 ### Change feed workload bootstrap
 
 `change_feed_processor::bootstrap` initializes a workload without consuming changes.
-It binds mode to the monitored account origin, container RID, and processor name
+It binds mode to the monitored account origin, container RID, and workload name
 within the lease container. Lease storage requires `/id` and default TTL `-1`.
 Single-write and multi-write accounts use the lease driver's normal routing.
 
-Mode and workload/worker names are passed directly to the driver. Timeout and
-retry policy remain internal rather than exposing separate bootstrap options.
+Mode and workload/worker names are passed directly to the driver. Claim timing
+and retry policy remain internal; processor options can override the caller budget.
 Bootstrap reuses `models::ChangeFeedFactoryMode`, while the SDK retains its own
 `ChangeFeedMode` and converts at the boundary. Persisted workload modes remain
 `latestVersion` and `allVersionsAndDeletes`.
 
 Overlapping compatible calls on the same factory-created source and lease
 drivers share in-flight bootstrap attempts, not their entire retry lifetimes.
-Each caller has its own two-minute budget, including retry delays. A shared
+Each caller has its own bootstrap budget, including retry delays; it defaults
+to two minutes and processor callers can set `with_bootstrap_timeout`.
+The standalone `bootstrap` function retains its two-minute default. A shared
 attempt retains its originating caller's deadline; joining never extends it.
 After a retryable failure, callers with remaining time automatically re-register
 without resetting their budgets. Permanent validation errors fail promptly.
-Instance names do not split that work. Cancelling one waiter does not cancel the others;
+Worker names do not split that work. Cancelling one waiter does not cancel the others;
 cancelling all waiters drops local work. Completed results are not cached, so a
 later call checks the durable completion marker again. Explicitly unwrapped
 driver values keep the existing inline execution path.
@@ -54,7 +56,10 @@ The driver persists a workload definition, a create-only initial range plan,
 unowned range leases, and a durable completion marker. A 30-second TTL claim
 coordinates initializers; each attempt is limited to 25 seconds within a default
 two-minute budget. Delayed initializers may overlap after expiration, so creation
-is idempotent and conflicts are validated without replacing existing progress.
+uses create-only writes. Lease-create `409` conflicts are accepted as "already
+exists" without reading or validating the existing document, matching Java's
+lease-create behavior. Existing progress is never replaced. Definition and plan
+conflicts still require validation; other lease-create failures propagate.
 The claim is not globally fenced across write regions; visibility and conflict
 resolution follow the lease account's consistency and conflict resolution policies.
 
@@ -92,12 +97,14 @@ continuations and topology recovery. Saved progress takes precedence over initia
 start options. An initial continuation must match the lease scope; a container-wide
 token is not automatically distributed among leases.
 
-Consumers call `next_batch()`, deserialize the returned payload, and invoke their
+Consumers call `read_next_change_feed_batch()`, deserialize the returned payload, and invoke their
 application callback. Only after success do they call the batch receipt's
-`checkpoint()`. A lease does not poll another page until that write succeeds.
+`acknowledge()`. The default `Deferred` policy accepts progress in memory and
+attempts persistence within five minutes. Select `Eager` to wait for a durable
+write before another page, or call `checkpoint()` for an explicit durable barrier.
 Dropping the receipt abandons the lease without acknowledging the batch.
 Conditional writes validate an acquisition-specific incarnation as well as the
-owner, rejecting late acknowledgments even after the same instance name reacquires
+owner, rejecting late acknowledgments even after the same worker name reacquires
 the lease. Renewal and checkpoint mutations are serialized per lease.
 
 Acquisition, renewal, checkpoint writes, and release share a read-modify-replace
@@ -114,18 +121,19 @@ topology repair remain in the existing driver pipelines. A 304 is local idleness
 not processor completion; changed idle continuations can be saved without
 an application callback.
 
-Each acquisition has a single-slot mailbox keyed by lease identity and incarnation.
-A local distributor queues ready session identities, not response payloads, and
-selects them in round-robin order through the existing `next_batch()` API.
-Retiring a session removes its pending delivery without closing other mailboxes.
-An empty session set waits for future acquisitions; only processor shutdown ends
-the delivery stream. Reacquisitions use new mailboxes, and stale session handles
-cannot publish to or retire their replacements.
+Each acquisition registers when it can accept a read turn.
+`ChangeFeedRequestDistributor` matches pending batch requests to these waiting
+registrations; its queue contains weak delivery-state references, not payloads.
+`read_next_change_feed_batch()` grants permission to one eligible acquisition
+and awaits its response. Ending a session removes its registrations without
+closing other sessions. An empty queue waits for future eligibility; processor
+shutdown ends receiving. Reacquisitions use fresh delivery state, and stale
+sessions cannot publish to or close their replacements.
 
 There is one outstanding batch per active lease session, without read-ahead.
 Taking a batch from a mailbox does not acknowledge it: the producer still waits
 for successful acknowledgment under the selected checkpoint policy before reading
-again. Per-batch durability gates that lease's next read; coalesced acknowledgment
+again. With `Eager`, per-batch durability gates that lease's next read; deferred acknowledgment
 retains only progress metadata, not completed payloads.
 
 There is no shared batch-count cap across leases or processors. Buffered data

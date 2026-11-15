@@ -141,25 +141,19 @@ async fn mixed_latest_beginning() -> TestResult {
 }
 
 #[tokio::test]
-async fn new_instance_resumes_existing_workload_every_batch() -> TestResult {
+async fn new_instance_resumes_existing_workload_eager() -> TestResult {
     let (source, leases) = containers(None).await?;
-    restart_case(
-        source,
-        leases,
-        false,
-        ChangeFeedCheckpointPolicy::EveryBatch,
-    )
-    .await
+    restart_case(source, leases, false, ChangeFeedCheckpointPolicy::Eager).await
 }
 
 #[tokio::test]
-async fn new_instance_resumes_existing_workload_coalesced() -> TestResult {
+async fn new_instance_resumes_existing_workload_deferred() -> TestResult {
     let (source, leases) = containers(None).await?;
     restart_case(
         source,
         leases,
         false,
-        ChangeFeedCheckpointPolicy::Coalesced {
+        ChangeFeedCheckpointPolicy::Deferred {
             max_interval: Duration::from_secs(60),
         },
     )
@@ -167,19 +161,19 @@ async fn new_instance_resumes_existing_workload_coalesced() -> TestResult {
 }
 
 #[tokio::test]
-async fn new_workload_replays_without_changing_existing_leases_every_batch() -> TestResult {
+async fn new_workload_replays_without_changing_existing_leases_eager() -> TestResult {
     let (source, leases) = containers(None).await?;
-    restart_case(source, leases, true, ChangeFeedCheckpointPolicy::EveryBatch).await
+    restart_case(source, leases, true, ChangeFeedCheckpointPolicy::Eager).await
 }
 
 #[tokio::test]
-async fn new_workload_replays_without_changing_existing_leases_coalesced() -> TestResult {
+async fn new_workload_replays_without_changing_existing_leases_deferred() -> TestResult {
     let (source, leases) = containers(None).await?;
     restart_case(
         source,
         leases,
         true,
-        ChangeFeedCheckpointPolicy::Coalesced {
+        ChangeFeedCheckpointPolicy::Deferred {
             max_interval: Duration::from_secs(60),
         },
     )
@@ -205,12 +199,12 @@ async fn processor_forwards_time_start_header() -> TestResult {
         leases,
         "time-start",
         "worker",
+        |_, changes: Vec<ChangeFeedItem<Document>>| {
+            CALLS.fetch_add(changes.len(), Ordering::SeqCst);
+            async { Ok(()) }
+        },
     )
     .with_start_time(OffsetDateTime::from_unix_timestamp(1_700_000_000)?)
-    .handle_change_feed(|_, changes: Vec<ChangeFeedItem<Document>>| {
-        CALLS.fetch_add(changes.len(), Ordering::SeqCst);
-        async { Ok(()) }
-    })
     .build()?;
     processor.start().await?;
     let result = tokio::time::timeout(Duration::from_secs(5), async {

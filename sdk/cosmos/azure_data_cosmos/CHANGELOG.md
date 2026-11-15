@@ -4,12 +4,12 @@
 
 ### Features Added
 
+- Added `ChangeFeedProcessorBuilder::with_bootstrap_timeout()` for the caller's bootstrap wait budget (default 120 seconds); initialization attempt and lock limits are unchanged. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
 - Added `ChangeFeedProcessorContext::diagnostics()` for retaining batch-read diagnostics independently of response payloads.
-- Added `ChangeFeedCheckpointPolicy::coalesced()` for five-minute checkpoint coalescing without idle-triggered persistence.
+- Added `ChangeFeedCheckpointPolicy::deferred()` for five-minute deferred checkpointing without idle-triggered persistence.
 - A throttled processor lease now yields receive demand to other leases, including with one SDK batch poller; Retry-After expiry only restores eligibility and does not prefetch.
-- Added `ChangeFeedProcessorBuilder::with_max_concurrency()` to bound receive, callback, and acknowledgment cycles, and `handle_error()` for independent asynchronous failure notifications.
-- Added opt-in `ChangeFeedCheckpointPolicy::Coalesced` to reduce checkpoint writes across successful callbacks, flushing at the configured interval, graceful shutdown, or topology recovery; durable-per-batch remains the default.
-- `ChangeFeedProcessor::start()` bootstraps the workload and starts driver-owned lease balancing, renewal, and polling; by default, a checkpoint follows each successful callback before the next batch for that lease, and `stop()` waits for local shutdown.
+- Added `ChangeFeedCheckpointPolicy::Deferred` to reduce checkpoint writes across successful callbacks, flushing at the configured interval, graceful shutdown, or topology recovery.
+- `ChangeFeedProcessor::start()` bootstraps the workload and starts driver-owned lease balancing, renewal, and polling; `stop()` waits for local shutdown.
 - The bootstrap stage of `ChangeFeedProcessor::start()` initializes incomplete workloads through the shared driver without inspecting completed lease inventories. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 - Opt-in restart verification recreates missing initial leases in the processing runtime while preserving existing owners and checkpoints. ([#5474](https://github.com/Azure/azure-sdk-for-rust/pull/5474))
 - Compatible concurrent processor starts sharing the same drivers now await one bootstrap outcome; cancelling one waiter does not cancel the others. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
@@ -18,11 +18,17 @@
 
 ### Breaking Changes
 
-- Leases can be reclaimed after processing inactivity despite healthy renewal: ten minutes with every-batch checkpoints, or twice the configured coalescing interval; idle reads and absent demand do not refresh processing activity.
+- Renamed CFP `processor_name` to `workload_name`, `instance_name` to `worker_name`, and monitoring `host_name()` to `owner_worker_name()`; persisted identity fields and lease IDs are unchanged. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
+- `ChangeFeedProcessorBuilder::new()` now requires a `ChangeFeedHandler<T, Fut>` function pointer; removed `handle_change_feed()` and builder-state wrappers. Builder and processor type parameters identify the document and callback future. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
+- `ChangeFeedProcessorContext::diagnostics()` now returns `Arc<DiagnosticsContext>` directly because delivered batches always have read diagnostics. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
+- Removed SDK `ChangeFeedProcessor::abort()` and `ChangeFeedProcessorBuilder::handle_error()`. Use `stop()` for graceful shutdown; dropping the processor requests cancellation without waiting. Background failures remain logged. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
+- Checkpointing now defaults to `Deferred` with a five-minute interval; select `Eager` for persistence after each successful callback. A crash can replay acknowledged changes, and an unpersisted `Now` start can move on restart. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
+- Renamed checkpoint policies to `Eager` and `Deferred`, and the five-minute constructor to `ChangeFeedCheckpointPolicy::deferred()`; checkpoint behavior is unchanged. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
+- Leases can be reclaimed after processing inactivity despite healthy renewal: ten minutes with eager checkpoints, or twice the configured deferral interval; idle reads and absent demand do not refresh processing activity.
 - Split parent leases are now deleted after child creation, while merge leases are retained; upgrade all cooperating workers before restarting with lease verification.
 - Processor read turns are now bounded to five seconds or a shorter driver operation deadline, independently of callback duration.
-- Change feed processors now use one batch poller per worker instance by default; configure `with_max_concurrency()` to process leases concurrently.
-- `ChangeFeedProcessor::stop()` now drains issued callbacks and reports incomplete shutdown or lease cleanup; use `abort()` for explicit callback cancellation. ([#5477](https://github.com/Azure/azure-sdk-for-rust/pull/5477))
+- Removed per-worker callback concurrency configuration; each worker runs one batch poller. Start additional workers with the same workload name and distinct worker names for concurrent processing. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
+- `ChangeFeedProcessor::stop()` drains issued callbacks and reports incomplete shutdown or lease cleanup. ([#5477](https://github.com/Azure/azure-sdk-for-rust/pull/5477))
 - Consumed legacy single-request prefix checkpoints cannot safely resume across physical ranges and are rejected; start a new feed with an explicit start position. Older unpolled single-request checkpoints require the original start on resume. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 
 ### Bugs Fixed
@@ -37,7 +43,7 @@
 
 ### Bugs Fixed
 
-- Retry coalesced bootstrap failures within each processor start's own budget without resetting deadlines or retrying permanent validation errors. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Retry deferred bootstrap failures within each processor start's own budget without resetting deadlines or retrying permanent validation errors. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 - Allow processor bootstrap to use multi-write-region lease accounts. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 
 ### Other Changes

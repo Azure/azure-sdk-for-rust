@@ -3,7 +3,7 @@
 
 use super::{
     balancing, fixture_with_emulator, insert, leases, next, options, start, ChangeFeedFactoryMode,
-    Context, Lease, Update,
+    Context, LeaseDocument, Update,
 };
 use crate::Result;
 use std::{sync::Arc, time::Duration};
@@ -14,14 +14,14 @@ async fn fixture() -> Result<Arc<Context>> {
         .0)
 }
 
-async fn record(context: &Context, id: &str) -> Lease {
+async fn record(context: &Context, id: &str) -> LeaseDocument {
     context
         .store()
-        .read::<Lease>(id)
+        .read::<LeaseDocument>(id)
         .await
         .unwrap()
         .unwrap()
-        .value
+        .0
 }
 
 #[tokio::test]
@@ -31,12 +31,12 @@ async fn idle_stop_releases_leases_and_is_repeatable() -> Result<()> {
     processor.stop().await?;
     processor.stop().await?;
     assert!(!processor.is_running());
-    assert!(processor.next_batch().await.is_none());
+    assert!(processor.read_next_change_feed_batch().await.is_none());
     assert!(context
         .list()
         .await?
         .iter()
-        .all(|lease| lease.base.owner.is_none()));
+        .all(|lease| lease.owner.is_none()));
     Ok(())
 }
 
@@ -49,14 +49,14 @@ async fn drain_renews_then_checkpoints_before_release_without_polling_again() ->
     let before = record(&context, &id).await;
     let mut stopping = Box::pin(processor.stop());
     assert!(futures::poll!(stopping.as_mut()).is_pending());
-    assert!(processor.next_batch().await.is_none());
+    assert!(processor.read_next_change_feed_batch().await.is_none());
     insert(&context, "after").await?;
     tokio::time::timeout(Duration::from_secs(5), async {
         loop {
             let current = record(&context, &id).await;
-            assert_eq!(current.base.owner, before.base.owner);
+            assert_eq!(current.owner, before.owner);
             assert_eq!(current.incarnation, before.incarnation);
-            assert_eq!(current.base.continuation, before.base.continuation);
+            assert_eq!(current.continuation, before.continuation);
             if current.renewed_at != before.renewed_at {
                 break;
             }
@@ -69,8 +69,8 @@ async fn drain_renews_then_checkpoints_before_release_without_polling_again() ->
     receipt.checkpoint().await?;
     stopping.await?;
     let saved = record(&context, &id).await;
-    assert!(saved.base.owner.is_none());
-    assert!(saved.base.continuation.is_some());
+    assert!(saved.owner.is_none());
+    assert!(saved.continuation.is_some());
     let restarted = start(&context, options("replacement")).await?;
     let (_, response, receipt) = next(&restarted).await.into_parts();
     let body: serde_json::Value = response.into_body().into_single()?;
@@ -96,8 +96,8 @@ async fn cancelled_wait_and_concurrent_stops_share_cleanup() -> Result<()> {
     let (first, second) = futures::join!(processor.stop(), processor.stop());
     first?;
     second?;
-    assert!(record(&context, &id).await.base.owner.is_none());
-    assert!(record(&context, &id).await.base.continuation.is_some());
+    assert!(record(&context, &id).await.owner.is_none());
+    assert!(record(&context, &id).await.continuation.is_some());
     Ok(())
 }
 
@@ -113,8 +113,8 @@ async fn abandoned_callback_reports_incomplete_drain_and_replays() -> Result<()>
     assert!(stopping.await.is_err());
     assert!(processor.stop().await.is_err());
     let saved = record(&context, &id).await;
-    assert!(saved.base.owner.is_none());
-    assert!(saved.base.continuation.is_none());
+    assert!(saved.owner.is_none());
+    assert!(saved.continuation.is_none());
     let replacement = start(&context, options("replacement")).await?;
     let (replayed, _, receipt) = next(&replacement).await.into_parts();
     assert_eq!(replayed, id);
@@ -135,8 +135,8 @@ async fn force_interrupts_drain_without_saving_pending_progress() -> Result<()> 
     assert!(stopping.await.is_err());
     assert!(receipt.checkpoint().await.is_err());
     let saved = record(&context, &id).await;
-    assert!(saved.base.owner.is_none());
-    assert!(saved.base.continuation.is_none());
+    assert!(saved.owner.is_none());
+    assert!(saved.continuation.is_none());
     Ok(())
 }
 
@@ -158,8 +158,8 @@ async fn ownership_loss_during_drain_never_clears_a_replacement_owner() -> Resul
     assert!(stopping.await.is_err());
     let saved = record(&context, &id).await;
     assert_eq!(saved.incarnation, replacement.value.incarnation);
-    assert_eq!(saved.base.owner, replacement.value.base.owner);
-    assert_eq!(saved.base.continuation, observed.base.continuation);
+    assert_eq!(saved.owner, replacement.value.owner);
+    assert_eq!(saved.continuation, observed.continuation);
     context.update(&mut replacement, Update::Release).await?;
     Ok(())
 }
@@ -176,13 +176,13 @@ async fn last_handle_drop_cancels_without_acknowledging() -> Result<()> {
         .unwrap();
     assert!(receipt.checkpoint().await.is_err());
     tokio::time::timeout(Duration::from_secs(5), async {
-        while record(&context, &id).await.base.owner.is_some() {
+        while record(&context, &id).await.owner.is_some() {
             tokio::task::yield_now().await;
         }
     })
     .await
     .unwrap();
-    assert!(record(&context, &id).await.base.continuation.is_none());
+    assert!(record(&context, &id).await.continuation.is_none());
     Ok(())
 }
 
@@ -279,19 +279,19 @@ mod faults {
         assert!(stopping.await.is_err());
         assert_eq!(rule.hit_count(), 1);
         let saved = record(&context, &id).await;
-        assert!(saved.base.continuation.is_none());
-        assert!(saved.base.owner.is_none());
+        assert!(saved.continuation.is_none());
+        assert!(saved.owner.is_none());
         Ok(())
     }
 
     #[tokio::test]
-    async fn coalesced_final_flush_failure_is_an_incomplete_drain() -> Result<()> {
+    async fn deferred_final_flush_failure_is_an_incomplete_drain() -> Result<()> {
         let (context, rule) = fixture(Some(1), false).await?;
         insert(&context, "one").await?;
         let options = context
             .options
             .clone()
-            .with_checkpoint_policy(CheckpointPolicy::Coalesced {
+            .with_checkpoint_policy(CheckpointPolicy::Deferred {
                 max_interval: Duration::from_secs(60),
             });
         let processor = start(&context, options).await?;
@@ -303,8 +303,8 @@ mod faults {
         assert!(stopping.await.is_err());
         assert_eq!(rule.hit_count(), 1);
         let saved = record(&context, &id).await;
-        assert!(saved.base.continuation.is_none());
-        assert!(saved.base.owner.is_none());
+        assert!(saved.continuation.is_none());
+        assert!(saved.owner.is_none());
         Ok(())
     }
 
@@ -314,7 +314,7 @@ mod faults {
         Arc::get_mut(&mut context)
             .unwrap()
             .options
-            .checkpoint_policy = CheckpointPolicy::Coalesced {
+            .checkpoint_policy = CheckpointPolicy::Deferred {
             max_interval: Duration::from_secs(60),
         };
         let mut owned = context.acquire(&context.list().await?.remove(0)).await?;
@@ -323,7 +323,7 @@ mod faults {
             2,
         );
         owned.pending.as_mut().unwrap().since = std::time::Instant::now() - Duration::from_secs(60);
-        let id = owned.value.base.record.id.clone();
+        let id = owned.value.record.id.clone();
         let lease = async_lock::Mutex::new(owned);
         let (_cancel, cancelled) = signal();
         let (_force, forced) = signal();
@@ -341,7 +341,7 @@ mod faults {
             StatusCode::BadRequest
         );
         assert!(lease.lock().await.pending.is_some());
-        assert!(record(&context, &id).await.base.continuation.is_none());
+        assert!(record(&context, &id).await.continuation.is_none());
         assert_eq!(rule.hit_count(), 1);
         Ok(())
     }
@@ -361,9 +361,9 @@ mod faults {
         assert!(receipt.checkpoint().await.is_err());
         assert_eq!(rule.hit_count(), 2);
         let saved = record(&context, &id).await;
-        assert_eq!(saved.base.owner, before.base.owner);
+        assert_eq!(saved.owner, before.owner);
         assert_eq!(saved.incarnation, before.incarnation);
-        assert_eq!(saved.base.continuation, before.base.continuation);
+        assert_eq!(saved.continuation, before.continuation);
         Ok(())
     }
 
@@ -383,7 +383,7 @@ mod faults {
                 .lock()
                 .unwrap()
                 .values()
-                .any(|lease| lease.base.record.id == id)
+                .any(|lease| lease.record.id == id)
             {
                 tokio::task::yield_now().await;
             }
@@ -391,13 +391,10 @@ mod faults {
         .await
         .unwrap();
         assert_eq!(rule.hit_count(), 1);
-        assert_eq!(
-            record(&context, &id).await.base.owner.as_deref(),
-            Some("first")
-        );
+        assert_eq!(record(&context, &id).await.owner.as_deref(), Some("first"));
         processor.stop().await?;
-        assert!(record(&context, &id).await.base.owner.is_none());
-        assert!(record(&context, &id).await.base.continuation.is_none());
+        assert!(record(&context, &id).await.owner.is_none());
+        assert!(record(&context, &id).await.continuation.is_none());
         Ok(())
     }
 
@@ -405,23 +402,20 @@ mod faults {
     async fn lost_acquisition_response_does_not_leave_an_untracked_owner() -> Result<()> {
         let (context, rule) = fixture(Some(1), true).await?;
         let lease = context.list().await?.remove(0);
-        let id = lease.base.record.id.clone();
+        let id = lease.record.id.clone();
         let state = Arc::new(SharedState::default());
         rule.enable();
         assert!(context.acquire_tracked(&lease, Some(&state)).await.is_err());
         assert_eq!(rule.hit_count(), 1);
-        assert_eq!(
-            record(&context, &id).await.base.owner.as_deref(),
-            Some("first")
-        );
+        assert_eq!(record(&context, &id).await.owner.as_deref(), Some("first"));
         assert_eq!(state.unreleased.lock().unwrap().len(), 1);
         let (stop, stopping) = signal();
         let (_force, forced) = signal();
         state.close(false);
         stop.send(()).unwrap();
         assert!(!run(context.clone(), state, stopping, forced).await?);
-        assert!(record(&context, &id).await.base.owner.is_none());
-        assert!(record(&context, &id).await.base.continuation.is_none());
+        assert!(record(&context, &id).await.owner.is_none());
+        assert!(record(&context, &id).await.continuation.is_none());
         Ok(())
     }
 }

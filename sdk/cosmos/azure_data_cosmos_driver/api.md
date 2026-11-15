@@ -171,7 +171,7 @@ pub mod binary_json {
     }
 }
 pub mod change_feed_processor {
-    pub async fn bootstrap(source_driver: &crate::CosmosDriver, source: &crate::models::ContainerReference, lease_driver: &crate::CosmosDriver, leases: &crate::models::ContainerReference, mode: crate::models::ChangeFeedFactoryMode, processor_name: &str, instance_name: &str) -> crate::Result<()>;
+    pub async fn bootstrap(source_driver: &crate::CosmosDriver, source: &crate::models::ContainerReference, lease_driver: &crate::CosmosDriver, leases: &crate::models::ContainerReference, mode: crate::models::ChangeFeedFactoryMode, workload_name: &str, worker_name: &str) -> crate::Result<()>;
     pub struct BatchReceipt {
     }
     impl BatchReceipt {
@@ -190,7 +190,7 @@ pub mod change_feed_processor {
     impl Processor {
         pub async fn abort(&self) -> Result<()>;
         pub fn is_running(&self) -> bool;
-        pub async fn next_batch(&self) -> Option<ChangeFeedBatch>;
+        pub async fn read_next_change_feed_batch(&self) -> Option<ChangeFeedBatch>;
         pub fn request_stop(&self);
         pub async fn start(source_driver: Arc<CosmosDriver>, source: ContainerReference, lease_driver: Arc<CosmosDriver>, leases: ContainerReference, options: ProcessorOptions) -> Result<Self>;
         pub async fn stop(&self) -> Result<()>;
@@ -199,7 +199,8 @@ pub mod change_feed_processor {
     pub struct ProcessorOptions {
     }
     impl ProcessorOptions {
-        pub fn new<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(mode: ChangeFeedFactoryMode, processor_name: impl Into<String>, instance_name: impl Into<String>) -> Self;
+        pub fn new<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(mode: ChangeFeedFactoryMode, workload_name: impl Into<String>, worker_name: impl Into<String>) -> Self;
+        pub fn with_bootstrap_timeout(self, timeout: Duration) -> Self;
         pub fn with_checkpoint_policy(self, policy: CheckpointPolicy) -> Self;
         pub fn with_continuation(self, continuation: ContinuationToken) -> Self;
         pub fn with_error_observer<F>(self, observer: F) -> Self where F: Fn(Option<String>, crate::CosmosError) + Send + Sync + 'static;
@@ -209,15 +210,17 @@ pub mod change_feed_processor {
         pub fn with_poll_delay(self, delay: Duration) -> Self;
         pub fn with_start(self, start: ChangeFeedStartFrom) -> Self;
     }
-    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[non_exhaustive]
     pub enum CheckpointPolicy {
-        #[default]
-        EveryBatch,
-        Coalesced { max_interval: std::time::Duration },
+        Eager,
+        Deferred { max_interval: std::time::Duration },
     }
     impl CheckpointPolicy {
-        pub fn coalesced() -> Self;
+        pub fn deferred() -> Self;
+    }
+    impl Default for CheckpointPolicy {
+        fn default() -> Self;
     }
 }
 pub mod diagnostics {
