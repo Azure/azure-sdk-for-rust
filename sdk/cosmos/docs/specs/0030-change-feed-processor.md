@@ -879,6 +879,41 @@ If the old acquisition already left the queue to read or deliver, cancellation
 and receipt handling govern that in-flight work. The next subsection explains
 the ownership checks; external callback effects cannot be undone.
 
+#### Multiple workers have independent queues
+
+Each `Processor::start()` creates its own shared coordination state and
+`ChangeFeedRequestDistributor`. Workers can share a `CosmosDriver` client
+without sharing their request queues:
+
+```text
+SDK consumer W1                       SDK consumer W2
+      |                                     |
+      v                                     v
+Processor W1                          Processor W2
+      |                                     |
+Request matcher W1                    Request matcher W2
+Queue [A, B]                          Queue [C, D]
+      |                                     |
+Feed pollers for A, B                 Feed pollers for C, D
+      |                                     |
+      +---------- source reads -------------+
+                        |
+                Shared driver client
+
+Ownership coordination:
+W1 <---------- shared lease container ----------> W2
+```
+
+The queues select read turns within each worker. The lease container coordinates
+ownership across workers; there is no fleet-wide eligibility queue. Cloning a
+`Processor` handle shares that worker's existing queue rather than creating
+another worker.
+
+If W2 takes lease A, W1 eventually detects ownership loss and removes its old
+acquisition's registration. W2 creates a fresh delivery session and registers
+A in its own queue when ready. **No queue entry is transferred directly between
+workers.**
+
 ### How ownership loss affects queue membership
 
 The [ownership checks](#preventing-stale-or-competing-ownership-writes)
