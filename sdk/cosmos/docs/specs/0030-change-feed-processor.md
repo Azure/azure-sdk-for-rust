@@ -1486,6 +1486,37 @@ behavior without starting processing.
 There is no SDK callback-concurrency setter; the
 [processing flow](#shared-rust-engine) describes worker-level parallelism.
 
+### Select Eager or Deferred checkpointing
+
+Pass either policy to `with_checkpoint_policy()`. **Deferred is the default**;
+the convenience constructor uses a five-minute interval:
+
+```rust
+ChangeFeedCheckpointPolicy::deferred()
+```
+
+To configure the interval explicitly:
+
+```rust
+ChangeFeedCheckpointPolicy::Deferred {
+    max_interval: Duration::from_secs(60),
+}
+```
+
+Replace the Eager setter in the builder example below with:
+
+```rust
+.with_checkpoint_policy(ChangeFeedCheckpointPolicy::Deferred {
+    max_interval: Duration::from_secs(60),
+})
+```
+
+`max_interval` must be positive and representable. It measures time from the
+first unsaved safe progress, not the most recent batch. Deferred acknowledgment
+can succeed before persistence, so acknowledged changes may replay after
+interruption. For immediate per-batch persistence, select
+`ChangeFeedCheckpointPolicy::Eager`.
+
 ### Choose where new leases begin reading
 
 Saved lease progress takes precedence over all initial-start options.
