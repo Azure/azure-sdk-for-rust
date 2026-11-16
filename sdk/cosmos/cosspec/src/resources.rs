@@ -41,8 +41,12 @@ async fn drain_query<T: DeserializeOwned + Send + 'static>(
 /// A pooled, read-only container shaped by `#[profile(...)]`.
 ///
 /// The container is created and seeded once per run and reused by every spec
-/// that asks for the same profile. Writes are rejected with `403 Forbidden` and
-/// fail the spec with [`InvalidConfiguration`].
+/// that asks for the same profile. Item writes are rejected with
+/// `403 Forbidden` and fail the spec with [`InvalidConfiguration`].
+///
+/// Deleting or replacing the container itself can't be blocked before it's
+/// sent, so it reaches the backend and can break other specs sharing the
+/// container. The spec still fails with [`InvalidConfiguration`] afterwards.
 pub struct SharedContainer {
     ctx: Arc<SpecContext>,
     profile: ContainerProfile,

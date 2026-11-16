@@ -170,13 +170,35 @@ pub(crate) async fn close_all() -> SpecResult<Vec<(String, ServiceProfile, Strin
             .map(|(backend, profile, cell)| (backend, profile, cell.database.clone()))
             .collect());
     }
-    for (_, _, cell) in opened {
+    attempt_all(opened.iter().map(|(_, _, cell)| async move {
         cell.account
             .provisioner()
             .delete_database(&cell.admin, &cell.database)
-            .await?;
-    }
+            .await
+    }))
+    .await?;
     Ok(Vec::new())
+}
+
+/// Runs every cleanup step in order, even after one fails.
+///
+/// Returns the first error; later errors are logged so one unavailable
+/// resource doesn't leave the others behind.
+pub(crate) async fn attempt_all<F>(steps: impl IntoIterator<Item = F>) -> SpecResult
+where
+    F: Future<Output = SpecResult>,
+{
+    let mut first = None;
+    for step in steps {
+        if let Err(error) = step.await {
+            if first.is_some() {
+                tracing::warn!(%error, "cleanup step failed");
+            } else {
+                first = Some(error);
+            }
+        }
+    }
+    first.map_or(Ok(()), Err)
 }
 
 /// Deletes framework databases left behind by runs that did not clean up.
@@ -258,7 +280,28 @@ pub(crate) async fn seed(
 
 #[cfg(test)]
 mod tests {
-    use super::{created_at, resource_name, Duration, SystemTime};
+    use super::{attempt_all, created_at, resource_name, Duration, SystemTime};
+    use crate::SpecResult;
+    use std::sync::Mutex;
+
+    #[tokio::test]
+    async fn attempt_all_runs_every_step_and_returns_the_first_error() {
+        let ran = Mutex::new(Vec::new());
+        let result = attempt_all((0..4).map(|i| {
+            let ran = &ran;
+            async move {
+                ran.lock().unwrap().push(i);
+                if i == 1 || i == 2 {
+                    SpecResult::Err(format!("step {i} failed").into())
+                } else {
+                    Ok(())
+                }
+            }
+        }))
+        .await;
+        assert_eq!(result.unwrap_err().to_string(), "step 1 failed");
+        assert_eq!(*ran.lock().unwrap(), [0, 1, 2, 3]);
+    }
 
     #[test]
     fn resource_names_carry_their_creation_time() {

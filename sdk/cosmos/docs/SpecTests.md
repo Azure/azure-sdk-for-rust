@@ -4,12 +4,11 @@ Spec tests are the normative specification of the Azure Cosmos DB Rust SDK's
 behavior. Each one states a single behavior in its doc comment and proves it in
 a short body that runs unchanged on every backend: the in-memory emulator, the
 Azure Cosmos DB Emulator, or live accounts. They live in the
-[`cosspec`](../cosspec/README.md) crate, under `tests/spec`.
+[`cosspec`][cosspec-readme] crate, under `tests/spec`.
 
 This guide covers what you need to write a spec and to review one. The
-[cosspec README](../cosspec/README.md) covers running specs and configuring
-backends, and the [design spec](specs/0031-cosmos-spec-tests.md) has the full
-design.
+[cosspec README][cosspec-readme] covers running specs and configuring
+backends, and the [design spec][design-spec] has the full design.
 
 ## Anatomy of a spec
 
@@ -65,7 +64,8 @@ runs and cleans them up afterwards.
 
 - `SharedContainer`: a pooled, seeded, **read-only** container. It's created
   once per run and reused by every spec with the same profile, and any write
-  fails the spec. Needs `#[profile(..)]`.
+  fails the spec, including deleting or replacing the container. Needs
+  `#[profile(..)]`.
 - `ExclusiveContainer`: a container created and seeded for this spec only, in
   the pooled database. Use it for anything that writes or changes topology.
   Without `#[profile(..)]` it's `empty`.
@@ -185,7 +185,7 @@ Diagnostics can supplement this evidence but never replace it.
   traffic.
 - CI runs the specs on every Cosmos test job and publishes each job's results
   as a `cosspec-results-*` artifact. See
-  [Run in CI](../cosspec/README.md#run-in-ci).
+  [Run in CI][cosspec-ci].
 
 ## Logs and spans
 
@@ -241,3 +241,7 @@ SDK. Run known issues with `-- --include-ignored`.
   a new format version.
 - Is the design spec updated to list any new attribute, resource method,
   fault, profile, dataset, or assertion?
+
+[cosspec-readme]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/cosspec/README.md
+[cosspec-ci]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/cosspec/README.md#run-in-ci
+[design-spec]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0031-cosmos-spec-tests.md

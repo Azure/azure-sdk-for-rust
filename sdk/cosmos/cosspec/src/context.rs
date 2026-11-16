@@ -14,6 +14,7 @@ use crate::{
     Capability, HttpTap, InvalidConfiguration, RegionAlias, RegionMap, ServiceProfile, SpecResult,
 };
 use azure_data_cosmos::{fault_injection::FaultInjectionRule, CosmosClient};
+use azure_data_cosmos_driver::models::{OperationType, ResourceType};
 use std::{
     future::Future,
     sync::{Arc, Mutex},
@@ -274,45 +275,46 @@ impl SpecContext {
     }
 
     /// Deletes exclusive resources (unless `--no-cleanup`) and checks that no
-    /// shared container was written.
+    /// shared container, or its items, was modified.
+    ///
+    /// Every deletion is attempted even if an earlier one fails. A shared
+    /// container violation is reported ahead of a deletion error.
     pub(crate) async fn finish(&self) -> SpecResult {
         let mut cleanups = std::mem::take(&mut *self.cleanups.lock().unwrap());
         if !crate::pool::cleanup() {
             cleanups.clear();
         }
-        for cleanup in cleanups.into_iter().rev() {
-            match cleanup {
-                Cleanup::Container {
-                    account,
-                    client,
-                    database,
-                    container,
-                } => {
-                    account
-                        .provisioner()
-                        .delete_container(&client, &database, &container)
-                        .await?
+        let deleted =
+            crate::pool::attempt_all(cleanups.into_iter().rev().map(|cleanup| async move {
+                match cleanup {
+                    Cleanup::Container {
+                        account,
+                        client,
+                        database,
+                        container,
+                    } => {
+                        account
+                            .provisioner()
+                            .delete_container(&client, &database, &container)
+                            .await
+                    }
+                    Cleanup::Database {
+                        account,
+                        client,
+                        database,
+                    } => {
+                        account
+                            .provisioner()
+                            .delete_database(&client, &database)
+                            .await
+                    }
                 }
-                Cleanup::Database {
-                    account,
-                    client,
-                    database,
-                } => {
-                    account
-                        .provisioner()
-                        .delete_database(&client, &database)
-                        .await?
-                }
-            }
-        }
+            }))
+            .await;
 
         let shared = self.shared.lock().unwrap().clone();
         for record in self.tap.records() {
-            let is_write = WRITE_OPERATIONS.iter().any(|op| record.is(op));
-            if let Some(name) = shared
-                .iter()
-                .find(|name| is_write && record.url.contains(&format!("/colls/{name}/")))
-            {
+            if let Some(name) = shared.iter().find(|name| modifies_shared(&record, name)) {
                 return Err(InvalidConfiguration(format!(
                     "the spec sent {} to SharedContainer '{name}'; shared containers are read-only, use ExclusiveContainer",
                     record.operation.as_deref().unwrap_or("a write"),
@@ -320,8 +322,28 @@ impl SpecContext {
                 .into());
             }
         }
-        Ok(())
+        deleted
     }
+}
+
+/// Whether `record` writes an item in, or deletes or replaces, the shared
+/// container `name`.
+///
+/// Item writes are also rejected before dispatch by the shared write guard.
+/// Container deletes and replaces can't be, so they're only caught here.
+fn modifies_shared(record: &HttpRecord, name: &str) -> bool {
+    let path = record.url.split(['?', '#']).next().unwrap_or_default();
+    if WRITE_OPERATIONS.iter().any(|op| record.is(op)) {
+        return path.contains(&format!("/colls/{name}/"));
+    }
+    record.resource_type == Some(ResourceType::DocumentCollection)
+        && matches!(
+            record.operation_type,
+            Some(OperationType::Delete | OperationType::Replace)
+        )
+        && path
+            .trim_end_matches('/')
+            .ends_with(&format!("/colls/{name}"))
 }
 
 impl Inject for HttpTap {
@@ -329,5 +351,102 @@ impl Inject for HttpTap {
 
     async fn inject(ctx: &Arc<SpecContext>, _index: usize) -> SpecResult<Self> {
         Ok(ctx.tap.clone())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{modifies_shared, HttpRecord, OperationType, ResourceType};
+    use std::time::Instant;
+
+    fn record(
+        url: &str,
+        operation: Option<&str>,
+        resource_type: ResourceType,
+        operation_type: OperationType,
+    ) -> HttpRecord {
+        HttpRecord {
+            sequence: 0,
+            method: "DELETE".into(),
+            url: url.into(),
+            operation: operation.map(str::to_owned),
+            operation_type: Some(operation_type),
+            resource_type: Some(resource_type),
+            transport_mode: None,
+            execution_context: None,
+            effective_partition_key: None,
+            consistency_level: None,
+            read_consistency_strategy: None,
+            headers: None,
+            region: None,
+            region_alias: None,
+            activity_id: None,
+            label: None,
+            started_at: Instant::now(),
+            completed_at: None,
+            outcome: None,
+            request_body: None,
+            response_body: None,
+        }
+    }
+
+    const BASE: &str = "https://localhost:8081/dbs/db";
+
+    #[test]
+    fn container_delete_and_replace_modify_the_shared_container() {
+        for operation_type in [OperationType::Delete, OperationType::Replace] {
+            for url in [
+                format!("{BASE}/colls/shared"),
+                format!("{BASE}/colls/shared/"),
+                format!("{BASE}/colls/shared?x=1"),
+            ] {
+                let record = record(&url, None, ResourceType::DocumentCollection, operation_type);
+                assert!(modifies_shared(&record, "shared"), "{url}");
+            }
+        }
+    }
+
+    #[test]
+    fn item_writes_modify_the_shared_container() {
+        let record = record(
+            &format!("{BASE}/colls/shared/docs/a"),
+            Some("DeleteItem"),
+            ResourceType::Document,
+            OperationType::Delete,
+        );
+        assert!(modifies_shared(&record, "shared"));
+    }
+
+    #[test]
+    fn other_requests_do_not_modify_the_shared_container() {
+        let cases = [
+            record(
+                &format!("{BASE}/colls/shared"),
+                None,
+                ResourceType::DocumentCollection,
+                OperationType::Read,
+            ),
+            record(
+                &format!("{BASE}/colls/shared-2"),
+                None,
+                ResourceType::DocumentCollection,
+                OperationType::Delete,
+            ),
+            record(
+                &format!("{BASE}/colls/other/docs/a"),
+                Some("DeleteItem"),
+                ResourceType::Document,
+                OperationType::Delete,
+            ),
+            record(
+                &format!("{BASE}/colls/shared/docs/a"),
+                Some("ReadItem"),
+                ResourceType::Document,
+                OperationType::Read,
+            ),
+        ];
+        for record in cases {
+            assert!(!modifies_shared(&record, "shared"), "{}", record.url);
+        }
     }
 }
