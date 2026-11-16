@@ -9,11 +9,13 @@
     "ckmaeskeywrap",
     "ckmaeskeywrappad",
     "ckmrsaaeskeywrap",
+    "cose",
     "deletedcertificates",
     "deletedkeys",
     "deletedsecrets",
     "deleteissuers",
     "diffie",
+    "dilithium",
     "echsm",
     "ekus",
     "fips",
@@ -42,6 +44,7 @@
     "undercounted",
     "unwrapkey",
     "upns",
+    "versionless",
     "wrapkey"
   ]
 }
