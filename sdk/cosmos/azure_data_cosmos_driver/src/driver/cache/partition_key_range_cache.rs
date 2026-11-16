@@ -2795,13 +2795,22 @@ mod tests {
             let count = count.clone();
             async move {
                 count.fetch_add(1, Ordering::SeqCst);
-                None
+                Err::<Option<PkRangeFetchResult>, _>(
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::from_parts(
+                            azure_core::http::StatusCode::ServiceUnavailable,
+                            None,
+                        ))
+                        .with_message("transient metadata failure")
+                        .build(),
+                )
             }
         };
 
         let refreshed = cache
-            .try_lookup(&container, true, all_regions_down)
+            .try_lookup_result(&container, true, &all_regions_down)
             .await
+            .expect("a failed refresh must preserve a valid cached map")
             .unwrap();
 
         assert_eq!(
@@ -2819,6 +2828,13 @@ mod tests {
             "the region-affine continuation must be discarded with its pin"
         );
 
+        let refreshed = cache
+            .try_lookup_result(&container, true, all_regions_down)
+            .await?
+            .unwrap();
+        assert_eq!(call_count.load(Ordering::SeqCst), 3);
+        assert_eq!(refreshed.ranges().len(), 2);
+
         // The container is no longer wedged: the next force-refresh starts a
         // cold, hedge-eligible chain instead of replaying the pinned token.
         let seen = Arc::new(Mutex::new(Vec::<Option<String>>::new()));
@@ -2835,12 +2851,16 @@ mod tests {
                         not_modified: true,
                     })
                 } else {
+                    let mut ranges = vec![
+                        make_range("2".into(), "", "40")?,
+                        make_range("3".into(), "40", "80")?,
+                        make_range("1".into(), "80", "FF")?,
+                    ];
+                    for child in &mut ranges[..2] {
+                        child.parents = Some(vec!["0".to_string()]);
+                    }
                     Some(PkRangeFetchResult {
-                        ranges: vec![
-                            make_range("2".into(), "", "40")?,
-                            make_range("3".into(), "40", "80")?,
-                            make_range("1".into(), "80", "FF")?,
-                        ],
+                        ranges,
                         continuation: Some("recovered-etag".to_string()),
                         not_modified: false,
                     })
@@ -2854,11 +2874,15 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            seen.lock().unwrap()[0],
-            None,
-            "the follow-up refresh must run cold, not replay the discarded token"
+            *seen.lock().unwrap(),
+            vec![None, Some("recovered-etag".to_string())],
+            "recovery must start cold and drain through the terminal page"
         );
         assert_eq!(recovered.ranges().len(), 3);
+        assert_eq!(
+            recovered.change_feed_next_if_none_match.as_deref(),
+            Some("recovered-etag")
+        );
         Ok(())
     }
 }
