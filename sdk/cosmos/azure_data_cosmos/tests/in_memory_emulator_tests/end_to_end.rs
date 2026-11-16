@@ -2073,6 +2073,12 @@ async fn resolve_real_client_with_fault_injection(
 
     // Apply fault injection at the SDK builder layer.
     let client = CosmosClientBuilder::new()
+        .with_runtime(
+            CosmosRuntimeBuilder::new()
+                .with_connection_pool(super::external_connection_pool(&endpoint)?)
+                .build()
+                .await?,
+        )
         .with_fault_injection_rules(vec![Arc::clone(&rule)])?
         .build(account, RoutingStrategy::ProximityTo(source_region))
         .await?;
@@ -2124,6 +2130,12 @@ async fn resolve_real_client() -> Result<Option<CosmosClient>, Box<dyn Error>> {
     );
 
     let client = CosmosClientBuilder::new()
+        .with_runtime(
+            CosmosRuntimeBuilder::new()
+                .with_connection_pool(super::external_connection_pool(&endpoint)?)
+                .build()
+                .await?,
+        )
         .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
         .await?;
 

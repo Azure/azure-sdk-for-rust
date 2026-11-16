@@ -138,6 +138,8 @@ Legacy ARM/AAD jobs retain their existing categories.
 `AZURE_COSMOS_VNEXT_GATEWAY` (`v1`/`v2`) ×
 `AZURE_COSMOS_VNEXT_ENCODING` (`text`/`binary`).
 Tests assert actual transport and encoding, not just successful operations.
+The separate in-memory parity suite uses Gateway V1 for its external baseline
+in all cells; the `vnext` target verifies the selected transport.
 
 Docker is required. Start in a fresh shell without cloud credentials,
 `ACCOUNT_HOST`, non-key `AZURE_COSMOS_AUTH_MODE`, `CARGO_ENCODED_RUSTFLAGS`, or

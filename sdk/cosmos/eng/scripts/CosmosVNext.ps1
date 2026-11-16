@@ -40,7 +40,7 @@ function Start-CosmosVNext {
         throw 'Remove ACCOUNT_HOST before vNext setup; inherited AAD endpoints must not override the local emulator.'
     }
     $name = 'cosmosdb-emulator-vnext'
-    $image = 'mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator@sha256:4535ddbd27bba762f3e068f7585feb0022a2559ceccc9394b23aa38d91d77c38'
+    $image = 'mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator@sha256:4489c4eb49d29ca203392a2dcdb5edfd4faee493610fe1d015d5f526bb5b80e7'
     $endpoint = 'https://localhost:8081/'
     # Public emulator key, not a cloud credential.
     $key = 'C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=='

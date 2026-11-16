@@ -19,7 +19,7 @@ use azure_data_cosmos::{
     models::{ContainerProperties, PartitionKeyDefinition, PartitionKeyVersion},
     options::{
         ConnectionPoolOptions, ExcludedRegions, MaxItemCountHint, OperationOptions, QueryOptions,
-        QueryPlanMode, Region, ServerCertificateValidation,
+        QueryPlanMode, Region,
     },
     AccountEndpoint, AccountReference, ContainerClient, CosmosClient, CosmosClientBuilder,
     CosmosRuntimeBuilder, FeedScope, PartitionKey, Query, RoutingStrategy,
@@ -267,13 +267,7 @@ async fn build_external_driver(
 }
 
 fn connection_pool(endpoint: &str) -> Result<ConnectionPoolOptions, Box<dyn Error>> {
-    let mut builder = ConnectionPoolOptions::builder();
-    if endpoint.contains("localhost") || endpoint.contains("127.0.0.1") {
-        builder = builder.with_server_certificate_validation(
-            ServerCertificateValidation::RequiredUnlessEmulator,
-        );
-    }
-    Ok(builder.build()?)
+    Ok(super::external_connection_pool(endpoint)?)
 }
 
 async fn resolve_hub_region_and_exclusions(
@@ -748,7 +742,10 @@ struct Scenario {
 
 #[tokio::test]
 #[cfg_attr(
-    test_category = "emulator_vnext",
+    any(
+        test_category = "emulator_vnext",
+        test_category = "emulator_vnext_gateway_v2"
+    ),
     ignore = "vnext emulator partition-scoped query pages do not expose LSN metadata: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/385"
 )]
 async fn query_results_plans_and_resume_paths_match() -> Result<(), Box<dyn Error>> {
