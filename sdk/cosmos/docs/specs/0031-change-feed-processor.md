@@ -72,6 +72,8 @@ asynchronous; awaiting a response suspends the SDK task rather than blocking
 its executor thread.
 
 ```text
+Application boundary  SDK boundary                  Driver boundary
+--------------------  ----------------------------  -------------------------
 Application          SDK                         Driver
     |                 |                             |
     | start()         |                             |
@@ -118,6 +120,8 @@ waiting SDK call: the SDK call holds the receiver, and the selected lease
 processor receives the sender. No request-ID lookup is needed.
 
 ```text
+SDK boundary          Driver boundary
+--------------------  -------------------------------------------------------
 SDK                   Driver request matching       Lease processing
  |                              |                           |
  | Request batch                |                           |
@@ -188,28 +192,31 @@ next. The receipt and checkpoint policy determine when that lease becomes
 eligible to rejoin the queue.
 
 ```text
-Ready leases: [A, B]
-       |
-       +-- SDK request selects A --> Ready leases: [B]
-                                      |
-                         A reads and delivers a batch
-                                      |
-                              SDK runs handler
-                                      |
-                       Successful acknowledgment
-                                      |
-                +---------------------+---------------------+
-                |                                           |
-              Eager                                      Deferred
-                |                                           |
-       Save continuation durably                 Record safe progress in memory
-                |                                           |
-                +---------------------+---------------------+
-                                      |
-                         Receipt completion succeeds
-                                      |
-                        A registers at the back again
-                         [B, A] if B is still waiting
+SDK boundary                        Driver boundary
+----------------------------------  -----------------------------------------
+SDK consumer                        Ready-lease queue and lease processor
+     |                                   |
+     | Request batch                     | Queue: [A, B]
+     |---------------------------------->| Select A; queue becomes [B]
+     |                                   | A reads its source range
+     | Batch + receipt                   |
+     |<----------------------------------|
+     |                                   |
+     | Run application handler           | A stays out of the queue
+     |                                   |
+     | Acknowledge successful processing |
+     |---------------------------------->|
+     |                                   | Eager: save continuation durably
+     |                                   | OR
+     |                                   | Deferred: record safe progress
+     |                                   |           in memory
+     |                                   |
+     | Receipt completion succeeds       |
+     |<----------------------------------|
+     |                                   | A can register at the back again
+     |                                   | Queue: [B, A] if B is still waiting
+     | Request next batch                |
+     |---------------------------------->|
 ```
 
 | Outcome | Progress and queue behavior |
