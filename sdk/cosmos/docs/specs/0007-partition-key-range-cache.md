@@ -498,6 +498,28 @@ If `fetch_fn` returns `None` (service unreachable or unexpected response):
 
 ---
 
+### 6.7 Shared Fill Lifetime
+
+Cold/eager loading, topology refresh, and session-token topology resolution join
+one cache-owned fill per container. A caller's end-to-end deadline or cancellation
+stops only that caller's wait. Other and later callers join the existing fill,
+including its accumulated pages, active-page continuation, activity ID, and
+region pin. Only a complete, validated routing map is published.
+
+The shared fill does not inherit the initiating caller's end-to-end deadline.
+Transport attempts keep their configured metadata request timeouts. HTTP 429
+retries retain the same page and honor bounded backoff; batch diagnostics are
+discarded before the next retry. Non-429 failures keep the existing bounded
+pipeline retries, cold-recovery rules, and previous-map fallback.
+
+The cache owns an abort handle for each pending fill. Invalidating a container
+aborts that fill; dropping the cache aborts all remaining fills. Workers hold
+only weak driver references between bounded pipeline batches, never across the
+unbounded throttling/backoff loop. If the last client owner drops during an
+active batch, that batch may finish its bounded transport attempts and retries
+before releasing the driver; no new throttling batch keeps it alive. There is
+no worker-to-driver-to-worker ownership cycle.
+
 ## 7. Async Caching Infrastructure
 
 The partition key range cache is built on two async primitives that provide

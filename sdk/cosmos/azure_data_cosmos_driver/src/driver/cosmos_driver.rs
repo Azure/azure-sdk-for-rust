@@ -423,6 +423,7 @@ impl std::fmt::Debug for TestEndpointProbeFn {
 #[non_exhaustive]
 #[derive(Debug)]
 pub struct CosmosDriver {
+    self_weak: Weak<Self>,
     /// Reference to the parent runtime.
     runtime: Arc<CosmosDriverRuntime>,
     /// Driver-level options including account reference.
@@ -1740,7 +1741,7 @@ impl CosmosDriver {
     pub(crate) fn new(
         runtime: Arc<CosmosDriverRuntime>,
         options: DriverOptions,
-    ) -> crate::error::Result<Self> {
+    ) -> crate::error::Result<Arc<Self>> {
         let account = options.account().clone();
         let account_endpoint = AccountEndpoint::from(&account);
 
@@ -1968,7 +1969,8 @@ impl CosmosDriver {
         let hedge_budget = HedgeBudget::new(options.hedging_options());
         let pk_range_cache = PartitionKeyRangeCache::new();
 
-        Ok(Self {
+        Ok(Arc::new_cyclic(|self_weak| Self {
+            self_weak: self_weak.clone(),
             runtime,
             options,
             transport,
@@ -1990,7 +1992,7 @@ impl CosmosDriver {
             fault_injection_enabled,
             #[cfg(feature = "__internal_native_query_plan")]
             native_query_plan_provider: crate::query_plan_native::NativeQueryPlanProvider::new(),
-        })
+        }))
     }
 
     /// Returns the account reference.
@@ -2376,7 +2378,8 @@ impl CosmosDriver {
     /// Bounded pipeline batches preserve cold-read hedging and regional
     /// failover, including 429/3092. Continuation pages stay region-pinned.
     /// An outer loop retries throttled pages with the same continuation,
-    /// activity ID, and absolute deadline, dropping batch diagnostics each time.
+    /// and activity ID, dropping batch diagnostics each time. The shared fill
+    /// has no caller deadline; individual transport attempts remain bounded.
     ///
     /// Permanent errors (401 Unauthorized, 403 Forbidden, 404 NotFound) are
     /// terminal and returned to the caller.
@@ -2385,25 +2388,18 @@ impl CosmosDriver {
     /// preserved so topology planning can surface typed failures; cache-only
     /// callers use the lossy wrapper and retain their existing fallback.
     async fn fetch_pk_ranges_from_service(
-        &self,
+        driver: Weak<Self>,
         container: ContainerReference,
         continuation: Option<String>,
         region_pin: Option<RegionPin>,
         options: OperationOptions,
-        absolute_deadline: Option<Instant>,
     ) -> (
         crate::error::Result<Option<PkRangeFetchResult>>,
         Option<CosmosEndpoint>,
     ) {
-        let absolute_deadline = absolute_deadline.or_else(|| {
-            self.operation_options_view(&options)
-                .end_to_end_latency_policy()
-                .map(|policy| Instant::now() + policy.timeout())
-        });
         // Build the operation through the standard pipeline to get correct
         // URL construction, signing, and cross-region retry behavior.
         let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone())
-            .with_absolute_deadline(absolute_deadline)
             .with_activity_id(ActivityId::new_uuid());
 
         // Set changefeed If-None-Match precondition for continuation.
@@ -2429,19 +2425,29 @@ impl CosmosDriver {
         // move the chain either.
         let overrides = OperationOverrides {
             region_pin: region_pin.map(Box::new),
+            independent_metadata_fill: true,
             ..Default::default()
         };
 
         let mut throttle_attempt_count = 0u32;
-        let result = loop {
-            let result = self
+        let (result, serving_endpoint) = loop {
+            let Some(driver) = driver.upgrade() else {
+                return (Err(Self::pk_range_fill_stopped()), None);
+            };
+            let result = driver
                 .execute_operation_direct(&operation, overrides.clone(), &options)
                 .await;
+            let serving_endpoint = result
+                .as_ref()
+                .ok()
+                .and_then(|response| driver.response_endpoint(response));
+            // Never retain the client across the unbounded throttling loop.
+            drop(driver);
             let Err(error) = &result else {
-                break result;
+                break (result, serving_endpoint);
             };
             if !error.status().is_throttled() {
-                break result;
+                break (result, serving_endpoint);
             }
 
             let delay = pk_range_retry_delay(
@@ -2458,9 +2464,6 @@ impl CosmosDriver {
             );
             // Drop this batch's finalized diagnostics before waiting or retrying.
             drop(result);
-            let delay = absolute_deadline
-                .map(|deadline| delay.min(deadline.saturating_duration_since(Instant::now())))
-                .unwrap_or(delay);
             azure_core::sleep(
                 azure_core::time::Duration::try_from(delay).expect("metadata delay is at most 5s"),
             )
@@ -2471,8 +2474,6 @@ impl CosmosDriver {
                 // Capture the region that served this page before the response
                 // body is consumed, so the caller can pin subsequent
                 // change-feed pages to it.
-                let serving_endpoint = self.response_endpoint(&response);
-
                 let etag = response.headers().etag.as_ref().map(|e| e.to_string());
 
                 // 304 Not Modified is a success outcome for conditional
@@ -2594,10 +2595,11 @@ impl CosmosDriver {
         operation_options: OperationOptions,
         absolute_deadline: Option<Instant>,
     ) -> crate::error::Result<Option<Arc<ContainerRoutingMap>>> {
-        let lookup = self.pk_range_cache.try_lookup_result(
+        let lookup = self.pk_range_cache.try_lookup_shared(
             container,
             false,
             self.pk_range_page_fetcher(operation_options, absolute_deadline),
+            absolute_deadline,
         );
         await_planning_or_deadline(lookup, absolute_deadline)
             .await
@@ -2620,29 +2622,33 @@ impl CosmosDriver {
     /// pin, and failed pinned chains can restart cold without changing the
     /// cached map's pin. A staged pin is promoted only after a new map is
     /// published, so cancellation preserves both halves of the cached state.
-    fn pk_range_page_fetcher<'a>(
-        &'a self,
+    fn pk_range_page_fetcher(
+        &self,
         options: OperationOptions,
-        absolute_deadline: Option<Instant>,
+        _absolute_deadline: Option<Instant>,
     ) -> impl Fn(
         ContainerReference,
         Option<String>,
-    ) -> BoxFuture<'a, crate::error::Result<Option<PkRangeFetchResult>>>
+    ) -> BoxFuture<'static, crate::error::Result<Option<PkRangeFetchResult>>>
            + Send
-           + 'a {
+           + Sync
+           + 'static {
         let drain_pin = Arc::new(Mutex::new(None::<PkRangeDrainPin>));
+        let driver = self.self_weak.clone();
         move |container, continuation| {
             let options = options.clone();
             let drain_pin = drain_pin.clone();
+            let driver = driver.clone();
             Box::pin(async move {
                 let mut guard = PkRangeDrainPinGuard {
                     pin: drain_pin.clone(),
                     keep: false,
                 };
-                let cached_map = self.pk_range_cache.cached_routing_map(&container).await?;
                 let (region_pin, generation) = {
+                    let driver = driver.upgrade().ok_or_else(Self::pk_range_fill_stopped)?;
+                    let cached_map = driver.pk_range_cache.cached_routing_map(&container).await?;
                     let mut drain = drain_pin.lock().expect("pk-range drain pin mutex poisoned");
-                    let mut pins = self
+                    let mut pins = driver
                         .pk_range_region_pins
                         .lock()
                         .expect("pk-range region pin mutex poisoned");
@@ -2684,12 +2690,12 @@ impl CosmosDriver {
                 };
                 let is_cold = region_pin.is_none();
 
-                let (result, serving_endpoint) = Box::pin(self.fetch_pk_ranges_from_service(
+                let (result, serving_endpoint) = Box::pin(Self::fetch_pk_ranges_from_service(
+                    driver.clone(),
                     container.clone(),
                     continuation,
                     region_pin,
                     options,
-                    absolute_deadline,
                 ))
                 .await;
                 if let Some(endpoint) = serving_endpoint.filter(|_| is_cold) {
@@ -2699,7 +2705,8 @@ impl CosmosDriver {
                         .as_mut()
                         .expect("pk-range drain pin initialized")
                         .endpoint = Some(endpoint.clone());
-                    let mut pins = self
+                    let driver = driver.upgrade().ok_or_else(Self::pk_range_fill_stopped)?;
+                    let mut pins = driver
                         .pk_range_region_pins
                         .lock()
                         .expect("pk-range region pin mutex poisoned");
@@ -2715,6 +2722,13 @@ impl CosmosDriver {
                 result
             })
         }
+    }
+
+    fn pk_range_fill_stopped() -> crate::error::CosmosError {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
+            .with_message("partition key range fill stopped because its driver was dropped")
+            .build()
     }
 
     /// Executes a Cosmos DB operation.
@@ -3828,7 +3842,7 @@ impl CosmosDriver {
 
         // Build the single OperationOptionsView for layered resolution.
         let effective_options = self.operation_options_view(options);
-        if operation.absolute_deadline().is_none() {
+        if operation.absolute_deadline().is_none() && !overrides.independent_metadata_fill {
             let deadline = effective_options
                 .end_to_end_latency_policy()
                 .map(|policy| std::time::Instant::now() + policy.timeout());
@@ -4409,7 +4423,7 @@ impl CosmosDriver {
             .map(|policy| Instant::now() + policy.timeout());
         match self
             .pk_range_cache
-            .try_lookup_result_with_deadline(
+            .try_lookup_shared(
                 container,
                 force_refresh,
                 self.pk_range_page_fetcher(options, deadline),
@@ -9071,7 +9085,7 @@ mod tests {
 
     /// A driver marked initialized so `execute_plan` reaches the pipeline. No
     /// request ever leaves it: the plans below are backed by a mock leaf.
-    async fn transcoding_test_driver() -> CosmosDriver {
+    async fn transcoding_test_driver() -> Arc<CosmosDriver> {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let driver = CosmosDriver::new(runtime, DriverOptions::builder(test_account()).build())
             .expect("CosmosDriver::new should succeed in tests");
