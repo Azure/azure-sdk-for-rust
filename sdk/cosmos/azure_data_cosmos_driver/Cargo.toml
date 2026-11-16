@@ -133,6 +133,8 @@ features = [
   "native_tls",
   "rustls",
   "tokio",
+  "unstable_dtx",
+  "unstable_patch",
 ]
 
 # Explicit [[test]] entries gate the feature-dependent integration test

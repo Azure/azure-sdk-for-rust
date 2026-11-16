@@ -17,6 +17,7 @@
 - `key_auth`
 - `native_tls`
 - `rustls`
+- `unstable_dtx`
 - `unstable_opentelemetry`
 - `unstable_patch`
 

@@ -128,6 +128,7 @@ features = [
   "key_auth",
   "unstable_opentelemetry",
   "native_tls",
+  "unstable_dtx",
   "unstable_patch",
   "rustls",
 ]
