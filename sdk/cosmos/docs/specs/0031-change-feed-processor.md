@@ -33,7 +33,7 @@ abstractions.
 A **language shim** adapts the shared engine to a language's SDK types and
 execution model.
 
-The [public Change Feed Processor documentation](https://learn.microsoft.com/en-us/azure/cosmos-db/change-feed-processor)
+The [public Change Feed Processor documentation](https://learn.microsoft.com/azure/cosmos-db/change-feed-processor)
 describes its purpose:
 
 > "simplify the process of reading the change feed and distribute the event processing across multiple consumers effectively."
