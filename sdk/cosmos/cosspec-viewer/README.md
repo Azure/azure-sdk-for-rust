@@ -70,10 +70,10 @@ Otherwise the folder is a snapshot.
 - **Runs**: every run, newest first, with when it ran, its backends, and its
   outcome counts. Runs still going, interrupted, or without a manifest are
   marked.
-- **Run**: the run's arguments, backends, and checks, then its trials as a
-  backend, profile, and spec tree (like the console) or as a spec-by-backend
-  matrix. Filter by text, backend, profile, or status. Filters are part of
-  the URL.
+- **Run**: the run's arguments, backends, log filter, and checks, then its
+  trials as a backend, profile, and spec tree (like the console) or as a
+  spec-by-backend matrix. Filter by text, backend, profile, or status.
+  Filters are part of the URL.
 - **Trial**: the spec's summary, backend, profile, capabilities, and outcome,
   with the error, panic, and backtrace, or the skip or known-issue reason.
   Tabs show:
@@ -89,16 +89,25 @@ Otherwise the folder is a snapshot.
     table of the same requests lists each one's overlaps. Select a request in
     either to see its URL, timing, overlaps, activity ID, and bodies. JSON is
     pretty-printed, binary bodies are shown as hex, and bodies cosspec cut
-    short are marked.
+    short are marked. **Show logs** interleaves the trial's logs with the
+    requests by time, at or above the chosen level, and adds them as ticks in
+    a lane under the timeline. Logs are hidden by default.
   - **Resources**: each account, database, and container, and whether it
     was created or borrowed from the pool.
-  - **Logs**: shown when a result file has captured logs. Logs also appear as
-    ticks in a lane under the timeline.
+  - **Logs**: every captured log, filtered by level, target, or text, with
+    its span path and fields. Select an activity ID to jump to its request.
+  - **Spans**: shown when the trial captured `tracing` spans, as a tree with
+    start times and durations.
   - **Raw JSON**: the whole result file.
+- **Run logs**: linked from the run, the events no trial owned, such as
+  pooled setup and end-of-run cleanup. Events a trial emitted after it
+  finished show that trial.
 
-Outcomes never rely on color alone. Statuses carry a symbol (✓ passed,
-✗ failed, ⊘ skipped, ⚠ ignored), requests show their status code and a
-symbol, and each request outcome and status total has its own fill pattern.
+Outcomes and log levels never rely on color alone. Statuses carry a symbol
+(✓ passed, ✗ failed, ⊘ skipped, ⚠ ignored), requests show their status code
+and a symbol, and each request outcome and status total has its own fill
+pattern. Log levels are spelled out, and log rows between requests are
+italic with a dotted rule.
 
 Every screen has its own URL, such as
 `#/run/<run-id>/trial/<test-name>?req=12`, so you can share a link to a

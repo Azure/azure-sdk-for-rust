@@ -2,9 +2,11 @@
 // Licensed under the MIT License.
 
 import { useEffect, useMemo, useState } from "react";
-import type { HttpJson, LogJson, ResultFile, RunSummary } from "../../model/types";
+import { atLeast, interleave, isLevel } from "../../model/logs";
+import type { HttpJson, Level, LogJson, ResultFile, RunSummary } from "../../model/types";
 import type { ResultSource } from "../../sources/source";
 import { BodyView } from "../components/BodyView";
+import { Fields, LevelBadge, LevelSelect, LogsTable, SpansTree } from "../components/Logs";
 import { StatusBadge } from "../components/Status";
 import { host, Timeline } from "../components/Timeline";
 import { concurrency, type Concurrency } from "../../timeline/layout";
@@ -20,7 +22,7 @@ import {
 } from "../format";
 import { href, setQuery, type Route } from "../router";
 
-type Tab = "requests" | "resources" | "logs" | "raw";
+type Tab = "requests" | "resources" | "logs" | "spans" | "raw";
 
 /** One trial: what it checks, how it ended, and every HTTP request it made. */
 export function TrialScreen(props: {
@@ -190,6 +192,15 @@ function TrialBody(props: {
     const { result, route, tab } = props;
     const [showHarness, setShowHarness] = useState(route.query.get("harness") === "1");
     const logs = result.logs ?? [];
+    const spans = result.spans ?? [];
+    // Logs are hidden from the requests view unless asked for.
+    const showLogs = route.query.get("logs") === "1";
+    const loglevel = route.query.get("loglevel");
+    const minLevel: Level = isLevel(loglevel) ? loglevel : "debug";
+    const shownLogs = useMemo(
+        () => (showLogs ? logs.filter((l) => atLeast(l.level, minLevel)) : []),
+        [logs, showLogs, minLevel],
+    );
     const http = useMemo(
         () => result.http.filter((r) => showHarness || r.label !== "harness"),
         [result.http, showHarness],
@@ -214,10 +225,15 @@ function TrialBody(props: {
     const request = result.http.find((r) => r.sequence === selected) ?? null;
     const select = (seq: number | null) =>
         setQuery(route, { req: seq === null ? null : String(seq) });
+    const selectActivity = (activityId: string) => {
+        const r = result.http.find((h) => h.activity_id === activityId);
+        if (r) setQuery(route, { tab: null, req: String(r.sequence) });
+    };
     const tabs: [Tab, string][] = [
         ["requests", `Requests (${result.http.length})`],
         ["resources", `Resources (${result.resources.length})`],
         ...(logs.length ? ([["logs", `Logs (${logs.length})`]] as [Tab, string][]) : []),
+        ...(spans.length ? ([["spans", `Spans (${spans.length})`]] as [Tab, string][]) : []),
         ["raw", "Raw JSON"],
     ];
 
@@ -241,6 +257,32 @@ function TrialBody(props: {
                             />{" "}
                             Show harness requests
                         </label>
+                        {logs.length ? (
+                            <>
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={showLogs}
+                                        onChange={(e) =>
+                                            setQuery(route, {
+                                                logs: e.currentTarget.checked ? "1" : null,
+                                            })
+                                        }
+                                    />{" "}
+                                    Show logs
+                                </label>
+                                {showLogs ? (
+                                    <LevelSelect
+                                        value={minLevel}
+                                        onChange={(l) =>
+                                            setQuery(route, {
+                                                loglevel: l === "debug" ? null : l,
+                                            })
+                                        }
+                                    />
+                                ) : null}
+                            </>
+                        ) : null}
                         <span className="muted small">
                             Harness requests set up and tear down resources; spec requests are the
                             test's own.
@@ -253,7 +295,7 @@ function TrialBody(props: {
                             origin={origin}
                             phases={phases}
                             concurrency={overlap}
-                            logs={logs}
+                            logs={shownLogs}
                             selected={selected}
                             onSelect={(s) => select(s === selected ? null : s)}
                         />
@@ -263,6 +305,8 @@ function TrialBody(props: {
                     <div className={`split ${request ? "with-drawer" : ""}`}>
                         <RequestTable
                             http={http}
+                            logs={shownLogs}
+                            onActivity={selectActivity}
                             origin={origin}
                             concurrency={overlap}
                             selected={selected}
@@ -282,7 +326,9 @@ function TrialBody(props: {
             ) : tab === "resources" ? (
                 <ResourcesTable result={result} />
             ) : tab === "logs" ? (
-                <LogsTable logs={logs} />
+                <LogsTable logs={logs} spans={spans} origin={origin} onActivity={selectActivity} />
+            ) : tab === "spans" ? (
+                <SpansTree spans={spans} origin={origin} />
             ) : (
                 <pre className="code raw">{JSON.stringify(result, null, 2)}</pre>
             )}
@@ -301,6 +347,9 @@ type SortKey = "sequence" | "start" | "duration" | "status";
 
 function RequestTable(props: {
     http: HttpJson[];
+    /** Logs to interleave by time. Shown only when sorted by start time. */
+    logs: LogJson[];
+    onActivity: (activityId: string) => void;
     origin: number;
     concurrency: Concurrency;
     selected: number | null;
@@ -320,10 +369,13 @@ function RequestTable(props: {
                     return r.outcome?.kind === "response" ? r.outcome.status : 1000;
             }
         };
-        return [...props.http].sort(
+        const sorted = [...props.http].sort(
             (a, b) => (key(a) - key(b)) * sort[1] || a.sequence - b.sequence,
         );
-    }, [props.http, sort]);
+        return sort[0] === "start"
+            ? interleave(sorted, props.logs, sort[1] === -1)
+            : interleave(sorted, []);
+    }, [props.http, props.logs, sort]);
 
     const th = (key: SortKey, text: string) => (
         <th
@@ -351,7 +403,37 @@ function RequestTable(props: {
                 </tr>
             </thead>
             <tbody>
-                {rows.map((r) => {
+                {rows.map((row) => {
+                    if (row.kind === "log") {
+                        const l = row.log;
+                        return (
+                            <tr key={`log-${row.index}`} className={`log-row lv-${l.level}`}>
+                                <td />
+                                <td>
+                                    <LevelBadge level={l.level} />
+                                </td>
+                                <td className="num">{rel(l.t_ms, props.origin)}</td>
+                                <td colSpan={6}>
+                                    <span className="muted">{l.target}: </span>
+                                    {l.message}
+                                    {l.activity_id ? (
+                                        <>
+                                            {" "}
+                                            <button
+                                                className="small"
+                                                title="Show the request with this activity ID"
+                                                onClick={() => props.onActivity(l.activity_id!)}
+                                            >
+                                                {l.activity_id.slice(0, 8)}…
+                                            </button>
+                                        </>
+                                    ) : null}
+                                    <Fields fields={l.fields} />
+                                </td>
+                            </tr>
+                        );
+                    }
+                    const r = row.http;
                     const others = props.concurrency.partners.get(r.sequence) ?? [];
                     const partner =
                         props.selected !== null &&
@@ -490,58 +572,5 @@ function ResourcesTable(props: { result: ResultFile }) {
                 ))}
             </tbody>
         </table>
-    );
-}
-
-const LEVELS: LogJson["level"][] = ["error", "warn", "info", "debug", "trace"];
-
-function LogsTable(props: { logs: LogJson[] }) {
-    const [level, setLevel] = useState<LogJson["level"]>("trace");
-    const [text, setText] = useState("");
-    const max = LEVELS.indexOf(level);
-    const q = text.toLowerCase();
-    const rows = props.logs.filter(
-        (l) =>
-            LEVELS.indexOf(l.level) <= max &&
-            (!q || l.message.toLowerCase().includes(q) || l.target.toLowerCase().includes(q)),
-    );
-    return (
-        <>
-            <div className="toolbar">
-                <select
-                    value={level}
-                    onChange={(e) => setLevel(e.currentTarget.value as LogJson["level"])}
-                >
-                    {LEVELS.map((l) => (
-                        <option key={l} value={l}>
-                            {l} and above
-                        </option>
-                    ))}
-                </select>
-                <input
-                    type="search"
-                    placeholder="Filter logs"
-                    value={text}
-                    onChange={(e) => setText(e.currentTarget.value)}
-                />
-            </div>
-            <table className="grid compact logs">
-                <tbody>
-                    {rows.map((l, i) => (
-                        <tr key={i}>
-                            <td className="num">{ms(l.t_ms)}</td>
-                            <td className={`lv-${l.level}`}>{l.level}</td>
-                            <td className="muted">{l.target}</td>
-                            <td>
-                                {l.message}
-                                {l.fields && Object.keys(l.fields).length ? (
-                                    <code className="muted"> {JSON.stringify(l.fields)}</code>
-                                ) : null}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </>
     );
 }

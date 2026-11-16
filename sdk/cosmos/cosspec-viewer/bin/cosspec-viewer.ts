@@ -83,9 +83,10 @@ function allowList(d: Detected): Map<string, { path: string; files: Set<string> 
             run.id,
             {
                 path: run.path,
-                files: new Set(
-                    run.manifest.trials.flatMap((t) => (t.result_file ? [t.result_file] : [])),
-                ),
+                files: new Set([
+                    ...run.manifest.trials.flatMap((t) => (t.result_file ? [t.result_file] : [])),
+                    ...(run.manifest.run_logs ? [run.manifest.run_logs] : []),
+                ]),
             },
         ]),
     );

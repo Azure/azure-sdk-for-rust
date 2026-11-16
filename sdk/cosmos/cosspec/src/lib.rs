@@ -33,6 +33,7 @@ mod console;
 mod context;
 pub mod faults;
 pub mod http_tap;
+mod logging;
 pub mod manifest;
 mod pool;
 pub mod profiles;
@@ -42,6 +43,7 @@ mod resources;
 pub mod results;
 mod runner;
 pub mod testdata;
+pub mod trace_capture;
 
 pub use capability::Capability;
 pub use context::SpecContext;

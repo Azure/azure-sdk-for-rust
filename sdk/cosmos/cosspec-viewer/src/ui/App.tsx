@@ -7,6 +7,7 @@ import { ServerSource } from "../sources/server";
 import type { ResultSource } from "../sources/source";
 import { href, useRoute } from "./router";
 import { OpenScreen } from "./screens/OpenScreen";
+import { RunLogsScreen } from "./screens/RunLogsScreen";
 import { RunScreen } from "./screens/RunScreen";
 import { RunsScreen } from "./screens/RunsScreen";
 import { TrialScreen } from "./screens/TrialScreen";
@@ -51,7 +52,7 @@ export function App() {
     }
 
     const single = detected?.mode === "run";
-    const [screen, runId, , testName] = route.path;
+    const [screen, runId, sub, testName] = route.path;
     const run =
         detected?.runs.find((r) => r.id === runId) ?? (single ? detected?.runs[0] : undefined);
 
@@ -74,6 +75,8 @@ export function App() {
                 version={version}
             />
         );
+    } else if (screen === "run" && run && sub === "logs") {
+        body = <RunLogsScreen source={source} run={run} version={version} />;
     } else if ((screen === "run" && run) || single) {
         body = <RunScreen run={run ?? detected.runs[0]!} route={route} />;
     } else if (screen === "run") {
@@ -96,6 +99,7 @@ export function App() {
                     single={single}
                     runId={run?.id}
                     testName={screen === "run" ? testName : undefined}
+                    logs={screen === "run" && sub === "logs"}
                 />
                 <span className="spacer" />
                 <span className="muted source" title={source.label}>
@@ -119,13 +123,19 @@ export function App() {
     );
 }
 
-function Breadcrumbs(props: { single: boolean; runId?: string; testName?: string }) {
+function Breadcrumbs(props: {
+    single: boolean;
+    runId?: string;
+    testName?: string;
+    logs?: boolean;
+}) {
     const crumbs: [string, string][] = [];
     if (!props.single) crumbs.push(["Runs", href(["runs"])]);
     if (props.runId) crumbs.push([shortId(props.runId), href(["run", props.runId])]);
     if (props.runId && props.testName) {
         crumbs.push([props.testName, href(["run", props.runId, "trial", props.testName])]);
     }
+    if (props.runId && props.logs) crumbs.push(["Run logs", href(["run", props.runId, "logs"])]);
     return (
         <nav className="crumbs">
             {crumbs.map(([text, link], i) => (

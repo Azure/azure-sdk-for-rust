@@ -9,6 +9,7 @@ use crate::{
     config::SpecConfig,
     console::{self, Ignore, Job, Place},
     context::{ParamKind, SpecContext},
+    logging,
     manifest::{self, Manifest, Planned, TrialEntry},
     pool,
     profiles::ContainerProfile,
@@ -25,6 +26,7 @@ use std::{
     sync::{Arc, OnceLock},
     time::Instant,
 };
+use tracing::Instrument;
 
 /// Every spec in the binary, registered by `#[spec_test]`.
 #[distributed_slice]
@@ -161,6 +163,11 @@ fn selected_profiles() -> Option<Vec<ServiceProfile>> {
 ///   A custom `--results-dir` is never pruned.
 ///
 /// Results print as a tree: backend, then spec, then service profile.
+///
+/// Each trial's `tracing` events and spans are captured into its result file.
+/// `RUST_LOG` sets the filter; it defaults to debug output from the SDK and
+/// warnings from everything else. Events outside every trial go to
+/// `run-logs.json`.
 pub fn main() {
     let exit = |e: &dyn std::fmt::Display| -> ! {
         eprintln!("error: {e}");
@@ -183,6 +190,7 @@ pub fn main() {
         pool::disable_cleanup();
     }
     results::install_panic_hook();
+    let log_filter = logging::install().map(|(_, directives)| directives.clone());
     let strict = std::env::var(STRICT_ENV).as_deref() == Ok("1");
     let only = selected_profiles();
 
@@ -192,6 +200,7 @@ pub fn main() {
         pool::run_id(),
         std::env::args().skip(1).collect(),
         pool::cleanup(),
+        log_filter,
     );
     for backend in &backends {
         let profiles: Vec<_> = backend
@@ -242,6 +251,13 @@ pub fn main() {
         }
         Ok(_) => {}
         Err(e) => eprintln!("warning: failed to delete pooled spec databases: {e}"),
+    }
+    if let (Some(dir), Some(capture)) = (results::dir(), logging::capture()) {
+        if !list_only {
+            if let Err(e) = results::write_run_logs(dir, capture.take_run_logs()) {
+                eprintln!("warning: failed to write run logs: {e}");
+            }
+        }
     }
     if let Some(dir) = results::dir().filter(|dir| !list_only && dir.exists()) {
         eprintln!("spec results: {}", dir.display());
@@ -360,7 +376,24 @@ async fn run_spec(
     spec: &'static SpecDescriptor,
     profile: ServiceProfile,
 ) -> TrialRecord {
-    let mut record = TrialRecord::start(spec, profile, backend.as_ref());
+    let record = TrialRecord::start(spec, profile, backend.as_ref());
+    let Some(capture) = logging::capture() else {
+        return run_trial(record, backend, spec, profile).await;
+    };
+    let (trace, span) = capture.begin(record.file_name(), record.started);
+    let mut record = run_trial(record, backend, spec, profile)
+        .instrument(span)
+        .await;
+    record.trace = trace.finish();
+    record
+}
+
+async fn run_trial(
+    mut record: TrialRecord,
+    backend: Arc<dyn Backend>,
+    spec: &'static SpecDescriptor,
+    profile: ServiceProfile,
+) -> TrialRecord {
     let cell = pool::cell(&backend, profile).await;
     record.phase("pool", record.started);
     let cell = match cell {

@@ -185,6 +185,26 @@ Diagnostics can supplement this evidence but never replace it.
   traffic. Browse runs with the
   [`cosspec-viewer`](../cosspec-viewer/README.md).
 
+## Logs and spans
+
+The runner captures `tracing` events and spans for each trial and stores them
+in the trial's result file, untruncated. Capture is isolated per trial, even
+when trials run in parallel: each trial runs inside its own span, and events
+are attributed to the trial whose span they're in.
+
+- By default, the SDK and cosspec log at `debug` and everything else at
+  `warn`. Set `RUST_LOG` to replace that filter, for example
+  `RUST_LOG=azure_data_cosmos=trace`.
+- Pooled setup (cell accounts, databases, and shared containers) serves many
+  trials, so it runs outside every trial. Its events, end-of-run cleanup,
+  and anything a trial emits after it finishes go to the run's
+  `run-logs.json`. Late events are tagged with their trial.
+- SDK background tasks keep the span of the code that spawned them. Code that
+  spawns tasks should do the same, with `Instrument::in_current_span`, so its
+  logs reach the right trial.
+- Logs explain a failure; they aren't evidence. Prove behavior with
+  `HttpTap`, not by asserting on log lines.
+
 ## Known issues
 
 When the SDK doesn't meet a spec, don't weaken the spec. Mark it with

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { detect, joinPath, type Detected, type FileTree } from "../model/detect";
-import { isResultFile, type ResultFile, type RunSummary } from "../model/types";
+import { isResultFile, type ResultFile, type RunLogsFile, type RunSummary } from "../model/types";
 import type { ResultSource } from "./source";
 
 /** Reads results from a directory the user picked or dropped. Files never leave the browser. */
@@ -34,6 +34,12 @@ export class DirectorySource implements ResultSource {
         const result: unknown = JSON.parse(text);
         if (!isResultFile(result)) throw new Error(`${file} is not a cosspec result file`);
         return result;
+    }
+
+    async runLogs(run: RunSummary, file: string): Promise<RunLogsFile> {
+        const text = await this.tree.read(joinPath(run.path, file));
+        if (text === null) throw new Error(`${joinPath(run.path, file)} not found`);
+        return JSON.parse(text) as RunLogsFile;
     }
 }
 

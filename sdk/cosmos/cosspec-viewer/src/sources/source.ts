@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import type { Detected } from "../model/detect";
-import type { ResultFile, RunSummary } from "../model/types";
+import type { ResultFile, RunLogsFile, RunSummary } from "../model/types";
 
 /**
  * Where the viewer reads results from. Screens only use this interface, so new
@@ -16,6 +16,8 @@ export interface ResultSource {
     detect(): Promise<Detected>;
     /** Reads one result file of `run`; `file` is the manifest's `result_file`. */
     result(run: RunSummary, file: string): Promise<ResultFile>;
+    /** Reads the run-level log file the manifest names in `run_logs`. */
+    runLogs(run: RunSummary, file: string): Promise<RunLogsFile>;
     /** Calls `onChange` when results change on disk. Returns an unsubscribe function. */
     subscribe?(onChange: () => void): () => void;
     /** Whether `detect` and `result` re-read files, so a refresh shows changes. */

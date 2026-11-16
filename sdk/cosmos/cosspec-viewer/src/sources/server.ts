@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import type { Detected } from "../model/detect";
-import type { ResultFile, RunSummary } from "../model/types";
+import type { ResultFile, RunLogsFile, RunSummary } from "../model/types";
 import type { ResultSource } from "./source";
 
 /** The API served by `bin/cosspec-viewer.ts`. */
@@ -37,6 +37,10 @@ export class ServerSource implements ResultSource {
 
     async result(run: RunSummary, file: string): Promise<ResultFile> {
         return json<ResultFile>(API.file(run.id, file));
+    }
+
+    async runLogs(run: RunSummary, file: string): Promise<RunLogsFile> {
+        return json<RunLogsFile>(API.file(run.id, file));
     }
 
     subscribe(onChange: () => void): () => void {

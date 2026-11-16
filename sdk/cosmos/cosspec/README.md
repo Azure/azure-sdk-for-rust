@@ -65,6 +65,11 @@ Runs that use the default location keep only the 10 newest run directories
 there. Pass `--no-prune` to keep them all. A `--results-dir` directory is never
 pruned.
 
+Result files also hold the `tracing` logs and spans each trial emitted. The
+SDK and cosspec log at `debug` and everything else at `warn`; set `RUST_LOG`
+to use a different filter. Events outside every trial, such as pooled setup
+and end-of-run cleanup, go to `run-logs.json` in the run directory.
+
 Each run directory also has a `manifest.json` that lists every trial with its
 backend, service profile, status, and result file. To browse results, use
 [`cosspec-viewer`](../cosspec-viewer/README.md):
@@ -200,7 +205,8 @@ it runs on every selected backend and service profile without further setup.
   labeled `spec` came from the spec's clients and requests labeled `harness`
   came from the framework's setup and teardown. Each exchange includes up to
   4 KiB of its request and response bodies, as `text` or, for binary bodies,
-  `base64`.
+  `base64`. `logs` holds the trial's `tracing` events; for more detail, rerun
+  with `RUST_LOG`, such as `RUST_LOG=azure_data_cosmos=trace`.
 - If an `emulator` trial fails with `error sending request`, check that the
   emulator is running and reachable at the configured `endpoint`.
 - If a `live` trial fails with `environment variable ... is not set`, export

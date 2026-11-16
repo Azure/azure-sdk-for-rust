@@ -17,7 +17,10 @@
 //! changing the meaning of a field is, and bumps the version.
 
 use crate::{
-    backend::Backend, results::RESULT_VERSION, runner::SpecDescriptor, ServiceProfile, SpecResult,
+    backend::Backend,
+    results::{RESULT_VERSION, RUN_LOGS_FILE},
+    runner::SpecDescriptor,
+    ServiceProfile, SpecResult,
 };
 use azure_core::time::{to_rfc3339, OffsetDateTime};
 use serde::Serialize;
@@ -145,6 +148,11 @@ pub(crate) struct Manifest {
     status: RunStatus,
     args: Vec<String>,
     cleanup: bool,
+    /// The `tracing` filter directives trials were captured with; `None` when
+    /// logs weren't captured.
+    log_filter: Option<String>,
+    /// Events captured outside every trial, relative to the run directory.
+    run_logs: Option<&'static str>,
     result_version: u32,
     backends: Vec<BackendEntry>,
     totals: Totals,
@@ -155,7 +163,12 @@ pub(crate) struct Manifest {
 }
 
 impl Manifest {
-    pub(crate) fn new(run_id: &str, args: Vec<String>, cleanup: bool) -> Self {
+    pub(crate) fn new(
+        run_id: &str,
+        args: Vec<String>,
+        cleanup: bool,
+        log_filter: Option<String>,
+    ) -> Self {
         Self {
             version: MANIFEST_VERSION,
             kind: MANIFEST_KIND,
@@ -165,6 +178,8 @@ impl Manifest {
             status: RunStatus::Running,
             args,
             cleanup,
+            run_logs: log_filter.is_some().then_some(RUN_LOGS_FILE),
+            log_filter,
             result_version: RESULT_VERSION,
             backends: Vec::new(),
             totals: Totals::default(),
@@ -321,7 +336,12 @@ mod tests {
         let profile = ServiceProfile::SingleRegion;
         let backend = InMemoryBackend::new(vec![profile]);
         let spec = &SPEC;
-        let mut manifest = Manifest::new("run", vec!["--no-cleanup".to_owned()], false);
+        let mut manifest = Manifest::new(
+            "run",
+            vec!["--no-cleanup".to_owned()],
+            false,
+            Some("debug".to_owned()),
+        );
         manifest.add_backend(&backend, &[profile]);
         let ran = manifest.add_trial(TrialEntry::new(spec, &backend, profile, Planned::Run, None));
         manifest.add_trial(TrialEntry::new(
@@ -347,6 +367,8 @@ mod tests {
         assert_eq!(json["kind"], "cosspec-run");
         assert_eq!(json["status"], "completed");
         assert_eq!(json["checks"], serde_json::json!([]));
+        assert_eq!(json["log_filter"], "debug");
+        assert_eq!(json["run_logs"], "run-logs.json");
         let trials = json["trials"].as_array().unwrap();
         assert_eq!(trials[0]["status"], "failed");
         assert_eq!(trials[0]["error"], "boom");

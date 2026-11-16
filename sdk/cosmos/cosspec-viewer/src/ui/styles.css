@@ -718,15 +718,54 @@ pre.raw {
     stroke-width: 1.5;
     stroke: var(--muted);
 }
-.log-tick.lv-error,
-td.lv-error {
+.log-tick.lv-error {
     stroke: var(--failed);
-    color: var(--failed);
 }
-.log-tick.lv-warn,
-td.lv-warn {
+.log-tick.lv-warn {
     stroke: var(--ignored);
+}
+/* A log level is always spelled out; color only reinforces it. */
+.level {
+    display: inline-block;
+    min-width: 3.4em;
+    padding: 0 0.3em;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-align: center;
+    color: var(--muted);
+}
+.level.lv-error {
+    color: var(--failed);
+    border-color: var(--failed);
+    font-weight: 700;
+}
+.level.lv-warn {
     color: var(--ignored);
+    border-color: var(--ignored);
+    font-weight: 700;
+}
+/* Log rows between requests: smaller, italic, with a dotted rule. */
+.requests tr.log-row td {
+    font-size: 11.5px;
+    font-style: italic;
+    color: var(--muted);
+    background: var(--bg-alt);
+}
+.requests tr.log-row td:first-child {
+    border-left: 3px dotted var(--border);
+}
+.fields {
+    font-size: 11px;
+    word-break: break-all;
+}
+details.fields pre {
+    margin: 0.3rem 0;
+}
+.span-path {
+    font-family: var(--mono);
+    font-size: 11px;
 }
 
 .outcome {

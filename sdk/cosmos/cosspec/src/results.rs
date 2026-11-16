@@ -8,8 +8,11 @@
 //! and bumps the version.
 
 use crate::{
-    backend::Backend, http_tap::HttpRecord, runner::SpecDescriptor, ServiceProfile, SpecError,
-    SpecResult,
+    backend::Backend,
+    http_tap::HttpRecord,
+    runner::SpecDescriptor,
+    trace_capture::{FieldValue, Fields, LogRecord, SpanRecord, TrialCapture},
+    ServiceProfile, SpecError, SpecResult,
 };
 use azure_core::time::{to_rfc3339, OffsetDateTime};
 use azure_data_cosmos_driver::transport_observer::HttpOutcomeKind;
@@ -31,6 +34,9 @@ pub const RESULT_VERSION: u32 = 1;
 
 /// The most bytes of each HTTP request or response body a result file keeps.
 pub const BODY_LIMIT: usize = 4096;
+
+/// The run-level log file's name inside a run directory.
+pub const RUN_LOGS_FILE: &str = "run-logs.json";
 
 /// The command-line option that sets the results directory.
 pub const RESULTS_DIR_ARG: &str = "--results-dir";
@@ -310,6 +316,110 @@ struct PhaseJson {
     end_ms: f64,
 }
 
+/// A captured `tracing` event.
+#[derive(Debug, Serialize)]
+pub(crate) struct LogJson {
+    /// Milliseconds from the trial start, or from the run start in
+    /// `run-logs.json`.
+    t_ms: f64,
+    level: String,
+    target: String,
+    message: String,
+    fields: serde_json::Map<String, serde_json::Value>,
+    /// The index into `spans` of the event's innermost span.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    span: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    activity_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    file: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    line: Option<u32>,
+    /// In `run-logs.json`: the trial that emitted the event after finishing.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    trial: Option<String>,
+}
+
+impl From<LogRecord> for LogJson {
+    fn from(log: LogRecord) -> Self {
+        Self {
+            t_ms: log.t_ms,
+            level: log.level.as_str().to_ascii_lowercase(),
+            target: log.target,
+            message: log.message,
+            fields: fields_json(log.fields),
+            span: log.span,
+            activity_id: log.activity_id,
+            file: log.file,
+            line: log.line,
+            trial: log.trial,
+        }
+    }
+}
+
+/// A captured `tracing` span.
+#[derive(Debug, Serialize)]
+struct SpanJson {
+    id: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    parent: Option<usize>,
+    name: &'static str,
+    target: &'static str,
+    level: String,
+    fields: serde_json::Map<String, serde_json::Value>,
+    start_ms: f64,
+    end_ms: Option<f64>,
+}
+
+impl From<SpanRecord> for SpanJson {
+    fn from(span: SpanRecord) -> Self {
+        Self {
+            id: span.id,
+            parent: span.parent,
+            name: span.name,
+            target: span.target,
+            level: span.level.as_str().to_ascii_lowercase(),
+            fields: fields_json(span.fields),
+            start_ms: span.start_ms,
+            end_ms: span.end_ms,
+        }
+    }
+}
+
+fn fields_json(fields: Fields) -> serde_json::Map<String, serde_json::Value> {
+    fields
+        .into_iter()
+        .map(|(name, value)| {
+            let value = match value {
+                FieldValue::Bool(v) => v.into(),
+                FieldValue::I64(v) => v.into(),
+                FieldValue::U64(v) => v.into(),
+                FieldValue::F64(v) => v.into(),
+                FieldValue::Str(v) => v.into(),
+            };
+            (name.to_owned(), value)
+        })
+        .collect()
+}
+
+/// `run-logs.json`: events captured outside every trial.
+#[derive(Debug, Serialize)]
+struct RunLogsFile {
+    version: u32,
+    logs: Vec<LogJson>,
+}
+
+/// Writes `run-logs.json` into `dir`.
+pub(crate) fn write_run_logs(dir: &Path, logs: Vec<LogRecord>) -> SpecResult {
+    std::fs::create_dir_all(dir)?;
+    let file = RunLogsFile {
+        version: RESULT_VERSION,
+        logs: logs.into_iter().map(LogJson::from).collect(),
+    };
+    std::fs::write(dir.join(RUN_LOGS_FILE), serde_json::to_vec_pretty(&file)?)?;
+    Ok(())
+}
+
 #[derive(Debug, Serialize)]
 struct KnownIssueJson {
     reason: &'static str,
@@ -338,6 +448,8 @@ struct ResultFile {
     resources: Vec<ResourceRecord>,
     phases: Vec<PhaseJson>,
     http: Vec<HttpJson>,
+    logs: Vec<LogJson>,
+    spans: Vec<SpanJson>,
 }
 
 /// The result file name of one trial, for example
@@ -361,6 +473,7 @@ pub(crate) struct TrialRecord {
     pub resources: Vec<ResourceRecord>,
     pub phases: Vec<(&'static str, Instant, Instant)>,
     pub http: Vec<HttpRecord>,
+    pub trace: TrialCapture,
 }
 
 impl TrialRecord {
@@ -383,6 +496,7 @@ impl TrialRecord {
             resources: Vec::new(),
             phases: Vec::new(),
             http: Vec::new(),
+            trace: TrialCapture::default(),
         }
     }
 
@@ -450,6 +564,8 @@ impl TrialRecord {
                 .into_iter()
                 .map(|record| HttpJson::new(record, self.started))
                 .collect(),
+            logs: self.trace.logs.into_iter().map(LogJson::from).collect(),
+            spans: self.trace.spans.into_iter().map(SpanJson::from).collect(),
         }
     }
 

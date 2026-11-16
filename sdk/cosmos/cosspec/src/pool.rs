@@ -13,6 +13,10 @@
 //! * Shared containers are created and seeded once per profile, then reused by
 //!   every spec that asks for them.
 //!
+//! Pooled resources serve many trials, so they're set up outside every
+//! trial's `tracing` span: their logs go to `run-logs.json`, not to whichever
+//! trial needed them first.
+//!
 //! Every database and container the framework creates is named
 //! `spec-<UUIDv7>`. The UUID's timestamp tells a sweep how old a leftover is,
 //! without any other bookkeeping.
@@ -26,6 +30,7 @@ use crate::{
 use azure_data_cosmos::{ContainerClient, CosmosClient};
 use std::{
     collections::HashMap,
+    future::Future,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc, Mutex, OnceLock,
@@ -109,9 +114,20 @@ pub(crate) async fn cell(
         .entry((backend.name().to_owned(), profile))
         .or_default()
         .clone();
-    slot.get_or_try_init(|| open_cell(backend.clone(), profile))
+    slot.get_or_try_init(|| detached(open_cell(backend.clone(), profile)))
         .await
         .cloned()
+}
+
+/// Runs `setup` on its own task, outside the current trial's span.
+async fn detached<T: Send + 'static>(
+    setup: impl Future<Output = SpecResult<T>> + Send + 'static,
+) -> SpecResult<T> {
+    match tokio::spawn(setup).await {
+        Ok(result) => result,
+        Err(e) if e.is_panic() => std::panic::resume_unwind(e.into_panic()),
+        Err(e) => Err(e.into()),
+    }
 }
 
 async fn open_cell(backend: Arc<dyn Backend>, profile: ServiceProfile) -> SpecResult<Arc<Cell>> {
@@ -181,7 +197,10 @@ async fn sweep(account: &dyn BackendAccount, client: &CosmosClient) -> SpecResul
 
 impl Cell {
     /// Returns the shared container for `profile`, creating and seeding it once.
-    pub async fn shared_container(&self, profile: &ContainerProfile) -> SpecResult<String> {
+    pub async fn shared_container(
+        self: &Arc<Self>,
+        profile: &ContainerProfile,
+    ) -> SpecResult<String> {
         let slot = self
             .shared
             .lock()
@@ -189,14 +208,17 @@ impl Cell {
             .entry(profile.name)
             .or_default()
             .clone();
-        slot.get_or_try_init(|| async {
-            let name = resource_name();
-            self.account
-                .provisioner()
-                .create_container(&self.admin, &self.database, &name, profile)
-                .await?;
-            seed(&self.admin, &self.database, &name, &(profile.dataset)()).await?;
-            Ok::<_, crate::SpecError>(name)
+        let (cell, profile) = (self.clone(), *profile);
+        slot.get_or_try_init(|| {
+            detached(async move {
+                let name = resource_name();
+                cell.account
+                    .provisioner()
+                    .create_container(&cell.admin, &cell.database, &name, &profile)
+                    .await?;
+                seed(&cell.admin, &cell.database, &name, &(profile.dataset)()).await?;
+                Ok(name)
+            })
         })
         .await
         .cloned()

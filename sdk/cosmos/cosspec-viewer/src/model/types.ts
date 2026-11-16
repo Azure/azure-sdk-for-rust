@@ -66,6 +66,10 @@ export interface Manifest {
     totals: Totals;
     checks: CheckEntry[];
     trials: TrialEntry[];
+    /** The `tracing` filter the run captured logs with. Absent when logs weren't captured. */
+    log_filter?: string | null;
+    /** The run-level log file, relative to the run directory. */
+    run_logs?: string | null;
 }
 
 export const MANIFEST_FILE = "manifest.json";
@@ -119,19 +123,43 @@ export interface PanicJson {
     backtrace: string;
 }
 
-/**
- * A captured log line. Not written by cosspec yet; the viewer shows logs when
- * a result file has them.
- */
+export type Level = "error" | "warn" | "info" | "debug" | "trace";
+
+/** A captured `tracing` event. Absent in results written before logs were captured. */
 export interface LogJson {
-    /** Milliseconds from the trial start. */
+    /** Milliseconds from the trial start (from the run start in `run-logs.json`). */
     t_ms: number;
-    level: "error" | "warn" | "info" | "debug" | "trace";
+    level: Level;
     target: string;
     message: string;
-    fields?: Record<string, unknown>;
-    span?: string;
+    fields: Record<string, unknown>;
+    /** The index into `spans` of the event's innermost span. */
+    span?: number;
     activity_id?: string;
+    file?: string;
+    line?: number;
+    /** In `run-logs.json`: the trial that emitted the event after it finished. */
+    trial?: string;
+}
+
+/** A captured `tracing` span. */
+export interface SpanJson {
+    id: number;
+    parent?: number;
+    name: string;
+    target: string;
+    level: Level;
+    fields: Record<string, unknown>;
+    /** Milliseconds from the trial start. */
+    start_ms: number;
+    /** `null` when the span was still open as the trial finished. */
+    end_ms: number | null;
+}
+
+/** `run-logs.json`: events no trial owned, such as pooled setup. */
+export interface RunLogsFile {
+    version: number;
+    logs: LogJson[];
 }
 
 /** A named stretch of a trial, such as `pool`, `body`, or `teardown`. */
@@ -166,6 +194,7 @@ export interface ResultFile {
     phases?: PhaseJson[];
     http: HttpJson[];
     logs?: LogJson[];
+    spans?: SpanJson[];
 }
 
 /** One run found in a results location. */

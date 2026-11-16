@@ -77,6 +77,22 @@ export function RunScreen(props: { run: RunSummary; route: Route }) {
                         </dd>
                         <dt>Cleanup</dt>
                         <dd>{m.cleanup ? "yes" : "no (--no-cleanup)"}</dd>
+                        <dt>Logs</dt>
+                        <dd>
+                            {m.log_filter ? (
+                                <>
+                                    <code>{m.log_filter}</code>
+                                    {m.run_logs ? (
+                                        <>
+                                            {" "}
+                                            <a href={href(["run", run.id, "logs"])}>Run logs</a>
+                                        </>
+                                    ) : null}
+                                </>
+                            ) : (
+                                "not captured"
+                            )}
+                        </dd>
                         <dt>Arguments</dt>
                         <dd>
                             <code>{m.args.join(" ") || "–"}</code>

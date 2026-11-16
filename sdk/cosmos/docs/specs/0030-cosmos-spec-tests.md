@@ -614,6 +614,8 @@ the version. Removing, renaming, or changing the meaning of a field does.
 | `resources` | Each account, database, and container the spec used: `kind`, `origin` (`created` or `pooled`), `name`, and where known `database`, `profile`, and `parameter` |
 | `phases` | Named spans of the trial, each with `start_ms` and `end_ms` from the trial start: `pool` (waiting for the pooled account and database), `body` (the spec itself), and `teardown` |
 | `http` | Every HTTP exchange of the spec's clients (`label: "spec"`) and of its harness clients (`label: "harness"`), in start order: method, URL, operation, `region`, `region_alias`, activity ID, `start_ms` from the trial start, `duration_ms`, `outcome`, `request_body`, and `response_body` |
+| `logs` | Every `tracing` event the trial emitted, untruncated, in order: `t_ms` from the trial start, `level`, `target`, `message`, `fields`, and where known `span` (an index into `spans`), `activity_id`, `file`, and `line` |
+| `spans` | Every `tracing` span opened in the trial: `id`, `parent`, `name`, `target`, `level`, `fields`, `start_ms`, and `end_ms` (`null` if still open) |
 
 The recording isn't affected by `HttpTap::clear()`. Traffic to set up pooled
 resources is shared by many specs, so it isn't attributed to any one of them.
@@ -626,6 +628,17 @@ UTF-8 bodies, such as JSON, appear as `text`. Binary bodies, such as Cosmos DB
 binary encoding, appear as `base64`. A body field is `null` when the request
 had no body or no response arrived. Headers aren't recorded yet; adding them
 later is an additive change.
+
+Logs are captured per trial by a `tracing` layer
+(`cosspec::trace_capture`). Each trial runs inside a `cosspec.trial` span,
+and an event belongs to the trial whose span encloses it, so trials running
+in parallel don't mix their logs. SDK background tasks keep the span of the
+code that spawned them. Pooled setup runs outside every trial. Its events,
+end-of-run cleanup, and events from a trial's span after the trial finished
+go to `run-logs.json` in the run directory (`{ "version": 1, "logs": [..] }`,
+with `t_ms` from the run start and late events tagged with `trial`). The
+filter is `debug` for the SDK and cosspec crates and `warn` otherwise;
+`RUST_LOG` replaces it.
 
 ### Run manifest
 
@@ -648,6 +661,7 @@ rule as result files.
 | `cleanup`, `result_version` | Whether resources were deleted, and the result file version |
 | `backends` | Each backend that ran: `name`, `kind`, and its `profiles` |
 | `totals` | Trial counts by status |
+| `log_filter`, `run_logs` | The `tracing` filter logs were captured with, and the run-level log file (`run-logs.json`); both `null` if capture couldn't be installed |
 | `checks` | Reserved for checks that aren't trials; always empty |
 | `trials` | Every selected trial, in run order |
 
