@@ -18,7 +18,6 @@ use azure_data_cosmos_driver::fault_injection::{
 use azure_data_cosmos_driver::options::{OperationOptions, Region};
 use std::error::Error;
 use std::sync::Arc;
-use std::time::Duration;
 
 /// Pins live 403/3 handling: existing failover to West US 3 must keep working.
 #[tokio::test]
@@ -61,8 +60,14 @@ pub async fn live_403_3_create_item_triggers_failover() -> Result<(), Box<dyn Er
             context
                 .create_item(&container, "warmup", "pk1", warmup_json)
                 .await?;
-            context.read_item(&container, "warmup", "pk1").await?;
-            tokio::time::sleep(Duration::from_secs(5)).await;
+            context
+                .wait_for_item_in_regions(
+                    &container,
+                    "warmup",
+                    "pk1",
+                    &[Region::EAST_US_2, Region::WEST_US_3],
+                )
+                .await?;
 
             rule.enable();
 

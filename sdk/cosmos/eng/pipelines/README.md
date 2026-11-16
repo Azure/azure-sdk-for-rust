@@ -132,6 +132,26 @@ without changing the existing suites. Ordinary emulator, vnext, in-memory,
 and codec-fuzz jobs do not use that resolver and do not enable the live gate.
 Legacy ARM/AAD jobs retain their existing categories.
 
+### High-throughput binary ORDER BY comparisons
+
+Ordinary `test_category="live"` selection does not include the binary ORDER BY
+comparison suite. Its two temporary containers each require 20,000 RU/s, so it
+requires a separate `live_order_by` category and explicit throughput approval.
+The offline fixture/comparison tests still run in ordinary non-live validation.
+
+Only after obtaining approval for the temporary 40,000 RU/s total, select the
+suite using both categories and the existing spending gate:
+
+```powershell
+$env:AZURE_COSMOS_TEST_MODE = 'required'
+$env:AZURE_COSMOS_ORDER_BY_LIVE_THROUGHPUT = '20000'
+$env:RUSTFLAGS = '--cfg=test_category="live" --cfg=test_category="live_order_by"'
+cargo test -p azure_data_cosmos --all-features --test live live_binary_order_by_matches_text_across_physical_ranges
+```
+
+The test still rejects missing approval or non-live credentials before
+provisioning. Do not add the category or spending opt-in to general live jobs.
+
 ### Gateway V2 multi-range prefix change feed
 
 The `gateway_v2_prefix_change_feed_across_physical_ranges` test exercises
