@@ -71,14 +71,7 @@ to use a different filter. Events outside every trial, such as pooled setup
 and end-of-run cleanup, go to `run-logs.json` in the run directory.
 
 Each run directory also has a `manifest.json` that lists every trial with its
-backend, service profile, status, and result file. To browse results, use
-[`cosspec-viewer`](../cosspec-viewer/README.md):
-
-```sh
-cd sdk/cosmos/cosspec-viewer
-bun install
-bun run start -- --open
-```
+backend, service profile, status, and result file.
 
 ### Choose backends
 
@@ -158,9 +151,8 @@ job, through `sdk/cosmos/eng/scripts/Invoke-CosmosSpecTests.ps1`:
   `configs/emulator.toml`. Other legs run the in-memory default.
 - Fuzz, in-memory emulator, E2E, vNext emulator, and live legs skip the specs.
 - Each leg publishes its results, pass or fail, as a pipeline artifact named
-  `cosspec-results-<job>-<attempt>`. Download it from the build's artifacts,
-  extract it, and open the folder in
-  [`cosspec-viewer`](../cosspec-viewer/README.md).
+  `cosspec-results-<job>-<attempt>`. Download it from the build's artifacts
+  and extract it to inspect the result files.
 - A spec failure fails the job, but the crate's own tests still run.
 - Set `AZURE_COSMOS_SPEC=false` to skip the specs, or
   `AZURE_COSMOS_SPEC=true` to run them from a local `Test-Packages.ps1` run.

@@ -674,9 +674,9 @@ never ran become `skipped` (missing capabilities), `ignored` (known issues), or
 the result file's name within the run directory, or `null` when the trial
 wrote none. Filtered-out trials aren't listed.
 
-[`cosspec-viewer`](../../cosspec-viewer/README.md) is a browser app that
-shows runs, trials, and each trial's requests on a timeline. It opens a run
-directory or a directory of runs, using `manifest.json` to find runs.
+A separate browser app, `cosspec-viewer`, shows runs, trials, and each
+trial's requests on a timeline. It opens a run directory or a directory of
+runs, using `manifest.json` to find runs.
 
 ## Known issues
 

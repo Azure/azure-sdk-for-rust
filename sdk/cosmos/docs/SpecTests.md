@@ -182,8 +182,7 @@ Diagnostics can supplement this evidence but never replace it.
 - Resource names are UUIDv7s, so leftovers in live accounts can be found and
   cleaned up by age.
 - Every trial writes a JSON result file with its outcome, resources, and HTTP
-  traffic. Browse runs with the
-  [`cosspec-viewer`](../cosspec-viewer/README.md).
+  traffic.
 - CI runs the specs on every Cosmos test job and publishes each job's results
   as a `cosspec-results-*` artifact. See
   [Run in CI](../cosspec/README.md#run-in-ci).
