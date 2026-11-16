@@ -8,7 +8,7 @@ contains the spec-test DSL and runner, and the specs themselves in
 
 This crate is test infrastructure (`publish = false`); it is not part of the
 supported SDK surface. To write or review a spec, start with
-[Writing and reviewing spec tests]. See [spec 0030] for the design, the full
+[Writing and reviewing spec tests]. See [spec 0031] for the design, the full
 DSL reference, and the roadmap.
 
 ## Getting started
@@ -235,5 +235,5 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 [Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
 [Azure Cosmos DB Emulator]: https://learn.microsoft.com/azure/cosmos-db/emulator
-[spec 0030]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0030-cosmos-spec-tests.md
+[spec 0031]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0031-cosmos-spec-tests.md
 [Writing and reviewing spec tests]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/SpecTests.md

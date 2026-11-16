@@ -6,7 +6,7 @@ with the spec runner.
 
 This crate is test infrastructure (`publish = false`); it is not part of the
 supported SDK surface. Use it through `cosspec::spec_test`. See
-[spec 0030] for the design.
+[spec 0031] for the design.
 
 ## Key concepts
 
@@ -37,4 +37,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 [CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
 [Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
-[spec 0030]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0030-cosmos-spec-tests.md
+[spec 0031]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0031-cosmos-spec-tests.md

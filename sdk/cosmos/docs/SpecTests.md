@@ -8,7 +8,7 @@ Azure Cosmos DB Emulator, or live accounts. They live in the
 
 This guide covers what you need to write a spec and to review one. The
 [cosspec README](../cosspec/README.md) covers running specs and configuring
-backends, and the [design spec](specs/0030-cosmos-spec-tests.md) has the full
+backends, and the [design spec](specs/0031-cosmos-spec-tests.md) has the full
 design.
 
 ## Anatomy of a spec

@@ -22,7 +22,7 @@
 //! }
 //! ```
 //!
-//! See `sdk/cosmos/docs/specs/0030-cosmos-spec-tests.md` for the design.
+//! See `sdk/cosmos/docs/specs/0031-cosmos-spec-tests.md` for the design.
 
 mod args;
 mod assertions;

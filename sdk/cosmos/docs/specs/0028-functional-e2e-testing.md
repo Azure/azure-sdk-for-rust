@@ -512,7 +512,7 @@ The roadmap is complete when:
 
 ## Related documents
 
-- Spec tests (planned successor): `specs/0030-cosmos-spec-tests.md`
+- Spec tests (planned successor): `specs/0031-cosmos-spec-tests.md`
 - Hosted emulator: `specs/0027-hosted-emulator.md`
 - In-memory emulator: `specs/0021-in-memory-emulator.md`
 - Operation and transport pipelines:
