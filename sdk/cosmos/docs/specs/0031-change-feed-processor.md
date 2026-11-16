@@ -45,6 +45,34 @@ describes its purpose:
 - Monitor **all physical partitions within the configured scope**, including
   replacement partitions after topology changes.
 
+### 2.1 Guarantees to establish
+
+These are required outcomes, not claims that the prototype already provides
+them. The code sketches below are illustrative proposed control flow, not
+existing or compiling SDK APIs. Prototype excerpts elsewhere explain earlier
+mechanisms; the explicit proposed contracts take precedence where they differ.
+
+| Guarantee | Mechanism and code discussion | Observable pass condition |
+| --- | --- | --- |
+| G1: Distinguish healthy idleness from stalled processing. | Track the active operation and its age separately from ownership renewal and item arrivals; see [liveness](#115-detect-stalls-and-confirm-recovery). | Empty successful reads and waiting for demand are not reported as hung callbacks; an overdue active operation is reported even while renewal succeeds. |
+| G2: Attempt recovery and verify useful progress, not just ownership movement. | Cancel failed acquisition work, release conditionally or let ownership expire, and reacquire normally; see the [recovery sketch](#115-detect-stalls-and-confirm-recovery). | With a runnable replacement and available service, an injected worker failure is followed by acquisition and successful processing or a healthy empty read. Repeated failure is visible and subject to bounded recovery policy. |
+| G3: Never skip changes by resetting a resume position. | Persist a stable initial anchor and resume saved progress; see [initial anchoring](#104-establish-a-stable-initial-resume-position). | Crash before the first normal checkpoint, restart, and deliver the changes still available from the original start position. An unusable continuation produces failure, not a new `Now`. |
+| G4: Persist only safe progress under current ownership. | Await handler success, then acknowledge; serialize conditional writes with the acquisition's cached ETag; see [fencing](#73-preventing-stale-or-competing-ownership-writes) and [checkpointing](#86-tie-successful-processing-to-the-next-delivery). | Handler failure leaves that batch unacknowledged; stale receipts cannot change replacement ownership or continuation; Deferred interruption may replay. |
+| G5: Preserve range coverage through topology changes. | Validate replacement coverage, project durable progress, create children before conditional parent deletion; see [topology recovery](#93-ensure-children-before-deleting-the-parent). | Interrupted child creation or parent deletion loses no logical range or saved resume position. |
+
+**No-skipping is bounded by the selected feed mode and service retention.**
+Latest Version does not promise every intermediate version or delete event;
+All Versions and Deletes is subject to its supported retention. If required
+history is no longer available, report that failure rather than pretend
+successful recovery. At-least-once delivery permits duplicate callbacks and
+does not guarantee exactly-once external effects.
+
+Liveness assumes available service capacity, a runnable worker/runtime, and
+application code that yields or can be isolated. It is not a promise of
+uninterrupted progress during an outage or automatic repair of a permanently
+failing handler. Thresholds, shared settings, and the health-observation surface
+are [open design decisions](#14-open-questions-and-scope-limits).
+
 ## 3. Non-functional requirements
 
 - Distribute processing load equally across cooperating workers.
@@ -237,6 +265,81 @@ A **lease document** stores the range, current worker owner, and saved position
 in a separate Cosmos DB **lease container**. This shared record lets workers
 coordinate responsibility and resume after restart or ownership change rather
 than rely only on a worker's memory.
+
+The following JSON illustrates the proposed acquired lease with saved progress.
+It revises the prototype's shape to use acquisition-local ETag fencing without
+a separate persisted acquisition identifier. Values are synthetic;
+`<encoded-workload-key>` and `<opaque-continuation-token>` are placeholders,
+not usable namespace or continuation values. This is a proposed storage
+contract, not an API shipped by this PR.
+
+```json
+{
+  "id": "cfp1.<encoded-workload-key>.lease.-FF",
+  "workload": {
+    "version": 1,
+    "account": "https://example.documents.azure.com",
+    "containerRid": "example-container-rid",
+    "processorName": "orders",
+    "mode": "latestVersion"
+  },
+  "ttl": -1,
+  "range": {
+    "Range": {
+      "min": "",
+      "max": "FF",
+      "isMinInclusive": true,
+      "isMaxInclusive": false
+    }
+  },
+  "owner": "worker-01",
+  "continuation": "<opaque-continuation-token>",
+  "renewed_at": 1800000000000,
+  "processed_at": 1800000000000
+}
+```
+
+Each stored property needs a purpose; an existing prototype field is not by
+itself a reason to retain it:
+
+| Property | Why store it? |
+| --- | --- |
+| `id` | Address one lease deterministically and make duplicate creates conflict. It also supplies the lease container's `/id` partition key. |
+| `workload.version` | Identify the coordination-document schema so incompatible readers fail rather than interpret fields incorrectly. It is not the continuation-token version. |
+| `workload.account` | Bind the lease to its source account origin and reject reuse against another account. |
+| `workload.containerRid` | Bind progress to the source container's service identity; a deleted and recreated container with the same name must not reuse it. |
+| `workload.processorName` | Separate cooperating workloads reading the same source. The stored name is preserved from the prototype; the API calls it `workload_name`. |
+| `workload.mode` | Reject continuation reuse across incompatible feed modes: `latestVersion` and `allVersionsAndDeletes`. Mode is not part of the namespace key. |
+| `ttl` | Set `-1` so the lease and saved progress survive document TTL. Ownership expires through lease timing, not document deletion; the initialization lock has a separate positive TTL. |
+| `range.Range.min`, `range.Range.max` | Persist the logical range whose progress this lease represents, including when physical partitions split or merge. This example covers the full keyspace; individual leases usually cover a subrange. |
+| `range.Range.isMinInclusive`, `range.Range.isMaxInclusive` | Preserve the shared serialized feed-range format. Their fixed values express `[min, max)`; they are format compatibility fields, not independent processor settings. |
+| `owner` | Identify the worker for ownership and balancing. An absent owner makes the lease available; matching names alone never authorize a write. |
+| `continuation` | Save the durable resume position. It must not describe an unfinished batch; pending Deferred progress remains in memory. |
+| `renewed_at` | Let other workers evaluate ownership liveness without treating checkpoint inactivity as worker failure. Every successful owner mutation refreshes it, not just renewal. |
+| `processed_at` | Record the latest successful processing activity separately from ownership maintenance: successful handler acknowledgment or a completed empty read. Renewal alone must not advance it. It is a health signal, not proof that `continuation` is durable. |
+
+The two timestamp fields use Unix epoch milliseconds. The proposed schema
+renames `last_processed_at` to `processed_at` and removes the stored
+`processing_deadline`; an agreed inactivity policy can derive a deadline
+without persisting a third timestamp. However, timestamp age alone cannot
+distinguish a queued lease from a hung handler. Active-operation tracking and
+the initial acquisition baseline are described under
+[liveness](#115-detect-stalls-and-confirm-recovery).
+
+Repeating source identity in each lease permits
+validation of individual documents, but duplicates information in the namespace
+and `.definition`. **Schema-size review remains open:** decide whether that
+per-document validation justifies its storage and write cost, rather than
+describing it as necessary for ETag fencing. The prototype still uses the
+earlier fields; the two-timestamp shape is a proposed revision.
+
+Optional ownership, continuation, and timestamp fields are omitted when absent,
+not serialized as `null`. A newly created lease has none of those fields.
+Service-managed properties such as `_etag` and `_ts` are omitted from this
+example; conditional writes use the service-provided ETag. Delivery state,
+waiting channels, and queued registrations are not stored in the document.
+`_etag` protects a specific document version through `If-Match`; `_ts` is a
+service-managed last-modification time, not the processing-progress timestamp.
 
 ## 6. How would a workload be initialized before processing?
 
@@ -653,39 +756,90 @@ the lease document. Only after that write succeeds does it start processing
 the range. Cooperating workers share the workload name and use distinct worker
 names; the SDK constructor inputs are listed in the [public API](#13-how-would-an-application-configure-and-control-the-rust-processor).
 
-The following are focused implementation excerpts, not standalone programs.
+The acquisition examples below are prototype excerpts, not standalone programs.
+The ETag-only ownership contract in the next section is a proposed revision;
+the preserved prototype has not been changed to implement it.
 
 ### 7.3 Preventing stale or competing ownership writes
 
-A lease replacement uses the ETag condition introduced during bootstrap.
-`If-Match` is the request condition requiring the stored ETag to match the
-version just read.
+**Proposed fencing contract: use `If-Match` with the ETag held by the
+acquisition, without a separate persisted acquisition identifier.** An
+**ownership turn** is one successful acquisition of a lease. Acquisition starts
+from an observed eligible document and conditionally replaces that exact
+version. Only a confirmed success starts processing, with the returned ETag.
 
-An **ownership turn** is one acquisition of a lease. The driver records a new
-UUID, stored as `incarnation`, for each successful acquisition. This distinguishes
-old work from new work even if the same named worker loses and reacquires the
-lease.
+Renewal, checkpoints, release, and topology preparation share one
+acquisition-local document/ETag under the lease-state mutex. Each mutation uses
+that cached ETag. A confirmed successful write installs its returned document
+and ETag before another mutation can begin. Receipts belong to this local
+acquisition, not merely to a lease ID or worker name.
 
-Before renewal, checkpoint, or release, `transition_lease()` compares fresh
-stored ownership with the acquisition's expected ownership:
+**A precondition failure ends the ownership turn.** The old acquisition must
+not reread the document and retry with a newer ETag just because `owner` still
+matches. Fresh reads can inform a later acquisition attempt, but cannot repair
+the old acquisition's authority. A missing lease also ends the turn. If a
+write's outcome is ambiguous, do not report confirmed persistence or adopt a
+fresh ETag to keep that turn alive; end it and resume from stored progress
+through normal acquisition.
+
+For example:
+
+```text
+Acquisition A holds ETag E1
+Another acquisition replaces the lease, producing E2
+Old acquisition A writes with If-Match: E1 -> precondition failure
+Even if the worker name matches, A cannot adopt E2 and retry
+```
+
+Cancel and settle old acquisition work, close its receipts and delivery state,
+and detach its local state before starting another local acquisition of the
+same lease. A late receipt must never obtain the replacement acquisition's
+ETag. These lifecycle rules and conditional writes provide **fencing**; an
+ETag alone does not make arbitrary reread-and-retry logic safe.
+
+For G4, the proposed mutation path is illustrated below. The helper names are
+schematic; the important ordering is lock, conditional write, then installation
+of the confirmed result. Invalidating a turn closes its delivery/receipt path
+and signals cancellation; it does not perform unconditional cleanup writes.
 
 ```rust
-if current.owner != observed.owner || current.incarnation != observed.incarnation {
-    return Err(lost());
+let mut state = acquisition.state.lock().await;
+state.require_active()?;
+let next = state.apply_safe_update(update)?;
+match store.replace(&next.id, &next, state.etag.clone()).await {
+    Ok(saved) => state.install_confirmed(saved),
+    Err(error) => {
+        state.invalidate_and_cancel();
+        return Err(error);
+    }
 }
 ```
 
-`modify_lease()` then writes with the ETag obtained from that fresh read:
+In particular, this path never repairs a failed write by reading a replacement
+owner's ETag. Transport retries must preserve the conditional version; an
+ambiguous response cannot be reported as a confirmed checkpoint.
 
-```rust
-self.store().replace(id, &next, etag).await
-```
+The following cases define when processing leases change. Identity and range
+fields remain unchanged by owner mutations.
 
-Source: `azure_data_cosmos_driver/src/change_feed_processor/processing.rs`.
-Owner/incarnation checks reject stale ownership turns; the ETag prevents
-changes racing the write. Retried write conflicts recheck ownership. These
-checks are called **fencing**: an old ownership turn cannot mutate replacement
-ownership or saved progress.
+| Case | Stored change | Condition and result |
+| --- | --- | --- |
+| Bootstrap creates a lease | Identity, range, and `ttl`; no owner or progress fields. | Create-only deterministic ID. A conflict must not overwrite existing state. Bootstrap claim validation is separate from processing-lease fencing. |
+| Worker acquires or takes over | Set `owner`, refresh `renewed_at`, and clear the previous owner's `processed_at`. Preserve `continuation`. | Check acquisition eligibility and replace with the observed ETag. A lost race starts no processing. Start a local monotonic acquisition baseline; an absent processing timestamp is not immediate evidence of a stall. |
+| Owner renews | Refresh `renewed_at`; preserve durable continuation and pending local progress. Publish updated processing timestamps only for safe progress already recorded locally. | Use the acquisition's cached ETag under its mutation lock. Renewal alone must not extend processing inactivity without progress. |
+| Eager acknowledgment or explicit durable checkpoint | Advance `continuation` to safe processed progress, publish `processed_at`, and refresh `renewed_at`. | Use the cached ETag; complete durable acknowledgment only after confirmed persistence. Install the returned ETag before another mutation. |
+| Deferred acknowledgment | No required document write; update pending safe progress and processing timestamps locally. | Do not claim durability or retain completed batch payloads. |
+| Successful empty read | Record healthy read completion in local `processed_at`; handle the safe idle continuation according to checkpoint policy. | No callback is required. A later renewal can publish the health timestamp without making pending Deferred continuation durable. |
+| Deferred deadline, graceful drain, or topology barrier | Persist eligible pending continuation and timestamps, refreshing `renewed_at`. | Same conditional checkpoint path. With no pending progress, no checkpoint write is needed. |
+| Graceful release | Clear `owner` and refresh `renewed_at`; preserve saved continuation. | Settle issued work and eligible persistence first, then release with the acquisition's cached ETag. Never clear a replacement owner after a conflict. |
+| Split recovery | Create missing children with projected durable progress, then delete the parent. | Prepare the parent through the same conditional mutation path; create children without overwriting existing state; delete the parent with its cached ETag only after validating replacement coverage. |
+| Precondition failure, missing lease, or unconfirmed write outcome | No compensating overwrite or unconditional release. | End the old turn, cancel its work, and let normal acquisition determine subsequent ownership and saved progress. |
+
+Required regression cases include concurrent renewal and checkpoint writes,
+takeover during a callback, same-name reacquisition followed by a late old
+receipt, a failed release racing a new owner, and an ambiguous checkpoint
+response. Assert both stored continuation and ownership; rejecting a stale
+callback result must not mutate replacement state.
 
 ### 7.4 Selecting leases across workers
 
@@ -696,8 +850,13 @@ If none are available, a worker below its target can select a donor lease
 according to the balancing policy.
 
 An **expired lease** has not been renewed within the expiration budget.
-**Processing-inactivity takeover** permits another worker to select a lease
-whose processing deadline has passed, even if renewal continues.
+The prototype also permits **processing-inactivity takeover** even if renewal
+continues. Under the proposed two-timestamp schema, an inactivity threshold
+would be shared policy rather than a stored per-lease deadline. Its safe
+eligibility rule is not yet resolved: an old `processed_at` alone is not
+sufficient evidence of a stuck processor. The policy must satisfy the
+[liveness contract](#115-detect-stalls-and-confirm-recovery) before enabling
+that takeover behavior.
 
 Driver `balance()` reads current leases and selects acquisition candidates:
 
@@ -754,8 +913,9 @@ Source: `processing.rs`, `supervise()` and `renew()`.
 
 ### 7.6 Detecting ownership loss and cleaning up
 
-Ownership loss is not immediately pushed to the old worker. Its next fenced
-lease operation discovers a different owner or ownership-turn identifier.
+Ownership loss is not immediately pushed to the old worker. Its next
+conditional lease mutation detects that its cached ETag is no longer current;
+a missing document also ends the acquisition.
 
 The supervisor then signals cancellation to the processing operation and waits
 for it to finish before release cleanup. Release uses the same ownership checks,
@@ -1109,10 +1269,12 @@ if let Some(pending) = lease.pending.clone() {
 }
 ```
 
-This is a focused excerpt. `update()` reads fresh lease state, validates
-ownership, and replaces the document using its ETag. A successful checkpoint
-installs updated local state and clears the pending progress. With no pending
-progress, `flush()` makes no write.
+This is a prototype excerpt. Under the proposed ETag-only contract, `update()`
+must replace using the acquisition's cached ETag under its mutation lock,
+rather than reread and adopt a newer version. A confirmed successful checkpoint
+installs updated local state and its returned ETag, then clears pending
+progress. A precondition failure ends the acquisition. With no pending progress,
+`flush()` makes no write.
 
 #### 8.6.3 How Deferred schedules persistence
 
@@ -1388,10 +1550,50 @@ Recovery uses the stored position, including after the
 **Current limitation:** with an initial `Now` start and no durable continuation,
 a restart can choose a later starting position. The default Deferred policy
 does not yet establish a durable initial anchor before relying on restart.
+This violates G3's intended restart guarantee; documenting the limitation does
+not resolve it. The proposed requirement is described next.
 
 Stopping one worker does not stop the workload's other workers.
 [Rebalancing](#77-how-start-and-stop-affect-rebalancing) explains when they discover
 released leases.
+
+### 10.4 Establish a stable initial resume position
+
+**Required for G3:** before relying on restart, durably establish the position
+from which a new lease begins. Applying `Now` again after a crash must not move
+that boundary forward. This initial anchor is required under both checkpoint
+policies; it is not permission to checkpoint a fetched but unprocessed batch.
+
+Proposed control flow, with illustrative helper names:
+
+```rust
+let position = match acquisition.saved_continuation() {
+    Some(saved) => validate_saved_position(saved)?,
+    None => {
+        let anchor = resolve_initial_resume_position(initial_start).await?;
+        acquisition.persist_initial_anchor_if_match(&anchor).await?;
+        anchor
+    }
+};
+let batch = read_from(position).await?;
+let items = deserialize(&batch)?;
+handler(items).await?;
+batch.receipt.acknowledge().await?;
+```
+
+The anchor must represent the position **before** changes that still require
+processing. Never use a fetched data page's ending continuation as an initial
+anchor before its handler succeeds. If resolving an initial position requires
+a source read, the design must retain a resumable pre-page position and must
+not skip that page.
+
+**Open mechanism:** how to obtain and durably establish such a position for
+each supported start option and feed mode, including failure between resolution
+and persistence. The sketch specifies the required ordering; it does not prove
+that the service already exposes the needed pre-page token. Without a safe
+anchor, fail or explicitly withhold the restart guarantee; never silently
+substitute a later `Now`. An invalid, incompatible, or expired saved token is
+an error, not a reason to run the initial-start branch.
 
 ## 11. How would failures be handled and exposed to the application?
 
@@ -1484,6 +1686,63 @@ signals remains open design work.
 
 Handling unwinding panics, cancellation, request deadlines, and TTL recovery
 do not cover process aborts or non-yielding application code.
+
+### 11.5 Detect stalls and confirm recovery
+
+**Required for G1 and G2:** distinguish a live owner, useful processing activity,
+and recovery that actually restores activity. `renewed_at` and `processed_at`
+are persisted signals, not a complete health state machine.
+
+| Observed state | Required interpretation and behavior |
+| --- | --- |
+| Waiting for demand, eligible queue turn, idle poll delay, or known throttle cooldown | Not a hung handler merely because no items were processed. Track excessive scheduling delay separately; do not silently label starvation healthy. |
+| Successful empty source read | Healthy processing activity. Update the local health timestamp without invoking a callback. |
+| Active source read exceeds its six-second budget | Report timeout, end the affected turn, and allow another eligible acquisition to serve demand. |
+| Active handler exceeds an agreed processing limit while renewal succeeds | Report a stall and attempt cancellation/recovery without acknowledging its batch. Renewal alone is not proof of processing health. |
+| Owner no longer renews | Permit takeover after expiration through the conditional acquisition path. |
+| New owner repeatedly encounters the same failure | Recovery has not succeeded. Report persistent failure and apply an agreed retry/backoff policy rather than count ownership changes as progress. |
+
+Use monotonic local timers for active-operation durations and the initial
+acquisition baseline. A lease without `processed_at` has not yet reported a
+successful processing turn; it is not immediately stalled. Record operation
+kind, start time, completion/failure, and acquisition identity locally so a
+waiting range is distinguishable from a running callback. Publish a newer
+`processed_at` on a subsequent conditional owner write; ordinary renewal must
+not manufacture processing activity. With Deferred, that timestamp is not
+proof that the corresponding continuation has been saved.
+
+The intended supervision flow is illustrated below. Helpers and event types
+are proposed, and do not define a new public API or an implemented watchdog:
+
+```rust
+match wait_for_operation_or_deadline(operation, phase_budget).await {
+    OperationOutcome::Completed(result) => record_operation_outcome(result)?,
+    OperationOutcome::TimedOut => {
+        report_stall(&acquisition, phase);
+        acquisition.cancel_without_acknowledging();
+        settle_issued_work_or_report_cleanup_failure().await?;
+        acquisition.release_if_match().await?;
+        track_recovery_until_activity_or_failure(lease_id).await?;
+    }
+}
+```
+
+The failure path must still be observed: cancellation or conditional release
+can fail, and then takeover relies on ownership expiration. A successful
+release or subsequent acquisition alone must not emit a recovery-success
+signal. Observe the replacement's handler success or healthy empty read, and
+observe durable checkpoint advancement separately. If no eligible worker or
+service capacity is available, expose recovery as pending or failed, not
+completed. A single worker may reacquire; a second worker is not guaranteed.
+
+**Unresolved before claiming bounded recovery:** handler limits and cancellation
+grace, retry/backoff bounds, shared inactivity settings, visibility across
+workers, and the health-reporting interface. A stale processing timestamp must
+not by itself cause takeover of a range queued behind another callback.
+Non-yielding application code cannot be forcibly stopped by dropping an async
+future; runtime starvation or unbounded cleanup prevents a bounded-recovery
+claim without stronger isolation. The existing unlimited graceful `stop()`
+contract does not become a timeout contract through this sketch.
 
 ## 12. How would background tasks coordinate polling, renewal, and balancing?
 
@@ -1750,10 +2009,16 @@ registration method.
   only. Alternate lease stores are not currently being considered.
 - **Initial restart position:** how should an initial `Now` position remain
   stable across restart before the first durable Deferred checkpoint, so
-  changes are not missed?
+  changes are not missed? Resolve the [initial anchor mechanism](#104-establish-a-stable-initial-resume-position)
+  under Eager as well as Deferred.
 - **Persistent failures:** should repeatedly failing acquisitions back off or
   suspend, and how should the application observe failure when batch receives
-  remain pending?
+  remain pending? Define bounded recovery attempts and [evidence of recovery](#115-detect-stalls-and-confirm-recovery),
+  not just ownership changes.
+- **Processing health and takeover:** agree on operation-specific limits,
+  shared inactivity policy, startup baseline, cancellation bounds, and
+  cross-worker health visibility. Do not equate an old `processed_at` with a
+  hung handler or let healthy empty reads cause repeated takeover.
 
 Prefix scope and process-until behavior are proposed use cases, not implemented
 processor options.
@@ -1776,6 +2041,15 @@ rather than deferring that evidence to a final combined PR.
 | 2 | One worker, partition splits, Eager | Exact replacement coverage, continuation projection, and children-before-parent deletion. Inject interrupted child creation and failed parent deletion. |
 | 3 | Multiple workers, partition splits, Eager | Balancing, competing acquisition, ownership loss, stale acknowledgments, and recovery races. |
 | 4 | Multiple workers, partition splits, Deferred | Safe pending progress, deadline/barrier flushes, permitted replay, and topology recovery with delayed persistence. |
+
+Each PR must provide evidence for the applicable
+[guarantees](#21-guarantees-to-establish). Stage 1 must exercise healthy idle
+reads, a stalled handler while renewal continues, and restart before the first
+normal checkpoint. Stage 3 must verify processing after takeover and expose
+repeated failed recovery, not merely assert a changed owner. Stage 4 must
+verify that published processing health cannot be mistaken for durable progress.
+Include a resume-token failure case that confirms no fallback to a later `Now`.
+These are planned acceptance cases, not tests executed by this design PR.
 
 Treat stage 1a as an early integration gate: **can GoV2 implement its CFP
 processing loop over the proposed FFI contract?** Run an end-to-end GoV2
