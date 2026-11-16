@@ -19,7 +19,7 @@
 9. [How would partition splits and merges affect processing?](#9-how-would-partition-splits-and-merges-affect-processing)
 10. [How would a worker stop and resume processing?](#10-how-would-a-worker-stop-and-resume-processing)
 11. [How would failures be handled and exposed to the application?](#11-how-would-failures-be-handled-and-exposed-to-the-application)
-12. [How would background tasks coordinate polling, renewal, and balancing?](#12-how-would-background-tasks-coordinate-polling-renewal-and-balancing)
+12. [How would background tasks coordinate feed processing, renewal, and balancing?](#12-how-would-background-tasks-coordinate-feed-processing-renewal-and-balancing)
 13. [How would an application configure and control the Rust processor?](#13-how-would-an-application-configure-and-control-the-rust-processor)
 14. [Open questions and scope limits](#14-open-questions-and-scope-limits)
 15. [How would we iterate on and review changes?](#15-how-would-we-iterate-on-and-review-changes)
@@ -56,7 +56,7 @@ necessarily a separate process, machine, or thread.
 | Execute feed processing | Read eligible owned ranges on demand, deliver batches, invoke the application handler in its SDK runtime, and acknowledge only successful processing. Handle topology changes without leaving a range unmonitored. | [SDK/driver flow](#42-shared-rust-engine), [delivery coordination](#8-how-would-batch-requests-delivery-and-checkpointing-stay-coordinated), and [topology recovery](#9-how-would-partition-splits-and-merges-affect-processing). |
 | Balance feed processing across workers | Coordinate range ownership through leases, assign work among cooperating workers, and redistribute it after workers join, leave, or fail. Fence old acquisitions so redistribution cannot authorize stale progress writes. | [Ownership and balancing](#7-how-would-leases-be-allocated-across-workers). |
 | Safe checkpointing | Separate fetched, successfully processed, and durably saved positions. Persist only safe progress under current ownership, implement Eager/Deferred completion semantics, and resume without silently skipping changes. | [Progress and lease state](#5-how-is-progress-tracked-in-the-change-feed-processor), [checkpointing](#86-tie-successful-processing-to-the-next-delivery), and [restart](#10-how-would-a-worker-stop-and-resume-processing). |
-| Worker health detection | Distinguish ownership liveness, healthy idle processing, and stalled operations. Expose failures, attempt recovery, and confirm that processing resumes rather than treating an ownership change as recovery success. | [Failures and health](#11-how-would-failures-be-handled-and-exposed-to-the-application) and [background coordination](#12-how-would-background-tasks-coordinate-polling-renewal-and-balancing). |
+| Worker health detection | Distinguish ownership liveness, healthy idle processing, and stalled operations. Expose failures, attempt recovery, and confirm that processing resumes rather than treating an ownership change as recovery success. | [Failures and health](#11-how-would-failures-be-handled-and-exposed-to-the-application) and [background coordination](#12-how-would-background-tasks-coordinate-feed-processing-renewal-and-balancing). |
 | Manage worker lifecycle and resource cleanup | Start and stop predictably, drain issued work during graceful shutdown, and cancel safely on failure. Release ownership conditionally and clean up tasks, receipts, and native/FFI handles without affecting replacement owners. | [Shutdown and restart](#10-how-would-a-worker-stop-and-resume-processing) and [graceful drain coordination](#122-during-graceful-feed-processing-drain). |
 
 ### 2.2 Guarantees to establish
@@ -86,6 +86,25 @@ uninterrupted progress during an outage or automatic repair of a permanently
 failing handler. Thresholds, shared settings, and the health-observation surface
 are [open design decisions](#14-open-questions-and-scope-limits).
 
+### 2.3 Terminology
+
+| Term | Meaning |
+| --- | --- |
+| Feed processing | The complete cycle: request a batch, read the source, run the application handler, acknowledge success, and checkpoint according to policy. |
+| Source read | The driver operation that reads the source container's change feed. It is one part of feed processing, not a synonym for it. |
+| Read turn | Permission for one acquired lease to execute a source-read operation. Request-level retries may issue multiple service requests within that turn. |
+| SDK consumer | The SDK task that requests one batch, runs the application handler, and awaits acknowledgment before requesting another. |
+| Lease processor | The driver operation for one acquired lease: wait for demand, perform a source read, deliver a batch, and handle its acknowledgment and safe checkpoint progress. It does not invoke the application handler. |
+| Request distributor | The driver component that matches an SDK batch request with a ready lease processor. It does not distribute lease ownership. |
+| Lease supervisor | The driver operation that coordinates a lease processor and lease renewal. |
+| Worker coordinator | The driver task that coordinates lease balancing and the worker's lease supervisors. |
+| Lease balancing | Distributing range ownership across workers through conditional lease acquisition. |
+| Idle read delay | The delay before a lease can try another source read after an empty result. It is separate from the source-read time budget. |
+
+Code identifiers retain their names: `poll_feed()` and its wrapper `poll()`
+perform lease processing, `ChangeFeedRequestDistributor` is the request
+distributor, and `with_feed_poll_delay()` configures the idle read delay.
+
 ## 3. Non-functional requirements
 
 - Distribute processing load equally across cooperating workers.
@@ -96,8 +115,8 @@ The **SDK** is the application-facing library; the **driver** is the shared
 engine beneath it.
 
 The **application handler** is the callback that processes a batch of changes.
-The SDK's **processing pipeline** reads a batch, invokes the handler, and
-records successful processing.
+The SDK consumer requests a batch, invokes the handler, and acknowledges
+successful processing to the driver.
 
 Here, **progress** means how far the application has successfully processed
 the change feed. A **checkpoint** saves a resume position durably; the
@@ -146,7 +165,7 @@ if (consumer != null) {
 **Responsibility:** [execute feed processing](#21-implementation-responsibilities).
 
 The SDK owns application callback execution. The shared driver engine owns
-lease coordination, feed reads, and checkpoint persistence.
+lease coordination, source reads, and checkpoint persistence.
 
 1. **SDK requests work:** request a batch of changes.
 2. **Driver reads changes:** select an eligible partition range owned by the
@@ -201,8 +220,8 @@ while let Some(batch) = driver.read_next_change_feed_batch().await {
 }
 ```
 
-Dispatch is awaited, not separately spawned. The next iteration therefore
-cannot accumulate demand while the current batch is being processed.
+The SDK consumer awaits `dispatch()` rather than spawning it. The next
+iteration cannot accumulate demand while the current batch is being processed.
 
 **Invoke the handler in the SDK:** deserialization converts returned data to
 application types. The SDK passes those items and batch context (lease identity
@@ -845,13 +864,12 @@ defines drain and cancellation behavior, and the
 
 The SDK requests one batch using the driver's
 `read_next_change_feed_batch()` method. Each acquired partition range registers
-when its feed poller can accept another read turn. These registrations form a
+when its lease processor can accept another read turn. These registrations form a
 waiting list; the driver selects one when an SDK request is pending.
 
 **The waiting list contains no fetched changes.** This request-matching
 component is named `ChangeFeedRequestDistributor`: it distributes read
-requests, not lease ownership. Below, "distributor" refers to that component
-and "eligibility queue" to its waiting list.
+requests, not lease ownership. Its waiting list is the **eligibility queue**.
 
 Each acquisition has a separate **delivery session**, its local state and
 cleanup scope. Its delivery state controls whether it may register, read, or
@@ -859,40 +877,40 @@ deliver again.
 
 ### 8.1 Register readiness and grant one read turn
 
-The SDK awaits `read_next_change_feed_batch()`. Each acquired lease's **feed
-poller** calls `wait_for_demand()` to register readiness. Registration and the
+The SDK consumer awaits `read_next_change_feed_batch()`. Each **lease
+processor** calls `wait_for_demand()` to register readiness. Registration and the
 SDK request can arrive in either order; **both are required before a read turn
 is granted**.
 
-**This is asynchronous request/reply, not a synchronous call into the poller.**
+**This is asynchronous request/reply, not a synchronous call into the lease processor.**
 Demand is represented by the SDK's pending receive future. There is no separate
 FIFO of demand objects: the eligibility queue is a `VecDeque` of weak
 delivery-session handles, protected by a short-held mutex.
 
 | Abstraction | Purpose |
 | --- | --- |
-| Eligibility FIFO (`VecDeque`) | Queue acquisitions whose pollers are ready for a read turn, not requests or fetched batches. |
+| Eligibility FIFO (`VecDeque`) | Queue acquisitions whose lease processors are ready for a read turn, not requests or fetched batches. |
 | Async selection lock (`async_lock::Mutex`) | Serialize selection by pending receives, not the resulting source reads. |
 | Readiness notification (`futures::task::AtomicWaker`) | Wake the waiting receive task when an acquisition becomes eligible or delivery stops. With no eligible acquisition, selection returns `Poll::Pending` rather than spinning. |
-| One-shot channels (`futures::channel::oneshot`) | Transfer read permission to the poller and return a batch to the specific receive that granted it, using separate channel pairs. |
+| One-shot channels (`futures::channel::oneshot`) | Transfer read permission to the lease processor and return a batch to the specific receive that granted it, using separate channel pairs. |
 
-The distributor selects a waiting registration, removes it from the queue, and
-creates a batch-response channel pair. It retains the response receiver in the
+The request distributor selects a waiting registration, removes it from the
+queue, and creates a batch-response channel pair. It retains the response receiver in the
 pending SDK call and sends `ReadDemand { response: response_sender }` through
-the selected poller's read-permission channel. The poller awaits that permission,
-performs the source read asynchronously, then sends the batch through the
+the selected lease processor's read-permission channel. The lease processor
+awaits that permission, performs the source read asynchronously, then sends the batch through the
 response sender carried by that demand.
 
 **The response sender is the association between demand and response.** It
 belongs to that receive, so no shared response queue or request-ID lookup is
 needed. Sending permission does not synchronously execute the source read or
-invoke the application handler. The SDK awaits the response while the poller
-reads independently; these waits suspend their tasks, and scheduler locks are
+invoke the application handler. The SDK consumer awaits the response while the
+lease processor reads independently; these waits suspend their tasks, and scheduler locks are
 not held across the source read or response wait.
 
 A one-shot channel transfers one value and wakes its receiver. Dropping the
 sender without replying signals channel cancellation, not a batch. For idle
-or failed reads, the distributor can try another acquisition for the same
+or failed reads, the request distributor can try another acquisition for the same
 pending receive. Acknowledgment uses separate channels for its request and
 completion result.
 
@@ -904,21 +922,21 @@ coordination, not durable delivery or a timeout.**
 | State | Meaning | Next action |
 | --- | --- | --- |
 | `Idle` | No outstanding delivery or demand registration. | Register readiness. |
-| `WaitingForDemand` | Registered in the eligibility queue. | Distributor grants a read turn. |
+| `WaitingForDemand` | Registered in the eligibility queue. | Request distributor grants a read turn. |
 | `Fetching` | A read turn has been granted. | Read and deliver, or yield after an idle/throttled turn. |
 | `AwaitingAcknowledgment` | A batch has been handed to the receiver. | Wait for successful processing and acknowledgment completion. |
 | `Closed` | This acquisition's delivery session has ended. | Remove or skip its queue entries. |
 
 These are delivery states, not persisted lease lifecycle states. `Fetching`
 also remains in use during an idle delay or throttle cooldown, until the
-poller registers again. `AwaitingAcknowledgment` covers SDK deserialization,
+lease processor registers again. `AwaitingAcknowledgment` covers SDK deserialization,
 handler execution, and any required checkpoint write; it does not distinguish
 those activities diagnostically.
 
 ### 8.3 How source-read outcomes change delivery state
 
 **Each SDK `read_next_change_feed_batch()` call returns at most one batch.**
-For an authorized range turn, the poller executes the read plan once and
+For an authorized range turn, the lease processor executes the read plan once and
 handles that response; it does not drain multiple pages from that partition
 range into a single delivery. Another data page requires successful
 acknowledgment and a new read turn.
@@ -939,8 +957,8 @@ flowchart TD
     Idle -->|Register another turn| Waiting
     Success -->|No| Closed["End acquisition and close delivery"]
     Outcome -->|304: no changes| NoChanges["Remain Fetching: record safe idle position and drop demand"]
-    NoChanges --> PollDelay["Await poll delay while servicing checkpoint deadlines"]
-    PollDelay -->|Register again| Waiting
+    NoChanges --> IdleDelay["Await idle read delay while servicing checkpoint deadlines"]
+    IdleDelay -->|Register again| Waiting
     Outcome -->|Ordinary 429| Throttled["Remain Fetching: drop demand before cooldown"]
     Throttled --> Cooldown["Await cooldown while servicing checkpoint deadlines"]
     Cooldown --> Retry{"Retry budget remains?"}
@@ -954,10 +972,10 @@ The delay/cooldown boxes describe work done while the actual state remains
 
 | Outcome | State and channel handling | Effect on the pending SDK receive |
 | --- | --- | --- |
-| Data | Move the response to its original receiver and enter `AwaitingAcknowledgment`. Do not register another turn until receipt completion succeeds. | Return this batch, then SDK dispatch handles it. |
-| 304 | Drop the response, record safe idle continuation according to policy, and drop demand before waiting. Remain `Fetching` until readiness is registered again. | Reply sender closes without a batch; the request matcher tries another eligible acquisition. |
+| Data | Move the response to its original receiver and enter `AwaitingAcknowledgment`. Do not register another turn until receipt completion succeeds. | Return this batch, then the SDK consumer runs the application handler. |
+| 304 | Drop the response, record safe idle continuation according to policy, and drop demand before waiting. Remain `Fetching` until readiness is registered again. | Reply sender closes without a batch; the request distributor tries another eligible acquisition. |
 | Ordinary 429 | Drop demand before the lease-local cooldown. Keep retry state across turns; register again only when cooldown permits retry. | Reply sender closes without a batch; another eligible range can serve the same receive. |
-| Remaining source error | Propagate the error to supervision and end the affected delivery session during cleanup. Explicit source-topology failures can initiate range recovery. | No error batch is returned; the receive can seek another eligible acquisition. |
+| Remaining source error | Propagate the error to the lease supervisor and end the affected delivery session during cleanup. Explicit source-topology failures can initiate range recovery. | No error batch is returned; the receive can seek another eligible acquisition. |
 
 Idle progress needs no application callback because no changes were returned.
 Eager can persist that position immediately; Deferred does not force a write
@@ -986,7 +1004,7 @@ Queue [A, B] -- select A --> Queue [B]
               v                 v                  v
  Send ONE batch to SDK    Handle idle progress   Drop demand
  A: AwaitingAcknowledgment Drop demand           Wait cooldown
-              |           Wait poll delay       A stays Fetching
+              |           Wait idle read delay  A stays Fetching
               |           A stays Fetching          |
               v                 |                  |
  Callback success               +--------+---------+
@@ -1035,10 +1053,10 @@ SDK consumer W1                       SDK consumer W2
       v                                     v
 Processor W1                          Processor W2
       |                                     |
-Request matcher W1                    Request matcher W2
+Request distributor W1                Request distributor W2
 Queue [A, B]                          Queue [C, D]
       |                                     |
-Feed pollers for A, B                 Feed pollers for C, D
+Lease processors for A, B             Lease processors for C, D
       |                                     |
       +---------- source reads -------------+
                         |
@@ -1062,7 +1080,7 @@ workers.**
 
 The [ownership checks](#73-handle-competing-writes)
 operate at lease-document writes, not queue selection. When a fenced operation
-detects loss, supervision cancels
+detects loss, the lease supervisor cancels
 processing and ends that session.
 
 The old delivery session is closed and its queue entries are removed by
@@ -1096,14 +1114,14 @@ Checkpoint policy determines what acknowledgment completion requires:
 
 #### 8.6.1 How acknowledgment records safe progress
 
-After the handler succeeds, SDK dispatch calls:
+After the handler succeeds, the SDK consumer calls:
 
 ```rust
 receipt.acknowledge().await
 ```
 
-The receipt sends an acknowledgment to the waiting driver poller and waits
-for its completion result. It does not itself write to Cosmos DB. The poller
+The receipt sends an acknowledgment to the waiting lease processor and waits
+for its completion result. It does not itself write to Cosmos DB. The lease processor
 already knows the continuation associated with the delivered batch:
 
 ```rust
@@ -1133,9 +1151,9 @@ let result = result.and_then(|()| session.acknowledged());
 The receipt's `checkpoint()` method requests durable persistence explicitly
 under either policy; this sets the `acknowledgment.durable` flag in the excerpt.
 `and_then` reopens delivery only if the required work succeeded:
-`AwaitingAcknowledgment` becomes `Idle`. The poller replies to the SDK and
-can register for another turn; after dispatch completes, the SDK requests
-another batch. Neither side must register first.
+`AwaitingAcknowledgment` becomes `Idle`. The lease processor replies to the SDK
+consumer and can register for another turn. After `dispatch()` completes, the
+SDK consumer requests another batch. Neither side must register first.
 
 `flush()` writes only pending safe progress:
 
@@ -1165,8 +1183,8 @@ computes the time remaining from the first unsaved progress:
 Some(max_interval.saturating_sub(now.saturating_duration_since(pending.since)))
 ```
 
-An overdue checkpoint produces zero delay. `wait_with_checkpoint()` polls
-the current operation alongside that deadline and cancellation signals.
+An overdue checkpoint produces zero delay. `wait_with_checkpoint()` waits
+for the current operation, checkpoint deadline, or cancellation signal.
 When the deadline fires, it awaits the same `flush()` operation, then resumes
 waiting on the original operation rather than recreating it.
 
@@ -1194,8 +1212,8 @@ failure behavior is detailed in [failure handling](#11-how-would-failures-be-han
 ```mermaid
 sequenceDiagram
     participant SDK as SDK consumer
-    participant D as Driver distributor
-    participant P as Feed poller for owned lease
+    participant D as Request distributor
+    participant P as Lease processor
     participant L as Lease container
     Note over SDK,P: SDK demand and readiness registration may arrive in either order
     SDK->>D: Request one batch
@@ -1215,7 +1233,7 @@ sequenceDiagram
     end
     Note over P: Reopen delivery: Idle
     P-->>SDK: Acknowledgment result
-    Note over SDK,P: SDK requests again and poller re-registers for another turn
+    Note over SDK,P: SDK consumer requests again and lease processor re-registers
 ```
 
 ### 8.7 Preserve the ordering during failures
@@ -1254,7 +1272,7 @@ returns an explicitly tagged `PollError::SourceTopologyChange`. Its enclosing
 `poll()` attempts to flush eligible acknowledged progress. A failed flush
 prevents recovery from proceeding with unpersisted progress.
 
-The supervisor settles processing and renewal before dispatching recovery.
+The lease supervisor settles lease processing and renewal before starting recovery.
 It does not initiate recovery during shutdown. A renewal failure remains a
 lease-operation failure, even if its status describes topology change.
 
@@ -1311,8 +1329,8 @@ parent:
 self.store().delete(&id, parent.etag.clone()).await
 ```
 
-Normal balancing discovers and acquires the children. Recovery does not bypass
-ownership acquisition to start their pollers.
+Lease balancing discovers and acquires the children. Recovery does not bypass
+ownership acquisition to start their lease processors.
 
 ```text
 Source-feed topology failure
@@ -1321,7 +1339,7 @@ Source-feed topology failure
 → validate ownership and renew parent conditionally
 → ensure children with projected saved positions
 → delete parent conditionally
-→ acquire children through normal balancing
+→ acquire children through lease balancing
 ```
 
 ### 9.4 How ownership checks constrain recovery, checkpoints, and queue readiness
@@ -1368,13 +1386,13 @@ requests cancellation without waiting.
 3. Issued work settles. A batch already handed to the SDK can finish its
    handler and acknowledgment; a read not yet delivered can be discarded.
 4. Lease renewal continues while processing drains.
-5. Each poller attempts to persist eligible acknowledged progress, including
+5. Each lease processor attempts to persist eligible acknowledged progress, including
    pending Deferred progress. It does not acknowledge unfinished or failed
    application work.
-6. Supervisors join processing and renewal, then conditionally release leases.
-7. The coordinator joins outstanding acquisition work and supervisors, and
+6. Lease supervisors join lease processing and renewal, then conditionally release leases.
+7. The worker coordinator joins outstanding acquisition work and lease supervisors, and
    retries recorded ownership cleanup without clearing a replacement owner.
-8. The SDK waits for its dispatcher to finish and returns the shutdown result.
+8. The SDK consumer finishes before shutdown returns its result.
 
 The public SDK method waits for both driver and SDK completion:
 
@@ -1401,7 +1419,7 @@ impl Drop for Running {
 ```
 
 Forced cancellation ends outstanding receipt waits rather than waiting for
-application callbacks. SDK dispatch races the callback against lease
+application callbacks. The SDK consumer races the handler against lease
 cancellation. Already-issued service operations or application side effects
 cannot be undone.
 
@@ -1482,11 +1500,11 @@ Failures are handled at the stage that can distinguish their meaning.
 | --- | --- | --- |
 | Ordinary source-read throttling | Release receive demand, apply lease-local cooldown, and retry within the throttle budget. | The pending receive can try another eligible acquisition. |
 | Slow source read | Allow six seconds per lease's source-read turn for planning/read execution, rather than a five-second or shorter turn deadline. A remaining timeout ends the acquisition. | The pending receive can continue seeking a batch elsewhere. |
-| Other service/transport errors | Applicable driver request/routing policies run first; remaining errors propagate to supervision. | Report failure and end the affected acquisition as appropriate. |
+| Other service/transport errors | Applicable driver request/routing policies run first; remaining errors propagate to the lease supervisor. | Report failure and end the affected acquisition as appropriate. |
 | Source-feed topology change | Preserve explicit source origin and attempt range-local recovery after safe-progress handling. | No topology-error batch is sent to the handler. |
 | Lost ownership | Reject stale lease mutations, cancel/join processing, and attempt fenced cleanup. | The callback can be canceled; already-performed effects remain. |
 | Checkpoint failure | Return an error to the receipt waiter when applicable and end affected processing. | Callback success may be followed by acknowledgment failure and replay. |
-| Lease release failure | Report it and retain cleanup state for the coordinator's final attempt. | Shutdown can fail; unreleased ownership can later expire. |
+| Lease release failure | Report it and retain cleanup state for the worker coordinator's final attempt. | Shutdown can fail; unreleased ownership can later expire. |
 
 Metadata and lease writes keep their normal request retries. Ordinary CFP
 page-read throttle retries are instead handled outside the request pipeline
@@ -1513,7 +1531,7 @@ unrelated source partition.
 
 ### 11.2 Application handler failures
 
-SDK dispatch acknowledges only successful deserialization and handler completion.
+The SDK consumer acknowledges only successful deserialization and handler completion.
 
 - Deserialization or handler errors are logged; the receipt is abandoned.
 - An unwinding handler panic is caught and logged without acknowledgment.
@@ -1545,7 +1563,7 @@ automatically skipped.
   pub async fn read_next_change_feed_batch(&self) -> Option<ChangeFeedBatch>
   ```
 
-Channel closure for a failed or idle read causes the distributor to seek
+Channel closure for a failed or idle read causes the request distributor to seek
 another eligible acquisition. If every acquisition repeatedly fails, receiving
 can remain pending while errors are logged; an application must not interpret
 that wait as proof of healthy processing.
@@ -1573,7 +1591,7 @@ state machine.
 
 | Observed state | Required interpretation and behavior |
 | --- | --- |
-| Waiting for demand, eligible queue turn, idle poll delay, or known throttle cooldown | Not a hung handler merely because no items were processed. Track excessive scheduling delay separately; do not silently label starvation healthy. |
+| Waiting for demand, eligible queue turn, idle read delay, or known throttle cooldown | Not a hung handler merely because no items were processed. Track excessive scheduling delay separately; do not silently label starvation healthy. |
 | Successful empty source read | Healthy processing activity. Update the local health timestamp without invoking a callback. |
 | Active source read exceeds its six-second budget | Report timeout, end the affected turn, and allow another eligible acquisition to serve demand. |
 | Active handler exceeds an agreed processing limit while renewal succeeds | Report a stall and attempt cancellation/recovery without acknowledging its batch. Renewal alone is not proof of processing health. |
@@ -1621,13 +1639,14 @@ future; runtime starvation or unbounded cleanup prevents a bounded-recovery
 claim without stronger isolation. The existing unlimited graceful `stop()`
 contract remains separate from stall-recovery limits.
 
-## 12. How would background tasks coordinate polling, renewal, and balancing?
+## 12. How would background tasks coordinate feed processing, renewal, and balancing?
 
-A **spawned task** is asynchronous work scheduled by the runtime. Within one
-worker, the SDK spawns a consumer task and the driver spawns a coordinator
-task. The coordinator polls a balancing future and the supervisor futures for
-its acquired leases. Each supervisor polls feed processing and renewal
-together; **there is no separately spawned task or thread per lease**.
+A **spawned task** is asynchronous work scheduled by the runtime. Each worker
+has two spawned tasks: the SDK consumer and the worker coordinator.
+The worker coordinator advances lease balancing and its
+lease supervisors concurrently. Each lease supervisor advances its lease
+processor and renewal concurrently; **there is no separately spawned task or
+thread per lease**.
 
 ```mermaid
 flowchart TB
@@ -1637,24 +1656,24 @@ flowchart TB
         Ack["Await acknowledgment result"]
         Consumer --> Handler --> Ack --> Consumer
     end
-    subgraph DriverTask["Driver coordinator task"]
-        Coordinator["run: poll balancing and supervisors"]
-        Balance["balance: wait interval, list leases, acquire candidates"]
-        subgraph Lease["Supervisor future for each acquired lease"]
-            Supervisor["supervise: poll both activities"]
-            Feed["poll: demand, source read, receipt wait, safe-progress flush"]
-            Renew["renew: wait until due, validate ownership, update lease"]
+    subgraph DriverTask["Worker coordinator task"]
+        Coordinator["Worker coordinator: lease balancing and lease supervisors"]
+        Balance["Lease balancing: wait interval, list leases, acquire candidates"]
+        subgraph Lease["Lease supervisor for each acquired lease"]
+            Supervisor["Lease supervisor: lease processing and renewal"]
+            Feed["Lease processor: demand, source read, receipt wait, checkpoint"]
+            Renew["Lease renewal: wait until due and update ownership"]
             Supervisor --> Feed
             Supervisor --> Renew
         end
         Coordinator --> Balance
         Coordinator --> Supervisor
     end
-    Delivery["Distributor: demand and response channels"]
+    Delivery["Request distributor: demand and response channels"]
     State["Per-lease mutex: serialize renewal and checkpoint writes"]
     Consumer -->|Demand| Delivery
     Delivery -->|Read permission| Feed
-    Feed -->|Batch through distributor| Handler
+    Feed -->|Batch through request distributor| Handler
     Ack -->|Successful processing signal| Feed
     Feed -->|Checkpoint mutation| State
     Renew -->|Renewal mutation| State
@@ -1662,29 +1681,29 @@ flowchart TB
 ```
 
 The arrows describe coordination, not one synchronous call chain. While an
-operation is asynchronously pending, the coordinator can poll other ready
-futures. Concurrency does not require each activity to run simultaneously on
+operation is asynchronously pending, the worker coordinator can advance other
+ready futures. Concurrency does not require each activity to run simultaneously on
 a separate OS thread.
 
 ### 12.1 During normal feed processing
 
 | Activity | What makes it run? | Interaction with other work |
 | --- | --- | --- |
-| Load balancing | First pass starts immediately; later passes wait the acquisition interval. | Can discover and acquire leases while existing supervisors await reads or receipts. Does not wait for an entire feed backlog to drain. |
-| Feed processing | A pending SDK receive grants a read turn to an eligible acquisition. | A delivered batch waits for receipt completion before that acquisition can read another batch. |
-| Application handling | The SDK consumer receives a batch. | Sequential within this SDK worker; a slow handler prevents that consumer from requesting another batch, but does not itself stop driver balancing or renewal. |
+| Lease balancing | First pass starts immediately; later passes wait the acquisition interval. | Can discover and acquire leases while existing lease supervisors await source reads or receipts. Does not wait for an entire feed backlog to drain. |
+| Source read | A pending SDK receive grants a read turn to an eligible lease processor. | A delivered batch waits for receipt completion before that acquisition can read another batch. |
+| Application handler | The SDK consumer receives a batch. | Sequential within this SDK worker; a slow handler prevents that consumer from requesting another batch, but does not itself stop lease balancing or renewal. |
 | Lease renewal | Renewal becomes due after the latest successful lease write. | Continues while processing awaits demand, reads, or acknowledgment. Successful checkpoint writes also refresh renewal timing. |
 | Deferred persistence | The first unsaved safe progress reaches its deadline, or a barrier requires a flush. | Can flush earlier acknowledged progress while current work remains pending. It cannot checkpoint an unfinished batch. |
 
 The default lease-expiration budget is 60 seconds. Balancing checks use one
 sixth of that budget (10 seconds); renewal is scheduled after one third
 (20 seconds) without a successful lease write. These are independent of the
-source's idle poll delay and application handler duration.
+idle read delay and application handler duration.
 
 **Renewal and checkpoint mutations for the same lease are serialized by its
 mutex.** Source reads and SDK handlers do not hold that mutation lock.
 A slow lease-store write can therefore delay another mutation of that lease,
-even though its futures are polled concurrently.
+even though both operations can otherwise advance concurrently.
 
 ### 12.2 During graceful feed-processing drain
 
@@ -1696,16 +1715,16 @@ prefetching all remaining changes in the source container.
    a handler for a batch it already received; undelivered read results can be
    discarded.
 3. Keep renewing each lease while its processing drains.
-4. Flush eligible safe progress when that poller exits.
-5. The supervisor cancels and joins renewal, then conditionally releases the
+4. Flush eligible safe progress when that lease processor exits.
+5. The lease supervisor cancels and joins renewal, then conditionally releases the
    lease.
-6. The coordinator joins in-flight acquisition work rather than forgetting a
-   successful ownership write, joins all supervisors, and performs final
+6. The worker coordinator joins in-flight acquisition work rather than forgetting a
+   successful ownership write, joins all lease supervisors, and performs final
    ownership cleanup.
 
 ```text
 Normal operation:
-balancing continues | feed waits/reads/acknowledges | renewal continues
+lease balancing continues | lease processor waits/reads/acknowledges | renewal continues
 
 Graceful stop:
 close new demand/acquisition
@@ -1713,12 +1732,12 @@ close new demand/acquisition
 → flush safe progress
 → stop and join renewal
 → release ownership
-→ coordinator and SDK consumer finish
+→ worker coordinator and SDK consumer finish
 ```
 
-This is coordinated completion, not a periodic global barrier. Each lease's
-supervisor settles its own work; the coordinator waits for all of them at
-shutdown. If renewal ends first, it cancels and joins processing before
+This is coordinated completion, not a periodic global barrier. Each lease
+supervisor settles its own work; the worker coordinator waits for all of them
+at shutdown. If renewal ends first, the lease supervisor cancels and joins lease processing before
 cleanup, using the [ownership-loss path](#75-stop-after-ownership-loss).
 Forced cancellation and failures follow the
 [shutdown rules](#10-how-would-a-worker-stop-and-resume-processing), not the
