@@ -1764,12 +1764,26 @@ Build confidence through progressively harder scenarios, rather than reviewing
 every component at once. **Start with Eager to isolate delivery and ownership
 correctness; add Deferred after those contracts are established.**
 
+Each stage below is intended to be a separate, focused pull request (PR),
+including the GoV2 FFI integration stage. Each PR builds on the preceding
+stage and includes the implementation and validation evidence for its scenario,
+rather than deferring that evidence to a final combined PR.
+
 | Stage | Scenario | Review and test focus |
 | --- | --- | --- |
 | 1 | One worker, fixed leases, Eager | Read, handler success, durable checkpoint, and next batch. Verify restart from saved progress and failure without checkpoint advancement. |
+| 1a | GoV2 over the native FFI boundary, one worker, fixed leases, Eager | Verify that GoV2 can request batches from the shared Rust engine, invoke its handler in Go, and acknowledge successful processing through FFI. Check durable progress, resource lifetimes, cancellation, and shutdown. |
 | 2 | One worker, partition splits, Eager | Exact replacement coverage, continuation projection, and children-before-parent deletion. Inject interrupted child creation and failed parent deletion. |
 | 3 | Multiple workers, partition splits, Eager | Balancing, competing acquisition, ownership loss, stale acknowledgments, and recovery races. |
 | 4 | Multiple workers, partition splits, Deferred | Safe pending progress, deadline/barrier flushes, permitted replay, and topology recovery with delayed persistence. |
+
+Treat stage 1a as an early integration gate: **can GoV2 implement its CFP
+processing loop over the proposed FFI contract?** Run an end-to-end GoV2
+scenario, not only Rust tests of the native wrapper. Verify that batch and
+receipt handles remain valid until completion, are released on cancellation,
+and do not prevent acknowledgment or shutdown from making progress. Handler
+failure must not advance saved progress. GoV2 compatibility remains unproven
+until this scenario executes successfully.
 
 Before stage 3, test workers joining, leaving gracefully, and crashing with
 fixed topology. This separates ownership failures from split recovery failures.
