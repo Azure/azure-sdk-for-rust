@@ -22,6 +22,8 @@ use std::{
 };
 
 mod enums;
+#[cfg(all(feature = "test", feature = "unstable_fake"))]
+mod fake;
 
 const VAULT: &str =
     "/subscriptions/sub/resourceGroups/group/providers/Microsoft.KeyVault/vaults/vault";

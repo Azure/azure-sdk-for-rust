@@ -26,7 +26,7 @@ pub(crate) fn capture_key_vault_private_link_resources_client_list_by_vault(
 }
 /// Fake server for [`KeyVaultPrivateLinkResourcesClient`](crate::clients::KeyVaultPrivateLinkResourcesClient).
 ///
-/// Implement the operations used by your test. Implement unused child server traits with an empty `impl`.
+/// Implement the operations used by your test.
 ///
 /// # Panics
 /// Default operation implementations call [`unimplemented!()`].

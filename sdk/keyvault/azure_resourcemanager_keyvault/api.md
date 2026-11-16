@@ -259,7 +259,19 @@ pub mod clients {
             async fn list(&self, resource_group_name: &str, vault_name: &str, state: PagerState, options: Option<models::KeyVaultSecretsClientListOptions<'_>>) -> Result<AsyncRawResponse>;
             async fn update(&self, resource_group_name: &str, vault_name: &str, secret_name: &str, parameters: RequestContent<models::SecretPatchParameters>, options: Option<models::KeyVaultSecretsClientUpdateOptions<'_>>) -> Result<AsyncRawResponse>;
         }
-        pub trait KeyVaultServer: Send + Sync + crate::clients::fake::KeyVaultKeysServer + crate::clients::fake::KeyVaultManagedHsmKeysServer + crate::clients::fake::KeyVaultManagedHsmsServer + crate::clients::fake::KeyVaultMHSMPrivateEndpointConnectionsServer + crate::clients::fake::KeyVaultMHSMPrivateLinkResourcesServer + crate::clients::fake::KeyVaultMHSMRegionsServer + crate::clients::fake::KeyVaultNetworkSecurityPerimeterConfigurationsServer + crate::clients::fake::KeyVaultOperationsServer + crate::clients::fake::KeyVaultPrivateEndpointConnectionsServer + crate::clients::fake::KeyVaultPrivateLinkResourcesServer + crate::clients::fake::KeyVaultSecretsServer + crate::clients::fake::KeyVaultVaultsServer {
+        pub trait KeyVaultServer: Send + Sync {
+            fn as_key_vault_keys(&self) -> &dyn KeyVaultKeysServer;
+            fn as_key_vault_managed_hsm_keys(&self) -> &dyn KeyVaultManagedHsmKeysServer;
+            fn as_key_vault_managed_hsms(&self) -> &dyn KeyVaultManagedHsmsServer;
+            fn as_key_vault_mhsm_private_endpoint_connections(&self) -> &dyn KeyVaultMHSMPrivateEndpointConnectionsServer;
+            fn as_key_vault_mhsm_private_link_resources(&self) -> &dyn KeyVaultMHSMPrivateLinkResourcesServer;
+            fn as_key_vault_mhsm_regions(&self) -> &dyn KeyVaultMHSMRegionsServer;
+            fn as_key_vault_network_security_perimeter_configurations(&self) -> &dyn KeyVaultNetworkSecurityPerimeterConfigurationsServer;
+            fn as_key_vault_operations(&self) -> &dyn KeyVaultOperationsServer;
+            fn as_key_vault_private_endpoint_connections(&self) -> &dyn KeyVaultPrivateEndpointConnectionsServer;
+            fn as_key_vault_private_link_resources(&self) -> &dyn KeyVaultPrivateLinkResourcesServer;
+            fn as_key_vault_secrets(&self) -> &dyn KeyVaultSecretsServer;
+            fn as_key_vault_vaults(&self) -> &dyn KeyVaultVaultsServer;
         }
         #[async_trait]
         pub trait KeyVaultVaultsServer: Send + Sync {

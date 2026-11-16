@@ -29,7 +29,7 @@ pub(crate) fn capture_key_vault_mhsm_regions_client_list_by_resource(
 }
 /// Fake server for [`KeyVaultMHSMRegionsClient`](crate::clients::KeyVaultMHSMRegionsClient).
 ///
-/// Implement the operations used by your test. Implement unused child server traits with an empty `impl`.
+/// Implement the operations used by your test.
 ///
 /// # Panics
 /// Default operation implementations call [`unimplemented!()`].

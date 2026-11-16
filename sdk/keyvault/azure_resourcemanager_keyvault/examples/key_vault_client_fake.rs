@@ -7,14 +7,7 @@ use azure_core::{
     Result,
 };
 use azure_resourcemanager_keyvault::{
-    clients::fake::{
-        KeyVaultKeysServer, KeyVaultMHSMPrivateEndpointConnectionsServer,
-        KeyVaultMHSMPrivateLinkResourcesServer, KeyVaultMHSMRegionsServer,
-        KeyVaultManagedHsmKeysServer, KeyVaultManagedHsmsServer,
-        KeyVaultNetworkSecurityPerimeterConfigurationsServer, KeyVaultOperationsServer,
-        KeyVaultPrivateEndpointConnectionsServer, KeyVaultPrivateLinkResourcesServer,
-        KeyVaultSecretsServer, KeyVaultServer, KeyVaultVaultsServer,
-    },
+    clients::fake::{KeyVaultKeysServer, KeyVaultServer},
     models::KeyVaultKeysClientGetOptions,
     KeyVaultClient,
 };
@@ -22,19 +15,11 @@ use std::sync::Arc;
 
 struct FakeKeyVault;
 
-#[async_trait]
-impl KeyVaultServer for FakeKeyVault {}
-impl KeyVaultManagedHsmKeysServer for FakeKeyVault {}
-impl KeyVaultManagedHsmsServer for FakeKeyVault {}
-impl KeyVaultMHSMPrivateEndpointConnectionsServer for FakeKeyVault {}
-impl KeyVaultMHSMPrivateLinkResourcesServer for FakeKeyVault {}
-impl KeyVaultMHSMRegionsServer for FakeKeyVault {}
-impl KeyVaultNetworkSecurityPerimeterConfigurationsServer for FakeKeyVault {}
-impl KeyVaultOperationsServer for FakeKeyVault {}
-impl KeyVaultPrivateEndpointConnectionsServer for FakeKeyVault {}
-impl KeyVaultPrivateLinkResourcesServer for FakeKeyVault {}
-impl KeyVaultSecretsServer for FakeKeyVault {}
-impl KeyVaultVaultsServer for FakeKeyVault {}
+impl KeyVaultServer for FakeKeyVault {
+    fn as_key_vault_keys(&self) -> &dyn KeyVaultKeysServer {
+        self
+    }
+}
 
 #[async_trait]
 impl KeyVaultKeysServer for FakeKeyVault {

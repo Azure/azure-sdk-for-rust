@@ -25,7 +25,8 @@ npm exec --prefix "$TSP_CLIENT_DIR" --no -- tsp-client update \
 ```
 
 Generated constructors, polling methods, polling options, empty-result formats,
-and key rotation action wire values currently contain prototype edits.
+key rotation action wire values, and fake child-server dispatch currently contain
+prototype edits.
 Regeneration overwrites those edits. [TODO.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/azure_resourcemanager_keyvault/TODO.md) tracks the specification
 and emitter changes needed to remove these patches.
 

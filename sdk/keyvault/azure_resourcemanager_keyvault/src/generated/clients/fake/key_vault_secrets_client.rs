@@ -83,7 +83,7 @@ pub(crate) fn capture_key_vault_secrets_client_update(
 }
 /// Fake server for [`KeyVaultSecretsClient`](crate::clients::KeyVaultSecretsClient).
 ///
-/// Implement the operations used by your test. Implement unused child server traits with an empty `impl`.
+/// Implement the operations used by your test.
 ///
 /// # Panics
 /// Default operation implementations call [`unimplemented!()`].
