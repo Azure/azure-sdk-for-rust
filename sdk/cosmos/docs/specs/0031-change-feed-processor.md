@@ -775,17 +775,39 @@ reads changes for that range, calls `wait_for_demand()`. That
 registers its delivery state in the queue. Registration and the SDK request can
 arrive in either order; **both are required before a read turn is granted**.
 
+**This is asynchronous request/reply, not a synchronous call into the poller.**
+Demand is represented by the SDK's pending receive future. There is no separate
+FIFO of demand objects: the eligibility queue is a `VecDeque` of weak
+delivery-session handles, protected by a short-held mutex.
+
+| Abstraction | Purpose |
+| --- | --- |
+| Eligibility FIFO (`VecDeque`) | Queue acquisitions whose pollers are ready for a read turn, not requests or fetched batches. |
+| Async selection lock (`async_lock::Mutex`) | Serialize selection by pending receives, not the resulting source reads. |
+| Readiness notification (`futures::task::AtomicWaker`) | Wake the waiting receive task when an acquisition becomes eligible or delivery stops. With no eligible acquisition, selection returns `Poll::Pending` rather than spinning. |
+| One-shot channels (`futures::channel::oneshot`) | Transfer read permission to the poller and return a batch to the specific receive that granted it, using separate channel pairs. |
+
 The distributor selects a waiting registration, removes it from the queue, and
-sends read permission with a one-shot reply channel. A **one-shot channel**
-carries one value to its waiting receiver; it does not invoke the application
-handler. The poller uses the reply sender to return the batch.
+creates a batch-response channel pair. It retains the response receiver in the
+pending SDK call and sends `ReadDemand { response: response_sender }` through
+the selected poller's read-permission channel. The poller awaits that permission,
+performs the source read asynchronously, then sends the batch through the
+response sender carried by that demand.
+
+**The response sender is the association between demand and response.** It
+belongs to that receive, so no shared response queue or request-ID lookup is
+needed. Sending permission does not synchronously execute the source read or
+invoke the application handler. The SDK awaits the response while the poller
+reads independently; these waits suspend their tasks, and scheduler locks are
+not held across the source read or response wait.
 
 A one-shot channel fits because each read permission expects **one batch
 response**, and each acknowledgment expects **one completion result**. It ties
-the reply directly to the waiting request without a request-ID lookup,
-transfers ownership of the value, and wakes the receiver without repeated
-polling. If the sender is dropped without replying, the receiver observes
-cancellation.
+the reply directly to the waiting request, transfers ownership of the value,
+and wakes the receiver when the value arrives. If the sender is dropped without
+replying, the receiver observes channel cancellation, not a successfully
+delivered batch. The distributor can then try another eligible acquisition for
+the same pending SDK receive, as described in the source-read outcomes below.
 
 Each turn creates a new channel pair. **The channel provides in-memory
 coordination, not durable delivery or a timeout.**
