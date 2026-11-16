@@ -26,9 +26,8 @@
 
 ## 1. Problem
 
-We are building a Rust-based Cosmos DB Change Feed Processor that also provides
-a shared engine for language shims to build their own Change Feed Processor
-abstractions.
+The Cosmos DB Change Feed Processor provides automatic change-feed processing
+for the Rust SDK and a shared Rust engine for other language SDKs.
 
 A **language shim** adapts the shared engine to a language's SDK types and
 execution model.
@@ -47,44 +46,38 @@ describes its purpose:
 
 ### 2.1 Implementation responsibilities
 
-The implementation is expected to provide six cooperating capabilities. A
-**workload** is the processors reading one source container under a shared
-workload name; a **worker** is one running processor instance, not necessarily
-a separate process, machine, or thread.
+A **workload** is a set of processors reading one source container under a
+shared workload name. A **worker** is one running processor instance, not
+necessarily a separate process, machine, or thread.
 
 | Responsibility | Expected behavior | Detailed design |
 | --- | --- | --- |
-| R1: Workload initialization | Establish source/workload identity and complete initial range coverage, prepare coordination records, and continue interrupted initialization without overwriting existing ownership or saved progress. Declare readiness only after the required state is established. | [Bootstrap](#6-how-would-a-workload-be-initialized-before-processing) and [initial resume anchoring](#104-establish-a-stable-initial-resume-position). |
-| R2: Execute feed processing | Read eligible owned ranges on demand, deliver batches, invoke the application handler in its SDK runtime, and acknowledge only successful processing. Handle topology changes without leaving a range unmonitored. | [SDK/driver flow](#42-shared-rust-engine), [delivery coordination](#8-how-would-batch-requests-delivery-and-checkpointing-stay-coordinated), and [topology recovery](#9-how-would-partition-splits-and-merges-affect-processing). |
-| R3: Balance feed processing across workers | Coordinate range ownership through leases, assign work among cooperating workers, and redistribute it after workers join, leave, or fail. Fence old acquisitions so redistribution cannot authorize stale progress writes. | [Ownership and balancing](#7-how-would-leases-be-allocated-across-workers). |
-| R4: Safe checkpointing | Separate fetched, successfully processed, and durably saved positions. Persist only safe progress under current ownership, implement Eager/Deferred completion semantics, and resume without silently skipping changes. | [Progress and lease state](#5-how-is-progress-tracked-in-the-change-feed-processor), [checkpointing](#86-tie-successful-processing-to-the-next-delivery), and [restart](#10-how-would-a-worker-stop-and-resume-processing). |
-| R5: Worker health detection | Distinguish ownership liveness, healthy idle processing, and stalled operations. Expose failures, attempt recovery, and confirm that processing resumes rather than treating an ownership change as recovery success. | [Failures and health](#11-how-would-failures-be-handled-and-exposed-to-the-application) and [background coordination](#12-how-would-background-tasks-coordinate-polling-renewal-and-balancing). |
-| R6: Manage worker lifecycle and resource cleanup | Start and stop predictably, drain issued work during graceful shutdown, and cancel safely on failure. Release ownership conditionally and clean up tasks, receipts, and native/FFI handles without affecting replacement owners. | [Shutdown and restart](#10-how-would-a-worker-stop-and-resume-processing) and [graceful drain coordination](#122-during-graceful-feed-processing-drain). |
-
-These are responsibilities of the proposed system, not a claim that every
-mechanism is implemented or resolved. The guarantees below define how to
-evaluate them; the linked sections describe their mechanisms and open decisions.
+| Workload initialization | Establish source/workload identity and complete initial range coverage, prepare coordination records, and continue interrupted initialization without overwriting existing ownership or saved progress. Declare readiness only after the required state is established. | [Bootstrap](#6-how-would-a-workload-be-initialized-before-processing) and [initial resume anchoring](#104-establish-a-stable-initial-resume-position). |
+| Execute feed processing | Read eligible owned ranges on demand, deliver batches, invoke the application handler in its SDK runtime, and acknowledge only successful processing. Handle topology changes without leaving a range unmonitored. | [SDK/driver flow](#42-shared-rust-engine), [delivery coordination](#8-how-would-batch-requests-delivery-and-checkpointing-stay-coordinated), and [topology recovery](#9-how-would-partition-splits-and-merges-affect-processing). |
+| Balance feed processing across workers | Coordinate range ownership through leases, assign work among cooperating workers, and redistribute it after workers join, leave, or fail. Fence old acquisitions so redistribution cannot authorize stale progress writes. | [Ownership and balancing](#7-how-would-leases-be-allocated-across-workers). |
+| Safe checkpointing | Separate fetched, successfully processed, and durably saved positions. Persist only safe progress under current ownership, implement Eager/Deferred completion semantics, and resume without silently skipping changes. | [Progress and lease state](#5-how-is-progress-tracked-in-the-change-feed-processor), [checkpointing](#86-tie-successful-processing-to-the-next-delivery), and [restart](#10-how-would-a-worker-stop-and-resume-processing). |
+| Worker health detection | Distinguish ownership liveness, healthy idle processing, and stalled operations. Expose failures, attempt recovery, and confirm that processing resumes rather than treating an ownership change as recovery success. | [Failures and health](#11-how-would-failures-be-handled-and-exposed-to-the-application) and [background coordination](#12-how-would-background-tasks-coordinate-polling-renewal-and-balancing). |
+| Manage worker lifecycle and resource cleanup | Start and stop predictably, drain issued work during graceful shutdown, and cancel safely on failure. Release ownership conditionally and clean up tasks, receipts, and native/FFI handles without affecting replacement owners. | [Shutdown and restart](#10-how-would-a-worker-stop-and-resume-processing) and [graceful drain coordination](#122-during-graceful-feed-processing-drain). |
 
 ### 2.2 Guarantees to establish
 
-These are required outcomes, not claims that the prototype already provides
-them. The code sketches below are illustrative proposed control flow, not
-existing or compiling SDK APIs. Prototype excerpts elsewhere explain earlier
-mechanisms; the explicit proposed contracts take precedence where they differ.
+This document proposes contracts, not shipped functionality. Rust snippets
+illustrate control flow and are not standalone compilable examples. Open
+mechanisms and acceptance criteria are identified separately.
 
 | Guarantee | Mechanism and code discussion | Observable pass condition |
 | --- | --- | --- |
-| G1: Distinguish healthy idleness from stalled processing. | Track the active operation and its age separately from ownership renewal and item arrivals; see [liveness](#115-detect-stalls-and-confirm-recovery). | Empty successful reads and waiting for demand are not reported as hung callbacks; an overdue active operation is reported even while renewal succeeds. |
-| G2: Attempt recovery and verify useful progress, not just ownership movement. | Cancel failed acquisition work, release conditionally or let ownership expire, and reacquire normally; see the [recovery sketch](#115-detect-stalls-and-confirm-recovery). | With a runnable replacement and available service, an injected worker failure is followed by acquisition and successful processing or a healthy empty read. Repeated failure is visible and subject to bounded recovery policy. |
-| G3: Never skip changes by resetting a resume position. | Persist a stable initial anchor and resume saved progress; see [initial anchoring](#104-establish-a-stable-initial-resume-position). | Crash before the first normal checkpoint, restart, and deliver the changes still available from the original start position. An unusable continuation produces failure, not a new `Now`. |
-| G4: Persist only safe progress under current ownership. | Await handler success, then acknowledge; serialize conditional writes with the acquisition's cached ETag; see [fencing](#73-handle-competing-writes) and [checkpointing](#86-tie-successful-processing-to-the-next-delivery). | Handler failure leaves that batch unacknowledged; stale receipts cannot change replacement ownership or continuation; Deferred interruption may replay. |
-| G5: Preserve range coverage through topology changes. | Validate replacement coverage, project durable progress, create children before conditional parent deletion; see [topology recovery](#93-ensure-children-before-deleting-the-parent). | Interrupted child creation or parent deletion loses no logical range or saved resume position. |
+| Distinguish healthy idleness from stalled processing. | Track the active operation and its age separately from ownership renewal and item arrivals; see [liveness](#115-detect-stalls-and-confirm-recovery). | Empty successful reads and waiting for demand are not reported as hung callbacks; an overdue active operation is reported even while renewal succeeds. |
+| Attempt recovery and verify useful progress, not just ownership movement. | Cancel failed acquisition work, release conditionally or let ownership expire, and reacquire normally; see the [recovery sketch](#115-detect-stalls-and-confirm-recovery). | With a runnable replacement and available service, an injected worker failure is followed by acquisition and successful processing or a healthy empty read. Repeated failure is visible and subject to bounded recovery policy. |
+| Never skip changes by resetting a resume position. | Persist a stable initial anchor and resume saved progress; see [initial anchoring](#104-establish-a-stable-initial-resume-position). | Crash before the first normal checkpoint, restart, and deliver the changes still available from the original start position. An unusable continuation produces failure, not a new `Now`. |
+| Persist only safe progress under current ownership. | Await handler success, then acknowledge; serialize conditional writes with the acquisition's cached ETag; see [fencing](#73-handle-competing-writes) and [checkpointing](#86-tie-successful-processing-to-the-next-delivery). | Handler failure leaves that batch unacknowledged; stale receipts cannot change replacement ownership or continuation; Deferred interruption may replay. |
+| Preserve range coverage through topology changes. | Validate replacement coverage, project durable progress, create children before conditional parent deletion; see [topology recovery](#93-ensure-children-before-deleting-the-parent). | Interrupted child creation or parent deletion loses no logical range or saved resume position. |
 
 **No-skipping is bounded by the selected feed mode and service retention.**
 Latest Version does not promise every intermediate version or delete event;
 All Versions and Deletes is subject to its supported retention. If required
-history is no longer available, report that failure rather than pretend
-successful recovery. At-least-once delivery permits duplicate callbacks and
+history is no longer available, report failure rather than successful recovery.
+At-least-once delivery permits duplicate callbacks and
 does not guarantee exactly-once external effects.
 
 Liveness assumes available service capacity, a runnable worker/runtime, and
@@ -102,9 +95,9 @@ are [open design decisions](#14-open-questions-and-scope-limits).
 The **SDK** is the application-facing library; the **driver** is the shared
 engine beneath it.
 
-The **application handler** is the callback supplied by the application to
-process a batch of changes. An **internal processing pipeline** is the SDK's
-sequence of steps that reads changes, invokes that handler, and records progress.
+The **application handler** is the callback that processes a batch of changes.
+The SDK's **processing pipeline** reads a batch, invokes the handler, and
+records successful processing.
 
 Here, **progress** means how far the application has successfully processed
 the change feed. A **checkpoint** saves a resume position durably; the
@@ -114,17 +107,14 @@ A **partition range** is a portion of the source container's partition key
 space. Workers divide processing by these ranges; the progress and ownership
 records are described in the next sections.
 
-- Existing .NET and Java CFP implementations pass the application handler into
-  their internal processing pipelines and invoke it within the same language
-  runtime.
-- A shared Rust driver cannot directly invoke a Java, Go, or other language's
-  callback object using that language's types, exception handling, and async
-  execution model.
-- Supporting foreign callbacks inside the driver would require an explicit
-  foreign-function interface (FFI) adapter for callback lifetime, runtime dispatch, and completion. Callbacks
-  can cross FFI, but the Java model cannot be reused unchanged.
-- Instead, each SDK or shim invokes its application handler and acknowledges
-  successful processing to the shared driver.
+Java and .NET invoke application handlers within their own runtimes. The shared
+Rust engine instead returns batches to each SDK or language shim, which invokes
+its handler and acknowledges success. This keeps language-specific types,
+exception handling, and async execution outside the driver.
+
+Callbacks can cross a foreign-function interface (FFI), but doing so requires
+explicit lifetime and runtime-dispatch contracts. The batch/acknowledgment
+boundary avoids requiring the shared driver to invoke foreign handlers.
 
 ### 4.1 Existing callback implementations
 
@@ -151,13 +141,9 @@ if (consumer != null) {
 }
 ```
 
-These handlers execute inside their SDKs' CFP pipelines, not a separate
-cross-language driver.
-
 ### 4.2 Shared Rust engine
 
-This flow implements **R2: execute feed processing** from the
-[responsibility overview](#21-implementation-responsibilities).
+**Responsibility:** [execute feed processing](#21-implementation-responsibilities).
 
 The SDK owns application callback execution. The shared driver engine owns
 lease coordination, feed reads, and checkpoint persistence.
@@ -197,22 +183,13 @@ flowchart LR
     Progress -->|Acknowledgment result| Next
 ```
 
-Requests, batches, and acknowledgments cross the SDK/driver boundary.
-The application handler does not: it executes inside the SDK or language shim.
-The driver performs source reads and persists checkpoint progress in Cosmos DB.
-
 **Parallelism comes from multiple workers running this flow concurrently**,
 with the driver coordinating which partition ranges each worker owns. Within
 each SDK worker, batch handling remains sequential.
 
-The Rust SDK implements this boundary in
-`azure_data_cosmos/src/change_feed_processor/execution.rs`. These are focused
-implementation excerpts, not standalone examples.
-
-In these snippets, `T` is the application's document type and `Fut` is its
-handler's returned **future**, an object representing asynchronous work.
-`.await` waits for that work without blocking an executor thread while it is
-pending.
+`T` is the application's document type. `Fut` is the handler's returned
+**future**, representing asynchronous work. Awaiting a pending future suspends
+the task without blocking its executor thread.
 
 **Request and process a batch:** the SDK waits for one batch from the driver,
 then waits for SDK-side processing before requesting another. `read_next_change_feed_batch()`
@@ -224,9 +201,8 @@ while let Some(batch) = driver.read_next_change_feed_batch().await {
 }
 ```
 
-`consume()` owns the container client and awaits each dispatch, so `dispatch()`
-borrows that client as `&ContainerClient` instead of cloning a handle per batch.
-Dispatch is not separately spawned; the borrow remains valid until it returns.
+Dispatch is awaited, not separately spawned. The next iteration therefore
+cannot accumulate demand while the current batch is being processed.
 
 **Invoke the handler in the SDK:** deserialization converts returned data to
 application types. The SDK passes those items and batch context (lease identity
@@ -284,12 +260,9 @@ in a separate Cosmos DB **lease container**. This shared record lets workers
 coordinate responsibility and resume after restart or ownership change rather
 than rely only on a worker's memory.
 
-The following JSON illustrates the proposed acquired lease with saved progress.
-It revises the prototype's shape to use acquisition-local ETag fencing without
-a separate persisted acquisition identifier. Values are synthetic;
-`<encoded-workload-key>` and `<opaque-continuation-token>` are placeholders,
-not usable namespace or continuation values. This is a proposed storage
-contract, not an API shipped by this PR.
+This acquired lease has saved progress. Values are synthetic;
+`<encoded-workload-key>` and `<opaque-continuation-token>` are not usable
+namespace or continuation values.
 
 ```json
 {
@@ -317,16 +290,13 @@ contract, not an API shipped by this PR.
 }
 ```
 
-Each stored property needs a purpose; an existing prototype field is not by
-itself a reason to retain it:
-
 | Property | Why store it? |
 | --- | --- |
 | `id` | Address one lease deterministically and make duplicate creates conflict. It also supplies the lease container's `/id` partition key. |
 | `workload.version` | Identify the coordination-document schema so incompatible readers fail rather than interpret fields incorrectly. It is not the continuation-token version. |
 | `workload.account` | Bind the lease to its source account origin and reject reuse against another account. |
 | `workload.containerRid` | Bind progress to the source container's service identity; a deleted and recreated container with the same name must not reuse it. |
-| `workload.processorName` | Separate cooperating workloads reading the same source. The stored name is preserved from the prototype; the API calls it `workload_name`. |
+| `workload.processorName` | Separate cooperating workloads reading the same source. The API calls it `workload_name`. |
 | `workload.mode` | Reject continuation reuse across incompatible feed modes: `latestVersion` and `allVersionsAndDeletes`. Mode is not part of the namespace key. |
 | `ttl` | Set `-1` so the lease and saved progress survive document TTL. Ownership expires through lease timing, not document deletion; the initialization lock has a separate positive TTL. |
 | `range.Range.min`, `range.Range.max` | Persist the logical range whose progress this lease represents, including when physical partitions split or merge. This example covers the full keyspace; individual leases usually cover a subrange. |
@@ -336,20 +306,13 @@ itself a reason to retain it:
 | `renewed_at` | Let other workers evaluate ownership liveness without treating checkpoint inactivity as worker failure. Every successful owner mutation refreshes it, not just renewal. |
 | `processed_at` | Record the latest successful processing activity separately from ownership maintenance: successful handler acknowledgment or a completed empty read. Renewal alone must not advance it. It is a health signal, not proof that `continuation` is durable. |
 
-The two timestamp fields use Unix epoch milliseconds. The proposed schema
-renames `last_processed_at` to `processed_at` and removes the stored
-`processing_deadline`; an agreed inactivity policy can derive a deadline
-without persisting a third timestamp. However, timestamp age alone cannot
-distinguish a queued lease from a hung handler. Active-operation tracking and
-the initial acquisition baseline are described under
-[liveness](#115-detect-stalls-and-confirm-recovery).
+The timestamps use Unix epoch milliseconds. Their age alone cannot distinguish
+a queued lease from a hung handler; [health detection](#115-detect-stalls-and-confirm-recovery)
+also tracks active operations and the initial acquisition baseline.
 
-Repeating source identity in each lease permits
-validation of individual documents, but duplicates information in the namespace
-and `.definition`. **Schema-size review remains open:** decide whether that
-per-document validation justifies its storage and write cost, rather than
-describing it as necessary for ETag fencing. The prototype still uses the
-earlier fields; the two-timestamp shape is a proposed revision.
+**Open: schema size.** Per-lease source identity supports independent validation
+but duplicates the namespace and `.definition`. Does that validation justify
+the additional storage and write cost?
 
 Optional ownership, continuation, and timestamp fields are omitted when absent,
 not serialized as `null`. A newly created lease has none of those fields.
@@ -361,8 +324,7 @@ service-managed last-modification time, not the processing-progress timestamp.
 
 ### 5.1 When the lease document changes
 
-The following cases define proposed lease updates. Identity and range fields
-remain unchanged by owner mutations; the
+Owner mutations preserve identity and range fields. The
 [ownership protocol](#7-how-would-leases-be-allocated-across-workers) defines
 who may perform them.
 
@@ -381,9 +343,8 @@ who may perform them.
 
 ### 5.2 Apply owner updates conditionally
 
-For G4, this proposed control-flow sketch applies an owner update under the
-acquisition's local mutation lock. Helper names are schematic, not existing
-SDK APIs. Invalidating a turn closes its delivery/receipt path and signals
+Apply owner updates under the acquisition's local mutation lock.
+Invalidating a turn closes its delivery/receipt path and signals
 cancellation; it does not perform unconditional cleanup writes.
 
 ```rust
@@ -407,8 +368,7 @@ replacement owner's ETag.
 
 ## 6. How would a workload be initialized before processing?
 
-This section details **R1: workload initialization** from the
-[responsibility overview](#21-implementation-responsibilities).
+**Responsibility:** [workload initialization](#21-implementation-responsibilities).
 
 ### 6.1 Startup initialization requirements
 
@@ -422,11 +382,10 @@ It must:
 - Allow interrupted initialization to be completed by a later attempt.
 - Report initialization failure rather than declare readiness prematurely.
 
-### 6.2 Current implementation
+### 6.2 Initialization flow
 
-During startup, the driver initializes the workload:
-it discovers the source's partition ranges and ensures a lease document exists
-for each range in the initial plan before starting worker coordination.
+Before starting worker coordination, the driver discovers source partition
+ranges and ensures a lease document exists for every range in the initial plan.
 
 New leases have no owner or saved position. Workers acquire them, read changes
 using the configured starting position, and persist successfully processed
@@ -454,10 +413,6 @@ let key = serde_json::to_vec(&(
 ))?;
 Ok(format!("cfp1.{}", URL_SAFE_NO_PAD.encode(key)))
 ```
-
-These Rust snippets are focused excerpts from
-`azure_data_cosmos_driver/src/change_feed_processor/bootstrap.rs`, not
-standalone programs.
 
 #### 6.3.2 Elect a designated initializer and check completion
 
@@ -501,11 +456,11 @@ Ok(Some(InitializationClaim {
 }))
 ```
 
-The intervening read returns `None` if no lock is visible. The ETag retained
-in the claim is used for subsequent claim checks and conditional release.
+If the lock is absent on read-back, no claim is granted. Its ETag is retained
+for claim checks and conditional release.
 
-The following is an illustrative lock document. Placeholder strings stand
-for the actual namespace, account origin, container RID, and attempt UUID:
+The lock document uses placeholders for the namespace, source identity, and
+attempt UUID:
 
 ```json
 {
@@ -523,7 +478,7 @@ for the actual namespace, account origin, container RID, and attempt UUID:
 }
 ```
 
-`processorName` is the existing stored field for the workload name. The lock
+`processorName` stores the workload name. The lock
 identifies the initializer; processing leases separately track ownership of
 source ranges.
 
@@ -572,7 +527,7 @@ service failures, or the caller deadline can end an attempt.
 
 #### 6.3.3 Publish readiness only after initialization
 
-The current ordering in `bootstrap.rs` is:
+Readiness publication follows this order:
 
 ```rust
 self.create_leases(&plan, claim).await?;
@@ -592,8 +547,8 @@ check claim -> create next lease
 check claim -> publish completion marker
 ```
 
-The final check is not the first ownership check. Claim validation and the
-following write are separate requests, not an atomic fenced transaction.
+Claim validation precedes each create and readiness publication, but the check
+and write are separate requests, not an atomic fenced transaction.
 
 An unresolved failure prevents new readiness publication. Existing
 lease-create conflicts are accepted without reading or validating the
@@ -631,10 +586,10 @@ propagate through `?`. No existing lease is overwritten.
 of lease documents that need to be created**, rather than require customers
 to predict a fixed total duration.
 
-**This proportional budget is not implemented today:** the current attempt
-and lock limits remain fixed, as shown below.
+**Open: scalable duration.** The bounded-attempt sketch uses the fixed limits
+below; it does not yet satisfy the proportional-budget requirement.
 
-| Current limit | Purpose |
+| Limit in the bounded-attempt sketch | Purpose |
 | --- | --- |
 | Caller budget: configurable, default 120 seconds | Total wait across attempts and retry delays. |
 | Claimed attempt: at most 25 seconds | Bounds one initializer's work, also subject to the caller deadline. |
@@ -648,8 +603,8 @@ const ATTEMPT_TIMEOUT: Duration = Duration::from_secs(25);
 pub(super) const BOOTSTRAP_TIMEOUT: Duration = Duration::from_secs(120);
 ```
 
-The claim-deadline calculation shown above uses the earlier of the attempt
-deadline and caller deadline. There is no lease-count multiplier in it.
+The claim expires at the earlier of the attempt and caller deadlines,
+independently of lease count.
 
 Increasing the caller budget allows more attempts, not a longer claim.
 Attempts reuse the persisted plan but traverse it again, checking the claim and
@@ -659,8 +614,8 @@ exhaust the attempt window on the same prefix without completing.
 **Open design:** resumable chunks and/or renewable initialization ownership
 could permit continued work while measurable progress is made. Individual
 operations still need bounds, and progress, stalls, throttling, and takeover
-rules need explicit definitions. No proportional-duration formula or scalable
-completion guarantee is currently implemented.
+rules need explicit definitions. The proportional-duration formula and scalable
+completion mechanism remain unresolved.
 
 **Java comparison: creating very large lease sets.** The Java SDK source at
 revision `5b89f6decbdd4388a72b0aa269ea331584c7832f` explains how initialization
@@ -758,13 +713,11 @@ recovery.
 
 #### 6.3.6 Recover when the initializer fails
 
-The persisted plan and successfully created leases survive the designated
-initializer. A later contender can become initializer and reuse that state,
-preserving existing lease ownership and saved progress.
-
-This supports recovery from partial initialization, but it is not a saved
-cursor: the replacement traverses the plan again. Inventory freshness has the
-[cache limitation](#635-relationship-to-the-partition-key-range-cache) described above.
+The plan and created leases survive initializer failure. A replacement reuses
+them without overwriting ownership or progress, but traverses the plan again:
+there is no saved creation cursor. The
+[routing-cache freshness limitation](#635-relationship-to-the-partition-key-range-cache)
+still applies.
 
 `initialize_and_release()` attempts lock release after the bounded
 initialization result, including initialization failure:
@@ -778,9 +731,8 @@ let release = catch_bootstrap_panic(Box::pin(
 .await;
 ```
 
-The following result handling preserves the original initialization error
-and logs a cleanup error if release also fails. If initialization succeeded,
-a release error is returned instead.
+Preserve the initialization error and log any additional release failure.
+If initialization succeeds but release fails, return the release error.
 
 #### 6.3.7 Why the initialization lock needs TTL
 
@@ -790,18 +742,17 @@ potential initializer to compete.
 
 **TTL supplies eventual takeover, not proof that the old initializer stopped.**
 Long-running bootstrap needs renewal and safe claim validation, rather than
-simply extending an attempt beyond the lock TTL. Persistent partial recovery
-is implemented; progress-aware duration and stronger initialization fencing
+simply extending an attempt beyond the lock TTL. Persisted state supports
+partial recovery; progress-aware duration and stronger initialization fencing
 remain open.
 
 ## 7. How would leases be allocated across workers?
 
-This section details **R3: balance feed processing across workers** from the
-[responsibility overview](#21-implementation-responsibilities).
+**Responsibility:** [balance feed processing across workers](#21-implementation-responsibilities).
 
 **Only the worker that successfully acquires a lease may process its range.**
 The proposed protocol uses owner names and ETags, not a separate persisted
-acquisition identifier. It revises the preserved prototype.
+acquisition identifier.
 
 ### 7.1 Acquire ownership
 
@@ -866,11 +817,11 @@ transfer, fleet-wide join/leave notification, or atomic redistribution.
 
 These are scheduling defaults, not deadlines for completing redistribution.
 
-**Open: processing-inactivity takeover.** The prototype allows takeover when
-processing stops progressing even if renewal continues. Under the proposed
-two-timestamp schema, the eligibility rule and shared inactivity policy remain
-unresolved. An old `processed_at` alone must not authorize takeover: it could
-describe a range queued behind another callback, not a hung processor. See
+**Open: processing-inactivity takeover.** Should another worker take over when
+processing stops progressing even if renewal continues? The eligibility rule
+and shared inactivity policy remain unresolved. An old `processed_at` alone
+must not authorize takeover: it could describe a range queued behind another
+callback, not a hung processor. See
 [health detection](#115-detect-stalls-and-confirm-recovery).
 
 ### 7.5 Stop after ownership loss
@@ -908,11 +859,10 @@ deliver again.
 
 ### 8.1 Register readiness and grant one read turn
 
-The SDK's `consume()` loop shown in the first section waits on `read_next_change_feed_batch()`.
-Meanwhile, the acquired lease's **feed poller**, the driver operation that
-reads changes for that range, calls `wait_for_demand()`. That
-registers its delivery state in the queue. Registration and the SDK request can
-arrive in either order; **both are required before a read turn is granted**.
+The SDK awaits `read_next_change_feed_batch()`. Each acquired lease's **feed
+poller** calls `wait_for_demand()` to register readiness. Registration and the
+SDK request can arrive in either order; **both are required before a read turn
+is granted**.
 
 **This is asynchronous request/reply, not a synchronous call into the poller.**
 Demand is represented by the SDK's pending receive future. There is no separate
@@ -940,13 +890,11 @@ invoke the application handler. The SDK awaits the response while the poller
 reads independently; these waits suspend their tasks, and scheduler locks are
 not held across the source read or response wait.
 
-A one-shot channel fits because each read permission expects **one batch
-response**, and each acknowledgment expects **one completion result**. It ties
-the reply directly to the waiting request, transfers ownership of the value,
-and wakes the receiver when the value arrives. If the sender is dropped without
-replying, the receiver observes channel cancellation, not a successfully
-delivered batch. The distributor can then try another eligible acquisition for
-the same pending SDK receive, as described in the source-read outcomes below.
+A one-shot channel transfers one value and wakes its receiver. Dropping the
+sender without replying signals channel cancellation, not a batch. For idle
+or failed reads, the distributor can try another acquisition for the same
+pending receive. Acknowledgment uses separate channels for its request and
+completion result.
 
 Each turn creates a new channel pair. **The channel provides in-memory
 coordination, not durable delivery or a timeout.**
@@ -1016,10 +964,6 @@ Eager can persist that position immediately; Deferred does not force a write
 merely because the result was idle. Checkpoint failures while handling idle,
 cooldown, or acknowledgment remain maintenance failures, not source-read 429
 or topology signals.
-
-Implementation anchors: the `idle` branch, throttle-error branch, and
-`session.deliver(...)` in `poll_feed()`; the response-channel retry loop in
-`ChangeFeedRequestDistributor::read_next_change_feed_batch()`.
 
 ### 8.4 Visualizing the waiting list and read outcomes
 
@@ -1134,8 +1078,7 @@ it cannot undo external application effects.
 
 ### 8.6 Tie successful processing to the next delivery
 
-This section details **R4: safe checkpointing** from the
-[responsibility overview](#21-implementation-responsibilities).
+**Responsibility:** [safe checkpointing](#21-implementation-responsibilities).
 
 The SDK completes the batch's receipt only after successful deserialization
 and handler execution.
@@ -1207,8 +1150,7 @@ if let Some(pending) = lease.pending.clone() {
 }
 ```
 
-This is a prototype excerpt. Under the proposed ETag-only contract, `update()`
-must replace using the acquisition's cached ETag under its mutation lock,
+`update()` uses the acquisition's cached ETag under its mutation lock,
 rather than reread and adopt a newer version. A confirmed successful checkpoint
 installs updated local state and its returned ETag, then clears pending
 progress. A precondition failure ends the acquisition. With no pending progress,
@@ -1229,7 +1171,7 @@ When the deadline fires, it awaits the same `flush()` operation, then resumes
 waiting on the original operation rather than recreating it.
 
 An explicit durable receipt or eligible final cleanup can flush sooner.
-The current default Deferred interval is five minutes; the SDK allows callers
+The default Deferred interval is five minutes; the SDK allows callers
 to choose a policy and interval.
 
 ```text
@@ -1392,7 +1334,7 @@ Source-feed topology failure
 
 The general [queue and ownership rules](#85-how-ownership-loss-affects-queue-membership)
 still apply during recovery: readiness is not proof of current ownership,
-and checkpoint writes use the previously described fencing.
+and checkpoint writes use [ETag fencing](#73-handle-competing-writes).
 
 If ownership changes during recovery, the final conditional parent deletion
 must not remove the changed document. Child creation is create-only and
@@ -1411,14 +1353,9 @@ topology changes, and ownership races need explicit test coverage.
 Application-effect and replay limitations are collected in
 [failure handling](#11-how-would-failures-be-handled-and-exposed-to-the-application).
 
-Implementation: `azure_data_cosmos_driver/src/change_feed_processor/processing/topology.rs`,
-`recover()`, `split()`, `checkpoint()`, and `has_replacements()`, together with
-`poll()` and `supervise()` in `processing.rs`.
-
 ## 10. How would a worker stop and resume processing?
 
-This section details **R6: manage worker lifecycle and resource cleanup** from
-the [responsibility overview](#21-implementation-responsibilities).
+**Responsibility:** [worker lifecycle and resource cleanup](#21-implementation-responsibilities).
 
 **Requesting shutdown is different from confirming cleanup has finished.**
 The Rust SDK provides an awaitable graceful `stop()`; dropping the processor
@@ -1485,14 +1422,13 @@ lease documents. A replacement acquisition uses saved lease progress before
 the configured initial position.
 
 Successfully processed changes whose position was not persisted may replay.
-Recovery uses the stored position, including after the
-[ambiguous checkpoint outcomes](#864-failure-and-replay-boundaries) described above.
+Recovery uses the stored position, including after an
+[ambiguous checkpoint outcome](#864-failure-and-replay-boundaries).
 
-**Current limitation:** with an initial `Now` start and no durable continuation,
-a restart can choose a later starting position. The default Deferred policy
-does not yet establish a durable initial anchor before relying on restart.
-This violates G3's intended restart guarantee; documenting the limitation does
-not resolve it. The proposed requirement is described next.
+**Restart hazard:** with an initial `Now` start and no durable continuation,
+reapplying `Now` after restart can choose a later position and skip changes.
+Both Eager and Deferred require a stable initial anchor to avoid skipping
+changes. The anchor mechanism remains open.
 
 Stopping one worker does not stop the workload's other workers.
 [Rebalancing](#74-redistribute-work) explains when they discover
@@ -1500,12 +1436,12 @@ released leases.
 
 ### 10.4 Establish a stable initial resume position
 
-**Required for G3:** before relying on restart, durably establish the position
+Before relying on restart, durably establish the position
 from which a new lease begins. Applying `Now` again after a crash must not move
 that boundary forward. This initial anchor is required under both checkpoint
 policies; it is not permission to checkpoint a fetched but unprocessed batch.
 
-Proposed control flow, with illustrative helper names:
+Resolve and persist the initial position before processing data:
 
 ```rust
 let position = match acquisition.saved_continuation() {
@@ -1530,11 +1466,10 @@ not skip that page.
 
 **Open mechanism:** how to obtain and durably establish such a position for
 each supported start option and feed mode, including failure between resolution
-and persistence. The sketch specifies the required ordering; it does not prove
-that the service already exposes the needed pre-page token. Without a safe
-anchor, fail or explicitly withhold the restart guarantee; never silently
-substitute a later `Now`. An invalid, incompatible, or expired saved token is
-an error, not a reason to run the initial-start branch.
+and persistence. The required pre-page token must be verified for each mode.
+Without a safe anchor, fail or explicitly withhold the restart guarantee;
+never silently substitute a later `Now`. An invalid, incompatible, or expired
+saved token is an error, not a reason to run the initial-start branch.
 
 ## 11. How would failures be handled and exposed to the application?
 
@@ -1543,7 +1478,7 @@ Failures are handled at the stage that can distinguish their meaning.
 
 ### 11.1 Source reads and lease maintenance
 
-| Failure | Current handling | Application-facing effect |
+| Failure | Handling | Application-facing effect |
 | --- | --- | --- |
 | Ordinary source-read throttling | Release receive demand, apply lease-local cooldown, and retry within the throttle budget. | The pending receive can try another eligible acquisition. |
 | Slow source read | Allow six seconds per lease's source-read turn for planning/read execution, rather than a five-second or shorter turn deadline. A remaining timeout ends the acquisition. | The pending receive can continue seeking a batch elsewhere. |
@@ -1617,9 +1552,9 @@ that wait as proof of healthy processing.
 
 ### 11.4 Persistent failures and limits
 
-The current worker can release and later reacquire a failing lease. There is
-no general acquisition-level suspension/backoff policy for deterministic
-handler, authorization, or invalid-continuation failures.
+A worker can release and later reacquire a failing lease. A general
+acquisition-level suspension/backoff policy for deterministic handler,
+authorization, or invalid-continuation failures remains an open decision.
 
 Request-level retry budgets therefore do not guarantee that the workload stops
 repeating the same failure. Defining persistent-failure behavior and operational
@@ -1630,12 +1565,11 @@ do not cover process aborts or non-yielding application code.
 
 ### 11.5 Detect stalls and confirm recovery
 
-This section details **R5: worker health detection** from the
-[responsibility overview](#21-implementation-responsibilities).
+**Responsibility:** [worker health detection](#21-implementation-responsibilities).
 
-**Required for G1 and G2:** distinguish a live owner, useful processing activity,
-and recovery that actually restores activity. `renewed_at` and `processed_at`
-are persisted signals, not a complete health state machine.
+Track ownership liveness, processing activity, and whether recovery restores
+activity. `renewed_at` and `processed_at` are signals, not a complete health
+state machine.
 
 | Observed state | Required interpretation and behavior |
 | --- | --- |
@@ -1655,8 +1589,7 @@ waiting range is distinguishable from a running callback. Publish a newer
 not manufacture processing activity. With Deferred, that timestamp is not
 proof that the corresponding continuation has been saved.
 
-The intended supervision flow is illustrated below. Helpers and event types
-are proposed, and do not define a new public API or an implemented watchdog:
+Supervise each active operation against its phase-specific time budget:
 
 ```rust
 match wait_for_operation_or_deadline(operation, phase_budget).await {
@@ -1686,7 +1619,7 @@ not by itself cause takeover of a range queued behind another callback.
 Non-yielding application code cannot be forcibly stopped by dropping an async
 future; runtime starvation or unbounded cleanup prevents a bounded-recovery
 claim without stronger isolation. The existing unlimited graceful `stop()`
-contract does not become a timeout contract through this sketch.
+contract remains separate from stall-recovery limits.
 
 ## 12. How would background tasks coordinate polling, renewal, and balancing?
 
@@ -1791,15 +1724,10 @@ Forced cancellation and failures follow the
 [shutdown rules](#10-how-would-a-worker-stop-and-resume-processing), not the
 successful-drain sequence.
 
-Implementation anchors: `run()`, `balance()`, `supervise()`, `renew()`, and
-`poll()` in `azure_data_cosmos_driver/src/change_feed_processor/processing.rs`;
-SDK `consume()` in `azure_data_cosmos/src/change_feed_processor/execution.rs`.
-
 ## 13. How would an application configure and control the Rust processor?
 
-The public API is defined in
-`azure_data_cosmos/src/change_feed_processor.rs`; lifecycle methods are
-implemented in its private `execution.rs` module.
+Applications configure the processor through a builder and control its
+lifecycle through `start()` and `stop()`.
 
 ### 13.1 Supply the workload and application handler
 
@@ -1822,7 +1750,7 @@ pub type ChangeFeedHandler<T, Fut> = fn(ChangeFeedProcessorContext, Vec<ChangeFe
 
 `T` is the application's deserializable document type. `Fut` is the future
 returned by the callback; it must resolve to `crate::Result<()>`.
-The current API accepts function pointers, not closures capturing application
+The API sketch accepts function pointers, not closures capturing application
 state. This is a callback-shape restriction, separate from keeping callback
 execution in the SDK rather than the shared driver.
 
@@ -1893,8 +1821,8 @@ Initial `Now` without a durable saved position has the
 
 ### 13.5 Build, then start
 
-The following is a usage excerpt. `source`, `leases`, and `handle_changes`
-represent an application's configured container clients and async handler:
+In this usage excerpt, `source`, `leases`, and `handle_changes` are the
+application's container clients and async handler:
 
 ```rust
 let processor = ChangeFeedProcessorBuilder::new(
@@ -1913,7 +1841,7 @@ processor.start().await?;
 ```
 
 `build()` consumes the builder and validates local configuration without I/O.
-`start()` then performs the initialization and lifecycle behavior below.
+`start()` initializes the workload and launches worker coordination.
 
 ### 13.6 Inspect batch context and lifecycle
 
@@ -1964,7 +1892,7 @@ registration method.
   cross-worker health visibility. Do not equate an old `processed_at` with a
   hung handler or let healthy empty reads cause repeated takeover.
 
-Prefix scope and process-until behavior are proposed use cases, not implemented
+Prefix scope and process-until behavior are open use cases, not defined
 processor options.
 
 ## 15. How would we iterate on and review changes?
@@ -2026,9 +1954,8 @@ lease-range coverage, and cleanup. Distinguish missed changes from duplicates
 that are allowed by replay; do not assume exactly-once callback side effects.
 
 Use existing in-memory and fault-injection harnesses first. Report compiled,
-executed, ignored, emulator, and live-service coverage separately. The stages
-above are an iteration strategy, not a claim that all scenarios have already
-passed.
+executed, ignored, emulator, and live-service coverage separately. These are
+planned scenarios, not claims of completed validation.
 
 ### 15.2 Validate ownership races
 
