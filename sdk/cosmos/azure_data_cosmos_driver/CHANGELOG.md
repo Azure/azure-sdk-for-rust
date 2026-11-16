@@ -4,54 +4,26 @@
 
 ### Features Added
 
-- Added `ProcessorOptions::with_bootstrap_timeout()` to configure each caller's bootstrap wait without extending shared attempts or initialization claims. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
-- Added `CheckpointPolicy::deferred()` for five-minute deferred checkpointing; idle reads do not trigger deferred persistence.
-- Processor reads now defer throttled acquisitions without blocking other eligible leases, preserve retry budgets across turns, and finish the final cooldown before reporting exhaustion and releasing ownership.
-- Added `ProcessorOptions::with_error_observer()` for observing background coordination and lease-processing failures without changing recovery.
-- Added deferred checkpointing and `BatchReceipt::acknowledge()` for deferred persistence of successful batches; `checkpoint()` remains a durable barrier and renewal schedules are unchanged.
-- Added `change_feed_processor::Processor` with equal lease balancing, renewal, and schema-agnostic batch receipts that gate durable checkpoints and subsequent polls.
-- Added automatic online processor split recovery with range-local child creation, conditional parent deletion, independent merge checkpoints, and balanced child acquisition. ([#5476](https://github.com/Azure/azure-sdk-for-rust/pull/5476))
-- Added driver-owned change feed workload bootstrap with mode binding, create-only initial lease coverage, bounded initialization claims, and progress-preserving recovery of incomplete workloads. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
-- Coalesce compatible overlapping bootstrap calls on shared drivers without coupling waiter cancellation or caching completed outcomes. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Added server-side PATCH filter predicates to `PatchInstructions` through the standard `condition` request envelope, with explicit rejection when execution resolves to client-side read-modify-write. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
+- Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
+- Added non-resumable read-many plans with `ItemSelector`, `ItemScope`, and `ItemFilter` for key/id, partition, or feed-range selections, including hierarchical prefixes, parameterized selector filters, and bounded query batches. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Added `FullTextScoreScope` and client-side ranked full-text and weighted hybrid query execution with bounded result windows. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
 
 ### Breaking Changes
 
-- Renamed `Processor::next_batch()` to `Processor::read_next_change_feed_batch()` to describe the demand-driven batch receive.
-- Bootstrap now creates leases directly and accepts HTTP 409 as already existing without lease reads or content validation, matching Java; other create failures still prevent readiness and existing lease documents are not overwritten. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
-- Renamed CFP `processor_name` and `instance_name` parameters to `workload_name` and `worker_name`; schema-1 `processorName`, stored owners, and lease IDs are unchanged. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
-- `CheckpointPolicy::default()` and new processor options now use `Deferred` with a five-minute interval; select `Eager` for durable-per-batch acknowledgment. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
-- Renamed checkpoint policies to `Eager` and `Deferred`, and the five-minute constructor to `CheckpointPolicy::deferred()`; checkpoint behavior and native policy values are unchanged. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
-- Lease balancing now considers processing inactivity using a persisted owner deadline; acquisition grants a fresh grace period, and existing lease writes publish activity without advancing checkpoints.
-- Completed split parent leases are now deleted after replacement leases are established; restart verification preserves descendant coverage. Drain and upgrade all workers together to avoid older versions recreating deleted parents.
-- Removed persisted split-retirement state and background split repair. Child creation and conditional parent deletion now run only after a change-feed topology error; failed handling retries through normal lease acquisition. ([#5589](https://github.com/Azure/azure-sdk-for-rust/pull/5589))
-- Processor read turns, including planning, are now limited to five seconds or a shorter configured operation deadline; callback duration is unchanged.
-- Renamed `change_feed_processor::Batch` to `change_feed_processor::ChangeFeedBatch` to distinguish processor deliveries from transactional batches.
-- `Processor::stop()` now drains issued receipts and returns shutdown errors; use `abort()` or `request_stop()` for forced cancellation. ([#5477](https://github.com/Azure/azure-sdk-for-rust/pull/5477))
-- Updated `ProcessorOptions::new()` to accept `ChangeFeedFactoryMode` and workload/worker names directly. ([#5474](https://github.com/Azure/azure-sdk-for-rust/pull/5474))
-- Moved opt-in restart lease verification to `ProcessorOptions`, preserving missing-lease recovery without changing completed bootstrap workloads. ([#5474](https://github.com/Azure/azure-sdk-for-rust/pull/5474))
-- Removed public `BootstrapOptions`; bootstrap accepts mode and workload/worker names directly, keeps timing policy internal, and never repairs completed workloads. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
-- Replaced bootstrap's `ChangeFeedProcessorMode` with `models::ChangeFeedFactoryMode`, preserving existing stored workload mode values. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
 - Consumed legacy single-request prefix checkpoints cannot safely resume across physical ranges and are rejected; start a new feed with an explicit start position. Older unpolled single-request checkpoints require the original start on resume. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 
 ### Bugs Fixed
 
-- Re-register failed bootstrap attempts within each caller's original budget, preserving late joiners' deadlines and attempting conditional claim cleanup after initialization panics. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
-- Allow change feed workload bootstrap on multi-write-region lease accounts using the driver's existing request routing. ([#5473](https://github.com/Azure/azure-sdk-for-rust/pull/5473))
+- Gateway V2 now loads lazy partition topology on demand to scope explicit compound session tokens; topology-loading failures propagate, while unavailable safe scoping omits the token and downgrades Session consistency to Eventual for that attempt, without a read-your-writes guarantee. ([#5585](https://github.com/Azure/azure-sdk-for-rust/pull/5585))
 - Replace stale change-feed start headers, retain starts and polling positions in checkpoints, and preserve hierarchical-prefix leaf bounds on both gateway transports. Invalid keyed change feeds return errors instead of panicking during planning. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - A checkpoint's saved start takes precedence over a newly supplied change-feed start. Omit the continuation token to start a new feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 
 ### Other Changes
 
-- Identify change feed processor bootstrap, polling, lease maintenance, and topology requests with `ChangeFeedProcessor` in the user agent without changing ordinary requests.
-
-- Derive processor renewal and acquisition schedules from the lease expiration budget, reuse checkpoint writes for renewal, and remove the implicit callback progress timeout. ([#5477](https://github.com/Azure/azure-sdk-for-rust/pull/5477))
 - New query and change-feed checkpoints use `c2.` and cannot be read by SDKs that only support `c1.`. Query checkpoint payloads are unchanged, and supported legacy `c1.` checkpoints remain readable. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
-
-### Bugs Fixed
-
-### Other Changes
+- Preserve binary `ORDER BY` source pages internally through merges, DISTINCT, and pagination windows, materializing only final output items into the existing standalone response buffers. ([#5409](https://github.com/Azure/azure-sdk-for-rust/pull/5409))
 
 ## 1.1.0-beta.2 (2026-11-03)
 

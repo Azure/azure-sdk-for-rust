@@ -310,7 +310,7 @@ impl ResponseSnapshot {
             // into a comparable snapshot, fail loudly rather than silently
             // dropping the body and letting tests pass on a regression.
             ResponseBody::Items(_) => panic!(
-                "ResponseSnapshot::capture: received Items response body but the validation \
+                "ResponseSnapshot::capture: received feed response body but the validation \
                  framework currently only supports single-payload responses. Add feed-aware \
                  body comparison before exercising this path."
             ),

@@ -5,7 +5,7 @@
 
 use std::sync::Arc;
 
-use crate::{driver::transport::EndpointKey, options::Region};
+use crate::{options::Region, pipeline::transport::EndpointKey};
 use url::Url;
 
 /// The reference-counted inner data for a [`CosmosEndpoint`].

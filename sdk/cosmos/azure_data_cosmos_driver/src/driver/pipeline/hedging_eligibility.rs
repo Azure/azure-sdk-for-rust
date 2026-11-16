@@ -11,17 +11,14 @@ use std::time::Duration;
 
 use crate::{
     driver::{
-        pipeline::{
-            components::{RoutingDecision, TransportMode},
-            hedging_diagnostics::HedgingStrategyConfig,
-        },
+        pipeline::{components::RoutingDecision, hedging_diagnostics::HedgingStrategyConfig},
         routing::AccountEndpointState,
-        transport::EndpointKey,
     },
     models::{CosmosOperation, OperationType, ResourceType},
     options::{
         AvailabilityStrategy, HedgeThreshold, HedgingStrategy, OperationOptionsView, Region,
     },
+    pipeline::transport::{types::TransportMode, EndpointKey},
 };
 
 /// Default hedge threshold cap used by [`resolve_availability_strategy`]

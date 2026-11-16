@@ -142,19 +142,18 @@ impl CosmosResponse {
         self.payload.body()
     }
 
-    /// Test-only helper: returns the body as raw bytes, panicking if the body is
-    /// not a [`ResponseBody::Bytes`] variant.
-    #[cfg(test)]
-    pub(crate) fn body_bytes(&self) -> &[u8] {
-        match self.body() {
-            ResponseBody::Bytes(b) => b.as_ref(),
-            _ => panic!("expected ResponseBody::Bytes"),
-        }
-    }
-
     /// Consumes the response and returns the body.
     pub fn into_body(self) -> ResponseBody {
         self.payload.into_body()
+    }
+
+    pub(crate) fn take_body(&mut self) -> ResponseBody {
+        std::mem::take(&mut self.payload.body)
+    }
+
+    pub(crate) fn with_body(mut self, body: ResponseBody) -> Self {
+        self.payload.body = body;
+        self
     }
 
     /// Suppresses the response payload while preserving status, headers,

@@ -222,7 +222,7 @@ Gateway 2.0 is enabled independently for each region by configuring
 The host owns the listener, HTTP/2 policy, connectivity probe, and bridge into
 the driver. The driver remains the single owner of RNTBD wire compatibility.
 The inverse server operations stay beside the client codec in
-`src/driver/transport/rntbd/`, and the host calls one feature-gated high-level
+`src/rntbd_encoding/`, and the host calls one feature-gated high-level
 adapter rather than depending on public token or frame internals.
 
 This split prevents the host from becoming a second RNTBD implementation whose

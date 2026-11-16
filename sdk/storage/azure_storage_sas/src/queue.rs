@@ -235,7 +235,7 @@ mod tests {
         assert_eq!(lines[9], "2025-11-05"); // skv
         assert_eq!(lines[10], "q-tenant"); // skdutid (from key)
         assert_eq!(lines[11], "duoid"); // sduoid (from builder)
-        assert_eq!(lines[14], "2026-04-06"); // sv
+        assert_eq!(lines[14], SAS_VERSION); // sv
     }
 
     #[test]

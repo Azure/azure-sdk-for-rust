@@ -165,7 +165,7 @@ impl<S: SasResource> SasBuilder<'_, S> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::common::test_support::test_udk;
+    use crate::{common::test_support::test_udk, SAS_VERSION};
     use time::macros::datetime;
 
     #[test]
@@ -201,7 +201,7 @@ mod tests {
             .cache_control("no-cache")
             .build();
 
-        assert!(qp.starts_with("sv=2026-04-06&sr=b&"));
+        assert!(qp.starts_with(&format!("sv={SAS_VERSION}&sr=b&")));
         assert!(qp.contains("sp=r"));
         assert!(qp.contains("skoid=oid-value"));
         assert!(qp.contains("rscc=no-cache"));
@@ -220,7 +220,7 @@ mod tests {
             .list()
             .build();
 
-        assert!(qp.starts_with("sv=2026-04-06&sr=c&"));
+        assert!(qp.starts_with(&format!("sv={SAS_VERSION}&sr=c&")));
         assert!(qp.contains("sp=rl"));
         assert!(qp.contains("sig="));
     }
@@ -237,7 +237,7 @@ mod tests {
             .add()
             .build();
 
-        assert!(qp.starts_with("sv=2026-04-06&"));
+        assert!(qp.starts_with(&format!("sv={SAS_VERSION}&")));
         assert!(qp.contains("sp=ra"));
         assert!(qp.contains("skoid=oid-value"));
         assert!(qp.contains("sig="));

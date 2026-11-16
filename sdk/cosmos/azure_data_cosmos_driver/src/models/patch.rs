@@ -31,7 +31,7 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::{num::NonZeroU16, time::Duration};
+use std::{borrow::Cow, num::NonZeroU16, time::Duration};
 use uuid::Uuid;
 
 /// Maximum number of instructions accepted by one server-side PATCH request.
@@ -317,12 +317,21 @@ impl PatchOperation {
 /// Server-side PATCH accepts at most 10 operations. Lists with more than 10
 /// operations require client-side PATCH execution.
 ///
+/// Use [`with_filter_predicate()`](Self::with_filter_predicate) to add a
+/// condition to the serialized request payload for server-side execution.
+///
 /// [`PatchOperation`]: crate::models::PatchOperation
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 #[non_exhaustive]
 pub struct PatchInstructions {
     /// Ordered list of operations.
     pub operations: Vec<PatchOperation>,
+    #[serde(rename = "condition", default, skip_serializing_if = "Option::is_none")]
+    filter_predicate: Option<Cow<'static, str>>,
+}
+
+pub(crate) fn parse_patch_request(body: &[u8]) -> serde_json::Result<PatchInstructions> {
+    serde_json::from_slice(body)
 }
 
 impl PatchInstructions {
@@ -330,12 +339,50 @@ impl PatchInstructions {
     pub fn new() -> Self {
         Self {
             operations: Vec::new(),
+            filter_predicate: None,
         }
     }
 
     /// Appends `operation` to the instruction set's list of operations.
     pub fn with_operation(mut self, operation: PatchOperation) -> Self {
         self.operations.push(operation);
+        self
+    }
+
+    /// Returns the SQL filter predicate serialized as the request's `condition`.
+    pub fn filter_predicate(&self) -> Option<&str> {
+        self.filter_predicate.as_deref()
+    }
+
+    /// Sets a SQL FROM/WHERE clause evaluated atomically before a server-side PATCH.
+    ///
+    /// A false predicate returns HTTP 412 with sub-status 1110 and leaves the
+    /// item unchanged. Empty or whitespace-only predicates return HTTP 400
+    /// before I/O; other invalid predicates return service HTTP 400.
+    ///
+    /// The predicate does not change strategy selection. Effective client-side
+    /// execution rejects predicates with HTTP 400 before I/O. Select explicit
+    /// server-side execution for instruction lists that would otherwise run
+    /// client-side, subject to the service's 10-operation limit.
+    ///
+    /// Conditional server-side PATCH is not retried after an ambiguous outcome,
+    /// even for retry-safe instructions. The driver returns the original error
+    /// without a reconciliation Read. Read the item to reconcile the outcome
+    /// before deciding whether to submit another patch.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use azure_data_cosmos_driver::models::{PatchInstructions, PatchOperation};
+    ///
+    /// let patch = PatchInstructions::from(vec![
+    ///     PatchOperation::set("/status", serde_json::json!("done")),
+    /// ]).with_filter_predicate("from c where c.status = 'pending'");
+    /// let body = serde_json::to_value(&patch).unwrap();
+    /// assert_eq!(body["condition"], "from c where c.status = 'pending'");
+    /// ```
+    pub fn with_filter_predicate(mut self, predicate: impl Into<Cow<'static, str>>) -> Self {
+        self.filter_predicate = Some(predicate.into());
         self
     }
 
@@ -350,6 +397,10 @@ impl PatchInstructions {
     /// A list of otherwise-safe operations is also unsafe when one path is an
     /// ancestor of another: an earlier operation may no longer satisfy its
     /// preconditions after the complete list has committed.
+    ///
+    /// This classifies only the instructions, ignoring any filter predicate.
+    /// The driver separately disables ambiguous-outcome retries when a
+    /// predicate is present, because a committed PATCH can make it false.
     pub fn is_retry_safe(&self) -> bool {
         let operations_are_safe = self.operations.iter().all(|operation| match operation {
             PatchOperation::Replace { .. } => true,
@@ -393,7 +444,10 @@ fn path_is_strict_ancestor(ancestor: &str, descendant: &str) -> bool {
 impl From<Vec<PatchOperation>> for PatchInstructions {
     /// Builds a [`PatchInstructions`] from an existing list of operations.
     fn from(operations: Vec<PatchOperation>) -> Self {
-        PatchInstructions { operations }
+        PatchInstructions {
+            operations,
+            filter_predicate: None,
+        }
     }
 }
 
@@ -407,6 +461,74 @@ mod tests {
         let op = PatchOperation::add("/a", json!(1));
         let s = serde_json::to_string(&op).unwrap();
         assert_eq!(s, r#"{"op":"add","path":"/a","value":1}"#);
+    }
+
+    #[test]
+    fn patch_request_round_trips_condition_in_either_field_order() {
+        let expected = PatchInstructions::from(vec![PatchOperation::set("/status", json!("done"))])
+            .with_filter_predicate("from c where c.status = 'pending'");
+        let condition_last = br#"{"operations":[{"op":"set","path":"/status","value":"done"}],"condition":"from c where c.status = 'pending'"}"#;
+        let condition_first = br#"{"condition":"from c where c.status = 'pending'","operations":[{"op":"set","path":"/status","value":"done"}]}"#;
+
+        for body in [condition_first.as_slice(), condition_last.as_slice()] {
+            let request = parse_patch_request(body).unwrap();
+            assert_eq!(request, expected);
+            assert_eq!(
+                request.filter_predicate(),
+                Some("from c where c.status = 'pending'")
+            );
+            let serialized = serde_json::to_vec(&request).unwrap();
+            assert_eq!(serialized, condition_last);
+            assert_eq!(
+                serde_json::from_slice::<PatchInstructions>(&serialized).unwrap(),
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn patch_request_preserves_blank_condition_for_validation() {
+        for predicate in ["", "  ", "\t\r\n"] {
+            let request = PatchInstructions::new().with_filter_predicate(predicate);
+            let body = serde_json::to_vec(&request).unwrap();
+            assert_eq!(
+                serde_json::from_slice::<Value>(&body).unwrap()["condition"],
+                predicate
+            );
+            let parsed = parse_patch_request(&body).unwrap();
+            assert_eq!(parsed, request);
+            assert_eq!(parsed.filter_predicate(), Some(predicate));
+        }
+    }
+
+    #[test]
+    fn patch_request_rejects_non_string_condition() {
+        for condition in [json!(42), json!(false), json!([]), json!({})] {
+            let body =
+                serde_json::to_vec(&json!({"condition": condition, "operations": []})).unwrap();
+            assert!(
+                parse_patch_request(&body).is_err(),
+                "condition: {condition}"
+            );
+            assert!(serde_json::from_slice::<PatchInstructions>(&body).is_err());
+        }
+    }
+
+    #[test]
+    fn retry_safety_classifies_instructions_independently_of_filter_predicate() {
+        for (operation, expected_safe) in [
+            (PatchOperation::set("/status", json!("done")), true),
+            (PatchOperation::increment("/visits", 1i64), false),
+        ] {
+            let instructions = PatchInstructions::from(vec![operation]);
+            assert_eq!(instructions.is_retry_safe(), expected_safe);
+            assert_eq!(
+                instructions
+                    .with_filter_predicate("from c where c.status = 'pending'")
+                    .is_retry_safe(),
+                expected_safe
+            );
+        }
     }
 
     #[test]
@@ -682,18 +804,21 @@ mod tests {
     }
 
     #[test]
-    fn patch_spec_does_not_serialize_condition_field() {
-        // The SQL filter predicate (peer SDKs' `FilterPredicate`) is not part
-        // of the public PATCH surface yet; serialization MUST NOT include a
-        // `condition` key, and deserialization MUST refuse one (since the
-        // struct is `#[non_exhaustive]` plus there is no `condition` field,
-        // serde's default `deny_unknown_fields = false` would silently drop
-        // an unknown field — verify the round-trip is condition-free).
-        let spec = PatchInstructions::from(vec![PatchOperation::set("/x", json!(1))]);
-        let s = serde_json::to_string(&spec).unwrap();
-        assert!(
-            !s.contains("condition"),
-            "PatchInstructions serialization must not include a `condition` field: {s}"
+    fn patch_spec_omits_absent_condition() {
+        for body in [
+            br#"{"operations":[]}"#.as_slice(),
+            br#"{"operations":[],"condition":null}"#.as_slice(),
+        ] {
+            let parsed = parse_patch_request(body).unwrap();
+            assert_eq!(parsed.filter_predicate(), None);
+            assert_eq!(
+                serde_json::to_vec(&parsed).unwrap(),
+                br#"{"operations":[]}"#
+            );
+        }
+        assert_eq!(
+            serde_json::to_vec(&PatchInstructions::default()).unwrap(),
+            br#"{"operations":[]}"#
         );
     }
 

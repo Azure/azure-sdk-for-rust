@@ -57,7 +57,7 @@ for the full design.
 | `cosmos_submit_operation` (legacy feeds) | ✅ with explicit errors for unrepresentable results |
 | Response status / RU / body / activity-id / session-token / etag / continuation | ✅ |
 | Retained query/read-feed/change-feed cursors | Supported through `cosmos_cursor_*` |
-| Change feed processor with acknowledged batches | Supported through `cosmos_processor_*` |
+| Read-many with optional scoped filters | `cosmos_read_many_open_submit` uses the retained cursor lifecycle |
 | Multi-part response body iteration | All buffers in cursor completions |
 | Diagnostics accessors | Supported through completion diagnostics |
 | Patch instruction builder | ⏳ planned |
@@ -65,100 +65,67 @@ for the full design.
 | Custom per-operation request headers | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
 | Driver fault injection | Supported through versioned `cosmos_driver_options_config_v2_t` records |
 
+## Read-many cursors
+
+Initialize `cosmos_read_many_request_t` with `cosmos_read_many_request_init`,
+set its container, and select either key/id pairs (`selection_kind = 1`) or
+partition keys (`selection_kind = 2`). Supply counted identities;
+partition selections must leave each item id unset. Duplicate selections are
+removed, empty selections read nothing, and missing items are omitted.
+
+An optional scalar SQL predicate using alias `c` narrows the selection.
+Bind values through the counted parameter array, with names including `@` and
+values encoded as JSON. Filters cannot replace the selection. Full SELECT
+queries, subqueries, projections, ordering, and aggregates belong in the query
+API. Both selection modes support complete keys and nonempty hierarchical
+prefixes. A prefix plus an item id returns every matching document across
+descendant logical partitions, not necessarily one document. Overlapping
+prefixes do not duplicate results, including across query batches. Empty keys
+are rejected; an empty selection array reads nothing.
+
+Only eligible unfiltered singleton selections with complete keys use point
+reads. Prefix selections and filtered selections use queries, including on
+containers whose final partition-key component is `/id`. When only that final
+component is omitted in a key/id pair, the SDK completes it from the supplied id.
+
+Submit through `cosmos_read_many_open_submit` on a cursor queue, then use the
+existing Next, completion, and Free APIs. Input buffers can be released as soon
+as submit returns. Pages expose every item buffer and remain valid until their
+completion is freed, even after advancing or freeing the cursor.
+Empty pages are not End. Results are unordered and not a transactional snapshot.
+
+Durable checkpoints and resume are unsupported for both selection modes;
+an unsupported checkpoint does not stop live iteration. The Rust SDK uses the
+same plan, with an explicit `collect_all` helper for callers willing to buffer
+all results in memory.
+
+### Request unit cost
+
+A point read of a roughly 1 KB item typically costs about 1 RU with Session or
+Eventual consistency. Treat that as a reference, not a guaranteed read-many
+charge per returned item. Stronger consistency, item size, index utilization,
+filtering, and the number of contacted partitions can change the cost.
+
+Partial hierarchical keys do not inherently offer an RU advantage. They select
+a broader scope than complete keys and can require more requests and return
+more items. Even a prefix/id pair can match several documents. Read-many routes
+to relevant physical ranges and uses bounded query batches rather than one
+unbounded selection expression, but still incurs query parsing and execution
+cost. A broad prefix may span many or all physical partitions; adding a filter
+does not guarantee that fewer returned items means a lower charge.
+
+Use complete keys when known and when they express the intended selection.
+Measure RU consumption across all pages and attempts using completion
+diagnostics; the Rust SDK's `ReadManyResponse::request_charge()` reports the
+aggregate for `collect_all()`. Neither lower RU consumption nor lower latency
+relative to another API is guaranteed without measuring the workload.
+
 ## Building
 
 Version **0.3.0** is a breaking C ABI revision. Check `cosmos_version()` against
 `AZURECOSMOSDRIVER_H_VERSION` before any layout-sensitive call, including options
 returned by value. Rebuild host bindings and vendor the generated header together
 with the matching library; do not mix 0.2.x headers and 0.3.x libraries.
-
-### Change feed processor delivery
-
-The processor API is an additive, format-isolated completion-queue interface.
-It does not invoke application callbacks from native code. The shared driver owns
-bootstrap, lease acquisition/stealing, renewal, feed polling, and checkpoint writes;
-the host SDK owns deserialization and callback execution.
-
-`workload_name` identifies the shared logical consumer. Cooperating change feed
-workers use the same workload name and distinct `worker_name` values. A worker
-is one running processor, not necessarily a process, pod, or thread.
-The request field names changed without changing their order, layout, or ABI
-version; existing bindings must update their source field accesses.
-
-`bootstrap_timeout_ms` configures the caller's bootstrap budget; zero keeps the
-120-second default. It occupies the first formerly reserved `u32`, preserving
-request size and existing field offsets. Old zero-filled requests keep their
-behavior; an older library rejects a nonzero value in that slot. Use matching
-headers and libraries when configuring it. The 25-second attempt deadline and
-30-second lock TTL are unchanged; optional restart verification is outside this
-budget. A longer wait alone does not solve large-workload initialization.
-
-1. Create a `cosmos_processor_queue_t` and initialize a
-   `cosmos_processor_request_t`. Supply resolved source/lease container and driver
-   handles to `cosmos_processor_start_submit`.
-2. Wait with `cosmos_processor_queue_wait`; detach the started processor with
-   `cosmos_processor_completion_take_processor`, then free the completion.
-3. Submit `cosmos_processor_next_submit`. A batch completion contains the complete
-   payload, its encoding-preserving body shape, lease identity, and a receipt.
-   Detach the receipt before freeing the completion. Keep the completion alive
-   as long as its borrowed payload views are in use.
-4. Invoke and await the application's callback in the host language.
-5. On success, submit `cosmos_processor_acknowledge_submit` to follow the selected
-   policy, or `cosmos_processor_checkpoint_submit` for a durable barrier.
-   On failure, free the receipt without submitting;
-   its lease is abandoned without advancing progress.
-6. Free receipt and operation handles. On shutdown, submit
-   `cosmos_processor_stop_submit`, drain results, and free the processor and queue.
-
-Only one undelivered Next is admitted per processor. After transferring it, the
-host may request other leases' batches while callbacks run concurrently. Each
-active lease session still has one outstanding batch; it cannot advance until
-acknowledgment succeeds. By default acknowledgment accepts progress in memory,
-with persistence deferred for up to five minutes.
-Receipts are one-use and tied to the acquisition incarnation. Receipts from ended
-sessions cannot authorize later checkpoints.
-
-The default start uses policy `1` and a five-minute interval. To override it,
-start with `cosmos_processor_start_with_policy_submit`: policy `0` and interval
-`0` select eager persistence; policy `1` and a positive interval in milliseconds
-select deferred persistence. Use
-`cosmos_processor_acknowledge_submit` after each successful callback. Its result
-kind `6` means acknowledgment, not necessarily persistence; the existing
-`cosmos_processor_checkpoint_submit` always persists and returns kind `3`.
-The start function signatures and request layout remain unchanged.
-
-There is no shared batch-count cap across leases or processors. Each lease can
-hold one outstanding batch, so buffered data can grow with owned lease count.
-The completion queue's capacity does not limit all batches held by the driver.
-Renewal and checkpoint deadlines continue while receipts are outstanding.
-
-Deferred checkpointing stores only the latest successfully handled continuation
-and counters, not past payloads. It flushes at the interval since the first
-unpersisted acknowledgment or an explicit/lifecycle barrier, not on idle reads.
-A deadline can flush earlier
-successes while another callback runs, but never includes that unfinished batch.
-Crashes and forced cancellation can replay multiple successful callbacks.
-With a `Now` start, restarting before the first durable checkpoint can resolve
-a later starting position.
-
-Queue capacity bounds admitted Start/Next results, including in-flight requests.
-Acknowledgment, Checkpoint, and Stop use control admission independently of that data capacity:
-otherwise a pending Next could occupy the slot needed by the acknowledgment
-that enables its next page. Renewal never waits on queue space. This does not
-bound payloads retained by the host or all active leases by a global byte limit.
-
-Freeing a completion also frees any undetached receipt/processor. Queue shutdown
-stops admission and requests processor shutdown while admitted results drain.
-Queue free abandons results and marks their operation handles as delivery-lost.
-Neither shutdown nor checkpoint writes can roll back callback side effects; consumers
-must tolerate at-least-once delivery.
-
-Graceful Stop drains issued receipts and flushes all successfully acknowledged
-progress before release, without waiting for the deferral interval. Continue
-receiving batches and acknowledging them while waiting; keep the queue and
-runtime alive. Incomplete drain or failed persistence/release produces an error.
-Abort and disposal instead request forced cancellation. Already-started writes
-may still complete; foreign callbacks remain the host's responsibility.
 
 ### Operation defaults and admission snapshots
 
@@ -217,6 +184,9 @@ an admission timeout does not guarantee partial driver diagnostics.
 ```bash
 # Rust side (produces the cdylib / staticlib and regenerates the header).
 cargo build --release -p azure_data_cosmos_driver_native
+
+# Same, but keep the system allocator instead of the default mimalloc.
+cargo build --release -p azure_data_cosmos_driver_native --no-default-features
 
 # C test harness (requires CMake ≥ 3.20 and a C compiler).
 cmake -B build sdk/cosmos/azure_data_cosmos_driver_native
