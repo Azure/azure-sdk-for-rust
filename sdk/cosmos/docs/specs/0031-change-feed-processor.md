@@ -87,14 +87,14 @@ Application          SDK                         Driver
     |                 | Request batch               |
     |                 |---------------------------->|
     |                 |                             | Read owned range
-    |                 | Batch + receipt             |
+    |                 | ChangeFeedBatch             |
     |                 |<----------------------------|
     |                 |                             |
     |                 | Deserialize                 |
     | Run handler     |                             |
     |<----------------|                             |
     | Success         |                             |
-    |---------------->| Acknowledge receipt         |
+    |---------------->| batch.acknowledge()         |
     |                 |---------------------------->|
     |                 |                             | Record safe progress
     |                 |                             | Checkpoint per policy
@@ -104,8 +104,9 @@ Application          SDK                         Driver
     |                 | Repeat                      |
 ```
 
-- A **receipt** is a single-use handle associating acknowledgment with the
-  delivered batch. Handler failure means no acknowledgment.
+- The SDK acknowledges the driver batch automatically after handler success.
+  The application sees typed changes and context, not the driver batch.
+  Handler failure means no acknowledgment.
 - Lease renewal and balancing run independently of the SDK's batch-processing
   loop.
 - **Eager** acknowledgment waits for checkpoint persistence. **Deferred**
@@ -133,12 +134,12 @@ SDK                   Driver request matching       Lease processing
  |                              |-------------------------->|
  |                              |                           | Read change feed
  |                              |                           |
- | Batch + receipt, through the request's response channel  |
+ | ChangeFeedBatch, through the request's response channel  |
  |<---------------------------------------------------------|
  |                              |                           |
- | Run application handler      |                           | Wait for receipt
+ | Run application handler      |                           | Await acknowledgment
  |                              |                           |
- | Acknowledge receipt          |                           |
+ | batch.acknowledge()           |                           |
  |--------------------------------------------------------->|
  |                              |                           | Record safe progress
  |                              |                           | Persist if required
@@ -155,12 +156,12 @@ not invoke application handlers.
 - An empty or throttled read releases its response sender without a batch.
   The same pending SDK request can select another eligible lease; the affected
   lease waits its idle delay or throttle cooldown before registering again.
-- When a read returns changes, the lease processor sends the batch and receipt
+- When a read returns changes, the lease processor sends a `ChangeFeedBatch`
   through the response channel. That lease cannot deliver another batch until
-  receipt completion succeeds.
+  acknowledgment completes successfully.
 - On acknowledgment, the lease processor records safe progress and persists it
   as required by the checkpoint policy before returning the completion result.
-  An abandoned receipt does not accept that batch's progress.
+  Dropping the batch without acknowledgment does not accept its progress.
 - Lease renewal and balancing continue independently of these waits.
 
 Batch delivery and acknowledgment are separate asynchronous exchanges:
@@ -179,7 +180,7 @@ queue; the lease container coordinates ownership across workers.
 3. The driver removes the next eligible registration and grants that lease a
    read turn, carrying the response-channel sender for this SDK request.
 4. The lease stays out of the queue while reading and awaiting acknowledgment.
-   After successful receipt completion, it can register at the back again.
+   After successful acknowledgment, it can register at the back again.
 
 Registration and the SDK request can arrive in either order. An empty or
 throttled read returns no batch and lets the pending SDK request select another
@@ -188,7 +189,7 @@ ready lease, as described above.
 ### 6.2 How queue readiness relates to checkpoints
 
 **The queue does not checkpoint progress.** It controls which lease may read
-next. The receipt and checkpoint policy determine when that lease becomes
+next. Batch acknowledgment and checkpoint policy determine when that lease becomes
 eligible to rejoin the queue.
 
 ```text
@@ -199,7 +200,7 @@ SDK consumer                        Ready-lease queue and lease processor
      | Request batch                     | Queue: [A, B]
      |---------------------------------->| Select A; queue becomes [B]
      |                                   | A reads its source range
-     | Batch + receipt                   |
+     | ChangeFeedBatch                   |
      |<----------------------------------|
      |                                   |
      | Run application handler           | A stays out of the queue
@@ -211,7 +212,7 @@ SDK consumer                        Ready-lease queue and lease processor
      |                                   | Deferred: record safe progress
      |                                   |           in memory
      |                                   |
-     | Receipt completion succeeds       |
+     | Acknowledgment succeeds           |
      |<----------------------------------|
      |                                   | A can register at the back again
      |                                   | Queue: [B, A] if B is still waiting
@@ -221,10 +222,10 @@ SDK consumer                        Ready-lease queue and lease processor
 
 | Outcome | Progress and queue behavior |
 | --- | --- |
-| Handler fails or receipt is abandoned | Do not accept the batch's progress. End the affected acquisition rather than requeue it as successful work. A later acquisition resumes from durable progress. |
-| Eager acknowledgment | Save safe progress durably before completing the receipt and allowing this lease to rejoin the queue. |
-| Deferred acknowledgment | Record safe progress in memory before completing the receipt and allowing re-registration. A deadline or explicit/lifecycle barrier later triggers persistence. |
-| Required checkpoint fails | Return failure when a receipt is waiting and end the affected acquisition; do not reopen delivery through the successful path. |
+| Handler fails or batch is abandoned | Do not accept the batch's progress. End the affected acquisition rather than requeue it as successful work. A later acquisition resumes from durable progress. |
+| Eager acknowledgment | Save safe progress durably before completing acknowledgment and allowing this lease to rejoin the queue. |
+| Deferred acknowledgment | Record safe progress in memory before completing acknowledgment and allowing re-registration. A deadline or explicit/lifecycle barrier later triggers persistence. |
+| Required checkpoint fails | Return failure to a waiting acknowledgment and end the affected acquisition; do not reopen delivery through the successful path. |
 
 This keeps at most one batch awaiting acknowledgment per acquisition and
 prevents that acquisition from advancing past unfinished processing. It also
@@ -274,11 +275,33 @@ Lease renewal and balancing continue independently in both workers.
 There is no shared queue across workers. If W2 acquires A from W1, W1 closes
 the old delivery session when ownership loss is detected. W2 creates a new
 lease processor for A and registers it in W2's queue when ready; no queue entry
-or in-flight batch is transferred between workers. Old receipts cannot update
+or in-flight batch is transferred between workers. Old batches cannot update
 the replacement owner's progress. Already-issued application effects can
 overlap before loss is detected and must tolerate replay.
 
 ## 7. What does the Rust SDK expose?
+
+**Audience: application developers using `azure_data_cosmos`.** Applications
+configure a processor, supply a typed handler, and call `start()` and `stop()`.
+They do not request driver batches or manually acknowledge them.
+
+| Application-visible type | What the application uses |
+| --- | --- |
+| `ChangeFeedProcessorBuilder<T, Fut>` | `new(...)`, the configuration setters below, and `build()`. |
+| `ChangeFeedProcessor<T, Fut>` | `start().await`, `stop().await`, and `is_started()`. |
+| `ChangeFeedHandler<T, Fut>` | Required async function-pointer handler returning the SDK's `Result<()>`. |
+| `ChangeFeedProcessorContext` | Handler context with `lease_token()` and read `diagnostics()`. |
+| `ChangeFeedCheckpointPolicy` | `Eager`, `Deferred { max_interval }`, and `deferred()` for the default interval. |
+
+The handler uses SDK-owned `ChangeFeedItem<T>` values and the builder uses
+`ChangeFeedMode`. Configuration also uses container clients, continuation
+tokens, timestamps, durations, and item-count hints. These supporting types
+are not additional processor lifecycle objects.
+
+**Not application-visible:** driver `ChangeFeedBatch`, native handles, native
+completion queues, and acknowledgment operations. There is no public
+`BatchReceipt` type to learn or manage. The SDK performs acknowledgment after
+the application handler succeeds.
 
 The application configures five dimensions. The SDK owns its public types;
 driver types do not appear in the SDK's public API.
@@ -366,8 +389,8 @@ sequentially within one worker.
 
 This callback shape accepts function pointers, not capturing closures.
 Callbacks must tolerate replay. Handler errors, deserialization errors, and
-unwinding panics do not acknowledge the batch. The SDK does not expose a
-receipt or require the application to call the driver directly.
+unwinding panics do not acknowledge the batch. The SDK does not expose driver acknowledgment state or require the application
+to call the driver directly.
 
 ### 7.4 Additional user options
 
@@ -386,6 +409,10 @@ successful lease write, and balancing checks every 10 seconds after an
 immediate first pass. These are not additional SDK tuning setters.
 
 ## 8. What does the driver expose to SDK adapters?
+
+**Audience: SDK and native-adapter implementers, not application developers.**
+The processor and option types in this section belong to
+`azure_data_cosmos_driver`, even where their names match SDK-owned types.
 
 The driver exposes processor operations and an acknowledgeable batch, not
 application handlers or a separate public receipt type.
@@ -425,7 +452,7 @@ The batch owns its single-use acknowledgment state internally. There is no
 public receipt to extract or manage separately. Dropping the batch without
 completing it abandons its progress. Completion is scoped to the acquisition
 that delivered it; stale batches cannot authorize writes using a replacement
-owner's ETag. In the diagrams, "receipt" denotes this acknowledgment state.
+owner's ETag.
 
 Startup, batch completion, and shutdown report errors directly. The receive
 method returns `Option`, not `Result`: a failed source read can leave the SDK
@@ -436,17 +463,134 @@ healthy processing.
 
 ## 9. How does GoV2 use the driver through FFI?
 
+The Go application uses the public surface below. Native operations and handles
+in the later subsections are for GoV2/native-adapter implementers only.
+
 The native adapter exposes opaque processor/receipt handles and asynchronous
 operation submission with completion delivery. GoV2 owns deserialization,
 the Go handler, and the mapping to idiomatic Go options and errors. The
-following native names are proposed; this document does not define the final
-Go public API or the complete C ABI layouts.
+Go and native signatures are proposed for review, not available APIs. Complete
+C ABI layouts are outside this proposal.
+
+### 9.1 Go application API
+
+The proposed Go constructor takes the same source, progress-storage, identity,
+feed-mode, and handler inputs as the Rust SDK. Go options use a pointer;
+`nil` selects defaults, following existing GoV2 operation conventions.
+
+```go
+type ChangeFeedMode uint32
+
+const (
+    ChangeFeedModeLatestVersion ChangeFeedMode = iota + 1
+    ChangeFeedModeAllVersionsAndDeletes
+)
+
+type ChangeFeedStartKind uint32
+
+const (
+    ChangeFeedStartNow ChangeFeedStartKind = iota
+    ChangeFeedStartBeginning
+    ChangeFeedStartTime
+    ChangeFeedStartContinuation
+)
+
+type ChangeFeedStartPosition struct {
+    Kind         ChangeFeedStartKind
+    Time         time.Time
+    Continuation string
+}
+
+type ChangeFeedCheckpointKind uint32
+
+const (
+    ChangeFeedCheckpointDeferred ChangeFeedCheckpointKind = iota
+    ChangeFeedCheckpointEager
+)
+
+type ChangeFeedCheckpointPolicy struct {
+    Kind        ChangeFeedCheckpointKind
+    MaxInterval time.Duration
+}
+
+type ChangeFeedProcessorOptions struct {
+    Start                      ChangeFeedStartPosition
+    CheckpointPolicy           ChangeFeedCheckpointPolicy
+    MaxItemCount               *int32
+    IdleReadDelay              *time.Duration
+    BootstrapTimeout           *time.Duration
+    MinLeaseCount              uint32
+    MaxLeaseCount              uint32
+    VerifyLeasesOnRestart      bool
+}
+
+type ChangeFeedProcessorContext struct {
+    LeaseToken  string
+    Diagnostics *Diagnostics
+}
+
+type ChangeFeedHandler func(
+    ctx context.Context,
+    batchContext ChangeFeedProcessorContext,
+    changes []json.RawMessage,
+) error
+
+func NewChangeFeedProcessor(
+    source *ContainerClient,
+    leases *ContainerClient,
+    workloadName string,
+    workerName string,
+    mode ChangeFeedMode,
+    handler ChangeFeedHandler,
+    options *ChangeFeedProcessorOptions,
+) (*ChangeFeedProcessor, error)
+
+func (p *ChangeFeedProcessor) Start(ctx context.Context) error
+func (p *ChangeFeedProcessor) Stop(ctx context.Context) error
+func (p *ChangeFeedProcessor) Close() error
+func (p *ChangeFeedProcessor) IsStarted() bool
+```
+
+These are API declarations, not a standalone Go source file.
+`ContainerClient` and `Diagnostics` are existing GoV2 SDK types. The processor
+is opaque; applications do not construct its internal fields.
+
+| Surface | Application contract |
+| --- | --- |
+| Constructor | Validate without I/O. Require both containers, names that are not blank, an explicit supported mode, and a non-nil handler. Zero-valued options mean `Now`, five-minute Deferred persistence, and the tuning defaults in section 7. |
+| `Start(ctx)` | Initialize and launch processing. The context bounds startup, not the lifetime of the successfully started processor. Return startup failures directly. |
+| Handler | Run sequentially per worker in Go. Returning `nil` tells the SDK to acknowledge; returning an error or cancellation leaves that batch unacknowledged. The handler context can be canceled on ownership loss or forced shutdown. |
+| `Stop(ctx)` | Request graceful drain and wait for cleanup. A canceled waiting context does not confirm that native cleanup stopped or completed. Keep completion delivery running until it settles. |
+| `Close()` | Request forced shutdown and join adapter/native resource cleanup. Cancel the handler context without claiming to forcibly terminate arbitrary Go code or undo effects. |
+| `IsStarted()` | Inspect local lifecycle state; not a health probe. |
+
+`changes` contains Go-owned JSON change records, not borrowed native buffers.
+Latest Version supplies item records; All Versions and Deletes preserves its
+version/delete envelopes and metadata. Application decoding uses the selected
+mode's record format. **Open: typed Go change records.** Review whether a
+mode-aware typed wrapper should replace `json.RawMessage` before API approval.
+Neither shape exposes a receipt, driver batch, or manual acknowledgment.
+
+For starts, `Beginning` and `Time` require Latest Version. `Time` requires a
+nonzero timestamp; `Continuation` requires a token that is not blank. Reject fields
+that conflict with the selected start kind. Saved lease progress wins.
+The initial-anchor requirement in section 7 applies equally to Go.
+
+For checkpoints, zero Deferred interval selects five minutes; explicit
+intervals must be positive. Eager requires a zero interval. Tuning pointer
+fields distinguish default from explicit zero: idle delay may be zero;
+bootstrap timeout must be positive; item count accepts a positive hint or
+`-1` for the service default. Validate lease-count bounds as in the Rust SDK.
+
+**Open: lifecycle and background failure reporting.** Validate context lifetime,
+restart/close races, cleanup joining, and how persistent processing failures
+reach Go callers; local state and successful startup do not establish health.
 
 The native receipt handle retains the batch's acknowledgment state after
 payload completion is freed. It is an FFI ownership detail, not another public
 Rust driver type or an additional acknowledgment required from the application.
 
-### 9.1 Native operations
+### 9.2 Native operations
 
 | Native API | Purpose |
 | --- | --- |
@@ -472,7 +616,7 @@ The adapter distinguishes submission rejection from an accepted operation's
 later error completion, end-of-delivery, policy acknowledgment, and durable
 checkpoint completion.
 
-### 9.2 Wait for completions using GoV2's reactor pattern
+### 9.3 Wait for completions using GoV2's reactor pattern
 
 GoV2 point operations already use a completion reactor and buffered Go channels.
 In [the point-operation adapter](https://github.com/Azure/azure-sdk-for-go/blob/64e45360ec225bb2280e4ca4cdf9a087fc3fe644/sdk/data/azcosmos/operation_native.go),
@@ -531,7 +675,7 @@ context error cancels its pending native receive or releases its resources.
 This reuses a coordination pattern, not an already-compatible queue ABI:
 processor completion conversion and handle cleanup need their own adapter.
 
-### 9.3 Possible Go-to-Rust request flow
+### 9.4 Possible Go-to-Rust request flow
 
 Go and Rust have separate async runtimes. Go cannot directly await a Rust
 future. Submission returns an operation handle after accepting the request;
@@ -603,7 +747,7 @@ and reactor-delivery pattern. Rust awaits batch acknowledgment or durable
 checkpoint completion before posting that operation's result. Each submission
 has its own correlation cookie.
 
-### 9.4 Go adapter processing loop
+### 9.5 Go adapter processing loop
 
 This is language-neutral pseudocode for the Go adapter, not proposed Go
 method signatures:
@@ -654,6 +798,6 @@ when batch delivery is saturated.
 
 **GoV2 integration gate:** execute the basic request/handler/acknowledgment loop
 over FFI, including handler failure, cancellation, durable checkpoint
-completion, and shutdown under saturation. Final Go signatures, per-receipt
+completion, and shutdown under saturation. The proposed Go signatures, per-receipt
 cancellation visibility, late-result disposal, and cancellation mapping require
 validation; this is not a claim that the Go adapter is implemented.
