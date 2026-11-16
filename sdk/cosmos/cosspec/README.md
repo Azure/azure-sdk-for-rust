@@ -149,6 +149,22 @@ cargo test -p cosspec --test spec -- --config ./configs/emulator.toml --no-clean
 Delete the kept databases yourself, or let a later run sweep them after two
 hours.
 
+### Run in CI
+
+The Cosmos crates' `Test-Setup.ps1` scripts run the specs once per pipeline
+job, through `sdk/cosmos/eng/scripts/Invoke-CosmosSpecTests.ps1`:
+
+- Legs that start the legacy Azure Cosmos DB Emulator (Windows) run
+  `configs/emulator.toml`. Other legs run the in-memory default.
+- Fuzz, in-memory emulator, E2E, vNext emulator, and live legs skip the specs.
+- Each leg publishes its results, pass or fail, as a pipeline artifact named
+  `cosspec-results-<job>-<attempt>`. Download it from the build's artifacts,
+  extract it, and open the folder in
+  [`cosspec-viewer`](../cosspec-viewer/README.md).
+- A spec failure fails the job, but the crate's own tests still run.
+- Set `AZURE_COSMOS_SPEC=false` to skip the specs, or
+  `AZURE_COSMOS_SPEC=true` to run them from a local `Test-Packages.ps1` run.
+
 ## Key concepts
 
 - **Spec**: an `async fn` marked `#[spec_test]` whose doc comment states the

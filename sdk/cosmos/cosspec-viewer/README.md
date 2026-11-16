@@ -49,8 +49,9 @@ reload in the browser as the files change, so you can watch a run in progress.
 | `--open`          |                                 | Opens the viewer in your browser        |
 
 `--results` can point at one run (a directory with a `manifest.json`) or at a
-directory holding runs, such as `target/cosspec-results` or a CI artifact
-with several runs. A directory of runs opens to the runs list; a single run
+directory holding runs, such as `target/cosspec-results`. For CI results,
+download a `cosspec-results-*` artifact from the build, extract it, and pass
+the extracted folder. A directory of runs opens to the runs list; a single run
 opens straight to its trials.
 
 After the first `start`, `bun run serve -- <options>` skips the build.
@@ -131,7 +132,7 @@ sources behind one interface (`src/sources/source.ts`):
 
 Other sources could be added without changing the screens, such as a ZIP file
 of a run, a run published at a URL by CI, or a single HTML report with the
-results inlined. Publishing results from CI isn't set up yet.
+results inlined.
 
 ## Contributing
 
