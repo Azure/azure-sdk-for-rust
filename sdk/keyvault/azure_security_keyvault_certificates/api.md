@@ -8,6 +8,8 @@
 
 - `default`
   - `azure_core/default`
+- `test`
+- `unstable_fake`
 
 ```rust
 #![crate_name = "azure_security_keyvault_certificates"]
@@ -73,6 +75,9 @@ pub mod clients {
         pub async fn update_certificate_properties(&self, certificate_name: &str, parameters: RequestContent<UpdateCertificatePropertiesParameters>, options: Option<CertificateClientUpdateCertificatePropertiesOptions<'_>>) -> Result<Response<Certificate>>;
         pub async fn update_issuer(&self, issuer_name: &str, parameter: RequestContent<UpdateIssuerParameters>, options: Option<CertificateClientUpdateIssuerOptions<'_>>) -> Result<Response<Issuer>>;
     }
+    impl crate::CertificateClient {
+        pub fn with_fake<impl CertificateServer + ?Sized + 'static: CertificateServer + ?Sized + 'static>(endpoint: &str, server: Arc<impl CertificateServer + ?Sized + 'static>, options: Option<CertificateClientOptions>) -> Result<Self>;
+    }
     #[derive(Clone, Debug)]
     pub struct CertificateClientOptions {
         pub api_version: String,
@@ -81,6 +86,64 @@ pub mod clients {
     }
     impl Default for CertificateClientOptions {
         fn default() -> Self;
+    }
+    #[cfg(all(feature = "test", feature = "unstable_fake"))]
+    pub mod fake {
+        #[async_trait]
+        pub trait CertificateServer: Send + Sync {
+            #[allow(clippy::too_many_arguments)]
+            async fn backup_certificate(&self, certificate_name: &str, options: Option<models::CertificateClientBackupCertificateOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn delete_certificate(&self, certificate_name: &str, options: Option<models::CertificateClientDeleteCertificateOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn delete_certificate_operation(&self, certificate_name: &str, options: Option<models::CertificateClientDeleteCertificateOperationOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn delete_contacts(&self, options: Option<models::CertificateClientDeleteContactsOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn delete_issuer(&self, issuer_name: &str, options: Option<models::CertificateClientDeleteIssuerOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn get_certificate(&self, certificate_name: &str, options: Option<models::CertificateClientGetCertificateOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn get_certificate_operation(&self, certificate_name: &str, options: Option<models::CertificateClientGetCertificateOperationOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn get_certificate_policy(&self, certificate_name: &str, options: Option<models::CertificateClientGetCertificatePolicyOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn get_contacts(&self, options: Option<models::CertificateClientGetContactsOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn get_deleted_certificate(&self, certificate_name: &str, options: Option<models::CertificateClientGetDeletedCertificateOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn get_issuer(&self, issuer_name: &str, options: Option<models::CertificateClientGetIssuerOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn import_certificate(&self, certificate_name: &str, parameters: RequestContent<models::ImportCertificateParameters>, options: Option<models::CertificateClientImportCertificateOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn list_certificate_properties(&self, state: PagerState, options: Option<models::CertificateClientListCertificatePropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn list_certificate_properties_versions(&self, certificate_name: &str, state: PagerState, options: Option<models::CertificateClientListCertificatePropertiesVersionsOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn list_deleted_certificate_properties(&self, state: PagerState, options: Option<models::CertificateClientListDeletedCertificatePropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn list_issuer_properties(&self, state: PagerState, options: Option<models::CertificateClientListIssuerPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn merge_certificate(&self, certificate_name: &str, parameters: RequestContent<models::MergeCertificateParameters>, options: Option<models::CertificateClientMergeCertificateOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn purge_deleted_certificate(&self, certificate_name: &str, options: Option<models::CertificateClientPurgeDeletedCertificateOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn recover_deleted_certificate(&self, certificate_name: &str, options: Option<models::CertificateClientRecoverDeletedCertificateOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn restore_certificate(&self, parameters: RequestContent<models::RestoreCertificateParameters>, options: Option<models::CertificateClientRestoreCertificateOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn set_contacts(&self, contacts: RequestContent<models::Contacts>, options: Option<models::CertificateClientSetContactsOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn set_issuer(&self, issuer_name: &str, parameter: RequestContent<models::SetIssuerParameters>, options: Option<models::CertificateClientSetIssuerOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn update_certificate_operation(&self, certificate_name: &str, certificate_operation: RequestContent<models::UpdateCertificateOperationParameter>, options: Option<models::CertificateClientUpdateCertificateOperationOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn update_certificate_policy(&self, certificate_name: &str, certificate_policy: RequestContent<models::CertificatePolicy>, options: Option<models::CertificateClientUpdateCertificatePolicyOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn update_certificate_properties(&self, certificate_name: &str, parameters: RequestContent<models::UpdateCertificatePropertiesParameters>, options: Option<models::CertificateClientUpdateCertificatePropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn update_issuer(&self, issuer_name: &str, parameter: RequestContent<models::UpdateIssuerParameters>, options: Option<models::CertificateClientUpdateIssuerOptions<'_>>) -> Result<AsyncRawResponse>;
+        }
     }
 }
 pub mod models {

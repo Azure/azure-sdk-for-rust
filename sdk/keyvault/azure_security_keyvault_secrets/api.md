@@ -61,8 +61,7 @@ pub mod clients {
         pub async fn update_secret_properties(&self, secret_name: &str, parameters: RequestContent<UpdateSecretPropertiesParameters>, options: Option<SecretClientUpdateSecretPropertiesOptions<'_>>) -> Result<Response<Secret>>;
     }
     impl crate::SecretClient {
-        #[cfg(all(feature = "test", feature = "unstable_fake"))]
-        pub fn with_fake<T>(endpoint: &str, server: Arc<T>, options: Option<SecretClientOptions>) -> Result<Self> where T: SecretServer + ?Sized + 'static;
+        pub fn with_fake<impl SecretServer + ?Sized + 'static: SecretServer + ?Sized + 'static>(endpoint: &str, server: Arc<impl SecretServer + ?Sized + 'static>, options: Option<SecretClientOptions>) -> Result<Self>;
     }
     #[derive(Clone, Debug)]
     pub struct SecretClientOptions {
@@ -77,18 +76,30 @@ pub mod clients {
     pub mod fake {
         #[async_trait]
         pub trait SecretServer: Send + Sync {
-            async fn backup_secret(&self, _secret_name: &str, _options: Option<SecretClientBackupSecretOptions<'_>>) -> Result<AsyncRawResponse>;
-            async fn delete_secret(&self, _secret_name: &str, _options: Option<SecretClientDeleteSecretOptions<'_>>) -> Result<AsyncRawResponse>;
-            async fn get_deleted_secret(&self, _secret_name: &str, _options: Option<SecretClientGetDeletedSecretOptions<'_>>) -> Result<AsyncRawResponse>;
-            async fn get_secret(&self, _secret_name: &str, _options: Option<SecretClientGetSecretOptions<'_>>) -> Result<AsyncRawResponse>;
-            async fn list_deleted_secret_properties(&self, _state: PagerState, _options: Option<SecretClientListDeletedSecretPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
-            async fn list_secret_properties(&self, _state: PagerState, _options: Option<SecretClientListSecretPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
-            async fn list_secret_properties_versions(&self, _secret_name: &str, _state: PagerState, _options: Option<SecretClientListSecretPropertiesVersionsOptions<'_>>) -> Result<AsyncRawResponse>;
-            async fn purge_deleted_secret(&self, _secret_name: &str, _options: Option<SecretClientPurgeDeletedSecretOptions<'_>>) -> Result<AsyncRawResponse>;
-            async fn recover_deleted_secret(&self, _secret_name: &str, _options: Option<SecretClientRecoverDeletedSecretOptions<'_>>) -> Result<AsyncRawResponse>;
-            async fn restore_secret(&self, _parameters: RequestContent<RestoreSecretParameters>, _options: Option<SecretClientRestoreSecretOptions<'_>>) -> Result<AsyncRawResponse>;
-            async fn set_secret(&self, _secret_name: &str, _parameters: RequestContent<SetSecretParameters>, _options: Option<SecretClientSetSecretOptions<'_>>) -> Result<AsyncRawResponse>;
-            async fn update_secret_properties(&self, _secret_name: &str, _parameters: RequestContent<UpdateSecretPropertiesParameters>, _options: Option<SecretClientUpdateSecretPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn backup_secret(&self, secret_name: &str, options: Option<models::SecretClientBackupSecretOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn delete_secret(&self, secret_name: &str, options: Option<models::SecretClientDeleteSecretOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn get_deleted_secret(&self, secret_name: &str, options: Option<models::SecretClientGetDeletedSecretOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn get_secret(&self, secret_name: &str, options: Option<models::SecretClientGetSecretOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn list_deleted_secret_properties(&self, state: PagerState, options: Option<models::SecretClientListDeletedSecretPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn list_secret_properties(&self, state: PagerState, options: Option<models::SecretClientListSecretPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn list_secret_properties_versions(&self, secret_name: &str, state: PagerState, options: Option<models::SecretClientListSecretPropertiesVersionsOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn purge_deleted_secret(&self, secret_name: &str, options: Option<models::SecretClientPurgeDeletedSecretOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn recover_deleted_secret(&self, secret_name: &str, options: Option<models::SecretClientRecoverDeletedSecretOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn restore_secret(&self, parameters: RequestContent<models::RestoreSecretParameters>, options: Option<models::SecretClientRestoreSecretOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn set_secret(&self, secret_name: &str, parameters: RequestContent<models::SetSecretParameters>, options: Option<models::SecretClientSetSecretOptions<'_>>) -> Result<AsyncRawResponse>;
+            #[allow(clippy::too_many_arguments)]
+            async fn update_secret_properties(&self, secret_name: &str, parameters: RequestContent<models::UpdateSecretPropertiesParameters>, options: Option<models::SecretClientUpdateSecretPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
         }
     }
 }
