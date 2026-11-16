@@ -7,10 +7,13 @@ use crate::{
     models::ReceivedEventData,
 };
 use async_stream::try_stream;
-use azure_core::{http::Url, time::Duration};
+use azure_core::{
+    http::Url,
+    time::Duration,
+    tracing::{Span, SpanKind},
+};
 use azure_core_amqp::{
-    error::AmqpErrorKind, AmqpDeliveryApis as _, AmqpError, AmqpReceiverApis as _,
-    AmqpReceiverOptions, AmqpSource,
+    error::AmqpErrorKind, AmqpDeliveryApis as _, AmqpError, AmqpReceiverOptions, AmqpSource,
 };
 use futures::{channel::oneshot, future::Shared, pin_mut, select_biased, FutureExt, Stream};
 use std::{
@@ -273,6 +276,22 @@ impl EventReceiver {
     }
 
     async fn receive_event(&self) -> Result<ReceivedEventData> {
+        self.connection
+            .diagnostics()
+            .run(
+                "EventReceiver.receive",
+                "receive",
+                SpanKind::Client,
+                1,
+                |parent| self.receive_event_with_parent(parent),
+            )
+            .await
+    }
+
+    async fn receive_event_with_parent(
+        &self,
+        parent: Option<Arc<dyn Span>>,
+    ) -> Result<ReceivedEventData> {
         #[cfg(test)]
         {
             let forced = self.forced_receive.lock().unwrap().take();
@@ -288,11 +307,12 @@ impl EventReceiver {
                 self.receiver_options.clone(),
                 &self.partition_id,
                 self.timeout,
+                parent.clone(),
             )
             .await
             .map_err(|e| translate_attach_error(e, &self.partition_id, &self.source_url))?;
         let delivery = receiver
-            .receive_delivery()
+            .receive_delivery_with_parent(parent)
             .await
             .map_err(|e| translate_receive_error(e, &self.partition_id, &self.source_url))?;
         Ok(ReceivedEventData::from(delivery.into_message()))
@@ -413,8 +433,14 @@ mod tests {
         translate_receive_error, AmqpError, AmqpErrorKind, ErrorKind, EventHubsError,
         ReceivedEventData, Url,
     };
+    use crate::common::diagnostics::tests::provider;
+    use crate::common::recoverable::RecoverableConnection;
     use azure_core_amqp::{error::AmqpErrorCondition, AmqpDescribedError, AmqpMessage};
+    use azure_core_test::credentials::MockCredential;
     use futures::{poll, StreamExt};
+    use opentelemetry::trace::Status;
+    use std::{sync::Arc, time::Duration as StdDuration};
+    use tokio::net::TcpListener;
 
     #[tokio::test]
     async fn close_wakes_pending_receive_before_detach_is_polled() {
@@ -596,5 +622,79 @@ mod tests {
         let attach_error = EventHubsError::with_message("not an AMQP error");
         let translated = translate_attach_error(attach_error, "0", &source_url());
         assert!(matches!(translated.kind, ErrorKind::SimpleMessage(_)));
+    }
+    #[tokio::test]
+    async fn telemetry_cold_attach_failure_records_logical_receive() {
+        let receiver = receiver_with_failing_attach("0", stolen());
+        let (provider, exporter, _sdk) = provider();
+        receiver.connection.configure_tracing(Some(provider));
+        let mut stream = std::pin::pin!(receiver.stream_events());
+        let error = stream.next().await.unwrap().unwrap_err();
+        assert!(matches!(
+            error.kind,
+            ErrorKind::ConsumerDisconnected(Some(_))
+        ));
+        let spans = exporter.get_finished_spans().unwrap();
+        let receives: Vec<_> = spans
+            .iter()
+            .filter(|span| span.name == "EventReceiver.receive")
+            .collect();
+        assert_eq!(
+            receives.len(),
+            1,
+            "initial attach failure must finish a logical receive"
+        );
+        assert!(matches!(receives[0].status, Status::Error { .. }));
+    }
+
+    #[tokio::test]
+    async fn telemetry_cold_attach_cancellation_records_logical_receive() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = Url::parse(&format!("amqp://{}", listener.local_addr().unwrap())).unwrap();
+        let source = source_url();
+        let connection = RecoverableConnection::new(
+            Url::parse("amqps://example.servicebus.windows.net/hub").unwrap(),
+            None,
+            Some(endpoint),
+            Default::default(),
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        );
+        let (provider, exporter, _sdk) = provider();
+        connection.configure_tracing(Some(provider));
+        let receiver = super::EventReceiver::new(
+            connection,
+            Default::default(),
+            Default::default(),
+            source,
+            "0".into(),
+            None,
+        );
+        let mut stream = Box::pin(receiver.stream_events());
+        let mut receive = Box::pin(stream.next());
+        // A real TCP connection has begun, but the peer never completes OPEN.
+        let _socket = tokio::time::timeout(StdDuration::from_secs(5), async {
+            tokio::select! {
+                accepted = listener.accept() => accepted.unwrap().0,
+                result = &mut receive => panic!("receive completed before the peer opened: {result:?}"),
+            }
+        }).await.expect("client connects to the local peer");
+        drop(receive);
+        drop(stream);
+        let spans = exporter.get_finished_spans().unwrap();
+        let receives: Vec<_> = spans
+            .iter()
+            .filter(|span| span.name == "EventReceiver.receive")
+            .collect();
+        assert_eq!(
+            receives.len(),
+            1,
+            "cancelling initial attachment must finish a logical receive"
+        );
+        assert!(
+            matches!(receives[0].status, Status::Error { ref description } if description.contains("cancelled"))
+        );
     }
 }
