@@ -545,11 +545,11 @@ pub mod models {
         #[serde(default)]
         pub value: Vec<CertificateProperties>,
     }
+    #[async_trait]
     impl Page for super::ListCertificatePropertiesResult {
         type IntoIter = <Vec<CertificateProperties> as IntoIterator>::IntoIter;
         type Item = CertificateProperties;
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn into_items(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<<Self as >::IntoIter>> + ::core::marker::Send>>;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -559,11 +559,11 @@ pub mod models {
         #[serde(default, skip_serializing)]
         pub value: Vec<DeletedCertificateProperties>,
     }
+    #[async_trait]
     impl Page for super::ListDeletedCertificatePropertiesResult {
         type IntoIter = <Vec<DeletedCertificateProperties> as IntoIterator>::IntoIter;
         type Item = DeletedCertificateProperties;
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn into_items(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<<Self as >::IntoIter>> + ::core::marker::Send>>;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -573,11 +573,11 @@ pub mod models {
         #[serde(default, skip_serializing)]
         pub value: Vec<IssuerProperties>,
     }
+    #[async_trait]
     impl Page for super::ListIssuerPropertiesResult {
         type IntoIter = <Vec<IssuerProperties> as IntoIterator>::IntoIter;
         type Item = IssuerProperties;
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn into_items(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<<Self as >::IntoIter>> + ::core::marker::Send>>;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     pub struct MergeCertificateParameters {

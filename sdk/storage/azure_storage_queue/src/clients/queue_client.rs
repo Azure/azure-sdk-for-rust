@@ -48,10 +48,13 @@ impl QueueClient {
                     format!("{queue_url} must use https"),
                 ));
             }
-            per_retry_policies.push(Arc::new(BearerTokenAuthorizationPolicy::new(
-                token_credential,
-                vec!["https://storage.azure.com/.default"],
-            )));
+            per_retry_policies.push(Arc::new(
+                BearerTokenAuthorizationPolicy::new(
+                    token_credential,
+                    vec!["https://storage.azure.com/.default"],
+                )
+                .with_options((&options.client_options).into()),
+            ));
         }
 
         let pipeline = Pipeline::new(

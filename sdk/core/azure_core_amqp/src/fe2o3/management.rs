@@ -3,18 +3,16 @@
 
 use crate::{
     error::{AmqpErrorKind, Result},
+    fe2o3::session::Fe2o3AmqpSession,
     management::AmqpManagementApis,
-    session::AmqpSession,
+    session::{AmqpSession, AmqpSessionApis},
     simple_value::AmqpSimpleValue,
     value::{AmqpOrderedMap, AmqpValue},
     AmqpError,
 };
 use azure_core::credentials::AccessToken;
 use fe2o3_amqp_management::operations::ReadResponse;
-use std::{
-    borrow::BorrowMut,
-    sync::{Arc, OnceLock},
-};
+use std::{borrow::BorrowMut, sync::OnceLock};
 use tokio::sync::Mutex;
 use tracing::debug;
 
@@ -22,7 +20,7 @@ use tracing::debug;
 pub(crate) struct Fe2o3AmqpManagement {
     client_node_name: String,
     access_token: AccessToken,
-    session: Arc<Mutex<fe2o3_amqp::session::SessionHandle<()>>>,
+    session: Fe2o3AmqpSession,
     management: OnceLock<Mutex<fe2o3_amqp_management::MgmtClient>>,
 }
 
@@ -38,8 +36,8 @@ impl Fe2o3AmqpManagement {
         client_node_name: String,
         access_token: AccessToken,
     ) -> Result<Self> {
-        // Session::get() returns a clone of the underlying session handle.
-        let session = session.implementation.get()?;
+        let session = session.implementation;
+        session.get()?;
 
         Ok(Self {
             access_token,
@@ -60,9 +58,10 @@ impl Fe2o3AmqpManagement {
 #[async_trait::async_trait]
 impl AmqpManagementApis for Fe2o3AmqpManagement {
     async fn attach(&self) -> Result<()> {
+        let session = self.session.get()?;
         let management = fe2o3_amqp_management::client::MgmtClient::builder()
             .client_node_addr(&self.client_node_name)
-            .attach(self.session.lock().await.borrow_mut())
+            .attach(session.lock().await.borrow_mut())
             .await
             .map_err(AmqpError::from)?;
 
@@ -81,8 +80,7 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
         let management = management.into_inner();
         management.close().await.map_err(AmqpError::from)?;
 
-        let mut session = self.session.lock().await;
-        session.end().await.map_err(AmqpError::from)?;
+        self.session.end().await?;
         Ok(())
     }
 

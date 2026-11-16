@@ -138,11 +138,11 @@ async fn health(State(state): State<ManagementState>) -> Json<serde_json::Value>
         "binaryNegotiatedRequests": state.metrics.binary_negotiated_requests(),
         "binaryPayloadRequests": state.metrics.binary_payload_requests(),
         "binaryResponsePayloads": state.metrics.binary_response_payloads(),
-        "defaultConsistencyRequests": state.metrics.default_consistency_requests(),
-        "eventualConsistencyRequests": state.metrics.eventual_consistency_requests(),
-        "sessionConsistencyRequests": state.metrics.session_consistency_requests(),
-        "latestCommittedConsistencyRequests": state.metrics.latest_committed_consistency_requests(),
-        "globalStrongConsistencyRequests": state.metrics.global_strong_consistency_requests(),
+        "wireDefaultConsistencyRequests": state.metrics.wire_default_consistency_requests(),
+        "wireEventualConsistencyRequests": state.metrics.wire_eventual_consistency_requests(),
+        "wireSessionConsistencyRequests": state.metrics.wire_session_consistency_requests(),
+        "wireLatestCommittedConsistencyRequests": state.metrics.wire_latest_committed_consistency_requests(),
+        "wireGlobalStrongConsistencyRequests": state.metrics.wire_global_strong_consistency_requests(),
         "gatewayRequests": state.metrics.gateway_requests(),
         "gateway20Requests": state.metrics.gateway20_requests()
     }))
@@ -1194,16 +1194,29 @@ mod tests {
         operation_id: &str,
         expected: &str,
     ) -> serde_json::Value {
-        for _ in 0..100 {
-            let operation = get_operation(State(state.clone()), ApiPath(operation_id.to_owned()))
-                .await
-                .unwrap();
-            if operation["phase"] == expected {
-                return operation.0;
+        let mut last_observed = serde_json::Value::Null;
+        let result = tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                let operation =
+                    get_operation(State(state.clone()), ApiPath(operation_id.to_owned()))
+                        .await
+                        .unwrap();
+                if operation["phase"] == expected {
+                    return operation.0;
+                }
+                assert_ne!(
+                    operation["phase"], "Failed",
+                    "operation failed: {}",
+                    operation.0
+                );
+                last_observed = operation.0;
+                tokio::time::sleep(Duration::from_millis(1)).await;
             }
-            tokio::task::yield_now().await;
-        }
-        panic!("operation {operation_id} did not reach phase {expected}")
+        })
+        .await;
+        result.unwrap_or_else(|_| {
+            panic!("operation {operation_id} did not reach phase {expected}: {last_observed}")
+        })
     }
 
     #[tokio::test]

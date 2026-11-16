@@ -39,6 +39,7 @@
     "secureunwrapkey",
     "securewrapkey",
     "setissuers",
+    "undercounted",
     "unwrapkey",
     "upns",
     "wrapkey"

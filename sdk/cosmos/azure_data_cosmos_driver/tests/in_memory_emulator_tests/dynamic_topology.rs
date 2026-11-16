@@ -93,7 +93,7 @@ fn build_emulator(
 }
 
 fn account() -> AccountReference {
-    AccountReference::with_master_key(Url::parse(EAST_URL).unwrap(), "ZW11bGF0b3Ita2V5")
+    AccountReference::with_account_key(Url::parse(EAST_URL).unwrap(), "ZW11bGF0b3Ita2V5")
 }
 
 async fn build_driver(

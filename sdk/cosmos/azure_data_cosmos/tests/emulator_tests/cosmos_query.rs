@@ -9,12 +9,12 @@ use std::error::Error;
 use azure_data_cosmos::feed::ContinuationToken;
 use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
-    feed::FeedScope,
+    feed::{FeedScope, ItemFilter, ItemScope},
     models::ThroughputProperties,
     options::{MaxItemCountHint, QueryOptions},
     Query,
 };
-use framework::{test_data, MockItem, TestClient, TestOptions};
+use framework::{test_data, MockItem, TestClient, TestOptions, TestRunContext};
 use futures::StreamExt;
 use serde::de::DeserializeOwned;
 
@@ -30,6 +30,61 @@ struct QueryTestOptions {
     max_item_count: Option<u32>,
     use_continuation_token_resume: bool,
     result_order: QueryResultOrder,
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires a Cosmos emulator test category"
+)]
+async fn read_many_scoped_filter() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let items = test_data::generate_mock_items(3, 4);
+            let container =
+                test_data::create_container_with_items(run_context, db_client, items.clone(), None)
+                    .await?;
+            let filter = "c.partitionKey != @excluded"
+                .parse::<ItemFilter>()?
+                .with_parameter("@excluded", "partition1")?;
+            for selection in [
+                ItemScope::Partitions(vec![
+                    "partition0".into(),
+                    "partition1".into(),
+                    "partition0".into(),
+                ]),
+                ItemScope::Items(
+                    items
+                        .iter()
+                        .filter(|item| item.partition_key != "partition2")
+                        .map(|item| (item.partition_key.clone().into(), item.id.clone()))
+                        .collect(),
+                ),
+            ] {
+                let result = container
+                    .read_many::<MockItem>(
+                        azure_data_cosmos::feed::ItemSelector::from(selection)
+                            .with_filter(filter.clone()),
+                        None,
+                    )
+                    .await?
+                    .collect_all()
+                    .await?;
+                assert_query_results(
+                    collect_matching_items(&items, |item| item.partition_key == "partition0"),
+                    result.into_items(),
+                    QueryResultOrder::Unordered,
+                );
+            }
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
 }
 
 #[derive(Default)]
@@ -80,6 +135,7 @@ fn unordered_query_results_preserve_multiplicity() {
 }
 
 async fn execute_query_test<T>(
+    run_context: &TestRunContext,
     db_client: &DatabaseClient,
     items: Vec<MockItem>,
     query: impl Into<Query>,
@@ -90,7 +146,8 @@ async fn execute_query_test<T>(
 where
     T: DeserializeOwned + Send + Eq + std::fmt::Debug + 'static,
 {
-    let container_client = test_data::create_container_with_items(db_client, items, None).await?;
+    let container_client =
+        test_data::create_container_with_items(run_context, db_client, items, None).await?;
     let query: Query = query.into();
 
     let build_options = || -> QueryOptions {
@@ -194,12 +251,13 @@ async fn collect_ids_for_scope(
 )]
 pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 10);
             let expected_items =
                 collect_matching_items(&items, |p| p.partition_key == "partition0");
 
             execute_query_test(
+                run_context,
                 db_client,
                 items,
                 "select * from docs c",
@@ -227,7 +285,7 @@ pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
 )]
 pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 10);
 
             // Find a merge order value in partition1's items
@@ -243,6 +301,7 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
             let expected_items = collect_matching_items(&items, |p| p.merge_order == merge_order);
 
             execute_query_test(
+                run_context,
                 db_client,
                 items,
                 query,
@@ -270,7 +329,7 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
 )]
 pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 10);
             let expected_items = items
                 .iter()
@@ -282,6 +341,7 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
                 .collect::<Vec<_>>();
 
             execute_query_test(
+                run_context,
                 db_client,
                 items,
                 "select c.id, c.mergeOrder from c",
@@ -309,7 +369,7 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
 )]
 pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 2);
             let expected_items = items
                 .iter()
@@ -318,6 +378,7 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
                 .collect::<Vec<_>>();
 
             execute_query_test(
+                run_context,
                 db_client,
                 items,
                 "select value c.id from c where c.mergeOrder between 40 and 60",
@@ -343,19 +404,16 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn cross_partition_query_with_order_by() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 10);
             let mut expected = items.clone();
             expected.sort_by_key(|item| item.merge_order);
             let expected_ids = expected.into_iter().map(|item| item.id).collect();
 
             execute_query_test(
+                run_context,
                 db_client,
                 items,
                 "select value c.id from c order by c.mergeOrder",
@@ -391,16 +449,12 @@ pub async fn cross_partition_query_with_order_by() -> Result<(), Box<dyn Error>>
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn cross_partition_query_with_unordered_distinct() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 10);
             let container_client =
-                test_data::create_container_with_items(db_client, items, None).await?;
+                test_data::create_container_with_items(run_context, db_client, items, None).await?;
 
             let mut pages = container_client
                 .query_items::<String>(
@@ -457,18 +511,15 @@ pub async fn cross_partition_query_with_unordered_distinct() -> Result<(), Box<d
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn cross_partition_query_with_ordered_distinct_resumes() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 10);
             let mut expected: Vec<String> = (0..10).map(|i| format!("partition{i}")).collect();
             expected.sort();
 
             execute_query_test(
+                run_context,
                 db_client,
                 items,
                 "select distinct value c.partitionKey from c order by c.partitionKey",
@@ -502,16 +553,12 @@ pub async fn cross_partition_query_with_ordered_distinct_resumes() -> Result<(),
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn unordered_distinct_refuses_a_continuation_token() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 10);
             let container_client =
-                test_data::create_container_with_items(db_client, items, None).await?;
+                test_data::create_container_with_items(run_context, db_client, items, None).await?;
 
             let mut pages = container_client
                 .query_items::<String>(
@@ -555,7 +602,7 @@ pub async fn unordered_distinct_refuses_a_continuation_token() -> Result<(), Box
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
+    ignore = "vnext emulator returns index metrics that are not valid base64: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/380"
 )]
 #[cfg_attr(
     test_category = "emulator_inmemory",
@@ -563,10 +610,16 @@ pub async fn unordered_distinct_refuses_a_continuation_token() -> Result<(), Box
 )]
 pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(5, 1);
             let container_client =
-                test_data::create_container_with_items(db_client, items.clone(), None).await?;
+                test_data::create_container_with_items(
+                    run_context,
+                    db_client,
+                    items.clone(),
+                    None,
+                )
+                .await?;
 
             // Enable both index metrics and query metrics via typed options.
             let options = QueryOptions::default()
@@ -658,7 +711,7 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
 )]
 pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(1, 5);
             let expected_items =
                 collect_matching_items(&items, |p| p.partition_key == "partition0");
@@ -668,6 +721,7 @@ pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
             );
 
             execute_query_test(
+                run_context,
                 db_client,
                 items,
                 "select * from c",
@@ -699,9 +753,10 @@ pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
 )]
 pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(3, 3);
             execute_query_test(
+                run_context,
                 db_client,
                 items.clone(),
                 "select * from c",
@@ -729,19 +784,23 @@ pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
+    ignore = "vnext emulator does not implement request units needed for throughput-driven partitioning: https://learn.microsoft.com/en-us/azure/cosmos-db/emulator-linux#feature-support"
 )]
 pub async fn feed_range_scoped_query_honors_range() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             // 10 logical partitions × 2 items. Provision 11000 RU/s so the
             // container splits into 2 physical partitions — a scoped query then
             // has a neighbouring range it must NOT touch.
             let items = test_data::generate_mock_items(10, 2);
             let throughput = ThroughputProperties::manual(11000);
-            let container_client =
-                test_data::create_container_with_items(db_client, items.clone(), Some(throughput))
-                    .await?;
+            let container_client = test_data::create_container_with_items(
+                run_context,
+                db_client,
+                items.clone(),
+                Some(throughput),
+            )
+            .await?;
 
             let ranges = container_client.read_feed_ranges(None).await?;
             assert_eq!(
@@ -807,13 +866,14 @@ pub async fn feed_range_scoped_query_honors_range() -> Result<(), Box<dyn Error>
 )]
 pub async fn cross_partition_query_suspend_resume() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             // Four logical partitions × three items per partition. With a
             // page size of one, this exercises both intra-partition and
             // cross-partition resume points.
             let items = test_data::generate_mock_items(4, 3);
 
             execute_query_test(
+                run_context,
                 db_client,
                 items.clone(),
                 "select * from c",
@@ -841,14 +901,14 @@ pub async fn cross_partition_query_suspend_resume() -> Result<(), Box<dyn Error>
 )]
 pub async fn query_rejects_newer_sdk_continuation_token() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(1, 1);
             let container_client =
-                test_data::create_container_with_items(db_client, items, None).await?;
+                test_data::create_container_with_items(run_context, db_client, items, None).await?;
 
-            // A `c2.` prefix indicates the token was issued by a future
+            // A `c3.` prefix indicates the token was issued by a future
             // SDK version this client does not understand.
-            let token = ContinuationToken::from_string("c2.something".to_string());
+            let token = ContinuationToken::from_string("c3.something".to_string());
             let options = QueryOptions::default().with_continuation_token(token);
 
             let Err(err) = container_client
@@ -881,10 +941,10 @@ pub async fn query_rejects_newer_sdk_continuation_token() -> Result<(), Box<dyn 
 )]
 pub async fn query_rejects_server_token_for_cross_partition() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(2, 1);
             let container_client =
-                test_data::create_container_with_items(db_client, items, None).await?;
+                test_data::create_container_with_items(run_context, db_client, items, None).await?;
 
             // An un-prefixed token is treated as an opaque server
             // continuation, which is only valid for trivial (single-
@@ -925,7 +985,7 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
     use base64::Engine as _;
 
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             // One logical partition × five items so we get multiple pages
             // with `max_item_count(1)`.
             let items = test_data::generate_mock_items(1, 5);
@@ -937,11 +997,11 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
             );
 
             let container_client =
-                test_data::create_container_with_items(db_client, items, None).await?;
+                test_data::create_container_with_items(run_context, db_client, items, None).await?;
             let scope = FeedScope::partition("partition0");
 
             // --- Round 1: fetch the first page through the SDK and pull
-            // the SDK-issued `c1.` token. ---
+            // the SDK-issued `c2.` token. ---
             let mut pages = container_client
                 .query_items::<MockItem>(
                     "select * from c",
@@ -964,27 +1024,27 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
             drop(pages);
 
             assert!(
-                raw.starts_with("c1."),
-                "expected SDK to emit a c1.-prefixed token, got: {raw}"
+                raw.starts_with("c2."),
+                "expected SDK to emit a c2.-prefixed token, got: {raw}"
             );
 
             // Crack the SDK token open. We deliberately couple this test
             // to the on-the-wire format so we can recover the underlying
             // server continuation without exposing extra public APIs.
             //
-            // Format: `c1.` + base64url-no-pad(JSON envelope). The envelope
+            // Format: `c2.` + base64url-no-pad(JSON envelope). The envelope
             // is shaped like `{"op":"Query","rid":"<rid>","root":<node>}`,
             // and for a trivial single-partition query the `root` node is
             // `{"kind":"request","server_continuation":"<token>"}`.
-            let payload = raw.strip_prefix("c1.").unwrap();
+            let payload = raw.strip_prefix("c2.").unwrap();
             let json_bytes = URL_SAFE_NO_PAD
                 .decode(payload)
-                .expect("c1. payload must be valid base64url-no-pad");
+                .expect("c2. payload must be valid base64url-no-pad");
             let envelope: serde_json::Value = serde_json::from_slice(&json_bytes)
-                .expect("decoded c1. payload must be valid JSON");
+                .expect("decoded c2. payload must be valid JSON");
             let snapshot = envelope
                 .get("root")
-                .expect("c1. envelope must contain a `root` node");
+                .expect("c2. envelope must contain a `root` node");
             assert_eq!(
                 snapshot.get("kind").and_then(|v| v.as_str()),
                 Some("request"),
@@ -1005,7 +1065,7 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
             );
 
             // --- Round 2: drain the rest of the query using the raw
-            // server token directly (no `c1.` prefix). The SDK accepts
+            // server token directly (no SDK prefix). The SDK accepts
             // un-prefixed tokens as an opaque server fallback for trivial
             // single-partition queries. ---
             let mut continuation = Some(ContinuationToken::from_string(server_token));
@@ -1036,18 +1096,18 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
                 let raw_next = next_token.as_str().to_owned();
                 drop(pages);
 
-                // Subsequent SDK-issued tokens must still be `c1.`-prefixed.
+                // Subsequent SDK-issued tokens must still be `c2.`-prefixed.
                 assert!(
-                    raw_next.starts_with("c1."),
-                    "follow-up token must remain c1.-prefixed, got: {raw_next}"
+                    raw_next.starts_with("c2."),
+                    "follow-up token must remain c2.-prefixed, got: {raw_next}"
                 );
 
                 // Decode again to detect end-of-stream: when the inner
                 // snapshot is `{"kind":"drained"}` we are done.
-                let payload = raw_next.strip_prefix("c1.").unwrap();
+                let payload = raw_next.strip_prefix("c2.").unwrap();
                 let json_bytes = URL_SAFE_NO_PAD
                     .decode(payload)
-                    .expect("c1. payload must be valid base64url-no-pad");
+                    .expect("c2. payload must be valid base64url-no-pad");
                 let envelope: serde_json::Value =
                     serde_json::from_slice(&json_bytes).expect("payload must be valid JSON");
                 let kind = envelope
@@ -1098,17 +1158,14 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn distinct_projection_shapes() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             // 4 partitions x 3 items: `partitionKey` repeats within a
             // partition, `id` is unique across the container.
             let items = test_data::generate_mock_items(4, 3);
-            let container = test_data::create_container_with_items(db_client, items, None).await?;
+            let container =
+                test_data::create_container_with_items(run_context, db_client, items, None).await?;
 
             async fn count(
                 container: &ContainerClient,
@@ -1211,15 +1268,12 @@ pub async fn distinct_projection_shapes() -> Result<(), Box<dyn Error>> {
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
 pub async fn distinct_combined_with_unsupported_stages_is_rejected() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(4, 3);
-            let container = test_data::create_container_with_items(db_client, items, None).await?;
+            let container =
+                test_data::create_container_with_items(run_context, db_client, items, None).await?;
 
             // Each of these needs a composition stage the driver does not have
             // yet: GROUP BY and aggregates. `TOP` and `OFFSET`/`LIMIT` are no

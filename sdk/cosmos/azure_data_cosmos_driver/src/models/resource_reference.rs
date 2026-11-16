@@ -749,7 +749,7 @@ mod tests {
     use url::Url;
 
     fn make_container_reference() -> ContainerReference {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://example.documents.azure.com:443/").unwrap(),
             "test-key",
         );
@@ -772,7 +772,7 @@ mod tests {
     }
 
     fn make_container_reference_by_rid() -> ContainerReference {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://example.documents.azure.com:443/").unwrap(),
             "test-key",
         );

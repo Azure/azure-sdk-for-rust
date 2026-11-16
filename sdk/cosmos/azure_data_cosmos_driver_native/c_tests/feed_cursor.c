@@ -244,6 +244,105 @@ cleanup:
     return result;
 }
 
+static int test_change_feed_checkpoint_before_next(void) {
+    int result = TEST_PASS;
+    fixture f = {0};
+    cosmos_cursor_t *cursor = NULL, *resumed = NULL;
+    cosmos_cursor_completion_t *page = NULL, *checkpoint = NULL;
+    REQUIRE(fixture_create(&f, 1), "scripted change feed fixture");
+    for (unsigned start = 1; start <= 3; ++start) {
+        cosmos_cursor_request_t request;
+        cosmos_cursor_request_init(&request);
+        request.change_feed_mode = 1;
+        request.start_from = start;
+        if (start == 3) request.start_time = SV("2023-11-14T00:00:00Z");
+        request.operation.container = f.container;
+        cursor = open_cursor(&f, &request);
+        REQUIRE(cursor, "open before first Next");
+        checkpoint = receive(&f, cosmos_cursor_checkpoint_submit(cursor, 0, NULL));
+        REQUIRE(checkpoint && !checkpoint->common.status && checkpoint->checkpoint.len, "checkpoint before Next");
+        request.operation.continuation_token = checkpoint->checkpoint;
+        request.start_from = start == 2 ? 1 : 2;
+        request.start_time = (cosmos_string_view_t){0};
+        resumed = open_cursor(&f, &request);
+        REQUIRE(resumed, "resume with conflicting start");
+        cosmos_cursor_completion_free(checkpoint); checkpoint = NULL;
+        page = receive(&f, cosmos_cursor_next_submit(resumed, 0, NULL));
+        REQUIRE(page && !page->common.status, "restored feed page");
+        ASSERT(page->common.http_status_code == (start == 2 ? 304 : 200), "checkpoint start wins");
+        cosmos_cursor_completion_free(page); page = NULL;
+        cosmos_cursor_free(cursor); cursor = NULL;
+        cosmos_cursor_free(resumed); resumed = NULL;
+    }
+cleanup:
+    cosmos_cursor_completion_free(checkpoint);
+    cosmos_cursor_completion_free(page);
+    cosmos_cursor_free(cursor);
+    cosmos_cursor_free(resumed);
+    fixture_free(&f);
+    return result;
+}
+
+static int test_prefix_change_feed_checkpoints(void) {
+    int result = TEST_PASS;
+    fixture f = {0};
+    cosmos_partition_key_t *key = NULL;
+    cosmos_feed_range_t *range = NULL;
+    cosmos_cursor_t *cursor = NULL, *resumed = NULL;
+    cosmos_cursor_completion_t *page = NULL, *checkpoint = NULL;
+    REQUIRE(fixture_create(&f, 2), "two ranges overlapping the same hierarchical prefix");
+    cosmos_partition_key_component_t components[2] = {0};
+    components[0].kind = components[1].kind = COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING;
+    components[0].value.string_value = SV("tenant");
+    components[1].value.string_value = SV("user");
+    for (size_t levels = 1; levels <= 2; ++levels) {
+        REQUIRE(!cosmos_partition_key_create(components, levels, &key), "prefix key");
+        REQUIRE(!cosmos_feed_range_for_partition_key(f.container, key, &range), "prefix range handle");
+        cosmos_cursor_request_t request;
+        cosmos_cursor_request_init(&request);
+        request.change_feed_mode = 1;
+        request.start_from = 1;
+        request.operation.container = f.container;
+        request.operation.feed_range = range;
+        cursor = open_cursor(&f, &request);
+        REQUIRE(cursor, "open prefix cursor");
+        int populated = 0, idle = 0;
+        for (int i = 0; i < 5; ++i) {
+            checkpoint = receive(&f, cosmos_cursor_checkpoint_submit(cursor, 0, NULL));
+            REQUIRE(checkpoint && !checkpoint->common.status, "checkpoint on every prefix page");
+            request.operation.continuation_token = checkpoint->checkpoint;
+            request.start_from = i % 2 ? 0 : 2;
+            resumed = open_cursor(&f, &request);
+            REQUIRE(resumed, "resume prefix with unset or conflicting start");
+            cosmos_cursor_completion_free(checkpoint); checkpoint = NULL;
+            cosmos_cursor_free(cursor); cursor = resumed; resumed = NULL;
+            page = receive(&f, cosmos_cursor_next_submit(cursor, 0, NULL));
+            REQUIRE(page && !page->common.status && page->result_kind == 2, "prefix page");
+            if (page->common.http_status_code == 304) idle++;
+            else {
+                char *text = text_copy(page->common.body, page->common.body_len);
+                ASSERT(strstr(text, populated == 0 ? "\"0d0\"" : "\"1d0\""), "both ranges, no replay");
+                free(text);
+                populated++;
+            }
+            cosmos_cursor_completion_free(page); page = NULL;
+        }
+        ASSERT(populated == 2 && idle == 3, "both physical ranges consumed and remain idle");
+        cosmos_cursor_free(cursor); cursor = NULL;
+        cosmos_feed_range_free(range); range = NULL;
+        cosmos_partition_key_free(key); key = NULL;
+    }
+cleanup:
+    cosmos_cursor_completion_free(checkpoint);
+    cosmos_cursor_completion_free(page);
+    cosmos_cursor_free(cursor);
+    cosmos_cursor_free(resumed);
+    cosmos_feed_range_free(range);
+    cosmos_partition_key_free(key);
+    fixture_free(&f);
+    return result;
+}
+
 static int test_change_feeds(void) {
     int result = TEST_PASS;
     fixture f = {0};
@@ -340,9 +439,87 @@ cleanup:
     return result;
 }
 
+static int test_read_many(void) {
+    int result = TEST_PASS;
+    fixture f = {0};
+    cosmos_cursor_t *cursor = NULL;
+    cosmos_cursor_completion_t *page = NULL, *held = NULL;
+    REQUIRE(fixture_create(&f, 0), "read-many fixture");
+    for (uint32_t kind = 1; kind <= 2; ++kind) {
+        cosmos_read_many_request_t request;
+        cosmos_read_many_request_init(&request);
+        request.operation.container = f.container;
+        request.operation.max_item_count = 1;
+        cosmos_operation_options_t options = cosmos_operation_options_default();
+        options.binary_encoding_enabled = 1;
+        request.operation.options = &options;
+        request.selection_kind = kind;
+        cosmos_partition_key_component_t components[3] = {0};
+        cosmos_read_many_identity_t identities[3] = {0};
+        char keys[3][5] = {"pk-2", "pk-3", "pk-4"};
+        char ids[3][3] = {"d2", "d3", "d4"};
+        for (size_t i = 0; i < 3; ++i) {
+            components[i].kind = COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING;
+            components[i].value.string_value = (cosmos_string_view_t){(const uint8_t *)keys[i], 4};
+            identities[i].partition_key = &components[i];
+            identities[i].partition_key_len = 1;
+            if (kind == 1) identities[i].item_id = (cosmos_string_view_t){(const uint8_t *)ids[i], 2};
+        }
+        request.identities = identities;
+        request.identities_len = 3;
+        request.filter = SV("c.rank >= @min");
+        cosmos_read_many_parameter_t parameter = {SV("@min"), SV("3")};
+        request.parameters = &parameter;
+        request.parameters_len = 1;
+        cosmos_status_code_t status = 0;
+        cosmos_operation_handle_t *op = cosmos_read_many_open_submit(
+            f.driver, &request, f.queue, 123, &status);
+        memset(keys, 'x', sizeof(keys));
+        memset(ids, 'x', sizeof(ids));
+        REQUIRE(op && !status, "read-many admitted with copied inputs");
+        page = receive(&f, op);
+        REQUIRE(page && !page->common.status && page->result_kind == 1, "read-many opened");
+        cursor = cosmos_cursor_completion_take_cursor(page);
+        cosmos_cursor_completion_free(page); page = NULL;
+        REQUIRE(cursor, "take read-many cursor");
+        page = receive(&f, cosmos_cursor_checkpoint_submit(cursor, 0, NULL));
+        REQUIRE(page && COSMOS_STATUS_SUB(page->common.status) == 20124,
+            "read-many checkpoint is explicitly unsupported");
+        cosmos_cursor_completion_free(page); page = NULL;
+        int ranks[32] = {0};
+        size_t count = 0;
+        int ended = 0;
+        for (int i = 0; i < 16; ++i) {
+            page = receive(&f, cosmos_cursor_next_submit(cursor, 0, NULL));
+            REQUIRE(page && !page->common.status, "read-many next succeeded");
+            if (page->result_kind == 4) { ended = 1; break; }
+            REQUIRE(page->body_kind == 2, "read-many exposes item buffers");
+            for (size_t j = 0; j < page->items_len; ++j)
+                count = ranks_from_bytes(page->items[j].data, page->items[j].len, ranks, count);
+            if (!held && page->items_len) { held = page; page = NULL; }
+            cosmos_cursor_completion_free(page); page = NULL;
+        }
+        REQUIRE(ended && count == 2 && ranks[0] + ranks[1] == 7,
+            "exactly ranks 3 and 4 are returned");
+        cosmos_cursor_completion_free(page); page = NULL;
+        cosmos_cursor_free(cursor); cursor = NULL;
+        REQUIRE(held && held->items_len && held->items[0].len, "held buffers survive cursor free");
+        cosmos_cursor_completion_free(held); held = NULL;
+    }
+cleanup:
+    cosmos_cursor_completion_free(page);
+    cosmos_cursor_completion_free(held);
+    cosmos_cursor_free(cursor);
+    fixture_free(&f);
+    return result;
+}
+
 TEST_SUITE_BEGIN("feed_cursor")
 TEST_REGISTER(populated_queries)
 TEST_REGISTER(read_feeds)
 TEST_REGISTER(change_feeds)
+TEST_REGISTER(change_feed_checkpoint_before_next)
+TEST_REGISTER(prefix_change_feed_checkpoints)
 TEST_REGISTER(diagnostics_lifetime)
+TEST_REGISTER(read_many)
 TEST_SUITE_END("feed_cursor")

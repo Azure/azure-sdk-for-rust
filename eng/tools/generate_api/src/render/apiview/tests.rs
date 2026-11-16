@@ -106,6 +106,22 @@ fn line_text(line: &ReviewLine) -> String {
         .collect()
 }
 
+fn find_line_by_text<'a>(lines: &'a [ReviewLine], text: &str) -> Option<&'a ReviewLine> {
+    lines.iter().find_map(|line| {
+        (line_text(line) == text)
+            .then_some(line)
+            .or_else(|| find_line_by_text(&line.children, text))
+    })
+}
+
+fn find_line_by_id<'a>(lines: &'a [ReviewLine], line_id: &str) -> Option<&'a ReviewLine> {
+    lines.iter().find_map(|line| {
+        (line.line_id.as_deref() == Some(line_id))
+            .then_some(line)
+            .or_else(|| find_line_by_id(&line.children, line_id))
+    })
+}
+
 #[test]
 fn renders_package_metadata_and_features_as_leading_text_tokens() {
     let model = ApiModel {
@@ -482,6 +498,18 @@ fn omits_doc_comment_lines_when_docs_are_disabled() {
             .iter()
             .any(|token| token.is_documentation && token.value == "/// module docs")
     }));
+    let member_docs =
+        find_line_by_text(&with_docs, "/// member docs").expect("expected member docs");
+    let member_line_id = member_docs
+        .related_to_line
+        .as_deref()
+        .expect("member docs should relate to a declaration");
+    let member =
+        find_line_by_id(&with_docs, member_line_id).expect("expected related member declaration");
+    assert!(
+        member.tokens.iter().any(|token| token.value == "method"),
+        "member docs should relate to the member line, not its impl block"
+    );
     assert!(!without_docs
         .iter()
         .any(|line| line.tokens.iter().any(|token| token.is_documentation)));

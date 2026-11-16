@@ -144,17 +144,17 @@ pub(crate) mod request_header_names {
     /// disabling Gateway 2.0 routing for the client.
     pub const USE_THINCLIENT: &str = "x-ms-cosmos-use-thinclient";
     /// DTX idempotency token (`Uuid`) generated once per distributed transaction.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub const DTX_IDEMPOTENCY_TOKEN: &str = "x-ms-cosmos-idempotency-token";
     /// DTX coordinator operation type (`CommitDistributedTransaction` or `Read`).
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub const DTX_OPERATION_TYPE: &str = "x-ms-cosmos-operation-type";
     /// DTX coordinator resource type (`DistributedTransactionBatch`).
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub const DTX_RESOURCE_TYPE: &str = "x-ms-cosmos-resource-type";
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 pub(crate) const DTX_RESOURCE_TYPE_HEADER_VALUE: &str = "DistributedTransactionBatch";
 
 /// Standard Cosmos DB response header names.
@@ -211,7 +211,7 @@ pub(crate) mod response_header_names {
     pub const COLLECTION_LAZY_INDEXING_PROGRESS: &str =
         "x-ms-documentdb-collection-lazy-indexing-progress";
     /// DTX idempotency token echoed by the coordinator.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub const DTX_IDEMPOTENCY_TOKEN: &str = "x-ms-cosmos-idempotency-token";
 }
 
@@ -687,7 +687,7 @@ pub struct CosmosResponseHeaders {
 
     /// Distributed transaction idempotency token returned by the coordinator
     /// (`x-ms-cosmos-idempotency-token`).
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub distributed_transaction_idempotency_token: Option<uuid::Uuid>,
 }
 
@@ -861,7 +861,7 @@ impl CosmosResponseHeaders {
                 response_header_names::COLLECTION_LAZY_INDEXING_PROGRESS => {
                     result.collection_lazy_indexing_progress = value.as_str().parse().ok();
                 }
-                #[cfg(feature = "preview_dtx")]
+                #[cfg(feature = "unstable_dtx")]
                 response_header_names::DTX_IDEMPOTENCY_TOKEN => {
                     result.distributed_transaction_idempotency_token =
                         uuid::Uuid::parse_str(value.as_str()).ok();
@@ -1077,7 +1077,7 @@ impl CosmosResponseHeaders {
             self.collection_lazy_indexing_progress
                 .map(|v| v.to_string()),
         );
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         put_str(
             response_header_names::DTX_IDEMPOTENCY_TOKEN,
             self.distributed_transaction_idempotency_token
@@ -1648,7 +1648,7 @@ mod tests {
             log_results: Some("ok".into()),
             collection_index_transformation_progress: Some(100),
             collection_lazy_indexing_progress: Some(75),
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             distributed_transaction_idempotency_token: Some(uuid::Uuid::new_v4()),
         };
 
@@ -1806,7 +1806,7 @@ mod tests {
             round_tripped.collection_lazy_indexing_progress,
             original.collection_lazy_indexing_progress
         );
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         assert_eq!(
             round_tripped.distributed_transaction_idempotency_token,
             original.distributed_transaction_idempotency_token

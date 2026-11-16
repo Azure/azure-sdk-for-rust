@@ -1,11 +1,54 @@
 # Release History
 
-## 1.0.0 (2026-10-07)
+## 1.1.0-beta.3 (Unreleased)
+
+### Features Added
+
+- Added SQL filter predicates to unstable PATCH instruction payloads for atomic conditional server-side PATCH execution. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
+- Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
+- Added paged `ContainerClient::read_many` with shared `ItemSelector`, `ItemScope`, and `ItemFilter` types for key/id, partition, or feed-range selections, optional selector filters, and result collection with aggregate diagnostics. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
+- Added ranked full-text and weighted text/vector hybrid search, with per-query `FullTextScoreScope` and bounded buffered results. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
 
 ### Breaking Changes
 
+- Consumed legacy single-request prefix checkpoints cannot safely resume across physical ranges and are rejected; start a new feed with an explicit start position. Older unpolled single-request checkpoints require the original start on resume. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+
+### Bugs Fixed
+
+- Report query-page deserialization failures in operation-level diagnostics while preserving request statuses and charges. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
+- Restore checkpoint-owned change-feed starts, preserve round-robin progress across resumes, and correctly scope hierarchical-prefix feeds across overlapping partitions. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- A checkpoint's saved start takes precedence over a newly supplied change-feed start. Omit the continuation token to start a new feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+
+### Other Changes
+
+- New query and change-feed checkpoints use `c2.` and cannot be read by SDKs that only support `c1.`. Query checkpoint payloads are unchanged, and supported legacy `c1.` checkpoints remain readable. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- Binary cross-partition `ORDER BY` avoids intermediate document transcoding during sorting and filtering; final raw item buffers remain independently decodable without changing the response-body API. ([#5409](https://github.com/Azure/azure-sdk-for-rust/pull/5409))
+
+## 1.1.0-beta.2 (2026-11-03)
+
+### Breaking Changes
+
+- Resource-name validation is now enabled by default for request paths and item names supplied to Create, Upsert, transactional batch, and distributed transaction operations; use `CosmosClientBuilder::with_resource_name_validation(false)` only when compatibility requires service-accepted names that are unsafe for point addressing. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
+
+## 1.1.0-beta.1 (2026-10-22)
+
+### Features Added
+
+- Added `OperationOptions::utf8_decoding_mode` for opt-in lossy recovery of invalid UTF-8 in response JSON strings. ([#5367](https://github.com/Azure/azure-sdk-for-rust/issues/5367))
+
+### Bugs Fixed
+
+- Keep CPU sampling active for long-lived clients and preserve diagnostics through partition split recovery, including `500/20206` errors. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
+
+## 1.0.0 (2026-10-08)
+
+### Breaking Changes
+
+- Renamed the `preview_dtx`, `preview_patch`, and `preview_opentelemetry` feature flags to `unstable_dtx`, `unstable_patch`, and `unstable_opentelemetry`, respectively; update dependency feature selections to use the new names. ([#5426](https://github.com/Azure/azure-sdk-for-rust/pull/5426))
 - Changed the `User-Agent` header format to `azsdk-rust-cosmos/{sdk-version} (drv={driver-version}; {os}; {arch}; {rustc}[; ft={B64}]) [{suffix}]`, replacing the separate driver and platform tokens and the trailing `|F<HEX>` feature-flag token. To fit the 255-byte limit, platform segments are removed whole from right to left; once none remain, the parentheses are omitted and the suffix, then the SDK identifier, may be shortened. ([#5406](https://github.com/Azure/azure-sdk-for-rust/pull/5406))
 - Terminal service 404/1002, 403/3, and 403/1008 errors now surface as synthetic 503/20310, 503/20311, and 503/20312 errors, retaining the original wire error in `source()`. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
+- Renamed `CosmosCredential::MasterKey` to `CosmosCredential::AccountKey` ([#5421](https://github.com/Azure/azure-sdk-for-rust/pull/5421)).
 
 ## 1.0.0-beta.1 (2026-09-28)
 

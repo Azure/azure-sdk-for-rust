@@ -202,8 +202,10 @@ fn crate_type(targets: &[CargoTarget]) -> String {
 }
 
 fn load_workspace_metadata(request: &Request) -> Result<WorkspaceMetadata, String> {
+    let channel = env!("TOOLCHAIN_CHANNEL");
     let mut command = Command::new("cargo");
     command
+        .arg(format!("+{channel}"))
         .arg("metadata")
         .arg("--format-version")
         .arg("1")

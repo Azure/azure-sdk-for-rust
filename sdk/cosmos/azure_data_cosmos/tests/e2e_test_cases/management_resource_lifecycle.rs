@@ -26,7 +26,7 @@ async fn database_and_container_resource_lifecycle() -> TestResult {
     }
 
     let client = build_client().await?;
-    let database_id = format!("e2e-management-{}", Uuid::new_v4());
+    let database_id = format!("test-db-e2e-management-{}", Uuid::now_v7());
     let container_id = format!("items-{}", Uuid::new_v4());
 
     let create_database = client.create_database(&database_id, None).await?;

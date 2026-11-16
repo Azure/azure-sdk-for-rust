@@ -18,19 +18,23 @@
 //! node only has to reconcile the child's documents into the final global
 //! window. It does that by splitting each page's `Documents` into per-document
 //! slices (see [`super::skip_take_page`]), dropping/truncating that list, and
-//! emitting the survivors as a [`ResponseBody::Items`] body — no envelope is
-//! re-serialized. It stops early once `take` is satisfied, so a `TOP n` query
+//! emitting the survivors as pre-split items — no envelope is re-serialized.
+//! Binary items from an ordered merge retain their original page and offsets.
+//! It stops early once `take` is satisfied, so a `TOP n` query
 //! never drains partitions it doesn't need.
 
+use crate::driver::dataflow::{ItemView, PipelineBody, PipelineResponse};
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use bytes::Bytes;
 
 use crate::diagnostics::DiagnosticsContext;
-use crate::models::{CosmosResponse, FeedRange, RequestCharge, ResponseBody};
+use crate::models::{FeedRange, RequestCharge};
 
-use super::{skip_take_page, PageResult, PipelineContext, PipelineNode, PipelineNodeState};
+use super::{
+    recovery_diagnostics::RecoveryDiagnostics, skip_take_page, PageResult, PipelineContext,
+    PipelineNode, PipelineNodeState,
+};
 
 /// Applies a global `OFFSET` (`remaining_skip`) then `LIMIT`/`TOP`
 /// (`remaining_take`, `None` = unbounded) over its single child's pages.
@@ -38,25 +42,23 @@ pub(crate) struct SkipTake {
     child: Box<dyn PipelineNode>,
     remaining_skip: u64,
     remaining_take: Option<u64>,
-    /// Set once `take` is satisfied (or the child drains) so subsequent pulls
-    /// short-circuit to `Drained` without touching the child again.
+    /// Stops child polling once the window is satisfied; pending errors drain first.
     exhausted: bool,
+    /// A child error retained when the final window page stops further polling.
+    deferred_error: Option<crate::error::CosmosError>,
     /// Request charges (RU) from backend pages that were fully consumed by the
     /// outstanding `OFFSET` and therefore suppressed (see the `continue` in
     /// [`next_page`](Self::next_page)). Folded into the next emitted page so the
     /// public page does not under-report the RUs actually billed.
     suppressed_charge: RequestCharge,
-    /// Diagnostics from those same suppressed pages, in arrival order. Merged
-    /// (as prior attempts) into the next emitted page so `request_count()` and
-    /// per-request diagnostics account for every backend request the skip
-    /// touched.
-    suppressed_diagnostics: Vec<Arc<DiagnosticsContext>>,
+    /// Bounded diagnostics from suppressed pages, awaiting the next page or error.
+    suppressed_diagnostics: RecoveryDiagnostics,
     /// The most recently suppressed page, retained as a template so that if the
     /// child drains while `suppressed_diagnostics` is still non-empty (i.e. the
     /// skip consumed the very last backend page without a terminal marker) the
     /// accumulated charge/diagnostics can still be flushed as a final empty
     /// page rather than being dropped.
-    pending_flush: Option<CosmosResponse>,
+    pending_flush: Option<PipelineResponse>,
     /// Whether a re-split page is emitted as Cosmos binary JSON. Derived from
     /// the negotiated operation, never from the bytes of a received page, so
     /// this node agrees with [`PageAggregator`] on the same query.
@@ -93,8 +95,9 @@ impl SkipTake {
             remaining_skip: skip,
             remaining_take: take,
             exhausted: false,
+            deferred_error: None,
             suppressed_charge: RequestCharge::default(),
-            suppressed_diagnostics: Vec::new(),
+            suppressed_diagnostics: RecoveryDiagnostics::default(),
             pending_flush: None,
             emit_binary,
             poisoned: false,
@@ -104,15 +107,14 @@ impl SkipTake {
     /// Rebuilds a response around the surviving per-document `items`, preserving
     /// status and headers (with `x-ms-item-count` updated to `emitted`), and
     /// folding in any request charge and diagnostics accumulated from suppressed
-    /// (fully-skipped) pages. The body is emitted as [`ResponseBody::Items`] so
-    /// the calling SDK reads each document directly without re-parsing an
-    /// envelope.
+    /// (fully-skipped) pages. The body carries pre-split standalone or
+    /// contextual items so the SDK need not re-parse an envelope.
     fn rebuild(
         &mut self,
-        response: &CosmosResponse,
-        items: Vec<Bytes>,
+        response: &PipelineResponse,
+        items: Vec<ItemView>,
         emitted: u64,
-    ) -> CosmosResponse {
+    ) -> PipelineResponse {
         let mut headers = response.headers().clone();
         headers.item_count = Some(emitted as u32);
         // Fold RUs charged by fully-skipped pages into this public page so the
@@ -121,33 +123,45 @@ impl SkipTake {
             let base = headers.request_charge.unwrap_or_default();
             headers.request_charge = Some(base + self.suppressed_charge);
         }
-        let rebuilt = CosmosResponse::new(
-            ResponseBody::from_items(items),
+        let rebuilt = PipelineResponse::new(
+            PipelineBody::from_item_views(items),
             headers,
             response.status(),
             response.diagnostics(),
         );
         // Prepend the suppressed pages' diagnostics (they happened before this
         // page) so request counts and per-request diagnostics are complete.
-        let merged = rebuilt.with_aggregated_prior_diagnostics(&self.suppressed_diagnostics);
+        let merged = self.suppressed_diagnostics.attach_response(rebuilt);
         self.clear_suppressed();
         merged
     }
 
     /// Accumulates a fully-skipped page's request charge and diagnostics, and
     /// retains it as the flush template (see [`pending_flush`](Self::pending_flush)).
-    fn suppress(&mut self, response: CosmosResponse) {
+    fn suppress(&mut self, response: PipelineResponse) {
         self.suppressed_charge =
             self.suppressed_charge + response.headers().request_charge.unwrap_or_default();
-        self.suppressed_diagnostics.push(response.diagnostics());
+        self.suppressed_diagnostics
+            .absorb(Some(response.diagnostics()));
         self.pending_flush = Some(response);
     }
 
     /// Clears the suppressed-page accumulators after they have been surfaced.
     fn clear_suppressed(&mut self) {
         self.suppressed_charge = RequestCharge::default();
-        self.suppressed_diagnostics.clear();
+        self.suppressed_diagnostics = RecoveryDiagnostics::default();
         self.pending_flush = None;
+    }
+
+    fn attach_error(
+        &mut self,
+        error: crate::error::CosmosError,
+        current: Option<Arc<DiagnosticsContext>>,
+    ) -> crate::error::CosmosError {
+        self.suppressed_diagnostics.absorb(current);
+        let error = self.suppressed_diagnostics.attach_error(error);
+        self.clear_suppressed();
+        error
     }
 
     /// Emits a final empty page carrying the accumulated suppressed charge and
@@ -155,20 +169,18 @@ impl SkipTake {
     /// without ever surfacing a terminal page for the fully-skipped tail.
     fn flush_suppressed(&mut self) -> Option<PageResult> {
         let template = self.pending_flush.take()?;
-        // `suppressed_diagnostics` already contains every suppressed page's
-        // diagnostics (including this template's), so aggregate them directly
-        // rather than re-using the template's own diagnostics as a base.
-        let diagnostics =
-            DiagnosticsContext::aggregate_sub_operations(&self.suppressed_diagnostics)
-                .map(Arc::new)
-                .unwrap_or_else(|| template.diagnostics());
+        // The template's diagnostics are already included; do not add them again.
+        let diagnostics = self
+            .suppressed_diagnostics
+            .take()
+            .unwrap_or_else(|| template.diagnostics());
         let mut headers = template.headers().clone();
         headers.item_count = Some(0);
         headers.request_charge = Some(self.suppressed_charge);
         // An empty ordered/unordered page is an empty item list, not an empty
         // re-serialized envelope.
-        let response = CosmosResponse::new(
-            ResponseBody::from_items(Vec::new()),
+        let response = PipelineResponse::new(
+            PipelineBody::from_items(Vec::new()),
             headers,
             template.status(),
             diagnostics,
@@ -196,16 +208,25 @@ impl SkipTake {
     /// whole page at once and cannot return part of it.
     fn process_page(
         &mut self,
-        response: CosmosResponse,
+        response: PipelineResponse,
         is_terminal: bool,
     ) -> crate::error::Result<Option<PageResult>> {
-        // Split the child's page into per-document slices. An ordered merge
-        // hands us pre-split `Items`; a raw backend feed page arrives as
-        // `Bytes` and is split as text, then re-encoded below.
+        // An ordered merge hands us pre-split items. A raw backend feed page
+        // arrives as `Bytes` and is split as text, then re-encoded below.
         let (items, needs_encode) = match response.body() {
-            ResponseBody::Items(items) => (items.clone(), false),
-            ResponseBody::Bytes(b) => (skip_take_page::split_feed_envelope(b)?, true),
-            ResponseBody::NoPayload => (Vec::new(), false),
+            PipelineBody::Items(items) => (
+                items.iter().cloned().map(ItemView::standalone).collect(),
+                false,
+            ),
+            PipelineBody::ContextualItems(items) => (items.clone(), false),
+            PipelineBody::Bytes(b) => (
+                skip_take_page::split_feed_envelope(b)?
+                    .into_iter()
+                    .map(ItemView::standalone)
+                    .collect(),
+                true,
+            ),
+            PipelineBody::NoPayload => (Vec::new(), false),
         };
 
         let outcome =
@@ -214,7 +235,15 @@ impl SkipTake {
         // Encode only the survivors: a document the window discards must not be
         // able to fail the query.
         let emitted_items = if needs_encode {
-            skip_take_page::encode_items(outcome.items, self.emit_binary)?
+            let standalone = outcome
+                .items
+                .iter()
+                .map(ItemView::to_standalone)
+                .collect::<crate::error::Result<Vec<_>>>()?;
+            skip_take_page::encode_items(standalone, self.emit_binary)?
+                .into_iter()
+                .map(ItemView::standalone)
+                .collect()
         } else {
             outcome.items
         };
@@ -236,12 +265,13 @@ impl SkipTake {
 
         if take_exhausted {
             self.exhausted = true;
+            self.deferred_error = self.child.take_pending_error();
         }
 
         let new_response = self.rebuild(&response, emitted_items, outcome.emitted);
         Ok(Some(PageResult::Page {
             response: new_response,
-            is_terminal: terminal,
+            is_terminal: terminal && self.deferred_error.is_none(),
         }))
     }
 
@@ -271,6 +301,9 @@ impl PipelineNode for SkipTake {
         &mut self,
         context: &mut PipelineContext<'_>,
     ) -> crate::error::Result<PageResult> {
+        if let Some(error) = self.deferred_error.take() {
+            return Err(error);
+        }
         if self.poisoned {
             return Err(Self::poisoned_error());
         }
@@ -279,7 +312,12 @@ impl PipelineNode for SkipTake {
         }
 
         loop {
-            match self.child.next_page(context).await? {
+            match self
+                .child
+                .next_page(context)
+                .await
+                .map_err(|error| self.attach_error(error, None))?
+            {
                 PageResult::Drained => {
                     self.exhausted = true;
                     // If the skip consumed the final backend page(s) without a
@@ -290,26 +328,30 @@ impl PipelineNode for SkipTake {
                     }
                     return Ok(PageResult::Drained);
                 }
-                PageResult::SplitRequired { .. } => {
+                PageResult::SplitRequired { mut replacements } => {
                     // A split must never reach a Skip/Take node: it always reads
                     // from a child that absorbs splits internally (the ordered
                     // merge or the sequential fan-out drain). A propagated split
                     // means the pipeline was mis-assembled, so fail loudly rather
                     // than silently mishandling it.
-                    return Err(crate::error::CosmosError::builder()
-                        .with_status(
-                            crate::error::status_codes::CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT,
-                        )
-                        .with_message(
-                            "SkipTake received a SplitRequired from its child; splits must be \
+                    return Err(self.attach_error(
+                        crate::error::CosmosError::builder()
+                            .with_status(
+                                crate::error::status_codes::CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT,
+                            )
+                            .with_message(
+                                "SkipTake received a SplitRequired from its child; splits must be \
                              absorbed below the skip/take node",
-                        )
-                        .build());
+                            )
+                            .build(),
+                        replacements.take_diagnostics(),
+                    ));
                 }
                 PageResult::Page {
                     response,
                     is_terminal,
                 } => {
+                    let diagnostics = response.diagnostics();
                     // Every fallible step in `process_page` runs *after* the
                     // child handed over the page, so poison on any error rather
                     // than at individual call sites.
@@ -319,7 +361,11 @@ impl PipelineNode for SkipTake {
                         Ok(None) => continue,
                         Err(err) => {
                             self.poisoned = true;
-                            return Err(err);
+                            self.suppressed_diagnostics.absorb(Some(diagnostics));
+                            if let Some(pending) = self.child.take_pending_error() {
+                                self.suppressed_diagnostics.absorb(pending.diagnostics());
+                            }
+                            return Err(self.attach_error(err, None));
                         }
                     }
                 }
@@ -332,7 +378,17 @@ impl PipelineNode for SkipTake {
         vec![self.child]
     }
 
+    fn take_pending_error(&mut self) -> Option<crate::error::CosmosError> {
+        self.deferred_error
+            .take()
+            .or_else(|| self.child.take_pending_error())
+            .map(|error| self.attach_error(error, None))
+    }
+
     fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
+        if let Some(error) = &self.deferred_error {
+            return Err(error.clone());
+        }
         // A poisoned node's window counters no longer describe the child's
         // position, so any token minted here would resume incorrectly.
         if self.poisoned {
@@ -370,7 +426,28 @@ impl PipelineNode for SkipTake {
 mod tests {
     use super::*;
     use crate::driver::dataflow::mocks::*;
-    use crate::models::ResponseBody;
+
+    #[tokio::test]
+    async fn completed_window_without_pending_error_does_not_poll_child_again() {
+        let child = Box::new(MockLeaf::with_pages(vec![page_result(&[1, 2, 3], false)]));
+        let mut window = SkipTake::new(child, 0, Some(2), false);
+        let mut executor = NoopRequestExecutor;
+        let mut context = PipelineContext::new(&mut executor, None);
+        let PageResult::Page {
+            response,
+            is_terminal,
+        } = window.next_page(&mut context).await.unwrap()
+        else {
+            panic!("expected window page");
+        };
+        assert_eq!(ids_of(&response), vec![1, 2]);
+        assert!(is_terminal);
+        assert!(window.take_pending_error().is_none());
+        assert!(matches!(
+            window.next_page(&mut context).await.unwrap(),
+            PageResult::Drained
+        ));
+    }
 
     /// Builds a query-page response body from a list of integer ids.
     fn page_body(ids: &[u64]) -> Vec<u8> {
@@ -390,13 +467,17 @@ mod tests {
         })
     }
 
-    fn ids_of(response: &CosmosResponse) -> Vec<u64> {
+    fn ids_of(response: &PipelineResponse) -> Vec<u64> {
         // SkipTake now emits a pre-split `Items` body; each item is one
         // document's exact bytes.
         let items = match response.body() {
-            ResponseBody::Items(items) => items.clone(),
-            ResponseBody::NoPayload => Vec::new(),
-            ResponseBody::Bytes(_) => panic!("expected Items body"),
+            PipelineBody::Items(items) => items.clone(),
+            PipelineBody::NoPayload => Vec::new(),
+            PipelineBody::Bytes(_) => panic!("expected Items body"),
+            PipelineBody::ContextualItems(items) => items
+                .iter()
+                .map(|item| item.to_standalone().unwrap())
+                .collect(),
         };
         items
             .iter()
@@ -633,7 +714,7 @@ mod tests {
         })
     }
 
-    fn request_charge_of(response: &CosmosResponse) -> f64 {
+    fn request_charge_of(response: &PipelineResponse) -> f64 {
         response
             .headers()
             .request_charge

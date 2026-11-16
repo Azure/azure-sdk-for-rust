@@ -20,9 +20,9 @@ architecture and specification.
 
 - Registers, via `CosmosClientBuilder::with_diagnostics_handler`, in order:
   - `CosmosMetricsHandler` — the stable `db.client.operation.duration` histogram
-    (plus opt-in development-tier metrics). *(feature `preview_opentelemetry`)*
+    (plus opt-in development-tier metrics). *(feature `unstable_opentelemetry`)*
   - `CosmosTracingHandler` — tail-sampled, backdated OpenTelemetry span trees.
-    *(feature `preview_opentelemetry`)*
+    *(feature `unstable_opentelemetry`)*
   - `SamplingLogHandler` — tail-sampled compact diagnostics log lines emitted
     through `tracing` (always registered).
 - Installs global OpenTelemetry `SdkMeterProvider` + `SdkTracerProvider` backed by
@@ -37,7 +37,7 @@ architecture and specification.
 
 | Feature | Default | Effect |
 | --- | --- | --- |
-| `preview_opentelemetry` | ✅ | Enables `azure_data_cosmos/preview_opentelemetry` and registers both `CosmosMetricsHandler` and `CosmosTracingHandler`. This integration is preview because the `opentelemetry` crate is still in preview. |
+| `unstable_opentelemetry` | ✅ | Enables `azure_data_cosmos/unstable_opentelemetry` and registers both `CosmosMetricsHandler` and `CosmosTracingHandler`. This integration is unstable because the `opentelemetry` crate is still in preview. |
 | `fault_injection` | ✅ | Enables `azure_data_cosmos/fault_injection` and the `--fault-*` flags. |
 | `otlp` | ❌ | Pulls `opentelemetry-otlp` (gRPC) so `--exporter otlp` works. Selects no TLS provider on its own. |
 | `otlp_rustls` | ✅ | Adds rustls with the `aws-lc-rs` provider and bundled webpki roots to the OTLP transport, so `https://` collectors work with no OpenSSL. Inert unless `otlp` is also enabled, which is why it can default on without dragging the gRPC stack into every build. |
@@ -49,7 +49,7 @@ that wants a different provider drops the default and names its own:
 ```bash
 cargo build -p azure_data_cosmos_observability_harness \
   --no-default-features \
-  --features "preview_opentelemetry,fault_injection,otlp,opentelemetry-otlp/tls-ring"
+  --features "unstable_opentelemetry,fault_injection,otlp,opentelemetry-otlp/tls-ring"
 ```
 
 The OpenTelemetry feature intentionally mirrors the SDK's feature name so the harness

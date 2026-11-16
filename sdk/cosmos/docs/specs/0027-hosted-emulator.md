@@ -222,12 +222,24 @@ Gateway 2.0 is enabled independently for each region by configuring
 The host owns the listener, HTTP/2 policy, connectivity probe, and bridge into
 the driver. The driver remains the single owner of RNTBD wire compatibility.
 The inverse server operations stay beside the client codec in
-`src/driver/transport/rntbd/`, and the host calls one feature-gated high-level
+`src/rntbd_encoding/`, and the host calls one feature-gated high-level
 adapter rather than depending on public token or frame internals.
 
 This split prevents the host from becoming a second RNTBD implementation whose
 token IDs, operation mappings, or framing rules can drift from the production
 driver. Unsupported RNTBD semantics fail explicitly.
+
+Routing hashes (`StartEpkHash` / `EndEpkHash`) select overlapping physical
+partitions, not individual documents. The adapter carries these separately
+from the explicit filtering tokens `StartEpk`, `EndEpk`, and `ReadFeedKeyType`.
+Filtering bounds are UTF-8 hex text inside `Bytes` tokens, whereas routing
+hashes contain decoded bytes. The adapter validates these encodings and must
+not synthesize missing filtering tokens from routing hashes; doing so would
+hide client-side serialization bugs. `EffectivePartitionKey` retains its
+logical point/prefix scope independently of explicit filters. Physical
+selection and returned documents must satisfy both that scope and any explicit
+range bounds, even when no string partition key or physical range ID is present.
+The adapter must not infer a missing range key type from an effective key.
 
 Gateway V1 remains the default. A region without a Gateway 2.0 endpoint does
 not advertise one, so the driver's existing discovery and probe behavior

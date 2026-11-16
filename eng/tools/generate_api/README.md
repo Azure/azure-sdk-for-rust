@@ -23,16 +23,6 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
   --review
 ```
 
-To keep `api.*` files in one directory but write review state under a different working directory:
-
-```sh
-cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
-  --manifest-path sdk/core/azure_core/Cargo.toml \
-  --output-dir target/generate_api/azure_core \
-  --working-dir target/generate_api/work/azure_core \
-  --review
-```
-
 To verify the default output without writing it:
 
 ```sh
@@ -41,23 +31,29 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
   --check
 ```
 
+To invoke the tool from outside the repository, pass the repository root explicitly:
+
+```sh
+cargo run --manifest-path /path/to/azure-sdk-for-rust/eng/tools/Cargo.toml -p generate_api -- \
+  --root /path/to/azure-sdk-for-rust \
+  --manifest-path /path/to/azure-sdk-for-rust/sdk/core/azure_core/Cargo.toml \
+  --output /tmp/generate_api/azure_core
+```
+
 ### Arguments
 
 - `--manifest-path <path>`: path to the target crate's `Cargo.toml`
+- `--root <path>`: optional repository root; defaults to the current directory
 - `--format <markdown|apiview>`: optional output format to generate; defaults to `markdown`
 - `--review`: emit Markdown review sidecars; valid only with `--format markdown`
 - `--check`: compare generated content with existing output files without writing them
 - `--output-dir <dir>`: directory where generated files are written; defaults to the crate directory
-- `--working-dir <dir>`: optional directory for Markdown review state; defaults to the resolved
-  `--output-dir` and is valid only with `--format markdown --review`
 
 ### Outputs
 
 - default `markdown` output writes `api.md`
 - `--format markdown --review` also writes `api.metadata.yml`, `api.md.map`, and
   `api.documentation.patch`
-- `--format markdown --review` writes `state/version.txt` and
-  `state/package-relative-path.txt` under the working directory
 - `--format apiview` writes `apiview.json`
 - `--check` succeeds when output files are absent or match after normalizing line endings; a mismatch
   writes an error to stderr and exits with code `1`
@@ -68,8 +64,9 @@ starts with the crate name. Multiline descriptions render with the `Description`
 line before the description text. Children of the `default` feature are also listed. `api.md` never
 contains
 documentation comments.
-`api.metadata.yml` is written next to `api.md` and records the normalized SHA-256 of `api.md`, the
-crate version, the `generate_api` version, and the rustc version used for generation.
+`api.metadata.yml` is written next to `api.md` and records `apiHash` as the normalized SHA-256 of
+`api.md`, the crate version, the repository-relative package path, the `generate_api` version, and
+the rustc version used for generation.
 `api.documentation.patch` is a unified diff that adds them back, so it can be applied to toggle
 documentation comments on. Each comment hunk uses all attributes and the first declaration line as
 context:
@@ -92,11 +89,6 @@ location within an unchanged repository directory structure; the source paths wi
 to resolve relative to `api.md.map` or a custom map path. Keep the `sources` entries unchanged in
 all cases.
 
-For Markdown review output, the `state` directory under the resolved working directory contains the
-crate version in `version.txt` and the repository-relative crate directory in
-`package-relative-path.txt`. If `--working-dir` is omitted, it defaults to `--output-dir`; if
-`--output-dir` is also omitted, both directories default to the crate directory.
-
 ## Workflow
 
 The current API review caller chain under `eng/pipelines/` is:
@@ -117,6 +109,32 @@ From that path:
 For local testing, `Pack-Crates.ps1 -APIReview` temporarily switches to Markdown review generation
 and writes the review artifacts into each crate root directory. Pipelines do not set `-APIReview`
 today.
+
+### API Review Hub
+
+Rust API Review Hub uses two job wrappers:
+
+1. `eng/pipelines/templates/jobs/apireview-hub-build-tools-rust.yml` uses the normal
+   `use-rust.yml` setup in `eng/tools` to install its specified toolchain, builds
+   `generate_api` in release mode, and stages the executable, its toolchain manifest,
+   and a few setup files in `$(BinOutputDirectory)`. All come from the same
+   `languageToolsRef` checkout so historical source refs do not need current
+   engineering helpers.
+2. `eng/pipelines/templates/jobs/apireview-hub-generate-artifact-rust.yml` uses
+   `use-rust.yml` with the staged setup script and manifest to install that exact
+   toolchain for both base and target. It uses the staged Cargo helpers to locate
+   the requested package, then invokes the prebuilt executable from `$(BinDirectory)`.
+   Setup and generation reuse `eng/common` from the reviewed checkout, assuming its
+   common utilities remain compatible; no `eng/common` files are staged.
+3. The generation job passes `--root $(Build.SourcesDirectory)` because the executable is outside
+   the package checkout, and writes the complete review bundle to `$(ArtifactOutputDirectory)`.
+
+The executable embeds its toolchain channel at build time and runs Cargo itself to build
+the package and generate rustdoc JSON. The staged manifest installs that same channel,
+independently of the base or target checkout's toolchain and engineering helpers.
+Generation invokes `cargo rustdoc` with the embedded channel and records the resulting
+rustc release in `api.metadata.yml`. Cargo build output
+stays in the source workspace; only the review bundle goes to `$(ArtifactOutputDirectory)`.
 
 ## Toolchain
 

@@ -313,6 +313,9 @@ impl<T: Send + DeserializeOwned + 'static> QueryPageIterator<T> {
     /// call (via [`QueryOptions::with_continuation_token`](crate::options::QueryOptions::with_continuation_token))
     /// to resume the query at the same position.
     ///
+    /// New checkpoints use `c2.` and require an SDK that supports that version.
+    /// Legacy `c1.` query checkpoints remain readable.
+    ///
     /// Snapshotting is non-mutating; the iterator may continue to be used
     /// afterwards. However, the captured token will resume from the position of the iterator at the time of capture,
     /// so any subsequent calls to `poll_next` after token capture will not affect the captured token's position.
@@ -392,6 +395,58 @@ mod tests {
             .map(|r| r.unwrap())
             .collect();
         assert_eq!(items, vec![1, 2, 3, 4, 5, 6]);
+    }
+
+    #[tokio::test]
+    async fn read_many_collection_includes_charged_retry_attempts() {
+        use azure_core::http::StatusCode;
+        use azure_data_cosmos_driver::{
+            diagnostics::RequestDiagnostics, models::CosmosResponseHeaders, CosmosStatus,
+            RequestCharge,
+        };
+        use std::time::{Duration, Instant};
+
+        let now = Instant::now();
+        let requests = [
+            (
+                CosmosStatus::new(StatusCode::NotFound).with_sub_status(1002),
+                2.0,
+            ),
+            (CosmosStatus::new(StatusCode::Ok), 3.0),
+        ]
+        .into_iter()
+        .map(|(status, charge)| {
+            RequestDiagnostics::for_testing(
+                "https://test.documents.azure.com",
+                None,
+                status,
+                RequestCharge::new(charge),
+                now,
+                now,
+            )
+        })
+        .collect();
+        let diagnostics = Arc::new(DiagnosticsContext::for_testing_with_requests(
+            ActivityId::new_uuid(),
+            Duration::ZERO,
+            Some(CosmosStatus::new(StatusCode::Ok)),
+            Some("read_many"),
+            requests,
+        ));
+        let mut headers = CosmosResponseHeaders::default();
+        headers.request_charge = Some(RequestCharge::new(3.0));
+        let page =
+            QueryFeedPage::new_for_testing(vec![1], ResponseHeaders::from(headers), diagnostics);
+        let pages = synthetic_item_iter(vec![Ok(page)]).into_pages();
+        let response = crate::feed::ReadManyIterator::new(pages)
+            .collect_all()
+            .await
+            .unwrap();
+        assert_eq!(response.request_charge().value(), 5.0);
+        assert_eq!(
+            response.request_charge(),
+            response.diagnostics().unwrap().total_request_charge()
+        );
     }
 
     #[tokio::test]

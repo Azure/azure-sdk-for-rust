@@ -21,7 +21,10 @@
 //! Transport-side knobs (connection pool, user-agent suffix, workload
 //! id, correlation id) live on the runtime options, not here.
 //!
-use crate::string::{required_text, validate_array, CosmosStringView};
+use crate::{
+    op_request::{decode_tristate_bool, TRISTATE_UNSET},
+    string::{required_text, validate_array, CosmosStringView},
+};
 use std::sync::Arc;
 
 use azure_data_cosmos_driver::options::{DriverOptions, DriverOptionsBuilder, Region};
@@ -188,6 +191,12 @@ pub struct CosmosDriverOptionsConfigV2 {
     pub fault_injection_rules: *const CosmosFaultInjectionRule,
     pub fault_injection_rules_len: usize,
     pub fault_injection_rule_stride: usize,
+    /// Whether to reject unsafe user-defined names before request planning,
+    /// including item names supplied to Create and Upsert.
+    ///
+    /// Tri-state bool: `0` leaves the driver default unchanged, `1` disables
+    /// validation, and `2` enables validation. The driver default is enabled.
+    pub resource_name_validation_enabled: i8,
 }
 
 /// Returns an all-unset [`CosmosDriverOptionsConfig`] by value. The host
@@ -216,6 +225,7 @@ pub extern "C" fn cosmos_driver_options_config_v2_default() -> CosmosDriverOptio
         fault_injection_rules: std::ptr::null(),
         fault_injection_rules_len: 0,
         fault_injection_rule_stride: std::mem::size_of::<CosmosFaultInjectionRule>(),
+        resource_name_validation_enabled: TRISTATE_UNSET,
     }
 }
 
@@ -317,15 +327,23 @@ pub extern "C" fn cosmos_driver_options_build_v2(
     let Some(account_inner) = AccountRefHandle::from_ptr(account) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     };
-    // SAFETY: the caller supplies at least the size/version prefix.
+    // SAFETY: the caller supplies a complete record from the matching native
+    // release.
     let header = unsafe { (*config).header };
     if header.version != COSMOS_FAULT_INJECTION_ABI_VERSION_1
         || header.struct_size < std::mem::size_of::<CosmosDriverOptionsConfigV2>()
     {
         return CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code();
     }
-    // SAFETY: the validated record size covers every v1 field.
+
+    // SAFETY: the validated record size covers every field.
     let cfg = unsafe { &*config };
+    let resource_name_validation_enabled =
+        match decode_tristate_bool(cfg.resource_name_validation_enabled) {
+            Ok(enabled) => enabled,
+            Err(code) => return code.as_status_code(),
+        };
+
     // SAFETY: caller contract on the region array pointer + length.
     let regions =
         match unsafe { decode_preferred_regions(cfg.preferred_regions, cfg.preferred_regions_len) }
@@ -356,6 +374,9 @@ pub extern "C" fn cosmos_driver_options_build_v2(
             Err(code) => return code.as_status_code(),
         };
         builder = builder.with_operation_options(operation_options);
+    }
+    if let Some(enabled) = resource_name_validation_enabled {
+        builder = builder.with_resource_name_validation(enabled);
     }
     if !rules.is_empty() {
         builder = match builder.with_fault_injection_rules(rules) {
@@ -525,6 +546,44 @@ mod tests {
             CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert!(options.is_null());
+        crate::account_ref::cosmos_account_ref_free(account);
+    }
+
+    #[test]
+    fn v2_build_configures_resource_name_validation() {
+        let account = make_account();
+
+        for (value, expected) in [(1, false), (2, true)] {
+            let mut config = cosmos_driver_options_config_v2_default();
+            config.resource_name_validation_enabled = value;
+            let mut options = ptr::null_mut();
+            assert_eq!(
+                cosmos_driver_options_build_v2(account, &config, &mut options),
+                crate::error::COSMOS_STATUS_SUCCESS
+            );
+            let handle = DriverOptionsHandle::inner_arc(options).unwrap();
+            assert_eq!(handle.inner.resource_name_validation_enabled(), expected);
+            drop(handle);
+            cosmos_driver_options_free(options);
+        }
+
+        let mut invalid = cosmos_driver_options_config_v2_default();
+        invalid.resource_name_validation_enabled = 3;
+        let mut options = ptr::null_mut();
+        assert_eq!(
+            cosmos_driver_options_build_v2(account, &invalid, &mut options),
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
+        );
+        assert!(options.is_null());
+
+        let mut undersized = cosmos_driver_options_config_v2_default();
+        undersized.header.struct_size -= 1;
+        assert_eq!(
+            cosmos_driver_options_build_v2(account, &undersized, &mut options),
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
+        );
+        assert!(options.is_null());
+
         crate::account_ref::cosmos_account_ref_free(account);
     }
 

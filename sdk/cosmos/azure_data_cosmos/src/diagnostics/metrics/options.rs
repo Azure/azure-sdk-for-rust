@@ -4,7 +4,7 @@
 //! Configuration for the Cosmos DB metrics handler.
 
 /// Controls which optional metrics and attributes the
-/// `CosmosMetricsHandler` emits when `preview_opentelemetry` is enabled.
+/// `CosmosMetricsHandler` emits when `unstable_opentelemetry` is enabled.
 ///
 /// The options are per-signal: each optional metric and the extended attribute
 /// set is toggled on its own, focused on *what* is emitted rather than on a

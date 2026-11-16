@@ -12,7 +12,7 @@ pub use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosStatus, EffectivePartitionKey, PartitionKey, PartitionKeyDefinition,
     PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion,
 };
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 #[doc(inline)]
 pub use azure_data_cosmos_driver::models::{CosmosNumber, PatchInstructions, PatchOperation};
 pub use batch_response::BatchResponse;
@@ -32,7 +32,7 @@ pub use indexing_policy::{
     VectorIndexType,
 };
 pub use item_response::ItemResponse;
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 pub use patch_tracking::{
     PatchTrackingId, DEFAULT_PATCH_TRACKING_CAPACITY, PATCH_TRACKING_PROPERTY,
     PATCH_TRACKING_RETENTION,
@@ -66,7 +66,7 @@ mod cosmos_response;
 mod database_properties;
 mod indexing_policy;
 mod item_response;
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 mod patch_tracking;
 mod resource_response;
 mod response_body;

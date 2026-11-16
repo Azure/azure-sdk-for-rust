@@ -136,7 +136,7 @@ impl<'de> serde::Deserialize<'de> for AccountEndpoint {
 #[derive(Clone)]
 pub enum Credential {
     /// Key-based authentication using the account's primary or secondary master key.
-    MasterKey(Secret),
+    AccountKey(Secret),
     /// Token-based authentication using an Azure credential.
     TokenCredential(Arc<dyn TokenCredential>),
 }
@@ -144,7 +144,7 @@ pub enum Credential {
 impl std::fmt::Debug for Credential {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::MasterKey(_) => f.debug_tuple("MasterKey").field(&"***").finish(),
+            Self::AccountKey(_) => f.debug_tuple("AccountKey").field(&"***").finish(),
             Self::TokenCredential(_) => f.debug_tuple("TokenCredential").field(&"...").finish(),
         }
     }
@@ -152,7 +152,7 @@ impl std::fmt::Debug for Credential {
 
 impl From<Secret> for Credential {
     fn from(key: Secret) -> Self {
-        Self::MasterKey(key)
+        Self::AccountKey(key)
     }
 }
 
@@ -182,7 +182,7 @@ impl From<Arc<dyn TokenCredential>> for Credential {
 /// .unwrap();
 ///
 /// // Using the shorthand constructor
-/// let account = AccountReference::with_master_key(
+/// let account = AccountReference::with_account_key(
 ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
 ///     "my-master-key",
 /// );
@@ -231,13 +231,13 @@ impl AccountReference {
         AccountReferenceBuilder::new(endpoint)
     }
 
-    /// Creates a new account reference with master key authentication.
+    /// Creates a new account reference with account key authentication.
     ///
     /// This is a convenience method for the common case of key-based auth.
-    pub fn with_master_key(endpoint: Url, key: impl Into<Secret>) -> Self {
+    pub fn with_account_key(endpoint: Url, key: impl Into<Secret>) -> Self {
         Self(Arc::new(AccountReferenceInner {
             endpoint: AccountEndpoint::from(endpoint),
-            credential: Credential::MasterKey(key.into()),
+            credential: Credential::AccountKey(key.into()),
             backup_endpoints: Vec::new(),
         }))
     }
@@ -275,8 +275,8 @@ impl AccountReference {
     /// Returns a new `AccountReference` with the given backup endpoints.
     ///
     /// This is a post-construction transformation for use when the account
-    /// was created via a convenience constructor (`with_master_key`,
-    /// `with_credential`) and backup endpoints need to be attached without
+    /// was created via a convenience constructor ([`with_account_key()`](Self::with_account_key),
+    /// [`with_credential()`](Self::with_credential)) and backup endpoints need to be attached without
     /// going through the full builder.
     ///
     /// Existing clones of this account are unaffected.
@@ -341,7 +341,7 @@ impl AccountReferenceBuilder {
 
     /// Sets master key authentication.
     pub fn master_key(mut self, key: impl Into<Secret>) -> Self {
-        self.credential = Some(Credential::MasterKey(key.into()));
+        self.credential = Some(Credential::AccountKey(key.into()));
         self
     }
 
@@ -454,8 +454,8 @@ mod tests {
                 .unwrap();
 
         match account.auth() {
-            Credential::MasterKey(key) => assert_eq!(key.secret(), "my-secret-key"),
-            _ => panic!("Expected MasterKey auth"),
+            Credential::AccountKey(key) => assert_eq!(key.secret(), "my-secret-key"),
+            _ => panic!("Expected AccountKey auth"),
         }
     }
 
@@ -486,14 +486,14 @@ mod tests {
 
     #[test]
     fn shorthand_with_master_key() {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "my-secret-key",
         );
 
         match account.auth() {
-            Credential::MasterKey(key) => assert_eq!(key.secret(), "my-secret-key"),
-            _ => panic!("Expected MasterKey auth"),
+            Credential::AccountKey(key) => assert_eq!(key.secret(), "my-secret-key"),
+            _ => panic!("Expected AccountKey auth"),
         }
     }
 
@@ -513,12 +513,12 @@ mod tests {
 
     #[test]
     fn account_reference_equality_ignores_auth() {
-        let account1 = AccountReference::with_master_key(
+        let account1 = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "key1",
         );
 
-        let account2 = AccountReference::with_master_key(
+        let account2 = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "key2",
         );
@@ -529,7 +529,7 @@ mod tests {
 
     #[test]
     fn shorthand_has_empty_backup_endpoints() {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "key",
         );
@@ -565,7 +565,7 @@ mod tests {
 
     #[test]
     fn with_backup_endpoints_updates_sole_owner_in_place() {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "key",
         );
@@ -578,7 +578,7 @@ mod tests {
 
     #[test]
     fn with_backup_endpoints_does_not_affect_existing_clones() {
-        let original = AccountReference::with_master_key(
+        let original = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "key",
         );

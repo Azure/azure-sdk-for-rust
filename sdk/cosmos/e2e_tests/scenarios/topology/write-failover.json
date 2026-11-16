@@ -4,7 +4,7 @@
     "id": "topology.write-failover",
     "title": "Writes recover through failover and failback",
     "requirement": "A running client refreshes account topology and redirects writes through announced, active, and completed write-region failover and failback phases.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "rust",

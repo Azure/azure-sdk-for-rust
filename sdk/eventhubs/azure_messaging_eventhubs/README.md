@@ -153,6 +153,14 @@ There are two mechanisms used to send events to an Event Hub instance. The first
 sends individual messages to the Event Hub, the second uses a "batch" operation to
 send multiple messages in a single network request to the service.
 
+When a connection or session closes, pending sends retry with the current connection. Peer-triggered invalidation also wakes pending sends.
+These retries use the configured limits and backoff. A lost acknowledgement can cause duplicate
+events, because the service can accept a send before the client detects the failure.
+
+`RetryOptions::max_total_elapsed` bounds each send and sender metadata request, including authorization, attachment, recovery, and backoff. The default remains 60 seconds. Expiry returns an I/O timeout and retires the transport used by the failed attempt. A later call can reconnect. An outage longer than the budget produces a terminal error; increasing the budget does not guarantee recovery.
+
+A deadline runs independently of AMQP reads and writes. It does not limit a healthy receiver's wait for an event. The client terminates retired transports without waiting for a graceful close handshake.
+
 #### Send events directly to the Event Hub
 
 ```rust no_run
@@ -410,6 +418,125 @@ Events follow a consistent level policy so you can pick the verbosity you need:
 - `debug` - per-operation bookkeeping, error classification decisions, retry chatter, and internal
   map updates.
 - `trace` - very-high-frequency or per-message detail, including the hot send path.
+
+When a recovery loop stops after an attempt returns an error, the SDK logs one `warn` event,
+`Operation recovery stopped, returning error.`, with these fields:
+
+- `stop_reason` - the decision that ended recovery: `elapsed_budget_exhausted`,
+  `retries_exhausted`, `non_recoverable`, `recovery_failed`, or `recovery_unavailable`.
+- `retries_attempted` and `max_retries` - the retries that ran and the configured limit.
+- `recovery_elapsed` and `max_total_elapsed` - the time charged to the elapsed-time budget and
+  its configured limit. For a receive, only recovery work counts: recovery actions, backoff, and
+  link attach. For other operations, all time from the first attempt counts.
+- `receive_wait_elapsed` - receive only: the total time in the current recovery episode that the
+  receive waited for an event on an attached link. This time is not charged to the budget.
+
+When a receive link fails after it waited at least 10 seconds for an event, the link was healthy,
+so the SDK starts a new recovery episode with a new retry count and a new budget. It logs this at
+`info` as `Receive link failed after a healthy wait, starting a new recovery episode.`, with
+`connection_id`, `partition_id`, the previous `retries_attempted`, and the `healthy_wait`.
+
+- `connection_id` and `partition_id` - the receiver that stopped, present on receive events at
+  every level.
+- `err` - the error that the operation returns.
+
+### OpenTelemetry traces, logs, and metrics
+
+Set `with_tracing_provider` on `ProducerClientBuilder`, `ConsumerClientBuilder`, or
+`BufferedProducerClientBuilder` to enable distributed tracing. The SDK uses the
+provider-neutral `azure_core::tracing` API. An application using OpenTelemetry can
+adapt its provider with `azure_core_opentelemetry::OpenTelemetryTracerProvider`.
+The application owns the providers and must flush or shut them down before exit.
+
+```rust no_run
+use azure_core_opentelemetry::OpenTelemetryTracerProvider;
+use azure_messaging_eventhubs::ProducerClient;
+use std::sync::Arc;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let sdk = opentelemetry_sdk::trace::SdkTracerProvider::builder().build();
+    let provider = OpenTelemetryTracerProvider::new(Arc::new(sdk.clone()));
+    let credential = azure_identity::DeveloperToolsCredential::new(None)?;
+    let producer = ProducerClient::builder()
+        .with_tracing_provider(provider)
+        .open("example.servicebus.windows.net", "events", credential)
+        .await?;
+    producer.send_event("hello", None).await?;
+    producer.close().await?;
+    sdk.shutdown()?;
+    Ok(())
+}
+```
+
+`ProducerClient.send` covers one logical send, including preparation and retries.
+`send_event` and `send_message` share a span. Background batch sends from a buffered
+producer start their spans when the worker begins link and batch preparation.
+Enqueue time and the wait before the worker starts are excluded. A buffered span
+uses real timestamps, so its elapsed time can include subsequent waits to fill
+the batch. Its duration metric excludes those waits and callback time, while
+including active preparation, sending, and retries. Preparation failures also
+complete a logical send with an error. `EventReceiver.receive`
+covers each delivery request, including recovery. It ends before yielding the
+event, so application processing time is excluded. Child spans measure sender and
+receiver attachment, send disposition, and blocking receive waits. Connection open
+and session begin also emit spans. Failed attempts mark their child span as an
+error; a successful retry leaves the logical span successful. Dropping a pending
+operation ends its span with a cancellation status.
+
+Trace attributes include `az.namespace=Microsoft.EventHub`,
+`messaging.system=eventhubs`, the destination or source name, the server address,
+the operation, and the message count. The Rust OpenTelemetry adapter uses schema
+1.23.0. These spans do not inject or extract message trace context or link batches
+to remote producer spans.
+
+Structured AMQP lifecycle records use the `tracing` module target
+`azure_messaging_eventhubs::common::diagnostics`. Records identify the client,
+component type, component ID, creation-attempt generation, and connection recovery
+generation. IDs remain the same between an attempt's `started` and terminal
+`success`, `error`, or `cancelled` record. Every creation attempt receives a new
+ID and generation, including attempts that fail. `invalidated` records identify
+the connection recovery generation and component scope being retired. Generations
+are diagnostic values, not partition ownership epochs. Bridge these records and
+the SDK's other diagnostic logs with
+`opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge`.
+
+Enable the optional `metrics` feature to emit native OpenTelemetry metrics. Install
+the application's global meter provider **before creating clients**. Register it
+through `opentelemetry` 0.32, the version used by this library, and select a
+compatible `opentelemetry_sdk` version. Incompatible `opentelemetry` versions have
+separate global providers; registering one does not configure the other. Without a
+provider, instruments are no-ops. Exporters and the OpenTelemetry SDK are application
+dependencies; the library depends only on the OpenTelemetry API for metrics.
+
+| Instrument | Type | Unit | Meaning |
+| --- | --- | --- | --- |
+| `az.eventhubs.operations` | Counter | `{operation}` | Completed logical send/receive operations, including errors and cancellation |
+| `az.eventhubs.events` | Counter | `{event}` | Events in accepted sends and successful receives |
+| `az.eventhubs.operation.duration` | Histogram | `s` | Logical duration including preparation and retries; buffered queue and batch-fill waits excluded |
+| `az.eventhubs.amqp.lifecycle` | Counter | `{transition}` | Completed component creation attempts and recovery invalidations |
+
+Operation metrics use server, Event Hub, operation (`send` or `receive`), and
+outcome (`success`, `error`, or `cancelled`) labels. Lifecycle metrics use component
+and outcome labels. Client IDs, component IDs, generations, message bodies,
+partition keys, and error text are excluded from metric labels. Retry attempts
+and child spans do not increment the logical operation counters. The unbuffered
+producer retains its existing success return for `Modified` and `Released`
+dispositions, but those outcomes add no delivered events. Buffered sends report
+those dispositions as errors in both the callback and telemetry. Counts describe SDK
+observations, not exactly-once delivery: an unacknowledged send can be retried and
+a consumer can receive an event again after recovery.
+
+For an OTLP/HTTP exporter setup, provider shutdown, a local collector configuration,
+and a no-Azure smoke run, see the
+[OpenTelemetry example](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/eventhubs/azure_messaging_eventhubs/examples/opentelemetry/README.md).
+
+### Link attachment during recovery
+
+Connection recovery can replace a session while a sender or receiver prepares
+to attach. The SDK checks that preparation still belongs to the current recovery
+generation before attaching the link. Superseded preparation restarts against the
+current session, avoiding a duplicate link-name attachment on that session.
 
 ## Contributing
 

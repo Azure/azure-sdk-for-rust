@@ -251,7 +251,7 @@ pub async fn setup_live() -> (Arc<CosmosDriver>, ItemReference) {
     let item_id = std::env::var("AZURE_COSMOS_ITEM_ID").unwrap_or_else(|_| "item1".to_string());
 
     let endpoint_url = Url::parse(&endpoint).expect("AZURE_COSMOS_ENDPOINT is not a valid URL");
-    let account = AccountReference::with_master_key(endpoint_url, key.clone());
+    let account = AccountReference::with_account_key(endpoint_url, key.clone());
 
     let runtime = CosmosDriverRuntimeBuilder::new()
         .build()
@@ -361,7 +361,7 @@ pub async fn setup() -> (Arc<CosmosDriver>, ItemReference) {
         .await
         .expect("failed to build runtime");
 
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         Url::parse("https://bench.documents.azure.com:443/").unwrap(),
         "dGVzdA==",
     );

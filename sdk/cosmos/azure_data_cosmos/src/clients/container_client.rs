@@ -4,16 +4,19 @@
 use crate::{
     clients::ClientContext,
     diagnostics::CosmosOperationContext,
-    feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
+    feed::{
+        ChangeFeedPageIterator, FeedRange, FeedScope, ItemSelector, QueryItemIterator,
+        ReadManyIterator,
+    },
     models::{BatchResponse, ChangeFeedItem, ItemResponse, TransactionalBatch},
     options::{
         BatchOptions, BinaryEncodingOptions, ChangeFeedMode, ChangeFeedOptions,
         ChangeFeedStartFrom, ItemReadOptions, ItemWriteOptions, OperationOptions, Precondition,
-        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, SessionToken,
+        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, ReadManyOptions, SessionToken,
     },
     PartitionKey, Query, ResourceIdentity,
 };
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 use crate::{models::PatchInstructions, options::PatchItemOptions};
 
 use azure_data_cosmos_driver::models::{
@@ -41,8 +44,79 @@ pub struct ContainerClient {
 }
 
 impl ContainerClient {
+    /// Reads selected items, logical partitions, or feed ranges as unordered pages.
+    ///
+    /// Duplicate selections are removed. Missing or filtered-out items are
+    /// omitted. A filter only narrows the selection; use [`Self::query_items()`]
+    /// for general queries. Item and partition scopes accept complete keys or
+    /// nonempty hierarchical prefixes. A prefix plus an id can return multiple
+    /// items across logical partitions. Overlapping selections do not duplicate
+    /// results. Item keys missing only a final `/id` component are completed from
+    /// the supplied id.
+    ///
+    /// Queries consume RUs and may span multiple service requests. There is no
+    /// cross-partition snapshot or durable resume. Use
+    /// [`ReadManyIterator::collect_all()`] before iteration to aggregate results.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid selections, unbound filter parameters,
+    /// excessive fan-out, or planning failures. Request and deserialization
+    /// failures are returned while consuming pages.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # async fn example(container: azure_data_cosmos::clients::ContainerClient) -> azure_data_cosmos::Result<()> {
+    /// use azure_data_cosmos::feed::{ItemFilter, ItemScope, ItemSelector};
+    /// let filter = "c.active = @active".parse::<ItemFilter>()?
+    ///     .with_parameter("@active", true)?;
+    /// let response = container.read_many::<serde_json::Value>(
+    ///     ItemSelector::from(ItemScope::Partitions(vec!["tenant-1".into()])).with_filter(filter),
+    ///     None,
+    /// ).await?.collect_all().await?;
+    /// println!("Found {} items", response.items().len());
+    /// # Ok(()) }
+    /// ```
+    pub async fn read_many<T: DeserializeOwned + Send + 'static>(
+        &self,
+        selection: impl Into<ItemSelector>,
+        options: Option<ReadManyOptions>,
+    ) -> crate::Result<ReadManyIterator<T>> {
+        let options = options.unwrap_or_default();
+        let plan_options = crate::options::FeedOptions {
+            max_fan_out: options.max_fan_out,
+            ..Default::default()
+        }
+        .to_plan_options();
+        let (operation_options, _) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
+        let mut operation = CosmosOperation::read_many(self.container_ref.clone(), selection);
+        if let Some(token) = options.session_token {
+            operation = operation.with_session_token(token);
+        }
+        if let Some(hint) = options.max_item_count {
+            operation = operation.with_max_item_count(hint);
+        }
+        let plan = self
+            .context
+            .driver
+            .plan_operation(operation, &operation_options, None, &plan_options)
+            .await?;
+        let pages = QueryItemIterator::new(
+            self.context.driver.clone(),
+            Some(self.container_ref.clone()),
+            plan,
+            operation_options,
+            self.context.diagnostics_handlers.clone(),
+            self.operation_context("read_many"),
+        )
+        .into_pages();
+        Ok(ReadManyIterator::new(pages))
+    }
+
     /// Returns the resolved [`ContainerReference`] for the container this client is attached to.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub(crate) fn container_reference(&self) -> &ContainerReference {
         &self.container_ref
     }
@@ -513,7 +587,7 @@ impl ContainerClient {
     /// client-side path persists a tracking marker only when required for
     /// duplicate suppression.
     ///
-    /// **Preview.** Requires the `preview_patch` feature. This API is not
+    /// **Unstable.** Requires the `unstable_patch` feature. This API is not
     /// production-ready — see [Retry Semantics](#retry-semantics) below.
     ///
     /// The handler refuses to PATCH paths that overlap the container's
@@ -569,6 +643,26 @@ impl ContainerClient {
     /// and resolves multi-write conflicts at document granularity. Select an
     /// explicit strategy when those differences matter.
     ///
+    /// # Filter predicates
+    ///
+    /// [`PatchInstructions::with_filter_predicate()`] adds a nonempty SQL
+    /// FROM/WHERE clause that Cosmos DB evaluates atomically before a
+    /// server-side PATCH. A false predicate returns HTTP 412 with sub-status
+    /// 1110 and leaves the item unchanged. Predicates aren't supported when
+    /// strategy resolution selects client-side execution; that combination
+    /// returns HTTP 400 before I/O.
+    /// Select [`PatchStrategy::ServerSide`](crate::options::PatchStrategy::ServerSide)
+    /// when a predicate must accompany operations that `Auto` would otherwise
+    /// execute client-side.
+    ///
+    /// # Errors
+    ///
+    /// Returns HTTP 412 with sub-status 1110 when a server-side predicate is
+    /// false. An empty predicate returns client-generated HTTP 400 before I/O;
+    /// other invalid predicates return service HTTP 400. If execution resolves
+    /// to client-side, the predicate is rejected before I/O with HTTP 400, no
+    /// sub-status, no request diagnostics, and no PATCH tracking ID.
+    ///
     /// # Retry Semantics
     ///
     /// [`PatchStrategy::Auto`](crate::options::PatchStrategy::Auto) is the
@@ -579,8 +673,12 @@ impl ContainerClient {
     /// Client-side-only settings do not influence strategy selection and are
     /// ignored on the server path. To provide a stable identity for
     /// application-level retries when client-side execution is selected, use
-    /// [`PatchItemOptions::with_tracking_id`]. Explicit unsafe server-side
-    /// PATCH is not retried after an ambiguous outcome.
+    /// [`PatchItemOptions::with_tracking_id`]. Server-side PATCH with an unsafe
+    /// list or a filter predicate is not retried after an ambiguous outcome.
+    /// A committed patch can make its predicate false, so even convergent
+    /// instructions cannot safely be replayed. The driver returns the original
+    /// error without a reconciliation Read; read the item to reconcile the
+    /// outcome before deciding whether to submit another patch.
     ///
     /// By default the driver generates a tracking ID for instruction lists that
     /// are not safe to reapply. The effective ID is available from
@@ -611,7 +709,7 @@ impl ContainerClient {
     /// and returned JSON and counts toward item size and indexing costs.
     /// Model-deserialization errors retain the response diagnostics and effective
     /// tracking ID so callers can safely reconcile a committed PATCH.
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     pub async fn patch_item(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -894,22 +992,27 @@ impl ContainerClient {
     /// * `scope` - The [`FeedScope`] specifying the scope of the query.
     /// * `options` - Optional parameters for the request.
     ///
-    /// # Cross Partition Queries
+    /// # Cross-partition queries
     ///
-    /// When `scope` spans multiple partitions, the SDK obtains a query plan and composes the
-    /// client-side pipeline needed to execute it. Supported features include ordinary projections
-    /// and filters, `TOP`, `OFFSET`/`LIMIT`, streaming single- and multiple-column `ORDER BY`, and
-    /// ordered or unordered `DISTINCT`.
+    /// Supported features:
     ///
-    /// Cross-partition vector ordering supports pure `ORDER BY VectorDistance(...)` queries with a
-    /// finite `TOP N` or `OFFSET x LIMIT y` window. The SDK buffers that result window before
-    /// returning the first page, so use narrow projections and choose a result window appropriate
-    /// for the memory available to the application.
+    /// - Projections and filters.
+    /// - `TOP` and `OFFSET`/`LIMIT`.
+    /// - Single- and multiple-column `ORDER BY`.
+    /// - Ordered and unordered `DISTINCT`.
+    /// - Vector ordering with `ORDER BY VectorDistance(...)`.
+    /// - Ranked full-text search with `ORDER BY RANK FullTextScore(...)`.
+    /// - Weighted full-text and vector hybrid search with `RRF(...)`.
     ///
-    /// The buffered result can be iterated in pages, but it does not support continuation tokens
-    /// for resuming in another process. Aggregates, `GROUP BY`, and hybrid/full-text ranking remain
-    /// unsupported when their query plans require client-side stages that have not been
-    /// implemented.
+    /// Unsupported features:
+    ///
+    /// - Aggregates and `GROUP BY` that require client-side aggregation.
+    /// - Continuation tokens for buffered queries, including vector ordering, ranked full-text,
+    ///   and hybrid search.
+    ///
+    /// Vector ordering, ranked full-text, and hybrid queries buffer candidates before returning
+    /// the first page. They require a finite `TOP` or `OFFSET`/`LIMIT` within
+    /// [`QueryOptions::max_buffered_query_window`].
     ///
     /// # Examples
     ///
@@ -978,6 +1081,27 @@ impl ContainerClient {
     ///
     /// while let Some(item) = matches.try_next().await? {
     ///     println!("{}: {}", item.id, item.score);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Rank full-text matches with a parameterized search term:
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::{feed::FeedScope, Query};
+    /// use futures::TryStreamExt;
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// let query = Query::from(
+    ///     "SELECT TOP 5 c.id FROM c ORDER BY RANK FullTextScore(c.text, @term)",
+    /// )
+    /// .with_parameter("@term", "bicycle")?;
+    /// let mut matches = container_client
+    ///     .query_items::<serde_json::Value>(query, FeedScope::full_container(), None)
+    ///     .await?;
+    /// while let Some(item) = matches.try_next().await? {
+    ///     println!("{item}");
     /// }
     /// # Ok(())
     /// # }
@@ -1066,10 +1190,24 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `scope` - Determines which partitions to read changes from.
+    ///   A hierarchical partition-key prefix reads every overlapping physical
+    ///   range, with each request bounded to the prefix.
     /// * `start_from` - Where to begin reading when no continuation token is
-    ///   provided. Ignored when `options` carries a continuation token, since
-    ///   the token holds its own position.
+    ///   provided. A checkpoint's saved start takes precedence over this value,
+    ///   and saved per-range ETags take precedence over the start. Older
+    ///   single-request checkpoints don't record the original start; supply the
+    ///   same `start_from` when resuming those checkpoints before the first poll.
     /// * `options` - Optional parameters controlling mode, session token, and paging.
+    ///
+    /// In LatestVersion mode, [`ChangeFeedStartFrom::Now`] is evaluated at each
+    /// range's first request, including ranges first polled after resume.
+    /// Creating an iterator or saving its checkpoint doesn't anchor that time.
+    ///
+    /// Older prefix checkpoints that contain a single request's ETag cannot
+    /// safely reconstruct per-range positions and are rejected. Unpolled prefix
+    /// checkpoints can resume with the original `start_from`.
+    /// New query and change-feed checkpoints use `c2.` and are rejected by
+    /// older SDKs that only support `c1.`.
     ///
     /// # AllVersionsAndDeletes limitations
     ///
@@ -1082,8 +1220,9 @@ impl ContainerClient {
     /// * When starting from [`ChangeFeedStartFrom::Now`], every range is pinned
     ///   to its concrete starting position before the first page is returned, so
     ///   a range that is never served before a checkpoint still resumes from its
-    ///   true start rather than resume-time. No intermediate versions or deletes
-    ///   are dropped across a resume. `Now` is deliberately **not** rewritten to
+    ///   captured start rather than resume-time. A checkpoint taken before the
+    ///   first poll has no captured ETags; priming happens when that feed is
+    ///   polled, including after resume. `Now` is deliberately **not** rewritten to
     ///   a concrete [`ChangeFeedStartFrom::PointInTime`], which would change its
     ///   semantics; each range instead captures its own server continuation.
     /// * The feed mode is encoded in the continuation token, so a token issued in
@@ -1232,6 +1371,11 @@ impl ContainerClient {
     ///
     /// All operations in the batch are executed atomically within the same partition key.
     /// If any operation fails, the entire batch is rolled back.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the batch can't be serialized, resource-name validation rejects an
+    /// item ID, or the driver or service rejects the request.
     ///
     /// # Arguments
     /// * `batch` - The [`TransactionalBatch`] containing the operations to execute.
@@ -1561,7 +1705,7 @@ fn apply_batch_options(mut operation: CosmosOperation, options: &BatchOptions) -
     operation
 }
 
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 fn apply_patch_options(
     mut operation: CosmosOperation,
     options: &PatchItemOptions,
@@ -1587,7 +1731,7 @@ fn apply_patch_options(
     operation
 }
 
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 fn apply_patch_operation_options(
     mut operation_options: OperationOptions,
     strategy: Option<crate::options::PatchStrategy>,
@@ -1616,7 +1760,7 @@ fn _assert_futures_are_send() {
     let partition_key: PartitionKey = todo!();
     let item_id: &str = todo!();
     assert_send(client.read_item(partition_key.clone(), item_id, None));
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     {
         let patch: PatchInstructions = todo!();
         let options: Option<PatchItemOptions> = todo!();
@@ -1634,10 +1778,10 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[test]
     fn patch_options_forward_to_driver_operation() {
-        let account = azure_data_cosmos_driver::models::AccountReference::with_master_key(
+        let account = azure_data_cosmos_driver::models::AccountReference::with_account_key(
             azure_core::http::Url::parse("https://localhost").unwrap(),
             "test-key",
         );
@@ -1678,6 +1822,100 @@ mod tests {
             operation_options.patch_strategy,
             Some(crate::options::PatchStrategy::ClientSide)
         );
+    }
+
+    #[cfg(feature = "unstable_patch")]
+    #[test]
+    fn patch_body_serializes_filter_predicate_as_condition() {
+        let patch = PatchInstructions::from(vec![crate::models::PatchOperation::set(
+            "/status",
+            serde_json::json!("done"),
+        )]);
+
+        for predicate in [
+            "from c where c.status = 'pending'",
+            "from c where c.status = \"quoted\\value\"\n",
+        ] {
+            let patch = patch.clone().with_filter_predicate(predicate);
+            let body = serde_json::to_vec(&patch).unwrap();
+            assert_eq!(
+                serde_json::from_slice::<PatchInstructions>(&body).unwrap(),
+                patch
+            );
+            let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+            assert_eq!(
+                body,
+                json!({
+                    "operations": [{"op": "set", "path": "/status", "value": "done"}],
+                    "condition": predicate,
+                })
+            );
+        }
+    }
+
+    #[cfg(feature = "unstable_patch")]
+    #[test]
+    fn patch_body_preserves_instruction_bytes_and_move_ordering() {
+        use crate::models::PatchOperation;
+
+        let patch = PatchInstructions::from(vec![
+            PatchOperation::set("/nested", json!({"items": [null, true, {"value": "text"}]})),
+            PatchOperation::add("/tags/-", json!("new")),
+            PatchOperation::replace("/count", json!(u64::MAX)),
+            PatchOperation::increment("/integer", i64::MAX),
+            PatchOperation::increment("/float", 1.25),
+            PatchOperation::remove("/removed"),
+            PatchOperation::move_value("/source", "/destination"),
+        ]);
+        let expected = concat!(
+            r#"{"operations":["#,
+            r#"{"op":"set","path":"/nested","value":{"items":[null,true,{"value":"text"}]}}"#,
+            r#",{"op":"add","path":"/tags/-","value":"new"}"#,
+            r#",{"op":"replace","path":"/count","value":18446744073709551615}"#,
+            r#",{"op":"incr","path":"/integer","value":9223372036854775807}"#,
+            r#",{"op":"incr","path":"/float","value":1.25}"#,
+            r#",{"op":"remove","path":"/removed"}"#,
+            r#",{"op":"move","from":"/source","path":"/destination"}]}"#,
+        )
+        .as_bytes();
+        assert_eq!(serde_json::to_vec(&patch).unwrap(), expected);
+
+        let mut conditional = expected.to_vec();
+        conditional.pop();
+        conditional.extend_from_slice(b",\"condition\":\"from c where c.ready = true\"}");
+        let patch = patch.with_filter_predicate("from c where c.ready = true");
+        assert_eq!(serde_json::to_vec(&patch).unwrap(), conditional);
+        assert_eq!(
+            serde_json::from_slice::<PatchInstructions>(&conditional).unwrap(),
+            patch
+        );
+        assert!(String::from_utf8(conditional)
+            .unwrap()
+            .contains(r#"{"op":"move","from":"/source","path":"/destination"}"#));
+    }
+
+    #[cfg(feature = "unstable_patch")]
+    #[test]
+    fn patch_body_preserves_explicit_filter_predicate() {
+        let patch = PatchInstructions::from(vec![crate::models::PatchOperation::set(
+            "/status",
+            serde_json::json!("done"),
+        )]);
+
+        for predicate in ["", "   "] {
+            let patch = patch.clone().with_filter_predicate(predicate);
+            let body = serde_json::to_vec(&patch).unwrap();
+            assert_eq!(
+                serde_json::from_slice::<PatchInstructions>(&body).unwrap(),
+                patch
+            );
+            let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+            assert_eq!(body["condition"], predicate);
+        }
+
+        let body = serde_json::to_vec(&patch).unwrap();
+        let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert!(body.get("condition").is_none());
     }
 
     #[test]

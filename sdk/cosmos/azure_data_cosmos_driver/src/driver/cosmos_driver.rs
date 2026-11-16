@@ -3,7 +3,11 @@
 
 //! Cosmos DB driver instance.
 
+#[cfg(test)]
+mod lazy_topology_tests;
 mod query_planning;
+#[cfg(all(test, feature = "reqwest", feature = "__internal_mocking"))]
+mod session_scope_live_tests;
 
 use crate::{
     diagnostics::{
@@ -11,25 +15,24 @@ use crate::{
         TransportHttpVersion, TransportSecurity,
     },
     driver::{
-        cache::{PartitionKeyRangeCache, PkRangeFetchResult},
+        cache::{ContainerRoutingMap, PartitionKeyRangeCache, PkRangeFetchResult},
         dataflow::{
             planner, CachedTopologyProvider, DrainedLeaf, OperationPlan, PartitionRoutingRefresh,
-            Pipeline, PipelineContext, PipelineNodeState, RequestExecutor, RequestTarget,
-            TopologyProvider,
+            Pipeline, PipelineContext, PipelineNodeState, PipelineResponse, RequestExecutor,
+            RequestTarget, TopologyProvider,
         },
         pipeline::{
-            components::{
-                ThrottleRetryState, METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS,
-                METADATA_MAX_THROTTLE_WAIT,
-            },
             hedge_budget::HedgeBudget,
             operation_pipeline::{
-                deadline_signal, ContainerRecreationRecoveryOutcome,
+                deadline_signal, operation_allows_automatic_session_token_resolution,
+                read_consistency_strategy_for_operation, ContainerRecreationRecoveryOutcome,
                 ContainerRecreationRecoveryTracker, OperationOverrides, RegionPin,
             },
         },
-        routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
-        transport::uses_dataplane_pipeline,
+        routing::{
+            is_eligible_for_ppaf, is_eligible_for_ppcb, session_manager::SessionManager,
+            CosmosEndpoint, LocationStateStore,
+        },
     },
     models::{
         effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
@@ -39,7 +42,16 @@ use crate::{
     },
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
-        PartitionTopologyCacheMode, PlanOptions, ResolvedThroughputControl, ThrottlingRetryOptions,
+        PartitionTopologyCacheMode, PlanOptions, ReadConsistencyStrategy,
+        ResolvedThroughputControl, ThrottlingRetryOptions,
+    },
+    pipeline::transport::{
+        is_operation_supported_by_gateway_v2,
+        recovery::{
+            ThrottleRetryPolicy, ThrottleRetryProgress, METADATA_MAX_PER_RETRY_DELAY,
+            METADATA_MAX_THROTTLE_ATTEMPTS, METADATA_MAX_THROTTLE_WAIT,
+        },
+        uses_dataplane_pipeline,
     },
     ActivityId, CosmosResponse, DiagnosticsContext,
 };
@@ -105,16 +117,16 @@ fn planning_timeout_error(
         .build()
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_MAX_RETRIES: u32 = 10;
 // Matches .NET DistributedTransactionCommitter.MaxCumulativeRetryDelay (30 s).
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_MAX_CUMULATIVE_DELAY: Duration = Duration::from_secs(30);
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_BASE_DELAY: Duration = Duration::from_secs(1);
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_MAX_EXPONENT: u32 = 5;
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_JITTER_RATIO: f64 = 0.25;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_MAX_RETRIES: u32 = 2;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY: Duration = Duration::from_millis(100);
@@ -140,11 +152,10 @@ const BINARY_NEGOTIATION_FORMATS_QUERY: &str = "JsonText,CosmosBinary";
 
 fn should_retry_account_properties_connectivity_error(
     error: &crate::error::CosmosError,
-    request_sent: RequestSentStatus,
     retry_count: u32,
 ) -> bool {
+    // Account discovery is an idempotent GET, even when sending the request was ambiguous.
     retry_count < ACCOUNT_PROPERTIES_CONNECTIVITY_MAX_RETRIES
-        && request_sent.definitely_not_sent()
         && is_account_properties_connectivity_error(error)
 }
 
@@ -174,15 +185,17 @@ use super::routing::EndpointProbeFn;
 
 use super::{
     cache::{parse_pk_ranges_response, AccountRegion},
-    transport::{
+    CosmosDriverRuntime,
+};
+use crate::{
+    emulator::ensure_endpoint_scheme_allowed,
+    pipeline::transport::{
         connectivity_probe::{ConnectivityProbe, Http2ConnectivityProbe},
         cosmos_headers,
         cosmos_transport_client::HttpRequest,
-        ensure_endpoint_scheme_allowed,
         http_client_factory::HttpClientConfig,
         request_signing, AuthorizationContext, CosmosTransport,
     },
-    CosmosDriverRuntime,
 };
 
 struct DriverRequestExecutor<'a> {
@@ -209,7 +222,6 @@ struct DriverRequestExecutor<'a> {
 type PkRangeRegionPins = Mutex<HashMap<ContainerReference, CosmosEndpoint>>;
 
 fn request_target_overrides(
-    operation_partition_key: Option<&PartitionKey>,
     target: RequestTarget,
     continuation: Option<String>,
 ) -> OperationOverrides {
@@ -234,32 +246,9 @@ fn request_target_overrides(
         } => OperationOverrides {
             partition_key_range_id: Some(partition_key_range_id),
             resolved_partition_key_range_parents: partition_key_range_parents,
-            // Only emit `x-ms-start-epk`/`x-ms-end-epk` for the narrowed case
-            // (range < partition_key_range). The public EPK headers paired with
-            // `partitionkeyrangeid` are accepted by Gateway 2.0 but rejected by
-            // the standard gateway with HTTP 400 (verified against live
-            // accounts, independent of the min bound value), so we never emit
-            // them on the full-pkrange XPK fan-out path that must also work on
-            // the standard gateway. Because the narrowed case emits both
-            // headers together, it is only valid on the wire against Gateway
-            // 2.0. The GW_V2 dispatcher derives its RNTBD
-            // `StartEpkHash`/`EndEpkHash` tokens from `pkrange_bounds` (below)
-            // when the public headers are absent.
+            // The leaf range already includes the logical-prefix intersection.
             feed_range: range,
-            // Always carry the physical pkrange bounds so the GW_V2 dispatcher
-            // can synthesize StartEpkHash/EndEpkHash tokens (which the
-            // thin-client proxy requires on every Query frame). Surfaced via
-            // internal `x-ms-thinclient-pkrange-min`/`-max` headers in
-            // `apply_headers`; the standard gateway ignores unknown headers.
             pkrange_bounds: Some(partition_key_range),
-            // Propagate the operation's logical partition key (e.g. the
-            // partial-HPK prefix from `FeedScope::partition(...)`) so the
-            // `x-ms-documentdb-partitionkey` HTTP header is emitted on
-            // per-pkrange query fan-out requests. The thin-client proxy
-            // uses this to filter docs within a pkrange by the supplied
-            // prefix; without it, the
-            // backend returns every document in the physical partition.
-            partition_key: operation_partition_key.cloned(),
             continuation,
             ..Default::default()
         },
@@ -293,7 +282,7 @@ fn container_recreation_recovery_eligible(
         return false;
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     if operation.resource_type() == ResourceType::DistributedTransactionBatch {
         return false;
     }
@@ -331,10 +320,9 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
         target: RequestTarget,
         _partition_routing_refresh: PartitionRoutingRefresh,
         continuation: Option<String>,
-    ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
+    ) -> BoxFuture<'a, crate::error::Result<PipelineResponse>> {
         let driver = self.driver;
-        let mut overrides =
-            request_target_overrides(operation.partition_key(), target, continuation);
+        let mut overrides = request_target_overrides(target, continuation);
         overrides.container_recreation_recovery_disabled =
             self.container_recreation_recovery_disabled;
         overrides.container_recreation_recovery_tracker =
@@ -344,13 +332,20 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
             let operation = operation
                 .clone()
                 .with_absolute_deadline(self.absolute_deadline);
-            let result = driver
+            let mut result = driver
                 .execute_planned_operation_direct(&operation, overrides, self.options)
                 .await;
+            if operation.resolved_utf8_decoding_mode() == crate::options::Utf8DecodingMode::Lossy {
+                if let Ok(response) = &mut result {
+                    response.transcode_body_to_text_with_utf8_mode(
+                        operation.resolved_utf8_decoding_mode(),
+                    )?;
+                }
+            }
             if result.is_ok() {
                 self.successful_requests += 1;
             }
-            result
+            result.map(Into::into)
         })
     }
 }
@@ -445,7 +440,8 @@ pub struct CosmosDriver {
     /// injection rules, this is a fault-injecting wrapper around the runtime's
     /// factory; the wrapper is owned by this driver alone and never affects
     /// other drivers built from the same runtime.
-    http_client_factory: Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+    http_client_factory:
+        Arc<dyn crate::pipeline::transport::http_client_factory::HttpClientFactory>,
     /// Whether this driver has fault injection rules installed.
     ///
     /// Mirrors `options.fault_injection_rules().is_some()`; cached at
@@ -518,12 +514,14 @@ impl CosmosDriver {
 
     fn build_metadata_transport_for_version(
         connection_pool: &ConnectionPoolOptions,
-        http_client_factory: Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+        http_client_factory: Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        >,
         version: TransportHttpVersion,
         endpoint: &AccountEndpoint,
     ) -> crate::error::Result<(
         CosmosTransport,
-        super::transport::adaptive_transport::AdaptiveTransport,
+        crate::pipeline::transport::adaptive_transport::AdaptiveTransport,
     )> {
         let transport =
             CosmosTransport::with_factory(connection_pool.clone(), http_client_factory, version)?;
@@ -531,9 +529,25 @@ impl CosmosDriver {
         Ok((transport, metadata_transport))
     }
 
+    fn connectivity_probe_http_client_config(
+        connection_pool: &ConnectionPoolOptions,
+        account_endpoint: &AccountEndpoint,
+    ) -> HttpClientConfig {
+        let mut config = HttpClientConfig::dataplane_gateway_v2(connection_pool);
+        if connection_pool
+            .server_certificate_validation()
+            .allows_insecure_connection(account_endpoint)
+        {
+            config = config.with_allow_invalid_cert();
+        }
+        config
+    }
+
     async fn fetch_account_properties_with_version(
         runtime: &CosmosDriverRuntime,
-        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+        http_client_factory: &Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        >,
         account: &AccountReference,
         version: TransportHttpVersion,
         client_id: &azure_core::http::headers::HeaderValue,
@@ -574,7 +588,7 @@ impl CosmosDriver {
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
         override_http_client_factory: Option<
-            &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+            &Arc<dyn crate::pipeline::transport::http_client_factory::HttpClientFactory>,
         >,
         client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
@@ -625,7 +639,9 @@ impl CosmosDriver {
     /// The returned version is used to create the per-account `CosmosTransport`.
     async fn fetch_initial_account_properties(
         runtime: &CosmosDriverRuntime,
-        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+        http_client_factory: &Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        >,
         account: &AccountReference,
         client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
@@ -689,7 +705,9 @@ impl CosmosDriver {
     /// Probes the HTTP version for a single endpoint.
     async fn fetch_initial_account_properties_for_endpoint(
         runtime: &CosmosDriverRuntime,
-        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+        http_client_factory: &Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        >,
         account: &AccountReference,
         client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
@@ -847,7 +865,7 @@ impl CosmosDriver {
     )]
     async fn fetch_account_properties_with_transport(
         runtime: &CosmosDriverRuntime,
-        transport: &super::transport::adaptive_transport::AdaptiveTransport,
+        transport: &crate::pipeline::transport::adaptive_transport::AdaptiveTransport,
         account: &AccountReference,
         region: Option<&crate::options::Region>,
         user_agent: &azure_core::http::headers::HeaderValue,
@@ -907,11 +925,12 @@ impl CosmosDriver {
         let max_throttle_wait_time = throttling_retry_options
             .max_retry_wait_time
             .unwrap_or(METADATA_MAX_THROTTLE_WAIT);
-        let mut throttle = ThrottleRetryState::with_limits(
+        let throttle_policy = ThrottleRetryPolicy::with_limits(
             max_throttle_attempts,
             max_throttle_wait_time,
             METADATA_MAX_PER_RETRY_DELAY,
         );
+        let mut throttle = ThrottleRetryProgress::default();
         let mut execution_context = ExecutionContext::Initial;
         let (response, cosmos_headers, status_code, sub_status, cosmos_status) = loop {
             let request_handle = diagnostics.start_request(
@@ -973,7 +992,6 @@ impl CosmosDriver {
                 Err(e) => {
                     if should_retry_account_properties_connectivity_error(
                         &e.error,
-                        e.request_sent,
                         connectivity_retry_count,
                     ) {
                         connectivity_retry_count += 1;
@@ -1028,10 +1046,9 @@ impl CosmosDriver {
             // Retry 429s using the shared metadata throttle budget before
             // surfacing the error.
             if cosmos_status.is_throttled() {
-                if let Some((delay, next)) =
-                    throttle.next_throttle_retry(cosmos_headers.retry_after_ms)
+                if let Some(delay) =
+                    throttle.try_retry(cosmos_headers.retry_after_ms, &throttle_policy)
                 {
-                    throttle = next;
                     azure_core::sleep(
                         azure_core::time::Duration::try_from(delay)
                             .unwrap_or(azure_core::time::Duration::ZERO),
@@ -1221,7 +1238,9 @@ impl CosmosDriver {
     )]
     async fn refresh_account_properties(
         runtime: &CosmosDriverRuntime,
-        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+        http_client_factory: &Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        >,
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         user_agent: &Arc<UserAgent>,
@@ -1400,7 +1419,9 @@ impl CosmosDriver {
     )]
     async fn maybe_restore_http2_after_refresh(
         runtime: &CosmosDriverRuntime,
-        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+        http_client_factory: &Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        >,
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         current_version: TransportHttpVersion,
@@ -1468,7 +1489,9 @@ impl CosmosDriver {
     #[allow(clippy::too_many_arguments)]
     async fn handle_refresh_failure(
         runtime: &CosmosDriverRuntime,
-        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+        http_client_factory: &Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        >,
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         current_version: TransportHttpVersion,
@@ -1721,7 +1744,9 @@ impl CosmosDriver {
         #[cfg(feature = "fault_injection")]
         let fault_injection_enabled =
             options.fault_injection_rules().is_some() || runtime.fault_injection_enabled();
-        let http_client_factory: Arc<dyn super::transport::http_client_factory::HttpClientFactory> = {
+        let http_client_factory: Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        > = {
             #[cfg(feature = "fault_injection")]
             {
                 if let Some(rules) = options.fault_injection_rules() {
@@ -1810,8 +1835,10 @@ impl CosmosDriver {
             if runtime.connection_pool().gateway_v2_disabled() {
                 None
             } else {
-                let probe_config =
-                    HttpClientConfig::dataplane_gateway_v2(runtime.connection_pool());
+                let probe_config = Self::connectivity_probe_http_client_config(
+                    runtime.connection_pool(),
+                    &account_endpoint,
+                );
                 let probe_client =
                     http_client_factory.build(runtime.connection_pool(), probe_config)?;
                 Some(Arc::new(Http2ConnectivityProbe::new(
@@ -1951,6 +1978,29 @@ impl CosmosDriver {
     pub async fn cached_account_regions_for_testing(
         &self,
     ) -> Option<(Vec<crate::options::Region>, Vec<crate::options::Region>)> {
+        let (_, _, writable, readable) = self.cached_account_configuration_for_testing().await?;
+        Some((writable, readable))
+    }
+
+    /// **Internal test hook -- not part of the public API.**
+    ///
+    /// Returns the account consistency, multi-write flag, and writable/readable
+    /// regions observed in the account-properties response used to initialize
+    /// this driver.
+    #[cfg(any(
+        test,
+        feature = "__internal_in_memory_emulator",
+        feature = "fault_injection"
+    ))]
+    #[doc(hidden)]
+    pub async fn cached_account_configuration_for_testing(
+        &self,
+    ) -> Option<(
+        String,
+        bool,
+        Vec<crate::options::Region>,
+        Vec<crate::options::Region>,
+    )> {
         let endpoint = AccountEndpoint::from(self.options.account());
         let props = self.runtime.account_metadata_cache().get(&endpoint).await?;
         let writable = props
@@ -1963,7 +2013,15 @@ impl CosmosDriver {
             .iter()
             .map(|location| location.name.clone())
             .collect();
-        Some((writable, readable))
+        Some((
+            props
+                .user_consistency_policy
+                .default_consistency_level
+                .to_string(),
+            props.enable_multiple_write_locations,
+            writable,
+            readable,
+        ))
     }
 
     /// Returns the runtime.
@@ -1996,7 +2054,7 @@ impl CosmosDriver {
     #[allow(dead_code)]
     pub(crate) fn http_client_factory(
         &self,
-    ) -> &Arc<dyn super::transport::http_client_factory::HttpClientFactory> {
+    ) -> &Arc<dyn crate::pipeline::transport::http_client_factory::HttpClientFactory> {
         &self.http_client_factory
     }
 
@@ -2129,7 +2187,7 @@ impl CosmosDriver {
         self.location_state_store.apply_partition(|current| {
             let mut next = current.clone();
             next.per_partition_automatic_failover_enabled = true;
-            next
+            crate::driver::routing::partition_endpoint_state::PartitionStateUpdate::Updated(next)
         });
     }
 
@@ -2473,6 +2531,32 @@ impl CosmosDriver {
     /// the `continuation.is_none()` branch below and clears the pin. Both halves
     /// of the region-affine state therefore die together, so an unreachable
     /// pinned region cannot wedge later force-refreshes.
+    pub(crate) async fn load_session_token_routing_map(
+        &self,
+        container: &ContainerReference,
+        operation_options: OperationOptions,
+        absolute_deadline: Option<Instant>,
+    ) -> crate::error::Result<Option<Arc<ContainerRoutingMap>>> {
+        let lookup = self.pk_range_cache.try_lookup_result(
+            container,
+            false,
+            self.pk_range_page_fetcher(operation_options, absolute_deadline),
+        );
+        await_planning_or_deadline(lookup, absolute_deadline)
+            .await
+            .ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::models::CosmosStatus::from_parts(
+                        azure_core::http::StatusCode::RequestTimeout,
+                        Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
+                    ))
+                    .with_message(
+                        "end-to-end operation timeout exceeded while loading session topology",
+                    )
+                    .build()
+            })?
+    }
+
     fn pk_range_page_fetcher<'a>(
         &'a self,
         options: OperationOptions,
@@ -2568,7 +2652,7 @@ impl CosmosDriver {
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
     ///
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -2711,9 +2795,10 @@ impl CosmosDriver {
     ) -> crate::error::Result<crate::driver::pipeline::patch_strategy::PatchExecution> {
         use crate::driver::pipeline::patch_strategy::resolve_patch_strategy;
 
-        let instructions = operation
+        let patch_request = operation
             .body()
-            .and_then(|body| serde_json::from_slice::<crate::models::PatchInstructions>(body).ok());
+            .and_then(|body| crate::models::parse_patch_request(body).ok());
+        let instructions = patch_request.as_ref();
 
         if operation
             .precondition()
@@ -2755,17 +2840,48 @@ impl CosmosDriver {
             )?;
         }
 
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         let requested = self
             .operation_options_view(options)
             .patch_strategy()
             .copied()
             .unwrap_or_default();
-        #[cfg(not(feature = "preview_patch"))]
+        #[cfg(not(feature = "unstable_patch"))]
         let _ = options;
-        #[cfg(not(feature = "preview_patch"))]
+        #[cfg(not(feature = "unstable_patch"))]
         let requested = crate::options::PatchStrategy::Auto;
-        let execution = resolve_patch_strategy(requested, instructions.as_ref())?;
+        if patch_request
+            .as_ref()
+            .and_then(|request| request.filter_predicate())
+            .is_some_and(|condition| condition.trim().is_empty())
+        {
+            return Err(crate::driver::pipeline::patch_handler::invalid_filter_predicate_error());
+        }
+        let mut execution = resolve_patch_strategy(requested, instructions)?;
+        if matches!(
+            execution,
+            crate::driver::pipeline::patch_strategy::PatchExecution::ClientSide
+        ) && patch_request
+            .as_ref()
+            .is_some_and(|request| request.filter_predicate().is_some())
+        {
+            return Err(
+                crate::driver::pipeline::patch_handler::unsupported_filter_predicate_error(),
+            );
+        }
+        if patch_request
+            .as_ref()
+            .is_some_and(|request| request.filter_predicate().is_some())
+        {
+            // A committed PATCH can make its predicate false, so replay can
+            // report a misleading 412 even when the instructions converge.
+            if let crate::driver::pipeline::patch_strategy::PatchExecution::ServerSide {
+                retry_safe,
+            } = &mut execution
+            {
+                *retry_safe = false;
+            }
+        }
         tracing::debug!(
             requested_patch_strategy = requested.as_str(),
             patch_execution = execution.as_str(),
@@ -2833,6 +2949,13 @@ impl CosmosDriver {
         options: &OperationOptions,
         resolved_binary: Option<crate::options::BinaryEncodingOptions>,
     ) -> CosmosOperation {
+        let resolved_utf8_decoding_mode = self
+            .operation_options_view(options)
+            .utf8_decoding_mode()
+            .copied()
+            .unwrap_or_default();
+        let operation = operation.with_resolved_utf8_decoding_mode(resolved_utf8_decoding_mode);
+
         if !Self::binary_negotiates_response(operation.resource_type(), operation.operation_type())
         {
             return operation;
@@ -2966,8 +3089,8 @@ impl CosmosDriver {
         }
     }
 
-    /// Executes a preview distributed transaction through the Gateway coordinator.
-    #[cfg(feature = "preview_dtx")]
+    /// Executes an unstable distributed transaction through the Gateway coordinator.
+    #[cfg(feature = "unstable_dtx")]
     pub async fn execute_distributed_transaction(
         &self,
         request: crate::models::DistributedTransactionRequest,
@@ -2978,7 +3101,7 @@ impl CosmosDriver {
             .map_err(crate::error::CosmosError::into_public_error)
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     async fn execute_distributed_transaction_inner(
         &self,
         mut request: crate::models::DistributedTransactionRequest,
@@ -2992,6 +3115,7 @@ impl CosmosDriver {
                 .with_message("cannot execute a distributed transaction with zero operations")
                 .build());
         }
+        request.validate_resource_names(self.options.resource_name_validation_enabled())?;
 
         let operation_count = request.operations.len();
         let is_session_consistency = {
@@ -3126,7 +3250,7 @@ impl CosmosDriver {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     async fn resolve_distributed_transaction_session_tokens(
         &self,
         operations: &mut [crate::models::DistributedTransactionOperation],
@@ -3185,8 +3309,8 @@ impl CosmosDriver {
     /// # Errors
     ///
     /// Once a page has advanced the plan without reaching the caller — a
-    /// response body that failed to transcode to text — the plan is spent, and
-    /// every later call fails with
+    /// response body that failed standalone materialization or text conversion —
+    /// the plan is spent, and every later call fails with
     /// [`SERIALIZATION_RESPONSE_BODY_INVALID`](crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID).
     /// Returning the following page instead would hand back the page *after*
     /// the one that was lost, with nothing to signal the gap.
@@ -3279,11 +3403,12 @@ impl CosmosDriver {
             let prior_diagnostics = error.diagnostics();
             let replacement_container = operation.container().cloned();
             let plan_options = plan.plan_options.clone();
+            let persistent_deadline = plan.operation.absolute_deadline();
             let operation = operation.with_absolute_deadline(absolute_deadline);
             *plan = self
                 .plan_operation_resolved(operation, &options, None, &plan_options, None)
                 .await?;
-            plan.clear_execution_deadlines();
+            plan.reset_replan_deadlines(persistent_deadline);
             plan.container_recreation_recovery_attempted = true;
             let (retry_result, retry_successes, _) = self
                 .execute_plan_once(plan, replacement_container, &options, absolute_deadline)
@@ -3321,26 +3446,137 @@ impl CosmosDriver {
 
     fn finalize_plan_response(
         plan: &mut OperationPlan,
-        response: crate::error::Result<Option<CosmosResponse>>,
+        response: crate::error::Result<Option<PipelineResponse>>,
     ) -> crate::error::Result<Option<CosmosResponse>> {
-        let response = response?;
-
-        // Driver-side transcoding: hand back text while the wire stayed
-        // binary. Read from the plan, not from this call's `options`: the
-        // decision was fixed when the plan was built.
-        if plan.transcodes_response_to_text() {
-            if let Some(mut response) = response {
-                // `next_page` already committed every node's resume position.
-                // Poison the plan if transcoding fails so a later page or token
-                // cannot silently skip the lost page.
-                if let Err(error) = response.transcode_body_to_text() {
-                    plan.poison_continuation();
-                    return Err(error);
-                }
-                return Ok(Some(response));
+        let Some(response) = response? else {
+            return Ok(None);
+        };
+        match response.into_response(
+            plan.transcodes_response_to_text(),
+            plan.operation.emits_binary_payload(),
+            plan.resolved_utf8_decoding_mode(),
+        ) {
+            Ok(response) => Ok(Some(response)),
+            Err(error) => {
+                // The root already committed progress; never skip a page that
+                // failed final standalone materialization or text conversion.
+                plan.poison_continuation();
+                Err(error)
             }
         }
-        Ok(response)
+    }
+
+    async fn uses_cache_only_topology(
+        &self,
+        operation: &CosmosOperation,
+        options: &OperationOptions,
+    ) -> bool {
+        if self
+            .options
+            .partition_failover_options()
+            .partition_topology_cache_mode()
+            != PartitionTopologyCacheMode::Lazy
+            || !operation.is_trivial()
+        {
+            return false;
+        }
+
+        let location = self.location_state_store.snapshot();
+        let partitioned = operation
+            .resource_type()
+            .is_partitioned(operation.operation_type());
+        if is_eligible_for_ppcb(
+            &location.partitions,
+            &location.account,
+            operation.is_read_only(),
+            partitioned,
+        ) || is_eligible_for_ppaf(
+            &location.partitions,
+            &location.account,
+            operation.is_read_only(),
+            partitioned,
+        ) {
+            return false;
+        }
+
+        let explicit_session_token = operation.request_headers().session_token.is_some()
+            || options.custom_headers.as_ref().is_some_and(|headers| {
+                headers.contains_key(&azure_core::http::headers::HeaderName::from_static(
+                    crate::models::request_header_names::SESSION_TOKEN,
+                ))
+            });
+        if explicit_session_token {
+            return true;
+        }
+
+        let effective = self.operation_options_view(options);
+        if effective
+            .session_capturing_disabled()
+            .copied()
+            .unwrap_or(false)
+            || !operation_allows_automatic_session_token_resolution(
+                operation,
+                location.account.multiple_write_locations_enabled,
+            )
+            || self.runtime.connection_pool().gateway_v2_disabled()
+            || self
+                .location_state_store
+                .global_database_account_name()
+                .is_none()
+            || !uses_dataplane_pipeline(operation.resource_type(), operation.operation_type())
+            || !is_operation_supported_by_gateway_v2(
+                operation.resource_type(),
+                operation.operation_type(),
+                operation.request_headers().full_fidelity_feed,
+                operation.resource_reference().is_rid_addressed(),
+            )
+            || !location
+                .account
+                .preferred_endpoints(operation.is_read_only())
+                .iter()
+                .chain(
+                    location
+                        .account
+                        .preferred_write_endpoints
+                        .iter()
+                        .filter(|_| operation.prefers_write_endpoints_for_read()),
+                )
+                .filter(|endpoint| {
+                    !endpoint.region().is_some_and(|region| {
+                        effective
+                            .excluded_regions()
+                            .is_some_and(|excluded| excluded.iter().any(|r| r == region))
+                    })
+                })
+                .any(|endpoint| endpoint.uses_gateway_v2(true))
+        {
+            return true;
+        }
+
+        let Some(properties) = self
+            .runtime
+            .account_metadata_cache()
+            .get(&AccountEndpoint::from(self.account()))
+            .await
+        else {
+            tracing::debug!(
+                "account consistency unavailable; retaining session topology resolution"
+            );
+            return false;
+        };
+        let strategy = read_consistency_strategy_for_operation(
+            operation,
+            effective
+                .read_consistency_strategy()
+                .copied()
+                .unwrap_or(ReadConsistencyStrategy::Default),
+        );
+        let default_consistency = properties.user_consistency_policy.default_consistency_level;
+        // Write-endpoint verification reads can fall back to default consistency.
+        !(strategy.is_session_effective(default_consistency)
+            || (operation.prefers_write_endpoints_for_read()
+                && ReadConsistencyStrategy::Default.is_session_effective(default_consistency)))
+            || !self.session_manager.has_session_token(operation)
     }
 
     async fn execute_plan_once(
@@ -3350,7 +3586,7 @@ impl CosmosDriver {
         options: &OperationOptions,
         absolute_deadline: Option<Instant>,
     ) -> (
-        crate::error::Result<Option<CosmosResponse>>,
+        crate::error::Result<Option<PipelineResponse>>,
         usize,
         ContainerRecreationRecoveryOutcome,
     ) {
@@ -3364,12 +3600,16 @@ impl CosmosDriver {
             container_recreation_recovery_disabled: plan.container_recreation_recovery_attempted,
             container_recreation_recovery_tracker: Arc::clone(&recovery_tracker),
         };
+        let cache_only = self
+            .uses_cache_only_topology(&plan.operation, options)
+            .await;
         let mut topology = container.map(|container| {
             CachedTopologyProvider::new(
                 &self.pk_range_cache,
                 container,
                 self.pk_range_page_fetcher(options.clone(), absolute_deadline),
             )
+            .with_cache_only(cache_only)
         });
         let mut context = PipelineContext::new(
             &mut executor,
@@ -3461,6 +3701,16 @@ impl CosmosDriver {
             // not affect wire routing, so clear it and continue by logical key.
             overrides.clear_resolved_partition_key_range();
         }
+        overrides.session_token_routing_map = match operation.container() {
+            Some(container) => match self.pk_range_cache.cached_routing_map(container).await {
+                Ok(map) => map,
+                Err(error) => {
+                    tracing::debug!(error = %error, "session scoping has no usable topology snapshot");
+                    None
+                }
+            },
+            None => None,
+        };
         tracing::debug!(
             operation_type = ?operation.operation_type(),
             resource_type = ?operation.resource_type(),
@@ -3867,7 +4117,7 @@ impl CosmosDriver {
     ///
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -4046,9 +4296,10 @@ impl CosmosDriver {
     /// `continuation` optionally provides resume state from a prior call. Two
     /// kinds of tokens are accepted:
     ///
-    /// - SDK-issued tokens (`c1.…`) carry a serialized snapshot of the
-    ///   previous pipeline's state and can resume any operation.
-    /// - Opaque server-issued tokens (no `c<N>.` prefix) are accepted only
+    /// - SDK-issued tokens start with `cN.`, where `N` is a format version, and
+    ///   can resume queries or change feeds. Treat their contents as opaque
+    ///   and resume them with a compatible SDK version.
+    /// - Server-issued tokens (no `cN.` prefix) are accepted only
     ///   for trivial operations; passing one to a cross-partition query
     ///   returns a `Client`-shaped error.
     ///
@@ -4065,6 +4316,11 @@ impl CosmosDriver {
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
     ) -> crate::error::Result<OperationPlan> {
+        if operation.read_many.is_some() && continuation.is_some() {
+            return Err(crate::read_many::invalid(
+                "read-many does not support resume",
+            ));
+        }
         if operation.operation_type() == crate::models::OperationType::Patch
             && !operation.patch_strategy_is_resolved()
         {
@@ -4118,21 +4374,12 @@ impl CosmosDriver {
         let planning_operation_name = operation.db_operation_name();
         let operation = operation.with_absolute_deadline(effective_deadline);
 
-        // Reject mixed name/RID addressing before any IO work is done. The
-        // service classifies a request as name-based or RID-based from its `dbs`
-        // segment alone, so a reference that mixes a name-addressed parent with
-        // a RID-addressed child (or vice versa) signs and routes inconsistently
-        // and the gateway rejects it with an opaque 401, while a name leaf under
-        // a RID-addressed parent is rejected with a 400 the caller cannot act
-        // on. Validating here — the single choke point every externally
-        // executable operation passes through on its way to a plan — turns both
-        // into deterministic client-side errors for references built through any
-        // path (including direct `plan_operation` + `execute_plan` callers and
-        // multi-page queries), not just `execute_operation`. The check is a cheap
-        // in-memory field comparison and a no-op for every consistently-addressed
-        // reference, so it issues no additional network calls and does not change
-        // the request flow.
-        operation.validate_addressing()?;
+        // Reject mixed name/RID addressing and, when enabled, unsafe
+        // user-defined names before any I/O work is done. This includes item
+        // names on Create and Upsert even though those operations use feed
+        // paths. Every executable operation passes this choke point, including
+        // direct plan callers and multi-page queries.
+        operation.validate_addressing(self.options.resource_name_validation_enabled())?;
 
         // Planning holds the whole pipeline-builder state across several await
         // points, which makes it one of the largest futures in the driver —
@@ -4190,6 +4437,15 @@ impl CosmosDriver {
         let retargeted = self
             .canonicalize_operation_container(&mut operation)
             .await?;
+        if operation.is_change_feed() {
+            if let (Some(key), Some(container)) = (operation.partition_key(), operation.container())
+            {
+                EffectivePartitionKey::compute_range(
+                    key.values(),
+                    container.partition_key_definition(),
+                )?;
+            }
+        }
         let explicit_session_token = operation.request_headers().session_token.is_some()
             || options.custom_headers.as_ref().is_some_and(|headers| {
                 headers.contains_key(&azure_core::http::headers::HeaderName::from_static(
@@ -4234,12 +4490,24 @@ impl CosmosDriver {
         // owned here alone. `execute_operation` resolves the binary options once
         // and forwards them via `resolved_binary` to avoid a second resolution;
         // the query path passes `None` and resolves lazily.
-        let operation = self.apply_response_negotiation(operation, options, resolved_binary);
+        let mut operation = self.apply_response_negotiation(operation, options, resolved_binary);
 
-        // Share the operation across every Request node in the resulting plan.
-        // Per-Request differences are layered on at execution time via
-        // OperationOverrides; the operation itself is never mutated.
-        let operation = Arc::new(operation);
+        if let Some(request) = operation.read_many.clone() {
+            let operation = Arc::new(operation);
+            let container = operation
+                .container()
+                .cloned()
+                .ok_or_else(|| crate::read_many::invalid("read-many requires a container"))?;
+            let mut topology = CachedTopologyProvider::new(
+                &self.pk_range_cache,
+                container,
+                self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
+            );
+            let pipeline =
+                super::dataflow::read_many::build(operation.clone(), &request, &mut topology)
+                    .await?;
+            return planner::finalize_plan(pipeline, operation, true, plan_options);
+        }
 
         // Resolve the continuation token (if any) into a planner-ready resume
         // state. Server-issued tokens are only valid for trivial operations.
@@ -4250,8 +4518,11 @@ impl CosmosDriver {
         let is_fresh = continuation.is_none();
         let resume_state = match resolved_continuation {
             None => None,
-            Some(ResolvedToken::ClientV1(state)) => {
+            Some(ResolvedToken::Client(state)) => {
                 state.is_valid_for_operation(&operation)?;
+                if let Some(start) = state.change_feed_start() {
+                    operation = operation.with_change_feed_start(start.clone());
+                }
                 Some(state.into_root_node_state())
             }
             Some(ResolvedToken::ServerOpaque(server_token)) => {
@@ -4270,18 +4541,27 @@ impl CosmosDriver {
             }
         };
 
+        // Every leaf shares the checkpoint-restored operation. Per-range ETags
+        // are applied later through OperationOverrides.
+        let operation = Arc::new(operation);
+
         // 1. Trivial plan: anything that isn't a cross-partition query.
         //    The internal pipeline only supports projection and filtering over
         //    a sequential drain, with no support for ordering. Trivial
         //    operations (targeting a single logical partition) are sent directly
         //    to the gateway without query planning.
-        if operation.is_trivial() {
+        if operation.is_trivial()
+            && !(operation.operation_type() == crate::models::OperationType::Query
+                && crate::query::uses_ranked_search(operation.body()))
+        {
+            let cache_only = self.uses_cache_only_topology(&operation, options).await;
             let mut topology = operation.container().cloned().map(|container| {
                 CachedTopologyProvider::new(
                     &self.pk_range_cache,
                     container,
                     self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
                 )
+                .with_cache_only(cache_only)
             });
             let pipeline = planner::build_trivial_pipeline(
                 operation.clone(),
@@ -4369,6 +4649,19 @@ impl CosmosDriver {
             container_ref,
             self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
         );
+
+        if query_plan.hybrid_search_query_info.is_some() {
+            let pipeline = planner::build_hybrid_search(
+                &query_plan,
+                &mut topology,
+                &operation,
+                resume_state,
+                plan_options.full_text_score_scope,
+                plan_options.max_buffered_query_window,
+            )
+            .await?;
+            return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
+        }
 
         // Route streaming ORDER BY queries to the k-way merge instead of
         // the natural-order sequential drain.
@@ -4507,7 +4800,7 @@ impl CosmosDriver {
     }
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn distributed_transaction_outer_retry_delay(
     response: &crate::models::DistributedTransactionResponse,
     retry_after_ms: Option<u64>,
@@ -4545,7 +4838,7 @@ fn distributed_transaction_outer_retry_delay(
     Some(delay)
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn distributed_transaction_outer_computed_delay(retry_count: u32) -> Duration {
     let exponent = retry_count.min(DTX_OUTER_MAX_EXPONENT);
     let delay_seconds = DTX_OUTER_BASE_DELAY.as_secs_f64() * 2_f64.powi(exponent as i32);
@@ -4569,7 +4862,7 @@ fn distributed_transaction_outer_computed_delay(retry_count: u32) -> Duration {
 /// account) keeps the probe off the metadata code path and minimizes the
 /// load it places on the service. See issue #4597.
 async fn probe_endpoint_connectivity(
-    transport: &super::transport::adaptive_transport::AdaptiveTransport,
+    transport: &crate::pipeline::transport::adaptive_transport::AdaptiveTransport,
     account: &AccountReference,
     user_agent: &azure_core::http::headers::HeaderValue,
     client_id: &azure_core::http::headers::HeaderValue,
@@ -4592,23 +4885,32 @@ async fn probe_endpoint_connectivity(
     transport.send(&request).await.is_ok()
 }
 
+#[cfg(all(
+    test,
+    feature = "__internal_in_memory_emulator",
+    feature = "fault_injection"
+))]
+#[path = "request_hedge_feedback_tests.rs"]
+mod request_hedge_feedback_tests;
+
 #[cfg(test)]
 mod tests {
     use std::collections::VecDeque;
     use std::sync::Mutex;
 
     use async_trait::async_trait;
-    use azure_core::http::headers::Headers;
+    use azure_core::http::headers::{HeaderValue, Headers};
 
     use url::Url;
 
     use crate::{
+        diagnostics::TransportKind,
         driver::CosmosDriverRuntimeBuilder,
-        models::AccountReference,
+        models::{AccountReference, CosmosResponseHeaders, ItemReference, SessionToken},
         options::{
             ContentResponseOnWrite, CorrelationId, DriverOptionsBuilder, OperationOptionsBuilder,
-            PriorityLevel, ThrottlingRetryOptionsBuilder, ThroughputControlOptions,
-            UserAgentSuffix, WorkloadId,
+            PartitionFailoverOptions, PriorityLevel, ServerCertificateValidation,
+            ThrottlingRetryOptionsBuilder, ThroughputControlOptions, UserAgentSuffix, WorkloadId,
         },
     };
 
@@ -4616,11 +4918,11 @@ mod tests {
     use crate::driver::cache::AccountProperties as CachedAccountProperties;
     use crate::options::Region;
     use crate::{
-        driver::transport::{
+        options::ConnectionPoolOptions,
+        pipeline::transport::{
             cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
             http_client_factory::{HttpClientConfig, HttpClientFactory, HttpVersionPolicy},
         },
-        options::ConnectionPoolOptions,
     };
 
     static TEST_CLIENT_ID: azure_core::http::headers::HeaderValue =
@@ -4648,7 +4950,7 @@ mod tests {
     }"#;
 
     fn signed_test_account(url: &str) -> AccountReference {
-        AccountReference::with_master_key(Url::parse(url).unwrap(), "dGVzdA==")
+        AccountReference::with_account_key(Url::parse(url).unwrap(), "dGVzdA==")
     }
 
     #[test]
@@ -4683,6 +4985,7 @@ mod tests {
         Success,
         Http2Incompatible,
         ConnectionError,
+        IoError(RequestSentStatus),
         /// 503 body the gateway returns under load (Cosmos-flavored JSON, no `_self`).
         /// Without status-gating the driver would relabel it as a deserialization failure.
         ServiceUnavailable503,
@@ -4716,6 +5019,13 @@ mod tests {
                         .with_message("simulated connection refused")
                         .build(),
                     crate::diagnostics::RequestSentStatus::NotSent,
+                )),
+                ResponsePlan::IoError(request_sent) => Err(TransportError::new(
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
+                        .with_message("simulated account discovery I/O failure")
+                        .build(),
+                    request_sent,
                 )),
                 ResponsePlan::ServiceUnavailable503 => Ok(HttpResponse {
                     status: 503,
@@ -4773,13 +5083,13 @@ mod tests {
     }
 
     fn test_account() -> AccountReference {
-        AccountReference::with_master_key(
+        AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn dtx_response(
         status_code: azure_core::http::StatusCode,
         is_retriable: bool,
@@ -4800,7 +5110,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_outer_retry_delay_stops_on_success_or_non_retriable() {
         assert!(distributed_transaction_outer_retry_delay(
@@ -4821,7 +5131,7 @@ mod tests {
         .is_none());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_outer_retry_delay_uses_larger_retry_after() {
         let delay = distributed_transaction_outer_retry_delay(
@@ -4836,7 +5146,7 @@ mod tests {
         assert_eq!(delay, Duration::from_secs(5));
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_outer_retry_delay_stops_at_retry_cap_and_cumulative_budget() {
         let response = dtx_response(azure_core::http::StatusCode::from(449_u16), true);
@@ -4858,7 +5168,7 @@ mod tests {
         .is_none());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_outer_retry_delay_stops_at_caller_deadline() {
         let response = dtx_response(azure_core::http::StatusCode::from(449_u16), true);
@@ -4885,7 +5195,7 @@ mod tests {
         .is_some());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_bodyless_infra_envelope_stops_outer_loop() {
         // Two-tier retry composition: after the inner bodyless classifier
@@ -4911,7 +5221,7 @@ mod tests {
         .is_none());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_body_bearing_retriable_envelope_drives_outer_loop() {
         // The complement: a body-bearing coordinator envelope that declares
@@ -4973,6 +5283,294 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn plan_operation_rejects_unsafe_item_name_on_point_operations() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        for operation in [
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+            CosmosOperation::delete_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+        ] {
+            let err = match Box::pin(driver.plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            ))
+            .await
+            {
+                Ok(_) => panic!("unsafe item name must be rejected before planning"),
+                Err(e) => e,
+            };
+            assert_eq!(err.status(), crate::error::status_codes::CLIENT_BAD_REQUEST);
+        }
+    }
+
+    #[tokio::test]
+    async fn plan_operation_rejects_unsafe_item_name_on_create_and_upsert() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        for operation in [
+            CosmosOperation::create_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+            CosmosOperation::upsert_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "item?query",
+            )),
+        ] {
+            let err = match Box::pin(driver.plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            ))
+            .await
+            {
+                Ok(_) => panic!("unsafe item name must be rejected before creation"),
+                Err(error) => error,
+            };
+            assert_eq!(err.status(), crate::error::status_codes::CLIENT_BAD_REQUEST);
+        }
+    }
+
+    #[tokio::test]
+    async fn plan_operation_rejects_unsafe_transactional_batch_item_names() {
+        // Native and other language SDKs submit this raw batch envelope directly
+        // to the driver, so validation must not depend on the typed Rust SDK.
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        for body in [
+            serde_json::json!([{
+                "operationType": "Create",
+                "resourceBody": {
+                    "id": "../other-container",
+                    "pk": "pk1"
+                }
+            }]),
+            serde_json::json!([{
+                "operationType": "Delete",
+                "id": "item?query"
+            }]),
+        ] {
+            let operation = CosmosOperation::batch(container.clone(), PartitionKey::from("pk1"))
+                .with_body(serde_json::to_vec(&body).unwrap());
+            let error = match Box::pin(driver.plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            ))
+            .await
+            {
+                Ok(_) => panic!("unsafe transactional batch item name must be rejected"),
+                Err(error) => error,
+            };
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn plan_operation_rejects_unsafe_database_and_container_names() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        let unsafe_database = epk_test_container_with_names(
+            r#"{"paths":["/pk"],"version":2}"#,
+            "../other-db",
+            "testcontainer",
+        );
+        let unsafe_container = epk_test_container_with_names(
+            r#"{"paths":["/pk"],"version":2}"#,
+            "testdb",
+            "test/container",
+        );
+
+        for operation in [
+            CosmosOperation::read_item(ItemReference::from_name(
+                &unsafe_database,
+                PartitionKey::from("pk1"),
+                "doc1",
+            )),
+            CosmosOperation::query_items(unsafe_container, Some(crate::models::FeedRange::full())),
+        ] {
+            let error = match Box::pin(driver.plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            ))
+            .await
+            {
+                Ok(_) => panic!("unsafe parent resource name must be rejected before planning"),
+                Err(error) => error,
+            };
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST
+            );
+        }
+    }
+
+    #[cfg(feature = "unstable_patch")]
+    #[tokio::test]
+    async fn patch_strategies_reject_unsafe_item_names() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        for strategy in [
+            crate::options::PatchStrategy::ClientSide,
+            crate::options::PatchStrategy::ServerSide,
+        ] {
+            let operation = CosmosOperation::patch_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../other-container",
+            ))
+            .with_body(
+                serde_json::to_vec(&crate::models::PatchInstructions::from(vec![
+                    crate::models::PatchOperation::increment("/count", 1),
+                ]))
+                .unwrap(),
+            );
+            let options = OperationOptionsBuilder::new()
+                .with_patch_strategy(strategy)
+                .build();
+
+            let error = driver
+                .execute_operation(operation, options)
+                .await
+                .expect_err("unsafe item name must be rejected for both PATCH strategies");
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST,
+                "{strategy:?}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn plan_operation_allows_unsafe_item_names_when_disabled() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver = CosmosDriver::new(
+            cosmos_runtime,
+            DriverOptions::builder(test_account())
+                .with_resource_name_validation(false)
+                .build(),
+        )
+        .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        for operation in [
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+            CosmosOperation::delete_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+            CosmosOperation::create_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "../../../../other-db/colls/other-container/docs/target",
+            )),
+            CosmosOperation::upsert_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "item?query",
+            )),
+        ] {
+            let err = match Box::pin(driver.plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            ))
+            .await
+            {
+                Ok(_) => panic!("the uninitialized driver should fail after name validation"),
+                Err(error) => error,
+            };
+            assert_eq!(
+                err.status(),
+                crate::error::status_codes::CLIENT_DRIVER_NOT_INITIALIZED
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn plan_operation_allows_unsafe_transactional_batch_names_when_disabled() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver = CosmosDriver::new(
+            cosmos_runtime,
+            DriverOptions::builder(test_account())
+                .with_resource_name_validation(false)
+                .build(),
+        )
+        .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let operation = CosmosOperation::batch(container, PartitionKey::from("pk1")).with_body(
+            serde_json::to_vec(&serde_json::json!([{
+                "operationType": "Create",
+                "resourceBody": {
+                    "id": "../other-container",
+                    "pk": "pk1"
+                }
+            }]))
+            .unwrap(),
+        );
+
+        let error = match Box::pin(driver.plan_operation(
+            operation,
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        ))
+        .await
+        {
+            Ok(_) => panic!("the uninitialized driver should fail after name validation"),
+            Err(error) => error,
+        };
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::CLIENT_DRIVER_NOT_INITIALIZED
+        );
+    }
+
+    #[tokio::test]
     async fn plan_operation_starts_end_to_end_deadline_before_planning() {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let driver = CosmosDriver::new(runtime, DriverOptions::builder(test_account()).build())
@@ -5011,6 +5609,45 @@ mod tests {
             plan.take_initial_execution_deadline().is_none(),
             "the planning deadline must be consumed only once"
         );
+    }
+
+    #[tokio::test]
+    async fn change_feed_planning_rejects_invalid_partition_keys() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver =
+            CosmosDriver::new(runtime, DriverOptions::builder(test_account()).build()).unwrap();
+        driver.initialized.store(true, Ordering::Release);
+        for (definition, key, expected) in [
+            (
+                r#"{"paths":["/pk"],"version":2}"#,
+                PartitionKey::from(("a", "b")),
+                crate::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS,
+            ),
+            (
+                r#"{"paths":["/a","/b"],"kind":"Hash","version":2}"#,
+                PartitionKey::from("a"),
+                crate::error::status_codes::CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH,
+            ),
+            (
+                r#"{"paths":["/a","/b"],"kind":"MultiHash","version":2}"#,
+                PartitionKey::from(("a", "b", "c")),
+                crate::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS,
+            ),
+        ] {
+            let container = epk_test_container(definition);
+            let range = FeedRange::for_partition(key, container.partition_key_definition());
+            let error = driver
+                .plan_operation(
+                    CosmosOperation::change_feed(container, Some(range)),
+                    &OperationOptions::default(),
+                    None,
+                    &PlanOptions::default(),
+                )
+                .await
+                .err()
+                .expect("invalid change-feed key must fail before topology planning");
+            assert_eq!(error.status(), expected);
+        }
     }
 
     #[tokio::test]
@@ -5392,7 +6029,7 @@ mod tests {
 
     #[test]
     fn endpoint_for_write_region_uses_service_uri() {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
             "test-key",
         );
@@ -5415,7 +6052,7 @@ mod tests {
 
     #[test]
     fn endpoint_for_write_region_falls_back_when_none() {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
             "test-key",
         );
@@ -5612,6 +6249,61 @@ mod tests {
             matches!(config.version_policy, HttpVersionPolicy::Http11Only)
                 && config.allow_invalid_cert
         }));
+    }
+
+    #[tokio::test]
+    async fn connectivity_probe_uses_emulator_certificate_policy() {
+        for policy in [
+            ServerCertificateValidation::Required,
+            ServerCertificateValidation::RequiredUnlessEmulator,
+        ] {
+            for endpoint in [
+                "https://localhost:8081/",
+                "https://test.documents.azure.com:443/",
+            ] {
+                let connection_pool = ConnectionPoolOptions::builder()
+                    .with_server_certificate_validation(policy)
+                    .with_is_http2_allowed(true)
+                    .with_gateway_v2_disabled(false)
+                    .build()
+                    .unwrap();
+                let factory = Arc::new(ScriptedFactory::new([]));
+                let runtime = CosmosDriverRuntimeBuilder::new()
+                    .with_connection_pool(connection_pool)
+                    .with_http_client_factory(factory.clone())
+                    .build()
+                    .await
+                    .unwrap();
+                let bootstrap_client_count = factory.configs().len();
+
+                let _driver = CosmosDriver::new(
+                    runtime,
+                    DriverOptions::builder(signed_test_account(endpoint)).build(),
+                )
+                .unwrap();
+
+                // Isolate the probe client from the runtime's bootstrap clients.
+                let configs = factory.configs();
+                let [probe_config] = &configs[bootstrap_client_count..] else {
+                    panic!("expected exactly one probe client for {policy:?}, {endpoint}");
+                };
+                assert_eq!(probe_config.transport_kind, Some(TransportKind::GatewayV2));
+                assert_eq!(probe_config.version_policy, HttpVersionPolicy::Http2Only);
+                if policy == ServerCertificateValidation::RequiredUnlessEmulator
+                    && endpoint == "https://localhost:8081/"
+                {
+                    assert!(
+                        probe_config.allow_invalid_cert,
+                        "emulator probe must honor {policy:?}"
+                    );
+                } else {
+                    assert!(
+                        !probe_config.allow_invalid_cert,
+                        "probe must validate certificates for {policy:?}, {endpoint}"
+                    );
+                }
+            }
+        }
     }
 
     #[tokio::test]
@@ -5869,7 +6561,6 @@ mod tests {
     fn logical_partition_override_keeps_physical_identity_internal() {
         let pk = PartitionKey::from("pk");
         let overrides = request_target_overrides(
-            None,
             RequestTarget::logical_partition_key_with_parents(
                 pk.clone(),
                 "7".to_string(),
@@ -5902,7 +6593,6 @@ mod tests {
             EffectivePartitionKey::try_from("40")?,
         )?;
         let overrides = request_target_overrides(
-            None,
             RequestTarget::effective_partition_key_range_with_parents(
                 range.clone(),
                 "merged".to_string(),
@@ -5926,19 +6616,12 @@ mod tests {
     #[test]
     fn effective_partition_key_range_override_omits_feed_range_when_full_pkrange(
     ) -> crate::error::Result<()> {
-        // When the request covers the FULL pkrange (range == partition_key_range),
-        // `feed_range` collapses to None — we do NOT emit the public
-        // `x-ms-start-epk`/`x-ms-end-epk` headers on the legacy gateway path
-        // (it rejects them paired with `partitionkeyrangeid` when min is the
-        // empty-string sentinel). The pkrange bounds are still carried in
-        // `pkrange_bounds` for the GW_V2 dispatcher to derive its
-        // `StartEpkHash`/`EndEpkHash` RNTBD tokens.
+        // Full physical ranges need no additional filter, but retain thin-client routing bounds.
         let range = crate::models::FeedRange::new(
             EffectivePartitionKey::try_from("10")?,
             EffectivePartitionKey::try_from("20")?,
         )?;
         let overrides = request_target_overrides(
-            None,
             RequestTarget::effective_partition_key_range(
                 range.clone(),
                 "pkrange".to_string(),
@@ -5954,22 +6637,13 @@ mod tests {
     }
 
     #[test]
-    fn effective_partition_key_range_override_forwards_logical_partition_key(
-    ) -> crate::error::Result<()> {
-        // Regression: partition-scoped queries (e.g. `FeedScope::partition(partial_hpk)`)
-        // decompose into per-pkrange `EffectivePartitionKeyRange` targets. The operation's
-        // logical partition key must be forwarded into the override so the
-        // `x-ms-documentdb-partitionkey` HTTP header (and the RNTBD `PartitionKey` 0x002B
-        // token on the thin-client proxy) is emitted on every per-pkrange fan-out request.
-        // Without this, the thin-client backend returns every document in the physical
-        // partition because it has no per-component prefix to filter by.
+    fn effective_partition_key_range_override_uses_only_range_routing() -> crate::error::Result<()>
+    {
         let range = crate::models::FeedRange::new(
             EffectivePartitionKey::try_from("10")?,
             EffectivePartitionKey::try_from("20")?,
         )?;
-        let pk = PartitionKey::from("tenant-prefix");
         let overrides = request_target_overrides(
-            Some(&pk),
             RequestTarget::effective_partition_key_range(
                 range.clone(),
                 "pkrange".to_string(),
@@ -5978,7 +6652,7 @@ mod tests {
             None,
         );
 
-        assert_eq!(overrides.partition_key.as_ref(), Some(&pk));
+        assert_eq!(overrides.partition_key, None);
         assert_eq!(overrides.partition_key_range_id.as_deref(), Some("pkrange"));
         assert_eq!(overrides.feed_range, None);
         assert_eq!(overrides.pkrange_bounds, Some(range));
@@ -6115,7 +6789,7 @@ mod tests {
     async fn fetch_account_properties_surfaces_5xx_body_as_status_error() {
         let client = scripted_client(ResponsePlan::ServiceUnavailable503);
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
@@ -6357,7 +7031,7 @@ mod tests {
             calls: Arc::clone(&calls),
         });
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
@@ -6416,7 +7090,7 @@ mod tests {
             calls: Arc::clone(&calls),
         });
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let opts = OperationOptionsBuilder::new()
             .with_throttling_retry_options(
@@ -6523,7 +7197,7 @@ mod tests {
     {
         let client = raw_response_client(status, body);
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
@@ -6550,7 +7224,7 @@ mod tests {
             ResponsePlan::Success,
         ]);
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
@@ -6580,7 +7254,7 @@ mod tests {
             ResponsePlan::ConnectionError,
         ]);
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
@@ -6618,6 +7292,91 @@ mod tests {
         assert!(requests.iter().all(|request| {
             request.request_sent() == crate::diagnostics::RequestSentStatus::NotSent
         }));
+    }
+
+    #[tokio::test]
+    async fn fetch_account_properties_retries_ambiguous_io_failures() {
+        for request_sent in [RequestSentStatus::Unknown, RequestSentStatus::Sent] {
+            let client = sequence_client([
+                ResponsePlan::IoError(request_sent),
+                ResponsePlan::IoError(request_sent),
+                ResponsePlan::Success,
+            ]);
+            let transport =
+                crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+            let account = signed_test_account("https://test.documents.azure.com:443/");
+            let user_agent = HeaderValue::from("cosmos-driver-test/0.0.0");
+            let properties = CosmosDriver::fetch_account_properties_with_transport(
+                &runtime,
+                &transport,
+                &account,
+                None,
+                &user_agent,
+                &TEST_CLIENT_ID,
+                false,
+                None,
+            )
+            .await
+            .expect("account GET can retry an ambiguous I/O failure");
+            assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
+        }
+    }
+
+    #[tokio::test]
+    async fn fetch_account_properties_bounds_ambiguous_io_retries() {
+        let client = sequence_client([
+            ResponsePlan::IoError(RequestSentStatus::Unknown),
+            ResponsePlan::IoError(RequestSentStatus::Unknown),
+            ResponsePlan::IoError(RequestSentStatus::Unknown),
+        ]);
+        let transport =
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let error = CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            None,
+            &HeaderValue::from("cosmos-driver-test/0.0.0"),
+            &TEST_CLIENT_ID,
+            false,
+            None,
+        )
+        .await
+        .expect_err("the third I/O failure must exhaust the retry budget");
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::TRANSPORT_IO_FAILED
+        );
+        let diagnostics = error.diagnostics().unwrap();
+        let requests = diagnostics.requests();
+        assert_eq!(requests.len(), 3);
+        assert_eq!(requests[0].execution_context(), ExecutionContext::Initial);
+        assert!(requests[1..]
+            .iter()
+            .all(|request| request.execution_context() == ExecutionContext::TransportRetry));
+        assert!(requests
+            .iter()
+            .all(|request| request.request_sent() == RequestSentStatus::Unknown));
+    }
+
+    #[test]
+    fn account_discovery_does_not_retry_configuration_or_authentication_errors() {
+        for status in [
+            crate::error::status_codes::CLIENT_GENERATED_401,
+            crate::error::status_codes::CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED,
+            crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID,
+        ] {
+            let error = crate::error::CosmosError::builder()
+                .with_status(status)
+                .with_message("non-connectivity failure")
+                .build();
+            assert!(!should_retry_account_properties_connectivity_error(
+                &error, 0
+            ));
+        }
     }
 
     #[tokio::test]
@@ -6660,7 +7419,7 @@ mod tests {
     async fn drive_probe_with(status: u16) -> bool {
         let client = raw_response_client(status, Vec::new());
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let account = signed_test_account("https://test.documents.azure.com:443/");
         let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
@@ -6671,7 +7430,7 @@ mod tests {
     async fn drive_probe_unreachable() -> bool {
         let client = unreachable_client();
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let account = signed_test_account("https://test.documents.azure.com:443/");
         let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
@@ -6968,7 +7727,7 @@ mod tests {
         let client: Box<dyn TransportClient> = Box::new(FailingTransportClient);
         let client = Arc::from(client);
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
@@ -6992,19 +7751,13 @@ mod tests {
         );
         assert_eq!(
             diag.requests().len(),
-            1,
-            "single bootstrap request must produce exactly one request record. Got: {diag:?}"
+            3,
+            "initial attempt and bounded retries must each retain diagnostics. Got: {diag:?}"
         );
-        let req = &diag.requests()[0];
-        assert!(
-            req.endpoint().contains("test.documents.azure.com"),
-            "request diagnostics must record the endpoint contacted. Got: {req:?}"
-        );
-        assert_eq!(
-            req.request_sent(),
-            crate::diagnostics::RequestSentStatus::Sent,
-            "transport.send returned an error after invocation; the request reached the wire side. Got: {req:?}"
-        );
+        for req in diag.requests().iter() {
+            assert!(req.endpoint().contains("test.documents.azure.com"));
+            assert_eq!(req.request_sent(), RequestSentStatus::Sent);
+        }
     }
 
     /// Sign-request failure (e.g. broken TokenCredential, IMDS unreachable) must produce
@@ -7037,7 +7790,7 @@ mod tests {
         // produces an obviously-wrong shape rather than a confused network-error message.
         let client = scripted_client(ResponsePlan::Success);
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let credential: Box<dyn TokenCredential> = Box::new(BrokenCredential);
@@ -7175,10 +7928,10 @@ mod tests {
             transport_kind: None,
         };
         let transport_client =
-            crate::driver::transport::http_client_factory::DefaultHttpClientFactory::new()
+            crate::pipeline::transport::http_client_factory::DefaultHttpClientFactory::new()
                 .build(&pool, config)
                 .expect("DefaultHttpClientFactory must build a real reqwest-backed transport");
-        let transport = crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(
+        let transport = crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(
             transport_client,
         );
 
@@ -7411,19 +8164,189 @@ mod tests {
     }
 
     fn epk_test_container_with_rid(pk_json: &str, rid: &str) -> ContainerReference {
+        epk_test_container_with_names_and_rid(pk_json, "testdb", "testcontainer", rid)
+    }
+
+    fn epk_test_container_with_names(
+        pk_json: &str,
+        database_name: &str,
+        container_name: &str,
+    ) -> ContainerReference {
+        epk_test_container_with_names_and_rid(
+            pk_json,
+            database_name,
+            container_name,
+            "testcontainer_rid",
+        )
+    }
+
+    fn epk_test_container_with_names_and_rid(
+        pk_json: &str,
+        database_name: &str,
+        container_name: &str,
+        rid: &str,
+    ) -> ContainerReference {
         let container_props = crate::models::ContainerProperties {
-            id: "testcontainer".into(),
+            id: container_name.to_owned().into(),
             partition_key: serde_json::from_str(pk_json).unwrap(),
             system_properties: Default::default(),
         };
         ContainerReference::new(
             signed_test_account("https://test.documents.azure.com:443/"),
-            "testdb",
+            database_name.to_owned(),
             "testdb_rid",
-            "testcontainer",
+            container_name.to_owned(),
             rid.to_owned(),
             &container_props,
         )
+    }
+
+    #[tokio::test]
+    async fn lazy_session_topology_tracks_tokens_transport_and_effective_options() {
+        for (advertised, disabled) in [(false, false), (true, true), (true, false)] {
+            let runtime = CosmosDriverRuntimeBuilder::new()
+                .with_connection_pool(
+                    ConnectionPoolOptions::builder()
+                        .with_gateway_v2_disabled(disabled)
+                        .build()
+                        .unwrap(),
+                )
+                .build()
+                .await
+                .unwrap();
+            let mut payload: serde_json::Value =
+                serde_json::from_str(ACCOUNT_PROPERTIES_PAYLOAD).unwrap();
+            if advertised {
+                let thin = serde_json::json!([{
+                    "name": "West US 2",
+                    "databaseAccountEndpoint": "https://test-westus2-thin.documents.azure.com:444/"
+                }]);
+                payload["thinClientReadableLocations"] = thin.clone();
+                payload["thinClientWritableLocations"] = thin;
+            }
+            let properties: CachedAccountProperties = serde_json::from_value(payload).unwrap();
+            let properties = runtime
+                .account_metadata_cache()
+                .get_or_fetch(AccountEndpoint::from(&test_account()), || async {
+                    Ok(properties)
+                })
+                .await
+                .unwrap();
+            let driver = CosmosDriver::new(
+                runtime,
+                DriverOptions::builder(test_account())
+                    .with_partition_failover_options(
+                        PartitionFailoverOptions::builder()
+                            .with_partition_topology_cache_mode(PartitionTopologyCacheMode::Lazy)
+                            .with_circuit_breaker_enabled(false)
+                            .build()
+                            .unwrap(),
+                    )
+                    .build(),
+            )
+            .unwrap();
+            driver.location_state_store.sync_account_properties(
+                properties,
+                driver.location_state_store.default_endpoint(),
+            );
+            let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+            let item =
+                ItemReference::from_name(&container, PartitionKey::from("key"), "one".to_owned());
+            let read = CosmosOperation::read_item(item.clone());
+            let options = OperationOptions::default();
+
+            assert!(
+                driver.uses_cache_only_topology(&read, &options).await,
+                "there is no session token to scope yet"
+            );
+            driver.session_manager.capture_session_token(
+                &read,
+                &CosmosResponseHeaders {
+                    session_token: Some(SessionToken::new("0:1#100#1=10")),
+                    ..Default::default()
+                },
+            );
+            assert_eq!(
+                driver.uses_cache_only_topology(&read, &options).await,
+                !advertised || disabled
+            );
+
+            for operation_options in [
+                OperationOptions {
+                    session_capturing_disabled: Some(true),
+                    ..Default::default()
+                },
+                OperationOptions {
+                    read_consistency_strategy: Some(ReadConsistencyStrategy::Eventual),
+                    ..Default::default()
+                },
+            ] {
+                assert!(
+                    driver
+                        .uses_cache_only_topology(&read, &operation_options)
+                        .await
+                );
+            }
+            assert!(
+                driver
+                    .uses_cache_only_topology(
+                        &read
+                            .clone()
+                            .with_session_token(SessionToken::new("0:1#100#1=10")),
+                        &options
+                    )
+                    .await
+            );
+            assert!(
+                driver
+                    .uses_cache_only_topology(&CosmosOperation::create_item(item), &options)
+                    .await,
+                "single-writer writes do not resolve automatic session tokens"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn lazy_topology_honors_account_ppcb_enablement_and_incident_override() {
+        for override_enabled in [None, Some(false), Some(true)] {
+            let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+            let mut failover = PartitionFailoverOptions::builder()
+                .with_partition_topology_cache_mode(PartitionTopologyCacheMode::Lazy)
+                .with_circuit_breaker_enabled(false);
+            if let Some(enabled) = override_enabled {
+                failover = failover.with_circuit_breaker_enabled_override(enabled);
+            }
+            let driver = CosmosDriver::new(
+                runtime,
+                DriverOptions::builder(test_account())
+                    .with_partition_failover_options(failover.build().unwrap())
+                    .build(),
+            )
+            .unwrap();
+            let mut payload: serde_json::Value =
+                serde_json::from_str(ACCOUNT_PROPERTIES_PAYLOAD).unwrap();
+            payload["enablePerPartitionFailoverBehavior"] = serde_json::json!(true);
+            payload["readableLocations"].as_array_mut().unwrap().push(serde_json::json!({
+                "name": "East US", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com/"
+            }));
+            let properties: CachedAccountProperties = serde_json::from_value(payload).unwrap();
+            driver.location_state_store.sync_account_properties(
+                Arc::new(properties),
+                driver.location_state_store.default_endpoint(),
+            );
+            let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+            let read = CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("key"),
+                "one".to_owned(),
+            ));
+            assert_eq!(
+                driver
+                    .uses_cache_only_topology(&read, &OperationOptions::default())
+                    .await,
+                override_enabled == Some(false)
+            );
+        }
     }
 
     #[tokio::test]
@@ -7737,6 +8660,10 @@ mod tests {
             crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID,
             "got: {err}",
         );
+        assert!(
+            err.diagnostics().is_some(),
+            "the transcode error must retain the page diagnostics",
+        );
 
         let err = plan
             .to_continuation_token()
@@ -7746,6 +8673,92 @@ mod tests {
             Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
             "got: {err}",
         );
+    }
+
+    #[tokio::test]
+    async fn final_item_materialization_failure_preserves_diagnostics_and_poisons_plan() {
+        use crate::driver::dataflow::{
+            mocks::{response, response_with_request_diagnostics, MockLeaf},
+            ItemView, PageResult, PipelineBody, PipelineResponse,
+        };
+
+        let driver = transcoding_test_driver().await;
+        for text_response in [false, true] {
+            let options = OperationOptionsBuilder::new()
+                .with_binary_encoding(
+                    crate::options::BinaryEncodingOptions::new()
+                        .with_enabled(true)
+                        .with_request_text_response(text_response),
+                )
+                .build();
+            let operation = driver.apply_response_negotiation(
+                binary_encoding_test_operation(b"{}".to_vec()),
+                &options,
+                None,
+            );
+            let diagnostics = response_with_request_diagnostics(1).diagnostics();
+            let item = ItemView::from_binary_page(
+                azure_core::Bytes::from_static(&[
+                    crate::binary_json::PREAMBLE,
+                    crate::binary_json::markers::STR_R1,
+                    255,
+                ]),
+                1..3,
+            )
+            .unwrap();
+            let page = PipelineResponse::new(
+                PipelineBody::from_item_views(vec![item]),
+                crate::models::CosmosResponseHeaders::default(),
+                crate::models::CosmosStatus::new(azure_core::http::StatusCode::Ok),
+                diagnostics.clone(),
+            );
+            let mut plan = OperationPlan::new(
+                Pipeline::new(Box::new(MockLeaf::with_pages(vec![
+                    Ok(PageResult::Page {
+                        response: page,
+                        is_terminal: false,
+                    }),
+                    Ok(PageResult::Page {
+                        response: response(br#"{"id":"not-delivered"}"#),
+                        is_terminal: true,
+                    }),
+                ]))),
+                Arc::new(operation),
+                PlanOptions::default(),
+                false,
+            );
+            let error = driver
+                .execute_plan(&mut plan, None, options.clone())
+                .await
+                .unwrap_err();
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
+            );
+            let failure_diagnostics = error.diagnostics().unwrap();
+            assert_eq!(failure_diagnostics.effective_status(), Some(error.status()));
+            assert_eq!(
+                failure_diagnostics.request_count(),
+                diagnostics.request_count()
+            );
+            assert!(Arc::ptr_eq(
+                &failure_diagnostics.requests(),
+                &diagnostics.requests()
+            ));
+            assert!(plan.continuation_poisoned());
+            assert_eq!(
+                plan.to_continuation_token().unwrap_err().status(),
+                crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE
+            );
+            assert_eq!(
+                driver
+                    .execute_plan(&mut plan, None, options)
+                    .await
+                    .unwrap_err()
+                    .status(),
+                crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
+            );
+        }
     }
 
     /// The token exit is the loud one; this is the quiet one. A caller that
@@ -7883,6 +8896,33 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn lossy_utf8_recovers_text_page_and_records_diagnostics() {
+        let driver = transcoding_test_driver().await;
+        let body = [
+            b'{', b'"', b'n', b'a', b'm', b'e', b'"', b':', b'"', b'a', 0xFF, b'b', b'"', b'}',
+        ];
+        let mut plan = lossy_transcoding_plan(&driver, &[&body]);
+
+        let response = driver
+            .execute_plan(&mut plan, None, OperationOptions::default())
+            .await
+            .expect("invalid UTF-8 inside a JSON string should be recovered")
+            .expect("the mock leaf returns one page");
+
+        let crate::models::ResponseBody::Bytes(body) = response.body() else {
+            panic!("expected a single response buffer");
+        };
+        assert_eq!(
+            body.as_ref(),
+            &[
+                b'{', b'"', b'n', b'a', b'm', b'e', b'"', b':', b'"', b'a', 0xEF, 0xBF, 0xBD, b'b',
+                b'"', b'}',
+            ],
+        );
+        assert!(response.diagnostics().invalid_utf8_was_recovered());
+    }
+
     /// A driver marked initialized so `execute_plan` reaches the pipeline. No
     /// request ever leaves it: the plans below are backed by a mock leaf.
     async fn transcoding_test_driver() -> CosmosDriver {
@@ -7916,6 +8956,41 @@ mod tests {
             operation.transcodes_response_to_text(),
             "the fixture must select the transcoding path",
         );
+
+        let last = bodies.len() - 1;
+        let pages = bodies
+            .iter()
+            .enumerate()
+            .map(|(i, body)| {
+                Ok(PageResult::Page {
+                    response: response(body),
+                    is_terminal: i == last,
+                })
+            })
+            .collect();
+        OperationPlan::new(
+            Pipeline::new(Box::new(MockLeaf::with_pages(pages))),
+            std::sync::Arc::new(operation),
+            PlanOptions::default(),
+            false,
+        )
+    }
+
+    fn lossy_transcoding_plan(driver: &CosmosDriver, bodies: &[&[u8]]) -> OperationPlan {
+        use crate::driver::dataflow::mocks::{response, MockLeaf};
+        use crate::driver::dataflow::{PageResult, Pipeline};
+
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
+            .with_utf8_decoding_mode(crate::options::Utf8DecodingMode::Lossy)
+            .build();
+        let operation = driver.apply_response_negotiation(
+            binary_encoding_test_operation(b"{}".to_vec()),
+            &options,
+            None,
+        );
+        assert!(operation.negotiates_binary_response());
+        assert!(operation.transcodes_response_to_text());
 
         let last = bodies.len() - 1;
         let pages = bodies

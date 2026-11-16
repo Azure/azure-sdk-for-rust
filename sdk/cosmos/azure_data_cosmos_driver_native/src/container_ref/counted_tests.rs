@@ -155,7 +155,7 @@ struct Fixture {
 
 impl Fixture {
     fn new() -> Self {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://counted-strings.invalid/").unwrap(),
             "dGVzdA==",
         );

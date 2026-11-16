@@ -2,7 +2,10 @@
 // Licensed under the MIT License.
 
 use azure_core::http::StatusCode;
-use azure_data_cosmos::TransactionalBatch;
+use azure_data_cosmos::{
+    options::{BatchOptions, ContentResponseOnWrite, OperationOptionsBuilder},
+    TransactionalBatch,
+};
 
 use crate::e2e_test_cases::{
     fixture::{E2eTestFixture, TestResult},
@@ -20,13 +23,18 @@ async fn batch_success_and_failure_are_atomic() -> TestResult {
     }
 
     E2eTestFixture::run(async |fixture| {
+        let batch_options = BatchOptions::default().with_operation_options(
+            OperationOptionsBuilder::new()
+                .with_content_response_on_write(ContentResponseOnWrite::Enabled)
+                .build(),
+        );
         let committed = item("committed", "A", 1);
         let successful = TransactionalBatch::new("A")
             .create_item(&committed)?
             .read_item(committed.id.clone(), None);
         let success = fixture
             .container
-            .execute_transactional_batch(successful, None)
+            .execute_transactional_batch(successful, Some(batch_options.clone()))
             .await?;
         assert_eq!(success.status(), StatusCode::Ok);
         assert_critical_diagnostics(
@@ -43,18 +51,56 @@ async fn batch_success_and_failure_are_atomic() -> TestResult {
                 .collect::<Vec<_>>(),
             [201, 200]
         );
-        let read_in_batch: Item = success.results()[1]
-            .into_model()?
-            .expect("batch read must return the committed item");
-        assert_eq!(read_in_batch, committed);
+        assert_eq!(
+            success.results()[1].into_model::<Item>()?,
+            Some(committed.clone())
+        );
 
+        let read_only = fixture
+            .container
+            .execute_transactional_batch(
+                TransactionalBatch::new("A").read_item(committed.id.clone(), None),
+                Some(batch_options.clone()),
+            )
+            .await?
+            .into_model()?;
+        assert_eq!(read_only.results().len(), 1);
+        assert_eq!(read_only.results()[0].status_code(), 200);
+        assert_eq!(
+            read_only.results()[0].into_model::<Item>()?,
+            Some(committed)
+        );
+
+        let committed = item("committed", "A", 3);
+        let update = fixture
+            .container
+            .execute_transactional_batch(
+                TransactionalBatch::new("A")
+                    .upsert_item(&committed, None)?
+                    .read_item(committed.id.clone(), None),
+                Some(batch_options.clone()),
+            )
+            .await?
+            .into_model()?;
+        assert_eq!(
+            update
+                .results()
+                .iter()
+                .map(|result| result.status_code())
+                .collect::<Vec<_>>(),
+            [200, 200]
+        );
+        assert_eq!(
+            update.results()[1].into_model::<Item>()?,
+            Some(committed.clone())
+        );
         let rolled_back = item("rolled-back", "A", 2);
         let failing = TransactionalBatch::new("A")
             .create_item(&rolled_back)?
             .delete_item("missing", None);
         let failure = fixture
             .container
-            .execute_transactional_batch(failing, None)
+            .execute_transactional_batch(failing, Some(batch_options))
             .await?;
         assert_eq!(failure.status(), StatusCode::MultiStatus);
         assert_critical_diagnostics(

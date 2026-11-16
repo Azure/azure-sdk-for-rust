@@ -100,9 +100,11 @@ Retrieve the issue with bounded `gh` reads:
 - The issue has a parent issue (sub-issues inherit triage from their parent).
 - The issue is clearly spam, bot-generated, or otherwise not actionable as a real report.
 
+Complete all precondition checks before continuing. Only proceed to Step 2 when every check is false. In particular, if the issue already has any labels, do not evaluate the author's association, predict labels, or route the issue to an owner.
+
 ## Step 2: Customer Evaluation
 
-Determine whether the issue author is an external customer; this gates what triage actions are taken.
+Determine whether the issue author is an external customer; this controls customer-specific labels but does not gate triage.
 
 ### Bot Allowlist
 
@@ -131,9 +133,8 @@ IF the author matches the bot allowlist:
     - Continue to Step 3.
 
 IF author_association is OWNER, MEMBER, or COLLABORATOR:
-    - Add `needs-triage` label.
-    - Use the Fallback Comment Format from Step 6 with a brief note that team-member issues are routed for self-triage.
-    - Stop.
+    - Do NOT add `customer-reported` or `question`.
+    - Continue to Step 3.
 
 ELSE (external customer):
     - Add `customer-reported` label.
@@ -143,7 +144,7 @@ ELSE (external customer):
 
 ## Step 3: Predict Labels
 
-All issues reaching this step proceed through label prediction and ownership routing regardless of whether they are customer-reported or bot-filed.
+All issues reaching this step proceed through label prediction and ownership routing regardless of author association or whether they are customer-reported or bot-filed.
 
 ### Label Identification
 

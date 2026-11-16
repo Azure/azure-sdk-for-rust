@@ -92,6 +92,99 @@ impl DiagnosticsHandler for CountingHandler {
 
 #[cfg(feature = "fault_injection")]
 #[tokio::test(start_paused = true)]
+async fn change_feed_split_exhaustion_reaches_sdk_error_and_handler() {
+    use azure_data_cosmos::options::ChangeFeedStartFrom;
+    use azure_data_cosmos_driver::{
+        error::status_codes,
+        fault_injection::{
+            FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+            FaultInjectionRuleBuilder, FaultOperationType,
+        },
+    };
+
+    let emulator = Arc::new(InMemoryEmulatorHttpClient::new(
+        VirtualAccountConfig::new(vec![VirtualRegion::new(
+            "East US",
+            azure_core::http::Url::parse(EMULATOR_GATEWAY_URL).unwrap(),
+        )])
+        .unwrap(),
+    ));
+    emulator.store().create_database("split-diagnostics");
+    emulator.store().create_container(
+        "split-diagnostics",
+        "items",
+        serde_json::from_value(serde_json::json!({"paths":["/pk"],"kind":"Hash","version":2}))
+            .unwrap(),
+    );
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new(
+            "sdk-split-exhaustion",
+            FaultInjectionResultBuilder::new()
+                .with_error(FaultInjectionErrorType::PartitionIsGone)
+                .build(),
+        )
+        .with_condition(
+            FaultInjectionConditionBuilder::new()
+                .with_operation_type(FaultOperationType::ChangeFeedItem)
+                .build(),
+        )
+        .build(),
+    );
+    let runtime =
+        CosmosRuntimeBuilder::from(emulator.runtime_builder_with_fault_rules(vec![rule.clone()]))
+            .build()
+            .await
+            .unwrap();
+    let handler = Arc::new(CountingHandler::default());
+    let client = CosmosClientBuilder::new()
+        .with_runtime(runtime)
+        .with_diagnostics_handler(handler.clone())
+        .build(
+            AccountReference::with_authentication_key(
+                EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
+                azure_core::credentials::Secret::new("dGVzdGtleQ=="),
+            ),
+            RoutingStrategy::ProximityTo(Region::EAST_US),
+        )
+        .await
+        .unwrap();
+    let container = client
+        .database_client("split-diagnostics")
+        .container_client("items", None)
+        .await
+        .unwrap();
+    let ranges = container.read_feed_ranges(None).await.unwrap();
+    let failures_before = handler.failures();
+    let mut pages = Box::pin(
+        container
+            .query_change_feed::<TestDoc>(
+                FeedScope::range(ranges[0].clone()),
+                ChangeFeedStartFrom::Beginning,
+                None,
+            )
+            .await
+            .unwrap(),
+    );
+    let error = pages.try_next().await.unwrap_err();
+    assert_eq!(error.status(), status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED);
+    let diagnostics = error
+        .diagnostics()
+        .expect("SDK error must retain recovery context");
+    assert_eq!(diagnostics.request_count(), 11);
+    assert_eq!(rule.hit_count(), 11);
+    assert_eq!(handler.failures(), failures_before + 1);
+    let observed = handler.last_diagnostics.lock().unwrap();
+    let observed = observed.as_ref().unwrap();
+    assert_eq!(
+        observed["status"],
+        status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED.to_string()
+    );
+    assert_eq!(observed["request_count"], 11);
+    assert_eq!(observed["topology_recovery"]["total_attempts"], 11);
+}
+
+#[cfg(feature = "fault_injection")]
+#[tokio::test(start_paused = true)]
 async fn handler_observes_wrapped_faults_with_original_attempts() {
     use azure_data_cosmos_driver::{
         error::status_codes,

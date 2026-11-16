@@ -43,6 +43,7 @@ use super::validation::{
 
 /// Environment variable for the real-account connection string.
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
+const AUTH_MODE_ENV_VAR: &str = "AZURE_COSMOS_AUTH_MODE";
 
 /// Environment variable controlling test mode.
 const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
@@ -112,7 +113,7 @@ impl DualBackend {
         let emulator_store = emulator.store();
         let emulator_runtime = emulator.runtime_builder().build().await?;
 
-        let emulator_account = AccountReference::with_master_key(
+        let emulator_account = AccountReference::with_account_key(
             Url::parse(EMULATOR_GATEWAY_URL).unwrap(),
             "dGVzdGtleQ==",
         );
@@ -499,6 +500,10 @@ impl DualBackend {
 /// Returns `Ok(None)` when the env var is unset and mode is not `required`.
 async fn resolve_real_account(
 ) -> Result<Option<(Arc<CosmosDriver>, AccountReference)>, Box<dyn Error>> {
+    if std::env::var(AUTH_MODE_ENV_VAR).is_ok_and(|value| value.eq_ignore_ascii_case("aad")) {
+        return Ok(None);
+    }
+
     let mode = std::env::var(TEST_MODE_ENV_VAR)
         .unwrap_or_default()
         .to_lowercase();
@@ -530,7 +535,7 @@ async fn resolve_real_account(
     let conn_str: ConnectionString = conn_str_raw.parse()?;
     let endpoint: Url = conn_str.account_endpoint().parse()?;
     let key = conn_str.account_key().secret().to_string();
-    let account = AccountReference::with_master_key(endpoint, key);
+    let account = AccountReference::with_account_key(endpoint, key);
 
     let mut pool_builder = ConnectionPoolOptions::builder();
     // If connecting to the local emulator, disable cert validation

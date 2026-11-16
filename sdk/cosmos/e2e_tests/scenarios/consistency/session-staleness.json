@@ -4,7 +4,7 @@
   "id": "consistency.session-staleness",
   "title": "Disabled session capture exposes deterministic replica staleness",
   "requirement": "With automatic session capture disabled, an immediate Eventual read from a delayed replica can return a plain NotFound before replication converges.",
-  "maturity": "candidate",
+  "maturity": "stable",
   "precedents": [
     {
       "sdk": "rust",

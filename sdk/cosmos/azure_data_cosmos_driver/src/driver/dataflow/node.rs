@@ -3,15 +3,17 @@
 
 //! [`PipelineNode`] trait and [`PageResult`] returned from each pull.
 
+use crate::driver::dataflow::PipelineResponse;
 use async_trait::async_trait;
+use std::sync::Arc;
 
-use crate::models::{CosmosResponse, FeedRange};
+use crate::{diagnostics::DiagnosticsContext, models::FeedRange};
 
 use super::{context::PipelineContext, snapshot::PipelineNodeState};
 
 /// Result of a single `next_page` call on a pipeline node.
 ///
-/// The `Page` variant contains a large `CosmosResponse` inline, but boxing it
+/// The `Page` variant contains a large `PipelineResponse` inline, but boxing it
 /// would add a heap allocation on every page fetch — the hot path. The `SplitRequired`
 /// variant is rare (only on partition splits), so the size difference is acceptable.
 #[must_use = "a PageResult carries the next page, drain signal, or a split request that the caller must act on"]
@@ -26,7 +28,7 @@ pub(crate) enum PageResult {
     /// drained children eagerly so that snapshots of the pipeline do not
     /// include children that are already done.
     Page {
-        response: CosmosResponse,
+        response: PipelineResponse,
         is_terminal: bool,
     },
     /// This node has no more pages to emit.
@@ -73,7 +75,7 @@ impl std::fmt::Debug for PageResult {
 /// The payload is a private enum so the only ways to obtain a value crate-wide
 /// are [`Self::try_tiling`] and the test-only [`Self::untiled`]; the invariant
 /// cannot be bypassed by constructing or mutating a variant directly.
-pub(crate) struct SplitReplacements(Repr);
+pub(crate) struct SplitReplacements(Repr, Option<Arc<DiagnosticsContext>>);
 
 enum Repr {
     /// Validated by [`SplitReplacements::try_tiling`], stored in ascending
@@ -104,14 +106,23 @@ impl SplitReplacements {
         }
         ranged.sort_by(|a, b| a.0.min_inclusive().cmp(b.0.min_inclusive()));
         validate_exact_coverage(scope, ranged.iter().map(|(range, _)| range))?;
-        Ok(Self(Repr::Tiled(ranged)))
+        Ok(Self(Repr::Tiled(ranged), None))
     }
 
     /// Test-only escape hatch for mock nodes that carry no feed range and so
     /// have no tiling invariant to uphold.
     #[cfg(test)]
     pub(crate) fn untiled(nodes: Vec<Box<dyn PipelineNode>>) -> Self {
-        Self(Repr::Untiled(nodes))
+        Self(Repr::Untiled(nodes), None)
+    }
+
+    pub(super) fn with_diagnostics(mut self, diagnostics: Option<Arc<DiagnosticsContext>>) -> Self {
+        self.1 = diagnostics;
+        self
+    }
+
+    pub(super) fn take_diagnostics(&mut self) -> Option<Arc<DiagnosticsContext>> {
+        self.1.take()
     }
 
     pub(crate) fn len(&self) -> usize {
@@ -214,6 +225,12 @@ pub(crate) trait PipelineNode: Send + std::any::Any {
         &mut self,
         context: &mut PipelineContext<'_>,
     ) -> crate::error::Result<PageResult>;
+
+    /// Transfers an already-deferred error without fetching or advancing rows.
+    /// Wrappers must forward this handoff before abandoning a child's remaining pages.
+    fn take_pending_error(&mut self) -> Option<crate::error::CosmosError> {
+        None
+    }
 
     /// Consumes this node and returns its children as a `Vec`.
     ///

@@ -1,6 +1,10 @@
 # Release History
 
-## 1.2.0-beta.3 (Unreleased)
+## 1.2.0-beta.3 (2026-11-05)
+
+### Features Added
+
+- Added `AmqpConnection::abort()` to terminate a failed transport without waiting for a close handshake.
 
 ### Breaking Changes
 
@@ -9,6 +13,12 @@
 
 ### Bugs Fixed
 
+- Concurrent calls to `AmqpConnection::open()` now return an error without starting another connection attempt.
+- A failed or cancelled connection handshake now releases its transport and permits another `open()` on the same object.
+- `AmqpConnection::abort()` now cancels an in-progress opening, including TCP connection and protocol negotiation.
+- An aborted opening now permits an immediate replacement attempt; stale completion and cleanup cannot change the replacement connection.
+- Pending sends and sender metadata waits now return when their connection or session closes; session errors retain the peer's protocol condition.
+- Dropping a connection now releases its socket even when an AMQP write is blocked; cancelling session, sender, or CBS preparation retires the transport used by that preparation.
 - Sending a message that is larger than the link allows now reports `AmqpErrorCondition::LinkPayloadSizeExceeded` before any frame is sent.
 - A send no longer hangs when the peer settles the delivery at once. The fix comes from `fe2o3-amqp` 0.18.2.
 

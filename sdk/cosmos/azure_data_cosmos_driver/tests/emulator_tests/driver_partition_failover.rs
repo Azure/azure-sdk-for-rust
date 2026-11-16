@@ -5,9 +5,8 @@
 //! failover behavior tested against the local emulator via fault injection.
 //!
 //! These tests cover:
-//!   1. Lazy PK range fetch failure graceful fallback — when the metadata request
-//!      for partition key ranges fails (503), pre-resolution returns `None` and
-//!      the operation still succeeds without a pre-resolved pk_range_id.
+//!   1. Lazy logical-key operations without partition-level failover do not
+//!      depend on partition topology, even when the metadata endpoint fails.
 //!   2. Partition split / 410 Gone handling — when a data operation returns 410
 //!      (PartitionIsGone), the pipeline performs a failover retry and the operation
 //!      ultimately succeeds.
@@ -30,22 +29,15 @@ use std::sync::Arc;
 // PK Range Cache Tests
 // ────────────────────────────────────────────────────────────────────────────
 
-/// In lazy mode, a 503 from `MetadataPartitionKeyRanges` during partition-range
-/// pre-resolution is non-fatal: the driver executes the operation without a
-/// pre-resolved `partition_key_range_id`.
-///
-/// The data operation (ReadItem) must still succeed — the 503 on pkranges only
-/// prevents the driver from pre-routing the request to the optimal region;
-/// it does not abort the data operation.
+/// Lazy point operations without partition failover must not fetch optional topology.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "emulator"),
     ignore = "requires test_category 'emulator'"
 )]
-pub async fn in_lazy_mode_pkrange_fetch_503_falls_back_gracefully_to_data_operation(
+pub async fn lazy_point_operations_do_not_fetch_optional_partition_topology(
 ) -> Result<(), Box<dyn Error>> {
-    // Inject a persistent 503 on ALL MetadataPartitionKeyRanges requests so
-    // that pre-resolution always fails.
+    // Any accidental topology fetch fails instead of silently warming the cache.
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::MetadataPartitionKeyRanges)
         .build();
@@ -62,11 +54,9 @@ pub async fn in_lazy_mode_pkrange_fetch_503_falls_back_gracefully_to_data_operat
     );
     let rules = vec![Arc::clone(&rule)];
 
-    // PPCB must be enabled for the driver to actually fetch PK ranges
-    // (pre_resolve_partition_key_range_id short-circuits otherwise).
     let partition_failover_options = PartitionFailoverOptions::builder()
         .with_partition_topology_cache_mode(PartitionTopologyCacheMode::Lazy)
-        .with_circuit_breaker_enabled(true)
+        .with_circuit_breaker_enabled(false)
         .build()?;
 
     DriverTestClient::run_with_unique_db_and_fault_injection_partition_failover_options(
@@ -79,23 +69,21 @@ pub async fn in_lazy_mode_pkrange_fetch_503_falls_back_gracefully_to_data_operat
                 .await
                 .expect("Container creation must succeed");
 
-            // Create an item — succeeds even though pkrange pre-resolution is failing.
             let item_json = br#"{"id": "pkrange-fallback-1", "pk": "pk1", "value": "test"}"#;
             context
                 .create_seed_item(&container, "pkrange-fallback-1", "pk1", item_json)
                 .await
                 .expect("CreateItem must succeed even when pkrange metadata fetch returns 503");
 
-            // Read the item back — also succeeds without pre-resolved pk_range_id.
             context
                 .read_item(&container, "pkrange-fallback-1", "pk1")
                 .await
                 .expect("ReadItem must succeed even when pkrange metadata fetch returns 503");
 
-            // Confirm the rule was hit (the injected fault actually fired).
-            assert!(
-                rule.hit_count() > 0,
-                "MetadataPartitionKeyRanges fault should have been hit at least once"
+            assert_eq!(
+                rule.hit_count(),
+                0,
+                "lazy point operations must not request optional partition topology"
             );
 
             Ok(())

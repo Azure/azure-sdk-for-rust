@@ -114,32 +114,44 @@ if (!$IgnoreCgManifestVersion) {
 
 Invoke-LoggedCommand "cargo install cargo-semver-checks --locked $($versionParams -join ' ')" -GroupOutput
 
+$packageExemptions = @{
+  # cargo-semver-checks resolves the latest compatible transitive dependencies in generated
+  # packages. fe2o3-amqp 0.14 and 0.18 fail to compile with tokio-util 0.7.20. The fix is
+  # merged but not released or backported: https://github.com/minghuaw/fe2o3-amqp/pull/420.
+  azure_core_amqp = 'its fe2o3-amqp dependency does not compile with the resolved tokio-util version'
+  azure_messaging_eventhubs = 'its fe2o3-amqp dependency does not compile with the resolved tokio-util version'
+  azure_messaging_eventhubs_checkpointstore_blob = 'its fe2o3-amqp dependency does not compile with the resolved tokio-util version'
+
+  # cargo-semver-checks cannot process these packages because their baselines contain a symlink.
+  azure_security_keyvault_certificates = 'of https://github.com/Azure/azure-sdk-for-rust/issues/5143'
+  azure_security_keyvault_secrets = 'of https://github.com/Azure/azure-sdk-for-rust/issues/5143'
+}
+
 $finalExitCode = 0
 foreach ($package in $outputPackages) {
-  $packageName = $package.name
+  $currentPackageName = $package.name
 
-  # BUG: Skip checking Key Vault secrets and certificates because of a symlink until a fix is merged upstream (https://github.com/Azure/azure-sdk-for-rust/issues/5143).
-  if ($packageName -in @('azure_security_keyvault_secrets', 'azure_security_keyvault_certificates')) {
-    LogWarning "Skipping $packageName due to a bug in ``cargo-semver-checks`` (https://github.com/Azure/azure-sdk-for-rust/issues/5143)"
+  if ($packageExemptions.ContainsKey($currentPackageName)) {
+    LogWarning "Skipping $currentPackageName because $($packageExemptions[$currentPackageName])"
     continue
   }
 
   $manifestPath = $package.manifest_path
   $baselineRevision = Get-BaselineRevision $package
   if (!$baselineRevision) {
-    LogWarning "$packageName has not been published yet and will be ignored"
+    LogWarning "$currentPackageName has not been published yet and will be ignored"
     continue
   }
 
   Initialize-BaselineRevision $baselineRevision
   $output = Invoke-LoggedCommand "cargo +$resolvedToolchain semver-checks --manifest-path '$manifestPath' --baseline-rev '$baselineRevision'" -DoNotExitOnFailedExitCode -GroupOutput 2>&1
-  if ($output -match 'error: no library targets found in package `(?<name>[\w_]+)`' -and $Matches['name'] -eq $packageName) {
-    LogWarning "$packageName base version is a placeholder and will be ignored"
+  if ($output -match 'error: no library targets found in package `(?<name>[\w_]+)`' -and $Matches['name'] -eq $currentPackageName) {
+    LogWarning "$currentPackageName base version is a placeholder and will be ignored"
     continue
   }
 
   if ($output -match 'error: no crates with library targets selected') {
-    LogWarning "$packageName is not a lib crate and will be ignored"
+    LogWarning "$currentPackageName is not a lib crate and will be ignored"
     continue
   }
 

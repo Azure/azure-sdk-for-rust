@@ -7,17 +7,40 @@
 ## Features
 
 - `default`
+  - `arrow`
   - `azure_core/default`
   - `tokio`
+- `arrow`
 - `tokio`
 
 ```rust
 #![crate_name = "azure_storage_blob"]
 #![crate_type = "lib"]
+#![cfg(feature = "arrow")]
 #![allow(dead_code)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 pub use azure_storage_blob::clients::*;
 pub fn format_filter_expression(tags: &std::collections::HashMap<String, String>) -> Result<String, std::io::Error>;
+pub struct ContainerSessionProvider {
+}
+impl ContainerSessionProvider {
+    pub fn new(service_url: &Url, credential: Arc<dyn TokenCredential>, options: Option<BlobServiceClientOptions>) -> Result<Self>;
+}
+impl Debug for ContainerSessionProvider {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+}
+#[async_trait]
+impl SessionProvider for ContainerSessionProvider {
+    async fn get_session(&self, request: &Request) -> Result<SessionTokenInfo>;
+    async fn invalidate_session(&self, request: &Request, current: &SessionTokenInfo);
+    fn is_request_eligible(&self, request: &Request) -> bool;
+}
+#[derive(Clone, Debug, Default)]
+pub struct SessionOptions {
+    pub mode: SessionMode,
+    pub account_name: Option<String>,
+    pub session_provider: Option<std::sync::Arc<dyn SessionProvider>>,
+}
 #[derive(Clone, Debug)]
 pub struct StorageError {
     pub status_code: azure_core::http::StatusCode,
@@ -40,6 +63,18 @@ impl TryFrom<Error> for StorageError {
     type Error = Error;
     fn try_from(error: azure_core::Error) -> std::result::Result<Self, <Self as >::Error>;
 }
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum SessionMode {
+    #[default]
+    Disabled,
+    Enabled,
+}
+#[async_trait]
+pub trait SessionProvider: sealed::Sealed + fmt::Debug + Send + Sync {
+    async fn get_session(&self, request: &Request) -> Result<SessionTokenInfo>;
+    async fn invalidate_session(&self, request: &Request, current: &SessionTokenInfo);
+    fn is_request_eligible(&self, request: &Request) -> bool;
+}
 pub type Result<T> = std::result::Result<T, StorageError>;
 pub mod clients {
     pub struct AppendBlobClient {
@@ -57,6 +92,7 @@ pub mod clients {
     #[derive(Clone, Debug)]
     pub struct AppendBlobClientOptions {
         pub client_options: azure_core::http::ClientOptions,
+        pub session_options: Option<crate::SessionOptions>,
         pub version: String,
     }
     impl Default for AppendBlobClientOptions {
@@ -102,6 +138,7 @@ pub mod clients {
     #[derive(Clone, Debug)]
     pub struct BlobClientOptions {
         pub client_options: azure_core::http::ClientOptions,
+        pub session_options: Option<crate::SessionOptions>,
         pub version: String,
     }
     impl Default for BlobClientOptions {
@@ -112,6 +149,8 @@ pub mod clients {
     impl BlobContainerClient {
         pub fn blob_client(&self, blob_name: &str) -> BlobClient;
         pub async fn exists(&self) -> Result<bool>;
+        pub fn list_blobs(&self, options: Option<BlobContainerClientListBlobsOptions<'_>>) -> Result<Pager<ListBlobsResponse, AutoFormat>>;
+        pub fn list_blobs_hierarchical(&self, delimiter: &str, options: Option<BlobContainerClientListBlobsHierarchicalOptions<'_>>) -> Result<Pager<ListBlobsHierarchicalResponse, AutoFormat>>;
         pub fn new(container_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<BlobContainerClientOptions>) -> Result<Self>;
         pub fn url(&self) -> &Url;
     }
@@ -125,7 +164,6 @@ pub mod clients {
         pub async fn get_access_policy(&self, options: Option<BlobContainerClientGetAccessPolicyOptions<'_>>) -> Result<Response<SignedIdentifiers, XmlFormat>>;
         pub async fn get_account_info(&self, options: Option<BlobContainerClientGetAccountInfoOptions<'_>>) -> Result<Response<BlobContainerClientGetAccountInfoResult, NoFormat>>;
         pub async fn get_properties(&self, options: Option<BlobContainerClientGetPropertiesOptions<'_>>) -> Result<Response<BlobContainerClientGetPropertiesResult, NoFormat>>;
-        pub fn list_blobs(&self, options: Option<BlobContainerClientListBlobsOptions<'_>>) -> Result<Pager<ListBlobsResponse, XmlFormat>>;
         pub async fn release_lease(&self, lease_id: String, options: Option<BlobContainerClientReleaseLeaseOptions<'_>>) -> Result<Response<BlobContainerClientReleaseLeaseResult, NoFormat>>;
         pub async fn renew_lease(&self, lease_id: String, options: Option<BlobContainerClientRenewLeaseOptions<'_>>) -> Result<Response<BlobContainerClientRenewLeaseResult, NoFormat>>;
         pub async fn set_access_policy(&self, container_acl: RequestContent<SignedIdentifiers, XmlFormat>, options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>) -> Result<Response<(), NoFormat>>;
@@ -134,6 +172,7 @@ pub mod clients {
     #[derive(Clone, Debug)]
     pub struct BlobContainerClientOptions {
         pub client_options: azure_core::http::ClientOptions,
+        pub session_options: Option<crate::SessionOptions>,
         pub version: String,
     }
     impl Default for BlobContainerClientOptions {
@@ -159,6 +198,7 @@ pub mod clients {
     #[derive(Clone, Debug)]
     pub struct BlobServiceClientOptions {
         pub client_options: azure_core::http::ClientOptions,
+        pub session_options: Option<crate::SessionOptions>,
         pub version: String,
     }
     impl Default for BlobServiceClientOptions {
@@ -181,6 +221,7 @@ pub mod clients {
     #[derive(Clone, Debug)]
     pub struct BlockBlobClientOptions {
         pub client_options: azure_core::http::ClientOptions,
+        pub session_options: Option<crate::SessionOptions>,
         pub version: String,
     }
     impl Default for BlockBlobClientOptions {
@@ -204,6 +245,7 @@ pub mod clients {
     #[derive(Clone, Debug)]
     pub struct PageBlobClientOptions {
         pub client_options: azure_core::http::ClientOptions,
+        pub session_options: Option<crate::SessionOptions>,
         pub version: String,
     }
     impl Default for PageBlobClientOptions {
@@ -322,6 +364,19 @@ pub mod models {
     }
     #[derive(Debug)]
     pub struct AppendBlobClientSealResult;
+    #[derive(Clone, Debug)]
+    pub struct AutoFormat;
+    impl DeserializeWith<AutoFormat> for crate::models::ListBlobsHierarchicalResponse {
+        fn deserialize_from(response: RawResponse) -> Result<Self>;
+        fn deserialize_with(body: ResponseBody) -> Result<Self>;
+    }
+    impl DeserializeWith<AutoFormat> for crate::models::ListBlobsResponse {
+        fn deserialize_from(response: RawResponse) -> Result<Self>;
+        fn deserialize_with(body: ResponseBody) -> Result<Self>;
+    }
+    impl Format for AutoFormat {
+        fn deserialize<T: DeserializeOwned, S: AsRef<[u8]>>(body: S) -> Result<T>;
+    }
     #[derive(Clone, Debug, Default)]
     pub struct BlobClientAbortCopyOptions<'a> {
         pub lease_id: Option<String>,
@@ -425,6 +480,7 @@ pub mod models {
         pub if_tags: Option<String>,
         pub if_unmodified_since: Option<time::OffsetDateTime>,
         pub lease_id: Option<String>,
+        pub layout_aware_routing: LayoutAwareRouting,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub parallel: Option<std::num::NonZero<usize>>,
         pub partition_size: Option<std::num::NonZero<usize>>,
@@ -685,8 +741,25 @@ pub mod models {
     #[derive(Debug)]
     pub struct BlobContainerClientGetPropertiesResult;
     #[derive(Clone, Debug, Default)]
+    pub struct BlobContainerClientListBlobsHierarchicalOptions<'a> {
+        #[cfg(feature = "arrow")]
+        pub end_before: Option<String>,
+        pub include: Option<Vec<crate::models::ListBlobsIncludeItem>>,
+        pub marker: Option<String>,
+        pub maxresults: Option<i32>,
+        pub method_options: azure_core::http::pager::PagerOptions<'a>,
+        pub prefix: Option<String>,
+        pub start_from: Option<String>,
+        pub timeout: Option<i32>,
+    }
+    impl BlobContainerClientListBlobsHierarchicalOptions<'_> {
+        pub fn into_owned(self) -> BlobContainerClientListBlobsHierarchicalOptions<'static>;
+    }
+    #[derive(Clone, Debug, Default)]
     pub struct BlobContainerClientListBlobsOptions<'a> {
-        pub include: Option<Vec<super::ListBlobsIncludeItem>>,
+        #[cfg(feature = "arrow")]
+        pub end_before: Option<String>,
+        pub include: Option<Vec<crate::models::ListBlobsIncludeItem>>,
         pub marker: Option<String>,
         pub maxresults: Option<i32>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
@@ -769,6 +842,17 @@ pub mod models {
         pub tag_count: Option<i64>,
         pub encryption_scope: Option<String>,
         pub encryption_key_sha256: Option<String>,
+        pub access_tier: Option<crate::generated::models::AccessTier>,
+        pub access_tier_changed_on: Option<time::OffsetDateTime>,
+        pub access_tier_inferred: Option<bool>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
+    pub struct BlobHierarchyList {
+        #[serde(default, rename = "Blob")]
+        pub blob_items: Vec<BlobItem>,
+        #[serde(rename = "BlobPrefix", skip_serializing_if = "Option::is_none")]
+        pub blob_prefixes: Option<Vec<BlobPrefix>>,
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -814,6 +898,12 @@ pub mod models {
         pub content: Option<String>,
         #[serde(rename = "@Encoded", skip_serializing_if = "Option::is_none")]
         pub encoded: Option<bool>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
+    pub struct BlobPrefix {
+        #[serde(deserialize_with = "crate::models::blob_name::option::deserialize", rename = "Name", skip_serializing_if = "Option::is_none")]
+        pub name: Option<String>,
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -897,6 +987,8 @@ pub mod models {
         pub remaining_retention_days: Option<i32>,
         #[serde(rename = "ServerEncrypted", skip_serializing_if = "Option::is_none")]
         pub server_encrypted: Option<bool>,
+        #[serde(rename = "SmartAccessTier", skip_serializing_if = "Option::is_none")]
+        pub smart_access_tier: Option<super::AccessTier>,
         #[serde(rename = "TagCount", skip_serializing_if = "Option::is_none")]
         pub tag_count: Option<i32>,
     }
@@ -1313,11 +1405,11 @@ pub mod models {
         #[serde(rename = "Where", skip_serializing_if = "Option::is_none")]
         pub where_prop: Option<String>,
     }
+    #[async_trait]
     impl Page for super::FilteredBlobResponse {
         type IntoIter = <Vec<FilterBlobItem> as IntoIterator>::IntoIter;
         type Item = FilterBlobItem;
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn into_items(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<<Self as >::IntoIter>> + ::core::marker::Send>>;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -1386,6 +1478,33 @@ pub mod models {
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
     #[serde(rename = "EnumerationResults")]
+    pub struct ListBlobsHierarchicalResponse {
+        #[serde(rename = "@ContainerName", skip_serializing_if = "Option::is_none")]
+        pub container_name: Option<String>,
+        #[serde(rename = "Delimiter", skip_serializing_if = "Option::is_none")]
+        pub delimiter: Option<String>,
+        #[serde(default, rename = "Blobs")]
+        pub hierarchical_list: BlobHierarchyList,
+        #[serde(rename = "Marker", skip_serializing_if = "Option::is_none")]
+        pub marker: Option<String>,
+        #[serde(rename = "MaxResults", skip_serializing_if = "Option::is_none")]
+        pub max_results: Option<i32>,
+        #[serde(rename = "NextMarker", skip_serializing_if = "Option::is_none")]
+        pub next_marker: Option<String>,
+        #[serde(rename = "Prefix", skip_serializing_if = "Option::is_none")]
+        pub prefix: Option<String>,
+        #[serde(rename = "@ServiceEndpoint", skip_serializing_if = "Option::is_none")]
+        pub service_endpoint: Option<String>,
+    }
+    #[async_trait]
+    impl Page for super::ListBlobsHierarchicalResponse {
+        type IntoIter = <Vec<BlobItem> as IntoIterator>::IntoIter;
+        type Item = BlobItem;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
+    #[serde(rename = "EnumerationResults")]
     pub struct ListBlobsResponse {
         #[serde(default, deserialize_with = "Blob_itemsBlobItem::unwrap", rename = "Blobs", serialize_with = "Blob_itemsBlobItem::wrap")]
         pub blob_items: Vec<BlobItem>,
@@ -1402,11 +1521,11 @@ pub mod models {
         #[serde(rename = "@ServiceEndpoint", skip_serializing_if = "Option::is_none")]
         pub service_endpoint: Option<String>,
     }
+    #[async_trait]
     impl Page for super::ListBlobsResponse {
         type IntoIter = <Vec<BlobItem> as IntoIterator>::IntoIter;
         type Item = BlobItem;
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn into_items(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<<Self as >::IntoIter>> + ::core::marker::Send>>;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -1425,11 +1544,11 @@ pub mod models {
         #[serde(rename = "@ServiceEndpoint", skip_serializing_if = "Option::is_none")]
         pub service_endpoint: Option<String>,
     }
+    #[async_trait]
     impl Page for super::ListContainersResponse {
         type IntoIter = <Vec<ContainerItem> as IntoIterator>::IntoIter;
         type Item = ContainerItem;
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn into_items(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<<Self as >::IntoIter>> + ::core::marker::Send>>;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     pub struct Logging {
@@ -1756,6 +1875,7 @@ pub mod models {
         RehydratePendingToCold,
         RehydratePendingToCool,
         RehydratePendingToHot,
+        RehydratePendingToSmart,
         UnknownValue(String),
     }
     impl AsRef<str> for super::ArchiveStatus {
@@ -2018,6 +2138,12 @@ pub mod models {
     }
     impl<'de> Deserialize<'de> for super::ImmutabilityPolicyMode {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
+    }
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    pub enum LayoutAwareRouting {
+        #[default]
+        Disabled,
+        Enabled,
     }
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub enum LeaseDuration {
@@ -2306,6 +2432,7 @@ pub mod models {
         CopyAcrossAccountsNotSupported,
         CopyIdMismatch,
         EmptyMetadataKey,
+        FeatureNotEnabled,
         FeatureVersionMismatch,
         IncrementalCopyBlobMismatch,
         IncrementalCopyOfEarlierSnapshotNotAllowed,
@@ -2514,6 +2641,7 @@ pub mod models {
         fn object_replication_policy_id(&self) -> Result<Option<String>>;
         fn object_replication_rules(&self) -> Result<HashMap<String, String>>;
         fn rehydrate_priority(&self) -> Result<Option<RehydratePriority>>;
+        fn smart_access_tier(&self) -> Result<Option<String>>;
         fn tag_count(&self) -> Result<Option<i64>>;
         fn version_id(&self) -> Result<Option<String>>;
     }
@@ -2606,6 +2734,7 @@ pub mod models {
         fn is_server_encrypted(&self) -> Result<Option<bool>>;
     }
     pub trait BlockBlobClientUploadBlobFromUrlResultHeaders: private::Sealed {
+        fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
         fn content_md5(&self) -> Result<Option<Vec<u8>>>;
         fn encryption_key_sha256(&self) -> Result<Option<String>>;
         fn encryption_scope(&self) -> Result<Option<String>>;
@@ -2678,7 +2807,6 @@ pub mod models {
 }
 pub mod stream {
     #[cfg(feature = "tokio")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
     pub mod tokio {
         #[derive(Clone, Debug)]
         pub struct FileStream {
@@ -2692,11 +2820,11 @@ pub mod stream {
         impl From<FileStream> for azure_core::http::Body {
             fn from(stream: FileStream) -> Self;
         }
+        #[async_trait]
         impl SeekableStream for FileStream {
             fn buffer_size(&self) -> usize;
             fn len(&self) -> Option<u64>;
-            #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-            fn reset(&mut self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = azure_core::Result<()>> + ::core::marker::Send>>;
+            async fn reset(&mut self) -> azure_core::Result<()>;
         }
         #[derive(Debug)]
         pub struct FileStreamBuilder {

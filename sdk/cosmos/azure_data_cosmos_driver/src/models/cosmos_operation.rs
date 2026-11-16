@@ -4,10 +4,12 @@
 //! Cosmos DB operation representation.
 
 use crate::models::{
-    AccountReference, ContainerReference, CosmosRequestHeaders, CosmosResourceReference,
-    DatabaseReference, FeedRange, ItemReference, OperationType, PartitionKey, Precondition,
-    ResourceType,
+    cosmos_resource_reference::validate_resource_name, AccountReference, ContainerReference,
+    CosmosRequestHeaders, CosmosResourceReference, DatabaseReference, FeedRange, ItemReference,
+    OperationType, PartitionKey, Precondition, ResourceType,
 };
+use crate::options::Utf8DecodingMode;
+use crate::read_many::ItemScope;
 use azure_core::http::Etag;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, time::Instant};
@@ -49,21 +51,20 @@ pub enum ChangeFeedStartFrom {
 
     /// Start from the current point in time (wire header `If-None-Match: *`).
     ///
-    /// "Now" is evaluated when the request is sent, so on resume a never-polled
-    /// partition starts from resume time rather than the original start time.
-    /// This is acceptable for LatestVersion (it still converges to the latest
-    /// state under at-least-once delivery). For AllVersionsAndDeletes it is a
-    /// documented limitation: a range that is never polled before a checkpoint
-    /// can drop the intermediate versions and deletes that occurred between the
-    /// original start and the resume. "Now" is deliberately not pinned to a
-    /// concrete start position before persisting, because that would change its
-    /// semantics; lossless per-range "Now" resolution is a future improvement.
+    /// "Now" is evaluated when each range's first request is sent, not when the
+    /// iterator is created or a checkpoint is saved. In LatestVersion mode, ranges not
+    /// polled before a checkpoint start at their first request after resume;
+    /// changes made before that request aren't included.
+    ///
+    /// AllVersionsAndDeletes fan-out polls every range to capture its starting
+    /// ETag before returning the first page. Saving a checkpoint before the first poll
+    /// does not perform this I/O; priming occurs when the resumed feed is polled.
     Now,
 
     /// Start from a specific point in time (wire header `If-Modified-Since`).
     ///
-    /// The timestamp is persisted in the continuation token as RFC 3339 so
-    /// resume is exact, and formatted as RFC 1123 for the wire header.
+    /// The timestamp is persisted in the continuation token as RFC 3339 and
+    /// formatted as RFC 1123 for the wire header, with one-second precision.
     PointInTime(#[serde(with = "time::serde::rfc3339")] OffsetDateTime),
 }
 
@@ -108,7 +109,7 @@ fn format_rfc1123(timestamp: &OffsetDateTime) -> String {
 /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
 /// // 1. Set up runtime and driver
 /// let runtime = CosmosDriverRuntime::builder().build().await?;
-/// let account = AccountReference::with_master_key(
+/// let account = AccountReference::with_account_key(
 ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
 ///     "my-key",
 /// );
@@ -128,6 +129,7 @@ fn format_rfc1123(timestamp: &OffsetDateTime) -> String {
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct CosmosOperation {
+    pub(crate) read_many: Option<std::sync::Arc<crate::read_many::ReadManyRequest>>,
     /// The type of operation (immutable after construction).
     operation_type: OperationType,
     /// The type of resource (derived from resource reference, immutable).
@@ -176,6 +178,8 @@ pub struct CosmosOperation {
     /// *emitted* format — see
     /// [`emits_binary_payload`](Self::emits_binary_payload).
     transcodes_response_to_text: bool,
+    /// Resolved handling for invalid UTF-8 in response JSON strings.
+    resolved_utf8_decoding_mode: Utf8DecodingMode,
     /// Internal routing constraint for reads whose correctness depends on
     /// observing the write region rather than the nearest read replica.
     internal_read_routing: InternalReadRouting,
@@ -236,6 +240,9 @@ impl CosmosOperation {
     /// caller actually invoked keeps reporting `patch_item` on the root span and
     /// the operation metric.
     pub fn db_operation_name(&self) -> Option<&'static str> {
+        if self.read_many.is_some() {
+            return Some("read_many");
+        }
         let name = match (self.operation_type, self.resource_type) {
             // Data-plane item operations.
             (OperationType::Create, ResourceType::Document) => "create_item",
@@ -341,15 +348,35 @@ impl CosmosOperation {
         }
     }
 
-    /// Validates that this operation does not mix name and RID addressing.
+    /// Validates name/RID addressing consistency and, when enabled, user-defined
+    /// resource names.
     ///
-    /// Delegates to
-    /// [`CosmosResourceReference::validate_addressing`], telling it whether the
-    /// leaf id will appear in the request path so that feed-style operations
-    /// (Create/Upsert) are correctly exempted from the leaf check.
-    pub(crate) fn validate_addressing(&self) -> crate::error::Result<()> {
+    /// Create and Upsert keep their mixed-addressing exemption because their
+    /// item id is not in the request path, but name validation still checks that
+    /// id so the created item remains addressable by later point operations.
+    /// Batch validation reads only item IDs from the service-defined envelope;
+    /// all other document fields remain schema-agnostic.
+    /// Read-many validates selected IDs before planning point reads or queries.
+    pub(crate) fn validate_addressing(
+        &self,
+        validate_resource_names: bool,
+    ) -> crate::error::Result<()> {
         self.resource_reference
-            .validate_addressing(!self.uses_feed_paths())
+            .validate_addressing(!self.uses_feed_paths())?;
+        if validate_resource_names {
+            self.resource_reference.validate_resource_names()?;
+            if self.operation_type == OperationType::Batch {
+                super::transactional_batch::validate_resource_names(self.body())?;
+            }
+            if let Some(request) = &self.read_many {
+                if let ItemScope::Items(items) = &request.selection {
+                    for (_, id) in items {
+                        validate_resource_name("item", id)?;
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 
     /// Returns the container for this operation, if applicable.
@@ -423,6 +450,9 @@ impl CosmosOperation {
     }
 
     /// Sets the session token request header for the operation.
+    ///
+    /// Caller tokens take precedence over cached state. See
+    /// [`SessionToken`](crate::models::SessionToken) for per-attempt transport scoping.
     pub fn with_session_token(
         mut self,
         session_token: impl Into<crate::models::SessionToken>,
@@ -482,8 +512,8 @@ impl CosmosOperation {
             })
     }
 
-    /// Records that the driver will transcode this operation's response back to
-    /// text before returning it to the caller.
+    /// Records that binary response options require this operation's response
+    /// to be transcoded back to text before returning it to the caller.
     pub(crate) fn transcoding_response_to_text(mut self) -> Self {
         self.transcodes_response_to_text = true;
         self
@@ -497,6 +527,21 @@ impl CosmosOperation {
     /// encoding from what the pipeline nodes were built to produce.
     pub(crate) fn transcodes_response_to_text(&self) -> bool {
         self.transcodes_response_to_text
+            || self.resolved_utf8_decoding_mode == Utf8DecodingMode::Lossy
+    }
+
+    /// Stores the resolved handling for invalid UTF-8 in this operation's response.
+    ///
+    /// [`Utf8DecodingMode::Lossy`] preserves binary response negotiation but
+    /// returns recovered text JSON so typed deserialization remains strict.
+    pub(crate) fn with_resolved_utf8_decoding_mode(mut self, mode: Utf8DecodingMode) -> Self {
+        self.resolved_utf8_decoding_mode = mode;
+        self
+    }
+
+    /// Returns the resolved handling for invalid UTF-8 in this operation's response.
+    pub(crate) fn resolved_utf8_decoding_mode(&self) -> Utf8DecodingMode {
+        self.resolved_utf8_decoding_mode
     }
 
     /// Whether pipeline nodes that synthesize a page should emit **binary**
@@ -508,7 +553,7 @@ impl CosmosOperation {
     /// while the driver transcodes on the way out, so a node emitting binary
     /// would re-encode every item only for `execute_plan` to decode it again.
     pub(crate) fn emits_binary_payload(&self) -> bool {
-        self.negotiates_binary_response() && !self.transcodes_response_to_text
+        self.negotiates_binary_response() && !self.transcodes_response_to_text()
     }
 
     /// Sets the maximum number of items the server should return per page
@@ -536,6 +581,9 @@ impl CosmosOperation {
 
     /// Records the change feed start position and emits its wire header.
     ///
+    /// Replaces any previously set precondition (`If-Match` or `If-None-Match`)
+    /// and `If-Modified-Since` value.
+    ///
     /// This is the single source of truth for translating a start position into
     /// the appropriate header, so both the initial request and a resume that
     /// reconstructs the position from a continuation token stay in sync:
@@ -544,6 +592,8 @@ impl CosmosOperation {
     /// - [`ChangeFeedStartFrom::Now`] → `If-None-Match: *`
     /// - [`ChangeFeedStartFrom::PointInTime`] → `If-Modified-Since: <RFC 1123>`
     pub fn with_change_feed_start(mut self, start_from: ChangeFeedStartFrom) -> Self {
+        self.request_headers.precondition = None;
+        self.request_headers.if_modified_since = None;
         match &start_from {
             ChangeFeedStartFrom::Beginning => {}
             ChangeFeedStartFrom::Now => {
@@ -720,6 +770,7 @@ impl CosmosOperation {
             "Attempted to create a partitioned operation without an OperationTarget specifying the partitions to access"
         );
         Self {
+            read_many: None,
             operation_type,
             resource_type,
             resource_reference,
@@ -735,6 +786,7 @@ impl CosmosOperation {
             is_patch_sub_operation: false,
             patch_retry_safe: None,
             transcodes_response_to_text: false,
+            resolved_utf8_decoding_mode: Utf8DecodingMode::Strict,
             internal_read_routing: InternalReadRouting::Default,
             absolute_deadline: None,
         }
@@ -743,6 +795,24 @@ impl CosmosOperation {
     fn for_item(operation_type: OperationType, item: ItemReference) -> Self {
         let range = FeedRange::for_item(&item);
         Self::new(operation_type, item, Some(range))
+    }
+
+    /// Reads selected items, logical partitions, or feed ranges, optionally filtered.
+    ///
+    /// Item and partition scopes accept complete keys or nonempty hierarchical prefixes.
+    /// A prefix plus an id returns every matching item across logical partitions.
+    ///
+    /// Execute with [`CosmosDriver::plan_operation()`](crate::CosmosDriver::plan_operation)
+    /// and [`CosmosDriver::execute_plan()`](crate::CosmosDriver::execute_plan).
+    /// Pages are unordered, duplicates are removed, and missing items are omitted.
+    /// Durable continuation tokens are not supported.
+    pub fn read_many(
+        container: ContainerReference,
+        selection: impl Into<crate::read_many::ItemSelector>,
+    ) -> Self {
+        let mut operation = Self::query_items(container, Some(FeedRange::full()));
+        operation.read_many = Some(std::sync::Arc::new(selection.into()));
+        operation
     }
 
     // ===== Control Plane Factory Methods =====
@@ -760,7 +830,7 @@ impl CosmosOperation {
     /// use azure_data_cosmos_driver::models::{AccountReference, CosmosOperation};
     /// use url::Url;
     ///
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -805,7 +875,7 @@ impl CosmosOperation {
     /// };
     /// use url::Url;
     ///
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -842,7 +912,7 @@ impl CosmosOperation {
     /// };
     /// use url::Url;
     ///
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -892,7 +962,7 @@ impl CosmosOperation {
     ///
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -985,7 +1055,7 @@ impl CosmosOperation {
     ///
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -1025,7 +1095,7 @@ impl CosmosOperation {
     ///
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -1087,14 +1157,18 @@ impl CosmosOperation {
     /// Builds a PATCH operation for an item.
     ///
     /// [`crate::options::PatchStrategy`] selects one server-side request or the
-    /// client-side Read-Modify-Write loop. Callers serialize
-    /// [`crate::models::PatchInstructions`] into the operation body.
+    /// client-side Read-Modify-Write loop. Provide a UTF-8 JSON body containing
+    /// `operations` and an optional string `condition` (a SQL `FROM ... WHERE ...`
+    /// predicate). Conditions require effective server-side execution.
+    /// Serialize [`crate::models::PatchInstructions`] to supply this body,
+    /// including any predicate set with
+    /// [`PatchInstructions::with_filter_predicate()`](crate::models::PatchInstructions::with_filter_predicate).
     pub fn patch_item(item: ItemReference) -> Self {
         Self::for_item(OperationType::Patch, item)
     }
 
     /// Builds a distributed transaction coordinator operation.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub fn distributed_transaction(
         account: AccountReference,
         transaction_type: crate::models::DistributedTransactionType,
@@ -1321,7 +1395,13 @@ impl CosmosOperation {
             // Change feed is trivial only when targeting a specific logical partition key.
             // Full-container (target=None) and EPK range targets require fan-out.
             if self.is_change_feed() {
-                return self.target().and_then(|t| t.partition_key()).is_some();
+                return self
+                    .target()
+                    .and_then(|target| target.partition_key())
+                    .zip(self.container())
+                    .is_some_and(|(key, container)| {
+                        container.partition_key_definition().is_complete(key)
+                    });
             }
             // For now, at least, all other non-query operations are trivial.
             return true;
@@ -1397,7 +1477,7 @@ mod tests {
     use url::Url;
 
     fn test_account() -> AccountReference {
-        AccountReference::with_master_key(
+        AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
@@ -1424,6 +1504,63 @@ mod tests {
             "testcontainer_rid",
             &test_container_props(),
         )
+    }
+
+    #[test]
+    fn utf8_decoding_is_strict_by_default() {
+        let operation =
+            CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()));
+
+        assert_eq!(
+            operation.resolved_utf8_decoding_mode(),
+            Utf8DecodingMode::Strict
+        );
+        assert!(!operation.transcodes_response_to_text());
+    }
+
+    #[test]
+    fn lossy_utf8_requests_text_output_without_disabling_binary_negotiation() {
+        let operation =
+            CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()))
+                .with_supported_serialization_formats("JsonText,CosmosBinary")
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Lossy);
+
+        assert!(operation.negotiates_binary_response());
+        assert!(operation.transcodes_response_to_text());
+        assert!(!operation.emits_binary_payload());
+    }
+
+    #[test]
+    fn resolved_utf8_decoding_mode_is_reversible() {
+        let operation =
+            CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()))
+                .with_supported_serialization_formats("JsonText,CosmosBinary")
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Lossy)
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Strict);
+
+        assert_eq!(
+            operation.resolved_utf8_decoding_mode(),
+            Utf8DecodingMode::Strict
+        );
+        assert!(!operation.transcodes_response_to_text());
+        assert!(operation.emits_binary_payload());
+    }
+
+    #[test]
+    fn strict_utf8_preserves_independent_text_transcoding() {
+        let operation =
+            CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()))
+                .with_supported_serialization_formats("JsonText,CosmosBinary")
+                .transcoding_response_to_text()
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Lossy)
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Strict);
+
+        assert_eq!(
+            operation.resolved_utf8_decoding_mode(),
+            Utf8DecodingMode::Strict
+        );
+        assert!(operation.transcodes_response_to_text());
+        assert!(!operation.emits_binary_payload());
     }
 
     /// A container addressed purely by RID (no name-based path available).
@@ -1492,12 +1629,98 @@ mod tests {
             ItemReference::from_name(&test_container_by_rid(), PartitionKey::from("pk1"), "doc1");
         let op = CosmosOperation::create_item(item_ref);
         assert!(op.uses_feed_paths());
-        op.validate_addressing()
+        op.validate_addressing(true)
             .expect("create on a RID container may carry a name id");
         assert_eq!(
             op.compute_resource_paths().request_path(),
             "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=/docs"
         );
+    }
+
+    #[test]
+    fn create_and_upsert_reject_unsafe_item_names_when_validation_is_enabled() {
+        for operation in [
+            CosmosOperation::create_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "../other-container",
+            )),
+            CosmosOperation::upsert_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "item?query",
+            )),
+        ] {
+            let error = operation
+                .validate_addressing(true)
+                .expect_err("unsafe item names must be rejected before creation");
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST
+            );
+        }
+    }
+
+    #[test]
+    fn create_and_upsert_allow_unsafe_item_names_when_validation_is_disabled() {
+        for operation in [
+            CosmosOperation::create_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "../other-container",
+            )),
+            CosmosOperation::upsert_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "item?query",
+            )),
+        ] {
+            operation
+                .validate_addressing(false)
+                .expect("the compatibility option must disable creation-time name validation");
+        }
+    }
+
+    #[test]
+    fn read_many_validates_selected_names_with_compatibility_opt_out() {
+        for id in ["..", "a/b", "item?query", "item#fragment", "item\nname"] {
+            for ids in [vec![id], vec!["safe-item", id]] {
+                let operation = CosmosOperation::read_many(
+                    test_container(),
+                    ItemScope::Items(
+                        ids.into_iter()
+                            .map(|id| (PartitionKey::from("pk1"), id.to_owned()))
+                            .collect(),
+                    ),
+                );
+                let error = operation
+                    .validate_addressing(true)
+                    .expect_err("unsafe selected IDs must be rejected before planning");
+                assert_eq!(
+                    error.status(),
+                    crate::error::status_codes::CLIENT_BAD_REQUEST
+                );
+                operation
+                    .validate_addressing(false)
+                    .expect("the compatibility option must disable selected ID validation");
+            }
+        }
+    }
+
+    #[test]
+    fn read_many_accepts_safe_names_and_partition_scopes() {
+        for selection in [
+            ItemScope::Items(vec![
+                (PartitionKey::from("pk1"), "item with spaces".into()),
+                (PartitionKey::from("pk2"), "item+value=1".into()),
+            ]),
+            ItemScope::Partitions(vec![PartitionKey::from("a/b")]),
+            ItemScope::Items(Vec::new()),
+        ] {
+            CosmosOperation::read_many(test_container(), selection)
+                .validate_addressing(true)
+                .expect("safe selections must pass name validation");
+        }
     }
 
     #[test]
@@ -1510,7 +1733,7 @@ mod tests {
         let op = CosmosOperation::read_item(item_ref);
         assert!(!op.uses_feed_paths());
         let err = op
-            .validate_addressing()
+            .validate_addressing(false)
             .expect_err("a name leaf under a RID parent must be rejected");
         assert_eq!(
             err.status(),
@@ -1528,7 +1751,7 @@ mod tests {
             "Lx1BALxJyZ8BAAAAAAAAAA==",
         );
         let op = CosmosOperation::read_item(item_ref);
-        op.validate_addressing()
+        op.validate_addressing(false)
             .expect("a RID leaf under a RID parent is consistent");
 
         let paths = op.compute_resource_paths();
@@ -1642,7 +1865,7 @@ mod tests {
             .allows_ambiguous_outcome_retry());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn distributed_write_transaction_is_idempotent() {
         let op = CosmosOperation::distributed_transaction(
@@ -1654,7 +1877,7 @@ mod tests {
         assert!(op.is_idempotent());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn distributed_read_transaction_is_read_only_and_idempotent() {
         let op = CosmosOperation::distributed_transaction(
@@ -1677,6 +1900,66 @@ mod tests {
         assert!(op.request_headers().incremental_feed);
         assert!(!op.request_headers().full_fidelity_feed);
         assert!(op.request_headers().changefeed_wire_format_version);
+    }
+
+    #[test]
+    fn change_feed_start_replaces_previous_headers() {
+        let starts = [
+            ChangeFeedStartFrom::Beginning,
+            ChangeFeedStartFrom::Now,
+            ChangeFeedStartFrom::PointInTime(time::macros::datetime!(2026-08-21 12:34:56 UTC)),
+        ];
+        for previous in &starts {
+            for start in &starts {
+                let operation =
+                    CosmosOperation::change_feed(test_container(), Some(FeedRange::full()))
+                        .with_change_feed_start(previous.clone())
+                        .with_change_feed_start(start.clone());
+                assert_eq!(operation.change_feed_start(), Some(start));
+                let expected_precondition = matches!(start, ChangeFeedStartFrom::Now)
+                    .then(|| Precondition::if_none_match(Etag::from("*")));
+                assert_eq!(operation.precondition(), expected_precondition.as_ref());
+                let expected_time = match start {
+                    ChangeFeedStartFrom::PointInTime(timestamp) => Some(format_rfc1123(timestamp)),
+                    _ => None,
+                };
+                assert_eq!(operation.request_headers().if_modified_since, expected_time);
+            }
+        }
+    }
+
+    #[test]
+    fn change_feed_prefix_requires_fanout_but_complete_key_does_not() {
+        let properties = ContainerProperties {
+            id: "hpk".into(),
+            partition_key: ("/tenant", "/user", "/device").into(),
+            system_properties: SystemProperties::default(),
+        };
+        let container = ContainerReference::new(
+            test_account(),
+            "db",
+            "db_rid",
+            "hpk",
+            "hpk_rid",
+            &properties,
+        );
+        for key in [
+            PartitionKey::from("tenant"),
+            PartitionKey::from(("tenant", "user")),
+            PartitionKey::from(("tenant", "user", "device")),
+        ] {
+            let complete = container.partition_key_definition().is_complete(&key);
+            let range = FeedRange::for_partition(key, container.partition_key_definition());
+            for operation in [
+                CosmosOperation::change_feed(container.clone(), Some(range.clone())),
+                CosmosOperation::change_feed_all_versions_and_deletes(
+                    container.clone(),
+                    Some(range.clone()),
+                ),
+            ] {
+                assert_eq!(operation.is_trivial(), complete);
+            }
+        }
     }
 
     /// The full-fidelity (AllVersionsAndDeletes) factory sets the

@@ -216,7 +216,7 @@ impl Arm {
 }
 
 fn account() -> AccountReference {
-    AccountReference::with_master_key(
+    AccountReference::with_account_key(
         Url::parse(ACCOUNT_ENDPOINT).expect("valid endpoint"),
         ACCOUNT_KEY,
     )

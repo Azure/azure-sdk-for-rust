@@ -300,11 +300,11 @@ impl Config {
                     .into(),
             );
         }
-        if !cfg!(feature = "preview_opentelemetry") && self.extended_metrics {
+        if !cfg!(feature = "unstable_opentelemetry") && self.extended_metrics {
             return Err(
                 "--extended-metrics was requested but this build was compiled without \
-                        the `preview_opentelemetry` feature; rebuild with \
-                        `--features preview_opentelemetry` (on by default)"
+                        the `unstable_opentelemetry` feature; rebuild with \
+                        `--features unstable_opentelemetry` (on by default)"
                     .into(),
             );
         }

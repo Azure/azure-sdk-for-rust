@@ -85,13 +85,13 @@ use crate::partition_key::{CosmosPartitionKeyComponent, PartitionKeyHandle};
 /// pointers so the struct stays `#[repr(C)]`.
 pub struct OptOf;
 
-const TRISTATE_UNSET: i8 = 0;
+pub(crate) const TRISTATE_UNSET: i8 = 0;
 const TRISTATE_FALSE: i8 = 1;
 const TRISTATE_TRUE: i8 = 2;
 
 /// Decodes a tri-state bool. Returns `Err(INVALID_OPTION_VALUE)` for an
 /// out-of-range discriminant.
-fn decode_tristate_bool(v: i8) -> Result<Option<bool>, CosmosErrorCode> {
+pub(crate) fn decode_tristate_bool(v: i8) -> Result<Option<bool>, CosmosErrorCode> {
     match v {
         TRISTATE_UNSET => Ok(None),
         TRISTATE_FALSE => Ok(Some(false)),
@@ -1466,7 +1466,7 @@ mod tests {
     #[test]
     fn patch_tracking_fields_are_rejected_for_non_patch_operation() {
         let operation = CosmosOperation::read_all_databases(
-            azure_data_cosmos_driver::models::AccountReference::with_master_key(
+            azure_data_cosmos_driver::models::AccountReference::with_account_key(
                 azure_core::http::Url::parse("https://localhost").unwrap(),
                 "test-key",
             ),
@@ -2166,7 +2166,7 @@ mod tests {
     async fn built_request_owns_text_before_async_execution() {
         let built = {
             let account = AccountRefHandle {
-                inner: azure_data_cosmos_driver::models::AccountReference::with_master_key(
+                inner: azure_data_cosmos_driver::models::AccountReference::with_account_key(
                     azure_core::http::Url::parse("https://localhost").unwrap(),
                     "key",
                 ),
@@ -2220,7 +2220,7 @@ mod tests {
     #[test]
     fn offer_links_and_continuations_validate_complete_values() {
         let account = AccountRefHandle {
-            inner: azure_data_cosmos_driver::models::AccountReference::with_master_key(
+            inner: azure_data_cosmos_driver::models::AccountReference::with_account_key(
                 azure_core::http::Url::parse("https://localhost").unwrap(),
                 "key",
             ),
@@ -2287,7 +2287,7 @@ mod tests {
                 request.max_item_count = -1;
                 set(&mut request, view(bytes));
                 let operation = CosmosOperation::read_all_databases(
-                    azure_data_cosmos_driver::models::AccountReference::with_master_key(
+                    azure_data_cosmos_driver::models::AccountReference::with_account_key(
                         azure_core::http::Url::parse("https://localhost").unwrap(),
                         "key",
                     ),

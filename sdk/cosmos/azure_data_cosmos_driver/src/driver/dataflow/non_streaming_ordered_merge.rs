@@ -7,15 +7,17 @@ use super::{
     binary_heap,
     order_by::compare_key_tuples,
     query_plan::SortOrder,
-    query_response::{parse_envelope_page, EnvelopeRow, PageAggregator},
+    query_response::{parse_envelope_page, EnvelopePayload, EnvelopeRow, PageAggregator},
+    recovery_diagnostics::RecoveryDiagnostics,
     PageResult, PipelineContext, PipelineNode, PipelineNodeState,
 };
+#[cfg(test)]
+use crate::driver::dataflow::PipelineBody;
 use crate::{
     error::CosmosError,
     models::{FeedRange, MaxItemCountHint, SessionToken},
 };
 use async_trait::async_trait;
-use serde_json::value::RawValue;
 use std::{cmp::Ordering, collections::VecDeque, mem, sync::Arc};
 
 const DEFAULT_PAGE_SIZE: usize = 100;
@@ -36,7 +38,7 @@ pub(crate) struct NonStreamingOrderedMerge {
     emit_binary: bool,
     retained: Vec<RetainedRow>,
     next_ordinal: u64,
-    results: VecDeque<Box<RawValue>>,
+    results: VecDeque<EnvelopePayload>,
     aggregator: Option<PageAggregator>,
     session_token: Option<SessionToken>,
     buffering_complete: bool,
@@ -176,6 +178,17 @@ impl NonStreamingOrderedMerge {
             is_terminal,
         })
     }
+
+    fn attach_error(&mut self, error: CosmosError) -> CosmosError {
+        let Some(aggregator) = self.aggregator.take() else {
+            return error;
+        };
+        self.session_token = aggregator.session_token().cloned();
+        let mut next = PageAggregator::new(self.emit_binary);
+        next.seed_session_token(self.session_token.clone());
+        self.aggregator = Some(next);
+        aggregator.attach_error(error)
+    }
 }
 
 #[async_trait]
@@ -189,26 +202,35 @@ impl PipelineNode for NonStreamingOrderedMerge {
         }
 
         while !self.buffering_complete {
-            match self.child.next_page(context).await? {
+            match self
+                .child
+                .next_page(context)
+                .await
+                .map_err(|error| self.attach_error(error))?
+            {
                 PageResult::Page {
                     response,
                     is_terminal,
                 } => {
-                    let rows = parse_envelope_page(response.body(), self.directions.len())?;
                     self.aggregator
                         .as_mut()
                         .expect("aggregator exists while buffering")
-                        .absorb(&response)?;
+                        .absorb(&response)
+                        .map_err(|error| self.attach_error(error))?;
+                    let rows = parse_envelope_page(response.body(), self.directions.len())
+                        .map_err(|error| self.attach_error(error))?;
                     for row in rows {
-                        self.retain(row)?;
+                        self.retain(row).map_err(|error| self.attach_error(error))?;
                     }
                     if is_terminal {
                         self.finish_buffering();
                     }
                 }
                 PageResult::Drained => self.finish_buffering(),
-                PageResult::SplitRequired { .. } => {
-                    return Err(CosmosError::builder()
+                PageResult::SplitRequired { mut replacements } => {
+                    let mut diagnostics = RecoveryDiagnostics::default();
+                    diagnostics.absorb(replacements.take_diagnostics());
+                    let error = diagnostics.attach_error(CosmosError::builder()
                         .with_status(
                             crate::error::status_codes::CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT,
                         )
@@ -216,11 +238,12 @@ impl PipelineNode for NonStreamingOrderedMerge {
                             "non-streaming ORDER BY child unexpectedly requested split handling",
                         )
                         .build());
+                    return Err(self.attach_error(error));
                 }
             }
         }
 
-        self.emit_page()
+        self.emit_page().map_err(|error| self.attach_error(error))
     }
 
     #[cfg(test)]
@@ -253,15 +276,13 @@ impl PipelineNode for NonStreamingOrderedMerge {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        driver::dataflow::{
-            mocks::{response_with_charge, MockLeaf, NoopRequestExecutor, NoopTopologyProvider},
-            order_by::{OrderByItem, OrderByNumber},
-            PipelineContext,
-        },
-        models::ResponseBody,
+    use crate::driver::dataflow::{
+        mocks::{response_with_charge, MockLeaf, NoopRequestExecutor, NoopTopologyProvider},
+        order_by::{OrderByItem, OrderByNumber},
+        PipelineContext,
     };
     use serde_json::json;
+    use serde_json::value::RawValue;
 
     fn envelope(rows: &[(&str, f64, &str)]) -> Vec<u8> {
         serde_json::to_vec(&json!({
@@ -300,8 +321,8 @@ mod tests {
         )
     }
 
-    fn ids(response: &crate::models::CosmosResponse) -> Vec<String> {
-        let ResponseBody::Items(items) = response.body() else {
+    fn ids(response: &crate::driver::dataflow::PipelineResponse) -> Vec<String> {
+        let PipelineBody::Items(items) = response.body() else {
             panic!("expected items response");
         };
         items
@@ -462,13 +483,67 @@ mod tests {
         let PageResult::Page { response, .. } = node.next_page(&mut context).await.unwrap() else {
             panic!("expected page");
         };
-        let ResponseBody::Items(items) = response.body() else {
+        let PipelineBody::Items(items) = response.body() else {
             panic!("expected items response");
         };
         assert_eq!(items.len(), 1);
         assert!(crate::binary_json::is_binary(&items[0]));
         let item: serde_json::Value = crate::binary_json::from_slice(&items[0]).unwrap();
         assert_eq!(item["id"], "a");
+    }
+
+    #[tokio::test]
+    async fn retained_window_keeps_reference_pages_after_merge_drop() {
+        let first =
+            crate::binary_json::test_support::reference_rows(&[("e", 4), ("a", 0)], "first");
+        let second = crate::binary_json::test_support::reference_rows(
+            &[("d", 3), ("b", 1), ("c", 2)],
+            "second",
+        );
+        let snapshot = second.to_vec();
+        let mut node = NonStreamingOrderedMerge::new(
+            Box::new(MockLeaf::with_responses([
+                (response_with_charge(&first, 1.0), false),
+                (response_with_charge(&second, 2.0), true),
+            ])),
+            vec![SortOrder::Ascending],
+            3,
+            1,
+            2,
+            Some(MaxItemCountHint::Limit(
+                std::num::NonZeroU32::new(1).unwrap(),
+            )),
+            true,
+        );
+        drop(first);
+        drop(second);
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = context(&mut executor, &mut topology);
+        let mut retained = Vec::new();
+        for _ in 0..2 {
+            let PageResult::Page { response, .. } = node.next_page(&mut context).await.unwrap()
+            else {
+                panic!("page")
+            };
+            let PipelineBody::ContextualItems(items) = response.into_body() else {
+                panic!("contextual")
+            };
+            retained.extend(items);
+        }
+        drop(node);
+        assert_eq!(retained.len(), 2);
+        for (item, id) in retained.iter().zip(["b", "c"]) {
+            assert_eq!(item.source_page(), snapshot);
+            assert_eq!(
+                item.source_page().as_ptr(),
+                retained[0].source_page().as_ptr()
+            );
+            assert_eq!(
+                item.deserialize::<serde_json::Value>().unwrap(),
+                json!({"id": id, "shared": "second"})
+            );
+        }
     }
 
     #[tokio::test]
@@ -486,10 +561,10 @@ mod tests {
         }))
         .unwrap();
         let mut node = NonStreamingOrderedMerge::new(
-            Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
-                response: response_with_charge(&body, 1.0),
-                is_terminal: true,
-            })])),
+            Box::new(MockLeaf::with_responses([(
+                response_with_charge(&body, 1.0),
+                true,
+            )])),
             vec![SortOrder::Ascending],
             1,
             0,
@@ -576,7 +651,7 @@ mod tests {
                     assert!(!terminal);
                     terminal = is_terminal;
                     charge += response.headers().request_charge.unwrap().value();
-                    let ResponseBody::Items(items) = response.body() else {
+                    let PipelineBody::Items(items) = response.body() else {
                         panic!("expected items");
                     };
                     assert!(items.len() <= 2);
@@ -649,7 +724,7 @@ mod tests {
                     OrderByItem::String("a".to_owned()),
                 ],
                 rid: "left".to_owned(),
-                payload: RawValue::from_string("{}".to_owned()).unwrap(),
+                payload: EnvelopePayload::Text(RawValue::from_string("{}".to_owned()).unwrap()),
             },
             ordinal: 0,
         };
@@ -660,7 +735,7 @@ mod tests {
                     OrderByItem::String("b".to_owned()),
                 ],
                 rid: "right".to_owned(),
-                payload: RawValue::from_string("{}".to_owned()).unwrap(),
+                payload: EnvelopePayload::Text(RawValue::from_string("{}".to_owned()).unwrap()),
             },
             ordinal: 1,
         };

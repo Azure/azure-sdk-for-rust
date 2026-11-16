@@ -22,7 +22,7 @@
 ///     .with_max_concurrent_metadata_attempts(64)
 ///     .build();
 ///
-/// let account = AccountReference::with_master_key(
+/// let account = AccountReference::with_account_key(
 ///     "https://my-account.documents.azure.com/".parse()?,
 ///     "my-key",
 /// );

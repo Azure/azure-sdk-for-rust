@@ -1,0 +1,37 @@
+{
+  "displayNames": {
+    "smokeTests": "smoke",
+    "coreOperations": "core_operations",
+    "sessionSingleRegion": "session_single_region",
+    "sdkDefault": "sdk_default"
+  },
+  "matrix": {
+    "Agent": {
+      "ubuntu": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      }
+    },
+    "RustToolchainName": [
+      "nightly"
+    ],
+    "Account Settings": {
+      "Session SingleWrite": {
+        "AccountSelector": "session-singlewrite"
+      }
+    },
+    "AZURE_COSMOS_E2E_PROFILE": [
+      "smokeTests",
+      "coreOperations"
+    ],
+    "AZURE_COSMOS_E2E_ACCOUNT": [
+      "sessionSingleRegion"
+    ],
+    "AZURE_COSMOS_E2E_RUNTIME": [
+      "sdkDefault"
+    ],
+    "AZURE_COSMOS_E2E_CLIENT": [
+      "sdkDefault"
+    ]
+  }
+}

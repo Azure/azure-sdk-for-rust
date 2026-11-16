@@ -18,16 +18,8 @@
 //! other vnext run. This canary re-enables binary at the **operation** layer,
 //! which outranks both.
 //!
-//! **This test is expected to FAIL today and is `#[ignore]`d for that reason.**
-//! It asserts the writes *succeed*, which is the behavior we are waiting on, so
-//! it stays red until vnext adds binary support and is kept out of CI rather
-//! than leaving the vnext pipeline permanently failing. Run it deliberately:
-//!
-//! ```text
-//! RUSTFLAGS='--cfg test_category="emulator_vnext"' \
-//!     cargo test -p azure_data_cosmos_driver --test emulator -- \
-//!     --ignored vnext_supports_binary_encoded_writes
-//! ```
+//! Runs in vnext CI and asserts that binary writes succeed, so an emulator
+//! regression fails the pipeline rather than remaining ignored.
 //!
 //! **When it passes, vnext supports binary encoding.** That is the signal to
 //! drop `patch_test_options`'s binary override, `runtime_operation_options`,
@@ -65,17 +57,10 @@ fn binary_on() -> OperationOptions {
         .build()
 }
 
-// Always ignored, for two different reasons depending on the category, so the
-// `--ignored` reason string stays accurate either way.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "emulator_vnext"),
     ignore = "vnext-only canary; requires test_category 'emulator_vnext'"
-)]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "EXPECTED TO FAIL until vnext supports binary encoding (#5240); \
-              run with --ignored, and when it passes remove the workarounds"
 )]
 pub async fn vnext_supports_binary_encoded_writes() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(

@@ -17,7 +17,7 @@ use futures::StreamExt;
 use crate::e2e_test_cases::{
     fixture::{build_client_with_customizer, ClientSetup, E2eTest, TestResult},
     support::{
-        assert_wrapped_session_failure, item, selected_scenario_profile, wait_for_item_replication,
+        assert_wrapped_session_failure, item, selected_scenario_profile,
         with_replication_paused_if, Item,
     },
 };
@@ -118,14 +118,21 @@ async fn explicit_tokens_work_when_automatic_capture_is_disabled() -> TestResult
     let Some(profile) = selected_scenario_profile("consistency.session-management").await? else {
         return Ok(());
     };
+    let regions = profile.selected_account()?.effective_regions()?;
+    if regions.len() != 2 {
+        return Err("session management requires exactly two configured regions".into());
+    }
+    // Keep this scenario on the write region; cross-region routing has dedicated coverage.
     let setup = ClientSetup::from_profile(
         profile.selected_runtime()?,
         profile.selected_client()?,
-        RoutingStrategy::PreferredRegions(vec![Region::WEST_US, Region::EAST_US]),
+        RoutingStrategy::PreferredRegions(regions.clone()),
     )?;
     let client = build_client_with_customizer(setup, |builder| {
         let mut defaults = OperationOptions::default();
         defaults.session_capturing_disabled = Some(true);
+        defaults.max_failover_retry_count = Some(0);
+        defaults.excluded_regions = Some(ExcludedRegions::new().with_region(regions[1].clone()));
         Ok(builder.with_default_operation_options(defaults))
     })
     .await?;
@@ -161,7 +168,6 @@ async fn explicit_tokens_work_when_automatic_capture_is_disabled() -> TestResult
                 .await?;
             assert_eq!(explicit.into_model::<Item>()?, expected);
 
-            wait_for_item_replication(&fixture.container, &expected.id, &expected).await?;
             for value in 0..3 {
                 let id = format!("session-page-{value}");
                 fixture
@@ -169,9 +175,6 @@ async fn explicit_tokens_work_when_automatic_capture_is_disabled() -> TestResult
                     .create_item("A", &id, item(&id, "A", value), None)
                     .await?;
             }
-            let last_page_item = item("session-page-2", "A", 2);
-            wait_for_item_replication(&fixture.container, &last_page_item.id, &last_page_item)
-                .await?;
 
             let page_size = MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap());
             let options = QueryOptions::default()

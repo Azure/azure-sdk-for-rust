@@ -19,13 +19,16 @@ use futures::FutureExt;
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineKind, TransportSecurity},
     driver::{
+        cache::ContainerRoutingMap,
         routing::{
             can_circuit_breaker_trigger_failover, is_eligible_for_ppaf, is_eligible_for_ppcb,
-            partition_endpoint_state::HealthStatus, partition_key_range_id::PartitionKeyRangeId,
-            remove_probe_succeeded_entry, session_manager::SessionManager, AccountEndpointState,
-            CosmosEndpoint, LocationEffect, LocationSnapshot, LocationStateStore,
+            partition_endpoint_state::{HealthStatus, PartitionStateUpdate},
+            partition_key_range_id::PartitionKeyRangeId,
+            remove_probe_succeeded_entry,
+            session_manager::SessionManager,
+            AccountEndpointState, CosmosEndpoint, LocationEffect, LocationSnapshot,
+            LocationStateStore,
         },
-        transport::CosmosTransport,
         CosmosDriver,
     },
     models::{
@@ -36,17 +39,23 @@ use crate::{
     },
     options::{
         resolve_effective_consistency, HedgeThreshold, OperationOptions, OperationOptionsView,
-        ReadConsistencyStrategy, Region, ResolvedThroughputControl,
+        PartitionTopologyCacheMode, ReadConsistencyStrategy, Region, ResolvedThroughputControl,
+    },
+    pipeline::transport::{
+        self, is_operation_supported_by_gateway_v2,
+        recovery::{
+            ThrottleRetryPolicy, DATA_PLANE_MAX_PER_RETRY_DELAY, DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
+            DATA_PLANE_MAX_THROTTLE_WAIT, METADATA_MAX_PER_RETRY_DELAY,
+            METADATA_MAX_THROTTLE_ATTEMPTS, METADATA_MAX_THROTTLE_WAIT,
+        },
+        types::{TransportMode, TransportOutcome, TransportRequest, TransportResult},
+        AuthorizationContext, CosmosTransport, EndpointKey, TransportPipelineConfig,
+        TransportPipelineServices,
     },
 };
 
 use super::{
-    components::{
-        OperationAction, OperationRetryState, RoutingDecision, TransportMode, TransportOutcome,
-        TransportRequest, TransportResult, DATA_PLANE_MAX_PER_RETRY_DELAY,
-        DATA_PLANE_MAX_THROTTLE_ATTEMPTS, DATA_PLANE_MAX_THROTTLE_WAIT,
-        METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS, METADATA_MAX_THROTTLE_WAIT,
-    },
+    components::{OperationAction, OperationRetryState, RoutingDecision},
     hedge_budget::{HedgeBudget, HedgePermit},
     hedging_diagnostics::{HedgeDiagnostics, HedgingStrategyConfig},
     hedging_eligibility::evaluate_hedge_eligibility,
@@ -54,12 +63,6 @@ use super::{
         build_service_error, evaluate_hedge_leg_effects, evaluate_transport_result,
         is_region_confirming_status, partition_effects_for_deferral,
     },
-};
-
-use crate::driver::transport::{
-    is_operation_supported_by_gateway_v2,
-    transport_pipeline::{execute_transport_pipeline, TransportPipelineContext},
-    AuthorizationContext, EndpointKey,
 };
 
 /// Default throttle-retry budget for a pipeline class when the caller hasn't
@@ -102,7 +105,7 @@ fn container_recreation_refresh_eligible(
         return false;
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     if operation.resource_type() == crate::models::ResourceType::DistributedTransactionBatch {
         return false;
     }
@@ -156,20 +159,19 @@ fn resolve_session_token_for_attempt(
     overrides: &OperationOverrides,
 ) -> Option<SessionToken> {
     let user_token = operation.request_headers().session_token.as_ref();
-    if !matches!(transport_mode, TransportMode::GatewayV2) {
-        return session_manager.resolve_session_token(operation, user_token, None);
+    if matches!(transport_mode, TransportMode::Gateway) {
+        return session_manager.resolve_gateway_session_token(
+            operation,
+            user_token,
+            partition_key_range_id.map(PartitionKeyRangeId::as_str),
+            overrides.session_token_routing_map.as_deref(),
+        );
     }
-
     let Some(partition_key_range_id) = partition_key_range_id else {
-        // A logical request whose optional topology lookup failed must not send
-        // a multi-range composite token to RNTBD. Explicit user tokens remain
-        // authoritative; otherwise omit the token until a range ID is known.
+        // Unresolved logical requests cannot send cached composites to RNTBD.
         return if overrides.logical_partition_key_target {
             user_token.cloned()
         } else {
-            // Today an id-less non-logical target is non-partitioned, so this
-            // resolves to `None`. A future partitioned target must provide an
-            // ID or its own no-composite signal before reaching Gateway 2.0.
             session_manager.resolve_session_token(operation, user_token, None)
         };
     };
@@ -180,6 +182,171 @@ fn resolve_session_token_for_attempt(
         Some(partition_key_range_id),
         overrides.effective_partition_key_range_parents(partition_key_range_id),
     )
+}
+
+enum AttemptSessionToken {
+    Resolved(Option<SessionToken>),
+    CannotScope,
+}
+
+impl AttemptSessionToken {
+    fn apply(self, ctx: &mut TransportRequestContext<'_>, is_read_only: bool) {
+        match self {
+            Self::Resolved(token) => ctx.resolved_session_token = token,
+            Self::CannotScope => {
+                ctx.resolved_session_token = None;
+                if ctx
+                    .read_consistency_strategy
+                    .is_session_effective(ctx.effective_consistency)
+                {
+                    ctx.effective_consistency = DefaultConsistencyLevel::Eventual;
+                    ctx.read_consistency_strategy = if is_read_only {
+                        ReadConsistencyStrategy::Eventual
+                    } else {
+                        ReadConsistencyStrategy::Default
+                    };
+                    tracing::warn!(
+                        activity_id = %ctx.activity_id,
+                        "explicit session token cannot be safely scoped; sending without a session token at Eventual consistency"
+                    );
+                } else {
+                    tracing::warn!(
+                        activity_id = %ctx.activity_id,
+                        "explicit session token cannot be safely scoped; omitting it without changing non-session consistency"
+                    );
+                }
+            }
+        }
+    }
+}
+
+async fn load_explicit_session_topology(
+    driver: &CosmosDriver,
+    operation: &CosmosOperation,
+    transport_mode: TransportMode,
+    overrides: &mut OperationOverrides,
+    operation_options: &OperationOptions,
+    deadline: Option<Instant>,
+) -> crate::error::Result<()> {
+    let Some(token) = operation.request_headers().session_token.as_ref() else {
+        return Ok(());
+    };
+    if transport_mode != TransportMode::GatewayV2 || !token.as_str().contains(',') {
+        return Ok(());
+    }
+
+    if !SessionManager::is_valid_explicit_token(token) {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+            .with_message("the explicit compound session token is malformed")
+            .build());
+    }
+
+    let container = operation.container().ok_or_else(|| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
+            .with_message("cannot scope an explicit compound session token without a container")
+            .build()
+    })?;
+    overrides.session_token_routing_map = driver
+        .load_session_token_routing_map(container, operation_options.clone(), deadline)
+        .await?;
+    Ok(())
+}
+
+fn explicit_session_target_id(
+    operation: &CosmosOperation,
+    partition_key_range_id: Option<&PartitionKeyRangeId>,
+    overrides: &OperationOverrides,
+) -> Option<String> {
+    let routing_map = overrides.session_token_routing_map.as_deref()?;
+    if let (Some(partition_key), Some(container)) =
+        (operation.partition_key(), operation.container())
+    {
+        let definition = container.partition_key_definition();
+        if definition.is_complete(partition_key) {
+            let epk = EffectivePartitionKey::compute(
+                partition_key.values(),
+                definition.kind(),
+                definition.version(),
+            );
+            return routing_map
+                .get_range_by_effective_partition_key(&epk)
+                .map(|range| range.id.clone());
+        }
+        if overrides.logical_partition_key_target {
+            return None;
+        }
+    }
+    let id = partition_key_range_id
+        .map(PartitionKeyRangeId::as_str)
+        .or_else(|| overrides.effective_partition_key_range_id())?;
+    routing_map.range(id).map(|range| range.id.clone())
+}
+
+fn prepare_session_token_for_attempt(
+    session_manager: &SessionManager,
+    operation: &CosmosOperation,
+    transport_mode: TransportMode,
+    partition_key_range_id: Option<&PartitionKeyRangeId>,
+    overrides: &OperationOverrides,
+    automatic_resolution_active: bool,
+) -> AttemptSessionToken {
+    if let Some(token) = operation.request_headers().session_token.as_ref() {
+        if transport_mode == TransportMode::GatewayV2 && token.as_str().contains(',') {
+            if let Some(scoped) = SessionManager::scope_explicit_token(
+                token,
+                explicit_session_target_id(operation, partition_key_range_id, overrides).as_deref(),
+                overrides.session_token_routing_map.as_deref(),
+            ) {
+                return AttemptSessionToken::Resolved(Some(scoped));
+            }
+            return AttemptSessionToken::CannotScope;
+        }
+        return AttemptSessionToken::Resolved(Some(token.clone()));
+    }
+    AttemptSessionToken::Resolved(
+        automatic_resolution_active
+            .then(|| {
+                resolve_session_token_for_attempt(
+                    session_manager,
+                    operation,
+                    transport_mode,
+                    partition_key_range_id,
+                    overrides,
+                )
+            })
+            .flatten(),
+    )
+}
+
+fn use_classic_gateway(routing: &mut RoutingDecision) {
+    routing.transport_mode = TransportMode::Gateway;
+    routing.selected_url = routing.endpoint.url().clone();
+    routing.endpoint_key = routing.endpoint.endpoint_key();
+}
+
+fn preserve_logical_session_routing(
+    routing: &mut RoutingDecision,
+    operation: &CosmosOperation,
+    overrides: &OperationOverrides,
+    partition_key_range_id: Option<&PartitionKeyRangeId>,
+    session_manager: &SessionManager,
+    session_resolution_active: bool,
+    lazy_topology: bool,
+) {
+    if lazy_topology
+        && session_resolution_active
+        && overrides.logical_partition_key_target
+        && partition_key_range_id.is_none()
+        && operation.request_headers().session_token.is_none()
+        && session_manager.has_session_token(operation)
+        && matches!(routing.transport_mode, TransportMode::GatewayV2)
+    {
+        // Routing can adopt Gateway 2.0 after cache-only planning. Classic
+        // gateway preserves the composite session until physical identity is known.
+        use_classic_gateway(routing);
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -267,7 +434,7 @@ pub(crate) struct OperationOverrides {
     /// to the GW_V2 dispatcher via internal `x-ms-thinclient-pkrange-min`/`-max`
     /// headers so it can derive `StartEpkHash`/`EndEpkHash` RNTBD tokens for the
     /// full-pkrange XPK case without emitting the public EPK headers (which the
-    /// legacy gateway rejects when paired with `partitionkeyrangeid`).
+    /// legacy gateway rejects for queries when paired with `partitionkeyrangeid`).
     pub pkrange_bounds: Option<crate::models::FeedRange>,
 
     /// Physical partition key range ID (emits `x-ms-documentdb-partitionkeyrangeid`).
@@ -275,13 +442,16 @@ pub(crate) struct OperationOverrides {
 
     /// Physical partition identity resolved for a logical-partition request.
     ///
-    /// This seeds PPCB/PPAF and thin-client session-token scoping but is never
+    /// This seeds PPCB/PPAF and session-token scoping but is never
     /// emitted as a request header; the logical partition key remains the
     /// authoritative wire-routing target.
     pub resolved_partition_key_range_id: Option<String>,
 
     /// Ancestors whose session vectors remain valid for the resolved child.
     pub resolved_partition_key_range_parents: Vec<String>,
+
+    /// Snapshot used to validate automatic classic Gateway session scoping.
+    pub session_token_routing_map: Option<Arc<ContainerRoutingMap>>,
 
     /// Logical partition key (emits `x-ms-documentdb-partitionkey`).
     pub partition_key: Option<crate::models::PartitionKey>,
@@ -344,6 +514,7 @@ impl OperationOverrides {
     pub(crate) fn clear_resolved_partition_key_range(&mut self) {
         self.resolved_partition_key_range_id = None;
         self.resolved_partition_key_range_parents.clear();
+        self.session_token_routing_map = None;
     }
 
     /// Whether this request carries wire-routing constraints tied to one
@@ -389,13 +560,7 @@ impl OperationOverrides {
         continuation_as_if_none_match: bool,
     ) -> crate::error::Result<()> {
         if let Some(feed_range) = &self.feed_range {
-            // Narrowed-range XPK case (range < pkrange) AND scoped reads via
-            // `FeedRange`. These public EPK headers are honored by Gateway 2.0;
-            // the standard gateway rejects them when paired with
-            // `partitionkeyrangeid` (HTTP 400, regardless of the min bound —
-            // verified against live accounts), so the full-pkrange XPK fan-out
-            // path uses the internal `pkrange_bounds` headers (below) instead
-            // and leaves these absent.
+            // Narrowed slices need explicit filters in addition to physical routing.
             headers.insert(
                 HeaderName::from_static(request_header_names::START_EPK),
                 HeaderValue::from(feed_range.min_inclusive().to_hex()),
@@ -492,6 +657,15 @@ pub(crate) async fn execute_operation_pipeline(
 ) -> crate::error::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let mut throughput_control = throughput_control;
+    let mut overrides = overrides;
+    if operation.request_headers().session_token.is_none() {
+        let session_header = HeaderName::from_static(request_header_names::SESSION_TOKEN);
+        if let Some(value) = custom_headers.and_then(|headers| headers.get(&session_header)) {
+            let mut headers = operation.request_headers().clone();
+            headers.session_token = Some(SessionToken::new(value.as_str().to_owned()));
+            *operation = operation.clone().with_request_headers(headers);
+        }
+    }
     #[cfg(feature = "fault_injection")]
     let fault_injection_enabled = driver.fault_injection_enabled();
     #[cfg(not(feature = "fault_injection"))]
@@ -512,7 +686,7 @@ pub(crate) async fn execute_operation_pipeline(
     // throttle retries.
     //
     // **Scope note**: each value is forwarded as a *per-transport-pipeline*
-    // budget — `execute_transport_pipeline` is invoked once per attempt that
+    // budget — `transport::execute` is invoked once per attempt that
     // this operation pipeline makes (e.g., per region during failover or per
     // leg during hedging), and each invocation starts with a fresh
     // throttle-retry budget. Total wall-clock cost across an operation is
@@ -552,6 +726,11 @@ pub(crate) async fn execute_operation_pipeline(
         )
         && operation_read_consistency_strategy.is_session_effective(account_default_consistency);
     let session_token_capture_active = !session_capturing_disabled;
+    let lazy_topology = driver
+        .options()
+        .partition_failover_options()
+        .partition_topology_cache_mode()
+        == PartitionTopologyCacheMode::Lazy;
 
     // Rule 4 (RCS validation): GlobalStrong is
     // valid only on reads against accounts whose default consistency is Strong.
@@ -659,7 +838,7 @@ pub(crate) async fn execute_operation_pipeline(
         // A pinned attempt (e.g. PartitionKeyRange pages 2..N after a first-page
         // hedge win) bypasses normal region selection and routes straight to the
         // pinned region so the change-feed continuation stays region-consistent.
-        let routing = match overrides.pinned_endpoint() {
+        let mut routing = match overrides.pinned_endpoint() {
             Some(pinned) => {
                 routing_decision_for_pinned_endpoint(pinned, pipeline_type.is_data_plane())
             }
@@ -689,6 +868,32 @@ pub(crate) async fn execute_operation_pipeline(
             )
             && attempt_read_consistency_strategy.is_session_effective(account_default_consistency);
         let attempt_session_token_capture_active = session_token_capture_active;
+        preserve_logical_session_routing(
+            &mut routing,
+            operation,
+            &overrides,
+            retry_state.partition_key_range_id.as_ref(),
+            session_manager,
+            attempt_session_token_resolution_active,
+            lazy_topology,
+        );
+        load_explicit_session_topology(
+            driver,
+            operation,
+            routing.transport_mode,
+            &mut overrides,
+            operation_options,
+            deadline,
+        )
+        .await?;
+        let attempt_session_token = prepare_session_token_for_attempt(
+            session_manager,
+            operation,
+            routing.transport_mode,
+            retry_state.partition_key_range_id.as_ref(),
+            &overrides,
+            attempt_session_token_resolution_active,
+        );
 
         // Emit one structured debug record per attempt with the chosen
         // routing decision. Tests and SREs filter on this to verify which
@@ -763,6 +968,15 @@ pub(crate) async fn execute_operation_pipeline(
                 }
             });
             if let Some((upgrade, _hedge_permit)) = admitted {
+                load_explicit_session_topology(
+                    driver,
+                    operation,
+                    upgrade.secondary_routing.transport_mode,
+                    &mut overrides,
+                    operation_options,
+                    deadline,
+                )
+                .await?;
                 let attempt_ctx = AttemptContext {
                     operation,
                     overrides: &overrides,
@@ -881,7 +1095,7 @@ pub(crate) async fn execute_operation_pipeline(
         // ── STAGE 3: Build transport request ───────────────────────────
         let execution_context = compute_execution_context(&retry_state);
 
-        let ctx = TransportRequestContext {
+        let mut ctx = TransportRequestContext {
             routing: &routing,
             activity_id,
             execution_context,
@@ -892,19 +1106,10 @@ pub(crate) async fn execute_operation_pipeline(
             } else {
                 ReadConsistencyStrategy::Default
             },
-            resolved_session_token: attempt_session_token_resolution_active
-                .then(|| {
-                    resolve_session_token_for_attempt(
-                        session_manager,
-                        operation,
-                        routing.transport_mode,
-                        retry_state.partition_key_range_id.as_ref(),
-                        &overrides,
-                    )
-                })
-                .flatten(),
+            resolved_session_token: None,
             throughput_control,
         };
+        attempt_session_token.apply(&mut ctx, operation.is_read_only());
         let mut transport_request = build_transport_request_with_fault_injection(
             operation,
             &overrides,
@@ -943,12 +1148,10 @@ pub(crate) async fn execute_operation_pipeline(
 
         // ── STAGE 4: Execute via transport pipeline ────────────────────
 
-        let result = execute_transport_pipeline(
+        let result = transport::execute(
             transport_request,
-            &TransportPipelineContext {
-                transport: &selected_transport,
+            &TransportPipelineConfig {
                 allow_sent_transport_retry: operation.allows_ambiguous_outcome_retry(),
-                credential,
                 user_agent,
                 client_id,
                 pipeline_type,
@@ -956,9 +1159,16 @@ pub(crate) async fn execute_operation_pipeline(
                 endpoint_key: routing.endpoint_key.clone(),
                 account_name: account_name.clone(),
                 collection_rid: operation.container().map(|c| c.rid().to_owned()),
-                max_throttle_attempts,
-                max_throttle_wait_time,
-                max_throttle_per_retry_delay,
+                throttle_policy: ThrottleRetryPolicy::with_limits(
+                    max_throttle_attempts,
+                    max_throttle_wait_time,
+                    max_throttle_per_retry_delay,
+                ),
+            },
+            &TransportPipelineServices {
+                transport: &selected_transport,
+                credential,
+                clock: Default::default(),
             },
             &mut diagnostics,
         )
@@ -1162,22 +1372,12 @@ pub(crate) async fn execute_operation_pipeline(
                 // that latch the header skip the 403/3 discovery chain.
                 if let Some(pk_range_id) = hub_region_cache_populate_target(&retry_state, operation)
                 {
-                    // Skip the apply when it would not change state: PPAF off
-                    // (the cache effect is a no-op) or the entry already points
-                    // at this hub endpoint. Both would only churn a clone + CAS.
-                    let partitions = location_state_store.snapshot().partitions;
-                    let already_cached = partitions
-                        .failover_overrides
-                        .get(pk_range_id.as_str())
-                        .is_some_and(|entry| entry.current_endpoint == routing.endpoint);
-                    if partitions.per_partition_automatic_failover_enabled && !already_cached {
-                        location_state_store
-                            .apply(&[LocationEffect::CacheHubRegion {
-                                partition_key_range_id: pk_range_id,
-                                hub_endpoint: routing.endpoint.clone(),
-                            }])
-                            .await;
-                    }
+                    populate_hub_region_cache(
+                        location_state_store,
+                        &pk_range_id,
+                        &routing.endpoint,
+                    )
+                    .await;
                 }
 
                 return build_cosmos_response(
@@ -1242,7 +1442,7 @@ pub(crate) async fn execute_operation_pipeline(
                 );
                 diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             OperationAction::DtxRetry { new_state, delay } => {
                 tracing::debug!(
                     activity_id = %activity_id,
@@ -1332,13 +1532,22 @@ pub(crate) async fn execute_operation_pipeline(
                 // triggered the upgrade — racing it again as the hedge's
                 // primary would double-pay RU on a known-bad region.
                 let location = location_state_store.snapshot();
-                let primary_routing = resolve_endpoint(
+                let mut primary_routing = resolve_endpoint(
                     operation,
                     &retry_state,
                     &location,
                     pipeline_type.is_data_plane(),
                     account_name.is_some(),
                     endpoint_unavailability_ttl,
+                );
+                preserve_logical_session_routing(
+                    &mut primary_routing,
+                    operation,
+                    &overrides,
+                    retry_state.partition_key_range_id.as_ref(),
+                    session_manager,
+                    session_token_resolution_active,
+                    lazy_topology,
                 );
                 // Re-evaluate hedge eligibility against the *post-advance*
                 // primary. After `advance_to_next_attempt` rotates the
@@ -1366,6 +1575,26 @@ pub(crate) async fn execute_operation_pipeline(
                         continue;
                     }
                 };
+                // Stage 7 can transition classic->GatewayV2 after advancing retry state;
+                // preload explicit-token topology before preparing either post-advance leg.
+                load_explicit_session_topology(
+                    driver,
+                    operation,
+                    primary_routing.transport_mode,
+                    &mut overrides,
+                    operation_options,
+                    deadline,
+                )
+                .await?;
+                load_explicit_session_topology(
+                    driver,
+                    operation,
+                    secondary_routing.transport_mode,
+                    &mut overrides,
+                    operation_options,
+                    deadline,
+                )
+                .await?;
                 let attempt_ctx = AttemptContext {
                     operation,
                     overrides: &overrides,
@@ -1619,7 +1848,7 @@ fn routing_decision_for_pinned_endpoint(
     };
     let selected_url = pinned.selected_url(use_gateway_v2).clone();
     let endpoint_key = if use_gateway_v2 {
-        crate::driver::transport::EndpointKey::try_from(&selected_url)
+        crate::pipeline::transport::EndpointKey::try_from(&selected_url)
             .expect("selected URL must have a valid host and port")
     } else {
         pinned.endpoint_key()
@@ -1981,12 +2210,12 @@ fn resolve_endpoint(
 }
 
 fn is_distributed_transaction_operation(operation: &CosmosOperation) -> bool {
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     {
         operation.resource_type() == crate::models::ResourceType::DistributedTransactionBatch
     }
 
-    #[cfg(not(feature = "preview_dtx"))]
+    #[cfg(not(feature = "unstable_dtx"))]
     {
         let _ = operation;
         false
@@ -2397,7 +2626,7 @@ fn build_transport_request_with_fault_injection(
             );
             // These two headers must always be set on QueryPlan
             // requests. The thin-client proxy reads them out of the RNTBD body
-            // (mirrored from these HTTP headers in gateway_v2_dispatch) and rejects
+            // (mirrored from these HTTP headers in gateway_v2::request_tokens) and rejects
             // requests where they're missing entirely. Default them here when the
             // caller hasn't already set explicit values.
             let supported_features_header =
@@ -2428,7 +2657,7 @@ fn build_transport_request_with_fault_injection(
                 &operation.resource_type(),
             )
         {
-            crate::driver::transport::cosmos_headers::apply_fault_injection_operation_tag(
+            crate::pipeline::transport::cosmos_headers::apply_fault_injection_operation_tag(
                 &mut headers,
                 fault_op,
             );
@@ -2449,7 +2678,17 @@ fn build_transport_request_with_fault_injection(
     // `x-ms-continuation`.
     overrides.apply_headers(&mut headers, operation.is_change_feed())?;
 
-    // Add resolved session token
+    let effective_partition_key = effective_partition_key_for_request(operation)?;
+    let effective_partition_key = if overrides.partition_key_range_id.is_some() {
+        // Range targets already preserve the logical scope in their EPK bounds.
+        headers.remove(HeaderName::from_static(request_header_names::PARTITION_KEY));
+        None
+    } else {
+        effective_partition_key
+    };
+
+    // Resolution is authoritative, including when an explicit token is omitted.
+    headers.remove(HeaderName::from_static(request_header_names::SESSION_TOKEN));
     if let Some(token) = &ctx.resolved_session_token {
         headers.insert(
             request_header_names::SESSION_TOKEN,
@@ -2479,18 +2718,18 @@ fn build_transport_request_with_fault_injection(
         endpoint: ctx.routing.endpoint.clone(),
         transport_mode: ctx.routing.transport_mode,
         operation_type: operation.operation_type(),
-        effective_partition_key: effective_partition_key_for_request(operation)?,
+        effective_partition_key,
         effective_consistency: ctx.effective_consistency,
         read_consistency_strategy: ctx.read_consistency_strategy,
         url,
         headers,
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         resource_type,
         body: operation.body().map(azure_core::Bytes::copy_from_slice),
         auth_context,
         execution_context: ctx.execution_context,
         routing_fallback: ctx.routing.routing_fallback,
-        deadline: ctx.deadline,
+        deadline: ctx.deadline.into(),
     })
 }
 
@@ -2524,6 +2763,10 @@ fn effective_partition_key_for_request(
                  partition-key definition declares",
             )
             .build());
+    }
+
+    if operation.is_change_feed() && !partition_key_definition.is_complete(partition_key) {
+        return Ok(None);
     }
 
     Ok(Some(EffectivePartitionKey::compute(
@@ -2744,7 +2987,9 @@ fn apply_optional_request_headers(
 
     if let Some(custom_headers) = options.custom_headers() {
         for (name, value) in custom_headers {
-            if !transport_request.headers.iter().any(|(n, _)| n == name) {
+            if name.as_str() != request_header_names::SESSION_TOKEN
+                && !transport_request.headers.iter().any(|(n, _)| n == name)
+            {
                 transport_request
                     .headers
                     .insert(name.clone(), value.clone());
@@ -2908,15 +3153,18 @@ fn try_cleanup_probe_candidate(
         return;
     }
 
+    #[cfg(test)]
+    probe_cleanup_tests::before_update(location_state_store);
+
     location_state_store.apply_partition(|current| {
         let is_probe = current
             .circuit_breaker_overrides
             .get(pk_range_id.as_str())
             .is_some_and(|e| e.health_status == HealthStatus::ProbeCandidate);
         if is_probe {
-            remove_probe_succeeded_entry(current, pk_range_id)
+            PartitionStateUpdate::Updated(remove_probe_succeeded_entry(current, pk_range_id))
         } else {
-            current.clone()
+            PartitionStateUpdate::Unchanged
         }
     });
 }
@@ -2936,6 +3184,47 @@ fn hub_region_cache_populate_target(
         retry_state.partition_key_range_id.clone()
     } else {
         None
+    }
+}
+
+/// Caches `hub_endpoint` as the partition's hub region.
+///
+/// Skips the apply when it would not change state: PPAF off (the cache effect
+/// is a no-op) or the entry already points at this endpoint.
+async fn populate_hub_region_cache(
+    location_state_store: &LocationStateStore,
+    pk_range_id: &PartitionKeyRangeId,
+    hub_endpoint: &CosmosEndpoint,
+) {
+    let partitions = location_state_store.snapshot().partitions;
+    let already_cached = partitions
+        .failover_overrides
+        .get(pk_range_id.as_str())
+        .is_some_and(|entry| entry.current_endpoint == *hub_endpoint);
+    if partitions.per_partition_automatic_failover_enabled && !already_cached {
+        location_state_store
+            .apply(&[LocationEffect::CacheHubRegion {
+                partition_key_range_id: pk_range_id.clone(),
+                hub_endpoint: hub_endpoint.clone(),
+            }])
+            .await;
+    }
+}
+
+/// Hedged counterpart of the `Complete` arm's hub-region cache populate: a
+/// hub-only read leg that succeeded was served by the partition's hub.
+async fn populate_hub_region_cache_for_hedge_winner(
+    ctx: &AttemptContext<'_>,
+    endpoint: &CosmosEndpoint,
+    hub_only_read: bool,
+    result: &TransportResult,
+    pk_range_id: Option<&PartitionKeyRangeId>,
+) {
+    let Some(pk_range_id) = pk_range_id else {
+        return;
+    };
+    if hub_only_read && matches!(result.outcome, TransportOutcome::Success { .. }) {
+        populate_hub_region_cache(ctx.location_state_store, pk_range_id, endpoint).await;
     }
 }
 
@@ -3130,13 +3419,26 @@ fn classify_hedge_result(result: crate::error::Result<TransportResult>) -> Hedge
 /// wins; a secondary transient stays transient. Data-plane hedging passes
 /// `false` and keeps the first-`Final`-wins semantics of
 /// [`classify_hedge_result`].
+///
+/// `hub_only_read` must be set only for a read whose leg sent the
+/// hub-region-processing-only header: its `403/3` means "not the hub here".
 fn classify_secondary_hedge_result(
     result: crate::error::Result<TransportResult>,
     primary_authoritative: bool,
+    hub_only_read: bool,
 ) -> HedgeClass {
     match classify_hedge_result(result) {
         HedgeClass::Final(tr)
             if primary_authoritative && !matches!(tr.outcome, TransportOutcome::Success { .. }) =>
+        {
+            HedgeClass::Transient
+        }
+        HedgeClass::Final(tr)
+            if hub_only_read
+                && matches!(
+                    &tr.outcome,
+                    TransportOutcome::HttpError { status, .. } if status.is_write_forbidden()
+                ) =>
         {
             HedgeClass::Transient
         }
@@ -3416,34 +3718,29 @@ async fn perform_single_attempt(
     routing: &RoutingDecision,
     execution_context: ExecutionContext,
     shared_hub_region_latch: Option<&Arc<AtomicBool>>,
+    sent_hub_region_header: Option<&AtomicBool>,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> crate::error::Result<TransportResult> {
-    // Resolve session token using the same precedence the main loop uses.
-    // Scope to the target range only for thin-client (Gateway 2.0); classic
-    // gateway keeps the composite token (see main-loop rationale).
-    let resolved_session_token = ctx
-        .session_token_resolution_active
-        .then(|| {
-            resolve_session_token_for_attempt(
-                ctx.session_manager,
-                ctx.operation,
-                routing.transport_mode,
-                ctx.partition_key_range_id.as_ref(),
-                ctx.overrides,
-            )
-        })
-        .flatten();
+    let attempt_session_token = prepare_session_token_for_attempt(
+        ctx.session_manager,
+        ctx.operation,
+        routing.transport_mode,
+        ctx.partition_key_range_id.as_ref(),
+        ctx.overrides,
+        ctx.session_token_resolution_active,
+    );
 
-    let request_ctx = TransportRequestContext {
+    let mut request_ctx = TransportRequestContext {
         routing,
         activity_id: ctx.activity_id,
         execution_context,
         deadline: ctx.deadline,
-        resolved_session_token,
+        resolved_session_token: None,
         throughput_control: ctx.throughput_control,
         effective_consistency: ctx.effective_consistency,
         read_consistency_strategy: ctx.read_consistency_strategy,
     };
+    attempt_session_token.apply(&mut request_ctx, ctx.operation.is_read_only());
 
     let mut transport_request = build_transport_request_with_fault_injection(
         ctx.operation,
@@ -3459,6 +3756,9 @@ async fn perform_single_attempt(
             HeaderName::from_static(request_header_names::HUB_REGION_PROCESSING_ONLY),
             HeaderValue::from_static("True"),
         );
+        if let Some(sent) = sent_hub_region_header {
+            sent.store(true, Ordering::Relaxed);
+        }
     }
     apply_optional_request_headers(&mut transport_request, ctx.operation, ctx.options);
 
@@ -3485,12 +3785,10 @@ async fn perform_single_attempt(
         .copied()
         .unwrap_or(default_wait);
 
-    let result = execute_transport_pipeline(
+    let result = transport::execute(
         transport_request,
-        &TransportPipelineContext {
-            transport: &selected_transport,
+        &TransportPipelineConfig {
             allow_sent_transport_retry: ctx.operation.allows_ambiguous_outcome_retry(),
-            credential: ctx.credential,
             user_agent: ctx.user_agent,
             client_id: ctx.client_id,
             pipeline_type: ctx.pipeline_type,
@@ -3498,9 +3796,16 @@ async fn perform_single_attempt(
             endpoint_key: routing.endpoint_key.clone(),
             account_name: ctx.account_name.clone(),
             collection_rid: ctx.operation.container().map(|c| c.rid().to_owned()),
-            max_throttle_attempts,
-            max_throttle_wait_time,
-            max_throttle_per_retry_delay,
+            throttle_policy: ThrottleRetryPolicy::with_limits(
+                max_throttle_attempts,
+                max_throttle_wait_time,
+                max_throttle_per_retry_delay,
+            ),
+        },
+        &TransportPipelineServices {
+            transport: &selected_transport,
+            credential: ctx.credential,
+            clock: Default::default(),
         },
         diagnostics,
     )
@@ -3693,6 +3998,8 @@ where
     }
     let deadline_fut = deadline_signal(deadline).fuse();
     let attempt = attempt.fuse();
+    // The selection macro polls through pinned references because async futures may not be Unpin.
+    // Stack pinning keeps both futures at stable addresses until this scope drops them.
     futures::pin_mut!(deadline_fut, attempt);
     // Bias toward the operation deadline so application cancellation wins when
     // the partner attempt's own per-attempt deadline becomes ready at the same
@@ -3811,6 +4118,7 @@ async fn apply_hedge_leg_effects(
     endpoint: &CosmosEndpoint,
     result: &crate::error::Result<TransportResult>,
     shared_hub_region_latch: Option<&Arc<AtomicBool>>,
+    hub_only_read: bool,
     race_observed_session_unavailable: &mut bool,
 ) {
     // Pre-transport / request-build errors carry no `TransportResult`
@@ -3819,12 +4127,17 @@ async fn apply_hedge_leg_effects(
     let Ok(transport_result) = result.as_ref() else {
         return;
     };
-    let eval = evaluate_hedge_leg_effects(
-        ctx.operation,
-        endpoint,
-        retry_state_snapshot,
-        transport_result,
-    );
+    // Judge the leg by the header it sent: the latch may have flipped after the snapshot.
+    let latched_state;
+    let retry_state = if hub_only_read && !retry_state_snapshot.hub_region_processing_only {
+        let mut state = retry_state_snapshot.clone();
+        state.hub_region_processing_only = true;
+        latched_state = state;
+        &latched_state
+    } else {
+        retry_state_snapshot
+    };
+    let eval = evaluate_hedge_leg_effects(ctx.operation, endpoint, retry_state, transport_result);
     if !eval.effects.is_empty() {
         ctx.location_state_store
             .apply_with_options(&eval.effects, Some(ctx.options))
@@ -3952,6 +4265,7 @@ async fn execute_hedged(
             ctx,
             primary_routing,
             ExecutionContext::Initial,
+            None,
             None,
             &mut diag,
         )
@@ -4154,6 +4468,9 @@ async fn execute_hedged(
         crate::diagnostics::ExecutionContext::Hedging,
     );
     parent_diagnostics.record_hedge_fanout(primary_dispatch, secondary_dispatch);
+    // Recorded at send time: the shared latch can flip after this leg's request was built.
+    let secondary_sent_hub_region_header = Arc::new(AtomicBool::new(false));
+    let sent_hub_region_header = Arc::clone(&secondary_sent_hub_region_header);
     let secondary_attempt = Box::pin(async move {
         let mut diag = secondary_diag;
         let result = perform_single_attempt(
@@ -4161,6 +4478,7 @@ async fn execute_hedged(
             secondary_routing,
             ExecutionContext::Hedging,
             secondary_shared_latch.as_ref(),
+            Some(&sent_hub_region_header),
             &mut diag,
         )
         .await;
@@ -4211,6 +4529,7 @@ async fn execute_hedged(
                 &primary_routing.endpoint,
                 &primary_result,
                 shared_hub_region_latch.as_ref(),
+                false,
                 &mut race_observed_session_unavailable,
             )
             .await;
@@ -4287,18 +4606,22 @@ async fn execute_hedged(
                     parent_diagnostics.merge_hedge_attempt(secondary_diag);
                     captured_pk_range_id =
                         captured_pk_range_id.or_else(|| pk_range_id_from_result(&secondary_result));
+                    let hub_only_read = ctx.operation.is_read_only()
+                        && secondary_sent_hub_region_header.load(Ordering::Relaxed);
                     apply_hedge_leg_effects(
                         ctx,
                         retry_state_snapshot,
                         &secondary_routing.endpoint,
                         &secondary_result,
                         shared_hub_region_latch.as_ref(),
+                        hub_only_read,
                         &mut race_observed_session_unavailable,
                     )
                     .await;
                     match classify_secondary_hedge_result(
                         secondary_result,
                         metadata_primary_authoritative,
+                        hub_only_read,
                     ) {
                         HedgeClass::Final(tr) => {
                             parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
@@ -4325,6 +4648,16 @@ async fn execute_hedged(
                                 primary_region.as_ref(),
                             );
                             capture_session_token_for_winner(ctx, &tr);
+                            populate_hub_region_cache_for_hedge_winner(
+                                ctx,
+                                &secondary_routing.endpoint,
+                                hub_only_read,
+                                &tr,
+                                captured_pk_range_id
+                                    .as_ref()
+                                    .or(ctx.partition_key_range_id.as_ref()),
+                            )
+                            .await;
                             HedgedRaceResult::Terminal(finalize_hedge_attempt(
                                 tr,
                                 parent_diagnostics,
@@ -4359,17 +4692,23 @@ async fn execute_hedged(
             parent_diagnostics.merge_hedge_attempt(secondary_diag);
             captured_pk_range_id =
                 captured_pk_range_id.or_else(|| pk_range_id_from_result(&secondary_result));
+            let hub_only_read = ctx.operation.is_read_only()
+                && secondary_sent_hub_region_header.load(Ordering::Relaxed);
             apply_hedge_leg_effects(
                 ctx,
                 retry_state_snapshot,
                 &secondary_routing.endpoint,
                 &secondary_result,
                 shared_hub_region_latch.as_ref(),
+                hub_only_read,
                 &mut race_observed_session_unavailable,
             )
             .await;
-            match classify_secondary_hedge_result(secondary_result, metadata_primary_authoritative)
-            {
+            match classify_secondary_hedge_result(
+                secondary_result,
+                metadata_primary_authoritative,
+                hub_only_read,
+            ) {
                 HedgeClass::Final(tr) => {
                     parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
                         strategy_config,
@@ -4404,6 +4743,16 @@ async fn execute_hedged(
                         primary_region.as_ref(),
                     );
                     capture_session_token_for_winner(ctx, &tr);
+                    populate_hub_region_cache_for_hedge_winner(
+                        ctx,
+                        &secondary_routing.endpoint,
+                        hub_only_read,
+                        &tr,
+                        captured_pk_range_id
+                            .as_ref()
+                            .or(ctx.partition_key_range_id.as_ref()),
+                    )
+                    .await;
                     HedgedRaceResult::Terminal(finalize_hedge_attempt(tr, parent_diagnostics))
                 }
                 HedgeClass::Transient => {
@@ -4444,6 +4793,7 @@ async fn execute_hedged(
                         &primary_routing.endpoint,
                         &primary_result,
                         shared_hub_region_latch.as_ref(),
+                        false,
                         &mut race_observed_session_unavailable,
                     )
                     .await;
@@ -4504,7 +4854,7 @@ async fn execute_hedged(
     }
 }
 
-fn read_consistency_strategy_for_operation(
+pub(crate) fn read_consistency_strategy_for_operation(
     operation: &CosmosOperation,
     read_consistency_strategy: ReadConsistencyStrategy,
 ) -> ReadConsistencyStrategy {
@@ -4515,7 +4865,7 @@ fn read_consistency_strategy_for_operation(
     }
 }
 
-fn operation_allows_automatic_session_token_resolution(
+pub(crate) fn operation_allows_automatic_session_token_resolution(
     operation: &CosmosOperation,
     multiple_write_locations_enabled: bool,
 ) -> bool {
@@ -4791,9 +5141,9 @@ fn try_advance_after_both_transient(
 
 /// Flips the per-state and shared `hub_region_processing_only` latches
 /// when a hedge leg observed a 1002 the non-hedged
-/// `build_session_retry_state` would have latched on, and advances
-/// `session_token_retry_count` symmetrically so `max_session_retries`
-/// is honored across both non-hedged and hedge-fallback flows.
+/// `build_session_retry_state` would have latched on, and applies the same
+/// session-retry transition so the retry counter and single-master
+/// write-endpoint routing match the non-hedged flow.
 fn propagate_hedge_session_unavailable(
     retry_state: &mut OperationRetryState,
     observed_session_unavailable: bool,
@@ -4801,12 +5151,9 @@ fn propagate_hedge_session_unavailable(
     if !observed_session_unavailable {
         return;
     }
-    // Mirror `.advance_session_retry()` in the non-hedged path so the
-    // hedge fallback can't exceed `max_session_retries`. Gate on
-    // `can_retry_session` to avoid overflowing past the cap.
+    // Gate on `can_retry_session` to avoid advancing past the cap.
     if retry_state.can_retry_session() {
-        retry_state.session_token_retry_count =
-            retry_state.session_token_retry_count.saturating_add(1);
+        *retry_state = retry_state.clone().advance_session_retry();
     }
     // The `hub_region_processing_only` latch is a single-master-only concept:
     // multi-master accounts never emit the hub-region header and must not enter
@@ -4831,31 +5178,36 @@ fn propagate_hedge_session_unavailable(
 }
 
 #[cfg(test)]
+#[path = "probe_cleanup_tests.rs"]
+mod probe_cleanup_tests;
+
+#[cfg(test)]
 mod tests {
     use std::{sync::Arc, time::Duration};
 
-    use azure_core::http::headers::HeaderName;
+    use azure_core::http::headers::{HeaderName, HeaderValue};
     use url::Url;
 
     #[cfg(feature = "fault_injection")]
     use super::build_transport_request_with_fault_injection;
     use super::{
         build_transport_request, container_recreation_retry_eligible,
-        partition_key_range_id_from_overrides, resolve_session_token_for_attempt,
-        OperationOverrides, TransportRequestContext,
+        partition_key_range_id_from_overrides, prepare_session_token_for_attempt,
+        resolve_session_token_for_attempt, AttemptSessionToken, OperationOverrides,
+        TransportRequestContext,
     };
     #[cfg(feature = "fault_injection")]
     use crate::options::Region;
     use crate::{
         diagnostics::ExecutionContext,
         driver::{
-            pipeline::components::{RoutingDecision, TransportMode},
+            cache::ContainerRoutingMap,
+            pipeline::components::RoutingDecision,
             routing::{
                 partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
                 AccountEndpointState, CosmosEndpoint, LocationEffect, LocationIndex,
                 LocationSnapshot,
             },
-            transport::EndpointKey,
         },
         models::{
             request_header_names, AccountReference, ActivityId, ContainerProperties,
@@ -4864,10 +5216,18 @@ mod tests {
             PartitionKeyDefinition, PartitionKeyValue, SessionToken, SystemProperties,
         },
         options::{PriorityLevel, ResolvedThroughputControl},
+        pipeline::transport::{
+            cosmos_transport_client::HttpRequest, types::TransportMode,
+            wrap_request_for_gateway_v2, EndpointKey, GatewayV2Headers,
+        },
+        rntbd_encoding::{
+            tokens::{ReadFeedKeyType, RntbdRequestToken},
+            RntbdRequestFrame, Token,
+        },
     };
 
     fn test_account() -> AccountReference {
-        AccountReference::with_master_key(
+        AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
@@ -4906,6 +5266,14 @@ mod tests {
                 ..Default::default()
             },
         );
+    }
+
+    fn test_session_topology(ranges: serde_json::Value) -> Arc<ContainerRoutingMap> {
+        Arc::new(
+            ContainerRoutingMap::try_create(serde_json::from_value(ranges).unwrap(), None, None)
+                .unwrap()
+                .unwrap(),
+        )
     }
 
     #[test]
@@ -5136,6 +5504,450 @@ mod tests {
     }
 
     #[test]
+    fn classic_gateway_request_scopes_session_without_changing_logical_routing() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ));
+        let manager = SessionManager::new();
+        capture_session_token(&manager, &operation, "0:1#100#1=10,1:1#200#1=20");
+        let overrides = OperationOverrides {
+            logical_partition_key_target: true,
+            resolved_partition_key_range_id: Some("1".to_owned()),
+            partition_key: Some(PartitionKey::from("pk")),
+            session_token_routing_map: Some(test_session_topology(serde_json::json!([
+                {"id":"0","minInclusive":"","maxExclusive":"80"},
+                {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+            ]))),
+            ..Default::default()
+        };
+        let range = partition_key_range_id_from_overrides(&overrides);
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("session-scoping".to_owned());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: resolve_session_token_for_attempt(
+                &manager,
+                &operation,
+                routing.transport_mode,
+                range.as_ref(),
+                &overrides,
+            ),
+            throughput_control: None,
+        };
+        let request = build_transport_request(&operation, &overrides, None, &ctx).unwrap();
+        assert_eq!(
+            request.headers.get_optional_str(&HeaderName::from_static(
+                request_header_names::SESSION_TOKEN
+            )),
+            Some("1:1#200#1=20"),
+        );
+        assert_eq!(
+            request.headers.get_optional_str(&HeaderName::from_static(
+                request_header_names::PARTITION_KEY
+            )),
+            Some(r#"["pk"]"#),
+        );
+        assert!(request
+            .headers
+            .get_optional_str(&HeaderName::from_static(
+                request_header_names::PARTITION_KEY_RANGE_ID
+            ),)
+            .is_none());
+    }
+
+    #[test]
+    fn explicit_tokens_are_prepared_per_attempt_without_cached_progress() {
+        let original = "0:1#10#1=9,1:1#20#2=19";
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ))
+        .with_session_token(original);
+        let manager = SessionManager::new();
+        capture_session_token(&manager, &operation, "0:1#900#1=899,1:1#800#2=799");
+        let cached = manager
+            .resolve_session_token(&operation, None, None)
+            .unwrap();
+        let overrides = OperationOverrides {
+            session_token_routing_map: Some(test_session_topology(serde_json::json!([
+                {"id":"0","minInclusive":"","maxExclusive":"80"},
+                {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+            ]))),
+            ..Default::default()
+        };
+        for automatic in [false, true] {
+            for (mode, id, expected) in [
+                (TransportMode::Gateway, "0", original),
+                (TransportMode::GatewayV2, "0", "0:1#10#1=9"),
+                (TransportMode::GatewayV2, "1", "0:1#10#1=9"),
+                (TransportMode::Gateway, "1", original),
+            ] {
+                let id = PartitionKeyRangeId::from(id.to_owned());
+                let AttemptSessionToken::Resolved(Some(token)) = prepare_session_token_for_attempt(
+                    &manager,
+                    &operation,
+                    mode,
+                    Some(&id),
+                    &overrides,
+                    automatic,
+                ) else {
+                    panic!("trusted explicit progress must resolve");
+                };
+                assert_eq!(token.as_str(), expected);
+                assert_eq!(
+                    operation
+                        .request_headers()
+                        .session_token
+                        .as_ref()
+                        .unwrap()
+                        .as_str(),
+                    original
+                );
+                assert_eq!(
+                    manager
+                        .resolve_session_token(&operation, None, None)
+                        .unwrap()
+                        .as_str(),
+                    cached.as_str()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn non_compound_tokens_and_disabled_automatic_resolution_keep_existing_behavior() {
+        let manager = SessionManager::new();
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ));
+        capture_session_token(&manager, &operation, "0:1#900");
+        assert!(matches!(
+            prepare_session_token_for_attempt(
+                &manager,
+                &operation,
+                TransportMode::GatewayV2,
+                None,
+                &OperationOverrides::default(),
+                false
+            ),
+            AttemptSessionToken::Resolved(None)
+        ));
+        for original in ["0:1#10", "opaque", ""] {
+            let operation = operation.clone().with_session_token(original);
+            let AttemptSessionToken::Resolved(Some(token)) = prepare_session_token_for_attempt(
+                &manager,
+                &operation,
+                TransportMode::GatewayV2,
+                None,
+                &OperationOverrides::default(),
+                false,
+            ) else {
+                panic!("single explicit tokens must keep existing passthrough behavior");
+            };
+            assert_eq!(token.as_str(), original);
+        }
+    }
+
+    #[test]
+    fn unresolved_explicit_scope_is_reported_by_attempt_preparation() {
+        let original = "0:1#10,1:1#20";
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ))
+        .with_session_token(original);
+        let manager = SessionManager::new();
+        let id = PartitionKeyRangeId::from("0".to_owned());
+        for automatic in [false, true] {
+            assert!(matches!(
+                prepare_session_token_for_attempt(
+                    &manager,
+                    &operation,
+                    TransportMode::GatewayV2,
+                    Some(&id),
+                    &OperationOverrides::default(),
+                    automatic,
+                ),
+                AttemptSessionToken::CannotScope
+            ));
+        }
+    }
+
+    #[test]
+    fn range_requests_keep_exact_scope_without_logical_selectors_on_every_attempt() {
+        let mut properties = test_container_props();
+        properties.partition_key = serde_json::from_value(serde_json::json!({
+            "paths": ["/tenant", "/user", "/session"], "kind": "MultiHash", "version": 2
+        }))
+        .unwrap();
+        let container = ContainerReference::new(
+            test_account(),
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "testcontainer_rid",
+            &properties,
+        );
+        let prefix =
+            FeedRange::for_partition(PartitionKey::from("tenant"), &properties.partition_key);
+        let operation = CosmosOperation::query_items(container, Some(prefix.clone()));
+        let overrides = OperationOverrides {
+            partition_key_range_id: Some("7".into()),
+            feed_range: Some(prefix.clone()),
+            pkrange_bounds: Some(FeedRange::full()),
+            continuation: Some("page-two".into()),
+            ..Default::default()
+        };
+        let custom_headers = [(
+            HeaderName::from_static(request_header_names::PARTITION_KEY),
+            HeaderValue::from_static(r#"["stale"]"#),
+        )]
+        .into_iter()
+        .collect();
+        let activity_id = ActivityId::from_string("hpk-prefix".into());
+        for mode in [TransportMode::GatewayV2, TransportMode::Gateway] {
+            for execution_context in [ExecutionContext::Initial, ExecutionContext::OperationRetry] {
+                let mut routing = test_routing();
+                routing.transport_mode = mode;
+                let context = TransportRequestContext {
+                    routing: &routing,
+                    activity_id: &activity_id,
+                    execution_context,
+                    deadline: None,
+                    effective_consistency: DefaultConsistencyLevel::Session,
+                    read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+                    resolved_session_token: Some(SessionToken::new("7:1#100")),
+                    throughput_control: None,
+                };
+                let request = build_transport_request(
+                    &operation,
+                    &overrides,
+                    Some(&custom_headers),
+                    &context,
+                )
+                .unwrap();
+                assert!(request.effective_partition_key.is_none());
+                assert!(request
+                    .headers
+                    .get_optional_str(&HeaderName::from_static(
+                        request_header_names::PARTITION_KEY
+                    ))
+                    .is_none());
+                for (name, expected) in [
+                    (
+                        request_header_names::START_EPK,
+                        prefix.min_inclusive().to_hex(),
+                    ),
+                    (
+                        request_header_names::END_EPK,
+                        prefix.max_exclusive().to_hex(),
+                    ),
+                    (request_header_names::PARTITION_KEY_RANGE_ID, "7".into()),
+                    (request_header_names::CONTINUATION, "page-two".into()),
+                    (request_header_names::SESSION_TOKEN, "7:1#100".into()),
+                    (
+                        request_header_names::READ_FEED_KEY_TYPE,
+                        request_header_names::READ_FEED_KEY_TYPE_EPK_RANGE.into(),
+                    ),
+                ] {
+                    assert_eq!(
+                        request
+                            .headers
+                            .get_optional_str(&HeaderName::from_static(name)),
+                        Some(expected.as_str()),
+                        "{name} on {mode:?}/{execution_context:?}",
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn shared_attempt_resolver_scopes_each_range_and_transport() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ));
+        let manager = SessionManager::new();
+        let composite = "0:1#100#1=10,1:1#200#1=20";
+        capture_session_token(&manager, &operation, composite);
+        let overrides = OperationOverrides {
+            session_token_routing_map: Some(test_session_topology(serde_json::json!([
+                {"id":"0","minInclusive":"","maxExclusive":"80"},
+                {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+            ]))),
+            ..Default::default()
+        };
+        for (mode, id, expected) in [
+            (TransportMode::Gateway, "0", "0:1#100#1=10"),
+            (TransportMode::GatewayV2, "1", "1:1#200#1=20"),
+            (TransportMode::Gateway, "1", "1:1#200#1=20"),
+        ] {
+            let range = PartitionKeyRangeId::from(id.to_owned());
+            let token = resolve_session_token_for_attempt(
+                &manager,
+                &operation,
+                mode,
+                Some(&range),
+                &overrides,
+            )
+            .unwrap();
+            assert_eq!(token.as_str(), expected, "{mode:?}");
+        }
+        assert_eq!(
+            manager
+                .resolve_session_token(&operation, None, None)
+                .unwrap()
+                .as_str(),
+            composite
+        );
+    }
+
+    #[test]
+    fn shared_attempt_resolver_preserves_fallback_when_range_cannot_be_scoped() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ));
+        let manager = SessionManager::new();
+        let composite = "0:1#100#1=10,1:1#200#1=20";
+        capture_session_token(&manager, &operation, composite);
+        let unknown = PartitionKeyRangeId::from("unknown".to_owned());
+        let overrides = OperationOverrides {
+            logical_partition_key_target: true,
+            resolved_partition_key_range_id: Some("unknown".to_owned()),
+            resolved_partition_key_range_parents: vec!["uncached-parent".to_owned()],
+            session_token_routing_map: Some(test_session_topology(serde_json::json!([
+                {"id":"0","minInclusive":"","maxExclusive":"80"},
+                {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+            ]))),
+            ..Default::default()
+        };
+        for range in [None, Some(&unknown)] {
+            assert_eq!(
+                resolve_session_token_for_attempt(
+                    &manager,
+                    &operation,
+                    TransportMode::Gateway,
+                    range,
+                    &overrides
+                )
+                .unwrap()
+                .as_str(),
+                composite,
+            );
+            assert!(resolve_session_token_for_attempt(
+                &manager,
+                &operation,
+                TransportMode::GatewayV2,
+                range,
+                &overrides,
+            )
+            .is_none());
+        }
+    }
+
+    #[test]
+    fn shared_attempt_resolver_preserves_explicit_tokens() {
+        let caller_token = "1:1#300#1=30,0:1#400#1=40";
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ))
+        .with_session_token(SessionToken::new(caller_token));
+        let manager = SessionManager::new();
+        capture_session_token(&manager, &operation, "0:1#100#1=10,1:1#200#1=20");
+        let known = PartitionKeyRangeId::from("1".to_owned());
+        let unknown = PartitionKeyRangeId::from("unknown".to_owned());
+        let overrides = OperationOverrides {
+            logical_partition_key_target: true,
+            ..Default::default()
+        };
+        for mode in [TransportMode::Gateway, TransportMode::GatewayV2] {
+            for range in [None, Some(&known), Some(&unknown)] {
+                assert_eq!(
+                    resolve_session_token_for_attempt(
+                        &manager, &operation, mode, range, &overrides
+                    )
+                    .unwrap()
+                    .as_str(),
+                    caller_token,
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn shared_attempt_resolver_merges_parents_only_for_matching_identity() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ));
+        let manager = SessionManager::new();
+        let composite = "other:1#900#1=90,parent_a:1#100#1=10,parent_b:1#200#2=20";
+        capture_session_token(&manager, &operation, composite);
+        let merged = PartitionKeyRangeId::from("merged".to_owned());
+        let different = PartitionKeyRangeId::from("different".to_owned());
+        let overrides = OperationOverrides {
+            logical_partition_key_target: true,
+            resolved_partition_key_range_id: Some("merged".to_owned()),
+            resolved_partition_key_range_parents: vec![
+                "parent_a".to_owned(),
+                "parent_b".to_owned(),
+            ],
+            session_token_routing_map: Some(test_session_topology(serde_json::json!([
+                {"id":"merged","minInclusive":"","maxExclusive":"80","parents":["parent_a","parent_b"]},
+                {"id":"other","minInclusive":"80","maxExclusive":"FF"}
+            ]))),
+            ..Default::default()
+        };
+        for mode in [TransportMode::Gateway, TransportMode::GatewayV2] {
+            assert_eq!(
+                resolve_session_token_for_attempt(
+                    &manager,
+                    &operation,
+                    mode,
+                    Some(&merged),
+                    &overrides
+                )
+                .unwrap()
+                .as_str(),
+                "merged:1#200#1=10#2=20",
+            );
+            let token = resolve_session_token_for_attempt(
+                &manager,
+                &operation,
+                mode,
+                Some(&different),
+                &overrides,
+            );
+            assert_eq!(
+                token.as_ref().map(SessionToken::as_str),
+                if mode == TransportMode::Gateway {
+                    Some(composite)
+                } else {
+                    None
+                },
+            );
+        }
+    }
+
+    #[test]
     fn gateway_v2_unresolved_logical_target_omits_cached_composite_token() {
         let operation = CosmosOperation::read_item(ItemReference::from_name(
             &test_container(),
@@ -5195,20 +6007,24 @@ mod tests {
         let overrides = OperationOverrides {
             partition_key_range_id: Some("child".to_string()),
             resolved_partition_key_range_parents: vec!["parent".to_string()],
+            session_token_routing_map: Some(test_session_topology(serde_json::json!([
+                {"id":"child","minInclusive":"","maxExclusive":"FF","parents":["parent"]}
+            ]))),
             ..Default::default()
         };
         let child = PartitionKeyRangeId::from("child".to_string());
 
-        let token = resolve_session_token_for_attempt(
-            &manager,
-            &operation,
-            TransportMode::GatewayV2,
-            Some(&child),
-            &overrides,
-        )
-        .unwrap();
-
-        assert_eq!(token.as_str(), "child:1#100#1=10");
+        for mode in [TransportMode::Gateway, TransportMode::GatewayV2] {
+            let token = resolve_session_token_for_attempt(
+                &manager,
+                &operation,
+                mode,
+                Some(&child),
+                &overrides,
+            )
+            .unwrap();
+            assert_eq!(token.as_str(), "child:1#100#1=10");
+        }
     }
 
     #[test]
@@ -5686,6 +6502,218 @@ mod tests {
     }
 
     #[test]
+    fn change_feed_transport_uses_only_restored_start_headers() {
+        let starts = [
+            crate::models::ChangeFeedStartFrom::Beginning,
+            crate::models::ChangeFeedStartFrom::Now,
+            crate::models::ChangeFeedStartFrom::PointInTime(
+                time::macros::datetime!(2026-08-21 12:34:56 UTC),
+            ),
+        ];
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("start-restoration".to_owned());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::OperationRetry,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        for previous in &starts {
+            for start in &starts {
+                let operation = CosmosOperation::change_feed(
+                    test_container(),
+                    Some(crate::models::FeedRange::full()),
+                )
+                .with_change_feed_start(previous.clone())
+                .with_change_feed_start(start.clone());
+                for continuation in [None, Some("\"saved-etag\"".to_owned())] {
+                    let overrides = OperationOverrides {
+                        continuation: continuation.clone(),
+                        partition_key_range_id: Some("0".to_owned()),
+                        ..Default::default()
+                    };
+                    let request =
+                        build_transport_request(&operation, &overrides, None, &ctx).unwrap();
+                    let expected_etag = continuation.as_deref().or_else(|| {
+                        matches!(start, crate::models::ChangeFeedStartFrom::Now).then_some("*")
+                    });
+                    assert_eq!(
+                        request.headers.get_optional_str(&HeaderName::from_static(
+                            request_header_names::IF_NONE_MATCH
+                        )),
+                        expected_etag,
+                    );
+                    let expected_time =
+                        matches!(start, crate::models::ChangeFeedStartFrom::PointInTime(_))
+                            .then_some("Fri, 21 Aug 2026 12:34:56 GMT");
+                    assert_eq!(
+                        request.headers.get_optional_str(&HeaderName::from_static(
+                            request_header_names::IF_MODIFIED_SINCE
+                        )),
+                        expected_time,
+                    );
+                    assert!(request
+                        .headers
+                        .get_optional_str(&HeaderName::from_static(
+                            request_header_names::CONTINUATION
+                        ))
+                        .is_none());
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn prefix_change_feed_transport_preserves_leaf_bounds_in_gateway_v2() {
+        let mut properties = test_container_props();
+        properties.partition_key = ("/tenant", "/user", "/device").into();
+        let container = ContainerReference::new(
+            test_account(),
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "testcontainer_rid",
+            &properties,
+        );
+        let prefix = FeedRange::for_partition(
+            PartitionKey::from("A"),
+            container.partition_key_definition(),
+        );
+        let operation = CosmosOperation::change_feed(container.clone(), Some(prefix.clone()));
+        let middle = EffectivePartitionKey::from_bytes({
+            let mut bytes = prefix.min_inclusive().as_bytes().to_vec();
+            bytes.push(0x80);
+            bytes
+        });
+        let slices = [
+            FeedRange::new(prefix.min_inclusive().clone(), middle.clone()).unwrap(),
+            FeedRange::new(middle, prefix.max_exclusive().clone()).unwrap(),
+            FeedRange::full(),
+        ];
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("00000000-0000-4000-8000-000000000001".into());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::OperationRetry,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        for slice in slices {
+            let overrides = OperationOverrides {
+                partition_key_range_id: Some("merged".into()),
+                feed_range: (slice != FeedRange::full()).then_some(slice.clone()),
+                pkrange_bounds: Some(FeedRange::full()),
+                continuation: Some("parent-etag".into()),
+                ..Default::default()
+            };
+            let mut request = build_transport_request(&operation, &overrides, None, &ctx).unwrap();
+            assert!(request.effective_partition_key.is_none());
+            request.headers.insert(
+                azure_core::http::headers::AUTHORIZATION,
+                "test-authorization",
+            );
+            request.headers.insert(
+                HeaderName::from_static("x-ms-date"),
+                "Wed, 21 Oct 2015 07:28:00 GMT",
+            );
+            let inputs = GatewayV2Headers {
+                auth_context: &request.auth_context,
+                operation_type: operation.operation_type(),
+                resource_type: operation.resource_type(),
+                effective_partition_key: request.effective_partition_key.as_ref(),
+                effective_consistency: DefaultConsistencyLevel::Session,
+                read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+                account_name: Some("test"),
+                collection_rid: None,
+            };
+            let wrapped = wrap_request_for_gateway_v2(
+                HttpRequest {
+                    url: request.url,
+                    method: request.method,
+                    headers: request.headers,
+                    body: request.body,
+                    timeout: None,
+                    #[cfg(feature = "fault_injection")]
+                    evaluation_collector: None,
+                },
+                &inputs,
+            )
+            .unwrap();
+            let frame = RntbdRequestFrame::read(wrapped.body.as_ref().unwrap()).unwrap();
+            let bounds: Vec<_> = frame
+                .metadata
+                .iter()
+                .filter(|token| {
+                    token.id == RntbdRequestToken::StartEpkHash.into()
+                        || token.id == RntbdRequestToken::EndEpkHash.into()
+                })
+                .cloned()
+                .collect();
+            assert_eq!(
+                bounds,
+                vec![
+                    Token::start_epk_hash(slice.min_inclusive().as_bytes().to_vec()),
+                    Token::end_epk_hash(slice.max_exclusive().as_bytes().to_vec()),
+                ]
+            );
+            let filters: Vec<_> = frame
+                .metadata
+                .iter()
+                .filter(|token| {
+                    token.id == RntbdRequestToken::StartEpk.into()
+                        || token.id == RntbdRequestToken::EndEpk.into()
+                        || token.id == RntbdRequestToken::ReadFeedKeyType.into()
+                })
+                .cloned()
+                .collect();
+            assert_eq!(
+                filters,
+                if slice == FeedRange::full() {
+                    vec![]
+                } else {
+                    vec![
+                        Token::start_epk(slice.min_inclusive().to_hex()),
+                        Token::end_epk(slice.max_exclusive().to_hex()),
+                        Token::read_feed_key_type(ReadFeedKeyType::EffectivePartitionKeyRange),
+                    ]
+                }
+            );
+            assert!(!frame.metadata.iter().any(|token| token.id
+                == RntbdRequestToken::EffectivePartitionKey.into()
+                || token.id == RntbdRequestToken::PartitionKey.into()));
+            assert!(frame
+                .metadata
+                .contains(&Token::partition_key_range_id("merged".into())));
+            assert!(frame
+                .metadata
+                .contains(&Token::match_condition("parent-etag".into())));
+        }
+        let complete = PartitionKey::from(("A", "one", "x"));
+        let operation = CosmosOperation::change_feed(
+            container.clone(),
+            Some(FeedRange::for_partition(
+                complete.clone(),
+                container.partition_key_definition(),
+            )),
+        );
+        assert!(super::effective_partition_key_for_request(&operation)
+            .unwrap()
+            .is_some());
+        let query = CosmosOperation::query_items(container, Some(prefix));
+        assert!(super::effective_partition_key_for_request(&query)
+            .unwrap()
+            .is_some());
+    }
+
+    #[test]
     fn build_transport_request_change_feed_continuation_keeps_if_modified_since() {
         // PointInTime start sets If-Modified-Since on the shared operation.
         // Merged partitions require the original timestamp alongside every
@@ -5985,9 +7013,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -6621,7 +7649,7 @@ mod tests {
         assert_eq!(patch_routing.routing_fallback, None);
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn resolve_endpoint_uses_account_write_region_order_for_read_dtx() {
         let operation = CosmosOperation::distributed_transaction(
@@ -6670,7 +7698,7 @@ mod tests {
         assert_eq!(routing.endpoint, account_write_endpoint);
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn resolve_endpoint_uses_account_write_region_order_for_write_dtx() {
         let operation = CosmosOperation::distributed_transaction(
@@ -6756,9 +7784,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -6825,9 +7853,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -6906,9 +7934,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -7021,9 +8049,9 @@ mod tests {
             max_session_retries: 3,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_backend_failover_retries:
                 crate::driver::pipeline::components::MAX_BACKEND_FAILOVER_RETRIES,
@@ -7366,8 +8394,8 @@ mod tests {
         use azure_core::http::StatusCode;
 
         use crate::{
-            driver::pipeline::components::TransportOutcome,
             models::{CosmosResponseHeaders, CosmosStatus},
+            pipeline::transport::types::TransportOutcome,
         };
 
         use super::super::should_capture_session_token_from_status;
@@ -7865,9 +8893,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -7933,9 +8961,9 @@ mod tests {
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -8004,9 +9032,9 @@ mod tests {
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -8088,9 +9116,9 @@ mod tests {
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -8183,9 +9211,9 @@ mod tests {
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -10574,6 +11602,10 @@ mod tests {
             state.session_token_retry_count, 1,
             "session-retry counter must still advance on multi-master",
         );
+        assert_eq!(
+            state.session_retry_routing,
+            crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+        );
     }
 
     /// Single-master: the hedge-fallback setter latches
@@ -10591,6 +11623,60 @@ mod tests {
             "single-master must latch hub_region_processing_only",
         );
         assert_eq!(state.session_token_retry_count, 1);
+        assert_eq!(
+            state.session_retry_routing,
+            crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints,
+        );
+    }
+
+    /// A failed hedge race that observed 404/1002 must route the fallback to
+    /// the write region, not the next read region, so the hub-only retry does
+    /// not hit a non-hub region and receive 403/3.
+    #[test]
+    fn hedge_session_unavailable_fallback_routes_to_write_region() {
+        let read_endpoints: Vec<CosmosEndpoint> =
+            ["region-r1", "region-r2", "region-r3", "region-w"]
+                .into_iter()
+                .map(make_endpoint)
+                .collect();
+        let write_endpoint = make_endpoint("region-w");
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: read_endpoints.clone().into(),
+            preferred_write_endpoints: vec![write_endpoint.clone()].into(),
+            account_write_endpoints: vec![write_endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: write_endpoint.clone(),
+        }));
+        let mut state = make_advance_test_state(0, read_endpoints.len());
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+
+        super::propagate_hedge_session_unavailable(&mut state, true);
+        super::try_advance_after_both_transient(
+            &mut state,
+            &location,
+            operation.is_read_only(),
+            Some(&crate::options::Region::new("region-r1")),
+            Some(&crate::options::Region::new("region-r2")),
+            dummy_last_error(),
+        )
+        .expect("budget should allow advance");
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &state,
+            &location,
+            false,
+            true,
+            Duration::from_secs(60),
+        );
+        assert_eq!(routing.endpoint, write_endpoint);
+        assert!(state.hub_region_processing_only);
     }
 
     // ── apply_tentative_writes_header ────────────────────────────────
@@ -10867,7 +11953,7 @@ mod tests {
         // must NOT win — downgraded to Transient so the primary is awaited.
         let tr = http_result(404, None);
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(tr), true),
+            super::classify_secondary_hedge_result(Ok(tr), true, false),
             super::HedgeClass::Transient
         ));
     }
@@ -10877,7 +11963,7 @@ mod tests {
         // Data-plane (primary_authoritative = false) keeps first-Final-wins.
         let tr = http_result(404, None);
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(tr), false),
+            super::classify_secondary_hedge_result(Ok(tr), false, false),
             super::HedgeClass::Final(_)
         ));
     }
@@ -10888,7 +11974,7 @@ mod tests {
         // (the latency benefit).
         let tr = http_result(200, None);
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(tr), true),
+            super::classify_secondary_hedge_result(Ok(tr), true, false),
             super::HedgeClass::Final(_)
         ));
     }
@@ -10897,8 +11983,25 @@ mod tests {
     fn secondary_transient_stays_transient_when_metadata() {
         let tr = http_result(503, None);
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(tr), true),
+            super::classify_secondary_hedge_result(Ok(tr), true, false),
             super::HedgeClass::Transient
+        ));
+    }
+
+    #[test]
+    fn secondary_write_forbidden_keeps_racing_only_on_hub_only_read() {
+        assert!(matches!(
+            super::classify_secondary_hedge_result(Ok(http_result(403, Some(3))), false, true),
+            super::HedgeClass::Transient
+        ));
+        assert!(matches!(
+            super::classify_secondary_hedge_result(Ok(http_result(403, Some(3))), false, false),
+            super::HedgeClass::Final(_)
+        ));
+        // Only 403/3 means "not the hub"; other 403s stay final on a hub-only read.
+        assert!(matches!(
+            super::classify_secondary_hedge_result(Ok(http_result(403, Some(5))), false, true),
+            super::HedgeClass::Final(_)
         ));
     }
 
@@ -11576,9 +12679,9 @@ mod tests {
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 10,
             max_backend_failover_retries: 120,

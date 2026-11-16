@@ -10,11 +10,12 @@ use std::time::Duration;
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_data_cosmos_macros::CosmosOptions;
 
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 use crate::options::PatchStrategy;
 use crate::options::{
     AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
     EndToEndOperationLatencyPolicy, ExcludedRegions, PriorityLevel, ReadConsistencyStrategy,
+    Utf8DecodingMode,
 };
 
 /// Options that apply to individual Cosmos DB requests.
@@ -49,7 +50,7 @@ pub struct OperationOptions {
     /// it. Unsafe server-side PATCH does not persist a tracking marker and is
     /// not retried after an ambiguous outcome; client-side-only settings are
     /// ignored whenever the resolved strategy uses the server path.
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[option(env = "AZURE_COSMOS_PATCH_STRATEGY")]
     pub patch_strategy: Option<PatchStrategy>,
 
@@ -93,9 +94,14 @@ pub struct OperationOptions {
     ///
     /// When `None` or `Some(false)`, session tokens are captured from responses
     /// and sent on subsequent requests for session consistency. Set to `Some(true)`
-    /// to disable both automatic capture and automatic resolution. User-provided
-    /// session tokens are unaffected. This setting cannot enable automatic session
-    /// token management when the driver's partition key range cache is disabled.
+    /// to disable both automatic capture and automatic resolution.
+    ///
+    /// Explicit tokens still apply. Gateway V2 loads topology on demand to scope
+    /// compound tokens. If topology loads but safe scoping is unavailable, the
+    /// attempt omits the token and downgrades Session consistency to Eventual,
+    /// without a read-your-writes guarantee. Topology-loading failures still return
+    /// errors. Classic Gateway retains token passthrough. Scoping an explicit
+    /// token does not read or update the session cache.
     pub session_capturing_disabled: Option<bool>,
 
     /// Maximum number of session-consistency retries on 404/1002 errors.
@@ -174,6 +180,14 @@ pub struct OperationOptions {
     /// a lower level (default: binary encoding enabled). See
     /// [`BinaryEncodingOptions`].
     pub binary_encoding: Option<BinaryEncodingOptions>,
+
+    /// How invalid UTF-8 in JSON response bodies is handled.
+    ///
+    /// `None` inherits from a lower layer. If no layer sets a value, the driver
+    /// uses [`Utf8DecodingMode::Strict`]. Lossy decoding preserves binary
+    /// response negotiation and replaces malformed UTF-8 sequences before JSON
+    /// deserialization.
+    pub utf8_decoding_mode: Option<Utf8DecodingMode>,
 }
 
 #[derive(Debug)]
@@ -332,7 +346,7 @@ mod tests {
             session_capturing_disabled: Some(true),
             excluded_regions: Some(ExcludedRegions::new().with_region("East US")),
             end_to_end_latency_policy: Some(Duration::from_secs(4).into()),
-            #[cfg(feature = "preview_patch")]
+            #[cfg(feature = "unstable_patch")]
             patch_strategy: Some(PatchStrategy::ServerSide),
             custom_headers: Some(HashMap::from([(
                 HeaderName::from("x-test"),
@@ -342,7 +356,7 @@ mod tests {
         });
         let account = Arc::new(OperationOptions {
             max_session_retry_count: Some(4),
-            #[cfg(feature = "preview_patch")]
+            #[cfg(feature = "unstable_patch")]
             patch_strategy: Some(PatchStrategy::Auto),
             ..Default::default()
         });
@@ -364,7 +378,7 @@ mod tests {
             view.endpoint_unavailability_ttl(),
             Some(&Duration::from_millis(12))
         );
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         assert_eq!(view.patch_strategy(), Some(&PatchStrategy::Auto));
         assert_eq!(
             view.read_consistency_strategy(),
@@ -390,7 +404,7 @@ mod tests {
     #[test]
     fn default_operation_options() {
         let options = OperationOptions::default();
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         assert!(options.patch_strategy.is_none());
         assert!(options.read_consistency_strategy.is_none());
         assert!(options.excluded_regions.is_none());
@@ -407,7 +421,7 @@ mod tests {
             .with_max_retry_wait_time(Duration::from_secs(12))
             .build();
         let builder = OperationOptionsBuilder::new();
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         let builder = builder.with_patch_strategy(PatchStrategy::ClientSide);
         let options = builder
             .with_content_response_on_write(ContentResponseOnWrite::Disabled)
@@ -417,7 +431,7 @@ mod tests {
             .with_throttling_retry_options(throttling)
             .build();
 
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         assert_eq!(options.patch_strategy, Some(PatchStrategy::ClientSide));
         assert_eq!(
             options.content_response_on_write,
@@ -444,7 +458,7 @@ mod tests {
         use std::sync::Arc;
 
         let env = Arc::new(OperationOptions {
-            #[cfg(feature = "preview_patch")]
+            #[cfg(feature = "unstable_patch")]
             patch_strategy: Some(PatchStrategy::ServerSide),
             read_consistency_strategy: Some(ReadConsistencyStrategy::Eventual),
             max_failover_retry_count: Some(3),
@@ -463,7 +477,7 @@ mod tests {
         });
 
         let operation = OperationOptions {
-            #[cfg(feature = "preview_patch")]
+            #[cfg(feature = "unstable_patch")]
             patch_strategy: Some(PatchStrategy::ClientSide),
             read_consistency_strategy: Some(ReadConsistencyStrategy::Session),
             ..Default::default()
@@ -473,7 +487,7 @@ mod tests {
             OperationOptionsView::new(Some(env), Some(runtime), Some(account), Some(&operation));
 
         // Operation overrides env
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         assert_eq!(view.patch_strategy(), Some(&PatchStrategy::ClientSide));
         // Operation overrides env
         assert_eq!(
@@ -530,7 +544,7 @@ mod tests {
             _ => Err(std::env::VarError::NotPresent),
         });
 
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         assert_eq!(options.patch_strategy, Some(PatchStrategy::ServerSide));
         assert_eq!(
             options.read_consistency_strategy,
@@ -568,7 +582,7 @@ mod tests {
     fn from_env_vars_returns_none_for_missing_vars() {
         let options = OperationOptions::from_env_vars(|_| Err(std::env::VarError::NotPresent));
 
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         assert!(options.patch_strategy.is_none());
         assert!(options.read_consistency_strategy.is_none());
         assert!(options.content_response_on_write.is_none());
@@ -579,9 +593,9 @@ mod tests {
         assert!(options.hedging_enabled.is_none());
     }
 
-    #[cfg(not(feature = "preview_patch"))]
+    #[cfg(not(feature = "unstable_patch"))]
     #[test]
-    fn from_env_does_not_read_preview_patch_strategy() {
+    fn from_env_does_not_read_unstable_patch_strategy() {
         OperationOptions::from_env_vars(|key| {
             assert_ne!(key, "AZURE_COSMOS_PATCH_STRATEGY");
             Err(std::env::VarError::NotPresent)
@@ -674,6 +688,15 @@ mod tests {
     }
 
     #[test]
+    fn builder_round_trips_utf8_decoding_mode() {
+        let options = OperationOptionsBuilder::new()
+            .with_utf8_decoding_mode(Utf8DecodingMode::Lossy)
+            .build();
+
+        assert_eq!(options.utf8_decoding_mode, Some(Utf8DecodingMode::Lossy));
+    }
+
+    #[test]
     fn binary_encoding_resolves_via_view() {
         use std::sync::Arc;
 
@@ -701,6 +724,35 @@ mod tests {
         let view_account_wins =
             OperationOptionsView::new(None, None, Some(account), Some(&empty_operation));
         assert_eq!(view_account_wins.binary_encoding(), Some(&account_be));
+    }
+
+    #[test]
+    fn utf8_decoding_mode_resolves_via_view() {
+        use std::sync::Arc;
+
+        let account = Arc::new(OperationOptions {
+            utf8_decoding_mode: Some(Utf8DecodingMode::Lossy),
+            ..Default::default()
+        });
+        let operation = OperationOptions {
+            utf8_decoding_mode: Some(Utf8DecodingMode::Strict),
+            ..Default::default()
+        };
+
+        let view_op_overrides =
+            OperationOptionsView::new(None, None, Some(account.clone()), Some(&operation));
+        assert_eq!(
+            view_op_overrides.utf8_decoding_mode(),
+            Some(&Utf8DecodingMode::Strict)
+        );
+
+        let empty_operation = OperationOptions::default();
+        let view_account_wins =
+            OperationOptionsView::new(None, None, Some(account), Some(&empty_operation));
+        assert_eq!(
+            view_account_wins.utf8_decoding_mode(),
+            Some(&Utf8DecodingMode::Lossy)
+        );
     }
 
     /// The nested [`ThrottlingRetryOptions`] group must participate in the
@@ -930,7 +982,7 @@ mod real_env_tests {
         // With no variables set, the env layer contributes nothing.
         with_scoped_env(OPERATION_ENV_VARS, &[], || {
             let o = OperationOptions::from_env();
-            #[cfg(feature = "preview_patch")]
+            #[cfg(feature = "unstable_patch")]
             assert!(o.patch_strategy.is_none());
             assert!(o.read_consistency_strategy.is_none());
             assert!(o.content_response_on_write.is_none());
@@ -952,7 +1004,7 @@ mod real_env_tests {
             ],
             || {
                 let o = OperationOptions::from_env();
-                #[cfg(feature = "preview_patch")]
+                #[cfg(feature = "unstable_patch")]
                 assert_eq!(o.patch_strategy, Some(PatchStrategy::ClientSide));
                 assert_eq!(
                     o.read_consistency_strategy,

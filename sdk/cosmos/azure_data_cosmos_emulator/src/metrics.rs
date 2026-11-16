@@ -10,11 +10,11 @@ pub(crate) struct HostMetrics {
     binary_negotiated_requests: AtomicUsize,
     binary_payload_requests: AtomicUsize,
     binary_response_payloads: AtomicUsize,
-    default_consistency_requests: AtomicUsize,
-    eventual_consistency_requests: AtomicUsize,
-    session_consistency_requests: AtomicUsize,
-    latest_committed_consistency_requests: AtomicUsize,
-    global_strong_consistency_requests: AtomicUsize,
+    wire_default_consistency_requests: AtomicUsize,
+    wire_eventual_consistency_requests: AtomicUsize,
+    wire_session_consistency_requests: AtomicUsize,
+    wire_latest_committed_consistency_requests: AtomicUsize,
+    wire_global_strong_consistency_requests: AtomicUsize,
     connectivity_probes: AtomicUsize,
     gateway_requests: AtomicUsize,
     gateway20_requests: AtomicUsize,
@@ -55,35 +55,40 @@ impl HostMetrics {
         strategy: Option<ReadConsistencyStrategy>,
     ) {
         let counter = match strategy.unwrap_or(ReadConsistencyStrategy::Default) {
-            ReadConsistencyStrategy::Default => &self.default_consistency_requests,
-            ReadConsistencyStrategy::Eventual => &self.eventual_consistency_requests,
-            ReadConsistencyStrategy::Session => &self.session_consistency_requests,
-            ReadConsistencyStrategy::LatestCommitted => &self.latest_committed_consistency_requests,
-            ReadConsistencyStrategy::GlobalStrong => &self.global_strong_consistency_requests,
+            ReadConsistencyStrategy::Default => &self.wire_default_consistency_requests,
+            ReadConsistencyStrategy::Eventual => &self.wire_eventual_consistency_requests,
+            ReadConsistencyStrategy::Session => &self.wire_session_consistency_requests,
+            ReadConsistencyStrategy::LatestCommitted => {
+                &self.wire_latest_committed_consistency_requests
+            }
+            ReadConsistencyStrategy::GlobalStrong => &self.wire_global_strong_consistency_requests,
             _ => return,
         };
         counter.fetch_add(1, Ordering::Relaxed);
     }
 
-    pub(crate) fn default_consistency_requests(&self) -> usize {
-        self.default_consistency_requests.load(Ordering::Relaxed)
-    }
-
-    pub(crate) fn eventual_consistency_requests(&self) -> usize {
-        self.eventual_consistency_requests.load(Ordering::Relaxed)
-    }
-
-    pub(crate) fn session_consistency_requests(&self) -> usize {
-        self.session_consistency_requests.load(Ordering::Relaxed)
-    }
-
-    pub(crate) fn latest_committed_consistency_requests(&self) -> usize {
-        self.latest_committed_consistency_requests
+    pub(crate) fn wire_default_consistency_requests(&self) -> usize {
+        self.wire_default_consistency_requests
             .load(Ordering::Relaxed)
     }
 
-    pub(crate) fn global_strong_consistency_requests(&self) -> usize {
-        self.global_strong_consistency_requests
+    pub(crate) fn wire_eventual_consistency_requests(&self) -> usize {
+        self.wire_eventual_consistency_requests
+            .load(Ordering::Relaxed)
+    }
+
+    pub(crate) fn wire_session_consistency_requests(&self) -> usize {
+        self.wire_session_consistency_requests
+            .load(Ordering::Relaxed)
+    }
+
+    pub(crate) fn wire_latest_committed_consistency_requests(&self) -> usize {
+        self.wire_latest_committed_consistency_requests
+            .load(Ordering::Relaxed)
+    }
+
+    pub(crate) fn wire_global_strong_consistency_requests(&self) -> usize {
+        self.wire_global_strong_consistency_requests
             .load(Ordering::Relaxed)
     }
 

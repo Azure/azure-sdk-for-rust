@@ -130,7 +130,7 @@ impl Fixture {
             .ok()
             .expect("mock runtime builds");
         let inner = RuntimeContext::from_ptr(runtime).unwrap();
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             "https://test.documents.azure.com/".parse().unwrap(),
             "dGVzdA==",
         );

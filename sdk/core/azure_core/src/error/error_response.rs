@@ -186,6 +186,12 @@ pub async fn check_success<T: Response>(
     }
 
     let raw_response = response.try_into_raw_response().await?;
+    Err(error_from_response(raw_response))
+}
+
+/// Creates an error using the service's response, even when its HTTP status indicates success.
+pub(crate) fn error_from_response(raw_response: RawResponse) -> Error {
+    let status = raw_response.status();
 
     // If there's no body, we can't extract any more information.
     if raw_response.body().is_empty() {
@@ -198,7 +204,7 @@ pub async fn check_success<T: Response>(
             error_code,
             raw_response: Some(Box::new(raw_response)),
         };
-        return Err(Error::with_message(error_kind, status.to_string()));
+        return Error::with_message(error_kind, status.to_string());
     }
     let internal_response =
         serde_json::de::from_slice::<ErrorResponseInternal>(raw_response.body())
@@ -220,10 +226,7 @@ pub async fn check_success<T: Response>(
                 error_code: Some(error_code),
                 raw_response: Some(Box::new(raw_response)),
             };
-            return Err(Error::with_message(
-                error_kind,
-                format!("{}: {}", status, message),
-            ));
+            return Error::with_message(error_kind, format!("{}: {}", status, message));
         }
     };
 
@@ -243,7 +246,7 @@ pub async fn check_success<T: Response>(
         raw_response: Some(Box::new(raw_response)),
     };
 
-    Err(Error::with_message(error_kind, message))
+    Error::with_message(error_kind, message)
 }
 
 #[cfg(test)]

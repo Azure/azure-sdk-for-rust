@@ -29,14 +29,13 @@ use crate::{
 
 use std::sync::atomic::Ordering;
 
-use super::components::{
-    OperationAction, OperationRetryState, RetryWithRetryState, TransportOutcome, TransportResult,
-};
-#[cfg(feature = "preview_dtx")]
+use super::components::{OperationAction, OperationRetryState, RetryWithRetryState};
+#[cfg(feature = "unstable_dtx")]
 use super::components::{
     DTX_COORDINATOR_RETRY_INTERVAL, DTX_INFRA_BASE_BACKOFF, DTX_INFRA_MAX_BACKOFF,
     DTX_INFRA_MAX_EXPONENT,
 };
+use crate::pipeline::transport::types::{TransportOutcome, TransportResult};
 
 /// Whether the current request is handled by the PPCB threshold mechanism.
 ///
@@ -389,7 +388,7 @@ fn evaluate_http_outcome(
         return result;
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     if operation.resource_type() == crate::models::ResourceType::DistributedTransactionBatch {
         return evaluate_dtx_http_outcome(status, cosmos_headers, body, retry_state);
     }
@@ -422,7 +421,7 @@ fn evaluate_http_outcome(
     )
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn evaluate_dtx_http_outcome(
     status: CosmosStatus,
     cosmos_headers: CosmosResponseHeaders,
@@ -454,7 +453,7 @@ fn evaluate_dtx_http_outcome(
     )
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn try_dtx_bodyless_retry(
     status: &CosmosStatus,
     cosmos_headers: &CosmosResponseHeaders,
@@ -484,7 +483,7 @@ fn try_dtx_bodyless_retry(
     None
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn is_dtx_bodyless_coordinator_retriable(status: &CosmosStatus) -> bool {
     status.status_code() == azure_core::http::StatusCode::RequestTimeout
         || (u16::from(status.status_code()) == 449
@@ -492,7 +491,7 @@ fn is_dtx_bodyless_coordinator_retriable(status: &CosmosStatus) -> bool {
                 == Some(crate::error::status_codes::substatus::DTC_COORDINATOR_RACE_CONFLICT))
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn is_dtx_bodyless_infra_retriable(status: &CosmosStatus) -> bool {
     status.status_code() == azure_core::http::StatusCode::InternalServerError
         && matches!(
@@ -503,7 +502,7 @@ fn is_dtx_bodyless_infra_retriable(status: &CosmosStatus) -> bool {
         )
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn dtx_infra_retry_delay(attempt: u32) -> std::time::Duration {
     let exponent = attempt.min(DTX_INFRA_MAX_EXPONENT);
     let delay = DTX_INFRA_BASE_BACKOFF.mul_f64(2_f64.powi(exponent as i32));
@@ -1310,11 +1309,11 @@ mod tests {
         );
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     use super::super::components::{MAX_DTX_COORDINATOR_RETRIES, MAX_DTX_INFRA_RETRIES};
 
     fn make_create_item_operation() -> CosmosOperation {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -1337,7 +1336,7 @@ mod tests {
     }
 
     fn make_read_operation() -> CosmosOperation {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==", // base64 "test"
         );
@@ -1347,23 +1346,23 @@ mod tests {
 
     fn make_create_operation() -> CosmosOperation {
         // create_database uses OperationType::Create which is NOT idempotent
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
         CosmosOperation::create_database(account)
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn make_dtx_operation() -> CosmosOperation {
         make_dtx_operation_for(crate::models::DistributedTransactionType::Write)
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn make_dtx_operation_for(
         transaction_type: crate::models::DistributedTransactionType,
     ) -> CosmosOperation {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -1415,7 +1414,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn make_dtx_http_error(
         status: CosmosStatus,
         body: Vec<u8>,
@@ -1435,7 +1434,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_bodyless_449_5352_uses_coordinator_retry_budget() {
         let op = make_dtx_operation();
@@ -1465,7 +1464,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_bodyless_500_5411_uses_infra_retry_budget() {
         let op = make_dtx_operation();
@@ -1495,7 +1494,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_bodyless_retry_budget_exhaustion_completes_response() {
         let op = make_dtx_operation();
@@ -1519,7 +1518,7 @@ mod tests {
         assert!(matches!(action, OperationAction::Complete(_)));
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_bodyless_infra_retry_budget_exhaustion_completes_response() {
         let op = make_dtx_operation();
@@ -1543,7 +1542,7 @@ mod tests {
         assert!(matches!(action, OperationAction::Complete(_)));
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_body_bearing_449_completes_for_outer_loop() {
         let op = make_dtx_operation();
@@ -1566,7 +1565,7 @@ mod tests {
         assert!(matches!(action, OperationAction::Complete(_)));
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_bodyless_write_forbidden_refreshes_topology_before_dtx_classification() {
         for transaction_type in [
@@ -1605,7 +1604,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_bodyless_database_account_not_found_refreshes_topology_before_dtx_classification() {
         // 403/1008 DatabaseAccountNotFound applies to every op type, including
@@ -1631,7 +1630,7 @@ mod tests {
             .any(|effect| matches!(effect, LocationEffect::RefreshAccountProperties)));
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_http_outcomes_never_failover_session_or_hedge() {
         // DTX is a write-bearing resource routed through the shared pipeline.
@@ -1795,7 +1794,7 @@ mod tests {
         use super::*;
 
         fn make_patch_operation(retry_safe: Option<bool>) -> CosmosOperation {
-            let account = AccountReference::with_master_key(
+            let account = AccountReference::with_account_key(
                 url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
                 "dGVzdA==",
             );
@@ -1894,7 +1893,7 @@ mod tests {
         use crate::models::{FeedRange, OperationType, StoredProcedureReference};
 
         fn make_execute_stored_procedure_operation() -> CosmosOperation {
-            let account = AccountReference::with_master_key(
+            let account = AccountReference::with_account_key(
                 url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
                 "dGVzdA==",
             );
@@ -2127,9 +2126,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: std::time::Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 1,
             max_backend_failover_retries: 120,
@@ -3095,9 +3094,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: std::time::Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 1,
             max_backend_failover_retries: 120,

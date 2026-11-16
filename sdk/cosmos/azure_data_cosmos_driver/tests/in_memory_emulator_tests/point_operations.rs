@@ -84,7 +84,7 @@ async fn item_id_with_literal_percent_round_trips_through_driver() {
         .await
         .expect("runtime should build against the in-memory emulator");
     let account =
-        AccountReference::with_master_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
+        AccountReference::with_account_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
     let driver = runtime
         .create_driver(DriverOptions::builder(account).build())
         .await
@@ -176,7 +176,7 @@ async fn default_operation_negotiates_binary_on_the_wire() {
 
     let runtime = emulator.runtime_builder().build().await.unwrap();
     let account =
-        AccountReference::with_master_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
+        AccountReference::with_account_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
     let driver = runtime
         .create_driver(DriverOptions::builder(account).build())
         .await

@@ -206,12 +206,14 @@ pub mod diagnostics {
     }
     impl DiagnosticsContext {
         pub fn activity_id(&self) -> &ActivityId;
+        pub fn clone_with_status(&self, status: CosmosStatus) -> Self;
         pub fn compaction(&self) -> Option<&CompactionInfo>;
         pub fn duration(&self) -> Duration;
         pub fn effective_status(&self) -> Option<CosmosStatus>;
         pub fn fault_injection_enabled(&self) -> bool;
         pub fn hedge_diagnostics(&self) -> Option<&HedgeDiagnostics>;
         pub fn hedging_started(&self) -> bool;
+        pub fn invalid_utf8_was_recovered(&self) -> bool;
         pub fn is_completed(&self) -> bool;
         pub fn is_failure(&self) -> bool;
         pub fn is_threshold_violated(&self, thresholds: &DiagnosticsThresholds) -> bool;
@@ -518,7 +520,7 @@ pub mod driver {
         #[cfg(any(test, feature = "__internal_testing"))]
         pub fn __test_only_hub_region_cache_snapshot(&self) -> Vec<(String, String)>;
         pub fn account(&self) -> &AccountReference;
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         pub async fn execute_distributed_transaction(&self, request: crate::models::DistributedTransactionRequest, options: OperationOptions) -> crate::error::Result<crate::models::DistributedTransactionResponse>;
         pub async fn execute_operation(&self, operation: CosmosOperation, options: OperationOptions) -> crate::error::Result<Option<crate::models::CosmosResponse>>;
         pub async fn execute_plan(&self, plan: &mut OperationPlan, container: Option<ContainerReference>, options: OperationOptions) -> crate::error::Result<Option<crate::models::CosmosResponse>>;
@@ -886,15 +888,15 @@ pub mod error {
             pub const COMPLETING_SPLIT: crate::error::SubStatusCode = _;
             pub const CROSS_PARTITION_QUERY_NOT_SERVABLE: crate::error::SubStatusCode = _;
             pub const DATABASE_ACCOUNT_NOT_FOUND: crate::error::SubStatusCode = _;
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             pub const DTC_ACCOUNT_CONFIG_FAILURE: crate::error::SubStatusCode = _;
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             pub const DTC_COORDINATOR_RACE_CONFLICT: crate::error::SubStatusCode = _;
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             pub const DTC_DISPATCH_FAILURE: crate::error::SubStatusCode = _;
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             pub const DTC_LEDGER_FAILURE: crate::error::SubStatusCode = _;
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             pub const DTC_OPERATION_ROLLED_BACK: crate::error::SubStatusCode = _;
             pub const HOT_PARTITION_KEY_THROTTLED: crate::error::SubStatusCode = _;
             pub const MALFORMED_CONTINUATION_TOKEN: crate::error::SubStatusCode = _;
@@ -949,9 +951,9 @@ pub mod fault_injection {
     #[non_exhaustive]
     pub struct FaultClient {
     }
+    #[async_trait]
     impl TransportClient for FaultClient {
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn send(&self, request: &HttpRequest) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<HttpResponse, TransportError>> + ::core::marker::Send>>;
+        async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError>;
     }
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
@@ -1351,9 +1353,9 @@ pub mod models {
         pub fn backup_endpoints(&self) -> &[Url];
         pub fn builder(endpoint: Url) -> AccountReferenceBuilder;
         pub fn endpoint(&self) -> &Url;
+        pub fn with_account_key<impl Into<Secret>: Into<Secret>>(endpoint: Url, key: impl Into<Secret>) -> Self;
         pub fn with_backup_endpoints(self, endpoints: Vec<Url>) -> Self;
         pub fn with_credential(endpoint: Url, credential: Arc<dyn TokenCredential>) -> Self;
-        pub fn with_master_key<impl Into<Secret>: Into<Secret>>(endpoint: Url, key: impl Into<Secret>) -> Self;
     }
     impl Eq for AccountReference {
     }
@@ -1487,7 +1489,7 @@ pub mod models {
         pub fn delete_container(container: ContainerReference) -> Self;
         pub fn delete_database(database: DatabaseReference) -> Self;
         pub fn delete_item(item: ItemReference) -> Self;
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         pub fn distributed_transaction(account: AccountReference, transaction_type: crate::models::DistributedTransactionType) -> Self;
         pub fn is_change_feed(&self) -> bool;
         pub fn is_idempotent(&self) -> bool;
@@ -1516,6 +1518,7 @@ pub mod models {
         pub fn read_container_by_rid<impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(account: AccountReference, db_rid: impl Into<std::borrow::Cow<'static, str>>, container_rid: impl Into<std::borrow::Cow<'static, str>>) -> Self;
         pub fn read_database(database: DatabaseReference) -> Self;
         pub fn read_item(item: ItemReference) -> Self;
+        pub fn read_many<impl Into<crate::read_many::ItemSelector>: Into<crate::read_many::ItemSelector>>(container: ContainerReference, selection: impl Into<crate::read_many::ItemSelector>) -> Self;
         pub fn read_offer<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(account: AccountReference, offer_id: impl Into<Cow<'static, str>>) -> Self;
         pub fn replace_container(container: ContainerReference) -> Self;
         pub fn replace_item(item: ItemReference) -> Self;
@@ -1647,7 +1650,7 @@ pub mod models {
         pub log_results: Option<String>,
         pub collection_index_transformation_progress: Option<i64>,
         pub collection_lazy_indexing_progress: Option<i64>,
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         pub distributed_transaction_idempotency_token: Option<uuid::Uuid>,
     }
     impl CosmosResponseHeaders {
@@ -1718,7 +1721,7 @@ pub mod models {
         pub fn rid(&self) -> Option<&str>;
         pub fn rid_based_path(&self) -> Option<String>;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct DistributedTransactionOperation {
@@ -1729,7 +1732,7 @@ pub mod models {
         pub precondition: Option<crate::models::Precondition>,
         pub patch_filter_predicate: Option<std::borrow::Cow<'static, str>>,
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl DistributedTransactionOperation {
         pub fn new(kind: DistributedTransactionOperationKind, target: DistributedTransactionTarget) -> Self;
         pub fn with_patch_filter_predicate<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, predicate: impl Into<Cow<'static, str>>) -> Self;
@@ -1737,7 +1740,7 @@ pub mod models {
         pub fn with_resource_body<impl Into<Bytes>: Into<Bytes>>(self, body: impl Into<Bytes>) -> Self;
         pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct DistributedTransactionOperationResult {
@@ -1751,12 +1754,12 @@ pub mod models {
         pub request_charge: Option<crate::models::RequestCharge>,
         pub resource_body: DistributedTransactionResultBody,
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl DistributedTransactionOperationResult {
         pub fn is_completed_status_code(&self) -> bool;
         pub fn is_success_status_code(&self) -> bool;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct DistributedTransactionRequest {
@@ -1764,12 +1767,12 @@ pub mod models {
         pub operations: Vec<DistributedTransactionOperation>,
         pub idempotency_token: uuid::Uuid,
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl DistributedTransactionRequest {
         pub fn new(transaction_type: DistributedTransactionType, operations: Vec<DistributedTransactionOperation>) -> Self;
         pub fn serialize_body(&self) -> crate::error::Result<Vec<u8>>;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct DistributedTransactionResponse {
@@ -1786,7 +1789,7 @@ pub mod models {
         pub diagnostic_string: Option<String>,
         pub error_message: Option<String>,
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl DistributedTransactionResponse {
         pub fn from_body(status_code: azure_core::http::StatusCode, sub_status_code: Option<crate::models::SubStatusCode>, body: &[u8], operation_count: usize, idempotency_token: Uuid) -> Self;
         pub fn is_completed_status_code(&self) -> bool;
@@ -1794,7 +1797,7 @@ pub mod models {
         pub fn is_success_status_code(&self) -> bool;
         pub fn len(&self) -> usize;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct DistributedTransactionTarget {
@@ -1802,7 +1805,7 @@ pub mod models {
         pub partition_key: crate::models::PartitionKey,
         pub id: std::borrow::Cow<'static, str>,
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl DistributedTransactionTarget {
         pub fn new<impl Into<PartitionKey>: Into<PartitionKey>, impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: ContainerReference, partition_key: impl Into<PartitionKey>, id: impl Into<Cow<'static, str>>) -> Self;
     }
@@ -2022,8 +2025,10 @@ pub mod models {
         pub operations: Vec<PatchOperation>,
     }
     impl PatchInstructions {
+        pub fn filter_predicate(&self) -> Option<&str>;
         pub fn is_retry_safe(&self) -> bool;
         pub fn new() -> Self;
+        pub fn with_filter_predicate<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, predicate: impl Into<Cow<'static, str>>) -> Self;
         pub fn with_operation(self, operation: PatchOperation) -> Self;
     }
     impl From<Vec<PatchOperation>> for PatchInstructions {
@@ -2228,7 +2233,7 @@ pub mod models {
     }
     #[derive(Clone)]
     pub enum Credential {
-        MasterKey(azure_core::credentials::Secret),
+        AccountKey(azure_core::credentials::Secret),
         TokenCredential(std::sync::Arc<dyn TokenCredential>),
     }
     impl Debug for Credential {
@@ -2240,7 +2245,7 @@ pub mod models {
     impl From<Secret> for Credential {
         fn from(key: Secret) -> Self;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
     pub enum DistributedTransactionOperationKind {
@@ -2251,7 +2256,7 @@ pub mod models {
         Delete,
         Patch,
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     #[non_exhaustive]
     pub enum DistributedTransactionResultBody {
@@ -2259,22 +2264,22 @@ pub mod models {
         None,
         Bytes(azure_core::Bytes),
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[non_exhaustive]
     pub enum DistributedTransactionType {
         Write,
         Read,
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl DistributedTransactionType {
         pub fn as_str(self) -> &'static str;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl AsRef<str> for DistributedTransactionType {
         fn as_ref(&self) -> &str;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl Display for DistributedTransactionType {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
     }
@@ -2301,9 +2306,9 @@ pub mod models {
         HeadFeed,
         Execute,
         Patch,
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         CommitDistributedTransaction,
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         ReadDistributedTransaction,
     }
     impl OperationType {
@@ -2392,7 +2397,7 @@ pub mod models {
         UserDefinedFunction,
         PartitionKeyRange,
         Offer,
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         DistributedTransactionBatch,
     }
     impl ResourceType {
@@ -2694,6 +2699,7 @@ pub mod options {
         pub fn operation_options(&self) -> &Arc<OperationOptions>;
         pub fn partition_failover_options(&self) -> &PartitionFailoverOptions;
         pub fn preferred_regions(&self) -> &[Region];
+        pub fn resource_name_validation_enabled(&self) -> bool;
         pub fn user_agent_suffix(&self) -> Option<&UserAgentSuffix>;
     }
     #[derive(Clone, Debug)]
@@ -2709,6 +2715,7 @@ pub mod options {
         pub fn with_operation_options(self, options: OperationOptions) -> Self;
         pub fn with_partition_failover_options(self, options: PartitionFailoverOptions) -> Self;
         pub fn with_preferred_regions(self, regions: Vec<Region>) -> Self;
+        pub fn with_resource_name_validation(self, enabled: bool) -> Self;
         pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
@@ -2771,7 +2778,7 @@ pub mod options {
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
     pub struct OperationOptions {
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         pub patch_strategy: Option<crate::options::PatchStrategy>,
         pub read_consistency_strategy: Option<crate::options::ReadConsistencyStrategy>,
         pub excluded_regions: Option<crate::options::ExcludedRegions>,
@@ -2787,6 +2794,7 @@ pub mod options {
         pub availability_strategy: Option<crate::options::AvailabilityStrategy>,
         pub custom_headers: Option<std::collections::HashMap<azure_core::http::headers::HeaderName, azure_core::http::headers::HeaderValue>>,
         pub binary_encoding: Option<crate::options::BinaryEncodingOptions>,
+        pub utf8_decoding_mode: Option<crate::options::Utf8DecodingMode>,
     }
     #[automatically_derived]
     impl OperationOptions {
@@ -2811,12 +2819,13 @@ pub mod options {
         pub fn with_hedging_enabled(self, value: bool) -> Self;
         pub fn with_max_failover_retry_count(self, value: u32) -> Self;
         pub fn with_max_session_retry_count(self, value: u32) -> Self;
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         pub fn with_patch_strategy(self, value: PatchStrategy) -> Self;
         pub fn with_read_consistency_strategy(self, value: ReadConsistencyStrategy) -> Self;
         pub fn with_session_capturing_disabled(self, value: bool) -> Self;
         pub fn with_throttling_retry_options(self, value: ThrottlingRetryOptions) -> Self;
         pub fn with_throughput_control(self, value: ThroughputControlOptions) -> Self;
+        pub fn with_utf8_decoding_mode(self, value: Utf8DecodingMode) -> Self;
     }
     #[automatically_derived]
     pub struct OperationOptionsView<'a> {
@@ -2835,12 +2844,13 @@ pub mod options {
         pub fn max_session_retry_count(&self) -> Option<&u32>;
         pub fn new(env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
         pub fn new_with_override(env_override: Option<::std::sync::Arc<OperationOptions>>, env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         pub fn patch_strategy(&self) -> Option<&PatchStrategy>;
         pub fn read_consistency_strategy(&self) -> Option<&ReadConsistencyStrategy>;
         pub fn session_capturing_disabled(&self) -> Option<&bool>;
         pub fn throttling_retry_options(&self) -> ThrottlingRetryOptionsView<'_>;
         pub fn throughput_control(&self) -> ThroughputControlOptionsView<'_>;
+        pub fn utf8_decoding_mode(&self) -> Option<&Utf8DecodingMode>;
     }
     #[derive(Clone, Debug)]
     #[non_exhaustive]
@@ -2879,11 +2889,13 @@ pub mod options {
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct PlanOptions {
+        pub full_text_score_scope: crate::options::FullTextScoreScope,
         pub max_buffered_query_window: u64,
         pub query_plan_mode: crate::options::QueryPlanMode,
         pub max_fan_out: u32,
     }
     impl PlanOptions {
+        pub fn with_full_text_score_scope(self, scope: FullTextScoreScope) -> Self;
         pub fn with_max_buffered_query_window(self, max_buffered_query_window: u64) -> Self;
         pub fn with_max_fan_out(self, max_fan_out: u32) -> Self;
         pub fn with_query_plan_mode(self, mode: QueryPlanMode) -> Self;
@@ -3180,6 +3192,13 @@ pub mod options {
         type Err = String;
         fn from_str(s: &str) -> Result<Self, <Self as >::Err>;
     }
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum FullTextScoreScope {
+        #[default]
+        Global,
+        Local,
+    }
     #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
     #[non_exhaustive]
     pub enum PartitionTopologyCacheMode {
@@ -3275,9 +3294,44 @@ pub mod options {
         #[default]
         Rustls,
     }
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum Utf8DecodingMode {
+        #[default]
+        Strict,
+        Lossy,
+    }
     pub const DEFAULT_MAX_BUFFERED_QUERY_WINDOW: u64 = 1000;
     pub const DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS: usize = 32;
     pub const DEFAULT_MAX_FAN_OUT: u32 = 100;
+}
+pub mod read_many {
+    #[derive(Clone, Debug)]
+    pub struct ItemFilter {
+    }
+    impl ItemFilter {
+        pub fn with_parameter<impl Into<String>: Into<String>, impl Serialize: Serialize>(self, name: impl Into<String>, value: impl Serialize) -> crate::Result<Self>;
+    }
+    impl FromStr for ItemFilter {
+        type Err = CosmosError;
+        fn from_str(value: &str) -> crate::Result<Self>;
+    }
+    #[derive(Clone, Debug)]
+    pub struct ItemSelector {
+    }
+    impl ItemSelector {
+        pub fn with_filter<impl Into<ItemFilter>: Into<ItemFilter>>(self, filter: impl Into<ItemFilter>) -> Self;
+    }
+    #[derive(Clone, Debug)]
+    #[non_exhaustive]
+    pub enum ItemScope {
+        Items(Vec<(crate::models::PartitionKey, String)>),
+        Partitions(Vec<crate::models::PartitionKey>),
+        FeedRanges(Vec<crate::models::FeedRange>),
+    }
+    impl From<ItemScope> for ItemSelector {
+        fn from(selection: ItemScope) -> Self;
+    }
 }
 #[cfg(feature = "__internal_mocking")]
 pub mod test {
@@ -3320,8 +3374,7 @@ pub mod test {
     }
     #[async_trait]
     pub trait TransportClient: Send + Sync + fmt::Debug {
-        #[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]
-        fn send(&self, request: &HttpRequest) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<HttpResponse, TransportError>> + ::core::marker::Send>>;
+        async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError>;
     }
 }
 ```

@@ -457,10 +457,14 @@ fn render_member_lines(
     let mut lines = Vec::new();
     let mut member_line_id_counts = BTreeMap::new();
     for member in members.iter() {
+        let line_id = allocate_unique_line_id(
+            member_line_id_base(related_to_line, member),
+            &mut member_line_id_counts,
+        );
         if options.include_docs {
             lines.extend(render_doc_comment_lines(
                 &member.doc_comments,
-                Some(related_to_line.to_string()),
+                Some(line_id.clone()),
             ));
         }
 
@@ -470,7 +474,7 @@ fn render_member_lines(
                 tokens: tokenize_line(&attribute.text, "", token_kind::TYPE_NAME),
                 children: Vec::new(),
                 is_context_end_line: None,
-                related_to_line: Some(related_to_line.to_string()),
+                related_to_line: Some(line_id.clone()),
             });
         }
 
@@ -488,10 +492,6 @@ fn render_member_lines(
             &mut tokens,
             navigation_lookup,
             member.declaration_path_references.is_empty(),
-        );
-        let line_id = allocate_unique_line_id(
-            member_line_id_base(related_to_line, member),
-            &mut member_line_id_counts,
         );
         lines.push(ReviewLine {
             line_id: Some(line_id),

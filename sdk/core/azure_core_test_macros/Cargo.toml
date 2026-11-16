@@ -13,6 +13,7 @@ keywords = ["cloud", "iot", "rest", "sdk"]
 categories = ["development-tools"]
 edition.workspace = true
 rust-version.workspace = true
+exclude.workspace = true
 
 [lib]
 proc-macro = true

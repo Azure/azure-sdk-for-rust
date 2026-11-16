@@ -19,7 +19,7 @@ use azure_core::http::StatusCode;
 use azure_data_cosmos::clients::{ContainerClient, DatabaseClient};
 use azure_data_cosmos::feed::FeedScope;
 use azure_data_cosmos::models::{ContainerProperties, PartitionKeyKind};
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
 use azure_data_cosmos::{PartitionKey, Query, SubStatusCode, TransactionalBatch};
 use framework::{TestClient, TestOptions, TestRunContext};
@@ -358,7 +358,7 @@ pub async fn hpk_item_delete_full_key() -> Result<(), Box<dyn Error>> {
 }
 
 /// A5: patch a field on an item addressed by a full 2-level key.
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 #[tokio::test]
 #[cfg_attr(
     not(any(
@@ -406,9 +406,7 @@ pub async fn hpk_item_patch_full_key() -> Result<(), Box<dyn Error>> {
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: 400 BadRequest is returned for a partial-key point \
-              read, but without the x-ms-substatus 1001 PartitionKeyMismatch header (behavioral \
-              divergence)"
+    ignore = "vnext emulator rejects partial-key point reads without substatus 1001: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/377"
 )]
 pub async fn hpk_item_partial_key_point_op_fails() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -825,7 +823,7 @@ pub async fn hpk_query_single_partition_order_by_servable() -> Result<(), Box<dy
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
+    ignore = "vnext emulator returns aggregate query plans without advertised aggregate support: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/383"
 )]
 pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -909,10 +907,6 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
-)]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn hpk_query_cross_partition_offset_limit_top_servable() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(

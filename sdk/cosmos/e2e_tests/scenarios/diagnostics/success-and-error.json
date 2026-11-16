@@ -4,7 +4,7 @@
     "id": "diagnostics.success-and-error",
     "title": "Success and error paths expose critical diagnostics",
     "requirement": "Public diagnostics identify the logical operation, effective status, activity, attempts, and contacted region on successful and failed operations.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "java",
@@ -32,7 +32,7 @@
             ]
         },
         "azureLive": {
-            "applicability": "supported",
+            "applicability": "required",
             "fidelity": "full"
         }
     }

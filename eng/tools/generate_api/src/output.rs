@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::cli::{OutputFormat, STATE_DIRECTORY_NAME};
+use crate::cli::OutputFormat;
 use sha2::{Digest, Sha256};
 use std::{
     fs::{self, File},
@@ -17,22 +17,20 @@ pub(crate) fn output_file_path(output_dir: &Path, file_name: &str) -> PathBuf {
     output_dir.join(file_name)
 }
 
-pub(crate) fn state_file_path(output_dir: &Path, file_name: &str) -> PathBuf {
-    output_dir.join(STATE_DIRECTORY_NAME).join(file_name)
-}
-
 pub(crate) fn render_markdown_metadata(
     api_md_contents: &str,
     package_version: &str,
+    package_relative_path: &str,
     parser_version: &str,
     rust_version: &str,
 ) -> Result<String, String> {
-    let api_md_sha256 = sha256_hex(api_md_contents.as_bytes())
+    let api_hash = sha256_hex(api_md_contents.as_bytes())
         .map_err(|error| format!("Failed to hash api.md content: {error}"))?;
 
     Ok(format!(
-        "apiMdSha256: {api_md_sha256}\npackageVersion: {}\nparserVersion: {}\nrustVersion: {}\n",
+        "apiHash: {api_hash}\npackageVersion: {}\npackageRelativePath: {}\nparserVersion: {}\nrustVersion: {}\n",
         yaml_scalar(package_version),
+        yaml_scalar(package_relative_path),
         yaml_scalar(parser_version),
         yaml_scalar(rust_version),
     ))

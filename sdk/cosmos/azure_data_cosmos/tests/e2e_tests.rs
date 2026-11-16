@@ -4,3 +4,4 @@
 #![allow(clippy::large_futures)]
 
 mod e2e_test_cases;
+mod framework;

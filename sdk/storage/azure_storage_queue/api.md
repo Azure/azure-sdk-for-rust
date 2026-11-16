@@ -152,11 +152,11 @@ pub mod models {
         #[serde(rename = "@ServiceEndpoint", skip_serializing_if = "Option::is_none")]
         pub service_endpoint: Option<String>,
     }
+    #[async_trait]
     impl Page for super::ListQueuesResponse {
         type IntoIter = <Vec<QueueItem> as IntoIterator>::IntoIter;
         type Item = QueueItem;
-        #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
-        fn into_items(self) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = Result<<Self as >::IntoIter>> + ::core::marker::Send>>;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     pub struct Logging {

@@ -8,7 +8,7 @@ use std::sync::Arc;
 use azure_data_cosmos_driver::{binary_json::BinaryError, error::CosmosErrorBuilder};
 
 use crate::diagnostics::DiagnosticsContext;
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 use crate::models::PatchTrackingId;
 
 pub use azure_data_cosmos_driver::error::{CosmosError, CosmosStatus, SubStatusCode};
@@ -44,7 +44,7 @@ pub(crate) fn with_diagnostics(
         .build()
 }
 
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 pub(crate) fn with_patch_tracking_id(
     error: CosmosError,
     tracking_id: PatchTrackingId,
@@ -62,7 +62,7 @@ mod tests {
     use super::*;
     use azure_core::error::ErrorKind as CoreErrorKind;
 
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[test]
     fn patch_tracking_id_uses_sdk_exported_model() {
         let id = crate::models::PatchTrackingId::from(uuid::Uuid::from_u128(42));
@@ -74,7 +74,7 @@ mod tests {
         assert_eq!(cosmos.patch_tracking_id(), Some(id));
     }
 
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[test]
     fn patch_tracking_id_can_decorate_existing_error() {
         let id = crate::models::PatchTrackingId::from(uuid::Uuid::from_u128(42));

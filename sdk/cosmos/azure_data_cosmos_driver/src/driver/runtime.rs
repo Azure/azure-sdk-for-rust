@@ -24,12 +24,10 @@ use crate::{
 };
 
 use super::cache::{AccountMetadataCache, ContainerCache};
-use super::{
-    transport::{
-        http_client_factory::{DefaultHttpClientFactory, HttpClientFactory},
-        CosmosTransport,
-    },
-    CosmosDriver,
+use super::CosmosDriver;
+use crate::pipeline::transport::{
+    http_client_factory::{DefaultHttpClientFactory, HttpClientFactory},
+    CosmosTransport,
 };
 
 /// The Cosmos DB driver runtime environment.
@@ -68,7 +66,7 @@ use super::{
 ///     .await?;
 ///
 /// // Create a driver for an account
-/// let account = AccountReference::with_master_key(
+/// let account = AccountReference::with_account_key(
 ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
 ///     "my-key",
 /// );
@@ -421,7 +419,7 @@ impl CosmosDriverRuntime {
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
     ///
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -840,7 +838,7 @@ mod tests {
     #[tokio::test]
     async fn create_driver_propagates_initialization_failures() {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "***not-base64***",
         );
@@ -864,7 +862,7 @@ mod tests {
     #[tokio::test]
     async fn create_driver_rejects_http_production_endpoint() {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("http://myaccount.documents.azure.com/").unwrap(),
             "***not-base64***",
         );
@@ -882,7 +880,7 @@ mod tests {
     #[tokio::test]
     async fn create_driver_rejects_http_backup_endpoint() {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://myaccount.documents.azure.com/").unwrap(),
             "***not-base64***",
         )
@@ -942,7 +940,7 @@ mod tests {
     /// untested.
     #[tokio::test]
     async fn user_agent_suffix_appears_in_request_headers() {
-        use crate::driver::transport::{
+        use crate::pipeline::transport::{
             cosmos_headers::apply_cosmos_headers, cosmos_transport_client::HttpRequest,
         };
         use azure_core::http::headers::{HeaderValue, Headers, USER_AGENT};

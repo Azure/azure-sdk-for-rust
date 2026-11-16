@@ -36,6 +36,14 @@ The Azure Identity library supports authenticating through developer tools to si
 
 A credential is a struct that can acquire access tokens for Azure resources. The Azure Identity library offers various credentials for use by Azure SDK service clients. See the [Credential structures](#credential-structures "Credential structures") section for a list of this library's credentials.
 
+### HTTP transport features
+
+- Default features enable the Reqwest HTTP transport with rustls.
+- `reqwest` enables the Reqwest HTTP transport without selecting a TLS backend.
+- `reqwest_rustls` enables the Reqwest HTTP transport with rustls and the built-in AKS identity binding token proxy client.
+
+If you disable default features, enable `reqwest_rustls` to use the built-in token proxy client, or provide a custom [`TokenProxyClient`][proxy_client_ref] through [`WorkloadIdentityCredentialOptions::proxy_client`][workload_options_ref]. Ordinary credential requests can use `reqwest` with a separately configured TLS backend or a custom HTTP transport.
+
 ## Examples
 
 ### Authenticate with `DeveloperToolsCredential`
@@ -128,6 +136,9 @@ See [Service principal authentication](https://learn.microsoft.com/entra/identit
 | [`ClientAssertionCredential`][assert_cred_ref] | Authenticate a service principal with client assertions.
 | [`ClientCertificateCredential`][cert_cred_ref] | Authenticate a service principal with a certificate.
 | [`ClientSecretCredential`][secret_cred_ref] | Authenticate a service principal with a secret.
+| [`GitHubActionsCredential`][github_actions_cred_ref] | Authenticate a service principal using GitHub Actions workload identity federation. Requires workflow `permissions: id-token: write`.
+
+`GitHubActionsCredential` requires the `AZURE_TENANT_ID` and `AZURE_CLIENT_ID` environment variables to specify the tenant and client IDs.
 
 ## Next steps
 
@@ -158,10 +169,13 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [cert_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ClientCertificateCredential.html
 [cli_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.AzureCliCredential.html
 [devtool_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.DeveloperToolsCredential.html
+[github_actions_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.GitHubActionsCredential.html
 [managed_id_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ManagedIdentityCredential.html
 [Microsoft Entra ID documentation]: https://learn.microsoft.com/entra/identity/
 [API reference documentation]: https://docs.rs/azure_identity/latest/azure_identity/
 [Package (crates.io)]: https://crates.io/crates/azure_identity
+[proxy_client_ref]: https://docs.rs/azure_identity/latest/azure_identity/trait.TokenProxyClient.html
 [secret_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ClientSecretCredential.html
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
 [workload_id_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.WorkloadIdentityCredential.html
+[workload_options_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.WorkloadIdentityCredentialOptions.html#structfield.proxy_client

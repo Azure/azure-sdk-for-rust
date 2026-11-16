@@ -4,7 +4,7 @@
   "id": "resilience.throttling-retry",
   "title": "Throttling retries respect operation policy",
   "requirement": "A bounded sequence of injected 429 responses is retried according to operation settings and succeeds with every attempt represented in diagnostics.",
-  "maturity": "candidate",
+  "maturity": "stable",
   "precedents": [
     {
       "sdk": "rust",

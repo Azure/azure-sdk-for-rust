@@ -22,6 +22,7 @@ mod diagnostics_options;
 mod diagnostics_thresholds;
 mod driver_options;
 pub(crate) mod env_parsing;
+mod full_text_score_scope;
 mod hedging;
 mod identity;
 mod operation_options;
@@ -34,6 +35,7 @@ mod query_plan_mode;
 mod read_consistency;
 mod region;
 mod throughput_control;
+mod utf8_decoding;
 
 pub use availability_strategy::{AvailabilityStrategy, HedgeThreshold, HedgingStrategy};
 pub use binary_encoding::BinaryEncodingOptions;
@@ -45,6 +47,7 @@ pub(crate) use diagnostics_thresholds::is_point_operation;
 pub use diagnostics_thresholds::DiagnosticsThresholds;
 pub use driver_options::{DriverOptions, DriverOptionsBuilder};
 pub(crate) use env_parsing::parse_duration_millis_from_env;
+pub use full_text_score_scope::FullTextScoreScope;
 pub use hedging::{
     HedgingOptions, HedgingOptionsBuilder, DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS,
 };
@@ -69,3 +72,4 @@ pub(crate) use read_consistency::resolve_effective_consistency;
 pub use read_consistency::ReadConsistencyStrategy;
 pub use region::Region;
 pub(crate) use throughput_control::ResolvedThroughputControl;
+pub use utf8_decoding::Utf8DecodingMode;

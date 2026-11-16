@@ -50,17 +50,18 @@
 //! than forwarded: `SplitRequired` replaces the node that emits it, so passing
 //! it up would discard the map along with the node.
 
+use crate::driver::dataflow::{ItemView, PipelineBody, PipelineResponse};
 use std::collections::HashSet;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use bytes::Bytes;
 
 use crate::diagnostics::DiagnosticsContext;
-use crate::models::{CosmosResponse, FeedRange, RequestCharge, ResponseBody};
+use crate::models::{FeedRange, RequestCharge};
 
 use super::distinct_hash::{hash_value, Hash128};
 use super::query_plan::DistinctType;
+use super::recovery_diagnostics::RecoveryDiagnostics;
 use super::{skip_take_page, PageResult, PipelineContext, PipelineNode, PipelineNodeState};
 
 /// Guidance surfaced when a caller asks for a continuation token on an
@@ -114,11 +115,11 @@ pub(crate) struct Distinct {
     /// context rather than retained one-per-page: `aggregate_sub_operations`
     /// re-bounds its record list to `max_request_diagnostics`, so a long run of
     /// all-duplicate pages cannot grow the artifact without limit.
-    suppressed_diagnostics: Option<Arc<DiagnosticsContext>>,
+    suppressed_diagnostics: RecoveryDiagnostics,
     /// The most recently suppressed page, kept as a template so accumulated
     /// charge/diagnostics can still be flushed as a final empty page if the
     /// child drains without ever surfacing a terminal page.
-    pending_flush: Option<CosmosResponse>,
+    pending_flush: Option<PipelineResponse>,
     /// Whether a re-split page is emitted as Cosmos binary JSON. Derived from
     /// the negotiated operation, never from the bytes of a received page, so
     /// this node agrees with its sibling nodes on the same query.
@@ -166,7 +167,7 @@ impl Distinct {
             map,
             exhausted: false,
             suppressed_charge: RequestCharge::default(),
-            suppressed_diagnostics: None,
+            suppressed_diagnostics: RecoveryDiagnostics::default(),
             pending_flush: None,
             emit_binary,
             poisoned: false,
@@ -175,10 +176,10 @@ impl Distinct {
 
     /// Selects the items that survive deduplication, preserving order and each
     /// item's exact backend bytes.
-    fn select_survivors(&mut self, items: &[Bytes]) -> crate::error::Result<Vec<Bytes>> {
+    fn select_survivors(&mut self, items: &[ItemView]) -> crate::error::Result<Vec<ItemView>> {
         let mut keep = Vec::with_capacity(items.len());
         for item in items {
-            let value = parse_row(item)?;
+            let value = item.decoded_value()?;
             if self.map.accept(hash_value(&value)?) {
                 keep.push(item.clone());
             }
@@ -190,70 +191,67 @@ impl Distinct {
     /// and folding in charge/diagnostics accumulated from suppressed pages.
     fn rebuild(
         &mut self,
-        response: &CosmosResponse,
-        survivors: Vec<Bytes>,
+        response: &PipelineResponse,
+        survivors: Vec<ItemView>,
         emitted: usize,
-    ) -> CosmosResponse {
+    ) -> PipelineResponse {
         let mut headers = response.headers().clone();
         headers.item_count = Some(emitted as u32);
         if self.suppressed_charge != RequestCharge::default() {
             let base = headers.request_charge.unwrap_or_default();
             headers.request_charge = Some(base + self.suppressed_charge);
         }
-        let rebuilt = CosmosResponse::new(
-            ResponseBody::from_items(survivors),
+        let rebuilt = PipelineResponse::new(
+            PipelineBody::from_item_views(survivors),
             headers,
             response.status(),
             response.diagnostics(),
         );
-        let merged = match self.suppressed_diagnostics.as_ref() {
-            Some(accumulated) => {
-                rebuilt.with_aggregated_prior_diagnostics(std::slice::from_ref(accumulated))
-            }
-            None => rebuilt,
-        };
+        let merged = self.suppressed_diagnostics.attach_response(rebuilt);
         self.clear_suppressed();
         merged
     }
 
     /// Accumulates an all-duplicate page's charge and diagnostics.
-    fn suppress(&mut self, response: CosmosResponse) {
+    fn suppress(&mut self, response: PipelineResponse) {
         self.suppressed_charge =
             self.suppressed_charge + response.headers().request_charge.unwrap_or_default();
-        let incoming = response.diagnostics();
-        // Fold on arrival so only one context is ever retained. The newest page
-        // stays last, preserving the aggregate's "operation-level fields come
-        // from the final source" contract.
-        self.suppressed_diagnostics = match self.suppressed_diagnostics.take() {
-            None => Some(incoming),
-            Some(accumulated) => {
-                DiagnosticsContext::aggregate_sub_operations(&[accumulated, incoming]).map(Arc::new)
-            }
-        };
+        self.suppressed_diagnostics
+            .absorb(Some(response.diagnostics()));
         self.pending_flush = Some(response);
     }
 
     fn clear_suppressed(&mut self) {
         self.suppressed_charge = RequestCharge::default();
-        self.suppressed_diagnostics = None;
+        self.suppressed_diagnostics = RecoveryDiagnostics::default();
         self.pending_flush = None;
+    }
+
+    fn attach_error(
+        &mut self,
+        error: crate::error::CosmosError,
+        current: Option<Arc<DiagnosticsContext>>,
+    ) -> crate::error::CosmosError {
+        self.suppressed_diagnostics.absorb(current);
+        let error = self.suppressed_diagnostics.attach_error(error);
+        self.clear_suppressed();
+        error
     }
 
     /// Emits a final empty page carrying accumulated suppressed charge and
     /// diagnostics, or `None` if nothing is pending.
     fn flush_suppressed(&mut self) -> Option<PageResult> {
         let template = self.pending_flush.take()?;
-        // `suppressed_diagnostics` already includes the template's own
-        // diagnostics, so aggregate the list rather than layering onto it.
+        // The template's diagnostics are already included; do not add them again.
         let diagnostics = self
             .suppressed_diagnostics
-            .clone()
+            .take()
             .unwrap_or_else(|| template.diagnostics());
         let mut headers = template.headers().clone();
         headers.item_count = Some(0);
         headers.request_charge = Some(self.suppressed_charge);
-        let response = CosmosResponse::new(
-            ResponseBody::from_items(Vec::new()),
+        let response = PipelineResponse::new(
+            PipelineBody::from_items(Vec::new()),
             headers,
             template.status(),
             diagnostics,
@@ -276,23 +274,37 @@ impl Distinct {
     /// past rows the caller never saw.
     fn process_page(
         &mut self,
-        response: CosmosResponse,
+        response: PipelineResponse,
         is_terminal: bool,
     ) -> crate::error::Result<Option<PageResult>> {
-        // Normalize the child's page into per-document slices. A streaming
-        // ordered merge hands over pre-split `Items`, already in the encoding
-        // the operation emits; a raw backend feed page arrives as `Bytes` and
-        // is split as text, then re-encoded below. `NoPayload` is a
-        // zero-document page.
+        // An ordered merge hands over pre-split items, already in the output
+        // encoding; a raw feed page is split as text, then re-encoded below.
         let (items, needs_encode) = match response.body() {
-            ResponseBody::Items(items) => (items.clone(), false),
-            ResponseBody::Bytes(bytes) => (skip_take_page::split_feed_envelope(bytes)?, true),
-            ResponseBody::NoPayload => (Vec::new(), false),
+            PipelineBody::Items(items) => (
+                items.iter().cloned().map(ItemView::standalone).collect(),
+                false,
+            ),
+            PipelineBody::ContextualItems(items) => (items.clone(), false),
+            PipelineBody::Bytes(bytes) => (
+                skip_take_page::split_feed_envelope(bytes)?
+                    .into_iter()
+                    .map(ItemView::standalone)
+                    .collect(),
+                true,
+            ),
+            PipelineBody::NoPayload => (Vec::new(), false),
         };
         let survivors = self.select_survivors(&items)?;
         let emitted = survivors.len();
         let survivors = if needs_encode {
-            skip_take_page::encode_items(survivors, self.emit_binary)?
+            let standalone = survivors
+                .iter()
+                .map(ItemView::to_standalone)
+                .collect::<crate::error::Result<Vec<_>>>()?;
+            skip_take_page::encode_items(standalone, self.emit_binary)?
+                .into_iter()
+                .map(ItemView::standalone)
+                .collect()
         } else {
             survivors
         };
@@ -331,30 +343,6 @@ impl Distinct {
     }
 }
 
-/// Parses one row payload into a value to hash, accepting either encoding.
-///
-/// A binary payload is decoded and its integral `Double`s normalized to
-/// integers, exactly as [`normalize_page_body`] does for a whole page, so a row
-/// hashes identically whether it reached this node as text or as binary.
-///
-/// [`normalize_page_body`]: super::query_response::normalize_page_body
-fn parse_row(item: &Bytes) -> crate::error::Result<serde_json::Value> {
-    fn row_error(e: impl std::error::Error + Send + Sync + 'static) -> crate::error::CosmosError {
-        crate::error::CosmosError::builder()
-            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
-            .with_message("failed to parse a DISTINCT row payload as JSON")
-            .with_source(e)
-            .build()
-    }
-
-    if crate::binary_json::is_binary(item) {
-        let mut value = crate::binary_json::decode(item).map_err(row_error)?;
-        crate::binary_json::normalize_integral_floats(&mut value);
-        return Ok(value);
-    }
-    serde_json::from_slice(item).map_err(row_error)
-}
-
 #[async_trait]
 impl PipelineNode for Distinct {
     async fn next_page(
@@ -369,7 +357,12 @@ impl PipelineNode for Distinct {
         }
 
         loop {
-            match self.child.next_page(context).await? {
+            match self
+                .child
+                .next_page(context)
+                .await
+                .map_err(|error| self.attach_error(error, None))?
+            {
                 PageResult::Drained => {
                     self.exhausted = true;
                     // Flush charge/diagnostics from a fully-duplicate tail that
@@ -379,33 +372,43 @@ impl PipelineNode for Distinct {
                     }
                     return Ok(PageResult::Drained);
                 }
-                PageResult::SplitRequired { .. } => {
+                PageResult::SplitRequired { mut replacements } => {
                     // `SplitRequired` replaces the node that emits it, so
                     // forwarding would drop this node along with its
                     // deduplication map and resurrect suppressed values. The
                     // wrapped fan-out node absorbs splits internally, so this
                     // is unreachable today; fail loudly if that ever changes.
-                    return Err(crate::error::CosmosError::builder()
-                        .with_status(
-                            crate::error::status_codes::CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT,
-                        )
-                        .with_message(
-                            "DISTINCT cannot forward a partition split; the wrapped fan-out \
+                    return Err(self.attach_error(
+                        crate::error::CosmosError::builder()
+                            .with_status(
+                                crate::error::status_codes::CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT,
+                            )
+                            .with_message(
+                                "DISTINCT cannot forward a partition split; the wrapped fan-out \
                              node must absorb splits internally",
-                        )
-                        .build());
+                            )
+                            .build(),
+                        replacements.take_diagnostics(),
+                    ));
                 }
                 PageResult::Page {
                     response,
                     is_terminal,
-                } => match self.process_page(response, is_terminal) {
-                    Ok(Some(page)) => return Ok(page),
-                    Ok(None) => continue,
-                    Err(e) => {
-                        self.poisoned = true;
-                        return Err(e);
+                } => {
+                    let diagnostics = response.diagnostics();
+                    match self.process_page(response, is_terminal) {
+                        Ok(Some(page)) => return Ok(page),
+                        Ok(None) => continue,
+                        Err(e) => {
+                            self.poisoned = true;
+                            self.suppressed_diagnostics.absorb(Some(diagnostics));
+                            if let Some(pending) = self.child.take_pending_error() {
+                                self.suppressed_diagnostics.absorb(pending.diagnostics());
+                            }
+                            return Err(self.attach_error(e, None));
+                        }
                     }
-                },
+                }
             }
         }
     }
@@ -413,6 +416,12 @@ impl PipelineNode for Distinct {
     #[cfg(test)]
     fn into_children(self) -> Vec<Box<dyn PipelineNode>> {
         vec![self.child]
+    }
+
+    fn take_pending_error(&mut self) -> Option<crate::error::CosmosError> {
+        self.child
+            .take_pending_error()
+            .map(|error| self.attach_error(error, None))
     }
 
     fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
@@ -465,7 +474,7 @@ mod tests {
     use super::*;
     use crate::driver::dataflow::mocks::*;
     use crate::driver::dataflow::node::SplitReplacements;
-    use crate::models::ResponseBody;
+    use bytes::Bytes;
     use serde::Serialize;
 
     /// Builds a query-page body from a list of raw JSON document texts.
@@ -524,15 +533,15 @@ mod tests {
         })
     }
 
-    fn documents_of(response: &CosmosResponse) -> Vec<serde_json::Value> {
+    fn documents_of(response: &PipelineResponse) -> Vec<serde_json::Value> {
         // `Distinct` emits pre-split `Items`, matching `StreamingOrderedMerge`
         // and `SkipTake`, so a parent node never has to re-split the page.
         match response.body() {
-            ResponseBody::Items(items) => items
+            PipelineBody::Items(items) => items
                 .iter()
                 .map(|item| serde_json::from_slice(item).unwrap())
                 .collect(),
-            ResponseBody::NoPayload => Vec::new(),
+            PipelineBody::NoPayload => Vec::new(),
             other => panic!("expected an Items body, got {other:?}"),
         }
     }
@@ -1181,8 +1190,8 @@ mod tests {
         let template = response(b"");
         let items: Vec<Bytes> = documents.iter().map(|d| to_binary(d)).collect();
         Ok(PageResult::Page {
-            response: CosmosResponse::new(
-                ResponseBody::from_items(items),
+            response: PipelineResponse::new(
+                PipelineBody::from_items(items),
                 template.headers().clone(),
                 template.status(),
                 template.diagnostics(),
@@ -1199,8 +1208,8 @@ mod tests {
         loop {
             match node.next_page(&mut context).await.unwrap() {
                 PageResult::Page { response, .. } => match response.body() {
-                    ResponseBody::Items(items) => all.extend(items.iter().cloned()),
-                    ResponseBody::NoPayload => {}
+                    PipelineBody::Items(items) => all.extend(items.iter().cloned()),
+                    PipelineBody::NoPayload => {}
                     other => panic!("expected an Items body, got {other:?}"),
                 },
                 PageResult::Drained => break,

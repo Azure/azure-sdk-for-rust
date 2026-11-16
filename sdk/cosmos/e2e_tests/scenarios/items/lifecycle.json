@@ -4,7 +4,7 @@
     "id": "item.lifecycle",
     "title": "An item completes its CRUD lifecycle",
     "requirement": "Create, read, replace, and delete preserve the addressed item identity and expose stable statuses.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "java",
@@ -34,7 +34,7 @@
             ]
         },
         "azureLive": {
-            "applicability": "supported",
+            "applicability": "required",
             "fidelity": "full"
         }
     }

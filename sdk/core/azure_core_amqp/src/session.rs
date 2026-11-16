@@ -63,6 +63,9 @@ impl AmqpSessionOptions {
 #[async_trait::async_trait]
 pub trait AmqpSessionApis {
     /// Begin the session.
+    ///
+    /// Cancelling a pending session handshake terminates its connection to release
+    /// partially created resources. Other operations on that connection also fail.
     async fn begin(
         &self,
         connection: &AmqpConnection,

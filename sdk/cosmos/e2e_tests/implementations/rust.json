@@ -1,4 +1,5 @@
 {
+  "$schema": "../schema/implementation.v1.json",
   "specVersion": "1.0",
   "sdk": "rust",
   "testTarget": "e2e_tests",

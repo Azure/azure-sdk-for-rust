@@ -1,6 +1,62 @@
 # Release History
 
-## 1.0.0 (2026-10-07)
+## 1.1.0-beta.3 (Unreleased)
+
+### Features Added
+
+- Added server-side PATCH filter predicates to `PatchInstructions` through the standard `condition` request envelope, with explicit rejection when execution resolves to client-side read-modify-write. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
+- Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
+- Added non-resumable read-many plans with `ItemSelector`, `ItemScope`, and `ItemFilter` for key/id, partition, or feed-range selections, including hierarchical prefixes, parameterized selector filters, and bounded query batches. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
+- Added `FullTextScoreScope` and client-side ranked full-text and weighted hybrid query execution with bounded result windows. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
+
+### Breaking Changes
+
+- Consumed legacy single-request prefix checkpoints cannot safely resume across physical ranges and are rejected; start a new feed with an explicit start position. Older unpolled single-request checkpoints require the original start on resume. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+
+### Bugs Fixed
+
+- Gateway V2 now loads lazy partition topology on demand to scope explicit compound session tokens; topology-loading failures propagate, while unavailable safe scoping omits the token and downgrades Session consistency to Eventual for that attempt, without a read-your-writes guarantee. ([#5585](https://github.com/Azure/azure-sdk-for-rust/pull/5585))
+- Replace stale change-feed start headers, retain starts and polling positions in checkpoints, and preserve hierarchical-prefix leaf bounds on both gateway transports. Invalid keyed change feeds return errors instead of panicking during planning. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- A checkpoint's saved start takes precedence over a newly supplied change-feed start. Omit the continuation token to start a new feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+
+### Other Changes
+
+- New query and change-feed checkpoints use `c2.` and cannot be read by SDKs that only support `c1.`. Query checkpoint payloads are unchanged, and supported legacy `c1.` checkpoints remain readable. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- Preserve binary `ORDER BY` source pages internally through merges, DISTINCT, and pagination windows, materializing only final output items into the existing standalone response buffers. ([#5409](https://github.com/Azure/azure-sdk-for-rust/pull/5409))
+
+## 1.1.0-beta.2 (2026-11-03)
+
+### Breaking Changes
+
+- Resource-name validation is now enabled by default for request paths and item names supplied to Create, Upsert, transactional batch, and distributed transaction operations; use `DriverOptionsBuilder::with_resource_name_validation(false)` only when compatibility requires service-accepted names that are unsafe for point addressing. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
+
+### Bugs Fixed
+
+- Honor the emulator certificate-validation policy in Gateway V2 connectivity probes so self-signed emulator certificates do not prevent Gateway V2 connectivity when validation is disabled for emulator hosts. ([#5484](https://github.com/Azure/azure-sdk-for-rust/pull/5484))
+- Preserve Gateway 2.0 batch atomicity and continue-on-error controls, preventing partial commits in failed transactional batches. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
+- Correct partition-local session-token scoping across classic Gateway and Gateway 2.0, including explicit compound tokens with automatic capture disabled, while retaining safe fallback for missing or stale topology. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
+- Preserve query and feed EPK filters and avoid conflicting hierarchical partition-key selectors across gateways, regional retries, and continuation requests. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
+- Retry transient account-discovery I/O failures within a bounded budget, including uncertain send outcomes. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
+
+## 1.1.0-beta.1 (2026-10-22)
+
+### Features Added
+
+- Single-partition queries are now eligible for cross-region hedging, bounding tail latency on a degraded region at the cost of a second request on pages that exceed the hedge threshold. Cross-partition queries are not yet hedged. ([#5452](https://github.com/Azure/azure-sdk-for-rust/pull/5452))
+- Added layered `OperationOptions::utf8_decoding_mode` for opt-in lossy recovery of invalid UTF-8 in response JSON strings, with strict decoding by default and a recovery indicator in `DiagnosticsContext`. ([#5367](https://github.com/Azure/azure-sdk-for-rust/issues/5367))
+
+### Bugs Fixed
+
+- Route the retry after a failed cross-region hedge race that observed `404/1002` to the write region on single-write accounts, instead of another read region that rejects the hub-only request with `403/3`. ([#5466](https://github.com/Azure/azure-sdk-for-rust/pull/5466))
+- Cache the partition's hub region when a hedged read that sent the hub-only header succeeds, so later hub-only reads of that partition skip hub discovery. ([#5466](https://github.com/Azure/azure-sdk-for-rust/pull/5466))
+- Avoid unnecessary routing-state copies for hedge feedback and unchanged partition transitions, and skip hedge feedback when the effective partition circuit breaker is disabled without disabling transport hedging. ([#5438](https://github.com/Azure/azure-sdk-for-rust/pull/5438))
+- Share immutable partition routing state across snapshot refreshes instead of copying its maps, while preserving older snapshots for active readers. ([#5438](https://github.com/Azure/azure-sdk-for-rust/pull/5438))
+- Avoid loading partition topology for lazy-mode logical-key operations unless partition-level failover or Gateway 2.0 session-token scoping requires it. ([#5431](https://github.com/Azure/azure-sdk-for-rust/pull/5431))
+- Keep CPU sampling active while runtime or diagnostics handles remain alive. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
+- Preserve bounded diagnostic history through partition split recovery, query buffering, and terminal `500/20206` errors. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
+
+## 1.0.0 (2026-10-08)
 
 ### Features Added
 
@@ -8,8 +64,10 @@
 
 ### Breaking Changes
 
+- Renamed the `preview_dtx` and `preview_patch` feature flags to `unstable_dtx` and `unstable_patch`, respectively; update dependency feature selections to use the new names. ([#5426](https://github.com/Azure/azure-sdk-for-rust/pull/5426))
 - Changed the `User-Agent` header to a compact, parsable format used by every Cosmos SDK: `{sdk}/{version} (drv={driver}; {os}; {arch}; {rustc}[; ft={B64}][; {key}={value}]...) [{suffix}]`. Feature flags are big-endian bytes without leading zeros, base64url-encoded without padding (e.g. `ft=Eg` for 0x12). To fit the 255-byte limit, platform segments are removed whole from right to left, with `drv` removed last; empty parentheses are omitted, then the suffix is shortened if needed, and finally the SDK identifier. The suffix is never normalized. ([#5406](https://github.com/Azure/azure-sdk-for-rust/pull/5406))
 - Terminal service 404/1002, 403/3, and 403/1008 errors now surface as synthetic 503/20310, 503/20311, and 503/20312 errors, retaining the original wire error in `source()`. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
+- Renamed `Credential::MasterKey` to `Credential::AccountKey` and `AccountReference::with_master_key()` to `AccountReference::with_account_key()`. ([#5421](https://github.com/Azure/azure-sdk-for-rust/pull/5421))
 
 ### Bugs Fixed
 

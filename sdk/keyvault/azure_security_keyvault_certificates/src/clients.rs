@@ -76,7 +76,8 @@ impl CertificateClient {
         let auth_policy: Arc<dyn Policy> = Arc::new(
             BearerTokenAuthorizationPolicy::new(credential, Vec::<String>::new())
                 .with_on_request(authorizer.clone())
-                .with_on_challenge(authorizer),
+                .with_on_challenge(authorizer)
+                .with_options((&options.client_options).into()),
         );
         Ok(Self {
             endpoint,

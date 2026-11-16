@@ -54,7 +54,7 @@ driver-owned and re-exported by `azure_data_cosmos`, exactly like
 
 The hedging orchestrator/dispatch is **landed** on `main`: it emits
 `ExecutionContext::Hedging` for alternate legs and populates `HedgeDiagnostics`
-(design: [`HEDGING_SPEC.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/HEDGING_SPEC.md)).
+(design: `sdk/cosmos/docs/specs/0009-cross-region-hedging.md`).
 
 ---
 
@@ -80,7 +80,7 @@ pub enum ExecutionContext {
 `Retry` has been removed and replaced by `OperationRetry` so the operation-level
 retry reason is clearly distinct from the transport-level `TransportRetry`. The
 hand-written `ExecutionContext::as_str()` and every dispatch site
-(`operation_pipeline.rs`, `transport_pipeline.rs`, `cosmos_driver.rs`) are updated
+(`operation_pipeline.rs`, `pipeline/transport/execution.rs`, `cosmos_driver.rs`) are updated
 accordingly. Telemetry parsers that matched the literal `"retry"` execution context
 must update; serialized output now emits `"operation_retry"` instead.
 

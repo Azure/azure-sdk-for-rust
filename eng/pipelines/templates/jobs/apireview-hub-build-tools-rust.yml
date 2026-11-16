@@ -1,0 +1,64 @@
+parameters:
+  - name: languageRepoResource
+    type: string
+  - name: toolsRef
+    type: string
+  - name: languageToolsRef
+    type: string
+  - name: poolName
+    type: string
+    default: 'azsdk-pool'
+  - name: imageOverride
+    type: string
+    default: 'ubuntu-24.04'
+
+jobs:
+  - template: /eng/common/pipelines/templates/jobs/apireview-hub-build-tools-base.yml
+    parameters:
+      languageRepoResource: ${{ parameters.languageRepoResource }}
+      toolsRef: ${{ parameters.toolsRef }}
+      languageToolsRef: ${{ parameters.languageToolsRef }}
+      poolName: ${{ parameters.poolName }}
+      imageOverride: ${{ parameters.imageOverride }}
+      stepList:
+        - template: /eng/pipelines/templates/steps/use-rust.yml
+          parameters:
+            SourcesDir: $(Build.SourcesDirectory)
+            WorkingDirectory: $(Build.SourcesDirectory)/eng/tools
+            SetDefault: false
+
+        - task: PowerShell@2
+          displayName: Build Rust API review tooling
+          inputs:
+            pwsh: true
+            targetType: inline
+            script: |
+              $ErrorActionPreference = 'Stop'
+              . ([System.IO.Path]::Combine($env:SOURCE_DIRECTORY, 'eng', 'common', 'scripts', 'common.ps1'))
+              $toolsDir = ([System.IO.Path]::Combine($RepoRoot, 'eng', 'tools'))
+              $targetDir = ([System.IO.Path]::Combine($toolsDir, 'target'))
+              Invoke-LoggedCommand 'cargo build --release --target-dir "$targetDir" -p generate_api' -ExecutePath $toolsDir -GroupOutput
+
+              $fileName = if ($IsWindows) { 'generate_api.exe' } else { 'generate_api' }
+              Copy-Item `
+                -LiteralPath ([System.IO.Path]::Combine($targetDir, 'release', $fileName)) `
+                -Destination $env:BIN_OUTPUT_DIRECTORY `
+                -Force
+              Copy-Item -LiteralPath @(
+                ([System.IO.Path]::Combine($toolsDir, 'rust-toolchain.toml')),
+                ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'Use-Rust.ps1')),
+                ([System.IO.Path]::Combine($RepoRoot, 'eng', 'templates', 'config.toml.template'))
+              ) -Destination $env:BIN_OUTPUT_DIRECTORY -Force
+
+              $sharedDir = ([System.IO.Path]::Combine($env:BIN_OUTPUT_DIRECTORY, 'shared'))
+              New-Item -ItemType Directory -Path $sharedDir -Force | Out-Null
+              foreach ($helper in @('Cargo.ps1', 'Process.ps1', 'Rustup.ps1')) {
+                Copy-Item `
+                  -LiteralPath ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'shared', $helper)) `
+                  -Destination $sharedDir `
+                  -Force
+              }
+            workingDirectory: $(Build.SourcesDirectory)/eng/tools
+          env:
+            SOURCE_DIRECTORY: $(Build.SourcesDirectory)
+            BIN_OUTPUT_DIRECTORY: $(BinOutputDirectory)

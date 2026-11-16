@@ -4,7 +4,14 @@
   "cSpell.enabled": true,
   "editor.formatOnSave": true,
   "files.associations": {
+    "ARCHITECTS": "ignore",
     "CODEOWNERS": "ignore"
+  },
+  "files.readonlyInclude": {
+    "**/api.documentation.patch": true,
+    "**/api.md": true,
+    "**/api.md.map": true,
+    "**/api.metadata.yml": true
   },
   "github.copilot.chat.commitMessageGeneration.instructions": [
     {

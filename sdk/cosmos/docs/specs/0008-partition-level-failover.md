@@ -349,8 +349,11 @@ The central structure for partition-level failover state. Resides in
 **Key design decision**: Unlike the SDK's `GlobalPartitionEndpointManager` which
 stores two `RwLock<HashMap>` with interior mutability, the driver follows its
 existing immutable-snapshot pattern. `PartitionEndpointState` is a plain `Clone`
-struct. Mutations create a new instance and swap it atomically via
-`crossbeam_epoch`. This eliminates reader/writer contention on the hot path.
+struct. `LocationStateStore` holds an `Arc<PartitionEndpointState>` behind the
+`crossbeam_epoch` pointer. Real mutations clone the state and publish a new Arc
+via CAS; snapshot refreshes clone only the Arc, including after account-only
+updates. Epoch retirement releases the replaced pointer's ownership, while held
+snapshots keep that immutable state alive until their readers release it.
 
 ```rust
 /// Immutable partition-level endpoint routing state.
@@ -1089,7 +1092,7 @@ with a fresh snapshot that has both updates.
 ### 9.1 Loop Structure
 
 The background failback loop is spawned via the driver's
-`BackgroundTaskManager` (from `driver::transport::background_task_manager`)
+`BackgroundTaskManager` (from `background_task_manager`)
 during `LocationStateStore` construction (or on first PPAF/PPCB enablement).
 The spawned future holds a `Weak` reference to `LocationStateStore` to avoid
 preventing the store from being dropped when the driver is dropped.
@@ -1515,7 +1518,7 @@ the override may point to a less-optimal region after a topology change.
 
 The failback loop (and any future background tasks in the driver) is spawned
 through the driver's `BackgroundTaskManager`
-(`driver::transport::background_task_manager`). This provides:
+(`background_task_manager`). This provides:
 
 - **Abort-on-drop**: When the `BackgroundTaskManager` is dropped, all stored
   `JoinHandle`s are aborted, cancelling background tasks immediately.

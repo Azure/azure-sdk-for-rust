@@ -73,7 +73,7 @@ fn print_banner(config: &Config) {
 /// Lists the diagnostics handlers compiled into this build.
 fn enabled_handlers() -> Vec<&'static str> {
     let mut handlers = Vec::new();
-    if cfg!(feature = "preview_opentelemetry") {
+    if cfg!(feature = "unstable_opentelemetry") {
         handlers.push("metrics");
         handlers.push("distributed_tracing");
     }

@@ -4,7 +4,7 @@
   "id": "diagnostics.handlers-telemetry",
   "title": "Diagnostics handlers emit operation telemetry",
   "requirement": "Registered handlers receive operation identity for success and failure, metrics record operation duration, and failed operations emit a sampled OpenTelemetry span tree.",
-  "maturity": "candidate",
+  "maturity": "stable",
   "precedents": [
     {
       "sdk": "rust",
@@ -13,7 +13,8 @@
     }
   ],
   "profiles": [
-    "configurationResilience"
+    "configurationResilience",
+    "liveConfiguration"
   ],
   "tags": [
     "diagnostics",
@@ -37,7 +38,7 @@
       ]
     },
     "azureLive": {
-      "applicability": "supported",
+      "applicability": "required",
       "fidelity": "full"
     }
   }

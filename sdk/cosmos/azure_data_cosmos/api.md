@@ -16,9 +16,9 @@
 - `hmac_rust`
 - `key_auth`
 - `native_tls`
-- `preview_opentelemetry`
-- `preview_patch`
 - `rustls`
+- `unstable_opentelemetry`
+- `unstable_patch`
 
 ```rust
 #![crate_name = "azure_data_cosmos"]
@@ -32,9 +32,9 @@ pub use azure_data_cosmos::clients::cosmos_client::CosmosClient;
 pub use azure_data_cosmos::clients::cosmos_client_builder::CosmosClientBuilder;
 #[doc(inline)]
 pub use azure_data_cosmos::clients::database_client::DatabaseClient;
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 pub use azure_data_cosmos::clients::distributed_transaction::DistributedReadTransaction;
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 pub use azure_data_cosmos::clients::distributed_transaction::DistributedWriteTransaction;
 pub use azure_data_cosmos::feed::query::FeedScope;
 pub use azure_data_cosmos::feed::query::Query;
@@ -265,7 +265,7 @@ impl From<u16> for SubStatusCode {
 pub enum CosmosCredential {
     TokenCredential(std::sync::Arc<dyn TokenCredential>),
     #[cfg(feature = "key_auth")]
-    MasterKey(azure_core::credentials::Secret),
+    AccountKey(azure_core::credentials::Secret),
 }
 impl From<Arc<dyn TokenCredential>> for CosmosCredential {
     fn from(credential: Arc<dyn TokenCredential>) -> Self;
@@ -309,13 +309,14 @@ pub mod clients {
         pub async fn execute_transactional_batch(&self, batch: TransactionalBatch, options: Option<BatchOptions>) -> crate::Result<BatchResponse>;
         pub async fn feed_range_from_partition_key<impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, options: Option<ReadFeedRangesOptions>) -> crate::Result<Vec<FeedRange>>;
         pub fn get_latest_session_token(&self, feed_ranges_to_session_tokens: &[(FeedRange, SessionToken)], target_feed_range: &FeedRange) -> crate::Result<SessionToken>;
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         pub async fn patch_item<impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, patch: PatchInstructions, options: Option<PatchItemOptions>) -> crate::Result<ItemResponse>;
         pub async fn query_change_feed<T: DeserializeOwned + Send + 'static>(&self, scope: FeedScope, start_from: ChangeFeedStartFrom, options: Option<ChangeFeedOptions>) -> crate::Result<ChangeFeedPageIterator<ChangeFeedItem<T>>>;
         pub async fn query_items<T: DeserializeOwned + Send + 'static, impl Into<Query>: Into<Query>>(&self, query: impl Into<Query>, scope: FeedScope, options: Option<QueryOptions>) -> crate::Result<QueryItemIterator<T>>;
         pub async fn read(&self, options: Option<ReadContainerOptions>) -> crate::Result<ResourceResponse<ContainerProperties>>;
         pub async fn read_feed_ranges(&self, options: Option<ReadFeedRangesOptions>) -> crate::Result<Vec<FeedRange>>;
         pub async fn read_item<impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, options: Option<ItemReadOptions>) -> crate::Result<ItemResponse>;
+        pub async fn read_many<T: DeserializeOwned + Send + 'static, impl Into<ItemSelector>: Into<ItemSelector>>(&self, selection: impl Into<ItemSelector>, options: Option<ReadManyOptions>) -> crate::Result<ReadManyIterator<T>>;
         #[cfg(feature = "control_plane")]
         pub async fn read_throughput(&self, options: Option<ThroughputOptions>) -> crate::Result<Option<ThroughputProperties>>;
         #[cfg(feature = "control_plane")]
@@ -328,13 +329,13 @@ pub mod clients {
     }
     impl CosmosClient {
         pub fn builder() -> CosmosClientBuilder;
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         pub async fn commit_distributed_write(&self, transaction: crate::clients::DistributedWriteTransaction) -> crate::Result<crate::clients::DistributedTransactionResponse>;
         #[cfg(feature = "control_plane")]
         pub async fn create_database(&self, id: &str, options: Option<CreateDatabaseOptions>) -> crate::Result<ResourceResponse<DatabaseProperties>>;
         pub fn database_client<impl Into<ResourceIdentity>: Into<ResourceIdentity>>(&self, database: impl Into<ResourceIdentity>) -> DatabaseClient;
         pub fn endpoint(&self) -> &Url;
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         pub async fn execute_distributed_read(&self, transaction: crate::clients::DistributedReadTransaction) -> crate::Result<crate::clients::DistributedTransactionResponse>;
         #[cfg(feature = "control_plane")]
         pub async fn query_databases<impl Into<Query>: Into<Query>>(&self, query: impl Into<Query>, options: Option<QueryDatabasesOptions>) -> crate::Result<QueryItemIterator<DatabaseProperties>>;
@@ -352,6 +353,7 @@ pub mod clients {
         #[cfg(feature = "fault_injection")]
         pub fn with_fault_injection_rules(self, rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>) -> crate::Result<Self>;
         pub fn with_partition_failover_options(self, options: PartitionFailoverOptions) -> Self;
+        pub fn with_resource_name_validation(self, enabled: bool) -> Self;
         pub fn with_runtime(self, runtime: CosmosRuntime) -> Self;
         pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
     }
@@ -375,36 +377,36 @@ pub mod clients {
         pub async fn read_throughput(&self, options: Option<ThroughputOptions>) -> crate::Result<Option<ThroughputProperties>>;
         pub fn rid(&self) -> Option<&ResourceId>;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Debug)]
     pub struct DistributedReadTransaction {
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl DistributedReadTransaction {
         pub fn new() -> Self;
         pub fn read_item<impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, options: Option<DistributedTransactionOperationOptions>) -> Self;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl Default for DistributedReadTransaction {
         fn default() -> Self;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Default)]
     #[non_exhaustive]
     pub struct DistributedTransactionOperationOptions {
         pub session_token: Option<crate::options::SessionToken>,
         pub precondition: Option<crate::options::Precondition>,
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl DistributedTransactionOperationOptions {
         pub fn with_precondition(self, precondition: Precondition) -> Self;
         pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Copy, Debug)]
     pub struct DistributedTransactionOperationResult<'a> {
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl DistributedTransactionOperationResult<'_> {
         pub fn etag(&self) -> Option<&azure_core::http::Etag>;
         pub fn index(&self) -> usize;
@@ -417,27 +419,27 @@ pub mod clients {
         pub fn status_code(&self) -> azure_core::http::StatusCode;
         pub fn sub_status_code(&self) -> Option<crate::SubStatusCode>;
     }
-    #[cfg(all(feature = "preview_dtx", feature = "preview_patch"))]
+    #[cfg(all(feature = "unstable_dtx", feature = "unstable_patch"))]
     #[derive(Clone, Default)]
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[non_exhaustive]
     pub struct DistributedTransactionPatchOperationOptions {
         pub session_token: Option<crate::options::SessionToken>,
         pub precondition: Option<crate::options::Precondition>,
         pub filter_predicate: Option<std::borrow::Cow<'static, str>>,
     }
-    #[cfg(all(feature = "preview_dtx", feature = "preview_patch"))]
-    #[cfg(feature = "preview_patch")]
+    #[cfg(all(feature = "unstable_dtx", feature = "unstable_patch"))]
+    #[cfg(feature = "unstable_patch")]
     impl DistributedTransactionPatchOperationOptions {
         pub fn with_filter_predicate<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, predicate: impl Into<Cow<'static, str>>) -> Self;
         pub fn with_precondition(self, precondition: Precondition) -> Self;
         pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Debug)]
     pub struct DistributedTransactionResponse {
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl DistributedTransactionResponse {
         pub fn activity_id(&self) -> Option<&str>;
         pub fn diagnostic_string(&self) -> Option<&str>;
@@ -455,21 +457,21 @@ pub mod clients {
         pub fn retry_after(&self) -> Option<std::time::Duration>;
         pub fn status(&self) -> crate::CosmosStatus;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Debug)]
     pub struct DistributedWriteTransaction {
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl DistributedWriteTransaction {
         pub fn create_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, item: T, options: Option<DistributedTransactionOperationOptions>) -> crate::Result<Self>;
         pub fn delete_item<impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, options: Option<DistributedTransactionOperationOptions>) -> Self;
         pub fn new() -> Self;
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         pub fn patch_item<impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, patch: PatchInstructions, options: Option<DistributedTransactionPatchOperationOptions>) -> crate::Result<Self>;
         pub fn replace_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, item: T, options: Option<DistributedTransactionOperationOptions>) -> crate::Result<Self>;
         pub fn upsert_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, item: T, options: Option<DistributedTransactionOperationOptions>) -> crate::Result<Self>;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl Default for DistributedWriteTransaction {
         fn default() -> Self;
     }
@@ -489,7 +491,7 @@ pub mod clients {
     }
 }
 pub mod diagnostics {
-    #[cfg(feature = "preview_opentelemetry")]
+    #[cfg(feature = "unstable_opentelemetry")]
     pub use azure_data_cosmos::diagnostics::metrics::handler::CosmosMetricsHandler;
     pub use azure_data_cosmos::diagnostics::metrics::options::MetricsOptions;
     pub struct ClientLifetimeToken {
@@ -537,34 +539,34 @@ pub mod diagnostics {
         #[must_use]
         pub fn with_server_address<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, address: impl Into<Cow<'static, str>>) -> Self;
     }
-    #[cfg(feature = "preview_opentelemetry")]
+    #[cfg(feature = "unstable_opentelemetry")]
     pub struct CosmosTracingHandler {
     }
-    #[cfg(feature = "preview_opentelemetry")]
+    #[cfg(feature = "unstable_opentelemetry")]
     impl CosmosTracingHandler {
         pub fn builder() -> CosmosTracingHandlerBuilder;
         pub fn should_emit(&self, diagnostics: &DiagnosticsContext) -> bool;
         pub fn thresholds(&self) -> &DiagnosticsThresholds;
     }
-    #[cfg(feature = "preview_opentelemetry")]
+    #[cfg(feature = "unstable_opentelemetry")]
     impl DiagnosticsHandler for CosmosTracingHandler {
         fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>);
     }
-    #[cfg(feature = "preview_opentelemetry")]
+    #[cfg(feature = "unstable_opentelemetry")]
     #[derive(Default)]
     pub struct CosmosTracingHandlerBuilder {
     }
-    #[cfg(feature = "preview_opentelemetry")]
+    #[cfg(feature = "unstable_opentelemetry")]
     impl CosmosTracingHandlerBuilder {
         pub fn build(self) -> CosmosTracingHandler;
         pub fn build_with_tracer<T>(self, tracer: T) -> CosmosTracingHandlerWithTracer<T> where T: opentelemetry::trace::Tracer + Send + Sync + 'static;
         pub fn with_rate_limit(self, rate_limit: RateLimiterConfig) -> Self;
         pub fn with_thresholds(self, thresholds: DiagnosticsThresholds) -> Self;
     }
-    #[cfg(feature = "preview_opentelemetry")]
+    #[cfg(feature = "unstable_opentelemetry")]
     pub struct CosmosTracingHandlerWithTracer<T> {
     }
-    #[cfg(feature = "preview_opentelemetry")]
+    #[cfg(feature = "unstable_opentelemetry")]
     impl<T> DiagnosticsHandler for CosmosTracingHandlerWithTracer<T> where T: opentelemetry::trace::Tracer + Send + Sync + 'static {
         fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>);
     }
@@ -575,12 +577,14 @@ pub mod diagnostics {
     #[doc(inline)]
     impl DiagnosticsContext {
         pub fn activity_id(&self) -> &ActivityId;
+        pub fn clone_with_status(&self, status: CosmosStatus) -> Self;
         pub fn compaction(&self) -> Option<&CompactionInfo>;
         pub fn duration(&self) -> Duration;
         pub fn effective_status(&self) -> Option<CosmosStatus>;
         pub fn fault_injection_enabled(&self) -> bool;
         pub fn hedge_diagnostics(&self) -> Option<&HedgeDiagnostics>;
         pub fn hedging_started(&self) -> bool;
+        pub fn invalid_utf8_was_recovered(&self) -> bool;
         pub fn is_completed(&self) -> bool;
         pub fn is_failure(&self) -> bool;
         pub fn is_threshold_violated(&self, thresholds: &DiagnosticsThresholds) -> bool;
@@ -757,25 +761,25 @@ pub mod diagnostics {
         fn on_client_created(&self, client: &CosmosClientInfo) -> Option<ClientLifetimeToken>;
     }
     pub mod metrics {
-        #[cfg(feature = "preview_opentelemetry")]
+        #[cfg(feature = "unstable_opentelemetry")]
         pub struct CosmosMetricsHandler {
         }
-        #[cfg(feature = "preview_opentelemetry")]
+        #[cfg(feature = "unstable_opentelemetry")]
         impl CosmosMetricsHandler {
             pub fn new() -> Self;
             pub fn with_meter(meter: Meter) -> Self;
             pub fn with_meter_and_options(meter: Meter, options: MetricsOptions) -> Self;
             pub fn with_options(options: MetricsOptions) -> Self;
         }
-        #[cfg(feature = "preview_opentelemetry")]
+        #[cfg(feature = "unstable_opentelemetry")]
         impl Debug for CosmosMetricsHandler {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
         }
-        #[cfg(feature = "preview_opentelemetry")]
+        #[cfg(feature = "unstable_opentelemetry")]
         impl Default for CosmosMetricsHandler {
             fn default() -> Self;
         }
-        #[cfg(feature = "preview_opentelemetry")]
+        #[cfg(feature = "unstable_opentelemetry")]
         impl DiagnosticsHandler for CosmosMetricsHandler {
             fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>);
             fn on_client_created(&self, client: &CosmosClientInfo) -> Option<ClientLifetimeToken>;
@@ -1205,6 +1209,22 @@ pub mod feed {
     impl<'de> Deserialize<'de> for FeedRange {
         fn deserialize<D>(deserializer: D) -> Result<Self, <D as >::Error> where D: serde::Deserializer<'de>;
     }
+    #[derive(Clone, Debug)]
+    pub struct ItemFilter {
+    }
+    impl ItemFilter {
+        pub fn with_parameter<impl Into<String>: Into<String>, impl Serialize: Serialize>(self, name: impl Into<String>, value: impl Serialize) -> crate::Result<Self>;
+    }
+    impl FromStr for ItemFilter {
+        type Err = CosmosError;
+        fn from_str(value: &str) -> crate::Result<Self>;
+    }
+    #[derive(Clone, Debug)]
+    pub struct ItemSelector {
+    }
+    impl ItemSelector {
+        pub fn with_filter<impl Into<ItemFilter>: Into<ItemFilter>>(self, filter: impl Into<ItemFilter>) -> Self;
+    }
     #[derive(Clone, Debug, serde::Serialize)]
     pub struct Query {
     }
@@ -1248,6 +1268,27 @@ pub mod feed {
         type Item = Result<QueryFeedPage<T>, CosmosError>;
         fn poll_next(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> task::Poll<Option<<Self as >::Item>>;
     }
+    #[pin_project]
+    pub struct ReadManyIterator<T: Send> {
+    }
+    impl<T: DeserializeOwned + Send + 'static> ReadManyIterator<T> {
+        pub async fn collect_all(self) -> crate::Result<ReadManyResponse<T>>;
+    }
+    impl<T: DeserializeOwned + Send + 'static> Stream for ReadManyIterator<T> {
+        type Item = Result<QueryFeedPage<T>, CosmosError>;
+        fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<<Self as >::Item>>;
+    }
+    pub struct ReadManyResponse<T> {
+    }
+    impl<T> ReadManyResponse<T> {
+        pub fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>>;
+        pub fn into_items(self) -> Vec<T>;
+        pub fn items(&self) -> &[T];
+        pub fn request_charge(&self) -> RequestCharge;
+    }
+    impl<T> Debug for ReadManyResponse<T> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
+    }
     #[derive(Clone)]
     #[non_exhaustive]
     pub enum FeedScope {
@@ -1258,6 +1299,16 @@ pub mod feed {
         pub fn full_container() -> Self;
         pub fn partition<impl Into<PartitionKey>: Into<PartitionKey>>(pk: impl Into<PartitionKey>) -> Self;
         pub fn range<impl Into<FeedRange>: Into<FeedRange>>(fr: impl Into<FeedRange>) -> Self;
+    }
+    #[derive(Clone, Debug)]
+    #[non_exhaustive]
+    pub enum ItemScope {
+        Items(Vec<(crate::models::PartitionKey, String)>),
+        Partitions(Vec<crate::models::PartitionKey>),
+        FeedRanges(Vec<crate::models::FeedRange>),
+    }
+    impl From<ItemScope> for ItemSelector {
+        fn from(selection: ItemScope) -> Self;
     }
 }
 pub mod models {
@@ -1623,7 +1674,7 @@ pub mod models {
         pub fn headers(&self) -> &ResponseHeaders;
         pub fn into_body(self) -> ResponseBody;
         pub fn into_model<T: DeserializeOwned>(self) -> crate::Result<T>;
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         pub fn patch_tracking_id(&self) -> Option<PatchTrackingId>;
         pub fn status(&self) -> CosmosStatus;
     }
@@ -1824,55 +1875,57 @@ pub mod models {
     impl<T: Into<PartitionKeyValue>> From<Option<T>> for PartitionKeyValue {
         fn from(value: Option<T>) -> Self;
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[doc(inline)]
     #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
     pub struct PatchInstructions {
         pub operations: Vec<PatchOperation>,
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[doc(inline)]
     impl PatchInstructions {
+        pub fn filter_predicate(&self) -> Option<&str>;
         pub fn is_retry_safe(&self) -> bool;
         pub fn new() -> Self;
+        pub fn with_filter_predicate<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, predicate: impl Into<Cow<'static, str>>) -> Self;
         pub fn with_operation(self, operation: PatchOperation) -> Self;
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[doc(inline)]
     impl From<Vec<PatchOperation>> for PatchInstructions {
         fn from(operations: Vec<PatchOperation>) -> Self;
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     pub struct PatchTrackingId(/* private fields */);
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     impl PatchTrackingId {
         pub fn as_uuid(&self) -> Uuid;
         pub fn new() -> Self;
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     impl Default for PatchTrackingId {
         fn default() -> Self;
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     impl Display for PatchTrackingId {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     impl From<Uuid> for PatchTrackingId {
         fn from(value: Uuid) -> Self;
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     impl FromStr for PatchTrackingId {
         type Err = Error;
         fn from_str(value: &str) -> Result<Self, <Self as >::Err>;
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     impl Serialize for PatchTrackingId {
         fn serialize<S>(&self, serializer: S) -> Result<<S as >::Ok, <S as >::Error> where S: serde::Serializer;
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     impl<'de> Deserialize<'de> for PatchTrackingId {
         fn deserialize<D>(deserializer: D) -> Result<Self, <D as >::Error> where D: serde::Deserializer<'de>;
     }
@@ -2126,7 +2179,7 @@ pub mod models {
         LastWriterWins,
         Custom,
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[doc(inline)]
     #[derive(Clone, Copy, Debug, PartialEq)]
     #[non_exhaustive]
@@ -2134,22 +2187,22 @@ pub mod models {
         Int(i64),
         Float(f64),
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[doc(inline)]
     impl From<f64> for CosmosNumber {
         fn from(v: f64) -> Self;
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[doc(inline)]
     impl From<i64> for CosmosNumber {
         fn from(v: i64) -> Self;
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[doc(inline)]
     impl Serialize for CosmosNumber {
         fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<<S as >::Ok, <S as >::Error>;
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[doc(inline)]
     impl<'de> Deserialize<'de> for CosmosNumber {
         fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, <D as >::Error>;
@@ -2191,7 +2244,7 @@ pub mod models {
         type Error = &'static str;
         fn try_from(value: u32) -> Result<Self, <Self as >::Error>;
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[doc(inline)]
     #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -2205,7 +2258,7 @@ pub mod models {
         Increment { path: String, value: CosmosNumber },
         Move { from: String, path: String },
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[doc(inline)]
     impl PatchOperation {
         pub fn add<impl Into<String>: Into<String>>(path: impl Into<String>, value: Value) -> Self;
@@ -2278,11 +2331,11 @@ pub mod models {
         QuantizedFlat,
         DiskANN,
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     pub const DEFAULT_PATCH_TRACKING_CAPACITY: std::num::NonZeroU16 = _;
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     pub const PATCH_TRACKING_PROPERTY: &str = "_azsdkPatchTracking";
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     pub const PATCH_TRACKING_RETENTION: std::time::Duration = _;
 }
 pub mod options {
@@ -2613,7 +2666,7 @@ pub mod options {
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
     pub struct OperationOptions {
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         pub patch_strategy: Option<crate::options::PatchStrategy>,
         pub read_consistency_strategy: Option<crate::options::ReadConsistencyStrategy>,
         pub excluded_regions: Option<crate::options::ExcludedRegions>,
@@ -2629,6 +2682,7 @@ pub mod options {
         pub availability_strategy: Option<crate::options::AvailabilityStrategy>,
         pub custom_headers: Option<std::collections::HashMap<azure_core::http::headers::HeaderName, azure_core::http::headers::HeaderValue>>,
         pub binary_encoding: Option<crate::options::BinaryEncodingOptions>,
+        pub utf8_decoding_mode: Option<crate::options::Utf8DecodingMode>,
     }
     #[doc(inline)]
     #[automatically_derived]
@@ -2656,12 +2710,13 @@ pub mod options {
         pub fn with_hedging_enabled(self, value: bool) -> Self;
         pub fn with_max_failover_retry_count(self, value: u32) -> Self;
         pub fn with_max_session_retry_count(self, value: u32) -> Self;
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         pub fn with_patch_strategy(self, value: PatchStrategy) -> Self;
         pub fn with_read_consistency_strategy(self, value: ReadConsistencyStrategy) -> Self;
         pub fn with_session_capturing_disabled(self, value: bool) -> Self;
         pub fn with_throttling_retry_options(self, value: ThrottlingRetryOptions) -> Self;
         pub fn with_throughput_control(self, value: ThroughputControlOptions) -> Self;
+        pub fn with_utf8_decoding_mode(self, value: Utf8DecodingMode) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug)]
@@ -2702,7 +2757,7 @@ pub mod options {
         pub fn with_read_failure_threshold(self, value: u32) -> Self;
         pub fn with_write_failure_threshold(self, value: u32) -> Self;
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[derive(Clone, Default)]
     #[non_exhaustive]
     pub struct PatchItemOptions {
@@ -2715,7 +2770,7 @@ pub mod options {
         pub tracking_capacity: Option<std::num::NonZeroU16>,
         pub tracking_retention: Option<std::time::Duration>,
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     impl PatchItemOptions {
         pub fn with_max_attempts(self, max_attempts: std::num::NonZeroU8) -> Self;
         pub fn with_operation_options(self, operation: OperationOptions) -> Self;
@@ -2749,6 +2804,7 @@ pub mod options {
     #[derive(Clone)]
     #[non_exhaustive]
     pub struct QueryOptions {
+        pub full_text_score_scope: crate::options::FullTextScoreScope,
         pub max_buffered_query_window: u64,
         pub query_plan_mode: crate::options::QueryPlanMode,
         pub operation: azure_data_cosmos_driver::options::OperationOptions,
@@ -2760,6 +2816,7 @@ pub mod options {
     impl QueryOptions {
         pub fn with_continuation_token(self, continuation_token: ContinuationToken) -> Self;
         pub fn with_feed_options(self, feed: FeedOptions) -> Self;
+        pub fn with_full_text_score_scope(self, scope: FullTextScoreScope) -> Self;
         pub fn with_max_buffered_query_window(self, max_buffered_query_window: u64) -> Self;
         pub fn with_max_item_count(self, max_item_count: MaxItemCountHint) -> Self;
         pub fn with_operation_options(self, operation: OperationOptions) -> Self;
@@ -2797,6 +2854,20 @@ pub mod options {
     impl ReadFeedRangesOptions {
         pub fn with_force_refresh(self, force_refresh: bool) -> Self;
         pub fn with_operation_options(self, operation: OperationOptions) -> Self;
+    }
+    #[derive(Clone, Default)]
+    #[non_exhaustive]
+    pub struct ReadManyOptions {
+        pub operation: crate::options::OperationOptions,
+        pub session_token: Option<crate::options::SessionToken>,
+        pub max_item_count: Option<crate::options::MaxItemCountHint>,
+        pub max_fan_out: Option<u32>,
+    }
+    impl ReadManyOptions {
+        pub fn with_max_fan_out(self, limit: u32) -> Self;
+        pub fn with_max_item_count(self, hint: MaxItemCountHint) -> Self;
+        pub fn with_operation_options(self, options: OperationOptions) -> Self;
+        pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, token: impl Into<SessionToken>) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, serde::Serialize)]
@@ -3128,6 +3199,14 @@ pub mod options {
         fn from_str(s: &str) -> Result<Self, <Self as >::Err>;
     }
     #[doc(inline)]
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum FullTextScoreScope {
+        #[default]
+        Global,
+        Local,
+    }
+    #[doc(inline)]
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[non_exhaustive]
     pub enum MaxItemCountHint {
@@ -3147,7 +3226,7 @@ pub mod options {
         type Err = String;
         fn from_str(value: &str) -> Result<Self, <Self as >::Err>;
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[doc(inline)]
     #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
     #[non_exhaustive]
@@ -3157,17 +3236,17 @@ pub mod options {
         ClientSide,
         ServerSide,
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[doc(inline)]
     impl PatchStrategy {
         pub fn as_str(&self) -> &'static str;
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[doc(inline)]
     impl Display for PatchStrategy {
         fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
     }
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[doc(inline)]
     impl FromStr for PatchStrategy {
         type Err = CosmosError;
@@ -3274,6 +3353,14 @@ pub mod options {
     pub enum TlsBackend {
         #[default]
         Rustls,
+    }
+    #[doc(inline)]
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum Utf8DecodingMode {
+        #[default]
+        Strict,
+        Lossy,
     }
 }
 ```

@@ -4,7 +4,7 @@
     "id": "management.capabilities",
     "title": "The emulator advertises a versioned capability document",
     "requirement": "An external SDK runner can discover protocol and management capabilities without using Rust internals.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "rust",

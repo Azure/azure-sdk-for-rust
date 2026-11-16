@@ -124,7 +124,7 @@ foreach ($account in $accounts) {
         $ageHours = [math]::Round(([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() - $ts) / 3600.0, 1)
         if ($PSCmdlet.ShouldProcess("$accountName/$dbName", "Delete stale test database (age ${ageHours}h)")) {
             $deleteUri = "https://management.azure.com/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroupName" +
-            "/providers/Microsoft.DocumentDB/databaseAccounts/$accountName/sqlDatabases/$dbName?api-version=$armApiVersion"
+            "/providers/Microsoft.DocumentDB/databaseAccounts/$accountName/sqlDatabases/${dbName}?api-version=$armApiVersion"
             $deleteResponse = Invoke-AzRestMethod -Method DELETE -Uri $deleteUri
             if ($deleteResponse.StatusCode -ge 300) {
                 Write-Warning "Failed to delete '$accountName/$dbName' (HTTP $($deleteResponse.StatusCode)): $($deleteResponse.Content)"

@@ -3,6 +3,7 @@
 
 //! Shared test mocks for dataflow pipeline testing.
 
+use crate::driver::dataflow::PipelineResponse;
 use std::{collections::VecDeque, sync::Arc};
 
 use azure_core::http::{Etag, StatusCode};
@@ -16,8 +17,8 @@ use crate::{
     diagnostics::DiagnosticsContextBuilder,
     models::{
         effective_partition_key::EffectivePartitionKey, AccountReference, ActivityId,
-        CosmosOperation, CosmosResponse, CosmosResponseHeaders, CosmosStatus, DatabaseReference,
-        FeedRange, PartitionKey,
+        CosmosOperation, CosmosResponseHeaders, CosmosStatus, DatabaseReference, FeedRange,
+        PartitionKey,
     },
     options::DiagnosticsOptions,
 };
@@ -27,6 +28,7 @@ use crate::{
 /// A mock leaf node that returns pre-configured page results.
 pub(crate) struct MockLeaf {
     pages: VecDeque<crate::error::Result<PageResult>>,
+    pending_error: Option<crate::error::CosmosError>,
     feed_range: Option<FeedRange>,
     snapshot: Option<PipelineNodeState>,
 }
@@ -36,14 +38,36 @@ impl MockLeaf {
     pub fn with_pages(pages: Vec<crate::error::Result<PageResult>>) -> Self {
         Self {
             pages: pages.into(),
+            pending_error: None,
             feed_range: None,
             snapshot: None,
         }
     }
 
+    pub(crate) fn with_responses(
+        responses: impl IntoIterator<Item = (PipelineResponse, bool)>,
+    ) -> Self {
+        Self::with_pages(
+            responses
+                .into_iter()
+                .map(|(response, is_terminal)| {
+                    Ok(PageResult::Page {
+                        response,
+                        is_terminal,
+                    })
+                })
+                .collect(),
+        )
+    }
+
     /// Sets the feed range reported by [`PipelineNode::feed_range`].
     pub fn with_feed_range(mut self, range: FeedRange) -> Self {
         self.feed_range = Some(range);
+        self
+    }
+
+    pub(crate) fn with_pending_error(mut self, error: crate::error::CosmosError) -> Self {
+        self.pending_error = Some(error);
         self
     }
 
@@ -57,6 +81,10 @@ impl MockLeaf {
 
 #[async_trait::async_trait]
 impl PipelineNode for MockLeaf {
+    fn take_pending_error(&mut self) -> Option<crate::error::CosmosError> {
+        self.pending_error.take()
+    }
+
     async fn next_page(
         &mut self,
         _context: &mut PipelineContext<'_>,
@@ -102,7 +130,7 @@ impl RequestExecutor for NoopRequestExecutor {
         _target: RequestTarget,
         _partition_routing_refresh: PartitionRoutingRefresh,
         _continuation: Option<String>,
-    ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
+    ) -> BoxFuture<'a, crate::error::Result<PipelineResponse>> {
         Box::pin(async {
             Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::new(
@@ -116,7 +144,7 @@ impl RequestExecutor for NoopRequestExecutor {
 
 /// A mock request executor that records calls and returns pre-configured responses.
 pub(crate) struct MockRequestExecutor {
-    pub responses: VecDeque<crate::error::Result<CosmosResponse>>,
+    pub responses: VecDeque<crate::error::Result<PipelineResponse>>,
     pub refresh_calls: Vec<PartitionRoutingRefresh>,
     pub continuation_calls: Vec<Option<String>>,
     pub target_calls: Vec<RequestTarget>,
@@ -126,7 +154,7 @@ pub(crate) struct MockRequestExecutor {
 }
 
 impl MockRequestExecutor {
-    pub fn new(responses: Vec<crate::error::Result<CosmosResponse>>) -> Self {
+    pub fn new(responses: Vec<crate::error::Result<PipelineResponse>>) -> Self {
         Self {
             responses: responses.into(),
             refresh_calls: Vec::new(),
@@ -155,7 +183,7 @@ impl RequestExecutor for MockRequestExecutor {
         target: RequestTarget,
         partition_routing_refresh: PartitionRoutingRefresh,
         continuation: Option<String>,
-    ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
+    ) -> BoxFuture<'a, crate::error::Result<PipelineResponse>> {
         self.refresh_calls.push(partition_routing_refresh);
         self.continuation_calls.push(continuation);
         self.target_calls.push(target);
@@ -261,8 +289,8 @@ impl TopologyProvider for PhysicalTopologyProvider {
 
 // ── Test helpers ────────────────────────────────────────────────────────────
 
-/// Extracts the `CosmosResponse` from a `PageResult::Page`, panicking otherwise.
-pub(crate) fn unwrap_page(result: crate::error::Result<PageResult>) -> CosmosResponse {
+/// Extracts the `PipelineResponse` from a `PageResult::Page`, panicking otherwise.
+pub(crate) fn unwrap_page(result: crate::error::Result<PageResult>) -> PipelineResponse {
     match result.expect("expected Ok result") {
         PageResult::Page { response, .. } => response,
         PageResult::Drained => panic!("expected Page, got Drained"),
@@ -281,7 +309,7 @@ pub(crate) fn assert_drained(result: crate::error::Result<PageResult>) {
 
 /// Creates a test `CosmosOperation`.
 pub(crate) fn operation() -> CosmosOperation {
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
         "dGVzdA==",
     );
@@ -308,15 +336,45 @@ pub(crate) fn epk_range_target() -> crate::error::Result<RequestTarget> {
 }
 
 /// Creates a test response with the given body.
-pub(crate) fn response(body: &[u8]) -> CosmosResponse {
+pub(crate) fn response(body: &[u8]) -> PipelineResponse {
     response_with_continuation(body, None)
+}
+
+pub(crate) fn binary_order_by_pages(
+    fan_out: usize,
+    items_per_page: usize,
+    payload_size: usize,
+) -> Vec<bytes::Bytes> {
+    let data = "x".repeat(payload_size);
+    (0..fan_out)
+        .map(|partition| {
+            let documents: Vec<_> = (0..items_per_page)
+                .map(|item| {
+                    let rank = item * fan_out + partition;
+                    serde_json::json!({
+                        "_rid": format!("rid-{rank}"),
+                        "orderByItems": [{"item": rank}],
+                        "payload": {
+                            "id": rank,
+                            "data": data,
+                        },
+                    })
+                })
+                .collect();
+            bytes::Bytes::from(crate::binary_json::encode(&serde_json::json!({
+                "_rid": "root",
+                "_count": documents.len(),
+                "Documents": documents,
+            })))
+        })
+        .collect()
 }
 
 /// Creates a test response with the given body and optional continuation token.
 pub(crate) fn response_with_continuation(
     body: &[u8],
     continuation: Option<&str>,
-) -> CosmosResponse {
+) -> PipelineResponse {
     let mut diagnostics = DiagnosticsContextBuilder::new(
         ActivityId::new_uuid(),
         Arc::new(DiagnosticsOptions::default()),
@@ -324,7 +382,7 @@ pub(crate) fn response_with_continuation(
     diagnostics.set_operation_status(StatusCode::Ok, None);
     let mut headers = CosmosResponseHeaders::new();
     headers.continuation = continuation.map(str::to_owned);
-    CosmosResponse::new(
+    PipelineResponse::new(
         body.to_vec(),
         headers,
         CosmosStatus::new(StatusCode::Ok),
@@ -333,7 +391,7 @@ pub(crate) fn response_with_continuation(
 }
 
 /// Creates a test response carrying a specific request charge (RU) header.
-pub(crate) fn response_with_charge(body: &[u8], request_charge: f64) -> CosmosResponse {
+pub(crate) fn response_with_charge(body: &[u8], request_charge: f64) -> PipelineResponse {
     let mut diagnostics = DiagnosticsContextBuilder::new(
         ActivityId::new_uuid(),
         Arc::new(DiagnosticsOptions::default()),
@@ -341,7 +399,7 @@ pub(crate) fn response_with_charge(body: &[u8], request_charge: f64) -> CosmosRe
     diagnostics.set_operation_status(StatusCode::Ok, None);
     let mut headers = CosmosResponseHeaders::new();
     headers.request_charge = Some(crate::models::RequestCharge::new(request_charge));
-    CosmosResponse::new(
+    PipelineResponse::new(
         body.to_vec(),
         headers,
         CosmosStatus::new(StatusCode::Ok),
@@ -351,7 +409,7 @@ pub(crate) fn response_with_charge(body: &[u8], request_charge: f64) -> CosmosRe
 
 /// Creates a test response whose diagnostics carry `requests` per-attempt
 /// records, so tests can assert on attempt counts surviving aggregation.
-pub(crate) fn response_with_request_diagnostics(requests: usize) -> CosmosResponse {
+pub(crate) fn response_with_request_diagnostics(requests: usize) -> PipelineResponse {
     use crate::diagnostics::{
         ExecutionContext, PipelineKind, TransportHttpVersion, TransportKind, TransportSecurity,
     };
@@ -374,7 +432,7 @@ pub(crate) fn response_with_request_diagnostics(requests: usize) -> CosmosRespon
         );
     }
     diagnostics.set_operation_status(StatusCode::Ok, None);
-    CosmosResponse::new(
+    PipelineResponse::new(
         Vec::new(),
         CosmosResponseHeaders::new(),
         CosmosStatus::new(StatusCode::Ok),
@@ -385,7 +443,7 @@ pub(crate) fn response_with_request_diagnostics(requests: usize) -> CosmosRespon
 /// Creates a test response with the given body and an `ETag`, mirroring the
 /// change feed contract where every poll (including a start-from-`Now` 304)
 /// carries an ETag continuation.
-pub(crate) fn response_with_etag(body: &[u8], etag: &str) -> CosmosResponse {
+pub(crate) fn response_with_etag(body: &[u8], etag: &str) -> PipelineResponse {
     let mut diagnostics = DiagnosticsContextBuilder::new(
         ActivityId::new_uuid(),
         Arc::new(DiagnosticsOptions::default()),
@@ -393,7 +451,7 @@ pub(crate) fn response_with_etag(body: &[u8], etag: &str) -> CosmosResponse {
     diagnostics.set_operation_status(StatusCode::Ok, None);
     let mut headers = CosmosResponseHeaders::new();
     headers.etag = Some(Etag::from(etag.to_owned()));
-    CosmosResponse::new(
+    PipelineResponse::new(
         body.to_vec(),
         headers,
         CosmosStatus::new(StatusCode::Ok),
@@ -416,6 +474,42 @@ pub(crate) fn gone_error() -> crate::error::CosmosError {
             Vec::new(),
             CosmosResponseHeaders::default(),
         ))
+        .build()
+}
+
+pub(crate) fn gone_error_with_diagnostics() -> crate::error::CosmosError {
+    use crate::diagnostics::{
+        ExecutionContext, PipelineKind, TransportHttpVersion, TransportKind, TransportSecurity,
+    };
+    let status = gone_error().status();
+    let mut diagnostics = DiagnosticsContextBuilder::new(
+        ActivityId::new_uuid(),
+        Arc::new(
+            DiagnosticsOptions::builder()
+                .with_max_request_diagnostics(16)
+                .build()
+                .unwrap(),
+        ),
+    );
+    let endpoint = crate::driver::routing::CosmosEndpoint::global(
+        url::Url::parse("https://acct.example/").unwrap(),
+    );
+    let handle = diagnostics.start_request(
+        ExecutionContext::Initial,
+        PipelineKind::DataPlane,
+        TransportSecurity::Secure,
+        TransportKind::Gateway,
+        TransportHttpVersion::Http11,
+        &endpoint,
+    );
+    diagnostics.update_request(handle, |request| {
+        request.with_charge(crate::models::RequestCharge::new(1.0))
+    });
+    diagnostics.complete_request(handle, status.status_code(), status.sub_status());
+    diagnostics.set_operation_status(status.status_code(), status.sub_status());
+    crate::error::CosmosError::builder()
+        .with_status(status)
+        .with_diagnostics(Arc::new(diagnostics.complete()))
         .build()
 }
 

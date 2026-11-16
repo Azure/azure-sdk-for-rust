@@ -1,18 +1,37 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-pub use crate::generated::clients::{BlobServiceClient, BlobServiceClientOptions};
+pub use crate::generated::clients::BlobServiceClient;
 
-use crate::{BlobClient, BlobContainerClient};
+use crate::{BlobClient, BlobContainerClient, SessionOptions};
 use azure_core::{
     credentials::TokenCredential,
-    http::{
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Pipeline, Url,
-    },
+    fmt::SafeDebug,
+    http::{ClientOptions, Url},
     tracing, Result,
 };
 use std::sync::Arc;
+
+/// Options used when creating a [`BlobServiceClient`].
+#[derive(Clone, SafeDebug)]
+pub struct BlobServiceClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Options for session token authentication.
+    pub session_options: Option<SessionOptions>,
+    /// Specifies the version of the operation to use for requests.
+    pub version: String,
+}
+
+impl Default for BlobServiceClientOptions {
+    fn default() -> Self {
+        Self {
+            client_options: ClientOptions::default(),
+            session_options: None,
+            version: crate::generated::clients::BlobServiceClientOptions::default().version,
+        }
+    }
+}
 
 impl BlobServiceClient {
     /// Creates a new BlobServiceClient from a service URL.
@@ -33,39 +52,22 @@ impl BlobServiceClient {
         if service_url.cannot_be_a_base() {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
-                format!("{service_url} is not a valid base URL"),
+                format!("{service_url} is not a valid base URL."),
             ));
         }
         let mut options = options.unwrap_or_default();
-        super::apply_client_defaults(&mut options.client_options);
-
-        let mut per_retry_policies: Vec<Arc<dyn Policy>> = Vec::default();
-        if let Some(token_credential) = credential {
-            if !service_url.scheme().starts_with("https") {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    format!("{service_url} must use https"),
-                ));
-            }
-            per_retry_policies.push(Arc::new(BearerTokenAuthorizationPolicy::new(
-                token_credential,
-                vec!["https://storage.azure.com/.default"],
-            )));
-        }
-
-        let pipeline = Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            options.client_options.clone(),
-            Vec::default(),
-            per_retry_policies,
-            None,
-        );
+        let pipeline = super::build_pipeline(
+            &service_url,
+            credential,
+            options.session_options.as_ref(),
+            &mut options.client_options,
+            &options.version,
+        )?;
 
         Ok(Self {
             endpoint: service_url,
-            version: options.version,
             pipeline,
+            version: options.version,
         })
     }
 

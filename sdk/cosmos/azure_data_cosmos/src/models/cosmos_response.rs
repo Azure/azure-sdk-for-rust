@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use crate::diagnostics::DiagnosticsContext;
 use crate::models::CosmosStatus;
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 use crate::models::PatchTrackingId;
 use crate::models::{ResponseBody, ResponseHeaders};
 use azure_data_cosmos_driver::models::CosmosResponse as DriverResponse;
@@ -84,19 +84,19 @@ impl CosmosResponse {
     }
 
     /// Returns the effective duplicate-suppression identity for a tracked PATCH.
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     pub(crate) fn patch_tracking_id(&self) -> Option<PatchTrackingId> {
         self.diagnostics.patch_tracking_id()
     }
 
     /// Deserializes the response body into a model type.
     pub(crate) fn into_model<T: DeserializeOwned>(self) -> crate::Result<T> {
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         let tracking_id = self.patch_tracking_id();
         let diagnostics = self.diagnostics;
         self.body.into_single().map_err(|error| {
             let error = crate::error::with_diagnostics(error, diagnostics);
-            #[cfg(feature = "preview_patch")]
+            #[cfg(feature = "unstable_patch")]
             if let Some(tracking_id) = tracking_id {
                 return crate::error::with_patch_tracking_id(error, tracking_id);
             }

@@ -4,7 +4,7 @@
   "id": "management.resource-lifecycle",
   "title": "Database and container resources complete their lifecycle",
   "requirement": "Database and container create, read, query, replace, and delete operations preserve resource identity, policies, and stable statuses.",
-  "maturity": "candidate",
+  "maturity": "stable",
   "precedents": [
     {
       "sdk": "rust",
@@ -43,7 +43,7 @@
       ]
     },
     "azureLive": {
-      "applicability": "supported",
+      "applicability": "required",
       "fidelity": "full"
     }
   }

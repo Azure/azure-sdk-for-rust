@@ -4,7 +4,7 @@
     "id": "query.parameterized-filter",
     "title": "A parameterized partition query filters and orders results",
     "requirement": "Query parameters are bound without string substitution and deterministic ORDER BY results preserve order.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "java",
@@ -32,7 +32,7 @@
             ]
         },
         "azureLive": {
-            "applicability": "supported",
+            "applicability": "required",
             "fidelity": "full"
         }
     }
