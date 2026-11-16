@@ -1,4 +1,4 @@
-# Rust change feed processor
+# Change feed processor: batch processing and public API
 
 > **Status:** Draft
 > **Scope:** Rust SDK processing and the shared cross-language driver engine
