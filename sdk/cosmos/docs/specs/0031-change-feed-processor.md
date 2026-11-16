@@ -45,7 +45,27 @@ describes its purpose:
 - Monitor **all physical partitions within the configured scope**, including
   replacement partitions after topology changes.
 
-### 2.1 Guarantees to establish
+### 2.1 Implementation responsibilities
+
+The implementation is expected to provide six cooperating capabilities. A
+**workload** is the processors reading one source container under a shared
+workload name; a **worker** is one running processor instance, not necessarily
+a separate process, machine, or thread.
+
+| Responsibility | Expected behavior | Detailed design |
+| --- | --- | --- |
+| R1: Workload initialization | Establish source/workload identity and complete initial range coverage, prepare coordination records, and continue interrupted initialization without overwriting existing ownership or saved progress. Declare readiness only after the required state is established. | [Bootstrap](#6-how-would-a-workload-be-initialized-before-processing) and [initial resume anchoring](#104-establish-a-stable-initial-resume-position). |
+| R2: Execute feed processing | Read eligible owned ranges on demand, deliver batches, invoke the application handler in its SDK runtime, and acknowledge only successful processing. Handle topology changes without leaving a range unmonitored. | [SDK/driver flow](#42-shared-rust-engine), [delivery coordination](#8-how-would-batch-requests-delivery-and-checkpointing-stay-coordinated), and [topology recovery](#9-how-would-partition-splits-and-merges-affect-processing). |
+| R3: Balance feed processing across workers | Coordinate range ownership through leases, assign work among cooperating workers, and redistribute it after workers join, leave, or fail. Fence old acquisitions so redistribution cannot authorize stale progress writes. | [Ownership and balancing](#7-how-would-leases-be-allocated-across-workers). |
+| R4: Safe checkpointing | Separate fetched, successfully processed, and durably saved positions. Persist only safe progress under current ownership, implement Eager/Deferred completion semantics, and resume without silently skipping changes. | [Progress and lease state](#5-how-is-progress-tracked-in-the-change-feed-processor), [checkpointing](#86-tie-successful-processing-to-the-next-delivery), and [restart](#10-how-would-a-worker-stop-and-resume-processing). |
+| R5: Worker health detection | Distinguish ownership liveness, healthy idle processing, and stalled operations. Expose failures, attempt recovery, and confirm that processing resumes rather than treating an ownership change as recovery success. | [Failures and health](#11-how-would-failures-be-handled-and-exposed-to-the-application) and [background coordination](#12-how-would-background-tasks-coordinate-polling-renewal-and-balancing). |
+| R6: Manage worker lifecycle and resource cleanup | Start and stop predictably, drain issued work during graceful shutdown, and cancel safely on failure. Release ownership conditionally and clean up tasks, receipts, and native/FFI handles without affecting replacement owners. | [Shutdown and restart](#10-how-would-a-worker-stop-and-resume-processing) and [graceful drain coordination](#122-during-graceful-feed-processing-drain). |
+
+These are responsibilities of the proposed system, not a claim that every
+mechanism is implemented or resolved. The guarantees below define how to
+evaluate them; the linked sections describe their mechanisms and open decisions.
+
+### 2.2 Guarantees to establish
 
 These are required outcomes, not claims that the prototype already provides
 them. The code sketches below are illustrative proposed control flow, not
@@ -57,7 +77,7 @@ mechanisms; the explicit proposed contracts take precedence where they differ.
 | G1: Distinguish healthy idleness from stalled processing. | Track the active operation and its age separately from ownership renewal and item arrivals; see [liveness](#115-detect-stalls-and-confirm-recovery). | Empty successful reads and waiting for demand are not reported as hung callbacks; an overdue active operation is reported even while renewal succeeds. |
 | G2: Attempt recovery and verify useful progress, not just ownership movement. | Cancel failed acquisition work, release conditionally or let ownership expire, and reacquire normally; see the [recovery sketch](#115-detect-stalls-and-confirm-recovery). | With a runnable replacement and available service, an injected worker failure is followed by acquisition and successful processing or a healthy empty read. Repeated failure is visible and subject to bounded recovery policy. |
 | G3: Never skip changes by resetting a resume position. | Persist a stable initial anchor and resume saved progress; see [initial anchoring](#104-establish-a-stable-initial-resume-position). | Crash before the first normal checkpoint, restart, and deliver the changes still available from the original start position. An unusable continuation produces failure, not a new `Now`. |
-| G4: Persist only safe progress under current ownership. | Await handler success, then acknowledge; serialize conditional writes with the acquisition's cached ETag; see [fencing](#73-preventing-stale-or-competing-ownership-writes) and [checkpointing](#86-tie-successful-processing-to-the-next-delivery). | Handler failure leaves that batch unacknowledged; stale receipts cannot change replacement ownership or continuation; Deferred interruption may replay. |
+| G4: Persist only safe progress under current ownership. | Await handler success, then acknowledge; serialize conditional writes with the acquisition's cached ETag; see [fencing](#73-handle-competing-writes) and [checkpointing](#86-tie-successful-processing-to-the-next-delivery). | Handler failure leaves that batch unacknowledged; stale receipts cannot change replacement ownership or continuation; Deferred interruption may replay. |
 | G5: Preserve range coverage through topology changes. | Validate replacement coverage, project durable progress, create children before conditional parent deletion; see [topology recovery](#93-ensure-children-before-deleting-the-parent). | Interrupted child creation or parent deletion loses no logical range or saved resume position. |
 
 **No-skipping is bounded by the selected feed mode and service retention.**
@@ -80,8 +100,7 @@ are [open design decisions](#14-open-questions-and-scope-limits).
 ## 4. How would SDKs process changes using the shared Rust engine?
 
 The **SDK** is the application-facing library; the **driver** is the shared
-engine beneath it. A **workload** is the cooperating processors reading one
-source container under a shared workload name.
+engine beneath it.
 
 The **application handler** is the callback supplied by the application to
 process a batch of changes. An **internal processing pipeline** is the SDK's
@@ -90,10 +109,6 @@ sequence of steps that reads changes, invokes that handler, and records progress
 Here, **progress** means how far the application has successfully processed
 the change feed. A **checkpoint** saves a resume position durably; the
 **checkpoint policy** determines when that save is required.
-
-A **worker** is one running Change Feed Processor instance. Multiple workers
-can cooperate on the same workload; a worker is not necessarily a separate
-process, machine, or thread.
 
 A **partition range** is a portion of the source container's partition key
 space. Workers divide processing by these ranges; the progress and ownership
@@ -140,6 +155,9 @@ These handlers execute inside their SDKs' CFP pipelines, not a separate
 cross-language driver.
 
 ### 4.2 Shared Rust engine
+
+This flow implements **R2: execute feed processing** from the
+[responsibility overview](#21-implementation-responsibilities).
 
 The SDK owns application callback execution. The shared driver engine owns
 lease coordination, feed reads, and checkpoint persistence.
@@ -341,7 +359,56 @@ waiting channels, and queued registrations are not stored in the document.
 `_etag` protects a specific document version through `If-Match`; `_ts` is a
 service-managed last-modification time, not the processing-progress timestamp.
 
+### 5.1 When the lease document changes
+
+The following cases define proposed lease updates. Identity and range fields
+remain unchanged by owner mutations; the
+[ownership protocol](#7-how-would-leases-be-allocated-across-workers) defines
+who may perform them.
+
+| Case | Stored change | Condition and result |
+| --- | --- | --- |
+| Bootstrap creates a lease | Identity, range, and `ttl`; no owner or progress fields. | Create-only deterministic ID. A conflict must not overwrite existing state. Bootstrap claim validation is separate from processing-lease fencing. |
+| Worker acquires or takes over | Set `owner`, refresh `renewed_at`, and clear the previous owner's `processed_at`. Preserve `continuation`. | Check acquisition eligibility and replace with the observed ETag. A lost race starts no processing. Start a local monotonic acquisition baseline; an absent processing timestamp is not immediate evidence of a stall. |
+| Owner renews | Refresh `renewed_at`; preserve durable continuation and pending local progress. Publish updated processing timestamps only for safe progress already recorded locally. | Use the acquisition's cached ETag under its mutation lock. Renewal alone must not extend processing inactivity without progress. |
+| Eager acknowledgment or explicit durable checkpoint | Advance `continuation` to safe processed progress, publish `processed_at`, and refresh `renewed_at`. | Use the cached ETag; complete durable acknowledgment only after confirmed persistence. Install the returned ETag before another mutation. |
+| Deferred acknowledgment | No required document write; update pending safe progress and processing timestamps locally. | Do not claim durability or retain completed batch payloads. |
+| Successful empty read | Record healthy read completion in local `processed_at`; handle the safe idle continuation according to checkpoint policy. | No callback is required. A later renewal can publish the health timestamp without making pending Deferred continuation durable. |
+| Deferred deadline, graceful drain, or topology barrier | Persist eligible pending continuation and timestamps, refreshing `renewed_at`. | Same conditional checkpoint path. With no pending progress, no checkpoint write is needed. |
+| Graceful release | Clear `owner` and refresh `renewed_at`; preserve saved continuation. | Settle issued work and eligible persistence first, then release with the acquisition's cached ETag. Never clear a replacement owner after a conflict. |
+| Split recovery | Create missing children with projected durable progress, then delete the parent. | Prepare the parent through the same conditional mutation path; create children without overwriting existing state; delete the parent with its cached ETag only after validating replacement coverage. |
+| Precondition failure, missing lease, or unconfirmed write outcome | No compensating overwrite or unconditional release. | End the old turn, cancel its work, and let normal acquisition determine subsequent ownership and saved progress. |
+
+### 5.2 Apply owner updates conditionally
+
+For G4, this proposed control-flow sketch applies an owner update under the
+acquisition's local mutation lock. Helper names are schematic, not existing
+SDK APIs. Invalidating a turn closes its delivery/receipt path and signals
+cancellation; it does not perform unconditional cleanup writes.
+
+```rust
+let mut state = acquisition.state.lock().await;
+state.require_active()?;
+let next = state.apply_safe_update(update)?;
+match store.replace(&next.id, &next, state.etag.clone()).await {
+    Ok(saved) => state.install_confirmed(saved),
+    Err(error) => {
+        state.invalidate_and_cancel();
+        return Err(error);
+    }
+}
+```
+
+Only a confirmed successful write installs its returned document and ETag.
+Transport retries must preserve the conditional version; an ambiguous response
+cannot be reported as a confirmed checkpoint. The
+[competing-write rule](#73-handle-competing-writes) prohibits adopting a
+replacement owner's ETag.
+
 ## 6. How would a workload be initialized before processing?
+
+This section details **R1: workload initialization** from the
+[responsibility overview](#21-implementation-responsibilities).
 
 ### 6.1 Startup initialization requirements
 
@@ -729,231 +796,99 @@ remain open.
 
 ## 7. How would leases be allocated across workers?
 
-### 7.1 Worker lifecycle
+This section details **R3: balance feed processing across workers** from the
+[responsibility overview](#21-implementation-responsibilities).
 
-1. **Construct:** the application supplies the source and lease containers,
-   workload name, worker name, handler, and processing options.
-2. **Start:** initialize or resume the workload, then launch driver
-   coordination and the SDK's batch-consumption loop. Startup does not wait
-   for the worker to acquire a lease or deliver a batch.
-3. **Acquire:** obtain ownership of ranges to process. A running worker can
-   own zero leases and wait for work.
-4. **Process:** read changes and keep ownership alive. The SDK handles one
-   batch at a time; the driver records successful progress.
-5. **Lose or change ownership:** stop processing the affected range and clean
-   up without changing another worker's ownership. Continue coordinating
-   other ranges; source topology changes can require replacement leases.
-6. **Stop gracefully:** drain issued work and release ownership.
-7. **Cancel or crash:** end processing without a confirmed graceful drain.
+**Only the worker that successfully acquires a lease may process its range.**
+The proposed protocol uses owner names and ETags, not a separate persisted
+acquisition identifier. It revises the preserved prototype.
 
-The detailed completion and restart rules appear in
-[shutdown and restart](#10-how-would-a-worker-stop-and-resume-processing).
+### 7.1 Acquire ownership
 
-### 7.2 Recording ownership
+Workers share a workload name and use distinct worker names. Each worker lists
+leases and chooses an eligible range. It writes its name as `owner`, using
+`If-Match` with the ETag of the document it inspected. Only a confirmed success
+starts processing; losing the write race starts no work.
 
-To **acquire** a lease, a worker conditionally writes its own name as owner in
-the lease document. Only after that write succeeds does it start processing
-the range. Cooperating workers share the workload name and use distinct worker
-names; the SDK constructor inputs are listed in the [public API](#13-how-would-an-application-configure-and-control-the-rust-processor).
+That successful acquisition and its associated work form one **ownership
+turn**. A started worker may own no leases and wait for work.
 
-The acquisition examples below are prototype excerpts, not standalone programs.
-The ETag-only ownership contract in the next section is a proposed revision;
-the preserved prototype has not been changed to implement it.
+### 7.2 Keep ownership alive
 
-### 7.3 Preventing stale or competing ownership writes
+The owner periodically renews each lease. Renewal keeps ownership alive but
+does not advance the saved continuation; successful checkpoint writes also
+refresh ownership liveness.
 
-**Proposed fencing contract: use `If-Match` with the ETag held by the
-acquisition, without a separate persisted acquisition identifier.** An
-**ownership turn** is one successful acquisition of a lease. Acquisition starts
-from an observed eligible document and conditionally replaces that exact
-version. Only a confirmed success starts processing, with the returned ETag.
+Renewal, checkpoints, release, and topology preparation share one local
+document/ETag protected by a mutex. Each write uses that cached ETag, and a
+confirmed success installs the returned ETag before the next write. The
+mutex prevents local writes from racing; `If-Match` prevents cross-worker
+overwrites. See the [conditional-update sketch](#52-apply-owner-updates-conditionally).
 
-Renewal, checkpoints, release, and topology preparation share one
-acquisition-local document/ETag under the lease-state mutex. Each mutation uses
-that cached ETag. A confirmed successful write installs its returned document
-and ETag before another mutation can begin. Receipts belong to this local
-acquisition, not merely to a lease ID or worker name.
+Renewal can continue while a source read or handler is pending. A slow
+lease-store write can delay another mutation of the same lease, because those
+writes are serialized.
 
-**A precondition failure ends the ownership turn.** The old acquisition must
-not reread the document and retry with a newer ETag just because `owner` still
-matches. Fresh reads can inform a later acquisition attempt, but cannot repair
-the old acquisition's authority. A missing lease also ends the turn. If a
-write's outcome is ambiguous, do not report confirmed persistence or adopt a
-fresh ETag to keep that turn alive; end it and resume from stored progress
-through normal acquisition.
+### 7.3 Handle competing writes
 
-For example:
+Cosmos DB accepts a conditional write only if its ETag still matches:
 
 ```text
-Acquisition A holds ETag E1
-Another acquisition replaces the lease, producing E2
-Old acquisition A writes with If-Match: E1 -> precondition failure
-Even if the worker name matches, A cannot adopt E2 and retry
+A and B attempt a write using ETag E1.
+A succeeds; the document becomes E2.
+B receives 412 Precondition Failed and ends its old ownership turn.
+B must not adopt E2 and retry as the owner, even if the owner name matches.
 ```
 
-Cancel and settle old acquisition work, close its receipts and delivery state,
-and detach its local state before starting another local acquisition of the
-same lease. A late receipt must never obtain the replacement acquisition's
-ETag. These lifecycle rules and conditional writes provide **fencing**; an
-ETag alone does not make arbitrary reread-and-retry logic safe.
+**A failed precondition is not permission to refresh ownership.** A new read
+can inform a later acquisition attempt, but cannot authorize the old turn.
+A missing document also ends that turn. If a write's outcome is ambiguous,
+do not claim a confirmed checkpoint or adopt a newer ETag; end the turn and
+recover through normal acquisition from stored progress.
 
-For G4, the proposed mutation path is illustrated below. The helper names are
-schematic; the important ordering is lock, conditional write, then installation
-of the confirmed result. Invalidating a turn closes its delivery/receipt path
-and signals cancellation; it does not perform unconditional cleanup writes.
+### 7.4 Redistribute work
 
-```rust
-let mut state = acquisition.state.lock().await;
-state.require_active()?;
-let next = state.apply_safe_update(update)?;
-match store.replace(&next.id, &next, state.etag.clone()).await {
-    Ok(saved) => state.install_confirmed(saved),
-    Err(error) => {
-        state.invalidate_and_cancel();
-        return Err(error);
-    }
-}
-```
+Workers periodically count leases held by healthy owners and calculate their
+target share. They prefer unowned or expired leases; a worker below its target
+can select a donor lease according to the balancing policy. Every ownership
+change still requires a successful conditional acquisition.
 
-In particular, this path never repairs a failed write by reading a replacement
-owner's ETag. Transport retries must preserve the conditional version; an
-ambiguous response cannot be reported as a confirmed checkpoint.
+Starting a worker begins these checks. Graceful shutdown stops new acquisition
+and releases leases; other workers discover them on later checks. After a
+crash, ownership must become eligible for takeover. There is no direct queue
+transfer, fleet-wide join/leave notification, or atomic redistribution.
 
-The following cases define when processing leases change. Identity and range
-fields remain unchanged by owner mutations.
+| Timing | Default |
+| --- | --- |
+| Lease expiration | 60 seconds without a successful ownership-maintenance write. |
+| Renewal due | 20 seconds after the latest successful lease write: one third of the expiration budget. |
+| Balancing checks | First pass immediately, then 10-second intervals: one sixth of the expiration budget. |
 
-| Case | Stored change | Condition and result |
-| --- | --- | --- |
-| Bootstrap creates a lease | Identity, range, and `ttl`; no owner or progress fields. | Create-only deterministic ID. A conflict must not overwrite existing state. Bootstrap claim validation is separate from processing-lease fencing. |
-| Worker acquires or takes over | Set `owner`, refresh `renewed_at`, and clear the previous owner's `processed_at`. Preserve `continuation`. | Check acquisition eligibility and replace with the observed ETag. A lost race starts no processing. Start a local monotonic acquisition baseline; an absent processing timestamp is not immediate evidence of a stall. |
-| Owner renews | Refresh `renewed_at`; preserve durable continuation and pending local progress. Publish updated processing timestamps only for safe progress already recorded locally. | Use the acquisition's cached ETag under its mutation lock. Renewal alone must not extend processing inactivity without progress. |
-| Eager acknowledgment or explicit durable checkpoint | Advance `continuation` to safe processed progress, publish `processed_at`, and refresh `renewed_at`. | Use the cached ETag; complete durable acknowledgment only after confirmed persistence. Install the returned ETag before another mutation. |
-| Deferred acknowledgment | No required document write; update pending safe progress and processing timestamps locally. | Do not claim durability or retain completed batch payloads. |
-| Successful empty read | Record healthy read completion in local `processed_at`; handle the safe idle continuation according to checkpoint policy. | No callback is required. A later renewal can publish the health timestamp without making pending Deferred continuation durable. |
-| Deferred deadline, graceful drain, or topology barrier | Persist eligible pending continuation and timestamps, refreshing `renewed_at`. | Same conditional checkpoint path. With no pending progress, no checkpoint write is needed. |
-| Graceful release | Clear `owner` and refresh `renewed_at`; preserve saved continuation. | Settle issued work and eligible persistence first, then release with the acquisition's cached ETag. Never clear a replacement owner after a conflict. |
-| Split recovery | Create missing children with projected durable progress, then delete the parent. | Prepare the parent through the same conditional mutation path; create children without overwriting existing state; delete the parent with its cached ETag only after validating replacement coverage. |
-| Precondition failure, missing lease, or unconfirmed write outcome | No compensating overwrite or unconditional release. | End the old turn, cancel its work, and let normal acquisition determine subsequent ownership and saved progress. |
+These are scheduling defaults, not deadlines for completing redistribution.
 
-Required regression cases include concurrent renewal and checkpoint writes,
-takeover during a callback, same-name reacquisition followed by a late old
-receipt, a failed release racing a new owner, and an ambiguous checkpoint
-response. Assert both stored continuation and ownership; rejecting a stale
-callback result must not mutate replacement state.
+**Open: processing-inactivity takeover.** The prototype allows takeover when
+processing stops progressing even if renewal continues. Under the proposed
+two-timestamp schema, the eligibility rule and shared inactivity policy remain
+unresolved. An old `processed_at` alone must not authorize takeover: it could
+describe a range queued behind another callback, not a hung processor. See
+[health detection](#115-detect-stalls-and-confirm-recovery).
 
-### 7.4 Selecting leases across workers
+### 7.5 Stop after ownership loss
 
-Workers periodically read the workload's lease documents, count leases held
-by healthy owners, and calculate their target share. They prefer available
-leases: unowned, expired, or eligible for processing-inactivity takeover.
-If none are available, a worker below its target can select a donor lease
-according to the balancing policy.
+Ownership loss is detected by a failed conditional mutation, not immediately
+pushed to the old owner. Once detected, cancel and settle that acquisition's
+work, close its receipts and delivery state, and never checkpoint or release
+replacement ownership. Other ranges continue independently.
 
-An **expired lease** has not been renewed within the expiration budget.
-The prototype also permits **processing-inactivity takeover** even if renewal
-continues. Under the proposed two-timestamp schema, an inactivity threshold
-would be shared policy rather than a stored per-lease deadline. Its safe
-eligibility rule is not yet resolved: an old `processed_at` alone is not
-sufficient evidence of a stuck processor. The policy must satisfy the
-[liveness contract](#115-detect-stalls-and-confirm-recovery) before enabling
-that takeover behavior.
+A late receipt must not obtain a replacement acquisition's ETag. Detach the
+old local state before starting another local acquisition of the same lease.
+Stale reads and callback overlap can occur before loss is detected;
+cancellation cannot undo application effects already performed.
 
-Driver `balance()` reads current leases and selects acquisition candidates:
-
-```rust
-let active = context.list().await?;
-let mut acquired = Vec::new();
-let selected = balancing::select(&active, &context.options, now_millis());
-```
-
-For each selected lease, it attempts acquisition:
-
-```rust
-match context.acquire_tracked(&active[index], Some(&state)).await {
-    Ok(lease) => acquired.push(lease),
-    Err(err) if err.status().is_precondition_failed() => {
-        tracing::debug!(error = %err, "Lease acquisition lost a race");
-    }
-    Err(err) => state.failed(Some(&active[index].record.id), err),
-}
-```
-
-Source: `processing.rs`; selection policy:
-`processing/balancing.rs`, `select()`.
-The first balancing pass has no initial delay; later passes use the acquisition
-interval. An empty result does not stop the worker.
-
-### 7.5 Maintaining ownership while processing
-
-**Renewal** is a periodic conditional lease update that keeps the owner's claim
-alive. It does not advance the saved change feed position. Successful checkpoint
-writes also refresh lease timing.
-
-The **supervisor** coordinates one acquired lease's processing and renewal.
-`LeaseState` holds its local document copy, ETag, renewal timing, and pending
-checkpoint progress. A **mutex** permits only one mutation of that local state
-at a time.
-It polls both asynchronous operations concurrently, so renewal can continue
-while processing waits for a source read or application acknowledgment.
-Renewal and checkpoint writes use the same lease-state mutex and are serialized.
-
-`.fuse()` supports use in
-`select!`, which waits for either operation to finish; `pin_mut!` pins those
-futures for polling. These are not separately spawned tasks.
-
-Driver `supervise()` prepares its processing and renewal futures for concurrent
-polling:
-
-```rust
-let renewing = renew(context.clone(), lease.clone(), cancelled).fuse();
-futures::pin_mut!(processing, renewing);
-```
-
-Source: `processing.rs`, `supervise()` and `renew()`.
-
-### 7.6 Detecting ownership loss and cleaning up
-
-Ownership loss is not immediately pushed to the old worker. Its next
-conditional lease mutation detects that its cached ETag is no longer current;
-a missing document also ends the acquisition.
-
-The supervisor then signals cancellation to the processing operation and waits
-for it to finish before release cleanup. Release uses the same ownership checks,
-so it cannot clear the replacement owner's claim. The coordinator continues balancing. The local delivery session and its queue
-cleanup are explained in the next section.
-
-In the renewal-completion branch, `cancel` is the local cancellation sender;
-dropping it wakes cancellation waiters. `processing.await` joins the issued
-work. `PollError::Other` preserves the fact that renewal errors are not
-source-feed topology signals:
-
-```rust
-result = renewing => {
-    // Renewal ended: cancel processing and join its issued work before releasing the lease.
-    drop(cancel.take());
-    let processed = processing.await;
-    result.map_err(PollError::Other).and(processed)
-},
-```
-
-Only an explicit source-feed topology failure can initiate source-range recovery.
-Cancellation cannot undo application effects already performed.
-
-### 7.7 How start and stop affect rebalancing
-
-Starting launches a new worker's balancing loop. Stopping prevents that worker
-from acquiring more leases and eventually releases its existing ownership.
-Other workers periodically inspect lease documents to discover those changes.
-There is no fleet-wide join/leave notification or atomic redistribution.
-
-With the default 60-second lease expiration budget, acquisition checks run
-every one sixth of that budget: 10 seconds.
-
-Released leases become available on subsequent balancing passes, not by direct
-assignment from `stop()`. Forced cancellation attempts cleanup; after a crash,
-workers must wait until eligibility rules permit takeover. The shutdown API
-and cleanup sequence are shown once in
-[shutdown and restart](#10-how-would-a-worker-stop-and-resume-processing).
+The [delivery-session rules](#85-how-ownership-loss-affects-queue-membership)
+describe queue cleanup. [Shutdown and restart](#10-how-would-a-worker-stop-and-resume-processing)
+defines drain and cancellation behavior, and the
+[ownership race cases](#152-validate-ownership-races) define validation.
 
 ## 8. How would batch requests, delivery, and checkpointing stay coordinated?
 
@@ -1181,7 +1116,7 @@ workers.**
 
 ### 8.5 How ownership loss affects queue membership
 
-The [ownership checks](#73-preventing-stale-or-competing-ownership-writes)
+The [ownership checks](#73-handle-competing-writes)
 operate at lease-document writes, not queue selection. When a fenced operation
 detects loss, supervision cancels
 processing and ends that session.
@@ -1198,6 +1133,9 @@ ownership loss is detected. Fencing protects stored ownership and progress;
 it cannot undo external application effects.
 
 ### 8.6 Tie successful processing to the next delivery
+
+This section details **R4: safe checkpointing** from the
+[responsibility overview](#21-implementation-responsibilities).
 
 The SDK completes the batch's receipt only after successful deserialization
 and handler execution.
@@ -1479,6 +1417,9 @@ Implementation: `azure_data_cosmos_driver/src/change_feed_processor/processing/t
 
 ## 10. How would a worker stop and resume processing?
 
+This section details **R6: manage worker lifecycle and resource cleanup** from
+the [responsibility overview](#21-implementation-responsibilities).
+
 **Requesting shutdown is different from confirming cleanup has finished.**
 The Rust SDK provides an awaitable graceful `stop()`; dropping the processor
 requests cancellation without waiting.
@@ -1554,7 +1495,7 @@ This violates G3's intended restart guarantee; documenting the limitation does
 not resolve it. The proposed requirement is described next.
 
 Stopping one worker does not stop the workload's other workers.
-[Rebalancing](#77-how-start-and-stop-affect-rebalancing) explains when they discover
+[Rebalancing](#74-redistribute-work) explains when they discover
 released leases.
 
 ### 10.4 Establish a stable initial resume position
@@ -1688,6 +1629,9 @@ Handling unwinding panics, cancellation, request deadlines, and TTL recovery
 do not cover process aborts or non-yielding application code.
 
 ### 11.5 Detect stalls and confirm recovery
+
+This section details **R5: worker health detection** from the
+[responsibility overview](#21-implementation-responsibilities).
 
 **Required for G1 and G2:** distinguish a live owner, useful processing activity,
 and recovery that actually restores activity. `renewed_at` and `processed_at`
@@ -1842,7 +1786,7 @@ close new demand/acquisition
 This is coordinated completion, not a periodic global barrier. Each lease's
 supervisor settles its own work; the coordinator waits for all of them at
 shutdown. If renewal ends first, it cancels and joins processing before
-cleanup, using the [ownership-loss path](#76-detecting-ownership-loss-and-cleaning-up).
+cleanup, using the [ownership-loss path](#75-stop-after-ownership-loss).
 Forced cancellation and failures follow the
 [shutdown rules](#10-how-would-a-worker-stop-and-resume-processing), not the
 successful-drain sequence.
@@ -2043,7 +1987,7 @@ rather than deferring that evidence to a final combined PR.
 | 4 | Multiple workers, partition splits, Deferred | Safe pending progress, deadline/barrier flushes, permitted replay, and topology recovery with delayed persistence. |
 
 Each PR must provide evidence for the applicable
-[guarantees](#21-guarantees-to-establish). Stage 1 must exercise healthy idle
+[guarantees](#22-guarantees-to-establish). Stage 1 must exercise healthy idle
 reads, a stalled handler while renewal continues, and restart before the first
 normal checkpoint. Stage 3 must verify processing after takeover and expose
 repeated failed recovery, not merely assert a changed owner. Stage 4 must
@@ -2085,3 +2029,17 @@ Use existing in-memory and fault-injection harnesses first. Report compiled,
 executed, ignored, emulator, and live-service coverage separately. The stages
 above are an iteration strategy, not a claim that all scenarios have already
 passed.
+
+### 15.2 Validate ownership races
+
+These planned cases validate the [ownership protocol](#7-how-would-leases-be-allocated-across-workers).
+Assert stored ownership and continuation, not only local cancellation signals.
+
+| Case | Required outcome |
+| --- | --- |
+| Competing acquisitions or owner writes using the same ETag | Only one write succeeds; a stale owner ends its turn without adopting the winner's ETag. |
+| Concurrent renewal and checkpoint within one acquisition | The mutation lock serializes writes; each uses the last confirmed ETag without overwriting newer safe progress. |
+| Takeover during a callback | The old callback cannot checkpoint replacement ownership after loss is detected; already-issued application effects remain subject to replay. |
+| Same-name reacquisition followed by a late old receipt | The old receipt cannot access the new acquisition's state or ETag. |
+| Old release races a new owner | Conditional release fails rather than clearing the new owner. |
+| Checkpoint response is ambiguous | Do not report confirmed persistence or refresh the old turn's authority; resume through normal acquisition using stored progress. |
