@@ -1359,7 +1359,7 @@ Failures are handled at the stage that can distinguish their meaning.
 | Failure | Current handling | Application-facing effect |
 | --- | --- | --- |
 | Ordinary source-read throttling | Release receive demand, apply lease-local cooldown, and retry within the throttle budget. | The pending receive can try another eligible acquisition. |
-| Slow source read | Planning/read execution is bounded to five seconds or a shorter configured driver deadline. A remaining timeout ends the acquisition. | The pending receive can continue seeking a batch elsewhere. |
+| Slow source read | Allow six seconds per lease's source-read turn for planning/read execution, rather than a five-second or shorter turn deadline. A remaining timeout ends the acquisition. | The pending receive can continue seeking a batch elsewhere. |
 | Other service/transport errors | Applicable driver request/routing policies run first; remaining errors propagate to supervision. | Report failure and end the affected acquisition as appropriate. |
 | Source-feed topology change | Preserve explicit source origin and attempt range-local recovery after safe-progress handling. | No topology-error batch is sent to the handler. |
 | Lost ownership | Reject stale lease mutations, cancel/join processing, and attempt fenced cleanup. | The callback can be canceled; already-performed effects remain. |
@@ -1369,6 +1369,21 @@ Failures are handled at the stage that can distinguish their meaning.
 Metadata and lease writes keep their normal request retries. Ordinary CFP
 page-read throttle retries are instead handled outside the request pipeline
 so cooldown does not occupy the pending receive.
+
+**Proposed read-turn budget: six seconds per lease.** A backend change feed
+request can consume its full five-second execution budget; the driver's
+read-turn allowance should not expire at the same time or earlier. The
+additional second provides client-side headroom, not a guarantee that every
+request completes within six seconds.
+
+This budget applies to source planning/read execution, not application handler
+duration or checkpoint persistence. It is also separate from the default
+five-second delay after an idle read, which remains unchanged.
+
+Validate this boundary with a controlled read that completes after five seconds
+but before six seconds, and a read that remains pending when the six-second
+budget expires. The former must not be canceled by a five-second turn deadline;
+the latter must follow the source-read timeout path.
 
 Deferred deadline failures are maintenance failures, not source-read throttling
 or source-topology signals. A failed checkpoint must not cause recovery of an
