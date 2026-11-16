@@ -77,6 +77,10 @@ Otherwise the folder is a snapshot.
 - **Trial**: the spec's summary, backend, profile, capabilities, and outcome,
   with the error, panic, and backtrace, or the skip or known-issue reason.
   Tabs show:
+  - **Events** (the default): the requests view below, with the trial's
+    logs interleaved by time at or above the chosen level. Time order
+    approximates causal order; it doesn't prove it. Logs also appear as
+    ticks in a lane under the timeline.
   - **Requests**: a timeline with one lane per client (`spec` or `harness`)
     and region, where requests in flight together get separate rows, so
     parallel requests such as hedges are visible. Times count from the start
@@ -89,9 +93,7 @@ Otherwise the folder is a snapshot.
     table of the same requests lists each one's overlaps. Select a request in
     either to see its URL, timing, overlaps, activity ID, and bodies. JSON is
     pretty-printed, binary bodies are shown as hex, and bodies cosspec cut
-    short are marked. **Show logs** interleaves the trial's logs with the
-    requests by time, at or above the chosen level, and adds them as ticks in
-    a lane under the timeline. Logs are hidden by default.
+    short are marked.
   - **Resources**: each account, database, and container, and whether it
     was created or borrowed from the pool.
   - **Logs**: every captured log, filtered by level, target, or text, with

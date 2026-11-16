@@ -22,7 +22,7 @@ import {
 } from "../format";
 import { href, setQuery, type Route } from "../router";
 
-type Tab = "requests" | "resources" | "logs" | "spans" | "raw";
+type Tab = "events" | "requests" | "resources" | "logs" | "spans" | "raw";
 
 /** One trial: what it checks, how it ended, and every HTTP request it made. */
 export function TrialScreen(props: {
@@ -60,7 +60,7 @@ export function TrialScreen(props: {
             </div>
         );
 
-    const tab = (route.query.get("tab") as Tab | null) ?? "requests";
+    const tab = (route.query.get("tab") as Tab | null) ?? "events";
     const selected = route.query.get("req");
     const known = result?.known_issue;
 
@@ -193,8 +193,8 @@ function TrialBody(props: {
     const [showHarness, setShowHarness] = useState(route.query.get("harness") === "1");
     const logs = result.logs ?? [];
     const spans = result.spans ?? [];
-    // Logs are hidden from the requests view unless asked for.
-    const showLogs = route.query.get("logs") === "1";
+    // Events interleave logs with requests; the Requests tab shows requests only.
+    const showLogs = tab === "events";
     const loglevel = route.query.get("loglevel");
     const minLevel: Level = isLevel(loglevel) ? loglevel : "debug";
     const shownLogs = useMemo(
@@ -230,6 +230,7 @@ function TrialBody(props: {
         if (r) setQuery(route, { tab: null, req: String(r.sequence) });
     };
     const tabs: [Tab, string][] = [
+        ["events", `Events (${result.http.length + logs.length})`],
         ["requests", `Requests (${result.http.length})`],
         ["resources", `Resources (${result.resources.length})`],
         ...(logs.length ? ([["logs", `Logs (${logs.length})`]] as [Tab, string][]) : []),
@@ -246,7 +247,7 @@ function TrialBody(props: {
                     </a>
                 ))}
             </div>
-            {tab === "requests" ? (
+            {tab === "events" || tab === "requests" ? (
                 <>
                     <div className="toolbar">
                         <label>
@@ -257,35 +258,20 @@ function TrialBody(props: {
                             />{" "}
                             Show harness requests
                         </label>
-                        {logs.length ? (
-                            <>
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        checked={showLogs}
-                                        onChange={(e) =>
-                                            setQuery(route, {
-                                                logs: e.currentTarget.checked ? "1" : null,
-                                            })
-                                        }
-                                    />{" "}
-                                    Show logs
-                                </label>
-                                {showLogs ? (
-                                    <LevelSelect
-                                        value={minLevel}
-                                        onChange={(l) =>
-                                            setQuery(route, {
-                                                loglevel: l === "debug" ? null : l,
-                                            })
-                                        }
-                                    />
-                                ) : null}
-                            </>
+                        {showLogs && logs.length ? (
+                            <LevelSelect
+                                value={minLevel}
+                                onChange={(l) =>
+                                    setQuery(route, { loglevel: l === "debug" ? null : l })
+                                }
+                            />
                         ) : null}
                         <span className="muted small">
                             Harness requests set up and tear down resources; spec requests are the
                             test's own.
+                            {showLogs
+                                ? " Events are ordered by time, which approximates but doesn't prove causal order."
+                                : null}
                         </span>
                     </div>
                     {http.length ? (
@@ -306,6 +292,7 @@ function TrialBody(props: {
                         <RequestTable
                             http={http}
                             logs={shownLogs}
+                            timeOnly={showLogs}
                             onActivity={selectActivity}
                             origin={origin}
                             concurrency={overlap}
@@ -338,7 +325,7 @@ function TrialBody(props: {
 
 function tabHref(route: Route, tab: Tab): string {
     const query: Record<string, string> = Object.fromEntries(route.query);
-    if (tab === "requests") delete query.tab;
+    if (tab === "events") delete query.tab;
     else query.tab = tab;
     return href(route.path, query);
 }
@@ -349,13 +336,16 @@ function RequestTable(props: {
     http: HttpJson[];
     /** Logs to interleave by time. Shown only when sorted by start time. */
     logs: LogJson[];
+    /** Only allow sorting by time, so logs always stay interleaved. */
+    timeOnly?: boolean;
     onActivity: (activityId: string) => void;
     origin: number;
     concurrency: Concurrency;
     selected: number | null;
     onSelect: (s: number) => void;
 }) {
-    const [sort, setSort] = useState<[SortKey, 1 | -1]>(["start", 1]);
+    const [chosen, setSort] = useState<[SortKey, 1 | -1]>(["start", 1]);
+    const sort: [SortKey, 1 | -1] = props.timeOnly && chosen[0] !== "start" ? ["start", 1] : chosen;
     const rows = useMemo(() => {
         const key = (r: HttpJson): number => {
             switch (sort[0]) {
@@ -375,17 +365,20 @@ function RequestTable(props: {
         return sort[0] === "start"
             ? interleave(sorted, props.logs, sort[1] === -1)
             : interleave(sorted, []);
-    }, [props.http, props.logs, sort]);
+    }, [props.http, props.logs, sort[0], sort[1]]);
 
-    const th = (key: SortKey, text: string) => (
-        <th
-            className="sortable"
-            onClick={() => setSort([key, sort[0] === key ? (-sort[1] as 1 | -1) : 1])}
-        >
-            {text}
-            {sort[0] === key ? (sort[1] === 1 ? " ▲" : " ▼") : ""}
-        </th>
-    );
+    const th = (key: SortKey, text: string) =>
+        props.timeOnly && key !== "start" ? (
+            <th>{text}</th>
+        ) : (
+            <th
+                className="sortable"
+                onClick={() => setSort([key, sort[0] === key ? (-sort[1] as 1 | -1) : 1])}
+            >
+                {text}
+                {sort[0] === key ? (sort[1] === 1 ? " ▲" : " ▼") : ""}
+            </th>
+        );
 
     return (
         <table className="grid compact requests">
