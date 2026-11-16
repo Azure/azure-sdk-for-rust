@@ -1148,6 +1148,8 @@ impl CosmosDriver {
             timeout: None,
             #[cfg(feature = "fault_injection")]
             evaluation_collector: None,
+            #[cfg(feature = "__internal_transport_observer")]
+            observer_context: None,
         };
         cosmos_headers::apply_cosmos_headers(&mut request, user_agent, client_id);
         request.headers.insert(
@@ -1741,18 +1743,9 @@ impl CosmosDriver {
         // construction time) is never wrapped, so rules targeting the
         // initial account-metadata probe only take effect on post-bootstrap
         // refreshes — matching the previous runtime-level FI semantics.
-        #[cfg(all(
-            feature = "fault_injection",
-            not(feature = "__internal_transport_observer")
-        ))]
+        #[cfg(feature = "fault_injection")]
         let fault_injection_enabled =
             options.fault_injection_rules().is_some() || runtime.fault_injection_enabled();
-        // An observer reads the operation/region tags that the pipeline only
-        // stamps when fault injection is enabled.
-        #[cfg(feature = "__internal_transport_observer")]
-        let fault_injection_enabled = options.fault_injection_rules().is_some()
-            || runtime.fault_injection_enabled()
-            || options.transport_observer().is_some();
         let http_client_factory: Arc<
             dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
         > = {
@@ -1778,11 +1771,12 @@ impl CosmosDriver {
         let http_client_factory: Arc<
             dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
         > = match options.transport_observer() {
-            Some(observer) => Arc::new(crate::transport_observer::ObservingHttpClientFactory::new(
-                http_client_factory,
-                Arc::clone(observer),
-                options.fault_injection_rules().is_none() && !runtime.fault_injection_enabled(),
-            )),
+            Some(observer) => Arc::new(
+                crate::pipeline::transport::transport_observer::ObservingHttpClientFactory::new(
+                    http_client_factory,
+                    Arc::clone(observer),
+                ),
+            ),
             None => http_client_factory,
         };
 
@@ -4896,6 +4890,8 @@ async fn probe_endpoint_connectivity(
         timeout: None,
         #[cfg(feature = "fault_injection")]
         evaluation_collector: None,
+        #[cfg(feature = "__internal_transport_observer")]
+        observer_context: None,
     };
     cosmos_headers::apply_cosmos_headers(&mut request, user_agent, client_id);
 

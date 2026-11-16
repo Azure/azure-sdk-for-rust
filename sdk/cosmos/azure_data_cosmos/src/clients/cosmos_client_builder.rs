@@ -259,7 +259,6 @@ impl CosmosClientBuilder {
     ///
     /// **Unsupported internal API** for spec-test harnesses; no stability guarantees.
     #[cfg(feature = "__internal_transport_observer")]
-    #[doc(hidden)]
     pub fn with_transport_observer(
         mut self,
         observer: Arc<dyn azure_data_cosmos_driver::transport_observer::TransportObserver>,

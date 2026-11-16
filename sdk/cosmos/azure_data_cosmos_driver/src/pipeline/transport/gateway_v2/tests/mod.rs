@@ -82,6 +82,8 @@ fn signed_request(body: Option<&[u8]>) -> HttpRequest {
         timeout: None,
         #[cfg(feature = "fault_injection")]
         evaluation_collector: None,
+        #[cfg(feature = "__internal_transport_observer")]
+        observer_context: None,
     }
 }
 

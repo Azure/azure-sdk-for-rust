@@ -42,6 +42,8 @@ pub(crate) mod request_signing;
 pub(crate) mod reqwest_transport_client;
 mod sent_status;
 mod sharded_transport;
+#[cfg(feature = "__internal_transport_observer")]
+pub mod transport_observer;
 pub(crate) mod types;
 
 pub(crate) use authorization::AuthorizationContext;
@@ -104,6 +106,13 @@ pub(crate) async fn execute(
             }
         };
         diagnostics::start_transport(&mut request_diagnostics);
+
+        #[cfg(feature = "__internal_transport_observer")]
+        let prepared = transport_observer::attach_context(
+            prepared,
+            &request,
+            progress.execution_context(request.execution_context),
+        );
 
         #[cfg(feature = "fault_injection")]
         let (prepared, collector) = fault_injection::attach_collector(

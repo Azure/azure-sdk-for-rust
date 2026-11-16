@@ -826,6 +826,8 @@ mod tests {
                 timeout: None,
                 #[cfg(feature = "fault_injection")]
                 evaluation_collector: None,
+                #[cfg(feature = "__internal_transport_observer")]
+                observer_context: None,
             },
             &GatewayV2Headers {
                 auth_context: &context,
@@ -1153,6 +1155,8 @@ mod tests {
             timeout: None,
             #[cfg(feature = "fault_injection")]
             evaluation_collector: None,
+            #[cfg(feature = "__internal_transport_observer")]
+            observer_context: None,
         };
         let auth_context = AuthorizationContext::new(
             Method::Get,
@@ -1632,6 +1636,8 @@ mod tests {
                             timeout: None,
                             #[cfg(feature = "fault_injection")]
                             evaluation_collector: None,
+                            #[cfg(feature = "__internal_transport_observer")]
+                            observer_context: None,
                         };
                         let auth_context = AuthorizationContext::new(
                             Method::Post,

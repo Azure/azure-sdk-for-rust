@@ -79,6 +79,8 @@ pub(super) async fn prepare(
         timeout: None,
         #[cfg(feature = "fault_injection")]
         evaluation_collector: None,
+        #[cfg(feature = "__internal_transport_observer")]
+        observer_context: None,
     };
     let timeout = request.deadline.request_timeout(clock.now());
     tracing::trace!(

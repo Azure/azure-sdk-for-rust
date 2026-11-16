@@ -15,7 +15,7 @@ use crate::{
 #[cfg(feature = "fault_injection")]
 use crate::fault_injection::FaultInjectionRule;
 #[cfg(feature = "__internal_transport_observer")]
-use crate::transport_observer::TransportObserver;
+use crate::pipeline::transport::transport_observer::TransportObserver;
 
 /// Configuration options for a Cosmos DB driver instance.
 ///
@@ -142,7 +142,6 @@ impl DriverOptions {
 
     /// Returns the transport observer, if one was installed.
     #[cfg(feature = "__internal_transport_observer")]
-    #[doc(hidden)]
     pub fn transport_observer(&self) -> Option<&Arc<dyn TransportObserver>> {
         self.transport_observer.as_ref()
     }
@@ -295,7 +294,6 @@ impl DriverOptionsBuilder {
     ///
     /// **Unsupported internal API** for test harnesses; no stability guarantees.
     #[cfg(feature = "__internal_transport_observer")]
-    #[doc(hidden)]
     pub fn with_transport_observer(mut self, observer: Arc<dyn TransportObserver>) -> Self {
         self.transport_observer = Some(observer);
         self

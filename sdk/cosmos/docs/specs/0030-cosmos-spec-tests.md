@@ -521,21 +521,32 @@ proof from the wire. For example, hedged requests must actually overlap.
 
 ### Driver hook
 
-`azure_data_cosmos_driver::TransportObserver` (feature
-`__internal_transport_observer`):
+`azure_data_cosmos_driver::transport_observer::TransportObserver` (feature
+`__internal_transport_observer`) lives beside the transport pipeline in
+`src/pipeline/transport/transport_observer.rs`:
 
 - `on_start(&HttpExchange)` reports the sequence number, a monotonic start
-  `Instant`, method, URL, operation, region, activity ID, and request body.
+  `Instant`, method, URL, activity ID, and request body. It also reports the
+  logical request: operation, operation and resource type, transport mode,
+  execution context, region, effective partition key, consistency level,
+  read consistency strategy, and headers.
 - `on_complete(&HttpExchange, &HttpOutcome)` reports a monotonic end
   `Instant`, the outcome (a response with status and sub-status, a transport
   error, or cancellation), and the response body when a response arrived.
 
 The observer wraps the transport's HTTP client factory **outside** fault
-injection. Injected delays therefore count as wire time, and injected
-responses are visible as such. Cancellation is detected when the request
-future is dropped, which is how hedging abandons the losing leg.
-`CosmosClientBuilder::with_transport_observer` is `#[doc(hidden)]` and exists
-only when the feature is on.
+injection but below transport sharding, so it sees every wire request.
+Injected delays therefore count as wire time, and injected responses are
+visible as such. Cancellation is detected when the request future is
+dropped, which is how hedging abandons the losing leg.
+
+Gateway 2.0 moves most headers into the RNTBD payload. So the transport
+pipeline stores a snapshot of the logical request on each `HttpRequest`, in a
+feature-gated field, and the observer reads the logical data from it. It
+also decodes Gateway 2.0 responses before reporting status and body.
+Requests sent outside the transport pipeline, such as account-metadata
+refreshes, carry no logical data. `CosmosClientBuilder::with_transport_observer`
+exists only when the feature is on.
 
 ### `http_tap` module
 

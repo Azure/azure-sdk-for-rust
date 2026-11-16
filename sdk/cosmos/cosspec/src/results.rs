@@ -20,6 +20,7 @@ use serde::Serialize;
 use std::{
     backtrace::Backtrace,
     cell::RefCell,
+    collections::BTreeMap,
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -219,6 +220,18 @@ struct HttpJson {
     method: String,
     url: String,
     operation: Option<String>,
+    operation_type: Option<String>,
+    resource_type: Option<String>,
+    /// `Gateway` or `GatewayV2`.
+    transport_mode: Option<String>,
+    /// Why the SDK sent the request, such as `Hedging`.
+    execution_context: Option<String>,
+    /// Hex-encoded.
+    effective_partition_key: Option<String>,
+    consistency_level: Option<String>,
+    read_consistency_strategy: Option<String>,
+    /// The logical request headers, before signing and Gateway 2.0 framing.
+    headers: Option<BTreeMap<String, String>>,
     region: Option<String>,
     /// The region's alias, such as `PrimaryReadWrite`.
     region_alias: Option<String>,
@@ -298,6 +311,19 @@ impl HttpJson {
             method: record.method,
             url: record.url,
             operation: record.operation,
+            operation_type: record.operation_type.map(|t| t.to_string()),
+            resource_type: record.resource_type.map(|t| t.to_string()),
+            transport_mode: record.transport_mode.map(str::to_owned),
+            execution_context: record.execution_context.map(|c| c.to_string()),
+            effective_partition_key: record.effective_partition_key.map(|k| k.to_hex()),
+            consistency_level: record.consistency_level.map(str::to_owned),
+            read_consistency_strategy: record.read_consistency_strategy.map(|s| s.to_string()),
+            headers: record.headers.map(|headers| {
+                headers
+                    .iter()
+                    .map(|(name, value)| (name.as_str().to_owned(), value.as_str().to_owned()))
+                    .collect()
+            }),
             region: record.region,
             region_alias: record.region_alias,
             activity_id: record.activity_id,

@@ -11,8 +11,12 @@
 //! This module depends only on `std` and the driver's `transport_observer` hook so
 //! it can move into its own crate later.
 
-use azure_data_cosmos_driver::transport_observer::{
-    HttpExchange, HttpOutcome, HttpOutcomeKind, TransportObserver,
+use azure_core::http::headers::Headers;
+use azure_data_cosmos_driver::{
+    models::{EffectivePartitionKey, OperationType, ResourceType},
+    options::ReadConsistencyStrategy,
+    transport_observer::{HttpExchange, HttpOutcome, HttpOutcomeKind, TransportObserver},
+    ExecutionContext,
 };
 use bytes::Bytes;
 use std::{
@@ -30,9 +34,25 @@ pub struct HttpRecord {
     pub method: String,
     /// Full request URL.
     pub url: String,
-    /// Logical operation, for example `ReadItem`, when the SDK tagged one.
+    /// Logical operation, for example `ReadItem`, when known.
     pub operation: Option<String>,
-    /// Target region name as the SDK tagged it, for example `eastus`.
+    /// The operation type, for example `Read`.
+    pub operation_type: Option<OperationType>,
+    /// The targeted resource type, for example `Document`.
+    pub resource_type: Option<ResourceType>,
+    /// The transport mode: `Gateway` or `GatewayV2`.
+    pub transport_mode: Option<&'static str>,
+    /// Why the SDK sent the request, for example `Hedging`.
+    pub execution_context: Option<ExecutionContext>,
+    /// The effective partition key the request targets.
+    pub effective_partition_key: Option<EffectivePartitionKey>,
+    /// The effective consistency level, for example `Session`.
+    pub consistency_level: Option<&'static str>,
+    /// The read consistency strategy the caller requested.
+    pub read_consistency_strategy: Option<ReadConsistencyStrategy>,
+    /// The logical request headers, before signing and Gateway 2.0 framing.
+    pub headers: Option<Headers>,
+    /// Target region name as the SDK routed it, for example `eastus`.
     pub region: Option<String>,
     /// The alias of [`region`](Self::region), from [`HttpTap::with_region_aliases`].
     pub region_alias: Option<String>,
@@ -151,6 +171,14 @@ impl HttpTap {
             method: exchange.method().to_string(),
             url: exchange.url().to_string(),
             operation: exchange.operation().map(str::to_owned),
+            operation_type: exchange.operation_type(),
+            resource_type: exchange.resource_type(),
+            transport_mode: exchange.transport_mode(),
+            execution_context: exchange.execution_context(),
+            effective_partition_key: exchange.effective_partition_key().cloned(),
+            consistency_level: exchange.consistency_level(),
+            read_consistency_strategy: exchange.read_consistency_strategy(),
+            headers: exchange.headers().cloned(),
             region: exchange.region().map(str::to_owned),
             region_alias: exchange
                 .region()
