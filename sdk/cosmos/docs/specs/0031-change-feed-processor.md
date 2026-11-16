@@ -232,6 +232,52 @@ rotates ready leases rather than always selecting the same one. Deferred
 progress may still replay after interruption: queue readiness is not proof of
 durable persistence.
 
+### 6.3 Parallel workers have independent queues
+
+Each running worker has its own SDK consumer and driver ready-lease queue.
+In this example, worker W1 owns ranges A and B; worker W2 owns C and D.
+The workers can run in the same process or separate processes.
+
+```text
+SDK boundary                        Driver boundary
+----------------------------------  -----------------------------------------
+Worker W1                           Worker W1
+  SDK consumer                      Ready-lease queue: [A, B]
+       | Request batch ------------------> Select A; queue becomes [B]
+       | <---------------- Batch A ------- Lease processor A reads source
+       | Run handler A                     A waits for acknowledgment
+       | Acknowledge A ------------------> Record progress; persist per policy
+       | <---------- Completion ---------- A may rejoin: [B, A]
+       |
+       |       W1 and W2 progress concurrently
+       |
+Worker W2                           Worker W2
+  SDK consumer                      Ready-lease queue: [C, D]
+       | Request batch ------------------> Select C; queue becomes [D]
+       | <---------------- Batch C ------- Lease processor C reads source
+       | Run handler C                     C waits for acknowledgment
+       | Acknowledge C ------------------> Record progress; persist per policy
+       | <---------- Completion ---------- C may rejoin: [D, C]
+
+                                    W1 lease coordination --+
+                                                             |
+                                    W2 lease coordination --+--> Lease container
+                                                                 Shared owners
+                                                                 and checkpoints
+```
+
+The queue contents are illustrative: B or D may already have been selected
+before A or C registers again. Each SDK consumer handles one batch at a time,
+but a slow W1 handler does not prevent W2 from processing its own batch.
+Lease renewal and balancing continue independently in both workers.
+
+There is no shared queue across workers. If W2 acquires A from W1, W1 closes
+the old delivery session when ownership loss is detected. W2 creates a new
+lease processor for A and registers it in W2's queue when ready; no queue entry
+or in-flight batch is transferred between workers. Old receipts cannot update
+the replacement owner's progress. Already-issued application effects can
+overlap before loss is detected and must tolerate replay.
+
 ## 7. What does the Rust SDK expose?
 
 The application configures five dimensions. The SDK owns its public types;
