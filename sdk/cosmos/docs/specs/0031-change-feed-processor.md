@@ -529,6 +529,13 @@ repeated exhaustion on the same prefix. Validate full planned coverage before
 publishing `.info`, and test interrupted creation and competing initializers
 explicitly. The proportional budget and scalable completion design remain open.
 
+**Open question: continuing from existing lease state.** Can initialization
+continue from lease documents already present, creating only missing leases
+while preserving existing ownership and saved continuation tokens? What checks
+of workload identity, feed mode, lease schema, and range coverage are required
+before trusting that state, and how should partial or incompatible state be
+handled?
+
 #### 6.3.5 Relationship to the partition key range cache
 
 The **partition key range cache** is the driver's shared routing inventory of
