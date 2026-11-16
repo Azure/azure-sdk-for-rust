@@ -1,6 +1,10 @@
-# Rust Change Feed Processor design
+# Rust change feed processor
 
-## Problem
+> **Status:** Draft
+> **Scope:** Rust SDK processing and the shared cross-language driver engine
+> **Crates:** `azure_data_cosmos`, `azure_data_cosmos_driver`, `azure_data_cosmos_driver_native`
+
+## 1. Problem
 
 We are building a Rust-based Cosmos DB Change Feed Processor that also provides
 a shared engine for language shims to build their own Change Feed Processor
@@ -14,18 +18,18 @@ describes its purpose:
 
 > "simplify the process of reading the change feed and distribute the event processing across multiple consumers effectively."
 
-## Functional requirements
+## 2. Functional requirements
 
 - Deliver changes from each physical partition with **at-least-once delivery
   semantics**.
 - Monitor **all physical partitions within the configured scope**, including
   replacement partitions after topology changes.
 
-## Non-functional requirements
+## 3. Non-functional requirements
 
 - Distribute processing load equally across cooperating workers.
 
-## How would SDKs process changes using the shared Rust engine?
+## 4. How would SDKs process changes using the shared Rust engine?
 
 The **SDK** is the application-facing library; the **driver** is the shared
 engine beneath it. A **workload** is the cooperating processors reading one
@@ -59,7 +63,7 @@ records are described in the next sections.
 - Instead, each SDK or shim invokes its application handler and acknowledges
   successful processing to the shared driver.
 
-### Existing callback implementations
+### 4.1 Existing callback implementations
 
 The following excerpts show direct handler invocation, not complete methods.
 
@@ -87,7 +91,7 @@ if (consumer != null) {
 These handlers execute inside their SDKs' CFP pipelines, not a separate
 cross-language driver.
 
-### Shared Rust engine
+### 4.2 Shared Rust engine
 
 The SDK owns application callback execution. The shared driver engine owns
 lease coordination, feed reads, and checkpoint persistence.
@@ -191,10 +195,10 @@ Some(Ok(Ok(()))) => {
 
 This match arm runs only after deserialization and handler execution succeed
 without an unwinding panic. The persistence sequence is explained in
-[delivery and checkpointing](#how-would-batch-requests-delivery-and-checkpointing-stay-coordinated);
-failure outcomes are collected in [failure handling](#how-would-failures-be-handled-and-exposed-to-the-application).
+[delivery and checkpointing](#8-how-would-batch-requests-delivery-and-checkpointing-stay-coordinated);
+failure outcomes are collected in [failure handling](#11-how-would-failures-be-handled-and-exposed-to-the-application).
 
-## How is progress tracked in the Change Feed Processor?
+## 5. How is progress tracked in the Change Feed Processor?
 
 **Progress is the position in each partition range's change feed up to which
 changes have been successfully processed.**
@@ -214,9 +218,9 @@ in a separate Cosmos DB **lease container**. This shared record lets workers
 coordinate responsibility and resume after restart or ownership change rather
 than rely only on a worker's memory.
 
-## How would a workload be initialized before processing?
+## 6. How would a workload be initialized before processing?
 
-### Startup initialization requirements
+### 6.1 Startup initialization requirements
 
 **Bootstrap prepares a workload so workers can begin processing safely.**
 It must:
@@ -228,7 +232,7 @@ It must:
 - Allow interrupted initialization to be completed by a later attempt.
 - Report initialization failure rather than declare readiness prematurely.
 
-### Current implementation
+### 6.2 Current implementation
 
 During startup, the driver initializes the workload:
 it discovers the source's partition ranges and ensures a lease document exists
@@ -238,9 +242,9 @@ New leases have no owner or saved position. Workers acquire them, read changes
 using the configured starting position, and persist successfully processed
 progress. Existing lease progress is preserved when the workload resumes.
 
-### How would workers coordinate bootstrap?
+### 6.3 How would workers coordinate bootstrap?
 
-#### Identify the workload
+#### 6.3.1 Identify the workload
 
 Within the supplied lease container, the workload namespace combines the
 source account origin, source container RID, and workload name. A durable
@@ -265,7 +269,7 @@ These Rust snippets are focused excerpts from
 `azure_data_cosmos_driver/src/change_feed_processor/bootstrap.rs`, not
 standalone programs.
 
-#### Elect a designated initializer and check completion
+#### 6.3.2 Elect a designated initializer and check completion
 
 An **ETag** is a document-version token supplied by Cosmos DB. A conditional
 write or delete can require that version still match, preventing it from
@@ -376,7 +380,7 @@ flowchart TD
 The diagram summarizes coordination, not a transaction. Claim expiry,
 service failures, or the caller deadline can end an attempt.
 
-#### Publish readiness only after initialization
+#### 6.3.3 Publish readiness only after initialization
 
 The current ordering in `bootstrap.rs` is:
 
@@ -385,6 +389,21 @@ self.create_leases(&plan, claim).await?;
 self.check_claim(claim).await?;
 self.ensure_record(&self.record("info")).await
 ```
+
+`create_leases()` already checks the claim **before each lease-create
+attempt**. The check shown after that call is an additional check before
+publishing readiness, because the claim may have expired or been replaced
+during lease creation:
+
+```text
+check claim -> create first lease
+check claim -> create next lease
+...
+check claim -> publish completion marker
+```
+
+The final check is not the first ownership check. Claim validation and the
+following write are separate requests, not an atomic fenced transaction.
 
 An unresolved failure prevents new readiness publication. Existing
 lease-create conflicts are accepted without reading or validating the
@@ -416,7 +435,7 @@ if !self.store.create(&expected.record.id, &expected).await? {
 The storage helper returns `false` for a create conflict; other failures
 propagate through `?`. No existing lease is overwritten.
 
-#### Allocate time for large workloads
+#### 6.3.4 Allocate time for large workloads
 
 **Requirement: the overall bootstrap time budget should scale with the number
 of lease documents that need to be created**, rather than require customers
@@ -453,7 +472,7 @@ operations still need bounds, and progress, stalls, throttling, and takeover
 rules need explicit definitions. No proportional-duration formula or scalable
 completion guarantee is currently implemented.
 
-#### Relationship to the partition key range cache
+#### 6.3.5 Relationship to the partition key range cache
 
 The **partition key range cache** is the driver's shared routing inventory of
 the source container's physical partition ranges. Bootstrap uses it to build
@@ -503,7 +522,7 @@ an atomic inventory of all physical partitions at the instant readiness is
 published. Subsequent source topology changes are handled by processing
 recovery.
 
-#### Recover when the initializer fails
+#### 6.3.6 Recover when the initializer fails
 
 The persisted plan and successfully created leases survive the designated
 initializer. A later contender can become initializer and reuse that state,
@@ -511,7 +530,7 @@ preserving existing lease ownership and saved progress.
 
 This supports recovery from partial initialization, but it is not a saved
 cursor: the replacement traverses the plan again. Inventory freshness has the
-[cache limitation](#relationship-to-the-partition-key-range-cache) described above.
+[cache limitation](#635-relationship-to-the-partition-key-range-cache) described above.
 
 `initialize_and_release()` attempts lock release after the bounded
 initialization result, including initialization failure:
@@ -529,7 +548,7 @@ The following result handling preserves the original initialization error
 and logs a cleanup error if release also fails. If initialization succeeded,
 a release error is returned instead.
 
-#### Why the initialization lock needs TTL
+#### 6.3.7 Why the initialization lock needs TTL
 
 A crashed initializer cannot release its lock. Document TTL prevents an
 abandoned lock from blocking initialization indefinitely and allows the next
@@ -541,9 +560,9 @@ simply extending an attempt beyond the lock TTL. Persistent partial recovery
 is implemented; progress-aware duration and stronger initialization fencing
 remain open.
 
-## How would leases be allocated across workers?
+## 7. How would leases be allocated across workers?
 
-### Worker lifecycle
+### 7.1 Worker lifecycle
 
 1. **Construct:** the application supplies the source and lease containers,
    workload name, worker name, handler, and processing options.
@@ -561,18 +580,18 @@ remain open.
 7. **Cancel or crash:** end processing without a confirmed graceful drain.
 
 The detailed completion and restart rules appear in
-[shutdown and restart](#how-would-a-worker-stop-and-resume-processing).
+[shutdown and restart](#10-how-would-a-worker-stop-and-resume-processing).
 
-### Recording ownership
+### 7.2 Recording ownership
 
 To **acquire** a lease, a worker conditionally writes its own name as owner in
 the lease document. Only after that write succeeds does it start processing
 the range. Cooperating workers share the workload name and use distinct worker
-names; the SDK constructor inputs are listed in the [public API](#how-would-an-application-configure-and-control-the-rust-processor).
+names; the SDK constructor inputs are listed in the [public API](#13-how-would-an-application-configure-and-control-the-rust-processor).
 
 The following are focused implementation excerpts, not standalone programs.
 
-### Preventing stale or competing ownership writes
+### 7.3 Preventing stale or competing ownership writes
 
 A lease replacement uses the ETag condition introduced during bootstrap.
 `If-Match` is the request condition requiring the stored ETag to match the
@@ -604,7 +623,7 @@ changes racing the write. Retried write conflicts recheck ownership. These
 checks are called **fencing**: an old ownership turn cannot mutate replacement
 ownership or saved progress.
 
-### Selecting leases across workers
+### 7.4 Selecting leases across workers
 
 Workers periodically read the workload's lease documents, count leases held
 by healthy owners, and calculate their target share. They prefer available
@@ -641,7 +660,7 @@ Source: `processing.rs`; selection policy:
 The first balancing pass has no initial delay; later passes use the acquisition
 interval. An empty result does not stop the worker.
 
-### Maintaining ownership while processing
+### 7.5 Maintaining ownership while processing
 
 **Renewal** is a periodic conditional lease update that keeps the owner's claim
 alive. It does not advance the saved change feed position. Successful checkpoint
@@ -669,7 +688,7 @@ futures::pin_mut!(processing, renewing);
 
 Source: `processing.rs`, `supervise()` and `renew()`.
 
-### Detecting ownership loss and cleaning up
+### 7.6 Detecting ownership loss and cleaning up
 
 Ownership loss is not immediately pushed to the old worker. Its next fenced
 lease operation discovers a different owner or ownership-turn identifier.
@@ -696,7 +715,7 @@ result = renewing => {
 Only an explicit source-feed topology failure can initiate source-range recovery.
 Cancellation cannot undo application effects already performed.
 
-### How start and stop affect rebalancing
+### 7.7 How start and stop affect rebalancing
 
 Starting launches a new worker's balancing loop. Stopping prevents that worker
 from acquiring more leases and eventually releases its existing ownership.
@@ -710,9 +729,9 @@ Released leases become available on subsequent balancing passes, not by direct
 assignment from `stop()`. Forced cancellation attempts cleanup; after a crash,
 workers must wait until eligibility rules permit takeover. The shutdown API
 and cleanup sequence are shown once in
-[shutdown and restart](#how-would-a-worker-stop-and-resume-processing).
+[shutdown and restart](#10-how-would-a-worker-stop-and-resume-processing).
 
-## How would batch requests, delivery, and checkpointing stay coordinated?
+## 8. How would batch requests, delivery, and checkpointing stay coordinated?
 
 The SDK requests one batch using the driver's
 `read_next_change_feed_batch()` method. Each acquired partition range registers
@@ -728,7 +747,7 @@ Each acquisition has a separate **delivery session**, its local state and
 cleanup scope. Its delivery state controls whether it may register, read, or
 deliver again.
 
-### Register readiness and grant one read turn
+### 8.1 Register readiness and grant one read turn
 
 The SDK's `consume()` loop shown in the first section waits on `read_next_change_feed_batch()`.
 Meanwhile, the acquired lease's **feed poller**, the driver operation that
@@ -751,7 +770,7 @@ cancellation.
 Each turn creates a new channel pair. **The channel provides in-memory
 coordination, not durable delivery or a timeout.**
 
-### Track the acquisition's delivery state
+### 8.2 Track the acquisition's delivery state
 
 | State | Meaning | Next action |
 | --- | --- | --- |
@@ -767,7 +786,7 @@ poller registers again. `AwaitingAcknowledgment` covers SDK deserialization,
 handler execution, and any required checkpoint write; it does not distinguish
 those activities diagnostically.
 
-### How source-read outcomes change delivery state
+### 8.3 How source-read outcomes change delivery state
 
 **Each SDK `read_next_change_feed_batch()` call returns at most one batch.**
 For an authorized range turn, the poller executes the read plan once and
@@ -821,7 +840,7 @@ Implementation anchors: the `idle` branch, throttle-error branch, and
 `session.deliver(...)` in `poll_feed()`; the response-channel retry loop in
 `ChangeFeedRequestDistributor::read_next_change_feed_batch()`.
 
-### Visualizing the waiting list and read outcomes
+### 8.4 Visualizing the waiting list and read outcomes
 
 The queue contains waiting registrations, not batches. With A and B ready,
 the front is on the left:
@@ -879,7 +898,7 @@ If the old acquisition already left the queue to read or deliver, cancellation
 and receipt handling govern that in-flight work. The next subsection explains
 the ownership checks; external callback effects cannot be undone.
 
-#### Multiple workers have independent queues
+#### 8.4.1 Multiple workers have independent queues
 
 Each `Processor::start()` creates its own shared coordination state and
 `ChangeFeedRequestDistributor`. Workers can share a `CosmosDriver` client
@@ -914,9 +933,9 @@ acquisition's registration. W2 creates a fresh delivery session and registers
 A in its own queue when ready. **No queue entry is transferred directly between
 workers.**
 
-### How ownership loss affects queue membership
+### 8.5 How ownership loss affects queue membership
 
-The [ownership checks](#preventing-stale-or-competing-ownership-writes)
+The [ownership checks](#73-preventing-stale-or-competing-ownership-writes)
 operate at lease-document writes, not queue selection. When a fenced operation
 detects loss, supervision cancels
 processing and ends that session.
@@ -932,7 +951,7 @@ every source read.** Stale reads and callback overlap are possible before
 ownership loss is detected. Fencing protects stored ownership and progress;
 it cannot undo external application effects.
 
-### Tie successful processing to the next delivery
+### 8.6 Tie successful processing to the next delivery
 
 The SDK completes the batch's receipt only after successful deserialization
 and handler execution.
@@ -948,7 +967,7 @@ Checkpoint policy determines what acknowledgment completion requires:
   expires, or at an explicit/lifecycle barrier. Saved progress can therefore
   lag behind processed progress.
 
-#### How acknowledgment records safe progress
+#### 8.6.1 How acknowledgment records safe progress
 
 After the handler succeeds, SDK dispatch calls:
 
@@ -969,7 +988,7 @@ latest safe token, handled-change count, and time of the first unsaved
 progress. Later successful acknowledgments update the token and count without
 resetting that timestamp. No completed batch payload is retained.
 
-#### How Eager persists progress
+#### 8.6.2 How Eager persists progress
 
 Inside `poll_feed()`, the policy branch and delivery transition are:
 
@@ -1009,7 +1028,7 @@ ownership, and replaces the document using its ETag. A successful checkpoint
 installs updated local state and clears the pending progress. With no pending
 progress, `flush()` makes no write.
 
-#### How Deferred schedules persistence
+#### 8.6.3 How Deferred schedules persistence
 
 Deferred may acknowledge in memory before that write. `checkpoint_delay()`
 computes the time remaining from the first unsaved progress:
@@ -1033,7 +1052,7 @@ Deferred: callback success → pending progress → acknowledgment result
                                            → deadline or barrier → durable write
 ```
 
-#### Failure and replay boundaries
+#### 8.6.4 Failure and replay boundaries
 
 A required persistence failure returns an error and ends the affected
 acquisition rather than permitting its next batch through the success path.
@@ -1041,8 +1060,8 @@ For either policy, a timeout can be ambiguous: the server may have committed
 the write before the caller observed failure.
 
 The saved position and initial-start limitation are discussed in
-[restart and saved positions](#restart-and-saved-positions); application
-failure behavior is detailed in [failure handling](#how-would-failures-be-handled-and-exposed-to-the-application).
+[restart and saved positions](#103-restart-and-saved-positions); application
+failure behavior is detailed in [failure handling](#11-how-would-failures-be-handled-and-exposed-to-the-application).
 
 ```mermaid
 sequenceDiagram
@@ -1071,12 +1090,12 @@ sequenceDiagram
     Note over SDK,P: SDK requests again and poller re-registers for another turn
 ```
 
-### Preserve the ordering during failures
+### 8.7 Preserve the ordering during failures
 
 Idle or throttled source reads release demand without invoking the handler,
 allowing the same pending receive to try another eligible acquisition.
 Handler and checkpoint failures follow the outcomes described in
-[failure handling](#how-would-failures-be-handled-and-exposed-to-the-application).
+[failure handling](#11-how-would-failures-be-handled-and-exposed-to-the-application).
 
 Queue changes and delivery transitions are protected by mutexes. Network reads
 and callbacks run outside those short queue locks; lease renewal and checkpoint
@@ -1089,7 +1108,7 @@ one global batch and not a global memory limit.** Different workers progress
 independently. A replacement acquisition gets new delivery state, and stale
 ownership turns cannot update its saved progress.
 
-## How would partition splits and merges affect processing?
+## 9. How would partition splits and merges affect processing?
 
 A **physical partition split** replaces one source partition with smaller
 partitions. A **merge** combines physical partitions. The processor's leases
@@ -1100,7 +1119,7 @@ as the physical layout changes.
 checkpoint error or a background scan.** It affects the failed acquisition,
 not every worker or the workload's bootstrap records.
 
-### Stop the affected acquisition and settle safe progress
+### 9.1 Stop the affected acquisition and settle safe progress
 
 When source planning or execution reports a topology change, `poll_feed()`
 returns an explicitly tagged `PollError::SourceTopologyChange`. Its enclosing
@@ -1115,7 +1134,7 @@ Other acquisitions remain coordinated independently. The pending SDK receive
 can try another eligible acquisition when the failed read drops its reply
 sender.
 
-### Discover replacement ranges
+### 9.2 Discover replacement ranges
 
 `recover()` refreshes physical ranges overlapping the affected lease and
 intersects them with that lease's boundaries. It sorts the intersections and
@@ -1130,7 +1149,7 @@ reacquired and replanned.
 range leases can remain inside the merged physical partition, preserving
 their independent positions.
 
-### Ensure children before deleting the parent
+### 9.3 Ensure children before deleting the parent
 
 `split()` validates parent identity and child coverage, requires no pending
 checkpoint progress, and conditionally renews the parent:
@@ -1177,7 +1196,7 @@ Source-feed topology failure
 → acquire children through normal balancing
 ```
 
-### How ownership checks constrain recovery, checkpoints, and queue readiness
+### 9.4 How ownership checks constrain recovery, checkpoints, and queue readiness
 
 | Activity | Enforcement and effect |
 | --- | --- |
@@ -1185,7 +1204,7 @@ Source-feed topology failure
 | Parent deletion | Uses the parent's ETag. A competing parent mutation causes deletion to fail rather than deleting unconditionally. |
 | Detected ownership loss | Cancel and join old processing, close its delivery session, and remove its queue entries by object identity. A replacement session remains separate. |
 
-The general [queue and ownership rules](#how-ownership-loss-affects-queue-membership)
+The general [queue and ownership rules](#85-how-ownership-loss-affects-queue-membership)
 still apply during recovery: readiness is not proof of current ownership,
 and checkpoint writes use the previously described fencing.
 
@@ -1194,7 +1213,7 @@ must not remove the changed document. Child creation is create-only and
 preserves existing state, but the entire recovery is not one transaction or
 an uninterrupted ownership lock.
 
-### Interrupted recovery and replay
+### 9.5 Interrupted recovery and replay
 
 If a child operation fails, the parent is not deleted by this attempt. Already
 created children remain. If parent deletion fails, parent and children can
@@ -1204,19 +1223,19 @@ coexist until a later acquisition retries recovery.
 steps atomic.** Overlapping documents during partial recovery, repeated
 topology changes, and ownership races need explicit test coverage.
 Application-effect and replay limitations are collected in
-[failure handling](#how-would-failures-be-handled-and-exposed-to-the-application).
+[failure handling](#11-how-would-failures-be-handled-and-exposed-to-the-application).
 
 Implementation: `azure_data_cosmos_driver/src/change_feed_processor/processing/topology.rs`,
 `recover()`, `split()`, `checkpoint()`, and `has_replacements()`, together with
 `poll()` and `supervise()` in `processing.rs`.
 
-## How would a worker stop and resume processing?
+## 10. How would a worker stop and resume processing?
 
 **Requesting shutdown is different from confirming cleanup has finished.**
 The Rust SDK provides an awaitable graceful `stop()`; dropping the processor
 requests cancellation without waiting.
 
-### Graceful shutdown
+### 10.1 Graceful shutdown
 
 1. The SDK requests driver shutdown.
 2. The driver stops granting new read turns and acquiring new leases.
@@ -1243,7 +1262,7 @@ There is no implicit callback or overall graceful-stop timeout. A handler
 that never completes can prevent graceful drain. Canceling the application's
 wait does not mean cleanup has completed or stopped.
 
-### Forced cancellation and process failure
+### 10.2 Forced cancellation and process failure
 
 Dropping SDK lifecycle state explicitly requests forced driver shutdown:
 
@@ -1269,7 +1288,7 @@ The driver exposes awaitable `abort()` for forced cleanup; the Rust SDK does
 not expose that method. A graceful stop interrupted by forced shutdown reports
 the forced outcome rather than claiming a successful drain.
 
-### Restart and saved positions
+### 10.3 Restart and saved positions
 
 After its previous processing and cleanup finish, the SDK processor can be
 started again. Startup checks workload initialization and preserves existing
@@ -1278,22 +1297,22 @@ the configured initial position.
 
 Successfully processed changes whose position was not persisted may replay.
 Recovery uses the stored position, including after the
-[ambiguous checkpoint outcomes](#failure-and-replay-boundaries) described above.
+[ambiguous checkpoint outcomes](#864-failure-and-replay-boundaries) described above.
 
 **Current limitation:** with an initial `Now` start and no durable continuation,
 a restart can choose a later starting position. The default Deferred policy
 does not yet establish a durable initial anchor before relying on restart.
 
 Stopping one worker does not stop the workload's other workers.
-[Rebalancing](#how-start-and-stop-affect-rebalancing) explains when they discover
+[Rebalancing](#77-how-start-and-stop-affect-rebalancing) explains when they discover
 released leases.
 
-## How would failures be handled and exposed to the application?
+## 11. How would failures be handled and exposed to the application?
 
 Failures are handled at the stage that can distinguish their meaning.
 **An error is not an instruction to skip changes or advance a checkpoint.**
 
-### Source reads and lease maintenance
+### 11.1 Source reads and lease maintenance
 
 | Failure | Current handling | Application-facing effect |
 | --- | --- | --- |
@@ -1313,7 +1332,7 @@ Deferred deadline failures are maintenance failures, not source-read throttling
 or source-topology signals. A failed checkpoint must not cause recovery of an
 unrelated source partition.
 
-### Application handler failures
+### 11.2 Application handler failures
 
 SDK dispatch acknowledges only successful deserialization and handler completion.
 
@@ -1332,7 +1351,7 @@ and must tolerate replay and possible overlap. Fencing protects stored progress,
 not external effects already performed. Repeatedly failing items are not
 automatically skipped.
 
-### What the application observes
+### 11.3 What the application observes
 
 - SDK `start()` returns initialization errors and rejects duplicate startup on
   the same running processor object.
@@ -1352,7 +1371,7 @@ another eligible acquisition. If every acquisition repeatedly fails, receiving
 can remain pending while errors are logged; an application must not interpret
 that wait as proof of healthy processing.
 
-### Persistent failures and limits
+### 11.4 Persistent failures and limits
 
 The current worker can release and later reacquire a failing lease. There is
 no general acquisition-level suspension/backoff policy for deterministic
@@ -1365,7 +1384,7 @@ signals remains open design work.
 Handling unwinding panics, cancellation, request deadlines, and TTL recovery
 do not cover process aborts or non-yielding application code.
 
-## How would background tasks coordinate polling, renewal, and balancing?
+## 12. How would background tasks coordinate polling, renewal, and balancing?
 
 A **spawned task** is asynchronous work scheduled by the runtime. Within one
 worker, the SDK spawns a consumer task and the driver spawns a coordinator
@@ -1410,7 +1429,7 @@ operation is asynchronously pending, the coordinator can poll other ready
 futures. Concurrency does not require each activity to run simultaneously on
 a separate OS thread.
 
-### During normal feed processing
+### 12.1 During normal feed processing
 
 | Activity | What makes it run? | Interaction with other work |
 | --- | --- | --- |
@@ -1430,7 +1449,7 @@ mutex.** Source reads and SDK handlers do not hold that mutation lock.
 A slow lease-store write can therefore delay another mutation of that lease,
 even though its futures are polled concurrently.
 
-### During graceful feed-processing drain
+### 12.2 During graceful feed-processing drain
 
 Here, **drain** means finishing already-issued work during shutdown, not
 prefetching all remaining changes in the source container.
@@ -1463,22 +1482,22 @@ close new demand/acquisition
 This is coordinated completion, not a periodic global barrier. Each lease's
 supervisor settles its own work; the coordinator waits for all of them at
 shutdown. If renewal ends first, it cancels and joins processing before
-cleanup, using the [ownership-loss path](#detecting-ownership-loss-and-cleaning-up).
+cleanup, using the [ownership-loss path](#76-detecting-ownership-loss-and-cleaning-up).
 Forced cancellation and failures follow the
-[shutdown rules](#how-would-a-worker-stop-and-resume-processing), not the
+[shutdown rules](#10-how-would-a-worker-stop-and-resume-processing), not the
 successful-drain sequence.
 
 Implementation anchors: `run()`, `balance()`, `supervise()`, `renew()`, and
 `poll()` in `azure_data_cosmos_driver/src/change_feed_processor/processing.rs`;
 SDK `consume()` in `azure_data_cosmos/src/change_feed_processor/execution.rs`.
 
-## How would an application configure and control the Rust processor?
+## 13. How would an application configure and control the Rust processor?
 
 The public API is defined in
 `azure_data_cosmos/src/change_feed_processor.rs`; lifecycle methods are
 implemented in its private `execution.rs` module.
 
-### Supply the workload and application handler
+### 13.1 Supply the workload and application handler
 
 `ChangeFeedProcessorBuilder::new` requires six inputs:
 
@@ -1503,7 +1522,7 @@ The current API accepts function pointers, not closures capturing application
 state. This is a callback-shape restriction, separate from keeping callback
 execution in the SDK rather than the shared driver.
 
-### Choose processing options
+### 13.2 Choose processing options
 
 Builder setters return the builder so they can be chained. They configure
 behavior without starting processing.
@@ -1519,9 +1538,9 @@ behavior without starting processing.
 | `with_lease_verification_enabled_on_restart(enabled)` | Default false. Check the persisted initial coverage and recreate missing leases while preserving existing progress and replacement coverage. Invalid coverage fails startup. |
 
 There is no SDK callback-concurrency setter; the
-[processing flow](#shared-rust-engine) describes worker-level parallelism.
+[processing flow](#42-shared-rust-engine) describes worker-level parallelism.
 
-### Select Eager or Deferred checkpointing
+### 13.3 Select Eager or Deferred checkpointing
 
 Pass either policy to `with_checkpoint_policy()`. **Deferred is the default**;
 the convenience constructor uses a five-minute interval:
@@ -1552,7 +1571,7 @@ can succeed before persistence, so acknowledged changes may replay after
 interruption. For immediate per-batch persistence, select
 `ChangeFeedCheckpointPolicy::Eager`.
 
-### Choose where new leases begin reading
+### 13.4 Choose where new leases begin reading
 
 Saved lease progress takes precedence over all initial-start options.
 For leases without saved progress, the last start setter wins:
@@ -1566,9 +1585,9 @@ For leases without saved progress, the last start setter wins:
 
 `AllVersionsAndDeletes` does not support beginning or time-based starts.
 Initial `Now` without a durable saved position has the
-[restart limitation](#restart-and-saved-positions) described above.
+[restart limitation](#103-restart-and-saved-positions) described above.
 
-### Build, then start
+### 13.5 Build, then start
 
 The following is a usage excerpt. `source`, `leases`, and `handle_changes`
 represent an application's configured container clients and async handler:
@@ -1592,7 +1611,7 @@ processor.start().await?;
 `build()` consumes the builder and validates local configuration without I/O.
 `start()` then performs the initialization and lifecycle behavior below.
 
-### Inspect batch context and lifecycle
+### 13.6 Inspect batch context and lifecycle
 
 The handler's `ChangeFeedProcessorContext` exposes:
 
@@ -1616,11 +1635,11 @@ When the application is ready to shut down:
 processor.stop().await?;
 ```
 
-For drop/cancellation semantics, see [shutdown and restart](#how-would-a-worker-stop-and-resume-processing).
+For drop/cancellation semantics, see [shutdown and restart](#10-how-would-a-worker-stop-and-resume-processing).
 The Rust SDK does not expose `abort()` or a separate asynchronous error-handler
 registration method.
 
-## Open questions and scope limits
+## 14. Open questions and scope limits
 
 - **Partition-key prefix scope:** should a customer be able to restrict a
   workload to a partition-key prefix rather than the whole source container?
@@ -1638,7 +1657,7 @@ registration method.
 Prefix scope and process-until behavior are proposed use cases, not implemented
 processor options.
 
-## How would we iterate on and review changes?
+## 15. How would we iterate on and review changes?
 
 Build confidence through progressively harder scenarios, rather than reviewing
 every component at once. **Start with Eager to isolate delivery and ownership
@@ -1660,7 +1679,7 @@ Include merges in the topology stages and exercise both feed modes where the
 scenario is supported. Document unsupported scenarios rather than weakening
 their expected results.
 
-### Review each increment against its contract
+### 15.1 Review each increment against its contract
 
 For each scenario:
 
