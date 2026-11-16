@@ -979,9 +979,10 @@ impl LocationStateStore {
     pub fn start_failback_loop(self: &Arc<Self>) {
         let weak_store: Weak<LocationStateStore> = Arc::downgrade(self);
         let config = self.snapshot().partitions.config.clone();
-        self.background_task_manager.spawn(async move {
-            failback_loop(weak_store, config).await;
-        });
+        self.background_task_manager
+            .spawn(tracing::Instrument::in_current_span(async move {
+                failback_loop(weak_store, config).await;
+            }));
     }
 
     /// Starts the background account-metadata refresh loop.
@@ -995,9 +996,10 @@ impl LocationStateStore {
     #[cfg(feature = "tokio")]
     pub fn start_account_refresh_loop(self: &Arc<Self>, interval: Duration) {
         let weak_store: Weak<LocationStateStore> = Arc::downgrade(self);
-        self.background_task_manager.spawn(async move {
-            account_refresh_loop(weak_store, interval).await;
-        });
+        self.background_task_manager
+            .spawn(tracing::Instrument::in_current_span(async move {
+                account_refresh_loop(weak_store, interval).await;
+            }));
     }
 
     /// Starts the background endpoint-probe loop.
@@ -1016,9 +1018,10 @@ impl LocationStateStore {
     #[cfg(feature = "tokio")]
     pub fn start_endpoint_probe_loop(self: &Arc<Self>, probe_fn: EndpointProbeFn) {
         let weak_store: Weak<LocationStateStore> = Arc::downgrade(self);
-        self.background_task_manager.spawn(async move {
-            endpoint_probe_loop(weak_store, probe_fn, ENDPOINT_PROBE_INTERVAL).await;
-        });
+        self.background_task_manager
+            .spawn(tracing::Instrument::in_current_span(async move {
+                endpoint_probe_loop(weak_store, probe_fn, ENDPOINT_PROBE_INTERVAL).await;
+            }));
     }
 
     /// Probes every account-level unavailable endpoint whose cooldown has

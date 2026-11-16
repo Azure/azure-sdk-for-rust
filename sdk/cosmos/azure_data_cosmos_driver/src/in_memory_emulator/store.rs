@@ -1128,7 +1128,7 @@ impl EmulatorStore {
                 region_name.clone(),
                 catch_up_journal_id.expect("Delayed always allocates a catch-up journal"),
             );
-            tokio::spawn(async move {
+            tokio::spawn(tracing::Instrument::in_current_span(async move {
                 tokio::time::sleep(delay).await;
                 let _replication_guard = barrier.write().await;
                 target.catch_up_from(&seed_source);
@@ -1147,7 +1147,7 @@ impl EmulatorStore {
                 // and replay.
                 drop(journals_guard);
                 drop(tracker_guard);
-            });
+            }));
         } else if let SeedingPolicy::HiddenUntilReady(delay) = seeding {
             // Hidden buildout is already internally seeded and participates in
             // normal replication while external clients cannot see or write to
@@ -1157,10 +1157,10 @@ impl EmulatorStore {
             let completion_region_name = region_name.clone();
             let operation_id =
                 add_operation_id.expect("HiddenUntilReady always allocates an operation ID");
-            tokio::spawn(async move {
+            tokio::spawn(tracing::Instrument::in_current_span(async move {
                 tokio::time::sleep(delay).await;
                 config.complete_region_add(&completion_region_name, operation_id);
-            });
+            }));
         }
 
         Ok(())
@@ -1550,13 +1550,16 @@ impl EmulatorStore {
                 let store_clone = store;
                 let semaphore = Arc::clone(&self.replication_semaphore);
                 let remaining = Arc::clone(&remaining_targets);
-                self.replication_tasks.lock().unwrap().spawn(async move {
-                    let _permit = semaphore.acquire_owned().await.ok();
-                    tokio::time::sleep(delay).await;
-                    store_clone
-                        .apply_replication(&target, &source, &db, &coll, &document, is_delete);
-                    store_clone.complete_replication_target(operation_id, &remaining);
-                });
+                self.replication_tasks
+                    .lock()
+                    .unwrap()
+                    .spawn(tracing::Instrument::in_current_span(async move {
+                        let _permit = semaphore.acquire_owned().await.ok();
+                        tokio::time::sleep(delay).await;
+                        store_clone
+                            .apply_replication(&target, &source, &db, &coll, &document, is_delete);
+                        store_clone.complete_replication_target(operation_id, &remaining);
+                    }));
             }
         }
     }
@@ -2872,7 +2875,7 @@ impl EmulatorStore {
             partitions: vec![partition_id],
         };
         let track_in_test_registry = completion.is_none();
-        let handle = tokio::spawn(async move {
+        let handle = tokio::spawn(tracing::Instrument::in_current_span(async move {
             let guard = match transition_guard {
                 Some(guard) => guard,
                 None => lock.lock_arc().await,
@@ -2892,7 +2895,7 @@ impl EmulatorStore {
             if let Some(completion) = completion {
                 let _ = completion.send(children.map(ManualControlPlaneResult::Split));
             }
-        });
+        }));
         if track_in_test_registry {
             self.control_plane_tasks.lock().unwrap().push((key, handle));
         }
@@ -3288,7 +3291,7 @@ impl EmulatorStore {
             partitions: vec![partition_id_a, partition_id_b],
         };
         let track_in_test_registry = completion.is_none();
-        let handle = tokio::spawn(async move {
+        let handle = tokio::spawn(tracing::Instrument::in_current_span(async move {
             let guard = match transition_guard {
                 Some(guard) => guard,
                 None => lock.lock_arc().await,
@@ -3309,7 +3312,7 @@ impl EmulatorStore {
             if let Some(completion) = completion {
                 let _ = completion.send(child.map(ManualControlPlaneResult::Merge));
             }
-        });
+        }));
         if track_in_test_registry {
             self.control_plane_tasks.lock().unwrap().push((key, handle));
         }
