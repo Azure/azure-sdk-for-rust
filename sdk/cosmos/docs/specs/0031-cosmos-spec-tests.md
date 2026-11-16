@@ -523,7 +523,7 @@ proof from the wire. For example, hedged requests must actually overlap.
 
 `azure_data_cosmos_driver::transport_observer::TransportObserver` (feature
 `__internal_transport_observer`) lives beside the transport pipeline in
-`src/pipeline/transport/transport_observer.rs`:
+`src/pipeline/transport/observer.rs`:
 
 - `on_start(&HttpExchange)` reports the sequence number, a monotonic start
   `Instant`, method, URL, activity ID, and request body. It also reports the

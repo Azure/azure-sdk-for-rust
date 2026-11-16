@@ -76,7 +76,7 @@ pub(crate) mod system;
 #[cfg(feature = "__internal_mocking")]
 pub mod test;
 #[cfg(feature = "__internal_transport_observer")]
-pub use pipeline::transport::transport_observer;
+pub use pipeline::transport::observer as transport_observer;
 
 // Re-export key types at crate root
 pub use diagnostics::{DiagnosticsContext, ExecutionContext, RequestDiagnostics, RequestHandle};

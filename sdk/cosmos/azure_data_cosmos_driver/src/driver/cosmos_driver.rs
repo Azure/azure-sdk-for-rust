@@ -1772,7 +1772,7 @@ impl CosmosDriver {
             dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
         > = match options.transport_observer() {
             Some(observer) => Arc::new(
-                crate::pipeline::transport::transport_observer::ObservingHttpClientFactory::new(
+                crate::pipeline::transport::observer::ObservingHttpClientFactory::new(
                     http_client_factory,
                     Arc::clone(observer),
                 ),

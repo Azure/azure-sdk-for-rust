@@ -57,7 +57,7 @@ pub struct HttpRequest {
     /// The logical request this HTTP request carries, for transport observers.
     #[cfg(feature = "__internal_transport_observer")]
     pub(crate) observer_context:
-        Option<std::sync::Arc<crate::pipeline::transport::transport_observer::RequestContext>>,
+        Option<std::sync::Arc<crate::pipeline::transport::observer::RequestContext>>,
 }
 
 // ----------------------------------------------------------------------------

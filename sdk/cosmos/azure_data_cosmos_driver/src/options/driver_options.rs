@@ -15,7 +15,7 @@ use crate::{
 #[cfg(feature = "fault_injection")]
 use crate::fault_injection::FaultInjectionRule;
 #[cfg(feature = "__internal_transport_observer")]
-use crate::pipeline::transport::transport_observer::TransportObserver;
+use crate::pipeline::transport::observer::TransportObserver;
 
 /// Configuration options for a Cosmos DB driver instance.
 ///
