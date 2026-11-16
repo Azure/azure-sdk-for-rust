@@ -387,7 +387,8 @@ immediate first pass. These are not additional SDK tuning setters.
 
 ## 8. What does the driver expose to SDK adapters?
 
-The driver exposes processing and receipt operations, not application handlers.
+The driver exposes processor operations and an acknowledgeable batch, not
+application handlers or a separate public receipt type.
 These are Rust APIs consumed by the Rust SDK and native adapter; the Go SDK
 uses the native API rather than Rust types.
 
@@ -397,20 +398,36 @@ uses the native API rather than Rust types.
 | `ChangeFeedProcessorOptions` setters | Configure initial start/continuation, item-count hint, idle delay, checkpoint policy, bootstrap timeout, lease-count bounds, and restart verification. |
 | `ChangeFeedProcessor::start(source_driver, source, lease_driver, leases, options).await` | Initialize and start a processor using separate source and lease-store driver/container references. Return startup failures directly. |
 | `read_next_change_feed_batch().await` | Return `Some(ChangeFeedBatch)` or `None` when delivery ends. Wait asynchronously if no batch is available. |
-| `ChangeFeedBatch::into_parts()` | Transfer lease identity, raw `CosmosResponse`, and its single-use `BatchReceipt`. Deserialization belongs to the SDK. |
-| `BatchReceipt::acknowledge().await` | Consume the receipt and accept successful processing according to Eager or Deferred policy. |
-| `BatchReceipt::checkpoint().await` | Consume the receipt and require durable persistence of that batch's safe progress under either policy. This is not a request to checkpoint an arbitrary position. |
-| `BatchReceipt::cancelled().await` | Observe acquisition cancellation, including ownership loss; adapters can race their handler against this signal. |
+| `ChangeFeedBatch::lease_token()` / `response()` | Borrow lease identity and the raw response, including read diagnostics. Deserialization belongs to the SDK. |
+| `ChangeFeedBatch::acknowledge(self).await` | Consume the batch and accept successful processing according to Eager or Deferred policy. |
+| `ChangeFeedBatch::checkpoint(self).await` | Consume the batch and require durable persistence of its safe progress under either policy. This is an alternative to acknowledgment, not a second completion step or a request to save an arbitrary position. |
+| `ChangeFeedBatch::cancelled(&self).await` | Observe acquisition cancellation, including ownership loss; adapters can race their handler against this signal. |
 | `stop().await` / `abort().await` | Await graceful drain or forced cleanup respectively; cleanup errors are returned. Forced cleanup cannot undo application effects. |
 | `request_stop()` / `is_running()` | Request forced shutdown without awaiting cleanup, or inspect local running state. |
 | `ChangeFeedProcessorOptions::with_error_observer(...)` | Optional synchronous observer of background errors, scoped to a lease when known. It must return promptly and is not an application batch handler. |
 
-Driver `CheckpointPolicy` maps to the SDK's separate checkpoint policy type.
-Dropping a receipt without completing it abandons the batch without accepting
-its progress. Receipt success is scoped to the acquisition that delivered it;
-stale receipts cannot authorize writes using a replacement owner's ETag.
+The SDK adapter's loop reduces to the following illustrative control flow:
 
-Startup, receipt completion, and shutdown report errors directly. The receive
+```rust
+while let Some(batch) = processor.read_next_change_feed_batch().await {
+    let items = deserialize(batch.response())?;
+    handler(items).await?;
+    batch.acknowledge().await?;
+}
+```
+
+Decoding produces application-owned items before the batch is consumed.
+Production adapter code must also handle cancellation and report failures;
+the sketch shows only the success path.
+
+Driver `CheckpointPolicy` maps to the SDK's separate checkpoint policy type.
+The batch owns its single-use acknowledgment state internally. There is no
+public receipt to extract or manage separately. Dropping the batch without
+completing it abandons its progress. Completion is scoped to the acquisition
+that delivered it; stale batches cannot authorize writes using a replacement
+owner's ETag. In the diagrams, "receipt" denotes this acknowledgment state.
+
+Startup, batch completion, and shutdown report errors directly. The receive
 method returns `Option`, not `Result`: a failed source read can leave the SDK
 waiting while other leases are tried and the failure is reported separately.
 **Open: health observation.** Define how the SDK exposes persistent failures
@@ -424,6 +441,10 @@ operation submission with completion delivery. GoV2 owns deserialization,
 the Go handler, and the mapping to idiomatic Go options and errors. The
 following native names are proposed; this document does not define the final
 Go public API or the complete C ABI layouts.
+
+The native receipt handle retains the batch's acknowledgment state after
+payload completion is freed. It is an FFI ownership detail, not another public
+Rust driver type or an additional acknowledgment required from the application.
 
 ### 9.1 Native operations
 
