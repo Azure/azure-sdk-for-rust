@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { useEffect, useMemo, useState } from "react";
-import { atLeast, interleave, isLevel } from "../../model/logs";
+import { atLeast, groupLogs, interleave, isLevel, type EventRow } from "../../model/logs";
 import type { HttpJson, Level, LogJson, ResultFile, RunSummary } from "../../model/types";
 import type { ResultSource } from "../../sources/source";
 import { BodyView } from "../components/BodyView";
@@ -345,6 +345,16 @@ function RequestTable(props: {
     onSelect: (s: number) => void;
 }) {
     const [chosen, setSort] = useState<[SortKey, 1 | -1]>(["start", 1]);
+    // Logs are noisy, so runs of them start collapsed.
+    const [open, setOpen] = useState<Set<number>>(new Set());
+    const [allOpen, setAllOpen] = useState(false);
+    const toggle = (key: number) =>
+        setOpen((prev) => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
     const sort: [SortKey, 1 | -1] = props.timeOnly && chosen[0] !== "start" ? ["start", 1] : chosen;
     const rows = useMemo(() => {
         const key = (r: HttpJson): number => {
@@ -362,9 +372,11 @@ function RequestTable(props: {
         const sorted = [...props.http].sort(
             (a, b) => (key(a) - key(b)) * sort[1] || a.sequence - b.sequence,
         );
-        return sort[0] === "start"
-            ? interleave(sorted, props.logs, sort[1] === -1)
-            : interleave(sorted, []);
+        return groupLogs(
+            sort[0] === "start"
+                ? interleave(sorted, props.logs, sort[1] === -1)
+                : interleave(sorted, []),
+        );
     }, [props.http, props.logs, sort[0], sort[1]]);
 
     const th = (key: SortKey, text: string) =>
@@ -381,89 +393,177 @@ function RequestTable(props: {
         );
 
     return (
-        <table className="grid compact requests">
-            <thead>
-                <tr>
-                    {th("sequence", "#")}
-                    <th>Client</th>
-                    {th("start", "Start")}
-                    {th("duration", "Duration")}
-                    <th>Operation</th>
-                    <th>Region</th>
-                    {th("status", "Status")}
-                    <th title="Requests in flight at the same time">Overlaps</th>
-                    <th>Path</th>
-                </tr>
-            </thead>
-            <tbody>
-                {rows.map((row) => {
-                    if (row.kind === "log") {
-                        const l = row.log;
+        <>
+            {props.logs.length ? (
+                <div className="toolbar">
+                    <button
+                        className="small"
+                        onClick={() => {
+                            setAllOpen(!allOpen);
+                            setOpen(new Set());
+                        }}
+                    >
+                        {allOpen ? "Collapse all logs" : "Expand all logs"}
+                    </button>
+                </div>
+            ) : null}
+            <table className="grid compact requests">
+                <thead>
+                    <tr>
+                        {th("sequence", "#")}
+                        <th>Client</th>
+                        {th("start", "Start")}
+                        {th("duration", "Duration")}
+                        <th>Operation</th>
+                        <th>Region</th>
+                        {th("status", "Status")}
+                        <th title="Requests in flight at the same time">Overlaps</th>
+                        <th>Path</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows.map((row) => {
+                        if (row.kind === "logs") {
+                            const expanded = allOpen || open.has(row.key);
+                            return [
+                                <LogGroupRow
+                                    key={`logs-${row.key}`}
+                                    logs={row.logs}
+                                    expanded={expanded}
+                                    origin={props.origin}
+                                    onToggle={() => toggle(row.key)}
+                                />,
+                                ...(expanded
+                                    ? row.logs.map((l) => (
+                                          <LogRow
+                                              key={`log-${l.index}`}
+                                              row={l}
+                                              origin={props.origin}
+                                              onActivity={props.onActivity}
+                                          />
+                                      ))
+                                    : []),
+                            ];
+                        }
+                        const r = row.http;
+                        const others = props.concurrency.partners.get(r.sequence) ?? [];
+                        const partner =
+                            props.selected !== null &&
+                            (props.concurrency.partners.get(props.selected) ?? []).includes(
+                                r.sequence,
+                            );
                         return (
-                            <tr key={`log-${row.index}`} className={`log-row lv-${l.level}`}>
-                                <td />
+                            <tr
+                                key={r.sequence}
+                                className={`link-row ${props.selected === r.sequence ? "selected" : ""} ${partner ? "partner" : ""}`}
+                                onClick={() => props.onSelect(r.sequence)}
+                            >
+                                <td className="num">{r.sequence}</td>
+                                <td className={`label-${r.label ?? "client"}`}>{r.label ?? "–"}</td>
+                                <td className="num">{rel(r.start_ms, props.origin)}</td>
+                                <td className="num">{ms(r.duration_ms)}</td>
+                                <td>{r.operation ?? r.method}</td>
+                                <td>{region(r) ?? <span className="muted">{host(r.url)}</span>}</td>
                                 <td>
-                                    <LevelBadge level={l.level} />
+                                    <Outcome request={r} />
                                 </td>
-                                <td className="num">{rel(l.t_ms, props.origin)}</td>
-                                <td colSpan={6}>
-                                    <span className="muted">{l.target}: </span>
-                                    {l.message}
-                                    {l.activity_id ? (
-                                        <>
-                                            {" "}
-                                            <button
-                                                className="small"
-                                                title="Show the request with this activity ID"
-                                                onClick={() => props.onActivity(l.activity_id!)}
-                                            >
-                                                {l.activity_id.slice(0, 8)}…
-                                            </button>
-                                        </>
+                                <td>
+                                    {others.length ? (
+                                        <span
+                                            className="overlaps"
+                                            title={`In flight with ${others.map((s) => `#${s}`).join(", ")}`}
+                                        >
+                                            ∥ {others.map((s) => `#${s}`).join(" ")}
+                                        </span>
                                     ) : null}
-                                    <Fields fields={l.fields} />
+                                </td>
+                                <td className="path" title={r.url}>
+                                    {urlPath(r.url)}
                                 </td>
                             </tr>
                         );
-                    }
-                    const r = row.http;
-                    const others = props.concurrency.partners.get(r.sequence) ?? [];
-                    const partner =
-                        props.selected !== null &&
-                        (props.concurrency.partners.get(props.selected) ?? []).includes(r.sequence);
-                    return (
-                        <tr
-                            key={r.sequence}
-                            className={`link-row ${props.selected === r.sequence ? "selected" : ""} ${partner ? "partner" : ""}`}
-                            onClick={() => props.onSelect(r.sequence)}
+                    })}
+                </tbody>
+            </table>
+        </>
+    );
+}
+
+/** A collapsed run of logs: how many, their time span, and any warnings or errors. */
+function LogGroupRow(props: {
+    logs: Extract<EventRow, { kind: "log" }>[];
+    expanded: boolean;
+    origin: number;
+    onToggle: () => void;
+}) {
+    const { logs } = props;
+    const times = logs.map((l) => l.t);
+    const notable = (["error", "warn"] as const)
+        .map((lv) => [lv, logs.filter((l) => l.log.level === lv).length] as const)
+        .filter(([, n]) => n > 0);
+    return (
+        <tr className="log-group link-row" onClick={props.onToggle}>
+            <td />
+            <td colSpan={8}>
+                <button
+                    className="link"
+                    aria-expanded={props.expanded}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        props.onToggle();
+                    }}
+                >
+                    {props.expanded ? "▾" : "▸"} {logs.length} log{" "}
+                    {logs.length === 1 ? "event" : "events"}
+                    {props.expanded ? "" : "…"}
+                </button>
+                {notable.map(([lv, n]) => (
+                    <span key={lv}>
+                        {" "}
+                        <LevelBadge level={lv} /> ×{n}
+                    </span>
+                ))}
+                <span className="muted small">
+                    {" "}
+                    {rel(Math.min(...times), props.origin)}
+                    {logs.length > 1 ? ` – ${rel(Math.max(...times), props.origin)}` : ""}
+                </span>
+            </td>
+        </tr>
+    );
+}
+
+function LogRow(props: {
+    row: Extract<EventRow, { kind: "log" }>;
+    origin: number;
+    onActivity: (activityId: string) => void;
+}) {
+    const l = props.row.log;
+    return (
+        <tr className={`log-row lv-${l.level}`}>
+            <td />
+            <td>
+                <LevelBadge level={l.level} />
+            </td>
+            <td className="num">{rel(l.t_ms, props.origin)}</td>
+            <td colSpan={6}>
+                <span className="muted">{l.target}: </span>
+                {l.message}
+                {l.activity_id ? (
+                    <>
+                        {" "}
+                        <button
+                            className="small"
+                            title="Show the request with this activity ID"
+                            onClick={() => props.onActivity(l.activity_id!)}
                         >
-                            <td className="num">{r.sequence}</td>
-                            <td className={`label-${r.label ?? "client"}`}>{r.label ?? "–"}</td>
-                            <td className="num">{rel(r.start_ms, props.origin)}</td>
-                            <td className="num">{ms(r.duration_ms)}</td>
-                            <td>{r.operation ?? r.method}</td>
-                            <td>{region(r) ?? <span className="muted">{host(r.url)}</span>}</td>
-                            <td>
-                                <Outcome request={r} />
-                            </td>
-                            <td>
-                                {others.length ? (
-                                    <span
-                                        className="overlaps"
-                                        title={`In flight with ${others.map((s) => `#${s}`).join(", ")}`}
-                                    >
-                                        ∥ {others.map((s) => `#${s}`).join(" ")}
-                                    </span>
-                                ) : null}
-                            </td>
-                            <td className="path" title={r.url}>
-                                {urlPath(r.url)}
-                            </td>
-                        </tr>
-                    );
-                })}
-            </tbody>
-        </table>
+                            {l.activity_id.slice(0, 8)}…
+                        </button>
+                    </>
+                ) : null}
+                <Fields fields={l.fields} />
+            </td>
+        </tr>
     );
 }
 

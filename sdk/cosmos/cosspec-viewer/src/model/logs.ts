@@ -75,3 +75,27 @@ export function spanPath(spans: SpanJson[], id: number | undefined): string[] {
     }
     return path;
 }
+
+/** A run of consecutive log rows between requests, shown collapsed. */
+export interface LogGroup {
+    kind: "logs";
+    /** Stable across re-sorts: the capture index of the group's first log. */
+    key: number;
+    logs: Extract<EventRow, { kind: "log" }>[];
+}
+
+/** Folds each run of consecutive log rows into one group. */
+export function groupLogs(rows: EventRow[]): (Extract<EventRow, { kind: "http" }> | LogGroup)[] {
+    const out: (Extract<EventRow, { kind: "http" }> | LogGroup)[] = [];
+    for (const row of rows) {
+        if (row.kind === "http") {
+            out.push(row);
+            continue;
+        }
+        const last = out[out.length - 1];
+        if (last?.kind === "logs") last.logs.push(row);
+        else out.push({ kind: "logs", key: row.index, logs: [row] });
+    }
+    for (const g of out) if (g.kind === "logs") g.key = Math.min(...g.logs.map((l) => l.index));
+    return out;
+}

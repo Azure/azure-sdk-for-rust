@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { describe, expect, test } from "bun:test";
-import { atLeast, interleave, spanPath, spanTree } from "./logs";
+import { atLeast, groupLogs, interleave, spanPath, spanTree } from "./logs";
 import type { HttpJson, LogJson, SpanJson } from "./types";
 
 const req = (sequence: number, start_ms: number) => ({ sequence, start_ms }) as unknown as HttpJson;
@@ -30,6 +30,27 @@ describe("interleave", () => {
         const rows = interleave([req(2, 30), req(1, 10)], [log("a", 5), log("b", 20)], true);
         expect(order(rows)).toEqual(["#2", "b", "#1", "a"]);
     });
+});
+
+test("groupLogs folds runs of logs between requests", () => {
+    const rows = groupLogs(
+        interleave(
+            [req(1, 10), req(2, 30)],
+            [log("a", 5), log("b", 10), log("c", 20), log("d", 40)],
+        ),
+    );
+    expect(rows.map((r) => (r.kind === "http" ? `#${r.http.sequence}` : r.logs.length))).toEqual([
+        1,
+        "#1",
+        2,
+        "#2",
+        1,
+    ]);
+    expect(rows.map((r) => (r.kind === "logs" ? r.key : null))).toEqual([0, null, 1, null, 3]);
+    const desc = groupLogs(
+        interleave([req(2, 30), req(1, 10)], [log("b", 10), log("c", 20)], true),
+    );
+    expect(desc.find((r) => r.kind === "logs")).toMatchObject({ key: 0 });
 });
 
 test("atLeast compares severity", () => {

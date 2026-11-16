@@ -79,8 +79,10 @@ Otherwise the folder is a snapshot.
   Tabs show:
   - **Events** (the default): the requests view below, with the trial's
     logs interleaved by time at or above the chosen level. Time order
-    approximates causal order; it doesn't prove it. Logs also appear as
-    ticks in a lane under the timeline.
+    approximates causal order; it doesn't prove it. Each run of logs between
+    requests starts collapsed to one "N log events…" row, which counts any
+    warnings and errors; select it, or **Expand all logs**, to see them.
+    Logs also appear as ticks in a lane under the timeline.
   - **Requests**: a timeline with one lane per client (`spec` or `harness`)
     and region, where requests in flight together get separate rows, so
     parallel requests such as hedges are visible. Times count from the start
