@@ -10,7 +10,6 @@ mod query_planning;
 mod session_scope_live_tests;
 
 use crate::{
-    change_feed_processor::BootstrapCoalescer,
     diagnostics::{
         DiagnosticsContextBuilder, ExecutionContext, PipelineKind, RequestSentStatus,
         TransportHttpVersion, TransportSecurity,
@@ -58,7 +57,7 @@ use futures::future::{select, BoxFuture, Either};
 use query_planning::ResolvedQueryPlan;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, OnceLock, Weak};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use url::Url;
 use uuid::Uuid;
@@ -379,10 +378,6 @@ impl std::fmt::Debug for TestEndpointProbeFn {
 #[non_exhaustive]
 #[derive(Debug)]
 pub struct CosmosDriver {
-    /// Driver-local in-flight change feed initialization.
-    bootstrap_coalescer: OnceLock<Arc<BootstrapCoalescer>>,
-    /// Weak link to factory ownership for internal bootstrap lifetime retention.
-    bootstrap_owner: OnceLock<Weak<CosmosDriver>>,
     /// Reference to the parent runtime.
     runtime: Arc<CosmosDriverRuntime>,
     /// Driver-level options including account reference.
@@ -1712,9 +1707,7 @@ impl CosmosDriver {
                 .circuit_breaker_enabled(),
         );
         let user_agent = match options.user_agent_suffix() {
-            Some(suffix) => {
-                Arc::new(runtime.user_agent_with_suffix(suffix.as_str(), feature_flags))
-            }
+            Some(suffix) => Arc::new(runtime.user_agent_with_suffix(suffix, feature_flags)),
             None if feature_flags == runtime.user_agent_feature_flags() => {
                 Arc::clone(runtime.user_agent())
             }
@@ -1914,8 +1907,6 @@ impl CosmosDriver {
         let pk_range_cache = PartitionKeyRangeCache::new();
 
         Ok(Self {
-            bootstrap_coalescer: OnceLock::new(),
-            bootstrap_owner: OnceLock::new(),
             runtime,
             options,
             transport,
@@ -1943,19 +1934,6 @@ impl CosmosDriver {
     /// Returns the account reference.
     pub fn account(&self) -> &AccountReference {
         self.options.account()
-    }
-
-    pub(crate) fn register_bootstrap_owner(self: &Arc<Self>) {
-        self.bootstrap_owner.get_or_init(|| Arc::downgrade(self));
-    }
-
-    pub(crate) fn retain_for_bootstrap(&self) -> Option<Arc<Self>> {
-        self.bootstrap_owner.get().and_then(Weak::upgrade)
-    }
-
-    pub(crate) fn bootstrap_coalescer(&self) -> &Arc<BootstrapCoalescer> {
-        self.bootstrap_coalescer
-            .get_or_init(|| Arc::new(BootstrapCoalescer::default()))
     }
 
     /// **Internal test hook -- not part of the public API.**
@@ -2043,27 +2021,6 @@ impl CosmosDriver {
     /// returns the driver's freshly-computed `UserAgent`.
     pub fn user_agent(&self) -> &Arc<UserAgent> {
         &self.user_agent
-    }
-
-    fn operation_user_agent(
-        &self,
-        options: &OperationOptions,
-    ) -> azure_core::http::headers::HeaderValue {
-        if let Some(suffix) = &options.user_agent_suffix {
-            let suffix = match self.user_agent.suffix() {
-                Some(existing) => format!("{existing} {suffix}"),
-                None => suffix.to_string(),
-            };
-            let flags = UserAgentFeatureFlags::from_client_config(
-                self.runtime.connection_pool().is_http2_allowed(),
-                self.options
-                    .partition_failover_options()
-                    .circuit_breaker_enabled(),
-            );
-            Self::user_agent_header(&self.runtime.user_agent_with_suffix(&suffix, flags))
-        } else {
-            Self::user_agent_header(&self.user_agent)
-        }
     }
 
     /// Returns the per-driver HTTP client factory.
@@ -3781,7 +3738,8 @@ impl CosmosDriver {
             PipelineKind::Metadata
         };
 
-        let user_agent = self.operation_user_agent(options);
+        let user_agent =
+            azure_core::http::headers::HeaderValue::from(self.user_agent.as_str().to_owned());
 
         // Execute via the operation pipeline.
         let result = super::pipeline::operation_pipeline::execute_operation_pipeline(
@@ -4529,19 +4487,13 @@ impl CosmosDriver {
                 container_ref,
                 self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
             );
-            let pipeline = if plan_options.change_feed_processor {
-                planner::build_change_feed(
-                    &feed_range,
-                    &mut topology,
-                    &operation,
-                    resume_state,
-                    true,
-                )
-                .await?
-            } else {
-                planner::build_unordered_merge(&feed_range, &mut topology, &operation, resume_state)
-                    .await?
-            };
+            let pipeline = planner::build_unordered_merge(
+                &feed_range,
+                &mut topology,
+                &operation,
+                resume_state,
+            )
+            .await?;
             return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
         }
 
@@ -4653,27 +4605,12 @@ impl CosmosDriver {
         force_refresh: bool,
     ) -> crate::error::Result<Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>>
     {
-        self.resolve_all_partition_key_ranges_with_options(
-            container,
-            force_refresh,
-            OperationOptions::default(),
-        )
-        .await
-    }
-
-    pub(crate) async fn resolve_all_partition_key_ranges_with_options(
-        &self,
-        container: &ContainerReference,
-        force_refresh: bool,
-        options: OperationOptions,
-    ) -> crate::error::Result<Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>>
-    {
         let routing_map = self
             .pk_range_cache
             .try_lookup(
                 container,
                 force_refresh,
-                self.pk_range_page_fetcher(options, None),
+                self.pk_range_page_fetcher(OperationOptions::default(), None),
             )
             .await;
 
@@ -4688,31 +4625,6 @@ impl CosmosDriver {
             return Ok(None);
         }
         Ok(Some(ranges.to_vec()))
-    }
-
-    pub(crate) async fn resolve_partition_key_ranges_for_feed_range(
-        &self,
-        container: &ContainerReference,
-        range: &FeedRange,
-        force_refresh: bool,
-        options: OperationOptions,
-    ) -> crate::error::Result<Vec<FeedRange>> {
-        let mut topology = CachedTopologyProvider::new(
-            &self.pk_range_cache,
-            container.clone(),
-            self.pk_range_page_fetcher(options, None),
-        );
-        let refresh = if force_refresh {
-            PartitionRoutingRefresh::ForceRefresh
-        } else {
-            PartitionRoutingRefresh::UseCached
-        };
-        Ok(topology
-            .resolve_ranges(range, refresh)
-            .await?
-            .into_iter()
-            .map(|resolved| resolved.range)
-            .collect())
     }
 
     /// Returns the partition key ranges covering the given partition key.
@@ -4890,8 +4802,7 @@ mod tests {
         options::{
             ContentResponseOnWrite, CorrelationId, DriverOptionsBuilder, OperationOptionsBuilder,
             PartitionFailoverOptions, PriorityLevel, ServerCertificateValidation,
-            ThrottlingRetryOptionsBuilder, ThroughputControlOptions, UserAgentProperty,
-            UserAgentSuffix, WorkloadId,
+            ThrottlingRetryOptionsBuilder, ThroughputControlOptions, UserAgentSuffix, WorkloadId,
         },
     };
 
@@ -7951,51 +7862,6 @@ mod tests {
             final_count, 2,
             "transport must have made exactly 2 wire requests (initial + one redirect follow). Got: {final_count}"
         );
-    }
-
-    #[tokio::test]
-    async fn operation_user_agent_suffix_is_appended_without_mutating_the_driver() {
-        for long_metadata in [false, true] {
-            let mut builder = CosmosDriverRuntimeBuilder::new()
-                .with_wrapping_sdk_identifier("azsdk-test-cosmos/1.0")
-                .with_user_agent_suffix(UserAgentSuffix::try_from("application").unwrap());
-            if long_metadata {
-                for index in 0..8 {
-                    builder = builder.with_user_agent_property(
-                        UserAgentProperty::try_new(format!("p{index}"), "x".repeat(32)).unwrap(),
-                    );
-                }
-            }
-            let runtime = builder.build().await.unwrap();
-            let driver = CosmosDriver::new(
-                runtime,
-                DriverOptionsBuilder::new(signed_test_account(
-                    "https://test.documents.azure.com:443/",
-                ))
-                .build(),
-            )
-            .unwrap();
-            let base = driver.user_agent().as_str().to_owned();
-            let options = OperationOptions {
-                user_agent_suffix: Some(UserAgentSuffix::try_from("request-tag").unwrap()),
-                ..Default::default()
-            };
-            let tagged = driver.operation_user_agent(&options);
-            assert!(tagged.as_str().ends_with("application request-tag"));
-            assert!(tagged.as_str().len() <= 255);
-            assert_eq!(tagged.as_str().matches("request-tag").count(), 1);
-            if !long_metadata {
-                assert_eq!(tagged.as_str(), format!("{base} request-tag"));
-            }
-            assert_eq!(driver.operation_user_agent(&options), tagged);
-            assert_eq!(
-                driver
-                    .operation_user_agent(&OperationOptions::default())
-                    .as_str(),
-                base
-            );
-            assert_eq!(driver.user_agent().as_str(), base);
-        }
     }
 
     #[tokio::test]

@@ -5,11 +5,10 @@
 
 use crate::{
     completion::{
-        CompletionQueue, CompletionQueueInner, CosmosCompletion, CosmosOperationHandleState,
-        CqOptions, OperationHandle, OperationInner, PendingCompletion,
+        CompletionQueue, CompletionQueueInner, CosmosCompletion, CosmosCompletionQueueState,
+        CosmosOperationHandleState, CqOptions, OperationHandle, OperationInner, PendingCompletion,
     },
     cursor_request::{build_cursor_request, CosmosCursorRequest},
-    delivery_queue::{DeliveryQueue, QueuedDelivery},
     driver::DriverHandle,
     error::{CosmosErrorCode, CosmosStatusCode, COSMOS_STATUS_SUCCESS},
     options_snapshot::OperationOptionsSnapshot,
@@ -26,7 +25,9 @@ use azure_data_cosmos_driver::{
 use futures::FutureExt;
 use std::{
     borrow::Cow,
-    sync::{atomic::Ordering, Arc, Mutex, Weak},
+    collections::VecDeque,
+    sync::{atomic::Ordering, Arc, Condvar, Mutex, Weak},
+    time::{Duration, Instant},
 };
 
 /// Borrowed item bytes; zero-length members retain their position.
@@ -104,7 +105,7 @@ enum ResultData {
     End,
 }
 
-pub(crate) struct Delivery {
+struct Delivery {
     result: Result<ResultData, CosmosError>,
     cursor: Option<Arc<CursorInner>>,
     op: Arc<OperationInner>,
@@ -112,6 +113,21 @@ pub(crate) struct Delivery {
 }
 
 impl Delivery {
+    fn lost(&self) {
+        let status = CosmosErrorCode::CosmosErrorCodeDeliveryLost.as_status_code();
+        self.op.terminal_status.store(status.0, Ordering::Release);
+        self.op.state.store(
+            CosmosOperationHandleState::CosmosOperationHandleStateFailed as u8,
+            Ordering::Release,
+        );
+        if let Some(cursor) = &self.cursor {
+            cursor.fail(status);
+        }
+        if let Ok(ResultData::Opened(cursor)) = &self.result {
+            cursor.fail(status);
+        }
+    }
+
     fn transfer(self, include_details: bool) -> *mut CosmosCursorCompletion {
         let mut kind = 0;
         let mut body_kind = 0;
@@ -187,39 +203,73 @@ impl Delivery {
     }
 }
 
-pub(crate) type CursorQueue = DeliveryQueue<Delivery>;
+pub(crate) struct CursorQueue {
+    inner: Mutex<CursorQueueState>,
+    available: Condvar,
+    options: CqOptions,
+}
+
+struct CursorQueueState {
+    deliveries: VecDeque<Delivery>,
+    reserved: u32,
+    shutdown: bool,
+    abandoned: bool,
+}
 
 impl CursorQueue {
+    pub(crate) fn new(options: CqOptions) -> Self {
+        Self {
+            inner: Mutex::new(CursorQueueState {
+                deliveries: VecDeque::new(),
+                reserved: 0,
+                shutdown: false,
+                abandoned: false,
+            }),
+            available: Condvar::new(),
+            options,
+        }
+    }
+
     fn admit(
         &self,
         cursor: Option<&CursorInner>,
     ) -> Result<Option<OperationPlan>, CosmosErrorCode> {
-        if let Some(cursor) = cursor {
-            self.reserve_with(
-                || {
-                    let state = cursor.state.lock_recover();
-                    if state.busy {
-                        return Err(CosmosErrorCode::CosmosErrorCodeCursorBusy);
-                    }
-                    if state.terminal != COSMOS_STATUS_SUCCESS {
-                        return Err(CosmosErrorCode::CosmosErrorCodeCursorClosed);
-                    }
-                    Ok(state)
-                },
-                |mut state| {
-                    state.busy = true;
-                    state.plan.take()
-                },
-            )
-        } else {
-            self.reserve().map(|()| None)
+        let mut queue = self.inner.lock_recover();
+        if queue.shutdown || queue.abandoned {
+            return Err(CosmosErrorCode::CosmosErrorCodeQueueShutdown);
         }
+        let plan = if let Some(cursor) = cursor {
+            let mut state = cursor.state.lock_recover();
+            if state.busy {
+                return Err(CosmosErrorCode::CosmosErrorCodeCursorBusy);
+            }
+            if state.terminal != COSMOS_STATUS_SUCCESS {
+                return Err(CosmosErrorCode::CosmosErrorCodeCursorClosed);
+            }
+            if self.options.max_capacity > 0 && queue.reserved >= self.options.max_capacity {
+                return Err(CosmosErrorCode::CosmosErrorCodeQueueFull);
+            }
+            state.busy = true;
+            state.plan.take()
+        } else {
+            if self.options.max_capacity > 0 && queue.reserved >= self.options.max_capacity {
+                return Err(CosmosErrorCode::CosmosErrorCodeQueueFull);
+            }
+            None
+        };
+        queue.reserved += 1;
+        Ok(plan)
     }
-}
 
-impl QueuedDelivery for Delivery {
-    fn published(&self) {
-        let (state, status) = match &self.result {
+    fn publish(&self, delivery: Delivery) {
+        let mut queue = self.inner.lock_recover();
+        let op = Arc::clone(&delivery.op);
+        if queue.abandoned {
+            queue.reserved -= 1;
+            delivery.lost();
+            return;
+        }
+        let (state, status) = match &delivery.result {
             Ok(_) => (
                 CosmosOperationHandleState::CosmosOperationHandleStateCompleted,
                 COSMOS_STATUS_SUCCESS,
@@ -229,22 +279,65 @@ impl QueuedDelivery for Delivery {
                 CosmosStatusCode::from_driver_error(err),
             ),
         };
-        self.op.terminal_status.store(status.0, Ordering::Release);
-        self.op.state.store(state as u8, Ordering::Release);
+        op.terminal_status.store(status.0, Ordering::Release);
+        op.state.store(state as u8, Ordering::Release);
+        queue.deliveries.push_back(delivery);
+        self.available.notify_all();
     }
 
-    fn lost(&self) {
-        let status = CosmosErrorCode::CosmosErrorCodeDeliveryLost.as_status_code();
-        self.op.terminal_status.store(status.0, Ordering::Release);
-        self.op.state.store(
-            CosmosOperationHandleState::CosmosOperationHandleStateFailed as u8,
-            Ordering::Release,
-        );
-        if let Some(cursor) = &self.cursor {
-            cursor.fail(status);
+    fn wait(&self, timeout_ms: u32) -> Option<Delivery> {
+        let deadline = (timeout_ms != u32::MAX)
+            .then(|| Instant::now() + Duration::from_millis(u64::from(timeout_ms)));
+        let mut queue = self.inner.lock_recover();
+        loop {
+            if let Some(delivery) = queue.deliveries.pop_front() {
+                queue.reserved -= 1;
+                return Some(delivery);
+            }
+            if queue.abandoned || (queue.shutdown && queue.reserved == 0) {
+                return None;
+            }
+            queue = if let Some(deadline) = deadline {
+                let remaining = deadline.saturating_duration_since(Instant::now());
+                if remaining.is_zero() {
+                    return None;
+                }
+                self.available
+                    .wait_timeout(queue, remaining)
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .0
+            } else {
+                self.available
+                    .wait(queue)
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+            };
         }
-        if let Ok(ResultData::Opened(cursor)) = &self.result {
-            cursor.fail(status);
+    }
+
+    pub(crate) fn shutdown(&self) {
+        self.inner.lock_recover().shutdown = true;
+        self.available.notify_all();
+    }
+
+    pub(crate) fn abandon(&self) {
+        let mut queue = self.inner.lock_recover();
+        queue.abandoned = true;
+        let pending = std::mem::take(&mut queue.deliveries);
+        queue.reserved -= pending.len() as u32;
+        for delivery in pending {
+            delivery.lost();
+        }
+        self.available.notify_all();
+    }
+
+    pub(crate) fn state(&self) -> CosmosCompletionQueueState {
+        let queue = self.inner.lock_recover();
+        if queue.abandoned || (queue.shutdown && queue.reserved == 0) {
+            CosmosCompletionQueueState::CosmosCompletionQueueStateDrained
+        } else if queue.shutdown {
+            CosmosCompletionQueueState::CosmosCompletionQueueStateShutdown
+        } else {
+            CosmosCompletionQueueState::CosmosCompletionQueueStateRunning
         }
     }
 }
@@ -529,7 +622,11 @@ pub extern "C" fn cosmos_cursor_status(cursor: *const CursorHandle) -> CosmosSta
     let Some(queue) = cursor.inner.queue.upgrade() else {
         return CosmosErrorCode::CosmosErrorCodeDeliveryLost.as_status_code();
     };
-    if queue.cursor.as_ref().is_some_and(|q| q.is_abandoned()) {
+    if queue
+        .cursor
+        .as_ref()
+        .is_some_and(|q| q.inner.lock_recover().abandoned)
+    {
         return CosmosErrorCode::CosmosErrorCodeDeliveryLost.as_status_code();
     }
     cursor.inner.state.lock_recover().terminal
@@ -603,7 +700,7 @@ pub extern "C" fn cosmos_cursor_completion_free(completion: *mut CosmosCursorCom
 }
 
 #[cfg(any(test, feature = "test-abi"))]
-pub(crate) mod fixture;
+mod fixture;
 
 #[cfg(test)]
 mod tests;

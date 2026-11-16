@@ -66,51 +66,6 @@ impl AccountReference {
     pub fn with_authentication_key<impl Into<Secret>: Into<Secret>>(endpoint: AccountEndpoint, key: impl Into<Secret>) -> Self;
     pub fn with_credential(endpoint: AccountEndpoint, credential: Arc<dyn TokenCredential>) -> Self;
 }
-#[must_use]
-pub struct ChangeFeedProcessor<T, Fut> {
-}
-impl<T, Fut> ChangeFeedProcessor<T, Fut> {
-    pub async fn current_state(&self) -> crate::Result<Vec<ChangeFeedProcessorState>>;
-    pub fn is_started(&self) -> bool;
-}
-impl<T, Fut> super::ChangeFeedProcessor<T, Fut> {
-    pub async fn start(&self) -> crate::Result<()> where T: DeserializeOwned + Send + 'static, Fut: Future<Output = crate::Result<()>> + Send + 'static;
-    pub async fn stop(&self) -> crate::Result<()>;
-}
-#[must_use]
-pub struct ChangeFeedProcessorBuilder<T, Fut> {
-}
-impl<T, Fut> ChangeFeedProcessorBuilder<T, Fut> {
-    pub fn build(self) -> crate::Result<ChangeFeedProcessor<T, Fut>> where T: DeserializeOwned + Send + 'static, Fut: Future<Output = crate::Result<()>> + Send + 'static;
-    pub fn new<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(mode: ChangeFeedMode, monitored_container: ContainerClient, lease_container: ContainerClient, workload_name: impl Into<String>, worker_name: impl Into<String>, handler: ChangeFeedHandler<T, Fut>) -> Self where T: DeserializeOwned + Send + 'static, Fut: Future<Output = crate::Result<()>> + Send + 'static;
-    pub fn with_bootstrap_timeout(self, bootstrap_timeout: Duration) -> Self;
-    pub fn with_checkpoint_policy(self, policy: ChangeFeedCheckpointPolicy) -> Self;
-    pub fn with_feed_poll_delay(self, feed_poll_delay: Duration) -> Self;
-    pub fn with_lease_verification_enabled_on_restart(self, enabled: bool) -> Self;
-    pub fn with_max_item_count(self, max_item_count: MaxItemCountHint) -> Self;
-    pub fn with_max_scale_count(self, max_scale_count: u32) -> Self;
-    pub fn with_min_scale_count(self, min_scale_count: u32) -> Self;
-    pub fn with_start_continuation(self, continuation: ContinuationToken) -> Self;
-    pub fn with_start_from_beginning(self) -> Self;
-    pub fn with_start_from_now(self) -> Self;
-    pub fn with_start_time(self, start_time: OffsetDateTime) -> Self;
-}
-#[derive(Clone, Debug)]
-pub struct ChangeFeedProcessorContext {
-}
-impl ChangeFeedProcessorContext {
-    pub fn diagnostics(&self) -> Arc<DiagnosticsContext>;
-    pub fn lease_token(&self) -> &str;
-}
-#[derive(Clone, Debug)]
-pub struct ChangeFeedProcessorState {
-}
-impl ChangeFeedProcessorState {
-    pub fn continuation_token(&self) -> Option<&ContinuationToken>;
-    pub fn estimated_lag(&self) -> Option<u64>;
-    pub fn lease_token(&self) -> &str;
-    pub fn owner_worker_name(&self) -> Option<&str>;
-}
 #[derive(Clone)]
 pub struct CosmosError {
 }
@@ -305,18 +260,6 @@ impl From<SubStatusCode> for u16 {
 impl From<u16> for SubStatusCode {
     fn from(value: u16) -> Self;
 }
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
-pub enum ChangeFeedCheckpointPolicy {
-    Eager,
-    Deferred { max_interval: std::time::Duration },
-}
-impl ChangeFeedCheckpointPolicy {
-    pub fn deferred() -> Self;
-}
-impl Default for ChangeFeedCheckpointPolicy {
-    fn default() -> Self;
-}
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub enum CosmosCredential {
@@ -352,7 +295,6 @@ impl From<&str> for ResourceIdentity {
 impl From<String> for ResourceIdentity {
     fn from(name: String) -> Self;
 }
-pub type ChangeFeedHandler<T, Fut> = fn(ChangeFeedProcessorContext, Vec<crate::models::ChangeFeedItem<T>>) -> Fut;
 pub mod clients {
     #[derive(Clone)]
     pub struct ContainerClient {

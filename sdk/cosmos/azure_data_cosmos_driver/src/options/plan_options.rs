@@ -23,7 +23,6 @@ pub const DEFAULT_MAX_BUFFERED_QUERY_WINDOW: u64 = 1000;
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct PlanOptions {
-    pub(crate) change_feed_processor: bool,
     /// Partitions used to calculate ranked full-text statistics.
     ///
     /// Defaults to [`FullTextScoreScope::Global`].
@@ -62,7 +61,6 @@ pub struct PlanOptions {
 impl Default for PlanOptions {
     fn default() -> Self {
         Self {
-            change_feed_processor: false,
             full_text_score_scope: FullTextScoreScope::default(),
             max_buffered_query_window: DEFAULT_MAX_BUFFERED_QUERY_WINDOW,
             query_plan_mode: QueryPlanMode::LocalPreferred,

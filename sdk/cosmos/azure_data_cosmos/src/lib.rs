@@ -18,10 +18,6 @@
 
 pub use account_endpoint::AccountEndpoint;
 pub use account_reference::AccountReference;
-pub use change_feed_processor::{
-    ChangeFeedCheckpointPolicy, ChangeFeedHandler, ChangeFeedProcessor, ChangeFeedProcessorBuilder,
-    ChangeFeedProcessorContext, ChangeFeedProcessorState,
-};
 #[doc(inline)]
 pub use clients::{ContainerClient, CosmosClient, CosmosClientBuilder, DatabaseClient};
 #[cfg(feature = "unstable_dtx")]
@@ -53,7 +49,6 @@ pub mod options;
 
 mod account_endpoint;
 mod account_reference;
-mod change_feed_processor;
 mod constants;
 mod credential;
 mod driver_bridge;

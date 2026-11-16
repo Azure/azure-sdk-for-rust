@@ -1040,16 +1040,6 @@ pub(crate) async fn build_unordered_merge(
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
 ) -> crate::error::Result<Pipeline> {
-    build_change_feed(feed_range, topology_provider, operation, resume, false).await
-}
-
-pub(crate) async fn build_change_feed(
-    feed_range: &FeedRange,
-    topology_provider: &mut dyn TopologyProvider,
-    operation: &Arc<CosmosOperation>,
-    resume: Option<PipelineNodeState>,
-    processor: bool,
-) -> crate::error::Result<Pipeline> {
     let (saved_tokens, resume_start, next_poll_min_epk) = match resume {
         None => (None, None, None),
         Some(PipelineNodeState::Drained) => {
@@ -1132,20 +1122,12 @@ pub(crate) async fn build_change_feed(
     // means "nothing has been polled yet". A resume that already carries saved
     // continuations must NOT prime: those ranges would re-poll from their real
     // ETags and the discarded primed page would lose real data.
-    let prime_on_first_drain = !processor
-        && operation.request_headers().full_fidelity_feed
+    let prime_on_first_drain = operation.request_headers().full_fidelity_feed
         && saved_tokens.as_ref().is_none_or(|tokens| tokens.is_empty());
 
     let resolved = topology_provider
         .resolve_ranges(feed_range, PartitionRoutingRefresh::UseCached)
         .await?;
-
-    if processor && resolved.len() > 1 {
-        return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::status_codes::PARTITION_KEY_RANGE_GONE)
-            .with_message("The processor lease spans multiple physical partitions.")
-            .build());
-    }
 
     let mut request_nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
 
@@ -1189,7 +1171,6 @@ pub(crate) async fn build_change_feed(
                         gap,
                         &resolved_range,
                         None,
-                        processor,
                     );
                 }
                 cursor = slice.max_exclusive().clone();
@@ -1199,7 +1180,6 @@ pub(crate) async fn build_change_feed(
                     slice,
                     &resolved_range,
                     Some(token.server_continuation.clone()),
-                    processor,
                 );
             }
         }
@@ -1208,14 +1188,7 @@ pub(crate) async fn build_change_feed(
             // Trailing slice with no saved continuation, or the whole range on
             // a fresh (non-resumed) start.
             let tail = FeedRange::new(cursor, range_max)?;
-            push_change_feed_leaf(
-                &mut request_nodes,
-                operation,
-                tail,
-                &resolved_range,
-                None,
-                processor,
-            );
+            push_change_feed_leaf(&mut request_nodes, operation, tail, &resolved_range, None);
         }
     }
 
@@ -1247,7 +1220,6 @@ fn push_change_feed_leaf(
     leaf_range: FeedRange,
     resolved_range: &ResolvedRange,
     continuation: Option<String>,
-    processor: bool,
 ) {
     let target = RequestTarget::effective_partition_key_range_with_parents(
         leaf_range,
@@ -1255,10 +1227,11 @@ fn push_change_feed_leaf(
         resolved_range.parents.clone(),
         resolved_range.range.clone(),
     );
-    request_nodes.push(Box::new(
-        Request::new(Arc::clone(operation), target, continuation)
-            .with_topology_recovery(!processor),
-    ));
+    request_nodes.push(Box::new(Request::new(
+        Arc::clone(operation),
+        target,
+        continuation,
+    )));
 }
 
 /// Builds the request leaves for a fresh (non-resumed) cross-partition plan.
@@ -1750,83 +1723,10 @@ fn snapshot_kind(state: &PipelineNodeState) -> &'static str {
     }
 }
 
-/// Projects acknowledged change feed progress without combining backend tokens.
-pub(crate) fn project_change_feed_state(
-    state: PipelineNodeState,
-    parent: &FeedRange,
-    child: &FeedRange,
-    full_fidelity: bool,
-) -> crate::error::Result<PipelineNodeState> {
-    let PipelineNodeState::UnorderedMerge {
-        active_tokens,
-        start_from,
-        next_poll_min_epk,
-    } = state
-    else {
-        return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
-            .with_message("Processor checkpoints require change feed state.")
-            .build());
-    };
-    let tokens = validate_unordered_merge_tokens(active_tokens)?;
-    if intersect_feed_ranges(parent, child).as_ref() != Some(child)
-        || tokens
-            .iter()
-            .any(|token| intersect_feed_ranges(parent, &token.range).as_ref() != Some(&token.range))
-    {
-        return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE)
-            .with_message("Processor checkpoint ranges must remain within their lease.")
-            .build());
-    }
-    if !tokens.is_empty()
-        && (full_fidelity || matches!(start_from, Some(crate::models::ChangeFeedStartFrom::Now)))
-    {
-        super::validate_exact_coverage(parent, tokens.iter().map(|token| &token.range))?;
-    }
-    let next_poll_min_epk = next_poll_min_epk
-        .map(|value| {
-            let next = parse_continuation_epk(
-                &value,
-                crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
-                "processor checkpoint polling position",
-            )?;
-            if &next < parent.min_inclusive() || &next >= parent.max_exclusive() {
-                return Err(crate::error::CosmosError::builder()
-                    .with_status(
-                        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
-                    )
-                    .with_message("Processor checkpoint polling position is outside its lease.")
-                    .build());
-            }
-            // A split child not containing the next position starts at its own first slice.
-            Ok(
-                if &next >= child.min_inclusive() && &next < child.max_exclusive() {
-                    next.to_hex()
-                } else {
-                    child.min_inclusive().to_hex()
-                },
-            )
-        })
-        .transpose()?;
-    let active_tokens = tokens
-        .into_iter()
-        .filter_map(|token| {
-            intersect_feed_ranges(&token.range, child).map(|range| RangedToken {
-                min_epk: range.min_inclusive().to_hex(),
-                max_epk: range.max_exclusive().to_hex(),
-                server_continuation: token.server_continuation,
-            })
-        })
-        .collect();
-    Ok(PipelineNodeState::UnorderedMerge {
-        active_tokens,
-        start_from,
-        next_poll_min_epk,
-    })
-}
-
-/// Validates sorted, nonempty, non-overlapping change feed token ranges.
+/// Validates the `active_tokens` from an `UnorderedMerge` continuation token.
+///
+/// Each entry must have `min < max` and be non-zero-width. The list must be
+/// sorted ascending by `min_epk` and non-overlapping.
 fn validate_unordered_merge_tokens(
     active_tokens: Vec<RangedToken>,
 ) -> crate::error::Result<Vec<SavedActiveToken>> {

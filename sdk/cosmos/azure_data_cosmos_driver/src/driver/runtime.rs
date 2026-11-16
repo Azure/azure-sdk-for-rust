@@ -377,12 +377,12 @@ impl CosmosDriverRuntime {
     /// the runtime's suffix source.
     pub(crate) fn user_agent_with_suffix(
         &self,
-        suffix: &str,
+        suffix: &UserAgentSuffix,
         feature_flags: UserAgentFeatureFlags,
     ) -> UserAgent {
         compute_user_agent_with_suffix(
             self.wrapping_sdk_identifier.as_deref(),
-            Some(suffix.to_owned()),
+            Some(suffix.as_str().to_owned()),
             feature_flags,
             &self.user_agent_properties,
         )
@@ -438,7 +438,6 @@ impl CosmosDriverRuntime {
     ) -> crate::error::Result<Arc<CosmosDriver>> {
         tracing::trace!("creating new driver");
         let driver = Arc::new(CosmosDriver::new(Arc::clone(self), driver_options)?);
-        driver.register_bootstrap_owner();
         driver.initialize().await?;
         Ok(driver)
     }

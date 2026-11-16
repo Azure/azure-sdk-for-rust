@@ -170,59 +170,6 @@ pub mod binary_json {
         pub fn encode(value: &serde_json::Value) -> Vec<u8>;
     }
 }
-pub mod change_feed_processor {
-    pub async fn bootstrap(source_driver: &crate::CosmosDriver, source: &crate::models::ContainerReference, lease_driver: &crate::CosmosDriver, leases: &crate::models::ContainerReference, mode: crate::models::ChangeFeedFactoryMode, workload_name: &str, worker_name: &str) -> crate::Result<()>;
-    pub struct BatchReceipt {
-    }
-    impl BatchReceipt {
-        pub async fn acknowledge(self) -> Result<()>;
-        pub async fn cancelled(&self);
-        pub async fn checkpoint(self) -> Result<()>;
-    }
-    pub struct ChangeFeedBatch {
-    }
-    impl ChangeFeedBatch {
-        pub fn into_parts(self) -> (String, CosmosResponse, BatchReceipt);
-    }
-    #[derive(Clone)]
-    pub struct Processor {
-    }
-    impl Processor {
-        pub async fn abort(&self) -> Result<()>;
-        pub fn is_running(&self) -> bool;
-        pub async fn read_next_change_feed_batch(&self) -> Option<ChangeFeedBatch>;
-        pub fn request_stop(&self);
-        pub async fn start(source_driver: Arc<CosmosDriver>, source: ContainerReference, lease_driver: Arc<CosmosDriver>, leases: ContainerReference, options: ProcessorOptions) -> Result<Self>;
-        pub async fn stop(&self) -> Result<()>;
-    }
-    #[derive(Clone, Debug)]
-    pub struct ProcessorOptions {
-    }
-    impl ProcessorOptions {
-        pub fn new<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(mode: ChangeFeedFactoryMode, workload_name: impl Into<String>, worker_name: impl Into<String>) -> Self;
-        pub fn with_bootstrap_timeout(self, timeout: Duration) -> Self;
-        pub fn with_checkpoint_policy(self, policy: CheckpointPolicy) -> Self;
-        pub fn with_continuation(self, continuation: ContinuationToken) -> Self;
-        pub fn with_error_observer<F>(self, observer: F) -> Self where F: Fn(Option<String>, crate::CosmosError) + Send + Sync + 'static;
-        pub fn with_lease_counts(self, minimum: u32, maximum: u32) -> Self;
-        pub fn with_lease_verification_enabled_on_restart(self, enabled: bool) -> Self;
-        pub fn with_max_item_count(self, hint: MaxItemCountHint) -> Self;
-        pub fn with_poll_delay(self, delay: Duration) -> Self;
-        pub fn with_start(self, start: ChangeFeedStartFrom) -> Self;
-    }
-    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    #[non_exhaustive]
-    pub enum CheckpointPolicy {
-        Eager,
-        Deferred { max_interval: std::time::Duration },
-    }
-    impl CheckpointPolicy {
-        pub fn deferred() -> Self;
-    }
-    impl Default for CheckpointPolicy {
-        fn default() -> Self;
-    }
-}
 pub mod diagnostics {
     #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
     #[non_exhaustive]
@@ -2253,12 +2200,6 @@ pub mod models {
     }
     impl Display for UserAgent {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
-    }
-    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    #[non_exhaustive]
-    pub enum ChangeFeedFactoryMode {
-        Incremental,
-        FullFidelity,
     }
     #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]

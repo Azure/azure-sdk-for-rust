@@ -15,7 +15,7 @@ use crate::options::PatchStrategy;
 use crate::options::{
     AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
     EndToEndOperationLatencyPolicy, ExcludedRegions, PriorityLevel, ReadConsistencyStrategy,
-    UserAgentSuffix, Utf8DecodingMode,
+    Utf8DecodingMode,
 };
 
 /// Options that apply to individual Cosmos DB requests.
@@ -42,8 +42,6 @@ use crate::options::{
 pub struct OperationOptions {
     #[option(skip)]
     pub(crate) resolution_snapshot: Option<Arc<OperationResolutionSnapshot>>,
-    #[option(skip)]
-    pub(crate) user_agent_suffix: Option<UserAgentSuffix>,
     /// How PATCH operations are executed.
     ///
     /// `None` inherits from a lower layer (default: [`PatchStrategy::Auto`]).
