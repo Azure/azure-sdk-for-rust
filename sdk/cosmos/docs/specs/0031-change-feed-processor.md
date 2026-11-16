@@ -472,7 +472,138 @@ The adapter distinguishes submission rejection from an accepted operation's
 later error completion, end-of-delivery, policy acknowledgment, and durable
 checkpoint completion.
 
-### 9.2 Go adapter processing loop
+### 9.2 Wait for completions using GoV2's reactor pattern
+
+GoV2 point operations already use a completion reactor and buffered Go channels.
+In [the point-operation adapter](https://github.com/Azure/azure-sdk-for-go/blob/64e45360ec225bb2280e4ca4cdf9a087fc3fe644/sdk/data/azcosmos/operation_native.go),
+`awaitCompletion()` creates a `pendingOperation` with a
+`make(chan completionResult, 1)` result channel and registers it using
+`runtime/cgo.Handle`. The native submission carries that handle as a
+pointer-sized cookie.
+
+The [reactor](https://github.com/Azure/azure-sdk-for-go/blob/64e45360ec225bb2280e4ca4cdf9a087fc3fe644/sdk/data/azcosmos/reactor_native.go)
+drains completions in a goroutine pinned to an OS thread. The native queue wait
+blocks that thread; callers wait on their own Go channels. The reactor resolves
+each completion's cookie to the pending operation and delivers its result.
+
+CFP should use the same waiting and correlation pattern, adapting the reactor
+to the processor-specific completion queue and owned completion records:
+
+```text
+Go SDK boundary                           Driver / native boundary
+----------------------------------------  -----------------------------------
+SDK consumer
+  | Create buffered result channel
+  | Register pending operation: cgo.Handle
+  |
+  | Submit next batch + cookie ----------> Pending native batch receive
+  | Wait on channel or Go context                    |
+  |                                                  | Batch becomes ready
+  |                              Reactor <-----------+ Completion queue
+  |                                 | Timed native queue wait
+  |                                 | Resolve returned cookie
+  |<---- Buffered channel result ---+
+  | Decode and invoke Go handler
+```
+
+The caller's wait has this shape, matching GoV2's `awaitOperationResult()`:
+
+```go
+select {
+case result := <-pending.result:
+    return result.prepare(), nil
+case <-ctx.Done():
+    if result, ok := pending.abandon(); ok {
+        return result.prepare(), nil
+    }
+    return completionResult{}, newOperationCancelledError(ctx.Err(), 0, "")
+}
+```
+
+`abandon()` atomically claims any result already delivered; otherwise it marks
+the operation abandoned so late delivery releases the result. The buffered
+channel keeps delivery from blocking when the caller stops waiting. The native
+operation handle and `cgo.Handle` remain live until delivery cleanup finishes.
+
+**Context cancellation stops the existing point-operation wait, not native
+execution.** A write can still commit. CFP must not assume that returning a Go
+context error cancels its pending native receive or releases its resources.
+This reuses a coordination pattern, not an already-compatible queue ABI:
+processor completion conversion and handle cleanup need their own adapter.
+
+### 9.3 Possible Go-to-Rust request flow
+
+Go and Rust have separate async runtimes. Go cannot directly await a Rust
+future. Submission returns an operation handle after accepting the request;
+completion later carries the batch or error. The Go caller waits on its result
+channel while Rust runs the operation.
+
+The following paired sketches show one possible CFP adaptation. Helper names,
+types, and shortened native signatures are illustrative, not compiling code
+or final Go APIs. `awaitCFPCompletion` follows the registration, channel wait,
+and late-delivery ownership rules in the preceding section.
+
+**Go SDK boundary: submit a receive, then wait on a Go channel.**
+
+```go
+func nextBatch(ctx context.Context, processor nativeProcessor) (Batch, error) {
+    result, err := awaitCFPCompletion(ctx,
+        func(queue nativeQueue, cookie uintptr) (nativeOperation, error) {
+            return nativeNextSubmit(processor, queue, cookie)
+        })
+    if err != nil {
+        return Batch{}, err
+    }
+    return takeBatchOrEnd(result)
+}
+```
+
+`nativeNextSubmit` represents `cosmos_change_feed_processor_next_submit`.
+The processor is already bound to its completion queue; the closure supplies
+the correlation cookie and checks immediate submission rejection.
+Before submission, `awaitCFPCompletion` creates the buffered channel and
+`cgo.Handle`. After acceptance it retains the operation/registration until
+completion cleanup, even if the caller's context ends.
+
+**Driver/native boundary: await the Rust operation and post its completion.**
+
+```rust
+// Inside the native submission adapter, after accepting the request.
+runtime.spawn(async move {
+    let result = match processor.read_next_change_feed_batch().await {
+        Some(batch) => native_batch_completion(batch, cookie),
+        None => native_end_completion(cookie),
+    };
+    queue.post(result);
+});
+// Submission returns an operation handle without waiting for this future.
+```
+
+The native adapter retains the Rust batch's acknowledgment state in its receipt
+handle. Posting transfers completion ownership to the queue; shutdown and
+failed-delivery paths must release it without acknowledging unprocessed work.
+
+**Go SDK boundary: the reactor delivers to the waiting caller.**
+
+```go
+// In the CFP completion reactor, after the timed native queue wait.
+for _, record := range nativeCompletions {
+    pending := lookupPending(record.Cookie) // Resolve the cgo.Handle.
+    result := takeOwnedCFPCompletion(record)
+    pending.deliver(result) // Buffered delivery, or release if abandoned.
+}
+```
+
+`deliver` and `abandon` must synchronize as in GoV2 point operations so a
+completion has exactly one owner: the caller or the late-result cleanup path.
+That path must understand processor and receipt handles, not just point-item
+response bytes. The SDK consumer then decodes and runs the Go handler.
+On success it submits acknowledgment through the same submit, channel wait,
+and reactor-delivery pattern. Rust awaits batch acknowledgment or durable
+checkpoint completion before posting that operation's result. Each submission
+has its own correlation cookie.
+
+### 9.4 Go adapter processing loop
 
 This is language-neutral pseudocode for the Go adapter, not proposed Go
 method signatures:
@@ -506,15 +637,23 @@ An accepted acknowledgment submission consumes the receipt's operation, but
 its native handle still requires freeing. Also release operation handles using
 the native runtime's existing operation-handle contract.
 
-Go context cancellation must be mapped to native operation cancellation and,
-when required, processor abort. Canceling a Go wait alone does not establish
-native cleanup or stop the application's side effects. Keep completion
-delivery active during graceful stop so issued batches and acknowledgments
-can settle. Acknowledgment and stop must remain admissible when batch delivery
-is saturated.
+An abandoned receive may still produce a batch. Its late-completion path must
+free the batch's receipt without acknowledgment and release all completion
+resources, rather than acknowledge work the Go handler never processed.
+Do not repeatedly submit replacement receives after context cancellation and
+leave earlier native receives pending without a bound.
+
+**Open: CFP cancellation mapping.** Define whether cancellation terminates one
+receive through an explicitly supported native mechanism, or stops/aborts the
+processor when its SDK consumer exits. Do not assume point-operation context
+cancellation already does either. Abort cannot forcibly terminate a Go handler
+or undo its effects. Keep completion delivery active until issued work and
+late completions are settled; graceful stop requires issued batches and
+acknowledgments to complete. Acknowledgment and stop must remain admissible
+when batch delivery is saturated.
 
 **GoV2 integration gate:** execute the basic request/handler/acknowledgment loop
 over FFI, including handler failure, cancellation, durable checkpoint
 completion, and shutdown under saturation. Final Go signatures, per-receipt
-cancellation visibility, and cancellation mapping require validation; this is
-not a claim that the Go adapter is implemented.
+cancellation visibility, late-result disposal, and cancellation mapping require
+validation; this is not a claim that the Go adapter is implemented.
