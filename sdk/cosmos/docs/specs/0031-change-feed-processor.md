@@ -393,9 +393,9 @@ uses the native API rather than Rust types.
 
 | Surface | Exposed behavior |
 | --- | --- |
-| `ProcessorOptions::new(mode, workload_name, worker_name)` | Configure driver-owned mode and worker identity. SDK `ChangeFeedMode` maps to the separate driver `ChangeFeedFactoryMode`; these are not one shared public type. |
-| `ProcessorOptions` setters | Configure initial start/continuation, item-count hint, idle delay, checkpoint policy, bootstrap timeout, lease-count bounds, and restart verification. |
-| `Processor::start(source_driver, source, lease_driver, leases, options).await` | Initialize and start a processor using separate source and lease-store driver/container references. Return startup failures directly. |
+| `ChangeFeedProcessorOptions::new(mode, workload_name, worker_name)` | Configure driver-owned mode and worker identity. SDK `ChangeFeedMode` maps to the separate driver `ChangeFeedFactoryMode`; these are not one shared public type. |
+| `ChangeFeedProcessorOptions` setters | Configure initial start/continuation, item-count hint, idle delay, checkpoint policy, bootstrap timeout, lease-count bounds, and restart verification. |
+| `ChangeFeedProcessor::start(source_driver, source, lease_driver, leases, options).await` | Initialize and start a processor using separate source and lease-store driver/container references. Return startup failures directly. |
 | `read_next_change_feed_batch().await` | Return `Some(ChangeFeedBatch)` or `None` when delivery ends. Wait asynchronously if no batch is available. |
 | `ChangeFeedBatch::into_parts()` | Transfer lease identity, raw `CosmosResponse`, and its single-use `BatchReceipt`. Deserialization belongs to the SDK. |
 | `BatchReceipt::acknowledge().await` | Consume the receipt and accept successful processing according to Eager or Deferred policy. |
@@ -403,7 +403,7 @@ uses the native API rather than Rust types.
 | `BatchReceipt::cancelled().await` | Observe acquisition cancellation, including ownership loss; adapters can race their handler against this signal. |
 | `stop().await` / `abort().await` | Await graceful drain or forced cleanup respectively; cleanup errors are returned. Forced cleanup cannot undo application effects. |
 | `request_stop()` / `is_running()` | Request forced shutdown without awaiting cleanup, or inspect local running state. |
-| `ProcessorOptions::with_error_observer(...)` | Optional synchronous observer of background errors, scoped to a lease when known. It must return promptly and is not an application batch handler. |
+| `ChangeFeedProcessorOptions::with_error_observer(...)` | Optional synchronous observer of background errors, scoped to a lease when known. It must return promptly and is not an application batch handler. |
 
 Driver `CheckpointPolicy` maps to the SDK's separate checkpoint policy type.
 Dropping a receipt without completing it abandons the batch without accepting
@@ -429,17 +429,17 @@ Go public API or the complete C ABI layouts.
 
 | Native API | Purpose |
 | --- | --- |
-| `cosmos_processor_request_init` | Initialize a versioned `CosmosProcessorRequest` carrying workload/worker names, feed mode, initial position, and tuning options. |
-| `cosmos_processor_queue_create` | Create the native completion queue. This is not the ready-lease queue described in section 6. |
-| `cosmos_processor_start_with_policy_submit` | Submit startup with source/lease driver and container handles, the request, and explicit checkpoint policy/interval. `cosmos_processor_start_submit` uses five-minute Deferred persistence. |
-| `cosmos_processor_next_submit` | Submit one batch receive. Accepted submission does not mean a batch is ready. |
-| `cosmos_processor_acknowledge_submit` | Submit successful processing under the selected policy. Completion can mean in-memory acceptance under Deferred. |
-| `cosmos_processor_checkpoint_submit` | Submit successful processing with an explicit durable checkpoint barrier. |
-| `cosmos_processor_stop_submit` / `cosmos_processor_abort_submit` | Submit graceful shutdown or forced cleanup. |
-| `cosmos_processor_queue_wait` | Retrieve owned completion records. This is a timed blocking native wait; the Go adapter must integrate it with its completion pump, not treat it as an async Rust call. |
-| `cosmos_processor_completion_take_processor` / `cosmos_processor_completion_take_receipt` | Detach an owned handle from a completion before freeing that completion. |
-| `cosmos_processor_completion_free`, `cosmos_processor_receipt_free`, `cosmos_processor_free` | Release owned native resources. Free an unacknowledged receipt on handler failure. |
-| `cosmos_processor_queue_shutdown` / `cosmos_processor_queue_free` | End completion delivery and request forced processor shutdown; do not use queue shutdown as graceful stop. |
+| `cosmos_change_feed_processor_request_init` | Initialize a versioned `CosmosChangeFeedProcessorRequest` carrying workload/worker names, feed mode, initial position, and tuning options. |
+| `cosmos_change_feed_processor_queue_create` | Create the native completion queue. This is not the ready-lease queue described in section 6. |
+| `cosmos_change_feed_processor_start_with_policy_submit` | Submit startup with source/lease driver and container handles, the request, and explicit checkpoint policy/interval. `cosmos_change_feed_processor_start_submit` uses five-minute Deferred persistence. |
+| `cosmos_change_feed_processor_next_submit` | Submit one batch receive. Accepted submission does not mean a batch is ready. |
+| `cosmos_change_feed_processor_acknowledge_submit` | Submit successful processing under the selected policy. Completion can mean in-memory acceptance under Deferred. |
+| `cosmos_change_feed_processor_checkpoint_submit` | Submit successful processing with an explicit durable checkpoint barrier. |
+| `cosmos_change_feed_processor_stop_submit` / `cosmos_change_feed_processor_abort_submit` | Submit graceful shutdown or forced cleanup. |
+| `cosmos_change_feed_processor_queue_wait` | Retrieve owned completion records. This is a timed blocking native wait; the Go adapter must integrate it with its completion pump, not treat it as an async Rust call. |
+| `cosmos_change_feed_processor_completion_take_processor` / `cosmos_change_feed_processor_completion_take_receipt` | Detach an owned handle from a completion before freeing that completion. |
+| `cosmos_change_feed_processor_completion_free`, `cosmos_change_feed_processor_receipt_free`, `cosmos_change_feed_processor_free` | Release owned native resources. Free an unacknowledged receipt on handler failure. |
+| `cosmos_change_feed_processor_queue_shutdown` / `cosmos_change_feed_processor_queue_free` | End completion delivery and request forced processor shutdown; do not use queue shutdown as graceful stop. |
 
 Startup maps the same configuration dimensions across FFI: source and lease
 handles, names, feed mode and start position, checkpoint policy, and tuning
