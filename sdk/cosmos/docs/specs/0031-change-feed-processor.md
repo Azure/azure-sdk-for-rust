@@ -492,6 +492,43 @@ operations still need bounds, and progress, stalls, throttling, and takeover
 rules need explicit definitions. No proportional-duration formula or scalable
 completion guarantee is currently implemented.
 
+**Java comparison: creating very large lease sets.** The Java SDK source at
+revision `5b89f6decbdd4388a72b0aa269ea331584c7832f` explains how initialization
+can continue through a large lease inventory. This is a source comparison,
+**not evidence that an 80,000-lease service scenario has been validated**.
+
+- Java enumerates source partition ranges and existing leases, then selects
+  missing leases rather than attempting every existing lease again. Its
+  [EPK partition synchronizer](https://github.com/Azure/azure-sdk-for-java/blob/5b89f6decbdd4388a72b0aa269ea331584c7832f/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/changefeed/epkversion/PartitionSynchronizerImpl.java)
+  creates individual lease documents through Reactor `flatMap` with bounded
+  concurrency. The
+  [processor construction](https://github.com/Azure/azure-sdk-for-java/blob/5b89f6decbdd4388a72b0aa269ea331584c7832f/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/changefeed/epkversion/ChangeFeedProcessorImplBase.java)
+  supplies a degree of parallelism of **25**; this is not a single bulk
+  transaction or 80,000 simultaneous creates.
+- The initialization lock has a **30-second TTL**, but the inspected Java
+  bootstrap paths do not impose a 25-second creation-attempt deadline or renew
+  and revalidate initialization ownership between creates. The TTL does not
+  cancel creation: a long creation pass can continue after lock expiration,
+  so competing initializers may overlap. See the
+  [initialization flow](https://github.com/Azure/azure-sdk-for-java/blob/5b89f6decbdd4388a72b0aa269ea331584c7832f/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/changefeed/epkversion/BootstrapperImpl.java)
+  and [lock storage](https://github.com/Azure/azure-sdk-for-java/blob/5b89f6decbdd4388a72b0aa269ea331584c7832f/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/changefeed/epkversion/LeaseStoreImpl.java).
+- [Lease creation](https://github.com/Azure/azure-sdk-for-java/blob/5b89f6decbdd4388a72b0aa269ea331584c7832f/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/changefeed/epkversion/LeaseStoreManagerImpl.java)
+  uses deterministic document IDs and treats create conflicts as an existing
+  lease. Successful individual creates persist across interrupted passes.
+- These mechanisms do not establish strict initialization ownership or complete
+  coverage at that scale. In particular, the EPK synchronizer's no-argument
+  `createMissingLeases()` logs creation failures and returns `Mono.empty()`;
+  bootstrap can proceed to marking initialization complete despite that failure.
+  This error handling is not a correctness model to copy.
+
+**Implication for Rust:** allow sustained progress through large plans without
+weakening claim fencing or publishing readiness after failed creation. Evaluate
+bounded parallel creates, skipping already-established leases, and resumable
+chunks and/or renewable ownership. A longer caller timeout alone does not fix
+repeated exhaustion on the same prefix. Validate full planned coverage before
+publishing `.info`, and test interrupted creation and competing initializers
+explicitly. The proportional budget and scalable completion design remain open.
+
 #### 6.3.5 Relationship to the partition key range cache
 
 The **partition key range cache** is the driver's shared routing inventory of
