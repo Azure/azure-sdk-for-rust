@@ -1300,6 +1300,52 @@ not every worker or the workload's bootstrap records.
 
 ### 9.1 Stop the affected acquisition and settle safe progress
 
+**CFP source reads surface topology changes to the lease processor instead of
+repairing them entirely inside the generic feed pipeline.** Generic change-feed
+readers can expand a range into current physical partitions during planning
+and consume `SplitRequired` internally during execution. That behavior alone
+would leave one parent lease responsible for all children, preventing lease
+balancing from assigning those children independently.
+
+The lease processor selects CFP-specific planning:
+
+```rust
+let plan_options = PlanOptions {
+    change_feed_processor: true,
+    ..Default::default()
+};
+```
+
+The driver uses that option to select `build_change_feed(..., true)` rather
+than the generic `build_unordered_merge(...)` path. It changes both planning
+and execution behavior:
+
+| Phase | CFP behavior |
+| --- | --- |
+| Planning | If a lease's logical range resolves to more than one physical partition, return `PARTITION_KEY_RANGE_GONE` instead of silently constructing a reader over the children. |
+| Execution | Disable request-node topology recovery so a source topology error returns to the lease processor rather than being converted to internally consumed `SplitRequired` replacements. |
+
+The relevant checks are:
+
+```rust
+if processor && resolved.len() > 1 {
+    return Err(crate::error::CosmosError::builder()
+        .with_status(crate::error::status_codes::PARTITION_KEY_RANGE_GONE)
+        .with_message("The processor lease spans multiple physical partitions.")
+        .build());
+}
+```
+
+```rust
+Request::new(Arc::clone(operation), target, continuation)
+    .with_topology_recovery(!processor)
+```
+
+For CFP, `processor` is `true`, so internal request-node recovery is disabled.
+Ordinary feed readers retain their normal internal recovery. A physical merge
+can leave each logical lease mapped to one physical partition; that does not
+require combining leases or their saved positions.
+
 When source planning or execution reports a topology change, `poll_feed()`
 returns an explicitly tagged `PollError::SourceTopologyChange`. Its enclosing
 `poll()` attempts to flush eligible acknowledged progress. A failed flush
@@ -2035,3 +2081,13 @@ lease reconciliation:
 | Source topology changes between attempts | Reconcile existing logical coverage with the discovered physical ranges. Do not start replacement ranges from a fresh initial position when surviving leases contain their progress. |
 | Coverage validation or source discovery fails | Do not publish readiness or treat an unresolved range as successfully initialized. |
 | Restart verification finds a missing lease | Recover a safe resume position from surviving state or fail explicitly. Restoring range boundaries alone is not recovery of a lost checkpoint. |
+
+### 15.4 Validate topology-error propagation
+
+| Case | Required outcome |
+| --- | --- |
+| Source splits before CFP planning | CFP planning surfaces a topology error; recovery creates independently acquirable child leases rather than hiding them behind one parent lease. |
+| Source splits during a CFP source read | The request node returns the topology error to the lease processor; internal pipeline recovery must not consume the signal. |
+| Generic feed reader encounters the same split | Internal topology recovery remains enabled; the CFP-specific option does not change ordinary feed-reader behavior. |
+| Lease-store checkpoint or renewal reports a topology status | Keep it classified as a lease-operation failure; do not initiate source-range recovery. |
+| Physical partitions merge | Preserve separate logical lease progress and verify resumed reads without requiring lease consolidation. |
