@@ -349,7 +349,7 @@ who may perform them.
 
 | Case | Stored change | Condition and result |
 | --- | --- | --- |
-| Bootstrap creates a lease | Identity, range, and `ttl`; no owner or progress fields. | Create-only deterministic ID. A conflict must not overwrite existing state. Bootstrap claim validation is separate from processing-lease fencing. |
+| Bootstrap creates a lease | Identity, range, and `ttl`; no owner or progress fields. | Create-only deterministic ID. Read and validate a conflict without overwriting existing state. Restoring a missing lease requires a safe resume position, not a fresh `Now`. Bootstrap claim validation is separate from processing-lease fencing. |
 | Worker acquires or takes over | Set `owner`, refresh `renewed_at`, and clear the previous owner's `processed_at`. Preserve `continuation`. | Check acquisition eligibility and replace with the observed ETag. A lost race starts no processing. Start a local monotonic acquisition baseline; an absent processing timestamp is not immediate evidence of a stall. |
 | Owner renews | Refresh `renewed_at`; preserve durable continuation and pending local progress. Publish updated processing timestamps only for safe progress already recorded locally. | Use the acquisition's cached ETag under its mutation lock. Renewal alone must not extend processing inactivity without progress. |
 | Eager acknowledgment or explicit durable checkpoint | Advance `continuation` to safe processed progress, publish `processed_at`, and refresh `renewed_at`. | Use the cached ETag; complete durable acknowledgment only after confirmed persistence. Install the returned ETag before another mutation. |
@@ -404,11 +404,21 @@ It must:
 ### 6.2 Initialization flow
 
 Before starting worker coordination, the driver discovers source partition
-ranges and ensures a lease document exists for every range in the initial plan.
+ranges, reads existing leases, and builds an **in-memory initialization plan**.
+The plan identifies coverage already provided by compatible leases and the
+missing leases that must be created. It is local to the attempt and is never
+stored as a Cosmos DB item.
 
-New leases have no owner or saved position. Workers acquire them, read changes
-using the configured starting position, and persist successfully processed
-progress. Existing lease progress is preserved when the workload resumes.
+New workload leases begin unowned; their initial resume positions follow the
+[anchoring contract](#104-establish-a-stable-initial-resume-position).
+Existing lease ownership and saved progress are preserved. Before publishing
+readiness, the initializer validates coverage using the resulting lease state.
+
+If initialization is interrupted, the created leases remain but the in-memory
+plan is discarded. The next attempt discovers ranges and reads leases again,
+then builds a new plan for the remaining work. Only the small workload
+definition, initialization lock, completion marker, and individual leases are
+persisted.
 
 ### 6.3 How would workers coordinate bootstrap?
 
@@ -529,15 +539,20 @@ flowchart TD
     Wait --> Ready
     Won -->|Yes| Recheck{"Completion marker now exists?"}
     Recheck -->|Yes| Release["Conditionally release initialization lock"]
-    Recheck -->|No| Plan["Persist or reuse initial partition plan"]
-    Plan --> Leases["Ensure planned leases using create-only writes"]
-    Leases --> ClaimCheck["Verify initialization claim"]
+    Recheck -->|No| Discover["Discover source ranges and read existing leases"]
+    Discover --> Plan["Build initialization plan in memory"]
+    Plan --> Leases["Create missing leases without overwriting existing state"]
+    Leases --> Coverage["Read and validate resulting lease coverage"]
+    Coverage --> ClaimCheck["Verify initialization claim"]
     ClaimCheck --> Publish["Publish completion marker"]
     Publish --> Release
     Release --> Done
-    Plan -.->|Failure or interruption| Partial["Preserve completed writes; attempt lock release"]
+    Discover -.->|Failure or interruption| Partial["Preserve created leases and discard local plan"]
+    Plan -.->|Failure or interruption| Partial
     Leases -.->|Failure or interruption| Partial
-    Partial --> Retry["Later attempt reuses plan and existing leases"]
+    Coverage -.->|Failure or interruption| Partial
+    Partial --> Cleanup["Attempt conditional lock release"]
+    Cleanup --> Retry["Later attempt rediscovers ranges and rebuilds plan from leases"]
     Retry --> Ready
 ```
 
@@ -546,16 +561,21 @@ service failures, or the caller deadline can end an attempt.
 
 #### 6.3.3 Publish readiness only after initialization
 
-Readiness publication follows this order:
+Build the plan from source ranges and existing leases, then create and verify
+the missing coverage. Helper names illustrate the required control flow:
 
 ```rust
-self.create_leases(&plan, claim).await?;
+let ranges = self.discover_source_ranges().await?;
+let existing = self.read_workload_leases().await?;
+let plan = reconcile_ranges_and_leases(&ranges, &existing)?;
+self.create_missing_leases(&plan, claim).await?;
+self.validate_resulting_lease_coverage(&ranges).await?;
 self.check_claim(claim).await?;
 self.ensure_record(&self.record("info")).await
 ```
 
-`create_leases()` already checks the claim **before each lease-create
-attempt**. The check shown after that call is an additional check before
+`create_missing_leases()` checks the claim **before each lease-create
+attempt**. The final check is an additional check before
 publishing readiness, because the claim may have expired or been replaced
 during lease creation:
 
@@ -563,19 +583,21 @@ during lease creation:
 check claim -> create first lease
 check claim -> create next lease
 ...
+read leases -> validate coverage
 check claim -> publish completion marker
 ```
 
 Claim validation precedes each create and readiness publication, but the check
 and write are separate requests, not an atomic fenced transaction.
 
-An unresolved failure prevents new readiness publication. Existing
-lease-create conflicts are accepted without reading or validating the
-conflicting lease's contents; this assumes a managed namespace and compatible
-deterministic IDs. Later starts trust `.info` rather than automatically
-auditing every lease.
+Reconciliation validates existing lease identity, feed mode, schema, and range
+coverage. Compatible existing leases satisfy coverage without being rewritten;
+their logical ranges can span multiple current physical ranges. Do not create
+new child leases at an initial position just because physical topology differs
+from the existing logical leases. Replacement coverage follows the
+[topology recovery rules](#9-how-would-partition-splits-and-merges-affect-processing).
 
-Inside `create_leases()`, each range gets a deterministic ID based on its
+Each missing lease gets a deterministic ID based on its
 boundaries:
 
 ```rust
@@ -592,12 +614,26 @@ initialization claim:
 ```rust
 self.check_claim(claim).await?;
 if !self.store.create(&expected.record.id, &expected).await? {
-    tracing::debug!(lease = %expected.record.id, "Processing lease already exists; preserving it");
+    self.validate_existing_lease(&expected).await?;
 }
 ```
 
-The storage helper returns `false` for a create conflict; other failures
-propagate through `?`. No existing lease is overwritten.
+The storage helper returns `false` for a create conflict; read and validate
+the existing lease rather than treating the conflict as proof of compatible
+coverage. Existing progress may be ahead of the initial position and must be
+preserved, not required to equal it. Other failures propagate through `?`.
+
+Publish `.info` only after every required range has compatible lease coverage
+and no unresolved operation has failed. If topology changes invalidate the
+coverage check, rediscover and reconcile within the allowed initialization
+budget or fail explicitly. The source inventory, lease writes, and readiness
+marker are not an atomic transaction.
+
+On later starts, a compatible `.info` skips initialization unless restart
+verification is requested. Verification rediscovers source ranges and reads
+existing leases. **A missing lease is not proof of a new range:** if its saved
+continuation was lost, restore only from a recoverable safe position or fail.
+Creating a lease with a fresh `Now` does not repair lost progress.
 
 #### 6.3.4 Allocate time for large workloads
 
@@ -626,15 +662,18 @@ The claim expires at the earlier of the attempt and caller deadlines,
 independently of lease count.
 
 Increasing the caller budget allows more attempts, not a longer claim.
-Attempts reuse the persisted plan but traverse it again, checking the claim and
-attempting creation even for existing leases. A large plan can repeatedly
-exhaust the attempt window on the same prefix without completing.
+Each attempt rebuilds its plan from discovered ranges and existing leases.
+Already-covered ranges need no create request. This avoids repeating completed
+lease writes, but range discovery, lease listing, or the remaining creates can
+still exceed a fixed attempt window.
 
-**Open design:** resumable chunks and/or renewable initialization ownership
-could permit continued work while measurable progress is made. Individual
-operations still need bounds, and progress, stalls, throttling, and takeover
-rules need explicit definitions. The proportional-duration formula and scalable
-completion mechanism remain unresolved.
+**Open design:** bounded parallel creation and renewable initialization ownership
+could allow sustained progress through large inventories. Individual operations
+and in-memory planning costs still need bounds, with explicit progress, stall,
+throttling, and takeover rules. Successfully created leases are the durable
+record of completed work; there is no persisted plan or creation cursor.
+The proportional-duration formula and scalable completion mechanism remain
+unresolved.
 
 **Java comparison: creating very large lease sets.** The Java SDK source at
 revision `5b89f6decbdd4388a72b0aa269ea331584c7832f` explains how initialization
@@ -665,28 +704,27 @@ can continue through a large lease inventory. This is a source comparison,
   bootstrap can proceed to marking initialization complete despite that failure.
   This error handling is not a correctness model to copy.
 
-**Implication for Rust:** allow sustained progress through large plans without
+**Implication for Rust:** allow sustained progress through large inventories without
 weakening claim fencing or publishing readiness after failed creation. Evaluate
-bounded parallel creates, skipping already-established leases, and resumable
-chunks and/or renewable ownership. A longer caller timeout alone does not fix
-repeated exhaustion on the same prefix. Validate full planned coverage before
+bounded parallel creates and renewable ownership while retaining the
+reconciliation rules above. A longer caller timeout alone does not guarantee
+that discovery and listing can finish. Validate full source-range coverage before
 publishing `.info`, and test interrupted creation and competing initializers
 explicitly. The proportional budget and scalable completion design remain open.
 
-**Open question: continuing from existing lease state.** Can initialization
-continue from lease documents already present, creating only missing leases
-while preserving existing ownership and saved continuation tokens? What checks
-of workload identity, feed mode, lease schema, and range coverage are required
-before trusting that state, and how should partial or incompatible state be
-handled?
+**Open: safe continuation from partial lease state.** Define how to recover
+safe resume positions when existing leases provide only partial coverage,
+including interrupted topology recovery or a lost lease document. Preserving
+surviving tokens and restoring coverage are both required; neither permits
+resetting a missing position to `Now`.
 
 #### 6.3.5 Relationship to the partition key range cache
 
 The **partition key range cache** is the driver's shared routing inventory of
 the source container's physical partition ranges. Bootstrap uses it to build
-the initial plan; it does not maintain a separate partition inventory.
+the in-memory initialization plan.
 
-When no persisted plan exists, `plan()` requests a refresh:
+Each initialization or restart-verification attempt requests a refresh:
 
 ```rust
 self.source_driver
@@ -696,9 +734,8 @@ self.source_driver
 
 The cache fetches partition metadata through the `/pkranges` feed and builds
 the routing map. Bootstrap converts the physical ranges into feed ranges,
-checks coverage, and persists that snapshot as `.plan`.
-
-After obtaining `topology`, the conversion and create-only persistence are:
+checks the inventory's coverage, and reconciles it with existing leases in
+memory:
 
 ```rust
 let ranges = topology
@@ -706,35 +743,31 @@ let ranges = topology
     .map(FeedRange::try_from)
     .collect::<Result<Vec<_>>>()?;
 validate_ranges(&ranges)?;
-let plan = RangePlan { record, ranges };
-self.check_claim(claim).await?;
-if self.store.create(&plan.record.id, &plan).await? {
-    return Ok(Some(plan));
-}
+let existing = self.read_workload_leases().await?;
+let plan = reconcile_ranges_and_leases(&ranges, &existing)?;
 ```
-
-If creation conflicts, the following code reads and validates the persisted
-plan rather than replacing it.
 
 - The refresh uses the same cache as other source-container operations, so
   bootstrap metadata traffic and cache updates affect shared routing state.
-- A later initialization attempt reuses `.plan`; it does not refresh the
-  inventory merely because it is a new attempt.
+- A later attempt rebuilds its plan from source ranges and persisted leases,
+  not from an earlier initializer's inventory document.
 - A compatible `.info` marker skips bootstrap inventory discovery entirely.
 - **A requested refresh is not a strict freshness guarantee:** the cache can
   return an older map after a fetch failure. Full keyspace coverage does not
   prove that every current physical partition is represented individually.
 
-Consequently, bootstrap readiness describes the persisted initial plan, not
-an atomic inventory of all physical partitions at the instant readiness is
-published. Subsequent source topology changes are handled by processing
-recovery.
+Consequently, coverage checks must account for the freshness and topology
+limitations of the inventory they use. An in-memory plan is not an atomic
+snapshot of source topology and lease state. Range-discovery failures or
+unresolved coverage must prevent readiness; subsequent topology changes use
+normal processing recovery.
 
 #### 6.3.6 Recover when the initializer fails
 
-The plan and created leases survive initializer failure. A replacement reuses
-them without overwriting ownership or progress, but traverses the plan again:
-there is no saved creation cursor. The
+Created leases survive initializer failure; the in-memory plan does not.
+A replacement rediscovers ranges, reads those leases, and creates a new plan
+without overwriting ownership or progress. Discovery and listing repeat, but
+compatible existing coverage avoids repeated creates. The
 [routing-cache freshness limitation](#635-relationship-to-the-partition-key-range-cache)
 still applies.
 
@@ -1313,9 +1346,8 @@ self.update(parent, Update::Renew).await?;
 ```
 
 For each child, the driver projects the parent's saved continuation onto the
-child's range, then creates the missing lease unowned. Existing child ownership
-and progress are preserved. Creation is followed by read-back validation;
-this is stronger than bootstrap's lease-create conflict handling.
+child's range, then creates the missing lease unowned. Read-back validation
+preserves compatible existing ownership and progress, as during initialization.
 
 Child validation requires the expected range and a continuation, not equality
 with the newly projected token: an existing child may already have advanced.
@@ -1786,7 +1818,7 @@ behavior without starting processing.
 | `with_bootstrap_timeout(timeout)` | Default 120-second caller wait budget. Must be positive and representable; does not extend claims or cover optional restart verification. |
 | `with_min_scale_count(minimum)` | Default zero. Sets the worker's minimum lease target, not a number of processes or threads. |
 | `with_max_scale_count(maximum)` | Default zero means uncapped lease count. A nonzero maximum must not be below the minimum. |
-| `with_lease_verification_enabled_on_restart(enabled)` | Default false. Check the persisted initial coverage and recreate missing leases while preserving existing progress and replacement coverage. Invalid coverage fails startup. |
+| `with_lease_verification_enabled_on_restart(enabled)` | Default false. Rediscover source ranges and validate existing lease coverage, identity, and progress. Restore missing coverage only with a recoverable safe resume position; otherwise fail startup. Never substitute a fresh `Now` for a lost checkpoint. |
 
 There is no SDK callback-concurrency setter; the
 [processing flow](#42-shared-rust-engine) describes worker-level parallelism.
@@ -1989,3 +2021,17 @@ Assert stored ownership and continuation, not only local cancellation signals.
 | Same-name reacquisition followed by a late old receipt | The old receipt cannot access the new acquisition's state or ETag. |
 | Old release races a new owner | Conditional release fails rather than clearing the new owner. |
 | Checkpoint response is ambiguous | Do not report confirmed persistence or refresh the old turn's authority; resume through normal acquisition using stored progress. |
+
+### 15.3 Validate initialization and restart
+
+These planned cases validate the in-memory initialization plan and durable
+lease reconciliation:
+
+| Case | Required outcome |
+| --- | --- |
+| Large source inventory, including 80,000 ranges | Keep the plan in memory; persist only individual leases and small coordination records, not an item containing the full inventory. Measure discovery, listing, planning memory, and completion time separately. |
+| Failure after creating some leases | Discard the local plan. A new attempt rediscovers ranges, reads existing leases, and creates only missing coverage without resetting ownership or continuation. |
+| Lease creation conflicts with another initializer | Read and validate the existing lease. Preserve compatible progress; reject incompatible identity, mode, schema, or coverage before readiness. |
+| Source topology changes between attempts | Reconcile existing logical coverage with the discovered physical ranges. Do not start replacement ranges from a fresh initial position when surviving leases contain their progress. |
+| Coverage validation or source discovery fails | Do not publish readiness or treat an unresolved range as successfully initialized. |
+| Restart verification finds a missing lease | Recover a safe resume position from surviving state or fail explicitly. Restoring range boundaries alone is not recovery of a lost checkpoint. |
