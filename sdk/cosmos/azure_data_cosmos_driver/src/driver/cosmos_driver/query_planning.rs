@@ -101,7 +101,7 @@ async fn try_plan_query_using_native_planner(
             driver.native_query_plan_provider.get_query_plan(
                 query_spec,
                 container.partition_key_definition(),
-                container.vector_embedding_policy_json(),
+                container.vector_embedding_policy(),
                 &query_engine_config,
             )
         });

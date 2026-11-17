@@ -165,13 +165,13 @@ impl NativeQueryPlanProvider {
     /// calls, if the config has changed the provider is updated via
     /// `UpdateServiceProvider`.
     ///
-    /// `vector_embedding_policy_json` is the container's vector embedding
-    /// policy; native uses it to plan `VectorDistance` ordering.
+    /// `vector_embedding_policy` is the container's vector embedding policy;
+    /// native uses it to plan `VectorDistance` ordering.
     pub fn get_query_plan(
         &self,
         query_spec_json: &str,
         partition_key: &crate::models::PartitionKeyDefinition,
-        vector_embedding_policy_json: Option<&str>,
+        vector_embedding_policy: Option<&serde_json::Value>,
         query_engine_config: &str,
     ) -> Result<crate::driver::dataflow::query_plan::QueryPlan, error::QueryPlanError> {
         let provider = self
@@ -195,11 +195,12 @@ impl NativeQueryPlanProvider {
             }
         }
 
+        let vector_embedding_policy_json = vector_embedding_policy.map(|p| p.to_string());
         provider.get_partition_key_ranges(
             query_spec_json,
             partition_key,
             &query_plan_options(),
-            vector_embedding_policy_json,
+            vector_embedding_policy_json.as_deref(),
         )
     }
 }

@@ -1393,7 +1393,7 @@ fn native_query_plan_resolves_ranges_to_epk_hex() {
 // Vector embedding policy (drives VectorDistance sort direction)
 // =========================================================================
 
-fn vector_policy(distance_function: &str) -> String {
+fn vector_policy(distance_function: &str) -> serde_json::Value {
     serde_json::json!({
         "vectorEmbeddings": [{
             "path": "/embedding",
@@ -1402,7 +1402,6 @@ fn vector_policy(distance_function: &str) -> String {
             "dimensions": 3
         }]
     })
-    .to_string()
 }
 
 #[test]

@@ -137,10 +137,9 @@ struct ContainerReferenceInner {
     container_rid: ResourceId,
     /// Partition key definition for this container.
     partition_key_definition: PartitionKeyDefinition,
-    /// Vector embedding policy as JSON text. `None` when the container has no
-    /// policy.
+    /// Vector embedding policy. `None` when the container has no policy.
     #[cfg_attr(not(feature = "__internal_native_query_plan"), allow(dead_code))]
-    vector_embedding_policy_json: Option<Box<str>>,
+    vector_embedding_policy: Option<serde_json::Value>,
     /// Pre-computed RID-based path: `/dbs/{db_rid}/colls/{container_rid}`.
     rid_based_path: Box<str>,
     /// Name-based addressing data. `Some` when the container was resolved by name,
@@ -183,15 +182,6 @@ impl Hash for ContainerReference {
     }
 }
 
-fn vector_embedding_policy_json(
-    container_properties: &crate::models::ContainerProperties,
-) -> Option<Box<str>> {
-    container_properties
-        .vector_embedding_policy
-        .as_ref()
-        .map(|policy| policy.to_string().into_boxed_str())
-}
-
 impl ContainerReference {
     /// Creates a fully resolved container reference.
     ///
@@ -224,7 +214,7 @@ impl ContainerReference {
             container_name,
             container_rid,
             partition_key_definition: container_properties.partition_key.clone(),
-            vector_embedding_policy_json: vector_embedding_policy_json(container_properties),
+            vector_embedding_policy: container_properties.vector_embedding_policy.clone(),
             rid_based_path,
             name_addressing: Some(NameAddressing {
                 db_name,
@@ -262,7 +252,7 @@ impl ContainerReference {
             container_name,
             container_rid,
             partition_key_definition: container_properties.partition_key.clone(),
-            vector_embedding_policy_json: vector_embedding_policy_json(container_properties),
+            vector_embedding_policy: container_properties.vector_embedding_policy.clone(),
             rid_based_path,
             name_addressing: None,
         }))
@@ -298,10 +288,10 @@ impl ContainerReference {
         &self.0.partition_key_definition
     }
 
-    /// Returns the container's vector embedding policy as JSON text, if any.
+    /// Returns the container's vector embedding policy, if any.
     #[cfg_attr(not(feature = "__internal_native_query_plan"), allow(dead_code))]
-    pub(crate) fn vector_embedding_policy_json(&self) -> Option<&str> {
-        self.0.vector_embedding_policy_json.as_deref()
+    pub(crate) fn vector_embedding_policy(&self) -> Option<&serde_json::Value> {
+        self.0.vector_embedding_policy.as_ref()
     }
 
     /// Returns the name-based relative path `/dbs/{db_name}/colls/{container_name}`,
@@ -830,14 +820,13 @@ mod tests {
         let container =
             ContainerReference::new(account, "db", "db-rid", "c", "c-rid", &container_properties);
 
-        let policy: serde_json::Value =
-            serde_json::from_str(container.vector_embedding_policy_json().unwrap()).unwrap();
+        let policy = container.vector_embedding_policy().unwrap();
         assert_eq!(
             policy["vectorEmbeddings"][0]["distanceFunction"],
             "euclidean"
         );
         assert!(make_container_reference()
-            .vector_embedding_policy_json()
+            .vector_embedding_policy()
             .is_none());
     }
 
