@@ -34,7 +34,7 @@ pub(super) fn fixture_test_lock() -> &'static tokio::sync::Mutex<()> {
 }
 
 pub struct E2eTestFixture {
-    cleanup: DatabaseCleanup,
+    cleanup: FixtureCleanup,
     pub database_id: String,
     pub container_id: String,
     pub container: ContainerClient,
@@ -117,9 +117,24 @@ fn parse_setup_switch(value: &str, default: &str) -> TestResult<Option<bool>> {
     }
 }
 
-struct DatabaseCleanup {
-    client: CosmosClient,
-    database_id: String,
+enum FixtureCleanup {
+    Database {
+        client: CosmosClient,
+        database_id: String,
+    },
+    Container {
+        client: CosmosClient,
+        database_id: String,
+        container_id: String,
+    },
+}
+
+fn fixed_database(value: Result<String, VarError>) -> TestResult<Option<String>> {
+    match value {
+        Err(VarError::NotPresent) => Ok(None),
+        Ok(value) if !value.trim().is_empty() => Ok(Some(value)),
+        _ => Err("AZURE_COSMOS_FIXED_DATABASE must be a non-empty Unicode database name".into()),
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -291,13 +306,13 @@ impl E2eTestFixture {
             Ok(Err(test_error)) => match cleanup {
                 Ok(()) => Err(test_error),
                 Err(cleanup_error) => Err(format!(
-                    "E2E test failed: {test_error}; database cleanup also failed: {cleanup_error}"
+                    "E2E test failed: {test_error}; fixture cleanup also failed: {cleanup_error}"
                 )
                 .into()),
             },
             Err(panic) => {
                 if let Err(error) = cleanup {
-                    eprintln!("E2E database cleanup after panic failed: {error}");
+                    eprintln!("E2E fixture cleanup after panic failed: {error}");
                 }
                 std::panic::resume_unwind(panic)
             }
@@ -307,14 +322,34 @@ impl E2eTestFixture {
     async fn new(client: CosmosClient, properties: ContainerProperties) -> TestResult<Self> {
         let auth_mode = parse_auth_mode(std::env::var("AZURE_COSMOS_AUTH_MODE"))?;
         let management_client = build_management_client(&client).await?;
-        Self::new_with_clients(client, management_client, properties, auth_mode).await
+        let database = fixed_database(std::env::var("AZURE_COSMOS_FIXED_DATABASE"))?;
+        Self::new_with_clients_in_database(
+            client,
+            management_client,
+            properties,
+            auth_mode,
+            database.as_deref(),
+        )
+        .await
     }
 
+    #[cfg(test)]
     async fn new_with_clients(
         client: CosmosClient,
         management_client: CosmosClient,
         properties: ContainerProperties,
         auth_mode: AuthMode,
+    ) -> TestResult<Self> {
+        Self::new_with_clients_in_database(client, management_client, properties, auth_mode, None)
+            .await
+    }
+
+    async fn new_with_clients_in_database(
+        client: CosmosClient,
+        management_client: CosmosClient,
+        properties: ContainerProperties,
+        auth_mode: AuthMode,
+        fixed_database: Option<&str>,
     ) -> TestResult<Self> {
         let backend = std::env::var("AZURE_COSMOS_E2E_BACKEND").ok();
         let readiness_partition_key =
@@ -322,44 +357,79 @@ impl E2eTestFixture {
                 .then(|| readiness_probe_partition_key(&properties.partition_key))
                 .transpose()?;
         // The stale-resource sweeper recognizes the test-db- prefix and ages resources by _ts.
-        let database_id = format!("test-db-e2e-{}", Uuid::now_v7());
+        let database_id = fixed_database
+            .map(str::to_owned)
+            .unwrap_or_else(|| format!("test-db-e2e-{}", Uuid::now_v7()));
         let container_id = properties.id.to_string();
-        management_client
-            .create_database(&database_id, None)
-            .await?;
+        let mut cleanup = if fixed_database.is_none() {
+            management_client
+                .create_database(&database_id, None)
+                .await
+                .map_err(|error| format!("E2E fixture create_database '{database_id}': {error}"))?;
+            Some(FixtureCleanup::Database {
+                client: management_client.clone(),
+                database_id: database_id.clone(),
+            })
+        } else {
+            None
+        };
         let database = management_client.database_client(&database_id);
-        let cleanup = DatabaseCleanup::new(management_client, database_id.clone());
         let setup: TestResult<_> = async {
-            database.create_container(properties, None).await?;
+            database
+                .create_container(properties, None)
+                .await
+                .map_err(|error| {
+                    format!("E2E fixture create_container '{database_id}/{container_id}': {error}")
+                })?;
+            // A failed/conflicting create must never delete another fixture's container.
+            if fixed_database.is_some() {
+                cleanup = Some(FixtureCleanup::Container {
+                    client: management_client,
+                    database_id: database_id.clone(),
+                    container_id: container_id.clone(),
+                });
+            }
             let container = client
                 .database_client(&database_id)
                 .container_client(&container_id, None)
-                .await?;
+                .await
+                .map_err(|error| {
+                    format!("E2E fixture resolve_container '{database_id}/{container_id}': {error}")
+                })?;
             if let Some(partition_key) = readiness_partition_key {
                 crate::framework::probe_data_plane_ready_with_partition_key(
                     "E2E data client",
                     &container,
                     partition_key,
                 )
-                .await?;
+                .await
+                .map_err(|error| {
+                    format!(
+                        "E2E fixture read_item readiness '{database_id}/{container_id}': {error}"
+                    )
+                })?;
             }
             Ok(container)
         }
         .await;
         match setup {
             Ok(container) => Ok(Self {
-                cleanup,
+                cleanup: cleanup.expect("successful setup owns fixture resources"),
                 database_id,
                 container_id,
                 container,
             }),
-            Err(setup_error) => match cleanup.cleanup().await {
-                Ok(()) => Err(setup_error),
-                Err(cleanup_error) => Err(format!(
-                    "E2E fixture setup failed: {setup_error}; database cleanup also failed: {cleanup_error}"
-                )
-                .into()),
-            },
+            Err(setup_error) => {
+                if let Some(cleanup) = cleanup {
+                    if let Err(cleanup_error) = cleanup.cleanup().await {
+                        return Err(format!(
+                            "E2E fixture setup failed: {setup_error}; fixture cleanup also failed: {cleanup_error}"
+                        )
+                        .into());
+                    }
+                }
+                Err(setup_error)
+            }
         }
     }
 
@@ -368,19 +438,28 @@ impl E2eTestFixture {
     }
 }
 
-impl DatabaseCleanup {
-    fn new(client: CosmosClient, database_id: String) -> Self {
-        Self {
-            client,
-            database_id,
-        }
-    }
-
+impl FixtureCleanup {
     async fn cleanup(self) -> TestResult {
-        self.client
-            .database_client(&self.database_id)
-            .delete(None)
-            .await?;
+        match self {
+            Self::Database {
+                client,
+                database_id,
+            } => {
+                client.database_client(&database_id).delete(None).await?;
+            }
+            Self::Container {
+                client,
+                database_id,
+                container_id,
+            } => {
+                client
+                    .database_client(&database_id)
+                    .container_client(&container_id, None)
+                    .await?
+                    .delete(None)
+                    .await?;
+            }
+        }
         Ok(())
     }
 }
@@ -493,11 +572,23 @@ pub(super) fn connection_string_value(connection_string: &str, key: &str) -> Tes
 #[cfg(test)]
 mod tests {
     use super::{
-        account_reference, parse_auth_mode, readiness_probe_partition_key,
+        account_reference, fixed_database, parse_auth_mode, readiness_probe_partition_key,
         requires_data_plane_readiness_probe, AuthMode, PartitionKeyDefinition, TestResult,
         VarError,
     };
     use azure_core_test::credentials::MockCredential;
+
+    #[test]
+    fn fixed_database_is_opt_in_and_rejects_empty_configuration() -> TestResult {
+        assert_eq!(fixed_database(Err(VarError::NotPresent))?, None);
+        assert_eq!(
+            fixed_database(Ok("shared-test-db".into()))?,
+            Some("shared-test-db".into())
+        );
+        assert!(fixed_database(Ok(" ".into())).is_err());
+        assert!(fixed_database(Err(VarError::NotUnicode("invalid".into()))).is_err());
+        Ok(())
+    }
 
     #[test]
     fn auth_mode_defaults_only_when_absent() -> TestResult {
@@ -583,13 +674,25 @@ mod tests {
             account_reference, AuthMode, MockCredential, TestResult,
         };
         use crate::e2e_test_cases::support::{item, wait_for_item_replication_in_region};
-        use azure_core::http::{StatusCode, Url};
+        use azure_core::http::{Method, Request, StatusCode, Url};
         use azure_data_cosmos::{options::Region, CosmosRuntimeBuilder};
         use azure_data_cosmos_driver::in_memory_emulator::{
-            InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion,
+            InMemoryEmulatorHttpClient, RequestObserver, VirtualAccountConfig, VirtualRegion,
         };
         use futures::TryStreamExt;
-        use std::sync::Arc;
+        use std::sync::{Arc, Mutex};
+
+        #[derive(Debug, Default)]
+        struct Requests(Mutex<Vec<(Method, String)>>);
+
+        impl RequestObserver for Requests {
+            fn on_request(&self, request: &Request) {
+                self.0
+                    .lock()
+                    .unwrap()
+                    .push((request.method(), request.url().path().to_owned()));
+            }
+        }
 
         fn emulator() -> TestResult<Arc<InMemoryEmulatorHttpClient>> {
             let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
@@ -624,6 +727,178 @@ mod tests {
         async fn assert_no_databases(client: &CosmosClient) -> TestResult {
             assert!(client
                 .query_databases("SELECT * FROM root r", None)
+                .await?
+                .try_next()
+                .await?
+                .is_none());
+            Ok(())
+        }
+
+        #[tokio::test]
+        async fn shared_database_isolates_independent_clients_without_database_churn() -> TestResult
+        {
+            let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+                "East US",
+                Url::parse("https://eastus.emulator.local")?,
+            )])?;
+            let requests = Arc::new(Requests::default());
+            let emulator = Arc::new(
+                InMemoryEmulatorHttpClient::new(config).with_request_observer(requests.clone()),
+            );
+            let first_client = client(&emulator, AuthMode::Key).await?;
+            let second_client = client(&emulator, AuthMode::Key).await?;
+            first_client.create_database("shared", None).await?;
+            requests.0.lock().unwrap().clear();
+
+            let (first, second) = tokio::try_join!(
+                E2eTestFixture::new_with_clients_in_database(
+                    first_client.clone(),
+                    first_client.clone(),
+                    ContainerProperties::new("first", "/pk".into()),
+                    AuthMode::Key,
+                    Some("shared"),
+                ),
+                E2eTestFixture::new_with_clients_in_database(
+                    second_client.clone(),
+                    second_client,
+                    ContainerProperties::new("second", "/pk".into()),
+                    AuthMode::Key,
+                    Some("shared"),
+                ),
+            )?;
+            let existing = item("same-item", "A", 1);
+            first
+                .container
+                .create_item("A", &existing.id, &existing, None)
+                .await?;
+            second
+                .container
+                .create_item("A", &existing.id, &existing, None)
+                .await?;
+            first.cleanup().await?;
+            let value: serde_json::Value = second
+                .container
+                .read_item("A", &existing.id, None)
+                .await?
+                .into_model()?;
+            assert_eq!(value["id"], existing.id);
+            second.cleanup().await?;
+
+            let requests = requests.0.lock().unwrap().clone();
+            assert!(first_client
+                .database_client("shared")
+                .query_containers("SELECT * FROM c", None)
+                .await?
+                .try_next()
+                .await?
+                .is_none());
+            assert_eq!(
+                requests
+                    .iter()
+                    .filter(|(method, path)| (*method == Method::Post && path == "/dbs")
+                        || (*method == Method::Delete && path == "/dbs/shared"))
+                    .count(),
+                0,
+                "fixtures must never create or delete the shared database"
+            );
+            assert_eq!(
+                requests
+                    .iter()
+                    .filter(|(method, path)| *method == Method::Post && path == "/dbs/shared/colls")
+                    .count(),
+                2
+            );
+            assert_eq!(
+                requests
+                    .iter()
+                    .filter(|(method, path)| *method == Method::Delete
+                        && path.starts_with("/dbs/shared/colls/"))
+                    .count(),
+                2
+            );
+            Ok(())
+        }
+
+        #[tokio::test]
+        async fn shared_fixture_conflict_does_not_clean_up_another_owners_container() -> TestResult
+        {
+            let emulator = emulator()?;
+            let client = client(&emulator, AuthMode::Key).await?;
+            client.create_database("shared", None).await?;
+            let fixture = E2eTestFixture::new_with_clients_in_database(
+                client.clone(),
+                client.clone(),
+                ContainerProperties::new("items", "/pk".into()),
+                AuthMode::Key,
+                Some("shared"),
+            )
+            .await?;
+            let collision = E2eTestFixture::new_with_clients_in_database(
+                client.clone(),
+                client.clone(),
+                ContainerProperties::new("items", "/pk".into()),
+                AuthMode::Key,
+                Some("shared"),
+            )
+            .await
+            .err()
+            .expect("a conflicting create must fail");
+            assert!(
+                collision.to_string().contains("create_container"),
+                "{collision}"
+            );
+            fixture
+                .container
+                .create_item(
+                    "A",
+                    "still-owned",
+                    serde_json::json!({"id":"still-owned","pk":"A"}),
+                    None,
+                )
+                .await?;
+            fixture.cleanup().await?;
+            client.database_client("shared").read(None).await?;
+            Ok(())
+        }
+
+        #[tokio::test]
+        async fn shared_fixture_missing_database_fails_without_provisioning() -> TestResult {
+            let emulator = emulator()?;
+            let client = client(&emulator, AuthMode::Key).await?;
+            let error = E2eTestFixture::new_with_clients_in_database(
+                client.clone(),
+                client.clone(),
+                ContainerProperties::new("items", "/pk".into()),
+                AuthMode::Key,
+                Some("not-provisioned"),
+            )
+            .await
+            .err()
+            .expect("fixed database must already exist");
+            assert!(error.to_string().contains("create_container"), "{error}");
+            assert_no_databases(&client).await
+        }
+
+        #[tokio::test]
+        async fn shared_fixture_setup_failure_removes_only_its_created_container() -> TestResult {
+            let management_emulator = emulator()?;
+            let management = client(&management_emulator, AuthMode::Key).await?;
+            management.create_database("shared", None).await?;
+            let data = client(&emulator()?, AuthMode::Key).await?;
+            let error = E2eTestFixture::new_with_clients_in_database(
+                data,
+                management.clone(),
+                ContainerProperties::new("items", "/pk".into()),
+                AuthMode::Key,
+                Some("shared"),
+            )
+            .await
+            .err()
+            .expect("data account is intentionally missing the container");
+            assert!(error.to_string().contains("resolve_container"), "{error}");
+            assert!(management
+                .database_client("shared")
+                .query_containers("SELECT * FROM c", None)
                 .await?
                 .try_next()
                 .await?

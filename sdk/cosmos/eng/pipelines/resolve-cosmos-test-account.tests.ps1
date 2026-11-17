@@ -44,6 +44,7 @@ if ($result.ExitCode -eq 0 -and
     $result.Output -match 'AZURE_COSMOS_ACCOUNT_WRITE_MODE=multi' -and
     $result.Output -match 'AZURE_COSMOS_ACCOUNT_MULTI_REGION=true' -and
     $result.Output -match 'AZURE_COSMOS_ACCOUNT_FULL_FIDELITY_CHANGE_FEED=false' -and
+    $result.Output -match 'AZURE_COSMOS_FIXED_DATABASE=shared-test-db' -and
     $result.Output -match 'AZURE_COSMOS_ACCOUNT_REGIONS=East US 2;West US 3') {
     Test-Ok "resolved connection string + rustflags + profile metadata"
 }

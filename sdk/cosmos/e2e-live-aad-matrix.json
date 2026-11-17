@@ -6,6 +6,8 @@
     "sdkDefault": "sdk_default"
   },
   "matrix": {
+    "AZURE_SDK_TEST_PACKAGE": ["azure_data_cosmos"],
+    "AZURE_SDK_TEST_TARGET": ["e2e_tests"],
     "Agent": {
       "ubuntu": {
         "OSVmImage": "env:LINUXVMIMAGE",

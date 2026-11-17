@@ -84,6 +84,27 @@ function Get-PackagesFromPackageInfo($packageInfoDirectory) {
   return $packages
 }
 
+function Select-CargoTestPackages(
+  [array] $Packages,
+  [string] $PackageName,
+  [string] $TestTarget
+) {
+  if ([bool]$PackageName -ne [bool]$TestTarget) {
+    throw 'Targeted integration tests require both a package name and a test target.'
+  }
+  if (!$TestTarget) {
+    return $Packages
+  }
+  if ($PackageName -notmatch '^[a-zA-Z0-9_-]+$' -or $TestTarget -notmatch '^[a-zA-Z0-9_-]+$') {
+    throw 'Targeted integration test package and target names must contain only letters, numbers, underscores, or hyphens.'
+  }
+  $selected = @($Packages | Where-Object { $_.Name -ceq $PackageName })
+  if ($selected.Count -ne 1) {
+    throw "Targeted integration test package '$PackageName' must occur exactly once in the test package selection."
+  }
+  return $selected
+}
+
 function Get-PackageNamesFromPackageInfo($packageInfoDirectory) {
   $packages = Get-PackagesFromPackageInfo($packageInfoDirectory)
   $packages.name

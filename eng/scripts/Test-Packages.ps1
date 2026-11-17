@@ -7,7 +7,9 @@
 param(
   [string]$PackageInfoDirectory,
   [ValidateSet('All', 'Default')]
-  [string]$FeatureSet = 'All'
+  [string]$FeatureSet = 'All',
+  [string]$PackageName = $env:AZURE_SDK_TEST_PACKAGE,
+  [string]$TestTarget = $env:AZURE_SDK_TEST_TARGET
 )
 
 $ErrorActionPreference = 'Stop'
@@ -80,6 +82,8 @@ Testing packages with
     ARM_OIDC_TOKEN: $($env:ARM_OIDC_TOKEN ? 'present' : 'not present')
     Active Rust toolchain: '$activeToolchain'
     Cargo feature set: '$FeatureSet'
+    Targeted integration test package: '$PackageName'
+    Targeted integration test target: '$TestTarget'
 "@
 
 $testResultsDir = ([System.IO.Path]::Combine($RepoRoot, 'test-results'))
@@ -111,6 +115,8 @@ else {
   $packagesToTest = Get-AllPackageInfoFromRepo
 }
 
+$packagesToTest = @(Select-CargoTestPackages $packagesToTest $PackageName $TestTarget)
+
 Write-Host "Testing packages:"
 foreach ($package in $packagesToTest) {
   Write-Host "  '$($package.Name)' in '$($package.DirectoryPath)'"
@@ -138,22 +144,32 @@ foreach ($package in $packagesToTest) {
 
   $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 
-  $docTestOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-doctest-$timestamp.json"))
-  Invoke-CargoTest `
-    -TestParams "--doc" `
-    -PackageName $package.Name `
-    -ManifestPath $manifestPath `
-    -OutputFile $docTestOutput
+  if ($TestTarget) {
+    $targetOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-$TestTarget-$timestamp.json"))
+    Invoke-CargoTest `
+      -TestParams "--test '$TestTarget'" `
+      -PackageName $package.Name `
+      -ManifestPath $manifestPath `
+      -OutputFile $targetOutput
+  }
+  else {
+    $docTestOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-doctest-$timestamp.json"))
+    Invoke-CargoTest `
+      -TestParams "--doc" `
+      -PackageName $package.Name `
+      -ManifestPath $manifestPath `
+      -OutputFile $docTestOutput
 
-  $allTargetsOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-alltargets-$timestamp.json"))
-  Invoke-CargoTest `
-    -TestParams "--lib --bins --tests --examples" `
-    -PackageName $package.Name `
-    -ManifestPath $manifestPath `
-    -OutputFile $allTargetsOutput
+    $allTargetsOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-alltargets-$timestamp.json"))
+    Invoke-CargoTest `
+      -TestParams "--lib --bins --tests --examples" `
+      -PackageName $package.Name `
+      -ManifestPath $manifestPath `
+      -OutputFile $allTargetsOutput
 
-  $benchCommand = (@('cargo', 'test', '--benches', '--manifest-path', "'$manifestPath'") + $cargoFeatureArgs + @('--no-fail-fast')) -join ' '
-  Invoke-LoggedCommand $benchCommand -GroupOutput
+    $benchCommand = (@('cargo', 'test', '--benches', '--manifest-path', "'$manifestPath'") + $cargoFeatureArgs + @('--no-fail-fast')) -join ' '
+    Invoke-LoggedCommand $benchCommand -GroupOutput
+  }
 
   $cleanupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Cleanup.ps1'))
   if (Test-Path $cleanupScript) {

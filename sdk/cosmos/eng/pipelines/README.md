@@ -54,6 +54,7 @@ their existing configuration.
    - `AZURE_COSMOS_CONNECTION_STRING` (secret - masked in logs)
    - `AZURE_COSMOS_SECONDARY_KEY` (secret, only if the account defines one)
    - `ACCOUNT_HOST`, `DATABASE_NAME`, `AZURE_COSMOS_DEFAULT_CONSISTENCY`, `COSMOS_RUSTFLAGS`
+   - `AZURE_COSMOS_FIXED_DATABASE` (the existing database reserved for fixed-account E2E fixtures)
    - `AZURE_COSMOS_E2E_BACKEND`, `AZURE_COSMOS_ACCOUNT_WRITE_MODE`, `AZURE_COSMOS_ACCOUNT_MULTI_REGION`, `AZURE_COSMOS_ACCOUNT_REGIONS`, and `AZURE_COSMOS_ACCOUNT_FULL_FIDELITY_CHANGE_FEED`
 
    The first group matches the environment variables that
@@ -83,6 +84,40 @@ their existing configuration.
    `FixedAccountMatrixConfigs` with `PreTestRunSteps` pointing at
    `resolve-test-account-steps.yml`, while the AAD matrices remain on
    `LiveTestMatrixConfigs`.
+
+## Metadata request load
+
+The fixed-account live profiles share account-level metadata limits with other
+jobs and builds. Unique database names prevent resource collisions, but do not
+isolate metadata capacity. A metadata `429/3200` is not an item-throughput
+shortage; increasing RU/s is not a remedy.
+
+The E2E live matrices explicitly select `AZURE_SDK_TEST_PACKAGE=azure_data_cosmos`
+and `AZURE_SDK_TEST_TARGET=e2e_tests`. `Test-Packages.ps1` then runs that integration
+target with the existing feature set, profile setup, failure handling, and nightly
+JSON/JUnit reporting. It does not repeat all package targets in every E2E profile.
+Ordinary live jobs still run the full package suites, including the intentional
+real-account comparisons in the in-memory emulator target. Build jobs retain
+unit, documentation, example, and benchmark coverage. Both selectors are required;
+an unknown package or Cargo test target fails rather than falling back or skipping.
+
+Fixed-account E2E fixtures use the database already created by account provisioning
+(`database` in the account configuration, default `shared-test-db`). They still
+create unique containers and clean up only containers they successfully created.
+They never create or delete that shared database. Missing provisioning and
+conflicting container creation fail explicitly. Non-fixed fixtures and the
+explicit database/container lifecycle scenarios retain their existing resource
+creation/deletion contracts.
+
+This reduces duplicate setup across every profile job/build; it is not a global
+mutex or a guarantee against arbitrary account load. All SDK retry bounds,
+backoff, operation deadlines, and 429 assertions remain unchanged. Setup errors
+identify database creation, container creation, metadata resolution, or item-read
+readiness so remaining throttling can be attributed to its actual phase.
+No ADO locks or additional Azure resources are required. Cancelled agents can
+leave containers in the shared fixture database; these require account-owner
+cleanup, just as cancelled database fixtures require the existing stale-database
+sweep. Never delete the shared database as per-run cleanup.
 
 ## Local testing
 
