@@ -39,6 +39,8 @@ pub use azure_data_cosmos_driver::diagnostics::diagnostics_context::RequestHandl
 pub use azure_data_cosmos_driver::models::response_body::ResponseBody;
 pub use azure_data_cosmos_driver::error::Result;
 pub use azure_data_cosmos_driver::error::cosmos_status::SubStatusCode;
+#[cfg(feature = "__internal_transport_observer")]
+pub use azure_data_cosmos_driver::pipeline::transport::observer as transport_observer;
 pub mod binary_json {
     pub use azure_data_cosmos_driver::binary_json::error::BinaryError;
     pub use azure_data_cosmos_driver::binary_json::error::Result;
@@ -2700,6 +2702,8 @@ pub mod options {
         pub fn partition_failover_options(&self) -> &PartitionFailoverOptions;
         pub fn preferred_regions(&self) -> &[Region];
         pub fn resource_name_validation_enabled(&self) -> bool;
+        #[cfg(feature = "__internal_transport_observer")]
+        pub fn transport_observer(&self) -> Option<&Arc<dyn TransportObserver>>;
         pub fn user_agent_suffix(&self) -> Option<&UserAgentSuffix>;
     }
     #[derive(Clone, Debug)]
@@ -2716,6 +2720,8 @@ pub mod options {
         pub fn with_partition_failover_options(self, options: PartitionFailoverOptions) -> Self;
         pub fn with_preferred_regions(self, regions: Vec<Region>) -> Self;
         pub fn with_resource_name_validation(self, enabled: bool) -> Self;
+        #[cfg(feature = "__internal_transport_observer")]
+        pub fn with_transport_observer(self, observer: Arc<dyn TransportObserver>) -> Self;
         pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]

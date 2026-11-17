@@ -355,6 +355,8 @@ pub mod clients {
         pub fn with_partition_failover_options(self, options: PartitionFailoverOptions) -> Self;
         pub fn with_resource_name_validation(self, enabled: bool) -> Self;
         pub fn with_runtime(self, runtime: CosmosRuntime) -> Self;
+        #[cfg(feature = "__internal_transport_observer")]
+        pub fn with_transport_observer(self, observer: Arc<dyn azure_data_cosmos_driver::transport_observer::TransportObserver>) -> Self;
         pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
     }
     pub struct DatabaseClient {
