@@ -5,8 +5,6 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs)]
 
-#[cfg(feature = "unstable_fake")]
-mod fake;
 mod tracing;
 mod tracing_client;
 mod tracing_function;
@@ -73,33 +71,4 @@ pub fn subclient(attr: TokenStream, item: TokenStream) -> TokenStream {
 pub fn function(attr: TokenStream, item: TokenStream) -> TokenStream {
     tracing_function::parse_function(attr.into(), item.into())
         .map_or_else(|e| e.into_compile_error().into(), |v| v.into())
-}
-
-/// Helpers that are only conditional currently.
-/// 
-/// Move these into the crate root when they are no longer conditional.
-#[cfg(feature = "unstable_fake")]
-mod helpers {
-    use syn::{parse_macro_input, DeriveInput};
-
-    pub type Result<T> = ::std::result::Result<T, syn::Error>;
-
-    /// Defines the function signature expected by run_derive_macro
-    pub type DeriveImpl = fn(DeriveInput) -> Result<proc_macro2::TokenStream>;
-
-    /// Runs the provided derive macro implementation, automatically generating errors if it returns errors.
-    pub fn run_derive_macro(input: proc_macro::TokenStream, imp: DeriveImpl) -> proc_macro::TokenStream {
-        let ast = parse_macro_input!(input as DeriveInput);
-        match imp(ast) {
-            Ok(tokens) => tokens.into(),
-            Err(e) => e.to_compile_error().into(),
-        }
-    }
-}
-
-/// Attribute server fakes to implement `azure_core::http::fake::ServerFactory`.
-#[cfg(feature = "unstable_fake")]
-#[proc_macro_derive(ServerFactory)]
-pub fn derive_server_factory(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    helpers::run_derive_macro(input, fake::derive_server_factory_impl)
 }

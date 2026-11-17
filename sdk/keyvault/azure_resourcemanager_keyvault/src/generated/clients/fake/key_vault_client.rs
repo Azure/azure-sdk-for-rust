@@ -18,7 +18,6 @@ use async_trait::async_trait;
 use azure_core::{
     error::ErrorKind,
     http::{
-        fake::ServerFactory,
         policies::{Policy, PolicyResult},
         Context, Pipeline, Request, Transport, Url,
     },
@@ -143,11 +142,6 @@ pub trait KeyVaultServer: Send + Sync {
     /// Panics unless overridden.
     fn as_key_vault_vaults(&self) -> &dyn KeyVaultVaultsServer {
         unimplemented!("KeyVaultServer::as_key_vault_vaults is not implemented")
-    }
-}
-impl<T: ServerFactory + KeyVaultKeysServer> KeyVaultServer for T {
-    fn as_key_vault_keys(&self) -> &dyn KeyVaultKeysServer {
-        self
     }
 }
 struct KeyVaultClientTransport<T: KeyVaultServer + ?Sized> {
