@@ -205,25 +205,12 @@ impl BlockBlobClient {
         body: RequestContent<Bytes, NoFormat>,
         options: Option<BlockBlobClientStageBlockOptions<'_>>,
     ) -> Result<()> {
-        let mut options = options.unwrap_or_default();
+        let options = options.unwrap_or_default();
         let mut content_length = content_length;
+        let content_validation_options = options.content_validation;
 
-        #[allow(
-            deprecated,
-            reason = "Accepting possible deprecated user input. Moving values once to avoid annotation clutter."
-        )]
-        let (mut options_transactional_crc_header, mut options_transactional_md5_header) = (
-            options.transactional_content_crc64,
-            options.transactional_content_md5,
-        );
-
-        let body = content_validation::apply_upload_content_validation(
-            body.into(),
-            options.content_validation.take(),
-            &mut options_transactional_crc_header,
-            &mut options_transactional_md5_header,
-        )?;
-        let mut internal_options = BlockBlobClientStageBlockInternalOptions {
+        #[allow(deprecated, reason = "Accepting possible deprecated user input.")]
+        let mut options = BlockBlobClientStageBlockInternalOptions {
             encryption_algorithm: options.encryption_algorithm,
             encryption_key: options.encryption_key,
             encryption_key_sha256: options.encryption_key_sha256,
@@ -231,37 +218,32 @@ impl BlockBlobClient {
             lease_id: options.lease_id,
             method_options: options.method_options,
             timeout: options.timeout,
-            // clear everything related to content validation to selectively apply in next step.
+            transactional_content_crc64: options.transactional_content_crc64,
+            transactional_content_md5: options.transactional_content_md5,
             structured_body_type: None,
             structured_content_length: None,
-            transactional_content_crc64: None,
-            transactional_content_md5: None,
-            // avoid `..Default::default()` to ensure new generated options are caught
-        };
-        match &body {
-            StorageUploadBody::StructuredMessage(body) => {
-                content_length = body.len().ok_or_else(|| {
-                    Error::with_message(
-                        ErrorKind::Other,
-                        "Expected structured message to have known length.",
-                    )
-                })?;
-                internal_options.structured_body_type = Some("TODO".into());
-                internal_options.structured_content_length = Some(content_length);
-            }
-            StorageUploadBody::RawContent(_) => {
-                internal_options.transactional_content_crc64 = options_transactional_crc_header;
-                internal_options.transactional_content_md5 = options_transactional_md5_header;
-            }
+            // avoid `..Default::default()` to ensure new generated options are caught in future
         };
 
-        self.stage_block_internal(
-            block_id,
-            content_length,
+        let body = content_validation::apply_upload_content_validation(
             body.into(),
-            Some(internal_options),
-        )
-        .await?;
+            content_validation_options,
+            &mut options.transactional_content_crc64,
+            &mut options.transactional_content_md5,
+            &mut options.structured_body_type,
+            &mut options.structured_content_length,
+        )?;
+        if let StorageUploadBody::StructuredMessage(body) = &body {
+            content_length = body.len().ok_or_else(|| {
+                Error::with_message(
+                    ErrorKind::Other,
+                    "Expected structured message to have known length.",
+                )
+            })?;
+        }
+
+        self.stage_block_internal(block_id, content_length, body.into(), Some(options))
+            .await?;
         Ok(())
     }
 }
