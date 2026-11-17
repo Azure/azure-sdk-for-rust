@@ -463,14 +463,6 @@ pub mod clients {
         pub fn status(&self) -> crate::CosmosStatus;
     }
     #[cfg(feature = "unstable_dtx")]
-    #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
-    #[non_exhaustive]
-    pub enum DistributedTransactionResponseMode {
-        #[default]
-        Standard,
-        FastResponse,
-    }
-    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Debug)]
     pub struct DistributedWriteTransaction {
     }
@@ -501,6 +493,14 @@ pub mod clients {
     impl Stream for ThroughputPoller {
         type Item = Result<ResourceResponse<ThroughputProperties>, CosmosError>;
         fn poll_next(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> task::Poll<Option<<Self as >::Item>>;
+    }
+    #[cfg(feature = "unstable_dtx")]
+    #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+    #[non_exhaustive]
+    pub enum DistributedTransactionResponseMode {
+        #[default]
+        Standard,
+        FastResponse,
     }
 }
 pub mod diagnostics {
