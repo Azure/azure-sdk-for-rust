@@ -11,8 +11,8 @@ use crate::{
     },
     models::{
         BlockBlobClientCommitBlockListOptions, BlockBlobClientStageBlockInternalOptions,
-        BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
-        BlockBlobClientUploadResult, BlockLookupList,
+        BlockBlobClientStageBlockOptions, BlockBlobClientStageBlockResult,
+        BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
 };
@@ -22,7 +22,7 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Body, NoFormat, Pipeline, RequestContent, Url,
+        Body, NoFormat, Pipeline, RequestContent, Response, Url,
     },
     tracing, Bytes, Error, Result, Uuid,
 };
@@ -204,7 +204,7 @@ impl BlockBlobClient {
         content_length: u64,
         body: RequestContent<Bytes, NoFormat>,
         options: Option<BlockBlobClientStageBlockOptions<'_>>,
-    ) -> Result<()> {
+    ) -> Result<Response<BlockBlobClientStageBlockResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let mut content_length = content_length;
         let content_validation_options = options.content_validation;
@@ -243,8 +243,8 @@ impl BlockBlobClient {
         }
 
         self.stage_block_internal(block_id, content_length, body.into(), Some(options))
-            .await?;
-        Ok(())
+            .await
+            .map(|r| r.to_raw_response().into())
     }
 }
 

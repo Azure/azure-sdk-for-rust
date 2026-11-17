@@ -10,8 +10,8 @@ use azure_core::{
 use time::OffsetDateTime;
 
 use crate::models::{
-    AccessTier, BlobClientDownloadInternalOptions, BlockBlobClientStageBlockInternalOptions,
-    EncryptionAlgorithmType, HttpRange, ImmutabilityPolicyMode,
+    AccessTier, BlobClientDownloadInternalOptions, EncryptionAlgorithmType, HttpRange,
+    ImmutabilityPolicyMode,
 };
 
 #[derive(Clone, Default, Debug)]
