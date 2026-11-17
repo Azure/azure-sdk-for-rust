@@ -3,6 +3,7 @@
     "../../.vscode/cspell.json"
   ],
   "ignoreWords": [
+    "AADSTS",
     "accountname",
     "acked",
     "adrs",
