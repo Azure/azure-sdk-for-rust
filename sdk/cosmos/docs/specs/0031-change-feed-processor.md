@@ -115,41 +115,53 @@ Application          SDK                         Driver
 
 ## 6. How does the driver respond to an SDK request?
 
-The driver matches the SDK's pending request to a ready, owned lease and grants
-one source-read turn. A one-shot response channel connects that turn to the
-waiting SDK call: the SDK call holds the receiver, and the selected lease
-processor receives the sender. No request-ID lookup is needed.
+`ChangeFeedRequestDistributor` matches the SDK's pending request to a ready,
+owned lease and grants one source-read turn. Its
+`read_next_change_feed_batch()` future owns the one-shot response receiver
+while the SDK awaits the returned batch. The sender is carried in `ReadDemand`
+to `poll_feed()` through `AcquisitionDelivery::wait_for_demand()`.
+The SDK does not hold or manipulate the channel directly.
+
+The diagram names the driver components and functions used by the delivery
+mechanism. `batch.acknowledge()` is the proposed adapter-facing API; the
+acknowledgment channels remain internal.
 
 ```text
-SDK boundary          Driver boundary
---------------------  -------------------------------------------------------
-SDK                   Driver request matching       Lease processing
- |                              |                           |
- | Request batch                |                           |
- |----------------------------->|                           |
- |                              | Wait for a ready lease    |
- |                              |                           |
- |                              | Grant one source read     |
- |                              | + response-channel sender |
- |                              |-------------------------->|
- |                              |                           | Read change feed
- |                              |                           |
- | ChangeFeedBatch, through the request's response channel  |
- |<---------------------------------------------------------|
- |                              |                           |
- | Run application handler      |                           | Await acknowledgment
- |                              |                           |
- | batch.acknowledge()           |                           |
- |--------------------------------------------------------->|
- |                              |                           | Record safe progress
- |                              |                           | Persist if required
- | Acknowledgment result        |                           |
- |<---------------------------------------------------------|
+SDK boundary       Driver boundary
+-----------------  ------------------------------------------------------------------
+SDK consumer       ChangeFeedRequestDistributor                 poll_feed()
+ |                              |                                  |
+ |                              |           AcquisitionDelivery::wait_for_demand()
+ |                              |<--------- Register ready delivery |
+ | read_next_change_feed_batch()|                                  |
+ |----------------------------->|                                  |
+ |                              | Select queued delivery            |
+ |                              | Create response channel           |
+ |                              | Send ReadDemand { response }      |
+ |                              |--------------------------------->|
+ |                              | Await received                    | Plan/read source
+ |                              |<----- AcquisitionDelivery::deliver(...)
+ | ChangeFeedBatch              |                                  |
+ |<-----------------------------|                                  |
+ |                              |                                  |
+ | Run application handler      |                                  | Await acknowledgment
+ | batch.acknowledge()           |                                  |
+ |---------------------------------------------------------------->|
+ |                              |                                  | LeaseState::acknowledge(...)
+ |                              |                                  | Context::flush(...) if required
+ |                              |                                  | AcquisitionDelivery::acknowledged()
+ |<-------------------------------------- Acknowledgment result -----|
 ```
 
-The **lease processor** is the driver operation for an acquired lease. It
-performs source reads, delivers batches, and handles acknowledgments; it does
-not invoke application handlers.
+These components have distinct roles:
+
+- `ChangeFeedRequestDistributor` selects a queued delivery and awaits its
+  response. It does not execute source reads or checkpoints.
+- `AcquisitionDelivery` registers readiness, delivers the batch through the
+  supplied sender, and controls when that acquisition can register again.
+- `poll_feed()` performs source reads and handles acknowledgment for one
+  acquisition. The term **lease processor** elsewhere refers to this driver
+  operation, not a separate type. It does not invoke application handlers.
 
 - If no lease is ready, the SDK request waits asynchronously. The waiting list
   contains ready lease registrations, not fetched batches.
