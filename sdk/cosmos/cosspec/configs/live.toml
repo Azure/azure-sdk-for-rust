@@ -1,5 +1,5 @@
 # Runs specs against the in-memory emulator and a live account.
-# Allows comparing in-memory behaviour against live accounts, and validating real behaviour against live accounts.
+# Allows comparing in-memory behavior against live accounts, and validating real behavior against live accounts.
 # Each profile's `regions` maps its region aliases to the regions the account is deployed to.
 
 [backends.inmemory]
