@@ -143,7 +143,7 @@ mod platform {
 
     #[link(name = "kernel32")]
     unsafe extern "system" {
-        fn LoadLibraryA(name: *const u8) -> *mut c_void;
+        fn LoadLibraryW(name: *const u16) -> *mut c_void;
         fn GetProcAddress(module: *mut c_void, name: *const u8) -> *mut c_void;
         fn FreeLibrary(module: *mut c_void) -> i32;
     }
@@ -152,9 +152,13 @@ mod platform {
     ///
     /// `path` must refer to a valid shared library.
     pub unsafe fn open(path: &str) -> Option<LibHandle> {
-        let c_path = CString::new(path).ok()?;
-        // SAFETY: CString guarantees a valid nul-terminated string.
-        let h = unsafe { LoadLibraryA(c_path.as_ptr().cast()) };
+        // UTF-16 so non-ASCII paths load regardless of the ANSI code page.
+        if path.contains('\0') {
+            return None;
+        }
+        let wide: Vec<u16> = path.encode_utf16().chain(std::iter::once(0)).collect();
+        // SAFETY: `wide` is a valid nul-terminated UTF-16 string.
+        let h = unsafe { LoadLibraryW(wide.as_ptr()) };
         if h.is_null() {
             None
         } else {

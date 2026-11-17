@@ -8,6 +8,11 @@
 //! (macOS), which generates partitioned query execution plans for Cosmos DB SQL
 //! queries.
 //!
+//! Gated behind the `__internal_native_query_plan` feature flag. When disabled,
+//! the driver uses the local Rust planner and the Gateway for query plans. The
+//! module itself always compiles so that tests can run independently of the
+//! feature flag.
+//!
 //! The library is bundled by the `azure_cosmos_queryplan_sys` crate, which
 //! selects the per-platform crate for the build target. On platforms without a
 //! prebuilt library, the driver falls back to the local Rust planner and then
@@ -38,7 +43,7 @@
 //!      -> OnceLock: cached QueryPlanProvider (created once, reused)
 //!         -> QueryPlanProvider::new(config)
 //!            -> query_plan_native_lib()  [OnceLock: loaded once per process]
-//!               -> load_library(binary_name()) -> LoadLibraryA / dlopen
+//!               -> load_library(binary_name()) -> LoadLibraryW / dlopen
 //!               -> GetProcAddress / dlsym for each export
 //!            -> calls CreateServiceProvider(config)
 //!         -> provider.get_partition_key_ranges(query, pk_definition, options)

@@ -80,6 +80,13 @@ tokio = { workspace = true, features = [
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 uuid = { workspace = true, features = ["v4", "v7", "fast-rng"] }
 
+# Tests use the native query planner where `azure_cosmos_queryplan_sys` bundles
+# a library, so query tests cover it there. Dev-only: consumers are unaffected.
+[target.'cfg(all(any(target_os = "windows", target_os = "linux", target_os = "macos"), any(target_arch = "x86_64", target_arch = "aarch64"), not(target_env = "musl")))'.dev-dependencies]
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", default-features = false, features = [
+  "__internal_native_query_plan",
+] }
+
 [lints]
 workspace = true
 

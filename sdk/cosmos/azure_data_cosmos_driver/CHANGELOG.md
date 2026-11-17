@@ -22,7 +22,7 @@
 ### Other Changes
 
 - New query and change-feed checkpoints use `c2.` and cannot be read by SDKs that only support `c1.`. Query checkpoint payloads are unchanged, and supported legacy `c1.` checkpoints remain readable. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
-- The native QueryPlanInterop library now comes from the public `azure_cosmos_queryplan_sys` crate on crates.io and is used by default on Windows, Linux (glibc), and macOS (x64/arm64). Removed the `__internal_native_query_plan` feature; other targets fall back to the local planner or Gateway.
+- The native QueryPlanInterop library used by the `__internal_native_query_plan` feature now comes from the public `azure_cosmos_queryplan_sys` crate on crates.io, with bundled libraries for Windows, Linux (glibc), and macOS (x64/arm64); other targets fall back to the local planner or Gateway.
 - Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - Preserve binary `ORDER BY` source pages internally through merges, DISTINCT, and pagination windows, materializing only final output items into the existing standalone response buffers. ([#5409](https://github.com/Azure/azure-sdk-for-rust/pull/5409))
 

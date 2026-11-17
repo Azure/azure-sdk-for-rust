@@ -191,19 +191,24 @@ intentionally trades full Cosmos parity for emulator usability — see
 
 ## Production provider and fallback contract
 
-Cross-partition query plans are resolved in this order:
+Normal builds resolve cross-partition query plans in this order:
 
-1. Native FFI provider (the QueryPlanInterop library bundled by
-   `azure_cosmos_queryplan_sys`; skipped on targets without a bundled library,
-   including musl).
-2. Local Rust planner.
-3. Gateway query-plan endpoint.
+1. Local Rust planner.
+2. Gateway query-plan endpoint.
 
 Set `PlanOptions::query_plan_mode` to `QueryPlanMode::GatewayOnly` to bypass
 local planning, or use `QueryOptions::with_query_plan_mode` in the SDK.
 Query-plan mode and `max_buffered_query_window` are per-query only, with defaults
 of `LocalPreferred` and 1000. They have no client, account, runtime, or
 environment defaults and no authoritative environment override.
+
+When `__internal_native_query_plan` is enabled, the existing native-first behavior is preserved:
+
+1. Native FFI provider (the QueryPlanInterop library bundled by
+   `azure_cosmos_queryplan_sys`; skipped on targets without a bundled library,
+   including musl).
+2. Local Rust planner.
+3. Gateway query-plan endpoint.
 
 The local provider accepts plain `SELECT`/`WHERE`, projections, `SELECT VALUE`,
 JOINs, subqueries, UDFs, partition-key equality/`IN`, TOP, OFFSET/LIMIT,

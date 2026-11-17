@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#[cfg(feature = "__internal_native_query_plan")]
 use crate::models::AccountEndpoint;
 use crate::{
     driver::{
@@ -77,6 +78,7 @@ fn is_provably_empty(plan: &QueryPlan) -> bool {
     ranges_empty && !produces_rows_without_documents
 }
 
+#[cfg(feature = "__internal_native_query_plan")]
 async fn try_plan_query_using_native_planner(
     driver: &CosmosDriver,
     container: &ContainerReference,
@@ -141,6 +143,16 @@ async fn try_plan_query_using_native_planner(
             None
         }
     }
+}
+
+#[cfg(not(feature = "__internal_native_query_plan"))]
+async fn try_plan_query_using_native_planner(
+    _driver: &CosmosDriver,
+    _container: &ContainerReference,
+    _operation: &CosmosOperation,
+    _mode: QueryPlanMode,
+) -> Option<QueryPlan> {
+    None
 }
 
 fn try_plan_query_using_local_planner(

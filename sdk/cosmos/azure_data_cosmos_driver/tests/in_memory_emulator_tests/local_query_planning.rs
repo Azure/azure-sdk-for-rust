@@ -268,8 +268,10 @@ enum FallbackOutcome {
     Error,
 }
 
-/// Whether `azure_cosmos_queryplan_sys` bundles a native planner for this target.
+/// Whether the driver uses the native planner: the feature is enabled and
+/// `azure_cosmos_queryplan_sys` bundles a library for this target.
 const NATIVE_PLANNER: bool = cfg!(all(
+    feature = "__internal_native_query_plan",
     any(
         target_os = "windows",
         target_os = "linux",

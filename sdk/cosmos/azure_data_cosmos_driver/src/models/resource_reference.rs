@@ -137,8 +137,9 @@ struct ContainerReferenceInner {
     container_rid: ResourceId,
     /// Partition key definition for this container.
     partition_key_definition: PartitionKeyDefinition,
-    /// Vector embedding policy as JSON text, serialized once for the native
-    /// query planner. `None` when the container has no policy.
+    /// Vector embedding policy as JSON text. `None` when the container has no
+    /// policy.
+    #[cfg_attr(not(feature = "__internal_native_query_plan"), allow(dead_code))]
     vector_embedding_policy_json: Option<Box<str>>,
     /// Pre-computed RID-based path: `/dbs/{db_rid}/colls/{container_rid}`.
     rid_based_path: Box<str>,
@@ -298,6 +299,7 @@ impl ContainerReference {
     }
 
     /// Returns the container's vector embedding policy as JSON text, if any.
+    #[cfg_attr(not(feature = "__internal_native_query_plan"), allow(dead_code))]
     pub(crate) fn vector_embedding_policy_json(&self) -> Option<&str> {
         self.0.vector_embedding_policy_json.as_deref()
     }

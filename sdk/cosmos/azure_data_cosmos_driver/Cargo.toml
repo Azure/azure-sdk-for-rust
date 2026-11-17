@@ -127,6 +127,7 @@ __internal_backtrace_bench = []
 # gateway-comparison tests. Production code MUST NOT enable this feature; it is
 # not covered by SemVer and may change or disappear at any time.
 __internal_testing = []
+__internal_native_query_plan = []  # uses the native query planner (azure_cosmos_queryplan_sys) for query plans
 __tls = []
 
 [package.metadata.docs.rs]

@@ -14,7 +14,8 @@
 //!
 //! The native library is bundled through `azure_cosmos_queryplan_sys`, so these
 //! tests run on every platform that has a prebuilt library (Windows, Linux and
-//! macOS on x86_64 and aarch64) and are compiled out elsewhere:
+//! macOS on x86_64 and aarch64) and are compiled out elsewhere. They run
+//! independently of the `__internal_native_query_plan` feature flag:
 //!
 //! ```bash
 //! cargo test -p azure_data_cosmos_driver --lib query_plan_native
