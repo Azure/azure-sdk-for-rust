@@ -17,7 +17,7 @@ pub use distributed_transaction::DistributedTransactionPatchOperationOptions;
 pub use distributed_transaction::{
     DistributedReadTransaction, DistributedTransactionOperationOptions,
     DistributedTransactionOperationResult, DistributedTransactionResponse,
-    DistributedWriteTransaction,
+    DistributedTransactionResponseMode, DistributedWriteTransaction,
 };
 #[cfg(feature = "control_plane")]
 pub use throughput_poller::ThroughputPoller;

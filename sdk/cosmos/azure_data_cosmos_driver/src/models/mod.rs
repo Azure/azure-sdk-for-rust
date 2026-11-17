@@ -61,11 +61,15 @@ pub(crate) use cosmos_resource_reference::ResourcePaths;
 pub use cosmos_response::CosmosResponse;
 pub(crate) use cosmos_response::CosmosResponsePayload;
 #[cfg(feature = "unstable_dtx")]
+pub(crate) use distributed_transaction::{
+    DistributedTransactionDispatchTracker, DTX_IS_CROSS_REGION_REDIRECT_HEADER, DTX_IS_RETRY_HEADER,
+};
+#[cfg(feature = "unstable_dtx")]
 pub use distributed_transaction::{
     DistributedTransactionOperation, DistributedTransactionOperationKind,
     DistributedTransactionOperationResult, DistributedTransactionRequest,
-    DistributedTransactionResponse, DistributedTransactionResultBody, DistributedTransactionTarget,
-    DistributedTransactionType,
+    DistributedTransactionResponse, DistributedTransactionResponseMode,
+    DistributedTransactionResultBody, DistributedTransactionTarget, DistributedTransactionType,
 };
 pub use resource_id::is_database_rid;
 // Cosmos status types are owned by `crate::error::cosmos_status` (canonical home,

@@ -4,6 +4,8 @@
 //! Builder for creating [`CosmosClient`] instances.
 
 use std::sync::Arc;
+#[cfg(feature = "unstable_dtx")]
+use std::time::Duration;
 
 use crate::{
     clients::{resolve_binary_encoding, ClientContext},
@@ -99,6 +101,10 @@ pub struct CosmosClientBuilder {
     partition_failover_options: Option<PartitionFailoverOptions>,
     /// Whether to validate user-defined resource names before request planning.
     resource_name_validation: Option<bool>,
+    #[cfg(feature = "unstable_dtx")]
+    max_retry_attempts_on_aborted_transactions: Option<u32>,
+    #[cfg(feature = "unstable_dtx")]
+    max_retry_wait_time_on_aborted_transactions: Option<Duration>,
 }
 
 impl CosmosClientBuilder {
@@ -172,6 +178,28 @@ impl CosmosClientBuilder {
     /// ordinary item request bodies.
     pub fn with_resource_name_validation(mut self, enabled: bool) -> Self {
         self.resource_name_validation = Some(enabled);
+        self
+    }
+
+    /// Sets the maximum number of automatic retries for retriable distributed
+    /// transaction responses.
+    ///
+    /// Defaults to 10 retries. Set to `0` to disable these retries.
+    /// This does not control bodyless transport or throttling retries.
+    #[cfg(feature = "unstable_dtx")]
+    pub fn with_max_retry_attempts_on_aborted_transactions(mut self, attempts: u32) -> Self {
+        self.max_retry_attempts_on_aborted_transactions = Some(attempts);
+        self
+    }
+
+    /// Sets the maximum cumulative delay spent retrying distributed transaction
+    /// responses.
+    ///
+    /// Defaults to 30 seconds. This limits retry delays, not total execution
+    /// time, and does not control bodyless transport or throttling retries.
+    #[cfg(feature = "unstable_dtx")]
+    pub fn with_max_retry_wait_time_on_aborted_transactions(mut self, wait_time: Duration) -> Self {
+        self.max_retry_wait_time_on_aborted_transactions = Some(wait_time);
         self
     }
 
@@ -325,6 +353,12 @@ impl CosmosClientBuilder {
             user_agent_suffix: self.options.user_agent_suffix,
             partition_failover_options: self.partition_failover_options,
             resource_name_validation: self.resource_name_validation,
+            #[cfg(feature = "unstable_dtx")]
+            max_retry_attempts_on_aborted_transactions: self
+                .max_retry_attempts_on_aborted_transactions,
+            #[cfg(feature = "unstable_dtx")]
+            max_retry_wait_time_on_aborted_transactions: self
+                .max_retry_wait_time_on_aborted_transactions,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: self.fault_injection_rules,
         }
@@ -359,6 +393,10 @@ struct DriverOptionsInput {
     user_agent_suffix: Option<UserAgentSuffix>,
     partition_failover_options: Option<PartitionFailoverOptions>,
     resource_name_validation: Option<bool>,
+    #[cfg(feature = "unstable_dtx")]
+    max_retry_attempts_on_aborted_transactions: Option<u32>,
+    #[cfg(feature = "unstable_dtx")]
+    max_retry_wait_time_on_aborted_transactions: Option<Duration>,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
 }
@@ -389,6 +427,15 @@ impl DriverOptionsInput {
         }
         if let Some(enabled) = self.resource_name_validation {
             builder = builder.with_resource_name_validation(enabled);
+        }
+        #[cfg(feature = "unstable_dtx")]
+        {
+            if let Some(attempts) = self.max_retry_attempts_on_aborted_transactions {
+                builder = builder.with_max_retry_attempts_on_aborted_transactions(attempts);
+            }
+            if let Some(wait_time) = self.max_retry_wait_time_on_aborted_transactions {
+                builder = builder.with_max_retry_wait_time_on_aborted_transactions(wait_time);
+            }
         }
         #[cfg(feature = "fault_injection")]
         if !self.fault_injection_rules.is_empty() {
@@ -493,6 +540,10 @@ mod tests {
             user_agent_suffix: None,
             partition_failover_options: None,
             resource_name_validation: None,
+            #[cfg(feature = "unstable_dtx")]
+            max_retry_attempts_on_aborted_transactions: None,
+            #[cfg(feature = "unstable_dtx")]
+            max_retry_wait_time_on_aborted_transactions: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: Vec::new(),
         }
@@ -612,6 +663,55 @@ mod tests {
         .build()
         .expect("driver options should build");
         assert!(!disabled_options.resource_name_validation_enabled());
+    }
+
+    #[cfg(all(feature = "unstable_dtx", feature = "__internal_in_memory_emulator"))]
+    #[tokio::test]
+    async fn dtx_retry_options_reach_built_client() {
+        use azure_data_cosmos_driver::in_memory_emulator::{
+            InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion,
+        };
+
+        let endpoint = "https://dtx-options.documents.azure.com/";
+        let emulator = Arc::new(InMemoryEmulatorHttpClient::new(
+            VirtualAccountConfig::new(vec![VirtualRegion::new(
+                "East US",
+                endpoint.parse().unwrap(),
+            )])
+            .unwrap(),
+        ));
+        let runtime = crate::CosmosRuntimeBuilder::from(emulator.runtime_builder())
+            .build()
+            .await
+            .unwrap();
+        for configured in [false, true] {
+            let mut builder = CosmosClientBuilder::new().with_runtime(runtime.clone());
+            if configured {
+                builder = builder
+                    .with_max_retry_attempts_on_aborted_transactions(0)
+                    .with_max_retry_wait_time_on_aborted_transactions(Duration::from_secs(7));
+            }
+            let account = AccountReference::with_authentication_key(
+                endpoint.parse().unwrap(),
+                azure_core::credentials::Secret::new("dGVzdGtleQ=="),
+            );
+            let client = builder
+                .build(
+                    account,
+                    RoutingStrategy::PreferredRegions(vec![Region::EAST_US]),
+                )
+                .await
+                .unwrap();
+            let options = client.context.driver.options();
+            assert_eq!(
+                options.max_retry_attempts_on_aborted_transactions(),
+                configured.then_some(0)
+            );
+            assert_eq!(
+                options.max_retry_wait_time_on_aborted_transactions(),
+                configured.then_some(Duration::from_secs(7))
+            );
+        }
     }
 
     /// Omitting the partition-failover options on the builder must resolve

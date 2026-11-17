@@ -2585,6 +2585,8 @@ fn build_transport_request_with_fault_injection(
         url,
         headers,
         #[cfg(feature = "unstable_dtx")]
+        dtx_dispatch_tracker: operation.dtx_dispatch_tracker().cloned(),
+        #[cfg(feature = "unstable_dtx")]
         resource_type,
         body: operation.body().map(azure_core::Bytes::copy_from_slice),
         auth_context,

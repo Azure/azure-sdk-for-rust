@@ -5,6 +5,8 @@
 ### Features Added
 
 - Added ranked full-text and weighted text/vector hybrid search, with per-query `FullTextScoreScope` and bounded buffered results. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
+- Added `DistributedTransactionResponseMode` and `DistributedTransactionResponse::response_mode()` to report whether the coordinator replied in `Standard` or `FastResponse` mode (`unstable_dtx`).
+- Added `CosmosClientBuilder::with_max_retry_attempts_on_aborted_transactions()` and `with_max_retry_wait_time_on_aborted_transactions()` to configure distributed transaction retries (`unstable_dtx`).
 
 ### Breaking Changes
 
@@ -12,11 +14,16 @@
 
 ### Bugs Fixed
 
+- An all-not-modified distributed read (`200` with sub-status `5425`) now reports `304 NotModified`.
+- A durably aborted distributed write transaction (`452`) is retried under a new idempotency token; other retriable responses reuse the same token.
+- Distributed transaction session tokens from `304`, `404`, `409`, and `412` sub-operations are now captured (except sub-status `1002`), and malformed tokens fail under Session consistency before retrying.
+- Distributed write retry headers now advance after bodyless HTTP `429` responses, and DTX session-token validation rejects legacy V1 payloads.
 - Restore checkpoint-owned change-feed starts, preserve round-robin progress across resumes, and correctly scope hierarchical-prefix feeds across overlapping partitions. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - A checkpoint's saved start takes precedence over a newly supplied change-feed start. Omit the continuation token to start a new feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 
 ### Other Changes
 
+- Documented that cancellation or network failures do not roll back distributed writes and require reconciliation before a new submission.
 - New query and change-feed checkpoints use `c2.` and cannot be read by SDKs that only support `c1.`. Query checkpoint payloads are unchanged, and supported legacy `c1.` checkpoints remain readable. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 
