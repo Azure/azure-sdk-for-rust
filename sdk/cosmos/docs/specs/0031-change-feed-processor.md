@@ -186,6 +186,18 @@ Registration and the SDK request can arrive in either order. An empty or
 throttled read returns no batch and lets the pending SDK request select another
 ready lease, as described above.
 
+The states below describe one acquisition's delivery, not the queue as a whole
+or persisted lease ownership. Only `WaitingForDemand` has an eligible queue
+registration:
+
+| Delivery state | Queue membership and meaning |
+| --- | --- |
+| `Idle` | Not queued; ready to register for another turn. |
+| `WaitingForDemand` | Queued; waiting for an SDK request to select this lease. |
+| `Fetching` | Removed from the queue; the source-read turn has been granted. Also remains the state during an idle delay or throttle cooldown, before registering again. |
+| `AwaitingAcknowledgment` | Not queued; the SDK is processing the batch or the driver is completing acknowledgment and any required persistence. |
+| `Closed` | Acquisition ended; remove or skip its registrations and reject further delivery. |
+
 ### 6.2 How queue readiness relates to checkpoints
 
 **The queue does not checkpoint progress.** It controls which lease may read
@@ -197,13 +209,13 @@ SDK boundary                        Driver boundary
 ----------------------------------  -----------------------------------------
 SDK consumer                        Ready-lease queue and lease processor
      |                                   |
-     | Request batch                     | Queue: [A, B]
+     | Request batch                     | A: WaitingForDemand; queue [A, B]
      |---------------------------------->| Select A; queue becomes [B]
-     |                                   | A reads its source range
+     |                                   | A: Fetching; read source range
      | ChangeFeedBatch                   |
      |<----------------------------------|
      |                                   |
-     | Run application handler           | A stays out of the queue
+     | Run application handler           | A: AwaitingAcknowledgment
      |                                   |
      | Acknowledge successful processing |
      |---------------------------------->|
@@ -214,7 +226,7 @@ SDK consumer                        Ready-lease queue and lease processor
      |                                   |
      | Acknowledgment succeeds           |
      |<----------------------------------|
-     |                                   | A can register at the back again
+     |                                   | A: Idle -> WaitingForDemand
      |                                   | Queue: [B, A] if B is still waiting
      | Request next batch                |
      |---------------------------------->|
