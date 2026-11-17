@@ -112,7 +112,7 @@ creation/deletion contracts.
 This reduces duplicate setup across every profile job/build; it is not a global
 mutex or a guarantee against arbitrary account load. All SDK retry bounds,
 backoff, operation deadlines, and 429 assertions remain unchanged. Setup errors
-identify database creation, container creation, metadata resolution, or item-read
+identify database creation, container creation, metadata resolution, or data-plane
 readiness so remaining throttling can be attributed to its actual phase.
 No ADO locks or additional Azure resources are required. Cancelled agents can
 leave containers in the shared fixture database; these require account-owner

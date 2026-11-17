@@ -405,7 +405,7 @@ impl E2eTestFixture {
                 .await
                 .map_err(|error| {
                     format!(
-                        "E2E fixture read_item readiness '{database_id}/{container_id}': {error}"
+                        "E2E fixture data-plane readiness '{database_id}/{container_id}': {error}"
                     )
                 })?;
             }
@@ -775,6 +775,13 @@ mod tests {
                 .container
                 .create_item("A", &existing.id, &existing, None)
                 .await?;
+            // Readiness uses item-level DELETEs, which must not count as container cleanup.
+            crate::framework::probe_data_plane_ready_with_partition_key(
+                "request accounting regression",
+                &first.container,
+                "A".into(),
+            )
+            .await?;
             first.cleanup().await?;
             let value: serde_json::Value = second
                 .container
@@ -812,7 +819,10 @@ mod tests {
                 requests
                     .iter()
                     .filter(|(method, path)| *method == Method::Delete
-                        && path.starts_with("/dbs/shared/colls/"))
+                        && matches!(
+                            path.as_str(),
+                            "/dbs/shared/colls/first" | "/dbs/shared/colls/second"
+                        ))
                     .count(),
                 2
             );
