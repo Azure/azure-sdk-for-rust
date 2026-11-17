@@ -6,7 +6,7 @@ use crate::clients::fake::{KeyVaultKeysServer, KeyVaultOperationsServer, KeyVaul
 use async_trait::async_trait;
 use azure_core::{
     http::{
-        fake::ResponseExt as _,
+        fake::{ResponseExt as _, ServerFactory},
         headers::Headers,
         pager::{PagerContinuation, PagerState},
         AsyncRawResponse, StatusCode,
@@ -19,13 +19,8 @@ use std::sync::{Arc, Mutex};
 const ENDPOINT: &str = "https://management.azure.com";
 const NEXT_LINK: &str = "https://management.azure.com/operations?cursor=next";
 
+#[derive(ServerFactory)]
 struct KeysOnly;
-
-impl KeyVaultServer for KeysOnly {
-    fn as_key_vault_keys(&self) -> &dyn KeyVaultKeysServer {
-        self
-    }
-}
 
 #[async_trait]
 impl KeyVaultKeysServer for KeysOnly {

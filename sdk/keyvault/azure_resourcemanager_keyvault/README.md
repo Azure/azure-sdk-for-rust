@@ -235,24 +235,20 @@ servers need no implementation:
 
 ```rust ignore testing_with_fakes
 use azure_core::{
-    http::{fake::ResponseExt as _, headers::Headers, AsyncRawResponse, StatusCode},
+    http::{
+        fake::{ResponseExt as _, ServerFactory},
+        headers::Headers,
+        AsyncRawResponse, StatusCode,
+    },
     Result,
 };
 use azure_resourcemanager_keyvault::{
-    clients::fake::{KeyVaultKeysServer, KeyVaultServer},
-    models::KeyVaultKeysClientGetOptions,
-    KeyVaultClient,
+    clients::fake::KeyVaultKeysServer, models::KeyVaultKeysClientGetOptions, KeyVaultClient,
 };
 use std::sync::Arc;
 
-#[derive(Debug)]
+#[derive(Debug, ServerFactory)]
 struct FakeKeyVaultServer;
-
-impl KeyVaultServer for FakeKeyVaultServer {
-    fn as_key_vault_keys(&self) -> &dyn KeyVaultKeysServer {
-        self
-    }
-}
 
 #[async_trait::async_trait]
 impl KeyVaultKeysServer for FakeKeyVaultServer {

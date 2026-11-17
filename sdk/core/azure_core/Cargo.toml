@@ -17,7 +17,7 @@ exclude.workspace = true
 [dependencies]
 async-lock.workspace = true
 async-trait.workspace = true
-azure_core_macros.workspace = true
+azure_core_macros = { path = "../azure_core_macros", version = "1.1.0-beta.1" }
 bytes.workspace = true
 futures.workspace = true
 hmac = { workspace = true, optional = true }
@@ -40,7 +40,6 @@ rustc_version.workspace = true
 
 [dev-dependencies]
 azure_core_examples = { path = "../azure_core_examples" }
-azure_core_macros.workspace = true
 azure_core_test = { path = "../azure_core_test" }
 clap = { workspace = true, features = ["derive"] }
 criterion.workspace = true
@@ -74,7 +73,7 @@ reqwest_gzip = ["reqwest", "typespec_client_core/reqwest_gzip"]
 reqwest_rustls = ["reqwest", "typespec_client_core/reqwest_rustls"]
 test = ["typespec_client_core/test"]
 tokio = ["dep:tokio", "typespec_client_core/tokio"]
-unstable_fake = ["test"]
+unstable_fake = ["azure_core_macros/unstable_fake", "test"]
 unstable_resource_manager = []
 xml = ["typespec_client_core/xml"]
 

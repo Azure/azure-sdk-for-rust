@@ -19,6 +19,7 @@ use crate::{
     tracing::PublicApiInstrumentationInformation,
     Bytes, Result,
 };
+pub use azure_core_macros::ServerFactory;
 
 /// Returns the borrowed API name from the context, or `None` if absent.
 pub fn get_api_name<'a>(context: &'a Context<'_>) -> Option<&'a str> {
@@ -105,6 +106,39 @@ impl<T> AsyncResponseExt for AsyncResponse<T> {
         AsyncRawResponse::fake_with_stream(status, headers, stream).into()
     }
 }
+
+/// Marker trait to enable blanket implementations of server fakes.
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{
+///     http::fake::ServerFactory,
+///     Result,
+/// };
+///
+/// pub trait MetaServer {
+///     fn as_foo(&self) -> &dyn FooServer;
+/// }
+///
+/// #[async_trait::async_trait]
+/// pub trait FooServer {
+///     async fn foo(&self) -> Result<()> {
+///         unimplemented!()
+///     }
+/// }
+///
+/// // Derive `ServerFactory` instead of implementing `MetaServer`.
+/// #[derive(ServerFactory)]
+/// struct FakeServer;
+///
+/// impl FooServer for FakeServer {
+///     async fn foo(&self) -> Result<()> {
+///         Ok(())
+///     }
+/// }
+/// ```
+pub trait ServerFactory {}
 
 #[cfg(test)]
 mod tests;

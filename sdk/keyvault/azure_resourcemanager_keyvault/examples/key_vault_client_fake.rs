@@ -3,23 +3,20 @@
 
 use async_trait::async_trait;
 use azure_core::{
-    http::{fake::ResponseExt as _, headers::Headers, AsyncRawResponse, StatusCode},
+    http::{
+        fake::{ResponseExt as _, ServerFactory},
+        headers::Headers,
+        AsyncRawResponse, StatusCode,
+    },
     Result,
 };
 use azure_resourcemanager_keyvault::{
-    clients::fake::{KeyVaultKeysServer, KeyVaultServer},
-    models::KeyVaultKeysClientGetOptions,
-    KeyVaultClient,
+    clients::fake::KeyVaultKeysServer, models::KeyVaultKeysClientGetOptions, KeyVaultClient,
 };
 use std::sync::Arc;
 
+#[derive(ServerFactory)]
 struct FakeKeyVault;
-
-impl KeyVaultServer for FakeKeyVault {
-    fn as_key_vault_keys(&self) -> &dyn KeyVaultKeysServer {
-        self
-    }
-}
 
 #[async_trait]
 impl KeyVaultKeysServer for FakeKeyVault {
