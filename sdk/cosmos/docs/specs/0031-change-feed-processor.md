@@ -115,6 +115,19 @@ Application          SDK                         Driver
 
 ## 6. How does the driver respond to an SDK request?
 
+The SDK starts with an ordinary async method call:
+
+```rust
+let batch = processor.read_next_change_feed_batch().await;
+```
+
+**A one-shot channel connects background completion to that pending method
+call.** The method awaits the receiver internally; background work gets the
+sender. Sending a value wakes the receiver so the method can return it. The
+SDK awaits the method, not a channel it must manage. The method call itself is
+not another channel. In channel variable names, `tx` means sender (transmit)
+and `rx` means receiver.
+
 `ChangeFeedRequestDistributor` matches the SDK's pending request to a ready,
 owned lease and grants one source-read turn. Its
 `read_next_change_feed_batch()` future owns the one-shot response receiver
@@ -178,6 +191,21 @@ These components have distinct roles:
 
 Batch delivery and acknowledgment are separate asynchronous exchanges:
 **request to batch**, then **acknowledgment to completion**.
+
+For one successful batch and acknowledgment, four `oneshot::channel()` calls
+create two request/reply pairs:
+
+| SDK call | Internal request channel | Internal response channel |
+| --- | --- | --- |
+| `read_next_change_feed_batch().await` | Distributor grants the selected acquisition read permission, carrying a batch-response sender. | Acquisition sends the batch to the distributor, which returns it to the SDK. |
+| `batch.acknowledge().await` | SDK-side acknowledgment code reports handler success, carrying an acknowledgment-result sender. | Acquisition returns success or failure after any persistence required by policy. |
+
+Each channel pair has one sender and one receiver. The permission channel is
+created when the acquisition registers readiness; the other channels are
+created as selection, delivery, and acknowledgment proceed. The application
+handler runs between the two SDK calls. Empty or throttled turns can create
+additional permission/response pairs for the same pending receive; shutdown
+and cancellation channels are separate.
 
 ### 6.1 Register readiness and match an SDK request
 
