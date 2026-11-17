@@ -1865,3 +1865,374 @@ mod live {
         Ok(())
     }
 }
+
+#[cfg(feature = "metrics")]
+mod telemetry {
+    use super::{to_partition, BufferedProducerClient, BufferedSendClient};
+    use crate::{
+        common::diagnostics::{tests as diagnostics_tests, Diagnostics},
+        error::Result,
+        EventHubsError,
+    };
+    use azure_core::{
+        http::Url,
+        tracing::{Span, SpanKind},
+    };
+    use azure_core_amqp::{AmqpMessage, AmqpSendOutcome};
+    use futures::{channel::mpsc, StreamExt};
+    use opentelemetry::{metrics::MeterProvider, trace::Status};
+    use opentelemetry_sdk::{
+        metrics::{
+            data::{AggregatedMetrics, MetricData},
+            InMemoryMetricExporter, SdkMeterProvider,
+        },
+        trace::{InMemorySpanExporter, SdkTracerProvider},
+    };
+    use std::{sync::Arc, time::Duration};
+
+    // Models the transport boundary, including a cold attach and a retried send.
+    // The real worker must supply the same logical parent to both operations.
+    struct ObservedSender {
+        diagnostics: Arc<Diagnostics>,
+        fail_attach: bool,
+        max_size: u64,
+        prepared: mpsc::UnboundedSender<()>,
+    }
+
+    #[async_trait::async_trait]
+    impl BufferedSendClient for ObservedSender {
+        fn diagnostics(&self) -> Option<&Arc<Diagnostics>> {
+            Some(&self.diagnostics)
+        }
+
+        async fn partition_ids(&self) -> Result<Vec<String>> {
+            Ok(vec!["0".into()])
+        }
+
+        async fn max_message_size(&self, _: &str, parent: Option<Arc<dyn Span>>) -> Result<u64> {
+            let mut attach =
+                self.diagnostics
+                    .start("sender.attach", "attach", SpanKind::Client, parent);
+            tokio::time::sleep(Duration::from_millis(20)).await;
+            let result = if self.fail_attach {
+                Err(EventHubsError::with_message("preparation failed"))
+            } else {
+                Ok(self.max_size)
+            };
+            attach.finish(&result, 0);
+            let _ = self.prepared.unbounded_send(());
+            result
+        }
+
+        async fn send_envelope(
+            &self,
+            _: &str,
+            _: AmqpMessage,
+            parent: Option<Arc<dyn Span>>,
+        ) -> Result<AmqpSendOutcome> {
+            for attempt in 0..2 {
+                let mut child = self.diagnostics.start(
+                    "send.disposition",
+                    "send",
+                    SpanKind::Client,
+                    parent.clone(),
+                );
+                let result = if attempt == 0 {
+                    Err(EventHubsError::with_message("retry"))
+                } else {
+                    Ok(())
+                };
+                child.finish(&result, 0);
+            }
+            Ok(AmqpSendOutcome::Accepted)
+        }
+    }
+
+    struct Observation {
+        sender: Arc<ObservedSender>,
+        prepared: mpsc::UnboundedReceiver<()>,
+        spans: InMemorySpanExporter,
+        metrics: InMemoryMetricExporter,
+        meter_provider: SdkMeterProvider,
+        _tracer_provider: SdkTracerProvider,
+    }
+
+    fn observation(fail_attach: bool, max_size: u64) -> Observation {
+        let (provider, spans, tracer_provider) = diagnostics_tests::provider();
+        let metrics = InMemoryMetricExporter::default();
+        let meter_provider = SdkMeterProvider::builder()
+            .with_periodic_exporter(metrics.clone())
+            .build();
+        let diagnostics = diagnostics_tests::with_meter(
+            Diagnostics::new(
+                &Url::parse("amqps://example.servicebus.windows.net/hub").unwrap(),
+                Some(provider),
+            ),
+            meter_provider.meter("buffered-test"),
+        );
+        let (prepared_tx, prepared) = mpsc::unbounded();
+        Observation {
+            sender: Arc::new(ObservedSender {
+                diagnostics: Arc::new(diagnostics),
+                fail_attach,
+                max_size,
+                prepared: prepared_tx,
+            }),
+            prepared,
+            spans,
+            metrics,
+            meter_provider,
+            _tracer_provider: tracer_provider,
+        }
+    }
+
+    fn metrics(observation: &Observation) -> (u64, u64, u64, f64) {
+        observation.meter_provider.force_flush().unwrap();
+        let data = observation.metrics.get_finished_metrics().unwrap();
+        let mut operations = 0;
+        let mut events = 0;
+        let mut durations = 0;
+        let mut seconds = 0.0;
+        // Each assertion flushes once; the exporter receives one cumulative snapshot.
+        for metric in data
+            .iter()
+            .flat_map(|r| r.scope_metrics())
+            .flat_map(|s| s.metrics())
+        {
+            match (metric.name(), metric.data()) {
+                ("az.eventhubs.operations", AggregatedMetrics::U64(MetricData::Sum(sum))) => {
+                    operations += sum.data_points().map(|p| p.value()).sum::<u64>()
+                }
+                ("az.eventhubs.events", AggregatedMetrics::U64(MetricData::Sum(sum))) => {
+                    events += sum.data_points().map(|p| p.value()).sum::<u64>()
+                }
+                (
+                    "az.eventhubs.operation.duration",
+                    AggregatedMetrics::F64(MetricData::Histogram(histogram)),
+                ) => {
+                    durations += histogram.data_points().map(|p| p.count()).sum::<u64>();
+                    seconds += histogram.data_points().map(|p| p.sum()).sum::<f64>();
+                }
+                _ => (),
+            }
+        }
+        (operations, events, durations, seconds)
+    }
+
+    #[tokio::test]
+    async fn preparation_failures_complete_one_logical_send_before_callback() {
+        for (fail_attach, max_size) in [(true, 1024), (false, 1)] {
+            let observation = observation(fail_attach, max_size);
+            let (reports, mut receiver) = mpsc::unbounded();
+            let client = BufferedProducerClient::builder()
+                .with_max_wait_time(azure_core::time::Duration::seconds(60))
+                .with_on_send_failed(move |context| {
+                    let reports = reports.clone();
+                    async move {
+                        reports.unbounded_send(context.events.len()).unwrap();
+                    }
+                })
+                .open_with_send_client(observation.sender.clone())
+                .await
+                .unwrap();
+            client
+                .enqueue_event("event", to_partition("0"))
+                .await
+                .unwrap();
+            client.flush().await.unwrap();
+            assert_eq!(receiver.next().await, Some(1));
+            assert!(receiver.try_recv().is_err());
+            let spans = observation.spans.get_finished_spans().unwrap();
+            let logical: Vec<_> = spans
+                .iter()
+                .filter(|s| s.name == "ProducerClient.send")
+                .collect();
+            assert_eq!(
+                logical.len(),
+                1,
+                "preparation failure must complete one logical send"
+            );
+            assert!(matches!(logical[0].status, Status::Error { .. }));
+            assert_eq!(spans[0].parent_span_id, logical[0].span_context.span_id());
+            assert!(!spans.iter().any(|s| s.name == "send.disposition"));
+            let (operations, events, durations, seconds) = metrics(&observation);
+            assert_eq!((operations, events, durations), (1, 0, 1));
+            assert!(seconds >= 0.020, "preparation duration must be measured");
+            client.close().await.unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn preparation_and_retries_share_scope_but_fill_and_callbacks_are_excluded() {
+        let mut observation = observation(false, 1024 * 1024);
+        let (callback_started, mut callbacks) = mpsc::unbounded();
+        let callback_gate = Arc::new(tokio::sync::Notify::new());
+        let gate = callback_gate.clone();
+        let client = BufferedProducerClient::builder()
+            .with_max_wait_time(azure_core::time::Duration::seconds(60))
+            .with_on_send_failed(|_| async { panic!("send must succeed") })
+            .with_on_send_succeeded(move |context| {
+                let gate = gate.clone();
+                let started = callback_started.clone();
+                async move {
+                    started.unbounded_send(context.events.len()).unwrap();
+                    gate.notified().await;
+                }
+            })
+            .open_with_send_client(observation.sender.clone())
+            .await
+            .unwrap();
+        client
+            .enqueue_event("first", to_partition("0"))
+            .await
+            .unwrap();
+        observation.prepared.next().await.unwrap();
+        tokio::time::sleep(Duration::from_millis(300)).await;
+        client
+            .enqueue_event("second", to_partition("0"))
+            .await
+            .unwrap();
+        let flush = client.flush();
+        let inspect = async {
+            assert_eq!(callbacks.next().await, Some(2));
+            // The callback is still blocked: spans and metrics must already be final.
+            let spans = observation.spans.get_finished_spans().unwrap();
+            let logical: Vec<_> = spans
+                .iter()
+                .filter(|s| s.name == "ProducerClient.send")
+                .collect();
+            assert_eq!(logical.len(), 1);
+            assert_eq!(
+                spans.len(),
+                4,
+                "one attach, two attempts, and one logical send"
+            );
+            assert_eq!(logical[0].status, Status::Unset);
+            let counts: Vec<_> = logical[0]
+                .attributes
+                .iter()
+                .filter(|a| a.key.as_str() == "messaging.batch.message_count")
+                .collect();
+            assert_eq!(counts.len(), 1);
+            assert_eq!(counts[0].value, 2_i64.into());
+            for child in spans.iter().filter(|s| s.name != "ProducerClient.send") {
+                assert_eq!(child.parent_span_id, logical[0].span_context.span_id());
+                assert_eq!(
+                    child.span_context.trace_id(),
+                    logical[0].span_context.trace_id()
+                );
+            }
+            let elapsed = logical[0]
+                .end_time
+                .duration_since(logical[0].start_time)
+                .unwrap()
+                .as_secs_f64();
+            let (operations, events, durations, seconds) = metrics(&observation);
+            assert_eq!((operations, events, durations), (1, 2, 1));
+            assert!(
+                elapsed >= 0.300,
+                "span must retain real wall-clock timestamps"
+            );
+            assert!(seconds >= 0.020, "active preparation must be included");
+            assert!(
+                seconds < elapsed / 2.0,
+                "batch-fill wait must be excluded: active={seconds}, elapsed={elapsed}"
+            );
+            callback_gate.notify_one();
+        };
+        let (result, ()) = futures::join!(flush, inspect);
+        result.unwrap();
+        assert!(callbacks.try_recv().is_err());
+        client.close().await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn aborting_a_prepared_batch_ends_one_cancelled_scope() {
+        let mut observation = observation(false, 1024 * 1024);
+        let client = BufferedProducerClient::builder()
+            .with_max_wait_time(azure_core::time::Duration::seconds(60))
+            .with_on_send_failed(|_| async { panic!("abandoned events have no callback") })
+            .with_on_send_succeeded(|_| async { panic!("abandoned events have no callback") })
+            .open_with_send_client(observation.sender.clone())
+            .await
+            .unwrap();
+        client
+            .enqueue_event("abandoned", to_partition("0"))
+            .await
+            .unwrap();
+        observation.prepared.next().await.unwrap();
+        // The worker is waiting to fill the batch when it is cancelled.
+        tokio::task::yield_now().await;
+        client.abort().await.unwrap();
+        let spans = observation.spans.get_finished_spans().unwrap();
+        let logical: Vec<_> = spans
+            .iter()
+            .filter(|s| s.name == "ProducerClient.send")
+            .collect();
+        assert_eq!(logical.len(), 1);
+        assert!(
+            matches!(&logical[0].status, Status::Error { description } if description.contains("cancelled"))
+        );
+        assert!(!spans.iter().any(|s| s.name == "send.disposition"));
+        let (operations, events, durations, _) = metrics(&observation);
+        assert_eq!((operations, events, durations), (1, 0, 1));
+        assert_eq!(client.total_buffered_event_count(), 0);
+    }
+
+    #[tokio::test]
+    async fn overflowing_a_batch_creates_one_scope_and_callback_per_batch() {
+        let observation = observation(false, 2500);
+        let (reports, mut receiver) = mpsc::unbounded();
+        let client = BufferedProducerClient::builder()
+            .with_max_wait_time(azure_core::time::Duration::seconds(60))
+            .with_on_send_failed(|_| async { panic!("both events fit individually") })
+            .with_on_send_succeeded(move |context| {
+                let reports = reports.clone();
+                async move {
+                    reports.unbounded_send(context.events.len()).unwrap();
+                }
+            })
+            .open_with_send_client(observation.sender.clone())
+            .await
+            .unwrap();
+        client
+            .enqueue_event("a".repeat(1000), to_partition("0"))
+            .await
+            .unwrap();
+        client
+            .enqueue_event("b".repeat(1000), to_partition("0"))
+            .await
+            .unwrap();
+        client.flush().await.unwrap();
+        assert_eq!(receiver.next().await, Some(1));
+        assert_eq!(receiver.next().await, Some(1));
+        assert!(receiver.try_recv().is_err());
+        let spans = observation.spans.get_finished_spans().unwrap();
+        let logical: Vec<_> = spans
+            .iter()
+            .filter(|s| s.name == "ProducerClient.send")
+            .collect();
+        assert_eq!(logical.len(), 2);
+        for parent in logical {
+            assert_eq!(parent.status, Status::Unset);
+            let counts: Vec<_> = parent
+                .attributes
+                .iter()
+                .filter(|a| a.key.as_str() == "messaging.batch.message_count")
+                .collect();
+            assert_eq!(counts.len(), 1, "message count is recorded exactly once");
+            assert_eq!(counts[0].value, 1_i64.into());
+            assert_eq!(
+                spans
+                    .iter()
+                    .filter(|s| s.name == "send.disposition"
+                        && s.parent_span_id == parent.span_context.span_id())
+                    .count(),
+                2
+            );
+        }
+        let (operations, events, durations, _) = metrics(&observation);
+        assert_eq!((operations, events, durations), (2, 2, 2));
+        client.close().await.unwrap();
+    }
+}

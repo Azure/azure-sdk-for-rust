@@ -15,17 +15,13 @@ use crate::{
         TransportHttpVersion, TransportSecurity,
     },
     driver::{
-        cache::{PartitionKeyRangeCache, PkRangeFetchResult},
+        cache::{ContainerRoutingMap, PartitionKeyRangeCache, PkRangeFetchResult},
         dataflow::{
             planner, CachedTopologyProvider, DrainedLeaf, OperationPlan, PartitionRoutingRefresh,
-            Pipeline, PipelineContext, PipelineNodeState, RequestExecutor, RequestTarget,
-            TopologyProvider,
+            Pipeline, PipelineContext, PipelineNodeState, PipelineResponse, RequestExecutor,
+            RequestTarget, TopologyProvider,
         },
         pipeline::{
-            components::{
-                ThrottleRetryState, METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS,
-                METADATA_MAX_THROTTLE_WAIT,
-            },
             hedge_budget::HedgeBudget,
             operation_pipeline::{
                 deadline_signal, operation_allows_automatic_session_token_resolution,
@@ -37,7 +33,6 @@ use crate::{
             is_eligible_for_ppaf, is_eligible_for_ppcb, session_manager::SessionManager,
             CosmosEndpoint, LocationStateStore,
         },
-        transport::{is_operation_supported_by_gateway_v2, uses_dataplane_pipeline},
     },
     models::{
         effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
@@ -49,6 +44,14 @@ use crate::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
         PartitionTopologyCacheMode, PlanOptions, ReadConsistencyStrategy,
         ResolvedThroughputControl, ThrottlingRetryOptions,
+    },
+    pipeline::transport::{
+        is_operation_supported_by_gateway_v2,
+        recovery::{
+            ThrottleRetryPolicy, ThrottleRetryProgress, METADATA_MAX_PER_RETRY_DELAY,
+            METADATA_MAX_THROTTLE_ATTEMPTS, METADATA_MAX_THROTTLE_WAIT,
+        },
+        uses_dataplane_pipeline,
     },
     ActivityId, CosmosResponse, DiagnosticsContext,
 };
@@ -185,15 +188,17 @@ use super::routing::EndpointProbeFn;
 
 use super::{
     cache::{parse_pk_ranges_response, AccountRegion},
-    transport::{
+    CosmosDriverRuntime,
+};
+use crate::{
+    emulator::ensure_endpoint_scheme_allowed,
+    pipeline::transport::{
         connectivity_probe::{ConnectivityProbe, Http2ConnectivityProbe},
         cosmos_headers,
         cosmos_transport_client::HttpRequest,
-        ensure_endpoint_scheme_allowed,
         http_client_factory::HttpClientConfig,
         request_signing, AuthorizationContext, CosmosTransport,
     },
-    CosmosDriverRuntime,
 };
 
 struct DriverRequestExecutor<'a> {
@@ -318,7 +323,7 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
         target: RequestTarget,
         _partition_routing_refresh: PartitionRoutingRefresh,
         continuation: Option<String>,
-    ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
+    ) -> BoxFuture<'a, crate::error::Result<PipelineResponse>> {
         let driver = self.driver;
         let mut overrides = request_target_overrides(target, continuation);
         overrides.container_recreation_recovery_disabled =
@@ -343,7 +348,7 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
             if result.is_ok() {
                 self.successful_requests += 1;
             }
-            result
+            result.map(Into::into)
         })
     }
 }
@@ -438,7 +443,8 @@ pub struct CosmosDriver {
     /// injection rules, this is a fault-injecting wrapper around the runtime's
     /// factory; the wrapper is owned by this driver alone and never affects
     /// other drivers built from the same runtime.
-    http_client_factory: Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+    http_client_factory:
+        Arc<dyn crate::pipeline::transport::http_client_factory::HttpClientFactory>,
     /// Whether this driver has fault injection rules installed.
     ///
     /// Mirrors `options.fault_injection_rules().is_some()`; cached at
@@ -511,12 +517,14 @@ impl CosmosDriver {
 
     fn build_metadata_transport_for_version(
         connection_pool: &ConnectionPoolOptions,
-        http_client_factory: Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+        http_client_factory: Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        >,
         version: TransportHttpVersion,
         endpoint: &AccountEndpoint,
     ) -> crate::error::Result<(
         CosmosTransport,
-        super::transport::adaptive_transport::AdaptiveTransport,
+        crate::pipeline::transport::adaptive_transport::AdaptiveTransport,
     )> {
         let transport =
             CosmosTransport::with_factory(connection_pool.clone(), http_client_factory, version)?;
@@ -540,7 +548,9 @@ impl CosmosDriver {
 
     async fn fetch_account_properties_with_version(
         runtime: &CosmosDriverRuntime,
-        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+        http_client_factory: &Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        >,
         account: &AccountReference,
         version: TransportHttpVersion,
         client_id: &azure_core::http::headers::HeaderValue,
@@ -581,7 +591,7 @@ impl CosmosDriver {
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
         override_http_client_factory: Option<
-            &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+            &Arc<dyn crate::pipeline::transport::http_client_factory::HttpClientFactory>,
         >,
         client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
@@ -632,7 +642,9 @@ impl CosmosDriver {
     /// The returned version is used to create the per-account `CosmosTransport`.
     async fn fetch_initial_account_properties(
         runtime: &CosmosDriverRuntime,
-        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+        http_client_factory: &Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        >,
         account: &AccountReference,
         client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
@@ -696,7 +708,9 @@ impl CosmosDriver {
     /// Probes the HTTP version for a single endpoint.
     async fn fetch_initial_account_properties_for_endpoint(
         runtime: &CosmosDriverRuntime,
-        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+        http_client_factory: &Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        >,
         account: &AccountReference,
         client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
@@ -854,7 +868,7 @@ impl CosmosDriver {
     )]
     async fn fetch_account_properties_with_transport(
         runtime: &CosmosDriverRuntime,
-        transport: &super::transport::adaptive_transport::AdaptiveTransport,
+        transport: &crate::pipeline::transport::adaptive_transport::AdaptiveTransport,
         account: &AccountReference,
         region: Option<&crate::options::Region>,
         user_agent: &azure_core::http::headers::HeaderValue,
@@ -914,11 +928,12 @@ impl CosmosDriver {
         let max_throttle_wait_time = throttling_retry_options
             .max_retry_wait_time
             .unwrap_or(METADATA_MAX_THROTTLE_WAIT);
-        let mut throttle = ThrottleRetryState::with_limits(
+        let throttle_policy = ThrottleRetryPolicy::with_limits(
             max_throttle_attempts,
             max_throttle_wait_time,
             METADATA_MAX_PER_RETRY_DELAY,
         );
+        let mut throttle = ThrottleRetryProgress::default();
         let mut execution_context = ExecutionContext::Initial;
         let (response, cosmos_headers, status_code, sub_status, cosmos_status) = loop {
             let request_handle = diagnostics.start_request(
@@ -1034,10 +1049,9 @@ impl CosmosDriver {
             // Retry 429s using the shared metadata throttle budget before
             // surfacing the error.
             if cosmos_status.is_throttled() {
-                if let Some((delay, next)) =
-                    throttle.next_throttle_retry(cosmos_headers.retry_after_ms)
+                if let Some(delay) =
+                    throttle.try_retry(cosmos_headers.retry_after_ms, &throttle_policy)
                 {
-                    throttle = next;
                     azure_core::sleep(
                         azure_core::time::Duration::try_from(delay)
                             .unwrap_or(azure_core::time::Duration::ZERO),
@@ -1227,7 +1241,9 @@ impl CosmosDriver {
     )]
     async fn refresh_account_properties(
         runtime: &CosmosDriverRuntime,
-        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+        http_client_factory: &Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        >,
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         user_agent: &Arc<UserAgent>,
@@ -1406,7 +1422,9 @@ impl CosmosDriver {
     )]
     async fn maybe_restore_http2_after_refresh(
         runtime: &CosmosDriverRuntime,
-        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+        http_client_factory: &Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        >,
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         current_version: TransportHttpVersion,
@@ -1474,7 +1492,9 @@ impl CosmosDriver {
     #[allow(clippy::too_many_arguments)]
     async fn handle_refresh_failure(
         runtime: &CosmosDriverRuntime,
-        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+        http_client_factory: &Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        >,
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         current_version: TransportHttpVersion,
@@ -1727,7 +1747,9 @@ impl CosmosDriver {
         #[cfg(feature = "fault_injection")]
         let fault_injection_enabled =
             options.fault_injection_rules().is_some() || runtime.fault_injection_enabled();
-        let http_client_factory: Arc<dyn super::transport::http_client_factory::HttpClientFactory> = {
+        let http_client_factory: Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        > = {
             #[cfg(feature = "fault_injection")]
             {
                 if let Some(rules) = options.fault_injection_rules() {
@@ -2035,7 +2057,7 @@ impl CosmosDriver {
     #[allow(dead_code)]
     pub(crate) fn http_client_factory(
         &self,
-    ) -> &Arc<dyn super::transport::http_client_factory::HttpClientFactory> {
+    ) -> &Arc<dyn crate::pipeline::transport::http_client_factory::HttpClientFactory> {
         &self.http_client_factory
     }
 
@@ -2512,6 +2534,32 @@ impl CosmosDriver {
     /// the `continuation.is_none()` branch below and clears the pin. Both halves
     /// of the region-affine state therefore die together, so an unreachable
     /// pinned region cannot wedge later force-refreshes.
+    pub(crate) async fn load_session_token_routing_map(
+        &self,
+        container: &ContainerReference,
+        operation_options: OperationOptions,
+        absolute_deadline: Option<Instant>,
+    ) -> crate::error::Result<Option<Arc<ContainerRoutingMap>>> {
+        let lookup = self.pk_range_cache.try_lookup_result(
+            container,
+            false,
+            self.pk_range_page_fetcher(operation_options, absolute_deadline),
+        );
+        await_planning_or_deadline(lookup, absolute_deadline)
+            .await
+            .ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::models::CosmosStatus::from_parts(
+                        azure_core::http::StatusCode::RequestTimeout,
+                        Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
+                    ))
+                    .with_message(
+                        "end-to-end operation timeout exceeded while loading session topology",
+                    )
+                    .build()
+            })?
+    }
+
     fn pk_range_page_fetcher<'a>(
         &'a self,
         options: OperationOptions,
@@ -2750,9 +2798,10 @@ impl CosmosDriver {
     ) -> crate::error::Result<crate::driver::pipeline::patch_strategy::PatchExecution> {
         use crate::driver::pipeline::patch_strategy::resolve_patch_strategy;
 
-        let instructions = operation
+        let patch_request = operation
             .body()
-            .and_then(|body| serde_json::from_slice::<crate::models::PatchInstructions>(body).ok());
+            .and_then(|body| crate::models::parse_patch_request(body).ok());
+        let instructions = patch_request.as_ref();
 
         if operation
             .precondition()
@@ -2804,7 +2853,38 @@ impl CosmosDriver {
         let _ = options;
         #[cfg(not(feature = "unstable_patch"))]
         let requested = crate::options::PatchStrategy::Auto;
-        let execution = resolve_patch_strategy(requested, instructions.as_ref())?;
+        if patch_request
+            .as_ref()
+            .and_then(|request| request.filter_predicate())
+            .is_some_and(|condition| condition.trim().is_empty())
+        {
+            return Err(crate::driver::pipeline::patch_handler::invalid_filter_predicate_error());
+        }
+        let mut execution = resolve_patch_strategy(requested, instructions)?;
+        if matches!(
+            execution,
+            crate::driver::pipeline::patch_strategy::PatchExecution::ClientSide
+        ) && patch_request
+            .as_ref()
+            .is_some_and(|request| request.filter_predicate().is_some())
+        {
+            return Err(
+                crate::driver::pipeline::patch_handler::unsupported_filter_predicate_error(),
+            );
+        }
+        if patch_request
+            .as_ref()
+            .is_some_and(|request| request.filter_predicate().is_some())
+        {
+            // A committed PATCH can make its predicate false, so replay can
+            // report a misleading 412 even when the instructions converge.
+            if let crate::driver::pipeline::patch_strategy::PatchExecution::ServerSide {
+                retry_safe,
+            } = &mut execution
+            {
+                *retry_safe = false;
+            }
+        }
         tracing::debug!(
             requested_patch_strategy = requested.as_str(),
             patch_execution = execution.as_str(),
@@ -3273,8 +3353,8 @@ impl CosmosDriver {
     /// # Errors
     ///
     /// Once a page has advanced the plan without reaching the caller — a
-    /// response body that failed to transcode to text — the plan is spent, and
-    /// every later call fails with
+    /// response body that failed standalone materialization or text conversion —
+    /// the plan is spent, and every later call fails with
     /// [`SERIALIZATION_RESPONSE_BODY_INVALID`](crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID).
     /// Returning the following page instead would hand back the page *after*
     /// the one that was lost, with nothing to signal the gap.
@@ -3367,11 +3447,12 @@ impl CosmosDriver {
             let prior_diagnostics = error.diagnostics();
             let replacement_container = operation.container().cloned();
             let plan_options = plan.plan_options.clone();
+            let persistent_deadline = plan.operation.absolute_deadline();
             let operation = operation.with_absolute_deadline(absolute_deadline);
             *plan = self
                 .plan_operation_resolved(operation, &options, None, &plan_options, None)
                 .await?;
-            plan.clear_execution_deadlines();
+            plan.reset_replan_deadlines(persistent_deadline);
             plan.container_recreation_recovery_attempted = true;
             let (retry_result, retry_successes, _) = self
                 .execute_plan_once(plan, replacement_container, &options, absolute_deadline)
@@ -3409,28 +3490,24 @@ impl CosmosDriver {
 
     fn finalize_plan_response(
         plan: &mut OperationPlan,
-        response: crate::error::Result<Option<CosmosResponse>>,
+        response: crate::error::Result<Option<PipelineResponse>>,
     ) -> crate::error::Result<Option<CosmosResponse>> {
-        let response = response?;
-
-        // Driver-side transcoding: hand back text while the wire stayed
-        // binary. Read from the plan, not from this call's `options`: the
-        // decision was fixed when the plan was built.
-        if plan.transcodes_response_to_text() {
-            if let Some(mut response) = response {
-                // `next_page` already committed every node's resume position.
-                // Poison the plan if transcoding fails so a later page or token
-                // cannot silently skip the lost page.
-                if let Err(error) = response
-                    .transcode_body_to_text_with_utf8_mode(plan.resolved_utf8_decoding_mode())
-                {
-                    plan.poison_continuation();
-                    return Err(error);
-                }
-                return Ok(Some(response));
+        let Some(response) = response? else {
+            return Ok(None);
+        };
+        match response.into_response(
+            plan.transcodes_response_to_text(),
+            plan.operation.emits_binary_payload(),
+            plan.resolved_utf8_decoding_mode(),
+        ) {
+            Ok(response) => Ok(Some(response)),
+            Err(error) => {
+                // The root already committed progress; never skip a page that
+                // failed final standalone materialization or text conversion.
+                plan.poison_continuation();
+                Err(error)
             }
         }
-        Ok(response)
     }
 
     async fn uses_cache_only_topology(
@@ -3466,12 +3543,21 @@ impl CosmosDriver {
             return false;
         }
 
+        let explicit_session_token = operation.request_headers().session_token.is_some()
+            || options.custom_headers.as_ref().is_some_and(|headers| {
+                headers.contains_key(&azure_core::http::headers::HeaderName::from_static(
+                    crate::models::request_header_names::SESSION_TOKEN,
+                ))
+            });
+        if explicit_session_token {
+            return true;
+        }
+
         let effective = self.operation_options_view(options);
         if effective
             .session_capturing_disabled()
             .copied()
             .unwrap_or(false)
-            || operation.request_headers().session_token.is_some()
             || !operation_allows_automatic_session_token_resolution(
                 operation,
                 location.account.multiple_write_locations_enabled,
@@ -3544,7 +3630,7 @@ impl CosmosDriver {
         options: &OperationOptions,
         absolute_deadline: Option<Instant>,
     ) -> (
-        crate::error::Result<Option<CosmosResponse>>,
+        crate::error::Result<Option<PipelineResponse>>,
         usize,
         ContainerRecreationRecoveryOutcome,
     ) {
@@ -4274,6 +4360,11 @@ impl CosmosDriver {
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
     ) -> crate::error::Result<OperationPlan> {
+        if operation.read_many.is_some() && continuation.is_some() {
+            return Err(crate::read_many::invalid(
+                "read-many does not support resume",
+            ));
+        }
         if operation.operation_type() == crate::models::OperationType::Patch
             && !operation.patch_strategy_is_resolved()
         {
@@ -4444,6 +4535,23 @@ impl CosmosDriver {
         // and forwards them via `resolved_binary` to avoid a second resolution;
         // the query path passes `None` and resolves lazily.
         let mut operation = self.apply_response_negotiation(operation, options, resolved_binary);
+
+        if let Some(request) = operation.read_many.clone() {
+            let operation = Arc::new(operation);
+            let container = operation
+                .container()
+                .cloned()
+                .ok_or_else(|| crate::read_many::invalid("read-many requires a container"))?;
+            let mut topology = CachedTopologyProvider::new(
+                &self.pk_range_cache,
+                container,
+                self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
+            );
+            let pipeline =
+                super::dataflow::read_many::build(operation.clone(), &request, &mut topology)
+                    .await?;
+            return planner::finalize_plan(pipeline, operation, true, plan_options);
+        }
 
         // Resolve the continuation token (if any) into a planner-ready resume
         // state. Server-issued tokens are only valid for trivial operations.
@@ -4819,7 +4927,7 @@ fn distributed_transaction_outer_computed_delay(retry_count: u32) -> Duration {
 /// account) keeps the probe off the metadata code path and minimizes the
 /// load it places on the service. See issue #4597.
 async fn probe_endpoint_connectivity(
-    transport: &super::transport::adaptive_transport::AdaptiveTransport,
+    transport: &crate::pipeline::transport::adaptive_transport::AdaptiveTransport,
     account: &AccountReference,
     user_agent: &azure_core::http::headers::HeaderValue,
     client_id: &azure_core::http::headers::HeaderValue,
@@ -4875,11 +4983,11 @@ mod tests {
     use crate::driver::cache::AccountProperties as CachedAccountProperties;
     use crate::options::Region;
     use crate::{
-        driver::transport::{
+        options::ConnectionPoolOptions,
+        pipeline::transport::{
             cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
             http_client_factory::{HttpClientConfig, HttpClientFactory, HttpVersionPolicy},
         },
-        options::ConnectionPoolOptions,
     };
 
     static TEST_CLIENT_ID: azure_core::http::headers::HeaderValue =
@@ -6993,7 +7101,7 @@ mod tests {
     async fn fetch_account_properties_surfaces_5xx_body_as_status_error() {
         let client = scripted_client(ResponsePlan::ServiceUnavailable503);
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
@@ -7235,7 +7343,7 @@ mod tests {
             calls: Arc::clone(&calls),
         });
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
@@ -7294,7 +7402,7 @@ mod tests {
             calls: Arc::clone(&calls),
         });
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let opts = OperationOptionsBuilder::new()
             .with_throttling_retry_options(
@@ -7401,7 +7509,7 @@ mod tests {
     {
         let client = raw_response_client(status, body);
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
@@ -7428,7 +7536,7 @@ mod tests {
             ResponsePlan::Success,
         ]);
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
@@ -7458,7 +7566,7 @@ mod tests {
             ResponsePlan::ConnectionError,
         ]);
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
@@ -7507,7 +7615,7 @@ mod tests {
                 ResponsePlan::Success,
             ]);
             let transport =
-                crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+                crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
             let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
             let account = signed_test_account("https://test.documents.azure.com:443/");
             let user_agent = HeaderValue::from("cosmos-driver-test/0.0.0");
@@ -7535,7 +7643,7 @@ mod tests {
             ResponsePlan::IoError(RequestSentStatus::Unknown),
         ]);
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
         let error = CosmosDriver::fetch_account_properties_with_transport(
@@ -7623,7 +7731,7 @@ mod tests {
     async fn drive_probe_with(status: u16) -> bool {
         let client = raw_response_client(status, Vec::new());
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let account = signed_test_account("https://test.documents.azure.com:443/");
         let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
@@ -7634,7 +7742,7 @@ mod tests {
     async fn drive_probe_unreachable() -> bool {
         let client = unreachable_client();
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let account = signed_test_account("https://test.documents.azure.com:443/");
         let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
@@ -7931,7 +8039,7 @@ mod tests {
         let client: Box<dyn TransportClient> = Box::new(FailingTransportClient);
         let client = Arc::from(client);
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
@@ -7994,7 +8102,7 @@ mod tests {
         // produces an obviously-wrong shape rather than a confused network-error message.
         let client = scripted_client(ResponsePlan::Success);
         let transport =
-            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+            crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let credential: Box<dyn TokenCredential> = Box::new(BrokenCredential);
@@ -8132,10 +8240,10 @@ mod tests {
             transport_kind: None,
         };
         let transport_client =
-            crate::driver::transport::http_client_factory::DefaultHttpClientFactory::new()
+            crate::pipeline::transport::http_client_factory::DefaultHttpClientFactory::new()
                 .build(&pool, config)
                 .expect("DefaultHttpClientFactory must build a real reqwest-backed transport");
-        let transport = crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(
+        let transport = crate::pipeline::transport::adaptive_transport::AdaptiveTransport::Gateway(
             transport_client,
         );
 
@@ -8879,6 +8987,92 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn final_item_materialization_failure_preserves_diagnostics_and_poisons_plan() {
+        use crate::driver::dataflow::{
+            mocks::{response, response_with_request_diagnostics, MockLeaf},
+            ItemView, PageResult, PipelineBody, PipelineResponse,
+        };
+
+        let driver = transcoding_test_driver().await;
+        for text_response in [false, true] {
+            let options = OperationOptionsBuilder::new()
+                .with_binary_encoding(
+                    crate::options::BinaryEncodingOptions::new()
+                        .with_enabled(true)
+                        .with_request_text_response(text_response),
+                )
+                .build();
+            let operation = driver.apply_response_negotiation(
+                binary_encoding_test_operation(b"{}".to_vec()),
+                &options,
+                None,
+            );
+            let diagnostics = response_with_request_diagnostics(1).diagnostics();
+            let item = ItemView::from_binary_page(
+                azure_core::Bytes::from_static(&[
+                    crate::binary_json::PREAMBLE,
+                    crate::binary_json::markers::STR_R1,
+                    255,
+                ]),
+                1..3,
+            )
+            .unwrap();
+            let page = PipelineResponse::new(
+                PipelineBody::from_item_views(vec![item]),
+                crate::models::CosmosResponseHeaders::default(),
+                crate::models::CosmosStatus::new(azure_core::http::StatusCode::Ok),
+                diagnostics.clone(),
+            );
+            let mut plan = OperationPlan::new(
+                Pipeline::new(Box::new(MockLeaf::with_pages(vec![
+                    Ok(PageResult::Page {
+                        response: page,
+                        is_terminal: false,
+                    }),
+                    Ok(PageResult::Page {
+                        response: response(br#"{"id":"not-delivered"}"#),
+                        is_terminal: true,
+                    }),
+                ]))),
+                Arc::new(operation),
+                PlanOptions::default(),
+                false,
+            );
+            let error = driver
+                .execute_plan(&mut plan, None, options.clone())
+                .await
+                .unwrap_err();
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
+            );
+            let failure_diagnostics = error.diagnostics().unwrap();
+            assert_eq!(failure_diagnostics.effective_status(), Some(error.status()));
+            assert_eq!(
+                failure_diagnostics.request_count(),
+                diagnostics.request_count()
+            );
+            assert!(Arc::ptr_eq(
+                &failure_diagnostics.requests(),
+                &diagnostics.requests()
+            ));
+            assert!(plan.continuation_poisoned());
+            assert_eq!(
+                plan.to_continuation_token().unwrap_err().status(),
+                crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE
+            );
+            assert_eq!(
+                driver
+                    .execute_plan(&mut plan, None, options)
+                    .await
+                    .unwrap_err()
+                    .status(),
+                crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
+            );
+        }
+    }
+
     /// The token exit is the loud one; this is the quiet one. A caller that
     /// keeps pulling pages rather than minting a token would otherwise receive
     /// the page *after* the lost one and never learn a page went missing.
@@ -9028,8 +9222,11 @@ mod tests {
             .expect("invalid UTF-8 inside a JSON string should be recovered")
             .expect("the mock leaf returns one page");
 
+        let crate::models::ResponseBody::Bytes(body) = response.body() else {
+            panic!("expected a single response buffer");
+        };
         assert_eq!(
-            response.body_bytes(),
+            body.as_ref(),
             &[
                 b'{', b'"', b'n', b'a', b'm', b'e', b'"', b':', b'"', b'a', 0xEF, 0xBF, 0xBD, b'b',
                 b'"', b'}',

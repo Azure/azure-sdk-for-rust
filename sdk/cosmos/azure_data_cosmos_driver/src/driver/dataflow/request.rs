@@ -3,11 +3,12 @@
 
 //! Request leaf node for the dataflow pipeline.
 
+use crate::driver::dataflow::PipelineResponse;
 use std::{sync::Arc, time::Instant};
 
 use async_trait::async_trait;
 
-use crate::models::{CosmosOperation, CosmosResponse, FeedRange, PartitionKey};
+use crate::models::{CosmosOperation, FeedRange, PartitionKey};
 
 use super::recovery_diagnostics::RecoveryDiagnostics;
 use super::{
@@ -324,7 +325,7 @@ impl Request {
         };
     }
 
-    fn handle_response(&mut self, response: CosmosResponse) -> PageResult {
+    fn handle_response(&mut self, response: PipelineResponse) -> PageResult {
         if self.operation.is_change_feed() {
             return self.handle_change_feed_response(response);
         }
@@ -361,7 +362,7 @@ impl Request {
     ///    `If-None-Match` on the next poll), not `x-ms-continuation`.
     /// 2. The request must **never** transition to `Drained`. Even a `304` with
     ///    no body advances the ETag, and the next poll resumes from there.
-    fn handle_change_feed_response(&mut self, response: CosmosResponse) -> PageResult {
+    fn handle_change_feed_response(&mut self, response: PipelineResponse) -> PageResult {
         let etag = response.headers().etag.as_ref().map(|e| e.to_string());
         tracing::trace!(
             target = ?self.target,
@@ -614,7 +615,7 @@ mod tests {
             _target: RequestTarget,
             _partition_routing_refresh: PartitionRoutingRefresh,
             _continuation: Option<String>,
-        ) -> futures::future::BoxFuture<'a, crate::error::Result<CosmosResponse>> {
+        ) -> futures::future::BoxFuture<'a, crate::error::Result<PipelineResponse>> {
             Box::pin(async { Err(gone_error()) })
         }
     }

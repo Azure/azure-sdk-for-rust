@@ -160,7 +160,7 @@ goes through it.
 | Public client API surface        | ✅ Owns                   | —                                    | Stable             |
 | Customer data-plane dispatch     | Forwards to driver via `context.driver.execute_operation(...)` | ✅ `CosmosDriver::execute_operation` is the entry point | Implemented |
 | Outbound default headers         | —                         | ✅ `cosmos_headers::apply_cosmos_headers()` (free function called at `driver/cosmos_driver.rs:301`) | Implemented |
-| Request signing                  | —                         | ✅ `request_signing` module (`driver/transport/request_signing.rs`) | Implemented |
+| Request signing                  | —                         | ✅ `request_signing` module (`pipeline/transport/request_signing.rs`) | Implemented |
 | Status-code retry (404/1002, 429, 503, timeout, …) | Legacy `ClientRetryPolicy` retained for metadata/PKR-cache calls only | ✅ `evaluate_transport_result` (`driver/pipeline/retry_evaluation.rs:31`); 404/1002 → `SessionRetry` already at `:70` (`status.is_read_session_not_available() && retry_state.can_retry_session()`) | Driver-owned for customer ops |
 | Transport-failure retry           | —                         | ✅ `CosmosDriver::execute_operation` (idempotent / `definitely_not_sent`) | Implemented |
 | Account topology / region tracking | Legacy `GlobalEndpointManager` / `LocationCache` retained for the residual SDK-pipeline call sites | ✅ `account_metadata_cache::AccountProperties::write_region()` (`driver/cache/account_metadata_cache.rs:175`); driver tracks per-account regions via `AccountMetadataCache` | Driver-owned for customer ops |
@@ -170,8 +170,8 @@ goes through it.
 > `TrackedTransportPolicy` no longer exist as `Policy` types. The `Vec<Arc<dyn Policy>>`
 > pipeline-chain abstraction is gone for the data-plane path; header application and request
 > signing are now direct function calls inside `execute_operation`. Two replacement-comment
-> citations: `driver/transport/cosmos_headers.rs:6` (*"This replaces `CosmosHeadersPolicy`
-> from the old policy-chain pipeline."*) and `driver/transport/request_signing.rs:6` (*"This
+> citations: `pipeline/transport/cosmos_headers.rs:6` (*"This replaces `CosmosHeadersPolicy`
+> from the old policy-chain pipeline."*) and `pipeline/transport/request_signing.rs:6` (*"This
 > replaces `AuthorizationPolicy` from the old policy-chain pipeline."*).
 
 **Implication for this work item.** All three prerequisites that previously gated the

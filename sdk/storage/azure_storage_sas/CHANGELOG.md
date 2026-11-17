@@ -1,16 +1,25 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.1.0-beta.2 (Unreleased)
 
 ### Features Added
-
-- Added a `default` feature forwarding Core defaults so consumers can opt out with `default-features = false`.
 
 ### Breaking Changes
 
 ### Bugs Fixed
 
 ### Other Changes
+
+## 1.1.0-beta.1 (2026-11-09)
+
+### Features Added
+
+- Updated the SAS service version to `2027-03-07`.
+- Added a `default` feature forwarding Core defaults so consumers can opt out with `default-features = false`.
+
+### Other Changes
+
+- Updated dependencies.
 
 ## 1.0.0 (2026-09-08)
 

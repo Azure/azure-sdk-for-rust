@@ -40,6 +40,9 @@ The `emulator` marker is highly recommended when running against a local emulato
 
 If you need to disable TLS certificate validation when using a different connection string, you can also set the `AZURE_COSMOS_ALLOW_INVALID_CERT` environment variable to `true`.
 
+For live binary ORDER BY validation, see the
+[test guide](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos/tests/live_tests/binary_order_by/README.md).
+
 ### Saving Recordings
 
 Before opening a PR, if you've added any integration tests, or changed the HTTP interactions of existing tests, you must save the recordings.

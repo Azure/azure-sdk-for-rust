@@ -10,6 +10,7 @@ use super::{
 use crate::{
     common::{
         authorizer::Authorizer,
+        diagnostics::Diagnostics,
         retry::ErrorRecoveryAction,
         user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
     },
@@ -19,7 +20,13 @@ use crate::{
     RetryOptions,
 };
 use async_lock::{Mutex as AsyncMutex, MutexGuard as AsyncMutexGuard, OnceCell, RwLock};
-use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Uuid};
+use azure_core::{
+    credentials::TokenCredential,
+    http::Url,
+    time::Duration,
+    tracing::{Span, TracerProvider},
+    Uuid,
+};
 use azure_core_amqp::{
     error::{AmqpErrorCondition, AmqpErrorKind},
     AmqpClaimsBasedSecurity, AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions, AmqpError,
@@ -35,7 +42,7 @@ use std::{
     future::Future,
     sync::{
         atomic::{AtomicU64, Ordering},
-        Arc, Weak,
+        Arc, OnceLock, Weak,
     },
 };
 use tracing::{debug, info, instrument, trace, warn};
@@ -77,6 +84,7 @@ const GEODR_REPLICATION_CAPABILITY: &str = "com.microsoft.georeplication";
 /// struct, while the `get_*` methods are public(crate) to allow clients to retrieve the underlying objects.
 ///
 pub(crate) struct RecoverableConnection {
+    diagnostics: OnceLock<Arc<Diagnostics>>,
     pub(super) url: Url,
     application_id: Option<String>,
     custom_endpoint: Option<Url>,
@@ -285,6 +293,17 @@ impl RecoveryPlan {
 }
 
 impl RecoverableConnection {
+    pub(crate) fn configure_tracing(&self, provider: Option<Arc<dyn TracerProvider>>) {
+        let _ = self
+            .diagnostics
+            .set(Arc::new(Diagnostics::new(&self.url, provider)));
+    }
+
+    pub(crate) fn diagnostics(&self) -> &Arc<Diagnostics> {
+        self.diagnostics
+            .get_or_init(|| Arc::new(Diagnostics::new(&self.url, None)))
+    }
+
     /// Creates a recoverable connection. `cbs_token_type` is `None` for
     /// JWT/Entra credentials and `Some("servicebus.windows.net:sastoken")` for
     /// SAS (connection-string) credentials.
@@ -307,6 +326,7 @@ impl RecoverableConnection {
             let authorizer = Arc::new(Authorizer::new(weak_rc.clone(), credential, cbs_token_type));
 
             Self {
+                diagnostics: OnceLock::new(),
                 url,
                 application_id,
                 connection_name,
@@ -558,8 +578,9 @@ impl RecoverableConnection {
         receiver_options: AmqpReceiverOptions,
         partition_id: &str,
         timeout: Option<Duration>,
+        parent: Option<Arc<dyn Span>>,
     ) -> Result<RecoverableReceiver> {
-        self.ensure_receiver(source_url, &message_source, &receiver_options)
+        self.ensure_receiver(source_url, &message_source, &receiver_options, parent)
             .await?;
 
         Ok(RecoverableReceiver::new(
@@ -775,12 +796,20 @@ impl RecoverableConnection {
                     debug!(source_url = %source_url, "Creating session for partition.");
 
                     let session = AmqpSession::new();
-                    session
+                    let mut telemetry = self.diagnostics().lifecycle(
+                        "session",
+                        source_url,
+                        self.current_generation(),
+                        None,
+                    );
+                    let result = session
                         .begin(
                             connection.as_ref(),
                             Some(AmqpSessionOptions::with_unbounded_windows()),
                         )
-                        .await?;
+                        .await;
+                    telemetry.finish(&result, 0);
+                    result?;
                     Ok::<_, AmqpError>(Arc::new(session))
                 },
             )
@@ -843,13 +872,18 @@ impl RecoverableConnection {
         );
         let connection = Arc::new(AmqpConnection::new());
 
-        connection
+        let mut telemetry =
+            self.diagnostics()
+                .lifecycle("connection", &self.url, self.current_generation(), None);
+        let result = connection
             .open(
                 self.connection_name.clone(),
                 self.url.clone(),
                 Some(self.connection_options()),
             )
-            .await?;
+            .await;
+        telemetry.finish(&result, 0);
+        result?;
         info!(
             connection_id = %self.connection_name,
             url = %self.url,
@@ -933,6 +967,7 @@ impl RecoverableConnection {
         source_url: &Url,
         message_source: &AmqpSource,
         receiver_options: &AmqpReceiverOptions,
+        parent: Option<Arc<dyn Span>>,
     ) -> azure_core_amqp::Result<Arc<AmqpReceiver>> {
         // Resolve the per-path cell while holding the map lock only briefly, then
         // attach (ensure connection + authorize + session begin + link attach)
@@ -955,31 +990,41 @@ impl RecoverableConnection {
 
                     self.get_session(source_url).await
                 },
-                |session| async move {
-                    debug!(source_url = %source_url, "Creating receiver on partition.");
-                    let receiver = AmqpReceiver::new();
-                    if let Err(e) = receiver
-                        .attach(
-                            &session,
-                            message_source.clone(),
-                            Some(receiver_options.clone()),
-                        )
-                        .await
-                    {
-                        warn!(
+                |session| {
+                    let parent = parent.clone();
+                    async move {
+                        debug!(source_url = %source_url, "Creating receiver on partition.");
+                        let mut telemetry = self.diagnostics().lifecycle(
+                            "receiver",
+                            source_url,
+                            self.current_generation(),
+                            parent.clone(),
+                        );
+                        let receiver = AmqpReceiver::new();
+                        let result = receiver
+                            .attach(
+                                &session,
+                                message_source.clone(),
+                                Some(receiver_options.clone()),
+                            )
+                            .await;
+                        telemetry.finish(&result, 0);
+                        if let Err(e) = result {
+                            warn!(
+                                connection_id = %self.get_connection_id(),
+                                source_url = %source_url,
+                                err = %e,
+                                "Failed to attach receiver on partition."
+                            );
+                            return Err(e);
+                        }
+                        info!(
                             connection_id = %self.get_connection_id(),
                             source_url = %source_url,
-                            err = %e,
-                            "Failed to attach receiver on partition."
+                            "Attached receiver on partition."
                         );
-                        return Err(e);
+                        Ok::<_, AmqpError>(Arc::new(receiver))
                     }
-                    info!(
-                        connection_id = %self.get_connection_id(),
-                        source_url = %source_url,
-                        "Attached receiver on partition."
-                    );
-                    Ok::<_, AmqpError>(Arc::new(receiver))
                 },
             )
             .await?;
@@ -1012,6 +1057,7 @@ impl RecoverableConnection {
     pub(super) async fn ensure_sender(
         self: &Arc<Self>,
         path: &Url,
+        parent: Option<Arc<dyn Span>>,
     ) -> azure_core_amqp::Result<Arc<AmqpSender>> {
         // Resolve the per-path cell while holding the map lock only briefly, then
         // attach (authorize + session begin + link attach) without holding it, so
@@ -1034,37 +1080,47 @@ impl RecoverableConnection {
                     // Retrieve a session for the sender from the session cache.
                     self.get_session(path).await
                 },
-                |session| async move {
-                    debug!(path = %path, "Creating sender on path.");
-                    let sender = AmqpSender::new();
-                    if let Err(e) = sender
-                        .attach(
-                            &session,
-                            format!(
-                                "{}-rust-sender",
-                                self.application_id
-                                    .as_ref()
-                                    .unwrap_or(&DEFAULT_EVENTHUBS_APPLICATION.to_string())
-                            ),
-                            path.to_string(),
-                            None,
-                        )
-                        .await
-                    {
-                        warn!(
+                |session| {
+                    let parent = parent.clone();
+                    async move {
+                        debug!(path = %path, "Creating sender on path.");
+                        let mut telemetry = self.diagnostics().lifecycle(
+                            "sender",
+                            path,
+                            self.current_generation(),
+                            parent.clone(),
+                        );
+                        let sender = AmqpSender::new();
+                        let result = sender
+                            .attach(
+                                &session,
+                                format!(
+                                    "{}-rust-sender",
+                                    self.application_id
+                                        .as_ref()
+                                        .unwrap_or(&DEFAULT_EVENTHUBS_APPLICATION.to_string())
+                                ),
+                                path.to_string(),
+                                None,
+                            )
+                            .await;
+                        telemetry.finish(&result, 0);
+                        if let Err(e) = result {
+                            warn!(
+                                connection_id = %self.get_connection_id(),
+                                path = %path,
+                                err = %e,
+                                "Failed to attach sender on path."
+                            );
+                            return Err(e);
+                        }
+                        info!(
                             connection_id = %self.get_connection_id(),
                             path = %path,
-                            err = %e,
-                            "Failed to attach sender on path."
+                            "Attached sender on path."
                         );
-                        return Err(e);
+                        Ok::<_, AmqpError>(Arc::new(sender))
                     }
-                    info!(
-                        connection_id = %self.get_connection_id(),
-                        path = %path,
-                        "Attached sender on path."
-                    );
-                    Ok::<_, AmqpError>(Arc::new(sender))
                 },
             )
             .await?;
@@ -1183,6 +1239,16 @@ impl RecoverableConnection {
             || plan.clear_receivers;
 
         if invalidates {
+            self.diagnostics().recovery(
+                self.current_generation(),
+                if plan.drop_connection {
+                    "connection"
+                } else if plan.clear_sessions {
+                    "session"
+                } else {
+                    "link"
+                },
+            );
             invalidated.get_or_init(|| async {}).await;
             self.generation.fetch_add(1, Ordering::AcqRel);
         }

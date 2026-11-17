@@ -90,6 +90,7 @@ json-patch
 libfuzzer_sys
 libfuzzer-sys
 litemap
+mimalloc
 openssl
 opentelemetry
 opentelemetry_appender_tracing

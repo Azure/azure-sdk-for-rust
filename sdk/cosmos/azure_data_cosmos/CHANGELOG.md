@@ -4,9 +4,12 @@
 
 ### Features Added
 
+- Added SQL filter predicates to unstable PATCH instruction payloads for atomic conditional server-side PATCH execution. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
+- Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
+- Added paged `ContainerClient::read_many` with shared `ItemSelector`, `ItemScope`, and `ItemFilter` types for key/id, partition, or feed-range selections, optional selector filters, and result collection with aggregate diagnostics. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Added ranked full-text and weighted text/vector hybrid search, with per-query `FullTextScoreScope` and bounded buffered results. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
-- Added `DistributedTransactionResponseMode` and `DistributedTransactionResponse::response_mode()` to report whether the coordinator replied in `Standard` or `FastResponse` mode (`unstable_dtx`).
-- Added `CosmosClientBuilder::with_max_retry_attempts_on_aborted_transactions()` and `with_max_retry_wait_time_on_aborted_transactions()` to configure distributed transaction retries (`unstable_dtx`).
+- Added `DistributedTransactionResponseMode` and `DistributedTransactionResponse::response_mode()` to report whether the coordinator replied in `Standard` or `FastResponse` mode (`unstable_dtx`). ([#5609](https://github.com/Azure/azure-sdk-for-rust/pull/5609))
+- Added `CosmosClientBuilder::with_max_retry_attempts_on_aborted_transactions()` and `with_max_retry_wait_time_on_aborted_transactions()` to configure distributed transaction retries (`unstable_dtx`). ([#5609](https://github.com/Azure/azure-sdk-for-rust/pull/5609))
 
 ### Breaking Changes
 
@@ -14,22 +17,20 @@
 
 ### Bugs Fixed
 
-- An all-not-modified distributed read (`200` with sub-status `5425`) now reports `304 NotModified`.
-- A durably aborted distributed write transaction (`452`) is retried under a new idempotency token; other retriable responses reuse the same token.
-- Distributed transaction session tokens from `304`, `404`, `409`, and `412` sub-operations are now captured (except sub-status `1002`), and malformed tokens fail under Session consistency before retrying.
-- Distributed write retry headers now advance after bodyless HTTP `429` responses, and DTX session-token validation rejects legacy V1 payloads.
+- An all-not-modified distributed read (`200` with sub-status `5425`) now reports `304 NotModified`. ([#5609](https://github.com/Azure/azure-sdk-for-rust/pull/5609))
+- A durably aborted distributed write transaction (`452`) is retried under a new idempotency token; other retriable responses reuse the same token. ([#5609](https://github.com/Azure/azure-sdk-for-rust/pull/5609))
+- Distributed transaction session tokens from `304`, `404`, `409`, and `412` sub-operations are now captured (except sub-status `1002`), and malformed tokens fail under Session consistency before retrying. ([#5609](https://github.com/Azure/azure-sdk-for-rust/pull/5609))
+- Distributed write retry headers now advance after bodyless HTTP `429` responses, and DTX session-token validation rejects legacy V1 payloads. ([#5609](https://github.com/Azure/azure-sdk-for-rust/pull/5609))
+- Report query-page deserialization failures in operation-level diagnostics while preserving request statuses and charges. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Restore checkpoint-owned change-feed starts, preserve round-robin progress across resumes, and correctly scope hierarchical-prefix feeds across overlapping partitions. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - A checkpoint's saved start takes precedence over a newly supplied change-feed start. Omit the continuation token to start a new feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 
 ### Other Changes
 
-- Documented that cancellation or network failures do not roll back distributed writes and require reconciliation before a new submission.
+- Documented that cancellation or network failures do not roll back distributed writes and require reconciliation before a new submission. ([#5609](https://github.com/Azure/azure-sdk-for-rust/pull/5609))
 - New query and change-feed checkpoints use `c2.` and cannot be read by SDKs that only support `c1.`. Query checkpoint payloads are unchanged, and supported legacy `c1.` checkpoints remain readable. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
-
-### Bugs Fixed
-
-### Other Changes
+- Binary cross-partition `ORDER BY` avoids intermediate document transcoding during sorting and filtering; final raw item buffers remain independently decodable without changing the response-body API. ([#5409](https://github.com/Azure/azure-sdk-for-rust/pull/5409))
 
 ## 1.1.0-beta.2 (2026-11-03)
 

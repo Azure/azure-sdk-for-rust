@@ -96,9 +96,12 @@ pub struct OperationOptions {
     /// and sent on subsequent requests for session consistency. Set to `Some(true)`
     /// to disable both automatic capture and automatic resolution.
     ///
-    /// Explicit tokens still apply. Gateway V2 may scope a compound token using
-    /// available topology, or fall back to classic Gateway with the original token.
-    /// This transport normalization does not read or update the session cache.
+    /// Explicit tokens still apply. Gateway V2 loads topology on demand to scope
+    /// compound tokens. If topology loads but safe scoping is unavailable, the
+    /// attempt omits the token and downgrades Session consistency to Eventual,
+    /// without a read-your-writes guarantee. Topology-loading failures still return
+    /// errors. Classic Gateway retains token passthrough. Scoping an explicit
+    /// token does not read or update the session cache.
     pub session_capturing_disabled: Option<bool>,
 
     /// Maximum number of session-consistency retries on 404/1002 errors.
