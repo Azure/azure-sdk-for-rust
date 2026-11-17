@@ -276,6 +276,7 @@ impl ClientOptionsExt for BlobClientOptions {
     }
 }
 
+/// An opaque type. References an atomic counter. Decrements that counter on [Drop::drop].
 pub struct AssertionScope {
     counter: Arc<AtomicUsize>,
 }
@@ -301,18 +302,23 @@ pub mod predicates {
     }
 }
 
+/// Policy to insert test behavior.
 pub struct TestPolicy {
-    request_scope_counter: Arc<AtomicUsize>,
-    response_scope_counter: Arc<AtomicUsize>,
+    /// Indicates whether the request check is enabled.
+    on_request_enabled: Arc<AtomicUsize>,
+    /// Indicates whether the response check is enabled.
+    on_response_enabled: Arc<AtomicUsize>,
+    /// Request check callback.
     on_request: Check<Request>,
+    /// Response check callback.
     on_response: Check<AsyncRawResponse>,
 }
 
 impl Default for TestPolicy {
     fn default() -> Self {
         Self {
-            request_scope_counter: Default::default(),
-            response_scope_counter: Default::default(),
+            on_request_enabled: Default::default(),
+            on_response_enabled: Default::default(),
             on_request: Arc::new(|_| Ok(())),
             on_response: Arc::new(|_| Ok(())),
         }
@@ -320,6 +326,9 @@ impl Default for TestPolicy {
 }
 
 impl TestPolicy {
+    /// Creates a new `TestPolicy` with optional request and response check callbacks.
+    /// Callbacks are not enabled by default, allowing for selective enabling during key test moments.
+    /// Callbacks can be independenly enabled using [Self::check_request_scope] and [Self::check_response_scope].
     pub fn new(
         on_request: Option<Check<Request>>,
         on_response: Option<Check<AsyncRawResponse>>,
@@ -331,6 +340,7 @@ impl TestPolicy {
         }
     }
 
+    /// Creates a test policy which [Clone::clone]s each [Request] and sends it through the provided [Sender].
     pub fn capture(request_sender: Option<Sender<Request>>) -> Self {
         TestPolicy {
             on_request: match request_sender {
@@ -345,6 +355,8 @@ impl TestPolicy {
         }
     }
 
+    /// Creates a test policy which counts the number of requests. If a predicate is provided, only requests which match
+    /// the predicate will be counted.
     pub fn count_requests(count: Arc<AtomicUsize>, predicate: Option<Predicate<Request>>) -> Self {
         Self::new(
             match predicate {
@@ -363,19 +375,31 @@ impl TestPolicy {
         )
     }
 
-    /// DO NOT assign this to `_`. It will be dropped immediately instead of the intended scope.
+    /// Increments the "enabled" counter for checking requests.
+    /// Returns an [AssertionScope] to decrement the counter when dropped.
+    ///
+    /// # Usage notes.
+    ///
+    /// DO NOT assign this to `_`. Assignment to `_` compiles to drop the value immediately.
+    /// Assigning to a named variable such as `_scope` will keep the value alive until usage scope is exited.
     pub fn check_request_scope(&self) -> AssertionScope {
-        self.request_scope_counter.fetch_add(1, Ordering::Relaxed);
+        self.on_request_enabled.fetch_add(1, Ordering::Relaxed);
         AssertionScope {
-            counter: self.request_scope_counter.clone(),
+            counter: self.on_request_enabled.clone(),
         }
     }
 
-    /// DO NOT assign this to `_`. It will be dropped immediately instead of the intended scope.
+    /// Increments the "enabled" counter for checking responses.
+    /// Returns an [AssertionScope] to decrement the counter when dropped.
+    ///
+    /// # Usage notes.
+    ///
+    /// DO NOT assign this to `_`. Assignment to `_` compiles to drop the value immediately.
+    /// Assigning to a named variable such as `_scope` will keep the value alive until usage scope is exited.
     pub fn check_response_scope(&self) -> AssertionScope {
-        self.response_scope_counter.fetch_add(1, Ordering::Relaxed);
+        self.on_response_enabled.fetch_add(1, Ordering::Relaxed);
         AssertionScope {
-            counter: self.response_scope_counter.clone(),
+            counter: self.on_response_enabled.clone(),
         }
     }
 }
@@ -388,11 +412,11 @@ impl Policy for TestPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        if self.request_scope_counter.load(Ordering::Relaxed) > 0 {
+        if self.on_request_enabled.load(Ordering::Relaxed) > 0 {
             (self.on_request)(request)?;
         }
         let response = next[0].send(ctx, request, &next[1..]).await?;
-        if self.response_scope_counter.load(Ordering::Relaxed) > 0 {
+        if self.on_response_enabled.load(Ordering::Relaxed) > 0 {
             (self.on_response)(&response)?;
         }
         Ok(response)
@@ -402,8 +426,8 @@ impl Policy for TestPolicy {
 impl std::fmt::Debug for TestPolicy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct(std::any::type_name::<TestPolicy>())
-            .field("check_request_counter", &self.request_scope_counter)
-            .field("check_response_counter", &self.response_scope_counter)
+            .field("check_request_counter", &self.on_request_enabled)
+            .field("check_response_counter", &self.on_response_enabled)
             .finish()
     }
 }
