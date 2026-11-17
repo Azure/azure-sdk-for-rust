@@ -167,28 +167,6 @@ pub struct BlockBlobClientStageBlockOptions<'a> {
     pub transactional_content_md5: Option<Vec<u8>>,
 }
 
-impl<'a> From<BlockBlobClientStageBlockOptions<'a>>
-    for BlockBlobClientStageBlockInternalOptions<'a>
-{
-    fn from(value: BlockBlobClientStageBlockOptions<'a>) -> Self {
-        Self {
-            encryption_algorithm: value.encryption_algorithm,
-            encryption_key: value.encryption_key,
-            encryption_key_sha256: value.encryption_key_sha256,
-            encryption_scope: value.encryption_scope,
-            lease_id: value.lease_id,
-            method_options: value.method_options,
-            timeout: value.timeout,
-            #[allow(deprecated)]
-            transactional_content_crc64: value.transactional_content_crc64,
-            #[allow(deprecated)]
-            transactional_content_md5: value.transactional_content_md5,
-            structured_body_type: todo!(),
-            structured_content_length: todo!(),
-        }
-    }
-}
-
 /// Options to be passed to `BlockBlobClient::upload()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlockBlobClientUploadOptions<'a> {

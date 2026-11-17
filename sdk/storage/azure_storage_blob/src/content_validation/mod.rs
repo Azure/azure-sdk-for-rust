@@ -84,8 +84,18 @@ pub(crate) fn apply_upload_content_validation(
         (None, None, None) => Default::default(),
         (None, Some(_), _) => UploadContentValidation::None,
         (None, _, Some(_)) => UploadContentValidation::None,
-        (Some(_), Some(_), _) => todo!("bad option combo"),
-        (Some(_), _, Some(_)) => todo!("bad option combo"),
+        (Some(_), Some(_), _) => {
+            return Err(Error::with_message(
+                ErrorKind::Other,
+                "Cannot specify both content validation and a transactional CRC header.",
+            ))
+        }
+        (Some(_), _, Some(_)) => {
+            return Err(Error::with_message(
+                ErrorKind::Other,
+                "Cannot specify both content validation and a transactional MD5 header.",
+            ))
+        }
     };
 
     Ok(match (content_validation, body) {
