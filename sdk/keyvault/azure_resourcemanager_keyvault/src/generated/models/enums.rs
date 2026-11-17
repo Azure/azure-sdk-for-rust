@@ -280,10 +280,13 @@ pub enum KeyPermissions {
     UnknownValue(String),
 }
 
+/// The type of action.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum KeyRotationPolicyActionType {
+    /// Trigger Event Grid events.
     Notify,
 
+    /// Rotate the key based on the key policy.
     Rotate,
 }
 
