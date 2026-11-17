@@ -219,8 +219,8 @@ Per-operation options:
 `DistributedTransactionResponse` exposes:
 
 - `status()` / `is_success_status_code()` — the promoted envelope status.
-- `idempotency_token()` — the `Uuid` reused across internal retries (observability
-  and correlation only).
+- `idempotency_token()` — the `Uuid` from the final attempt; internal retries reuse
+  it unless a `452` abort rotates it (observability and correlation only).
 - `is_retriable()` — the coordinator's retriable hint.
 - `error_message()` / `diagnostic_string()` — synthesized and coordinator-side
   diagnostics.

@@ -143,7 +143,7 @@ pub(crate) mod request_header_names {
     /// fields even when the federation has thin-client enabled, silently
     /// disabling Gateway 2.0 routing for the client.
     pub const USE_THINCLIENT: &str = "x-ms-cosmos-use-thinclient";
-    /// DTX idempotency token (`Uuid`) generated once per distributed transaction.
+    /// DTX idempotency token (`Uuid`); retries reuse it until a `452` abort rotates it.
     #[cfg(feature = "unstable_dtx")]
     pub const DTX_IDEMPOTENCY_TOKEN: &str = "x-ms-cosmos-idempotency-token";
     /// DTX coordinator operation type (`CommitDistributedTransaction` or `Read`).

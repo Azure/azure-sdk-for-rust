@@ -1708,10 +1708,10 @@ mod tests {
 
     #[test]
     fn request_is_a_stable_replay_across_retries() {
-        // The outer retry loop re-sends the request with the same idempotency
-        // token and re-serializes the body on each attempt, so both must be
-        // deterministic: a retry then replays byte-for-byte and the server
-        // treats it as the same commit rather than a duplicate.
+        // Retries replay the request under the same idempotency token until a
+        // `452` abort rotates it, so serialization must be deterministic and
+        // must not change the token. The server then treats a replay as the
+        // same commit rather than a duplicate.
         let operation = DistributedTransactionOperation::new(
             DistributedTransactionOperationKind::Create,
             target("item1"),
