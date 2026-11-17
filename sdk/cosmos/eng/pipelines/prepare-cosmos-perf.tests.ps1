@@ -182,7 +182,7 @@ Set-Item Function:\Invoke-RestMethod $mockMetadata
 $temporary = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "cosmos-perf-script-$([Guid]::NewGuid())")
 $savedEnvironment = @{}
 foreach ($name in @('COSMOS_PERF_OUTPUT', 'AZURE_COSMOS_ENDPOINT', 'AZURE_COSMOS_KEY', 'BUILD_BUILDID', 'COSMOS_TEST_ACCOUNTS_JSON',
-    'COSMOS_PERF_BASELINE_COMMIT', 'COSMOS_PERF_CALIBRATE', 'COSMOS_PERF_WEEKLY', 'COSMOS_PERF_AUTO_CALIBRATE',
+    'COSMOS_PERF_BASELINE_COMMIT', 'COSMOS_PERF_CALIBRATE', 'COSMOS_PERF_WEEKLY',
     'SYSTEM_PULLREQUEST_PULLREQUESTNUMBER', 'SYSTEM_PULLREQUEST_SOURCECOMMITID', 'BUILD_SOURCEVERSION', 'BUILD_SOURCEBRANCH')) {
     $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name)
 }
@@ -277,8 +277,7 @@ try {
 
     $env:COSMOS_PERF_BASELINE_COMMIT = '$(cosmos-perf-baseline-commit)'
     $env:COSMOS_PERF_CALIBRATE = 'False'
-    $env:COSMOS_PERF_WEEKLY = 'False'
-    $env:COSMOS_PERF_AUTO_CALIBRATE = 'True'
+    $env:COSMOS_PERF_WEEKLY = 'True'
     $env:BUILD_SOURCEVERSION = (& git rev-parse HEAD)
     if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve the test checkout commit.' }
     $sourceProfileJson = & git show "$($env:BUILD_SOURCEVERSION):sdk/cosmos/eng/pipelines/perf-profile.json"
@@ -305,7 +304,7 @@ try {
         $recordedMode.calibrate -ne $true) {
         throw 'Pipeline-style invocation did not execute and persist verified preflight.'
     }
-    Write-Host 'PASS: standalone pipeline defaults execute preflight and bootstrap calibration without manual flags'
+    Write-Host 'PASS: weekly pipeline defaults execute preflight and bootstrap calibration without manual flags'
 } finally {
     Remove-Item Function:\Invoke-WebRequest
     Remove-Item Function:\Invoke-RestMethod

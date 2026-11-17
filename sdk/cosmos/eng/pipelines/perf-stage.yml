@@ -10,9 +10,6 @@ parameters:
 - name: Weekly
   type: boolean
   default: false
-- name: AutoCalibrate
-  type: boolean
-  default: false
 - name: DependsOn
   type: object
   default: []
@@ -57,7 +54,6 @@ stages:
         COSMOS_PERF_OUTPUT: $(PerfOutput)
         COSMOS_PERF_CALIBRATE: ${{ parameters.Calibrate }}
         COSMOS_PERF_WEEKLY: ${{ parameters.Weekly }}
-        COSMOS_PERF_AUTO_CALIBRATE: ${{ parameters.AutoCalibrate }}
         COSMOS_TEST_ACCOUNTS_JSON: $(rust-ci)
     - template: /eng/pipelines/templates/steps/use-rust.yml
       parameters:

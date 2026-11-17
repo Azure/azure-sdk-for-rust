@@ -1,4 +1,4 @@
-# Cosmos performance pipelines
+# Weekly Cosmos performance gate
 
 The `CosmosPerf` stage in `sdk/cosmos/ci.yml` runs automatically in the internal
 `- weekly` pipeline definition, including manual runs of that definition. It builds and executes
@@ -6,44 +6,21 @@ The `CosmosPerf` stage in `sdk/cosmos/ci.yml` runs automatically in the internal
 runs all 14 workload types concurrently for 2,700 seconds, excluding the first
 300 seconds from the gate. Setup and cleanup are outside that window.
 
-## Standalone PR-comment pipeline
+## Triggering the existing pipeline
 
-`sdk/cosmos/perf.yml` is the entry point for **`rust - cosmos - perf`**.
-It reuses the same `CosmosPerf` stage, but has no dependency on the main Build
-matrix or functional live tests. The stage still builds the perf binary in
-release mode, validates account/agent placement, runs the workload, cleans up,
-and publishes the results. Repository 1ES security stages still apply.
+The existing **`rust - cosmos - weekly`** definition runs a single `Perf` job
+inside its `CosmosPerf` stage, after Build and functional live tests. No new
+pipeline definition, GitHub comment trigger, or schedule is needed. The job
+builds the perf binary, validates placement, measures the workload, cleans up,
+and publishes results.
 
-After an administrator registers the definition and its comment trigger, use:
-
-```text
-/azp run rust - cosmos - perf
-```
-
-Post that comment on the upstream GitHub PR as an authorized contributor.
-The YAML alone does not register a named ADO pipeline or enable PR comments.
-Registration in the `azure-sdk` organization's `internal` project requires:
-
-1. A pipeline named exactly `rust - cosmos - perf`, repository
-   `Azure/azure-sdk-for-rust`, YAML path `sdk/cosmos/perf.yml`, using the existing
-   GitHub connection. Publish the YAML to the selected source branch first.
-2. **PR trigger override in ADO**, with comments required for **all** PRs
-   (including same-repository and fork PRs), following the existing
-   `rust - cosmos` definition's comment-required setup. Keep automatic CI and
-   scheduled triggers disabled for this standalone definition. The YAML has
-   `trigger: none` and `pr: none` to prevent automatic runs before registration.
-3. Authorization for the existing perf pool, shared template resources, feeds,
-   and protected variable group. Review and approve access to secrets for fork
-   builds under the existing organization policy; do not grant full-access job
-   tokens or unrestricted secret access to untrusted PRs.
-4. The same account exclusive-lock check as weekly runs, so the two pipelines
-   cannot benchmark this account concurrently.
-
-No comment parameters are required. The standalone definition automatically
-collects calibration when no approved baseline is configured and enforces a
-reviewed baseline when present. `CalibratePerf=true` in the ADO Run pipeline
-dialog explicitly requests calibration even when a baseline is configured.
-Weekly execution through `sdk/cosmos/ci.yml` remains unchanged.
+For an on-demand run, manually queue **`rust - cosmos`** using the ADO Run pipeline
+dialog or CLI with `RunPerfTests=true`, selecting the intended PR head commit.
+Until a reviewed baseline exists, also set `CalibratePerf=true`.
+Set `RunLiveTests=false` if functional live tests are not needed; the Build
+stage still runs. Ordinary PR builds and `/azp run rust - cosmos` do not
+enable perf by default. There is no separate `/azp run rust - cosmos - perf`
+pipeline to register.
 
 Native ADO PR-comment runs normally check out `refs/pull/<number>/merge`.
 Preflight checks that `System.PullRequest.PullRequestNumber` matches the ref
@@ -150,7 +127,7 @@ only its own database and containers, not the dedicated account.
 
 ## Calibration and execution
 
-Weekly and standalone runs automatically collect calibration if no reviewed baseline revision
+Weekly runs automatically collect calibration if no reviewed baseline revision
 is configured, or if the pinned revision contains the initial empty, unapproved
 threshold template. They enforce thresholds once the pinned baseline is approved.
 Malformed or partially configured pinned baselines fail; they do not silently

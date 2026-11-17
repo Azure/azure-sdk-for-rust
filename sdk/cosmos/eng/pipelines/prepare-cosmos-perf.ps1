@@ -116,7 +116,7 @@ New-Item -ItemType Directory -Force -Path $output | Out-Null
 $baseline = $env:COSMOS_PERF_BASELINE_COMMIT
 $source = Select-CosmosPerfSource $env:BUILD_SOURCEBRANCH $env:BUILD_SOURCEVERSION `
     $env:SYSTEM_PULLREQUEST_PULLREQUESTNUMBER $env:SYSTEM_PULLREQUEST_SOURCECOMMITID
-$autoCalibrate = $env:COSMOS_PERF_WEEKLY -eq 'True' -or $env:COSMOS_PERF_AUTO_CALIBRATE -eq 'True'
+$autoCalibrate = $env:COSMOS_PERF_WEEKLY -eq 'True'
 $requested = $env:COSMOS_PERF_CALIBRATE -eq 'True'
 $hasBaseline = -not [string]::IsNullOrWhiteSpace($baseline) -and -not $baseline.StartsWith('$(')
 if (-not $hasBaseline) {
