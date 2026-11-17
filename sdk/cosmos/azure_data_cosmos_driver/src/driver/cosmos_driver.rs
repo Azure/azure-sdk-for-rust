@@ -4848,6 +4848,12 @@ impl CosmosDriver {
     /// is `true`, the cached routing map is refreshed from the service before
     /// returning results.
     ///
+    /// Returns `Ok(None)` if no routing map is available, unless a configured deadline expires.
+    ///
+    /// # Errors
+    ///
+    /// Returns `408/CLIENT_OPERATION_TIMEOUT` if a configured deadline expires during topology resolution.
+    ///
     pub async fn resolve_all_partition_key_ranges(
         &self,
         container: &ContainerReference,
@@ -4876,9 +4882,13 @@ impl CosmosDriver {
     /// Handles both full keys (single range via point lookup) and prefix keys
     /// on MultiHash containers (multiple ranges via overlapping range lookup).
     ///
-    /// Returns `Ok(None)` if the partition key is empty or the routing map
-    /// cannot be resolved. When `force_refresh` is `true`, the cached routing
-    /// map is refreshed from the service before lookup.
+    /// Returns `Ok(None)` if the partition key is empty or no routing map is available,
+    /// unless a configured deadline expires during topology resolution. When `force_refresh`
+    /// is `true`, the cached routing map is refreshed from the service before lookup.
+    ///
+    /// # Errors
+    ///
+    /// Returns `408/CLIENT_OPERATION_TIMEOUT` if a configured deadline expires during topology resolution.
     ///
     pub async fn resolve_partition_key_ranges_for_key(
         &self,
