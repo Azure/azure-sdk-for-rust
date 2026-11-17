@@ -61,6 +61,7 @@ fn test_container_props() -> ContainerProperties {
     ContainerProperties {
         id: Cow::Owned("coll".into()),
         partition_key: serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap(),
+        vector_embedding_policy: None,
         system_properties: SystemProperties::default(),
     }
 }
@@ -820,6 +821,7 @@ async fn hierarchical_prefix_keeps_bounds_and_continuations_across_merge_and_spl
     let properties = ContainerProperties {
         id: "hpk".into(),
         partition_key: ("/tenant", "/user", "/device").into(),
+        vector_embedding_policy: None,
         system_properties: SystemProperties::default(),
     };
     let container = ContainerReference::new(

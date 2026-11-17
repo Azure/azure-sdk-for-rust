@@ -237,11 +237,8 @@ fn json_type_name(v: &serde_json::Value) -> &'static str {
 
 /// The resolved query plan the planner consumes.
 ///
-/// Built from a [`RawQueryPlan`] via [`RawQueryPlan::resolve`] on the Gateway
-/// path. The native QueryPlanInterop path deserializes JSON directly into
-/// this type (it does not need the EPK-hashing step the Gateway path needs,
-/// because the native DLL emits ranges in a form `string_or_json` can flatten
-/// in place).
+/// Built from a [`RawQueryPlan`] via [`RawQueryPlan::resolve`] on both the
+/// Gateway and native QueryPlanInterop paths.
 #[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
 #[serde(default)]
 #[serde(rename_all = "camelCase")]
@@ -366,8 +363,8 @@ pub(crate) enum SortOrder {
 /// On the Gateway path, ranges arrive in canonical hex EPK form (`""`, `"FF"`,
 /// or a hash hex). On the native QueryPlanInterop path and the Gateway V2
 /// thin-client proxy path, ranges arrive as `PartitionKeyInternal` JSON values
-/// (arrays); `string_or_json` flattens those to the JSON text. The Gateway
-/// path additionally runs each `RawQueryRange` through
+/// (arrays); `string_or_json` flattens those to the JSON text. Both paths
+/// additionally run each `RawQueryRange` through
 /// [`RawQueryPlan::resolve`] to hash structured PK values into proper EPK hex.
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]

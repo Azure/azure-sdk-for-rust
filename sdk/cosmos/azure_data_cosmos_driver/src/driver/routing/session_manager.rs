@@ -302,6 +302,7 @@ mod tests {
         let props = ContainerProperties {
             id: "coll1".into(),
             partition_key: pk_def,
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         ContainerReference::new(account, "db1", "db_rid1", "coll1", "coll_rid1", &props)
@@ -446,6 +447,7 @@ mod tests {
         let props = ContainerProperties {
             id: "coll1".into(),
             partition_key: pk_def.clone(),
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         let c_capture = ContainerReference::new(
@@ -474,6 +476,7 @@ mod tests {
         let props2 = ContainerProperties {
             id: "coll1".into(),
             partition_key: pk_def,
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         let c_resolve =
@@ -996,6 +999,7 @@ mod tests {
         let props1 = ContainerProperties {
             id: "coll1".into(),
             partition_key: pk_def.clone(),
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         let c1 = ContainerReference::new(
@@ -1009,6 +1013,7 @@ mod tests {
         let props2 = ContainerProperties {
             id: "coll2".into(),
             partition_key: pk_def,
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         let c2 = ContainerReference::new(account, "db1", "db_rid1", "coll2", "coll_rid2", &props2);
@@ -1177,6 +1182,7 @@ mod tests {
         let props = ContainerProperties {
             id: "new_coll".into(),
             partition_key: pk_def,
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         let probe = ContainerReference::new(
@@ -1224,6 +1230,7 @@ mod tests {
         let props = ContainerProperties {
             id: "coll1".into(),
             partition_key: pk_def,
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         let probe = ContainerReference::new(account, "db1", "db_rid1", "coll1", "coll_rid", &props);

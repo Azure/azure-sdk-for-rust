@@ -350,6 +350,7 @@ mod tests {
         ContainerProperties {
             id: "testcontainer".into(),
             partition_key: test_partition_key_definition("/pk"),
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         }
     }

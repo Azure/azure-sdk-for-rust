@@ -2114,6 +2114,7 @@ mod tests {
         ContainerProperties {
             id: Cow::Owned("coll".into()),
             partition_key: test_partition_key_definition(),
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         }
     }

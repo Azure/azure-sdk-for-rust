@@ -8,10 +8,16 @@
 //! process-exit crashes caused by DLL static destructor ordering and
 //! provides graceful error handling when the library is missing.
 //!
+//! The library is bundled by the `azure_cosmos_queryplan_<os>_<arch>` crate
+//! selected by `azure_cosmos_queryplan_sys`, whose build script copies it into
+//! the cargo profile directory (for example `target/debug`).
+//!
 //! # Library search order
 //!
-//! 1. `AZURE_COSMOS_QUERYPLANINTEROP_DIR` environment variable (full path)
-//! 2. OS default search (PATH on Windows, LD_LIBRARY_PATH on Linux)
+//! 1. `AZURE_COSMOS_QUERYPLANINTEROP_DIR` environment variable
+//! 2. Directory of the current executable
+//! 3. Parent of that directory when it is `deps` (cargo test binaries)
+//! 4. OS default search (PATH on Windows, LD_LIBRARY_PATH on Linux)
 
 use std::os::raw::c_void;
 
@@ -144,29 +150,11 @@ mod platform {
 
     /// # Safety
     ///
-    /// The library name must refer to a valid shared library on the system.
-    ///
-    /// Search order:
-    /// 1. AZURE_COSMOS_QUERYPLANINTEROP_DIR environment variable (loads by absolute path)
-    /// 2. OS default search (PATH)
-    pub unsafe fn load_library(name: &str) -> Option<LibHandle> {
-        // Try AZURE_COSMOS_QUERYPLANINTEROP_DIR if set — build an absolute path
-        // to avoid mutating the process-wide DLL search directory.
-        if let Ok(dir) = std::env::var("AZURE_COSMOS_QUERYPLANINTEROP_DIR") {
-            let full_path = format!("{}\\{}", dir.trim_end_matches('\\'), name);
-            if let Ok(c_path) = CString::new(full_path) {
-                // SAFETY: CString guarantees a valid nul-terminated string.
-                let h = unsafe { LoadLibraryA(c_path.as_ptr().cast()) };
-                if !h.is_null() {
-                    return Some(h);
-                }
-            }
-        }
-
-        // Fall back to OS default search (PATH).
-        let c_name = CString::new(name).ok()?;
+    /// `path` must refer to a valid shared library.
+    pub unsafe fn open(path: &str) -> Option<LibHandle> {
+        let c_path = CString::new(path).ok()?;
         // SAFETY: CString guarantees a valid nul-terminated string.
-        let h = unsafe { LoadLibraryA(c_name.as_ptr().cast()) };
+        let h = unsafe { LoadLibraryA(c_path.as_ptr().cast()) };
         if h.is_null() {
             None
         } else {
@@ -199,8 +187,6 @@ mod platform {
             FreeLibrary(lib);
         }
     }
-
-    pub const LIB_NAME: &str = "Cosmos.QueryPlanInterop.dll";
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -217,32 +203,18 @@ mod platform {
     }
 
     const RTLD_NOW: c_int = 0x2;
+    #[cfg(target_vendor = "apple")]
+    const RTLD_LOCAL: c_int = 0x4;
+    #[cfg(not(target_vendor = "apple"))]
     const RTLD_LOCAL: c_int = 0x0;
 
     /// # Safety
     ///
-    /// The library name must refer to a valid shared library on the system.
-    ///
-    /// Search order:
-    /// 1. AZURE_COSMOS_QUERYPLANINTEROP_DIR environment variable
-    /// 2. OS default search (LD_LIBRARY_PATH / DYLD_LIBRARY_PATH)
-    pub unsafe fn load_library(name: &str) -> Option<LibHandle> {
-        // Try AZURE_COSMOS_QUERYPLANINTEROP_DIR if set.
-        if let Ok(dir) = std::env::var("AZURE_COSMOS_QUERYPLANINTEROP_DIR") {
-            let full_path = format!("{}/{}", dir.trim_end_matches('/'), name);
-            if let Ok(c_path) = CString::new(full_path) {
-                // SAFETY: CString guarantees a valid nul-terminated string.
-                let h = unsafe { dlopen(c_path.as_ptr(), RTLD_NOW | RTLD_LOCAL) };
-                if !h.is_null() {
-                    return Some(h);
-                }
-            }
-        }
-
-        // Fall back to OS default search.
-        let c_name = CString::new(name).ok()?;
+    /// `path` must refer to a valid shared library.
+    pub unsafe fn open(path: &str) -> Option<LibHandle> {
+        let c_path = CString::new(path).ok()?;
         // SAFETY: CString guarantees a valid nul-terminated string.
-        let h = unsafe { dlopen(c_name.as_ptr(), RTLD_NOW | RTLD_LOCAL) };
+        let h = unsafe { dlopen(c_path.as_ptr(), RTLD_NOW | RTLD_LOCAL) };
         if h.is_null() {
             None
         } else {
@@ -275,11 +247,56 @@ mod platform {
             dlclose(lib);
         }
     }
+}
 
-    #[cfg(target_os = "linux")]
-    pub const LIB_NAME: &str = "libqueryplaninterop.so";
-    #[cfg(target_os = "macos")]
-    pub const LIB_NAME: &str = "libqueryplaninterop.dylib";
+/// Returns the bundled library file name, or `None` when no usable library
+/// exists for the target.
+fn bundled_binary_name() -> Option<&'static str> {
+    // The Linux crates bundle a glibc build, which must not be loaded into a
+    // musl process.
+    if cfg!(target_env = "musl") {
+        return None;
+    }
+    azure_cosmos_queryplan_sys::binary_name()
+}
+
+/// Directories probed (in order) before falling back to the OS default search.
+fn candidate_dirs() -> Vec<std::path::PathBuf> {
+    let mut dirs = Vec::new();
+    if let Some(dir) = std::env::var_os("AZURE_COSMOS_QUERYPLANINTEROP_DIR") {
+        dirs.push(dir.into());
+    }
+    if let Some(exe_dir) = std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(std::path::Path::to_path_buf))
+    {
+        // cargo test binaries live in `target/<profile>/deps`, while the
+        // bundling crate copies the library into `target/<profile>`.
+        let profile_dir = exe_dir
+            .file_name()
+            .filter(|name| *name == "deps")
+            .and_then(|_| exe_dir.parent())
+            .map(std::path::Path::to_path_buf);
+        dirs.push(exe_dir);
+        dirs.extend(profile_dir);
+    }
+    dirs
+}
+
+/// # Safety
+///
+/// `name` must be the file name of a valid shared library.
+unsafe fn load_library(name: &str) -> Option<platform::LibHandle> {
+    for dir in candidate_dirs() {
+        if let Some(path) = dir.join(name).to_str() {
+            // SAFETY: Forwarded from the caller.
+            if let Some(handle) = unsafe { platform::open(path) } {
+                return Some(handle);
+            }
+        }
+    }
+    // SAFETY: Forwarded from the caller.
+    unsafe { platform::open(name) }
 }
 
 // -------------------------------------------------------------------------
@@ -300,17 +317,20 @@ unsafe impl Sync for QueryPlanNativeLibrary {}
 
 impl QueryPlanNativeLibrary {
     fn load() -> Result<Self, String> {
+        let lib_name = bundled_binary_name()
+            .ok_or_else(|| "failed to load QueryPlanInterop: unsupported platform".to_owned())?;
+
         // SAFETY: We load the library and resolve symbols whose signatures
         // match the C ABI declared in QueryPlanInterop.h. The transmutes
         // convert raw function pointers to typed function pointers with
         // signatures matching the header's extern "C" declarations.
         unsafe {
-            let handle = platform::load_library(platform::LIB_NAME)
-                .ok_or_else(|| format!("failed to load {}", platform::LIB_NAME))?;
+            let handle =
+                load_library(lib_name).ok_or_else(|| format!("failed to load {lib_name}"))?;
 
             let resolve = |name: &str| -> Result<*mut c_void, String> {
                 platform::get_proc(handle, name)
-                    .ok_or_else(|| format!("symbol '{}' not found in {}", name, platform::LIB_NAME))
+                    .ok_or_else(|| format!("symbol '{name}' not found in {lib_name}"))
             };
 
             Ok(Self {

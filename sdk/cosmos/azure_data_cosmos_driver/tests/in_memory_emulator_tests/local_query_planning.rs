@@ -75,7 +75,6 @@ async fn per_request_gateway_only_mode_bypasses_local_query_planning() {
     assert_eq!(recorder.query_plan_count(), 1);
 }
 
-#[cfg(not(feature = "__internal_native_query_plan"))]
 #[tokio::test]
 async fn per_plan_mode_does_not_leak_to_subsequent_queries() {
     let (_emulator, recorder, driver) = setup().await;
@@ -129,7 +128,6 @@ fn query_with_parameters(
     )
 }
 
-#[cfg(not(feature = "__internal_native_query_plan"))]
 #[tokio::test]
 async fn eligible_query_skips_gateway_query_plan() {
     let (_emulator, recorder, driver) = setup().await;
@@ -270,6 +268,27 @@ enum FallbackOutcome {
     Error,
 }
 
+/// Whether `azure_cosmos_queryplan_sys` bundles a native planner for this target.
+const NATIVE_PLANNER: bool = cfg!(all(
+    any(
+        target_os = "windows",
+        target_os = "linux",
+        target_os = "macos"
+    ),
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    not(target_env = "musl")
+));
+
+/// Expected Gateway query-plan requests: one, unless the native planner
+/// handles the query without falling back.
+fn expected_gateway_plans(handled_by_native: bool) -> usize {
+    if NATIVE_PLANNER && handled_by_native {
+        0
+    } else {
+        1
+    }
+}
+
 #[tokio::test]
 async fn unsupported_families_fall_back_to_gateway_once() {
     let (_emulator, recorder, driver) = setup().await;
@@ -278,35 +297,46 @@ async fn unsupported_families_fall_back_to_gateway_once() {
         .await
         .unwrap();
 
+    // (name, query, expected outcome, handled by native planner)
     let scenarios = [
         (
             "aggregate",
             "SELECT VALUE COUNT(1) FROM c",
             FallbackOutcome::Error,
+            true,
         ),
         (
             "group_by",
             "SELECT c.pk, COUNT(1) FROM c GROUP BY c.pk",
             FallbackOutcome::Error,
+            false,
         ),
         (
             "dcount",
             "SELECT VALUE DCOUNT(c.pk) FROM c",
             FallbackOutcome::Plan,
+            false,
         ),
         (
             "hybrid",
             "SELECT VALUE RRF(c.score) FROM c",
             FallbackOutcome::Plan,
+            false,
         ),
         (
             "rewrite_unavailable",
             "SELECT VALUE 1 ORDER BY 1",
-            FallbackOutcome::Error,
+            // Native plans this query; without it, planning fails.
+            if NATIVE_PLANNER {
+                FallbackOutcome::Plan
+            } else {
+                FallbackOutcome::Error
+            },
+            true,
         ),
     ];
 
-    for (name, text, expected) in scenarios {
+    for (name, text, expected, handled_by_native) in scenarios {
         recorder.clear();
         let result = driver
             .plan_operation(
@@ -319,12 +349,12 @@ async fn unsupported_families_fall_back_to_gateway_once() {
 
         assert_eq!(
             recorder.query_plan_count(),
-            1,
-            "{name} must issue exactly one Gateway query-plan request"
+            expected_gateway_plans(handled_by_native),
+            "{name} must issue the expected number of Gateway query-plan requests"
         );
         match expected {
             FallbackOutcome::Plan => {
-                assert!(result.is_ok(), "{name} should produce a Gateway plan");
+                assert!(result.is_ok(), "{name} should produce a plan");
             }
 
             FallbackOutcome::Error => {
@@ -335,7 +365,7 @@ async fn unsupported_families_fall_back_to_gateway_once() {
 }
 
 #[tokio::test]
-async fn vector_queries_fall_back_to_gateway_once() {
+async fn vector_queries_plan_natively_or_fall_back_once() {
     let (_emulator, recorder, driver) = setup().await;
     let container = driver
         .resolve_container("testdb", "testcoll", OperationOptions::default())
@@ -374,13 +404,17 @@ async fn vector_queries_fall_back_to_gateway_once() {
 
         assert_eq!(
             recorder.query_plan_count(),
-            1,
-            "vector query must issue exactly one Gateway query-plan request"
+            expected_gateway_plans(true),
+            "vector query must issue the expected number of Gateway query-plan requests"
         );
-        assert!(
-            result.is_err(),
-            "the in-memory Gateway cannot synthesize authoritative vector metadata"
-        );
+        if NATIVE_PLANNER {
+            assert!(result.is_ok(), "native should plan the vector query");
+        } else {
+            assert!(
+                result.is_err(),
+                "the in-memory Gateway cannot synthesize authoritative vector metadata"
+            );
+        }
         assert_eq!(recorder.document_query_count(), 0);
     }
 }

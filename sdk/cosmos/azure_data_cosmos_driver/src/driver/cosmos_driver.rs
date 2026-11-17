@@ -451,7 +451,6 @@ pub struct CosmosDriver {
     fault_injection_enabled: bool,
     /// Native FFI query plan provider. Lazily loads the native library on
     /// first use; returns errors if unavailable.
-    #[cfg(feature = "__internal_native_query_plan")]
     native_query_plan_provider: crate::query_plan_native::NativeQueryPlanProvider,
 }
 
@@ -1948,7 +1947,6 @@ impl CosmosDriver {
             http_client_factory,
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled,
-            #[cfg(feature = "__internal_native_query_plan")]
             native_query_plan_provider: crate::query_plan_native::NativeQueryPlanProvider::new(),
         })
     }
@@ -8189,6 +8187,7 @@ mod tests {
         let container_props = crate::models::ContainerProperties {
             id: container_name.to_owned().into(),
             partition_key: serde_json::from_str(pk_json).unwrap(),
+            vector_embedding_policy: None,
             system_properties: Default::default(),
         };
         ContainerReference::new(

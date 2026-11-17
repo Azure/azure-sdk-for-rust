@@ -122,7 +122,7 @@ impl DatabaseProperties {}
 /// Properties of a Cosmos DB container.
 ///
 /// Returned by container read/query operations and used when creating/updating containers.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[non_exhaustive]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ContainerProperties {
@@ -131,6 +131,10 @@ pub(crate) struct ContainerProperties {
 
     /// Partition key definition specifying the partition key path(s).
     pub partition_key: PartitionKeyDefinition,
+
+    /// Vector embedding policy, kept as raw JSON for the native query planner.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vector_embedding_policy: Option<serde_json::Value>,
 
     /// System-managed properties (e.g., _rid, _ts, _etag).
     #[serde(flatten)]

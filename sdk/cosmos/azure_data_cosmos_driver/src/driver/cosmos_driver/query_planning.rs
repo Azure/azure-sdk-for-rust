@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#[cfg(feature = "__internal_native_query_plan")]
 use crate::models::AccountEndpoint;
 use crate::{
     driver::{
@@ -44,6 +43,9 @@ pub(super) async fn resolve_query_plan(
         if let Some(plan) =
             try_plan_query_using_native_planner(driver, container, operation, mode).await
         {
+            if is_provably_empty(&plan) {
+                return Ok(ResolvedQueryPlan::Empty);
+            }
             return Ok(ResolvedQueryPlan::Plan(Box::new(plan)));
         }
         if let Some(resolution) = try_plan_query_using_local_planner(container, operation, mode) {
@@ -56,7 +58,25 @@ pub(super) async fn resolve_query_plan(
     Ok(ResolvedQueryPlan::Plan(Box::new(plan)))
 }
 
-#[cfg(feature = "__internal_native_query_plan")]
+/// Returns true when a plan provably matches no documents and can skip all
+/// query I/O, like the local planner's contradictory-filter outcome.
+///
+/// The service encodes contradictory partition-key filters as a single point
+/// range on the empty partition key, which resolves to EPK `""..""`; no
+/// document hashes there. Aggregates, GROUP BY and hybrid search are excluded
+/// because they still produce rows (e.g. `COUNT` returns 0) over no documents.
+fn is_provably_empty(plan: &QueryPlan) -> bool {
+    let ranges_empty = plan
+        .query_ranges
+        .iter()
+        .all(|range| range.min.is_empty() && range.max.is_empty());
+    let produces_rows_without_documents = plan.hybrid_search_query_info.is_some()
+        || plan.query_info.as_ref().is_some_and(|info| {
+            !info.aggregates.is_empty() || !info.group_by_expressions.is_empty()
+        });
+    ranges_empty && !produces_rows_without_documents
+}
+
 async fn try_plan_query_using_native_planner(
     driver: &CosmosDriver,
     container: &ContainerReference,
@@ -76,16 +96,10 @@ async fn try_plan_query_using_native_planner(
         .body()
         .and_then(|body| std::str::from_utf8(body).ok())
         .map(|query_spec| {
-            let partition_key = container.partition_key_definition();
-            let paths: Vec<&str> = partition_key
-                .paths()
-                .iter()
-                .map(|path| path.as_ref())
-                .collect();
             driver.native_query_plan_provider.get_query_plan(
                 query_spec,
-                &paths,
-                partition_key.kind(),
+                container.partition_key_definition(),
+                container.vector_embedding_policy_json(),
                 &query_engine_config,
             )
         });
@@ -127,16 +141,6 @@ async fn try_plan_query_using_native_planner(
             None
         }
     }
-}
-
-#[cfg(not(feature = "__internal_native_query_plan"))]
-async fn try_plan_query_using_native_planner(
-    _driver: &CosmosDriver,
-    _container: &ContainerReference,
-    _operation: &CosmosOperation,
-    _mode: QueryPlanMode,
-) -> Option<QueryPlan> {
-    None
 }
 
 fn try_plan_query_using_local_planner(
@@ -239,6 +243,7 @@ mod tests {
                 r#"{"paths":["/pk"],"version":2}"#,
             )
             .unwrap(),
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         ContainerReference::new(account, "db", "db_rid", "coll", "coll_rid", &properties)
@@ -256,5 +261,40 @@ mod tests {
         let query_plan_operation = build_gateway_query_plan_operation(&container, &operation);
 
         assert_eq!(query_plan_operation.absolute_deadline(), Some(deadline));
+    }
+
+    fn resolved_plan(query_info: serde_json::Value, min: &str, max: &str) -> QueryPlan {
+        let raw: RawQueryPlan = serde_json::from_value(serde_json::json!({
+            "queryInfo": query_info,
+            "queryRanges": [{
+                "min": serde_json::from_str::<serde_json::Value>(min).unwrap(),
+                "max": serde_json::from_str::<serde_json::Value>(max).unwrap(),
+                "isMinInclusive": true,
+                "isMaxInclusive": true
+            }]
+        }))
+        .unwrap();
+        raw.resolve(test_container().partition_key_definition())
+            .unwrap()
+    }
+
+    #[test]
+    fn contradictory_filter_plan_is_provably_empty() {
+        // Shape the native planner returns for `c.pk = 'a' AND c.pk = 'b'`.
+        let plan = resolved_plan(serde_json::json!({ "rewrittenQuery": "" }), "[]", "[]");
+        assert!(is_provably_empty(&plan));
+    }
+
+    #[test]
+    fn contradictory_aggregate_plan_is_not_empty() {
+        // COUNT over no documents still returns 0.
+        let plan = resolved_plan(serde_json::json!({ "aggregates": ["Count"] }), "[]", "[]");
+        assert!(!is_provably_empty(&plan));
+    }
+
+    #[test]
+    fn point_query_plan_is_not_empty() {
+        let plan = resolved_plan(serde_json::json!({}), r#"["a"]"#, r#"["a"]"#);
+        assert!(!is_provably_empty(&plan));
     }
 }
