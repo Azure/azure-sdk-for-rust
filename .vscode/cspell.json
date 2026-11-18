@@ -8,6 +8,7 @@
     "**/test-resources.bicep",
     "**/test-resources.json",
     "**/test-resources-post.ps1",
+    "**/tsp-location.yaml",
     "**/assets.json",
     "**/*.pfx",
     ".cargo/",
