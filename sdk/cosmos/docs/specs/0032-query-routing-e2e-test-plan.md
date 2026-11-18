@@ -94,7 +94,7 @@ invalid.
 
 Populate every container with the same deterministic logical data.
 
-| Cohort     | Count   | `tenantId`                      | `id`                       | Purpose                                          |
+| Cohort     |   Count | `tenantId`                      | `id`                       | Purpose                                          |
 | ---------- | ------: | ------------------------------- | -------------------------- | ------------------------------------------------ |
 | Target     | 100,000 | `abc`                           | Unique deterministic value | High-cardinality HPK suffix and aggregate target |
 | Background | 100,000 | Deterministic non-`abc` tenants | Unique deterministic value | Cross-tenant and FeedRange controls              |
@@ -257,13 +257,13 @@ For every automated scenario, assert:
 
 These cases protect the correctness exceptions to EPK-filter removal.
 
-| Case | Setup | Required wire behavior | Result assertion |
-| ---- | ----- | ---------------------- | ---------------- |
-| Colocated `IN` | At least two planned point ranges on one PKRID | One unfiltered execution for the query/scope/PKRID, or one non-overlapping EPK-R per leaf | No duplicate or missing rows across pages and resume |
-| Colocated `OR` | At least two disjoint planned ranges on one PKRID | Same as colocated `IN` | Exact identity set across small pages and resume |
-| Query resume after split | Save continuation, split the active range, then resume | Each child retains the saved range intersection and continuation boundary | No reread, loss, or duplicate rows |
+| Case                     | Setup                                                                  | Required wire behavior                                                                        | Result assertion                                       |
+| ------------------------ | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Colocated `IN`           | At least two planned point ranges on one PKRID                         | One unfiltered execution for the query/scope/PKRID, or one non-overlapping EPK-R per leaf     | No duplicate or missing rows across pages and resume   |
+| Colocated `OR`           | At least two disjoint planned ranges on one PKRID                      | Same as colocated `IN`                                                                        | Exact identity set across small pages and resume       |
+| Query resume after split | Save continuation, split the active range, then resume                 | Each child retains the saved range intersection and continuation boundary                     | No reread, loss, or duplicate rows                     |
 | Query resume after merge | Advance sibling ranges to different positions, merge them, then resume | Independently continued slices and fresh gaps keep distinct EPK-R filters on the merged PKRID | No overlap between leaves and no completed work reread |
-| Topology recovery retry | Trigger stale topology while several slices share one PKRID | Rebuilt leaves preserve the original non-overlapping range ledger | Same result as an uninterrupted execution |
+| Topology recovery retry  | Trigger stale topology while several slices share one PKRID            | Rebuilt leaves preserve the original non-overlapping range ledger                             | Same result as an uninterrupted execution              |
 
 Use page size `1` or another deliberately small size so every case crosses a
 continuation boundary. The hosted emulator must expose the captured range and
@@ -281,13 +281,13 @@ compatibility probes, not supported public option combinations. Assert and
 record the exact service status, substatus, response body classification, and
 whether the request reached the service.
 
-| Case | Required client behavior | Live assertion |
-| ---- | ------------------------ | -------------- |
-| Start without end | No newly added client rejection | Pin exact V1 and V2 service outcome |
-| End without start | No newly added client rejection | Pin exact V1 and V2 service outcome |
-| Start/end without key type | No newly added client rejection | Pin exact V1 and V2 service outcome |
+| Case                               | Required client behavior        | Live assertion                      |
+| ---------------------------------- | ------------------------------- | ----------------------------------- |
+| Start without end                  | No newly added client rejection | Pin exact V1 and V2 service outcome |
+| End without start                  | No newly added client rejection | Pin exact V1 and V2 service outcome |
+| Start/end without key type         | No newly added client rejection | Pin exact V1 and V2 service outcome |
 | Start/end with mismatched key type | No newly added client rejection | Pin exact V1 and V2 service outcome |
-| EPK-R with key type `2` | No newly added client rejection | Pin exact V1 and V2 service outcome |
+| EPK-R with key type `2`            | No newly added client rejection | Pin exact V1 and V2 service outcome |
 
 Treat any difference between Gateway V1 and Gateway V2 as an explicit
 transport result, not a reason to normalize behavior client-side without a

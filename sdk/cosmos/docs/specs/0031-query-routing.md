@@ -1,277 +1,338 @@
 <!-- cspell:ignore partialpartitionkey PKRID -->
 # Query Routing and Backend Filtering
 
-**Status:** Draft
-**Date:** 2026-11-17
-**Crate:** `azure_data_cosmos_driver`
+Define the headers the Rust Cosmos DB driver sends to route point operations,
+queries, and change feed requests without redundant backend EPK range filtering.
 
-## Purpose
+**Status:** Draft | **Date:** 2026-11-17 | **Crate:** `azure_data_cosmos_driver`
 
-This specification defines which partition-routing and backend-filtering
-headers the Rust Cosmos DB driver sends for point operations, queries, and
-change feed requests. The primary goal is to avoid backend EPK range filtering
-when a logical partition key, partial hierarchical partition key, physical
-partition, or SQL predicate already provides the required scope.
+## Executive summary
 
-Gateway V1 and Gateway V2 are in scope. Direct mode is not implemented by the
-Rust SDK. Java and .NET behavior is precedent, not part of this contract.
+- Routing chooses a physical partition; filtering determines which documents
+   it returns. Removing a filter must not remove required Gateway V2 routing.
+- Prefer a complete partition key over a partial hierarchical key, and either
+   over a redundant EPK range filter.
+- Queries can rely on SQL for filtering; change feed has no SQL and still needs
+   EPK range filtering for a partial hierarchical key.
+- Keep range boundaries that prevent duplicate results or preserve independent
+   continuation progress, including after splits and merges.
+- A necessary filter covering one EPK stays a start/end range. Incomplete
+   existing wire headers do not acquire new client-side rejection rules.
 
-Related designs are `0007-partition-key-range-cache.md`,
-`0011-gateway-v2.md`, `0012-feed-operations-and-dataflow.md`, and
-`0013-query-engine.md`.
+## User and problem
 
-## Legend
+An application asks for one item, query results, or changes within a chosen
+scope. The driver must reach the right partitions without adding an EPK range
+filter already enforced by the partition key, physical partition, or SQL.
+For example, `WHERE c.tenantId = "abc"` can filter through the partition-key
+path index rather than through an additional EPK range filter.
 
-| Term  | Meaning                                                         |
-| ----- | --------------------------------------------------------------- |
-| PK    | Complete logical partition key                                  |
-| PPK   | Non-empty HPK prefix                                            |
-| PKRID | Physical partition-key-range ID                                 |
-| EPK   | One effective partition key                                     |
-| EPK-R | Half-open effective-partition-key range `[min, max)`            |
-| SQL   | The query text remains responsible for document filtering       |
-| TC-R  | Gateway V2 proxy-routing range; never a backend document filter |
-| `—`   | Header must be absent                                           |
+The optimization must also preserve the work assigned to each request: SQL
+alone does not separate independently paged slices on the same partition.
 
-## Header ownership
+## Scope and non-goals
 
-The most important distinction is between **proxy routing** and **backend
-filtering**. Removing a backend EPK filter must not remove Gateway V2 routing
-metadata.
+This is the Rust driver contract for Gateway V1 and Gateway V2, including point
+operations, queries, query-plan requests, change feed, and their range handling
+during pagination and topology recovery. Direct mode is out of scope and is
+not implemented by the Rust SDK. Java and .NET are precedents, not normative
+contracts for Rust.
 
-| Carrier                                     | Wire form                   | Consumer        | Purpose                        | Companion or constraint                                               |
-| ------------------------------------------- | --------------------------- | --------------- | ------------------------------ | --------------------------------------------------------------------- |
-| `x-ms-documentdb-partitionkey`              | HTTP; RNTBD `0x002B` String | Backend         | Complete PK filter             | Takes precedence over PPK                                             |
-| `x-ms-documentdb-partialpartitionkey`       | HTTP; RNTBD `0x0108` String | Backend         | HPK-prefix query filter        | Query only; omitted when PK is present                                |
-| `x-ms-documentdb-partitionkeyrangeid`       | HTTP; RNTBD `0x002C` String | Gateway/backend | Physical routing               | May accompany one semantic backend filter                             |
-| `x-ms-effective-partition-key`              | HTTP; RNTBD `0x005A` Bytes  | Proxy           | PK-derived EPK routing         | Accompanies PK when no EPK-R is retained; not a backend filter        |
-| `x-ms-start-epk`, `x-ms-end-epk`            | HTTP                        | Backend         | EPK-R filter                   | SDK-generated filters use both plus `EffectivePartitionKeyRange`      |
-| RNTBD `StartEpk`, `EndEpk`                  | `0x0062`, `0x0063` Bytes    | Backend         | UTF-8 EPK-R filter text        | Derived only from public start/end EPK headers                        |
-| `x-ms-read-key-type`                        | HTTP; RNTBD `0x0064` Byte   | Backend         | Selects read-feed key form     | Feed/query filtering uses `3` = `EffectivePartitionKeyRange`          |
-| `x-ms-thinclient-range-min`, `-max`         | Outer Gateway V2 HTTP       | Proxy only      | Announces TC-R in frame        | Current Rust value is literal `true`; never backend filtering         |
-| RNTBD `StartEpkHash`, `EndEpkHash`          | `0x00D2`, `0x00D3` Bytes    | Proxy only      | TC-R routing bounds            | Hex-decoded; may use physical-range fallback                          |
-| `x-ms-thinclient-pkrange-min`, `-max`       | Internal Rust HTTP staging  | V2 serializer   | Supplies fallback TC-R         | Must not become backend `StartEpk`/`EndEpk` tokens                    |
+## Key decisions and unresolved questions
 
-An `EffectivePartitionKey` token routes a PK-scoped Gateway V2 request and does
-not require `ReadFeedKeyType`. A feed/query/change-feed filter that covers one
-EPK remains a range: start/end plus
-`ReadFeedKeyType::EffectivePartitionKeyRange`. This matches current Rust,
-Java, and .NET behavior. The protocol value `EffectivePartitionKey` (`2`) is
-not used by this contract for feed filtering.
+The decisions are to remove only redundant backend filtering, keep proxy
+routing independent, and preserve existing incomplete-header transmission
+behavior. A complete PK takes precedence over PPK; PPK is a query filter, not
+a change-feed filter (yet). These decisions apply even where Rust implementation
+gaps remain.
 
-When an EPK-R backend filter must be retained, Gateway V2 uses TC-R routing and
-suppresses the proxy `EffectivePartitionKey` token, even if a PK is also known.
-This keeps point EPK routing mutually exclusive with range routing hashes.
+- **[OPEN QUESTION]** What exact live service result and status do requests
+   with only one range bound or with missing range key type produce? The
+   compatibility tests must identify these outcomes and then update this spec;
+   for now, this document does not invent them.
+- **[OPEN QUESTION]** For several fresh query ranges on one physical partition,
+   which permitted strategy will the planner use: one execution or separate
+   range-filtered executions? Both remain allowed; neither may duplicate work.
 
-## Operation capabilities
+## End-to-end flow
 
-| Operation   | PK option | PPK option                | FeedRange      | WHERE scope | PKRID per leaf | One-EPK form | Fan-out         |
-| ----------- | --------- | ------------------------- | -------------- | ----------- | -------------- | ------------ | --------------- |
-| Point       | Required  | Unsupported               | Unsupported    | N/A         | Optional       | N/A          | No              |
-| Query       | Optional  | HPK only                  | Optional       | Supported   | Yes            | EPK-R        | Yes             |
-| Change feed | Optional  | Scope only; no PPK header | Optional       | N/A         | Yes            | EPK-R        | Yes             |
-| Query plan  | Optional  | Optional input            | Optional input | Input SQL   | No data PKRID  | No           | No data fan-out |
+A **complete partition key (PK)** identifies one logical partition. A
+**partial partition key (PPK)** is a non-empty prefix of a hierarchical
+partition key (HPK). An **effective partition key (EPK)** is its routing-space
+representation; a **FeedRange** selects an EPK interval. **PKRID** identifies
+a physical partition-key range. A request *leaf* in cross partition queries
+or change feed executes against one physical partition.
 
-A point operation always carries a complete PK. It must not carry PPK, EPK-R,
-or `ReadFeedKeyType` backend filtering. Gateway V2 independently derives the
-EPK needed by the proxy; complete-PK routing does not use TC-R.
+```mermaid
+sequenceDiagram
+      participant App as Application
+      participant Driver as Rust driver
+      participant Gateway as Gateway V1 or V2
+      participant Backend as Service backend
+      alt Point operation
+            App->>Driver: Item operation with complete PK
+            Driver->>Gateway: PK and required routing metadata
+      else Query
+            App->>Driver: SQL with optional scope and continuation
+            Note over Driver: Use query-plan ranges and preserve per-leaf work
+            Driver->>Gateway: SQL, scope filters, and required routing metadata
+      else Change feed
+            App->>Driver: Feed scope and continuation
+            Note over Driver: Convert an HPK prefix to an EPK range
+            Driver->>Gateway: Scope filters and required routing metadata
+      end
+      Gateway->>Backend: Operation and selected backend filters
+      Backend-->>App: Result via gateway and driver
+```
 
-## Range model and normalization
+For an HPK container, the difference is concrete: a point request uses the full
+key, a query for tenant `abc` can use PPK `["abc"]` or SQL, and change feed for
+the same prefix uses an EPK range. The requirements below define the filters
+and the exceptions; protocol encodings are at the end.
 
-All EPK ranges sent as filters are half-open: `[minInclusive, maxExclusive)`.
+## Functional requirements by user goal
 
-| Partitioning model | One-EPK successor rule                                       |
-| ------------------ | ------------------------------------------------------------ |
-| Hash V1            | Increment the variable-width encoded EPK in big-endian order |
-| Hash V2            | Right-pad to 16 bytes with zeroes, then increment            |
-| HPK / MultiHash    | Right-pad to `16 * path_count` bytes, then increment         |
+### Point operations (exactly one document)
 
-A closed query-plan equality range `[X, X]` normalizes to
-`[X, successor(X))`. A half-open range is one EPK only when its upper bound is
-the container-definition-aware successor of its lower bound. Therefore
-`[AA, AB)` is one EPK only when `AA` and `AB` are already comparable at the
-correct encoded width. Raw hexadecimal subtraction is not sufficient for
-trimmed Hash V2 or HPK bounds.
+Point operations require a complete PK and do not fan out. Partial PK,
+FeedRange, and WHERE scope are not supported for their routing. The request
+must contain PK and must not contain PPK, backend EPK range filtering, or its
+read-key-type selector. Physical PKRID is optional; Gateway V2 independently
+derives the complete-PK routing EPK.
 
-A partial HPK with prefix EPK `P` covers `[P, P + FF)`. It is not a one-EPK
-range.
+### Query the selected documents
 
-## Selection algorithm
+Queries support optional full PK, partial HPK, or FeedRange scopes via request
+options; physical PKRID and full-container targeting are also covered.
+They support WHERE filtering and cross-partition fan-out. The backend applies
+SQL together with the selected scope:
 
-For every data request, the driver must apply these steps in order:
+- **No scope or full container:** SQL alone supplies document filtering.
+- **Complete PK or partial HPK:** emit PK or PPK respectively, alongside SQL.
+- **EPK FeedRange:** enforce the range alongside SQL, subject to the redundancy
+   rules below.
+- **Whole physical partition:** PKRID supplies the physical scope; SQL filters
+   within it.
 
-1. Derive the caller scope: PK, PPK, explicit FeedRange, physical PKRID, or full
-   container.
-2. Derive query routing ranges from the selected query plan. The routing layer
-   must not independently parse SQL.
-3. Intersect compatible ranges for physical routing. If request-option scope
-   and SQL scope are disjoint, route the request-option scope and let SQL
-   evaluate the contradiction. Do not eliminate all leaves: aggregates and
-   similar queries can still produce a row over zero matching documents.
-4. Resolve each request leaf to one physical partition and retain its PKRID.
-5. Choose the most semantic backend filter: PK, then PPK, then EPK-R.
-6. Preserve correctness-required EPK-R boundaries for independent fresh or
-   resumed leaves, even when SQL also filters the documents.
-7. Remove any remaining EPK-R filtering only when another backend constraint
-   fully enforces it. Mere overlap is not sufficient.
-8. If a required EPK-R filter contains one normalized EPK, retain its
-   `[X, successor(X))` start/end range representation.
-9. Project physical routing to Gateway V1 or Gateway V2 independently of the
-   backend-filter decision.
+These combinations apply whether the SQL contains no PK predicate, matching
+full-key equality, matching HPK prefix, a narrower predicate, or a disjoint
+predicate. The query plan may reduce contacted partitions; the routing layer
+must consume that plan rather than independently parse SQL. **Synthesizing PK or
+PPK headers from SQL values is not required.**
 
-Correctness-required boundaries include independently continued slices and
-fresh gaps reconstructed during query resume or topology recovery. After a
-merge, several such leaves can share one PKRID but carry different progress;
-their EPK-R filters prevent rereading completed work and overlapping adjacent
-leaves.
+When no explicit or correctness-required range needs enforcement, prefer SQL
+filtering over an EPK range filter. For example, a WHERE-only tenant equality
+uses the plan to find partitions and SQL to filter documents. Internally
+combined PK/PPK and explicit FeedRange inputs must also follow the business
+rules below.
 
-Fresh query plans can also produce several non-overlapping query ranges on one
-PKRID, for example colocated `IN` or `OR` values. The planner must either issue
-one execution for the query, semantic scope, and PKRID, or retain a distinct
-EPK-R filter on every leaf. It must never issue multiple unfiltered executions
-of the same query against one PKRID.
+### Read changes within a scope
 
-## Range-relation decision table
+The Change feed API supports complete PK, partial HPK scope, explicit FeedRange,
+whole physical partition, or full container, with fan-out when needed. It has
+no SQL predicate (yet).
 
-In this table, `S` is a backend-enforced PK, PPK, or physical-partition scope,
-and `F` is an additional explicit EPK filter. A query-plan range used only for
-routing is not `F`; SQL already enforces that predicate.
+- A complete PK uses the PK filter; physical PKRID is optional.
+- Currently, A partial HPK must become an EPK range, not a PPK header. Assert
+   equivalent scoped results and the range headers; query PPK use instead
+   asserts the query scope and PPK header. There is ongoing work to also
+   add support for the PPK header in the changefeed API in the service. Once
+   this change is deployed globally, the SDK should switch to that model.
+- Full-container and whole-physical-partition reads can use PKRID per leaf
+   backend EPK filtering for full-partition leaves - but splits and merges
+   need to be handled correctly without missing/duplicate data.
+- Strict slices, including a necessary one-EPK scope, use PKRID and an EPK
+   range filter.
 
-| Relation                            | Physical route       | Backend filter             | Start/end | Key type                     | Result behavior                                             |
-| ----------------------------------- | -------------------- | -------------------------- | --------- | ---------------------------- | ----------------------------------------------------------- |
-| `F == S`                            | `S` partitions       | PK, PPK, or PKRID          | `—`       | `—`                          | Same scope                                                  |
-| `S` strictly inside `F`             | `S` partitions       | PK, PPK, or PKRID          | `—`       | `—`                          | `F` redundant                                               |
-| `F` strictly inside `S`             | Overlap              | Semantic filter plus EPK-R | Required  | `EffectivePartitionKeyRange` | Narrower result                                             |
-| Partial overlap                     | Overlap              | Semantic filter plus EPK-R | Required  | `EffectivePartitionKeyRange` | Intersection                                                |
-| Disjoint                            | `S` partitions       | Semantic filter plus EPK-R | Required  | `EffectivePartitionKeyRange` | Zero matching documents; SQL aggregate may still emit a row |
-| `F` is one EPK and is not redundant | Owning partition     | Semantic filter plus EPK-R | Required  | `EffectivePartitionKeyRange` | One-EPK range lookup                                        |
+### Continue without duplicating or rereading work
 
-A physical PKRID is sufficient by itself only when the intended scope covers that
-whole physical partition. A strict subrange still needs EPK filtering.
+Query plans for SQL statements wit `IN` or `OR` can assign several
+non-overlapping ranges to one PKRID. The planner must either execute once per
+query, semantic scope, and PKRID, or keep a distinct EPK range filter on
+every leaf. It must never execute the same query unfiltered multiple times
+against that partition.
 
-Evaluate equal/containing redundancy before the one-EPK row. If `S` fully
-enforces a one-EPK `F`, strip `F`; otherwise retain its narrow EPK-R. For a
-disjoint pair, route the `S` partitions and send both backend constraints so
-the service can preserve zero-input aggregate semantics.
+On query or change-feed resume and topology recovery, retain the EPK filters
+for strict saved slices. Independently continued slices and fresh gaps must
+remain separate even when a merge places them on one PKRID with different
+progress. SQL does not enforce these saved work boundaries.
 
-For a WHERE-only contradiction, existing query-planner rules remain valid:
-ordinary projections may drain without I/O when emptiness is proven, while
-aggregates, GROUP BY, and hybrid search must preserve their zero-input
-semantics. The rule above is specifically for contradictions between an
-explicit request scope and SQL.
+**Takeaway:** filter removal must preserve both the requested documents and
+the work remaining for each leaf.
 
-## Query matrix
+## Business rules
 
-The table lists backend filters. PKRID and Gateway V2 TC-R routing are added per
-physical request and are intentionally omitted from the cells for readability.
+Select the semantic filter in this order: complete PK, PPK, EPK range. If both
+PK and PPK are available, emit PK and omit PPK rather than rejecting the input.
+Retain any additional EPK range needed for correctness or a narrower scope.
 
-| Request option | No PK predicate | Matching PK equality | Matching HPK prefix | Narrower PK predicate | Disjoint PK predicate |
-| -------------- | --------------- | -------------------- | ------------------- | --------------------- | --------------------- |
-| None           | SQL only        | SQL only             | SQL only            | SQL only              | SQL only              |
-| Full PK        | PK              | PK + SQL             | PK + SQL            | PK + SQL              | PK + SQL              |
-| Partial HPK    | PPK             | PPK + SQL            | PPK + SQL           | PPK + SQL             | PPK + SQL             |
-| EPK FeedRange  | EPK-R           | EPK-R + SQL          | EPK-R + SQL         | EPK-R + SQL           | EPK-R + SQL           |
-| Physical PKRID | PKRID only      | PKRID + SQL          | PKRID + SQL         | PKRID + SQL           | PKRID + SQL           |
-| Full container | SQL only        | SQL only             | SQL only            | SQL only              | SQL only              |
+For the comparison below, `S` is a backend-enforced PK, PPK, or physical scope;
+`F` is an additional explicit EPK range filter. A query-plan range used only
+for routing is not `F`. Protect independent leaf boundaries before evaluating
+redundancy, and evaluate redundancy before the one-EPK case.
 
-The query plan may reduce the physical partitions contacted in every row. It
-does not require the driver to synthesize PK or PPK headers from SQL values.
-When no explicit FeedRange must be enforced, the SQL predicate is preferred to
-an EPK-R backend filter so the query engine can use the partition-key path
-index. A one-EPK range remains EPK-R only when it is an explicit FeedRange or
-is otherwise required as a backend scope. A range derived solely from a WHERE
-equality is routing metadata: SQL filters the backend results, so no backend
-start/end tokens are required. Gateway V2 uses TC-R—not the PK-derived
-`EffectivePartitionKey` token—to route that SQL-only leaf.
+| Relationship                         | Physical route    | Backend decision and outcome                                                          |
+| ------------------------------------ | ----------------- | ------------------------------------------------------------------------------------- |
+| `F == S`, or `S` strictly inside `F` | Partitions of `S` | Keep PK, PPK, or PKRID; omit redundant start/end and key type. Results are unchanged. |
+| `F` strictly inside `S`              | Overlap           | Keep semantic filter and EPK range; return the narrower scope.                        |
+| Partial overlap                      | Overlap           | Keep semantic filter and EPK range; return the intersection.                          |
+| Disjoint                             | Partitions of `S` | Send both constraints; zero documents match, but SQL aggregates may still emit a row. |
+| Necessary `F` covers one EPK         | Owning partition  | Keep semantic filter and the narrow start/end range with range key type.              |
 
-If PK or PPK is combined internally with an explicit EPK FeedRange, apply the
-range-relation table in addition to the query matrix.
+The one-EPK case is reserved for an application explicitly constructing an EPK
+`FeedRange` for a single logical partition; whenever the Rust API creates a
+`FeedRange` from a `PartitionKey`, it must preserve the original PK value so it
+can recover the `PartitionKey` and prefer the partition-key header instead.
 
-## Change-feed matrix
+Every necessary one-EPK filter remains a range rather than becoming an equality
+filter. PKRID alone suffices only for the whole physical partition, not a
+strict slice of it.
 
-Change feed has no SQL predicate. PPK is not currently a backend change-feed
-filter, so an HPK prefix remains an EPK-R filter.
+**[ASSUMPTION] Example values only:** physical partition `7` owns `[20, 80)`;
+short EPK values below illustrate relationships, not real hashes.
 
-| Requested scope          | Backend filter           | PKRID route | Gateway V2 proxy route | Efficiency note                   |
-| ------------------------ | ------------------------ | ----------- | ---------------------- | --------------------------------- |
-| Full container           | None per full PKRID leaf | Required    | TC-R per leaf          | No EPK filtering                  |
-| Whole physical partition | None                     | Required    | TC-R                   | No EPK filtering                  |
-| Strict EPK subrange      | EPK-R                    | Required    | TC-R                   | Range lookup                      |
-| Complete PK              | PK                       | Optional    | Derived EPK            | Logical filter                    |
-| Partial HPK prefix       | EPK-R                    | Required    | TC-R                   | Required until PPK support exists |
-| One normalized EPK       | EPK-R                    | Required    | TC-R                   | Narrow one-EPK range lookup       |
+- PK hashing to `40` plus `[20, 80)` needs PK and routing metadata, not
+   start/end or key type. With disjoint `[90, A0)`, retain PK and the range;
+   no documents match.
+- PPK `["abc"]` covering `[30, 30FF)` makes a containing range redundant;
+   a strict `[3040, 3050)` still needs PPK and the range filter.
+- FeedRange `[20, 80)` needs only PKRID `7` for backend scope; `[30, 50)`
+   needs PKRID `7` plus start/end and range key type. Gateway V2 routing remains
+   present in both cases.
+- `[40, successor(40))`, after width-aware normalization, remains a range
+   filter with PKRID `7` when it is not redundant.
 
-After a merge, several continuation ranges may share one physical partition.
-Each strict saved subrange retains its own EPK filter; PKRID alone would
-over-read another continuation range. This rule applies to query and change
-feed resume and topology recovery.
+## Edge cases and error behavior
 
-## Transport projection
+### Contradictory scopes are not all the same
 
-| Logical target           | Gateway V1 backend HTTP            | Gateway V2 outer HTTP  | Gateway V2 routing tokens           | Gateway V2 backend tokens              |
-| ------------------------ | ---------------------------------- | ---------------------- | ----------------------------------- | -------------------------------------- |
-| Complete PK              | PK                                 | Existing proxy headers | `EffectivePartitionKey`             | `PartitionKey`; no EPK-R               |
-| Whole PKRID              | PKRID                              | Range flags for query  | `StartEpkHash`, `EndEpkHash`, PKRID | PKRID; no `StartEpk`/`EndEpk`          |
-| EPK-R, including one EPK | Start/end + range key type + PKRID | Range flags            | `StartEpkHash`, `EndEpkHash`, PKRID | `StartEpk`, `EndEpk`, range key type   |
+If request-option scope and SQL scope are disjoint, route the request-option
+scope and let SQL evaluate the contradiction. Do not eliminate every leaf:
+zero matching documents can still produce an aggregate row.
 
-`x-ms-thinclient-range-min/max` continue to be emitted where the existing
-Gateway V2 transport requires them. They are proxy flags, not EPK values and not
-backend filters.
+For a WHERE-only contradiction, existing planner rules remain valid: an
+ordinary projection may drain without I/O when emptiness is proven, while
+aggregates, GROUP BY, and hybrid search must retain their zero-input semantics.
 
-## Ambiguous or incomplete inputs
+### Incomplete headers preserve compatibility
 
-| Input state                                | Required SDK behavior                                    | Validation                                  |
-| ------------------------------------------ | -------------------------------------------------------- | ------------------------------------------- |
-| PK and PPK together                        | Emit PK and omit PPK                                     | PK is more selective                        |
-| Staged/wire headers contain only one bound | Preserve current transmission behavior; add no rejection | Pin live service result and status          |
-| Staged/wire start/end omit range key type  | Preserve current transmission behavior; add no rejection | Pin live service result and status          |
-| PPK on query                               | Emit PPK                                                 | Assert query scope and wire header          |
-| PPK on change feed                         | Convert the prefix to EPK-R                              | Assert equivalent results and range headers |
-| Data PKRID or TC-R on query-plan request   | Omit                                                     | Query plan is not a data-plane leaf         |
+Typed ranges have two bounds, and SDK-generated filters use the complete
+header set. For existing staged/raw requests with only one bound or without
+range key type, preserve current transmission behavior; do not introduce new
+client-side rejection. Pin the live service result and status rather than
+assuming an error response.
 
-A typed logical range always has both bounds, and SDK-generated filters use the
-complete header set. The compatibility rows apply only when an existing staged
-or raw wire request is already incomplete; the routing work must not introduce
-a new client-side rejection on that path. An empty minimum EPK is a valid
-bound, not a missing bound. Gateway V1 may carry it as an empty HTTP value.
-Gateway V2 encodes it as a zero-byte `StartEpkHash` for routing and may omit the
-empty backend `StartEpk` text token; PKRID disambiguates the physical route.
-This wire omission must not be rejected as an incomplete logical range.
+An empty minimum is a valid bound, not a missing one. Its permitted wire
+representation must not cause rejection as an incomplete logical range; the
+gateway-specific encoding is defined under Implementation details.
 
-## Worked examples
+### Query planning is not data execution
 
-Assume physical partition `7` owns `[20, 80)`.
+Query-plan requests accept SQL and optional PK, PPK, or FeedRange input, but
+must omit data PKRID and proxy range routing. They have no data fan-out or
+one-EPK filter conversion.
 
-1. **Full PK inside a containing range:** PK hashes to `40`; candidate EPK-R is
-   `[20, 80)`. Send PK (and routing metadata), but omit start/end and key type.
-2. **Full PK with a disjoint explicit range:** PK hashes to `40`; explicit range
-   is `[90, A0)`. Send PK and the EPK-R. The service returns no documents.
-3. **Partial HPK:** PPK `["abc"]` covers `[30, 30FF)`. A containing EPK-R is
-   redundant; send PPK only. A strict `[3040, 3050)` subrange requires both PPK
-   and EPK-R.
-4. **Whole physical partition:** FeedRange `[20, 80)` sends PKRID `7` without
-   backend start/end. Gateway V2 still sends TC-R routing hashes.
-5. **Strict physical subrange:** FeedRange `[30, 50)` sends PKRID `7`, start/end,
-   and range key type.
-6. **One EPK:** After width-aware normalization, `[40, successor(40))` sends PKRID
-   `7`, start/end, and `EffectivePartitionKeyRange`, like any other strict
-   EPK-R.
-7. **WHERE-only HPK prefix:** SQL `c.tenantId = "abc"` limits physical routing
-   through its query-plan range, but backend filtering is SQL only. Gateway V2
-   may carry TC-R without backend `StartEpk`/`EndEpk`.
+## Implementation details
 
-## Implementation gaps
+### Ordered selection algorithm
 
-This document is normative even where the current Rust driver differs:
+For every data request, apply these steps in order (query-plan processing
+applies to queries):
 
-- Rust does not yet emit `x-ms-documentdb-partialpartitionkey` or RNTBD token
-  `0x0108`.
-- Query leaves currently emit narrow start/end EPK filters for many
-  planner-derived ranges.
-- Gateway V2 currently prefers public start/end headers when producing routing
-  hashes. The implementation must preserve routing hashes while allowing the
-  public backend filters to be removed.
+1. Derive caller scope: PK, PPK, explicit FeedRange, physical PKRID, or full
+    container.
+2. Obtain query routing ranges from the selected query plan; do not parse SQL
+    independently in routing.
+3. Intersect compatible ranges for routing. For disjoint option/SQL scopes,
+    retain request-option routing and service evaluation as specified above.
+4. Resolve each leaf to one physical partition and retain its PKRID.
+5. Select the semantic filter: PK, then PPK, then EPK range.
+6. Preserve correctness-required boundaries of independent fresh/resumed leaves.
+7. Remove other EPK filters only when another backend constraint fully enforces
+    them; overlap alone is insufficient.
+8. Retain `[X, successor(X))` for a necessary one-EPK range filter.
+9. Project routing to the chosen gateway independently of backend filtering.
 
-The .NET `RequestInvokerHandler` partial-key and exact-range behavior and the
-Java `FeedRangeEpkImpl` / thin-client range tests are the cross-SDK precedents
-for these rules.
+### Range encoding and normalization
+
+**EPK-R** means a half-open filter interval `[minInclusive, maxExclusive)`.
+A closed query-plan equality `[X, X]` becomes `[X, successor(X))`.
+Every retained EPK range uses start/end plus
+`ReadFeedKeyType::EffectivePartitionKeyRange`. Do not replace a one-EPK filter
+with `ReadFeedKeyType::EffectivePartitionKey` (`2`).
+
+| Partitioning model | Successor calculation                                         |
+| ------------------ | ------------------------------------------------------------- |
+| Hash V1            | Increment the variable-width encoded EPK in big-endian order. |
+| Hash V2            | Right-pad to 16 bytes with zeroes, then increment.            |
+| HPK / MultiHash    | Right-pad to `16 * path_count` bytes, then increment.         |
+
+A half-open range represents one EPK only when the upper bound is the
+container-definition-aware successor of the lower bound. `[AA, AB)` qualifies
+only at the correct encoded width; raw hexadecimal subtraction is insufficient
+for trimmed Hash V2 or HPK bounds. A partial HPK prefix `P` covers
+`[P, P + FF)`, not one EPK.
+
+### Header and token reference
+
+**TC-R** means Gateway V2 proxy range routing, never backend document
+filtering. RNTBD IDs below are the Gateway V2 projection of the named headers;
+`String`, `Bytes`, and `Byte` are wire types.
+
+| Header or token                                              | Wire form                   | Consumer        | Function and constraint                                                                  |
+| ------------------------------------------------------------ | --------------------------- | --------------- | ---------------------------------------------------------------------------------------- |
+| `x-ms-documentdb-partitionkey`                               | HTTP; RNTBD `0x002B` String | Backend         | Complete PK filter; takes precedence over PPK.                                           |
+| `x-ms-documentdb-partialpartitionkey`                        | HTTP; RNTBD `0x0108` String | Backend         | HPK-prefix query filter; omit when PK is present.                                        |
+| `x-ms-documentdb-partitionkeyrangeid`                        | HTTP; RNTBD `0x002C` String | Gateway/backend | Physical routing; may accompany one semantic backend filter.                             |
+| `x-ms-effective-partition-key`                               | HTTP; RNTBD `0x005A` Bytes  | Proxy           | PK-derived routing EPK, not a backend filter; accompanies PK when EPK-R is not retained. |
+| `x-ms-start-epk`, `x-ms-end-epk`                             | HTTP                        | Backend         | SDK-generated EPK-R filters use both bounds and range key type.                          |
+| RNTBD `StartEpk`, `EndEpk`                                   | `0x0062`, `0x0063` Bytes    | Backend         | UTF-8 EPK hex filter text, derived only from public start/end headers.                   |
+| `x-ms-read-key-type`                                         | HTTP; RNTBD `0x0064` Byte   | Backend         | Feed/query range filtering uses `3`, `EffectivePartitionKeyRange`.                       |
+| `x-ms-thinclient-range-min`, `x-ms-thinclient-range-max`     | Outer Gateway V2 HTTP       | Proxy only      | Literal `true` flags announcing TC-R in the frame; not EPK values or backend filters.    |
+| RNTBD `StartEpkHash`, `EndEpkHash`                           | `0x00D2`, `0x00D3` Bytes    | Proxy only      | Hex-decoded routing bounds; may use physical-range fallback.                             |
+| `x-ms-thinclient-pkrange-min`, `x-ms-thinclient-pkrange-max` | Internal Rust HTTP staging  | V2 serializer   | Fallback TC-R bounds; must not become backend `StartEpk`/`EndEpk` tokens.                |
+
+### Transport projection
+
+Gateway V1 sends the selected backend HTTP headers. Gateway V2 retains existing
+outer proxy headers and independently emits routing and backend tokens:
+
+- **Complete PK without EPK-R:** use proxy `EffectivePartitionKey` and backend
+   `PartitionKey`, not TC-R or backend start/end. The proxy EPK does not require
+   `ReadFeedKeyType`.
+- **Whole physical partition:** send PKRID and proxy `StartEpkHash`/
+   `EndEpkHash`, without backend start/end.
+- **Required EPK-R, including one EPK:** Gateway V1 sends start/end, range key
+   type, and PKRID. Gateway V2 sends routing hashes and PKRID plus backend
+   `StartEpk`, `EndEpk`, and range key type. Suppress proxy
+   `EffectivePartitionKey`, even when PK is known: point EPK routing and range
+   routing hashes are mutually exclusive.
+- **SQL-only query leaf:** route with TC-R, not the PK-derived proxy EPK.
+   SQL filters the backend; independent work-boundary requirements still apply.
+
+Continue emitting outer `x-ms-thinclient-range-min/max` flags where the existing
+Gateway V2 transport requires them, including whole-partition range-routed
+queries. Never remove this routing metadata merely because backend EPK filters
+were removed. Change-feed range leaves likewise retain TC-R and PKRID; the
+complete-PK case uses the derived proxy EPK and optional PKRID.
+
+For an empty minimum bound, Gateway V1 may send an empty HTTP value. Gateway V2
+encodes routing `StartEpkHash` as zero bytes and may omit the empty backend
+`StartEpk` text token. PKRID disambiguates the physical route; this permitted
+omission must not be rejected as an incomplete logical range.
+
+### Implementation gaps and related designs
+
+This contract remains normative where current Rust differs:
+
+- Rust does not yet emit the PPK HTTP header or RNTBD token `0x0108`.
+- Query leaves currently emit narrow start/end filters for many planner-derived
+   ranges.
+- Gateway V2 currently prefers public start/end headers for routing hashes;
+   those hashes must survive removal of redundant backend filters.
+
+Related designs: `0007-partition-key-range-cache.md`, `0011-gateway-v2.md`,
+`0012-feed-operations-and-dataflow.md`, and `0013-query-engine.md`.
+The .NET `RequestInvokerHandler` partial-key/exact-range behavior and Java
+`FeedRangeEpkImpl` and thin-client range tests provide precedents. Keeping
+one-EPK feed filters in range form matches current Rust, Java, and .NET.
