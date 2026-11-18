@@ -12,7 +12,7 @@ use azure_storage_blob::{
         BlobContainerClientListBlobsOptions, BlobServiceClientListContainersOptions,
         StorageErrorCode,
     },
-    StorageError,
+    BlobContainerClient, StorageError,
 };
 use common::{get_blob_service_client, get_container_client, get_container_name, StorageAccount};
 use futures::TryStreamExt;
@@ -48,7 +48,7 @@ async fn blob_access_point_create_and_verify_container_properties(
         .expect("fixture configuration unique ID");
     assert!(!configuration_unique_id.is_empty());
     let prefix = get_container_name(recording);
-    let container_names = [format!("{prefix}-id"), format!("{prefix}-ordinary")];
+    let container_names = [format!("{prefix}-bap"), format!("{prefix}-ordinary")];
     let mut created_container_names = Vec::new();
 
     // Keep cleanup outside the assertions so failed assertions also remove test-owned containers.
@@ -222,7 +222,9 @@ async fn blob_access_point_create_name_only(ctx: TestContext) -> Result<(), Box<
 // Lists and reads the reference blob through an existing access-point container.
 // Expected: matching length, ETag, and last-modified time, a populated tier, and exact full and ranged content.
 #[recorded::test]
-async fn blob_access_point_list_and_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn blob_access_point_list_and_download_from_existing_container(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let configuration_name = recording.var("BLOB_ACCESS_POINT_CONFIGURATION_NAME", None);
@@ -237,6 +239,82 @@ async fn blob_access_point_list_and_download_blob(ctx: TestContext) -> Result<()
     let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
     let container_client = service_client.blob_container_client(&container_name);
 
+    verify_access_point_blob_reads(&container_client, &configuration_name, &blob_name).await
+}
+
+// Creates a randomly named access-point container, then lists and reads the reference blob through it.
+// Expected: matching binding, length, ETag, and last-modified time, a populated tier, and exact full and ranged content.
+#[recorded::test]
+async fn blob_access_point_list_and_download_from_new_container(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let configuration_name = recording.var("BLOB_ACCESS_POINT_CONFIGURATION_NAME", None);
+    let blob_name = recording.var(
+        "BLOB_ACCESS_POINT_BLOB_NAME",
+        Some(VarOptions {
+            default_value: Some("blob_access_point.txt".into()),
+            ..Default::default()
+        }),
+    );
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
+
+    // Get Existing Configuration Binding
+    let fixture_container_name = recording.var("BLOB_ACCESS_POINT_CONTAINER_NAME", None);
+    let fixture_container_client = service_client.blob_container_client(&fixture_container_name);
+    let container_properties = fixture_container_client.get_properties(None).await?;
+    assert_eq!(
+        container_properties.is_blob_access_point_container()?,
+        Some(true)
+    );
+    assert_eq!(
+        container_properties.blob_access_point_configuration_name()?,
+        Some(configuration_name.clone())
+    );
+    let configuration_unique_id = container_properties
+        .blob_access_point_configuration_unique_id()?
+        .expect("fixture configuration unique ID");
+    assert!(!configuration_unique_id.is_empty());
+
+    // Create Access Point Container With A Different Name
+    let container_name = get_container_name(recording);
+    assert_ne!(container_name, fixture_container_name);
+    let container_client = service_client.blob_container_client(&container_name);
+    container_client
+        .create(Some(BlobContainerClientCreateOptions {
+            blob_access_point_configuration_name: Some(configuration_name.clone()),
+            blob_access_point_configuration_unique_id: Some(configuration_unique_id),
+            ..Default::default()
+        }))
+        .await?;
+
+    let outcome = futures::FutureExt::catch_unwind(std::panic::AssertUnwindSafe(
+        verify_access_point_blob_reads(&container_client, &configuration_name, &blob_name),
+    ))
+    .await;
+
+    // Cleanup Even If A Read Or Assertion Fails
+    let cleanup_result = container_client.delete(None).await;
+    if let Err(error) = &cleanup_result {
+        eprintln!(
+            "Failed to delete test container {}: {error}",
+            container_client.url()
+        );
+    }
+    match outcome {
+        Ok(result) => result?,
+        Err(panic) => std::panic::resume_unwind(panic),
+    }
+    cleanup_result?;
+    Ok(())
+}
+
+async fn verify_access_point_blob_reads(
+    container_client: &BlobContainerClient,
+    configuration_name: &str,
+    blob_name: &str,
+) -> Result<(), Box<dyn Error>> {
     // Get Container Properties
     let container_properties = container_client.get_properties(None).await?;
     assert_eq!(
@@ -245,7 +323,7 @@ async fn blob_access_point_list_and_download_blob(ctx: TestContext) -> Result<()
     );
     assert_eq!(
         container_properties.blob_access_point_configuration_name()?,
-        Some(configuration_name)
+        Some(configuration_name.to_string())
     );
     assert!(!container_properties
         .blob_access_point_configuration_unique_id()?
@@ -253,7 +331,7 @@ async fn blob_access_point_list_and_download_blob(ctx: TestContext) -> Result<()
         .is_empty());
 
     // Get Blob Properties
-    let blob_client = container_client.blob_client(&blob_name);
+    let blob_client = container_client.blob_client(blob_name);
     let blob_properties = blob_client.get_properties(None).await?;
     assert_eq!(
         blob_properties.content_length()?,
@@ -267,14 +345,14 @@ async fn blob_access_point_list_and_download_blob(ctx: TestContext) -> Result<()
     // List Blobs
     let mut pager_response = container_client
         .list_blobs(Some(BlobContainerClientListBlobsOptions {
-            prefix: Some(blob_name.clone()),
+            prefix: Some(blob_name.to_string()),
             ..Default::default()
         }))?
         .into_pages();
     let mut blob_found = false;
     while let Some(page) = pager_response.try_next().await? {
         for blob_item in page.into_model()?.blob_items {
-            if blob_item.name.as_deref() == Some(blob_name.as_str()) {
+            if blob_item.name.as_deref() == Some(blob_name) {
                 assert!(!blob_found, "duplicate fixture blob");
                 blob_found = true;
                 let listed_properties = blob_item.properties.expect("listed blob properties");
