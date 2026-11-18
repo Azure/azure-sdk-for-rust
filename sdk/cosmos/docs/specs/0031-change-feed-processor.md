@@ -125,8 +125,7 @@ let batch = processor.read_next_change_feed_batch().await;
 call.** The method awaits the receiver internally; background work gets the
 sender. Sending a value wakes the receiver so the method can return it. The
 SDK awaits the method, not a channel it must manage. The method call itself is
-not another channel. In channel variable names, `tx` means sender (transmit)
-and `rx` means receiver.
+not another channel.
 
 `ChangeFeedRequestDistributor` matches the SDK's pending request to a ready,
 owned lease and grants one source-read turn. Its
@@ -209,7 +208,7 @@ and cancellation channels are separate.
 
 ### 6.1 Register readiness and match an SDK request
 
-The queue holds **ready lease registrations**, not SDK requests or batch data.
+The queue holds **leases ready for feed processing**, not SDK requests or batch data.
 The SDK's request is a pending asynchronous receive. Each worker has its own
 queue; the lease container coordinates ownership across workers.
 
@@ -478,8 +477,7 @@ uses the native API rather than Rust types.
 | `ChangeFeedProcessor::start(source_driver, source, lease_driver, leases, options).await` | Initialize and start a processor using separate source and lease-store driver/container references. Return startup failures directly. |
 | `read_next_change_feed_batch().await` | Return `Some(ChangeFeedBatch)` or `None` when delivery ends. Wait asynchronously if no batch is available. |
 | `ChangeFeedBatch::lease_token()` / `response()` | Borrow lease identity and the raw response, including read diagnostics. Deserialization belongs to the SDK. |
-| `ChangeFeedBatch::acknowledge(self).await` | Consume the batch and accept successful processing according to Eager or Deferred policy. |
-| `ChangeFeedBatch::checkpoint(self).await` | Consume the batch and require durable persistence of its safe progress under either policy. This is an alternative to acknowledgment, not a second completion step or a request to save an arbitrary position. |
+| `ChangeFeedBatch::acknowledge(self).await` | Consume the successfully processed batch. With Eager, durably checkpoint before returning success. With Deferred, record safe progress in memory for a later checkpoint; success does not confirm durability. |
 | `ChangeFeedBatch::cancelled(&self).await` | Observe acquisition cancellation, including ownership loss; adapters can race their handler against this signal. |
 | `stop().await` / `abort().await` | Await graceful drain or forced cleanup respectively; cleanup errors are returned. Forced cleanup cannot undo application effects. |
 | `request_stop()` / `is_running()` | Request forced shutdown without awaiting cleanup, or inspect local running state. |
@@ -513,362 +511,37 @@ waiting while other leases are tried and the failure is reported separately.
 and recovery status; a pending receive or local running flag is not proof of
 healthy processing.
 
-## 9. How does GoV2 use the driver through FFI?
+## 9. Native and GoV2 integration requirements
 
-The Go application uses the public surface below. Native operations and handles
-in the later subsections are for GoV2/native-adapter implementers only.
+**Open: the C-ABI contract and Go public API require a separate design pass.**
+The Rust driver supplies the processing boundary; each language SDK owns its
+application handler, deserialization, and idiomatic configuration. This
+proposal does not define native function signatures or Go public types.
 
-The native adapter exposes opaque processor/receipt handles and asynchronous
-operation submission with completion delivery. GoV2 owns deserialization,
-the Go handler, and the mapping to idiomatic Go options and errors. The
-Go and native signatures are proposed for review, not available APIs. Complete
-C ABI layouts are outside this proposal.
+The integration must establish:
 
-### 9.1 Go application API
-
-The proposed Go constructor takes the same source, progress-storage, identity,
-feed-mode, and handler inputs as the Rust SDK. Go options use a pointer;
-`nil` selects defaults, following existing GoV2 operation conventions.
-
-```go
-type ChangeFeedMode uint32
-
-const (
-    ChangeFeedModeLatestVersion ChangeFeedMode = iota + 1
-    ChangeFeedModeAllVersionsAndDeletes
-)
-
-type ChangeFeedStartKind uint32
-
-const (
-    ChangeFeedStartNow ChangeFeedStartKind = iota
-    ChangeFeedStartBeginning
-    ChangeFeedStartTime
-    ChangeFeedStartContinuation
-)
-
-type ChangeFeedStartPosition struct {
-    Kind         ChangeFeedStartKind
-    Time         time.Time
-    Continuation string
-}
-
-type ChangeFeedCheckpointKind uint32
-
-const (
-    ChangeFeedCheckpointDeferred ChangeFeedCheckpointKind = iota
-    ChangeFeedCheckpointEager
-)
-
-type ChangeFeedCheckpointPolicy struct {
-    Kind        ChangeFeedCheckpointKind
-    MaxInterval time.Duration
-}
-
-type ChangeFeedProcessorOptions struct {
-    Start                      ChangeFeedStartPosition
-    CheckpointPolicy           ChangeFeedCheckpointPolicy
-    MaxItemCount               *int32
-    IdleReadDelay              *time.Duration
-    BootstrapTimeout           *time.Duration
-    MinLeaseCount              uint32
-    MaxLeaseCount              uint32
-    VerifyLeasesOnRestart      bool
-}
-
-type ChangeFeedProcessorContext struct {
-    LeaseToken  string
-    Diagnostics *Diagnostics
-}
-
-type ChangeFeedHandler func(
-    ctx context.Context,
-    batchContext ChangeFeedProcessorContext,
-    changes []json.RawMessage,
-) error
-
-func NewChangeFeedProcessor(
-    source *ContainerClient,
-    leases *ContainerClient,
-    workloadName string,
-    workerName string,
-    mode ChangeFeedMode,
-    handler ChangeFeedHandler,
-    options *ChangeFeedProcessorOptions,
-) (*ChangeFeedProcessor, error)
-
-func (p *ChangeFeedProcessor) Start(ctx context.Context) error
-func (p *ChangeFeedProcessor) Stop(ctx context.Context) error
-func (p *ChangeFeedProcessor) Close() error
-func (p *ChangeFeedProcessor) IsStarted() bool
-```
-
-These are API declarations, not a standalone Go source file.
-`ContainerClient` and `Diagnostics` are existing GoV2 SDK types. The processor
-is opaque; applications do not construct its internal fields.
-
-| Surface | Application contract |
+| Area | Required contract |
 | --- | --- |
-| Constructor | Validate without I/O. Require both containers, names that are not blank, an explicit supported mode, and a non-nil handler. Zero-valued options mean `Now`, five-minute Deferred persistence, and the tuning defaults in section 7. |
-| `Start(ctx)` | Initialize and launch processing. The context bounds startup, not the lifetime of the successfully started processor. Return startup failures directly. |
-| Handler | Run sequentially per worker in Go. Returning `nil` tells the SDK to acknowledge; returning an error or cancellation leaves that batch unacknowledged. The handler context can be canceled on ownership loss or forced shutdown. |
-| `Stop(ctx)` | Request graceful drain and wait for cleanup. A canceled waiting context does not confirm that native cleanup stopped or completed. Keep completion delivery running until it settles. |
-| `Close()` | Request forced shutdown and join adapter/native resource cleanup. Cancel the handler context without claiming to forcibly terminate arbitrary Go code or undo effects. |
-| `IsStarted()` | Inspect local lifecycle state; not a health probe. |
+| Completion delivery | Reuse the existing native completion-queue type and GoV2 client reactor, allowing compatible workers and point operations to share a queue. Correlate each submission with its completion; distinguish rejection, error, end-of-delivery, batch, and acknowledgment results. |
+| Worker lifetime | Define creation, startup, graceful stop, forced cleanup, and release of each processor. Each worker retains its own driver distributor and ready-lease queue. Stopping one worker must not shut down the client's shared completion infrastructure. |
+| Batch ownership | Define payload lifetime and the single-use acknowledgment state associated with a delivered batch and acquisition. Release abandoned or late batches without accepting unprocessed progress. Decide whether common completion ownership APIs suffice before introducing new extraction or release functions. |
+| Acknowledgment | Expose one policy-controlled acknowledgment operation. Eager success confirms durable persistence; Deferred success confirms in-memory acceptance for later persistence. Return status/error, not another batch. Report later Deferred persistence failures separately. |
+| Cancellation and cleanup | Define how canceling a Go wait affects pending native work and handler cancellation. Existing GoV2 point-operation cancellation stops waiting, not native execution. Keep resources valid until completion delivery or disposal finishes, and keep completion delivery active during graceful drain. |
+| Capacity and progress | Bound outstanding CFP receives and retained batches without starving point operations, acknowledgment, or shutdown. Run application handlers outside the shared reactor. Define admission and cleanup behavior under saturation. |
 
-`changes` contains Go-owned JSON change records, not borrowed native buffers.
-Latest Version supplies item records; All Versions and Deletes preserves its
-version/delete envelopes and metadata. Application decoding uses the selected
-mode's record format. **Open: typed Go change records.** Review whether a
-mode-aware typed wrapper should replace `json.RawMessage` before API approval.
-Neither shape exposes a receipt, driver batch, or manual acknowledgment.
+Configuration must cover the same dimensions as the Rust SDK: source and lease
+storage, workload/worker identity, feed mode and initial position, checkpoint
+policy, and tuning options. Keep application handlers in Go; applications
+should not manage driver batches, native handles, or manual acknowledgments.
 
-For starts, `Beginning` and `Time` require Latest Version. `Time` requires a
-nonzero timestamp; `Continuation` requires a token that is not blank. Reject fields
-that conflict with the selected start kind. Saved lease progress wins.
-The initial-anchor requirement in section 7 applies equally to Go.
+GoV2's existing
+[point-operation adapter](https://github.com/Azure/azure-sdk-for-go/blob/64e45360ec225bb2280e4ca4cdf9a087fc3fe644/sdk/data/azcosmos/operation_native.go)
+and [completion reactor](https://github.com/Azure/azure-sdk-for-go/blob/64e45360ec225bb2280e4ca4cdf9a087fc3fe644/sdk/data/azcosmos/reactor_native.go)
+are integration precedents, not proof that their current completion payloads
+already support CFP.
 
-For checkpoints, zero Deferred interval selects five minutes; explicit
-intervals must be positive. Eager requires a zero interval. Tuning pointer
-fields distinguish default from explicit zero: idle delay may be zero;
-bootstrap timeout must be positive; item count accepts a positive hint or
-`-1` for the service default. Validate lease-count bounds as in the Rust SDK.
-
-**Open: lifecycle and background failure reporting.** Validate context lifetime,
-restart/close races, cleanup joining, and how persistent processing failures
-reach Go callers; local state and successful startup do not establish health.
-
-The native receipt handle retains the batch's acknowledgment state after
-payload completion is freed. It is an FFI ownership detail, not another public
-Rust driver type or an additional acknowledgment required from the application.
-
-### 9.2 Native operations
-
-CFP uses the existing native completion-queue type and GoV2 client reactor,
-not a CFP-specific queue creation API. Startup receives a compatible existing
-queue; subsequent operations post their completions to that queue.
-
-| Native API | Purpose |
-| --- | --- |
-| `cosmos_change_feed_processor_request_init` | Initialize a versioned `CosmosChangeFeedProcessorRequest` carrying workload/worker names, feed mode, initial position, and tuning options. |
-| `cosmos_change_feed_processor_start_with_policy_submit` | Submit startup with source/lease driver and container handles, the request, and explicit checkpoint policy/interval. `cosmos_change_feed_processor_start_submit` uses five-minute Deferred persistence. |
-| `cosmos_change_feed_processor_next_submit` | Submit one batch receive. Accepted submission does not mean a batch is ready. |
-| `cosmos_change_feed_processor_acknowledge_submit` | Submit successful processing under the selected policy. Completion can mean in-memory acceptance under Deferred. |
-| `cosmos_change_feed_processor_checkpoint_submit` | Submit successful processing with an explicit durable checkpoint barrier. |
-| `cosmos_change_feed_processor_stop_submit` / `cosmos_change_feed_processor_abort_submit` | Submit graceful shutdown or forced cleanup. |
-| `cosmos_change_feed_processor_completion_take_processor` / `cosmos_change_feed_processor_completion_take_receipt` | Detach an owned handle from a completion before freeing that completion. |
-| `cosmos_change_feed_processor_receipt_free`, `cosmos_change_feed_processor_free` | Release processor-specific native handles. Free an unacknowledged receipt on handler failure. |
-
-Use the common `cosmos_completion_queue_wait` and
-`cosmos_completion_queue_free_completions` paths to retrieve and release
-completion records. Processor-handle extraction must integrate with that common
-record ownership model. The client owns queue shutdown and free; stopping or
-freeing one processor must not close a queue used by other workers or point
-operations.
-
-**Open: shared completion contract.** Define version-compatible result kinds,
-batch payloads, and handle extraction/disposal within the common completion
-representation. Pending CFP receives must not exhaust shared admission
-capacity needed by point operations, acknowledgments, or shutdown. The shared
-reactor routes completions; application handlers run outside it.
-
-Startup maps the same configuration dimensions across FFI: source and lease
-handles, names, feed mode and start position, checkpoint policy, and tuning
-options. No Go application-handler pointer is passed to the Rust processor.
-
-A completion identifies its submitted operation through correlation data and
-contains success/error status, diagnostics, and any batch payload or handles.
-The adapter distinguishes submission rejection from an accepted operation's
-later error completion, end-of-delivery, policy acknowledgment, and durable
-checkpoint completion.
-
-### 9.3 Wait for completions using GoV2's reactor pattern
-
-GoV2 point operations already use a completion reactor and buffered Go channels.
-In [the point-operation adapter](https://github.com/Azure/azure-sdk-for-go/blob/64e45360ec225bb2280e4ca4cdf9a087fc3fe644/sdk/data/azcosmos/operation_native.go),
-`awaitCompletion()` creates a `pendingOperation` with a
-`make(chan completionResult, 1)` result channel and registers it using
-`runtime/cgo.Handle`. The native submission carries that handle as a
-pointer-sized cookie.
-
-The [reactor](https://github.com/Azure/azure-sdk-for-go/blob/64e45360ec225bb2280e4ca4cdf9a087fc3fe644/sdk/data/azcosmos/reactor_native.go)
-drains completions in a goroutine pinned to an OS thread. The native queue wait
-blocks that thread; callers wait on their own Go channels. The reactor resolves
-each completion's cookie to the pending operation and delivers its result.
-
-CFP extends the existing reactor to recognize processor completions on the
-same compatible queue used by point operations. Multiple workers can share
-this reactor while each driver processor retains its own ready-lease queue:
-
-```text
-Go SDK boundary                           Driver / native boundary
-----------------------------------------  -----------------------------------
-SDK consumer
-  | Create buffered result channel
-  | Register pending operation: cgo.Handle
-  |
-  | Submit next batch + cookie ----------> Pending native batch receive
-  | Wait on channel or Go context                    |
-  |                                                  | Batch becomes ready
-  |                       Shared reactor <-----------+ Shared completion queue
-  |                                 | Timed native queue wait
-  |                                 | Resolve returned cookie
-  |<---- Buffered channel result ---+
-  | Decode and invoke Go handler
-```
-
-The caller's wait has this shape, matching GoV2's `awaitOperationResult()`:
-
-```go
-select {
-case result := <-pending.result:
-    return result.prepare(), nil
-case <-ctx.Done():
-    if result, ok := pending.abandon(); ok {
-        return result.prepare(), nil
-    }
-    return completionResult{}, newOperationCancelledError(ctx.Err(), 0, "")
-}
-```
-
-`abandon()` atomically claims any result already delivered; otherwise it marks
-the operation abandoned so late delivery releases the result. The buffered
-channel keeps delivery from blocking when the caller stops waiting. The native
-operation handle and `cgo.Handle` remain live until delivery cleanup finishes.
-
-**Context cancellation stops the existing point-operation wait, not native
-execution.** A write can still commit. CFP must not assume that returning a Go
-context error cancels its pending native receive or releases its resources.
-Sharing the queue requires completion conversion and handle cleanup support
-in the existing adapter; compatible CFP payloads are not yet established by
-the point-operation ABI.
-
-### 9.4 Possible Go-to-Rust request flow
-
-Go and Rust have separate async runtimes. Go cannot directly await a Rust
-future. Submission returns an operation handle after accepting the request;
-completion later carries the batch or error. The Go caller waits on its result
-channel while Rust runs the operation.
-
-The following paired sketches show one possible CFP adaptation. Helper names,
-types, and shortened native signatures are illustrative, not compiling code
-or final Go APIs. `awaitCFPCompletion` follows the registration, channel wait,
-and late-delivery ownership rules in the preceding section.
-
-**Go SDK boundary: submit a receive, then wait on a Go channel.**
-
-```go
-func nextBatch(ctx context.Context, processor nativeProcessor) (Batch, error) {
-    result, err := awaitCFPCompletion(ctx,
-        func(queue nativeQueue, cookie uintptr) (nativeOperation, error) {
-            return nativeNextSubmit(processor, queue, cookie)
-        })
-    if err != nil {
-        return Batch{}, err
-    }
-    return takeBatchOrEnd(result)
-}
-```
-
-`nativeNextSubmit` represents `cosmos_change_feed_processor_next_submit`.
-The processor is already bound to its completion queue; the closure supplies
-the correlation cookie and checks immediate submission rejection.
-Before submission, `awaitCFPCompletion` creates the buffered channel and
-`cgo.Handle`. After acceptance it retains the operation/registration until
-completion cleanup, even if the caller's context ends.
-
-**Driver/native boundary: await the Rust operation and post its completion.**
-
-```rust
-// Inside the native submission adapter, after accepting the request.
-runtime.spawn(async move {
-    let result = match processor.read_next_change_feed_batch().await {
-        Some(batch) => native_batch_completion(batch, cookie),
-        None => native_end_completion(cookie),
-    };
-    queue.post(result);
-});
-// Submission returns an operation handle without waiting for this future.
-```
-
-The native adapter retains the Rust batch's acknowledgment state in its receipt
-handle. Posting transfers completion ownership to the queue; shutdown and
-failed-delivery paths must release it without acknowledging unprocessed work.
-
-**Go SDK boundary: the reactor delivers to the waiting caller.**
-
-```go
-// In the shared GoV2 reactor, after the common native queue wait.
-for _, record := range nativeCompletions {
-    pending := lookupPending(record.Cookie) // Resolve the cgo.Handle.
-    result := takeOwnedCFPCompletion(record)
-    pending.deliver(result) // Buffered delivery, or release if abandoned.
-}
-```
-
-`deliver` and `abandon` must synchronize as in GoV2 point operations so a
-completion has exactly one owner: the caller or the late-result cleanup path.
-That path must understand processor and receipt handles, not just point-item
-response bytes. The SDK consumer then decodes and runs the Go handler.
-On success it submits acknowledgment through the same submit, channel wait,
-and reactor-delivery pattern. Rust awaits batch acknowledgment or durable
-checkpoint completion before posting that operation's result. Each submission
-has its own correlation cookie.
-
-### 9.5 Go adapter processing loop
-
-This is language-neutral pseudocode for the Go adapter, not proposed Go
-method signatures:
-
-```text
-submit start; await its completion; take processor handle
-repeat:
-    submit next batch; await its completion
-    on error: report failure
-    on end-of-delivery: exit
-    take receipt handle
-    decode or copy payload before freeing its completion
-    run Go handler
-    on decode or handler failure:
-        free receipt without acknowledgment
-        report failure
-    on success:
-        submit acknowledgment (or explicit durable checkpoint)
-        if submission is accepted:
-            free receipt handle; await acknowledgment completion
-        otherwise:
-            retain receipt for retry or free it without acknowledgment
-        report any submission or completion failure
-submit stop; keep completion delivery running until stop completes
-free this processor's remaining handles and completions
-leave the shared queue/reactor running for the client and other workers
-```
-
-Completion payload views are borrowed until that completion is freed; copy
-them into Go-owned memory or retain the completion until decoding finishes.
-An accepted acknowledgment submission consumes the receipt's operation, but
-its native handle still requires freeing. Also release operation handles using
-the native runtime's existing operation-handle contract.
-
-An abandoned receive may still produce a batch. Its late-completion path must
-free the batch's receipt without acknowledgment and release all completion
-resources, rather than acknowledge work the Go handler never processed.
-Do not repeatedly submit replacement receives after context cancellation and
-leave earlier native receives pending without a bound.
-
-**Open: CFP cancellation mapping.** Define whether cancellation terminates one
-receive through an explicitly supported native mechanism, or stops/aborts the
-processor when its SDK consumer exits. Do not assume point-operation context
-cancellation already does either. Abort cannot forcibly terminate a Go handler
-or undo its effects. Keep completion delivery active until issued work and
-late completions are settled; graceful stop requires issued batches and
-acknowledgments to complete. Acknowledgment and stop must remain admissible
-when batch delivery is saturated. Only client-level teardown shuts down the
-shared queue after all its users and accepted operations have settled.
-
-**GoV2 integration gate:** execute the basic request/handler/acknowledgment loop
-over FFI, including handler failure, cancellation, durable checkpoint
-completion, and shutdown under saturation while point operations and other
-CFP workers continue using the shared queue. The proposed Go signatures, per-receipt
-cancellation visibility, late-result disposal, and cancellation mapping require
-validation; this is not a claim that the Go adapter is implemented.
+Validate the eventual contract end to end with multiple workers and point
+operations sharing completion infrastructure. Include pending idle receives,
+handler failure, Eager and Deferred acknowledgment, cancellation with late
+results, and shutdown under saturation. Native layouts, ownership operations,
+Go signatures, and background-error reporting remain unresolved.
