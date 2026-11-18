@@ -151,7 +151,9 @@ impl BlockBlobClient {
             lease_id: options.lease_id.clone(),
             method_options: options.method_options.clone(),
             timeout: options.per_request_timeout,
+            #[allow(deprecated, reason = "Manual `None` to avoid `..Default::default()`")]
             transactional_content_crc64: None,
+            #[allow(deprecated, reason = "Manual `None` to avoid `..Default::default()`")]
             transactional_content_md5: None,
             content_validation: None,
         };
