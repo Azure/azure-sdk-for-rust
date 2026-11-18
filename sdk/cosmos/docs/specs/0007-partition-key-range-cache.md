@@ -508,8 +508,14 @@ region pin. Only a complete, validated routing map is published.
 
 The shared fill does not inherit the initiating caller's end-to-end deadline.
 Each signing attempt, including token acquisition, has a cache-owned budget
-equal to the configured metadata request timeout; exhaustion returns the normal
-client authorization failure without sending the request. Transport attempts
+equal to the configured metadata request timeout; exhaustion returns client-generated
+`408/20403` (`AuthenticationTokenAcquisitionTimeout`) without sending the request.
+It is a terminal credential error, including for hedged fills: it does not trigger
+regional retries, endpoint/partition health effects, or hedge-win feedback. This
+cache-owned budget is distinct from caller-deadline expiry (`408/20008`).
+The failed fill discards partial progress; a later lookup can start a new fill.
+Ordinary credential failures retain their authorization-error classification.
+Transport attempts
 separately keep their configured metadata request timeouts. HTTP 429
 retries retain the same page and honor bounded backoff; batch diagnostics are
 discarded before the next retry. Non-429 failures keep the existing bounded

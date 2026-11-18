@@ -3297,7 +3297,14 @@ fn record_hedge_outcome(
     outcome: HedgeOutcome,
     partition: Option<&PartitionKeyRangeId>,
     primary_region: Option<&Region>,
+    result: &TransportResult,
 ) {
+    // A stalled credential says nothing about either region's health.
+    if matches!(&result.outcome, TransportOutcome::TransportError { status, .. }
+        if status.is_token_acquisition_timeout())
+    {
+        return;
+    }
     let Some(partition) = partition else {
         return;
     };
@@ -3416,7 +3423,7 @@ enum HedgeClass {
 /// `Err` (e.g. failure constructing the request) and any non-final
 /// TransportOutcome map to `Transient`. A `Success` is always final; an
 /// `HttpError` is final iff [`CosmosStatus::is_final_result`] returns `true` for its
-/// status.
+/// status. A client signing timeout is final without regional recovery.
 fn classify_hedge_result(result: crate::error::Result<TransportResult>) -> HedgeClass {
     match result {
         Ok(tr) => match &tr.outcome {
@@ -3427,6 +3434,11 @@ fn classify_hedge_result(result: crate::error::Result<TransportResult>) -> Hedge
                 } else {
                     HedgeClass::Transient
                 }
+            }
+            TransportOutcome::TransportError { status, .. }
+                if status.is_token_acquisition_timeout() =>
+            {
+                HedgeClass::Final(Box::new(tr))
             }
             TransportOutcome::TransportError { .. } | TransportOutcome::DeadlineExceeded { .. } => {
                 HedgeClass::Transient
@@ -3444,12 +3456,13 @@ fn classify_hedge_result(result: crate::error::Result<TransportResult>) -> Hedge
 /// must never override the primary with a definitive **error** (e.g. a
 /// not-yet-replicated secondary returning `404` for a freshly-created container,
 /// or a `409`/`412`/`429`-final). When `primary_authoritative` is set, a
-/// secondary that produced a `Final` but non-`Success` outcome is therefore
+/// secondary that produced a final service error is therefore
 /// downgraded to [`HedgeClass::Transient`] so the race discards it and awaits
 /// the primary's authoritative outcome. A secondary definitive success still
 /// wins; a secondary transient stays transient. Data-plane hedging passes
 /// `false` and keeps the first-`Final`-wins semantics of
 /// [`classify_hedge_result`].
+/// A pre-send credential timeout remains terminal: it is not a regional service reply.
 ///
 /// `hub_only_read` must be set only for a read whose leg sent the
 /// hub-region-processing-only header: its `403/3` means "not the hub here".
@@ -3460,7 +3473,8 @@ fn classify_secondary_hedge_result(
 ) -> HedgeClass {
     match classify_hedge_result(result) {
         HedgeClass::Final(tr)
-            if primary_authoritative && !matches!(tr.outcome, TransportOutcome::Success { .. }) =>
+            if primary_authoritative
+                && matches!(tr.outcome, TransportOutcome::HttpError { .. }) =>
         {
             HedgeClass::Transient
         }
@@ -3493,9 +3507,8 @@ fn result_is_final(tr: &TransportResult) -> bool {
     match &tr.outcome {
         TransportOutcome::Success { .. } => true,
         TransportOutcome::HttpError { status, .. } => status.is_final_result(),
-        TransportOutcome::TransportError { .. } | TransportOutcome::DeadlineExceeded { .. } => {
-            false
-        }
+        TransportOutcome::TransportError { status, .. } => status.is_token_acquisition_timeout(),
+        TransportOutcome::DeadlineExceeded { .. } => false,
     }
 }
 
@@ -3588,6 +3601,9 @@ fn finalize_hedge_attempt(
                 error = %error,
                 "non-retriable transport error in hedging attempt",
             );
+            let mut diagnostics = diagnostics;
+            diagnostics
+                .set_operation_status(error.status().status_code(), error.status().sub_status());
             let diagnostics_ctx = Arc::new(diagnostics.complete());
             Err(crate::error::CosmosErrorBuilder::from_error(error)
                 .with_diagnostics(diagnostics_ctx)
@@ -4450,14 +4466,14 @@ async fn execute_hedged(
                 // though the response now carries the resolved range.
                 let pk_range_id_for_feedback =
                     pk_range_id_from_result(&result).or_else(|| ctx.partition_key_range_id.clone());
+                let tr = result.expect("Ok by primary_was_final guard");
                 record_hedge_outcome(
                     ctx.location_state_store,
                     HedgeOutcome::PrimaryWin,
                     pk_range_id_for_feedback.as_ref(),
                     primary_region.as_ref(),
+                    &tr,
                 );
-                // result is Ok by the `primary_was_final` guard above.
-                let tr = result.expect("Ok by primary_was_final guard");
                 capture_session_token_for_winner(ctx, &tr);
                 return HedgedRaceResult::Terminal(finalize_hedge_attempt(
                     Box::new(tr),
@@ -4785,6 +4801,7 @@ async fn execute_hedged(
                             .as_ref()
                             .or(ctx.partition_key_range_id.as_ref()),
                         primary_region.as_ref(),
+                        &tr,
                     );
                     capture_session_token_for_winner(ctx, &tr);
                     HedgedRaceResult::Terminal(finalize_hedge_attempt(tr, parent_diagnostics))
@@ -4864,6 +4881,7 @@ async fn execute_hedged(
                                     .as_ref()
                                     .or(ctx.partition_key_range_id.as_ref()),
                                 primary_region.as_ref(),
+                                &tr,
                             );
                             capture_session_token_for_winner(ctx, &tr);
                             populate_hub_region_cache_for_hedge_winner(
@@ -4961,6 +4979,7 @@ async fn execute_hedged(
                             .as_ref()
                             .or(ctx.partition_key_range_id.as_ref()),
                         primary_region.as_ref(),
+                        &tr,
                     );
                     capture_session_token_for_winner(ctx, &tr);
                     populate_hub_region_cache_for_hedge_winner(
@@ -5045,6 +5064,7 @@ async fn execute_hedged(
                                     .as_ref()
                                     .or(ctx.partition_key_range_id.as_ref()),
                                 primary_region.as_ref(),
+                                &tr,
                             );
                             capture_session_token_for_winner(ctx, &tr);
                             HedgedRaceResult::Terminal(finalize_hedge_attempt(
@@ -12137,6 +12157,31 @@ mod tests {
             &http_result(410, Some(1024)),
             &available,
         ));
+    }
+
+    #[test]
+    fn token_acquisition_timeout_is_final_for_both_hedge_legs() {
+        let status = crate::error::status_codes::AUTHENTICATION_TOKEN_ACQUISITION_TIMEOUT;
+        for primary_authoritative in [false, true] {
+            let result = super::TransportResult {
+                outcome: super::TransportOutcome::TransportError {
+                    status,
+                    error: crate::error::CosmosError::builder()
+                        .with_status(status)
+                        .build(),
+                    request_sent: crate::diagnostics::RequestSentStatus::NotSent,
+                },
+            };
+            assert!(super::result_is_final(&result));
+            let super::HedgeClass::Final(result) =
+                super::classify_secondary_hedge_result(Ok(result), primary_authoritative, true)
+            else {
+                panic!("a signing timeout must terminate either hedge leg");
+            };
+            let error = super::finalize_hedge_attempt(result, test_diagnostics()).unwrap_err();
+            assert_eq!(error.status(), status);
+            assert!(error.diagnostics().is_some());
+        }
     }
 
     #[test]

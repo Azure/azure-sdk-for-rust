@@ -159,7 +159,6 @@ function Emit-Secret([string]$name, [string]$value) {
 Emit-Secret 'AZURE_COSMOS_CONNECTION_STRING' $connectionString
 Emit-Public 'ACCOUNT_HOST' $endpoint
 Emit-Public 'DATABASE_NAME' $database
-Emit-Public 'AZURE_COSMOS_FIXED_DATABASE' $database
 Emit-Public 'AZURE_COSMOS_DEFAULT_CONSISTENCY' $consistency
 Emit-Public 'COSMOS_RUSTFLAGS' $rustFlags
 Emit-Public 'AZURE_COSMOS_E2E_BACKEND' 'azureLive'

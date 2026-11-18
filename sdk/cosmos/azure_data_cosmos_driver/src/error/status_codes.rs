@@ -98,6 +98,15 @@ pub const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: CosmosStatus = CosmosStatus {
     sub_status: Some(SubStatusCode::new(20402)),
 };
 
+/// Shared metadata signing exceeded its credential-acquisition budget (HTTP 408, sub-status 20403).
+///
+/// The request was not sent. This timeout ends the fill without regional retries;
+/// it does not indicate that the caller's deadline expired.
+pub const AUTHENTICATION_TOKEN_ACQUISITION_TIMEOUT: CosmosStatus = CosmosStatus {
+    status_code: StatusCode::RequestTimeout,
+    sub_status: Some(SubStatusCode::new(20403)),
+};
+
 // ----- 400: Bad Request -----
 
 /// Cross-partition query not servable by the client
@@ -768,6 +777,10 @@ pub mod substatus {
     /// which means the SDK synthesized a 401 itself; this one means the
     /// credential provider call failed.
     pub const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: SubStatusCode = SubStatusCode::new(20402);
+    /// Shared metadata signing timed out before sending the request (20403).
+    ///
+    /// Paired with HTTP 408. Terminal for the fill, without regional retries or health effects.
+    pub const AUTHENTICATION_TOKEN_ACQUISITION_TIMEOUT: SubStatusCode = SubStatusCode::new(20403);
     /// AAD token expired (5006).
     pub const AAD_TOKEN_EXPIRED: SubStatusCode = SubStatusCode::new(5006);
     /// Partition key was supplied with zero components (20100).

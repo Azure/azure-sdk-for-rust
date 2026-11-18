@@ -239,6 +239,7 @@ struct PageFactory(Arc<PageClient>);
 #[derive(Debug, Default)]
 struct StallingCredential {
     stall: AtomicBool,
+    stalled_calls: std::sync::atomic::AtomicUsize,
     entered: tokio::sync::Notify,
 }
 
@@ -250,6 +251,7 @@ impl TokenCredential for StallingCredential {
         _: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         if self.stall.load(Ordering::SeqCst) {
+            self.stalled_calls.fetch_add(1, Ordering::SeqCst);
             self.entered.notify_one();
             std::future::pending::<()>().await;
         }
@@ -1244,7 +1246,7 @@ async fn stalled_pk_range_authorization_outlives_caller_but_releases_the_driver(
         .await;
         credential.stall.store(true, Ordering::SeqCst);
         let mut operation_options = options(0, Duration::ZERO, hedge);
-        operation_options.max_failover_retry_count = Some(0);
+        operation_options.max_failover_retry_count = Some(3);
         operation_options.end_to_end_latency_policy = Some(Duration::from_millis(20).into());
         let mut waiter = Box::pin(driver.load_session_token_routing_map(
             &container,
@@ -1255,7 +1257,13 @@ async fn stalled_pk_range_authorization_outlives_caller_but_releases_the_driver(
             result = &mut waiter => panic!("fill completed before signing stalled: {result:?}"),
             () = credential.entered.notified() => {}
         }
-        assert!(waiter.await.unwrap_err().status().is_timeout());
+        assert_eq!(
+            waiter.await.unwrap_err().status(),
+            crate::error::CosmosStatus::from_parts(
+                azure_core::http::StatusCode::RequestTimeout,
+                Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
+            )
+        );
         assert!(client.attempts.lock().unwrap().is_empty());
         assert!(driver
             .pk_range_cache
@@ -1290,7 +1298,7 @@ async fn stalled_pk_range_authorization_terminates_and_allows_a_later_fill() {
     .await;
     credential.stall.store(true, Ordering::SeqCst);
     let mut operation_options = options(0, Duration::ZERO, false);
-    operation_options.max_failover_retry_count = Some(0);
+    operation_options.max_failover_retry_count = Some(3);
     let error = tokio::time::timeout(
         Duration::from_secs(2),
         driver.load_session_token_routing_map(&container, operation_options, None),
@@ -1298,7 +1306,19 @@ async fn stalled_pk_range_authorization_terminates_and_allows_a_later_fill() {
     .await
     .expect("stalled authorization must fail without a caller deadline")
     .unwrap_err();
-    assert_eq!(u16::from(error.status().status_code()), 401);
+    assert_eq!(
+        error.status(),
+        crate::error::status_codes::AUTHENTICATION_TOKEN_ACQUISITION_TIMEOUT
+    );
+    assert!(!error.is_from_wire());
+    assert!(!error.status().is_transient());
+    let core_error: azure_core::Error = error.into();
+    assert_eq!(*core_error.kind(), azure_core::error::ErrorKind::Credential);
+    assert_eq!(
+        credential.stalled_calls.load(Ordering::SeqCst),
+        1,
+        "signing must not trigger regional retries or hedging",
+    );
     assert!(client.attempts.lock().unwrap().is_empty());
     assert!(driver
         .pk_range_cache

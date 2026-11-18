@@ -38,6 +38,9 @@ impl PreparationError {
     #[inline(always)]
     pub fn status(&self) -> CosmosStatus {
         match self {
+            Self::Authorization(error) if error.status().is_token_acquisition_timeout() => {
+                error.status()
+            }
             Self::Authorization(_) => status_codes::CLIENT_GENERATED_401,
             Self::Encoding(_) => status_codes::CLIENT_BAD_REQUEST,
         }
@@ -102,7 +105,7 @@ pub(super) async fn prepare(
             .map_err(|_| {
                 PreparationError::Authorization(
                     CosmosError::builder()
-                        .with_status(status_codes::AUTHENTICATION_TOKEN_ACQUISITION_FAILED)
+                        .with_status(status_codes::AUTHENTICATION_TOKEN_ACQUISITION_TIMEOUT)
                         .with_message("shared metadata request authorization timed out")
                         .build(),
                 )
@@ -137,4 +140,35 @@ pub(super) async fn prepare(
         mode: request.transport_mode,
         timeout,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        CosmosError, PreparationError, RequestSentStatus, TransportOutcome, TransportResult,
+    };
+    use crate::error::status_codes;
+
+    #[test]
+    fn ordinary_authorization_failure_keeps_its_existing_status_and_cause() {
+        let result = TransportResult::from(PreparationError::Authorization(
+            CosmosError::builder()
+                .with_status(status_codes::AUTHENTICATION_TOKEN_ACQUISITION_FAILED)
+                .build(),
+        ));
+        let TransportOutcome::TransportError {
+            status,
+            error,
+            request_sent,
+        } = result.outcome
+        else {
+            panic!("authorization failure must remain a transport preparation error");
+        };
+        assert_eq!(status, status_codes::CLIENT_GENERATED_401);
+        assert_eq!(
+            error.status(),
+            status_codes::AUTHENTICATION_TOKEN_ACQUISITION_FAILED
+        );
+        assert_eq!(request_sent, RequestSentStatus::NotSent);
+    }
 }

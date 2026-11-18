@@ -459,6 +459,7 @@ impl SubStatusCode {
             20020 => Some("SerializationResponseBodyInvalid"),
             20021 => Some("SerializationRequestBodyInvalid"),
             20401 => Some("ClientGenerated401"),
+            20403 => Some("AuthenticationTokenAcquisitionTimeout"),
             20901 => Some("NegativeTimeoutProvided"),
             20902 => Some("MissingPartitionKeyRangeIdInContext"),
             20903 => Some("InvalidRegionsInSessionToken"),
@@ -764,7 +765,7 @@ impl CosmosStatus {
 
     /// Returns `true` if this is an HTTP 408 (request timeout) response —
     /// covers both a service-side timeout and a synthetic client-side
-    /// end-to-end timeout (`408 / 20008`).
+    /// end-to-end timeout (`408 / 20008`) or metadata signing timeout (`408 / 20403`).
     pub fn is_timeout(&self) -> bool {
         u16::from(self.status_code) == 408
     }
@@ -804,8 +805,15 @@ impl CosmosStatus {
     /// SDK's synthetic transport-generated codes (`TRANSPORT_GENERATED_503`,
     /// `CLIENT_OPERATION_TIMEOUT` on `408`, etc.) since both share the same
     /// HTTP status code by construction.
+    /// Metadata signing timeout `408 / 20403` is excluded: changing regions
+    /// cannot recover a stalled credential provider.
     pub fn is_transient(&self) -> bool {
-        matches!(u16::from(self.status_code), 408 | 429 | 449 | 503)
+        !self.is_token_acquisition_timeout()
+            && matches!(u16::from(self.status_code), 408 | 429 | 449 | 503)
+    }
+
+    pub(crate) fn is_token_acquisition_timeout(&self) -> bool {
+        *self == crate::error::status_codes::AUTHENTICATION_TOKEN_ACQUISITION_TIMEOUT
     }
 
     /// Returns `true` if this is a write-forbidden error (HTTP 403, sub-status 3).
@@ -872,7 +880,8 @@ impl CosmosStatus {
     ///   (`RU_BUDGET_EXCEEDED_FOR_MASTER`), and `3214`
     ///   (`HOT_PARTITION_KEY_THROTTLED`).
     ///
-    /// Everything else — including `404/1002`, `408`, generic/`3092` `429`,
+    /// The client metadata signing timeout `408/20403` is also final.
+    /// Everything else — including `404/1002`, other `408`s, generic/`3092` `429`,
     /// `410`, `500`, and `503` — is treated as retriable so the racing hedge
     /// gets a chance to win.
     ///
@@ -897,6 +906,9 @@ impl CosmosStatus {
     ///   another region cannot resolve. Racing a hedge against them only
     ///   wastes RU and request budget.
     pub(crate) fn is_final_result(&self) -> bool {
+        if self.is_token_acquisition_timeout() {
+            return true;
+        }
         let code: u16 = self.status_code.into();
         if code < 400 {
             return true;

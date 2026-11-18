@@ -54,7 +54,6 @@ their existing configuration.
    - `AZURE_COSMOS_CONNECTION_STRING` (secret - masked in logs)
    - `AZURE_COSMOS_SECONDARY_KEY` (secret, only if the account defines one)
    - `ACCOUNT_HOST`, `DATABASE_NAME`, `AZURE_COSMOS_DEFAULT_CONSISTENCY`, `COSMOS_RUSTFLAGS`
-   - `AZURE_COSMOS_FIXED_DATABASE` (the existing database reserved for fixed-account E2E fixtures)
    - `AZURE_COSMOS_E2E_BACKEND`, `AZURE_COSMOS_ACCOUNT_WRITE_MODE`, `AZURE_COSMOS_ACCOUNT_MULTI_REGION`, `AZURE_COSMOS_ACCOUNT_REGIONS`, and `AZURE_COSMOS_ACCOUNT_FULL_FIDELITY_CHANGE_FEED`
 
    The first group matches the environment variables that
@@ -84,31 +83,6 @@ their existing configuration.
    `FixedAccountMatrixConfigs` with `PreTestRunSteps` pointing at
    `resolve-test-account-steps.yml`, while the AAD matrices remain on
    `LiveTestMatrixConfigs`.
-
-## Metadata request load
-
-The fixed-account live profiles share account-level metadata limits with other
-jobs and builds. Unique database names prevent resource collisions, but do not
-isolate metadata capacity. A metadata `429/3200` is not an item-throughput
-shortage; increasing RU/s is not a remedy.
-
-Fixed-account E2E fixtures use the database already created by account provisioning
-(`database` in the account configuration, default `shared-test-db`). They still
-create unique containers and clean up only containers they successfully created.
-They never create or delete that shared database. Missing provisioning and
-conflicting container creation fail explicitly. Non-fixed fixtures and the
-explicit database/container lifecycle scenarios retain their existing resource
-creation/deletion contracts.
-
-Reusing the provisioned database reduces database lifecycle requests; it is not
-a global mutex or a guarantee against arbitrary account load. All SDK retry bounds,
-backoff, operation deadlines, and 429 assertions remain unchanged. Setup errors
-identify database creation, container creation, metadata resolution, or data-plane
-readiness so remaining throttling can be attributed to its actual phase.
-No ADO locks or additional Azure resources are required. Cancelled agents can
-leave containers in the shared fixture database; these require account-owner
-cleanup, just as cancelled database fixtures require the existing stale-database
-sweep. Never delete the shared database as per-run cleanup.
 
 ## Local testing
 
@@ -157,26 +131,6 @@ preconfigured-connection early return, so `Cosmos_live_test` runs this target
 without changing the existing suites. Ordinary emulator, vnext, in-memory,
 and codec-fuzz jobs do not use that resolver and do not enable the live gate.
 Legacy ARM/AAD jobs retain their existing categories.
-
-### High-throughput binary ORDER BY comparisons
-
-Ordinary `test_category="live"` selection does not include the binary ORDER BY
-comparison suite. Its two temporary containers each require 20,000 RU/s, so it
-requires a separate `live_order_by` category and explicit throughput approval.
-The offline fixture/comparison tests still run in ordinary non-live validation.
-
-Only after obtaining approval for the temporary 40,000 RU/s total, select the
-suite using both categories and the existing spending gate:
-
-```powershell
-$env:AZURE_COSMOS_TEST_MODE = 'required'
-$env:AZURE_COSMOS_ORDER_BY_LIVE_THROUGHPUT = '20000'
-$env:RUSTFLAGS = '--cfg=test_category="live" --cfg=test_category="live_order_by"'
-cargo test -p azure_data_cosmos --all-features --test live live_binary_order_by_matches_text_across_physical_ranges
-```
-
-The test still rejects missing approval or non-live credentials before
-provisioning. Do not add the category or spending opt-in to general live jobs.
 
 ### Gateway V2 multi-range prefix change feed
 

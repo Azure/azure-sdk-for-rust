@@ -323,6 +323,8 @@ pub(crate) fn evaluate_hedge_leg_effects(
             }
         }
 
+        TransportOutcome::TransportError { status, .. }
+            if status.is_token_acquisition_timeout() => {}
         TransportOutcome::TransportError { request_sent, .. } => {
             // Mirrors `evaluate_transport_layer_outcome`: a not-sent failure is
             // endpoint-wide (mark the endpoint, leave PPCB's partition counter
@@ -485,7 +487,8 @@ fn try_dtx_bodyless_retry(
 
 #[cfg(feature = "unstable_dtx")]
 fn is_dtx_bodyless_coordinator_retriable(status: &CosmosStatus) -> bool {
-    status.status_code() == azure_core::http::StatusCode::RequestTimeout
+    (status.status_code() == azure_core::http::StatusCode::RequestTimeout
+        && !status.is_token_acquisition_timeout())
         || (u16::from(status.status_code()) == 449
             && status.sub_status()
                 == Some(crate::error::status_codes::substatus::DTC_COORDINATOR_RACE_CONFLICT))
@@ -788,7 +791,8 @@ fn try_handle_retry_trigger_group(
         status.status_code() == azure_core::http::StatusCode::ServiceUnavailable;
     // Partition Topology changes (410 with sub-status 1009) are handled by the dataflow layer, not classified as retry triggers here. Only non-topology 410s trigger retries.
     let is_gone = status.is_gone() && !status.is_partition_topology_change();
-    let is_request_timeout = status.status_code() == azure_core::http::StatusCode::RequestTimeout;
+    let is_request_timeout = status.status_code() == azure_core::http::StatusCode::RequestTimeout
+        && !status.is_token_acquisition_timeout();
 
     let in_trigger_group =
         is_system_resource_unavailable || is_service_unavailable || is_gone || is_request_timeout;
@@ -902,8 +906,9 @@ fn try_handle_server_error(
     status: &CosmosStatus,
 ) -> Option<(OperationAction, Vec<LocationEffect>)> {
     let status_code = status.status_code();
-    let is_eligible_status = status_code.is_server_error()
-        || status_code == azure_core::http::StatusCode::RequestTimeout;
+    let is_eligible_status = !status.is_token_acquisition_timeout()
+        && (status_code.is_server_error()
+            || status_code == azure_core::http::StatusCode::RequestTimeout);
     if !(is_eligible_status && retry_state.can_retry_failover()) {
         return None;
     }
@@ -941,6 +946,14 @@ fn evaluate_transport_layer_outcome(
     error: crate::error::CosmosError,
     request_sent: RequestSentStatus,
 ) -> (OperationAction, Vec<LocationEffect>) {
+    if status.is_token_acquisition_timeout() {
+        return (
+            OperationAction::Abort {
+                error: build_transport_error(&status, error),
+            },
+            Vec::new(),
+        );
+    }
     if request_sent.definitely_not_sent() {
         // Not-sent means endpoint-wide failure; do not inflate PPCB's partition counter.
         let effects = vec![LocationEffect::MarkEndpointUnavailable {
@@ -1413,6 +1426,41 @@ mod tests {
                 request_sent: RequestSentStatus::Sent,
             },
         }
+    }
+
+    #[test]
+    fn token_acquisition_timeout_aborts_without_regional_effects() {
+        let status = crate::error::status_codes::AUTHENTICATION_TOKEN_ACQUISITION_TIMEOUT;
+        let operation = make_read_operation();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint =
+            CosmosEndpoint::global(url::Url::parse("https://test.documents.azure.com/").unwrap());
+        for result in [
+            TransportResult {
+                outcome: TransportOutcome::TransportError {
+                    status,
+                    error: crate::error::CosmosError::builder()
+                        .with_status(status)
+                        .build(),
+                    request_sent: RequestSentStatus::NotSent,
+                },
+            },
+            make_http_error_status(status),
+        ] {
+            let hedge = evaluate_hedge_leg_effects(&operation, &endpoint, &state, &result);
+            assert!(hedge.effects.is_empty());
+            assert!(!hedge.observed_session_unavailable);
+            let (action, effects) =
+                evaluate_transport_result(&operation, &endpoint, result, &state);
+            assert!(effects.is_empty());
+            let OperationAction::Abort { error } = action else {
+                panic!("signing timeout must not be retried: {action:?}");
+            };
+            assert_eq!(error.status(), status);
+        }
+        assert!(!is_region_confirming_status(&status));
+        #[cfg(feature = "unstable_dtx")]
+        assert!(!is_dtx_bodyless_coordinator_retriable(&status));
     }
 
     #[cfg(feature = "unstable_dtx")]

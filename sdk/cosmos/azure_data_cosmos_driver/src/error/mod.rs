@@ -611,7 +611,8 @@ fn classify_for_azure_core(error: &CosmosError) -> azure_core::error::ErrorKind 
     }
 
     match sub_status {
-        Some(status_codes::substatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED)
+        Some(status_codes::substatus::AUTHENTICATION_TOKEN_ACQUISITION_TIMEOUT)
+        | Some(status_codes::substatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED)
         | Some(status_codes::substatus::CLIENT_GENERATED_401) => ErrorKind::Credential,
         Some(status_codes::substatus::SERIALIZATION_RESPONSE_BODY_INVALID)
         | Some(status_codes::substatus::SERIALIZATION_REQUEST_BODY_INVALID) => {
