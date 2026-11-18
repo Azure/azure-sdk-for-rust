@@ -2669,6 +2669,9 @@ impl CosmosDriver {
                     });
                     if continuation.is_none() {
                         drain.endpoint = None;
+                        if Arc::ptr_eq(&pin.generation, &drain.generation) {
+                            pin.staged = None;
+                        }
                         (None, drain.generation.clone())
                     } else {
                         (

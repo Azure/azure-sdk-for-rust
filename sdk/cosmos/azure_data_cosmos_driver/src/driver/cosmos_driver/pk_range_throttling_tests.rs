@@ -8,7 +8,9 @@ use crate::{
         routing::CosmosEndpoint,
         CosmosDriverRuntime,
     },
-    models::{AccountReference, ContainerProperties, ContainerReference, CosmosOperation},
+    models::{
+        AccountEndpoint, AccountReference, ContainerProperties, ContainerReference, CosmosOperation,
+    },
     options::{
         AvailabilityStrategy, ConnectionPoolOptions, DriverOptions, HedgeThreshold,
         HedgingStrategy, OperationOptions, PartitionFailoverOptions, PartitionTopologyCacheMode,
@@ -670,6 +672,99 @@ async fn cold_throttle_sweep_reaches_third_region_and_bounds_huge_failover_caps(
     }
 }
 
+#[tokio::test(start_paused = true)]
+async fn cold_hedge_throttles_apply_completed_leg_effects_once_to_original_endpoints() {
+    for (partner_status, partner_substatus) in [
+        (429, Some(3092)),
+        (200, None),
+        (503, None),
+        (429, Some(3200)),
+    ] {
+        for primary_first in [false, true] {
+            let (driver, client, container) =
+                setup_with_metadata_timeout(false, false, Duration::from_millis(100), true).await;
+            client
+                .hold_primary_until_hedge
+                .store(true, Ordering::SeqCst);
+            let capacity = ColdReply {
+                status: 429,
+                substatus: Some(3092),
+                delay: Duration::ZERO,
+                pending: false,
+            };
+            let partner = ColdReply {
+                status: partner_status,
+                substatus: partner_substatus,
+                delay: Duration::from_millis(30),
+                pending: false,
+            };
+            *client.cold_replies.lock().unwrap() = Some(vec![
+                if primary_first { capacity } else { partner },
+                if primary_first { partner } else { capacity },
+                ColdReply {
+                    status: 200,
+                    substatus: None,
+                    delay: Duration::ZERO,
+                    pending: false,
+                },
+            ]);
+            let initial_version = driver.location_state_store.version_for_tests();
+            let operation = CosmosOperation::read_all_partition_key_ranges(container);
+            let result = driver
+                .execute_operation_direct(
+                    &operation,
+                    OperationOverrides::default(),
+                    &options(0, Duration::ZERO, true),
+                )
+                .await;
+            let diagnostics = if partner_substatus == Some(3200) {
+                let error = result.unwrap_err();
+                assert_eq!(
+                    error.status().sub_status().unwrap().value(),
+                    if primary_first { 3092 } else { 3200 },
+                    "the primary metadata response must remain authoritative"
+                );
+                error.diagnostics().unwrap().clone()
+            } else {
+                result.unwrap().diagnostics().clone()
+            };
+            let both_unavailable = partner_status == 503 || partner_substatus == Some(3092);
+            let expected_marks = if both_unavailable { 2 } else { 1 };
+            let snapshot = driver.location_state_store.snapshot();
+            assert_eq!(
+                snapshot.account.unavailable_endpoints.len(),
+                expected_marks,
+                "every completed capacity/503 leg must mark only its own endpoint"
+            );
+            assert_eq!(
+                driver.location_state_store.version_for_tests() - initial_version,
+                expected_marks as u64,
+                "each leg's endpoint effect must be applied exactly once"
+            );
+            for endpoint in snapshot.account.unavailable_endpoints.keys() {
+                let host = endpoint.host_str().unwrap();
+                assert!(
+                    host.contains(if primary_first { "east" } else { "west" })
+                        || (both_unavailable
+                            && host.contains(if primary_first { "west" } else { "east" })),
+                    "effect was attributed to the wrong endpoint: {endpoint}"
+                );
+            }
+            let attempts = client.attempts.lock().unwrap();
+            let expected_attempts = if both_unavailable { 3 } else { 2 };
+            assert_eq!(attempts.len(), expected_attempts);
+            assert_eq!(diagnostics.request_count(), expected_attempts);
+            assert_eq!(
+                attempts
+                    .iter()
+                    .any(|attempt| attempt.host.contains("central")),
+                both_unavailable,
+                "remaining failover budget must reach the healthy third region"
+            );
+        }
+    }
+}
+
 #[tokio::test]
 async fn mixed_hedge_throttles_preserve_primary_result_without_regional_sweep() {
     for substatus in [3200, 3210, 3214] {
@@ -944,6 +1039,121 @@ async fn unfinished_cold_recovery_preserves_the_cached_continuations_region() {
         assert_eq!(attempts.len(), 1);
         assert_eq!(attempts[0].token.as_deref(), Some("page-2"));
         assert!(attempts[0].host.contains("west"));
+    }
+}
+
+#[tokio::test]
+async fn cold_replacement_without_response_endpoint_does_not_inherit_the_cached_pin() {
+    for cancel in [false, true] {
+        let (driver, client, container) = setup(false, false).await;
+        let original = driver
+            .pk_range_cache
+            .try_lookup_result(
+                &container,
+                false,
+                driver.pk_range_page_fetcher(options(0, Duration::ZERO, false), None),
+            )
+            .await
+            .unwrap()
+            .unwrap();
+        client.attempts.lock().unwrap().clear();
+        client.fail_pinned.store(true, Ordering::SeqCst);
+        client.hold_east_cold.store(true, Ordering::SeqCst);
+        let fetch = driver.pk_range_page_fetcher(options(0, Duration::ZERO, false), None);
+        let mut refresh = Box::pin(
+            driver
+                .pk_range_cache
+                .try_lookup_result(&container, true, &fetch),
+        );
+        loop {
+            tokio::select! {
+                result = &mut refresh => panic!("refresh unexpectedly completed: {result:?}"),
+                () = client.attempted.notified() => {
+                    if client.attempts.lock().unwrap().iter().any(|attempt| attempt.token.is_none()) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Remove the in-flight response's region before response_endpoint resolves it.
+        let account_endpoint = AccountEndpoint::from(driver.account());
+        let mut properties = (*driver
+            .runtime
+            .account_metadata_cache()
+            .get(&account_endpoint)
+            .await
+            .unwrap())
+        .clone();
+        properties
+            .readable_locations
+            .retain(|location| location.name == Region::new("West US"));
+        let properties = driver
+            .runtime
+            .account_metadata_cache()
+            .get_or_refresh_with(account_endpoint, |_| true, || async { properties })
+            .await
+            .unwrap();
+        driver
+            .location_state_store
+            .sync_account_properties(properties, driver.location_state_store.default_endpoint());
+        if cancel {
+            *client.remaining_throttles.lock().unwrap() = u32::MAX;
+        }
+        client.release_east_cold.notify_one();
+        if cancel {
+            loop {
+                tokio::select! {
+                    result = &mut refresh => panic!("refresh unexpectedly completed: {result:?}"),
+                    () = client.attempted.notified() => {
+                        if client.attempts.lock().unwrap().iter().any(|attempt| {
+                            attempt.token.as_deref() == Some("page-1")
+                        }) {
+                            break;
+                        }
+                    }
+                }
+            }
+            drop(refresh);
+        } else {
+            let replacement = refresh.await.unwrap().unwrap();
+            assert!(!Arc::ptr_eq(&original, &replacement));
+        }
+        {
+            let pins = driver.pk_range_region_pins.lock().unwrap();
+            let pin = pins.get(&container).unwrap();
+            assert!(
+                pin.staged.is_none(),
+                "unknown serving region must not inherit staged affinity"
+            );
+            let (cached, endpoint) = pin.cached.as_ref().unwrap();
+            assert!(cached.ptr_eq(&Arc::downgrade(&original)));
+            assert!(endpoint.url().host_str().unwrap().contains("east"));
+        }
+        let cached = driver
+            .pk_range_cache
+            .cached_routing_map(&container)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(Arc::ptr_eq(&cached, &original), cancel);
+        *client.remaining_throttles.lock().unwrap() = 0;
+        client.attempts.lock().unwrap().clear();
+        driver
+            .pk_range_cache
+            .try_lookup_result(&container, true, &fetch)
+            .await
+            .unwrap()
+            .unwrap();
+        let attempts = client.attempts.lock().unwrap();
+        assert_eq!(attempts.len(), 1);
+        assert_eq!(attempts[0].token.as_deref(), Some("page-2"));
+        assert!(
+            attempts[0]
+                .host
+                .contains(if cancel { "east" } else { "west" }),
+            "only cancellation should retain the previous map's east pin: {attempts:?}"
+        );
     }
 }
 

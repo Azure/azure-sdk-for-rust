@@ -4579,17 +4579,54 @@ async fn execute_hedged(
             Either::Left((completed, remaining)) => (completed, remaining, true),
             Either::Right((completed, remaining)) => (completed, remaining, false),
         };
-    let (completed, remaining, primary_first) = match completed {
-        (Ok(mut throttle), diag)
-            if is_pk_range_throttle(ctx.operation, &throttle)
-                && (!result_is_final(&throttle) || !primary_first) =>
+    let (completed, remaining, primary_first, leg_effects_applied) = match completed {
+        (result, diag)
+            if result.as_ref().is_ok_and(|throttle| {
+                is_pk_range_throttle(ctx.operation, throttle)
+                    && (!result_is_final(throttle) || !primary_first)
+            }) =>
         {
+            apply_hedge_leg_effects(
+                ctx,
+                retry_state_snapshot,
+                if primary_first {
+                    &primary_routing.endpoint
+                } else {
+                    &secondary_routing.endpoint
+                },
+                &result,
+                shared_hub_region_latch.as_ref(),
+                !primary_first
+                    && ctx.operation.is_read_only()
+                    && secondary_sent_hub_region_header.load(Ordering::Relaxed),
+                &mut race_observed_session_unavailable,
+            )
+            .await;
+            let mut throttle = result.expect("matched a metadata throttle");
             let partner = await_pk_range_hedge_partner(
                 remaining,
                 ctx.deadline,
                 ctx.transport.metadata_request_timeout(),
             )
             .await;
+            if let Some((result, _)) = &partner {
+                apply_hedge_leg_effects(
+                    ctx,
+                    retry_state_snapshot,
+                    if primary_first {
+                        &secondary_routing.endpoint
+                    } else {
+                        &primary_routing.endpoint
+                    },
+                    result,
+                    shared_hub_region_latch.as_ref(),
+                    primary_first
+                        && ctx.operation.is_read_only()
+                        && secondary_sent_hub_region_header.load(Ordering::Relaxed),
+                    &mut race_observed_session_unavailable,
+                )
+                .await;
+            }
             if partner.as_ref().is_some_and(|(result, _)| {
                 result.as_ref().is_ok_and(|result| {
                     is_pk_range_throttle(ctx.operation, result)
@@ -4666,13 +4703,16 @@ async fn execute_hedged(
             }
             parent_diagnostics.merge_hedge_attempt(diag);
             let diag = parent_diagnostics.clone_for_hedge_attempt();
+            // Both legs completed and their effects were applied above.
+            // Replaying the buffered throttle must not apply them again.
             (
                 partner.expect("non-throttled partner completed"),
                 Box::pin(futures::future::ready((Ok(throttle), diag))) as PrimaryAttemptFuture<'_>,
                 !primary_first,
+                true,
             )
         }
-        completed => (completed, remaining, primary_first),
+        completed => (completed, remaining, primary_first, false),
     };
     let race = if primary_first {
         Either::Left((completed, remaining))
@@ -4684,16 +4724,18 @@ async fn execute_hedged(
             parent_diagnostics.merge_hedge_attempt(primary_diag);
             captured_pk_range_id =
                 captured_pk_range_id.or_else(|| pk_range_id_from_result(&primary_result));
-            apply_hedge_leg_effects(
-                ctx,
-                retry_state_snapshot,
-                &primary_routing.endpoint,
-                &primary_result,
-                shared_hub_region_latch.as_ref(),
-                false,
-                &mut race_observed_session_unavailable,
-            )
-            .await;
+            if !leg_effects_applied {
+                apply_hedge_leg_effects(
+                    ctx,
+                    retry_state_snapshot,
+                    &primary_routing.endpoint,
+                    &primary_result,
+                    shared_hub_region_latch.as_ref(),
+                    false,
+                    &mut race_observed_session_unavailable,
+                )
+                .await;
+            }
             match classify_secondary_hedge_result(primary_result, false, false) {
                 HedgeClass::Final(tr) => {
                     // Primary won post-threshold; drop secondary.
@@ -4769,16 +4811,18 @@ async fn execute_hedged(
                         captured_pk_range_id.or_else(|| pk_range_id_from_result(&secondary_result));
                     let hub_only_read = ctx.operation.is_read_only()
                         && secondary_sent_hub_region_header.load(Ordering::Relaxed);
-                    apply_hedge_leg_effects(
-                        ctx,
-                        retry_state_snapshot,
-                        &secondary_routing.endpoint,
-                        &secondary_result,
-                        shared_hub_region_latch.as_ref(),
-                        hub_only_read,
-                        &mut race_observed_session_unavailable,
-                    )
-                    .await;
+                    if !leg_effects_applied {
+                        apply_hedge_leg_effects(
+                            ctx,
+                            retry_state_snapshot,
+                            &secondary_routing.endpoint,
+                            &secondary_result,
+                            shared_hub_region_latch.as_ref(),
+                            hub_only_read,
+                            &mut race_observed_session_unavailable,
+                        )
+                        .await;
+                    }
                     match classify_secondary_hedge_result(
                         secondary_result,
                         metadata_primary_authoritative,
@@ -4855,16 +4899,18 @@ async fn execute_hedged(
                 captured_pk_range_id.or_else(|| pk_range_id_from_result(&secondary_result));
             let hub_only_read = ctx.operation.is_read_only()
                 && secondary_sent_hub_region_header.load(Ordering::Relaxed);
-            apply_hedge_leg_effects(
-                ctx,
-                retry_state_snapshot,
-                &secondary_routing.endpoint,
-                &secondary_result,
-                shared_hub_region_latch.as_ref(),
-                hub_only_read,
-                &mut race_observed_session_unavailable,
-            )
-            .await;
+            if !leg_effects_applied {
+                apply_hedge_leg_effects(
+                    ctx,
+                    retry_state_snapshot,
+                    &secondary_routing.endpoint,
+                    &secondary_result,
+                    shared_hub_region_latch.as_ref(),
+                    hub_only_read,
+                    &mut race_observed_session_unavailable,
+                )
+                .await;
+            }
             match classify_secondary_hedge_result(
                 secondary_result,
                 metadata_primary_authoritative,
@@ -4948,16 +4994,18 @@ async fn execute_hedged(
                     parent_diagnostics.merge_hedge_attempt(primary_diag);
                     captured_pk_range_id =
                         captured_pk_range_id.or_else(|| pk_range_id_from_result(&primary_result));
-                    apply_hedge_leg_effects(
-                        ctx,
-                        retry_state_snapshot,
-                        &primary_routing.endpoint,
-                        &primary_result,
-                        shared_hub_region_latch.as_ref(),
-                        false,
-                        &mut race_observed_session_unavailable,
-                    )
-                    .await;
+                    if !leg_effects_applied {
+                        apply_hedge_leg_effects(
+                            ctx,
+                            retry_state_snapshot,
+                            &primary_routing.endpoint,
+                            &primary_result,
+                            shared_hub_region_latch.as_ref(),
+                            false,
+                            &mut race_observed_session_unavailable,
+                        )
+                        .await;
+                    }
                     match classify_secondary_hedge_result(primary_result, false, false) {
                         HedgeClass::Final(tr) => {
                             parent_diagnostics.set_hedge_diagnostics(
