@@ -17,6 +17,9 @@
 #include "test_common.h"
 #include <stddef.h>
 
+_Static_assert(COSMOS_OPERATION_KIND_DELETE_BY_PARTITION_KEY == 25,
+               "partition deletion appends an operation kind without changing existing values");
+
 _Static_assert(sizeof(((cosmos_operation_options_t *)0)->max_failover_retry_count) == 8,
                "ABI 0.3 carries the complete uint32 retry domain");
 #if UINTPTR_MAX == UINT64_MAX

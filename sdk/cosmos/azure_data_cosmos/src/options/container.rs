@@ -8,6 +8,23 @@ use azure_data_cosmos_driver::options::OperationOptions;
 #[cfg(feature = "control_plane")]
 use crate::models::ThroughputProperties;
 
+/// Options for
+/// [`ContainerClient::begin_delete_by_partition_key`](crate::clients::ContainerClient::begin_delete_by_partition_key).
+#[derive(Clone, Default)]
+#[non_exhaustive]
+pub struct DeleteByPartitionKeyOptions {
+    /// General-purpose options that apply to the initiation request.
+    pub operation: OperationOptions,
+}
+
+impl DeleteByPartitionKeyOptions {
+    /// Sets the [`OperationOptions`] for the initiation request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
+
 /// Options to be passed to [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
 #[derive(Clone, Default)]
 #[non_exhaustive]

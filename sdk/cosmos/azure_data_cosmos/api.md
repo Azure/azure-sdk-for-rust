@@ -301,6 +301,7 @@ pub mod clients {
     pub struct ContainerClient {
     }
     impl ContainerClient {
+        pub async fn begin_delete_by_partition_key<impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, options: Option<DeleteByPartitionKeyOptions>) -> crate::Result<DeleteByPartitionKeyResponse>;
         #[cfg(feature = "control_plane")]
         pub async fn begin_replace_throughput(&self, throughput: ThroughputProperties, options: Option<ThroughputOptions>) -> crate::Result<ThroughputPoller>;
         pub async fn create_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, item: T, options: Option<ItemWriteOptions>) -> crate::Result<ItemResponse>;
@@ -1528,6 +1529,15 @@ pub mod models {
         #[serde(flatten)]
         pub system_properties: crate::models::SystemProperties,
     }
+    #[derive(Debug)]
+    #[non_exhaustive]
+    pub struct DeleteByPartitionKeyResponse {
+    }
+    impl DeleteByPartitionKeyResponse {
+        pub fn diagnostics(&self) -> Arc<DiagnosticsContext>;
+        pub fn headers(&self) -> &ResponseHeaders;
+        pub fn status(&self) -> CosmosStatus;
+    }
     #[doc(inline)]
     #[derive(Clone, Debug, Eq)]
     pub struct EffectivePartitionKey(/* private fields */);
@@ -2524,6 +2534,14 @@ pub mod options {
     }
     #[cfg(feature = "control_plane")]
     impl CreateDatabaseOptions {
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
+    }
+    #[derive(Clone, Default)]
+    #[non_exhaustive]
+    pub struct DeleteByPartitionKeyOptions {
+        pub operation: azure_data_cosmos_driver::options::OperationOptions,
+    }
+    impl DeleteByPartitionKeyOptions {
         pub fn with_operation_options(self, operation: OperationOptions) -> Self;
     }
     #[cfg(feature = "control_plane")]

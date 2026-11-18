@@ -8,11 +8,15 @@ use crate::{
         ChangeFeedPageIterator, FeedRange, FeedScope, ItemSelector, QueryItemIterator,
         ReadManyIterator,
     },
-    models::{BatchResponse, ChangeFeedItem, ItemResponse, TransactionalBatch},
+    models::{
+        BatchResponse, ChangeFeedItem, DeleteByPartitionKeyResponse, ItemResponse,
+        TransactionalBatch,
+    },
     options::{
         BatchOptions, BinaryEncodingOptions, ChangeFeedMode, ChangeFeedOptions,
-        ChangeFeedStartFrom, ItemReadOptions, ItemWriteOptions, OperationOptions, Precondition,
-        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, ReadManyOptions, SessionToken,
+        ChangeFeedStartFrom, DeleteByPartitionKeyOptions, ItemReadOptions, ItemWriteOptions,
+        OperationOptions, Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions,
+        ReadManyOptions, SessionToken,
     },
     PartitionKey, Query, ResourceIdentity,
 };
@@ -976,6 +980,74 @@ impl ContainerClient {
         Ok(ItemResponse::new(
             self.context
                 .complete_result(driver_result, || self.operation_context("delete_item"))?,
+        ))
+    }
+
+    /// Starts asynchronously deleting all items with the specified partition key.
+    ///
+    /// A successful response means the service has started the operation, not that
+    /// deletion has completed. Physical deletion may take several hours, and there
+    /// is no way to monitor its progress.
+    ///
+    /// The service attempts to hide the affected items from reads and queries as
+    /// soon as the operation starts. Some aggregate queries, including queries that
+    /// use the index to compute a count, may still include these items until
+    /// physical deletion completes.
+    ///
+    /// Deleting items this way consumes the same request units (RUs) as deleting
+    /// them individually. Consider whether background deletion meets your
+    /// requirements.
+    ///
+    /// Specify the complete [`PartitionKey`], including every component of a
+    /// hierarchical partition key. Partition-key prefixes aren't supported.
+    ///
+    /// # Arguments
+    ///
+    /// * `partition_key` - The complete logical partition key of the items to delete.
+    /// * `options` - Optional parameters for the initiation request.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `partition_key` doesn't match the container's partition
+    /// key definition, the service rejects the initiation request, or the request
+    /// can't be completed within the configured transport and retry limits.
+    ///
+    /// # Examples
+    ///
+    /// Use a client configured for the target container. This example requires
+    /// access to a Cosmos DB account.
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::clients::ContainerClient;
+    ///
+    /// # async fn example(container: &ContainerClient) -> azure_data_cosmos::Result<()> {
+    /// let response = container
+    ///     .begin_delete_by_partition_key("Contoso", None)
+    ///     .await?;
+    /// // The response confirms initiation, not completed deletion.
+    /// let status = response.status();
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn begin_delete_by_partition_key(
+        &self,
+        partition_key: impl Into<PartitionKey>,
+        options: Option<DeleteByPartitionKeyOptions>,
+    ) -> crate::Result<DeleteByPartitionKeyResponse> {
+        let options = options.unwrap_or_default();
+        let operation = CosmosOperation::delete_by_partition_key(
+            self.container_ref.clone(),
+            partition_key.into(),
+        );
+        let driver_result = self
+            .context
+            .driver
+            .execute_singleton_operation(operation, options.operation)
+            .await;
+        Ok(DeleteByPartitionKeyResponse::new(
+            self.context.complete_result(driver_result, || {
+                self.operation_context("begin_delete_by_partition_key")
+            })?,
         ))
     }
 

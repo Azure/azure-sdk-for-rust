@@ -1488,6 +1488,7 @@ pub mod models {
         pub fn create_database(account: AccountReference) -> Self;
         pub fn create_item(item: ItemReference) -> Self;
         pub fn db_operation_name(&self) -> Option<&'static str>;
+        pub fn delete_by_partition_key(container: ContainerReference, partition_key: PartitionKey) -> Self;
         pub fn delete_container(container: ContainerReference) -> Self;
         pub fn delete_database(database: DatabaseReference) -> Self;
         pub fn delete_item(item: ItemReference) -> Self;
@@ -2299,6 +2300,7 @@ pub mod models {
         ReadFeed,
         Replace,
         Delete,
+        DeleteByPartitionKey,
         Upsert,
         Query,
         SqlQuery,

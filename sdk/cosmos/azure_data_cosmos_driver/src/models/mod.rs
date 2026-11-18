@@ -562,6 +562,9 @@ impl ResourceType {
     pub fn is_partitioned(self, operation_type: OperationType) -> bool {
         match self {
             ResourceType::Document => operation_type != OperationType::QueryPlan,
+            ResourceType::DocumentCollection => {
+                operation_type == OperationType::DeleteByPartitionKey
+            }
             ResourceType::StoredProcedure => operation_type == OperationType::Execute,
             _ => false,
         }
@@ -640,6 +643,13 @@ pub enum OperationType {
     Replace,
     /// Delete a resource.
     Delete,
+    /// Start asynchronously deleting items with a complete logical partition key from a container.
+    ///
+    /// Successful execution confirms initiation, not completed deletion. Physical deletion
+    /// may take several hours, and progress can't be monitored. The service attempts to
+    /// hide affected items, but some aggregate queries may still include them.
+    /// Deletion consumes the same request units as deleting the items individually.
+    DeleteByPartitionKey,
     /// Create or replace a resource.
     Upsert,
     /// Execute a query.
@@ -735,6 +745,7 @@ impl OperationType {
             | OperationType::SqlQuery
             | OperationType::Batch
             | OperationType::QueryPlan
+            | OperationType::DeleteByPartitionKey
             | OperationType::Execute => Method::Post,
             #[cfg(feature = "unstable_dtx")]
             OperationType::CommitDistributedTransaction
@@ -801,6 +812,7 @@ impl OperationType {
             OperationType::ReadFeed => "read_feed",
             OperationType::Replace => "replace",
             OperationType::Delete => "delete",
+            OperationType::DeleteByPartitionKey => "delete_by_partition_key",
             OperationType::Upsert => "upsert",
             OperationType::Query => "query",
             OperationType::SqlQuery => "sql_query",
