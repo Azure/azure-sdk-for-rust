@@ -265,6 +265,7 @@ function Get-ReleaseAnalysis($Inventory, $Selected, [string] $Channel, [string] 
 function Get-ReleaseDecisions($Plan, $Inventory) {
   if ($Plan.ReleaseType -notin @('Stable', 'Beta')) { throw 'Invalid release type in decision file.' }
   $versions = @{}
+  $rewriteVersions = @{}
   $release = @($Plan.Packages | Where-Object Release)
   foreach ($package in $Plan.Packages) {
     $actual = @($Inventory | Where-Object { $_.Name -ceq $package.Name -and $_.Publishable })
@@ -281,6 +282,10 @@ function Get-ReleaseDecisions($Plan, $Inventory) {
         throw "Release baseline changed: $($package.Name)"
       }
       $versions[$package.Name] = $baseline.Version
+      # Preserve local sources that are identical to the released baseline.
+      if ($actual[0].Version -cne $baseline.Version -or $package.Changes.Count) {
+        $rewriteVersions[$package.Name] = $baseline.Version
+      }
       continue
     }
     $version = [System.Management.Automation.SemanticVersion]::new($package.Version)
@@ -306,7 +311,7 @@ function Get-ReleaseDecisions($Plan, $Inventory) {
       $package = $Inventory | Where-Object Name -CEQ $name
       if ($Plan.ReleaseType -eq 'Stable') {
         foreach ($dependency in ($package.Dependencies | Where-Object { $_.kind -ne 'dev' })) {
-          $rewritten = $versions.ContainsKey($dependency.name) -and
+          $rewritten = $rewriteVersions.ContainsKey($dependency.name) -and
             @($package.Dependencies | Where-Object { $_.name -eq $dependency.name -and $_.path }).Count -gt 0
           if (!$rewritten -and $dependency.req -match '\d+\.\d+\.\d+-[0-9A-Za-z]') {
             throw "Stable release '$name' cannot depend on preview '$($dependency.name)'. Analyze it against its last stable release."
@@ -326,7 +331,7 @@ function Get-ReleaseDecisions($Plan, $Inventory) {
     }
     $pending = @($pending | Where-Object { $_ -notin $ready })
   }
-  return @{ Versions = $versions; ReleaseOrder = $ordered }
+  return @{ Versions = $versions; RewriteVersions = $rewriteVersions; ReleaseOrder = $ordered }
 }
 
 function Confirm-PreparedRelease($Plan, $Inventory) {
@@ -372,7 +377,7 @@ else {
       throw 'Review local changes and analyze again once they are resolved; HEAD-only decisions cannot verify them.'
     }
     $decisions = Get-ReleaseDecisions $plan $inventory
-    $inputObject = @{ root = [string] $RepoRoot; versions = $decisions.Versions; apply = $true }
+    $inputObject = @{ root = [string] $RepoRoot; versions = $decisions.RewriteVersions; apply = $true }
     $result = Invoke-ReleaseToml 'release-dependencies' $inputObject
     [ordered]@{
       ReleaseOrder = $decisions.ReleaseOrder; WorkspaceBuild = $plan.WorkspaceBuild
@@ -384,7 +389,7 @@ else {
     Confirm-PreparedRelease $plan $inventory
     $decisions = Get-ReleaseDecisions $plan $inventory
     $remaining = Invoke-ReleaseToml 'release-dependencies' @{
-      root = [string] $RepoRoot; versions = $decisions.Versions; apply = $false
+      root = [string] $RepoRoot; versions = $decisions.RewriteVersions; apply = $false
     }
     if ($remaining.changed_manifests.Count) {
       throw 'Prepared dependency declarations no longer match the approved release decisions.'
