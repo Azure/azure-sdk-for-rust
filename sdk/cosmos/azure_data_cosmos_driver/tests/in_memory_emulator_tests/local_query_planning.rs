@@ -12,7 +12,7 @@ use azure_data_cosmos_driver::{
         ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
         VirtualRegion,
     },
-    models::{AccountReference, CosmosOperation, FeedRange, PartitionKeyDefinition},
+    models::{AccountReference, CosmosOperation, FeedRange, PartitionKeyDefinition, ResponseBody},
     options::{DriverOptions, OperationOptions, PlanOptions, QueryPlanMode},
 };
 
@@ -163,6 +163,9 @@ async fn eligible_query_skips_gateway_query_plan() {
     assert_eq!(recorder.document_query_count(), 1);
 }
 
+// Native plans this query and runs it as-is; only the local planner
+// short-circuits contradictory filters.
+#[cfg(not(feature = "__internal_native_query_plan"))]
 #[tokio::test]
 async fn contradictory_query_short_circuits_all_query_io() {
     let (_emulator, recorder, driver) = setup().await;
@@ -417,6 +420,91 @@ async fn vector_queries_plan_natively_or_fall_back_once() {
                 "the in-memory Gateway cannot synthesize authoritative vector metadata"
             );
         }
+        assert_eq!(recorder.document_query_count(), 0);
+    }
+}
+
+/// Plans and drains `text`, returning every row or the first error.
+async fn run_query(
+    driver: &CosmosDriver,
+    container: &azure_data_cosmos_driver::models::ContainerReference,
+    text: &str,
+) -> azure_data_cosmos_driver::error::Result<Vec<serde_json::Value>> {
+    let mut plan = driver
+        .plan_operation(
+            query(container, text),
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        )
+        .await?;
+    let mut rows = Vec::new();
+    while let Some(response) = driver
+        .execute_plan(
+            &mut plan,
+            Some(container.clone()),
+            OperationOptions::default(),
+        )
+        .await?
+    {
+        match response.into_body() {
+            ResponseBody::NoPayload => {}
+            ResponseBody::Items(items) => rows.extend(
+                items
+                    .iter()
+                    .map(|item| super::parse_json_body(item).expect("item should parse")),
+            ),
+            ResponseBody::Bytes(bytes) => {
+                let page = super::parse_json_body(&bytes).expect("page should parse");
+                rows.extend(page["Documents"].as_array().cloned().unwrap_or_default());
+            }
+        }
+    }
+    Ok(rows)
+}
+
+#[tokio::test]
+async fn empty_range_plans_return_correct_rows() {
+    let (_emulator, recorder, driver) = setup().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
+        .await
+        .unwrap();
+
+    // Native returns the same empty range for all of these and the driver
+    // runs that plan as-is, like a Gateway plan; only the local planner
+    // short-circuits contradictory filters. The in-memory emulator returns no
+    // rows for `SELECT VALUE 1`, so assert it is executed.
+    recorder.clear();
+    run_query(&driver, &container, "SELECT VALUE 1")
+        .await
+        .unwrap();
+    assert!(
+        recorder.document_query_count() > 0,
+        "SELECT VALUE 1 must not be short-circuited"
+    );
+
+    for text in [
+        "SELECT VALUE COUNT(1) FROM c WHERE false",
+        "SELECT COUNT(1) AS n FROM c WHERE c.pk = 'a' AND c.pk = 'b'",
+    ] {
+        match run_query(&driver, &container, text).await {
+            Ok(rows) => assert!(!rows.is_empty(), "{text} must not return an empty success"),
+            Err(_) => {} // explicit unsupported-aggregate error
+        }
+    }
+
+    recorder.clear();
+    let rows = run_query(
+        &driver,
+        &container,
+        "SELECT * FROM c WHERE c.pk = 'a' AND c.pk = 'b'",
+    )
+    .await
+    .unwrap();
+    assert!(rows.is_empty());
+    assert_eq!(recorder.query_plan_count(), 0);
+    if !NATIVE_PLANNER {
         assert_eq!(recorder.document_query_count(), 0);
     }
 }

@@ -122,7 +122,7 @@ impl DatabaseProperties {}
 /// Properties of a Cosmos DB container.
 ///
 /// Returned by container read/query operations and used when creating/updating containers.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ContainerProperties {
@@ -132,13 +132,56 @@ pub(crate) struct ContainerProperties {
     /// Partition key definition specifying the partition key path(s).
     pub partition_key: PartitionKeyDefinition,
 
-    /// Vector embedding policy, kept as raw JSON for the native query planner.
+    /// Vector embedding policy; drives `VectorDistance` ordering in query plans.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub vector_embedding_policy: Option<serde_json::Value>,
+    pub vector_embedding_policy: Option<VectorEmbeddingPolicy>,
 
     /// System-managed properties (e.g., _rid, _ts, _etag).
     #[serde(flatten)]
     pub system_properties: SystemProperties,
+}
+
+/// Vector embedding policy of a container.
+///
+/// Fields the driver does not model are kept in `extra` so the policy
+/// round-trips unchanged to the query planner.
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct VectorEmbeddingPolicy {
+    /// Vector embeddings declared on the container.
+    #[serde(default)]
+    pub vector_embeddings: Vec<VectorEmbedding>,
+
+    /// Properties this version of the driver does not model.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
+}
+
+/// A single vector embedding of a [`VectorEmbeddingPolicy`].
+///
+/// Everything except `path` is optional so an unexpected policy shape
+/// cannot fail container resolution.
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct VectorEmbedding {
+    /// Path to the property containing the vector (e.g., `/embedding`).
+    pub path: String,
+
+    /// Element data type (e.g., `float32`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub data_type: Option<String>,
+
+    /// Number of dimensions in the vector.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dimensions: Option<u32>,
+
+    /// Distance function (e.g., `cosine`, `dotproduct`, `euclidean`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub distance_function: Option<String>,
+
+    /// Properties this version of the driver does not model.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 /// Partition key definition for a container.

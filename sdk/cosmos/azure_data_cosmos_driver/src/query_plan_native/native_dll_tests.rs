@@ -1393,15 +1393,17 @@ fn native_query_plan_resolves_ranges_to_epk_hex() {
 // Vector embedding policy (drives VectorDistance sort direction)
 // =========================================================================
 
-fn vector_policy(distance_function: &str) -> serde_json::Value {
-    serde_json::json!({
-        "vectorEmbeddings": [{
-            "path": "/embedding",
-            "dataType": "float32",
-            "distanceFunction": distance_function,
-            "dimensions": 3
-        }]
-    })
+fn vector_policy(distance_function: &str) -> crate::models::VectorEmbeddingPolicy {
+    crate::models::VectorEmbeddingPolicy {
+        vector_embeddings: vec![crate::models::VectorEmbedding {
+            path: "/embedding".to_string(),
+            data_type: Some("float32".to_string()),
+            dimensions: Some(3),
+            distance_function: Some(distance_function.to_string()),
+            ..Default::default()
+        }],
+        ..Default::default()
+    }
 }
 
 #[test]

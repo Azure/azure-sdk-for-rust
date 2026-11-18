@@ -158,6 +158,18 @@ impl NativeQueryPlanProvider {
         }
     }
 
+    /// Creates a provider that behaves as if the native library failed to
+    /// load, so fallback paths can be tested on every platform.
+    #[cfg(test)]
+    pub(crate) fn unavailable() -> Self {
+        Self {
+            inner: std::sync::OnceLock::from(Err(error::QueryPlanError::LibraryNotAvailable {
+                message: "unavailable for test".to_string(),
+            })),
+            last_config: std::sync::Mutex::new(String::new()),
+        }
+    }
+
     /// Generates a query plan using the native FFI provider.
     ///
     /// On first call, lazily loads the native library and creates the
@@ -171,7 +183,7 @@ impl NativeQueryPlanProvider {
         &self,
         query_spec_json: &str,
         partition_key: &crate::models::PartitionKeyDefinition,
-        vector_embedding_policy: Option<&serde_json::Value>,
+        vector_embedding_policy: Option<&crate::models::VectorEmbeddingPolicy>,
         query_engine_config: &str,
     ) -> Result<crate::driver::dataflow::query_plan::QueryPlan, error::QueryPlanError> {
         let provider = self
@@ -195,7 +207,9 @@ impl NativeQueryPlanProvider {
             }
         }
 
-        let vector_embedding_policy_json = vector_embedding_policy.map(|p| p.to_string());
+        // Infallible: the policy holds only strings, numbers and string-keyed JSON maps.
+        let vector_embedding_policy_json = vector_embedding_policy
+            .map(|p| serde_json::to_string(p).expect("vector embedding policy serializes to JSON"));
         provider.get_partition_key_ranges(
             query_spec_json,
             partition_key,
@@ -225,5 +239,21 @@ mod tests {
         let options = query_plan_options();
         assert!(options.require_formattable_order_by_query);
         assert!(!options.is_continuation_expected);
+    }
+
+    #[test]
+    fn unavailable_provider_reports_library_not_available() {
+        let pk: crate::models::PartitionKeyDefinition =
+            serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap();
+        let result = NativeQueryPlanProvider::unavailable().get_query_plan(
+            r#"{"query":"SELECT * FROM c"}"#,
+            &pk,
+            None,
+            "{}",
+        );
+        assert!(matches!(
+            result,
+            Err(error::QueryPlanError::LibraryNotAvailable { .. })
+        ));
     }
 }

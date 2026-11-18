@@ -9,7 +9,7 @@
 
 use crate::models::{
     resource_id::{ResourceId, ResourceIdentifier, ResourceName},
-    AccountReference, PartitionKey, PartitionKeyDefinition,
+    AccountReference, PartitionKey, PartitionKeyDefinition, VectorEmbeddingPolicy,
 };
 
 use std::borrow::Cow;
@@ -139,7 +139,7 @@ struct ContainerReferenceInner {
     partition_key_definition: PartitionKeyDefinition,
     /// Vector embedding policy. `None` when the container has no policy.
     #[cfg_attr(not(feature = "__internal_native_query_plan"), allow(dead_code))]
-    vector_embedding_policy: Option<serde_json::Value>,
+    vector_embedding_policy: Option<VectorEmbeddingPolicy>,
     /// Pre-computed RID-based path: `/dbs/{db_rid}/colls/{container_rid}`.
     rid_based_path: Box<str>,
     /// Name-based addressing data. `Some` when the container was resolved by name,
@@ -290,7 +290,7 @@ impl ContainerReference {
 
     /// Returns the container's vector embedding policy, if any.
     #[cfg_attr(not(feature = "__internal_native_query_plan"), allow(dead_code))]
-    pub(crate) fn vector_embedding_policy(&self) -> Option<&serde_json::Value> {
+    pub(crate) fn vector_embedding_policy(&self) -> Option<&VectorEmbeddingPolicy> {
         self.0.vector_embedding_policy.as_ref()
     }
 
@@ -812,19 +812,34 @@ mod tests {
             Url::parse("https://example.documents.azure.com:443/").unwrap(),
             "test-key",
         );
-        let container_properties: ContainerProperties = serde_json::from_str(
-            r#"{"id":"c","partitionKey":{"paths":["/pk"]},
-                "vectorEmbeddingPolicy":{"vectorEmbeddings":[{"path":"/v","distanceFunction":"euclidean"}]}}"#,
-        )
+        let policy_json = serde_json::json!({
+            "vectorEmbeddings": [{
+                "path": "/v",
+                "dataType": "float32",
+                "dimensions": 3,
+                "distanceFunction": "euclidean",
+                "futureEmbeddingKnob": true
+            }],
+            "futurePolicyKnob": 1
+        });
+        let container_properties: ContainerProperties = serde_json::from_value(serde_json::json!({
+            "id": "c",
+            "partitionKey": { "paths": ["/pk"] },
+            "vectorEmbeddingPolicy": policy_json
+        }))
         .unwrap();
         let container =
             ContainerReference::new(account, "db", "db-rid", "c", "c-rid", &container_properties);
 
         let policy = container.vector_embedding_policy().unwrap();
+        assert_eq!(policy.vector_embeddings[0].path, "/v");
+        assert_eq!(policy.vector_embeddings[0].dimensions, Some(3));
         assert_eq!(
-            policy["vectorEmbeddings"][0]["distanceFunction"],
-            "euclidean"
+            policy.vector_embeddings[0].distance_function.as_deref(),
+            Some("euclidean")
         );
+        // Unmodeled fields round-trip to the query planner unchanged.
+        assert_eq!(serde_json::to_value(policy).unwrap(), policy_json);
         assert!(make_container_reference()
             .vector_embedding_policy()
             .is_none());

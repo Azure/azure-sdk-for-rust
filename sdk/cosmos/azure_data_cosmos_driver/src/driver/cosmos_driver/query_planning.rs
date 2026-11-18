@@ -44,9 +44,6 @@ pub(super) async fn resolve_query_plan(
         if let Some(plan) =
             try_plan_query_using_native_planner(driver, container, operation, mode).await
         {
-            if is_provably_empty(&plan) {
-                return Ok(ResolvedQueryPlan::Empty);
-            }
             return Ok(ResolvedQueryPlan::Plan(Box::new(plan)));
         }
         if let Some(resolution) = try_plan_query_using_local_planner(container, operation, mode) {
@@ -57,25 +54,6 @@ pub(super) async fn resolve_query_plan(
     let plan = Box::pin(gateway_query_plan(driver, container, operation, options)).await?;
     tracing::debug!(provider = "gateway", ?mode, "using Gateway query plan");
     Ok(ResolvedQueryPlan::Plan(Box::new(plan)))
-}
-
-/// Returns true when a plan provably matches no documents and can skip all
-/// query I/O, like the local planner's contradictory-filter outcome.
-///
-/// The service encodes contradictory partition-key filters as a single point
-/// range on the empty partition key, which resolves to EPK `""..""`; no
-/// document hashes there. Aggregates, GROUP BY and hybrid search are excluded
-/// because they still produce rows (e.g. `COUNT` returns 0) over no documents.
-fn is_provably_empty(plan: &QueryPlan) -> bool {
-    let ranges_empty = plan
-        .query_ranges
-        .iter()
-        .all(|range| range.min.is_empty() && range.max.is_empty());
-    let produces_rows_without_documents = plan.hybrid_search_query_info.is_some()
-        || plan.query_info.as_ref().is_some_and(|info| {
-            !info.aggregates.is_empty() || !info.group_by_expressions.is_empty()
-        });
-    ranges_empty && !produces_rows_without_documents
 }
 
 #[cfg(feature = "__internal_native_query_plan")]
@@ -275,38 +253,36 @@ mod tests {
         assert_eq!(query_plan_operation.absolute_deadline(), Some(deadline));
     }
 
-    fn resolved_plan(query_info: serde_json::Value, min: &str, max: &str) -> QueryPlan {
-        let raw: RawQueryPlan = serde_json::from_value(serde_json::json!({
-            "queryInfo": query_info,
-            "queryRanges": [{
-                "min": serde_json::from_str::<serde_json::Value>(min).unwrap(),
-                "max": serde_json::from_str::<serde_json::Value>(max).unwrap(),
-                "isMinInclusive": true,
-                "isMaxInclusive": true
-            }]
-        }))
+    #[cfg(feature = "__internal_native_query_plan")]
+    #[tokio::test]
+    async fn unavailable_native_library_falls_back_to_local_planner() {
+        let container = test_container();
+        let runtime = crate::driver::CosmosDriverRuntimeBuilder::new()
+            .build()
+            .await
+            .unwrap();
+        let mut driver = CosmosDriver::new(
+            runtime,
+            crate::options::DriverOptions::builder(container.account().clone()).build(),
+        )
         .unwrap();
-        raw.resolve(test_container().partition_key_definition())
-            .unwrap()
-    }
+        driver.native_query_plan_provider =
+            crate::query_plan_native::NativeQueryPlanProvider::unavailable();
+        let operation =
+            CosmosOperation::query_items(container.clone(), Some(crate::models::FeedRange::full()))
+                .with_body(br#"{"query":"SELECT * FROM c WHERE c.pk = 'a'"}"#.to_vec());
 
-    #[test]
-    fn contradictory_filter_plan_is_provably_empty() {
-        // Shape the native planner returns for `c.pk = 'a' AND c.pk = 'b'`.
-        let plan = resolved_plan(serde_json::json!({ "rewrittenQuery": "" }), "[]", "[]");
-        assert!(is_provably_empty(&plan));
-    }
+        // The driver has no network; a plan here means the local planner served it.
+        let resolved = resolve_query_plan(
+            &driver,
+            &container,
+            &operation,
+            &OperationOptions::default(),
+            &PlanOptions::default(),
+        )
+        .await
+        .unwrap();
 
-    #[test]
-    fn contradictory_aggregate_plan_is_not_empty() {
-        // COUNT over no documents still returns 0.
-        let plan = resolved_plan(serde_json::json!({ "aggregates": ["Count"] }), "[]", "[]");
-        assert!(!is_provably_empty(&plan));
-    }
-
-    #[test]
-    fn point_query_plan_is_not_empty() {
-        let plan = resolved_plan(serde_json::json!({}), r#"["a"]"#, r#"["a"]"#);
-        assert!(!is_provably_empty(&plan));
+        assert!(matches!(resolved, ResolvedQueryPlan::Plan(_)));
     }
 }
