@@ -747,7 +747,7 @@ async fn cold_hedge_throttles_apply_completed_leg_effects_once_to_original_endpo
                     host.contains(if primary_first { "east" } else { "west" })
                         || (both_unavailable
                             && host.contains(if primary_first { "west" } else { "east" })),
-                    "effect was attributed to the wrong endpoint: {endpoint}"
+                    "effect was attributed to the wrong endpoint"
                 );
             }
             let attempts = client.attempts.lock().unwrap();
