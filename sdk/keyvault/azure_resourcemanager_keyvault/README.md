@@ -89,6 +89,11 @@ async fn main() -> azure_core::Result<()> {
 }
 ```
 
+## Features
+
+- `test`: enables test support.
+- `unstable_fake`: enables experimental fake server transports and the `test` feature. These APIs are subject to change.
+
 ## Key concepts
 
 `KeyVaultClient` is scoped to a subscription. Its specialized clients manage individual
@@ -206,6 +211,107 @@ Deleting a vault does not purge a soft-deleted vault.
 vaults.delete(&resource_group, &vault_name, None).await?;
 ```
 
+## Testing with fakes
+
+Enable the crate's `test` and `unstable_fake` features in your test dependencies.
+`unstable_fake` enables `test` automatically, but both are shown explicitly below.
+The fake APIs are experimental and subject to change:
+
+```toml
+[dependencies]
+azure_resourcemanager_keyvault = "0.1"
+
+[dev-dependencies]
+azure_core = { version = "1", features = ["test", "unstable_fake"] }
+azure_resourcemanager_keyvault = { version = "0.1", features = ["test", "unstable_fake"] }
+async-trait = "0.1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+```
+
+Implement just the fake server operations your test needs. The root `KeyVaultServer`
+requires its child server traits; use empty implementations for unused child servers:
+
+```rust ignore testing_with_fakes
+use azure_core::{
+    http::{fake::ResponseExt as _, headers::Headers, AsyncRawResponse, StatusCode},
+    Result,
+};
+use azure_resourcemanager_keyvault::{
+    clients::fake::{
+        KeyVaultKeysServer, KeyVaultManagedHsmKeysServer, KeyVaultManagedHsmsServer,
+        KeyVaultMHSMPrivateEndpointConnectionsServer, KeyVaultMHSMPrivateLinkResourcesServer,
+        KeyVaultMHSMRegionsServer, KeyVaultNetworkSecurityPerimeterConfigurationsServer,
+        KeyVaultOperationsServer, KeyVaultPrivateEndpointConnectionsServer,
+        KeyVaultPrivateLinkResourcesServer, KeyVaultSecretsServer, KeyVaultServer,
+        KeyVaultVaultsServer,
+    },
+    models::KeyVaultKeysClientGetOptions,
+    KeyVaultClient,
+};
+use std::sync::Arc;
+
+#[derive(Debug)]
+struct FakeKeyVaultServer;
+
+#[async_trait::async_trait]
+impl KeyVaultServer for FakeKeyVaultServer {}
+impl KeyVaultManagedHsmKeysServer for FakeKeyVaultServer {}
+impl KeyVaultManagedHsmsServer for FakeKeyVaultServer {}
+impl KeyVaultMHSMPrivateEndpointConnectionsServer for FakeKeyVaultServer {}
+impl KeyVaultMHSMPrivateLinkResourcesServer for FakeKeyVaultServer {}
+impl KeyVaultMHSMRegionsServer for FakeKeyVaultServer {}
+impl KeyVaultNetworkSecurityPerimeterConfigurationsServer for FakeKeyVaultServer {}
+impl KeyVaultOperationsServer for FakeKeyVaultServer {}
+impl KeyVaultPrivateEndpointConnectionsServer for FakeKeyVaultServer {}
+impl KeyVaultPrivateLinkResourcesServer for FakeKeyVaultServer {}
+impl KeyVaultSecretsServer for FakeKeyVaultServer {}
+impl KeyVaultVaultsServer for FakeKeyVaultServer {}
+
+#[async_trait::async_trait]
+impl KeyVaultKeysServer for FakeKeyVaultServer {
+    async fn get(
+        &self,
+        resource_group_name: &str,
+        vault_name: &str,
+        key_name: &str,
+        _options: Option<KeyVaultKeysClientGetOptions<'_>>,
+    ) -> Result<AsyncRawResponse> {
+        assert_eq!(resource_group_name, "my-resource-group");
+        assert_eq!(vault_name, "my-vault");
+        assert_eq!(key_name, "my-key");
+        Ok(AsyncRawResponse::fake_with_bytes(
+            StatusCode::Ok,
+            Headers::new(),
+            r#"{"name":"my-key"}"#,
+        ))
+    }
+}
+
+let client = KeyVaultClient::with_fake(
+    "https://management.azure.com",
+    Arc::new(FakeKeyVaultServer),
+    "00000000-0000-0000-0000-000000000000".into(),
+    None,
+)?;
+let keys = client.get_key_vault_keys_client();
+let key = keys
+    .get("my-resource-group", "my-vault", "my-key", None)
+    .await?
+    .into_model()?;
+assert_eq!(key.name.as_deref(), Some("my-key"));
+```
+
+### Fake service responses
+
+The experimental [fake server example] retrieves key metadata and simulates a service error
+without credentials or network access. Implement only the `KeyVaultKeysServer` operations
+your application needs; the client uses its normal response and error handling.
+Unused operations panic by default.
+
+```sh
+cargo run -p azure_resourcemanager_keyvault --example key_vault_client_fake --features test,unstable_fake
+```
+
 ## Troubleshooting
 
 ### General
@@ -236,3 +342,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_resourcemanager_keyvault/src
 [CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
+[fake server example]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_resourcemanager_keyvault/examples/key_vault_client_fake.rs
