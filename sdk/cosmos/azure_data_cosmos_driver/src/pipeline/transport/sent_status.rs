@@ -40,7 +40,6 @@ pub(crate) fn infer_request_sent_status(error: &CosmosError) -> RequestSentStatu
     // so must stay `Unknown`.
     match error.status().sub_status() {
         Some(crate::error::status_codes::substatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED)
-        | Some(crate::error::status_codes::substatus::AUTHENTICATION_TOKEN_ACQUISITION_TIMEOUT)
         | Some(crate::error::status_codes::substatus::CLIENT_GENERATED_401)
         | Some(crate::error::status_codes::substatus::TRANSPORT_CONNECTION_FAILED)
         | Some(crate::error::status_codes::substatus::TRANSPORT_DNS_FAILED)
@@ -108,13 +107,6 @@ mod tests {
             .with_source(std::io::Error::other("stub"))
             .build();
         assert_eq!(infer_request_sent_status(&err), RequestSentStatus::Unknown);
-    }
-
-    #[test]
-    fn token_acquisition_timeout_is_not_sent() {
-        let err =
-            transport_err(crate::error::status_codes::AUTHENTICATION_TOKEN_ACQUISITION_TIMEOUT);
-        assert_eq!(infer_request_sent_status(&err), RequestSentStatus::NotSent);
     }
 
     #[test]

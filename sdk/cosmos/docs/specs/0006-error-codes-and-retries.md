@@ -133,21 +133,8 @@ embedded in successful batch or distributed-transaction bodies are not rewritten
 | 404    | 0         | Not Found           | Abort  |
 | 409    | —         | Conflict            | Abort  |
 | 412    | —         | Precondition Failed | Abort  |
-| 408    | 20403     | Signing timed out   | Abort  |
 
 These are deterministic client errors. No retry will change the outcome.
-
-`408/20403` (`AUTHENTICATION_TOKEN_ACQUISITION_TIMEOUT`) is generated before
-sending an independent metadata fill's request when its credential/signing budget
-expires. It maps to `ErrorKind::Credential`, not a network error: no service or
-transport attempt rejected or timed out the request. It is `NotSent`, but unlike
-connectivity failures it cannot be recovered by changing regions. It neither
-confirms region health nor changes endpoint/partition availability or hedge-win
-counters. Both hedge legs treat it as terminal, including a metadata secondary;
-the primary-authoritative rule continues to apply to regional service replies.
-The fill ends and discards partial progress. A later lookup may try a new fill.
-Caller deadline expiry remains the separate `408/20008`; non-timeout credential
-failures retain their existing `401/20402` cause.
 
 ### 449 — Retry With
 

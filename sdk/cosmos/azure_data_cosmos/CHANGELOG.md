@@ -15,8 +15,7 @@
 
 ### Bugs Fixed
 
-- Keep shared partition topology loading independent of caller deadlines and cancellation, so other callers can reuse completed pages without restarting the fill. ([#5603](https://github.com/Azure/azure-sdk-for-rust/pull/5603))
-- Bound shared partition topology authorization by the configured metadata request timeout so stalled credentials cannot retain a client indefinitely. Expiry returns client-generated 408/20403 without sending the request, retrying in another region, or changing regional health. ([#5603](https://github.com/Azure/azure-sdk-for-rust/pull/5603))
+- Keep shared partition topology loading independent of caller deadlines and cancellation, so other callers can reuse completed pages without restarting the fill. Token acquisition remains unbounded; a stalled credential can retain the underlying driver indefinitely. ([#5603](https://github.com/Azure/azure-sdk-for-rust/pull/5603))
 - Retain partition-key-range pages across HTTP 429 retries, bypassing configured throttle caps until success, a non-429 result, deadline, or cancellation; persistent throttling without a deadline or cancellation can wait indefinitely, while joined callers keep independent deadlines. ([#5595](https://github.com/Azure/azure-sdk-for-rust/pull/5595))
 - Report query-page deserialization failures in operation-level diagnostics while preserving request statuses and charges. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Restore checkpoint-owned change-feed starts, preserve round-robin progress across resumes, and correctly scope hierarchical-prefix feeds across overlapping partitions. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))

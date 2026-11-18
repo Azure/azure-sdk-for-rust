@@ -614,7 +614,7 @@ The wrapper's error surface is built on two complementary types — a **packed `
 > - **Header accessors (`activity_id`, `session_token`, `etag`, retry-after) do not live on `CosmosError`.** They are reachable via `err.response().headers()` when a wire response was received. The wrapper exposes them as `cosmos_error_*` convenience accessors that internally walk through `cosmos_error_response(e)`; they return NULL / -1 for non-wire errors (transport, client, configuration).
 > - **Backtrace tuning is process-global, not per-runtime / per-driver.** The driver exposes `error::set_backtrace_options(BacktraceOptions { max_captures_per_second, max_resolutions_per_second })` as a free function, not as a `CosmosDriverRuntimeBuilder` / `CosmosDriverBuilder` method. The wrapper therefore exposes a single `cosmos_set_backtrace_options(captures, resolutions)` entry at module scope instead of the per-runtime / per-driver setters earlier drafts described. See §6.4.
 >
-> Sub-status synthetic codes (`20003`, `20008`, `20010..=20015`, `20020`, `20402..=20403`, `20912`, ...) are defined as `pub const` in the driver's substatus registry; the wrapper re-exports them verbatim through the `COSMOS_SUB_STATUS_*` constants described in §3.5.2.
+> Sub-status synthetic codes (`20003`, `20008`, `20010..=20015`, `20020`, `20402`, `20912`, ...) are defined as `pub const` on `SubStatusCode`; the wrapper re-exports them verbatim through the `COSMOS_SUB_STATUS_*` constants described in §3.5.2.
 
 #### 3.5.1 `cosmos_status_code_t`
 
@@ -756,7 +756,6 @@ void cosmos_error_free(cosmos_error_t *e);
 > - `TRANSPORT_HTTP2_INCOMPATIBLE = 20015`
 > - `SERIALIZATION_RESPONSE_BODY_INVALID = 20020`
 > - `AUTHENTICATION_TOKEN_ACQUISITION_FAILED = 20402`
-> - `AUTHENTICATION_TOKEN_ACQUISITION_TIMEOUT = 20403` (pre-send shared metadata signing timeout, HTTP 408; terminal without regional retries or health effects, distinct from caller deadline `20008`)
 >
 > Plus the `20912` "closed client" value the driver currently displays without a `pub const` (tracked in §9 Q17 below as a driver-side cleanup before the wrapper re-exports it). Earlier drafts of this spec listed `TRANSPORT_REQUEST_TIMEOUT`, `TRANSPORT_RESPONSE_TIMEOUT`, `TRANSPORT_RESPONSE_BODY_FAILED`, `TRANSPORT_TLS_FAILURE`, `SERIALIZATION_REQUEST_FAILED`, and `CONFIGURATION_INVALID` — those names are **not** on the merged `SubStatusCode` and have been removed; if a wrapper-side consumer needs a code for any of those concepts, it must be added to the driver first and then re-exported.
 
@@ -776,8 +775,6 @@ pub const COSMOS_SUB_STATUS_TRANSPORT_BODY_READ_FAILED:        u16 = SubStatusCo
 pub const COSMOS_SUB_STATUS_TRANSPORT_HTTP2_INCOMPATIBLE:      u16 = SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE.value();
 pub const COSMOS_SUB_STATUS_SERIALIZATION_RESPONSE_BODY_INVALID: u16 = SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID.value();
 pub const COSMOS_SUB_STATUS_AUTHENTICATION_TOKEN_ACQUISITION_FAILED: u16 = SubStatusCode::AUTHENTICATION_TOKEN_ACQUISITION_FAILED.value();
-pub const COSMOS_SUB_STATUS_AUTHENTICATION_TOKEN_ACQUISITION_TIMEOUT: u16 =
-    azure_data_cosmos_driver::error::status_codes::substatus::AUTHENTICATION_TOKEN_ACQUISITION_TIMEOUT.value();
 // Service-error substatus mirrors (LSN/session/etc.) emitted under the
 // same naming rule from the corresponding pub const SubStatusCode definitions.
 ```

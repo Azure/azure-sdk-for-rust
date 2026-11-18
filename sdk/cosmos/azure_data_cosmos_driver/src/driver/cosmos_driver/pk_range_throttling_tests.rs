@@ -22,11 +22,7 @@ use crate::{
     },
 };
 use async_trait::async_trait;
-use azure_core::{
-    credentials::{AccessToken, TokenCredential, TokenRequestOptions},
-    http::headers::Headers,
-    time::OffsetDateTime,
-};
+use azure_core::http::headers::Headers;
 use std::{
     collections::HashMap,
     sync::{
@@ -236,32 +232,6 @@ impl TransportClient for PageClient {
 #[derive(Debug)]
 struct PageFactory(Arc<PageClient>);
 
-#[derive(Debug, Default)]
-struct StallingCredential {
-    stall: AtomicBool,
-    stalled_calls: std::sync::atomic::AtomicUsize,
-    entered: tokio::sync::Notify,
-}
-
-#[async_trait]
-impl TokenCredential for StallingCredential {
-    async fn get_token(
-        &self,
-        _: &[&str],
-        _: Option<TokenRequestOptions<'_>>,
-    ) -> azure_core::Result<AccessToken> {
-        if self.stall.load(Ordering::SeqCst) {
-            self.stalled_calls.fetch_add(1, Ordering::SeqCst);
-            self.entered.notify_one();
-            std::future::pending::<()>().await;
-        }
-        Ok(AccessToken::new(
-            "test-token",
-            OffsetDateTime::now_utc() + Duration::from_secs(3600),
-        ))
-    }
-}
-
 impl HttpClientFactory for PageFactory {
     fn build(
         &self,
@@ -291,7 +261,6 @@ async fn setup_with_metadata_timeout(
         timeout,
         third_region,
         PartitionTopologyCacheMode::Lazy,
-        None,
     )
     .await
 }
@@ -302,7 +271,6 @@ async fn setup_with_topology_mode(
     timeout: Duration,
     third_region: bool,
     topology_mode: PartitionTopologyCacheMode,
-    credential: Option<Arc<dyn TokenCredential>>,
 ) -> (Arc<CosmosDriver>, Arc<PageClient>, ContainerReference) {
     let client = Arc::new(PageClient {
         attempts: Mutex::new(Vec::new()),
@@ -332,11 +300,10 @@ async fn setup_with_topology_mode(
         .build()
         .await
         .unwrap();
-    let endpoint = Url::parse("https://test.documents.azure.com/").unwrap();
-    let account = match credential {
-        Some(credential) => AccountReference::with_credential(endpoint, credential),
-        None => AccountReference::with_account_key(endpoint, "dGVzdA=="),
-    };
+    let account = AccountReference::with_account_key(
+        Url::parse("https://test.documents.azure.com/").unwrap(),
+        "dGVzdA==",
+    );
     let driver = runtime
         .create_driver(
             DriverOptions::builder(account.clone())
@@ -1006,7 +973,6 @@ async fn shared_eager_fill_survives_its_first_waiter_and_keeps_each_throttled_pa
             Duration::from_millis(100),
             false,
             PartitionTopologyCacheMode::Eager,
-            None,
         )
         .await;
         client.retry_after_ms.store(20, Ordering::SeqCst);
@@ -1229,124 +1195,6 @@ async fn dropping_the_driver_reclaims_shared_fills_even_during_a_transport_attem
         tokio::time::sleep(Duration::from_millis(50)).await;
         assert_eq!(client.attempts.lock().unwrap().len(), attempts);
     }
-}
-
-#[tokio::test]
-async fn stalled_pk_range_authorization_outlives_caller_but_releases_the_driver() {
-    for hedge in [false, true] {
-        let credential = Arc::new(StallingCredential::default());
-        let (driver, client, container) = setup_with_topology_mode(
-            hedge,
-            false,
-            Duration::from_millis(200),
-            false,
-            PartitionTopologyCacheMode::Lazy,
-            Some(credential.clone()),
-        )
-        .await;
-        credential.stall.store(true, Ordering::SeqCst);
-        let mut operation_options = options(0, Duration::ZERO, hedge);
-        operation_options.max_failover_retry_count = Some(3);
-        operation_options.end_to_end_latency_policy = Some(Duration::from_millis(20).into());
-        let mut waiter = Box::pin(driver.load_session_token_routing_map(
-            &container,
-            operation_options,
-            Some(Instant::now() + Duration::from_millis(20)),
-        ));
-        tokio::select! {
-            result = &mut waiter => panic!("fill completed before signing stalled: {result:?}"),
-            () = credential.entered.notified() => {}
-        }
-        assert_eq!(
-            waiter.await.unwrap_err().status(),
-            crate::error::CosmosStatus::from_parts(
-                azure_core::http::StatusCode::RequestTimeout,
-                Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
-            )
-        );
-        assert!(client.attempts.lock().unwrap().is_empty());
-        assert!(driver
-            .pk_range_cache
-            .cached_routing_map(&container)
-            .await
-            .unwrap()
-            .is_none());
-        let weak = Arc::downgrade(&driver);
-        drop(driver);
-        assert!(weak.upgrade().is_some(), "the fill must outlive its caller");
-        tokio::time::timeout(Duration::from_secs(2), async {
-            while weak.upgrade().is_some() {
-                tokio::task::yield_now().await;
-            }
-        })
-        .await
-        .expect("stalled authorization must release the last driver reference");
-    }
-}
-
-#[tokio::test]
-async fn stalled_pk_range_authorization_terminates_and_allows_a_later_fill() {
-    let credential = Arc::new(StallingCredential::default());
-    let (driver, client, container) = setup_with_topology_mode(
-        false,
-        false,
-        Duration::from_millis(100),
-        false,
-        PartitionTopologyCacheMode::Lazy,
-        Some(credential.clone()),
-    )
-    .await;
-    credential.stall.store(true, Ordering::SeqCst);
-    let mut operation_options = options(0, Duration::ZERO, false);
-    operation_options.max_failover_retry_count = Some(3);
-    let error = tokio::time::timeout(
-        Duration::from_secs(2),
-        driver.load_session_token_routing_map(&container, operation_options, None),
-    )
-    .await
-    .expect("stalled authorization must fail without a caller deadline")
-    .unwrap_err();
-    assert_eq!(
-        error.status(),
-        crate::error::status_codes::AUTHENTICATION_TOKEN_ACQUISITION_TIMEOUT
-    );
-    assert!(!error.is_from_wire());
-    assert!(!error.status().is_transient());
-    let core_error: azure_core::Error = error.into();
-    assert_eq!(*core_error.kind(), azure_core::error::ErrorKind::Credential);
-    assert_eq!(
-        credential.stalled_calls.load(Ordering::SeqCst),
-        1,
-        "signing must not trigger regional retries or hedging",
-    );
-    assert!(client.attempts.lock().unwrap().is_empty());
-    assert!(driver
-        .pk_range_cache
-        .cached_routing_map(&container)
-        .await
-        .unwrap()
-        .is_none());
-    credential.stall.store(false, Ordering::SeqCst);
-    assert_eq!(
-        driver
-            .load_session_token_routing_map(&container, OperationOptions::default(), None)
-            .await
-            .unwrap()
-            .unwrap()
-            .ranges()
-            .len(),
-        2
-    );
-    assert_eq!(
-        client
-            .attempts
-            .lock()
-            .unwrap()
-            .iter()
-            .map(|attempt| attempt.token.as_deref())
-            .collect::<Vec<_>>(),
-        [None, Some("page-1"), Some("page-2")]
-    );
 }
 
 #[tokio::test]

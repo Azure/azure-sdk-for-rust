@@ -723,7 +723,6 @@ pub mod error {
     pub type Result<T> = std::result::Result<T, CosmosError>;
     pub mod status_codes {
         pub const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: crate::error::CosmosStatus = _;
-        pub const AUTHENTICATION_TOKEN_ACQUISITION_TIMEOUT: crate::error::CosmosStatus = _;
         pub const CLIENT_BAD_REQUEST: crate::error::CosmosStatus = _;
         pub const CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED: crate::error::CosmosStatus = _;
         pub const CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW: crate::error::CosmosStatus = _;
@@ -817,7 +816,6 @@ pub mod error {
         pub mod substatus {
             pub const AAD_TOKEN_EXPIRED: crate::error::SubStatusCode = _;
             pub const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: crate::error::SubStatusCode = _;
-            pub const AUTHENTICATION_TOKEN_ACQUISITION_TIMEOUT: crate::error::SubStatusCode = _;
             pub const CHANNEL_CLOSED: crate::error::SubStatusCode = _;
             pub const CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED: crate::error::SubStatusCode = _;
             pub const CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE: crate::error::SubStatusCode = _;

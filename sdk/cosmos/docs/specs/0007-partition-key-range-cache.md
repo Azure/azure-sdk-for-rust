@@ -507,27 +507,22 @@ including its accumulated pages, active-page continuation, activity ID, and
 region pin. Only a complete, validated routing map is published.
 
 The shared fill does not inherit the initiating caller's end-to-end deadline.
-Each signing attempt, including token acquisition, has a cache-owned budget
-equal to the configured metadata request timeout; exhaustion returns client-generated
-`408/20403` (`AuthenticationTokenAcquisitionTimeout`) without sending the request.
-It is a terminal credential error, including for hedged fills: it does not trigger
-regional retries, endpoint/partition health effects, or hedge-win feedback. This
-cache-owned budget is distinct from caller-deadline expiry (`408/20008`).
-The failed fill discards partial progress; a later lookup can start a new fill.
-Ordinary credential failures retain their authorization-error classification.
-Transport attempts
-separately keep their configured metadata request timeouts. HTTP 429
+Transport attempts keep their configured metadata request timeouts. Signing and
+token acquisition have no SDK time limit; bounding credential preparation is
+future work. HTTP 429
 retries retain the same page and honor bounded backoff; batch diagnostics are
 discarded before the next retry. Non-429 failures keep the existing bounded
 pipeline retries, cold-recovery rules, and previous-map fallback.
 
 The cache owns an abort handle for each pending fill. Invalidating a container
 aborts that fill; dropping the cache aborts all remaining fills. Workers hold
-only weak driver references between bounded pipeline batches, never across the
-unbounded throttling/backoff loop. If the last client owner drops during an
-active batch, that batch may finish its bounded transport attempts and retries
-before releasing the driver; no new throttling batch keeps it alive. There is
-no worker-to-driver-to-worker ownership cycle.
+only weak driver references between pipeline batches, never across the unbounded
+throttling/backoff loop. An active batch holds a strong driver reference through
+signing and transport. A credential that never completes can therefore retain
+the driver and cache indefinitely after the last external client owner drops;
+the cache's drop-triggered abort cannot run while that reference is held.
+Explicit container invalidation can still abort the pending fill. Once signing
+completes, the batch's transport timeouts and retry limits apply as before.
 
 ## 7. Async Caching Infrastructure
 

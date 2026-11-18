@@ -2375,11 +2375,13 @@ impl CosmosDriver {
     ///
     /// # Retry Policy
     ///
-    /// Bounded pipeline batches preserve cold-read hedging and regional
+    /// Pipeline batches with bounded retry counts preserve cold-read hedging and regional
     /// failover, including 429/3092. Continuation pages stay region-pinned.
     /// An outer loop retries throttled pages with the same continuation,
     /// and activity ID, dropping batch diagnostics each time. The shared fill
     /// has no caller deadline; individual transport attempts remain bounded.
+    /// Signing has no SDK timeout, so a stalled credential can retain the driver
+    /// indefinitely; bounding credential preparation is deferred.
     ///
     /// Permanent errors (401 Unauthorized, 403 Forbidden, 404 NotFound) are
     /// terminal and returned to the caller.

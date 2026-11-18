@@ -15,8 +15,7 @@
 
 ### Bugs Fixed
 
-- Keep shared partition-key-range fills running when an initiating caller times out or cancels, preserving pagination progress for other callers and reclaiming workers when the cache is disposed. ([#5603](https://github.com/Azure/azure-sdk-for-rust/pull/5603))
-- Bound shared partition-key-range authorization by the configured metadata request timeout so stalled credentials cannot retain a driver indefinitely. Expiry returns client-generated 408/20403 without sending the request, retrying in another region, or changing regional health. ([#5603](https://github.com/Azure/azure-sdk-for-rust/pull/5603))
+- Keep shared partition-key-range fills running when an initiating caller times out or cancels, preserving pagination progress for other callers and reclaiming workers when the cache is disposed. Token acquisition remains unbounded; a stalled credential can retain the driver indefinitely. ([#5603](https://github.com/Azure/azure-sdk-for-rust/pull/5603))
 - Retain partition-key-range pages across 429 retries regardless of throttling caps, until success, a non-429 result, deadline, or cancellation; persistent throttling can wait indefinitely without a deadline or cancellation. ([#5595](https://github.com/Azure/azure-sdk-for-rust/pull/5595))
 - Gateway V2 now loads lazy partition topology on demand to scope explicit compound session tokens; topology-loading failures propagate, while unavailable safe scoping omits the token and downgrades Session consistency to Eventual for that attempt, without a read-your-writes guarantee. ([#5585](https://github.com/Azure/azure-sdk-for-rust/pull/5585))
 - Replace stale change-feed start headers, retain starts and polling positions in checkpoints, and preserve hierarchical-prefix leaf bounds on both gateway transports. Invalid keyed change feeds return errors instead of panicking during planning. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
