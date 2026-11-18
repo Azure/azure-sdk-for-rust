@@ -838,7 +838,7 @@ mod tests {
             policy.vector_embeddings[0].distance_function.as_deref(),
             Some("euclidean")
         );
-        // Unmodeled fields round-trip to the query planner unchanged.
+        // Fields the driver does not model round-trip to the query planner unchanged.
         assert_eq!(serde_json::to_value(policy).unwrap(), policy_json);
         assert!(make_container_reference()
             .vector_embedding_policy()
