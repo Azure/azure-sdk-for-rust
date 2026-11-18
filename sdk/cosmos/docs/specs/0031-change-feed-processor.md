@@ -510,38 +510,3 @@ waiting while other leases are tried and the failure is reported separately.
 **Open: health observation.** Define how the SDK exposes persistent failures
 and recovery status; a pending receive or local running flag is not proof of
 healthy processing.
-
-## 9. Native and GoV2 integration requirements
-
-**Open: the C-ABI contract and Go public API require a separate design pass.**
-The Rust driver supplies the processing boundary; each language SDK owns its
-application handler, deserialization, and idiomatic configuration. This
-proposal does not define native function signatures or Go public types.
-
-The integration must establish:
-
-| Area | Required contract |
-| --- | --- |
-| Completion delivery | Reuse the existing native completion-queue type and GoV2 client reactor, allowing compatible workers and point operations to share a queue. Correlate each submission with its completion; distinguish rejection, error, end-of-delivery, batch, and acknowledgment results. |
-| Worker lifetime | Define creation, startup, graceful stop, forced cleanup, and release of each processor. Each worker retains its own driver distributor and ready-lease queue. Stopping one worker must not shut down the client's shared completion infrastructure. |
-| Batch ownership | Define payload lifetime and the single-use acknowledgment state associated with a delivered batch and acquisition. Release abandoned or late batches without accepting unprocessed progress. Decide whether common completion ownership APIs suffice before introducing new extraction or release functions. |
-| Acknowledgment | Expose one policy-controlled acknowledgment operation. Eager success confirms durable persistence; Deferred success confirms in-memory acceptance for later persistence. Return status/error, not another batch. Report later Deferred persistence failures separately. |
-| Cancellation and cleanup | Define how canceling a Go wait affects pending native work and handler cancellation. Existing GoV2 point-operation cancellation stops waiting, not native execution. Keep resources valid until completion delivery or disposal finishes, and keep completion delivery active during graceful drain. |
-| Capacity and progress | Bound outstanding CFP receives and retained batches without starving point operations, acknowledgment, or shutdown. Run application handlers outside the shared reactor. Define admission and cleanup behavior under saturation. |
-
-Configuration must cover the same dimensions as the Rust SDK: source and lease
-storage, workload/worker identity, feed mode and initial position, checkpoint
-policy, and tuning options. Keep application handlers in Go; applications
-should not manage driver batches, native handles, or manual acknowledgments.
-
-GoV2's existing
-[point-operation adapter](https://github.com/Azure/azure-sdk-for-go/blob/64e45360ec225bb2280e4ca4cdf9a087fc3fe644/sdk/data/azcosmos/operation_native.go)
-and [completion reactor](https://github.com/Azure/azure-sdk-for-go/blob/64e45360ec225bb2280e4ca4cdf9a087fc3fe644/sdk/data/azcosmos/reactor_native.go)
-are integration precedents, not proof that their current completion payloads
-already support CFP.
-
-Validate the eventual contract end to end with multiple workers and point
-operations sharing completion infrastructure. Include pending idle receives,
-handler failure, Eager and Deferred acknowledgment, cancellation with late
-results, and shutdown under saturation. Native layouts, ownership operations,
-Go signatures, and background-error reporting remain unresolved.
