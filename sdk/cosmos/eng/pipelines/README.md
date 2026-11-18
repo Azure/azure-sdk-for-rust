@@ -92,15 +92,6 @@ jobs and builds. Unique database names prevent resource collisions, but do not
 isolate metadata capacity. A metadata `429/3200` is not an item-throughput
 shortage; increasing RU/s is not a remedy.
 
-The E2E live matrices explicitly select `AZURE_SDK_TEST_PACKAGE=azure_data_cosmos`
-and `AZURE_SDK_TEST_TARGET=e2e_tests`. `Test-Packages.ps1` then runs that integration
-target with the existing feature set, profile setup, failure handling, and nightly
-JSON/JUnit reporting. It does not repeat all package targets in every E2E profile.
-Ordinary live jobs still run the full package suites, including the intentional
-real-account comparisons in the in-memory emulator target. Build jobs retain
-unit, documentation, example, and benchmark coverage. Both selectors are required;
-an unknown package or Cargo test target fails rather than falling back or skipping.
-
 Fixed-account E2E fixtures use the database already created by account provisioning
 (`database` in the account configuration, default `shared-test-db`). They still
 create unique containers and clean up only containers they successfully created.
@@ -109,8 +100,8 @@ conflicting container creation fail explicitly. Non-fixed fixtures and the
 explicit database/container lifecycle scenarios retain their existing resource
 creation/deletion contracts.
 
-This reduces duplicate setup across every profile job/build; it is not a global
-mutex or a guarantee against arbitrary account load. All SDK retry bounds,
+Reusing the provisioned database reduces database lifecycle requests; it is not
+a global mutex or a guarantee against arbitrary account load. All SDK retry bounds,
 backoff, operation deadlines, and 429 assertions remain unchanged. Setup errors
 identify database creation, container creation, metadata resolution, or data-plane
 readiness so remaining throttling can be attributed to its actual phase.
