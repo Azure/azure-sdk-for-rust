@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `CosmosOperationKindDeleteByPartitionKey` through the existing operation submission and completion APIs.
 - Added `cosmos_read_many_request_init` and `cosmos_read_many_open_submit` with versioned request records for key/id or partition selections, including hierarchical prefixes and optional parameterized filters, returning paged results through the existing native cursor APIs without durable checkpoint/resume support. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Added a driver option for disabling default-on resource-name validation, including item names supplied to Create and Upsert, when compatibility requires it. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
 

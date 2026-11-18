@@ -285,6 +285,9 @@ impl CosmosOperation {
             (OperationType::Read, ResourceType::DocumentCollection) => "read_container",
             (OperationType::Replace, ResourceType::DocumentCollection) => "replace_container",
             (OperationType::Delete, ResourceType::DocumentCollection) => "delete_container",
+            (OperationType::DeleteByPartitionKey, ResourceType::DocumentCollection) => {
+                "begin_delete_by_partition_key"
+            }
             (OperationType::Query, ResourceType::DocumentCollection)
             | (OperationType::SqlQuery, ResourceType::DocumentCollection) => "query_containers",
             (OperationType::ReadFeed, ResourceType::DocumentCollection) => "read_all_containers",
@@ -341,7 +344,11 @@ impl CosmosOperation {
     /// Cosmos DB REST API POSTs these to the collection feed. All other
     /// operations use the standard resource paths.
     pub(crate) fn compute_resource_paths(&self) -> crate::models::ResourcePaths {
-        if self.uses_feed_paths() {
+        if self.operation_type == OperationType::DeleteByPartitionKey {
+            self.resource_reference
+                .compute_paths()
+                .with_operation_suffix("/operations/partitionkeydelete")
+        } else if self.uses_feed_paths() {
             self.resource_reference.compute_feed_paths()
         } else {
             self.resource_reference.compute_paths()
@@ -363,6 +370,19 @@ impl CosmosOperation {
     ) -> crate::error::Result<()> {
         self.resource_reference
             .validate_addressing(!self.uses_feed_paths())?;
+        if self.requires_complete_partition_key()
+            && !self
+                .partition_key()
+                .zip(self.container())
+                .is_some_and(|(key, container)| {
+                    container.partition_key_definition().is_complete(key)
+                })
+        {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+                .with_message("operation requires a complete logical partition key")
+                .build());
+        }
         if validate_resource_names {
             self.resource_reference.validate_resource_names()?;
             if self.operation_type == OperationType::Batch {
@@ -423,6 +443,10 @@ impl CosmosOperation {
     /// Returns the partition key for this operation, if applicable.
     pub fn partition_key(&self) -> Option<&PartitionKey> {
         self.target.as_ref().and_then(|t| t.partition_key())
+    }
+
+    fn requires_complete_partition_key(&self) -> bool {
+        matches!(self.operation_type, OperationType::DeleteByPartitionKey)
     }
 
     /// Returns `true` if this is a change feed request.
@@ -1121,6 +1145,28 @@ impl CosmosOperation {
         Self::for_item(OperationType::Delete, item)
     }
 
+    /// Creates an operation that starts asynchronously deleting items with the specified partition key.
+    ///
+    /// Submit this operation through
+    /// [`CosmosDriver::execute_singleton_operation`](crate::driver::CosmosDriver::execute_singleton_operation).
+    /// Specify every component of the container's logical partition key; prefixes
+    /// aren't supported.
+    ///
+    /// Successful execution confirms initiation, not completed deletion. Physical
+    /// deletion may take several hours, and there's no way to monitor progress.
+    /// The service attempts to hide affected items from reads and queries, but
+    /// some aggregate queries may still include them until deletion completes.
+    ///
+    /// Deletion consumes the same request units (RUs) as deleting the items
+    /// individually. Consider whether background deletion meets your requirements.
+    pub fn delete_by_partition_key(
+        container: ContainerReference,
+        partition_key: PartitionKey,
+    ) -> Self {
+        let target = FeedRange::for_partition(partition_key, container.partition_key_definition());
+        Self::new(OperationType::DeleteByPartitionKey, container, Some(target))
+    }
+
     /// Executes a transactional batch of operations against a single partition.
     ///
     /// All operations in the batch target the same `partition_key` and are
@@ -1374,7 +1420,7 @@ impl CosmosOperation {
     /// shard retry in the transport pipeline.
     pub fn allows_ambiguous_outcome_retry(&self) -> bool {
         match self.operation_type {
-            OperationType::Execute => false,
+            OperationType::Execute | OperationType::DeleteByPartitionKey => false,
             OperationType::Patch => self.patch_retry_safe.unwrap_or(false),
             _ => true,
         }
@@ -1504,6 +1550,109 @@ mod tests {
             "testcontainer_rid",
             &test_container_props(),
         )
+    }
+
+    #[test]
+    fn delete_by_partition_key_preserves_container_signing_link() {
+        for (container, path, signing_link) in [
+            (
+                test_container(),
+                "/dbs/testdb/colls/testcontainer/operations/partitionkeydelete",
+                "dbs/testdb/colls/testcontainer",
+            ),
+            (
+                test_container_by_rid(),
+                "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=/operations/partitionkeydelete",
+                "lx1balxjyz8=",
+            ),
+        ] {
+            let operation = CosmosOperation::delete_by_partition_key(container, "tenant".into());
+            operation.validate_addressing(true).unwrap();
+            let paths = operation.compute_resource_paths();
+            assert_eq!(paths.request_path(), path);
+            assert_eq!(paths.signing_link(), signing_link);
+            assert_eq!(operation.resource_type().path_segment(), "colls");
+            assert_eq!(
+                operation.operation_type().http_method(),
+                azure_core::http::Method::Post
+            );
+            assert_eq!(
+                operation.db_operation_name(),
+                Some("begin_delete_by_partition_key")
+            );
+            assert_eq!(
+                operation.partition_key(),
+                Some(&PartitionKey::from("tenant"))
+            );
+            assert!(operation.body().is_none());
+            assert!(!operation.is_read_only());
+            assert!(!operation.is_idempotent());
+            assert!(!operation.allows_ambiguous_outcome_retry());
+            assert!(!operation.operation_type().is_feed());
+            assert!(operation.operation_type().routes_to_write_endpoints());
+            assert!(operation
+                .resource_type()
+                .is_partitioned(operation.operation_type()));
+        }
+    }
+
+    #[test]
+    fn delete_by_partition_key_rejects_incomplete_and_excess_keys() {
+        let mut properties = test_container_props();
+        properties.partition_key = ("/tenant", "/user").into();
+        let container = ContainerReference::new(
+            test_account(),
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "testcontainer_rid",
+            &properties,
+        );
+        for key in [
+            PartitionKey::from("tenant"),
+            PartitionKey::from(("tenant", "user", "extra")),
+        ] {
+            let operation = CosmosOperation::delete_by_partition_key(container.clone(), key);
+            assert_eq!(
+                operation.validate_addressing(false).unwrap_err().status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST,
+            );
+        }
+        CosmosOperation::delete_by_partition_key(container, ("tenant", "user").into())
+            .validate_addressing(false)
+            .unwrap();
+    }
+
+    #[test]
+    fn complete_partition_key_requirement_rejects_missing_key_but_allows_query_prefixes() {
+        let container = test_container();
+        let mut operation =
+            CosmosOperation::delete_by_partition_key(container.clone(), "tenant".into());
+        operation.target = None;
+        assert_eq!(
+            operation.validate_addressing(false).unwrap_err().status(),
+            crate::error::status_codes::CLIENT_BAD_REQUEST,
+        );
+
+        let mut properties = test_container_props();
+        properties.partition_key = ("/tenant", "/user").into();
+        let container = ContainerReference::new(
+            test_account(),
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "testcontainer_rid",
+            &properties,
+        );
+        let query = CosmosOperation::query_items(
+            container.clone(),
+            Some(FeedRange::for_partition(
+                "tenant".into(),
+                container.partition_key_definition(),
+            )),
+        );
+        assert!(!query.requires_complete_partition_key());
+        query.validate_addressing(false).unwrap();
     }
 
     #[test]

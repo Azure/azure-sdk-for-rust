@@ -741,6 +741,11 @@ pub enum CosmosOperationKind {
     CosmosOperationKindDeleteItem = 23,
     /// `CosmosOperation::patch_item` — requires `container` + `partition_key` + `item_id` + body.
     CosmosOperationKindPatchItem = 24,
+    /// [`CosmosOperation::delete_by_partition_key`] requires `container` and a
+    /// complete partition key, without an item ID or request body.
+    ///
+    /// Completion reports initiation, not completed background deletion.
+    CosmosOperationKindDeleteByPartitionKey = 25,
 }
 
 impl CosmosOperationKind {
@@ -779,6 +784,7 @@ impl CosmosOperationKind {
             22 => Self::CosmosOperationKindReplaceItem,
             23 => Self::CosmosOperationKindDeleteItem,
             24 => Self::CosmosOperationKindPatchItem,
+            25 => Self::CosmosOperationKindDeleteByPartitionKey,
             _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
         })
     }
@@ -846,9 +852,9 @@ pub struct CosmosOperationRequest {
     /// kinds; otherwise NULL.
     pub resource_link: CosmosStringView,
 
-    /// Partition key handle. Required for item-scope, `read_all_items`, and
-    /// `batch` (unless the inline `partition_key_components` array is supplied
-    /// instead); otherwise NULL.
+    /// Partition key handle. Required for item-scope, `read_all_items`, `batch`,
+    /// and `delete_by_partition_key` (unless the inline `partition_key_components`
+    /// array is supplied instead); otherwise NULL.
     pub partition_key: *const PartitionKeyHandle,
     /// Inline partition-key components, assembled by the host in one array so
     /// no separate partition-key construction call is needed. When
@@ -1155,6 +1161,11 @@ unsafe fn build_operation(
             let container = require_container(req)?;
             let pk = require_partition_key(req)?;
             CosmosOperation::batch(container, pk)
+        }
+        K::CosmosOperationKindDeleteByPartitionKey => {
+            let container = require_container(req)?;
+            let pk = require_partition_key(req)?;
+            CosmosOperation::delete_by_partition_key(container, pk)
         }
 
         // ── Item-scope ───────────────────────────────────────────────────
@@ -1864,6 +1875,10 @@ mod tests {
         assert_eq!(K::from_i32(24), Ok(K::CosmosOperationKindPatchItem));
         assert_eq!(
             K::from_i32(25),
+            Ok(K::CosmosOperationKindDeleteByPartitionKey)
+        );
+        assert_eq!(
+            K::from_i32(26),
             Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
         );
         assert_eq!(

@@ -25,6 +25,7 @@ pub(crate) enum OperationType {
     ReadContainer,
     ReplaceContainer,
     DeleteContainer,
+    DeleteByPartitionKey,
     ReadPKRanges,
     ReadFeedItems,
     Create,
@@ -471,6 +472,15 @@ fn resolve_operation(
             OperationType::DeleteContainer
         }
 
+        ("POST", 6)
+            if segments[0] == "dbs"
+                && segments[2] == "colls"
+                && segments[4] == "operations"
+                && segments[5] == "partitionkeydelete" =>
+        {
+            OperationType::DeleteByPartitionKey
+        }
+
         // GET /dbs/{db}/colls/{coll}/pkranges → ReadPKRanges
         ("GET", 5)
             if segments[0] == "dbs" && segments[2] == "colls" && segments[4] == "pkranges" =>
@@ -637,6 +647,23 @@ mod tests {
         let req = make_request("POST", "/dbs");
         let parsed = parse_request(&req);
         assert_eq!(parsed.operation, OperationType::CreateDatabase);
+    }
+
+    #[test]
+    fn delete_by_partition_key_requires_post_and_exact_suffix() {
+        let path = "/dbs/db/colls/coll/operations/partitionkeydelete";
+        let request = make_request("POST", path);
+        let parsed = parse_request(&request);
+        assert_eq!(parsed.operation, OperationType::DeleteByPartitionKey);
+        assert_eq!(parsed.db_id.as_deref(), Some("db"));
+        assert_eq!(parsed.coll_id.as_deref(), Some("coll"));
+        assert!(parsed.doc_id.is_none());
+        for method in ["GET", "DELETE"] {
+            assert!(matches!(
+                parse_request(&make_request(method, path)).operation,
+                OperationType::Unsupported(_),
+            ));
+        }
     }
 
     #[test]

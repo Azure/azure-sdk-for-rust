@@ -1074,6 +1074,9 @@ impl From<OperationType> for RntbdOperationType {
             OperationType::HeadFeed => 0x0012,
             OperationType::Upsert => 0x0013,
             OperationType::Batch => 0x0025,
+            OperationType::DeleteByPartitionKey => {
+                unreachable!("partition-key deletion must use the standard gateway")
+            }
             // Distributed transactions do not use the thin-client RNTBD
             // encoder; they route through the standard gateway coordinator.
             #[cfg(feature = "unstable_dtx")]

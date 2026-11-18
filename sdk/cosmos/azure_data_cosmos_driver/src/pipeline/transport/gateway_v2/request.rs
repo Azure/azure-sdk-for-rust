@@ -157,6 +157,9 @@ fn proxy_operation_type_name(op: OperationType) -> &'static str {
         OperationType::HeadFeed => "HeadFeed",
         OperationType::Execute => "ExecuteJavaScript",
         OperationType::Patch => "Patch",
+        OperationType::DeleteByPartitionKey => {
+            unreachable!("partition deletion must not reach Gateway 2.0 dispatch")
+        }
         // Distributed transactions never reach Gateway 2.0 dispatch (rejected
         // by `is_operation_supported_by_gateway_v2`); they route through the
         // standard gateway coordinator.

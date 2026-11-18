@@ -50,6 +50,11 @@ pub(crate) struct ResourcePaths {
 }
 
 impl ResourcePaths {
+    pub(crate) fn with_operation_suffix(mut self, suffix: &str) -> Self {
+        self.buf.push_str(suffix);
+        self
+    }
+
     fn empty() -> Self {
         Self {
             buf: String::new(),

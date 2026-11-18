@@ -29,7 +29,7 @@ pub use batch::{
 };
 pub use change_feed::{ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom};
 pub(crate) use client::CosmosClientOptions;
-pub use container::{ContainerClientOptions, ReadContainerOptions};
+pub use container::{ContainerClientOptions, DeleteByPartitionKeyOptions, ReadContainerOptions};
 #[cfg(feature = "control_plane")]
 pub use container::{
     CreateContainerOptions, DeleteContainerOptions, QueryContainersOptions, ReplaceContainerOptions,

@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added the container-scoped `CosmosOperation::delete_by_partition_key` operation and in-memory emulator support.
 - Added server-side PATCH filter predicates to `PatchInstructions` through the standard `condition` request envelope, with explicit rejection when execution resolves to client-side read-modify-write. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
 - Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Added non-resumable read-many plans with `ItemSelector`, `ItemScope`, and `ItemFilter` for key/id, partition, or feed-range selections, including hierarchical prefixes, parameterized selector filters, and bounded query batches. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
