@@ -20,9 +20,9 @@ cargo add azure_security_keyvault_keys
 
 ### Prerequisites
 
-* An [Azure subscription].
-* An existing Azure Key Vault. If you need to create an Azure Key Vault, you can use the Azure Portal or [Azure CLI].
-* Authorization to an existing Azure Key Vault using either [RBAC] (recommended) or [access control].
+- An [Azure subscription].
+- An existing Azure Key Vault. If you need to create an Azure Key Vault, you can use the Azure Portal or [Azure CLI].
+- Authorization to an existing Azure Key Vault using either [RBAC] (recommended) or [access control].
 
 If you use the Azure CLI, replace `<your-resource-group-name>` and `<your-key-vault-name>` with your own, unique names:
 
@@ -58,8 +58,8 @@ This section only applies if you are creating a Managed HSM. All data plane comm
 
 To activate your HSM you need:
 
-* Minimum 3 RSA key-pairs (maximum 10)
-* Specify minimum number of keys required to decrypt the security domain (quorum)
+- Minimum 3 RSA key-pairs (maximum 10)
+- Specify minimum number of keys required to decrypt the security domain (quorum)
 
 To activate the HSM you send at least 3 (maximum 10) RSA public keys to the HSM. The HSM encrypts the security domain with these keys and sends it back. Once this security domain is successfully downloaded, your HSM is ready to use. You also need to specify quorum, which is the minimum number of private keys required to decrypt the security domain.
 
@@ -104,6 +104,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+## Features
+
+- `test`: enables test support.
+- `unstable_fake`: enables experimental fake server transports and the `test` feature. These APIs are subject to change.
+
 ## Key concepts
 
 ### Key
@@ -122,12 +127,12 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 The following section provides several code snippets using a `KeyClient` like we [instantiated above](#instantiate-a-client):
 
-* [Create a key](#create-a-key)
-* [Retrieve a key](#retrieve-a-key)
-* [Update an existing key](#update-an-existing-key)
-* [Delete a key](#delete-a-key)
-* [List keys](#list-keys)
-* [Encrypt and decrypt](#encrypt-and-decrypt)
+- [Create a key](#create-a-key)
+- [Retrieve a key](#retrieve-a-key)
+- [Update an existing key](#update-an-existing-key)
+- [Delete a key](#delete-a-key)
+- [List keys](#list-keys)
+- [Encrypt and decrypt](#encrypt-and-decrypt)
 
 ### Create a key
 
@@ -281,6 +286,75 @@ let unwrapped = client
 assert!(matches!(unwrapped.result, Some(result) if result.eq(&dek)));
 ```
 
+## Testing with fakes
+
+Enable the crate's `test` and `unstable_fake` features in your test dependencies.
+`unstable_fake` enables `test` automatically, but both are shown explicitly below.
+The fake APIs are experimental and subject to change:
+
+```toml
+[dependencies]
+azure_security_keyvault_keys = "1"
+
+[dev-dependencies]
+azure_core = { version = "1", features = ["test", "unstable_fake"] }
+azure_security_keyvault_keys = { version = "1", features = ["test", "unstable_fake"] }
+async-trait = "0.1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+```
+
+Then implement just the fake server operations your test needs:
+
+```rust ignore testing_with_fakes
+use azure_core::{
+    http::{fake::ResponseExt as _, headers::Headers, AsyncRawResponse, StatusCode},
+    Result,
+};
+use azure_security_keyvault_keys::{
+    clients::fake::KeyServer,
+    models::{KeyClientGetKeyOptions, KeyType},
+    KeyClient,
+};
+use std::sync::Arc;
+
+#[derive(Debug)]
+struct FakeKeyServer;
+
+#[async_trait::async_trait]
+impl KeyServer for FakeKeyServer {
+    async fn get_key(
+        &self,
+        key_name: &str,
+        _options: Option<KeyClientGetKeyOptions<'_>>,
+    ) -> Result<AsyncRawResponse> {
+        assert_eq!(key_name, "my-key");
+        Ok(AsyncRawResponse::fake_with_bytes(
+            StatusCode::Ok,
+            Headers::new(),
+            r#"{"key":{"kty":"RSA"}}"#,
+        ))
+    }
+}
+
+let client = KeyClient::with_fake(
+    "https://my-vault.vault.azure.net",
+    Arc::new(FakeKeyServer),
+    None,
+)?;
+let key = client.get_key("my-key", None).await?.into_model()?;
+assert_eq!(key.key.and_then(|key| key.kty), Some(KeyType::Rsa));
+```
+
+### Fake service responses
+
+The experimental [fake server example] retrieves a key and simulates a service error
+without credentials or network access. Implement only the `KeyServer` operations
+your application needs; the client uses its normal response and error handling.
+
+```sh
+cargo run -p azure_security_keyvault_keys --example key_client_fake --features test,unstable_fake
+```
+
 ## Troubleshooting
 
 ### General
@@ -337,3 +411,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct]. For more i
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
 [access control]: https://learn.microsoft.com/azure/key-vault/general/assign-access-policy
 [RBAC]: https://learn.microsoft.com/azure/key-vault/general/rbac-guide
+[fake server example]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_keys/examples/key_client_fake.rs

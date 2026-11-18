@@ -120,12 +120,24 @@ fn scripted_client(steps: Vec<Step>) -> Result<(KeyVaultClient, Arc<Mutex<VecDeq
             .pop_front()
             .expect("unexpected request");
         assert_eq!(request.method(), step.method);
+        // Ignore the api-version value so tests don't need updating with each new api-version.
+        let mut url = request.url().clone();
+        let (api_versions, query): (Vec<_>, Vec<_>) = url
+            .query_pairs()
+            .into_owned()
+            .partition(|(name, _)| name == "api-version");
+        assert!(
+            matches!(api_versions.as_slice(), [(_, version)] if !version.is_empty()),
+            "expected a single api-version in {url}"
+        );
+        if query.is_empty() {
+            url.set_query(None);
+        } else {
+            url.query_pairs_mut().clear().extend_pairs(query);
+        }
         assert_eq!(
-            request.url().as_str(),
-            format!(
-                "https://management.azure.com{}?api-version=2026-05-15",
-                step.path
-            )
+            url.as_str(),
+            format!("https://management.azure.com{}", step.path)
         );
         assert_eq!(
             request.headers().get_optional_str(&AUTHORIZATION),
@@ -485,10 +497,10 @@ async fn synchronous_resource_completion_is_lazy_and_reuses_response() -> Result
 }
 
 #[tokio::test]
-async fn explicit_location_metadata_overrides_operation_resource_location() -> Result<()> {
+async fn operation_resource_location_is_used_for_final_get() -> Result<()> {
     let mut headers = Headers::new();
     headers.insert("operation-location", "/operations/1?api-version=other");
-    headers.insert("location", "/results/1?api-version=other");
+    headers.insert("location", "/header-result?api-version=other");
     headers.insert("retry-after-ms", "0");
     let initial = Step {
         method: Method::Put,
@@ -506,7 +518,7 @@ async fn explicit_location_metadata_overrides_operation_resource_location() -> R
             Method::Get,
             OPERATION,
             StatusCode::Ok,
-            br#"{"status":"Succeeded","resourceLocation":"/wrong-result"}"#,
+            br#"{"status":"Succeeded","resourceLocation":"/results/1"}"#,
         ),
         step(
             Method::Get,

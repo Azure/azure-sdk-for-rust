@@ -8,6 +8,8 @@
 
 - `default`
   - `azure_core/default`
+- `test`
+- `unstable_fake`
 
 ```rust
 #![crate_name = "azure_resourcemanager_keyvault"]
@@ -23,12 +25,16 @@ impl KeyVaultClient {
     pub fn get_key_vault_mhsm_private_endpoint_connections_client(&self) -> KeyVaultMHSMPrivateEndpointConnectionsClient;
     pub fn get_key_vault_mhsm_private_link_resources_client(&self) -> KeyVaultMHSMPrivateLinkResourcesClient;
     pub fn get_key_vault_mhsm_regions_client(&self) -> KeyVaultMHSMRegionsClient;
+    pub fn get_key_vault_network_security_perimeter_configurations_client(&self) -> KeyVaultNetworkSecurityPerimeterConfigurationsClient;
     pub fn get_key_vault_operations_client(&self) -> KeyVaultOperationsClient;
     pub fn get_key_vault_private_endpoint_connections_client(&self) -> KeyVaultPrivateEndpointConnectionsClient;
     pub fn get_key_vault_private_link_resources_client(&self) -> KeyVaultPrivateLinkResourcesClient;
     pub fn get_key_vault_secrets_client(&self) -> KeyVaultSecretsClient;
     pub fn get_key_vault_vaults_client(&self) -> KeyVaultVaultsClient;
     pub fn new(subscription_id: String, credential: Arc<dyn TokenCredential>, options: Option<KeyVaultClientOptions>) -> Result<Self>;
+}
+impl crate::KeyVaultClient {
+    pub fn with_fake<impl KeyVaultServer + ?Sized + 'static: KeyVaultServer + ?Sized + 'static>(endpoint: &str, server: Arc<impl KeyVaultServer + ?Sized + 'static>, subscription_id: String, options: Option<KeyVaultClientOptions>) -> Result<Self>;
 }
 #[derive(Clone, Debug)]
 pub struct KeyVaultClientOptions {
@@ -49,12 +55,16 @@ pub mod clients {
         pub fn get_key_vault_mhsm_private_endpoint_connections_client(&self) -> KeyVaultMHSMPrivateEndpointConnectionsClient;
         pub fn get_key_vault_mhsm_private_link_resources_client(&self) -> KeyVaultMHSMPrivateLinkResourcesClient;
         pub fn get_key_vault_mhsm_regions_client(&self) -> KeyVaultMHSMRegionsClient;
+        pub fn get_key_vault_network_security_perimeter_configurations_client(&self) -> KeyVaultNetworkSecurityPerimeterConfigurationsClient;
         pub fn get_key_vault_operations_client(&self) -> KeyVaultOperationsClient;
         pub fn get_key_vault_private_endpoint_connections_client(&self) -> KeyVaultPrivateEndpointConnectionsClient;
         pub fn get_key_vault_private_link_resources_client(&self) -> KeyVaultPrivateLinkResourcesClient;
         pub fn get_key_vault_secrets_client(&self) -> KeyVaultSecretsClient;
         pub fn get_key_vault_vaults_client(&self) -> KeyVaultVaultsClient;
         pub fn new(subscription_id: String, credential: Arc<dyn TokenCredential>, options: Option<KeyVaultClientOptions>) -> Result<Self>;
+    }
+    impl crate::KeyVaultClient {
+        pub fn with_fake<impl KeyVaultServer + ?Sized + 'static: KeyVaultServer + ?Sized + 'static>(endpoint: &str, server: Arc<impl KeyVaultServer + ?Sized + 'static>, subscription_id: String, options: Option<KeyVaultClientOptions>) -> Result<Self>;
     }
     #[derive(Clone, Debug)]
     pub struct KeyVaultClientOptions {
@@ -120,6 +130,14 @@ pub mod clients {
         pub fn list_by_subscription(&self, options: Option<KeyVaultManagedHsmsClientListBySubscriptionOptions<'_>>) -> Result<Pager<ManagedHsmListResult>>;
         pub fn list_deleted(&self, options: Option<KeyVaultManagedHsmsClientListDeletedOptions<'_>>) -> Result<Pager<DeletedManagedHsmListResult>>;
     }
+    pub struct KeyVaultNetworkSecurityPerimeterConfigurationsClient {
+    }
+    impl KeyVaultNetworkSecurityPerimeterConfigurationsClient {
+        pub fn endpoint(&self) -> &Url;
+        pub async fn get_configuration(&self, resource_group_name: &str, vault_name: &str, network_security_perimeter_configuration_name: &str, options: Option<KeyVaultNetworkSecurityPerimeterConfigurationsClientGetConfigurationOptions<'_>>) -> Result<Response<NetworkSecurityPerimeterConfiguration>>;
+        pub fn list_configurations(&self, resource_group_name: &str, vault_name: &str, options: Option<KeyVaultNetworkSecurityPerimeterConfigurationsClientListConfigurationsOptions<'_>>) -> Result<Pager<NetworkSecurityPerimeterConfigurationListResult>>;
+        pub async fn reconcile_configuration(&self, resource_group_name: &str, vault_name: &str, network_security_perimeter_configuration_name: &str, options: Option<KeyVaultNetworkSecurityPerimeterConfigurationsClientReconcileConfigurationOptions<'_>>) -> Result<Response<(), NoFormat>>;
+    }
     pub struct KeyVaultOperationsClient {
     }
     impl KeyVaultOperationsClient {
@@ -167,6 +185,98 @@ pub mod clients {
         pub async fn update(&self, resource_group_name: &str, vault_name: &str, parameters: RequestContent<VaultPatchParameters>, options: Option<KeyVaultVaultsClientUpdateOptions<'_>>) -> Result<Response<Vault>>;
         pub async fn update_access_policy(&self, resource_group_name: &str, vault_name: &str, operation_kind: AccessPolicyUpdateKind, parameters: RequestContent<VaultAccessPolicyParameters>, options: Option<KeyVaultVaultsClientUpdateAccessPolicyOptions<'_>>) -> Result<Response<VaultAccessPolicyParameters>>;
     }
+    #[cfg(all(feature = "test", feature = "unstable_fake"))]
+    pub mod fake {
+        #[async_trait]
+        pub trait KeyVaultKeysServer: Send + Sync {
+            async fn create_if_not_exist(&self, resource_group_name: &str, vault_name: &str, key_name: &str, parameters: RequestContent<models::KeyCreateParameters>, options: Option<models::KeyVaultKeysClientCreateIfNotExistOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get(&self, resource_group_name: &str, vault_name: &str, key_name: &str, options: Option<models::KeyVaultKeysClientGetOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get_version(&self, resource_group_name: &str, vault_name: &str, key_name: &str, key_version: &str, options: Option<models::KeyVaultKeysClientGetVersionOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list(&self, resource_group_name: &str, vault_name: &str, state: PagerState, options: Option<models::KeyVaultKeysClientListOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list_versions(&self, resource_group_name: &str, vault_name: &str, key_name: &str, state: PagerState, options: Option<models::KeyVaultKeysClientListVersionsOptions<'_>>) -> Result<AsyncRawResponse>;
+        }
+        #[async_trait]
+        pub trait KeyVaultMHSMPrivateEndpointConnectionsServer: Send + Sync {
+            async fn begin_delete(&self, resource_group_name: &str, name: &str, private_endpoint_connection_name: &str, state: PollerState, request: &Request, options: Option<models::KeyVaultMHSMPrivateEndpointConnectionsClientBeginDeleteOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get(&self, resource_group_name: &str, name: &str, private_endpoint_connection_name: &str, options: Option<models::KeyVaultMHSMPrivateEndpointConnectionsClientGetOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list_by_resource(&self, resource_group_name: &str, name: &str, state: PagerState, options: Option<models::KeyVaultMHSMPrivateEndpointConnectionsClientListByResourceOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn put(&self, resource_group_name: &str, name: &str, private_endpoint_connection_name: &str, properties: RequestContent<models::MHSMPrivateEndpointConnection>, options: Option<models::KeyVaultMHSMPrivateEndpointConnectionsClientPutOptions<'_>>) -> Result<AsyncRawResponse>;
+        }
+        #[async_trait]
+        pub trait KeyVaultMHSMPrivateLinkResourcesServer: Send + Sync {
+            async fn list_by_mhsm_resource(&self, resource_group_name: &str, name: &str, options: Option<models::KeyVaultMHSMPrivateLinkResourcesClientListByMhsmResourceOptions<'_>>) -> Result<AsyncRawResponse>;
+        }
+        #[async_trait]
+        pub trait KeyVaultMHSMRegionsServer: Send + Sync {
+            async fn list_by_resource(&self, resource_group_name: &str, name: &str, state: PagerState, options: Option<models::KeyVaultMHSMRegionsClientListByResourceOptions<'_>>) -> Result<AsyncRawResponse>;
+        }
+        #[async_trait]
+        pub trait KeyVaultManagedHsmKeysServer: Send + Sync {
+            async fn create_if_not_exist(&self, resource_group_name: &str, name: &str, key_name: &str, parameters: RequestContent<models::ManagedHsmKeyCreateParameters>, options: Option<models::KeyVaultManagedHsmKeysClientCreateIfNotExistOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get(&self, resource_group_name: &str, name: &str, key_name: &str, options: Option<models::KeyVaultManagedHsmKeysClientGetOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get_version(&self, resource_group_name: &str, name: &str, key_name: &str, key_version: &str, options: Option<models::KeyVaultManagedHsmKeysClientGetVersionOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list(&self, resource_group_name: &str, name: &str, state: PagerState, options: Option<models::KeyVaultManagedHsmKeysClientListOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list_versions(&self, resource_group_name: &str, name: &str, key_name: &str, state: PagerState, options: Option<models::KeyVaultManagedHsmKeysClientListVersionsOptions<'_>>) -> Result<AsyncRawResponse>;
+        }
+        #[async_trait]
+        pub trait KeyVaultManagedHsmsServer: Send + Sync {
+            async fn begin_create_or_update(&self, resource_group_name: &str, name: &str, parameters: RequestContent<models::ManagedHsm>, state: PollerState, request: &Request, options: Option<models::KeyVaultManagedHsmsClientBeginCreateOrUpdateOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn begin_delete(&self, resource_group_name: &str, name: &str, state: PollerState, request: &Request, options: Option<models::KeyVaultManagedHsmsClientBeginDeleteOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn begin_purge_deleted(&self, location: &str, name: &str, state: PollerState, request: &Request, options: Option<models::KeyVaultManagedHsmsClientBeginPurgeDeletedOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn begin_update(&self, resource_group_name: &str, name: &str, parameters: RequestContent<models::ManagedHsm>, state: PollerState, request: &Request, options: Option<models::KeyVaultManagedHsmsClientBeginUpdateOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn check_mhsm_name_availability(&self, mhsm_name: RequestContent<models::CheckMhsmNameAvailabilityParameters>, options: Option<models::KeyVaultManagedHsmsClientCheckMhsmNameAvailabilityOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get(&self, resource_group_name: &str, name: &str, options: Option<models::KeyVaultManagedHsmsClientGetOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get_deleted(&self, location: &str, name: &str, options: Option<models::KeyVaultManagedHsmsClientGetDeletedOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list_by_resource_group(&self, resource_group_name: &str, state: PagerState, options: Option<models::KeyVaultManagedHsmsClientListByResourceGroupOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list_by_subscription(&self, state: PagerState, options: Option<models::KeyVaultManagedHsmsClientListBySubscriptionOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list_deleted(&self, state: PagerState, options: Option<models::KeyVaultManagedHsmsClientListDeletedOptions<'_>>) -> Result<AsyncRawResponse>;
+        }
+        #[async_trait]
+        pub trait KeyVaultNetworkSecurityPerimeterConfigurationsServer: Send + Sync {
+            async fn get_configuration(&self, resource_group_name: &str, vault_name: &str, network_security_perimeter_configuration_name: &str, options: Option<models::KeyVaultNetworkSecurityPerimeterConfigurationsClientGetConfigurationOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list_configurations(&self, resource_group_name: &str, vault_name: &str, state: PagerState, options: Option<models::KeyVaultNetworkSecurityPerimeterConfigurationsClientListConfigurationsOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn reconcile_configuration(&self, resource_group_name: &str, vault_name: &str, network_security_perimeter_configuration_name: &str, options: Option<models::KeyVaultNetworkSecurityPerimeterConfigurationsClientReconcileConfigurationOptions<'_>>) -> Result<AsyncRawResponse>;
+        }
+        #[async_trait]
+        pub trait KeyVaultOperationsServer: Send + Sync {
+            async fn list(&self, state: PagerState, options: Option<models::KeyVaultOperationsClientListOptions<'_>>) -> Result<AsyncRawResponse>;
+        }
+        #[async_trait]
+        pub trait KeyVaultPrivateEndpointConnectionsServer: Send + Sync {
+            async fn begin_delete(&self, resource_group_name: &str, vault_name: &str, private_endpoint_connection_name: &str, state: PollerState, request: &Request, options: Option<models::KeyVaultPrivateEndpointConnectionsClientBeginDeleteOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get(&self, resource_group_name: &str, vault_name: &str, private_endpoint_connection_name: &str, options: Option<models::KeyVaultPrivateEndpointConnectionsClientGetOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list_by_resource(&self, resource_group_name: &str, vault_name: &str, state: PagerState, options: Option<models::KeyVaultPrivateEndpointConnectionsClientListByResourceOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn put(&self, resource_group_name: &str, vault_name: &str, private_endpoint_connection_name: &str, properties: RequestContent<models::PrivateEndpointConnection>, options: Option<models::KeyVaultPrivateEndpointConnectionsClientPutOptions<'_>>) -> Result<AsyncRawResponse>;
+        }
+        #[async_trait]
+        pub trait KeyVaultPrivateLinkResourcesServer: Send + Sync {
+            async fn list_by_vault(&self, resource_group_name: &str, vault_name: &str, options: Option<models::KeyVaultPrivateLinkResourcesClientListByVaultOptions<'_>>) -> Result<AsyncRawResponse>;
+        }
+        #[async_trait]
+        pub trait KeyVaultSecretsServer: Send + Sync {
+            async fn create_or_update(&self, resource_group_name: &str, vault_name: &str, secret_name: &str, parameters: RequestContent<models::SecretCreateOrUpdateParameters>, options: Option<models::KeyVaultSecretsClientCreateOrUpdateOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get(&self, resource_group_name: &str, vault_name: &str, secret_name: &str, options: Option<models::KeyVaultSecretsClientGetOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list(&self, resource_group_name: &str, vault_name: &str, state: PagerState, options: Option<models::KeyVaultSecretsClientListOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn update(&self, resource_group_name: &str, vault_name: &str, secret_name: &str, parameters: RequestContent<models::SecretPatchParameters>, options: Option<models::KeyVaultSecretsClientUpdateOptions<'_>>) -> Result<AsyncRawResponse>;
+        }
+        pub trait KeyVaultServer: Send + Sync + crate::clients::fake::KeyVaultKeysServer + crate::clients::fake::KeyVaultManagedHsmKeysServer + crate::clients::fake::KeyVaultManagedHsmsServer + crate::clients::fake::KeyVaultMHSMPrivateEndpointConnectionsServer + crate::clients::fake::KeyVaultMHSMPrivateLinkResourcesServer + crate::clients::fake::KeyVaultMHSMRegionsServer + crate::clients::fake::KeyVaultNetworkSecurityPerimeterConfigurationsServer + crate::clients::fake::KeyVaultOperationsServer + crate::clients::fake::KeyVaultPrivateEndpointConnectionsServer + crate::clients::fake::KeyVaultPrivateLinkResourcesServer + crate::clients::fake::KeyVaultSecretsServer + crate::clients::fake::KeyVaultVaultsServer {
+        }
+        #[async_trait]
+        pub trait KeyVaultVaultsServer: Send + Sync {
+            async fn begin_create_or_update(&self, resource_group_name: &str, vault_name: &str, parameters: RequestContent<models::VaultCreateOrUpdateParameters>, state: PollerState, request: &Request, options: Option<models::KeyVaultVaultsClientBeginCreateOrUpdateOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn begin_purge_deleted(&self, location: &str, vault_name: &str, state: PollerState, request: &Request, options: Option<models::KeyVaultVaultsClientBeginPurgeDeletedOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn check_name_availability(&self, vault_name: RequestContent<models::VaultCheckNameAvailabilityParameters>, options: Option<models::KeyVaultVaultsClientCheckNameAvailabilityOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn delete(&self, resource_group_name: &str, vault_name: &str, options: Option<models::KeyVaultVaultsClientDeleteOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get(&self, resource_group_name: &str, vault_name: &str, options: Option<models::KeyVaultVaultsClientGetOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get_deleted(&self, location: &str, vault_name: &str, options: Option<models::KeyVaultVaultsClientGetDeletedOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list(&self, state: PagerState, options: Option<models::KeyVaultVaultsClientListOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list_by_resource_group(&self, resource_group_name: &str, state: PagerState, options: Option<models::KeyVaultVaultsClientListByResourceGroupOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list_by_subscription(&self, state: PagerState, options: Option<models::KeyVaultVaultsClientListBySubscriptionOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list_deleted(&self, state: PagerState, options: Option<models::KeyVaultVaultsClientListDeletedOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn update(&self, resource_group_name: &str, vault_name: &str, parameters: RequestContent<models::VaultPatchParameters>, options: Option<models::KeyVaultVaultsClientUpdateOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn update_access_policy(&self, resource_group_name: &str, vault_name: &str, operation_kind: models::AccessPolicyUpdateKind, parameters: RequestContent<models::VaultAccessPolicyParameters>, options: Option<models::KeyVaultVaultsClientUpdateAccessPolicyOptions<'_>>) -> Result<AsyncRawResponse>;
+        }
+    }
 }
 pub mod models {
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
@@ -179,6 +289,38 @@ pub mod models {
         pub permissions: Option<Permissions>,
         #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
         pub tenant_id: Option<String>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
+    pub struct AccessRule {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub name: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub properties: Option<AccessRuleProperties>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
+    pub struct AccessRuleProperties {
+        #[serde(rename = "addressPrefixes", skip_serializing_if = "Option::is_none")]
+        pub address_prefixes: Option<Vec<String>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub direction: Option<super::AccessRuleDirection>,
+        #[serde(rename = "emailAddresses", skip_serializing_if = "Option::is_none")]
+        pub email_addresses: Option<Vec<String>>,
+        #[serde(rename = "fullyQualifiedDomainNames", skip_serializing_if = "Option::is_none")]
+        pub fully_qualified_domain_names: Option<Vec<String>>,
+        #[serde(rename = "networkSecurityPerimeters", skip_serializing_if = "Option::is_none")]
+        pub network_security_perimeters: Option<Vec<NetworkSecurityPerimeter>>,
+        #[serde(rename = "phoneNumbers", skip_serializing_if = "Option::is_none")]
+        pub phone_numbers: Option<Vec<String>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub subscriptions: Option<Vec<AccessRulePropertiesSubscription>>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
+    pub struct AccessRulePropertiesSubscription {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub id: Option<String>,
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     pub struct Action {
@@ -719,6 +861,21 @@ pub mod models {
     }
     impl KeyVaultManagedHsmsClientListDeletedOptions<'_> {
         pub fn into_owned(self) -> KeyVaultManagedHsmsClientListDeletedOptions<'static>;
+    }
+    #[derive(Clone, Debug, Default)]
+    pub struct KeyVaultNetworkSecurityPerimeterConfigurationsClientGetConfigurationOptions<'a> {
+        pub method_options: azure_core::http::ClientMethodOptions<'a>,
+    }
+    #[derive(Clone, Debug, Default)]
+    pub struct KeyVaultNetworkSecurityPerimeterConfigurationsClientListConfigurationsOptions<'a> {
+        pub method_options: azure_core::http::pager::PagerOptions<'a>,
+    }
+    impl KeyVaultNetworkSecurityPerimeterConfigurationsClientListConfigurationsOptions<'_> {
+        pub fn into_owned(self) -> KeyVaultNetworkSecurityPerimeterConfigurationsClientListConfigurationsOptions<'static>;
+    }
+    #[derive(Clone, Debug, Default)]
+    pub struct KeyVaultNetworkSecurityPerimeterConfigurationsClientReconcileConfigurationOptions<'a> {
+        pub method_options: azure_core::http::ClientMethodOptions<'a>,
     }
     #[derive(Clone, Debug, Default)]
     pub struct KeyVaultOperationsClientListOptions<'a> {
@@ -1354,6 +1511,72 @@ pub mod models {
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
+    pub struct NetworkSecurityPerimeter {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub location: Option<String>,
+        #[serde(rename = "perimeterGuid", skip_serializing_if = "Option::is_none")]
+        pub perimeter_guid: Option<String>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
+    pub struct NetworkSecurityPerimeterConfiguration {
+        #[serde(skip_serializing)]
+        pub id: Option<String>,
+        #[serde(skip_serializing)]
+        pub name: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub properties: Option<NetworkSecurityPerimeterConfigurationProperties>,
+        #[serde(rename = "systemData", skip_serializing)]
+        pub system_data: Option<SystemData>,
+        #[serde(rename = "type", skip_serializing)]
+        pub type_prop: Option<String>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
+    pub struct NetworkSecurityPerimeterConfigurationListResult {
+        #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
+        pub next_link: Option<String>,
+        #[serde(default)]
+        pub value: Vec<NetworkSecurityPerimeterConfiguration>,
+    }
+    #[async_trait]
+    impl Page for super::NetworkSecurityPerimeterConfigurationListResult {
+        type IntoIter = <Vec<NetworkSecurityPerimeterConfiguration> as IntoIterator>::IntoIter;
+        type Item = NetworkSecurityPerimeterConfiguration;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
+    pub struct NetworkSecurityPerimeterConfigurationProperties {
+        #[serde(rename = "networkSecurityPerimeter", skip_serializing_if = "Option::is_none")]
+        pub network_security_perimeter: Option<NetworkSecurityPerimeter>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub profile: Option<NetworkSecurityProfile>,
+        #[serde(rename = "provisioningIssues", skip_serializing)]
+        pub provisioning_issues: Option<Vec<ProvisioningIssue>>,
+        #[serde(rename = "provisioningState", skip_serializing)]
+        pub provisioning_state: Option<super::NetworkSecurityPerimeterConfigurationProvisioningState>,
+        #[serde(rename = "resourceAssociation", skip_serializing_if = "Option::is_none")]
+        pub resource_association: Option<ResourceAssociation>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
+    pub struct NetworkSecurityProfile {
+        #[serde(rename = "accessRules", skip_serializing_if = "Option::is_none")]
+        pub access_rules: Option<Vec<AccessRule>>,
+        #[serde(rename = "accessRulesVersion", skip_serializing_if = "Option::is_none")]
+        pub access_rules_version: Option<i32>,
+        #[serde(rename = "diagnosticSettingsVersion", skip_serializing_if = "Option::is_none")]
+        pub diagnostic_settings_version: Option<i32>,
+        #[serde(rename = "enabledLogCategories", skip_serializing_if = "Option::is_none")]
+        pub enabled_log_categories: Option<Vec<String>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub name: Option<String>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
     pub struct Operation {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub display: Option<OperationDisplay>,
@@ -1515,6 +1738,36 @@ pub mod models {
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
+    pub struct ProvisioningIssue {
+        #[serde(skip_serializing)]
+        pub name: Option<String>,
+        #[serde(skip_serializing)]
+        pub properties: Option<ProvisioningIssueProperties>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
+    pub struct ProvisioningIssueProperties {
+        #[serde(skip_serializing)]
+        pub description: Option<String>,
+        #[serde(rename = "issueType", skip_serializing)]
+        pub issue_type: Option<super::IssueType>,
+        #[serde(skip_serializing)]
+        pub severity: Option<super::Severity>,
+        #[serde(rename = "suggestedAccessRules", skip_serializing)]
+        pub suggested_access_rules: Option<Vec<AccessRule>>,
+        #[serde(rename = "suggestedResourceIds", skip_serializing)]
+        pub suggested_resource_ids: Option<Vec<String>>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
+    pub struct ResourceAssociation {
+        #[serde(rename = "accessMode", skip_serializing_if = "Option::is_none")]
+        pub access_mode: Option<super::ResourceAssociationAccessMode>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub name: Option<String>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
     pub struct ResourceListResult {
         #[serde(rename = "nextLink", skip_serializing_if = "Option::is_none")]
         pub next_link: Option<String>,
@@ -1655,6 +1908,13 @@ pub mod models {
         pub last_modified_by_type: Option<super::CreatedByType>,
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    pub struct TokenBindingParameters {
+        #[serde(rename = "minimumTokenBindingStrength", skip_serializing_if = "Option::is_none")]
+        pub minimum_token_binding_strength: Option<super::TokenBindingStrength>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub mode: Option<super::TokenBindingMode>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
     pub struct TrackedResource {
         #[serde(skip_serializing)]
@@ -1689,6 +1949,8 @@ pub mod models {
     pub struct Vault {
         #[serde(skip_serializing)]
         pub id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub identity: Option<ManagedServiceIdentity>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub location: Option<String>,
         #[serde(skip_serializing)]
@@ -1738,6 +2000,8 @@ pub mod models {
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     pub struct VaultCreateOrUpdateParameters {
         #[serde(skip_serializing_if = "Option::is_none")]
+        pub identity: Option<ManagedServiceIdentity>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub location: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub properties: Option<VaultProperties>,
@@ -1765,6 +2029,8 @@ pub mod models {
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     pub struct VaultPatchParameters {
         #[serde(skip_serializing_if = "Option::is_none")]
+        pub identity: Option<ManagedServiceIdentity>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub properties: Option<VaultPatchProperties>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tags: Option<std::collections::HashMap<String, String>>,
@@ -1779,6 +2045,8 @@ pub mod models {
         pub access_policies: Option<Vec<AccessPolicyEntry>>,
         #[serde(rename = "createMode", skip_serializing_if = "Option::is_none")]
         pub create_mode: Option<super::CreateMode>,
+        #[serde(rename = "enableCrossTenantAccessProtection", skip_serializing_if = "Option::is_none")]
+        pub enable_cross_tenant_access_protection: Option<bool>,
         #[serde(rename = "enablePurgeProtection", skip_serializing_if = "Option::is_none")]
         pub enable_purge_protection: Option<bool>,
         #[serde(rename = "enableRbacAuthorization", skip_serializing_if = "Option::is_none")]
@@ -1793,6 +2061,8 @@ pub mod models {
         pub enabled_for_template_deployment: Option<bool>,
         #[serde(rename = "networkAcls", skip_serializing_if = "Option::is_none")]
         pub network_acls: Option<NetworkRuleSet>,
+        #[serde(rename = "protectionKeysWrappingKey", skip_serializing_if = "Option::is_none")]
+        pub protection_keys_wrapping_key: Option<WrappingKeyConfiguration>,
         #[serde(rename = "publicNetworkAccess", skip_serializing_if = "Option::is_none")]
         pub public_network_access: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -1801,6 +2071,8 @@ pub mod models {
         pub soft_delete_retention_in_days: Option<i32>,
         #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
         pub tenant_id: Option<String>,
+        #[serde(rename = "tokenBindingParameters", skip_serializing_if = "Option::is_none")]
+        pub token_binding_parameters: Option<TokenBindingParameters>,
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     pub struct VaultProperties {
@@ -1808,6 +2080,8 @@ pub mod models {
         pub access_policies: Option<Vec<AccessPolicyEntry>>,
         #[serde(rename = "createMode", skip_serializing_if = "Option::is_none")]
         pub create_mode: Option<super::CreateMode>,
+        #[serde(rename = "enableCrossTenantAccessProtection", skip_serializing_if = "Option::is_none")]
+        pub enable_cross_tenant_access_protection: Option<bool>,
         #[serde(rename = "enablePurgeProtection", skip_serializing_if = "Option::is_none")]
         pub enable_purge_protection: Option<bool>,
         #[serde(rename = "enableRbacAuthorization", skip_serializing_if = "Option::is_none")]
@@ -1826,6 +2100,8 @@ pub mod models {
         pub network_acls: Option<NetworkRuleSet>,
         #[serde(rename = "privateEndpointConnections", skip_serializing)]
         pub private_endpoint_connections: Option<Vec<PrivateEndpointConnectionItem>>,
+        #[serde(rename = "protectionKeysWrappingKey", skip_serializing_if = "Option::is_none")]
+        pub protection_keys_wrapping_key: Option<WrappingKeyConfiguration>,
         #[serde(rename = "provisioningState", skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<super::VaultProvisioningState>,
         #[serde(rename = "publicNetworkAccess", skip_serializing_if = "Option::is_none")]
@@ -1836,6 +2112,8 @@ pub mod models {
         pub soft_delete_retention_in_days: Option<i32>,
         #[serde(rename = "tenantId", skip_serializing_if = "Option::is_none")]
         pub tenant_id: Option<String>,
+        #[serde(rename = "tokenBindingParameters", skip_serializing_if = "Option::is_none")]
+        pub token_binding_parameters: Option<TokenBindingParameters>,
         #[serde(rename = "vaultUri", skip_serializing_if = "Option::is_none")]
         pub vault_uri: Option<String>,
     }
@@ -1845,6 +2123,25 @@ pub mod models {
         pub id: Option<String>,
         #[serde(rename = "ignoreMissingVnetServiceEndpoint", skip_serializing_if = "Option::is_none")]
         pub ignore_missing_vnet_service_endpoint: Option<bool>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    pub struct WrappingKeyAuthenticationData {
+        #[serde(rename = "authType", serialize_with = "models_serde::serialize_string_literal_ServiceIdentity")]
+        pub auth_type: Option<String>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    pub struct WrappingKeyConfiguration {
+        #[serde(rename = "keyAuthenticationData", skip_serializing_if = "Option::is_none")]
+        pub key_authentication_data: Option<WrappingKeyAuthenticationData>,
+        #[serde(rename = "keyValue", skip_serializing_if = "Option::is_none")]
+        pub key_value: Option<WrappingKeyValue>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    pub struct WrappingKeyValue {
+        #[serde(serialize_with = "models_serde::serialize_string_literal_oct")]
+        pub kty: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub url: Option<String>,
     }
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub enum AccessPolicyUpdateKind {
@@ -1866,6 +2163,31 @@ pub mod models {
         fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
     }
     impl<'de> Deserialize<'de> for super::AccessPolicyUpdateKind {
+        fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub enum AccessRuleDirection {
+        Inbound,
+        Outbound,
+        UnknownValue(String),
+    }
+    impl AsRef<str> for super::AccessRuleDirection {
+        fn as_ref(&self) -> &str;
+    }
+    impl Display for super::AccessRuleDirection {
+        fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
+    }
+    impl FromStr for super::AccessRuleDirection {
+        type Err = Infallible;
+        fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
+    }
+    impl Serialize for super::AccessRuleDirection {
+        fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
+    }
+    impl<'a> From<&'a AccessRuleDirection> for &'a str {
+        fn from(e: &'a AccessRuleDirection) -> Self;
+    }
+    impl<'de> Deserialize<'de> for super::AccessRuleDirection {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
@@ -2061,6 +2383,33 @@ pub mod models {
         fn from(e: &'a GeoReplicationRegionProvisioningState) -> Self;
     }
     impl<'de> Deserialize<'de> for super::GeoReplicationRegionProvisioningState {
+        fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub enum IssueType {
+        ConfigurationPropagationFailure,
+        MissingIdentityConfiguration,
+        MissingPerimeterConfiguration,
+        Unknown,
+        UnknownValue(String),
+    }
+    impl AsRef<str> for super::IssueType {
+        fn as_ref(&self) -> &str;
+    }
+    impl Display for super::IssueType {
+        fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
+    }
+    impl FromStr for super::IssueType {
+        type Err = Infallible;
+        fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
+    }
+    impl Serialize for super::IssueType {
+        fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
+    }
+    impl<'a> From<&'a IssueType> for &'a str {
+        fn from(e: &'a IssueType) -> Self;
+    }
+    impl<'de> Deserialize<'de> for super::IssueType {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
@@ -2350,6 +2699,36 @@ pub mod models {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
+    pub enum NetworkSecurityPerimeterConfigurationProvisioningState {
+        Accepted,
+        Canceled,
+        Creating,
+        Deleting,
+        Failed,
+        Succeeded,
+        Updating,
+        UnknownValue(String),
+    }
+    impl AsRef<str> for super::NetworkSecurityPerimeterConfigurationProvisioningState {
+        fn as_ref(&self) -> &str;
+    }
+    impl Display for super::NetworkSecurityPerimeterConfigurationProvisioningState {
+        fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
+    }
+    impl FromStr for super::NetworkSecurityPerimeterConfigurationProvisioningState {
+        type Err = Infallible;
+        fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
+    }
+    impl Serialize for super::NetworkSecurityPerimeterConfigurationProvisioningState {
+        fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
+    }
+    impl<'a> From<&'a NetworkSecurityPerimeterConfigurationProvisioningState> for &'a str {
+        fn from(e: &'a NetworkSecurityPerimeterConfigurationProvisioningState) -> Self;
+    }
+    impl<'de> Deserialize<'de> for super::NetworkSecurityPerimeterConfigurationProvisioningState {
+        fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
     pub enum PrivateEndpointConnectionProvisioningState {
         Creating,
         Deleting,
@@ -2487,6 +2866,32 @@ pub mod models {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
+    pub enum ResourceAssociationAccessMode {
+        Audit,
+        Enforced,
+        Learning,
+        UnknownValue(String),
+    }
+    impl AsRef<str> for super::ResourceAssociationAccessMode {
+        fn as_ref(&self) -> &str;
+    }
+    impl Display for super::ResourceAssociationAccessMode {
+        fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
+    }
+    impl FromStr for super::ResourceAssociationAccessMode {
+        type Err = Infallible;
+        fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
+    }
+    impl Serialize for super::ResourceAssociationAccessMode {
+        fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
+    }
+    impl<'a> From<&'a ResourceAssociationAccessMode> for &'a str {
+        fn from(e: &'a ResourceAssociationAccessMode) -> Self;
+    }
+    impl<'de> Deserialize<'de> for super::ResourceAssociationAccessMode {
+        fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
     pub enum ResourceProvisioningState {
         Canceled,
         Failed,
@@ -2542,6 +2947,31 @@ pub mod models {
         fn from(e: &'a SecretPermissions) -> Self;
     }
     impl<'de> Deserialize<'de> for super::SecretPermissions {
+        fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub enum Severity {
+        Error,
+        Warning,
+        UnknownValue(String),
+    }
+    impl AsRef<str> for super::Severity {
+        fn as_ref(&self) -> &str;
+    }
+    impl Display for super::Severity {
+        fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
+    }
+    impl FromStr for super::Severity {
+        type Err = Infallible;
+        fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
+    }
+    impl Serialize for super::Severity {
+        fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
+    }
+    impl<'a> From<&'a Severity> for &'a str {
+        fn from(e: &'a Severity) -> Self;
+    }
+    impl<'de> Deserialize<'de> for super::Severity {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
@@ -2625,6 +3055,58 @@ pub mod models {
         fn from(e: &'a StoragePermissions) -> Self;
     }
     impl<'de> Deserialize<'de> for super::StoragePermissions {
+        fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub enum TokenBindingMode {
+        Enforced,
+        NotEnforced,
+        UnknownValue(String),
+    }
+    impl AsRef<str> for super::TokenBindingMode {
+        fn as_ref(&self) -> &str;
+    }
+    impl Display for super::TokenBindingMode {
+        fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
+    }
+    impl FromStr for super::TokenBindingMode {
+        type Err = Infallible;
+        fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
+    }
+    impl Serialize for super::TokenBindingMode {
+        fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
+    }
+    impl<'a> From<&'a TokenBindingMode> for &'a str {
+        fn from(e: &'a TokenBindingMode) -> Self;
+    }
+    impl<'de> Deserialize<'de> for super::TokenBindingMode {
+        fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub enum TokenBindingStrength {
+        AttestedConfidential,
+        AttestedTrustedLaunch,
+        NoValidation,
+        Unattested,
+        UnknownValue(String),
+    }
+    impl AsRef<str> for super::TokenBindingStrength {
+        fn as_ref(&self) -> &str;
+    }
+    impl Display for super::TokenBindingStrength {
+        fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
+    }
+    impl FromStr for super::TokenBindingStrength {
+        type Err = Infallible;
+        fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
+    }
+    impl Serialize for super::TokenBindingStrength {
+        fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
+    }
+    impl<'a> From<&'a TokenBindingStrength> for &'a str {
+        fn from(e: &'a TokenBindingStrength) -> Self;
+    }
+    impl<'de> Deserialize<'de> for super::TokenBindingStrength {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
