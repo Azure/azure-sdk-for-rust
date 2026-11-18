@@ -13,6 +13,8 @@
 - `native_tls`
 - `rustls`
 - `tokio`
+- `unstable_dtx`
+- `unstable_patch`
 
 ```rust
 #![crate_name = "azure_data_cosmos_driver"]
