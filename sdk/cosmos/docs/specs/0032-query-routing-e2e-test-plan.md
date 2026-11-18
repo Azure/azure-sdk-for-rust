@@ -1,3 +1,4 @@
+<!-- cspell:ignore PKRID -->
 # Query Routing E2E Test Plan
 
 **Status:** Draft
@@ -134,12 +135,12 @@ split or merge.
 
 ### Observation points
 
-| Transport                | Authoritative observation          | Required fields                                 |
-| ------------------------ | ---------------------------------- | ----------------------------------------------- |
-| Gateway V1               | Hosted emulator request capture    | Backend HTTP partition headers                  |
-| Gateway V2 outer request | Hosted proxy capture               | `x-ms-thinclient-range-*`, operation, resource  |
-| Gateway V2 frame         | Hosted RNTBD decoder capture       | EPK, RID, routing hashes, backend filter tokens |
-| Pre-send SDK             | Test-only observer where practical | Logical target and serialized carrier set       |
+| Transport                | Authoritative observation          | Required fields                                   |
+| ------------------------ | ---------------------------------- | ------------------------------------------------- |
+| Gateway V1               | Hosted emulator request capture    | Backend HTTP partition headers                    |
+| Gateway V2 outer request | Hosted proxy capture               | `x-ms-thinclient-range-*`, operation, resource    |
+| Gateway V2 frame         | Hosted RNTBD decoder capture       | EPK, PKRID, routing hashes, backend filter tokens |
+| Pre-send SDK             | Test-only observer where practical | Logical target and serialized carrier set         |
 
 The hosted emulator capture is authoritative because it observes what each
 consumer receives. A test-only SDK observer is supplemental and must not mutate
@@ -167,30 +168,37 @@ types, and encodings:
 
 Use the abbreviations from `0031-query-routing.md`.
 
-| Scenario                        | Backend semantic carrier | Backend EPK-R                  | RID               | Proxy EPK `0x005A` | Gateway V2 TC-R |
-| ------------------------------- | ------------------------ | ------------------------------ | ----------------- | ------------------ | --------------- |
-| Point with complete PK          | PK                       | Absent                         | As resolved       | Required           | Absent          |
-| Query with complete PK          | PK                       | Absent for planner-derived SQL | As resolved       | Required           | Absent          |
-| Query with partial HPK          | PPK                      | Absent for planner-derived SQL | Required per leaf | Absent             | Required        |
-| Query over whole physical range | None                     | Absent                         | Required          | Absent             | Required        |
-| Query over strict FeedRange     | None                     | Present                        | Required          | Absent             | Required        |
-| Query over one EPK              | None                     | Present                        | Required          | Absent             | Required        |
-| WHERE-only PK equality          | SQL                      | Absent                         | Required          | Absent             | Required        |
-| WHERE-only HPK prefix           | SQL                      | Absent                         | Required per leaf | Absent             | Required        |
-| Change feed over HPK prefix     | None                     | Present                        | Required per leaf | Absent             | Required        |
-| Change feed over whole RID      | None                     | Absent                         | Required          | Absent             | Required        |
-| QueryPlan request               | Input options only       | Absent                         | Absent            | Absent             | Absent          |
+| Scenario                        | Backend semantic header | Backend EPK-R                  | PKRID             | Proxy EPK `0x005A` | Gateway V2 TC-R |
+| ------------------------------- | ----------------------- | ------------------------------ | ----------------- | ------------------ | --------------- |
+| Point with complete PK          | PK                      | Absent                         | As resolved       | Required           | Absent          |
+| Query with complete PK          | PK                      | Absent for planner-derived SQL | As resolved       | Required           | Absent          |
+| Query with partial HPK          | PPK                     | Absent for planner-derived SQL | Required per leaf | Absent             | Required        |
+| Query over whole physical range | None                    | Absent                         | Required          | Absent             | Required        |
+| Query over strict FeedRange     | None                    | Present                        | Required          | Absent             | Required        |
+| Query over one EPK              | None                    | Present                        | Required          | Absent             | Required        |
+| WHERE-only PK equality          | SQL                     | Absent                         | Required          | Absent             | Required        |
+| WHERE-only HPK prefix           | SQL                     | Absent                         | Required per leaf | Absent             | Required        |
+| Change feed over HPK prefix     | None                    | Present                        | Required per leaf | Absent             | Required        |
+| Change feed over whole PKRID    | None                    | Absent                         | Required          | Absent             | Required        |
+| QueryPlan request               | Input options only      | Absent                         | Absent            | Absent             | Absent          |
 
-For QueryPlan, assert that Gateway V1 and Gateway V2 omit data-plane RID,
+For QueryPlan, assert that Gateway V1 and Gateway V2 omit data-plane PKRID,
 thin-client range flags, routing hashes, backend start/end, and key type. Then
 assert that the returned ranges affect only the subsequent data-leaf routing.
 
-Add driver component or raw-protocol negative tests for incomplete or
-conflicting carriers: PK plus PPK, a logically missing range bound, missing key
-type, mismatched key type, and backend key type `2` combined with EPK-R
-filtering. Separately, add a positive `[MIN, X)` test proving that a logical
-empty minimum is preserved
-as a zero-byte routing hash even when the empty backend text token is omitted.
+Add a component test for simultaneous PK and PPK that asserts PK is emitted and
+PPK is omitted. Do not introduce new client-side rejection for incomplete
+range headers. Tier A raw-protocol tests assert that a missing start or end,
+absent key type, mismatched key type, and backend key type `2` combined with
+EPK-R filtering are serialized without a newly introduced client rejection.
+Tier B pins the corresponding live service outcomes.
+
+Separately, add a positive `[MIN, X)` test proving that a logical empty minimum
+is preserved as a zero-byte routing hash even when the empty backend text token
+is omitted.
+
+Add operation-specific PPK tests: query emits PPK, while change feed converts
+the same HPK prefix to EPK-R and returns equivalent scoped results.
 
 ### Explicit semantic-scope and EPK-R component matrix
 
@@ -245,10 +253,45 @@ For every automated scenario, assert:
 - Gateway V1 and Gateway V2 result equivalence; and
 - stable behavior after rebuilding the request for a retry.
 
+### Colocated and topology-change query cases
+
+These cases protect the correctness exceptions to EPK-filter removal.
+
+| Case | Setup | Required wire behavior | Result assertion |
+| ---- | ----- | ---------------------- | ---------------- |
+| Colocated `IN` | At least two planned point ranges on one PKRID | One unfiltered execution for the query/scope/PKRID, or one non-overlapping EPK-R per leaf | No duplicate or missing rows across pages and resume |
+| Colocated `OR` | At least two disjoint planned ranges on one PKRID | Same as colocated `IN` | Exact identity set across small pages and resume |
+| Query resume after split | Save continuation, split the active range, then resume | Each child retains the saved range intersection and continuation boundary | No reread, loss, or duplicate rows |
+| Query resume after merge | Advance sibling ranges to different positions, merge them, then resume | Independently continued slices and fresh gaps keep distinct EPK-R filters on the merged PKRID | No overlap between leaves and no completed work reread |
+| Topology recovery retry | Trigger stale topology while several slices share one PKRID | Rebuilt leaves preserve the original non-overlapping range ledger | Same result as an uninterrupted execution |
+
+Use page size `1` or another deliberately small size so every case crosses a
+continuation boundary. The hosted emulator must expose the captured range and
+continuation for each request leaf.
+
 The in-memory emulator is not the RU oracle. Its request capture validates the
 wire contract; live service runs validate the performance consequence.
 
 ## Tier B: live correctness and efficiency
+
+### Live incomplete-header compatibility matrix
+
+Issue raw qualification requests through Gateway V1 and Gateway V2. These are
+compatibility probes, not supported public option combinations. Assert and
+record the exact service status, substatus, response body classification, and
+whether the request reached the service.
+
+| Case | Required client behavior | Live assertion |
+| ---- | ------------------------ | -------------- |
+| Start without end | No newly added client rejection | Pin exact V1 and V2 service outcome |
+| End without start | No newly added client rejection | Pin exact V1 and V2 service outcome |
+| Start/end without key type | No newly added client rejection | Pin exact V1 and V2 service outcome |
+| Start/end with mismatched key type | No newly added client rejection | Pin exact V1 and V2 service outcome |
+| EPK-R with key type `2` | No newly added client rejection | Pin exact V1 and V2 service outcome |
+
+Treat any difference between Gateway V1 and Gateway V2 as an explicit
+transport result, not a reason to normalize behavior client-side without a
+separate design decision.
 
 ### Concrete query scenarios
 
@@ -264,7 +307,7 @@ Do not treat this as an unconstrained cross-product.
 | Q5  | `SELECT * FROM c WHERE c.tenantId = "abc"`            | Full container             | N/A                        | Exact target IDs             | SQL only                 |
 | Q6a | `SELECT COUNT(1) FROM c`                              | Complete HPK `["abc", id]` | One logical partition      | `1`                          | PK                       |
 | Q6b | `SELECT COUNT(1) FROM c`                              | Hash PK `["abc"]`          | One logical partition      | `100000`                     | PK                       |
-| Q7  | `SELECT * FROM c`                                     | Whole physical RID         | Exact physical range       | Manifest RID count           | RID only                 |
+| Q7  | `SELECT * FROM c`                                     | Whole physical PKRID       | Exact physical range       | Manifest PKRID count         | PKRID only               |
 | Q8  | `SELECT * FROM c`                                     | Strict FeedRange           | Subset                     | Manifest range IDs           | EPK-R                    |
 | Q9  | `SELECT * FROM c`                                     | Overlapping FeedRange      | Partial overlap            | Manifest range IDs           | EPK-R                    |
 | Q10 | `SELECT * FROM c`                                     | Disjoint FeedRange         | Disjoint from `abc` cohort | Manifest range IDs; no `abc` | EPK-R                    |
@@ -354,12 +397,12 @@ optimized threshold.
 
 ### Optimized/control performance pairs
 
-| Pair | Optimized cell            | Control cell                                 | Equal result       | Required evidence                                                    |
-| ---- | ------------------------- | -------------------------------------------- | ------------------ | -------------------------------------------------------------------- |
-| P1   | Q1, SQL-only HPK prefix   | Same SQL forced through exact prefix EPK-R   | `100000`           | Optimized fixed RU/latency maxima; control remains measurably higher |
-| P2   | Q2, PPK-only aggregate    | Same scope forced through prefix EPK-R       | `100000`           | PPK carrier versus EPK-R carrier                                     |
-| P3   | Q3, PPK plus matching SQL | Same query and scope forced through EPK-R    | `100000`           | PPK + SQL versus PPK + SQL + EPK-R                                   |
-| P4   | Q7, whole RID             | Same physical range forced through start/end | Manifest RID count | RID-only versus redundant EPK-R                                      |
+| Pair | Optimized cell            | Control cell                                 | Equal result         | Required evidence                                                    |
+| ---- | ------------------------- | -------------------------------------------- | -------------------- | -------------------------------------------------------------------- |
+| P1   | Q1, SQL-only HPK prefix   | Same SQL forced through exact prefix EPK-R   | `100000`             | Optimized fixed RU/latency maxima; control remains measurably higher |
+| P2   | Q2, PPK-only aggregate    | Same scope forced through prefix EPK-R       | `100000`             | PPK carrier versus EPK-R carrier                                     |
+| P3   | Q3, PPK plus matching SQL | Same query and scope forced through EPK-R    | `100000`             | PPK + SQL versus PPK + SQL + EPK-R                                   |
+| P4   | Q7, whole PKRID           | Same physical range forced through start/end | Manifest PKRID count | PKRID-only versus redundant EPK-R                                    |
 
 If the public API cannot force a control carrier without changing semantics,
 run that control through a test-only driver operation in the manual
