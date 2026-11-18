@@ -360,6 +360,15 @@ async fn mixed_recovery_keeps_target_and_consumes_shard_exclusion_once() {
     .unwrap();
     let request = test_request(None);
     let target = request.url.clone();
+    #[cfg(feature = "unstable_dtx")]
+    let request = {
+        let mut request = request;
+        request.resource_type = crate::models::ResourceType::DistributedTransactionBatch;
+        request.dtx_dispatch_tracker = Some(Arc::new(
+            crate::models::DistributedTransactionDispatchTracker::default(),
+        ));
+        request
+    };
     let mut diagnostics = DiagnosticsContextBuilder::new(
         ActivityId::from_string("mixed-recovery".to_owned()),
         Arc::new(DiagnosticsOptions::default()),
@@ -393,6 +402,12 @@ async fn mixed_recovery_keeps_target_and_consumes_shard_exclusion_once() {
         }
     ));
     let requests = captured.lock().unwrap();
+    #[cfg(feature = "unstable_dtx")]
+    for ((_, request), expected) in requests.iter().zip(["False", "False", "True"]) {
+        let retry_header =
+            azure_core::http::headers::HeaderName::from_static(crate::models::DTX_IS_RETRY_HEADER);
+        assert_eq!(request.headers.get_str(&retry_header).unwrap(), expected);
+    }
     assert_eq!(
         requests.iter().map(|(shard, _)| *shard).collect::<Vec<_>>(),
         vec![1, 2, 1]

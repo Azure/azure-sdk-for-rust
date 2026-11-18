@@ -119,6 +119,9 @@ fn planning_timeout_error(
 
 #[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_MAX_RETRIES: u32 = 10;
+// Coordinator status for a durably aborted transaction; replay needs a new token.
+#[cfg(feature = "unstable_dtx")]
+const DTX_ABORTED_STATUS_CODE: u16 = 452;
 // Matches .NET DistributedTransactionCommitter.MaxCumulativeRetryDelay (30 s).
 #[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_MAX_CUMULATIVE_DELAY: Duration = Duration::from_secs(30);
@@ -3152,17 +3155,31 @@ impl CosmosDriver {
                 .await;
         }
         let body = request.serialize_body()?;
-        let operation = CosmosOperation::distributed_transaction(
+        let base_operation = CosmosOperation::distributed_transaction(
             self.options.account().clone(),
             request.transaction_type,
         )
         .with_body(body);
+        // Only writes carry an idempotency-token dispatch history; reads never
+        // send the retry headers.
+        let is_write = request.transaction_type == crate::models::DistributedTransactionType::Write;
+        let operation_for_token = || {
+            if is_write {
+                base_operation.clone().with_dtx_dispatch_tracker(Arc::new(
+                    crate::models::DistributedTransactionDispatchTracker::default(),
+                ))
+            } else {
+                base_operation.clone()
+            }
+        };
+        let mut operation = operation_for_token();
 
+        let token_header_name = azure_core::http::headers::HeaderName::from_static(
+            crate::models::request_header_names::DTX_IDEMPOTENCY_TOKEN,
+        );
         let custom_headers = options.custom_headers.get_or_insert_with(Default::default);
         custom_headers.insert(
-            azure_core::http::headers::HeaderName::from_static(
-                crate::models::request_header_names::DTX_IDEMPOTENCY_TOKEN,
-            ),
+            token_header_name.clone(),
             azure_core::http::headers::HeaderValue::from(request.idempotency_token.to_string()),
         );
         custom_headers.insert(
@@ -3195,6 +3212,15 @@ impl CosmosDriver {
             .end_to_end_latency_policy()
             .map(|policy| Instant::now() + policy.timeout());
 
+        let max_retries = self
+            .options
+            .max_retry_attempts_on_aborted_transactions()
+            .unwrap_or(DTX_OUTER_MAX_RETRIES);
+        let max_cumulative_delay = self
+            .options
+            .max_retry_wait_time_on_aborted_transactions()
+            .unwrap_or(DTX_OUTER_MAX_CUMULATIVE_DELAY);
+
         let mut retry_count = 0_u32;
         let mut cumulative_delay = Duration::ZERO;
 
@@ -3218,30 +3244,48 @@ impl CosmosDriver {
             .with_response_headers(&headers)
             .with_diagnostics(diagnostics);
 
-            let retry_delay = distributed_transaction_outer_retry_delay(
+            // Capture progress and reject malformed tokens before a retry can
+            // discard this response. Cache-disabled mode skips automatic capture.
+            if is_session_consistency {
+                self.session_manager
+                    .merge_distributed_transaction_session_tokens(
+                        &response,
+                        &request.operations,
+                        is_session_consistency,
+                    )?;
+            }
+
+            let retry_delay = distributed_transaction_outer_retry_delay_with_limits(
                 &response,
                 retry_after_ms,
                 retry_count,
                 cumulative_delay,
                 outer_deadline,
+                max_retries,
+                max_cumulative_delay,
             );
             let Some(retry_delay) = retry_delay else {
-                // Cache-disabled mode disables automatic session management.
-                // Explicit per-operation tokens remain in the request unchanged.
-                if is_session_consistency {
-                    self.session_manager
-                        .merge_distributed_transaction_session_tokens(
-                            &response,
-                            &request.operations,
-                            is_session_consistency,
-                        )?;
-                }
-
                 return Ok(response);
             };
 
             retry_count += 1;
             cumulative_delay = cumulative_delay.saturating_add(retry_delay);
+
+            // A 452 means the coordinator durably aborted this token, so the
+            // replay needs a fresh token (and fresh dispatch history). Every
+            // other retriable response replays the same token.
+            if u16::from(response.status_code) == DTX_ABORTED_STATUS_CODE {
+                request.idempotency_token = uuid::Uuid::new_v4();
+                if let Some(headers) = options.custom_headers.as_mut() {
+                    headers.insert(
+                        token_header_name.clone(),
+                        azure_core::http::headers::HeaderValue::from(
+                            request.idempotency_token.to_string(),
+                        ),
+                    );
+                }
+                operation = operation_for_token();
+            }
             azure_core::sleep(
                 azure_core::time::Duration::try_from(retry_delay)
                     .unwrap_or(azure_core::time::Duration::ZERO),
@@ -4800,7 +4844,7 @@ impl CosmosDriver {
     }
 }
 
-#[cfg(feature = "unstable_dtx")]
+#[cfg(all(test, feature = "unstable_dtx"))]
 fn distributed_transaction_outer_retry_delay(
     response: &crate::models::DistributedTransactionResponse,
     retry_after_ms: Option<u64>,
@@ -4808,11 +4852,32 @@ fn distributed_transaction_outer_retry_delay(
     cumulative_delay: Duration,
     deadline: Option<Instant>,
 ) -> Option<Duration> {
+    distributed_transaction_outer_retry_delay_with_limits(
+        response,
+        retry_after_ms,
+        retry_count,
+        cumulative_delay,
+        deadline,
+        DTX_OUTER_MAX_RETRIES,
+        DTX_OUTER_MAX_CUMULATIVE_DELAY,
+    )
+}
+
+#[cfg(feature = "unstable_dtx")]
+fn distributed_transaction_outer_retry_delay_with_limits(
+    response: &crate::models::DistributedTransactionResponse,
+    retry_after_ms: Option<u64>,
+    retry_count: u32,
+    cumulative_delay: Duration,
+    deadline: Option<Instant>,
+    max_retries: u32,
+    max_cumulative_delay: Duration,
+) -> Option<Duration> {
     if response.is_completed_status_code() || !response.is_retriable {
         return None;
     }
 
-    if retry_count >= DTX_OUTER_MAX_RETRIES {
+    if retry_count >= max_retries {
         return None;
     }
 
@@ -4822,7 +4887,7 @@ fn distributed_transaction_outer_retry_delay(
         .unwrap_or(Duration::ZERO);
     let delay = computed_delay.max(server_delay);
     let next_cumulative = cumulative_delay.checked_add(delay)?;
-    if next_cumulative > DTX_OUTER_MAX_CUMULATIVE_DELAY {
+    if next_cumulative > max_cumulative_delay {
         return None;
     }
 
@@ -5107,6 +5172,253 @@ mod tests {
             is_retriable,
             diagnostic_string: None,
             error_message: None,
+            response_mode: Default::default(),
+        }
+    }
+
+    #[cfg(feature = "unstable_dtx")]
+    #[derive(Debug)]
+    struct DtxSessionClient {
+        responses: Mutex<VecDeque<HttpResponse>>,
+        requests: Mutex<Vec<HttpRequest>>,
+    }
+
+    #[cfg(feature = "unstable_dtx")]
+    #[async_trait]
+    impl TransportClient for DtxSessionClient {
+        async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            if request.url.path() == "/" {
+                return Ok(HttpResponse {
+                    status: 200,
+                    headers: Headers::new(),
+                    body: ACCOUNT_PROPERTIES_PAYLOAD.as_bytes().to_vec(),
+                });
+            }
+            assert_eq!(request.url.path(), "/operations/dtc");
+            self.requests.lock().unwrap().push(request.clone());
+            Ok(self.responses.lock().unwrap().pop_front().unwrap())
+        }
+    }
+
+    #[cfg(feature = "unstable_dtx")]
+    #[derive(Debug)]
+    struct DtxSessionFactory(Arc<DtxSessionClient>);
+
+    #[cfg(feature = "unstable_dtx")]
+    impl HttpClientFactory for DtxSessionFactory {
+        fn build(
+            &self,
+            _: &ConnectionPoolOptions,
+            _: HttpClientConfig,
+        ) -> crate::error::Result<Arc<dyn TransportClient>> {
+            Ok(self.0.clone())
+        }
+    }
+
+    #[cfg(feature = "unstable_dtx")]
+    fn dtx_session_client(token: &str) -> Arc<DtxSessionClient> {
+        Arc::new(DtxSessionClient {
+            responses: Mutex::new(VecDeque::from([
+                HttpResponse {
+                    status: 452,
+                    headers: Headers::new(),
+                    body: serde_json::to_vec(&serde_json::json!({
+                        "isRetriable": true,
+                        "operationResponses": [{
+                            "index": 0,
+                            "statusCode": 409,
+                            "sessionToken": token,
+                        }],
+                    }))
+                    .unwrap(),
+                },
+                HttpResponse {
+                    status: 200,
+                    headers: Headers::new(),
+                    body: br#"{"operationResponses":[{"index":0,"statusCode":200}]}"#.to_vec(),
+                },
+            ])),
+            requests: Mutex::new(Vec::new()),
+        })
+    }
+
+    #[cfg(feature = "unstable_dtx")]
+    async fn dtx_session_driver(
+        client: Arc<DtxSessionClient>,
+    ) -> (
+        Arc<CosmosDriver>,
+        crate::models::DistributedTransactionRequest,
+    ) {
+        use crate::models::{
+            DistributedTransactionOperation, DistributedTransactionOperationKind,
+            DistributedTransactionRequest, DistributedTransactionTarget,
+            DistributedTransactionType, PartitionKeyDefinition, SystemProperties,
+        };
+
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_http_client_factory(Arc::new(DtxSessionFactory(client)))
+            .with_connection_pool(
+                ConnectionPoolOptions::builder()
+                    .with_is_http2_allowed(false)
+                    .with_gateway_v2_disabled(true)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .await
+            .unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let driver = runtime
+            .create_driver(DriverOptions::builder(account.clone()).build())
+            .await
+            .unwrap();
+        let properties = ContainerProperties {
+            id: "coll".into(),
+            partition_key: serde_json::from_str::<PartitionKeyDefinition>(r#"{"paths":["/pk"]}"#)
+                .unwrap(),
+            system_properties: SystemProperties::default(),
+        };
+        let container =
+            ContainerReference::new(account, "db", "db_rid", "coll", "coll_rid", &properties);
+        let operation = DistributedTransactionOperation::new(
+            DistributedTransactionOperationKind::Delete,
+            DistributedTransactionTarget::new(container, PartitionKey::from("pk"), "item"),
+        )
+        .with_session_token("0:1#1");
+        (
+            driver,
+            DistributedTransactionRequest::new(DistributedTransactionType::Write, vec![operation]),
+        )
+    }
+
+    #[cfg(feature = "unstable_dtx")]
+    #[tokio::test]
+    async fn dtx_malformed_session_token_fails_before_retry() {
+        for token in ["malformed", "   ", ":1#100#1=10", " :1#100#1=10", "1:500"] {
+            let client = dtx_session_client(token);
+            let (driver, request) = dtx_session_driver(Arc::clone(&client)).await;
+
+            let error = driver
+                .execute_distributed_transaction(request, OperationOptions::default())
+                .await
+                .unwrap_err();
+
+            assert_eq!(
+                error.status().status_code(),
+                azure_core::http::StatusCode::InternalServerError
+            );
+            assert_eq!(client.requests.lock().unwrap().len(), 1, "{token:?}");
+        }
+    }
+
+    #[cfg(feature = "unstable_dtx")]
+    #[tokio::test]
+    async fn dtx_captures_session_token_before_retry() {
+        let client = dtx_session_client("0:1#100#1=10");
+        let (driver, request) = dtx_session_driver(Arc::clone(&client)).await;
+        let container = request.operations[0].target.container.clone();
+
+        let response = driver
+            .execute_distributed_transaction(request, OperationOptions::default())
+            .await
+            .unwrap();
+
+        assert!(response.is_completed_status_code());
+        assert_eq!(client.requests.lock().unwrap().len(), 2);
+        let read = CosmosOperation::read_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk"),
+            "item",
+        ));
+        let token = driver
+            .session_manager
+            .resolve_session_token(&read, None, Some("0"))
+            .unwrap();
+        assert_eq!(token.as_str(), "0:1#100#1=10");
+    }
+
+    #[cfg(feature = "unstable_dtx")]
+    #[tokio::test]
+    async fn dtx_throttle_dispatch_headers_preserve_body_and_token() {
+        use crate::models::{
+            DistributedTransactionType, DTX_IS_CROSS_REGION_REDIRECT_HEADER, DTX_IS_RETRY_HEADER,
+        };
+
+        for is_write in [true, false] {
+            let client = dtx_session_client("0:1#100#1=10");
+            let (driver, mut request) = dtx_session_driver(Arc::clone(&client)).await;
+            let mut throttle_headers = Headers::new();
+            throttle_headers.insert("x-ms-retry-after-ms", "0");
+            let throttle = || HttpResponse {
+                status: 429,
+                headers: throttle_headers.clone(),
+                body: Vec::new(),
+            };
+            {
+                let mut responses = client.responses.lock().unwrap();
+                if is_write {
+                    responses.push_front(throttle());
+                    // A throttle after the 452 must start the new token's history.
+                    responses.insert(2, throttle());
+                } else {
+                    responses.pop_front();
+                    responses.push_front(throttle());
+                }
+            }
+            if !is_write {
+                request.transaction_type = DistributedTransactionType::Read;
+                request.operations[0].kind =
+                    crate::models::DistributedTransactionOperationKind::Read;
+            }
+            let response = driver
+                .execute_distributed_transaction(request, OperationOptions::default())
+                .await
+                .unwrap();
+            assert!(response.is_completed_status_code());
+            let requests = client.requests.lock().unwrap();
+            assert_eq!(requests.len(), if is_write { 4 } else { 2 });
+            let token_header = azure_core::http::headers::HeaderName::from_static(
+                crate::models::request_header_names::DTX_IDEMPOTENCY_TOKEN,
+            );
+            let retry_header =
+                azure_core::http::headers::HeaderName::from_static(DTX_IS_RETRY_HEADER);
+            let cross_region_header = azure_core::http::headers::HeaderName::from_static(
+                DTX_IS_CROSS_REGION_REDIRECT_HEADER,
+            );
+            for pair in requests.windows(2) {
+                assert_eq!(pair[0].body, pair[1].body);
+            }
+            assert_eq!(
+                requests[0].headers.get_str(&token_header).unwrap(),
+                requests[1].headers.get_str(&token_header).unwrap()
+            );
+            if is_write {
+                assert_ne!(
+                    requests[1].headers.get_str(&token_header).unwrap(),
+                    requests[2].headers.get_str(&token_header).unwrap()
+                );
+                assert_eq!(
+                    requests[2].headers.get_str(&token_header).unwrap(),
+                    requests[3].headers.get_str(&token_header).unwrap()
+                );
+                for (request, expected_retry) in
+                    requests.iter().zip(["False", "True", "False", "True"])
+                {
+                    assert_eq!(
+                        request.headers.get_str(&retry_header).unwrap(),
+                        expected_retry
+                    );
+                    assert_eq!(
+                        request.headers.get_str(&cross_region_header).unwrap(),
+                        "False"
+                    );
+                }
+            } else {
+                for request in requests.iter() {
+                    assert!(request.headers.get_str(&retry_header).is_err());
+                    assert!(request.headers.get_str(&cross_region_header).is_err());
+                }
+            }
         }
     }
 

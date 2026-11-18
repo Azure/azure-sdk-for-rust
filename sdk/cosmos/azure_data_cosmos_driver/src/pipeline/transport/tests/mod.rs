@@ -316,6 +316,8 @@ pub(super) fn test_request(deadline: Option<Instant>) -> TransportRequest {
         headers: azure_core::http::headers::Headers::new(),
         #[cfg(feature = "unstable_dtx")]
         resource_type: ResourceType::Database,
+        #[cfg(feature = "unstable_dtx")]
+        dtx_dispatch_tracker: None,
         body: None,
         auth_context: crate::pipeline::transport::AuthorizationContext::new(
             azure_core::http::Method::Get,
@@ -422,6 +424,8 @@ fn gateway_v2_transport_request(transport_mode: TransportMode) -> TransportReque
         headers,
         #[cfg(feature = "unstable_dtx")]
         resource_type: ResourceType::Document,
+        #[cfg(feature = "unstable_dtx")]
+        dtx_dispatch_tracker: None,
         body: None,
         auth_context: crate::pipeline::transport::AuthorizationContext::new(
             azure_core::http::Method::Get,

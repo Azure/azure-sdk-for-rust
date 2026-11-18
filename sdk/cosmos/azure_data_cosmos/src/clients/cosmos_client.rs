@@ -170,6 +170,12 @@ impl CosmosClient {
     /// **Unstable / work in progress.** Requires the disabled-by-default
     /// `unstable_dtx` feature and a service account with the DTX feature enabled.
     /// Not supported for production use; the API may change without notice.
+    ///
+    /// Cancelling or dropping this future does not roll back a transaction already
+    /// accepted by the service. Cancellation or a network failure can leave the
+    /// outcome unknown. Reconcile the affected items before submitting a new
+    /// transaction: a new submission uses a new idempotency token and can apply
+    /// the writes again.
     #[cfg(feature = "unstable_dtx")]
     pub async fn commit_distributed_write(
         &self,

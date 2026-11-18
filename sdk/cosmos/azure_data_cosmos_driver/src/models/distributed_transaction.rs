@@ -187,7 +187,9 @@ pub struct DistributedTransactionRequest {
     pub transaction_type: DistributedTransactionType,
     /// Operations to send to the coordinator.
     pub operations: Vec<DistributedTransactionOperation>,
-    /// Idempotency token generated once and reused across driver retries.
+    /// Initial idempotency token, reused across retries unless the coordinator
+    /// durably aborts the transaction (`452`), after which the driver generates
+    /// a new token.
     pub idempotency_token: Uuid,
 }
 
@@ -457,6 +459,72 @@ fn invalid_partition_key(message: impl Into<String>) -> crate::error::CosmosErro
         .build()
 }
 
+/// Request header telling the coordinator this write replays an earlier dispatch.
+pub(crate) const DTX_IS_RETRY_HEADER: &str = "x-ms-cosmos-internal-is-dtx-retry";
+/// Request header telling the coordinator a replay may have crossed regions.
+pub(crate) const DTX_IS_CROSS_REGION_REDIRECT_HEADER: &str =
+    "x-ms-cosmos-internal-is-dtx-cross-region-redirect";
+
+/// Derives the retry and cross-region-redirect signals from the dispatch history
+/// of one write idempotency token.
+///
+/// Scoped to the token rather than to a pipeline attempt: the pipeline can fail
+/// over regions within one commit attempt and the outer loop replays the same
+/// token, so attempt-local state would under-report both signals. Token
+/// rotation creates a new tracker.
+#[derive(Debug, Default)]
+pub(crate) struct DistributedTransactionDispatchTracker {
+    state: std::sync::Mutex<DispatchState>,
+}
+
+#[derive(Debug, Default)]
+struct DispatchState {
+    original_region: Option<String>,
+    dispatch_count: u32,
+    has_unresolved_dispatch: bool,
+    is_cross_region_redirect: bool,
+}
+
+impl DistributedTransactionDispatchTracker {
+    /// Records an imminent dispatch and returns `(is_retry, is_cross_region_redirect)`.
+    ///
+    /// Records intent rather than delivery: a failed dispatch may still have
+    /// reached the coordinator, so over-reporting is the safe direction. Region
+    /// comparison ignores ASCII case. An unresolved region on a replay
+    /// conservatively latches the cross-region signal.
+    pub(crate) fn record_dispatch(&self, region: Option<&str>) -> (bool, bool) {
+        let mut state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        state.dispatch_count += 1;
+        let is_retry = state.dispatch_count > 1;
+
+        match region.filter(|r| !r.is_empty()) {
+            None => {
+                state.has_unresolved_dispatch = true;
+                state.is_cross_region_redirect |= is_retry;
+            }
+            Some(region) => match state.original_region.as_deref() {
+                None => {
+                    state.original_region = Some(region.to_owned());
+                    // An earlier dispatch went somewhere this client could not
+                    // name, so this region cannot be trusted as the origin.
+                    if state.has_unresolved_dispatch {
+                        state.is_cross_region_redirect = true;
+                    }
+                }
+                Some(original) if !original.eq_ignore_ascii_case(region) => {
+                    state.is_cross_region_redirect = true;
+                }
+                Some(_) => {}
+            },
+        }
+
+        (is_retry, state.is_cross_region_redirect)
+    }
+}
+
 /// The resource body returned for one distributed transaction operation.
 #[derive(Clone, SafeDebug, Default, PartialEq, Eq)]
 #[non_exhaustive]
@@ -533,12 +601,38 @@ pub struct DistributedTransactionResponse {
     pub retry_after_ms: Option<u64>,
     /// Diagnostics captured while executing the transaction.
     pub diagnostics: Option<Arc<DiagnosticsContext>>,
-    /// Whether the coordinator says the same idempotency token can be retried.
+    /// Whether the coordinator marks the transaction as retryable.
+    ///
+    /// A durably aborted transaction (`452`) requires a new idempotency token;
+    /// other retryable responses reuse the current token.
     pub is_retriable: bool,
     /// Coordinator diagnostic string, when present.
     pub diagnostic_string: Option<String>,
     /// Error message synthesized by the driver for malformed coordinator responses.
     pub error_message: Option<String>,
+    /// Response mode reported by the coordinator.
+    pub response_mode: DistributedTransactionResponseMode,
+}
+
+/// Response mode reported by the distributed transaction coordinator.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum DistributedTransactionResponseMode {
+    /// The coordinator returned a standard response. This is the default when the
+    /// coordinator omits the mode or reports an unrecognized value.
+    #[default]
+    Standard,
+    /// The coordinator returned a fast response.
+    FastResponse,
+}
+
+impl DistributedTransactionResponseMode {
+    fn from_wire(value: Option<&serde_json::Value>) -> Self {
+        match value.and_then(|v| v.as_str()) {
+            Some(name) if name.eq_ignore_ascii_case("FastResponse") => Self::FastResponse,
+            _ => Self::Standard,
+        }
+    }
 }
 
 impl DistributedTransactionResponse {
@@ -549,6 +643,27 @@ impl DistributedTransactionResponse {
         body: &[u8],
         operation_count: usize,
         idempotency_token: Uuid,
+    ) -> Self {
+        let mut response_mode = DistributedTransactionResponseMode::default();
+        let mut response = Self::parse_body(
+            status_code,
+            sub_status_code,
+            body,
+            operation_count,
+            idempotency_token,
+            &mut response_mode,
+        );
+        response.response_mode = response_mode;
+        response
+    }
+
+    fn parse_body(
+        status_code: azure_core::http::StatusCode,
+        sub_status_code: Option<crate::models::SubStatusCode>,
+        body: &[u8],
+        operation_count: usize,
+        idempotency_token: Uuid,
+        response_mode: &mut DistributedTransactionResponseMode,
     ) -> Self {
         let is_success_envelope = is_dtx_completed_status_code(status_code);
         let mut is_retriable = false;
@@ -585,6 +700,8 @@ impl DistributedTransactionResponse {
             }
         };
 
+        *response_mode =
+            DistributedTransactionResponseMode::from_wire(get_property(&root, "responseMode"));
         is_retriable = get_property(&root, "isRetriable")
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
@@ -687,6 +804,7 @@ impl DistributedTransactionResponse {
             is_retriable,
             diagnostic_string,
             error_message: None,
+            response_mode: DistributedTransactionResponseMode::default(),
         }
     }
 
@@ -823,6 +941,7 @@ impl DistributedTransactionResponse {
             is_retriable,
             diagnostic_string,
             error_message,
+            response_mode: DistributedTransactionResponseMode::default(),
         }
     }
 }
@@ -944,7 +1063,7 @@ fn promote_multistatus(
     Option<crate::models::SubStatusCode>,
 ) {
     if u16::from(status_code) != 207 {
-        return (status_code, sub_status_code);
+        return normalize_not_modified(status_code, sub_status_code);
     }
 
     for result in results {
@@ -954,7 +1073,29 @@ fn promote_multistatus(
         }
     }
 
-    (status_code, sub_status_code)
+    normalize_not_modified(status_code, sub_status_code)
+}
+
+/// Sub-status the coordinator sends with a `200 OK` read envelope when every
+/// operation was not modified.
+const DTX_ALL_NOT_MODIFIED_SUB_STATUS: u16 = 5425;
+
+/// Maps the coordinator's `200` + `5425` all-not-modified signal to `304`
+/// with no sub-status, matching .NET.
+fn normalize_not_modified(
+    status_code: azure_core::http::StatusCode,
+    sub_status_code: Option<crate::models::SubStatusCode>,
+) -> (
+    azure_core::http::StatusCode,
+    Option<crate::models::SubStatusCode>,
+) {
+    if status_code == azure_core::http::StatusCode::Ok
+        && sub_status_code.is_some_and(|s| s.value() == DTX_ALL_NOT_MODIFIED_SUB_STATUS)
+    {
+        (azure_core::http::StatusCode::NotModified, None)
+    } else {
+        (status_code, sub_status_code)
+    }
 }
 
 #[cfg(test)]
@@ -1492,11 +1633,85 @@ mod tests {
     }
 
     #[test]
+    fn all_not_modified_sub_status_maps_to_304() {
+        let body = br#"{"operationResponses":[{"index":0,"statusCode":304}]}"#;
+        let response = DistributedTransactionResponse::from_body(
+            azure_core::http::StatusCode::Ok,
+            Some(crate::models::SubStatusCode::new(
+                DTX_ALL_NOT_MODIFIED_SUB_STATUS,
+            )),
+            body,
+            1,
+            Uuid::nil(),
+        );
+
+        assert_eq!(
+            response.status_code,
+            azure_core::http::StatusCode::NotModified
+        );
+        assert!(response.sub_status_code.is_none());
+    }
+
+    #[test]
+    fn response_mode_parses_fast_response_case_insensitively() {
+        let body = br#"{"responseMode":"fastresponse","operationResponses":[{"index":0,"statusCode":200}]}"#;
+        let response = DistributedTransactionResponse::from_body(
+            azure_core::http::StatusCode::Ok,
+            None,
+            body,
+            1,
+            Uuid::nil(),
+        );
+        assert_eq!(
+            response.response_mode,
+            DistributedTransactionResponseMode::FastResponse
+        );
+
+        let body =
+            br#"{"responseMode":"bogus","operationResponses":[{"index":0,"statusCode":200}]}"#;
+        let response = DistributedTransactionResponse::from_body(
+            azure_core::http::StatusCode::Ok,
+            None,
+            body,
+            1,
+            Uuid::nil(),
+        );
+        assert_eq!(
+            response.response_mode,
+            DistributedTransactionResponseMode::Standard
+        );
+    }
+
+    #[test]
+    fn dispatch_tracker_reports_retry_and_cross_region() {
+        let tracker = DistributedTransactionDispatchTracker::default();
+        assert_eq!(tracker.record_dispatch(Some("East US")), (false, false));
+        assert_eq!(tracker.record_dispatch(Some("east us")), (true, false));
+        assert_eq!(tracker.record_dispatch(Some("West US")), (true, true));
+        assert_eq!(tracker.record_dispatch(Some("East US")), (true, true));
+
+        let tracker = DistributedTransactionDispatchTracker::default();
+        assert_eq!(tracker.record_dispatch(None), (false, false));
+        assert_eq!(tracker.record_dispatch(None), (true, true));
+    }
+
+    #[test]
+    fn undefined_partition_key_serializes_as_empty_object_array() {
+        let target = DistributedTransactionTarget::new(
+            container(),
+            crate::models::PartitionKey::UNDEFINED,
+            "item1",
+        );
+        let json = serde_json::to_string(&partition_key_json(&target).unwrap()).unwrap();
+        assert_eq!(json, "[{}]");
+    }
+
+    #[test]
     fn request_is_a_stable_replay_across_retries() {
-        // The outer retry loop re-sends the request with the same idempotency
-        // token and re-serializes the body on each attempt, so both must be
-        // deterministic: a retry then replays byte-for-byte and the server
-        // treats it as the same commit rather than a duplicate.
+        // Retries replay the request under the same idempotency token until a
+        // `452` abort rotates it, so serialization must be deterministic and
+        // must not change the token. The server then treats a replay as the
+        // same commit rather than a duplicate.
         let operation = DistributedTransactionOperation::new(
             DistributedTransactionOperationKind::Create,
             target("item1"),

@@ -219,8 +219,8 @@ Per-operation options:
 `DistributedTransactionResponse` exposes:
 
 - `status()` / `is_success_status_code()` — the promoted envelope status.
-- `idempotency_token()` — the `Uuid` reused across internal retries (observability
-  and correlation only).
+- `idempotency_token()` — the `Uuid` from the final attempt; internal retries reuse
+  it unless a `452` abort rotates it (observability and correlation only).
 - `is_retriable()` — the coordinator's retriable hint.
 - `error_message()` / `diagnostic_string()` — synthesized and coordinator-side
   diagnostics.
@@ -390,7 +390,16 @@ when it is **not** a success envelope **and** the coordinator set `isRetriable: 
 The whole request is safe to replay because `OperationType::is_idempotent` returns
 `true` for both `CommitDistributedTransaction` and `ReadDistributedTransaction`, and
 the `idempotency_token` is generated once and reused on every attempt so the
-coordinator can dedupe.
+coordinator can dedupe. The one exception is a durably aborted write (`452`): the
+token is burned, so the next attempt uses a fresh token and a fresh dispatch history
+(.NET PR #6054). Write dispatches carry `x-ms-cosmos-internal-is-dtx-retry` and
+`x-ms-cosmos-internal-is-dtx-cross-region-redirect` (`True`/`False`).
+
+The retry cap and cumulative wait can be overridden through
+`CosmosClientBuilder::with_max_retry_attempts_on_aborted_transactions` (`0`
+disables outer retries) and
+`with_max_retry_wait_time_on_aborted_transactions`. The corresponding
+`DriverOptionsBuilder` setters are also available (.NET PR #6043).
 
 | Parameter                        | Value                                                        |
 | -------------------------------- | ------------------------------------------------------------ |
@@ -425,6 +434,9 @@ outer loop — the inner tier deliberately does not swallow it.
   retry; it bubbles to the outer loop where the coordinator's `isRetriable` +
   `retry-after` govern.
 - **Bodyless** DTX `429` uses the shared throttle path like any other request.
+  Each HTTP throttle redispatch advances the write token's dispatch history and
+  refreshes its retry/region headers. Socket-level resends reuse the policy
+  dispatch headers without advancing this history.
 
 > **Interaction with the user-configured throttle cap.** Because a body-bearing
 > DTX `429` is routed to the outer coordinator loop rather than the shared
@@ -467,28 +479,35 @@ split children, and falls back to the compound collection-level token when the
 range cannot be resolved. This mirrors .NET PR #5958's best-effort
 `ResolvePartitionLocalToken` behavior.
 
-After a **terminal success** (the outer loop returning `Ok`), the driver calls
+Under effective Session consistency, after **each coordinator response** and
+before deciding whether to retry, the driver calls
 `merge_distributed_transaction_session_tokens`. Because a distributed transaction
-spans partitions, tokens are **per operation**, keyed by the operation's
-`partitionKeyRangeId`. The merge:
+spans partitions, tokens are **per operation**, keyed by the range prefix carried
+in each session token. The merge:
 
-- Assembles split tokens (LSN plus a separate `partitionKeyRangeId`) into the
-  `{pkRangeId}:{lsn}` form before folding them into the session container.
+- Requires a complete `{pkRangeId}:{token}` value; a separate
+  `partitionKeyRangeId` field does not repair a missing range prefix.
 - Models per-region progress as `region_progress: HashMap<u64, Option<u64>>`,
   where `None` is the wire "no-progress" sentinel (`-1`) and `Some(lsn)` a
   recorded region LSN, so tokens such as `0#3#12=-1` parse and round-trip
   correctly (`None` sorts below any `Some` in recency/merge comparisons).
 - Under **Session** consistency, a non-canonical token — a corrupt value, **or**
-  a bare `{lsn}` that has no interior colon and no `partitionKeyRangeId` to route
-  it to a partition — is **rejected strictly** (the committed response fails
-  closed) so it cannot silently weaken read-your-own-writes. Outside Session
-  consistency the bookkeeping is best-effort.
+  a bare `{lsn}`, a legacy `{pkRangeId}:{lsn}` payload, or an
+  empty/whitespace-only range prefix — is **rejected
+  strictly** so it cannot silently weaken read-your-own-writes.
 
-Session merge runs **only on terminal success**. Outside Session consistency,
-token bookkeeping is best-effort and does not fail the response. Under Session
-consistency, a malformed per-operation token on a committed response is surfaced
-as an error (matching .NET PR #5958) so read-your-own-writes is not silently
-weakened.
+A malformed capture-eligible per-operation token is surfaced as an error under
+Session consistency regardless of the envelope status, so a retry cannot hide
+corrupt progress. Tokens merged before a failure remain cached.
+Automatic capture is skipped when Session consistency or session capture is
+disabled. Tokens are captured from sub-operations with status below 400, or
+404/409/412 unless the sub-status is 1002; empty tokens are skipped, but nonempty
+whitespace-only tokens are rejected.
+
+This is partial parity with .NET PRs #6081/#6082, not their complete policy:
+the current #6082 proposal validates/captures at every consistency level and
+validates all eligible tokens before merging any. Rust retains Session-only
+capture and incremental merging pending an explicit policy decision.
 
 ---
 
@@ -595,12 +614,13 @@ accepted by the preview API.
 
 A commit-level token cannot describe a transaction spanning partition key
 ranges, so the driver merges each operation's token by
-`partitionKeyRangeId`, including signed per-region LSN values. Merge occurs only
-after the coordinator reaches a terminal successful outcome. Under Session
-consistency, malformed or unroutable tokens are rejected rather than silently
-weakening read-your-own-writes; under weaker consistency modes, bookkeeping is
-best-effort. A valid merge lets later Session reads on every touched container
-observe the committed state.
+`partitionKeyRangeId`, including signed per-region LSN values. Merge occurs after
+each coordinator response, before any outer retry, for capture-eligible
+sub-operations under Session consistency. Malformed or unroutable tokens are
+rejected rather than silently weakening read-your-own-writes; automatic capture
+is skipped under weaker consistency modes. Tokens merged before a later
+validation failure remain cached. A valid merge lets later Session reads on
+every touched container observe the committed state.
 
 Token bookkeeping never changes the coordinator's commit or abort decision. A
 strict merge error discovered after a commit is nevertheless returned to the

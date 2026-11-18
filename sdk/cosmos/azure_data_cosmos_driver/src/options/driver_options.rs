@@ -96,6 +96,12 @@ pub struct DriverOptions {
     /// Whether the driver rejects unsafe user-defined resource names before
     /// request planning.
     resource_name_validation_enabled: bool,
+    /// Maximum automatic retries of a retriable distributed transaction response.
+    #[cfg(feature = "unstable_dtx")]
+    max_retry_attempts_on_aborted_transactions: Option<u32>,
+    /// Maximum cumulative delay spent retrying a distributed transaction.
+    #[cfg(feature = "unstable_dtx")]
+    max_retry_wait_time_on_aborted_transactions: Option<std::time::Duration>,
 }
 
 impl DriverOptions {
@@ -161,6 +167,23 @@ impl DriverOptions {
     pub fn resource_name_validation_enabled(&self) -> bool {
         self.resource_name_validation_enabled
     }
+
+    /// Returns the maximum number of automatic retries for a retriable
+    /// distributed transaction response, or `None` for the default (10).
+    ///
+    /// `Some(0)` disables retries of coordinator responses. This does not control
+    /// bodyless transport or throttling retries.
+    #[cfg(feature = "unstable_dtx")]
+    pub fn max_retry_attempts_on_aborted_transactions(&self) -> Option<u32> {
+        self.max_retry_attempts_on_aborted_transactions
+    }
+
+    /// Returns the maximum cumulative delay spent retrying a distributed
+    /// transaction, or `None` for the default (30 seconds).
+    #[cfg(feature = "unstable_dtx")]
+    pub fn max_retry_wait_time_on_aborted_transactions(&self) -> Option<std::time::Duration> {
+        self.max_retry_wait_time_on_aborted_transactions
+    }
 }
 
 /// Builder for creating [`DriverOptions`].
@@ -179,6 +202,10 @@ pub struct DriverOptionsBuilder {
     partition_failover_options: Option<PartitionFailoverOptions>,
     hedging_options: Option<HedgingOptions>,
     resource_name_validation_enabled: bool,
+    #[cfg(feature = "unstable_dtx")]
+    max_retry_attempts_on_aborted_transactions: Option<u32>,
+    #[cfg(feature = "unstable_dtx")]
+    max_retry_wait_time_on_aborted_transactions: Option<std::time::Duration>,
 }
 
 impl DriverOptionsBuilder {
@@ -194,6 +221,10 @@ impl DriverOptionsBuilder {
             partition_failover_options: None,
             hedging_options: None,
             resource_name_validation_enabled: true,
+            #[cfg(feature = "unstable_dtx")]
+            max_retry_attempts_on_aborted_transactions: None,
+            #[cfg(feature = "unstable_dtx")]
+            max_retry_wait_time_on_aborted_transactions: None,
         }
     }
 
@@ -313,6 +344,32 @@ impl DriverOptionsBuilder {
         self
     }
 
+    /// Sets the maximum number of automatic retries of a retriable
+    /// distributed transaction response.
+    ///
+    /// Defaults to 10 when unset. `0` disables automatic retries. Retrying also
+    /// stops once [`with_max_retry_wait_time_on_aborted_transactions()`](Self::with_max_retry_wait_time_on_aborted_transactions)
+    /// is exhausted, whichever comes first. This does not control bodyless
+    /// transport or throttling retries.
+    #[cfg(feature = "unstable_dtx")]
+    pub fn with_max_retry_attempts_on_aborted_transactions(mut self, attempts: u32) -> Self {
+        self.max_retry_attempts_on_aborted_transactions = Some(attempts);
+        self
+    }
+
+    /// Sets the maximum cumulative delay spent retrying a distributed transaction.
+    ///
+    /// Defaults to 30 seconds when unset. A zero duration permits no retry delay,
+    /// so no retry happens.
+    #[cfg(feature = "unstable_dtx")]
+    pub fn with_max_retry_wait_time_on_aborted_transactions(
+        mut self,
+        wait: std::time::Duration,
+    ) -> Self {
+        self.max_retry_wait_time_on_aborted_transactions = Some(wait);
+        self
+    }
+
     /// Builds the [`DriverOptions`].
     ///
     /// When [`with_partition_failover_options`](Self::with_partition_failover_options)
@@ -360,6 +417,12 @@ impl DriverOptionsBuilder {
             partition_failover_options,
             hedging_options: self.hedging_options.unwrap_or_default(),
             resource_name_validation_enabled: self.resource_name_validation_enabled,
+            #[cfg(feature = "unstable_dtx")]
+            max_retry_attempts_on_aborted_transactions: self
+                .max_retry_attempts_on_aborted_transactions,
+            #[cfg(feature = "unstable_dtx")]
+            max_retry_wait_time_on_aborted_transactions: self
+                .max_retry_wait_time_on_aborted_transactions,
         }
     }
 }

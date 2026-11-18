@@ -1790,6 +1790,7 @@ pub mod models {
         pub is_retriable: bool,
         pub diagnostic_string: Option<String>,
         pub error_message: Option<String>,
+        pub response_mode: DistributedTransactionResponseMode,
     }
     #[cfg(feature = "unstable_dtx")]
     impl DistributedTransactionResponse {
@@ -2259,6 +2260,14 @@ pub mod models {
         Patch,
     }
     #[cfg(feature = "unstable_dtx")]
+    #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+    #[non_exhaustive]
+    pub enum DistributedTransactionResponseMode {
+        #[default]
+        Standard,
+        FastResponse,
+    }
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     #[non_exhaustive]
     pub enum DistributedTransactionResultBody {
@@ -2698,6 +2707,10 @@ pub mod options {
         #[cfg(feature = "fault_injection")]
         pub fn fault_injection_rules(&self) -> Option<&[Arc<FaultInjectionRule>]>;
         pub fn hedging_options(&self) -> &HedgingOptions;
+        #[cfg(feature = "unstable_dtx")]
+        pub fn max_retry_attempts_on_aborted_transactions(&self) -> Option<u32>;
+        #[cfg(feature = "unstable_dtx")]
+        pub fn max_retry_wait_time_on_aborted_transactions(&self) -> Option<std::time::Duration>;
         pub fn operation_options(&self) -> &Arc<OperationOptions>;
         pub fn partition_failover_options(&self) -> &PartitionFailoverOptions;
         pub fn preferred_regions(&self) -> &[Region];
@@ -2714,6 +2727,10 @@ pub mod options {
         #[cfg(feature = "fault_injection")]
         pub fn with_fault_injection_rules(self, rules: Vec<Arc<FaultInjectionRule>>) -> crate::error::Result<Self>;
         pub fn with_hedging_options(self, options: HedgingOptions) -> Self;
+        #[cfg(feature = "unstable_dtx")]
+        pub fn with_max_retry_attempts_on_aborted_transactions(self, attempts: u32) -> Self;
+        #[cfg(feature = "unstable_dtx")]
+        pub fn with_max_retry_wait_time_on_aborted_transactions(self, wait: std::time::Duration) -> Self;
         pub fn with_operation_options(self, options: OperationOptions) -> Self;
         pub fn with_partition_failover_options(self, options: PartitionFailoverOptions) -> Self;
         pub fn with_preferred_regions(self, regions: Vec<Region>) -> Self;

@@ -600,11 +600,13 @@ mod tests {
 
     #[test]
     fn set_and_get_single_token() {
-        let sc = SessionContainer::new();
-        let c = test_container("db1", "c1", "rid1");
-        sc.set_session_token(&c, "0:1#100#1=10");
-        let token = sc.resolve_session_token(&c).unwrap();
-        assert_eq!(token.as_str(), "0:1#100#1=10");
+        for value in ["0:1#100#1=10", "1:500"] {
+            let sc = SessionContainer::new();
+            let c = test_container("db1", "c1", "rid1");
+            sc.set_session_token(&c, value);
+            let token = sc.resolve_session_token(&c).unwrap();
+            assert_eq!(token.as_str(), value);
+        }
     }
 
     #[test]

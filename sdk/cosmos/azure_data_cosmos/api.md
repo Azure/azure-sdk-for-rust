@@ -353,6 +353,10 @@ pub mod clients {
         pub fn with_diagnostics_handler(self, handler: Arc<dyn DiagnosticsHandler>) -> Self;
         #[cfg(feature = "fault_injection")]
         pub fn with_fault_injection_rules(self, rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>) -> crate::Result<Self>;
+        #[cfg(feature = "unstable_dtx")]
+        pub fn with_max_retry_attempts_on_aborted_transactions(self, attempts: u32) -> Self;
+        #[cfg(feature = "unstable_dtx")]
+        pub fn with_max_retry_wait_time_on_aborted_transactions(self, wait_time: Duration) -> Self;
         pub fn with_partition_failover_options(self, options: PartitionFailoverOptions) -> Self;
         pub fn with_resource_name_validation(self, enabled: bool) -> Self;
         pub fn with_runtime(self, runtime: CosmosRuntime) -> Self;
@@ -455,6 +459,7 @@ pub mod clients {
         pub fn len(&self) -> usize;
         pub fn operation_result(&self, index: usize) -> Option<DistributedTransactionOperationResult<'_>>;
         pub fn request_charge(&self) -> Option<f64>;
+        pub fn response_mode(&self) -> DistributedTransactionResponseMode;
         pub fn retry_after(&self) -> Option<std::time::Duration>;
         pub fn status(&self) -> crate::CosmosStatus;
     }
@@ -489,6 +494,14 @@ pub mod clients {
     impl Stream for ThroughputPoller {
         type Item = Result<ResourceResponse<ThroughputProperties>, CosmosError>;
         fn poll_next(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> task::Poll<Option<<Self as >::Item>>;
+    }
+    #[cfg(feature = "unstable_dtx")]
+    #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+    #[non_exhaustive]
+    pub enum DistributedTransactionResponseMode {
+        #[default]
+        Standard,
+        FastResponse,
     }
 }
 pub mod diagnostics {

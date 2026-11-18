@@ -417,6 +417,18 @@ fn validate_transaction_account(
     }
 }
 
+/// Response mode reported by the distributed transaction coordinator.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum DistributedTransactionResponseMode {
+    /// The coordinator returned a standard response. This is the default when the
+    /// coordinator omits the mode or reports an unrecognized value.
+    #[default]
+    Standard,
+    /// The coordinator returned a fast response.
+    FastResponse,
+}
+
 /// Response from a distributed transaction.
 #[derive(Clone, SafeDebug)]
 #[safe(true)]
@@ -501,6 +513,16 @@ impl DistributedTransactionResponse {
     /// Returns whether the coordinator marked this response as retryable.
     pub fn is_retriable(&self) -> bool {
         self.inner.is_retriable
+    }
+
+    /// Returns the response mode the coordinator reported for this transaction.
+    pub fn response_mode(&self) -> DistributedTransactionResponseMode {
+        match self.inner.response_mode {
+            driver_models::DistributedTransactionResponseMode::FastResponse => {
+                DistributedTransactionResponseMode::FastResponse
+            }
+            _ => DistributedTransactionResponseMode::Standard,
+        }
     }
 
     /// Returns a driver-synthesized error message for malformed coordinator responses.
@@ -595,6 +617,41 @@ impl DistributedTransactionOperationResult<'_> {
                 serde_json::from_slice(bytes).map(Some).map_err(Into::into)
             }
             _ => Ok(None),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{DistributedTransactionResponse, DistributedTransactionResponseMode};
+    use azure_core::http::StatusCode;
+    use azure_data_cosmos_driver::models as driver_models;
+
+    #[test]
+    fn response_modes_use_sdk_owned_types() {
+        for (wire_mode, expected) in [
+            ("Standard", DistributedTransactionResponseMode::Standard),
+            (
+                "FastResponse",
+                DistributedTransactionResponseMode::FastResponse,
+            ),
+            ("unknown", DistributedTransactionResponseMode::Standard),
+        ] {
+            let body = serde_json::json!({
+                "responseMode": wire_mode,
+                "operationResponses": [{"index": 0, "statusCode": 200}],
+            });
+            let response = DistributedTransactionResponse::from_driver(
+                driver_models::DistributedTransactionResponse::from_body(
+                    StatusCode::Ok,
+                    None,
+                    &serde_json::to_vec(&body).unwrap(),
+                    1,
+                    Default::default(),
+                ),
+            );
+            let mode: crate::clients::DistributedTransactionResponseMode = response.response_mode();
+            assert_eq!(mode, expected);
         }
     }
 }

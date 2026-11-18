@@ -7,7 +7,9 @@
 //! resolve / capture operations that the pipeline calls directly.
 
 #[cfg(feature = "unstable_dtx")]
-use crate::models::partition_key_range::PartitionKeyRange;
+use crate::models::{
+    partition_key_range::PartitionKeyRange, vector_session_token::VectorSessionToken,
+};
 use crate::{
     driver::cache::ContainerRoutingMap,
     models::{
@@ -198,40 +200,50 @@ impl SessionManager {
         operations: &[crate::models::DistributedTransactionOperation],
         is_session_consistency: bool,
     ) -> crate::error::Result<()> {
-        // Only a 2xx-success committed response under Session consistency turns a
-        // malformed per-operation token into a hard error. A `304 NotModified`
-        // or any non-success envelope must not fail on token bookkeeping.
-        let throw_on_malformed = response.is_success_status_code() && is_session_consistency;
+        // A malformed token is a hard error under Session consistency regardless
+        // of the envelope status, so a failed or retriable response cannot hide a
+        // corrupt session token. Tokens already merged stay in the cache.
+        let throw_on_malformed = is_session_consistency;
 
         for result in &response.operation_results {
             let Some(operation) = operations.get(result.index) else {
                 continue;
             };
-            // Skip non-success sub-operations. They may carry stale or malformed
-            // tokens that must not be merged or trigger the throw.
-            if !result.is_success_status_code() {
+            if !is_session_token_capturable(result.status_code, result.sub_status_code) {
                 continue;
             }
             let Some(session_token) = result.session_token.as_ref() else {
                 continue;
             };
             let token = session_token.as_str();
-            if token.trim().is_empty() {
+            if token.is_empty() {
+                continue;
+            }
+
+            if !token.split(',').all(|segment| {
+                segment.split_once(':').is_some_and(|(range, value)| {
+                    !range.trim().is_empty() && VectorSessionToken::parse(value).is_ok()
+                })
+            }) {
+                if throw_on_malformed {
+                    return Err(dtx_malformed_session_token_error(format!(
+                        "distributed transaction session token for operation {} requires a usable partition key range prefix and a current-protocol vector payload",
+                        result.index
+                    )));
+                }
                 continue;
             }
 
             // The coordinator must send a complete `<pkRangeId>:<token>` segment.
             // The SDK validates and merges that value as-is; it does not construct
             // missing partition key range prefixes from side-channel fields.
-            let token = token.trim();
-
             if let Err(error) = self
                 .container
                 .set_session_token_checked(&operation.target.container, token)
             {
                 if throw_on_malformed {
                     return Err(dtx_malformed_session_token_error(format!(
-                        "distributed transaction committed but session token for operation {} was rejected: {}",
+                        "distributed transaction session token for operation {} was rejected: {}",
                         result.index, error
                     )));
                 }
@@ -271,6 +283,21 @@ impl SessionManager {
         self.container
             .resolve_session_token(&operation.target.container)
     }
+}
+
+/// Mirrors .NET's per-operation capture policy: any status below 400 carries a
+/// valid token, as do 404, 409 and 412 unless they are a `1002` read-session
+/// mismatch.
+#[cfg(feature = "unstable_dtx")]
+fn is_session_token_capturable(
+    status_code: azure_core::http::StatusCode,
+    sub_status_code: Option<crate::models::SubStatusCode>,
+) -> bool {
+    const READ_SESSION_NOT_AVAILABLE: u16 = 1002;
+    let code = u16::from(status_code);
+    code < 400
+        || (matches!(code, 404 | 409 | 412)
+            && sub_status_code.map(|s| s.value()) != Some(READ_SESSION_NOT_AVAILABLE))
 }
 
 #[cfg(feature = "unstable_dtx")]
@@ -549,6 +576,7 @@ mod tests {
             is_retriable: false,
             diagnostic_string: None,
             error_message: None,
+            response_mode: Default::default(),
         };
 
         mgr.merge_distributed_transaction_session_tokens(&response, &[operation], true)
@@ -601,6 +629,7 @@ mod tests {
             is_retriable: false,
             diagnostic_string: None,
             error_message: None,
+            response_mode: Default::default(),
         };
 
         let error = mgr
@@ -650,6 +679,7 @@ mod tests {
             is_retriable: false,
             diagnostic_string: None,
             error_message: None,
+            response_mode: Default::default(),
         };
 
         let error = mgr
@@ -699,6 +729,7 @@ mod tests {
             is_retriable: false,
             diagnostic_string: None,
             error_message: None,
+            response_mode: Default::default(),
         };
 
         // Outside Session consistency a malformed token is skipped best-effort,
@@ -748,6 +779,7 @@ mod tests {
             is_retriable: false,
             diagnostic_string: None,
             error_message: None,
+            response_mode: Default::default(),
         };
 
         let error = mgr
@@ -766,7 +798,7 @@ mod tests {
 
     #[cfg(feature = "unstable_dtx")]
     #[test]
-    fn dtx_not_modified_sub_operation_skipped_under_session_consistency() {
+    fn dtx_not_modified_sub_operation_token_is_captured_under_session_consistency() {
         use crate::models::{
             DistributedTransactionOperation, DistributedTransactionOperationKind,
             DistributedTransactionOperationResult, DistributedTransactionResponse,
@@ -780,9 +812,7 @@ mod tests {
             DistributedTransactionTarget::new(container.clone(), PartitionKey::from("pk1"), "doc1"),
         )];
         // An all-`304 NotModified` read snapshot whose 304 sub-op carries a
-        // malformed token must NOT fail the completed read under Session
-        // consistency. The 304 sub-op is non-success, so it is skipped (no merge,
-        // no throw) exactly like .NET #5958.
+        // malformed token. 304 is capturable (.NET #6081/#6082), so it errors.
         let response = DistributedTransactionResponse {
             status_code: azure_core::http::StatusCode::NotModified,
             sub_status_code: None,
@@ -806,19 +836,23 @@ mod tests {
             is_retriable: false,
             diagnostic_string: None,
             error_message: None,
+            response_mode: Default::default(),
         };
 
-        // No error despite the malformed token on the 304 sub-op.
+        for token in ["0:not-a-token", "   ", ":1#100#1=10", " :1#100#1=10"] {
+            let mut response = response.clone();
+            response.operation_results[0].session_token = Some(SessionToken::new(token));
+            assert!(
+                mgr.merge_distributed_transaction_session_tokens(&response, &operations, true)
+                    .is_err(),
+                "{token:?}"
+            );
+        }
+
+        let mut response = response;
+        response.operation_results[0].session_token = Some(SessionToken::new(""));
         mgr.merge_distributed_transaction_session_tokens(&response, &operations, true)
             .unwrap();
-
-        // And nothing was merged for the skipped 304 sub-op.
-        let read_op = CosmosOperation::read_item(ItemReference::from_name(
-            &container,
-            PartitionKey::from("pk1"),
-            "doc1",
-        ));
-        assert!(mgr.resolve_session_token(&read_op, None, None).is_none());
     }
 
     #[cfg(feature = "unstable_dtx")]
@@ -862,6 +896,7 @@ mod tests {
             is_retriable: false,
             diagnostic_string: None,
             error_message: None,
+            response_mode: Default::default(),
         };
 
         mgr.merge_distributed_transaction_session_tokens(&response, &operations, true)
@@ -912,6 +947,7 @@ mod tests {
             is_retriable: false,
             diagnostic_string: None,
             error_message: None,
+            response_mode: Default::default(),
         };
         let prime_op = DistributedTransactionOperation::new(
             DistributedTransactionOperationKind::Create,

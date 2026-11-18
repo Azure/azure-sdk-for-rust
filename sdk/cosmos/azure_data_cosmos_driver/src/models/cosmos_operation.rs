@@ -186,6 +186,14 @@ pub struct CosmosOperation {
     /// Absolute deadline inherited by internal sub-operations that belong to
     /// one logical operation, such as PATCH Read-Modify-Write.
     absolute_deadline: Option<Instant>,
+    /// Dispatch history of a distributed write transaction's idempotency token,
+    /// used to stamp the retry and cross-region-redirect headers.
+    #[cfg(feature = "unstable_dtx")]
+    dtx_dispatch_tracker: Option<
+        std::sync::Arc<
+            crate::models::distributed_transaction::DistributedTransactionDispatchTracker,
+        >,
+    >,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -747,6 +755,30 @@ impl CosmosOperation {
         self.absolute_deadline
     }
 
+    /// Attaches the dispatch tracker of a distributed write transaction.
+    #[cfg(feature = "unstable_dtx")]
+    pub(crate) fn with_dtx_dispatch_tracker(
+        mut self,
+        tracker: std::sync::Arc<
+            crate::models::distributed_transaction::DistributedTransactionDispatchTracker,
+        >,
+    ) -> Self {
+        self.dtx_dispatch_tracker = Some(tracker);
+        self
+    }
+
+    /// Returns the dispatch tracker of a distributed write transaction, if any.
+    #[cfg(feature = "unstable_dtx")]
+    pub(crate) fn dtx_dispatch_tracker(
+        &self,
+    ) -> Option<
+        &std::sync::Arc<
+            crate::models::distributed_transaction::DistributedTransactionDispatchTracker,
+        >,
+    > {
+        self.dtx_dispatch_tracker.as_ref()
+    }
+
     /// Returns `true` when this operation is an internal sub-operation of a
     /// PATCH's Read-Modify-Write loop.
     pub fn is_patch_sub_operation(&self) -> bool {
@@ -789,6 +821,8 @@ impl CosmosOperation {
             resolved_utf8_decoding_mode: Utf8DecodingMode::Strict,
             internal_read_routing: InternalReadRouting::Default,
             absolute_deadline: None,
+            #[cfg(feature = "unstable_dtx")]
+            dtx_dispatch_tracker: None,
         }
     }
 

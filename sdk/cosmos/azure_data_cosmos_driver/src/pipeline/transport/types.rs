@@ -73,6 +73,10 @@ pub(crate) struct TransportRequest {
     pub url: Url,
     /// Headers to send (includes operation-specific and attempt-specific headers).
     pub headers: Headers,
+    /// Per-token dispatch history, shared across DTX policy retries.
+    #[cfg(feature = "unstable_dtx")]
+    pub dtx_dispatch_tracker:
+        Option<std::sync::Arc<crate::models::DistributedTransactionDispatchTracker>>,
     /// Type of resource targeted by the operation.
     #[cfg(feature = "unstable_dtx")]
     pub resource_type: ResourceType,

@@ -44,6 +44,15 @@ async fn ordinary_and_forced_final_retries_wait_on_the_injected_clock() {
         ]));
         let client = AdaptiveTransport::Gateway(mock.clone());
         let request = test_request(Some(clock.now() + Duration::from_secs(4)));
+        #[cfg(feature = "unstable_dtx")]
+        let request = {
+            let mut request = request;
+            request.resource_type = crate::models::ResourceType::DistributedTransactionBatch;
+            request.dtx_dispatch_tracker = Some(Arc::new(
+                crate::models::DistributedTransactionDispatchTracker::default(),
+            ));
+            request
+        };
         let credential = Credential::from(azure_core::credentials::Secret::new("dGVzdA=="));
         let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
         let mut context = gateway_v2_context(
@@ -74,6 +83,13 @@ async fn ordinary_and_forced_final_retries_wait_on_the_injected_clock() {
 
         assert!(result.outcome.is_successful());
         assert_eq!(mock.requests().len(), 2);
+        #[cfg(feature = "unstable_dtx")]
+        for (request, expected) in mock.requests().iter().zip(["False", "True"]) {
+            let retry_header = azure_core::http::headers::HeaderName::from_static(
+                crate::models::DTX_IS_RETRY_HEADER,
+            );
+            assert_eq!(request.headers.get_str(&retry_header).unwrap(), expected);
+        }
         assert_eq!(clock.pending_sleep_count(), 0);
         let completed = diagnostics.complete();
         assert_eq!(completed.requests().len(), 2);

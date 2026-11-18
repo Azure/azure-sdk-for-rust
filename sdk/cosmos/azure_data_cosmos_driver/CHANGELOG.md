@@ -8,6 +8,8 @@
 - Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Added non-resumable read-many plans with `ItemSelector`, `ItemScope`, and `ItemFilter` for key/id, partition, or feed-range selections, including hierarchical prefixes, parameterized selector filters, and bounded query batches. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Added `FullTextScoreScope` and client-side ranked full-text and weighted hybrid query execution with bounded result windows. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
+- Added `DistributedTransactionResponseMode`, and `max_retry_attempts_on_aborted_transactions` and `max_retry_wait_time_on_aborted_transactions` driver options for distributed transaction retries (`unstable_dtx`). ([#5609](https://github.com/Azure/azure-sdk-for-rust/pull/5609))
+- Distributed write transactions now send `x-ms-cosmos-internal-is-dtx-retry` and `x-ms-cosmos-internal-is-dtx-cross-region-redirect` headers. ([#5609](https://github.com/Azure/azure-sdk-for-rust/pull/5609))
 
 ### Breaking Changes
 
@@ -15,6 +17,10 @@
 
 ### Bugs Fixed
 
+- An all-not-modified distributed read (`200` with sub-status `5425`) now reports `304 NotModified`. ([#5609](https://github.com/Azure/azure-sdk-for-rust/pull/5609))
+- A durably aborted distributed write transaction (`452`) is retried under a new idempotency token. ([#5609](https://github.com/Azure/azure-sdk-for-rust/pull/5609))
+- Distributed transaction session tokens are captured from eligible non-success sub-operations, and malformed tokens fail under Session consistency before retrying. ([#5609](https://github.com/Azure/azure-sdk-for-rust/pull/5609))
+- Distributed write retry headers now advance after bodyless HTTP `429` responses without counting socket resends; DTX token validation rejects legacy V1 payloads without changing ordinary session-token support. ([#5609](https://github.com/Azure/azure-sdk-for-rust/pull/5609))
 - Gateway V2 now loads lazy partition topology on demand to scope explicit compound session tokens; topology-loading failures propagate, while unavailable safe scoping omits the token and downgrades Session consistency to Eventual for that attempt, without a read-your-writes guarantee. ([#5585](https://github.com/Azure/azure-sdk-for-rust/pull/5585))
 - Replace stale change-feed start headers, retain starts and polling positions in checkpoints, and preserve hierarchical-prefix leaf bounds on both gateway transports. Invalid keyed change feeds return errors instead of panicking during planning. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - A checkpoint's saved start takes precedence over a newly supplied change-feed start. Omit the continuation token to start a new feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))

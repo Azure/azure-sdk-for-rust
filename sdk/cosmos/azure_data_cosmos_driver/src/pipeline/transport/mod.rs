@@ -81,10 +81,39 @@ pub(crate) async fn execute(
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
     let mut progress = TransportRetryProgress::default();
+    #[cfg(feature = "unstable_dtx")]
+    let mut request = request;
+    // Socket resends reuse the policy dispatch's headers without advancing its history.
+    #[cfg(feature = "unstable_dtx")]
+    let mut record_dtx_dispatch = true;
     loop {
         if request.deadline.exceeded(services.clock.now()) {
             tracing::trace!("transport pipeline: deadline exceeded before attempt");
             return TransportResult::deadline_exceeded(RequestSentStatus::NotSent);
+        }
+
+        #[cfg(feature = "unstable_dtx")]
+        if record_dtx_dispatch {
+            if let Some(tracker) = &request.dtx_dispatch_tracker {
+                let (is_retry, is_cross_region) =
+                    tracker.record_dispatch(request.endpoint.region().map(|r| r.as_str()));
+                for (name, value) in [
+                    (crate::models::DTX_IS_RETRY_HEADER, is_retry),
+                    (
+                        crate::models::DTX_IS_CROSS_REGION_REDIRECT_HEADER,
+                        is_cross_region,
+                    ),
+                ] {
+                    request.headers.insert(
+                        azure_core::http::headers::HeaderName::from_static(name),
+                        azure_core::http::headers::HeaderValue::from_static(if value {
+                            "True"
+                        } else {
+                            "False"
+                        }),
+                    );
+                }
+            }
         }
 
         let mut request_diagnostics =
@@ -130,6 +159,8 @@ pub(crate) async fn execute(
         };
         tracing::debug!(outcome = ?result.outcome, "transport request complete");
 
+        #[cfg(feature = "unstable_dtx")]
+        let throttle_before_recovery = progress.throttle;
         match outcome {
             Ok(result) => return result,
             Err(error) => match recovery::recover(
@@ -142,7 +173,13 @@ pub(crate) async fn execute(
             )
             .await
             {
-                RecoveryAction::Retry => continue,
+                RecoveryAction::Retry => {
+                    #[cfg(feature = "unstable_dtx")]
+                    {
+                        record_dtx_dispatch = progress.throttle != throttle_before_recovery;
+                    }
+                    continue;
+                }
                 RecoveryAction::Fail(result) => return result,
             },
         }
