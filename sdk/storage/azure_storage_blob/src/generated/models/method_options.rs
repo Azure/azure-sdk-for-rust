@@ -1061,6 +1061,14 @@ pub struct BlobContainerClientCreateOptions<'a> {
     /// The public access setting for the container.
     pub access: Option<PublicAccessType>,
 
+    /// The name of the Blob Access Point configuration to bind to the container at creation. If the unique ID is omitted, the
+    /// service resolves and stores it. The binding cannot be changed after creation.
+    pub blob_access_point_configuration_name: Option<String>,
+
+    /// The unique ID of the Blob Access Point configuration to bind to the container at creation. When supplied with the configuration
+    /// name, the service validates that both identify the same configuration.
+    pub blob_access_point_configuration_unique_id: Option<String>,
+
     /// Specifies the default encryption scope to set on the container and use for all future requests.
     pub default_encryption_scope: Option<String>,
 

@@ -756,6 +756,20 @@ pub struct ContainerItem {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct ContainerProperties {
+    /// The name of the Blob Access Point configuration bound to the container. Omitted for ordinary containers.
+    #[serde(
+        rename = "BlobAccessPointConfigurationName",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub blob_access_point_configuration_name: Option<String>,
+
+    /// The unique ID of the Blob Access Point configuration bound to the container. Omitted for ordinary containers.
+    #[serde(
+        rename = "BlobAccessPointConfigurationUniqueId",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub blob_access_point_configuration_unique_id: Option<String>,
+
     /// The default encryption scope of the container.
     #[serde(
         rename = "DefaultEncryptionScope",
@@ -786,6 +800,13 @@ pub struct ContainerProperties {
     /// Whether the container has a legal hold.
     #[serde(rename = "HasLegalHold", skip_serializing_if = "Option::is_none")]
     pub has_legal_hold: Option<bool>,
+
+    /// Indicates whether this is a Blob Access Point container. Omitted for ordinary containers.
+    #[serde(
+        rename = "IsBlobAccessPointContainer",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub is_blob_access_point_container: Option<bool>,
 
     /// Whether immutable storage with versioning is enabled.
     #[serde(

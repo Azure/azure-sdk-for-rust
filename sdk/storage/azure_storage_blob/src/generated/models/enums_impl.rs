@@ -1216,6 +1216,12 @@ impl<'a> From<&'a StorageErrorCode> for &'a str {
             }
             StorageErrorCode::AuthorizationServiceMismatch => "AuthorizationServiceMismatch",
             StorageErrorCode::AuthorizationSourceIPMismatch => "AuthorizationSourceIPMismatch",
+            StorageErrorCode::BlobAccessPointConfigurationNameNotFound => {
+                "BlobAccessPointConfigurationNameNotFound"
+            }
+            StorageErrorCode::BlobAccessPointConfigurationUniqueIdMismatch => {
+                "BlobAccessPointConfigurationUniqueIdMismatch"
+            }
             StorageErrorCode::BlobAccessTierNotSupportedForAccountType => {
                 "BlobAccessTierNotSupportedForAccountType"
             }
@@ -1332,6 +1338,9 @@ impl<'a> From<&'a StorageErrorCode> for &'a str {
             StorageErrorCode::OperationNotAllowedOnIncrementalCopyBlob => {
                 "OperationNotAllowedOnIncrementalCopyBlob"
             }
+            StorageErrorCode::OperationNotSupportedForBlobAccessPoint => {
+                "OperationNotSupportedForBlobAccessPoint"
+            }
             StorageErrorCode::OperationTimedOut => "OperationTimedOut",
             StorageErrorCode::OutOfRangeInput => "OutOfRangeInput",
             StorageErrorCode::OutOfRangeQueryParameterValue => "OutOfRangeQueryParameterValue",
@@ -1382,6 +1391,12 @@ impl FromStr for StorageErrorCode {
             }
             "AuthorizationServiceMismatch" => StorageErrorCode::AuthorizationServiceMismatch,
             "AuthorizationSourceIPMismatch" => StorageErrorCode::AuthorizationSourceIPMismatch,
+            "BlobAccessPointConfigurationNameNotFound" => {
+                StorageErrorCode::BlobAccessPointConfigurationNameNotFound
+            }
+            "BlobAccessPointConfigurationUniqueIdMismatch" => {
+                StorageErrorCode::BlobAccessPointConfigurationUniqueIdMismatch
+            }
             "BlobAccessTierNotSupportedForAccountType" => {
                 StorageErrorCode::BlobAccessTierNotSupportedForAccountType
             }
@@ -1498,6 +1513,9 @@ impl FromStr for StorageErrorCode {
             "OperationNotAllowedOnIncrementalCopyBlob" => {
                 StorageErrorCode::OperationNotAllowedOnIncrementalCopyBlob
             }
+            "OperationNotSupportedForBlobAccessPoint" => {
+                StorageErrorCode::OperationNotSupportedForBlobAccessPoint
+            }
             "OperationTimedOut" => StorageErrorCode::OperationTimedOut,
             "OutOfRangeInput" => StorageErrorCode::OutOfRangeInput,
             "OutOfRangeQueryParameterValue" => StorageErrorCode::OutOfRangeQueryParameterValue,
@@ -1547,6 +1565,12 @@ impl AsRef<str> for StorageErrorCode {
             }
             StorageErrorCode::AuthorizationServiceMismatch => "AuthorizationServiceMismatch",
             StorageErrorCode::AuthorizationSourceIPMismatch => "AuthorizationSourceIPMismatch",
+            StorageErrorCode::BlobAccessPointConfigurationNameNotFound => {
+                "BlobAccessPointConfigurationNameNotFound"
+            }
+            StorageErrorCode::BlobAccessPointConfigurationUniqueIdMismatch => {
+                "BlobAccessPointConfigurationUniqueIdMismatch"
+            }
             StorageErrorCode::BlobAccessTierNotSupportedForAccountType => {
                 "BlobAccessTierNotSupportedForAccountType"
             }
@@ -1663,6 +1687,9 @@ impl AsRef<str> for StorageErrorCode {
             StorageErrorCode::OperationNotAllowedOnIncrementalCopyBlob => {
                 "OperationNotAllowedOnIncrementalCopyBlob"
             }
+            StorageErrorCode::OperationNotSupportedForBlobAccessPoint => {
+                "OperationNotSupportedForBlobAccessPoint"
+            }
             StorageErrorCode::OperationTimedOut => "OperationTimedOut",
             StorageErrorCode::OutOfRangeInput => "OutOfRangeInput",
             StorageErrorCode::OutOfRangeQueryParameterValue => "OutOfRangeQueryParameterValue",
@@ -1721,6 +1748,12 @@ impl Display for StorageErrorCode {
             }
             StorageErrorCode::AuthorizationSourceIPMismatch => {
                 f.write_str("AuthorizationSourceIPMismatch")
+            }
+            StorageErrorCode::BlobAccessPointConfigurationNameNotFound => {
+                f.write_str("BlobAccessPointConfigurationNameNotFound")
+            }
+            StorageErrorCode::BlobAccessPointConfigurationUniqueIdMismatch => {
+                f.write_str("BlobAccessPointConfigurationUniqueIdMismatch")
             }
             StorageErrorCode::BlobAccessTierNotSupportedForAccountType => {
                 f.write_str("BlobAccessTierNotSupportedForAccountType")
@@ -1859,6 +1892,9 @@ impl Display for StorageErrorCode {
             StorageErrorCode::NoPendingCopyOperation => f.write_str("NoPendingCopyOperation"),
             StorageErrorCode::OperationNotAllowedOnIncrementalCopyBlob => {
                 f.write_str("OperationNotAllowedOnIncrementalCopyBlob")
+            }
+            StorageErrorCode::OperationNotSupportedForBlobAccessPoint => {
+                f.write_str("OperationNotSupportedForBlobAccessPoint")
             }
             StorageErrorCode::OperationTimedOut => f.write_str("OperationTimedOut"),
             StorageErrorCode::OutOfRangeInput => f.write_str("OutOfRangeInput"),
