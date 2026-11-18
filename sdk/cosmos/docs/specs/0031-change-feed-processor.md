@@ -324,7 +324,7 @@ before A or C registers again. Each SDK consumer handles one batch at a time,
 but a slow W1 handler does not prevent W2 from processing its own batch.
 Lease renewal and balancing continue independently in both workers.
 
-There is no shared queue across workers. If W2 acquires A from W1, W1 closes
+There is no shared ready-lease queue across workers. If W2 acquires A from W1, W1 closes
 the old delivery session when ownership loss is detected. W2 creates a new
 lease processor for A and registers it in W2's queue when ready; no queue entry
 or in-flight batch is transferred between workers. Old batches cannot update
@@ -644,19 +644,33 @@ Rust driver type or an additional acknowledgment required from the application.
 
 ### 9.2 Native operations
 
+CFP uses the existing native completion-queue type and GoV2 client reactor,
+not a CFP-specific queue creation API. Startup receives a compatible existing
+queue; subsequent operations post their completions to that queue.
+
 | Native API | Purpose |
 | --- | --- |
 | `cosmos_change_feed_processor_request_init` | Initialize a versioned `CosmosChangeFeedProcessorRequest` carrying workload/worker names, feed mode, initial position, and tuning options. |
-| `cosmos_change_feed_processor_queue_create` | Create the native completion queue. This is not the ready-lease queue described in section 6. |
 | `cosmos_change_feed_processor_start_with_policy_submit` | Submit startup with source/lease driver and container handles, the request, and explicit checkpoint policy/interval. `cosmos_change_feed_processor_start_submit` uses five-minute Deferred persistence. |
 | `cosmos_change_feed_processor_next_submit` | Submit one batch receive. Accepted submission does not mean a batch is ready. |
 | `cosmos_change_feed_processor_acknowledge_submit` | Submit successful processing under the selected policy. Completion can mean in-memory acceptance under Deferred. |
 | `cosmos_change_feed_processor_checkpoint_submit` | Submit successful processing with an explicit durable checkpoint barrier. |
 | `cosmos_change_feed_processor_stop_submit` / `cosmos_change_feed_processor_abort_submit` | Submit graceful shutdown or forced cleanup. |
-| `cosmos_change_feed_processor_queue_wait` | Retrieve owned completion records. This is a timed blocking native wait; the Go adapter must integrate it with its completion pump, not treat it as an async Rust call. |
 | `cosmos_change_feed_processor_completion_take_processor` / `cosmos_change_feed_processor_completion_take_receipt` | Detach an owned handle from a completion before freeing that completion. |
-| `cosmos_change_feed_processor_completion_free`, `cosmos_change_feed_processor_receipt_free`, `cosmos_change_feed_processor_free` | Release owned native resources. Free an unacknowledged receipt on handler failure. |
-| `cosmos_change_feed_processor_queue_shutdown` / `cosmos_change_feed_processor_queue_free` | End completion delivery and request forced processor shutdown; do not use queue shutdown as graceful stop. |
+| `cosmos_change_feed_processor_receipt_free`, `cosmos_change_feed_processor_free` | Release processor-specific native handles. Free an unacknowledged receipt on handler failure. |
+
+Use the common `cosmos_completion_queue_wait` and
+`cosmos_completion_queue_free_completions` paths to retrieve and release
+completion records. Processor-handle extraction must integrate with that common
+record ownership model. The client owns queue shutdown and free; stopping or
+freeing one processor must not close a queue used by other workers or point
+operations.
+
+**Open: shared completion contract.** Define version-compatible result kinds,
+batch payloads, and handle extraction/disposal within the common completion
+representation. Pending CFP receives must not exhaust shared admission
+capacity needed by point operations, acknowledgments, or shutdown. The shared
+reactor routes completions; application handlers run outside it.
 
 Startup maps the same configuration dimensions across FFI: source and lease
 handles, names, feed mode and start position, checkpoint policy, and tuning
@@ -682,8 +696,9 @@ drains completions in a goroutine pinned to an OS thread. The native queue wait
 blocks that thread; callers wait on their own Go channels. The reactor resolves
 each completion's cookie to the pending operation and delivers its result.
 
-CFP should use the same waiting and correlation pattern, adapting the reactor
-to the processor-specific completion queue and owned completion records:
+CFP extends the existing reactor to recognize processor completions on the
+same compatible queue used by point operations. Multiple workers can share
+this reactor while each driver processor retains its own ready-lease queue:
 
 ```text
 Go SDK boundary                           Driver / native boundary
@@ -695,7 +710,7 @@ SDK consumer
   | Submit next batch + cookie ----------> Pending native batch receive
   | Wait on channel or Go context                    |
   |                                                  | Batch becomes ready
-  |                              Reactor <-----------+ Completion queue
+  |                       Shared reactor <-----------+ Shared completion queue
   |                                 | Timed native queue wait
   |                                 | Resolve returned cookie
   |<---- Buffered channel result ---+
@@ -724,8 +739,9 @@ operation handle and `cgo.Handle` remain live until delivery cleanup finishes.
 **Context cancellation stops the existing point-operation wait, not native
 execution.** A write can still commit. CFP must not assume that returning a Go
 context error cancels its pending native receive or releases its resources.
-This reuses a coordination pattern, not an already-compatible queue ABI:
-processor completion conversion and handle cleanup need their own adapter.
+Sharing the queue requires completion conversion and handle cleanup support
+in the existing adapter; compatible CFP payloads are not yet established by
+the point-operation ABI.
 
 ### 9.4 Possible Go-to-Rust request flow
 
@@ -782,7 +798,7 @@ failed-delivery paths must release it without acknowledging unprocessed work.
 **Go SDK boundary: the reactor delivers to the waiting caller.**
 
 ```go
-// In the CFP completion reactor, after the timed native queue wait.
+// In the shared GoV2 reactor, after the common native queue wait.
 for _, record := range nativeCompletions {
     pending := lookupPending(record.Cookie) // Resolve the cgo.Handle.
     result := takeOwnedCFPCompletion(record)
@@ -824,7 +840,8 @@ repeat:
             retain receipt for retry or free it without acknowledgment
         report any submission or completion failure
 submit stop; keep completion delivery running until stop completes
-free remaining handles and completions, then shut down the queue
+free this processor's remaining handles and completions
+leave the shared queue/reactor running for the client and other workers
 ```
 
 Completion payload views are borrowed until that completion is freed; copy
@@ -846,10 +863,12 @@ cancellation already does either. Abort cannot forcibly terminate a Go handler
 or undo its effects. Keep completion delivery active until issued work and
 late completions are settled; graceful stop requires issued batches and
 acknowledgments to complete. Acknowledgment and stop must remain admissible
-when batch delivery is saturated.
+when batch delivery is saturated. Only client-level teardown shuts down the
+shared queue after all its users and accepted operations have settled.
 
 **GoV2 integration gate:** execute the basic request/handler/acknowledgment loop
 over FFI, including handler failure, cancellation, durable checkpoint
-completion, and shutdown under saturation. The proposed Go signatures, per-receipt
+completion, and shutdown under saturation while point operations and other
+CFP workers continue using the shared queue. The proposed Go signatures, per-receipt
 cancellation visibility, late-result disposal, and cancellation mapping require
 validation; this is not a claim that the Go adapter is implemented.
