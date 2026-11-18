@@ -185,6 +185,9 @@ an admission timeout does not guarantee partial driver diagnostics.
 # Rust side (produces the cdylib / staticlib and regenerates the header).
 cargo build --release -p azure_data_cosmos_driver_native
 
+# Same, but keep the system allocator instead of the default mimalloc.
+cargo build --release -p azure_data_cosmos_driver_native --no-default-features
+
 # C test harness (requires CMake ≥ 3.20 and a C compiler).
 cmake -B build sdk/cosmos/azure_data_cosmos_driver_native
 cmake --build build

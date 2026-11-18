@@ -66,9 +66,11 @@ serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = [
   "rt-multi-thread",
   "macros",
+  "sync",
   "time",
   "test-util",
 ] }
+toml.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 uuid = { workspace = true, features = ["v4", "v7", "fast-rng"] }
 
@@ -133,6 +135,8 @@ features = [
   "native_tls",
   "rustls",
   "tokio",
+  "unstable_dtx",
+  "unstable_patch",
 ]
 
 # Explicit [[test]] entries gate the feature-dependent integration test

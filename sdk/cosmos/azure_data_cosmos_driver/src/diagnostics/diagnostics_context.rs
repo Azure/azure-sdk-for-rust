@@ -511,7 +511,7 @@ pub struct RequestDiagnostics {
     /// Populated only when the `fault_injection` feature is enabled and
     /// evaluations are propagated from the [`FaultClient`](crate::fault_injection::FaultClient)
     /// via an [`EvaluationCollector`](crate::fault_injection::EvaluationCollector) attached
-    /// to the [`HttpRequest`](crate::driver::transport::cosmos_transport_client::HttpRequest).
+    /// to the [`HttpRequest`](crate::pipeline::transport::cosmos_transport_client::HttpRequest).
     #[cfg(feature = "fault_injection")]
     fault_injection_evaluations: Vec<crate::fault_injection::FaultInjectionEvaluation>,
 }

@@ -6,6 +6,9 @@
 
 ## Features
 
+- `default`
+  - `mimalloc`
+- `mimalloc`
 - `test-abi`
 
 ```rust

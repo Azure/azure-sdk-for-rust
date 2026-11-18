@@ -32,6 +32,7 @@ azure_core_amqp = { path = "../../core/azure_core_amqp", version = "1.2.0-beta.3
 base64.workspace = true
 futures.workspace = true
 hmac.workspace = true
+opentelemetry = { workspace = true, optional = true, features = ["metrics"] }
 percent-encoding.workspace = true
 rand.workspace = true
 rand_chacha.workspace = true
@@ -45,6 +46,7 @@ rustc_version.workspace = true
 azure_core_amqp = { path = "../../core/azure_core_amqp", default-features = false, features = [
   "test",
 ] }
+azure_core_opentelemetry = { path = "../../core/azure_core_opentelemetry" }
 azure_core_test = { path = "../../core/azure_core_test", features = [
   "tracing",
 ] }
@@ -61,10 +63,22 @@ azure_storage_blob = { path = "../../storage/azure_storage_blob" }
 criterion.workspace = true
 fe2o3-amqp = { workspace = true, features = ["acceptor", "tracing"] }
 include-file.workspace = true
+opentelemetry.workspace = true
+opentelemetry-appender-tracing.workspace = true
+opentelemetry-otlp = { workspace = true, features = [
+  "http-proto",
+  "reqwest-blocking-client",
+  "trace",
+  "logs",
+  "metrics",
+] }
+opentelemetry_sdk = { workspace = true, features = ["testing"] }
+serde_amqp.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "test-util"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [features]
+metrics = ["dep:opentelemetry"]
 in_memory_checkpoint_store = []
 default = ["azure_core_amqp/default"]
 # Forward the AMQP backend and TCP TLS features from `azure_core_amqp`.
@@ -83,3 +97,7 @@ harness = false
 
 [lints]
 workspace = true
+
+[[example]]
+name = "eventhubs_opentelemetry"
+required-features = ["metrics"]

@@ -70,6 +70,10 @@ impl SessionManager {
         SessionContainer::scope_explicit_token(token, pk_range_id, topology)
     }
 
+    pub(crate) fn is_valid_explicit_token(token: &SessionToken) -> bool {
+        SessionContainer::is_valid_explicit_token(token)
+    }
+
     /// Resolves the session token that should be sent on the next request.
     ///
     /// Resolution order:

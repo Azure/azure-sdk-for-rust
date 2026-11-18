@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added SQL filter predicates to unstable PATCH instruction payloads for atomic conditional server-side PATCH execution. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
 - Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Added paged `ContainerClient::read_many` with shared `ItemSelector`, `ItemScope`, and `ItemFilter` types for key/id, partition, or feed-range selections, optional selector filters, and result collection with aggregate diagnostics. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Added ranked full-text and weighted text/vector hybrid search, with per-query `FullTextScoreScope` and bounded buffered results. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
@@ -22,6 +23,7 @@
 
 - New query and change-feed checkpoints use `c2.` and cannot be read by SDKs that only support `c1.`. Query checkpoint payloads are unchanged, and supported legacy `c1.` checkpoints remain readable. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- Binary cross-partition `ORDER BY` avoids intermediate document transcoding during sorting and filtering; final raw item buffers remain independently decodable without changing the response-body API. ([#5409](https://github.com/Azure/azure-sdk-for-rust/pull/5409))
 
 ## 1.1.0-beta.2 (2026-11-03)
 

@@ -33,7 +33,9 @@ Describe 'Cosmos native test runner' {
 
     It 'runs both suites and publishes the C ABI report' {
         & $ScriptPath -BuildDirectory $BuildDirectory
-        Should -Invoke cargo -Exactly 1
+        Should -Invoke cargo -Exactly 2
+        Should -Invoke cargo -Exactly 1 -ParameterFilter { $args -contains '--all-features' }
+        Should -Invoke cargo -Exactly 1 -ParameterFilter { $args -contains '--no-default-features' }
         Should -Invoke cmake -Exactly 2
         Should -Invoke ctest -Exactly 1
         Should -Invoke Write-Host -Exactly 1 -ParameterFilter {
@@ -44,6 +46,7 @@ Describe 'Cosmos native test runner' {
     It 'stops before CMake when Rust tests fail' {
         Mock cargo { $global:LASTEXITCODE = 1 }
         { & $ScriptPath -BuildDirectory $BuildDirectory } | Should -Throw '*Native test setup failed*'
+        Should -Invoke cargo -Exactly 1
         Should -Invoke cmake -Exactly 0
         Should -Invoke ctest -Exactly 0
     }

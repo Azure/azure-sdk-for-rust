@@ -13,6 +13,7 @@
 //! shape (`{"_rid": ..., "Documents": [{"_rid", "orderByItems", "payload"}]}`)
 //! `StreamingOrderedMerge` expects.
 
+use crate::driver::dataflow::PipelineResponse;
 use std::{sync::Arc, time::Duration};
 
 use super::super::{
@@ -28,8 +29,8 @@ use crate::{
     models::{
         effective_partition_key::EffectivePartitionKey, AccountReference, ActivityId,
         ContainerProperties, ContainerReference, ContinuationToken, CosmosOperation,
-        CosmosResponse, CosmosResponseHeaders, CosmosStatus, FeedRange, MaxItemCountHint,
-        ResolvedToken, SystemProperties,
+        CosmosResponseHeaders, CosmosStatus, FeedRange, MaxItemCountHint, ResolvedToken,
+        SystemProperties,
     },
     options::DiagnosticsOptions,
 };
@@ -203,7 +204,7 @@ fn resolved(min: &str, max: &str, pk_range_id: &str) -> crate::error::Result<Res
 }
 
 /// Builds a rewritten-envelope page with one row per `(rid, rank)` pair.
-fn envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> CosmosResponse {
+fn envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> PipelineResponse {
     let documents: Vec<serde_json::Value> = rows
         .iter()
         .map(|(rid, rank)| {
@@ -227,7 +228,7 @@ fn envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> CosmosResp
     let mut headers = CosmosResponseHeaders::new();
     headers.continuation = continuation.map(str::to_owned);
     headers.request_charge = Some(crate::models::RequestCharge::new(1.5));
-    CosmosResponse::new(
+    PipelineResponse::new(
         serde_json::to_vec(&body).unwrap(),
         headers,
         CosmosStatus::new(azure_core::http::StatusCode::Ok),
@@ -237,7 +238,7 @@ fn envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> CosmosResp
 
 /// Like [`envelope_page`] but encodes the feed body as Cosmos **binary** JSON,
 /// exercising `parse_envelope_page`'s transcode path through the merge.
-fn binary_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> CosmosResponse {
+fn binary_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> PipelineResponse {
     let documents: Vec<serde_json::Value> = rows
         .iter()
         .map(|(rid, rank)| {
@@ -264,7 +265,7 @@ fn binary_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> Cos
     let mut headers = CosmosResponseHeaders::new();
     headers.continuation = continuation.map(str::to_owned);
     headers.request_charge = Some(crate::models::RequestCharge::new(1.5));
-    CosmosResponse::new(
+    PipelineResponse::new(
         binary,
         headers,
         CosmosStatus::new(azure_core::http::StatusCode::Ok),
@@ -275,7 +276,7 @@ fn binary_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> Cos
 /// Like [`envelope_page`] but JOIN-shaped: `(rid, rank, id)` rows where
 /// several rows may share one `_rid` (a single document expanded by a JOIN)
 /// while carrying distinct payload `id`s. Drives the `skip_count` resume path.
-fn join_envelope_page(rows: &[(&str, i64, &str)], continuation: Option<&str>) -> CosmosResponse {
+fn join_envelope_page(rows: &[(&str, i64, &str)], continuation: Option<&str>) -> PipelineResponse {
     let documents: Vec<serde_json::Value> = rows
         .iter()
         .map(|(rid, rank, id)| {
@@ -299,7 +300,7 @@ fn join_envelope_page(rows: &[(&str, i64, &str)], continuation: Option<&str>) ->
     let mut headers = CosmosResponseHeaders::new();
     headers.continuation = continuation.map(str::to_owned);
     headers.request_charge = Some(crate::models::RequestCharge::new(1.5));
-    CosmosResponse::new(
+    PipelineResponse::new(
         serde_json::to_vec(&body).unwrap(),
         headers,
         CosmosStatus::new(azure_core::http::StatusCode::Ok),
@@ -309,7 +310,7 @@ fn join_envelope_page(rows: &[(&str, i64, &str)], continuation: Option<&str>) ->
 
 /// Like [`envelope_page`] but with a string sort key per row, for
 /// string-boundary resume coverage.
-fn string_envelope_page(rows: &[(&str, &str)], continuation: Option<&str>) -> CosmosResponse {
+fn string_envelope_page(rows: &[(&str, &str)], continuation: Option<&str>) -> PipelineResponse {
     let documents: Vec<serde_json::Value> = rows
         .iter()
         .map(|(rid, key)| {
@@ -333,7 +334,7 @@ fn string_envelope_page(rows: &[(&str, &str)], continuation: Option<&str>) -> Co
     let mut headers = CosmosResponseHeaders::new();
     headers.continuation = continuation.map(str::to_owned);
     headers.request_charge = Some(crate::models::RequestCharge::new(1.5));
-    CosmosResponse::new(
+    PipelineResponse::new(
         serde_json::to_vec(&body).unwrap(),
         headers,
         CosmosStatus::new(azure_core::http::StatusCode::Ok),
@@ -343,7 +344,7 @@ fn string_envelope_page(rows: &[(&str, &str)], continuation: Option<&str>) -> Co
 
 /// Like [`envelope_page`] but with a complex array sort key `[value]` per
 /// row, for complex-boundary resume coverage.
-fn array_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> CosmosResponse {
+fn array_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> PipelineResponse {
     let documents: Vec<serde_json::Value> = rows
         .iter()
         .map(|(rid, value)| {
@@ -367,7 +368,7 @@ fn array_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> Cosm
     let mut headers = CosmosResponseHeaders::new();
     headers.continuation = continuation.map(str::to_owned);
     headers.request_charge = Some(crate::models::RequestCharge::new(1.5));
-    CosmosResponse::new(
+    PipelineResponse::new(
         serde_json::to_vec(&body).unwrap(),
         headers,
         CosmosStatus::new(azure_core::http::StatusCode::Ok),
@@ -379,32 +380,31 @@ fn array_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> Cosm
 /// pre-split `Items` body (one payload per document). A binary-negotiated merge
 /// emits binary items, so each is transcoded to text before parsing — mirroring
 /// the SDK's per-slice format-agnostic decode.
-fn ids_in_page(page: &CosmosResponse) -> Vec<String> {
-    let items = match page.body() {
-        crate::models::ResponseBody::Items(items) => items.clone(),
-        crate::models::ResponseBody::NoPayload => Vec::new(),
-        crate::models::ResponseBody::Bytes(_) => panic!("expected Items body"),
-    };
+fn ids_in_page(page: &PipelineResponse) -> Vec<String> {
+    assert!(!matches!(
+        page.body(),
+        crate::driver::dataflow::PipelineBody::Bytes(_)
+    ));
+    let items: Vec<serde_json::Value> = page.body().clone().into_items().unwrap();
     items
         .iter()
-        .map(|item| {
-            let text = crate::binary_json::transcode_to_text(item).unwrap();
-            let value: serde_json::Value = serde_json::from_slice(&text).unwrap();
-            value["id"].as_str().unwrap().to_owned()
-        })
+        .map(|item| item["id"].as_str().unwrap().to_owned())
         .collect()
 }
 
 /// Whether every item in an emitted page is Cosmos binary JSON. An empty page
 /// (no items) is treated as binary-neutral (`true`) so a trailing empty page
 /// does not fail a binary-source assertion.
-fn page_is_binary(page: &CosmosResponse) -> bool {
+fn page_is_binary(page: &PipelineResponse) -> bool {
     match page.body() {
-        crate::models::ResponseBody::Items(items) => {
+        crate::driver::dataflow::PipelineBody::Items(items) => {
             items.iter().all(|item| crate::binary_json::is_binary(item))
         }
-        crate::models::ResponseBody::NoPayload => true,
-        crate::models::ResponseBody::Bytes(b) => crate::binary_json::is_binary(b),
+        crate::driver::dataflow::PipelineBody::NoPayload => true,
+        crate::driver::dataflow::PipelineBody::Bytes(b) => crate::binary_json::is_binary(b),
+        crate::driver::dataflow::PipelineBody::ContextualItems(items) => items
+            .iter()
+            .all(|item| crate::binary_json::is_binary(item.source_page())),
     }
 }
 
@@ -596,6 +596,123 @@ async fn merges_two_binary_partitions_into_global_order() -> crate::error::Resul
             .collect::<Vec<_>>(),
         "binary ORDER BY pages must interleave in the same global order as text"
     );
+    Ok(())
+}
+
+fn referenced_views(response: PipelineResponse) -> Vec<crate::driver::dataflow::ItemView> {
+    match response.into_body() {
+        crate::driver::dataflow::PipelineBody::ContextualItems(items) => items,
+        body if body.is_empty() => Vec::new(),
+        _ => panic!("reference-backed binary output expected"),
+    }
+}
+
+#[tokio::test]
+async fn referenced_pages_survive_streaming_resume_and_pipeline_drop() -> crate::error::Result<()> {
+    let op = binary_order_by_operation_with_page_size(1);
+    let plan = order_by_plan();
+    let ranges = vec![resolved("", "80", "left")?, resolved("80", "FF", "right")?];
+    let left = crate::binary_json::test_support::reference_rows(&[("a", 1), ("c", 3)], "left");
+    let right = crate::binary_json::test_support::reference_rows(&[("b", 2), ("d", 4)], "right");
+    let mut topology = MockTopologyProvider::new(vec![Ok(ranges.clone())]);
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(super::super::mocks::response(&left)),
+        Ok(super::super::mocks::response(&right)),
+    ]);
+    let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None).await?;
+    let first = {
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        pipeline.next_page(&mut context).await?.unwrap()
+    };
+    let state = round_trip_state(pipeline.snapshot_state()?, &op);
+    drop(pipeline);
+    let mut topology =
+        MockTopologyProvider::new(vec![Ok(ranges.clone()), Ok(ranges.clone()), Ok(ranges)]);
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(super::super::mocks::response(&left)),
+        Ok(super::super::mocks::response(&right)),
+    ]);
+    let mut pipeline =
+        build_streaming_ordered_merge(&plan, &mut topology, &op, Some(state)).await?;
+    let mut retained = referenced_views(first);
+    loop {
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        let Some(response) = pipeline.next_page(&mut context).await? else {
+            break;
+        };
+        retained.extend(referenced_views(response));
+    }
+    drop(pipeline);
+    drop(left);
+    drop(right);
+    let actual: Vec<serde_json::Value> = retained
+        .iter()
+        .map(|item| item.deserialize().unwrap())
+        .collect();
+    assert_eq!(
+        actual,
+        vec![
+            serde_json::json!({"id":"a","shared":"left"}),
+            serde_json::json!({"id":"b","shared":"right"}),
+            serde_json::json!({"id":"c","shared":"left"}),
+            serde_json::json!({"id":"d","shared":"right"}),
+        ]
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn referenced_pages_preserve_distinct_skip_take_and_split_replacements(
+) -> crate::error::Result<()> {
+    let op = binary_order_by_operation_with_page_size(1);
+    let mut plan = order_by_plan();
+    let info = plan.query_info.as_mut().unwrap();
+    info.distinct_type = DistinctType::Ordered;
+    info.offset = Some(1);
+    info.limit = Some(2);
+    let initial = crate::binary_json::test_support::reference_rows(&[("a", 1), ("b", 2)], "same");
+    let replacement =
+        crate::binary_json::test_support::reference_rows(&[("b", 2), ("c", 3)], "same");
+    let sibling = crate::binary_json::test_support::reference_rows(&[("d", 4)], "same");
+    let mut topology = MockTopologyProvider::new(vec![
+        Ok(vec![resolved("", "FF", "parent")?]),
+        Ok(vec![
+            resolved("", "80", "left")?,
+            resolved("80", "FF", "right")?,
+        ]),
+    ]);
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(super::super::mocks::response_with_continuation(
+            &initial,
+            Some("next"),
+        )),
+        Err(super::super::mocks::gone_error()),
+        Ok(super::super::mocks::response(&replacement)),
+        Ok(super::super::mocks::response(&sibling)),
+    ]);
+    let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None).await?;
+    let mut retained = Vec::new();
+    loop {
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        let Some(response) = pipeline.next_page(&mut context).await? else {
+            break;
+        };
+        assert!(page_is_binary(&response));
+        retained.extend(referenced_views(response));
+    }
+    drop(pipeline);
+    let actual: Vec<serde_json::Value> = retained
+        .iter()
+        .map(|item| item.deserialize().unwrap())
+        .collect();
+    assert_eq!(
+        actual,
+        vec![
+            serde_json::json!({"id":"b","shared":"same"}),
+            serde_json::json!({"id":"c","shared":"same"})
+        ]
+    );
+    assert!(retained.iter().all(|item| item.value_range().start > 0));
     Ok(())
 }
 

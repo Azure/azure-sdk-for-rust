@@ -16,6 +16,7 @@ $BuildDirectory = [System.IO.Path]::GetFullPath($BuildDirectory)
 $nativeCrateDirectory = ([System.IO.Path]::Combine($RepoRoot, 'sdk', 'cosmos', 'azure_data_cosmos_driver_native'))
 $commands = @(
     'cargo test -p azure_data_cosmos_driver_native --all-features'
+    'cargo test -p azure_data_cosmos_driver_native --no-default-features'
     "cmake -S '$nativeCrateDirectory' -B '$BuildDirectory' -DCMAKE_BUILD_TYPE=Debug"
     "cmake --build '$BuildDirectory' --config Debug --parallel 2"
 )

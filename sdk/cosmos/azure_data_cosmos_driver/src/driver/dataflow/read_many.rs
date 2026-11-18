@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! Read-many stages use private pipeline bodies; public output conversion stays at the root.
+
 use std::{
     collections::{BTreeMap, HashSet},
     sync::Arc,
@@ -12,15 +14,15 @@ use serde_json::{json, Value};
 
 use crate::{
     models::{
-        CosmosOperation, CosmosResponse, CosmosStatus, FeedRange, ItemReference, PartitionKey,
-        PartitionKeyDefinition, PartitionKeyKind, ResponseBody,
+        CosmosOperation, CosmosStatus, FeedRange, ItemReference, PartitionKey,
+        PartitionKeyDefinition, PartitionKeyKind,
     },
     read_many::{invalid, ItemScope, ReadManyRequest},
 };
 
 use super::{
-    PageResult, PartitionRoutingRefresh, Pipeline, PipelineContext, PipelineNode,
-    PipelineNodeState, Request, RequestTarget, SequentialDrain, TopologyProvider,
+    PageResult, PartitionRoutingRefresh, Pipeline, PipelineBody, PipelineContext, PipelineNode,
+    PipelineNodeState, PipelineResponse, Request, RequestTarget, SequentialDrain, TopologyProvider,
 };
 
 // Stay below the service's SQL-text and request-body limits, including parameters.
@@ -495,18 +497,23 @@ impl ReadManyDrain {
                 headers.continuation = None;
                 let diagnostics = Arc::new(
                     response
-                        .diagnostics_ref()
+                        .diagnostics()
                         .clone_with_operation_name(Some(Arc::from("read_many")))
                         .with_operation_status(CosmosStatus::new(StatusCode::Ok)),
                 );
-                let items = match response.into_body() {
-                    ResponseBody::Bytes(bytes) => {
-                        super::skip_take_page::split_feed_envelope(&bytes).and_then(|items| {
-                            super::skip_take_page::encode_items(items, self.emit_binary)
-                        })
+                let body = match response.into_body() {
+                    PipelineBody::Bytes(bytes) => {
+                        super::skip_take_page::split_feed_envelope(&bytes)
+                            .and_then(|items| {
+                                super::skip_take_page::encode_items(items, self.emit_binary)
+                            })
+                            .map(PipelineBody::from_items)
                     }
-                    ResponseBody::Items(items) => Ok(items),
-                    ResponseBody::NoPayload => Ok(Vec::new()),
+                    PipelineBody::Items(items) => Ok(PipelineBody::from_items(items)),
+                    PipelineBody::ContextualItems(items) => {
+                        Ok(PipelineBody::from_item_views(items))
+                    }
+                    PipelineBody::NoPayload => Ok(PipelineBody::from_items(Vec::new())),
                 }
                 .map_err(|error| {
                     crate::CosmosErrorBuilder::from_error(error)
@@ -514,8 +521,8 @@ impl ReadManyDrain {
                         .build()
                 })?;
                 Ok(PageResult::Page {
-                    response: CosmosResponse::new(
-                        ResponseBody::Items(items),
+                    response: PipelineResponse::new(
+                        body,
                         headers,
                         CosmosStatus::new(StatusCode::Ok),
                         diagnostics,
@@ -544,8 +551,8 @@ impl PipelineNode for Singleton {
                 let diagnostics = response.diagnostics();
                 let item = response.into_body().single()?;
                 Ok(PageResult::Page {
-                    response: CosmosResponse::new(
-                        ResponseBody::Items(vec![item]),
+                    response: PipelineResponse::new(
+                        PipelineBody::from_items(vec![item]),
                         headers,
                         CosmosStatus::new(StatusCode::Ok),
                         diagnostics,
@@ -565,8 +572,8 @@ impl PipelineNode for Singleton {
                     .headers()
                     .clone();
                 Ok(PageResult::Page {
-                    response: CosmosResponse::new(
-                        ResponseBody::Items(Vec::new()),
+                    response: PipelineResponse::new(
+                        PipelineBody::from_items(Vec::new()),
                         headers,
                         CosmosStatus::new(StatusCode::Ok),
                         diagnostics,

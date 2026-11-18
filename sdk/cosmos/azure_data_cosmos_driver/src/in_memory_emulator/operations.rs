@@ -39,8 +39,12 @@ use super::system_properties::{
     inject_system_properties, offer_to_json, pkranges_to_json,
 };
 use crate::driver::pipeline::patch_eval::apply_patch_ops;
-use crate::models::{effective_partition_key::prefix_range_end_bytes, PatchInstructions};
-use crate::models::{PartitionKeyDefinition, MAX_SERVER_SIDE_PATCH_OPERATIONS};
+#[cfg(feature = "unstable_dtx")]
+use crate::models::PatchInstructions;
+use crate::models::{
+    effective_partition_key::prefix_range_end_bytes, PartitionKeyDefinition,
+    MAX_SERVER_SIDE_PATCH_OPERATIONS,
+};
 use crate::options::ReadConsistencyStrategy;
 use crate::query::ast::{
     SqlCollection, SqlCollectionExpression, SqlQuery, SqlScalarExpression, SqlSelectSpec,
@@ -85,10 +89,31 @@ const DTX_ROLLED_BACK_STATUS: u16 = 453;
 /// Sub-status accompanying [`DTX_ROLLED_BACK_STATUS`] (DtcOperationRolledBack).
 #[cfg(feature = "unstable_dtx")]
 const DTX_ROLLED_BACK_SUBSTATUS: u32 = 5415;
-/// Sub-status paired with `412 PreconditionFailed` when a distributed
-/// transaction patch operation's `condition` (filter predicate) is not met.
-#[cfg(feature = "unstable_dtx")]
-const DTX_PATCH_CONDITION_NOT_MET_SUBSTATUS: u16 = 1110;
+/// Sub-status paired with `412 PreconditionFailed` when a PATCH operation's
+/// `condition` (filter predicate) is not met.
+const PATCH_CONDITION_NOT_MET_SUBSTATUS: u16 = 1110;
+
+fn patch_condition_matches(
+    condition: Option<&str>,
+    document: &serde_json::Value,
+) -> Result<bool, String> {
+    let Some(condition) = condition else {
+        return Ok(true);
+    };
+    let sql = if condition
+        .trim_start_matches(|ch: char| ch.is_ascii_whitespace())
+        .split_once(|ch: char| ch.is_ascii_whitespace())
+        .is_some_and(|(keyword, _)| keyword.eq_ignore_ascii_case("from"))
+    {
+        format!("SELECT * {condition}")
+    } else {
+        condition.to_owned()
+    };
+    let program =
+        crate::query::parse(&sql).map_err(|error| format!("invalid PATCH condition: {error}"))?;
+    crate::query::eval::matches_query(document, &program.query, &[])
+        .map_err(|error| format!("failed to evaluate PATCH condition: {error}"))
+}
 
 /// If any non-source target region's replication queue is saturated, returns
 /// a 429/3075 error response so callers can short-circuit before committing.
@@ -857,7 +882,7 @@ pub(crate) async fn handle_operation(
                     .build());
                 }
 
-                match dtx_patch_condition_matches(condition.as_deref(), &current.body) {
+                match patch_condition_matches(condition.as_deref(), &current.body) {
                     Ok(true) => {}
                     Ok(false) => {
                         let token = session_token_for(
@@ -867,7 +892,7 @@ pub(crate) async fn handle_operation(
                         );
                         return Err(error_response(
                             StatusCode::PreconditionFailed,
-                            Some(DTX_PATCH_CONDITION_NOT_MET_SUBSTATUS.into()),
+                            Some(PATCH_CONDITION_NOT_MET_SUBSTATUS.into()),
                             "PreconditionFailed",
                             "Patch condition was not met.",
                             1.0,
@@ -980,29 +1005,6 @@ pub(crate) async fn handle_operation(
         let patch = serde_json::from_value::<PatchInstructions>(body)
             .map_err(|error| format!("invalid DTX patch resourceBody: {error}"))?;
         Ok((patch, condition))
-    }
-
-    #[cfg(feature = "unstable_dtx")]
-    fn dtx_patch_condition_matches(
-        condition: Option<&str>,
-        document: &serde_json::Value,
-    ) -> Result<bool, String> {
-        let Some(condition) = condition else {
-            return Ok(true);
-        };
-        let sql = if condition
-            .trim_start()
-            .to_ascii_lowercase()
-            .starts_with("from ")
-        {
-            format!("SELECT * {condition}")
-        } else {
-            condition.to_owned()
-        };
-        let program = crate::query::parse(&sql)
-            .map_err(|error| format!("invalid DTX patch condition: {error}"))?;
-        crate::query::eval::matches_query(document, &program.query, &[])
-            .map_err(|error| format!("failed to evaluate DTX patch condition: {error}"))
     }
 
     #[cfg(feature = "unstable_dtx")]
@@ -1455,12 +1457,12 @@ pub(crate) async fn handle_operation(
                         let (_, condition) = parse_dtx_patch_body(&body).map_err(|message| {
                             preflight_failure(StatusCode::BadRequest, None, message)
                         })?;
-                        match dtx_patch_condition_matches(condition.as_deref(), &existing.body) {
+                        match patch_condition_matches(condition.as_deref(), &existing.body) {
                             Ok(true) => {}
                             Ok(false) => {
                                 return Err(preflight_failure(
                                     StatusCode::PreconditionFailed,
-                                    Some(DTX_PATCH_CONDITION_NOT_MET_SUBSTATUS),
+                                    Some(PATCH_CONDITION_NOT_MET_SUBSTATUS),
                                     "Patch condition was not met.",
                                 ));
                             }
@@ -5333,8 +5335,8 @@ async fn handle_patch_locked(
         return oversized_item_response(start);
     }
 
-    let instructions: PatchInstructions = match serde_json::from_slice(request_body) {
-        Ok(instructions) => instructions,
+    let patch_request = match crate::models::parse_patch_request(request_body) {
+        Ok(request) => request,
         Err(_) => {
             return error_response(
                 StatusCode::BadRequest,
@@ -5348,6 +5350,8 @@ async fn handle_patch_locked(
             .build()
         }
     };
+    let condition = patch_request.filter_predicate().map(str::to_owned);
+    let instructions = patch_request;
 
     if instructions.operations.is_empty() {
         return error_response(
@@ -5462,6 +5466,34 @@ async fn handle_patch_locked(
                     start,
                 )
                 .build());
+            }
+
+            match patch_condition_matches(condition.as_deref(), &current.body) {
+                Ok(true) => {}
+                Ok(false) => {
+                    return Err(error_response(
+                        StatusCode::PreconditionFailed,
+                        Some(PATCH_CONDITION_NOT_MET_SUBSTATUS.into()),
+                        "PreconditionFailed",
+                        "Patch condition was not met.",
+                        1.0,
+                        &token,
+                        start,
+                    )
+                    .build());
+                }
+                Err(message) => {
+                    return Err(error_response(
+                        StatusCode::BadRequest,
+                        None,
+                        "BadRequest",
+                        &message,
+                        1.0,
+                        &token,
+                        start,
+                    )
+                    .build());
+                }
             }
 
             let mut patched_body = current.body.clone();

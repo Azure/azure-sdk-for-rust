@@ -3,9 +3,10 @@
 
 //! Execution context plumbed through [`PipelineNode::next_page`] calls.
 
+use crate::driver::dataflow::PipelineResponse;
 use futures::future::BoxFuture;
 
-use crate::models::{CosmosOperation, CosmosResponse, FeedRange};
+use crate::models::{CosmosOperation, FeedRange};
 
 use super::request::RequestTarget;
 
@@ -27,7 +28,7 @@ pub(crate) trait RequestExecutor: Send {
         target: RequestTarget,
         partition_routing_refresh: PartitionRoutingRefresh,
         continuation: Option<String>,
-    ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>>;
+    ) -> BoxFuture<'a, crate::error::Result<PipelineResponse>>;
 }
 
 /// Resolves EPK ranges to their current physical partition key ranges.
@@ -99,7 +100,7 @@ impl<'a> PipelineContext<'a> {
         target: RequestTarget,
         partition_routing_refresh: PartitionRoutingRefresh,
         continuation: Option<String>,
-    ) -> crate::error::Result<CosmosResponse> {
+    ) -> crate::error::Result<PipelineResponse> {
         self.request_executor
             .execute_request(operation, target, partition_routing_refresh, continuation)
             .await

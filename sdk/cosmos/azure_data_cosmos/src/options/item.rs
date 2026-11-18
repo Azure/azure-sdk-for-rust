@@ -116,19 +116,14 @@ impl ItemWriteOptions {
 ///
 /// # Conditions
 ///
-/// PATCH exposes ETag preconditions but not SQL filter predicates:
+/// These options configure ETag preconditions. SQL filter predicates belong to
+/// the payload; set them with
+/// [`PatchInstructions::with_filter_predicate()`](crate::models::PatchInstructions::with_filter_predicate).
 ///
-/// * **`Precondition::IfMatch`.** Server-side PATCH sends the condition to
-///   Cosmos DB. Client-side PATCH evaluates it against each write-region
-///   `LatestCommitted` Read, then uses that Read's ETag as the internal Replace
-///   concurrency guard. `IfNoneMatch` is a read condition and is rejected for
-///   PATCH.
-/// * **SQL filter predicate** (peer SDKs' `FilterPredicate`). Predicate
-///   evaluation requires either native wire-level PATCH (so the server
-///   evaluates the predicate inside the same transaction) or a client-side
-///   SQL subset evaluator; neither is in scope for this unstable API. The
-///   driver's [`PatchInstructions`](crate::models::PatchInstructions) has no `condition` field, so
-///   there is no way to attach a predicate to a PATCH request.
+/// Server-side PATCH sends [`Precondition::IfMatch`] to Cosmos DB. Client-side
+/// PATCH evaluates it against each write-region `LatestCommitted` Read, then
+/// uses that Read's ETag as the internal Replace concurrency guard.
+/// [`Precondition::IfNoneMatch`] is a read condition and is rejected for PATCH.
 ///
 /// The session token lives on the dedicated
 /// [`session_token`](Self::session_token) field (mirroring

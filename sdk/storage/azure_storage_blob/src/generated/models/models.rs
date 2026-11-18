@@ -221,7 +221,7 @@ pub(crate) struct BlobLayout {
     pub(crate) next_marker: Option<String>,
 
     /// The ranges that make up the blob.
-    #[serde(rename = "Ranges")]
+    #[serde(default, rename = "Ranges")]
     pub(crate) ranges: BlobLayoutRanges,
 }
 
@@ -273,7 +273,7 @@ pub(crate) struct BlobLayoutRange {
 #[serde(rename = "Ranges")]
 pub(crate) struct BlobLayoutRanges {
     /// The list of ranges.
-    #[serde(rename = "Range")]
+    #[serde(default, rename = "Range")]
     pub(crate) range: Vec<BlobLayoutRange>,
 }
 

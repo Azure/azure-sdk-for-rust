@@ -17,6 +17,8 @@
 pub use azure_data_cosmos_test::resource_manager;
 pub mod emulator_credential;
 pub mod mock_account;
+#[path = "../../../test_support/seeded_json.rs"]
+pub mod seeded_json;
 pub mod test_client;
 pub mod test_data;
 

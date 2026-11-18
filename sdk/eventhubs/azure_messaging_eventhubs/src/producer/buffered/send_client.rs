@@ -3,8 +3,8 @@
 
 // cspell: ignore retryable
 
-use crate::{error::Result, producer::ProducerClient};
-use azure_core::http::Url;
+use crate::{common::diagnostics::Diagnostics, error::Result, producer::ProducerClient};
+use azure_core::{http::Url, tracing::Span};
 use azure_core_amqp::{AmqpMessage, AmqpSendOutcome};
 use std::sync::Arc;
 
@@ -16,11 +16,20 @@ use std::sync::Arc;
 /// scripted outcomes, so the worker tests do not need a network.
 #[async_trait::async_trait]
 pub(crate) trait BufferedSendClient: Send + Sync + 'static {
+    /// Diagnostic scope shared by preparation and sending; absent in simple fakes.
+    fn diagnostics(&self) -> Option<&Arc<Diagnostics>> {
+        None
+    }
+
     /// Returns the partition IDs of the Event Hub.
     async fn partition_ids(&self) -> Result<Vec<String>>;
 
     /// Returns the largest message that the link to the partition accepts.
-    async fn max_message_size(&self, partition_id: &str) -> Result<u64>;
+    async fn max_message_size(
+        &self,
+        partition_id: &str,
+        parent: Option<Arc<dyn Span>>,
+    ) -> Result<u64>;
 
     /// Sends one batch envelope to a partition and returns the AMQP outcome.
     ///
@@ -30,6 +39,7 @@ pub(crate) trait BufferedSendClient: Send + Sync + 'static {
         &self,
         partition_id: &str,
         envelope: AmqpMessage,
+        parent: Option<Arc<dyn Span>>,
     ) -> Result<AmqpSendOutcome>;
 }
 
@@ -51,26 +61,40 @@ impl ProducerSendClient {
 
 #[async_trait::async_trait]
 impl BufferedSendClient for ProducerSendClient {
+    fn diagnostics(&self) -> Option<&Arc<Diagnostics>> {
+        Some(self.producer.diagnostics())
+    }
+
     async fn partition_ids(&self) -> Result<Vec<String>> {
         Ok(self.producer.get_eventhub_properties().await?.partition_ids)
     }
 
-    async fn max_message_size(&self, partition_id: &str) -> Result<u64> {
+    async fn max_message_size(
+        &self,
+        partition_id: &str,
+        parent: Option<Arc<dyn Span>>,
+    ) -> Result<u64> {
         let path = self.partition_path(partition_id)?;
-        self.producer.max_message_size(path).await?.ok_or_else(|| {
-            crate::EventHubsError::with_message(
-                "No maximum message size available from the sender link.",
-            )
-        })
+        self.producer
+            .max_message_size(path, parent)
+            .await?
+            .ok_or_else(|| {
+                crate::EventHubsError::with_message(
+                    "No maximum message size available from the sender link.",
+                )
+            })
     }
 
     async fn send_envelope(
         &self,
         partition_id: &str,
         envelope: AmqpMessage,
+        parent: Option<Arc<dyn Span>>,
     ) -> Result<AmqpSendOutcome> {
         let path = self.partition_path(partition_id)?;
-        self.producer.send_batch_envelope(path, envelope).await
+        self.producer
+            .send_batch_envelope_traced(path, envelope, parent)
+            .await
     }
 }
 
@@ -206,7 +230,11 @@ pub(crate) mod mock {
             Ok(self.partitions.clone())
         }
 
-        async fn max_message_size(&self, _partition_id: &str) -> Result<u64> {
+        async fn max_message_size(
+            &self,
+            _partition_id: &str,
+            _parent: Option<Arc<dyn Span>>,
+        ) -> Result<u64> {
             Ok(self.max_message_size)
         }
 
@@ -214,6 +242,7 @@ pub(crate) mod mock {
             &self,
             partition_id: &str,
             envelope: AmqpMessage,
+            _parent: Option<Arc<dyn Span>>,
         ) -> Result<AmqpSendOutcome> {
             let event_count = Self::count_events(&envelope);
 

@@ -12,6 +12,10 @@
 /// The service accepts at most 10 instructions in one server-side PATCH.
 /// [`Auto`](Self::Auto) also keeps non-retry-safe instructions on the tracked
 /// client-side path so ambiguous failures cannot apply them twice.
+/// A filter predicate is supported only on the resolved server-side path and
+/// disables ambiguous-outcome retries, even for retry-safe instructions. The
+/// driver returns the error without a reconciliation Read; read the item to
+/// reconcile the outcome before submitting another patch.
 ///
 /// [`PatchInstructions::is_retry_safe`]: crate::models::PatchInstructions::is_retry_safe
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
@@ -31,8 +35,8 @@ pub enum PatchStrategy {
     /// Always send the PATCH to the service.
     ///
     /// Lists exceeding 10 instructions fail instead of falling back. For an
-    /// unsafe list, ambiguous-outcome retries are disabled to avoid applying
-    /// an instruction twice. A caller-supplied tracking ID does not override
+    /// unsafe list or a filter predicate, ambiguous-outcome retries are disabled.
+    /// A caller-supplied tracking ID does not override
     /// this strategy and provides no marker-backed duplicate suppression.
     ServerSide,
 }

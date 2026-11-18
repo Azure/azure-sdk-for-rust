@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added fakes support for testing.
+
 ### Breaking Changes
 
 ### Bugs Fixed
@@ -11,6 +13,7 @@
 ### Other Changes
 
 - Applied client options to bearer-token authorization so tests can opt in to authenticated HTTP connections with `ClientOptions::allow_insecure_connections`.
+- Upgraded to API service version `2026-07-01-preview`.
 
 ## 1.1.0-beta.1 (2026-10-21)
 
