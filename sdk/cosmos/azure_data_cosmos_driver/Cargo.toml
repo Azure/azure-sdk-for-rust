@@ -22,7 +22,7 @@ azure_core = { workspace = true, default-features = false, features = [
   "hmac_rust",
 ] }
 # Pulls in the target's prebuilt QueryPlanInterop library (version set in the workspace Cargo.toml).
-azure_cosmos_queryplan_sys.workspace = true
+azure_cosmos_queryplan_sys = "0.2.6"
 azure_data_cosmos_macros = { path = "../azure_data_cosmos_macros", version = "1.1.0-beta.3" }
 backtrace.workspace = true
 base64.workspace = true
