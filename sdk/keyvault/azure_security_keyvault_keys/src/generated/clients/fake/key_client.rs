@@ -20,7 +20,6 @@ use std::sync::Arc;
 struct KeyClientBackupKeyArguments {
     key_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_backup_key(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -30,7 +29,6 @@ pub(crate) fn capture_key_client_backup_key(
 struct KeyClientCreateKeyArguments {
     key_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_create_key(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -41,7 +39,6 @@ struct KeyClientDecryptArguments {
     key_name: String,
     key_version: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_decrypt(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -55,7 +52,6 @@ pub(crate) fn capture_key_client_decrypt(
 struct KeyClientDeleteKeyArguments {
     key_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_delete_key(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -66,7 +62,6 @@ struct KeyClientEncryptArguments {
     key_name: String,
     key_version: Option<String>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_encrypt(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -80,7 +75,6 @@ pub(crate) fn capture_key_client_encrypt(
 struct KeyClientGetDeletedKeyArguments {
     key_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_get_deleted_key(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -91,7 +85,6 @@ struct KeyClientGetKeyArguments {
     key_name: String,
     key_version: Option<String>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_get_key(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -106,7 +99,6 @@ struct KeyClientGetKeyAttestationArguments {
     key_name: String,
     key_version: Option<String>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_get_key_attestation(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -120,7 +112,6 @@ pub(crate) fn capture_key_client_get_key_attestation(
 struct KeyClientGetKeyRotationPolicyArguments {
     key_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_get_key_rotation_policy(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -130,7 +121,6 @@ pub(crate) fn capture_key_client_get_key_rotation_policy(
 struct KeyClientImportKeyArguments {
     key_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_import_key(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -140,7 +130,6 @@ pub(crate) fn capture_key_client_import_key(
 struct KeyClientListDeletedKeyPropertiesArguments {
     maxresults: Option<i32>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_list_deleted_key_properties(
     context: &mut azure_core::http::Context<'_>,
     maxresults: Option<i32>,
@@ -150,7 +139,6 @@ pub(crate) fn capture_key_client_list_deleted_key_properties(
 struct KeyClientListKeyPropertiesArguments {
     maxresults: Option<i32>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_list_key_properties(
     context: &mut azure_core::http::Context<'_>,
     maxresults: Option<i32>,
@@ -161,7 +149,6 @@ struct KeyClientListKeyPropertiesVersionsArguments {
     key_name: String,
     maxresults: Option<i32>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_list_key_properties_versions(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -175,7 +162,6 @@ pub(crate) fn capture_key_client_list_key_properties_versions(
 struct KeyClientPurgeDeletedKeyArguments {
     key_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_purge_deleted_key(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -185,7 +171,6 @@ pub(crate) fn capture_key_client_purge_deleted_key(
 struct KeyClientRecoverDeletedKeyArguments {
     key_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_recover_deleted_key(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -196,7 +181,6 @@ struct KeyClientReleaseArguments {
     key_name: String,
     key_version: Option<String>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_release(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -210,7 +194,6 @@ pub(crate) fn capture_key_client_release(
 struct KeyClientRotateKeyArguments {
     key_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_rotate_key(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -221,7 +204,6 @@ struct KeyClientSecureUnwrapKeyArguments {
     key_name: String,
     key_version: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_secure_unwrap_key(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -236,7 +218,6 @@ struct KeyClientSecureWrapKeyArguments {
     key_name: String,
     key_version: Option<String>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_secure_wrap_key(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -251,7 +232,6 @@ struct KeyClientSignArguments {
     key_name: String,
     key_version: Option<String>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_sign(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -266,7 +246,6 @@ struct KeyClientUnwrapKeyArguments {
     key_name: String,
     key_version: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_unwrap_key(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -281,7 +260,6 @@ struct KeyClientUpdateKeyPropertiesArguments {
     key_name: String,
     key_version: Option<String>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_update_key_properties(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -295,7 +273,6 @@ pub(crate) fn capture_key_client_update_key_properties(
 struct KeyClientUpdateKeyRotationPolicyArguments {
     key_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_update_key_rotation_policy(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -306,7 +283,6 @@ struct KeyClientVerifyArguments {
     key_name: String,
     key_version: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_verify(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -321,7 +297,6 @@ struct KeyClientWrapKeyArguments {
     key_name: String,
     key_version: Option<String>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_client_wrap_key(
     context: &mut azure_core::http::Context<'_>,
     key_name: String,
@@ -341,7 +316,6 @@ pub(crate) fn capture_key_client_wrap_key(
 #[async_trait]
 pub trait KeyServer: Send + Sync {
     /// Handles [`KeyClient::backup_key()`](crate::clients::KeyClient::backup_key).
-    #[allow(clippy::too_many_arguments)]
     async fn backup_key(
         &self,
         key_name: &str,
@@ -351,7 +325,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::backup_key is not implemented")
     }
     /// Handles [`KeyClient::create_key()`](crate::clients::KeyClient::create_key).
-    #[allow(clippy::too_many_arguments)]
     async fn create_key(
         &self,
         key_name: &str,
@@ -362,7 +335,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::create_key is not implemented")
     }
     /// Handles [`KeyClient::decrypt()`](crate::clients::KeyClient::decrypt).
-    #[allow(clippy::too_many_arguments)]
     async fn decrypt(
         &self,
         key_name: &str,
@@ -374,7 +346,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::decrypt is not implemented")
     }
     /// Handles [`KeyClient::delete_key()`](crate::clients::KeyClient::delete_key).
-    #[allow(clippy::too_many_arguments)]
     async fn delete_key(
         &self,
         key_name: &str,
@@ -384,7 +355,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::delete_key is not implemented")
     }
     /// Handles [`KeyClient::encrypt()`](crate::clients::KeyClient::encrypt).
-    #[allow(clippy::too_many_arguments)]
     async fn encrypt(
         &self,
         key_name: &str,
@@ -395,7 +365,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::encrypt is not implemented")
     }
     /// Handles [`KeyClient::get_deleted_key()`](crate::clients::KeyClient::get_deleted_key).
-    #[allow(clippy::too_many_arguments)]
     async fn get_deleted_key(
         &self,
         key_name: &str,
@@ -405,7 +374,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::get_deleted_key is not implemented")
     }
     /// Handles [`KeyClient::get_key()`](crate::clients::KeyClient::get_key).
-    #[allow(clippy::too_many_arguments)]
     async fn get_key(
         &self,
         key_name: &str,
@@ -415,7 +383,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::get_key is not implemented")
     }
     /// Handles [`KeyClient::get_key_attestation()`](crate::clients::KeyClient::get_key_attestation).
-    #[allow(clippy::too_many_arguments)]
     async fn get_key_attestation(
         &self,
         key_name: &str,
@@ -425,7 +392,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::get_key_attestation is not implemented")
     }
     /// Handles [`KeyClient::get_key_rotation_policy()`](crate::clients::KeyClient::get_key_rotation_policy).
-    #[allow(clippy::too_many_arguments)]
     async fn get_key_rotation_policy(
         &self,
         key_name: &str,
@@ -435,7 +401,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::get_key_rotation_policy is not implemented")
     }
     /// Handles [`KeyClient::get_random_bytes()`](crate::clients::KeyClient::get_random_bytes).
-    #[allow(clippy::too_many_arguments)]
     async fn get_random_bytes(
         &self,
         parameters: RequestContent<models::GetRandomBytesParameters>,
@@ -445,7 +410,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::get_random_bytes is not implemented")
     }
     /// Handles [`KeyClient::import_key()`](crate::clients::KeyClient::import_key).
-    #[allow(clippy::too_many_arguments)]
     async fn import_key(
         &self,
         key_name: &str,
@@ -456,7 +420,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::import_key is not implemented")
     }
     /// Handles [`KeyClient::list_deleted_key_properties()`](crate::clients::KeyClient::list_deleted_key_properties).
-    #[allow(clippy::too_many_arguments)]
     async fn list_deleted_key_properties(
         &self,
         state: PagerState,
@@ -466,7 +429,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::list_deleted_key_properties is not implemented")
     }
     /// Handles [`KeyClient::list_key_properties()`](crate::clients::KeyClient::list_key_properties).
-    #[allow(clippy::too_many_arguments)]
     async fn list_key_properties(
         &self,
         state: PagerState,
@@ -476,7 +438,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::list_key_properties is not implemented")
     }
     /// Handles [`KeyClient::list_key_properties_versions()`](crate::clients::KeyClient::list_key_properties_versions).
-    #[allow(clippy::too_many_arguments)]
     async fn list_key_properties_versions(
         &self,
         key_name: &str,
@@ -487,7 +448,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::list_key_properties_versions is not implemented")
     }
     /// Handles [`KeyClient::purge_deleted_key()`](crate::clients::KeyClient::purge_deleted_key).
-    #[allow(clippy::too_many_arguments)]
     async fn purge_deleted_key(
         &self,
         key_name: &str,
@@ -497,7 +457,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::purge_deleted_key is not implemented")
     }
     /// Handles [`KeyClient::recover_deleted_key()`](crate::clients::KeyClient::recover_deleted_key).
-    #[allow(clippy::too_many_arguments)]
     async fn recover_deleted_key(
         &self,
         key_name: &str,
@@ -507,7 +466,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::recover_deleted_key is not implemented")
     }
     /// Handles [`KeyClient::release()`](crate::clients::KeyClient::release).
-    #[allow(clippy::too_many_arguments)]
     async fn release(
         &self,
         key_name: &str,
@@ -518,7 +476,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::release is not implemented")
     }
     /// Handles [`KeyClient::restore_key()`](crate::clients::KeyClient::restore_key).
-    #[allow(clippy::too_many_arguments)]
     async fn restore_key(
         &self,
         parameters: RequestContent<models::RestoreKeyParameters>,
@@ -528,7 +485,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::restore_key is not implemented")
     }
     /// Handles [`KeyClient::rotate_key()`](crate::clients::KeyClient::rotate_key).
-    #[allow(clippy::too_many_arguments)]
     async fn rotate_key(
         &self,
         key_name: &str,
@@ -538,7 +494,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::rotate_key is not implemented")
     }
     /// Handles [`KeyClient::secure_unwrap_key()`](crate::clients::KeyClient::secure_unwrap_key).
-    #[allow(clippy::too_many_arguments)]
     async fn secure_unwrap_key(
         &self,
         key_name: &str,
@@ -550,7 +505,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::secure_unwrap_key is not implemented")
     }
     /// Handles [`KeyClient::secure_wrap_key()`](crate::clients::KeyClient::secure_wrap_key).
-    #[allow(clippy::too_many_arguments)]
     async fn secure_wrap_key(
         &self,
         key_name: &str,
@@ -561,7 +515,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::secure_wrap_key is not implemented")
     }
     /// Handles [`KeyClient::sign()`](crate::clients::KeyClient::sign).
-    #[allow(clippy::too_many_arguments)]
     async fn sign(
         &self,
         key_name: &str,
@@ -572,7 +525,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::sign is not implemented")
     }
     /// Handles [`KeyClient::unwrap_key()`](crate::clients::KeyClient::unwrap_key).
-    #[allow(clippy::too_many_arguments)]
     async fn unwrap_key(
         &self,
         key_name: &str,
@@ -584,7 +536,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::unwrap_key is not implemented")
     }
     /// Handles [`KeyClient::update_key_properties()`](crate::clients::KeyClient::update_key_properties).
-    #[allow(clippy::too_many_arguments)]
     async fn update_key_properties(
         &self,
         key_name: &str,
@@ -595,7 +546,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::update_key_properties is not implemented")
     }
     /// Handles [`KeyClient::update_key_rotation_policy()`](crate::clients::KeyClient::update_key_rotation_policy).
-    #[allow(clippy::too_many_arguments)]
     async fn update_key_rotation_policy(
         &self,
         key_name: &str,
@@ -606,7 +556,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::update_key_rotation_policy is not implemented")
     }
     /// Handles [`KeyClient::verify()`](crate::clients::KeyClient::verify).
-    #[allow(clippy::too_many_arguments)]
     async fn verify(
         &self,
         key_name: &str,
@@ -618,7 +567,6 @@ pub trait KeyServer: Send + Sync {
         unimplemented!("KeyServer::verify is not implemented")
     }
     /// Handles [`KeyClient::wrap_key()`](crate::clients::KeyClient::wrap_key).
-    #[allow(clippy::too_many_arguments)]
     async fn wrap_key(
         &self,
         key_name: &str,

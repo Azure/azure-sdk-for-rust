@@ -18,7 +18,6 @@ struct KeyVaultSecretsClientCreateOrUpdateArguments {
     vault_name: String,
     secret_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_secrets_client_create_or_update(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -36,7 +35,6 @@ struct KeyVaultSecretsClientGetArguments {
     vault_name: String,
     secret_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_secrets_client_get(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -54,7 +52,6 @@ struct KeyVaultSecretsClientListArguments {
     vault_name: String,
     top: Option<i32>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_secrets_client_list(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -72,7 +69,6 @@ struct KeyVaultSecretsClientUpdateArguments {
     vault_name: String,
     secret_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_secrets_client_update(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -94,7 +90,6 @@ pub(crate) fn capture_key_vault_secrets_client_update(
 #[async_trait]
 pub trait KeyVaultSecretsServer: Send + Sync {
     /// Handles [`KeyVaultSecretsClient::create_or_update()`](crate::clients::KeyVaultSecretsClient::create_or_update).
-    #[allow(clippy::too_many_arguments)]
     async fn create_or_update(
         &self,
         resource_group_name: &str,
@@ -113,7 +108,6 @@ pub trait KeyVaultSecretsServer: Send + Sync {
         unimplemented!("KeyVaultSecretsServer::create_or_update is not implemented")
     }
     /// Handles [`KeyVaultSecretsClient::get()`](crate::clients::KeyVaultSecretsClient::get).
-    #[allow(clippy::too_many_arguments)]
     async fn get(
         &self,
         resource_group_name: &str,
@@ -125,7 +119,6 @@ pub trait KeyVaultSecretsServer: Send + Sync {
         unimplemented!("KeyVaultSecretsServer::get is not implemented")
     }
     /// Handles [`KeyVaultSecretsClient::list()`](crate::clients::KeyVaultSecretsClient::list).
-    #[allow(clippy::too_many_arguments)]
     async fn list(
         &self,
         resource_group_name: &str,
@@ -137,7 +130,6 @@ pub trait KeyVaultSecretsServer: Send + Sync {
         unimplemented!("KeyVaultSecretsServer::list is not implemented")
     }
     /// Handles [`KeyVaultSecretsClient::update()`](crate::clients::KeyVaultSecretsClient::update).
-    #[allow(clippy::too_many_arguments)]
     async fn update(
         &self,
         resource_group_name: &str,

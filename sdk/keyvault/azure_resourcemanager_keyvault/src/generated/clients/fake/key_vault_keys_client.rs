@@ -18,7 +18,6 @@ struct KeyVaultKeysClientCreateIfNotExistArguments {
     vault_name: String,
     key_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_keys_client_create_if_not_exist(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -36,7 +35,6 @@ struct KeyVaultKeysClientGetArguments {
     vault_name: String,
     key_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_keys_client_get(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -55,7 +53,6 @@ struct KeyVaultKeysClientGetVersionArguments {
     key_name: String,
     key_version: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_keys_client_get_version(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -74,7 +71,6 @@ struct KeyVaultKeysClientListArguments {
     resource_group_name: String,
     vault_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_keys_client_list(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -90,7 +86,6 @@ struct KeyVaultKeysClientListVersionsArguments {
     vault_name: String,
     key_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_keys_client_list_versions(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -112,7 +107,6 @@ pub(crate) fn capture_key_vault_keys_client_list_versions(
 #[async_trait]
 pub trait KeyVaultKeysServer: Send + Sync {
     /// Handles [`KeyVaultKeysClient::create_if_not_exist()`](crate::clients::KeyVaultKeysClient::create_if_not_exist).
-    #[allow(clippy::too_many_arguments)]
     async fn create_if_not_exist(
         &self,
         resource_group_name: &str,
@@ -131,7 +125,6 @@ pub trait KeyVaultKeysServer: Send + Sync {
         unimplemented!("KeyVaultKeysServer::create_if_not_exist is not implemented")
     }
     /// Handles [`KeyVaultKeysClient::get()`](crate::clients::KeyVaultKeysClient::get).
-    #[allow(clippy::too_many_arguments)]
     async fn get(
         &self,
         resource_group_name: &str,
@@ -143,7 +136,6 @@ pub trait KeyVaultKeysServer: Send + Sync {
         unimplemented!("KeyVaultKeysServer::get is not implemented")
     }
     /// Handles [`KeyVaultKeysClient::get_version()`](crate::clients::KeyVaultKeysClient::get_version).
-    #[allow(clippy::too_many_arguments)]
     async fn get_version(
         &self,
         resource_group_name: &str,
@@ -162,7 +154,6 @@ pub trait KeyVaultKeysServer: Send + Sync {
         unimplemented!("KeyVaultKeysServer::get_version is not implemented")
     }
     /// Handles [`KeyVaultKeysClient::list()`](crate::clients::KeyVaultKeysClient::list).
-    #[allow(clippy::too_many_arguments)]
     async fn list(
         &self,
         resource_group_name: &str,
@@ -174,7 +165,6 @@ pub trait KeyVaultKeysServer: Send + Sync {
         unimplemented!("KeyVaultKeysServer::list is not implemented")
     }
     /// Handles [`KeyVaultKeysClient::list_versions()`](crate::clients::KeyVaultKeysClient::list_versions).
-    #[allow(clippy::too_many_arguments)]
     async fn list_versions(
         &self,
         resource_group_name: &str,

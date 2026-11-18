@@ -18,7 +18,6 @@ struct KeyVaultManagedHsmKeysClientCreateIfNotExistArguments {
     name: String,
     key_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_managed_hsm_keys_client_create_if_not_exist(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -36,7 +35,6 @@ struct KeyVaultManagedHsmKeysClientGetArguments {
     name: String,
     key_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_managed_hsm_keys_client_get(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -55,7 +53,6 @@ struct KeyVaultManagedHsmKeysClientGetVersionArguments {
     key_name: String,
     key_version: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_managed_hsm_keys_client_get_version(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -74,7 +71,6 @@ struct KeyVaultManagedHsmKeysClientListArguments {
     resource_group_name: String,
     name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_managed_hsm_keys_client_list(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -90,7 +86,6 @@ struct KeyVaultManagedHsmKeysClientListVersionsArguments {
     name: String,
     key_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_managed_hsm_keys_client_list_versions(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -112,7 +107,6 @@ pub(crate) fn capture_key_vault_managed_hsm_keys_client_list_versions(
 #[async_trait]
 pub trait KeyVaultManagedHsmKeysServer: Send + Sync {
     /// Handles [`KeyVaultManagedHsmKeysClient::create_if_not_exist()`](crate::clients::KeyVaultManagedHsmKeysClient::create_if_not_exist).
-    #[allow(clippy::too_many_arguments)]
     async fn create_if_not_exist(
         &self,
         resource_group_name: &str,
@@ -125,7 +119,6 @@ pub trait KeyVaultManagedHsmKeysServer: Send + Sync {
         unimplemented!("KeyVaultManagedHsmKeysServer::create_if_not_exist is not implemented")
     }
     /// Handles [`KeyVaultManagedHsmKeysClient::get()`](crate::clients::KeyVaultManagedHsmKeysClient::get).
-    #[allow(clippy::too_many_arguments)]
     async fn get(
         &self,
         resource_group_name: &str,
@@ -137,7 +130,6 @@ pub trait KeyVaultManagedHsmKeysServer: Send + Sync {
         unimplemented!("KeyVaultManagedHsmKeysServer::get is not implemented")
     }
     /// Handles [`KeyVaultManagedHsmKeysClient::get_version()`](crate::clients::KeyVaultManagedHsmKeysClient::get_version).
-    #[allow(clippy::too_many_arguments)]
     async fn get_version(
         &self,
         resource_group_name: &str,
@@ -150,7 +142,6 @@ pub trait KeyVaultManagedHsmKeysServer: Send + Sync {
         unimplemented!("KeyVaultManagedHsmKeysServer::get_version is not implemented")
     }
     /// Handles [`KeyVaultManagedHsmKeysClient::list()`](crate::clients::KeyVaultManagedHsmKeysClient::list).
-    #[allow(clippy::too_many_arguments)]
     async fn list(
         &self,
         resource_group_name: &str,
@@ -162,7 +153,6 @@ pub trait KeyVaultManagedHsmKeysServer: Send + Sync {
         unimplemented!("KeyVaultManagedHsmKeysServer::list is not implemented")
     }
     /// Handles [`KeyVaultManagedHsmKeysClient::list_versions()`](crate::clients::KeyVaultManagedHsmKeysClient::list_versions).
-    #[allow(clippy::too_many_arguments)]
     async fn list_versions(
         &self,
         resource_group_name: &str,

@@ -19,7 +19,6 @@ struct KeyVaultVaultsClientBeginCreateOrUpdateArguments {
     vault_name: String,
     frequency: azure_core::time::Duration,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_vaults_client_begin_create_or_update(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -37,7 +36,6 @@ struct KeyVaultVaultsClientBeginPurgeDeletedArguments {
     vault_name: String,
     frequency: azure_core::time::Duration,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_vaults_client_begin_purge_deleted(
     context: &mut azure_core::http::Context<'_>,
     location: String,
@@ -54,7 +52,6 @@ struct KeyVaultVaultsClientDeleteArguments {
     resource_group_name: String,
     vault_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_vaults_client_delete(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -69,7 +66,6 @@ struct KeyVaultVaultsClientGetArguments {
     resource_group_name: String,
     vault_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_vaults_client_get(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -84,7 +80,6 @@ struct KeyVaultVaultsClientGetDeletedArguments {
     location: String,
     vault_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_vaults_client_get_deleted(
     context: &mut azure_core::http::Context<'_>,
     location: String,
@@ -98,7 +93,6 @@ pub(crate) fn capture_key_vault_vaults_client_get_deleted(
 struct KeyVaultVaultsClientListArguments {
     top: Option<i32>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_vaults_client_list(
     context: &mut azure_core::http::Context<'_>,
     top: Option<i32>,
@@ -109,7 +103,6 @@ struct KeyVaultVaultsClientListByResourceGroupArguments {
     resource_group_name: String,
     top: Option<i32>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_vaults_client_list_by_resource_group(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -123,7 +116,6 @@ pub(crate) fn capture_key_vault_vaults_client_list_by_resource_group(
 struct KeyVaultVaultsClientListBySubscriptionArguments {
     top: Option<i32>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_vaults_client_list_by_subscription(
     context: &mut azure_core::http::Context<'_>,
     top: Option<i32>,
@@ -134,7 +126,6 @@ struct KeyVaultVaultsClientUpdateArguments {
     resource_group_name: String,
     vault_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_vaults_client_update(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -150,7 +141,6 @@ struct KeyVaultVaultsClientUpdateAccessPolicyArguments {
     vault_name: String,
     operation_kind: models::AccessPolicyUpdateKind,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_vaults_client_update_access_policy(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -173,7 +163,6 @@ pub(crate) fn capture_key_vault_vaults_client_update_access_policy(
 pub trait KeyVaultVaultsServer: Send + Sync {
     /// Handles [`KeyVaultVaultsClient::begin_create_or_update()`](crate::clients::KeyVaultVaultsClient::begin_create_or_update).
     /// The request and opaque content belong to the current HTTP step, not necessarily initiation.
-    #[allow(clippy::too_many_arguments)]
     async fn begin_create_or_update(
         &self,
         resource_group_name: &str,
@@ -195,7 +184,6 @@ pub trait KeyVaultVaultsServer: Send + Sync {
     }
     /// Handles [`KeyVaultVaultsClient::begin_purge_deleted()`](crate::clients::KeyVaultVaultsClient::begin_purge_deleted).
     /// The request and opaque content belong to the current HTTP step, not necessarily initiation.
-    #[allow(clippy::too_many_arguments)]
     async fn begin_purge_deleted(
         &self,
         location: &str,
@@ -208,7 +196,6 @@ pub trait KeyVaultVaultsServer: Send + Sync {
         unimplemented!("KeyVaultVaultsServer::begin_purge_deleted is not implemented")
     }
     /// Handles [`KeyVaultVaultsClient::check_name_availability()`](crate::clients::KeyVaultVaultsClient::check_name_availability).
-    #[allow(clippy::too_many_arguments)]
     async fn check_name_availability(
         &self,
         vault_name: RequestContent<models::VaultCheckNameAvailabilityParameters>,
@@ -218,7 +205,6 @@ pub trait KeyVaultVaultsServer: Send + Sync {
         unimplemented!("KeyVaultVaultsServer::check_name_availability is not implemented")
     }
     /// Handles [`KeyVaultVaultsClient::delete()`](crate::clients::KeyVaultVaultsClient::delete).
-    #[allow(clippy::too_many_arguments)]
     async fn delete(
         &self,
         resource_group_name: &str,
@@ -229,7 +215,6 @@ pub trait KeyVaultVaultsServer: Send + Sync {
         unimplemented!("KeyVaultVaultsServer::delete is not implemented")
     }
     /// Handles [`KeyVaultVaultsClient::get()`](crate::clients::KeyVaultVaultsClient::get).
-    #[allow(clippy::too_many_arguments)]
     async fn get(
         &self,
         resource_group_name: &str,
@@ -240,7 +225,6 @@ pub trait KeyVaultVaultsServer: Send + Sync {
         unimplemented!("KeyVaultVaultsServer::get is not implemented")
     }
     /// Handles [`KeyVaultVaultsClient::get_deleted()`](crate::clients::KeyVaultVaultsClient::get_deleted).
-    #[allow(clippy::too_many_arguments)]
     async fn get_deleted(
         &self,
         location: &str,
@@ -251,7 +235,6 @@ pub trait KeyVaultVaultsServer: Send + Sync {
         unimplemented!("KeyVaultVaultsServer::get_deleted is not implemented")
     }
     /// Handles [`KeyVaultVaultsClient::list()`](crate::clients::KeyVaultVaultsClient::list).
-    #[allow(clippy::too_many_arguments)]
     async fn list(
         &self,
         state: PagerState,
@@ -261,7 +244,6 @@ pub trait KeyVaultVaultsServer: Send + Sync {
         unimplemented!("KeyVaultVaultsServer::list is not implemented")
     }
     /// Handles [`KeyVaultVaultsClient::list_by_resource_group()`](crate::clients::KeyVaultVaultsClient::list_by_resource_group).
-    #[allow(clippy::too_many_arguments)]
     async fn list_by_resource_group(
         &self,
         resource_group_name: &str,
@@ -272,7 +254,6 @@ pub trait KeyVaultVaultsServer: Send + Sync {
         unimplemented!("KeyVaultVaultsServer::list_by_resource_group is not implemented")
     }
     /// Handles [`KeyVaultVaultsClient::list_by_subscription()`](crate::clients::KeyVaultVaultsClient::list_by_subscription).
-    #[allow(clippy::too_many_arguments)]
     async fn list_by_subscription(
         &self,
         state: PagerState,
@@ -282,7 +263,6 @@ pub trait KeyVaultVaultsServer: Send + Sync {
         unimplemented!("KeyVaultVaultsServer::list_by_subscription is not implemented")
     }
     /// Handles [`KeyVaultVaultsClient::list_deleted()`](crate::clients::KeyVaultVaultsClient::list_deleted).
-    #[allow(clippy::too_many_arguments)]
     async fn list_deleted(
         &self,
         state: PagerState,
@@ -292,7 +272,6 @@ pub trait KeyVaultVaultsServer: Send + Sync {
         unimplemented!("KeyVaultVaultsServer::list_deleted is not implemented")
     }
     /// Handles [`KeyVaultVaultsClient::update()`](crate::clients::KeyVaultVaultsClient::update).
-    #[allow(clippy::too_many_arguments)]
     async fn update(
         &self,
         resource_group_name: &str,
@@ -304,7 +283,6 @@ pub trait KeyVaultVaultsServer: Send + Sync {
         unimplemented!("KeyVaultVaultsServer::update is not implemented")
     }
     /// Handles [`KeyVaultVaultsClient::update_access_policy()`](crate::clients::KeyVaultVaultsClient::update_access_policy).
-    #[allow(clippy::too_many_arguments)]
     async fn update_access_policy(
         &self,
         resource_group_name: &str,

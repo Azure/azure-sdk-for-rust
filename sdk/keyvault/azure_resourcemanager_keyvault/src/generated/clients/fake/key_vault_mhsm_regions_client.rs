@@ -17,7 +17,6 @@ struct KeyVaultMhsmRegionsClientListByResourceArguments {
     resource_group_name: String,
     name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_mhsm_regions_client_list_by_resource(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -37,7 +36,6 @@ pub(crate) fn capture_key_vault_mhsm_regions_client_list_by_resource(
 #[async_trait]
 pub trait KeyVaultMHSMRegionsServer: Send + Sync {
     /// Handles [`KeyVaultMHSMRegionsClient::list_by_resource()`](crate::clients::KeyVaultMHSMRegionsClient::list_by_resource).
-    #[allow(clippy::too_many_arguments)]
     async fn list_by_resource(
         &self,
         resource_group_name: &str,

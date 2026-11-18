@@ -20,7 +20,6 @@ use std::sync::Arc;
 struct SecretClientBackupSecretArguments {
     secret_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_secret_client_backup_secret(
     context: &mut azure_core::http::Context<'_>,
     secret_name: String,
@@ -30,7 +29,6 @@ pub(crate) fn capture_secret_client_backup_secret(
 struct SecretClientDeleteSecretArguments {
     secret_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_secret_client_delete_secret(
     context: &mut azure_core::http::Context<'_>,
     secret_name: String,
@@ -40,7 +38,6 @@ pub(crate) fn capture_secret_client_delete_secret(
 struct SecretClientGetDeletedSecretArguments {
     secret_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_secret_client_get_deleted_secret(
     context: &mut azure_core::http::Context<'_>,
     secret_name: String,
@@ -52,7 +49,6 @@ struct SecretClientGetSecretArguments {
     secret_version: Option<String>,
     out_content_type: Option<models::ContentType>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_secret_client_get_secret(
     context: &mut azure_core::http::Context<'_>,
     secret_name: String,
@@ -68,7 +64,6 @@ pub(crate) fn capture_secret_client_get_secret(
 struct SecretClientListDeletedSecretPropertiesArguments {
     maxresults: Option<i32>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_secret_client_list_deleted_secret_properties(
     context: &mut azure_core::http::Context<'_>,
     maxresults: Option<i32>,
@@ -78,7 +73,6 @@ pub(crate) fn capture_secret_client_list_deleted_secret_properties(
 struct SecretClientListSecretPropertiesArguments {
     maxresults: Option<i32>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_secret_client_list_secret_properties(
     context: &mut azure_core::http::Context<'_>,
     maxresults: Option<i32>,
@@ -89,7 +83,6 @@ struct SecretClientListSecretPropertiesVersionsArguments {
     secret_name: String,
     maxresults: Option<i32>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_secret_client_list_secret_properties_versions(
     context: &mut azure_core::http::Context<'_>,
     secret_name: String,
@@ -103,7 +96,6 @@ pub(crate) fn capture_secret_client_list_secret_properties_versions(
 struct SecretClientPurgeDeletedSecretArguments {
     secret_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_secret_client_purge_deleted_secret(
     context: &mut azure_core::http::Context<'_>,
     secret_name: String,
@@ -113,7 +105,6 @@ pub(crate) fn capture_secret_client_purge_deleted_secret(
 struct SecretClientRecoverDeletedSecretArguments {
     secret_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_secret_client_recover_deleted_secret(
     context: &mut azure_core::http::Context<'_>,
     secret_name: String,
@@ -123,7 +114,6 @@ pub(crate) fn capture_secret_client_recover_deleted_secret(
 struct SecretClientSetSecretArguments {
     secret_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_secret_client_set_secret(
     context: &mut azure_core::http::Context<'_>,
     secret_name: String,
@@ -134,7 +124,6 @@ struct SecretClientUpdateSecretPropertiesArguments {
     secret_name: String,
     secret_version: Option<String>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_secret_client_update_secret_properties(
     context: &mut azure_core::http::Context<'_>,
     secret_name: String,
@@ -154,7 +143,6 @@ pub(crate) fn capture_secret_client_update_secret_properties(
 #[async_trait]
 pub trait SecretServer: Send + Sync {
     /// Handles [`SecretClient::backup_secret()`](crate::clients::SecretClient::backup_secret).
-    #[allow(clippy::too_many_arguments)]
     async fn backup_secret(
         &self,
         secret_name: &str,
@@ -164,7 +152,6 @@ pub trait SecretServer: Send + Sync {
         unimplemented!("SecretServer::backup_secret is not implemented")
     }
     /// Handles [`SecretClient::delete_secret()`](crate::clients::SecretClient::delete_secret).
-    #[allow(clippy::too_many_arguments)]
     async fn delete_secret(
         &self,
         secret_name: &str,
@@ -174,7 +161,6 @@ pub trait SecretServer: Send + Sync {
         unimplemented!("SecretServer::delete_secret is not implemented")
     }
     /// Handles [`SecretClient::get_deleted_secret()`](crate::clients::SecretClient::get_deleted_secret).
-    #[allow(clippy::too_many_arguments)]
     async fn get_deleted_secret(
         &self,
         secret_name: &str,
@@ -184,7 +170,6 @@ pub trait SecretServer: Send + Sync {
         unimplemented!("SecretServer::get_deleted_secret is not implemented")
     }
     /// Handles [`SecretClient::get_secret()`](crate::clients::SecretClient::get_secret).
-    #[allow(clippy::too_many_arguments)]
     async fn get_secret(
         &self,
         secret_name: &str,
@@ -194,7 +179,6 @@ pub trait SecretServer: Send + Sync {
         unimplemented!("SecretServer::get_secret is not implemented")
     }
     /// Handles [`SecretClient::list_deleted_secret_properties()`](crate::clients::SecretClient::list_deleted_secret_properties).
-    #[allow(clippy::too_many_arguments)]
     async fn list_deleted_secret_properties(
         &self,
         state: PagerState,
@@ -204,7 +188,6 @@ pub trait SecretServer: Send + Sync {
         unimplemented!("SecretServer::list_deleted_secret_properties is not implemented")
     }
     /// Handles [`SecretClient::list_secret_properties()`](crate::clients::SecretClient::list_secret_properties).
-    #[allow(clippy::too_many_arguments)]
     async fn list_secret_properties(
         &self,
         state: PagerState,
@@ -214,7 +197,6 @@ pub trait SecretServer: Send + Sync {
         unimplemented!("SecretServer::list_secret_properties is not implemented")
     }
     /// Handles [`SecretClient::list_secret_properties_versions()`](crate::clients::SecretClient::list_secret_properties_versions).
-    #[allow(clippy::too_many_arguments)]
     async fn list_secret_properties_versions(
         &self,
         secret_name: &str,
@@ -225,7 +207,6 @@ pub trait SecretServer: Send + Sync {
         unimplemented!("SecretServer::list_secret_properties_versions is not implemented")
     }
     /// Handles [`SecretClient::purge_deleted_secret()`](crate::clients::SecretClient::purge_deleted_secret).
-    #[allow(clippy::too_many_arguments)]
     async fn purge_deleted_secret(
         &self,
         secret_name: &str,
@@ -235,7 +216,6 @@ pub trait SecretServer: Send + Sync {
         unimplemented!("SecretServer::purge_deleted_secret is not implemented")
     }
     /// Handles [`SecretClient::recover_deleted_secret()`](crate::clients::SecretClient::recover_deleted_secret).
-    #[allow(clippy::too_many_arguments)]
     async fn recover_deleted_secret(
         &self,
         secret_name: &str,
@@ -245,7 +225,6 @@ pub trait SecretServer: Send + Sync {
         unimplemented!("SecretServer::recover_deleted_secret is not implemented")
     }
     /// Handles [`SecretClient::restore_secret()`](crate::clients::SecretClient::restore_secret).
-    #[allow(clippy::too_many_arguments)]
     async fn restore_secret(
         &self,
         parameters: RequestContent<models::RestoreSecretParameters>,
@@ -255,7 +234,6 @@ pub trait SecretServer: Send + Sync {
         unimplemented!("SecretServer::restore_secret is not implemented")
     }
     /// Handles [`SecretClient::set_secret()`](crate::clients::SecretClient::set_secret).
-    #[allow(clippy::too_many_arguments)]
     async fn set_secret(
         &self,
         secret_name: &str,
@@ -266,7 +244,6 @@ pub trait SecretServer: Send + Sync {
         unimplemented!("SecretServer::set_secret is not implemented")
     }
     /// Handles [`SecretClient::update_secret_properties()`](crate::clients::SecretClient::update_secret_properties).
-    #[allow(clippy::too_many_arguments)]
     async fn update_secret_properties(
         &self,
         secret_name: &str,

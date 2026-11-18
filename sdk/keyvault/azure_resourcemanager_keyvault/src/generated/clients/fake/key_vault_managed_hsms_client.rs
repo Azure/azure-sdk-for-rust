@@ -19,7 +19,6 @@ struct KeyVaultManagedHsmsClientBeginCreateOrUpdateArguments {
     name: String,
     frequency: azure_core::time::Duration,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_managed_hsms_client_begin_create_or_update(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -37,7 +36,6 @@ struct KeyVaultManagedHsmsClientBeginDeleteArguments {
     name: String,
     frequency: azure_core::time::Duration,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_managed_hsms_client_begin_delete(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -55,7 +53,6 @@ struct KeyVaultManagedHsmsClientBeginPurgeDeletedArguments {
     name: String,
     frequency: azure_core::time::Duration,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_managed_hsms_client_begin_purge_deleted(
     context: &mut azure_core::http::Context<'_>,
     location: String,
@@ -73,7 +70,6 @@ struct KeyVaultManagedHsmsClientBeginUpdateArguments {
     name: String,
     frequency: azure_core::time::Duration,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_managed_hsms_client_begin_update(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -90,7 +86,6 @@ struct KeyVaultManagedHsmsClientGetArguments {
     resource_group_name: String,
     name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_managed_hsms_client_get(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -105,7 +100,6 @@ struct KeyVaultManagedHsmsClientGetDeletedArguments {
     location: String,
     name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_managed_hsms_client_get_deleted(
     context: &mut azure_core::http::Context<'_>,
     location: String,
@@ -117,7 +111,6 @@ struct KeyVaultManagedHsmsClientListByResourceGroupArguments {
     resource_group_name: String,
     top: Option<i32>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_managed_hsms_client_list_by_resource_group(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -131,7 +124,6 @@ pub(crate) fn capture_key_vault_managed_hsms_client_list_by_resource_group(
 struct KeyVaultManagedHsmsClientListBySubscriptionArguments {
     top: Option<i32>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_managed_hsms_client_list_by_subscription(
     context: &mut azure_core::http::Context<'_>,
     top: Option<i32>,
@@ -148,7 +140,6 @@ pub(crate) fn capture_key_vault_managed_hsms_client_list_by_subscription(
 pub trait KeyVaultManagedHsmsServer: Send + Sync {
     /// Handles [`KeyVaultManagedHsmsClient::begin_create_or_update()`](crate::clients::KeyVaultManagedHsmsClient::begin_create_or_update).
     /// The request and opaque content belong to the current HTTP step, not necessarily initiation.
-    #[allow(clippy::too_many_arguments)]
     async fn begin_create_or_update(
         &self,
         resource_group_name: &str,
@@ -170,7 +161,6 @@ pub trait KeyVaultManagedHsmsServer: Send + Sync {
     }
     /// Handles [`KeyVaultManagedHsmsClient::begin_delete()`](crate::clients::KeyVaultManagedHsmsClient::begin_delete).
     /// The request and opaque content belong to the current HTTP step, not necessarily initiation.
-    #[allow(clippy::too_many_arguments)]
     async fn begin_delete(
         &self,
         resource_group_name: &str,
@@ -184,7 +174,6 @@ pub trait KeyVaultManagedHsmsServer: Send + Sync {
     }
     /// Handles [`KeyVaultManagedHsmsClient::begin_purge_deleted()`](crate::clients::KeyVaultManagedHsmsClient::begin_purge_deleted).
     /// The request and opaque content belong to the current HTTP step, not necessarily initiation.
-    #[allow(clippy::too_many_arguments)]
     async fn begin_purge_deleted(
         &self,
         location: &str,
@@ -198,7 +187,6 @@ pub trait KeyVaultManagedHsmsServer: Send + Sync {
     }
     /// Handles [`KeyVaultManagedHsmsClient::begin_update()`](crate::clients::KeyVaultManagedHsmsClient::begin_update).
     /// The request and opaque content belong to the current HTTP step, not necessarily initiation.
-    #[allow(clippy::too_many_arguments)]
     async fn begin_update(
         &self,
         resource_group_name: &str,
@@ -219,7 +207,6 @@ pub trait KeyVaultManagedHsmsServer: Send + Sync {
         unimplemented!("KeyVaultManagedHsmsServer::begin_update is not implemented")
     }
     /// Handles [`KeyVaultManagedHsmsClient::check_mhsm_name_availability()`](crate::clients::KeyVaultManagedHsmsClient::check_mhsm_name_availability).
-    #[allow(clippy::too_many_arguments)]
     async fn check_mhsm_name_availability(
         &self,
         mhsm_name: RequestContent<models::CheckMhsmNameAvailabilityParameters>,
@@ -229,7 +216,6 @@ pub trait KeyVaultManagedHsmsServer: Send + Sync {
         unimplemented!("KeyVaultManagedHsmsServer::check_mhsm_name_availability is not implemented")
     }
     /// Handles [`KeyVaultManagedHsmsClient::get()`](crate::clients::KeyVaultManagedHsmsClient::get).
-    #[allow(clippy::too_many_arguments)]
     async fn get(
         &self,
         resource_group_name: &str,
@@ -240,7 +226,6 @@ pub trait KeyVaultManagedHsmsServer: Send + Sync {
         unimplemented!("KeyVaultManagedHsmsServer::get is not implemented")
     }
     /// Handles [`KeyVaultManagedHsmsClient::get_deleted()`](crate::clients::KeyVaultManagedHsmsClient::get_deleted).
-    #[allow(clippy::too_many_arguments)]
     async fn get_deleted(
         &self,
         location: &str,
@@ -251,7 +236,6 @@ pub trait KeyVaultManagedHsmsServer: Send + Sync {
         unimplemented!("KeyVaultManagedHsmsServer::get_deleted is not implemented")
     }
     /// Handles [`KeyVaultManagedHsmsClient::list_by_resource_group()`](crate::clients::KeyVaultManagedHsmsClient::list_by_resource_group).
-    #[allow(clippy::too_many_arguments)]
     async fn list_by_resource_group(
         &self,
         resource_group_name: &str,
@@ -262,7 +246,6 @@ pub trait KeyVaultManagedHsmsServer: Send + Sync {
         unimplemented!("KeyVaultManagedHsmsServer::list_by_resource_group is not implemented")
     }
     /// Handles [`KeyVaultManagedHsmsClient::list_by_subscription()`](crate::clients::KeyVaultManagedHsmsClient::list_by_subscription).
-    #[allow(clippy::too_many_arguments)]
     async fn list_by_subscription(
         &self,
         state: PagerState,
@@ -272,7 +255,6 @@ pub trait KeyVaultManagedHsmsServer: Send + Sync {
         unimplemented!("KeyVaultManagedHsmsServer::list_by_subscription is not implemented")
     }
     /// Handles [`KeyVaultManagedHsmsClient::list_deleted()`](crate::clients::KeyVaultManagedHsmsClient::list_deleted).
-    #[allow(clippy::too_many_arguments)]
     async fn list_deleted(
         &self,
         state: PagerState,

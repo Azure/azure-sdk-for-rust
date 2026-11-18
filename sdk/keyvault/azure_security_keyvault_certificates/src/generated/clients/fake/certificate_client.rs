@@ -20,7 +20,6 @@ use std::sync::Arc;
 struct CertificateClientBackupCertificateArguments {
     certificate_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_backup_certificate(
     context: &mut azure_core::http::Context<'_>,
     certificate_name: String,
@@ -30,7 +29,6 @@ pub(crate) fn capture_certificate_client_backup_certificate(
 struct CertificateClientDeleteCertificateArguments {
     certificate_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_delete_certificate(
     context: &mut azure_core::http::Context<'_>,
     certificate_name: String,
@@ -40,7 +38,6 @@ pub(crate) fn capture_certificate_client_delete_certificate(
 struct CertificateClientDeleteCertificateOperationArguments {
     certificate_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_delete_certificate_operation(
     context: &mut azure_core::http::Context<'_>,
     certificate_name: String,
@@ -50,7 +47,6 @@ pub(crate) fn capture_certificate_client_delete_certificate_operation(
 struct CertificateClientDeleteIssuerArguments {
     issuer_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_delete_issuer(
     context: &mut azure_core::http::Context<'_>,
     issuer_name: String,
@@ -61,7 +57,6 @@ struct CertificateClientGetCertificateArguments {
     certificate_name: String,
     certificate_version: Option<String>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_get_certificate(
     context: &mut azure_core::http::Context<'_>,
     certificate_name: String,
@@ -75,7 +70,6 @@ pub(crate) fn capture_certificate_client_get_certificate(
 struct CertificateClientGetCertificateOperationArguments {
     certificate_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_get_certificate_operation(
     context: &mut azure_core::http::Context<'_>,
     certificate_name: String,
@@ -85,7 +79,6 @@ pub(crate) fn capture_certificate_client_get_certificate_operation(
 struct CertificateClientGetCertificatePolicyArguments {
     certificate_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_get_certificate_policy(
     context: &mut azure_core::http::Context<'_>,
     certificate_name: String,
@@ -95,7 +88,6 @@ pub(crate) fn capture_certificate_client_get_certificate_policy(
 struct CertificateClientGetDeletedCertificateArguments {
     certificate_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_get_deleted_certificate(
     context: &mut azure_core::http::Context<'_>,
     certificate_name: String,
@@ -105,7 +97,6 @@ pub(crate) fn capture_certificate_client_get_deleted_certificate(
 struct CertificateClientGetIssuerArguments {
     issuer_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_get_issuer(
     context: &mut azure_core::http::Context<'_>,
     issuer_name: String,
@@ -115,7 +106,6 @@ pub(crate) fn capture_certificate_client_get_issuer(
 struct CertificateClientImportCertificateArguments {
     certificate_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_import_certificate(
     context: &mut azure_core::http::Context<'_>,
     certificate_name: String,
@@ -126,7 +116,6 @@ struct CertificateClientListCertificatePropertiesArguments {
     maxresults: Option<i32>,
     include_pending: Option<bool>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_list_certificate_properties(
     context: &mut azure_core::http::Context<'_>,
     maxresults: Option<i32>,
@@ -141,7 +130,6 @@ struct CertificateClientListCertificatePropertiesVersionsArguments {
     certificate_name: String,
     maxresults: Option<i32>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_list_certificate_properties_versions(
     context: &mut azure_core::http::Context<'_>,
     certificate_name: String,
@@ -158,7 +146,6 @@ struct CertificateClientListDeletedCertificatePropertiesArguments {
     maxresults: Option<i32>,
     include_pending: Option<bool>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_list_deleted_certificate_properties(
     context: &mut azure_core::http::Context<'_>,
     maxresults: Option<i32>,
@@ -172,7 +159,6 @@ pub(crate) fn capture_certificate_client_list_deleted_certificate_properties(
 struct CertificateClientListIssuerPropertiesArguments {
     maxresults: Option<i32>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_list_issuer_properties(
     context: &mut azure_core::http::Context<'_>,
     maxresults: Option<i32>,
@@ -182,7 +168,6 @@ pub(crate) fn capture_certificate_client_list_issuer_properties(
 struct CertificateClientMergeCertificateArguments {
     certificate_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_merge_certificate(
     context: &mut azure_core::http::Context<'_>,
     certificate_name: String,
@@ -192,7 +177,6 @@ pub(crate) fn capture_certificate_client_merge_certificate(
 struct CertificateClientPurgeDeletedCertificateArguments {
     certificate_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_purge_deleted_certificate(
     context: &mut azure_core::http::Context<'_>,
     certificate_name: String,
@@ -202,7 +186,6 @@ pub(crate) fn capture_certificate_client_purge_deleted_certificate(
 struct CertificateClientRecoverDeletedCertificateArguments {
     certificate_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_recover_deleted_certificate(
     context: &mut azure_core::http::Context<'_>,
     certificate_name: String,
@@ -212,7 +195,6 @@ pub(crate) fn capture_certificate_client_recover_deleted_certificate(
 struct CertificateClientSetIssuerArguments {
     issuer_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_set_issuer(
     context: &mut azure_core::http::Context<'_>,
     issuer_name: String,
@@ -222,7 +204,6 @@ pub(crate) fn capture_certificate_client_set_issuer(
 struct CertificateClientUpdateCertificateOperationArguments {
     certificate_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_update_certificate_operation(
     context: &mut azure_core::http::Context<'_>,
     certificate_name: String,
@@ -232,7 +213,6 @@ pub(crate) fn capture_certificate_client_update_certificate_operation(
 struct CertificateClientUpdateCertificatePolicyArguments {
     certificate_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_update_certificate_policy(
     context: &mut azure_core::http::Context<'_>,
     certificate_name: String,
@@ -243,7 +223,6 @@ struct CertificateClientUpdateCertificatePropertiesArguments {
     certificate_name: String,
     certificate_version: Option<String>,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_update_certificate_properties(
     context: &mut azure_core::http::Context<'_>,
     certificate_name: String,
@@ -257,7 +236,6 @@ pub(crate) fn capture_certificate_client_update_certificate_properties(
 struct CertificateClientUpdateIssuerArguments {
     issuer_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_certificate_client_update_issuer(
     context: &mut azure_core::http::Context<'_>,
     issuer_name: String,
@@ -273,7 +251,6 @@ pub(crate) fn capture_certificate_client_update_issuer(
 #[async_trait]
 pub trait CertificateServer: Send + Sync {
     /// Handles [`CertificateClient::backup_certificate()`](crate::clients::CertificateClient::backup_certificate).
-    #[allow(clippy::too_many_arguments)]
     async fn backup_certificate(
         &self,
         certificate_name: &str,
@@ -283,7 +260,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::backup_certificate is not implemented")
     }
     /// Handles [`CertificateClient::delete_certificate()`](crate::clients::CertificateClient::delete_certificate).
-    #[allow(clippy::too_many_arguments)]
     async fn delete_certificate(
         &self,
         certificate_name: &str,
@@ -293,7 +269,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::delete_certificate is not implemented")
     }
     /// Handles [`CertificateClient::delete_certificate_operation()`](crate::clients::CertificateClient::delete_certificate_operation).
-    #[allow(clippy::too_many_arguments)]
     async fn delete_certificate_operation(
         &self,
         certificate_name: &str,
@@ -303,7 +278,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::delete_certificate_operation is not implemented")
     }
     /// Handles [`CertificateClient::delete_contacts()`](crate::clients::CertificateClient::delete_contacts).
-    #[allow(clippy::too_many_arguments)]
     async fn delete_contacts(
         &self,
         options: Option<models::CertificateClientDeleteContactsOptions<'_>>,
@@ -312,7 +286,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::delete_contacts is not implemented")
     }
     /// Handles [`CertificateClient::delete_issuer()`](crate::clients::CertificateClient::delete_issuer).
-    #[allow(clippy::too_many_arguments)]
     async fn delete_issuer(
         &self,
         issuer_name: &str,
@@ -322,7 +295,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::delete_issuer is not implemented")
     }
     /// Handles [`CertificateClient::get_certificate()`](crate::clients::CertificateClient::get_certificate).
-    #[allow(clippy::too_many_arguments)]
     async fn get_certificate(
         &self,
         certificate_name: &str,
@@ -332,7 +304,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::get_certificate is not implemented")
     }
     /// Handles [`CertificateClient::get_certificate_operation()`](crate::clients::CertificateClient::get_certificate_operation).
-    #[allow(clippy::too_many_arguments)]
     async fn get_certificate_operation(
         &self,
         certificate_name: &str,
@@ -342,7 +313,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::get_certificate_operation is not implemented")
     }
     /// Handles [`CertificateClient::get_certificate_policy()`](crate::clients::CertificateClient::get_certificate_policy).
-    #[allow(clippy::too_many_arguments)]
     async fn get_certificate_policy(
         &self,
         certificate_name: &str,
@@ -352,7 +322,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::get_certificate_policy is not implemented")
     }
     /// Handles [`CertificateClient::get_contacts()`](crate::clients::CertificateClient::get_contacts).
-    #[allow(clippy::too_many_arguments)]
     async fn get_contacts(
         &self,
         options: Option<models::CertificateClientGetContactsOptions<'_>>,
@@ -361,7 +330,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::get_contacts is not implemented")
     }
     /// Handles [`CertificateClient::get_deleted_certificate()`](crate::clients::CertificateClient::get_deleted_certificate).
-    #[allow(clippy::too_many_arguments)]
     async fn get_deleted_certificate(
         &self,
         certificate_name: &str,
@@ -371,7 +339,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::get_deleted_certificate is not implemented")
     }
     /// Handles [`CertificateClient::get_issuer()`](crate::clients::CertificateClient::get_issuer).
-    #[allow(clippy::too_many_arguments)]
     async fn get_issuer(
         &self,
         issuer_name: &str,
@@ -381,7 +348,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::get_issuer is not implemented")
     }
     /// Handles [`CertificateClient::import_certificate()`](crate::clients::CertificateClient::import_certificate).
-    #[allow(clippy::too_many_arguments)]
     async fn import_certificate(
         &self,
         certificate_name: &str,
@@ -392,7 +358,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::import_certificate is not implemented")
     }
     /// Handles [`CertificateClient::list_certificate_properties()`](crate::clients::CertificateClient::list_certificate_properties).
-    #[allow(clippy::too_many_arguments)]
     async fn list_certificate_properties(
         &self,
         state: PagerState,
@@ -402,7 +367,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::list_certificate_properties is not implemented")
     }
     /// Handles [`CertificateClient::list_certificate_properties_versions()`](crate::clients::CertificateClient::list_certificate_properties_versions).
-    #[allow(clippy::too_many_arguments)]
     async fn list_certificate_properties_versions(
         &self,
         certificate_name: &str,
@@ -413,7 +377,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::list_certificate_properties_versions is not implemented")
     }
     /// Handles [`CertificateClient::list_deleted_certificate_properties()`](crate::clients::CertificateClient::list_deleted_certificate_properties).
-    #[allow(clippy::too_many_arguments)]
     async fn list_deleted_certificate_properties(
         &self,
         state: PagerState,
@@ -423,7 +386,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::list_deleted_certificate_properties is not implemented")
     }
     /// Handles [`CertificateClient::list_issuer_properties()`](crate::clients::CertificateClient::list_issuer_properties).
-    #[allow(clippy::too_many_arguments)]
     async fn list_issuer_properties(
         &self,
         state: PagerState,
@@ -433,7 +395,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::list_issuer_properties is not implemented")
     }
     /// Handles [`CertificateClient::merge_certificate()`](crate::clients::CertificateClient::merge_certificate).
-    #[allow(clippy::too_many_arguments)]
     async fn merge_certificate(
         &self,
         certificate_name: &str,
@@ -444,7 +405,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::merge_certificate is not implemented")
     }
     /// Handles [`CertificateClient::purge_deleted_certificate()`](crate::clients::CertificateClient::purge_deleted_certificate).
-    #[allow(clippy::too_many_arguments)]
     async fn purge_deleted_certificate(
         &self,
         certificate_name: &str,
@@ -454,7 +414,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::purge_deleted_certificate is not implemented")
     }
     /// Handles [`CertificateClient::recover_deleted_certificate()`](crate::clients::CertificateClient::recover_deleted_certificate).
-    #[allow(clippy::too_many_arguments)]
     async fn recover_deleted_certificate(
         &self,
         certificate_name: &str,
@@ -464,7 +423,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::recover_deleted_certificate is not implemented")
     }
     /// Handles [`CertificateClient::restore_certificate()`](crate::clients::CertificateClient::restore_certificate).
-    #[allow(clippy::too_many_arguments)]
     async fn restore_certificate(
         &self,
         parameters: RequestContent<models::RestoreCertificateParameters>,
@@ -474,7 +432,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::restore_certificate is not implemented")
     }
     /// Handles [`CertificateClient::set_contacts()`](crate::clients::CertificateClient::set_contacts).
-    #[allow(clippy::too_many_arguments)]
     async fn set_contacts(
         &self,
         contacts: RequestContent<models::Contacts>,
@@ -484,7 +441,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::set_contacts is not implemented")
     }
     /// Handles [`CertificateClient::set_issuer()`](crate::clients::CertificateClient::set_issuer).
-    #[allow(clippy::too_many_arguments)]
     async fn set_issuer(
         &self,
         issuer_name: &str,
@@ -495,7 +451,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::set_issuer is not implemented")
     }
     /// Handles [`CertificateClient::update_certificate_operation()`](crate::clients::CertificateClient::update_certificate_operation).
-    #[allow(clippy::too_many_arguments)]
     async fn update_certificate_operation(
         &self,
         certificate_name: &str,
@@ -506,7 +461,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::update_certificate_operation is not implemented")
     }
     /// Handles [`CertificateClient::update_certificate_policy()`](crate::clients::CertificateClient::update_certificate_policy).
-    #[allow(clippy::too_many_arguments)]
     async fn update_certificate_policy(
         &self,
         certificate_name: &str,
@@ -517,7 +471,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::update_certificate_policy is not implemented")
     }
     /// Handles [`CertificateClient::update_certificate_properties()`](crate::clients::CertificateClient::update_certificate_properties).
-    #[allow(clippy::too_many_arguments)]
     async fn update_certificate_properties(
         &self,
         certificate_name: &str,
@@ -528,7 +481,6 @@ pub trait CertificateServer: Send + Sync {
         unimplemented!("CertificateServer::update_certificate_properties is not implemented")
     }
     /// Handles [`CertificateClient::update_issuer()`](crate::clients::CertificateClient::update_issuer).
-    #[allow(clippy::too_many_arguments)]
     async fn update_issuer(
         &self,
         issuer_name: &str,

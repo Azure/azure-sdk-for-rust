@@ -14,7 +14,6 @@ struct KeyVaultMhsmPrivateLinkResourcesClientListByMhsmResourceArguments {
     resource_group_name: String,
     name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_mhsm_private_link_resources_client_list_by_mhsm_resource(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -36,7 +35,6 @@ pub(crate) fn capture_key_vault_mhsm_private_link_resources_client_list_by_mhsm_
 #[async_trait]
 pub trait KeyVaultMHSMPrivateLinkResourcesServer: Send + Sync {
     /// Handles [`KeyVaultMHSMPrivateLinkResourcesClient::list_by_mhsm_resource()`](crate::clients::KeyVaultMHSMPrivateLinkResourcesClient::list_by_mhsm_resource).
-    #[allow(clippy::too_many_arguments)]
     async fn list_by_mhsm_resource(
         &self,
         resource_group_name: &str,

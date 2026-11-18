@@ -91,59 +91,32 @@ pub mod clients {
     pub mod fake {
         #[async_trait]
         pub trait KeyServer: Send + Sync {
-            #[allow(clippy::too_many_arguments)]
             async fn backup_key(&self, key_name: &str, options: Option<models::KeyClientBackupKeyOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn create_key(&self, key_name: &str, parameters: RequestContent<models::CreateKeyParameters>, options: Option<models::KeyClientCreateKeyOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn decrypt(&self, key_name: &str, key_version: &str, parameters: RequestContent<models::KeyOperationParameters>, options: Option<models::KeyClientDecryptOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn delete_key(&self, key_name: &str, options: Option<models::KeyClientDeleteKeyOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn encrypt(&self, key_name: &str, parameters: RequestContent<models::KeyOperationParameters>, options: Option<models::KeyClientEncryptOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get_deleted_key(&self, key_name: &str, options: Option<models::KeyClientGetDeletedKeyOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get_key(&self, key_name: &str, options: Option<models::KeyClientGetKeyOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get_key_attestation(&self, key_name: &str, options: Option<models::KeyClientGetKeyAttestationOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get_key_rotation_policy(&self, key_name: &str, options: Option<models::KeyClientGetKeyRotationPolicyOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get_random_bytes(&self, parameters: RequestContent<models::GetRandomBytesParameters>, options: Option<models::KeyClientGetRandomBytesOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn import_key(&self, key_name: &str, parameters: RequestContent<models::ImportKeyParameters>, options: Option<models::KeyClientImportKeyOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list_deleted_key_properties(&self, state: PagerState, options: Option<models::KeyClientListDeletedKeyPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list_key_properties(&self, state: PagerState, options: Option<models::KeyClientListKeyPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list_key_properties_versions(&self, key_name: &str, state: PagerState, options: Option<models::KeyClientListKeyPropertiesVersionsOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn purge_deleted_key(&self, key_name: &str, options: Option<models::KeyClientPurgeDeletedKeyOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn recover_deleted_key(&self, key_name: &str, options: Option<models::KeyClientRecoverDeletedKeyOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn release(&self, key_name: &str, parameters: RequestContent<models::ReleaseParameters>, options: Option<models::KeyClientReleaseOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn restore_key(&self, parameters: RequestContent<models::RestoreKeyParameters>, options: Option<models::KeyClientRestoreKeyOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn rotate_key(&self, key_name: &str, options: Option<models::KeyClientRotateKeyOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn secure_unwrap_key(&self, key_name: &str, key_version: &str, parameters: RequestContent<models::SecureKeyUnWrapOperationParameters>, options: Option<models::KeyClientSecureUnwrapKeyOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn secure_wrap_key(&self, key_name: &str, parameters: RequestContent<models::SecureKeyWrapOperationParameters>, options: Option<models::KeyClientSecureWrapKeyOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn sign(&self, key_name: &str, parameters: RequestContent<models::SignParameters>, options: Option<models::KeyClientSignOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn unwrap_key(&self, key_name: &str, key_version: &str, parameters: RequestContent<models::KeyOperationParameters>, options: Option<models::KeyClientUnwrapKeyOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn update_key_properties(&self, key_name: &str, parameters: RequestContent<models::UpdateKeyPropertiesParameters>, options: Option<models::KeyClientUpdateKeyPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn update_key_rotation_policy(&self, key_name: &str, key_rotation_policy: RequestContent<models::KeyRotationPolicy>, options: Option<models::KeyClientUpdateKeyRotationPolicyOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn verify(&self, key_name: &str, key_version: &str, parameters: RequestContent<models::VerifyParameters>, options: Option<models::KeyClientVerifyOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn wrap_key(&self, key_name: &str, parameters: RequestContent<models::KeyOperationParameters>, options: Option<models::KeyClientWrapKeyOptions<'_>>) -> Result<AsyncRawResponse>;
         }
     }

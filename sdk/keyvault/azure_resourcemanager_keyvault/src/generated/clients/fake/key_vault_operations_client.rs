@@ -22,7 +22,6 @@ use azure_core::{
 #[async_trait]
 pub trait KeyVaultOperationsServer: Send + Sync {
     /// Handles [`KeyVaultOperationsClient::list()`](crate::clients::KeyVaultOperationsClient::list).
-    #[allow(clippy::too_many_arguments)]
     async fn list(
         &self,
         state: PagerState,

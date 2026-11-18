@@ -76,29 +76,17 @@ pub mod clients {
     pub mod fake {
         #[async_trait]
         pub trait SecretServer: Send + Sync {
-            #[allow(clippy::too_many_arguments)]
             async fn backup_secret(&self, secret_name: &str, options: Option<models::SecretClientBackupSecretOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn delete_secret(&self, secret_name: &str, options: Option<models::SecretClientDeleteSecretOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get_deleted_secret(&self, secret_name: &str, options: Option<models::SecretClientGetDeletedSecretOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get_secret(&self, secret_name: &str, options: Option<models::SecretClientGetSecretOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list_deleted_secret_properties(&self, state: PagerState, options: Option<models::SecretClientListDeletedSecretPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list_secret_properties(&self, state: PagerState, options: Option<models::SecretClientListSecretPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list_secret_properties_versions(&self, secret_name: &str, state: PagerState, options: Option<models::SecretClientListSecretPropertiesVersionsOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn purge_deleted_secret(&self, secret_name: &str, options: Option<models::SecretClientPurgeDeletedSecretOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn recover_deleted_secret(&self, secret_name: &str, options: Option<models::SecretClientRecoverDeletedSecretOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn restore_secret(&self, parameters: RequestContent<models::RestoreSecretParameters>, options: Option<models::SecretClientRestoreSecretOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn set_secret(&self, secret_name: &str, parameters: RequestContent<models::SetSecretParameters>, options: Option<models::SecretClientSetSecretOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn update_secret_properties(&self, secret_name: &str, parameters: RequestContent<models::UpdateSecretPropertiesParameters>, options: Option<models::SecretClientUpdateSecretPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
         }
     }

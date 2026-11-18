@@ -18,7 +18,6 @@ struct KeyVaultNetworkSecurityPerimeterConfigurationsClientGetConfigurationArgum
     vault_name: String,
     network_security_perimeter_configuration_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_network_security_perimeter_configurations_client_get_configuration(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -37,7 +36,6 @@ struct KeyVaultNetworkSecurityPerimeterConfigurationsClientListConfigurationsArg
     resource_group_name: String,
     vault_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_network_security_perimeter_configurations_client_list_configurations(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -55,7 +53,6 @@ struct KeyVaultNetworkSecurityPerimeterConfigurationsClientReconcileConfiguratio
     vault_name: String,
     network_security_perimeter_configuration_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_network_security_perimeter_configurations_client_reconcile_configuration(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -79,7 +76,6 @@ pub(crate) fn capture_key_vault_network_security_perimeter_configurations_client
 #[async_trait]
 pub trait KeyVaultNetworkSecurityPerimeterConfigurationsServer: Send + Sync {
     /// Handles [`KeyVaultNetworkSecurityPerimeterConfigurationsClient::get_configuration()`](crate::clients::KeyVaultNetworkSecurityPerimeterConfigurationsClient::get_configuration).
-    #[allow(clippy::too_many_arguments)]
     async fn get_configuration(
         &self,
         resource_group_name: &str,
@@ -98,7 +94,6 @@ pub trait KeyVaultNetworkSecurityPerimeterConfigurationsServer: Send + Sync {
         unimplemented!("KeyVaultNetworkSecurityPerimeterConfigurationsServer::get_configuration is not implemented")
     }
     /// Handles [`KeyVaultNetworkSecurityPerimeterConfigurationsClient::list_configurations()`](crate::clients::KeyVaultNetworkSecurityPerimeterConfigurationsClient::list_configurations).
-    #[allow(clippy::too_many_arguments)]
     async fn list_configurations(
         &self,
         resource_group_name: &str,
@@ -114,7 +109,6 @@ pub trait KeyVaultNetworkSecurityPerimeterConfigurationsServer: Send + Sync {
         unimplemented!("KeyVaultNetworkSecurityPerimeterConfigurationsServer::list_configurations is not implemented")
     }
     /// Handles [`KeyVaultNetworkSecurityPerimeterConfigurationsClient::reconcile_configuration()`](crate::clients::KeyVaultNetworkSecurityPerimeterConfigurationsClient::reconcile_configuration).
-    #[allow(clippy::too_many_arguments)]
     async fn reconcile_configuration(
         &self,
         resource_group_name: &str,

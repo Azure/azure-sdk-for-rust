@@ -189,142 +189,91 @@ pub mod clients {
     pub mod fake {
         #[async_trait]
         pub trait KeyVaultKeysServer: Send + Sync {
-            #[allow(clippy::too_many_arguments)]
             async fn create_if_not_exist(&self, resource_group_name: &str, vault_name: &str, key_name: &str, parameters: RequestContent<models::KeyCreateParameters>, options: Option<models::KeyVaultKeysClientCreateIfNotExistOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get(&self, resource_group_name: &str, vault_name: &str, key_name: &str, options: Option<models::KeyVaultKeysClientGetOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get_version(&self, resource_group_name: &str, vault_name: &str, key_name: &str, key_version: &str, options: Option<models::KeyVaultKeysClientGetVersionOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list(&self, resource_group_name: &str, vault_name: &str, state: PagerState, options: Option<models::KeyVaultKeysClientListOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list_versions(&self, resource_group_name: &str, vault_name: &str, key_name: &str, state: PagerState, options: Option<models::KeyVaultKeysClientListVersionsOptions<'_>>) -> Result<AsyncRawResponse>;
         }
         #[async_trait]
         pub trait KeyVaultMHSMPrivateEndpointConnectionsServer: Send + Sync {
-            #[allow(clippy::too_many_arguments)]
             async fn begin_delete(&self, resource_group_name: &str, name: &str, private_endpoint_connection_name: &str, state: PollerState, request: &Request, options: Option<models::KeyVaultMHSMPrivateEndpointConnectionsClientBeginDeleteOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get(&self, resource_group_name: &str, name: &str, private_endpoint_connection_name: &str, options: Option<models::KeyVaultMHSMPrivateEndpointConnectionsClientGetOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list_by_resource(&self, resource_group_name: &str, name: &str, state: PagerState, options: Option<models::KeyVaultMHSMPrivateEndpointConnectionsClientListByResourceOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn put(&self, resource_group_name: &str, name: &str, private_endpoint_connection_name: &str, properties: RequestContent<models::MHSMPrivateEndpointConnection>, options: Option<models::KeyVaultMHSMPrivateEndpointConnectionsClientPutOptions<'_>>) -> Result<AsyncRawResponse>;
         }
         #[async_trait]
         pub trait KeyVaultMHSMPrivateLinkResourcesServer: Send + Sync {
-            #[allow(clippy::too_many_arguments)]
             async fn list_by_mhsm_resource(&self, resource_group_name: &str, name: &str, options: Option<models::KeyVaultMHSMPrivateLinkResourcesClientListByMhsmResourceOptions<'_>>) -> Result<AsyncRawResponse>;
         }
         #[async_trait]
         pub trait KeyVaultMHSMRegionsServer: Send + Sync {
-            #[allow(clippy::too_many_arguments)]
             async fn list_by_resource(&self, resource_group_name: &str, name: &str, state: PagerState, options: Option<models::KeyVaultMHSMRegionsClientListByResourceOptions<'_>>) -> Result<AsyncRawResponse>;
         }
         #[async_trait]
         pub trait KeyVaultManagedHsmKeysServer: Send + Sync {
-            #[allow(clippy::too_many_arguments)]
             async fn create_if_not_exist(&self, resource_group_name: &str, name: &str, key_name: &str, parameters: RequestContent<models::ManagedHsmKeyCreateParameters>, options: Option<models::KeyVaultManagedHsmKeysClientCreateIfNotExistOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get(&self, resource_group_name: &str, name: &str, key_name: &str, options: Option<models::KeyVaultManagedHsmKeysClientGetOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get_version(&self, resource_group_name: &str, name: &str, key_name: &str, key_version: &str, options: Option<models::KeyVaultManagedHsmKeysClientGetVersionOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list(&self, resource_group_name: &str, name: &str, state: PagerState, options: Option<models::KeyVaultManagedHsmKeysClientListOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list_versions(&self, resource_group_name: &str, name: &str, key_name: &str, state: PagerState, options: Option<models::KeyVaultManagedHsmKeysClientListVersionsOptions<'_>>) -> Result<AsyncRawResponse>;
         }
         #[async_trait]
         pub trait KeyVaultManagedHsmsServer: Send + Sync {
-            #[allow(clippy::too_many_arguments)]
             async fn begin_create_or_update(&self, resource_group_name: &str, name: &str, parameters: RequestContent<models::ManagedHsm>, state: PollerState, request: &Request, options: Option<models::KeyVaultManagedHsmsClientBeginCreateOrUpdateOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn begin_delete(&self, resource_group_name: &str, name: &str, state: PollerState, request: &Request, options: Option<models::KeyVaultManagedHsmsClientBeginDeleteOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn begin_purge_deleted(&self, location: &str, name: &str, state: PollerState, request: &Request, options: Option<models::KeyVaultManagedHsmsClientBeginPurgeDeletedOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn begin_update(&self, resource_group_name: &str, name: &str, parameters: RequestContent<models::ManagedHsm>, state: PollerState, request: &Request, options: Option<models::KeyVaultManagedHsmsClientBeginUpdateOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn check_mhsm_name_availability(&self, mhsm_name: RequestContent<models::CheckMhsmNameAvailabilityParameters>, options: Option<models::KeyVaultManagedHsmsClientCheckMhsmNameAvailabilityOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get(&self, resource_group_name: &str, name: &str, options: Option<models::KeyVaultManagedHsmsClientGetOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get_deleted(&self, location: &str, name: &str, options: Option<models::KeyVaultManagedHsmsClientGetDeletedOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list_by_resource_group(&self, resource_group_name: &str, state: PagerState, options: Option<models::KeyVaultManagedHsmsClientListByResourceGroupOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list_by_subscription(&self, state: PagerState, options: Option<models::KeyVaultManagedHsmsClientListBySubscriptionOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list_deleted(&self, state: PagerState, options: Option<models::KeyVaultManagedHsmsClientListDeletedOptions<'_>>) -> Result<AsyncRawResponse>;
         }
         #[async_trait]
         pub trait KeyVaultNetworkSecurityPerimeterConfigurationsServer: Send + Sync {
-            #[allow(clippy::too_many_arguments)]
             async fn get_configuration(&self, resource_group_name: &str, vault_name: &str, network_security_perimeter_configuration_name: &str, options: Option<models::KeyVaultNetworkSecurityPerimeterConfigurationsClientGetConfigurationOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list_configurations(&self, resource_group_name: &str, vault_name: &str, state: PagerState, options: Option<models::KeyVaultNetworkSecurityPerimeterConfigurationsClientListConfigurationsOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn reconcile_configuration(&self, resource_group_name: &str, vault_name: &str, network_security_perimeter_configuration_name: &str, options: Option<models::KeyVaultNetworkSecurityPerimeterConfigurationsClientReconcileConfigurationOptions<'_>>) -> Result<AsyncRawResponse>;
         }
         #[async_trait]
         pub trait KeyVaultOperationsServer: Send + Sync {
-            #[allow(clippy::too_many_arguments)]
             async fn list(&self, state: PagerState, options: Option<models::KeyVaultOperationsClientListOptions<'_>>) -> Result<AsyncRawResponse>;
         }
         #[async_trait]
         pub trait KeyVaultPrivateEndpointConnectionsServer: Send + Sync {
-            #[allow(clippy::too_many_arguments)]
             async fn begin_delete(&self, resource_group_name: &str, vault_name: &str, private_endpoint_connection_name: &str, state: PollerState, request: &Request, options: Option<models::KeyVaultPrivateEndpointConnectionsClientBeginDeleteOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get(&self, resource_group_name: &str, vault_name: &str, private_endpoint_connection_name: &str, options: Option<models::KeyVaultPrivateEndpointConnectionsClientGetOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list_by_resource(&self, resource_group_name: &str, vault_name: &str, state: PagerState, options: Option<models::KeyVaultPrivateEndpointConnectionsClientListByResourceOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn put(&self, resource_group_name: &str, vault_name: &str, private_endpoint_connection_name: &str, properties: RequestContent<models::PrivateEndpointConnection>, options: Option<models::KeyVaultPrivateEndpointConnectionsClientPutOptions<'_>>) -> Result<AsyncRawResponse>;
         }
         #[async_trait]
         pub trait KeyVaultPrivateLinkResourcesServer: Send + Sync {
-            #[allow(clippy::too_many_arguments)]
             async fn list_by_vault(&self, resource_group_name: &str, vault_name: &str, options: Option<models::KeyVaultPrivateLinkResourcesClientListByVaultOptions<'_>>) -> Result<AsyncRawResponse>;
         }
         #[async_trait]
         pub trait KeyVaultSecretsServer: Send + Sync {
-            #[allow(clippy::too_many_arguments)]
             async fn create_or_update(&self, resource_group_name: &str, vault_name: &str, secret_name: &str, parameters: RequestContent<models::SecretCreateOrUpdateParameters>, options: Option<models::KeyVaultSecretsClientCreateOrUpdateOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get(&self, resource_group_name: &str, vault_name: &str, secret_name: &str, options: Option<models::KeyVaultSecretsClientGetOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list(&self, resource_group_name: &str, vault_name: &str, state: PagerState, options: Option<models::KeyVaultSecretsClientListOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn update(&self, resource_group_name: &str, vault_name: &str, secret_name: &str, parameters: RequestContent<models::SecretPatchParameters>, options: Option<models::KeyVaultSecretsClientUpdateOptions<'_>>) -> Result<AsyncRawResponse>;
         }
         pub trait KeyVaultServer: Send + Sync + crate::clients::fake::KeyVaultKeysServer + crate::clients::fake::KeyVaultManagedHsmKeysServer + crate::clients::fake::KeyVaultManagedHsmsServer + crate::clients::fake::KeyVaultMHSMPrivateEndpointConnectionsServer + crate::clients::fake::KeyVaultMHSMPrivateLinkResourcesServer + crate::clients::fake::KeyVaultMHSMRegionsServer + crate::clients::fake::KeyVaultNetworkSecurityPerimeterConfigurationsServer + crate::clients::fake::KeyVaultOperationsServer + crate::clients::fake::KeyVaultPrivateEndpointConnectionsServer + crate::clients::fake::KeyVaultPrivateLinkResourcesServer + crate::clients::fake::KeyVaultSecretsServer + crate::clients::fake::KeyVaultVaultsServer {
         }
         #[async_trait]
         pub trait KeyVaultVaultsServer: Send + Sync {
-            #[allow(clippy::too_many_arguments)]
             async fn begin_create_or_update(&self, resource_group_name: &str, vault_name: &str, parameters: RequestContent<models::VaultCreateOrUpdateParameters>, state: PollerState, request: &Request, options: Option<models::KeyVaultVaultsClientBeginCreateOrUpdateOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn begin_purge_deleted(&self, location: &str, vault_name: &str, state: PollerState, request: &Request, options: Option<models::KeyVaultVaultsClientBeginPurgeDeletedOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn check_name_availability(&self, vault_name: RequestContent<models::VaultCheckNameAvailabilityParameters>, options: Option<models::KeyVaultVaultsClientCheckNameAvailabilityOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn delete(&self, resource_group_name: &str, vault_name: &str, options: Option<models::KeyVaultVaultsClientDeleteOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get(&self, resource_group_name: &str, vault_name: &str, options: Option<models::KeyVaultVaultsClientGetOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn get_deleted(&self, location: &str, vault_name: &str, options: Option<models::KeyVaultVaultsClientGetDeletedOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list(&self, state: PagerState, options: Option<models::KeyVaultVaultsClientListOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list_by_resource_group(&self, resource_group_name: &str, state: PagerState, options: Option<models::KeyVaultVaultsClientListByResourceGroupOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list_by_subscription(&self, state: PagerState, options: Option<models::KeyVaultVaultsClientListBySubscriptionOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn list_deleted(&self, state: PagerState, options: Option<models::KeyVaultVaultsClientListDeletedOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn update(&self, resource_group_name: &str, vault_name: &str, parameters: RequestContent<models::VaultPatchParameters>, options: Option<models::KeyVaultVaultsClientUpdateOptions<'_>>) -> Result<AsyncRawResponse>;
-            #[allow(clippy::too_many_arguments)]
             async fn update_access_policy(&self, resource_group_name: &str, vault_name: &str, operation_kind: models::AccessPolicyUpdateKind, parameters: RequestContent<models::VaultAccessPolicyParameters>, options: Option<models::KeyVaultVaultsClientUpdateAccessPolicyOptions<'_>>) -> Result<AsyncRawResponse>;
         }
     }

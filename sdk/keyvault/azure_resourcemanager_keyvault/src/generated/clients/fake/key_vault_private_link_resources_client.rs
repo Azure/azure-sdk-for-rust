@@ -14,7 +14,6 @@ struct KeyVaultPrivateLinkResourcesClientListByVaultArguments {
     resource_group_name: String,
     vault_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_private_link_resources_client_list_by_vault(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -34,7 +33,6 @@ pub(crate) fn capture_key_vault_private_link_resources_client_list_by_vault(
 #[async_trait]
 pub trait KeyVaultPrivateLinkResourcesServer: Send + Sync {
     /// Handles [`KeyVaultPrivateLinkResourcesClient::list_by_vault()`](crate::clients::KeyVaultPrivateLinkResourcesClient::list_by_vault).
-    #[allow(clippy::too_many_arguments)]
     async fn list_by_vault(
         &self,
         resource_group_name: &str,

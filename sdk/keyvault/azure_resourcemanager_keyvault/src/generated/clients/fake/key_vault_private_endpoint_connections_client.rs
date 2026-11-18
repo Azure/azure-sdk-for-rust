@@ -20,7 +20,6 @@ struct KeyVaultPrivateEndpointConnectionsClientBeginDeleteArguments {
     private_endpoint_connection_name: String,
     frequency: azure_core::time::Duration,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_private_endpoint_connections_client_begin_delete(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -42,7 +41,6 @@ struct KeyVaultPrivateEndpointConnectionsClientGetArguments {
     vault_name: String,
     private_endpoint_connection_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_private_endpoint_connections_client_get(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -59,7 +57,6 @@ struct KeyVaultPrivateEndpointConnectionsClientListByResourceArguments {
     resource_group_name: String,
     vault_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_private_endpoint_connections_client_list_by_resource(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -77,7 +74,6 @@ struct KeyVaultPrivateEndpointConnectionsClientPutArguments {
     vault_name: String,
     private_endpoint_connection_name: String,
 }
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn capture_key_vault_private_endpoint_connections_client_put(
     context: &mut azure_core::http::Context<'_>,
     resource_group_name: String,
@@ -100,7 +96,6 @@ pub(crate) fn capture_key_vault_private_endpoint_connections_client_put(
 pub trait KeyVaultPrivateEndpointConnectionsServer: Send + Sync {
     /// Handles [`KeyVaultPrivateEndpointConnectionsClient::begin_delete()`](crate::clients::KeyVaultPrivateEndpointConnectionsClient::begin_delete).
     /// The request and opaque content belong to the current HTTP step, not necessarily initiation.
-    #[allow(clippy::too_many_arguments)]
     async fn begin_delete(
         &self,
         resource_group_name: &str,
@@ -121,7 +116,6 @@ pub trait KeyVaultPrivateEndpointConnectionsServer: Send + Sync {
         unimplemented!("KeyVaultPrivateEndpointConnectionsServer::begin_delete is not implemented")
     }
     /// Handles [`KeyVaultPrivateEndpointConnectionsClient::get()`](crate::clients::KeyVaultPrivateEndpointConnectionsClient::get).
-    #[allow(clippy::too_many_arguments)]
     async fn get(
         &self,
         resource_group_name: &str,
@@ -138,7 +132,6 @@ pub trait KeyVaultPrivateEndpointConnectionsServer: Send + Sync {
         unimplemented!("KeyVaultPrivateEndpointConnectionsServer::get is not implemented")
     }
     /// Handles [`KeyVaultPrivateEndpointConnectionsClient::list_by_resource()`](crate::clients::KeyVaultPrivateEndpointConnectionsClient::list_by_resource).
-    #[allow(clippy::too_many_arguments)]
     async fn list_by_resource(
         &self,
         resource_group_name: &str,
@@ -152,7 +145,6 @@ pub trait KeyVaultPrivateEndpointConnectionsServer: Send + Sync {
         )
     }
     /// Handles [`KeyVaultPrivateEndpointConnectionsClient::put()`](crate::clients::KeyVaultPrivateEndpointConnectionsClient::put).
-    #[allow(clippy::too_many_arguments)]
     async fn put(
         &self,
         resource_group_name: &str,
