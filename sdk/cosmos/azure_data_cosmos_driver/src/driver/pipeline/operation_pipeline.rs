@@ -1172,6 +1172,9 @@ pub(crate) async fn execute_operation_pipeline(
             transport_request,
             &TransportPipelineConfig {
                 allow_sent_transport_retry: operation.allows_ambiguous_outcome_retry(),
+                authorization_timeout: overrides
+                    .independent_metadata_fill
+                    .then(|| transport.metadata_request_timeout()),
                 user_agent,
                 client_id,
                 pipeline_type,
@@ -3825,6 +3828,10 @@ async fn perform_single_attempt(
         transport_request,
         &TransportPipelineConfig {
             allow_sent_transport_retry: ctx.operation.allows_ambiguous_outcome_retry(),
+            authorization_timeout: ctx
+                .overrides
+                .independent_metadata_fill
+                .then(|| ctx.transport.metadata_request_timeout()),
             user_agent: ctx.user_agent,
             client_id: ctx.client_id,
             pipeline_type: ctx.pipeline_type,

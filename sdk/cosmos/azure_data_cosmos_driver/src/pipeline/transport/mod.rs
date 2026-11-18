@@ -56,6 +56,8 @@ pub(crate) use sharded_transport::EndpointKey;
 /// Fixed routing, identity, and retry limits for one transport invocation.
 pub(crate) struct TransportPipelineConfig<'a> {
     pub allow_sent_transport_retry: bool,
+    /// Cache-owned signing budget for independent metadata fills.
+    pub authorization_timeout: Option<std::time::Duration>,
     pub user_agent: &'a HeaderValue,
     pub client_id: &'a HeaderValue,
     pub pipeline_type: PipelineKind,

@@ -94,9 +94,22 @@ pub(super) async fn prepare(
             .headers
             .insert(NO_RETRY_449, HeaderValue::from_static("true"));
     }
-    request_signing::sign_request(&mut http_request, credential, &request.auth_context)
-        .await
-        .map_err(PreparationError::Authorization)?;
+    let authorization =
+        request_signing::sign_request(&mut http_request, credential, &request.auth_context);
+    let authorization = match config.authorization_timeout {
+        Some(timeout) => crate::timeout::with_timeout(timeout, authorization, clock)
+            .await
+            .map_err(|_| {
+                PreparationError::Authorization(
+                    CosmosError::builder()
+                        .with_status(status_codes::AUTHENTICATION_TOKEN_ACQUISITION_FAILED)
+                        .with_message("shared metadata request authorization timed out")
+                        .build(),
+                )
+            })?,
+        None => authorization.await,
+    };
+    authorization.map_err(PreparationError::Authorization)?;
     if request.transport_mode.is_gateway_v2() {
         let inputs = GatewayV2Headers {
             auth_context: &request.auth_context,

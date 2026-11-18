@@ -102,6 +102,7 @@ async fn connectivity_retry_updates_progress_only_for_eligible_replays() {
     let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
     let mut config = TransportPipelineConfig {
         allow_sent_transport_retry: false,
+        authorization_timeout: None,
         user_agent: &user_agent,
         client_id: &TEST_CLIENT_ID,
         pipeline_type: PipelineKind::DataPlane,

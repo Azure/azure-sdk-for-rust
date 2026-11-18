@@ -61,6 +61,7 @@ async fn run_pipeline(
         request,
         &TransportPipelineConfig {
             allow_sent_transport_retry: context.allow_sent_transport_retry,
+            authorization_timeout: None,
             user_agent: context.user_agent,
             client_id: context.client_id,
             pipeline_type: context.pipeline_type,

@@ -507,7 +507,10 @@ including its accumulated pages, active-page continuation, activity ID, and
 region pin. Only a complete, validated routing map is published.
 
 The shared fill does not inherit the initiating caller's end-to-end deadline.
-Transport attempts keep their configured metadata request timeouts. HTTP 429
+Each signing attempt, including token acquisition, has a cache-owned budget
+equal to the configured metadata request timeout; exhaustion returns the normal
+client authorization failure without sending the request. Transport attempts
+separately keep their configured metadata request timeouts. HTTP 429
 retries retain the same page and honor bounded backoff; batch diagnostics are
 discarded before the next retry. Non-429 failures keep the existing bounded
 pipeline retries, cold-recovery rules, and previous-map fallback.
