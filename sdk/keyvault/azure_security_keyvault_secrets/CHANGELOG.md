@@ -1,15 +1,10 @@
 # Release History
 
-## 1.1.0-beta.2 (Unreleased)
+## 1.1.0-beta.2 (2026-11-18)
 
 ### Features Added
 
 - Added optional `test` and `unstable_fake` features with experimental `clients::fake::SecretServer` and `SecretClient::with_fake()` APIs to build credential-free tests using the existing client.
-- Added fakes support for testing.
-
-### Breaking Changes
-
-### Bugs Fixed
 
 ### Other Changes
 
