@@ -347,6 +347,7 @@ async fn setup_with_topology_mode(
     let properties = ContainerProperties {
         id: "items".into(),
         partition_key: serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap(),
+        vector_embedding_policy: None,
         system_properties: Default::default(),
     };
     let container =
@@ -1220,6 +1221,7 @@ async fn dropping_last_driver_stops_staggered_container_fills() {
     let properties = ContainerProperties {
         id: "other-items".into(),
         partition_key: serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap(),
+        vector_embedding_policy: None,
         system_properties: Default::default(),
     };
     let second = ContainerReference::new(
