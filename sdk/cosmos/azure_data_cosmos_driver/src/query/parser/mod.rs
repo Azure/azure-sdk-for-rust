@@ -926,7 +926,11 @@ impl<'a> Parser<'a> {
                 let value = serde_json::from_str::<String>(self.current.text)
                     .map_err(|_| self.error("invalid double-quoted string".into()))?;
                 self.advance();
-                SqlScalarExpression::Literal(SqlLiteral::String(value))
+                if self.at(TokenKind::Dot) {
+                    SqlScalarExpression::PropertyRef(value)
+                } else {
+                    SqlScalarExpression::Literal(SqlLiteral::String(value))
+                }
             }
             // String literal
             TokenKind::StringLiteral => {
