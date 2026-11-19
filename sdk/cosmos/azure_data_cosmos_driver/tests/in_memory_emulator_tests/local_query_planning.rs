@@ -307,19 +307,31 @@ async fn advanced_families_plan_natively_or_fall_back_once() {
         (
             "aggregate",
             "SELECT VALUE COUNT(1) FROM c",
-            FallbackOutcome::Plan,
+            if NATIVE_PLANNER {
+                FallbackOutcome::Plan
+            } else {
+                FallbackOutcome::Error
+            },
             true,
         ),
         (
             "group_by",
             "SELECT c.pk, COUNT(1) FROM c GROUP BY c.pk",
-            FallbackOutcome::Plan,
+            if NATIVE_PLANNER {
+                FallbackOutcome::Plan
+            } else {
+                FallbackOutcome::Error
+            },
             true,
         ),
         (
             "canonical_dcount",
             "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.pk FROM c) AS t",
-            FallbackOutcome::Plan,
+            if NATIVE_PLANNER {
+                FallbackOutcome::Plan
+            } else {
+                FallbackOutcome::Error
+            },
             true,
         ),
         (
