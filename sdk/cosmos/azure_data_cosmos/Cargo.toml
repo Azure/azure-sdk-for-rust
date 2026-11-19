@@ -121,6 +121,8 @@ unstable_patch = [
   "dep:uuid",
   "azure_data_cosmos_driver/unstable_patch",
 ] # Enables the unstable PATCH API with bounded duplicate suppression. Disabled by default.
+unstable_delete_by_partition_key = [
+] # Enables the unstable API for background deletion of a logical partition. Disabled by default.
 __internal_in_memory_emulator = [
   "azure_data_cosmos_driver/__internal_in_memory_emulator",
   "key_auth",
@@ -139,6 +141,7 @@ features = [
   "native_tls",
   "unstable_dtx",
   "unstable_patch",
+  "unstable_delete_by_partition_key",
   "rustls",
 ]
 

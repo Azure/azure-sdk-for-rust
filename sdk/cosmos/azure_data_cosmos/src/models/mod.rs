@@ -26,6 +26,7 @@ pub use container_properties::{
 };
 #[cfg(feature = "control_plane")]
 pub use database_properties::DatabaseProperties;
+#[cfg(feature = "unstable_delete_by_partition_key")]
 pub use delete_by_partition_key_response::DeleteByPartitionKeyResponse;
 pub use indexing_policy::{
     CompositeIndex, CompositeIndexOrder, CompositeIndexProperty, FullTextIndex, IndexingMode,
@@ -65,6 +66,7 @@ mod container_properties;
 mod cosmos_response;
 #[cfg(feature = "control_plane")]
 mod database_properties;
+#[cfg(feature = "unstable_delete_by_partition_key")]
 mod delete_by_partition_key_response;
 mod indexing_policy;
 mod item_response;

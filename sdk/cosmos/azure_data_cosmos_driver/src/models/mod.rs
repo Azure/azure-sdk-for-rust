@@ -643,13 +643,6 @@ pub enum OperationType {
     Replace,
     /// Delete a resource.
     Delete,
-    /// Start asynchronously deleting items with a complete logical partition key from a container.
-    ///
-    /// Successful execution confirms initiation, not completed deletion. Physical deletion
-    /// may take several hours, and progress can't be monitored. The service attempts to
-    /// hide affected items, but some aggregate queries may still include them.
-    /// Deletion consumes the same request units as deleting the items individually.
-    DeleteByPartitionKey,
     /// Create or replace a resource.
     Upsert,
     /// Execute a query.
@@ -686,6 +679,13 @@ pub enum OperationType {
     /// Execute a distributed read transaction.
     #[cfg(feature = "unstable_dtx")]
     ReadDistributedTransaction,
+    /// Start asynchronously deleting items with a complete logical partition key from a container.
+    ///
+    /// Successful execution confirms initiation, not completed deletion. Physical deletion
+    /// may take several hours, and progress can't be monitored. The service attempts to
+    /// hide affected items, but some aggregate queries may still include them.
+    /// Deletion consumes the same request units as deleting the items individually.
+    DeleteByPartitionKey,
 }
 
 impl OperationType {

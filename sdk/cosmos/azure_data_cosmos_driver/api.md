@@ -2300,7 +2300,6 @@ pub mod models {
         ReadFeed,
         Replace,
         Delete,
-        DeleteByPartitionKey,
         Upsert,
         Query,
         SqlQuery,
@@ -2314,6 +2313,7 @@ pub mod models {
         CommitDistributedTransaction,
         #[cfg(feature = "unstable_dtx")]
         ReadDistributedTransaction,
+        DeleteByPartitionKey,
     }
     impl OperationType {
         pub fn as_str(self) -> &'static str;

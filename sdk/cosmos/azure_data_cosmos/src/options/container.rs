@@ -10,6 +10,9 @@ use crate::models::ThroughputProperties;
 
 /// Options for
 /// [`ContainerClient::begin_delete_by_partition_key`](crate::clients::ContainerClient::begin_delete_by_partition_key).
+///
+/// **Unstable.** Requires the `unstable_delete_by_partition_key` feature.
+#[cfg(feature = "unstable_delete_by_partition_key")]
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct DeleteByPartitionKeyOptions {
@@ -17,6 +20,7 @@ pub struct DeleteByPartitionKeyOptions {
     pub operation: OperationOptions,
 }
 
+#[cfg(feature = "unstable_delete_by_partition_key")]
 impl DeleteByPartitionKeyOptions {
     /// Sets the [`OperationOptions`] for the initiation request.
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
