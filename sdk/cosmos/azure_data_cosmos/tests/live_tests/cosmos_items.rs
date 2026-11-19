@@ -3,7 +3,11 @@
 
 use crate::framework::{self, test_client::TEST_MODE_ENV_VAR, TestClient, TestOptions};
 use azure_core::http::StatusCode;
-use azure_data_cosmos::{feed::FeedScope, models::ContainerProperties};
+use azure_data_cosmos::{
+    feed::FeedScope,
+    models::ContainerProperties,
+    options::{ItemReadOptions, OperationOptionsBuilder, QueryOptions, ReadConsistencyStrategy},
+};
 use futures::StreamExt;
 use std::{error::Error, time::Duration};
 
@@ -26,6 +30,12 @@ async fn begin_delete_by_partition_key() -> Result<(), Box<dyn Error>> {
                     None,
                 )
                 .await?;
+            let operation_options = OperationOptionsBuilder::new()
+                .with_read_consistency_strategy(ReadConsistencyStrategy::LatestCommitted)
+                .build();
+            let read_options =
+                ItemReadOptions::default().with_operation_options(operation_options.clone());
+            let query_options = QueryOptions::default().with_operation_options(operation_options);
             for (pk, id) in [
                 ("target", "shared"),
                 ("target", "second"),
@@ -34,7 +44,9 @@ async fn begin_delete_by_partition_key() -> Result<(), Box<dyn Error>> {
                 container
                     .create_item(pk, id, &serde_json::json!({"id": id, "pk": pk}), None)
                     .await?;
-                run_context.read_item(&container, pk, id, None).await?;
+                run_context
+                    .read_item(&container, pk, id, Some(read_options.clone()))
+                    .await?;
             }
             let response = container
                 .begin_delete_by_partition_key("target", None)
@@ -48,7 +60,10 @@ async fn begin_delete_by_partition_key() -> Result<(), Box<dyn Error>> {
                 loop {
                     let mut hidden = true;
                     for id in ["shared", "second"] {
-                        match container.read_item("target", id, None).await {
+                        match container
+                            .read_item("target", id, Some(read_options.clone()))
+                            .await
+                        {
                             Ok(_) => hidden = false,
                             Err(error) if error.status().status_code() == StatusCode::NotFound => {}
                             Err(error) => return Err(error),
@@ -58,7 +73,7 @@ async fn begin_delete_by_partition_key() -> Result<(), Box<dyn Error>> {
                         .query_items::<String>(
                             "SELECT VALUE c.id FROM c",
                             FeedScope::partition("target"),
-                            None,
+                            Some(query_options.clone()),
                         )
                         .await?
                         .into_pages();
@@ -74,7 +89,7 @@ async fn begin_delete_by_partition_key() -> Result<(), Box<dyn Error>> {
             })
             .await??;
             let control: serde_json::Value = container
-                .read_item("control", "shared", None)
+                .read_item("control", "shared", Some(read_options))
                 .await?
                 .into_model()?;
             assert_eq!(control["pk"], "control");
@@ -82,7 +97,7 @@ async fn begin_delete_by_partition_key() -> Result<(), Box<dyn Error>> {
                 .query_items::<String>(
                     "SELECT VALUE c.id FROM c",
                     FeedScope::full_container(),
-                    None,
+                    Some(query_options),
                 )
                 .await?
                 .into_pages();
