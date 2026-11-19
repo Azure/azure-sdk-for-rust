@@ -17,14 +17,65 @@ use crate::{
     system::CpuMemoryMonitor,
 };
 use azure_core::http::StatusCode;
-use serde::Serialize;
+use serde::{ser::Error as _, Serialize, Serializer};
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex, OnceLock},
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime},
 };
+use time::{macros::format_description, OffsetDateTime};
 
 use super::compaction::{compact_requests, merge_carried_runs, CompactedRun, CompactionInfo};
+
+#[derive(Clone, Copy, Debug)]
+struct ClockAnchor {
+    instant: Instant,
+    system_time: SystemTime,
+}
+
+impl ClockAnchor {
+    fn now() -> Self {
+        Self {
+            instant: Instant::now(),
+            system_time: SystemTime::now(),
+        }
+    }
+
+    fn system_time_at(self, instant: Instant) -> SystemTime {
+        let timestamp = if instant >= self.instant {
+            self.system_time.checked_add(instant - self.instant)
+        } else {
+            self.system_time.checked_sub(self.instant - instant)
+        };
+        match timestamp {
+            Some(timestamp) => timestamp,
+            None => panic!("diagnostics clock offset is outside the SystemTime range"),
+        }
+    }
+}
+
+pub(super) fn serialize_utc<S: Serializer>(
+    timestamp: &SystemTime,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    let nanos = match timestamp.duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(duration) => duration.as_nanos() as i128,
+        Err(error) => -(error.duration().as_nanos() as i128),
+    };
+    let timestamp = OffsetDateTime::from_unix_timestamp_nanos(nanos).map_err(S::Error::custom)?;
+    if !(0..=9999).contains(&timestamp.year()) {
+        return Err(S::Error::custom(
+            "diagnostics timestamp year is outside the RFC 3339 range",
+        ));
+    }
+    // cspell:ignore subsecond
+    let formatted = timestamp
+        .format(format_description!(
+            "[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond digits:3]Z"
+        ))
+        .map_err(S::Error::custom)?;
+    serializer.serialize_str(&formatted)
+}
 
 // =============================================================================
 // Threshold breach classification
@@ -470,6 +521,9 @@ pub struct RequestDiagnostics {
     #[serde(skip)]
     started_at: Instant,
 
+    #[serde(serialize_with = "serialize_utc")]
+    start_time_utc: SystemTime,
+
     /// When this request completed (response received or error).
     #[serde(skip)]
     pub(crate) completed_at: Option<Instant>,
@@ -518,14 +572,16 @@ pub struct RequestDiagnostics {
 
 impl RequestDiagnostics {
     /// Creates a new request diagnostics entry for a request being started.
-    pub(crate) fn new(
+    fn new(
         execution_context: ExecutionContext,
         pipeline_type: PipelineKind,
         transport_security: TransportSecurity,
         transport_kind: TransportKind,
         transport_http_version: TransportHttpVersion,
         endpoint: &CosmosEndpoint,
+        clock_anchor: ClockAnchor,
     ) -> Self {
+        let started_at = Instant::now();
         Self {
             execution_context,
             operation_name: None,
@@ -542,7 +598,8 @@ impl RequestDiagnostics {
             activity_id: None,
             session_token: None,
             server_duration_ms: None,
-            started_at: Instant::now(),
+            started_at,
+            start_time_utc: clock_anchor.system_time_at(started_at),
             completed_at: None,
             duration_ms: 0,
             events: Vec::new(),
@@ -591,6 +648,7 @@ impl RequestDiagnostics {
             session_token: None,
             server_duration_ms: None,
             started_at,
+            start_time_utc: ClockAnchor::now().system_time_at(started_at),
             completed_at: Some(completed_at),
             duration_ms,
             events: Vec::new(),
@@ -850,6 +908,14 @@ impl RequestDiagnostics {
         self.started_at
     }
 
+    /// Returns the wall-clock start time of this request attempt.
+    ///
+    /// Derived from the operation's clock anchor, so later system-clock adjustments
+    /// don't shift this timestamp. Use [`Self::started_at()`] to measure elapsed time.
+    pub fn start_time(&self) -> SystemTime {
+        self.start_time_utc
+    }
+
     /// Returns when this request completed, if it has completed.
     pub fn completed_at(&self) -> Option<Instant> {
         self.completed_at
@@ -1037,6 +1103,9 @@ pub struct RequestEvent {
     #[serde(skip)]
     timestamp: Instant,
 
+    #[serde(serialize_with = "serialize_utc")]
+    timestamp_utc: SystemTime,
+
     /// Duration of this stage, if applicable.
     duration_ms: Option<u64>,
 
@@ -1172,9 +1241,15 @@ where
 impl RequestEvent {
     /// Creates a new request event.
     pub fn new(event_type: RequestEventType) -> Self {
+        let timestamp = ClockAnchor::now();
+        Self::new_at(event_type, timestamp.instant, timestamp.system_time)
+    }
+
+    fn new_at(event_type: RequestEventType, timestamp: Instant, timestamp_utc: SystemTime) -> Self {
         Self {
             event_type,
-            timestamp: Instant::now(),
+            timestamp,
+            timestamp_utc,
             duration_ms: None,
             details: None,
         }
@@ -1183,10 +1258,8 @@ impl RequestEvent {
     /// Creates a request event with duration.
     pub fn with_duration(event_type: RequestEventType, duration: Duration) -> Self {
         Self {
-            event_type,
-            timestamp: Instant::now(),
             duration_ms: Some(duration.as_millis() as u64),
-            details: None,
+            ..Self::new(event_type)
         }
     }
 
@@ -1206,6 +1279,14 @@ impl RequestEvent {
     /// Returns when this event occurred.
     pub fn timestamp(&self) -> Instant {
         self.timestamp
+    }
+
+    /// Returns the wall-clock time when this event occurred.
+    ///
+    /// SDK events use the operation's clock anchor; standalone constructors capture
+    /// the current system time. Use [`Self::timestamp()`] to measure elapsed time.
+    pub fn timestamp_utc(&self) -> SystemTime {
+        self.timestamp_utc
     }
 
     /// Returns the duration of this stage in milliseconds, if applicable.
@@ -1237,6 +1318,8 @@ enum DiagnosticsPayload<'a> {
 #[derive(Serialize)]
 struct DiagnosticsOutput<'a> {
     activity_id: &'a ActivityId,
+    #[serde(serialize_with = "serialize_utc")]
+    start_time_utc: SystemTime,
     #[serde(flatten)]
     status: Option<CosmosStatus>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -1310,6 +1393,8 @@ struct RegionSummary {
 #[derive(Serialize)]
 struct RequestSummary {
     execution_context: ExecutionContext,
+    #[serde(serialize_with = "serialize_utc")]
+    start_time_utc: SystemTime,
     endpoint: String,
     #[serde(flatten)]
     status: CosmosStatus,
@@ -1322,6 +1407,7 @@ impl From<&RequestDiagnostics> for RequestSummary {
     fn from(req: &RequestDiagnostics) -> Self {
         Self {
             execution_context: req.execution_context,
+            start_time_utc: req.start_time_utc,
             endpoint: req.endpoint.clone(),
             status: req.status,
             request_charge: req.request_charge,
@@ -1349,6 +1435,8 @@ struct DeduplicatedGroup {
 #[derive(Serialize)]
 struct TruncatedOutput<'a> {
     activity_id: &'a ActivityId,
+    #[serde(serialize_with = "serialize_utc")]
+    start_time_utc: SystemTime,
     #[serde(flatten)]
     status: Option<CosmosStatus>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -1580,6 +1668,8 @@ pub(crate) struct DiagnosticsContextBuilder {
     /// When this operation started.
     started_at: Instant,
 
+    clock_anchor: ClockAnchor,
+
     /// All request diagnostics collected during this operation.
     ///
     /// `Vec<T>` in Rust guarantees insertion order, so requests are stored in
@@ -1641,9 +1731,11 @@ pub(crate) struct DiagnosticsContextBuilder {
 impl DiagnosticsContextBuilder {
     /// Creates a new diagnostics context builder for an operation.
     pub(crate) fn new(activity_id: ActivityId, options: Arc<DiagnosticsOptions>) -> Self {
+        let clock_anchor = ClockAnchor::now();
         Self {
             activity_id,
-            started_at: Instant::now(),
+            started_at: clock_anchor.instant,
+            clock_anchor,
             requests: Vec::with_capacity(4), // Expect 1-4 requests in most cases
             status: None,
             options,
@@ -1744,6 +1836,7 @@ impl DiagnosticsContextBuilder {
         Self {
             activity_id: self.activity_id.clone(),
             started_at: Instant::now(),
+            clock_anchor: self.clock_anchor,
             requests: Vec::with_capacity(2),
             status: None,
             options: Arc::clone(&self.options),
@@ -1848,6 +1941,7 @@ impl DiagnosticsContextBuilder {
             transport_kind,
             transport_http_version,
             endpoint,
+            self.clock_anchor,
         );
         request.with_activity_id(self.activity_id.clone());
         let handle = RequestHandle(self.requests.len());
@@ -2019,6 +2113,22 @@ impl DiagnosticsContextBuilder {
         }
     }
 
+    pub(crate) fn record_event(
+        &mut self,
+        handle: RequestHandle,
+        event_type: RequestEventType,
+        details: Option<String>,
+    ) {
+        let timestamp = Instant::now();
+        let mut event = RequestEvent::new_at(
+            event_type,
+            timestamp,
+            self.clock_anchor.system_time_at(timestamp),
+        );
+        event.details = details;
+        self.add_event(handle, event);
+    }
+
     pub(crate) fn set_transport_shard(
         &mut self,
         handle: RequestHandle,
@@ -2168,6 +2278,8 @@ impl DiagnosticsContextBuilder {
 
         DiagnosticsContext {
             activity_id: self.activity_id,
+            started_at: self.started_at,
+            start_time_utc: self.clock_anchor.system_time_at(self.started_at),
             duration,
             requests: Arc::new(requests),
             total_request_charge,
@@ -2238,6 +2350,9 @@ impl DiagnosticsContextBuilder {
 pub struct DiagnosticsContext {
     /// Operation-level activity ID.
     activity_id: ActivityId,
+
+    started_at: Instant,
+    start_time_utc: SystemTime,
 
     /// Total duration of the operation (from start to completion).
     duration: Duration,
@@ -2456,6 +2571,14 @@ impl DiagnosticsContext {
             DiagnosticsContextBuilder::new(activity_id, Arc::new(DiagnosticsOptions::default()))
                 .complete();
         context.duration = duration;
+        // Backdate the start when representable; `Instant` can't precede host boot.
+        if let (Some(started_at), Some(start_time_utc)) = (
+            context.started_at.checked_sub(duration),
+            context.start_time_utc.checked_sub(duration),
+        ) {
+            context.started_at = started_at;
+            context.start_time_utc = start_time_utc;
+        }
         context.status = status;
         context
     }
@@ -2495,8 +2618,18 @@ impl DiagnosticsContext {
         let hedging_started = requests
             .iter()
             .any(|r| matches!(r.execution_context(), ExecutionContext::Hedging));
+        let start = requests
+            .iter()
+            .min_by_key(|request| request.started_at)
+            .map(|request| ClockAnchor {
+                instant: request.started_at,
+                system_time: request.start_time_utc,
+            })
+            .unwrap_or_else(ClockAnchor::now);
         DiagnosticsContext {
             activity_id,
+            started_at: start.instant,
+            start_time_utc: start.system_time,
             duration,
             requests: Arc::new(requests),
             total_request_charge,
@@ -2640,6 +2773,7 @@ impl DiagnosticsContext {
     #[doc(hidden)]
     pub fn aggregate_sub_operations(sources: &[Arc<DiagnosticsContext>]) -> Option<Self> {
         let last = sources.last()?;
+        let first = sources.iter().min_by_key(|source| source.started_at)?;
         // Carry each source's operation name down onto the requests it
         // contributed. The aggregate reports a single operation name (the
         // caller-facing one — `patch_item`), so without this the sub-op
@@ -2802,6 +2936,8 @@ impl DiagnosticsContext {
 
         Some(DiagnosticsContext {
             activity_id: last.activity_id.clone(),
+            started_at: first.started_at,
+            start_time_utc: first.start_time_utc,
             duration: aggregated_duration,
             requests: Arc::new(requests),
             total_request_charge,
@@ -2878,9 +3014,22 @@ impl DiagnosticsContext {
 
     /// Returns the operation duration.
     ///
-    /// This is the total time from operation start to completion.
+    /// For an operation, this is the elapsed time from start to completion. For
+    /// an aggregate, it is the sum of its sub-operation durations and may not
+    /// represent the wall-clock interval from the earliest start to completion.
     pub fn duration(&self) -> Duration {
         self.duration
+    }
+
+    /// Returns the wall-clock start time of this operation.
+    ///
+    /// Captured from the host clock; its accuracy depends on clock synchronization.
+    /// Later clock adjustments don't change this operation's captured timestamps.
+    /// For an aggregate, this is the earliest sub-operation's captured start, while
+    /// [`duration`](Self::duration) is the sum of sub-operation durations. Adding
+    /// that duration to this start time may not identify the aggregate's completion.
+    pub fn start_time(&self) -> SystemTime {
+        self.start_time_utc
     }
 
     /// Returns the operation-level combined HTTP status and sub-status code.
@@ -3231,6 +3380,8 @@ impl DiagnosticsContext {
     pub(crate) fn clone_with_operation_name(&self, operation_name: Option<Arc<str>>) -> Self {
         DiagnosticsContext {
             activity_id: self.activity_id.clone(),
+            started_at: self.started_at,
+            start_time_utc: self.start_time_utc,
             duration: self.duration,
             requests: Self::preserve_request_operation_names(
                 &self.requests,
@@ -3391,6 +3542,13 @@ impl DiagnosticsContext {
     /// The top-level `status`, when recorded, describes the operation outcome.
     /// Request and region entries retain the original attempt statuses.
     ///
+    /// Timestamp fields use RFC 3339 UTC with three fractional-second digits;
+    /// fractional seconds are truncated, not rounded. Detailed output includes
+    /// operation, attempt, and event timestamps. Summary output includes the
+    /// operation start, each region's first and last attempt starts, and any
+    /// compacted-run time ranges, but not every attempt or event. A size-truncated
+    /// Summary preserves the operation start and omits region and event details.
+    ///
     /// The result is lazily cached - the first call computes the JSON,
     /// subsequent calls return the cached string (for the same verbosity level).
     ///
@@ -3476,6 +3634,7 @@ impl DiagnosticsContext {
         let system_usage = self.resolve_system_usage();
         let output = DiagnosticsOutput {
             activity_id: &self.activity_id,
+            start_time_utc: self.start_time_utc,
             status: self.status,
             patch_tracking_id: self.patch_tracking_id.as_ref(),
             total_duration_ms,
@@ -3516,6 +3675,7 @@ impl DiagnosticsContext {
 
         let output = DiagnosticsOutput {
             activity_id: &self.activity_id,
+            start_time_utc: self.start_time_utc,
             status: self.status,
             patch_tracking_id: self.patch_tracking_id.as_ref(),
             total_duration_ms,
@@ -3540,6 +3700,7 @@ impl DiagnosticsContext {
             // Return a truncated indicator
             let truncated = TruncatedOutput {
                 activity_id: &self.activity_id,
+                start_time_utc: self.start_time_utc,
                 status: self.status,
                 patch_tracking_id: self.patch_tracking_id.as_ref(),
                 total_duration_ms,
@@ -3559,6 +3720,8 @@ impl Clone for DiagnosticsContext {
     fn clone(&self) -> Self {
         Self {
             activity_id: self.activity_id.clone(),
+            started_at: self.started_at,
+            start_time_utc: self.start_time_utc,
             duration: self.duration,
             requests: Arc::clone(&self.requests),
             total_request_charge: self.total_request_charge,
@@ -3607,6 +3770,7 @@ impl PartialEq for DiagnosticsContext {
         // excluding it would let two contexts with a different public
         // `total_request_charge()` result compare equal.
         self.activity_id == other.activity_id
+            && self.start_time_utc == other.start_time_utc
             && self.duration == other.duration
             && self.requests == other.requests
             && self.total_request_charge == other.total_request_charge
@@ -3969,17 +4133,15 @@ mod tests {
         }
     }
 
-    /// Normalizes dynamic fields in diagnostics JSON for deterministic comparison.
-    ///
-    /// Replaces `total_duration_ms` and per-request `duration_ms` values with `0`
-    /// so that tests can compare the full JSON structure without being affected
-    /// by wall-clock timing variations.
+    /// Normalizes durations and removes clock-dependent starts for legacy snapshots.
+    /// Exact timestamp serialization is covered separately with fixed anchors.
     fn normalize_diagnostics_json(json: &str) -> serde_json::Value {
         let mut value: serde_json::Value = serde_json::from_str(json)
             .unwrap_or_else(|e| panic!("Failed to parse diagnostics JSON: {e}\nJSON: {json}"));
 
         // Normalize top-level total_duration_ms
         if let Some(obj) = value.as_object_mut() {
+            obj.remove("start_time_utc");
             if obj.contains_key("total_duration_ms") {
                 obj.insert(
                     "total_duration_ms".to_string(),
@@ -3992,6 +4154,7 @@ mod tests {
         if let Some(requests) = value.get_mut("requests").and_then(|v| v.as_array_mut()) {
             for req in requests {
                 if let Some(obj) = req.as_object_mut() {
+                    obj.remove("start_time_utc");
                     if obj.contains_key("duration_ms") {
                         obj.insert(
                             "duration_ms".to_string(),
@@ -4008,6 +4171,7 @@ mod tests {
                 // Normalize first/last request summaries
                 for key in &["first", "last"] {
                     if let Some(summary) = region.get_mut(*key).and_then(|v| v.as_object_mut()) {
+                        summary.remove("start_time_utc");
                         if summary.contains_key("duration_ms") {
                             summary.insert(
                                 "duration_ms".to_string(),
@@ -4038,6 +4202,209 @@ mod tests {
         }
 
         value
+    }
+
+    fn anchored_builder(
+        anchor: ClockAnchor,
+        options: Arc<DiagnosticsOptions>,
+    ) -> DiagnosticsContextBuilder {
+        let mut builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), options);
+        builder.started_at = anchor.instant;
+        builder.clock_anchor = anchor;
+        builder
+    }
+
+    fn record_at(
+        builder: &mut DiagnosticsContextBuilder,
+        offset: Duration,
+        endpoint: &str,
+    ) -> RequestHandle {
+        let anchor = builder.clock_anchor;
+        let handle = builder.start_test_request(
+            ExecutionContext::OperationRetry,
+            Some(Region::EAST_US),
+            endpoint,
+        );
+        builder.update_request(handle, |request| {
+            request.started_at = anchor.instant + offset;
+            request.start_time_utc = anchor.system_time + offset;
+            request.events.push(RequestEvent::new_at(
+                RequestEventType::TransportStart,
+                request.started_at + Duration::from_millis(3),
+                request.start_time_utc + Duration::from_millis(3),
+            ));
+        });
+        builder.complete_request(handle, StatusCode::Ok, None);
+        handle
+    }
+
+    #[test]
+    fn utc_timestamps_preserve_retry_gaps_and_json_precision() {
+        let anchor = ClockAnchor {
+            instant: Instant::now() - Duration::from_secs(60),
+            system_time: SystemTime::UNIX_EPOCH
+                + Duration::from_secs(86_399)
+                + Duration::from_micros(999_123),
+        };
+        assert_eq!(
+            anchor.system_time_at(anchor.instant - Duration::from_secs(1)),
+            anchor.system_time - Duration::from_secs(1),
+        );
+        assert_eq!(
+            anchor.system_time_at(anchor.instant + Duration::from_secs(1)),
+            anchor.system_time + Duration::from_secs(1),
+        );
+        let mut builder = anchored_builder(anchor, make_options());
+        for offset in [2, 1002] {
+            record_at(&mut builder, Duration::from_millis(offset), "https://east/");
+        }
+        let context = builder.complete();
+        let detailed = context.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        let json: serde_json::Value = serde_json::from_str(detailed).unwrap();
+        assert_eq!(json["start_time_utc"], "1970-01-01T23:59:59.999Z");
+        assert_eq!(
+            json["requests"][0]["start_time_utc"],
+            "1970-01-02T00:00:00.001Z"
+        );
+        assert_eq!(
+            json["requests"][0]["events"][0]["timestamp_utc"],
+            "1970-01-02T00:00:00.004Z"
+        );
+        assert_eq!(
+            json["requests"][1]["start_time_utc"],
+            "1970-01-02T00:00:01.001Z"
+        );
+        assert_eq!(context.start_time(), anchor.system_time);
+        assert_eq!(
+            context.requests()[0].start_time(),
+            anchor.system_time + Duration::from_millis(2)
+        );
+        assert_eq!(
+            context.requests()[0].events()[0].timestamp_utc(),
+            anchor.system_time + Duration::from_millis(5)
+        );
+        assert_eq!(
+            context.to_json_string(Some(DiagnosticsVerbosity::Detailed)),
+            detailed
+        );
+        let summary: serde_json::Value =
+            serde_json::from_str(context.to_json_string(Some(DiagnosticsVerbosity::Summary)))
+                .unwrap();
+        assert_eq!(summary["start_time_utc"], json["start_time_utc"]);
+        assert_eq!(
+            summary["regions"][0]["first"]["start_time_utc"],
+            json["requests"][0]["start_time_utc"]
+        );
+        assert_eq!(
+            summary["regions"][0]["last"]["start_time_utc"],
+            json["requests"][1]["start_time_utc"]
+        );
+    }
+
+    #[test]
+    fn utc_start_survives_empty_and_size_truncated_output() {
+        let anchor = ClockAnchor {
+            instant: Instant::now() - Duration::from_secs(60),
+            system_time: SystemTime::UNIX_EPOCH,
+        };
+        let options = Arc::new(
+            DiagnosticsOptions::builder()
+                .with_max_summary_size_bytes(4096)
+                .build()
+                .unwrap(),
+        );
+        let empty = anchored_builder(anchor, Arc::clone(&options)).complete();
+        for verbosity in [
+            DiagnosticsVerbosity::Summary,
+            DiagnosticsVerbosity::Detailed,
+        ] {
+            let json: serde_json::Value =
+                serde_json::from_str(empty.to_json_string(Some(verbosity))).unwrap();
+            assert_eq!(json["start_time_utc"], "1970-01-01T00:00:00.000Z");
+        }
+        let mut builder = anchored_builder(anchor, options);
+        record_at(
+            &mut builder,
+            Duration::ZERO,
+            &format!("https://east/{}", "a".repeat(4096)),
+        );
+        let context = builder.complete();
+        let json = context.to_json_string(Some(DiagnosticsVerbosity::Summary));
+        assert!(json.len() <= context.options.max_summary_size_bytes());
+        let json: serde_json::Value = serde_json::from_str(json).unwrap();
+        assert_eq!(json["truncated"], true);
+        assert_eq!(json["start_time_utc"], "1970-01-01T00:00:00.000Z");
+    }
+
+    #[test]
+    fn aggregate_and_clones_preserve_original_clock_anchors() {
+        let first = ClockAnchor {
+            instant: Instant::now() - Duration::from_secs(60),
+            system_time: SystemTime::UNIX_EPOCH + Duration::from_secs(100),
+        };
+        // A later operation can observe a host-clock adjustment backwards.
+        let second = ClockAnchor {
+            instant: first.instant + Duration::from_secs(10),
+            system_time: first.system_time - Duration::from_secs(10),
+        };
+        let sources: Vec<_> = [second, first]
+            .into_iter()
+            .map(|anchor| {
+                let mut builder = anchored_builder(anchor, make_options());
+                record_at(&mut builder, Duration::from_millis(2), "https://east/");
+                Arc::new(builder.complete())
+            })
+            .collect();
+        let aggregate = DiagnosticsContext::aggregate_sub_operations(&sources).unwrap();
+        assert_eq!(aggregate.start_time(), first.system_time);
+        assert_eq!(aggregate.requests()[0], sources[0].requests()[0]);
+        assert_eq!(aggregate.requests()[1], sources[1].requests()[0]);
+        let nested = DiagnosticsContext::aggregate_sub_operations(&[Arc::new(aggregate)]).unwrap();
+        assert_eq!(nested.start_time(), first.system_time);
+        for cloned in [
+            nested.clone(),
+            nested.clone_with_status(CosmosStatus::new(StatusCode::BadRequest)),
+            nested.clone_with_operation_name(Some(Arc::from("read_item"))),
+        ] {
+            assert_eq!(cloned.start_time(), nested.start_time());
+            assert_eq!(cloned.requests(), nested.requests());
+        }
+    }
+
+    #[test]
+    fn standalone_events_capture_stable_utc_times() {
+        let before = SystemTime::now();
+        let events = [
+            RequestEvent::new(RequestEventType::TransportStart),
+            RequestEvent::with_duration(RequestEventType::TransportFailed, Duration::from_secs(1)),
+        ];
+        let after = SystemTime::now();
+        for event in events {
+            let timestamp = event.timestamp_utc();
+            assert!(timestamp >= before && timestamp <= after);
+            let json = serde_json::to_value(&event).unwrap();
+            let parsed = OffsetDateTime::parse(
+                json["timestamp_utc"].as_str().unwrap(),
+                &time::format_description::well_known::Rfc3339,
+            )
+            .unwrap();
+            assert_eq!(
+                timestamp
+                    .duration_since(SystemTime::from(parsed))
+                    .unwrap()
+                    .as_millis(),
+                0
+            );
+        }
+        let before_epoch = RequestEvent::new_at(
+            RequestEventType::TransportStart,
+            Instant::now(),
+            SystemTime::UNIX_EPOCH - Duration::from_millis(1),
+        );
+        assert_eq!(
+            serde_json::to_value(before_epoch).unwrap()["timestamp_utc"],
+            "1969-12-31T23:59:59.999Z"
+        );
     }
 
     fn assert_no_rust_debug_internals(rendered: &str) {
@@ -5865,6 +6232,7 @@ mod tests {
         // builder with the race would erase that reply, under-reporting charge
         // and omitting a genuine entry from responded_regions.
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            builder.clock_anchor.system_time = SystemTime::UNIX_EPOCH;
             let (mut primary, primary_dispatch) =
                 spawn_primary_leg(builder, Some(Region::EAST_US_2), ExecutionContext::Initial);
             // Primary is throttled and sleeps before its next attempt.
@@ -5876,6 +6244,7 @@ mod tests {
             primary.update_request(throttled, |req| {
                 req.request_charge = RequestCharge::new(1.5)
             });
+            primary.record_event(throttled, RequestEventType::TransportStart, None);
             primary.complete_request(throttled, StatusCode::TooManyRequests, None);
 
             let mut alternate =
@@ -5886,6 +6255,7 @@ mod tests {
                 "https://test.westus2.documents.azure.com",
             );
             alternate.update_request(won, |req| req.request_charge = RequestCharge::new(2.5));
+            alternate.record_event(won, RequestEventType::TransportStart, None);
             alternate.complete_request(won, StatusCode::Ok, None);
 
             // The alternate wins; `select` drops the primary mid-backoff.
@@ -5900,6 +6270,18 @@ mod tests {
 
         // Both attempts survive, in true dispatch order.
         assert_eq!(ctx.request_count(), 2);
+        for request in ctx.requests().iter() {
+            assert_eq!(
+                request.start_time(),
+                ctx.start_time() + (request.started_at() - ctx.started_at)
+            );
+            for event in request.events() {
+                assert_eq!(
+                    event.timestamp_utc(),
+                    ctx.start_time() + (event.timestamp() - ctx.started_at)
+                );
+            }
+        }
         assert_eq!(
             ctx.requested_regions(),
             vec![
@@ -6588,6 +6970,64 @@ mod tests {
                 .build()
                 .expect("valid cap"),
         )
+    }
+
+    #[test]
+    fn compacted_timestamp_ranges_survive_bucketing_and_repeated_aggregation() {
+        for interleaved in [false, true] {
+            let start = Instant::now() - Duration::from_secs(60);
+            let sources: Vec<_> = [0, 10]
+                .into_iter()
+                .map(|seconds| {
+                    let mut builder = anchored_builder(
+                        ClockAnchor {
+                            instant: start + Duration::from_secs(seconds),
+                            system_time: SystemTime::UNIX_EPOCH + Duration::from_secs(seconds),
+                        },
+                        options_with_cap(16),
+                    );
+                    for index in 0..40 {
+                        let endpoint = if interleaved && index % 2 == 1 {
+                            "https://west/"
+                        } else {
+                            "https://east/"
+                        };
+                        record_at(&mut builder, Duration::from_millis(index), endpoint);
+                    }
+                    Arc::new(builder.complete())
+                })
+                .collect();
+            let aggregate =
+                Arc::new(DiagnosticsContext::aggregate_sub_operations(&sources).unwrap());
+            let nested =
+                DiagnosticsContext::aggregate_sub_operations(&[Arc::clone(&aggregate)]).unwrap();
+            assert_eq!(nested.compaction(), aggregate.compaction());
+            assert_eq!(nested.request_count(), 80);
+            assert!(nested.retained_request_count() <= 16);
+            for run in &nested.compaction().unwrap().runs {
+                let (first_ms, last_ms) = match (interleaved, run.endpoint.as_str()) {
+                    (true, "https://west/") => (1, 39),
+                    (true, _) => (0, 38),
+                    (false, _) => (0, 39),
+                };
+                assert_eq!(
+                    run.first_start_time_utc,
+                    SystemTime::UNIX_EPOCH + Duration::from_millis(first_ms)
+                );
+                assert_eq!(
+                    run.last_start_time_utc,
+                    SystemTime::UNIX_EPOCH
+                        + Duration::from_secs(10)
+                        + Duration::from_millis(last_ms)
+                );
+                let json = serde_json::to_value(run).unwrap();
+                assert!(json["first_start_time_utc"]
+                    .as_str()
+                    .unwrap()
+                    .ends_with('Z'));
+                assert!(json["last_start_time_utc"].as_str().unwrap().ends_with('Z'));
+            }
+        }
     }
 
     /// Records `count` attempts sharing one (region, endpoint, status, exec-ctx)

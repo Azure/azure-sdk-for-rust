@@ -12,7 +12,10 @@
 //! `error.with_diagnostics(diagnostics.complete())` call at the abort site
 //! would silently regress observability for every failed operation.
 
-use std::sync::Arc;
+use std::{
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
 
 use azure_core::http::Url;
 
@@ -20,8 +23,7 @@ use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion,
 };
 use azure_data_cosmos_driver::models::{AccountReference, CosmosOperation, DatabaseReference};
-use azure_data_cosmos_driver::options::DriverOptions;
-use azure_data_cosmos_driver::options::OperationOptions;
+use azure_data_cosmos_driver::options::{DiagnosticsVerbosity, DriverOptions, OperationOptions};
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
 
@@ -67,6 +69,7 @@ async fn aborted_operation_error_carries_operation_diagnostics() {
 
     let db_ref = DatabaseReference::from_name(driver.account().clone(), "nonexistent".to_string());
 
+    let before = SystemTime::now();
     let err = driver
         .execute_operation(
             CosmosOperation::read_database(db_ref),
@@ -78,6 +81,30 @@ async fn aborted_operation_error_carries_operation_diagnostics() {
     let diagnostics = err
         .diagnostics()
         .expect("aborted operation error must carry the operation's DiagnosticsContext");
+
+    assert!(diagnostics.start_time() >= before);
+    assert!(diagnostics.start_time() <= SystemTime::now());
+    let json: serde_json::Value =
+        serde_json::from_str(diagnostics.to_json_string(Some(DiagnosticsVerbosity::Detailed)))
+            .unwrap();
+    assert!(json["start_time_utc"].as_str().unwrap().ends_with('Z'));
+    for (request, json) in diagnostics
+        .requests()
+        .iter()
+        .zip(json["requests"].as_array().unwrap())
+    {
+        assert!(request.start_time() >= diagnostics.start_time());
+        assert!(json["start_time_utc"].as_str().unwrap().ends_with('Z'));
+        for event in request.events() {
+            let wall_elapsed = event
+                .timestamp_utc()
+                .duration_since(request.start_time())
+                .unwrap();
+            let monotonic_elapsed = event.timestamp().duration_since(request.started_at());
+            // Windows SystemTime arithmetic has 100 ns precision.
+            assert!(wall_elapsed.abs_diff(monotonic_elapsed) <= Duration::from_nanos(100));
+        }
+    }
 
     // A default/empty `DiagnosticsContext` would have zero per-request
     // entries and a placeholder activity id. The real operation

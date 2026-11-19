@@ -183,6 +183,10 @@ pub mod diagnostics {
         pub status: crate::models::CosmosStatus,
         pub execution_context: super::diagnostics_context::ExecutionContext,
         pub count: usize,
+        #[serde(serialize_with = "serialize_utc")]
+        pub first_start_time_utc: std::time::SystemTime,
+        #[serde(serialize_with = "serialize_utc")]
+        pub last_start_time_utc: std::time::SystemTime,
         pub total_request_charge: crate::models::RequestCharge,
         pub min_duration_ms: u64,
         pub max_duration_ms: u64,
@@ -229,6 +233,7 @@ pub mod diagnostics {
         pub fn requests(&self) -> Arc<Vec<RequestDiagnostics>>;
         pub fn responded_regions(&self) -> Vec<&Region>;
         pub fn retained_request_count(&self) -> usize;
+        pub fn start_time(&self) -> SystemTime;
         pub fn status(&self) -> Option<&CosmosStatus>;
         pub fn threshold_breach_for(&self, thresholds: &DiagnosticsThresholds, operation_name: Option<&str>) -> Option<ThresholdBreach>;
         pub fn to_json_string(&self, verbosity: Option<DiagnosticsVerbosity>) -> &str;
@@ -309,6 +314,7 @@ pub mod diagnostics {
         pub fn request_sent(&self) -> RequestSentStatus;
         pub fn server_duration_ms(&self) -> Option<f64>;
         pub fn session_token(&self) -> Option<&str>;
+        pub fn start_time(&self) -> SystemTime;
         pub fn started_at(&self) -> Instant;
         pub fn status(&self) -> &CosmosStatus;
         pub fn timed_out(&self) -> bool;
@@ -327,6 +333,7 @@ pub mod diagnostics {
         pub fn event_type(&self) -> &RequestEventType;
         pub fn new(event_type: RequestEventType) -> Self;
         pub fn timestamp(&self) -> Instant;
+        pub fn timestamp_utc(&self) -> SystemTime;
         pub fn with_details<impl Into<String>: Into<String>>(self, details: impl Into<String>) -> Self;
         pub fn with_duration(event_type: RequestEventType, duration: Duration) -> Self;
     }
