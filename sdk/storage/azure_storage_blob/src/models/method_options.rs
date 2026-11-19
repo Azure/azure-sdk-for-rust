@@ -14,6 +14,22 @@ use crate::models::{
     ImmutabilityPolicyMode,
 };
 
+#[derive(Clone, Default, Debug)]
+pub enum UploadContentValidation {
+    #[default]
+    Auto,
+    None,
+    Crc64Nvme(Option<[u8; 8]>),
+}
+
+#[derive(Clone, Default, Debug)]
+pub enum DownloadContentValidation {
+    #[default]
+    Auto,
+    None,
+    Crc64Nvme,
+}
+
 /// Options to be passed to `BlobClient::download()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientDownloadOptions<'a> {
@@ -107,6 +123,48 @@ impl<'a> From<BlobClientDownloadOptions<'a>> for BlobClientDownloadInternalOptio
             version_id: value.version_id,
         }
     }
+}
+
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlockBlobClientStageBlockOptions<'a> {
+    /// Content validation options. Specifies how block content is validated during the transfer.
+    /// If `None`, the SDK will select a default strategy, which may change across versions.
+    pub content_validation: Option<UploadContentValidation>,
+
+    /// The algorithm used to produce the encryption key hash. Must be provided if the encryption key is provided.
+    pub encryption_algorithm: Option<EncryptionAlgorithmType>,
+
+    /// Specifies the encryption key to use to encrypt the data provided in the request.
+    pub encryption_key: Option<String>,
+
+    /// The SHA-256 hash of the provided encryption key. Must be provided if the encryption key is provided.
+    pub encryption_key_sha256: Option<String>,
+
+    /// Specifies the encryption scope used to encrypt the data.
+    pub encryption_scope: Option<String>,
+
+    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
+    pub lease_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
+    pub timeout: Option<i32>,
+
+    /// Specifies the transactional CRC64 hash for the body.
+    #[deprecated(
+        since = "1.2.0",
+        note = "Use `content_validation` field instead. Operation will fail if both `transactional_content_crc64` and `content_validation` are `Some`."
+    )]
+    pub transactional_content_crc64: Option<Vec<u8>>,
+
+    /// Specifies the transactional MD5 hash for the body.
+    #[deprecated(
+        since = "1.2.0",
+        note = "MD5 checksums are no longer recommended. Instead, use other checksums via `content_validation` field instead. Operation will fail if both `transactional_content_md5` and `content_validation` are `Some`."
+    )]
+    pub transactional_content_md5: Option<Vec<u8>>,
 }
 
 /// Options to be passed to `BlockBlobClient::upload()`

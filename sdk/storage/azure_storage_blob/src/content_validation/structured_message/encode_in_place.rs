@@ -122,8 +122,7 @@ mod tests {
     use azure_core::stream::BytesStream;
     use futures::AsyncReadExt;
 
-    use crate::structured_message::tests::*;
-
+    use super::super::tests::*;
     use super::*;
 
     #[tokio::test]

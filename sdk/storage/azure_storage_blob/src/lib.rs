@@ -9,13 +9,13 @@
 
 pub(crate) mod buffers;
 pub mod clients;
+pub(crate) mod content_validation;
 #[allow(unused_imports)]
 mod generated;
 mod parsers;
 mod partitioned_transfer;
 pub mod stream;
 mod streams;
-pub(crate) mod structured_message;
 pub use clients::*;
 pub use parsers::*;
 mod logging;

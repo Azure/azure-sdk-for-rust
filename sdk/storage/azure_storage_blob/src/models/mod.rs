@@ -7,8 +7,10 @@ mod download_result;
 pub(crate) mod drains;
 pub(crate) mod error;
 pub(crate) mod extensions;
+mod header_traits;
 pub(crate) mod http_ranges;
 mod method_options;
+mod method_results;
 
 pub use http_ranges::HttpRange;
 pub(crate) mod response_ext;
@@ -18,9 +20,14 @@ pub use crate::generated::models::*;
 pub use download_result::{
     BlobClientDownloadIntoResult, BlobClientDownloadResult, BlobDownloadProperties,
 };
+pub use header_traits::BlockBlobClientStageBlockResultHeaders;
 pub use method_options::BlobClientDownloadOptions;
+pub use method_options::BlockBlobClientStageBlockOptions;
 pub use method_options::BlockBlobClientUploadOptions;
 pub use method_options::BlockBlobClientUploadOptions as BlobClientUploadOptions;
+pub use method_options::DownloadContentValidation;
+pub use method_options::UploadContentValidation;
+pub use method_results::BlockBlobClientStageBlockResult;
 pub use upload_result::BlockBlobClientUploadResult;
 pub use upload_result::BlockBlobClientUploadResult as BlobClientUploadResult;
 

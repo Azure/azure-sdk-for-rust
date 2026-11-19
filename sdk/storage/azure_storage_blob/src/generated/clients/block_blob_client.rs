@@ -6,8 +6,8 @@
 use crate::generated::models::{
     BlockBlobClientCommitBlockListOptions, BlockBlobClientCommitBlockListResult,
     BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockFromUrlOptions,
-    BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockOptions,
-    BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlOptions,
+    BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockInternalOptions,
+    BlockBlobClientStageBlockInternalResult, BlockBlobClientUploadBlobFromUrlOptions,
     BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadInternalOptions,
     BlockBlobClientUploadInternalResult, BlockList, BlockListType, BlockLookupList,
 };
@@ -285,115 +285,6 @@ impl BlockBlobClient {
         Ok(rsp.into())
     }
 
-    /// Creates a new block of data to be committed as part of a blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `block_id` - A Base64 value that identifies the block. Prior to encoding, the string must be less than or equal to 64
-    ///   bytes in size. For a given blob, the length of the value specified for the blockid parameter must be the same size for
-    ///   each block.
-    /// * `content_length` - The length of the request.
-    /// * `body` - The body of the request.
-    /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlockBlobClientStageBlockResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_blob::models::{BlockBlobClientStageBlockResult, BlockBlobClientStageBlockResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<BlockBlobClientStageBlockResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(content_md5) = response.content_md5()? {
-    ///         println!("content-md5: {:?}", content_md5);
-    ///     }
-    ///     if let Some(content_crc64) = response.content_crc64()? {
-    ///         println!("x-ms-content-crc64: {:?}", content_crc64);
-    ///     }
-    ///     if let Some(encryption_key_sha256) = response.encryption_key_sha256()? {
-    ///         println!("x-ms-encryption-key-sha256: {:?}", encryption_key_sha256);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`content_md5`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::content_md5) - content-md5
-    /// * [`content_crc64`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::content_crc64) - x-ms-content-crc64
-    /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
-    /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::encryption_scope) - x-ms-encryption-scope
-    /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
-    ///
-    /// [`BlockBlobClientStageBlockResultHeaders`]: crate::generated::models::BlockBlobClientStageBlockResultHeaders
-    #[tracing::function("Storage.Blob.BlockBlobClient.stageBlock")]
-    pub async fn stage_block(
-        &self,
-        block_id: &[u8],
-        content_length: u64,
-        body: RequestContent<Bytes, NoFormat>,
-        options: Option<BlockBlobClientStageBlockOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientStageBlockResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
-        let mut url = self.endpoint.clone();
-        let mut query_builder = url.query_builder();
-        query_builder.append_pair("comp", "block");
-        query_builder.set_pair("blockid", base64::encode(block_id));
-        if let Some(timeout) = options.timeout {
-            query_builder.set_pair("timeout", timeout.to_string());
-        }
-        query_builder.build();
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("content-length", content_length.to_string());
-        if let Some(transactional_content_md5) = options.transactional_content_md5 {
-            request.insert_header("content-md5", base64::encode(transactional_content_md5));
-        }
-        request.insert_header("content-type", "application/octet-stream");
-        if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
-            request.insert_header(
-                "x-ms-content-crc64",
-                base64::encode(transactional_content_crc64),
-            );
-        }
-        if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
-            request.insert_header(
-                "x-ms-encryption-algorithm",
-                encryption_algorithm.to_string(),
-            );
-        }
-        if let Some(encryption_key) = options.encryption_key.as_ref() {
-            request.insert_header("x-ms-encryption-key", encryption_key);
-        }
-        if let Some(encryption_key_sha256) = options.encryption_key_sha256.as_ref() {
-            request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
-        }
-        if let Some(encryption_scope) = options.encryption_scope.as_ref() {
-            request.insert_header("x-ms-encryption-scope", encryption_scope);
-        }
-        if let Some(lease_id) = options.lease_id.as_ref() {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        request.set_body(body);
-        let rsp = self
-            .pipeline
-            .send(
-                &ctx,
-                &mut request,
-                Some(PipelineSendOptions {
-                    check_success: CheckSuccessOptions {
-                        success_codes: &[201],
-                    },
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        Ok(rsp.into())
-    }
-
     /// Creates a new block of data from the specified URL to be committed as part of a blob.
     ///
     /// # Arguments
@@ -534,6 +425,124 @@ impl BlockBlobClient {
             request.insert_header("x-ms-source-range", source_range.to_string());
         }
         request.insert_header("x-ms-version", &self.version);
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[201],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(rsp.into())
+    }
+
+    /// Creates a new block of data to be committed as part of a blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `block_id` - A Base64 value that identifies the block. Prior to encoding, the string must be less than or equal to 64
+    ///   bytes in size. For a given blob, the length of the value specified for the blockid parameter must be the same size for
+    ///   each block.
+    /// * `content_length` - The length of the request.
+    /// * `body` - The body of the request.
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlockBlobClientStageBlockInternalResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```ignore
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlockBlobClientStageBlockInternalResult, BlockBlobClientStageBlockInternalResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlockBlobClientStageBlockInternalResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(content_md5) = response.content_md5()? {
+    ///         println!("content-md5: {:?}", content_md5);
+    ///     }
+    ///     if let Some(content_crc64) = response.content_crc64()? {
+    ///         println!("x-ms-content-crc64: {:?}", content_crc64);
+    ///     }
+    ///     if let Some(encryption_key_sha256) = response.encryption_key_sha256()? {
+    ///         println!("x-ms-encryption-key-sha256: {:?}", encryption_key_sha256);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`content_md5`()](crate::generated::models::BlockBlobClientStageBlockInternalResultHeaders::content_md5) - content-md5
+    /// * [`content_crc64`()](crate::generated::models::BlockBlobClientStageBlockInternalResultHeaders::content_crc64) - x-ms-content-crc64
+    /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientStageBlockInternalResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
+    /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientStageBlockInternalResultHeaders::encryption_scope) - x-ms-encryption-scope
+    /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientStageBlockInternalResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
+    ///
+    /// [`BlockBlobClientStageBlockInternalResultHeaders`]: crate::generated::models::BlockBlobClientStageBlockInternalResultHeaders
+    #[tracing::function("Storage.Blob.BlockBlobClient.stageBlock")]
+    pub(crate) async fn stage_block_internal(
+        &self,
+        block_id: &[u8],
+        content_length: u64,
+        body: RequestContent<Bytes, NoFormat>,
+        options: Option<BlockBlobClientStageBlockInternalOptions<'_>>,
+    ) -> Result<Response<BlockBlobClientStageBlockInternalResult, NoFormat>> {
+        let options = options.unwrap_or_default();
+        let ctx = options.method_options.context.to_borrowed();
+        let mut url = self.endpoint.clone();
+        let mut query_builder = url.query_builder();
+        query_builder.append_pair("comp", "block");
+        query_builder.set_pair("blockid", base64::encode(block_id));
+        if let Some(timeout) = options.timeout {
+            query_builder.set_pair("timeout", timeout.to_string());
+        }
+        query_builder.build();
+        let mut request = Request::new(url, Method::Put);
+        request.insert_header("content-length", content_length.to_string());
+        if let Some(transactional_content_md5) = options.transactional_content_md5 {
+            request.insert_header("content-md5", base64::encode(transactional_content_md5));
+        }
+        request.insert_header("content-type", "application/octet-stream");
+        if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
+            request.insert_header(
+                "x-ms-content-crc64",
+                base64::encode(transactional_content_crc64),
+            );
+        }
+        if let Some(encryption_algorithm) = options.encryption_algorithm.as_ref() {
+            request.insert_header(
+                "x-ms-encryption-algorithm",
+                encryption_algorithm.to_string(),
+            );
+        }
+        if let Some(encryption_key) = options.encryption_key.as_ref() {
+            request.insert_header("x-ms-encryption-key", encryption_key);
+        }
+        if let Some(encryption_key_sha256) = options.encryption_key_sha256.as_ref() {
+            request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
+        }
+        if let Some(encryption_scope) = options.encryption_scope.as_ref() {
+            request.insert_header("x-ms-encryption-scope", encryption_scope);
+        }
+        if let Some(lease_id) = options.lease_id.as_ref() {
+            request.insert_header("x-ms-lease-id", lease_id);
+        }
+        if let Some(structured_body_type) = options.structured_body_type.as_ref() {
+            request.insert_header("x-ms-structured-body", structured_body_type);
+        }
+        if let Some(structured_content_length) = options.structured_content_length {
+            request.insert_header(
+                "x-ms-structured-content-length",
+                structured_content_length.to_string(),
+            );
+        }
+        request.insert_header("x-ms-version", &self.version);
+        request.set_body(body);
         let rsp = self
             .pipeline
             .send(
