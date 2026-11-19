@@ -417,7 +417,7 @@ impl TransportClient for ScriptedTransport {
             path => panic!("unexpected scripted request {path}"),
         };
         headers.insert("x-ms-request-charge", "1.5");
-        let binary_ordered = request.url.path().ends_with("/docs")
+        let binary_response = request.url.path().ends_with("/docs")
             && header(request, "x-ms-cosmos-is-query-plan-request").is_none()
             && header(request, "a-im").is_none()
             && header(request, "x-ms-cosmos-supported-serialization-formats")
@@ -427,8 +427,16 @@ impl TransportClient for ScriptedTransport {
             headers,
             body: if status == 304 {
                 Vec::new()
-            } else if binary_ordered {
-                referenced_feed(&body)
+            } else if binary_response {
+                if body["Documents"].as_array().is_some_and(|documents| {
+                    documents
+                        .iter()
+                        .any(|row| row.get("orderByItems").is_some())
+                }) {
+                    referenced_feed(&body)
+                } else {
+                    encode(&body)
+                }
             } else {
                 serde_json::to_vec(&body).unwrap()
             },
