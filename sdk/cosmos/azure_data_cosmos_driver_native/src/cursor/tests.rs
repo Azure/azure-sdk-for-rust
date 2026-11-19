@@ -25,8 +25,10 @@ use crate::{
     error::{CosmosErrorCode, COSMOS_STATUS_SUCCESS},
     feed_range::{cosmos_feed_range_for_partition_key, cosmos_feed_range_free},
     op_request::cosmos_operation_options_default,
-    partition_key::{cosmos_partition_key_free, PartitionKeyHandle},
-    partition_key::{CosmosPartitionKeyComponent, CosmosPartitionKeyComponentValue},
+    partition_key::{
+        cosmos_partition_key_free, CosmosPartitionKeyComponent, CosmosPartitionKeyComponentValue,
+        PartitionKeyHandle,
+    },
     read_many::{
         cosmos_read_many_open_submit, cosmos_read_many_request_init, CosmosReadManyIdentity,
         CosmosReadManyParameter, CosmosReadManyRequest,
@@ -838,7 +840,6 @@ impl Fixture {
             "delivered completion must be non-null"
         );
         cosmos_operation_handle_free(op);
-        assert!(!completion.is_null());
         completion
     }
 

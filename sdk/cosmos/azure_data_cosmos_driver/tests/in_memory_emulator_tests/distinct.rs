@@ -724,12 +724,12 @@ async fn catalog_emulator_error_scenarios_fail_as_expected() {
             ),
         };
         let outcome = match expected.category.as_str() {
-            // The emulator cannot produce service aggregate/GROUP BY rewrites.
+            // Exercise the emulator's incomplete Gateway rewrite, not a native plan.
             "serializationResponseBodyInvalid" => Box::pin(driver.plan_operation(
                 query_operation(&container, &scenario.query, 10),
                 &OperationOptions::default(),
                 None,
-                &PlanOptions::default(),
+                &PlanOptions::default().with_query_plan_mode(QueryPlanMode::GatewayOnly),
             ))
             .await
             .err(),
