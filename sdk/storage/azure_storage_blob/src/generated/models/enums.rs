@@ -484,6 +484,12 @@ pub enum StorageErrorCode {
     /// Authorization source IP mismatch.
     AuthorizationSourceIPMismatch,
 
+    /// The specified Blob Access Point configuration name was not found.
+    BlobAccessPointConfigurationNameNotFound,
+
+    /// The specified unique ID does not match the named Blob Access Point configuration.
+    BlobAccessPointConfigurationUniqueIdMismatch,
+
     /// Blob access tier not supported for account type.
     BlobAccessTierNotSupportedForAccountType,
 
@@ -723,6 +729,9 @@ pub enum StorageErrorCode {
 
     /// Operation not allowed on incremental copy blob.
     OperationNotAllowedOnIncrementalCopyBlob,
+
+    /// The operation is not supported for a Blob Access Point container.
+    OperationNotSupportedForBlobAccessPoint,
 
     /// Operation timed out.
     OperationTimedOut,
