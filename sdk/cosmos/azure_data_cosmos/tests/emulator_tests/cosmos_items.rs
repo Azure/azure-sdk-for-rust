@@ -382,6 +382,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
     not(any(test_category = "emulator", test_category = "emulator_inmemory")),
     ignore = "requires test_category 'emulator' or 'emulator_inmemory'"
 )]
+#[cfg(feature = "unstable_delete_by_partition_key")]
 async fn begin_delete_by_partition_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {

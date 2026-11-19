@@ -123,8 +123,11 @@ fn replication_back_pressure_response(
     start: Instant,
 ) -> Option<AsyncRawResponse> {
     let (target, retry_ms) = store.find_overflowed_replication_target(region_name)?;
-    Some(
-        error_response(
+    Some(replication_capacity_response(&target, retry_ms, start))
+}
+
+fn replication_capacity_response(target: &str, retry_ms: u64, start: Instant) -> AsyncRawResponse {
+    error_response(
             StatusCode::TooManyRequests,
             Some(3075),
             "TooManyRequests",
@@ -137,8 +140,7 @@ fn replication_back_pressure_response(
             start,
         )
         .with_retry_after_ms(retry_ms)
-        .build(),
-    )
+        .build()
 }
 
 /// Post-processes a dispatched response to stamp the per-request `x-ms-activity-id`
@@ -6262,7 +6264,8 @@ async fn handle_delete_by_partition_key(
     #[cfg(feature = "unstable_dtx")]
     let _write_guard = write_lock.lock().await;
     let replication_barrier = store.replication_barrier();
-    let _replication_guard = replication_barrier.read().await;
+    let _replication_guard = replication_barrier.write().await;
+    let mut reservation = store.replication_batch_reservation(region_name);
 
     if let Some(response) = replication_back_pressure_response(store, region_name, start) {
         return response;
@@ -6295,7 +6298,7 @@ async fn handle_delete_by_partition_key(
         let charge;
         {
             let mut documents = partition.documents.write().unwrap();
-            charge = documents.get(&epk).map_or(0.0, |logical| {
+            let deletion_charge = documents.get(&epk).map_or(0.0, |logical| {
                 logical
                     .values()
                     .map(|document| {
@@ -6306,6 +6309,10 @@ async fn handle_delete_by_partition_key(
                     })
                     .sum()
             });
+            reservation
+                .try_reserve(documents.get(&epk).map_or(0, |logical| logical.len()))
+                .map_err(|target| replication_capacity_response(&target, 100, start))?;
+            charge = 1.0;
             if let Some(response) = check_throttle(
                 partition,
                 charge,
@@ -6329,6 +6336,11 @@ async fn handle_delete_by_partition_key(
                     document
                 })
                 .collect::<Vec<_>>();
+            if store.config().throttling_enabled() {
+                if let Some(tracker) = &partition.throughput_tracker {
+                    tracker.queue_background_charge(deletion_charge);
+                }
+            }
         }
         let token = session_token_for(
             partition,
@@ -6342,7 +6354,13 @@ async fn handle_delete_by_partition_key(
     match result {
         Some(Ok((tombstones, token, charge, headers))) => {
             for tombstone in tombstones {
-                store.replicate(region_name, db_id, coll_id, &tombstone, true);
+                store.replicate_reserved_delete(
+                    region_name,
+                    db_id,
+                    coll_id,
+                    &tombstone,
+                    &mut reservation,
+                );
             }
             decorate_point_response(
                 ResponseBuilder::new(StatusCode::Ok, start)

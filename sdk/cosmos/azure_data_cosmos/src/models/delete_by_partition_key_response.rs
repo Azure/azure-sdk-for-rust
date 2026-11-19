@@ -10,6 +10,8 @@ use std::sync::Arc;
 
 /// The service response to a request to start deleting items by partition key.
 ///
+/// **Unstable.** Requires the `unstable_delete_by_partition_key` feature.
+///
 /// Returned by
 /// [`ContainerClient::begin_delete_by_partition_key`](crate::clients::ContainerClient::begin_delete_by_partition_key).
 /// This response describes initiation only, not completion of physical deletion,

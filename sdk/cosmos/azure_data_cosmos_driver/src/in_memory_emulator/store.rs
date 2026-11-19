@@ -21,6 +21,67 @@ type SplitMergeLocks = HashMap<(String, String), Arc<async_lock::Mutex<()>>>;
 type ReplicationTrackerHandle = Arc<std::sync::Mutex<ReplicationTracker>>;
 type CatchUpJournals = Arc<std::sync::Mutex<HashMap<(String, u64), Vec<PendingReplication>>>>;
 type ReplicationRegistrationHook = Arc<dyn Fn() + Send + Sync>;
+
+pub(crate) struct ReplicationBatchReservation {
+    targets: HashMap<String, ReplicationReservation>,
+}
+
+struct ReplicationReservation {
+    region: Arc<RegionStore>,
+    max: usize,
+    remaining: usize,
+}
+
+impl Drop for ReplicationReservation {
+    fn drop(&mut self) {
+        self.region
+            .reserved_replications
+            .fetch_sub(self.remaining, Ordering::SeqCst);
+    }
+}
+
+impl ReplicationBatchReservation {
+    pub(crate) fn try_reserve(&mut self, count: usize) -> Result<(), String> {
+        let buffers: Vec<_> = self
+            .targets
+            .values()
+            .map(|target| target.region.replication_buffer.write().unwrap())
+            .collect();
+        for ((name, target), buffer) in self.targets.iter().zip(&buffers) {
+            if target.region.paused.load(Ordering::SeqCst)
+                && buffer
+                    .len()
+                    .saturating_add(target.region.reserved_replications.load(Ordering::SeqCst))
+                    .saturating_add(count)
+                    > target.max
+            {
+                return Err(name.clone());
+            }
+        }
+        for target in self.targets.values() {
+            target
+                .region
+                .reserved_replications
+                .fetch_add(count, Ordering::SeqCst);
+        }
+        drop(buffers);
+        for target in self.targets.values_mut() {
+            target.remaining += count;
+        }
+        Ok(())
+    }
+
+    fn take_one(&mut self, name: &str) -> Option<ReplicationReservation> {
+        let target = self.targets.get_mut(name)?;
+        assert!(target.remaining > 0);
+        target.remaining -= 1;
+        Some(ReplicationReservation {
+            region: Arc::clone(&target.region),
+            max: target.max,
+            remaining: 1,
+        })
+    }
+}
 /// Sentinel pkrange id used for control-plane (database/container/offer) session
 /// tokens. Chosen as `u32::MAX` so it cannot collide with any user pkrange id,
 /// since real Cosmos partition counts are bounded far below this value.
@@ -470,12 +531,44 @@ impl EmulatorStore {
                 .config
                 .replication_for(source, target_name)
                 .max_buffered_replications();
-            let len = region_store.replication_buffer.read().unwrap().len();
+            let len = region_store
+                .replication_buffer
+                .read()
+                .unwrap()
+                .len()
+                .saturating_add(region_store.reserved_replications.load(Ordering::SeqCst));
             if len >= max {
                 return Some((target_name.clone(), 100));
             }
         }
         None
+    }
+
+    pub(crate) fn replication_batch_reservation(
+        &self,
+        source: &str,
+    ) -> ReplicationBatchReservation {
+        let targets = self
+            .regions
+            .read()
+            .unwrap()
+            .iter()
+            .filter(|(name, _)| name.as_str() != source)
+            .map(|(name, region)| {
+                (
+                    name.clone(),
+                    ReplicationReservation {
+                        region: Arc::clone(region),
+                        max: self
+                            .config
+                            .replication_for(source, name)
+                            .max_buffered_replications(),
+                        remaining: 0,
+                    },
+                )
+            })
+            .collect();
+        ReplicationBatchReservation { targets }
     }
 
     /// Awaits all pending split/merge tasks. Test-only.
@@ -1429,6 +1522,29 @@ impl EmulatorStore {
         doc: &StoredDocument,
         is_delete: bool,
     ) {
+        self.replicate_inner(source_region, db_id, coll_id, doc, is_delete, None);
+    }
+
+    pub(crate) fn replicate_reserved_delete(
+        self: &Arc<Self>,
+        source_region: &str,
+        db_id: &str,
+        coll_id: &str,
+        doc: &StoredDocument,
+        reservation: &mut ReplicationBatchReservation,
+    ) {
+        self.replicate_inner(source_region, db_id, coll_id, doc, true, Some(reservation));
+    }
+
+    fn replicate_inner(
+        self: &Arc<Self>,
+        source_region: &str,
+        db_id: &str,
+        coll_id: &str,
+        doc: &StoredDocument,
+        is_delete: bool,
+        mut reservation: Option<&mut ReplicationBatchReservation>,
+    ) {
         // While a distributed transaction is applying, buffer replication so a
         // rollback can discard replicas that were never durably committed. The
         // DTX write path holds `document_write_lock` for the whole transaction,
@@ -1527,19 +1643,19 @@ impl EmulatorStore {
         let remaining_targets = Arc::new(AtomicUsize::new(region_names.len()));
 
         for target_name in region_names {
+            let reserved = reservation
+                .as_deref_mut()
+                .and_then(|batch| batch.take_one(&target_name));
             let repl_config = self.config.replication_for(source_region, &target_name);
             let delay = repl_config.sample_delay();
 
             let store = Arc::clone(self);
             let target = target_name.clone();
-            let db = db_id.to_string();
-            let coll = coll_id.to_string();
-            let document = doc.clone();
+            let pending = pending_replication.clone();
 
-            let source = source_region.to_string();
             if delay.is_zero() {
                 // Immediate replication — no async needed
-                store.apply_replication(&target, &source, &db, &coll, &document, is_delete);
+                store.apply_replication(&target, &pending, reserved);
                 store.complete_replication_target(operation_id, &remaining_targets);
             } else {
                 // Async delayed replication. Bound concurrency via the
@@ -1553,8 +1669,7 @@ impl EmulatorStore {
                 self.replication_tasks.lock().unwrap().spawn(async move {
                     let _permit = semaphore.acquire_owned().await.ok();
                     tokio::time::sleep(delay).await;
-                    store_clone
-                        .apply_replication(&target, &source, &db, &coll, &document, is_delete);
+                    store_clone.apply_replication(&target, &pending, reserved);
                     store_clone.complete_replication_target(operation_id, &remaining);
                 });
             }
@@ -1612,12 +1727,16 @@ impl EmulatorStore {
     fn apply_replication(
         self: &Arc<Self>,
         target_region: &str,
-        source_region: &str,
-        db_id: &str,
-        coll_id: &str,
-        doc: &StoredDocument,
-        is_delete: bool,
+        pending: &PendingReplication,
+        reservation: Option<ReplicationReservation>,
     ) {
+        let PendingReplication {
+            db_id,
+            coll_id,
+            source_region,
+            doc,
+            is_delete,
+        } = pending;
         let regions = self.regions.read().unwrap();
         if let Some(region_store) = regions.get(target_region) {
             if region_store.paused.load(Ordering::SeqCst) {
@@ -1643,7 +1762,12 @@ impl EmulatorStore {
                     .replication_for(source_region, target_region)
                     .max_buffered_replications();
                 let mut buffer = region_store.replication_buffer.write().unwrap();
-                if buffer.len() > max {
+                if reservation.is_none()
+                    && buffer
+                        .len()
+                        .saturating_add(region_store.reserved_replications.load(Ordering::SeqCst))
+                        > max
+                {
                     self.dropped_replications.fetch_add(1, Ordering::SeqCst);
                     tracing::warn!(
                         target_region = target_region,
@@ -1655,13 +1779,7 @@ impl EmulatorStore {
                     );
                     return;
                 }
-                buffer.push_back(PendingReplication {
-                    db_id: db_id.to_string(),
-                    coll_id: coll_id.to_string(),
-                    source_region: source_region.to_string(),
-                    doc: doc.clone(),
-                    is_delete,
-                });
+                buffer.push_back(pending.clone());
                 return;
             }
 
@@ -1676,11 +1794,11 @@ impl EmulatorStore {
                         // ensures a replication either joins the topology
                         // operation or applies to the unchanged parent.
                         if partition.is_locked() {
-                            deferred.push((doc.clone(), is_delete));
+                            deferred.push((doc.clone(), *is_delete));
                             return;
                         }
                     }
-                    apply_doc_to_partition(partition, doc, is_delete);
+                    apply_doc_to_partition(partition, doc, *is_delete);
                 }
             }
         }
@@ -1799,6 +1917,7 @@ pub(crate) struct RegionStore {
     pub offers: RwLock<HashMap<String, OfferMetadata>>,
     pub paused: AtomicBool,
     pub replication_buffer: RwLock<VecDeque<PendingReplication>>,
+    reserved_replications: AtomicUsize,
     /// Per-region master-partition LSN counter for control-plane operations
     /// (database / container CRUD, throughput changes). Real Cosmos DB
     /// advances each region's master partition independently.
@@ -1813,6 +1932,7 @@ impl RegionStore {
             offers: RwLock::new(HashMap::new()),
             paused: AtomicBool::new(false),
             replication_buffer: RwLock::new(VecDeque::new()),
+            reserved_replications: AtomicUsize::new(0),
             master_partition_lsn: AtomicU64::new(0),
         }
     }
@@ -2510,6 +2630,7 @@ pub(crate) struct ThroughputTracker {
 struct ThroughputWindow {
     window_start: std::time::Instant,
     consumed_centiru: u64,
+    background_centiru: u64,
 }
 
 const THROUGHPUT_WINDOW: std::time::Duration = std::time::Duration::from_secs(1);
@@ -2521,6 +2642,7 @@ impl ThroughputTracker {
             inner: std::sync::Mutex::new(ThroughputWindow {
                 window_start: std::time::Instant::now(),
                 consumed_centiru: 0,
+                background_centiru: 0,
             }),
         }
     }
@@ -2533,14 +2655,14 @@ impl ThroughputTracker {
     /// Attempts to consume `charge` RU. Returns `Ok(())` if within budget,
     /// or `Err(retry_after_ms)` if throttled.
     pub fn try_consume(&self, charge: f64) -> Result<(), u64> {
-        let now = std::time::Instant::now();
+        self.try_consume_at(charge, std::time::Instant::now())
+    }
+
+    fn try_consume_at(&self, charge: f64, now: std::time::Instant) -> Result<(), u64> {
         let charge_centiru = (charge * 100.0) as u64;
         let budget_centiru = self.provisioned_ru.saturating_mul(100);
         let mut w = self.inner.lock().unwrap();
-        if now.duration_since(w.window_start) >= THROUGHPUT_WINDOW {
-            w.window_start = now;
-            w.consumed_centiru = 0;
-        }
+        Self::advance_window(&mut w, now, budget_centiru);
         if w.consumed_centiru.saturating_add(charge_centiru) > budget_centiru {
             // Suggest waiting until the start of the next window.
             let remaining = THROUGHPUT_WINDOW.saturating_sub(now.duration_since(w.window_start));
@@ -2548,6 +2670,41 @@ impl ThroughputTracker {
         }
         w.consumed_centiru += charge_centiru;
         Ok(())
+    }
+
+    pub(crate) fn queue_background_charge(&self, charge: f64) {
+        self.queue_background_charge_at(charge, std::time::Instant::now());
+    }
+
+    fn queue_background_charge_at(&self, charge: f64, now: std::time::Instant) {
+        let mut window = self.inner.lock().unwrap();
+        let budget = self.provisioned_ru.saturating_mul(100);
+        Self::advance_window(&mut window, now, budget);
+        window.background_centiru = window
+            .background_centiru
+            .saturating_add((charge * 100.0) as u64);
+        Self::consume_background(&mut window, budget);
+    }
+
+    fn advance_window(window: &mut ThroughputWindow, now: std::time::Instant, budget: u64) {
+        let elapsed = now.duration_since(window.window_start).as_secs();
+        if elapsed > 0 {
+            // Account for unobserved windows without scheduling a task for each deletion.
+            window.background_centiru = window
+                .background_centiru
+                .saturating_sub(budget.saturating_mul(elapsed - 1));
+            window.window_start += Duration::from_secs(elapsed);
+            window.consumed_centiru = 0;
+        }
+        Self::consume_background(window, budget);
+    }
+
+    fn consume_background(window: &mut ThroughputWindow, budget: u64) {
+        let charge = window
+            .background_centiru
+            .min(budget.saturating_sub(window.consumed_centiru));
+        window.background_centiru -= charge;
+        window.consumed_centiru += charge;
     }
 }
 
@@ -3806,6 +3963,47 @@ fn decode_v1_number_hex_to_u32(hex: &str) -> Result<u32, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn background_deletion_charge_spans_windows_without_rejecting_initiation() {
+        let tracker = ThroughputTracker::new(10);
+        let now = tracker.inner.lock().unwrap().window_start;
+        assert_eq!(tracker.try_consume_at(1.0, now), Ok(()));
+        tracker.queue_background_charge_at(24.0, now);
+        assert!(tracker.try_consume_at(1.0, now).is_err());
+        assert!(tracker
+            .try_consume_at(1.0, now + Duration::from_secs(1))
+            .is_err());
+        assert_eq!(
+            tracker.try_consume_at(5.0, now + Duration::from_secs(2)),
+            Ok(())
+        );
+        assert!(tracker
+            .try_consume_at(0.01, now + Duration::from_secs(2))
+            .is_err());
+        assert_eq!(
+            tracker.try_consume_at(10.0, now + Duration::from_secs(3)),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn background_deletion_charge_accounts_for_unobserved_windows() {
+        let tracker = ThroughputTracker::new(10);
+        let now = tracker.inner.lock().unwrap().window_start;
+        tracker.queue_background_charge_at(35.0, now);
+        assert_eq!(
+            tracker.try_consume_at(5.0, now + Duration::from_millis(3500)),
+            Ok(())
+        );
+        assert!(tracker
+            .try_consume_at(0.01, now + Duration::from_millis(3500))
+            .is_err());
+        assert_eq!(
+            tracker.try_consume_at(10.0, now + Duration::from_secs(4)),
+            Ok(())
+        );
+    }
 
     fn test_store(config: VirtualAccountConfig) -> Arc<EmulatorStore> {
         let store = EmulatorStore::new(config);

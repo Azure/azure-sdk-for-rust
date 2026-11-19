@@ -165,6 +165,18 @@ pub static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
 pub static SUPPORTED_SERIALIZATION_FORMATS: HeaderName =
     HeaderName::from_static("x-ms-cosmos-supported-serialization-formats");
 
+pub fn delete_by_partition_key_request(gateway_url: &str, pk: &str) -> Request {
+    let mut request = Request::new(
+        Url::parse(&format!(
+            "{gateway_url}/dbs/testdb/colls/testcoll/operations/partitionkeydelete"
+        ))
+        .unwrap(),
+        Method::Post,
+    );
+    request.insert_header(PARTITION_KEY.clone(), pk.to_owned());
+    request
+}
+
 /// Helper to create a POST request to create a document.
 pub fn create_item_request(
     gateway_url: &str,

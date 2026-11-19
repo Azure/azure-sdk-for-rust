@@ -8,18 +8,16 @@ use crate::{
         ChangeFeedPageIterator, FeedRange, FeedScope, ItemSelector, QueryItemIterator,
         ReadManyIterator,
     },
-    models::{
-        BatchResponse, ChangeFeedItem, DeleteByPartitionKeyResponse, ItemResponse,
-        TransactionalBatch,
-    },
+    models::{BatchResponse, ChangeFeedItem, ItemResponse, TransactionalBatch},
     options::{
         BatchOptions, BinaryEncodingOptions, ChangeFeedMode, ChangeFeedOptions,
-        ChangeFeedStartFrom, DeleteByPartitionKeyOptions, ItemReadOptions, ItemWriteOptions,
-        OperationOptions, Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions,
-        ReadManyOptions, SessionToken,
+        ChangeFeedStartFrom, ItemReadOptions, ItemWriteOptions, OperationOptions, Precondition,
+        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, ReadManyOptions, SessionToken,
     },
     PartitionKey, Query, ResourceIdentity,
 };
+#[cfg(feature = "unstable_delete_by_partition_key")]
+use crate::{models::DeleteByPartitionKeyResponse, options::DeleteByPartitionKeyOptions};
 #[cfg(feature = "unstable_patch")]
 use crate::{models::PatchInstructions, options::PatchItemOptions};
 
@@ -985,6 +983,9 @@ impl ContainerClient {
 
     /// Starts asynchronously deleting all items with the specified partition key.
     ///
+    /// **Unstable.** Requires the `unstable_delete_by_partition_key` feature and
+    /// a Cosmos DB account with partition-key deletion enabled.
+    ///
     /// A successful response means the service has started the operation, not that
     /// deletion has completed. Physical deletion may take several hours, and there
     /// is no way to monitor its progress.
@@ -1029,6 +1030,7 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "unstable_delete_by_partition_key")]
     pub async fn begin_delete_by_partition_key(
         &self,
         partition_key: impl Into<PartitionKey>,

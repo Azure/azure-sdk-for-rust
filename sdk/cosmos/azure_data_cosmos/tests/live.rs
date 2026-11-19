@@ -8,6 +8,9 @@
 mod binary_order_by;
 #[path = "live_tests/cosmos_change_feed.rs"]
 mod cosmos_change_feed;
+#[cfg(feature = "unstable_delete_by_partition_key")]
+#[path = "live_tests/cosmos_items.rs"]
+mod cosmos_items;
 #[path = "live_tests/cosmos_query.rs"]
 mod cosmos_query;
 mod framework;
