@@ -49,6 +49,23 @@ where
         F: FnOnce() -> Fut,
         Fut: Future<Output = V>,
     {
+        self.get_or_insert_with_if(key, |_| factory(), |_| true)
+            .await
+    }
+
+    /// Initializes using this lazy's retained previous value, if any, while
+    /// holding its initialization lock so cancellation takeover preserves it.
+    pub(crate) async fn get_or_insert_with_if<F, Fut, P>(
+        &self,
+        key: K,
+        factory: F,
+        cacheable: P,
+    ) -> Arc<V>
+    where
+        F: FnOnce(Option<Arc<V>>) -> Fut,
+        Fut: Future<Output = V>,
+        P: FnOnce(&V) -> bool,
+    {
         // Fast path: check if already in cache with read lock
         {
             let read_guard = self.map.read().await;
@@ -57,7 +74,9 @@ where
                 drop(read_guard); // Release read lock before awaiting
                                   // Use get_or_init rather than get() to avoid a panic if
                                   // the entry was just inserted but not yet initialized.
-                return lazy_clone.get_or_init(factory).await;
+                return lazy_clone
+                    .get_or_init_if(|| factory(lazy_clone.try_get()), cacheable)
+                    .await;
             }
         }
 
@@ -78,7 +97,8 @@ where
         };
 
         // Now initialize the lazy value (only one caller will actually run factory)
-        lazy.get_or_init(factory).await
+        lazy.get_or_init_if(|| factory(lazy.try_get()), cacheable)
+            .await
     }
 
     /// Gets a cached value if it exists and is initialized.
@@ -99,7 +119,10 @@ where
         F: FnOnce(),
     {
         let read_guard = self.map.read().await;
-        let Some(current) = read_guard.get(key).and_then(|lazy| lazy.try_get()) else {
+        let Some(current) = read_guard
+            .get(key)
+            .and_then(|lazy| lazy.try_get_initialized())
+        else {
             return false;
         };
         if !Arc::ptr_eq(&current, observed) {
@@ -123,7 +146,7 @@ where
         let mut write_guard = self.map.write().await;
         let should_remove = write_guard
             .get(key)
-            .and_then(|lazy| lazy.try_get())
+            .and_then(|lazy| lazy.try_get_initialized())
             .is_some_and(|current| Arc::ptr_eq(&current, observed));
 
         if should_remove {
@@ -143,7 +166,7 @@ where
         let mut write_guard = self.map.write().await;
         let should_replace = write_guard
             .get(key)
-            .and_then(|lazy| lazy.try_get())
+            .and_then(|lazy| lazy.try_get_initialized())
             .is_some_and(|current| Arc::ptr_eq(&current, observed));
 
         if should_replace {
@@ -192,6 +215,23 @@ where
         Fut: Future<Output = V>,
         P: FnOnce(Option<&V>) -> bool,
     {
+        self.get_or_refresh_with_if(key, should_force_refresh, |_| factory(), |_| true)
+            .await
+    }
+
+    pub(crate) async fn get_or_refresh_with_if<F, Fut, P, C>(
+        &self,
+        key: K,
+        should_force_refresh: P,
+        factory: F,
+        cacheable: C,
+    ) -> Option<Arc<V>>
+    where
+        F: FnOnce(Option<Arc<V>>) -> Fut,
+        Fut: Future<Output = V>,
+        P: FnOnce(Option<&V>) -> bool,
+        C: FnOnce(&V) -> bool,
+    {
         // First, check if we have an existing entry
         let (initial_lazy, existing_value, is_initializing) = {
             let read_guard = self.map.read().await;
@@ -199,7 +239,7 @@ where
                 Some(lazy) => {
                     let lazy_clone = lazy.clone();
                     // Get the current value (if initialized) without blocking
-                    let current = lazy.try_get();
+                    let current = lazy.try_get_initialized();
                     // Detect if initialization is in progress (lazy exists but no value yet)
                     let initializing = current.is_none();
                     (Some(lazy_clone), current, initializing)
@@ -212,7 +252,10 @@ where
         // wait for it to complete rather than starting a new refresh
         if is_initializing {
             if let Some(lazy) = initial_lazy {
-                return Some(lazy.get().await);
+                return Some(
+                    lazy.get_or_init_if(|| factory(lazy.try_get()), cacheable)
+                        .await,
+                );
             }
         }
 
@@ -244,20 +287,28 @@ where
                     // Another task already started initialization, wait for it
                     let current_clone = current.clone();
                     drop(write_guard);
-                    return Some(current_clone.get().await);
+                    return Some(
+                        current_clone
+                            .get_or_init_if(|| factory(current_clone.try_get()), cacheable)
+                            .await,
+                    );
                 }
                 // Key existed - check if it's still the same lazy
                 (Some(initial), Some(current)) => {
                     if Arc::ptr_eq(initial, current) {
                         // Still the same lazy we observed - we can replace
-                        let lazy = Arc::new(AsyncLazy::new());
+                        let lazy = Arc::new(AsyncLazy::refreshing(existing_value));
                         write_guard.insert(key, lazy.clone());
                         lazy
                     } else {
                         // Lazy changed - another task already refreshed, use theirs
                         let current_clone = current.clone();
                         drop(write_guard);
-                        return Some(current_clone.get().await);
+                        return Some(
+                            current_clone
+                                .get_or_init_if(|| factory(current_clone.try_get()), cacheable)
+                                .await,
+                        );
                     }
                 }
                 // Key existed but was removed - insert new
@@ -270,7 +321,11 @@ where
         };
 
         // Initialize the new lazy value
-        Some(new_lazy.get_or_init(factory).await)
+        Some(
+            new_lazy
+                .get_or_init_if(|| factory(new_lazy.try_get()), cacheable)
+                .await,
+        )
     }
 }
 
@@ -288,6 +343,106 @@ mod tests {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use tokio::time::{sleep, Duration};
+
+    #[tokio::test]
+    async fn forced_takeover_uses_selected_generation_previous_value() {
+        for invalidate in [false, true] {
+            let cache = AsyncCache::new();
+            let old = cache.get_or_insert_with("key", || async { 1 }).await;
+            let selected_previous = (!invalidate).then(|| Arc::new(2));
+            let calls = AtomicUsize::new(0);
+            let current = cache
+                .get_or_refresh_with_if(
+                    "key",
+                    |observed| {
+                        assert_eq!(observed, Some(&*old));
+                        // Deterministically change generations between observation and selection.
+                        let mut map = cache.map.try_write().unwrap();
+                        map.remove(&"key");
+                        if let Some(previous) = &selected_previous {
+                            map.insert(
+                                "key",
+                                Arc::new(AsyncLazy::refreshing(Some(previous.clone()))),
+                            );
+                        }
+                        true
+                    },
+                    |previous| {
+                        calls.fetch_add(1, Ordering::SeqCst);
+                        assert_eq!(previous.as_deref(), selected_previous.as_deref());
+                        async move { previous.as_deref().copied().unwrap_or(0) + 1 }
+                    },
+                    |_| true,
+                )
+                .await
+                .unwrap();
+            assert_eq!(calls.load(Ordering::SeqCst), 1);
+            assert_eq!(*current, if invalidate { 1 } else { 3 });
+            assert!(Arc::ptr_eq(&current, &cache.get(&"key").await.unwrap()));
+        }
+    }
+
+    #[tokio::test]
+    async fn forced_takeover_after_cancellation_uses_retained_previous() {
+        let cache = AsyncCache::new();
+        let previous = cache.get_or_insert_with("key", || async { 2 }).await;
+        let mut owner =
+            Box::pin(cache.get_or_refresh_with("key", |_| true, futures::future::pending::<i32>));
+        assert!(futures::poll!(&mut owner).is_pending());
+        drop(owner);
+        let current = cache
+            .get_or_refresh_with_if(
+                "key",
+                |_| panic!("initializing takeover must not start another refresh"),
+                |selected| {
+                    assert!(Arc::ptr_eq(&selected.unwrap(), &previous));
+                    async { 3 }
+                },
+                |_| true,
+            )
+            .await
+            .unwrap();
+        assert_eq!(*current, 3);
+    }
+
+    #[tokio::test]
+    async fn initializing_refresh_exposes_previous_only_for_reads() {
+        let cache = AsyncCache::new();
+        let observed = cache.get_or_insert_with("key", || async { 1 }).await;
+        let started = tokio::sync::Notify::new();
+        let release = tokio::sync::Notify::new();
+        let refresh = cache.get_or_refresh_with(
+            "key",
+            |_| true,
+            || async {
+                started.notify_one();
+                release.notified().await;
+                2
+            },
+        );
+        tokio::pin!(refresh);
+        tokio::select! {
+            _ = &mut refresh => panic!("refresh completed before release"),
+            _ = started.notified() => {}
+        }
+        assert!(Arc::ptr_eq(&cache.get(&"key").await.unwrap(), &observed));
+        assert!(
+            !cache
+                .apply_if_current(&"key", &observed, || panic!("stale apply"))
+                .await
+        );
+        assert!(!cache.invalidate_if_same(&"key", &observed).await);
+        assert!(!cache.replace_if_same(&"key", &observed, Arc::new(3)).await);
+        release.notify_one();
+        let current = refresh.await.unwrap();
+        assert_eq!(*current, 2);
+        assert!(
+            !cache
+                .apply_if_current(&"key", &observed, || panic!("stale apply"))
+                .await
+        );
+        assert!(cache.apply_if_current(&"key", &current, || {}).await);
+    }
 
     async fn cache_len<K, V>(cache: &AsyncCache<K, V>) -> usize
     where

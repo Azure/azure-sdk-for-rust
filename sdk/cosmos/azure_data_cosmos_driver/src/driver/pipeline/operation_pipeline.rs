@@ -35,7 +35,8 @@ use crate::{
         cosmos_headers::{PATCH_CONTENT_TYPE, QUERY_CONTENT_TYPE},
         effective_partition_key::EffectivePartitionKey,
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
-        Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
+        Credential, DefaultConsistencyLevel, OperationType, ResourceType, SessionToken,
+        SubStatusCode,
     },
     options::{
         resolve_effective_consistency, HedgeThreshold, OperationOptions, OperationOptionsView,
@@ -673,6 +674,12 @@ pub(crate) async fn execute_operation_pipeline(
     let mut container_recreation_retry_attempted = false;
     let location_snapshot = location_state_store.snapshot();
     let max_failover_retries = options.max_failover_retry_count().copied().unwrap_or(3);
+    let max_failover_retries = if operation.resource_type() == ResourceType::PartitionKeyRange {
+        let region_count = location_snapshot.account.preferred_endpoints(true).len();
+        max_failover_retries.min(u32::try_from(region_count.saturating_sub(1)).unwrap_or(u32::MAX))
+    } else {
+        max_failover_retries
+    };
     let endpoint_unavailability_ttl = options
         .endpoint_unavailability_ttl()
         .copied()
@@ -695,10 +702,15 @@ pub(crate) async fn execute_operation_pipeline(
     let throttling_retry_options = options.throttling_retry_options();
     let (default_attempts, default_wait, max_throttle_per_retry_delay) =
         default_throttle_budget(pipeline_type);
-    let max_throttle_attempts = throttling_retry_options
-        .max_retry_count()
-        .copied()
-        .unwrap_or(default_attempts);
+    // PK-range pages retry at the page boundary, keeping live diagnostics bounded.
+    let max_throttle_attempts = if operation.resource_type() == ResourceType::PartitionKeyRange {
+        0
+    } else {
+        throttling_retry_options
+            .max_retry_count()
+            .copied()
+            .unwrap_or(default_attempts)
+    };
     let max_throttle_wait_time = throttling_retry_options
         .max_retry_wait_time()
         .copied()
@@ -1048,12 +1060,14 @@ pub(crate) async fn execute_operation_pipeline(
                     } => {
                         // Both legs failed with retriable errors; fall back
                         // into the failover loop against the untried regions.
-                        tracing::warn!(
-                            activity_id = %activity_id,
-                            primary_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
-                            secondary_region = ?secondary_region.as_ref().map(crate::options::Region::as_str),
-                            "hedge race: both transient on STAGE 2b; attempting failover fallback",
-                        );
+                        if !last_error.status().is_throttled() {
+                            tracing::warn!(
+                                activity_id = %activity_id,
+                                primary_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
+                                secondary_region = ?secondary_region.as_ref().map(crate::options::Region::as_str),
+                                "hedge race: both transient on STAGE 2b; attempting failover fallback",
+                            );
+                        }
                         diagnostics = returned_diagnostics;
                         // Fold race-observed PK-range-id and 1002 latch back
                         // into retry_state so the fallback behaves like a
@@ -1207,6 +1221,12 @@ pub(crate) async fn execute_operation_pipeline(
                     session_manager.capture_session_token(operation, cosmos_headers);
                 }
             }
+        }
+
+        let cold_capacity_failover =
+            overrides.region_pin.is_none() && is_capacity_throttle(&result);
+        if is_pk_range_throttle(operation, &result) && !cold_capacity_failover {
+            return finalize_hedge_attempt(Box::new(result), diagnostics, None);
         }
 
         if container_recreation_refresh_eligible(
@@ -1659,12 +1679,14 @@ pub(crate) async fn execute_operation_pipeline(
                         // budget remaining — fall back into the failover
                         // loop (same shape as the STAGE 2b post-race
                         // fallback earlier in this function).
-                        tracing::warn!(
-                            activity_id = %activity_id,
-                            primary_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
-                            secondary_region = ?secondary_region.as_ref().map(crate::options::Region::as_str),
-                            "hedge race: both transient on STAGE 7; attempting failover fallback",
-                        );
+                        if !last_error.status().is_throttled() {
+                            tracing::warn!(
+                                activity_id = %activity_id,
+                                primary_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
+                                secondary_region = ?secondary_region.as_ref().map(crate::options::Region::as_str),
+                                "hedge race: both transient on STAGE 7; attempting failover fallback",
+                            );
+                        }
                         diagnostics = returned_diagnostics;
                         // Same fold-back as the STAGE 2b handler above.
                         if retry_state.partition_key_range_id.is_none() {
@@ -3490,6 +3512,17 @@ impl HedgeRacePolicy {
     }
 }
 
+fn is_pk_range_throttle(operation: &CosmosOperation, result: &TransportResult) -> bool {
+    operation.resource_type() == ResourceType::PartitionKeyRange
+        && matches!(&result.outcome, TransportOutcome::HttpError { status, .. } if status.is_throttled())
+}
+
+fn is_capacity_throttle(result: &TransportResult) -> bool {
+    matches!(&result.outcome, TransportOutcome::HttpError { status, .. }
+        if status.is_throttled()
+            && status.sub_status() == Some(crate::error::status_codes::substatus::SYSTEM_RESOURCE_UNAVAILABLE))
+}
+
 /// Peeks at a hedge-leg's [`TransportResult`] for the partition-key-range-id
 /// header without consuming the result.
 ///
@@ -3810,10 +3843,15 @@ async fn perform_single_attempt(
     let throttling_retry_options = ctx.options.throttling_retry_options();
     let (default_attempts, default_wait, max_throttle_per_retry_delay) =
         default_throttle_budget(ctx.pipeline_type);
-    let max_throttle_attempts = throttling_retry_options
-        .max_retry_count()
-        .copied()
-        .unwrap_or(default_attempts);
+    let max_throttle_attempts = if ctx.operation.resource_type() == ResourceType::PartitionKeyRange
+    {
+        0
+    } else {
+        throttling_retry_options
+            .max_retry_count()
+            .copied()
+            .unwrap_or(default_attempts)
+    };
     let max_throttle_wait_time = throttling_retry_options
         .max_retry_wait_time()
         .copied()
@@ -3931,6 +3969,32 @@ pub(crate) fn deadline_signal(
     match azure_core::time::Duration::try_from(remaining_std) {
         Ok(remaining) => Box::pin(azure_core::sleep(remaining)),
         Err(_) => Box::pin(futures::future::ready(())),
+    }
+}
+
+// A throttled page gives its partner a bounded chance to succeed before the
+// page loop retries; a stuck partner must not retain this batch indefinitely.
+async fn await_pk_range_hedge_partner<F>(
+    partner: F,
+    deadline: Option<Instant>,
+    request_timeout: Duration,
+) -> Option<(
+    crate::error::Result<TransportResult>,
+    DiagnosticsContextBuilder,
+)>
+where
+    F: Future<
+            Output = (
+                crate::error::Result<TransportResult>,
+                DiagnosticsContextBuilder,
+            ),
+        > + Unpin,
+{
+    let batch_deadline = Instant::now() + request_timeout;
+    let deadline = deadline.map_or(batch_deadline, |deadline| deadline.min(batch_deadline));
+    match select(partner, deadline_signal(Some(deadline))).await {
+        Either::Left((result, _)) => Some(result),
+        Either::Right(((), _)) => None,
     }
 }
 
@@ -4510,7 +4574,7 @@ async fn execute_hedged(
     // Recorded at send time: the shared latch can flip after this leg's request was built.
     let secondary_sent_hub_region_header = Arc::new(AtomicBool::new(false));
     let sent_hub_region_header = Arc::clone(&secondary_sent_hub_region_header);
-    let secondary_attempt = Box::pin(async move {
+    let secondary_attempt: PrimaryAttemptFuture<'_> = Box::pin(async move {
         let mut diag = secondary_diag;
         let result = perform_single_attempt(
             ctx,
@@ -4557,21 +4621,169 @@ async fn execute_hedged(
     // — see `pk_range_id_from_result` and `apply_hedge_leg_effects`.
     let mut captured_pk_range_id: Option<PartitionKeyRangeId> = None;
     let mut race_observed_session_unavailable = false;
-    match select(primary_attempt, secondary_attempt).await {
+    let (completed, remaining, primary_first) =
+        match select(primary_attempt, secondary_attempt).await {
+            Either::Left((completed, remaining)) => (completed, remaining, true),
+            Either::Right((completed, remaining)) => (completed, remaining, false),
+        };
+    let (completed, remaining, primary_first, leg_effects_applied) = match completed {
+        (result, diag)
+            if result.as_ref().is_ok_and(|throttle| {
+                is_pk_range_throttle(ctx.operation, throttle)
+                    && (!policy.result_is_final(throttle) || !primary_first)
+            }) =>
+        {
+            apply_hedge_leg_effects(
+                ctx,
+                retry_state_snapshot,
+                if primary_first {
+                    &primary_routing.endpoint
+                } else {
+                    &secondary_routing.endpoint
+                },
+                &result,
+                shared_hub_region_latch.as_ref(),
+                !primary_first
+                    && ctx.operation.is_read_only()
+                    && secondary_sent_hub_region_header.load(Ordering::Relaxed),
+                &mut race_observed_session_unavailable,
+            )
+            .await;
+            let mut throttle = result.expect("matched a metadata throttle");
+            let partner = await_pk_range_hedge_partner(
+                remaining,
+                ctx.deadline,
+                ctx.transport.metadata_request_timeout(),
+            )
+            .await;
+            if let Some((result, _)) = &partner {
+                apply_hedge_leg_effects(
+                    ctx,
+                    retry_state_snapshot,
+                    if primary_first {
+                        &secondary_routing.endpoint
+                    } else {
+                        &primary_routing.endpoint
+                    },
+                    result,
+                    shared_hub_region_latch.as_ref(),
+                    primary_first
+                        && ctx.operation.is_read_only()
+                        && secondary_sent_hub_region_header.load(Ordering::Relaxed),
+                    &mut race_observed_session_unavailable,
+                )
+                .await;
+            }
+            if partner.as_ref().is_some_and(|(result, _)| {
+                result.as_ref().is_ok_and(|result| {
+                    is_pk_range_throttle(ctx.operation, result)
+                        && (policy.result_is_final(&throttle) || policy.result_is_final(result))
+                })
+            }) {
+                let (Ok(partner), partner_diag) = partner.expect("throttled partner completed")
+                else {
+                    unreachable!("throttled partner is an HTTP result");
+                };
+                parent_diagnostics.merge_hedge_attempt(diag);
+                parent_diagnostics.merge_hedge_attempt(partner_diag);
+                parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::both_transient(
+                    strategy_config,
+                    primary_region_for_diag,
+                    secondary_region_for_diag,
+                    deadline_elapsed(ctx.deadline),
+                ));
+                // Final alternate throttles cannot override metadata's primary, or trigger a sweep.
+                return HedgedRaceResult::Terminal(if deadline_elapsed(ctx.deadline) {
+                    Err(application_cancelled_error(parent_diagnostics))
+                } else {
+                    finalize_hedge_attempt(
+                        Box::new(if primary_first { throttle } else { partner }),
+                        parent_diagnostics,
+                        query_wire_range,
+                    )
+                });
+            }
+            if partner.as_ref().is_none_or(|(result, _)| {
+                result.as_ref().is_ok_and(|result| {
+                    is_pk_range_throttle(ctx.operation, result) && !policy.result_is_final(result)
+                })
+            }) {
+                parent_diagnostics.merge_hedge_attempt(diag);
+                if let Some((Ok(result), diag)) = partner {
+                    parent_diagnostics.merge_hedge_attempt(diag);
+                    if is_capacity_throttle(&result) {
+                        throttle = result;
+                    }
+                }
+                if !deadline_elapsed(ctx.deadline) {
+                    let TransportOutcome::HttpError {
+                        status,
+                        cosmos_headers,
+                        body,
+                        ..
+                    } = &throttle.outcome
+                    else {
+                        unreachable!("throttle is an HTTP error");
+                    };
+                    return HedgedRaceResult::BothTransient {
+                        primary_region,
+                        secondary_region,
+                        strategy_config,
+                        primary_region_for_diag,
+                        secondary_region_for_diag,
+                        last_error: build_service_error(status, cosmos_headers, body),
+                        diagnostics: parent_diagnostics,
+                        partition_key_range_id: None,
+                        observed_session_unavailable: false,
+                    };
+                }
+                parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::both_transient(
+                    strategy_config,
+                    primary_region_for_diag,
+                    secondary_region_for_diag,
+                    deadline_elapsed(ctx.deadline),
+                ));
+                return HedgedRaceResult::Terminal(if deadline_elapsed(ctx.deadline) {
+                    Err(application_cancelled_error(parent_diagnostics))
+                } else {
+                    finalize_hedge_attempt(Box::new(throttle), parent_diagnostics, query_wire_range)
+                });
+            }
+            parent_diagnostics.merge_hedge_attempt(diag);
+            let diag = parent_diagnostics.clone_for_hedge_attempt();
+            // Both legs completed and their effects were applied above.
+            // Replaying the buffered throttle must not apply them again.
+            (
+                partner.expect("non-throttled partner completed"),
+                Box::pin(futures::future::ready((Ok(throttle), diag))) as PrimaryAttemptFuture<'_>,
+                !primary_first,
+                true,
+            )
+        }
+        completed => (completed, remaining, primary_first, false),
+    };
+    let race = if primary_first {
+        Either::Left((completed, remaining))
+    } else {
+        Either::Right((completed, remaining))
+    };
+    match race {
         Either::Left(((primary_result, primary_diag), secondary_remaining)) => {
             parent_diagnostics.merge_hedge_attempt(primary_diag);
             captured_pk_range_id =
                 captured_pk_range_id.or_else(|| pk_range_id_from_result(&primary_result));
-            apply_hedge_leg_effects(
-                ctx,
-                retry_state_snapshot,
-                &primary_routing.endpoint,
-                &primary_result,
-                shared_hub_region_latch.as_ref(),
-                false,
-                &mut race_observed_session_unavailable,
-            )
-            .await;
+            if !leg_effects_applied {
+                apply_hedge_leg_effects(
+                    ctx,
+                    retry_state_snapshot,
+                    &primary_routing.endpoint,
+                    &primary_result,
+                    shared_hub_region_latch.as_ref(),
+                    false,
+                    &mut race_observed_session_unavailable,
+                )
+                .await;
+            }
             match policy.classify(primary_result) {
                 HedgeClass::Final(tr) => {
                     // Primary won post-threshold; drop secondary.
@@ -4652,16 +4864,18 @@ async fn execute_hedged(
                         captured_pk_range_id.or_else(|| pk_range_id_from_result(&secondary_result));
                     let hub_only_read = ctx.operation.is_read_only()
                         && secondary_sent_hub_region_header.load(Ordering::Relaxed);
-                    apply_hedge_leg_effects(
-                        ctx,
-                        retry_state_snapshot,
-                        &secondary_routing.endpoint,
-                        &secondary_result,
-                        shared_hub_region_latch.as_ref(),
-                        hub_only_read,
-                        &mut race_observed_session_unavailable,
-                    )
-                    .await;
+                    if !leg_effects_applied {
+                        apply_hedge_leg_effects(
+                            ctx,
+                            retry_state_snapshot,
+                            &secondary_routing.endpoint,
+                            &secondary_result,
+                            shared_hub_region_latch.as_ref(),
+                            hub_only_read,
+                            &mut race_observed_session_unavailable,
+                        )
+                        .await;
+                    }
                     match policy.classify_secondary(secondary_result, hub_only_read) {
                         HedgeClass::Final(tr) => {
                             parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
@@ -4736,16 +4950,18 @@ async fn execute_hedged(
                 captured_pk_range_id.or_else(|| pk_range_id_from_result(&secondary_result));
             let hub_only_read = ctx.operation.is_read_only()
                 && secondary_sent_hub_region_header.load(Ordering::Relaxed);
-            apply_hedge_leg_effects(
-                ctx,
-                retry_state_snapshot,
-                &secondary_routing.endpoint,
-                &secondary_result,
-                shared_hub_region_latch.as_ref(),
-                hub_only_read,
-                &mut race_observed_session_unavailable,
-            )
-            .await;
+            if !leg_effects_applied {
+                apply_hedge_leg_effects(
+                    ctx,
+                    retry_state_snapshot,
+                    &secondary_routing.endpoint,
+                    &secondary_result,
+                    shared_hub_region_latch.as_ref(),
+                    hub_only_read,
+                    &mut race_observed_session_unavailable,
+                )
+                .await;
+            }
             match policy.classify_secondary(secondary_result, hub_only_read) {
                 HedgeClass::Final(tr) => {
                     parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
@@ -4830,16 +5046,18 @@ async fn execute_hedged(
                     parent_diagnostics.merge_hedge_attempt(primary_diag);
                     captured_pk_range_id =
                         captured_pk_range_id.or_else(|| pk_range_id_from_result(&primary_result));
-                    apply_hedge_leg_effects(
-                        ctx,
-                        retry_state_snapshot,
-                        &primary_routing.endpoint,
-                        &primary_result,
-                        shared_hub_region_latch.as_ref(),
-                        false,
-                        &mut race_observed_session_unavailable,
-                    )
-                    .await;
+                    if !leg_effects_applied {
+                        apply_hedge_leg_effects(
+                            ctx,
+                            retry_state_snapshot,
+                            &primary_routing.endpoint,
+                            &primary_result,
+                            shared_hub_region_latch.as_ref(),
+                            false,
+                            &mut race_observed_session_unavailable,
+                        )
+                        .await;
+                    }
                     match policy.classify(primary_result) {
                         HedgeClass::Final(tr) => {
                             parent_diagnostics.set_hedge_diagnostics(
