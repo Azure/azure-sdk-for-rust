@@ -4,6 +4,7 @@
 //! Topology provider adapter backed by the partition key range cache.
 
 use futures::future::BoxFuture;
+use std::time::Instant;
 
 use crate::{
     driver::cache::{PartitionKeyRangeCache, PkRangeFetchResult},
@@ -30,6 +31,7 @@ pub(crate) struct CachedTopologyProvider<'a, F> {
     container: ContainerReference,
     fetch_pk_ranges: F,
     cache_only: bool,
+    absolute_deadline: Option<Instant>,
 }
 
 impl<'a, F> CachedTopologyProvider<'a, F> {
@@ -44,7 +46,13 @@ impl<'a, F> CachedTopologyProvider<'a, F> {
             container,
             fetch_pk_ranges,
             cache_only: false,
+            absolute_deadline: None,
         }
+    }
+
+    pub(crate) fn with_absolute_deadline(mut self, deadline: Option<Instant>) -> Self {
+        self.absolute_deadline = deadline;
+        self
     }
 
     /// Uses optional cached identity without fetching topology, even during recovery.
@@ -82,6 +90,7 @@ where
                         epk_range,
                         force_refresh,
                         &self.fetch_pk_ranges,
+                        self.absolute_deadline,
                     )
                     .await?
             };

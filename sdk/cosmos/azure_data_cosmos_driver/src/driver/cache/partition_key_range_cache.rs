@@ -6,7 +6,9 @@
 //! Uses the driver's operation pipeline to fetch `/pkranges` from the service
 //! and caches the resulting [`ContainerRoutingMap`] per container RID.
 
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc, time::Instant};
+
+use futures::{future::Either, pin_mut};
 
 use crate::models::{
     effective_partition_key::EffectivePartitionKey, partition_key_range::PkRangesResponse,
@@ -49,6 +51,11 @@ impl IntoPkRangeFetchOutcome for crate::error::Result<Option<PkRangeFetchResult>
 }
 
 type CachedRoutingMap = crate::error::Result<Arc<ContainerRoutingMap>>;
+
+fn is_caller_timeout(error: &crate::error::CosmosError) -> bool {
+    error.status().sub_status()
+        == Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT)
+}
 
 /// Cache that maps container RIDs to their partition key routing maps.
 ///
@@ -185,10 +192,16 @@ impl PartitionKeyRangeCache {
         Fut: std::future::Future<Output = R>,
         R: IntoPkRangeFetchOutcome,
     {
-        self.resolve_overlapping_ranges_result(container, epk_range, force_refresh, fetch_pk_ranges)
-            .await
-            .ok()
-            .flatten()
+        self.resolve_overlapping_ranges_result(
+            container,
+            epk_range,
+            force_refresh,
+            fetch_pk_ranges,
+            None,
+        )
+        .await
+        .ok()
+        .flatten()
     }
 
     pub(crate) async fn resolve_overlapping_ranges_result<F, Fut, R>(
@@ -197,6 +210,7 @@ impl PartitionKeyRangeCache {
         epk_range: std::ops::Range<&EffectivePartitionKey>,
         force_refresh: bool,
         fetch_pk_ranges: F,
+        deadline: Option<Instant>,
     ) -> crate::error::Result<Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>>
     where
         F: Fn(ContainerReference, Option<String>) -> Fut,
@@ -204,7 +218,7 @@ impl PartitionKeyRangeCache {
         R: IntoPkRangeFetchOutcome,
     {
         let routing_map = self
-            .try_lookup_result(container, force_refresh, fetch_pk_ranges)
+            .try_lookup_result_with_deadline(container, force_refresh, fetch_pk_ranges, deadline)
             .await?;
         let Some(routing_map) = routing_map else {
             return Ok(None);
@@ -314,6 +328,48 @@ impl PartitionKeyRangeCache {
         Fut: std::future::Future<Output = R>,
         R: IntoPkRangeFetchOutcome,
     {
+        self.try_lookup_result_with_deadline(container, force_refresh, fetch_pk_ranges, None)
+            .await
+    }
+
+    pub(crate) async fn try_lookup_result_with_deadline<F, Fut, R>(
+        &self,
+        container: &ContainerReference,
+        force_refresh: bool,
+        fetch_pk_ranges: F,
+        deadline: Option<Instant>,
+    ) -> crate::error::Result<Option<Arc<ContainerRoutingMap>>>
+    where
+        F: Fn(ContainerReference, Option<String>) -> Fut,
+        Fut: std::future::Future<Output = R>,
+        R: IntoPkRangeFetchOutcome,
+    {
+        let lookup = self.lookup_inner(container, force_refresh, fetch_pk_ranges);
+        let timer = crate::driver::pipeline::operation_pipeline::deadline_signal(deadline);
+        pin_mut!(lookup, timer);
+        match futures::future::select(timer, lookup).await {
+            Either::Left(((), _)) => Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::from_parts(
+                    azure_core::http::StatusCode::RequestTimeout,
+                    Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
+                ))
+                .with_message("partition key range lookup exceeded the caller's deadline")
+                .build()),
+            Either::Right((result, _)) => result,
+        }
+    }
+
+    async fn lookup_inner<F, Fut, R>(
+        &self,
+        container: &ContainerReference,
+        force_refresh: bool,
+        fetch_pk_ranges: F,
+    ) -> crate::error::Result<Option<Arc<ContainerRoutingMap>>>
+    where
+        F: Fn(ContainerReference, Option<String>) -> Fut,
+        Fut: std::future::Future<Output = R>,
+        R: IntoPkRangeFetchOutcome,
+    {
         let key = container.clone();
 
         let cached_result = if force_refresh {
@@ -328,7 +384,7 @@ impl PartitionKeyRangeCache {
                 .and_then(|m| m.change_feed_next_if_none_match.clone());
 
             self.cache
-                .get_or_refresh_with(
+                .get_or_refresh_with_if(
                     key.clone(),
                     |existing| {
                         // If there's no existing entry, we must fetch to populate the cache.
@@ -343,15 +399,30 @@ impl PartitionKeyRangeCache {
                         // by another concurrent request since we last saw it.
                         existing.change_feed_next_if_none_match == prev_continuation
                     },
-                    || fetch_and_build_routing_map_result(key.clone(), previous, fetch_pk_ranges),
+                    |previous| {
+                        let previous = previous
+                            .as_deref()
+                            .and_then(|result| result.as_ref().ok())
+                            .cloned();
+                        fetch_and_build_routing_map_result(key.clone(), previous, fetch_pk_ranges)
+                    },
+                    |result| !matches!(result, Err(error) if is_caller_timeout(error)),
                 )
                 .await
                 .expect("routing cache refresh requested")
         } else {
             self.cache
-                .get_or_insert_with(key.clone(), || {
-                    fetch_and_build_routing_map_result(key.clone(), None, fetch_pk_ranges)
-                })
+                .get_or_insert_with_if(
+                    key.clone(),
+                    |previous| {
+                        let previous = previous
+                            .as_deref()
+                            .and_then(|result| result.as_ref().ok())
+                            .cloned();
+                        fetch_and_build_routing_map_result(key.clone(), previous, fetch_pk_ranges)
+                    },
+                    |result| !matches!(result, Err(error) if is_caller_timeout(error)),
+                )
                 .await
         };
 
@@ -393,13 +464,8 @@ impl PartitionKeyRangeCache {
 
 /// Returns `previous` with its change-feed continuation stripped.
 ///
-/// Every caller reaches this having *already* attempted a cold fetch that came
-/// back empty, and a cold attempt is what releases the container's region pin —
-/// both layers define "cold" identically as "carries no continuation". So by the
-/// time we fall back to the cached map, the continuation it still holds is
-/// orphaned: it is affine to a region nothing routes back to any more, and
-/// replaying it would risk handing a region-specific ETag to a region that never
-/// issued it. Dropping it costs one full refresh and makes the next attempt cold.
+/// A failed cold recovery leaves the previous ranges usable, but its failed
+/// continuation should not be retried on the next refresh.
 fn without_orphaned_continuation(previous: &ContainerRoutingMap) -> ContainerRoutingMap {
     let mut unpinned = previous.clone();
     unpinned.change_feed_next_if_none_match = None;
@@ -494,6 +560,9 @@ where
     let drained = match drained_result {
         Ok(drained) => drained,
         Err(error) => {
+            if is_caller_timeout(&error) {
+                return Err(error);
+            }
             tracing::warn!(
                 error = %error,
                 "Failed to fetch partition key ranges from service; \
@@ -507,6 +576,11 @@ where
                     0,
                 ))
                 .await;
+                if let Err(error) = &refreshed {
+                    if is_caller_timeout(error) {
+                        return Err(error.clone());
+                    }
+                }
                 if let Ok(refreshed) = &refreshed {
                     if !refreshed.ranges().is_empty() {
                         return Ok(refreshed.clone());
@@ -557,6 +631,11 @@ where
                 0,
             ))
             .await;
+            if let Err(error) = &refreshed {
+                if is_caller_timeout(error) {
+                    return Err(error.clone());
+                }
+            }
             if let Ok(refreshed) = &refreshed {
                 if !refreshed.ranges().is_empty() {
                     return Ok(refreshed.clone());
@@ -627,6 +706,7 @@ where
                 Ok(without_orphaned_continuation(&prev))
             }
             Ok(refreshed) => Ok(refreshed),
+            Err(error) if is_caller_timeout(&error) => Err(error),
             Err(_) => Ok(without_orphaned_continuation(&prev)),
         };
     }
@@ -835,6 +915,291 @@ pub(crate) fn parse_pk_ranges_response(
 mod tests {
     use super::*;
     use crate::models::partition_key_range::PartitionKeyRange as PkRange;
+
+    #[tokio::test]
+    async fn abandoned_owner_is_taken_over_once_by_concurrent_waiters() {
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+        {
+            let owner = cache.try_lookup_result(&container, false, |_, _| {
+                futures::future::pending::<crate::error::Result<Option<PkRangeFetchResult>>>()
+            });
+            pin_mut!(owner);
+            assert!(futures::poll!(&mut owner).is_pending());
+            assert!(cache
+                .cached_routing_map(&container)
+                .await
+                .unwrap()
+                .is_none());
+        }
+        let calls = std::sync::atomic::AtomicUsize::new(0);
+        let results = futures::future::join_all((0..8).map(|_| {
+            cache.try_lookup_result(&container, false, |container, continuation| {
+                calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                test_fetch(container, continuation)
+            })
+        }))
+        .await;
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 2);
+        let first = results[0].as_ref().unwrap().as_ref().unwrap();
+        assert!(results
+            .iter()
+            .all(|result| { Arc::ptr_eq(first, result.as_ref().unwrap().as_ref().unwrap()) }));
+    }
+
+    #[tokio::test]
+    async fn joined_callers_keep_their_own_deadlines_in_both_directions() {
+        use std::{
+            sync::atomic::{AtomicUsize, Ordering},
+            time::Duration,
+        };
+
+        for owner_expires_first in [false, true] {
+            let cache = PartitionKeyRangeCache::new();
+            let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+            let now = Instant::now();
+            let short = Some(now + Duration::from_millis(20));
+            let long = Some(now + Duration::from_secs(2));
+            let calls = AtomicUsize::new(0);
+            let owner = cache.try_lookup_result_with_deadline(
+                &container,
+                false,
+                |_, _| {
+                    calls.fetch_add(1, Ordering::SeqCst);
+                    futures::future::pending::<crate::error::Result<Option<PkRangeFetchResult>>>()
+                },
+                if owner_expires_first { short } else { long },
+            );
+            pin_mut!(owner);
+            assert!(futures::poll!(&mut owner).is_pending());
+            let waiter = cache.try_lookup_result_with_deadline(
+                &container,
+                false,
+                |container, token| {
+                    assert!(matches!(calls.fetch_add(1, Ordering::SeqCst), 1 | 2));
+                    test_fetch(container, token)
+                },
+                if owner_expires_first { long } else { short },
+            );
+            pin_mut!(waiter);
+            assert!(futures::poll!(&mut waiter).is_pending());
+            if owner_expires_first {
+                assert!(is_caller_timeout(&owner.await.unwrap_err()));
+                assert_eq!(waiter.await.unwrap().unwrap().ranges().len(), 1);
+                assert_eq!(calls.load(Ordering::SeqCst), 3);
+            } else {
+                assert!(is_caller_timeout(&waiter.await.unwrap_err()));
+                assert_eq!(calls.load(Ordering::SeqCst), 1);
+                assert!(cache
+                    .cached_routing_map(&container)
+                    .await
+                    .unwrap()
+                    .is_none());
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn owner_timeout_error_is_not_shared_or_cached_for_longer_waiter() {
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+        let (release, gate) = futures::channel::oneshot::channel::<()>();
+        let gate = futures::future::FutureExt::shared(gate);
+        let owner = cache.try_lookup_result(&container, false, |_, _| {
+            let gate = gate.clone();
+            async move {
+                gate.await.unwrap();
+                Err::<Option<PkRangeFetchResult>, _>(caller_timeout())
+            }
+        });
+        pin_mut!(owner);
+        assert!(futures::poll!(&mut owner).is_pending());
+        let waiter = cache.try_lookup_result(&container, false, test_fetch);
+        pin_mut!(waiter);
+        assert!(futures::poll!(&mut waiter).is_pending());
+        release.send(()).unwrap();
+        assert!(is_caller_timeout(&owner.await.unwrap_err()));
+        assert_eq!(waiter.await.unwrap().unwrap().ranges().len(), 1);
+        assert!(cache
+            .cached_routing_map(&container)
+            .await
+            .unwrap()
+            .is_some());
+    }
+
+    fn caller_timeout() -> crate::error::CosmosError {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::from_parts(
+                azure_core::http::StatusCode::RequestTimeout,
+                Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
+            ))
+            .with_message("caller deadline")
+            .build()
+    }
+
+    #[tokio::test]
+    async fn timed_out_or_cancelled_refresh_retains_last_good_map_without_cold_fallback() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+        let previous = cache
+            .try_lookup_result(&container, false, test_fetch)
+            .await
+            .unwrap()
+            .unwrap();
+        let calls = AtomicUsize::new(0);
+        let result = cache
+            .try_lookup_result(&container, true, |_, token| {
+                calls.fetch_add(1, Ordering::SeqCst);
+                assert_eq!(token.as_deref(), Some("test-etag"));
+                futures::future::ready(Err::<Option<PkRangeFetchResult>, _>(caller_timeout()))
+            })
+            .await;
+        assert!(is_caller_timeout(&result.unwrap_err()));
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        assert!(Arc::ptr_eq(
+            &previous,
+            &cache.cached_routing_map(&container).await.unwrap().unwrap()
+        ));
+        {
+            let refresh = cache.try_lookup_result(&container, true, |_, token| {
+                assert_eq!(token.as_deref(), Some("test-etag"));
+                futures::future::pending::<crate::error::Result<Option<PkRangeFetchResult>>>()
+            });
+            pin_mut!(refresh);
+            assert!(futures::poll!(&mut refresh).is_pending());
+            assert!(Arc::ptr_eq(
+                &previous,
+                &cache.cached_routing_map(&container).await.unwrap().unwrap()
+            ));
+        }
+        let refreshed = cache
+            .try_lookup_result(&container, true, test_fetch)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(refreshed.ranges(), previous.ranges());
+    }
+
+    #[tokio::test]
+    async fn ordinary_takeover_failure_preserves_last_good_map_after_refresh_abandonment() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        for owner_times_out in [false, true] {
+            let cache = PartitionKeyRangeCache::new();
+            let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+            let previous = cache
+                .try_lookup_result(&container, false, test_fetch)
+                .await
+                .unwrap()
+                .unwrap();
+            let (release, gate) = futures::channel::oneshot::channel::<()>();
+            let gate = futures::future::FutureExt::shared(gate);
+            let mut owner = Box::pin(cache.try_lookup_result(&container, true, |_, token| {
+                assert_eq!(token.as_deref(), Some("test-etag"));
+                let gate = gate.clone();
+                async move {
+                    gate.await.unwrap();
+                    Err::<Option<PkRangeFetchResult>, _>(caller_timeout())
+                }
+            }));
+            assert!(futures::poll!(&mut owner).is_pending());
+            let calls = AtomicUsize::new(0);
+            let waiter = cache.try_lookup_result(&container, false, |_, _| {
+                calls.fetch_add(1, Ordering::SeqCst);
+                futures::future::ready(Err::<Option<PkRangeFetchResult>, _>(
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message("takeover fetch failed")
+                        .build(),
+                ))
+            });
+            pin_mut!(waiter);
+            assert!(futures::poll!(&mut waiter).is_pending());
+            let joined = cache.try_lookup_result(
+                &container,
+                false,
+                |_, _| -> futures::future::Ready<Option<PkRangeFetchResult>> {
+                    panic!("joined waiter must share the takeover");
+                },
+            );
+            pin_mut!(joined);
+            assert!(futures::poll!(&mut joined).is_pending());
+            assert_eq!(calls.load(Ordering::SeqCst), 0);
+            if owner_times_out {
+                release.send(()).unwrap();
+                assert!(is_caller_timeout(&owner.await.unwrap_err()));
+            } else {
+                drop(owner);
+            }
+            let retained = waiter.await.unwrap().unwrap();
+            assert_eq!(retained.ranges(), previous.ranges());
+            assert_eq!(calls.load(Ordering::SeqCst), 2);
+            assert!(Arc::ptr_eq(&retained, &joined.await.unwrap().unwrap()));
+            assert!(Arc::ptr_eq(
+                &retained,
+                &cache.cached_routing_map(&container).await.unwrap().unwrap()
+            ));
+            let ordinary = cache
+                .try_lookup_result(
+                    &container,
+                    false,
+                    |_, _| -> futures::future::Ready<Option<PkRangeFetchResult>> {
+                        panic!("last-known-good map should remain initialized");
+                    },
+                )
+                .await
+                .unwrap()
+                .unwrap();
+            assert!(Arc::ptr_eq(&retained, &ordinary));
+            cache.invalidate(&container).await;
+            let after_invalidation = cache
+                .try_lookup_result(&container, false, |_, token| {
+                    assert!(token.is_none());
+                    futures::future::ready(Err::<Option<PkRangeFetchResult>, _>(caller_timeout()))
+                })
+                .await;
+            assert!(is_caller_timeout(&after_invalidation.unwrap_err()));
+            assert!(cache
+                .cached_routing_map(&container)
+                .await
+                .unwrap()
+                .is_none());
+        }
+    }
+
+    #[tokio::test]
+    async fn invalidation_during_initialization_does_not_publish_old_generation() {
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+        let (release, gate) = futures::channel::oneshot::channel::<()>();
+        let gate = futures::future::FutureExt::shared(gate);
+        let old = cache.try_lookup_result(&container, false, |container, token| {
+            let gate = gate.clone();
+            async move {
+                gate.await.unwrap();
+                test_fetch(container, token).await
+            }
+        });
+        pin_mut!(old);
+        assert!(futures::poll!(&mut old).is_pending());
+        cache.invalidate(&container).await;
+        let current = cache
+            .try_lookup_result(&container, false, test_fetch)
+            .await
+            .unwrap()
+            .unwrap();
+        release.send(()).unwrap();
+        let old = old.await.unwrap().unwrap();
+        assert!(!Arc::ptr_eq(&old, &current));
+        assert!(Arc::ptr_eq(
+            &current,
+            &cache.cached_routing_map(&container).await.unwrap().unwrap()
+        ));
+    }
 
     fn make_range(id: String, min: &str, max: &str) -> crate::error::Result<PkRange> {
         Ok(PkRange::new(
