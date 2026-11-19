@@ -449,6 +449,7 @@ mod tests {
         let props = ContainerProperties {
             id: Cow::Owned(coll_name.to_owned()),
             partition_key: pk_def,
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         ContainerReference::new(

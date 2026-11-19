@@ -222,6 +222,7 @@ mod tests {
         let props = ContainerProperties {
             id: "c".into(),
             partition_key: serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap(),
+            vector_embedding_policy: None,
             system_properties: Default::default(),
         };
         ContainerReference::new(account, "db", "db_rid", "c", rid, &props)

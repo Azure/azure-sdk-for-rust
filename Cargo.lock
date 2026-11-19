@@ -677,6 +677,56 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_cosmos_queryplan_linux_arm64"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "84703891cde635debec49b66dc90b8af16079ffc1a6c8b6d7043927a0b5e4313"
+
+[[package]]
+name = "azure_cosmos_queryplan_linux_x64"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "de2167df63d12de5456ad569c3380a03946829e6f799b7fd7d66d4b051cab548"
+
+[[package]]
+name = "azure_cosmos_queryplan_macos_arm64"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a86a88b259f8eacd95c5227c5c5ac98e8f73bf74bcd42b7db04867fdcd5e204e"
+
+[[package]]
+name = "azure_cosmos_queryplan_macos_x64"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd510ac0de2090ad41506e1ba3a8cbd13917dd22852ddb03b23dfb52e5d67d80"
+
+[[package]]
+name = "azure_cosmos_queryplan_sys"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc2cd8a37999914f66a6f143087d3d317763b095ff12e5bb56dc6c49a0c18619"
+dependencies = [
+ "azure_cosmos_queryplan_linux_arm64",
+ "azure_cosmos_queryplan_linux_x64",
+ "azure_cosmos_queryplan_macos_arm64",
+ "azure_cosmos_queryplan_macos_x64",
+ "azure_cosmos_queryplan_win_arm64",
+ "azure_cosmos_queryplan_win_x64",
+]
+
+[[package]]
+name = "azure_cosmos_queryplan_win_arm64"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6201b0649e3110016a1dcbd5fa30cbb9416c91c5191cd781cd1edc275fb778c3"
+
+[[package]]
+name = "azure_cosmos_queryplan_win_x64"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "faf54882c19904c70df88db5b346ae80b2cbad49cf37ea76bc43f318cbeacb2e"
+
+[[package]]
 name = "azure_data_cosmos"
 version = "1.1.0-beta.3"
 dependencies = [
@@ -732,6 +782,7 @@ dependencies = [
  "async-trait",
  "azure_core 1.1.0",
  "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "azure_cosmos_queryplan_sys",
  "azure_data_cosmos_macros",
  "azure_data_cosmos_test",
  "azure_identity 1.0.0",

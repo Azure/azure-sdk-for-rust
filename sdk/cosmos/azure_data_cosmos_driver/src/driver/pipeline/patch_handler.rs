@@ -1275,6 +1275,7 @@ mod tests {
         let props = ContainerProperties {
             id: "testcontainer".into(),
             partition_key: test_partition_key_definition("/pk"),
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         ContainerReference::new(
@@ -1521,6 +1522,7 @@ mod tests {
         let props = ContainerProperties {
             id: "multi_hash_container".into(),
             partition_key: pk_def,
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         let container = ContainerReference::new(
@@ -1551,6 +1553,7 @@ mod tests {
             let props = ContainerProperties {
                 id: "tracking_pk_container".into(),
                 partition_key: test_partition_key_definition(pk_path),
+                vector_embedding_policy: None,
                 system_properties: SystemProperties::default(),
             };
             let container = ContainerReference::new(

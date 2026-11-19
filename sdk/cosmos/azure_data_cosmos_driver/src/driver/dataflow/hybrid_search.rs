@@ -803,6 +803,7 @@ mod tests {
         let properties = ContainerProperties {
             id: "coll".into(),
             partition_key: PartitionKeyDefinition::new(vec!["/pk".into()]),
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         let container =

@@ -8189,6 +8189,7 @@ mod tests {
         let container_props = crate::models::ContainerProperties {
             id: container_name.to_owned().into(),
             partition_key: serde_json::from_str(pk_json).unwrap(),
+            vector_embedding_policy: None,
             system_properties: Default::default(),
         };
         ContainerReference::new(

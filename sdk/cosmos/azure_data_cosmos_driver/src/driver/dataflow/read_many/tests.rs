@@ -56,6 +56,7 @@ fn container() -> ContainerReference {
         &ContainerProperties {
             id: "items".into(),
             partition_key: PartitionKeyDefinition::new(vec!["/pk".into()]),
+            vector_embedding_policy: None,
             system_properties: Default::default(),
         },
     )
@@ -312,6 +313,7 @@ async fn prefix_routes_to_all_intersecting_ranges_and_rejects_gaps() {
         &ContainerProperties {
             id: "items".into(),
             partition_key: definition.clone(),
+            vector_embedding_policy: None,
             system_properties: Default::default(),
         },
     );
@@ -415,6 +417,7 @@ async fn id_partition_singleton_keeps_point_read_optimization() {
         &ContainerProperties {
             id: "items".into(),
             partition_key: PartitionKeyDefinition::new(vec!["/id".into()]),
+            vector_embedding_policy: None,
             system_properties: Default::default(),
         },
     );
