@@ -8,6 +8,8 @@
 
 - `default`
   - `azure_core/default`
+- `test`
+- `unstable_fake`
 
 ```rust
 #![crate_name = "azure_security_keyvault_keys"]
@@ -73,6 +75,9 @@ pub mod clients {
         pub async fn verify(&self, key_name: &str, key_version: &str, parameters: RequestContent<VerifyParameters>, options: Option<KeyClientVerifyOptions<'_>>) -> Result<Response<KeyVerifyResult>>;
         pub async fn wrap_key(&self, key_name: &str, parameters: RequestContent<KeyOperationParameters>, options: Option<KeyClientWrapKeyOptions<'_>>) -> Result<Response<KeyOperationResult>>;
     }
+    impl crate::KeyClient {
+        pub fn with_fake<impl KeyServer + ?Sized + 'static: KeyServer + ?Sized + 'static>(endpoint: &str, server: Arc<impl KeyServer + ?Sized + 'static>, options: Option<KeyClientOptions>) -> Result<Self>;
+    }
     #[derive(Clone, Debug)]
     pub struct KeyClientOptions {
         pub api_version: String,
@@ -81,6 +86,39 @@ pub mod clients {
     }
     impl Default for KeyClientOptions {
         fn default() -> Self;
+    }
+    #[cfg(all(feature = "test", feature = "unstable_fake"))]
+    pub mod fake {
+        #[async_trait]
+        pub trait KeyServer: Send + Sync {
+            async fn backup_key(&self, key_name: &str, options: Option<models::KeyClientBackupKeyOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn create_key(&self, key_name: &str, parameters: RequestContent<models::CreateKeyParameters>, options: Option<models::KeyClientCreateKeyOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn decrypt(&self, key_name: &str, key_version: &str, parameters: RequestContent<models::KeyOperationParameters>, options: Option<models::KeyClientDecryptOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn delete_key(&self, key_name: &str, options: Option<models::KeyClientDeleteKeyOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn encrypt(&self, key_name: &str, parameters: RequestContent<models::KeyOperationParameters>, options: Option<models::KeyClientEncryptOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get_deleted_key(&self, key_name: &str, options: Option<models::KeyClientGetDeletedKeyOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get_key(&self, key_name: &str, options: Option<models::KeyClientGetKeyOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get_key_attestation(&self, key_name: &str, options: Option<models::KeyClientGetKeyAttestationOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get_key_rotation_policy(&self, key_name: &str, options: Option<models::KeyClientGetKeyRotationPolicyOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn get_random_bytes(&self, parameters: RequestContent<models::GetRandomBytesParameters>, options: Option<models::KeyClientGetRandomBytesOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn import_key(&self, key_name: &str, parameters: RequestContent<models::ImportKeyParameters>, options: Option<models::KeyClientImportKeyOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list_deleted_key_properties(&self, state: PagerState, options: Option<models::KeyClientListDeletedKeyPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list_key_properties(&self, state: PagerState, options: Option<models::KeyClientListKeyPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn list_key_properties_versions(&self, key_name: &str, state: PagerState, options: Option<models::KeyClientListKeyPropertiesVersionsOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn purge_deleted_key(&self, key_name: &str, options: Option<models::KeyClientPurgeDeletedKeyOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn recover_deleted_key(&self, key_name: &str, options: Option<models::KeyClientRecoverDeletedKeyOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn release(&self, key_name: &str, parameters: RequestContent<models::ReleaseParameters>, options: Option<models::KeyClientReleaseOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn restore_key(&self, parameters: RequestContent<models::RestoreKeyParameters>, options: Option<models::KeyClientRestoreKeyOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn rotate_key(&self, key_name: &str, options: Option<models::KeyClientRotateKeyOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn secure_unwrap_key(&self, key_name: &str, key_version: &str, parameters: RequestContent<models::SecureKeyUnWrapOperationParameters>, options: Option<models::KeyClientSecureUnwrapKeyOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn secure_wrap_key(&self, key_name: &str, parameters: RequestContent<models::SecureKeyWrapOperationParameters>, options: Option<models::KeyClientSecureWrapKeyOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn sign(&self, key_name: &str, parameters: RequestContent<models::SignParameters>, options: Option<models::KeyClientSignOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn unwrap_key(&self, key_name: &str, key_version: &str, parameters: RequestContent<models::KeyOperationParameters>, options: Option<models::KeyClientUnwrapKeyOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn update_key_properties(&self, key_name: &str, parameters: RequestContent<models::UpdateKeyPropertiesParameters>, options: Option<models::KeyClientUpdateKeyPropertiesOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn update_key_rotation_policy(&self, key_name: &str, key_rotation_policy: RequestContent<models::KeyRotationPolicy>, options: Option<models::KeyClientUpdateKeyRotationPolicyOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn verify(&self, key_name: &str, key_version: &str, parameters: RequestContent<models::VerifyParameters>, options: Option<models::KeyClientVerifyOptions<'_>>) -> Result<AsyncRawResponse>;
+            async fn wrap_key(&self, key_name: &str, parameters: RequestContent<models::KeyOperationParameters>, options: Option<models::KeyClientWrapKeyOptions<'_>>) -> Result<AsyncRawResponse>;
+        }
     }
 }
 pub mod models {
@@ -92,6 +130,8 @@ pub mod models {
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     pub struct CreateKeyParameters {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub alg: Option<super::AkpAlgorithm>,
         #[serde(rename = "crv", skip_serializing_if = "Option::is_none")]
         pub curve: Option<super::CurveName>,
         #[serde(rename = "attributes", skip_serializing_if = "Option::is_none")]
@@ -185,6 +225,8 @@ pub mod models {
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     pub struct JsonWebKey {
         #[serde(skip_serializing_if = "Option::is_none")]
+        pub alg: Option<super::AkpAlgorithm>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub crv: Option<super::CurveName>,
         #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", serialize_with = "base64::option::serialize_url_safe", skip_serializing_if = "Option::is_none")]
         pub d: Option<Vec<u8>>,
@@ -206,6 +248,8 @@ pub mod models {
         pub n: Option<Vec<u8>>,
         #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", serialize_with = "base64::option::serialize_url_safe", skip_serializing_if = "Option::is_none")]
         pub p: Option<Vec<u8>>,
+        #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", rename = "pub", serialize_with = "base64::option::serialize_url_safe", skip_serializing_if = "Option::is_none")]
+        pub pub_prop: Option<Vec<u8>>,
         #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", serialize_with = "base64::option::serialize_url_safe", skip_serializing_if = "Option::is_none")]
         pub q: Option<Vec<u8>>,
         #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", serialize_with = "base64::option::serialize_url_safe", skip_serializing_if = "Option::is_none")]
@@ -610,6 +654,10 @@ pub mod models {
         #[serde(rename = "alg", skip_serializing_if = "Option::is_none")]
         pub algorithm: Option<super::SignatureAlgorithm>,
         #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", serialize_with = "base64::option::serialize_url_safe", skip_serializing_if = "Option::is_none")]
+        pub context: Option<Vec<u8>>,
+        #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", serialize_with = "base64::option::serialize_url_safe", skip_serializing_if = "Option::is_none")]
+        pub external_mu: Option<Vec<u8>>,
+        #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", serialize_with = "base64::option::serialize_url_safe", skip_serializing_if = "Option::is_none")]
         pub value: Option<Vec<u8>>,
     }
     impl TryFrom<SignParameters> for azure_core::http::RequestContent<super::SignParameters> {
@@ -636,13 +684,43 @@ pub mod models {
         #[serde(rename = "alg", skip_serializing_if = "Option::is_none")]
         pub algorithm: Option<super::SignatureAlgorithm>,
         #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", serialize_with = "base64::option::serialize_url_safe", skip_serializing_if = "Option::is_none")]
+        pub context: Option<Vec<u8>>,
+        #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", serialize_with = "base64::option::serialize_url_safe", skip_serializing_if = "Option::is_none")]
         pub digest: Option<Vec<u8>>,
+        #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", serialize_with = "base64::option::serialize_url_safe", skip_serializing_if = "Option::is_none")]
+        pub external_mu: Option<Vec<u8>>,
         #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", rename = "value", serialize_with = "base64::option::serialize_url_safe", skip_serializing_if = "Option::is_none")]
         pub signature: Option<Vec<u8>>,
     }
     impl TryFrom<VerifyParameters> for azure_core::http::RequestContent<super::VerifyParameters> {
         type Error = Error;
         fn try_from(value: VerifyParameters) -> Result<Self>;
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub enum AkpAlgorithm {
+        MlDsa44,
+        MlDsa65,
+        MlDsa87,
+        UnknownValue(String),
+    }
+    impl AsRef<str> for super::AkpAlgorithm {
+        fn as_ref(&self) -> &str;
+    }
+    impl Display for super::AkpAlgorithm {
+        fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
+    }
+    impl FromStr for super::AkpAlgorithm {
+        type Err = Infallible;
+        fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
+    }
+    impl Serialize for super::AkpAlgorithm {
+        fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
+    }
+    impl<'a> From<&'a AkpAlgorithm> for &'a str {
+        fn from(e: &'a AkpAlgorithm) -> Self;
+    }
+    impl<'de> Deserialize<'de> for super::AkpAlgorithm {
+        fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
     pub enum CurveName {
@@ -805,6 +883,8 @@ pub mod models {
         Encrypt,
         Export,
         Import,
+        SecureUnwrapKey,
+        SecureWrapKey,
         Sign,
         UnwrapKey,
         Verify,
@@ -853,6 +933,8 @@ pub mod models {
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
     pub enum KeyType {
+        Akp,
+        AkpHsm,
         Ec,
         EcHsm,
         Oct,

@@ -6,10 +6,14 @@ use super::{
     SendBatchSucceededContext,
 };
 use crate::{
-    error::ErrorKind, models::EventData, producer::batch::EventDataBatchInner, EventHubsError,
+    common::diagnostics::{Diagnostics, Operation},
+    error::ErrorKind,
+    models::EventData,
+    producer::batch::EventDataBatchInner,
+    EventHubsError,
 };
 use async_lock::SemaphoreGuardArc;
-use azure_core::{sleep, time::Duration};
+use azure_core::{sleep, time::Duration, tracing::SpanKind};
 use azure_core_amqp::{AmqpMessage, AmqpSendOutcome};
 use futures::{
     channel::{mpsc, oneshot},
@@ -112,6 +116,11 @@ impl PartitionWorker {
             "Buffered producer partition worker started."
         );
 
+        // One scope owns preparation and all transport retries. Its real span
+        // timestamps include batch-fill gaps; only active work contributes to
+        // the operation-duration metric. Enqueue and callback time are excluded.
+        let diagnostics = self.send_client.diagnostics().cloned();
+        let mut telemetry = None;
         let mut batch: Option<EventDataBatchInner> = None;
         let mut pending: Vec<PendingEvent> = Vec::new();
         let mut timer: Option<Pin<Box<dyn Future<Output = ()> + Send>>> = None;
@@ -121,6 +130,9 @@ impl PartitionWorker {
                 break;
             }
 
+            if let Some(operation) = telemetry.as_mut() {
+                Operation::pause(operation);
+            }
             let command = match timer.as_mut() {
                 // The batch is empty. Wait for a command with no timer running.
                 None => self.receiver.next().await,
@@ -133,7 +145,7 @@ impl PartitionWorker {
                                 partition_id = %self.partition_id,
                                 "Maximum wait time expired; sending the partial batch."
                             );
-                            self.send_batch(&mut batch, &mut pending).await;
+                            self.send_batch(&mut batch, &mut pending, &mut telemetry).await;
                             timer = None;
                             continue;
                         }
@@ -149,7 +161,8 @@ impl PartitionWorker {
                     partition_id = %self.partition_id,
                     "Partition queue closed; draining the active batch."
                 );
-                self.send_batch(&mut batch, &mut pending).await;
+                self.send_batch(&mut batch, &mut pending, &mut telemetry)
+                    .await;
                 break;
             };
 
@@ -163,6 +176,8 @@ impl PartitionWorker {
                         &mut batch,
                         &mut pending,
                         &mut timer,
+                        diagnostics.as_deref(),
+                        &mut telemetry,
                         event,
                         *message,
                         permit,
@@ -175,12 +190,14 @@ impl PartitionWorker {
                             event_count = pending.len(),
                             "Batch reached the configured event count; sending it."
                         );
-                        self.send_batch(&mut batch, &mut pending).await;
+                        self.send_batch(&mut batch, &mut pending, &mut telemetry)
+                            .await;
                         timer = None;
                     }
                 }
                 Command::Flush(completed) => {
-                    self.send_batch(&mut batch, &mut pending).await;
+                    self.send_batch(&mut batch, &mut pending, &mut telemetry)
+                        .await;
                     timer = None;
                     if self.abandon.load(Ordering::Acquire) {
                         // The client abandoned the events during this flush, so
@@ -195,6 +212,7 @@ impl PartitionWorker {
             }
         }
 
+        drop(telemetry);
         if self.abandon.load(Ordering::Acquire) {
             self.discard_remaining(pending).await;
         }
@@ -218,19 +236,35 @@ impl PartitionWorker {
     /// Adds one event to the active batch, and sends the batch when the event
     /// does not fit.
     #[allow(clippy::too_many_arguments)]
-    async fn add_event(
+    async fn add_event<'a>(
         &self,
         batch: &mut Option<EventDataBatchInner>,
         pending: &mut Vec<PendingEvent>,
         timer: &mut Option<Pin<Box<dyn Future<Output = ()> + Send>>>,
+        diagnostics: Option<&'a Diagnostics>,
+        telemetry: &mut Option<Operation<'a>>,
         event: EventData,
         message: AmqpMessage,
         permit: SemaphoreGuardArc,
     ) {
+        if telemetry.is_none() {
+            *telemetry =
+                diagnostics.map(|d| d.logical("ProducerClient.send", "send", SpanKind::Producer));
+        }
+        if let Some(operation) = telemetry.as_mut() {
+            operation.resume();
+        }
         // The batch needs the maximum message size of the link, so it is created
         // on the first event.
         if batch.is_none() {
-            match self.send_client.max_message_size(&self.partition_id).await {
+            match self
+                .send_client
+                .max_message_size(
+                    &self.partition_id,
+                    telemetry.as_ref().and_then(|t| t.span.clone()),
+                )
+                .await
+            {
                 Ok(max_size) => {
                     *batch = Some(EventDataBatchInner::new(max_size, None));
                 }
@@ -239,7 +273,15 @@ impl PartitionWorker {
                         partition_id = %self.partition_id,
                         "Could not read the maximum message size; failing the event."
                     );
-                    self.fail_one(event, permit, error).await;
+                    self.fail_preparation(
+                        event,
+                        permit,
+                        error,
+                        pending.is_empty(),
+                        diagnostics,
+                        telemetry,
+                    )
+                    .await;
                     return;
                 }
             }
@@ -260,7 +302,8 @@ impl PartitionWorker {
             Ok(false) if active.is_empty() => {
                 // One event on its own is larger than the whole batch. Fail that
                 // event only. The worker stays healthy.
-                self.fail_oversized(event, permit).await;
+                self.fail_oversized(event, permit, pending.is_empty(), diagnostics, telemetry)
+                    .await;
             }
             Ok(false) => {
                 // The batch is full. Send it, then start a new batch with this event.
@@ -268,7 +311,9 @@ impl PartitionWorker {
                     partition_id = %self.partition_id,
                     "The next event does not fit; sending the full batch."
                 );
-                self.send_batch(batch, pending).await;
+                self.send_batch(batch, pending, telemetry).await;
+                *telemetry = diagnostics
+                    .map(|d| d.logical("ProducerClient.send", "send", SpanKind::Producer));
                 *timer = None;
 
                 let active = batch.as_mut().expect("the batch is reused after a send");
@@ -277,8 +322,14 @@ impl PartitionWorker {
                         pending.push((event, permit));
                         *timer = Some(Box::pin(sleep(self.max_wait_time)));
                     }
-                    Ok(false) => self.fail_oversized(event, permit).await,
-                    Err(error) => self.fail_one(event, permit, error).await,
+                    Ok(false) => {
+                        self.fail_oversized(event, permit, true, diagnostics, telemetry)
+                            .await
+                    }
+                    Err(error) => {
+                        self.fail_preparation(event, permit, error, true, diagnostics, telemetry)
+                            .await
+                    }
                 }
             }
             Err(error) => {
@@ -286,24 +337,68 @@ impl PartitionWorker {
                     partition_id = %self.partition_id,
                     "Could not add an event to the batch; failing that event."
                 );
-                self.fail_one(event, permit, error).await;
+                self.fail_preparation(
+                    event,
+                    permit,
+                    error,
+                    pending.is_empty(),
+                    diagnostics,
+                    telemetry,
+                )
+                .await;
             }
         }
     }
 
-    async fn fail_oversized(&self, event: EventData, permit: SemaphoreGuardArc) {
+    async fn fail_oversized<'a>(
+        &self,
+        event: EventData,
+        permit: SemaphoreGuardArc,
+        empty: bool,
+        diagnostics: Option<&'a Diagnostics>,
+        telemetry: &mut Option<Operation<'a>>,
+    ) {
         warn!(
             partition_id = %self.partition_id,
             "An event is too large for an empty batch; failing that event."
         );
-        self.fail_one(
+        self.fail_preparation(
             event,
             permit,
             EventHubsError::with_message(
                 "The event is too large for the maximum message size of the link.",
             ),
+            empty,
+            diagnostics,
+            telemetry,
         )
         .await;
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    async fn fail_preparation<'a>(
+        &self,
+        event: EventData,
+        permit: SemaphoreGuardArc,
+        error: EventHubsError,
+        empty: bool,
+        diagnostics: Option<&'a Diagnostics>,
+        telemetry: &mut Option<Operation<'a>>,
+    ) {
+        let mut failure = if empty {
+            telemetry.take()
+        } else {
+            diagnostics.map(|d| d.logical("ProducerClient.send", "send", SpanKind::Producer))
+        };
+        if let Some(operation) = failure.as_mut() {
+            operation.set_message_count(1);
+            operation.finish(&Err::<(), _>(&error), 0);
+        }
+        drop(failure);
+        if let Some(operation) = telemetry.as_mut() {
+            operation.pause();
+        }
+        self.fail_one(event, permit, error).await;
     }
 
     /// Reports one event as failed and returns its capacity permit.
@@ -328,6 +423,7 @@ impl PartitionWorker {
         &self,
         batch: &mut Option<EventDataBatchInner>,
         pending: &mut Vec<PendingEvent>,
+        telemetry: &mut Option<Operation<'_>>,
     ) {
         let Some(active) = batch.as_mut() else {
             return;
@@ -344,6 +440,9 @@ impl PartitionWorker {
             return;
         }
 
+        if let Some(operation) = telemetry.as_mut() {
+            operation.resume();
+        }
         let batch_size_in_bytes = active.size();
         let envelope = active.take_envelope();
         let (events, permits): (Vec<EventData>, Vec<SemaphoreGuardArc>) =
@@ -357,10 +456,32 @@ impl PartitionWorker {
             "Sending a batch of events."
         );
 
+        if let Some(operation) = telemetry.as_mut() {
+            operation.set_message_count(event_count as u64);
+        }
         let outcome = self
             .send_client
-            .send_envelope(&self.partition_id, envelope)
+            .send_envelope(
+                &self.partition_id,
+                envelope,
+                telemetry.as_ref().and_then(|t| t.span.clone()),
+            )
             .await;
+
+        if let Some(mut operation) = telemetry.take() {
+            match &outcome {
+                Ok(AmqpSendOutcome::Accepted) => {
+                    operation.finish(&Ok::<(), EventHubsError>(()), event_count as u64)
+                }
+                Err(error) => operation.finish(&Err::<(), _>(error), 0),
+                Ok(_) => operation.finish(
+                    &Err::<(), _>(EventHubsError::from(ErrorKind::SendNotAccepted(
+                        "the service did not accept the buffered batch".into(),
+                    ))),
+                    0,
+                ),
+            }
+        }
 
         // The send settled, so every event in the batch is at a terminal
         // outcome whatever that outcome is. Give the capacity back before the

@@ -7,7 +7,7 @@ use super::{
     recover_azure_operation, AmqpError, AmqpMessage, AmqpSendOutcome, AmqpSenderApis,
     ErrorRecoveryAction, RecoverableConnection, RecoverableSender, SenderInvalidated,
 };
-use crate::RetryOptions;
+use crate::{common::diagnostics::tests::provider, RetryOptions};
 use azure_core::http::Url;
 use azure_core_amqp::{AmqpErrorKind, AmqpTransport};
 use azure_core_test::credentials::MockCredential;
@@ -15,8 +15,12 @@ use fe2o3_amqp::{
     acceptor::{
         ConnectionAcceptor, LinkAcceptor, LinkEndpoint, SaslAnonymousMechanism, SessionAcceptor,
     },
-    types::{messaging::Body, primitives::Value},
+    types::{
+        messaging::{Body, Modified},
+        primitives::Value,
+    },
 };
+use opentelemetry::trace::Status;
 use std::{
     error::Error,
     future::pending,
@@ -637,4 +641,103 @@ async fn deadline_after_self_recovery_preserves_replacement_generation() {
     assert_timed_out(&operation.await.unwrap_err());
     assert_eq!(connection.generation(), 2);
     assert!(replacement.get().is_none());
+}
+
+#[tokio::test]
+async fn disposition_spans_report_non_accepted_outcomes_without_changing_results() {
+    timeout(Duration::from_secs(10), async {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = Url::parse(&format!("amqp://{}/hub", listener.local_addr().unwrap())).unwrap();
+        let peer = tokio::spawn(async move {
+            let (stream, _) = listener.accept().await.unwrap();
+            let mut connection = ConnectionAcceptor::builder()
+                .container_id("disposition-peer")
+                .sasl_acceptor(SaslAnonymousMechanism {})
+                .build()
+                .accept(stream)
+                .await
+                .unwrap();
+            let mut session = SessionAcceptor::new()
+                .accept(&mut connection)
+                .await
+                .unwrap();
+            let LinkEndpoint::Receiver(mut receiver) =
+                LinkAcceptor::new().accept(&mut session).await.unwrap()
+            else {
+                panic!("expected an SDK sender");
+            };
+            receiver.set_auto_accept(false);
+            let accepted = receiver.recv::<Body<Value>>().await.unwrap();
+            receiver.accept(&accepted).await.unwrap();
+            let released = receiver.recv::<Body<Value>>().await.unwrap();
+            receiver.release(&released).await.unwrap();
+            let modified = receiver.recv::<Body<Value>>().await.unwrap();
+            receiver
+                .modify(
+                    &modified,
+                    Modified {
+                        delivery_failed: Some(true),
+                        undeliverable_here: Some(false),
+                        message_annotations: None,
+                    },
+                )
+                .await
+                .unwrap();
+            // Keep the link alive until the client has observed all dispositions.
+            pending::<()>().await;
+            drop((receiver, session, connection));
+        });
+        let (provider, exporter, _sdk) = provider();
+        let connection = RecoverableConnection::new(
+            url.clone(),
+            None,
+            None,
+            AmqpTransport::Tcp,
+            None,
+            Arc::new(MockCredential),
+            RetryOptions::default(),
+            None,
+        );
+        connection.authorizer.disable_authorization().unwrap();
+        connection
+            .authorizer
+            .set_token_refresh_bias_for_test(azure_core::time::Duration::seconds(1))
+            .unwrap();
+        connection.configure_tracing(Some(provider));
+        let sender = connection.get_sender(url).await.unwrap();
+        assert!(matches!(
+            sender.send(AmqpMessage::default(), None).await.unwrap(),
+            AmqpSendOutcome::Accepted
+        ));
+        assert!(matches!(
+            sender.send(AmqpMessage::default(), None).await.unwrap(),
+            AmqpSendOutcome::Released
+        ));
+        let AmqpSendOutcome::Modified(modified) =
+            sender.send(AmqpMessage::default(), None).await.unwrap()
+        else {
+            panic!("expected unchanged modified outcome");
+        };
+        assert_eq!(modified.delivery_failed, Some(true));
+        assert_eq!(modified.undeliverable_here, Some(false));
+        let spans: Vec<_> = exporter
+            .get_finished_spans()
+            .unwrap()
+            .into_iter()
+            .filter(|span| span.name == "EventHubs.send.disposition")
+            .collect();
+        peer.abort();
+        assert!(peer.await.unwrap_err().is_cancelled());
+        assert_eq!(spans.len(), 3);
+        assert_eq!(spans[0].status, Status::Unset);
+        for span in &spans[1..] {
+            assert!(
+                matches!(span.status, Status::Error { .. }),
+                "a disposition that was not accepted must be an error: {:?}",
+                span.status
+            );
+        }
+    })
+    .await
+    .expect("local AMQP dispositions should complete");
 }

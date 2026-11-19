@@ -1402,7 +1402,7 @@ impl BlobContainerClient {
 }
 
 /// Default value for [`BlobContainerClientOptions::version`].
-pub(crate) const DEFAULT_VERSION: &str = "2026-12-06";
+pub(crate) const DEFAULT_VERSION: &str = "2027-03-07";
 
 impl Default for BlobContainerClientOptions {
     fn default() -> Self {

@@ -1,6 +1,6 @@
 [package]
 name = "azure_security_keyvault_keys"
-version = "1.1.0-beta.2"
+version = "1.1.0-beta.3"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Key Vault Keys"
 readme = "README.md"
 authors.workspace = true
@@ -16,6 +16,8 @@ exclude.workspace = true
 
 [features]
 default = ["azure_core/default"]
+test = ["azure_core/test"]
+unstable_fake = ["test", "azure_core/unstable_fake"]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -47,3 +49,7 @@ rustc_version.workspace = true
 
 [lints]
 workspace = true
+
+[[example]]
+name = "key_client_fake"
+required-features = ["test", "unstable_fake"]

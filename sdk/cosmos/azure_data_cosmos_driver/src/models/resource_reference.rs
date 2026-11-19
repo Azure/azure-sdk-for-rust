@@ -9,7 +9,7 @@
 
 use crate::models::{
     resource_id::{ResourceId, ResourceIdentifier, ResourceName},
-    AccountReference, PartitionKey, PartitionKeyDefinition,
+    AccountReference, PartitionKey, PartitionKeyDefinition, VectorEmbeddingPolicy,
 };
 
 use std::borrow::Cow;
@@ -137,6 +137,9 @@ struct ContainerReferenceInner {
     container_rid: ResourceId,
     /// Partition key definition for this container.
     partition_key_definition: PartitionKeyDefinition,
+    /// Vector embedding policy. `None` when the container has no policy.
+    #[cfg_attr(not(feature = "__internal_native_query_plan"), allow(dead_code))]
+    vector_embedding_policy: Option<VectorEmbeddingPolicy>,
     /// Pre-computed RID-based path: `/dbs/{db_rid}/colls/{container_rid}`.
     rid_based_path: Box<str>,
     /// Name-based addressing data. `Some` when the container was resolved by name,
@@ -211,6 +214,7 @@ impl ContainerReference {
             container_name,
             container_rid,
             partition_key_definition: container_properties.partition_key.clone(),
+            vector_embedding_policy: container_properties.vector_embedding_policy.clone(),
             rid_based_path,
             name_addressing: Some(NameAddressing {
                 db_name,
@@ -248,6 +252,7 @@ impl ContainerReference {
             container_name,
             container_rid,
             partition_key_definition: container_properties.partition_key.clone(),
+            vector_embedding_policy: container_properties.vector_embedding_policy.clone(),
             rid_based_path,
             name_addressing: None,
         }))
@@ -281,6 +286,12 @@ impl ContainerReference {
     /// Returns the partition key definition for this container.
     pub fn partition_key_definition(&self) -> &crate::models::PartitionKeyDefinition {
         &self.0.partition_key_definition
+    }
+
+    /// Returns the container's vector embedding policy, if any.
+    #[cfg_attr(not(feature = "__internal_native_query_plan"), allow(dead_code))]
+    pub(crate) fn vector_embedding_policy(&self) -> Option<&VectorEmbeddingPolicy> {
+        self.0.vector_embedding_policy.as_ref()
     }
 
     /// Returns the name-based relative path `/dbs/{db_name}/colls/{container_name}`,
@@ -758,6 +769,7 @@ mod tests {
         let container_properties = ContainerProperties {
             id: "my-container".into(),
             partition_key,
+            vector_embedding_policy: None,
             system_properties: Default::default(),
         };
 
@@ -781,6 +793,7 @@ mod tests {
         let container_properties = ContainerProperties {
             id: "my-container".into(),
             partition_key,
+            vector_embedding_policy: None,
             system_properties: Default::default(),
         };
 
@@ -791,6 +804,45 @@ mod tests {
             "container-rid",
             &container_properties,
         )
+    }
+
+    #[test]
+    fn container_read_keeps_vector_embedding_policy() {
+        let account = AccountReference::with_account_key(
+            Url::parse("https://example.documents.azure.com:443/").unwrap(),
+            "test-key",
+        );
+        let policy_json = serde_json::json!({
+            "vectorEmbeddings": [{
+                "path": "/v",
+                "dataType": "float32",
+                "dimensions": 3,
+                "distanceFunction": "euclidean",
+                "futureEmbeddingKnob": true
+            }],
+            "futurePolicyKnob": 1
+        });
+        let container_properties: ContainerProperties = serde_json::from_value(serde_json::json!({
+            "id": "c",
+            "partitionKey": { "paths": ["/pk"] },
+            "vectorEmbeddingPolicy": policy_json
+        }))
+        .unwrap();
+        let container =
+            ContainerReference::new(account, "db", "db-rid", "c", "c-rid", &container_properties);
+
+        let policy = container.vector_embedding_policy().unwrap();
+        assert_eq!(policy.vector_embeddings[0].path, "/v");
+        assert_eq!(policy.vector_embeddings[0].dimensions, Some(3));
+        assert_eq!(
+            policy.vector_embeddings[0].distance_function.as_deref(),
+            Some("euclidean")
+        );
+        // Fields the driver does not model round-trip to the query planner unchanged.
+        assert_eq!(serde_json::to_value(policy).unwrap(), policy_json);
+        assert!(make_container_reference()
+            .vector_embedding_policy()
+            .is_none());
     }
 
     #[test]

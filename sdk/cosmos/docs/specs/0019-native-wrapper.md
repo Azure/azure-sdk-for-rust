@@ -194,7 +194,7 @@ When this spec says "inherited from the original wrapper" elsewhere, it means PR
 
 ### 3.1 Invocation model — completion queues
 
-> **Visual overview:** see [`sdk/cosmos/docs/specs/0020-native-async-invocation.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0020-native-async-invocation.md) for the picture-first walkthrough of every flow described below (component layout, submission lifecycle, two-handle ownership, queue states, per-language pinning).
+> **Visual overview:** see `sdk/cosmos/docs/specs/0020-native-async-invocation.md` for the picture-first walkthrough of every flow described below (component layout, submission lifecycle, two-handle ownership, queue states, per-language pinning).
 
 Every operation that touches the network in this wrapper is **asynchronous and non-blocking at the FFI boundary**. Submitting a request returns a lightweight in-flight handle (`cosmos_operation_handle_t`); the response (or error) is delivered later on a caller-owned **completion queue** (`cosmos_cq_t`). Host SDKs spin one or more "receive loop" threads that wait on a queue, dequeue completed operations, and dispatch them — typically by carrying the host-language continuation (e.g. a .NET `TaskCompletionSource`) through the `void *user_data` field round-trip.
 
@@ -605,7 +605,7 @@ The wrapper's error surface is built on two complementary types — a **packed `
 
 - **Diagnosability.** `400 Bad Request` is the canonical example: callers cannot debug it without the gateway response body, headers (`x-ms-activity-id`, `x-ms-substatus`), and the driver's `DiagnosticsContext` for the failed attempt. The rich payload exposes all three.
 - **Failure-class routing.** Host SDKs translate `cosmos_error_is_not_found(e)` / `_is_conflict(e)` / `_is_precondition_failed(e)` / `_is_throttled(e)` etc. into their language-native exceptions (`CosmosException` subclasses in Java, dedicated error variants in Go, `CosmosException.StatusCode` in .NET). Routing is **classification**, not retry.
-- **What host SDKs do NOT do.** They do **not** drive retry loops, back-off timers, conditional-write recovery, or cross-region failover off the wrapper's error surface — those are owned by the driver's pipeline (`transport_pipeline.rs`, the throttle / failover / circuit-breaker components, and the `OperationOptions` retry knobs). A host SDK that re-implements any of these on top of the wrapper is defeating the whole point of the driver split.
+- **What host SDKs do NOT do.** They do **not** drive retry loops, back-off timers, conditional-write recovery, or cross-region failover off the wrapper's error surface — those are owned by the driver's pipeline (`pipeline/transport/execution.rs`, the throttle / failover / circuit-breaker components, and the `OperationOptions` retry knobs). A host SDK that re-implements any of these on top of the wrapper is defeating the whole point of the driver split.
 
 > **Landing prerequisites — read this before implementing.** §3.5.2 below and §6 mirror the **actually merged** shape of `azure_data_cosmos_driver::error::CosmosError` from PR [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442) (now on `main`). Notable departures from earlier drafts of this spec:
 >

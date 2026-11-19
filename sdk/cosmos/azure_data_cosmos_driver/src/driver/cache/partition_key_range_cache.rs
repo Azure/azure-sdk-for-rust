@@ -880,6 +880,7 @@ mod tests {
         let container_props = crate::models::ContainerProperties {
             id: "testcontainer".into(),
             partition_key: serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap(),
+            vector_embedding_policy: None,
             system_properties: Default::default(),
         };
         let container = ContainerReference::new(
@@ -910,6 +911,7 @@ mod tests {
         let container_props = crate::models::ContainerProperties {
             id: "testcontainer".into(),
             partition_key: serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap(),
+            vector_embedding_policy: None,
             system_properties: Default::default(),
         };
         let container = ContainerReference::new(
@@ -939,6 +941,7 @@ mod tests {
         let container_props = crate::models::ContainerProperties {
             id: "testcontainer".into(),
             partition_key: serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap(),
+            vector_embedding_policy: None,
             system_properties: Default::default(),
         };
         let container = ContainerReference::new(
@@ -1071,6 +1074,7 @@ mod tests {
         let container_props = crate::models::ContainerProperties {
             id: "testcontainer".into(),
             partition_key: serde_json::from_str(pk_json).unwrap(),
+            vector_embedding_policy: None,
             system_properties: Default::default(),
         };
         ContainerReference::new(

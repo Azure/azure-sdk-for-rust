@@ -26,4 +26,4 @@ pub use ip_range::SasIpRange;
 pub use protocol::SasProtocol;
 
 /// The SAS service version targeted by this crate.
-pub(crate) const SAS_VERSION: &str = "2026-04-06";
+pub(crate) const SAS_VERSION: &str = "2027-03-07";

@@ -23,7 +23,7 @@ use azure_core::{
     error::CheckSuccessOptions,
     http::{
         pager::{PagerContinuation, PagerResult, PagerState},
-        poller::resource_manager::{new_poller, FinalStateVia},
+        poller::resource_manager::new_poller,
         Method, Pager, Pipeline, PipelineSendOptions, Poller, RawResponse, Request, RequestContent,
         Response, Url, UrlExt,
     },
@@ -88,7 +88,17 @@ impl KeyVaultManagedHsmsClient {
         options: Option<KeyVaultManagedHsmsClientBeginCreateOrUpdateOptions<'_>>,
     ) -> Result<Poller<KeyVaultManagedHsmsClientBeginCreateOrUpdateOperationStatus>> {
         let options = options.unwrap_or_default().into_owned();
-        let pipeline = self.pipeline.clone();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_managed_hsms_client_begin_create_or_update(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(name)).to_owned(),
+                options.method_options.frequency,
+            );
+            options
+        };
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/managedHSMs/{name}");
         path = path.replace("{name}", name);
@@ -103,9 +113,9 @@ impl KeyVaultManagedHsmsClient {
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
         Ok(new_poller(
-            pipeline,
+            self.pipeline.clone(),
             request,
-            Some(FinalStateVia::Location),
+            None,
             Some(options.method_options),
         ))
     }
@@ -152,7 +162,17 @@ impl KeyVaultManagedHsmsClient {
         options: Option<KeyVaultManagedHsmsClientBeginDeleteOptions<'_>>,
     ) -> Result<Poller<KeyVaultManagedHsmsClientBeginDeleteOperationStatus>> {
         let options = options.unwrap_or_default().into_owned();
-        let pipeline = self.pipeline.clone();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_managed_hsms_client_begin_delete(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(name)).to_owned(),
+                options.method_options.frequency,
+            );
+            options
+        };
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/managedHSMs/{name}");
         path = path.replace("{name}", name);
@@ -164,7 +184,7 @@ impl KeyVaultManagedHsmsClient {
         query_builder.build();
         let request = Request::new(url, Method::Delete);
         Ok(new_poller(
-            pipeline,
+            self.pipeline.clone(),
             request,
             None,
             Some(options.method_options),
@@ -213,7 +233,17 @@ impl KeyVaultManagedHsmsClient {
         options: Option<KeyVaultManagedHsmsClientBeginPurgeDeletedOptions<'_>>,
     ) -> Result<Poller<KeyVaultManagedHsmsClientBeginPurgeDeletedOperationStatus>> {
         let options = options.unwrap_or_default().into_owned();
-        let pipeline = self.pipeline.clone();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_managed_hsms_client_begin_purge_deleted(
+                &mut options.method_options.context,
+                (*(location)).to_owned(),
+                (*(name)).to_owned(),
+                options.method_options.frequency,
+            );
+            options
+        };
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/providers/Microsoft.KeyVault/locations/{location}/deletedManagedHSMs/{name}/purge");
         path = path.replace("{location}", location);
@@ -225,7 +255,7 @@ impl KeyVaultManagedHsmsClient {
         query_builder.build();
         let request = Request::new(url, Method::Post);
         Ok(new_poller(
-            pipeline,
+            self.pipeline.clone(),
             request,
             None,
             Some(options.method_options),
@@ -276,7 +306,17 @@ impl KeyVaultManagedHsmsClient {
         options: Option<KeyVaultManagedHsmsClientBeginUpdateOptions<'_>>,
     ) -> Result<Poller<KeyVaultManagedHsmsClientBeginUpdateOperationStatus>> {
         let options = options.unwrap_or_default().into_owned();
-        let pipeline = self.pipeline.clone();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_managed_hsms_client_begin_update(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(name)).to_owned(),
+                options.method_options.frequency,
+            );
+            options
+        };
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/managedHSMs/{name}");
         path = path.replace("{name}", name);
@@ -291,9 +331,9 @@ impl KeyVaultManagedHsmsClient {
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
         Ok(new_poller(
-            pipeline,
+            self.pipeline.clone(),
             request,
-            Some(FinalStateVia::Location),
+            None,
             Some(options.method_options),
         ))
     }
@@ -366,6 +406,16 @@ impl KeyVaultManagedHsmsClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_managed_hsms_client_get(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                (*(name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/managedHSMs/{name}");
@@ -421,6 +471,16 @@ impl KeyVaultManagedHsmsClient {
             ));
         }
         let options = options.unwrap_or_default();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_managed_hsms_client_get_deleted(
+                &mut options.method_options.context,
+                (*(location)).to_owned(),
+                (*(name)).to_owned(),
+            );
+            options
+        };
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/providers/Microsoft.KeyVault/locations/{location}/deletedManagedHSMs/{name}");
@@ -469,6 +529,16 @@ impl KeyVaultManagedHsmsClient {
             ));
         }
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_managed_hsms_client_list_by_resource_group(
+                &mut options.method_options.context,
+                (*(resource_group_name)).to_owned(),
+                options.top,
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         let mut path = String::from("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/managedHSMs");
@@ -549,6 +619,15 @@ impl KeyVaultManagedHsmsClient {
         options: Option<KeyVaultManagedHsmsClientListBySubscriptionOptions<'_>>,
     ) -> Result<Pager<ManagedHsmListResult>> {
         let options = options.unwrap_or_default().into_owned();
+        #[cfg(all(feature = "test", feature = "unstable_fake"))]
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_key_vault_managed_hsms_client_list_by_subscription(
+                &mut options.method_options.context,
+                options.top,
+            );
+            options
+        };
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
         let mut path = String::from(

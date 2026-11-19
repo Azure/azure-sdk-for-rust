@@ -139,7 +139,55 @@ fn generate_default(input: &OptionsInput) -> Result<proc_macro2::TokenStream> {
 #[cfg(test)]
 mod tests {
     use super::derive_cosmos_options_impl;
+    use std::{fs, path::Path};
     use syn::DeriveInput;
+
+    #[test]
+    fn docs_rs_includes_public_features() {
+        const IGNORE: &[&str] = &["default"];
+
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
+        let manifest: toml::Table = fs::read_to_string(path)
+            .expect("read Cargo.toml")
+            .parse()
+            .expect("parse Cargo.toml");
+        let features = manifest
+            .get("features")
+            .map(|value| value.as_table().expect("features must be a table"));
+        let docs_metadata =
+            ["package", "metadata", "docs", "rs"]
+                .iter()
+                .try_fold(&manifest, |table, key| {
+                    table
+                        .get(*key)
+                        .map(|value| value.as_table().expect("docs.rs metadata must be tables"))
+                });
+        let docs_features: Vec<&str> = docs_metadata
+            .and_then(|table| table.get("features"))
+            .map(|value| {
+                value
+                    .as_array()
+                    .expect("docs.rs features must be an array")
+                    .iter()
+                    .map(|value| value.as_str().expect("feature names must be strings"))
+                    .collect()
+            })
+            .unwrap_or_default();
+        let missing: Vec<&str> = features
+            .into_iter()
+            .flat_map(|features| features.keys())
+            .map(String::as_str)
+            .filter(|feature| {
+                !feature.starts_with("__")
+                    && !IGNORE.contains(feature)
+                    && !docs_features.contains(feature)
+            })
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "Add these features to package.metadata.docs.rs.features: {missing:?}"
+        );
+    }
 
     #[test]
     fn conditional_field_gates_every_generated_member() {

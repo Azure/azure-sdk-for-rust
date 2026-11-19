@@ -105,7 +105,7 @@ The following section provides several code snippets using a `SecretClient` like
 - [Update an existing secret](#update-an-existing-secret)
 - [Delete a secret](#delete-a-secret)
 - [List secrets](#list-secrets)
-- [Fake service responses](#fake-service-responses)
+- [Testing with fakes](#testing-with-fakes)
 
 ### Create a secret
 
@@ -206,7 +206,7 @@ while let Some(secret) = pager.try_next().await? {
 }
 ```
 
-## Testing with fakes
+### Testing with fakes
 
 Enable the crate's `test` and `unstable_fake` features in your test dependencies.
 `unstable_fake` enables `test` automatically, but both are shown explicitly below.
@@ -265,7 +265,7 @@ let secret = client.get_secret("my-secret", None).await?.into_model()?;
 assert_eq!(secret.value.as_deref(), Some("fake value"));
 ```
 
-### Fake service responses
+#### Fake service responses
 
 The experimental [fake server example] lists two secrets,
 retrieves their values, and simulates a service error without credentials or network access.

@@ -636,7 +636,7 @@ impl CosmosResourceReference {
     /// path computation.
     ///
     /// Also consumed by
-    /// [`is_operation_supported_by_gateway_v2`](crate::driver::transport::is_operation_supported_by_gateway_v2)
+    /// [`is_operation_supported_by_gateway_v2`](crate::pipeline::transport::is_operation_supported_by_gateway_v2)
     /// to route RID-addressed operations to standard Gateway, since Gateway 2.0
     /// derives its routing tokens by parsing the name-based signing link.
     pub(crate) fn is_rid_addressed(&self) -> bool {
@@ -967,6 +967,7 @@ mod tests {
         ContainerProperties {
             id: "testcontainer".into(),
             partition_key: test_partition_key_definition(),
+            vector_embedding_policy: None,
             system_properties: Default::default(),
         }
     }

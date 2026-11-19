@@ -67,6 +67,7 @@ pub use distributed_transaction::{
     DistributedTransactionResponse, DistributedTransactionResultBody, DistributedTransactionTarget,
     DistributedTransactionType,
 };
+pub(crate) use patch::parse_patch_request;
 pub use resource_id::is_database_rid;
 // Cosmos status types are owned by `crate::error::cosmos_status` (canonical home,
 // tightly coupled to the typed Cosmos error). Re-exported here for ergonomic access
@@ -131,9 +132,56 @@ pub(crate) struct ContainerProperties {
     /// Partition key definition specifying the partition key path(s).
     pub partition_key: PartitionKeyDefinition,
 
+    /// Vector embedding policy; drives `VectorDistance` ordering in query plans.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vector_embedding_policy: Option<VectorEmbeddingPolicy>,
+
     /// System-managed properties (e.g., _rid, _ts, _etag).
     #[serde(flatten)]
     pub system_properties: SystemProperties,
+}
+
+/// Vector embedding policy of a container.
+///
+/// Fields the driver does not model are kept in `extra` so the policy
+/// round-trips unchanged to the query planner.
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct VectorEmbeddingPolicy {
+    /// Vector embeddings declared on the container.
+    #[serde(default)]
+    pub vector_embeddings: Vec<VectorEmbedding>,
+
+    /// Properties this version of the driver does not model.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
+}
+
+/// A single vector embedding of a [`VectorEmbeddingPolicy`].
+///
+/// Everything except `path` is optional so an unexpected policy shape
+/// cannot fail container resolution.
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct VectorEmbedding {
+    /// Path to the property containing the vector (e.g., `/embedding`).
+    pub path: String,
+
+    /// Element data type (e.g., `float32`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub data_type: Option<String>,
+
+    /// Number of dimensions in the vector.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dimensions: Option<u32>,
+
+    /// Distance function (e.g., `cosine`, `dotproduct`, `euclidean`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub distance_function: Option<String>,
+
+    /// Properties this version of the driver does not model.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 /// Partition key definition for a container.
@@ -788,9 +836,13 @@ impl AsRef<str> for OperationType {
 /// read-your-writes consistency within a session.
 ///
 /// Explicit tokens take precedence over cached state. Gateway V2 may send a
-/// topology-scoped copy of a compound token without modifying this value. When
-/// the scope cannot be established safely, classic Gateway receives the original.
-/// This normalization is independent of automatic session capture.
+/// topology-scoped copy of a compound token without modifying this value, loading
+/// partition topology on demand. If topology loads but safe scoping is unavailable,
+/// Gateway V2 omits the token and downgrades Session consistency to Eventual for
+/// that attempt. This fallback does not guarantee read-your-writes. Non-session
+/// consistency settings are preserved. Topology-loading failures and malformed
+/// compound tokens return errors. Attempts already using classic Gateway send the
+/// original token. This behavior is independent of automatic session capture.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct SessionToken(Cow<'static, str>);
 

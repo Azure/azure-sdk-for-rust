@@ -61,7 +61,9 @@ use uuid::Uuid;
 #[path = "framework/mod.rs"]
 mod framework;
 
-use framework::{resource_manager_from_env, CosmosResourceManager, ResourceManager};
+use framework::{
+    resource_manager_from_env, seeded_json::SplitMix64, CosmosResourceManager, ResourceManager,
+};
 
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 const AUTH_MODE_ENV_VAR: &str = "AZURE_COSMOS_AUTH_MODE";
@@ -108,29 +110,6 @@ const SIZE_SCALE_LIMIT: u32 = 1024;
 // Seeded PRNG (SplitMix64) — deterministic and dependency-feature-free, matching
 // the codebase's in-tree fuzz convention so a failure reproduces from its seed.
 // ─────────────────────────────────────────────────────────────────────────────
-
-struct SplitMix64 {
-    state: u64,
-}
-
-impl SplitMix64 {
-    fn new(seed: u64) -> Self {
-        Self { state: seed }
-    }
-
-    fn next_u64(&mut self) -> u64 {
-        self.state = self.state.wrapping_add(0x9E37_79B9_7F4A_7C15);
-        let mut z = self.state;
-        z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
-        z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
-        z ^ (z >> 31)
-    }
-
-    /// Uniform integer in `[0, n)`. `n` must be non-zero.
-    fn below(&mut self, n: u64) -> u64 {
-        self.next_u64() % n
-    }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuration

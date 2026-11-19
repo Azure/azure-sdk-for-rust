@@ -11,17 +11,14 @@ use std::time::Duration;
 
 use crate::{
     driver::{
-        pipeline::{
-            components::{RoutingDecision, TransportMode},
-            hedging_diagnostics::HedgingStrategyConfig,
-        },
+        pipeline::{components::RoutingDecision, hedging_diagnostics::HedgingStrategyConfig},
         routing::AccountEndpointState,
-        transport::EndpointKey,
     },
     models::{CosmosOperation, OperationType, ResourceType},
     options::{
         AvailabilityStrategy, HedgeThreshold, HedgingStrategy, OperationOptionsView, Region,
     },
+    pipeline::transport::{types::TransportMode, EndpointKey},
 };
 
 /// Default hedge threshold cap used by [`resolve_availability_strategy`]
@@ -410,6 +407,7 @@ mod tests {
         let container_props = ContainerProperties {
             id: std::borrow::Cow::Borrowed("c"),
             partition_key: PartitionKeyDefinition::new(vec![std::borrow::Cow::Borrowed("/pk")]),
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         ContainerReference::new(account, "db", "db_rid", "c", "c_rid", &container_props)

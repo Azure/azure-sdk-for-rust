@@ -76,16 +76,10 @@ async fn try_plan_query_using_native_planner(
         .body()
         .and_then(|body| std::str::from_utf8(body).ok())
         .map(|query_spec| {
-            let partition_key = container.partition_key_definition();
-            let paths: Vec<&str> = partition_key
-                .paths()
-                .iter()
-                .map(|path| path.as_ref())
-                .collect();
             driver.native_query_plan_provider.get_query_plan(
                 query_spec,
-                &paths,
-                partition_key.kind(),
+                container.partition_key_definition(),
+                container.vector_embedding_policy(),
                 &query_engine_config,
             )
         });
@@ -239,6 +233,7 @@ mod tests {
                 r#"{"paths":["/pk"],"version":2}"#,
             )
             .unwrap(),
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         ContainerReference::new(account, "db", "db_rid", "coll", "coll_rid", &properties)
@@ -256,5 +251,38 @@ mod tests {
         let query_plan_operation = build_gateway_query_plan_operation(&container, &operation);
 
         assert_eq!(query_plan_operation.absolute_deadline(), Some(deadline));
+    }
+
+    #[cfg(feature = "__internal_native_query_plan")]
+    #[tokio::test]
+    async fn unavailable_native_library_falls_back_to_local_planner() {
+        let container = test_container();
+        let runtime = crate::driver::CosmosDriverRuntimeBuilder::new()
+            .build()
+            .await
+            .unwrap();
+        let mut driver = CosmosDriver::new(
+            runtime,
+            crate::options::DriverOptions::builder(container.account().clone()).build(),
+        )
+        .unwrap();
+        driver.native_query_plan_provider =
+            crate::query_plan_native::NativeQueryPlanProvider::unavailable();
+        let operation =
+            CosmosOperation::query_items(container.clone(), Some(crate::models::FeedRange::full()))
+                .with_body(br#"{"query":"SELECT * FROM c WHERE c.pk = 'a'"}"#.to_vec());
+
+        // The driver has no network; a plan here means the local planner served it.
+        let resolved = resolve_query_plan(
+            &driver,
+            &container,
+            &operation,
+            &OperationOptions::default(),
+            &PlanOptions::default(),
+        )
+        .await
+        .unwrap();
+
+        assert!(matches!(resolved, ResolvedQueryPlan::Plan(_)));
     }
 }

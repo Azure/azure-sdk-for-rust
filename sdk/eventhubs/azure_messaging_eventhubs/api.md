@@ -10,6 +10,7 @@
 - `fe2o3_amqp`
 - `fe2o3_amqp_rustls`
 - `in_memory_checkpoint_store`
+- `metrics`
 
 ```rust
 #![crate_name = "azure_messaging_eventhubs"]
@@ -224,6 +225,7 @@ pub mod builders {
         pub fn with_on_send_failed<F, Fut>(self, handler: F) -> Self where F: Fn(SendBatchFailedContext) -> Fut + Send + Sync + 'static, Fut: Future<Output = ()> + Send + 'static;
         pub fn with_on_send_succeeded<F, Fut>(self, handler: F) -> Self where F: Fn(SendBatchSucceededContext) -> Fut + Send + Sync + 'static, Fut: Future<Output = ()> + Send + 'static;
         pub fn with_retry_options(self, retry_options: RetryOptions) -> Self;
+        pub fn with_tracing_provider(self, provider: Arc<dyn azure_core::tracing::TracerProvider>) -> Self;
     }
     impl Default for BufferedProducerClientBuilder {
         fn default() -> Self;
@@ -240,6 +242,7 @@ pub mod builders {
         pub fn with_idle_timeout(self, idle_timeout: Duration) -> Self;
         pub fn with_instance_id(self, instance_id: String) -> Self;
         pub fn with_retry_options(self, retry_options: RetryOptions) -> Self;
+        pub fn with_tracing_provider(self, provider: Arc<dyn azure_core::tracing::TracerProvider>) -> Self;
         pub fn with_transport(self, transport: AmqpTransport) -> Self;
     }
     #[derive(Default)]
@@ -264,6 +267,7 @@ pub mod builders {
         pub fn with_custom_endpoint(self, endpoint: String) -> Self;
         pub fn with_idle_timeout(self, idle_timeout: Duration) -> Self;
         pub fn with_retry_options(self, retry_options: RetryOptions) -> Self;
+        pub fn with_tracing_provider(self, provider: Arc<dyn azure_core::tracing::TracerProvider>) -> Self;
         pub fn with_transport(self, transport: AmqpTransport) -> Self;
     }
 }

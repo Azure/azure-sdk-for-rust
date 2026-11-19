@@ -1,1 +1,2 @@
+https://docs.rs/azure_identity/latest/azure_identity/struct.GitHubActionsCredential.html
 https://docs.rs/azure_identity/latest/azure_identity/trait.TokenProxyClient.html

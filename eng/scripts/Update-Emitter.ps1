@@ -8,9 +8,9 @@
     Updates eng/emitter-package.json to the latest @azure-tools/typespec-rust version.
 
 .DESCRIPTION
-    Queries npmjs.org for the latest version of @azure-tools/typespec-rust, fetches
-    its package.json from GitHub, and updates any matching peerDependencies or
-    devDependencies in our eng/emitter-package.json devDependencies.
+    Queries npmjs.org for the latest version of @azure-tools/typespec-rust and
+    updates any matching peerDependencies or devDependencies in our
+    eng/emitter-package.json devDependencies.
     Runs 'tsp-client generate-lock-file' afterward.
 
 .PARAMETER Regenerate
@@ -61,12 +61,8 @@ $npmData = Invoke-RestMethod -Uri 'https://registry.npmjs.org/@azure-tools/types
 $latestVersion = $npmData.version
 Write-Host "Latest version: $latestVersion"
 
-# Fetch the upstream package.json from the corresponding GitHub tag.
-$packageJsonUrl = "https://raw.githubusercontent.com/Azure/typespec-rust/v$latestVersion/packages/typespec-rust/package.json"
-Write-Host "Fetching upstream package.json from v$latestVersion tag"
-$upstreamPackage = Invoke-RestMethod -Uri $packageJsonUrl
-$upstreamDevDeps = if ($upstreamPackage.devDependencies) { $upstreamPackage.devDependencies } else { [PSCustomObject]@{} }
-$upstreamPeerDeps = if ($upstreamPackage.peerDependencies) { $upstreamPackage.peerDependencies } else { [PSCustomObject]@{} }
+$upstreamDevDeps = if ($npmData.devDependencies) { $npmData.devDependencies } else { [PSCustomObject]@{} }
+$upstreamPeerDeps = if ($npmData.peerDependencies) { $npmData.peerDependencies } else { [PSCustomObject]@{} }
 
 # Read our emitter-package.json and check if an update is needed.
 $emitterPackage = Get-Content $EmitterPackagePath -Raw | ConvertFrom-Json

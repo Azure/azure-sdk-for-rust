@@ -1,6 +1,6 @@
 [package]
 name = "azure_resourcemanager_keyvault"
-version = "0.1.0"
+version = "0.2.0"
 description = "Azure Resource Manager client library for Azure Key Vault"
 readme = "README.md"
 authors.workspace = true
@@ -16,6 +16,8 @@ exclude.workspace = true
 
 [features]
 default = ["azure_core/default"]
+test = ["azure_core/test"]
+unstable_fake = ["test", "azure_core/unstable_fake"]
 
 [dependencies]
 async-trait = { workspace = true }
@@ -38,3 +40,7 @@ workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
+
+[[example]]
+name = "key_vault_client_fake"
+required-features = ["test", "unstable_fake"]

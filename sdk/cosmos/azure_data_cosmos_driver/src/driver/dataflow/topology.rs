@@ -195,6 +195,8 @@ mod tests {
         let pending = cache.try_lookup_result(&container, false, |_, _| {
             futures::future::pending::<crate::error::Result<Option<PkRangeFetchResult>>>()
         });
+        // Polling requires a pinned reference; the macro prevents this async future
+        // from moving while it holds the cache fetch open for the assertion below.
         futures::pin_mut!(pending);
         assert!(futures::poll!(pending.as_mut()).is_pending());
 
@@ -220,6 +222,7 @@ mod tests {
         let props = ContainerProperties {
             id: "c".into(),
             partition_key: serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap(),
+            vector_embedding_policy: None,
             system_properties: Default::default(),
         };
         ContainerReference::new(account, "db", "db_rid", "c", rid, &props)

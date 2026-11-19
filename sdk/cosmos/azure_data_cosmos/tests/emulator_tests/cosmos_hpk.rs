@@ -875,6 +875,8 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
                 // gateway builds emit the same rejection with sub-status 0 (e.g. for
                 // `SELECT VALUE COUNT(1) FROM c`). Both encode the same product behavior, so
                 // this test asserts only on the HTTP status and tolerates either sub-status.
+                // With the native query planner the query is planned locally and the driver
+                // rejects it itself with sub-status 20113 (ClientUnsupportedQueryFeature).
                 assert_eq!(
                     status.status_code(),
                     StatusCode::BadRequest,
@@ -883,8 +885,9 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
                 if let Some(sub) = status.sub_status() {
                     assert!(
                         sub == azure_data_cosmos_driver::error::status_codes::substatus::CROSS_PARTITION_QUERY_NOT_SERVABLE
+                            || sub == azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
                             || sub == SubStatusCode::new(0),
-                        "expected sub-status 1004 or 0 for {query}, got {sub:?}"
+                        "expected sub-status 1004, 20113 or 0 for {query}, got {sub:?}"
                     );
                 }
             }

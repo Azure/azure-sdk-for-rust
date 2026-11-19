@@ -16,8 +16,8 @@
 //! instances, then pass your factory to
 //! [`CosmosDriverRuntimeBuilder::with_mock_http_client_factory`](crate::CosmosDriverRuntimeBuilder::with_mock_http_client_factory).
 
-pub use crate::driver::transport::{
+pub use crate::options::ConnectionPoolOptions;
+pub use crate::pipeline::transport::{
     cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
     http_client_factory::{HttpClientConfig, HttpClientFactory},
 };
-pub use crate::options::ConnectionPoolOptions;

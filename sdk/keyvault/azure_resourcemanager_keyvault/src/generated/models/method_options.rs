@@ -370,6 +370,42 @@ impl KeyVaultManagedHsmsClientListDeletedOptions<'_> {
     }
 }
 
+/// Options to be passed to [`KeyVaultNetworkSecurityPerimeterConfigurationsClient::get_configuration()`](crate::generated::clients::KeyVaultNetworkSecurityPerimeterConfigurationsClient::get_configuration())
+#[derive(Clone, Default, SafeDebug)]
+pub struct KeyVaultNetworkSecurityPerimeterConfigurationsClientGetConfigurationOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+/// Options to be passed to [`KeyVaultNetworkSecurityPerimeterConfigurationsClient::list_configurations()`](crate::generated::clients::KeyVaultNetworkSecurityPerimeterConfigurationsClient::list_configurations())
+#[derive(Clone, Default, SafeDebug)]
+pub struct KeyVaultNetworkSecurityPerimeterConfigurationsClientListConfigurationsOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: PagerOptions<'a>,
+}
+
+impl KeyVaultNetworkSecurityPerimeterConfigurationsClientListConfigurationsOptions<'_> {
+    /// Transforms this [`KeyVaultNetworkSecurityPerimeterConfigurationsClientListConfigurationsOptions`] into a new `KeyVaultNetworkSecurityPerimeterConfigurationsClientListConfigurationsOptions` that owns the underlying data, cloning it if necessary.
+    pub fn into_owned(
+        self,
+    ) -> KeyVaultNetworkSecurityPerimeterConfigurationsClientListConfigurationsOptions<'static>
+    {
+        KeyVaultNetworkSecurityPerimeterConfigurationsClientListConfigurationsOptions {
+            method_options: PagerOptions {
+                context: self.method_options.context.into_owned(),
+                ..self.method_options
+            },
+        }
+    }
+}
+
+/// Options to be passed to [`KeyVaultNetworkSecurityPerimeterConfigurationsClient::reconcile_configuration()`](crate::generated::clients::KeyVaultNetworkSecurityPerimeterConfigurationsClient::reconcile_configuration())
+#[derive(Clone, Default, SafeDebug)]
+pub struct KeyVaultNetworkSecurityPerimeterConfigurationsClientReconcileConfigurationOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+}
+
 /// Options to be passed to [`KeyVaultOperationsClient::list()`](crate::generated::clients::KeyVaultOperationsClient::list())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyVaultOperationsClientListOptions<'a> {
