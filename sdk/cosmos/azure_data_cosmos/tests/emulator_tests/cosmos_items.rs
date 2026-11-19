@@ -14,6 +14,10 @@ use azure_data_cosmos::models::{ContainerProperties, PartitionKeyVersion};
 use azure_data_cosmos::options::{
     ContentResponseOnWrite, ItemWriteOptions, OperationOptions, Precondition,
 };
+#[cfg(feature = "unstable_delete_by_partition_key")]
+use azure_data_cosmos::options::{
+    ItemReadOptions, OperationOptionsBuilder, QueryOptions, ReadConsistencyStrategy,
+};
 use azure_data_cosmos::PartitionKey;
 use azure_data_cosmos_driver::{
     models::{AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference},
@@ -387,6 +391,12 @@ async fn begin_delete_by_partition_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
             let container = create_container(run_context).await?;
+            let operation_options = OperationOptionsBuilder::new()
+                .with_read_consistency_strategy(ReadConsistencyStrategy::LatestCommitted)
+                .build();
+            let read_options =
+                ItemReadOptions::default().with_operation_options(operation_options.clone());
+            let query_options = QueryOptions::default().with_operation_options(operation_options);
             for (pk, id) in [
                 ("target", "shared"),
                 ("target", "second"),
@@ -395,7 +405,7 @@ async fn begin_delete_by_partition_key() -> Result<(), Box<dyn Error>> {
                 let item = serde_json::json!({"id": id, "partition_key": pk});
                 container.create_item(pk, id, &item, None).await?;
                 let stored: serde_json::Value = run_context
-                    .read_item(&container, pk, id, None)
+                    .read_item(&container, pk, id, Some(read_options.clone()))
                     .await?
                     .into_model()?;
                 assert_eq!(stored["id"], id);
@@ -412,7 +422,10 @@ async fn begin_delete_by_partition_key() -> Result<(), Box<dyn Error>> {
 
             // Absence proves invisibility, not whether physical deletion or masking occurred.
             for id in ["shared", "second"] {
-                let error = container.read_item("target", id, None).await.unwrap_err();
+                let error = container
+                    .read_item("target", id, Some(read_options.clone()))
+                    .await
+                    .unwrap_err();
                 assert_eq!(error.status().status_code(), StatusCode::NotFound);
             }
             for (scope, expected) in [
@@ -430,7 +443,11 @@ async fn begin_delete_by_partition_key() -> Result<(), Box<dyn Error>> {
                 ),
             ] {
                 let mut pages = container
-                    .query_items::<String>("SELECT VALUE c.id FROM c", scope, None)
+                    .query_items::<String>(
+                        "SELECT VALUE c.id FROM c",
+                        scope,
+                        Some(query_options.clone()),
+                    )
                     .await?
                     .into_pages();
                 let mut actual = Vec::new();
@@ -440,7 +457,7 @@ async fn begin_delete_by_partition_key() -> Result<(), Box<dyn Error>> {
                 assert_eq!(actual, expected);
             }
             let control: serde_json::Value = container
-                .read_item("control", "shared", None)
+                .read_item("control", "shared", Some(read_options))
                 .await?
                 .into_model()?;
             assert_eq!(control["id"], "shared");
