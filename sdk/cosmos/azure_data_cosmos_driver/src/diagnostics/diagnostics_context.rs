@@ -447,6 +447,14 @@ pub struct RequestDiagnostics {
     /// Region this request was sent to.
     region: Option<Region>,
 
+    /// Physical range of the served query page (service response or wire target).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    partition_key_range_id: Option<String>,
+
+    /// This wire attempt supplied the returned query leaf page.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    served_query_page: bool,
+
     /// Endpoint URI contacted.
     endpoint: String,
 
@@ -534,6 +542,8 @@ impl RequestDiagnostics {
             transport_kind,
             transport_http_version,
             region: endpoint.region().cloned(),
+            partition_key_range_id: None,
+            served_query_page: false,
             endpoint: endpoint.url().as_str().to_owned(),
             // Status is set when the request completes via `complete()`.
             // Using 0 as sentinel value for "not yet completed".
@@ -584,6 +594,8 @@ impl RequestDiagnostics {
             transport_kind: TransportKind::Gateway,
             transport_http_version: TransportHttpVersion::Http2,
             region,
+            partition_key_range_id: None,
+            served_query_page: false,
             endpoint: endpoint.into(),
             status,
             request_charge,
@@ -1943,6 +1955,16 @@ impl DiagnosticsContextBuilder {
         self.complete_request(handle, status_code, headers.substatus);
     }
 
+    /// Marks the final transport attempt on successful completion of a routed query leaf.
+    /// The selected leg's requests have just been appended in transport order;
+    /// `complete` has not yet recovered any dropped leg from the hedge journal.
+    pub(crate) fn mark_served_query_page(&mut self, range_id: &str) {
+        if let Some(request) = self.requests.last_mut().filter(|r| r.status.is_success()) {
+            request.partition_key_range_id = Some(range_id.to_owned());
+            request.served_query_page = true;
+        }
+    }
+
     /// Records completion of a request.
     ///
     /// Should be called when the HTTP response is received.
@@ -2828,9 +2850,8 @@ impl DiagnosticsContext {
             // out (an alternate region is present); otherwise fall back to any
             // attached hedge diagnostics. Taking the last match mirrors how the
             // aggregate inherits its operation-level fields from the last
-            // sub-op. Limitation: only one representative survives, so if two
-            // sub-ops both fanned out to different alternates, `requested_regions`
-            // recovers only the representative one's dropped leg.
+            // sub-op. This is not a winner for the whole aggregate; each
+            // source contributes its own bounded dispatch and response histories.
             hedge_diagnostics: sources
                 .iter()
                 .rev()
@@ -2982,9 +3003,8 @@ impl DiagnosticsContext {
     /// entry, since it never produced a service reply.
     ///
     /// For an aggregated operation (e.g. PATCH) stitched from multiple
-    /// sub-operations, recovery uses the single representative `hedge_diagnostics`
-    /// retained by `aggregate_sub_operations`, so if more than one sub-operation
-    /// fanned out, only the representative fan-out's dropped leg is recovered.
+    /// sub-operations, aggregation combines their bounded dispatch histories,
+    /// independently of the single representative hedge outcome.
     ///
     /// Order is dispatch order: each fan-out's two legs are spliced in at the
     /// point the race was dispatched, primary before alternate.

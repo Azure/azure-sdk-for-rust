@@ -182,6 +182,27 @@ fn round_trip_state(state: PipelineNodeState, op: &CosmosOperation) -> PipelineN
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
+#[tokio::test]
+async fn unordered_query_has_one_leaf_in_flight() -> Result<()> {
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
+    ])]);
+    let mut pipeline = build_sequential_drain(
+        &full_range_plan(),
+        &mut topology,
+        &cross_partition_query_operation(),
+        None,
+    )
+    .await?;
+    super::assert_serial_leaf_requests(
+        &mut pipeline,
+        [page_response(b"left", None), page_response(b"right", None)],
+    )
+    .await;
+    Ok(())
+}
+
 /// Baseline: a single-partition query that pages once, serializes, resumes,
 /// and drains. No topology change. Sanity-checks the end-to-end round-trip
 /// before the more interesting split scenarios.

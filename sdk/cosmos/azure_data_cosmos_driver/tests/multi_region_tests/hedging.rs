@@ -21,6 +21,8 @@
 
 #![cfg(feature = "fault_injection")]
 
+mod multi_range;
+
 use crate::framework::{is_regional_readiness_error, DriverTestClient};
 use azure_data_cosmos_driver::diagnostics::{DiagnosticsContext, HedgeTerminalState};
 use azure_data_cosmos_driver::error::CosmosError;

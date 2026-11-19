@@ -764,11 +764,22 @@ mod parsing_tests;
 
 #[cfg(test)]
 mod tests {
-    use std::{hint::black_box, time::Instant};
+    use std::{
+        hint::black_box,
+        time::{Duration, Instant},
+    };
 
     use super::*;
     use crate::binary_json::{markers, PREAMBLE};
+    use crate::diagnostics::{
+        ExecutionContext, HedgeDiagnostics, HedgingStrategyConfig, PipelineKind,
+        TransportHttpVersion, TransportKind, TransportSecurity,
+    };
     use crate::driver::dataflow::mocks::{self, response};
+    use crate::driver::routing::CosmosEndpoint;
+    use crate::models::RequestCharge;
+    use crate::options::{DiagnosticsVerbosity, HedgeThreshold, Region};
+    use azure_core::http::StatusCode;
 
     fn binary_string(value: &str) -> Vec<u8> {
         let mut bytes = vec![markers::ENCODED_STRING_LENGTH_MIN + value.len() as u8];
@@ -1531,6 +1542,141 @@ mod tests {
                 .as_ref()
                 .map(SessionToken::as_str),
             Some("0:1#10,1:1#20")
+        );
+    }
+
+    #[test]
+    fn merged_page_keeps_each_serving_range_and_only_winning_session_tokens() {
+        fn leaf(range: &str, token: &'static str, alternate_wins: bool) -> PipelineResponse {
+            let mut parent = DiagnosticsContextBuilder::new(
+                ActivityId::new_uuid(),
+                Arc::new(DiagnosticsOptions::default()),
+            );
+            let mut primary = parent.clone_for_hedge_attempt();
+            let record =
+                |leg: &mut DiagnosticsContextBuilder, reason, region, status, token, ru| {
+                    let endpoint = CosmosEndpoint::regional(
+                        region,
+                        url::Url::parse("https://acct.example/").unwrap(),
+                    );
+                    let handle = leg.start_request(
+                        reason,
+                        PipelineKind::DataPlane,
+                        TransportSecurity::Secure,
+                        TransportKind::Gateway,
+                        TransportHttpVersion::Http2,
+                        &endpoint,
+                    );
+                    let headers = CosmosResponseHeaders {
+                        partition_key_range_id: Some(range.to_owned()),
+                        session_token: Some(SessionToken::new(token)),
+                        request_charge: Some(RequestCharge::new(ru)),
+                        ..Default::default()
+                    };
+                    leg.record_response(handle, status, &headers);
+                    headers
+                };
+            let config = HedgingStrategyConfig::new(
+                HedgeThreshold::new(Duration::from_millis(500)).unwrap(),
+            );
+            let (headers, outcome) = if alternate_wins {
+                let mut alternate = parent.clone_for_hedge_attempt();
+                parent.record_hedge_fanout(
+                    primary.leg_dispatch(Some(Region::EAST_US_2), ExecutionContext::Initial),
+                    alternate.leg_dispatch(Some(Region::WEST_US_2), ExecutionContext::Hedging),
+                );
+                // A service reply from the losing leg is observable, but its
+                // larger LSN must never advance the returned page token.
+                record(
+                    &mut primary,
+                    ExecutionContext::Initial,
+                    Region::EAST_US_2,
+                    StatusCode::TooManyRequests,
+                    "0:1#999",
+                    2.0,
+                );
+                let headers = record(
+                    &mut alternate,
+                    ExecutionContext::Hedging,
+                    Region::WEST_US_2,
+                    StatusCode::Ok,
+                    token,
+                    3.0,
+                );
+                parent.merge_hedge_attempt(alternate);
+                (
+                    headers,
+                    HedgeDiagnostics::hedge_won(config, Region::EAST_US_2, Region::WEST_US_2),
+                )
+            } else {
+                // Pre-threshold primary: no alternate or fan-out record exists.
+                let headers = record(
+                    &mut primary,
+                    ExecutionContext::Initial,
+                    Region::EAST_US_2,
+                    StatusCode::Ok,
+                    token,
+                    3.0,
+                );
+                parent.merge_hedge_attempt(primary);
+                (
+                    headers,
+                    HedgeDiagnostics::primary_only(config, Region::EAST_US_2),
+                )
+            };
+            parent.set_hedge_diagnostics(outcome);
+            parent.mark_served_query_page(range);
+            parent.set_operation_status(StatusCode::Ok, None);
+            PipelineResponse::new(
+                PipelineBody::NoPayload,
+                headers,
+                CosmosStatus::new(StatusCode::Ok),
+                Arc::new(parent.complete()),
+            )
+        }
+
+        let mut aggregator = PageAggregator::new(false);
+        aggregator.absorb(&leaf("0", "0:1#10", true)).unwrap();
+        aggregator.absorb(&leaf("1", "1:1#20", false)).unwrap();
+        let page = aggregator.build_page(Vec::new());
+        let diagnostics = page.diagnostics();
+        assert!(diagnostics.hedging_started());
+        assert_eq!(diagnostics.requested_regions().len(), 3);
+        assert_eq!(diagnostics.request_count(), 3);
+        assert_eq!(
+            page.headers().session_token.as_ref().unwrap().as_str(),
+            "0:1#10,1:1#20"
+        );
+        assert_eq!(page.headers().request_charge, Some(RequestCharge::new(6.0)));
+        // Sum of observed replies, not the service's bill for all dispatched work.
+        assert_eq!(diagnostics.total_request_charge(), RequestCharge::new(8.0));
+        let json: serde_json::Value =
+            serde_json::from_str(diagnostics.to_json_string(Some(DiagnosticsVerbosity::Detailed)))
+                .unwrap();
+        let attempts = json["requests"].as_array().unwrap();
+        let losing_reply = attempts
+            .iter()
+            .find(|r| r["request_charge"] == 2.0)
+            .unwrap();
+        assert_eq!(losing_reply["region"], Region::EAST_US_2.as_str());
+        assert!(losing_reply.get("served_query_page").is_none());
+        assert!(losing_reply.get("partition_key_range_id").is_none());
+        let serving: Vec<_> = attempts
+            .iter()
+            .filter(|r| r["served_query_page"] == true)
+            .map(|r| {
+                (
+                    r["partition_key_range_id"].as_str().unwrap(),
+                    r["region"].as_str().unwrap(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            serving,
+            [
+                ("0", Region::WEST_US_2.as_str()),
+                ("1", Region::EAST_US_2.as_str())
+            ]
         );
     }
 
