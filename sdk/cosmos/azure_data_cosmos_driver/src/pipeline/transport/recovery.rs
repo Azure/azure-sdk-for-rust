@@ -59,6 +59,28 @@ impl ThrottleRetryPolicy {
             backoff_jitter_ratio: 0.25,
         }
     }
+
+    /// Computes a bounded service or fallback delay without applying retry budgets.
+    pub(crate) fn retry_delay(&self, attempt_count: u32, retry_after_ms: Option<u64>) -> Duration {
+        let delay = match retry_after_ms {
+            Some(ms) => Duration::from_millis(ms),
+            None => {
+                let multiplier = self
+                    .backoff_factor
+                    .powi(attempt_count.min(i32::MAX as u32) as i32);
+                let seconds = (self.fallback_base_delay.as_secs_f64() * multiplier)
+                    .min(self.max_per_retry_delay.as_secs_f64());
+                let base = Duration::from_secs_f64(seconds);
+                let ratio = self.backoff_jitter_ratio.clamp(0.0, 1.0);
+                if ratio == 0.0 || base.is_zero() {
+                    base
+                } else {
+                    Duration::from_secs_f64(jitter::with_jitter(base.as_secs_f64(), ratio))
+                }
+            }
+        };
+        delay.min(self.max_per_retry_delay)
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -82,22 +104,8 @@ impl ThrottleRetryProgress {
         if self.attempt_count >= policy.max_attempts {
             return None;
         }
-        let delay = match retry_after_ms {
-            Some(ms) => Duration::from_millis(ms),
-            None => {
-                let base = policy
-                    .fallback_base_delay
-                    .mul_f64(policy.backoff_factor.powi(self.attempt_count as i32));
-                let ratio = policy.backoff_jitter_ratio.clamp(0.0, 1.0);
-                if ratio == 0.0 || base.is_zero() {
-                    base
-                } else {
-                    Duration::from_secs_f64(jitter::with_jitter(base.as_secs_f64(), ratio))
-                }
-            }
-        }
-        .min(policy.max_per_retry_delay);
-        let cumulative = self.cumulative_budgeted_delay + delay;
+        let delay = policy.retry_delay(self.attempt_count, retry_after_ms);
+        let cumulative = self.cumulative_budgeted_delay.saturating_add(delay);
         if cumulative > policy.max_wait_time {
             return None;
         }
@@ -306,6 +314,30 @@ mod tests {
             ),
             Some(Duration::ZERO),
         );
+    }
+
+    #[test]
+    fn extreme_retry_progress_keeps_backoff_and_budget_arithmetic_bounded() {
+        let policy = ThrottleRetryPolicy {
+            max_attempts: u32::MAX,
+            max_wait_time: Duration::MAX,
+            max_per_retry_delay: Duration::from_secs(5),
+            backoff_jitter_ratio: 0.0,
+            ..metadata_policy()
+        };
+        let mut progress = ThrottleRetryProgress {
+            attempt_count: u32::MAX - 1,
+            cumulative_budgeted_delay: Duration::MAX - Duration::from_secs(1),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            progress.try_retry(None, &policy),
+            Some(Duration::from_secs(5))
+        );
+        assert_eq!(progress.attempt_count, u32::MAX);
+        assert_eq!(progress.cumulative_budgeted_delay, Duration::MAX);
+        assert_eq!(progress.try_retry(None, &policy), None);
     }
 
     fn metadata_policy() -> ThrottleRetryPolicy {
