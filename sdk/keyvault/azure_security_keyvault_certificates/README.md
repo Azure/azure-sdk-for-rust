@@ -110,6 +110,7 @@ The following section provides several code snippets using a `CertificateClient`
 - [Delete a certificate](#delete-a-certificate)
 - [List certificates](#list-certificates)
 - [Key operations using certificates](#key-operations-using-certificates)
+- [Testing with fakes](#testing-with-fakes)
 
 ### Create a certificate
 
@@ -307,7 +308,7 @@ if let Some(signature) = signature.result.map(base64::encode_url_safe) {
 }
 ```
 
-## Testing with fakes
+### Testing with fakes
 
 Enable the crate's `test` and `unstable_fake` features in your test dependencies.
 `unstable_fake` enables `test` automatically, but both are shown explicitly below.
@@ -372,7 +373,7 @@ assert_eq!(
 );
 ```
 
-### Fake service responses
+#### Fake service responses
 
 The experimental [fake server example] retrieves a certificate and simulates a service error
 without credentials or network access. Implement only the `CertificateServer` operations
