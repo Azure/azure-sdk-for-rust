@@ -43,6 +43,8 @@ pub mod patch_verification_routing;
 pub mod point_operations;
 pub mod ppaf_dynamic_enablement;
 pub mod query;
+#[cfg(feature = "__internal_mocking")]
+mod query_leaf_hedging;
 pub mod read_feed;
 pub mod region_online_offline;
 #[cfg(feature = "fault_injection")]

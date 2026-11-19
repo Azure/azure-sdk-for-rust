@@ -11,7 +11,10 @@ use std::time::Duration;
 
 use crate::{
     driver::{
-        pipeline::{components::RoutingDecision, hedging_diagnostics::HedgingStrategyConfig},
+        pipeline::{
+            components::RoutingDecision, hedging_diagnostics::HedgingStrategyConfig,
+            operation_pipeline::OperationOverrides,
+        },
         routing::AccountEndpointState,
     },
     models::{CosmosOperation, OperationType, ResourceType},
@@ -53,13 +56,9 @@ const METADATA_HEDGE_THRESHOLD: Duration = Duration::from_millis(1500);
 ///
 /// Current members:
 /// * `(Document, Read)` — data-plane point reads (Phase 1).
-/// * `(Document, Query)` — data-plane query pages, narrowed to
-///   **single-partition** queries by the `is_trivial()` guard in
-///   [`should_hedge`]. The table keys on `(resource, operation)` and cannot
-///   express that narrowing itself. `SqlQuery` is deliberately absent: no
-///   `CosmosOperation` is built with it today, and `is_trivial()` does not
-///   narrow it, so admitting the pair would silently hedge a cross-partition
-///   query if one were ever constructed.
+/// * `(Document, Query)` — query pages targeting a complete logical partition
+///   key or a physical partition selected by the planner. [`should_hedge`]
+///   checks the target; unresolved fan-out queries and `SqlQuery` are excluded.
 /// * `(DocumentCollection, Read)` — `Collection` `Read` metadata cache read.
 /// * `(PartitionKeyRange, ReadFeed)` — `PartitionKeyRange` `ReadFeed` metadata
 ///   cache read. Only the cold first change-feed page is hedged; if the hedge
@@ -87,6 +86,7 @@ const HEDGEABLE_PAIRS: &[(ResourceType, OperationType)] = &[
 pub(crate) fn should_hedge(
     strategy: Option<&HedgingStrategy>,
     operation: &CosmosOperation,
+    overrides: &OperationOverrides,
     account_state: &AccountEndpointState,
     excluded_regions: &[Region],
 ) -> bool {
@@ -103,13 +103,12 @@ pub(crate) fn should_hedge(
         return false;
     }
 
-    // One leaf of a cross-partition fan-out carries the same `(Document, Query)`
-    // pair as a single-partition query, but is its own pipeline invocation —
-    // hedging every leaf would spawn one alternate per partition, and data-plane
-    // hedging has no admission budget yet. `is_trivial()` is `true` for every
-    // other member of the table, so scope the guard to queries rather than
-    // applying it unconditionally.
-    if operation.operation_type() == OperationType::Query && !operation.is_trivial() {
+    // A feed range can span multiple physical partitions. Only the wire-routing
+    // range ID identifies a physically routed leaf of a nontrivial query.
+    if operation.operation_type() == OperationType::Query
+        && !operation.is_trivial()
+        && overrides.partition_key_range_id.is_none()
+    {
         return false;
     }
 
@@ -241,6 +240,7 @@ pub(crate) struct HedgeUpgrade {
 /// `FailoverRetry`).
 pub(crate) fn evaluate_hedge_eligibility(
     operation: &CosmosOperation,
+    overrides: &OperationOverrides,
     options: &OperationOptionsView<'_>,
     account_state: &AccountEndpointState,
     primary: &RoutingDecision,
@@ -258,7 +258,13 @@ pub(crate) fn evaluate_hedge_eligibility(
         .map(|r| r.iter().cloned().collect())
         .unwrap_or_default();
 
-    if !should_hedge(Some(&strategy), operation, account_state, &user_excluded) {
+    if !should_hedge(
+        Some(&strategy),
+        operation,
+        overrides,
+        account_state,
+        &user_excluded,
+    ) {
         return None;
     }
 
@@ -467,6 +473,10 @@ mod tests {
         HedgingStrategy::new(HedgeThreshold::new(Duration::from_millis(500)).unwrap())
     }
 
+    fn no_overrides() -> OperationOverrides {
+        OperationOverrides::default()
+    }
+
     fn status(code: u16, sub: Option<u32>) -> CosmosStatus {
         let mut s = CosmosStatus::new(StatusCode::from(code));
         if let Some(v) = sub {
@@ -481,14 +491,26 @@ mod tests {
     fn should_hedge_read_multi_region() {
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let op = read_item_operation();
-        assert!(should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+        assert!(should_hedge(
+            Some(&enabled_strategy()),
+            &op,
+            &no_overrides(),
+            &state,
+            &[]
+        ));
     }
 
     #[test]
     fn should_hedge_read_single_region() {
         let state = account_state_with_regions(&[Region::EAST_US]);
         let op = read_item_operation();
-        assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+        assert!(!should_hedge(
+            Some(&enabled_strategy()),
+            &op,
+            &no_overrides(),
+            &state,
+            &[]
+        ));
     }
 
     #[test]
@@ -499,6 +521,7 @@ mod tests {
         assert!(!should_hedge(
             Some(&enabled_strategy()),
             &op,
+            &no_overrides(),
             &state,
             &excluded,
         ));
@@ -508,14 +531,26 @@ mod tests {
     fn should_hedge_no_preferred_regions() {
         let state = account_state_with_regions(&[]);
         let op = read_item_operation();
-        assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+        assert!(!should_hedge(
+            Some(&enabled_strategy()),
+            &op,
+            &no_overrides(),
+            &state,
+            &[]
+        ));
     }
 
     #[test]
     fn should_hedge_write_never() {
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let op = create_item_operation();
-        assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+        assert!(!should_hedge(
+            Some(&enabled_strategy()),
+            &op,
+            &no_overrides(),
+            &state,
+            &[]
+        ));
     }
 
     #[test]
@@ -526,7 +561,13 @@ mod tests {
         // HEDGEABLE_PAIRS member, so it must not hedge.
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let op = read_database_operation();
-        assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+        assert!(!should_hedge(
+            Some(&enabled_strategy()),
+            &op,
+            &no_overrides(),
+            &state,
+            &[]
+        ));
     }
 
     #[test]
@@ -534,7 +575,13 @@ mod tests {
         // Metadata Collection Read `(DocumentCollection, Read)` IS hedged.
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let op = read_container_operation();
-        assert!(should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+        assert!(should_hedge(
+            Some(&enabled_strategy()),
+            &op,
+            &no_overrides(),
+            &state,
+            &[]
+        ));
     }
 
     #[test]
@@ -544,7 +591,13 @@ mod tests {
         // later pages to the winner via OperationOverrides::region_pin.
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let op = read_pk_ranges_operation();
-        assert!(should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+        assert!(should_hedge(
+            Some(&enabled_strategy()),
+            &op,
+            &no_overrides(),
+            &state,
+            &[]
+        ));
     }
 
     #[test]
@@ -562,18 +615,71 @@ mod tests {
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let op = single_partition_query_operation();
         assert!(op.is_trivial(), "fixture must be a single-partition query");
-        assert!(should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+        assert!(should_hedge(
+            Some(&enabled_strategy()),
+            &op,
+            &no_overrides(),
+            &state,
+            &[]
+        ));
     }
 
     #[test]
-    fn should_hedge_cross_partition_query_not_yet() {
-        // Same `(Document, Query)` pair, but each fan-out leaf would hedge
-        // independently and data-plane hedging is unbudgeted. Held back until
-        // the budget lands.
+    fn fanout_query_requires_a_physical_route_and_an_alternate_region() {
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let primary = primary_routing_for(&state);
         let op = cross_partition_query_operation();
-        assert!(!op.is_trivial(), "fixture must be a cross-partition query");
-        assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+        let options = OperationOptions::default();
+        let eligible = |overrides: &OperationOverrides, options: &OperationOptions| {
+            evaluate_hedge_eligibility(
+                &op,
+                overrides,
+                &empty_view(options),
+                &state,
+                &primary,
+                None,
+                false,
+            )
+            .is_some()
+        };
+        let range_only = OperationOverrides {
+            feed_range: Some(crate::models::FeedRange::full()),
+            ..Default::default()
+        };
+        let leaf = OperationOverrides {
+            partition_key_range_id: Some("7".into()),
+            ..Default::default()
+        };
+        assert!(!eligible(&no_overrides(), &options));
+        assert!(!eligible(&range_only, &options));
+        assert!(eligible(&leaf, &options));
+        let mut restricted = options;
+        restricted.excluded_regions = Some([Region::WEST_US_2].into_iter().collect());
+        assert!(!eligible(&leaf, &restricted));
+    }
+
+    #[test]
+    fn physical_route_does_not_admit_change_feed_or_query_plan() {
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let overrides = OperationOverrides {
+            partition_key_range_id: Some("7".into()),
+            ..Default::default()
+        };
+        for op in [
+            CosmosOperation::change_feed(
+                fake_container_reference(),
+                Some(crate::models::FeedRange::full()),
+            ),
+            CosmosOperation::query_plan(fake_container_reference(), "".into()),
+        ] {
+            assert!(!should_hedge(
+                Some(&enabled_strategy()),
+                &op,
+                &overrides,
+                &state,
+                &[]
+            ));
+        }
     }
 
     #[test]
@@ -614,7 +720,7 @@ mod tests {
             (ResourceType::Document, OperationType::Create),
             // `is_trivial()` only narrows `OperationType::Query`; it returns
             // `true` for `SqlQuery` regardless of partition key, so admitting
-            // this pair would bypass the single-partition guard entirely.
+            // this pair would bypass the query target check entirely.
             (ResourceType::Document, OperationType::SqlQuery),
         ] {
             assert!(
@@ -650,11 +756,18 @@ mod tests {
         assert!(!should_hedge(
             Some(&enabled_strategy()),
             &write,
+            &no_overrides(),
             &state,
             &[]
         ));
         assert!(read.is_read_only());
-        assert!(!should_hedge(Some(&enabled_strategy()), &read, &state, &[]));
+        assert!(!should_hedge(
+            Some(&enabled_strategy()),
+            &read,
+            &no_overrides(),
+            &state,
+            &[]
+        ));
     }
 
     #[test]
@@ -663,7 +776,7 @@ mod tests {
         // should_hedge is even called.
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let op = read_item_operation();
-        assert!(!should_hedge(None, &op, &state, &[]));
+        assert!(!should_hedge(None, &op, &no_overrides(), &state, &[]));
     }
 
     // ───────────────────────── is_final_result ─────────────────────────
@@ -964,6 +1077,7 @@ mod tests {
         assert!(!should_hedge(
             Some(&enabled_strategy()),
             &op,
+            &no_overrides(),
             &state,
             &excluded.iter().cloned().collect::<Vec<_>>(),
         ));
@@ -1018,8 +1132,9 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false)
-            .expect("eligible multi-region read");
+        let upgrade =
+            evaluate_hedge_eligibility(&op, &no_overrides(), &view, &state, &primary, None, false)
+                .expect("eligible multi-region read");
 
         // Secondary pinned to applicable[1] = WEST_US_2.
         assert_eq!(
@@ -1045,8 +1160,16 @@ mod tests {
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
         for op in [read_container_operation(), read_pk_ranges_operation()] {
-            let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false)
-                .expect("eligible metadata read");
+            let upgrade = evaluate_hedge_eligibility(
+                &op,
+                &no_overrides(),
+                &view,
+                &state,
+                &primary,
+                None,
+                false,
+            )
+            .expect("eligible metadata read");
             assert_eq!(
                 upgrade.threshold.get(),
                 Duration::from_millis(1500),
@@ -1063,6 +1186,7 @@ mod tests {
         let dp = read_item_operation();
         let dp_upgrade = evaluate_hedge_eligibility(
             &dp,
+            &no_overrides(),
             &view,
             &state,
             &primary,
@@ -1082,7 +1206,16 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).is_none());
+        assert!(evaluate_hedge_eligibility(
+            &op,
+            &no_overrides(),
+            &view,
+            &state,
+            &primary,
+            None,
+            false
+        )
+        .is_none());
     }
 
     #[test]
@@ -1094,7 +1227,16 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).is_none());
+        assert!(evaluate_hedge_eligibility(
+            &op,
+            &no_overrides(),
+            &view,
+            &state,
+            &primary,
+            None,
+            false
+        )
+        .is_none());
     }
 
     #[test]
@@ -1108,7 +1250,16 @@ mod tests {
             .build();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).is_none());
+        assert!(evaluate_hedge_eligibility(
+            &op,
+            &no_overrides(),
+            &view,
+            &state,
+            &primary,
+            None,
+            false
+        )
+        .is_none());
     }
 
     #[test]
@@ -1128,14 +1279,26 @@ mod tests {
             read_container_operation(),
             read_pk_ranges_operation(),
         ] {
-            assert!(
-                evaluate_hedge_eligibility(&operation, &view, &state, &primary, None, true,)
-                    .is_none()
-            );
-            assert!(
-                evaluate_hedge_eligibility(&operation, &view, &state, &primary, None, false,)
-                    .is_some()
-            );
+            assert!(evaluate_hedge_eligibility(
+                &operation,
+                &no_overrides(),
+                &view,
+                &state,
+                &primary,
+                None,
+                true
+            )
+            .is_none());
+            assert!(evaluate_hedge_eligibility(
+                &operation,
+                &no_overrides(),
+                &view,
+                &state,
+                &primary,
+                None,
+                false
+            )
+            .is_some());
         }
     }
 
@@ -1149,9 +1312,16 @@ mod tests {
             .build();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(
-            evaluate_hedge_eligibility(&operation, &view, &state, &primary, None, false,).is_none()
-        );
+        assert!(evaluate_hedge_eligibility(
+            &operation,
+            &no_overrides(),
+            &view,
+            &state,
+            &primary,
+            None,
+            false
+        )
+        .is_none());
     }
 
     #[test]
@@ -1164,7 +1334,16 @@ mod tests {
         op_opts.excluded_regions = Some([Region::WEST_US_2].into_iter().collect());
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).is_none());
+        assert!(evaluate_hedge_eligibility(
+            &op,
+            &no_overrides(),
+            &view,
+            &state,
+            &primary,
+            None,
+            false
+        )
+        .is_none());
     }
 
     #[test]
@@ -1180,8 +1359,9 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false)
-            .expect("eligible three-region read");
+        let upgrade =
+            evaluate_hedge_eligibility(&op, &no_overrides(), &view, &state, &primary, None, false)
+                .expect("eligible three-region read");
 
         let url_str = upgrade.secondary_routing.selected_url.as_str();
         assert!(
@@ -1247,8 +1427,9 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false)
-            .expect("eligible multi-region GatewayV2 read");
+        let upgrade =
+            evaluate_hedge_eligibility(&op, &no_overrides(), &view, &state, &primary, None, false)
+                .expect("eligible multi-region GatewayV2 read");
         let secondary = &upgrade.secondary_routing;
 
         assert_eq!(secondary.transport_mode, TransportMode::GatewayV2);
@@ -1289,13 +1470,27 @@ mod tests {
         // Configured timeout = 800ms → expected threshold = 400ms (cap = 1s).
         let configured_timeout = Some(Duration::from_millis(800));
 
-        let first =
-            evaluate_hedge_eligibility(&op, &view, &state, &primary, configured_timeout, false)
-                .expect("first call eligible");
+        let first = evaluate_hedge_eligibility(
+            &op,
+            &no_overrides(),
+            &view,
+            &state,
+            &primary,
+            configured_timeout,
+            false,
+        )
+        .expect("first call eligible");
         std::thread::sleep(Duration::from_millis(10));
-        let second =
-            evaluate_hedge_eligibility(&op, &view, &state, &primary, configured_timeout, false)
-                .expect("second call eligible");
+        let second = evaluate_hedge_eligibility(
+            &op,
+            &no_overrides(),
+            &view,
+            &state,
+            &primary,
+            configured_timeout,
+            false,
+        )
+        .expect("second call eligible");
 
         assert_eq!(
             first.threshold.get(),
@@ -1334,8 +1529,9 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false)
-            .expect("eligible three-region read");
+        let upgrade =
+            evaluate_hedge_eligibility(&op, &no_overrides(), &view, &state, &primary, None, false)
+                .expect("eligible three-region read");
 
         let secondary_region = upgrade.secondary_routing.endpoint.region().cloned();
         assert_ne!(
@@ -1372,10 +1568,12 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).expect(
-            "request must still be hedged when the primary is not \
+        let upgrade =
+            evaluate_hedge_eligibility(&op, &no_overrides(), &view, &state, &primary, None, false)
+                .expect(
+                    "request must still be hedged when the primary is not \
              preferred_read_endpoints[0]",
-        );
+                );
 
         let secondary_region = upgrade.secondary_routing.endpoint.region().cloned();
         // First applicable region distinct from the primary, in
@@ -1416,7 +1614,8 @@ mod tests {
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
         assert!(
-            evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).is_none(),
+            evaluate_hedge_eligibility(&op, &no_overrides(), &view, &state, &primary, None, false)
+                .is_none(),
             "no distinct alternate exists — must fall back to non-hedged decision",
         );
     }

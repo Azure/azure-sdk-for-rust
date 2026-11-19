@@ -468,6 +468,26 @@ fn round_trip_state(state: PipelineNodeState, op: &CosmosOperation) -> PipelineN
 // ── Tests ────────────────────────────────────────────────────────────────
 
 #[tokio::test]
+async fn ordered_query_has_one_leaf_in_flight() -> crate::error::Result<()> {
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
+    ])]);
+    let mut pipeline =
+        build_streaming_ordered_merge(&order_by_plan(), &mut topology, &order_by_operation(), None)
+            .await?;
+    super::assert_serial_leaf_requests(
+        &mut pipeline,
+        [
+            envelope_page(&[("a", 1)], None),
+            envelope_page(&[("b", 2)], None),
+        ],
+    )
+    .await;
+    Ok(())
+}
+
+#[tokio::test]
 async fn slow_consumer_fetches_only_one_head_page_per_partition() -> crate::error::Result<()> {
     let operation = order_by_operation_with_page_size(1);
     let plan = order_by_plan();

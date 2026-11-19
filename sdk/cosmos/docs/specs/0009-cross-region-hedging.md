@@ -91,22 +91,22 @@ design review.
 | Operation type | Phase 1 | Phase 2 | Future |
 |---|:---:|:---:|:---:|
 | Document point reads (GetItem) | ✅ | ✅ | ✅ |
-| Queries (`QueryItems`) — page-level | ❌ | 🟡 partial | ✅ |
+| Queries (`QueryItems`) — page-level | ❌ | ✅ | ✅ |
 | `ReadMany` — page-level | ❌ | ✅ | ✅ |
 | Change feed — page-level | ❌ | ✅ | ✅ |
 | Metadata operations (Database / Container / Offer / Throughput) | ❌ | ✅ | ✅ |
 | Document writes (Create/Replace/Upsert/Delete/Patch) — any topology | ❌ | ❌ | ❌ |
 | Stored procedure execution (`ExecuteJavaScript`) | ❌ | ❌ | 🟡 candidate |
 
-> **🟡 Queries are partially landed.** `(Document, Query)` is a
-> `HEDGEABLE_PAIRS` member, but `should_hedge()` narrows it to
-> **single-partition** queries via `CosmosOperation::is_trivial()`.
-> Cross-partition fan-out is still excluded: each per-pkrange leaf is its own
-> pipeline invocation, so hedging every leaf would spawn one alternate per
-> partition, and data-plane hedging has no admission budget
-> ([#4916](https://github.com/Azure/azure-sdk-for-rust/issues/4916)). A
-> single-partition query is one request per page — the same shape as a point
-> read — so it adds no amplification beyond what Phase 1 already ships.
+> **Query hedging races one partition's page, not the entire query.** A
+> `(Document, Query)` request must target a complete logical partition key or
+> carry the physical range ID selected by the planner. A feed range alone is
+> not sufficient. The dataflow executor reads one leaf at a time, so one query
+> can have at most one alternate in flight, but each slow page can incur extra
+> RU. This is not a client-wide cap. Revisit the data-plane admission budget
+> ([#4916](https://github.com/Azure/azure-sdk-for-rust/issues/4916)) before
+> introducing parallel partition reads. Gateway query-plan requests and the
+> document change feed are not eligible.
 
 > **Triggers and UDFs** are not standalone operations — they ride along
 > as request headers on document operations and are therefore hedged
@@ -2588,16 +2588,12 @@ operations, stored procedure execution, adaptive threshold tuning.
 
 **Operation rows from §1 covered (Phase 2 column):**
 
-- `QueryItems` — hedged **per page**. **Partially landed:**
-  single-partition queries only (see the §1 note). Cross-partition fan-out
-  remains blocked on data-plane hedge admission control
-  ([#4916](https://github.com/Azure/azure-sdk-for-rust/issues/4916)).
-  Per-page continuation portability across regions relies on query
-  continuations resuming on globally stable document rids, unlike the
-  region-affine change-feed ETag. The live multi-region test
-  `query_continuation_minted_in_primary_resumes_in_alternate` covers it; a
-  lagging region surfaces as a transient 1002 that the other leg wins, so the
-  failure mode is availability, not correctness.
+- `QueryItems` — hedged **per partition page** (see §1). Both legs use the same
+  range, query body and backend continuation. Only the winning response advances
+  the leaf and contributes to the returned page's session token. A `404/1002`
+  from a lagging region lets the other leg continue. A topology `410` (substatus
+  `1002`, `1007`, or `1008`) observed on a physical range instead returns control
+  to dataflow to refresh the routing map and recover the affected leaf.
 - `ReadMany` — hedged **per page**.
 - Change feed (`ReadFeed`) — hedged **per page**.
 - Metadata operations: Database / Container / Offer / Throughput

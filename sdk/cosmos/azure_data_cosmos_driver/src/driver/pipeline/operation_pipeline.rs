@@ -960,6 +960,7 @@ pub(crate) async fn execute_operation_pipeline(
         {
             let admitted = evaluate_hedge_eligibility(
                 operation,
+                &overrides,
                 options,
                 &location.account,
                 &routing,
@@ -1225,7 +1226,7 @@ pub(crate) async fn execute_operation_pipeline(
         let cold_capacity_failover =
             overrides.region_pin.is_none() && is_capacity_throttle(&result);
         if is_pk_range_throttle(operation, &result) && !cold_capacity_failover {
-            return finalize_hedge_attempt(Box::new(result), diagnostics);
+            return finalize_hedge_attempt(Box::new(result), diagnostics, None);
         }
 
         if container_recreation_refresh_eligible(
@@ -1337,6 +1338,7 @@ pub(crate) async fn execute_operation_pipeline(
             maybe_upgrade_to_hedge(
                 action,
                 operation,
+                &overrides,
                 options,
                 &location.account,
                 location.cross_region_hedging_disabled,
@@ -1404,6 +1406,7 @@ pub(crate) async fn execute_operation_pipeline(
                     result,
                     diagnostics,
                     routing.routing_fallback.is_some(),
+                    routed_query_range_id(operation, &overrides, pipeline_type),
                 );
             }
             OperationAction::FailoverRetry { new_state, delay } => {
@@ -1579,6 +1582,7 @@ pub(crate) async fn execute_operation_pipeline(
                 // `hedge_already_fired` since no race actually started.
                 let secondary_routing = match evaluate_hedge_eligibility(
                     operation,
+                    &overrides,
                     options,
                     &location.account,
                     &primary_routing,
@@ -2803,6 +2807,7 @@ fn build_cosmos_response(
     result: Box<TransportResult>,
     mut diagnostics: DiagnosticsContextBuilder,
     routing_fallback: bool,
+    query_wire_range: Option<&str>,
 ) -> crate::error::Result<CosmosResponse> {
     match result.outcome {
         TransportOutcome::Success {
@@ -2810,6 +2815,14 @@ fn build_cosmos_response(
             cosmos_headers,
             body,
         } => {
+            if let Some(target) = query_wire_range {
+                diagnostics.mark_served_query_page(
+                    cosmos_headers
+                        .partition_key_range_id
+                        .as_deref()
+                        .unwrap_or(target),
+                );
+            }
             diagnostics.set_operation_status(status.status_code(), status.sub_status());
 
             let diagnostics_ctx = Arc::new(diagnostics.complete());
@@ -3286,12 +3299,19 @@ async fn populate_hub_region_cache_for_hedge_winner(
 fn record_hedge_outcome(
     location_state_store: &LocationStateStore,
     outcome: HedgeOutcome,
+    result: &TransportResult,
     partition: Option<&PartitionKeyRangeId>,
     primary_region: Option<&Region>,
 ) {
     let Some(partition) = partition else {
         return;
     };
+    // A retired range ends the page race, but says nothing about either
+    // region's health. Neither trip nor reset the PPCB counter for it.
+    if matches!(&result.outcome, TransportOutcome::HttpError { status, .. } if status.is_partition_topology_change())
+    {
+        return;
+    }
     match outcome {
         HedgeOutcome::AlternateWin => {
             location_state_store.record_consecutive_hedge_win(partition, primary_region)
@@ -3402,69 +3422,93 @@ enum HedgeClass {
     Transient,
 }
 
-/// Pure classifier for a per-attempt result.
-///
-/// `Err` (e.g. failure constructing the request) and any non-final
-/// TransportOutcome map to `Transient`. A `Success` is always final; an
-/// `HttpError` is final iff [`CosmosStatus::is_final_result`] returns `true` for its
-/// status.
-fn classify_hedge_result(result: crate::error::Result<TransportResult>) -> HedgeClass {
-    match result {
-        Ok(tr) => match &tr.outcome {
-            TransportOutcome::Success { .. } => HedgeClass::Final(Box::new(tr)),
-            TransportOutcome::HttpError { status, .. } => {
-                if status.is_final_result() {
-                    HedgeClass::Final(Box::new(tr))
-                } else {
-                    HedgeClass::Transient
-                }
-            }
-            TransportOutcome::TransportError { .. } | TransportOutcome::DeadlineExceeded { .. } => {
-                HedgeClass::Transient
-            }
-        },
-        Err(_) => HedgeClass::Transient,
+#[derive(Clone, Copy)]
+enum HedgeRacePolicy {
+    Standard,
+    Metadata,
+    RangeQueryPage,
+}
+
+/// A physical query leaf has a range on the wire, not just a range resolved for session scoping.
+fn routed_query_range_id<'a>(
+    operation: &CosmosOperation,
+    overrides: &'a OperationOverrides,
+    pipeline: PipelineKind,
+) -> Option<&'a str> {
+    if pipeline.is_data_plane()
+        && operation.operation_type() == OperationType::Query
+        && operation.resource_type() == crate::models::ResourceType::Document
+    {
+        overrides.partition_key_range_id.as_deref()
+    } else {
+        None
     }
 }
 
-/// Classifies the SECONDARY (hedge) leg, applying the metadata
-/// primary-authoritative rule.
-///
-/// For the two metadata cache reads the primary region is authoritative: a
-/// hedge may improve latency by winning with a definitive **success**, but it
-/// must never override the primary with a definitive **error** (e.g. a
-/// not-yet-replicated secondary returning `404` for a freshly-created container,
-/// or a `409`/`412`/`429`-final). When `primary_authoritative` is set, a
-/// secondary that produced a `Final` but non-`Success` outcome is therefore
-/// downgraded to [`HedgeClass::Transient`] so the race discards it and awaits
-/// the primary's authoritative outcome. A secondary definitive success still
-/// wins; a secondary transient stays transient. Data-plane hedging passes
-/// `false` and keeps the first-`Final`-wins semantics of
-/// [`classify_hedge_result`].
-///
-/// `hub_only_read` must be set only for a read whose leg sent the
-/// hub-region-processing-only header: its `403/3` means "not the hub here".
-fn classify_secondary_hedge_result(
-    result: crate::error::Result<TransportResult>,
-    primary_authoritative: bool,
-    hub_only_read: bool,
-) -> HedgeClass {
-    match classify_hedge_result(result) {
-        HedgeClass::Final(tr)
-            if primary_authoritative && !matches!(tr.outcome, TransportOutcome::Success { .. }) =>
-        {
-            HedgeClass::Transient
+impl HedgeRacePolicy {
+    fn for_operation(
+        operation: &CosmosOperation,
+        overrides: &OperationOverrides,
+        pipeline: PipelineKind,
+    ) -> Self {
+        if pipeline.is_metadata() {
+            Self::Metadata
+        } else if routed_query_range_id(operation, overrides, pipeline).is_some() {
+            Self::RangeQueryPage
+        } else {
+            Self::Standard
         }
-        HedgeClass::Final(tr)
-            if hub_only_read
-                && matches!(
-                    &tr.outcome,
-                    TransportOutcome::HttpError { status, .. } if status.is_write_forbidden()
-                ) =>
-        {
-            HedgeClass::Transient
+    }
+
+    fn classify(self, result: crate::error::Result<TransportResult>) -> HedgeClass {
+        match result {
+            Ok(tr) if self.result_is_final(&tr) => HedgeClass::Final(Box::new(tr)),
+            _ => HedgeClass::Transient,
         }
-        other => other,
+    }
+
+    /// A metadata secondary may win only with a success (e.g. a lagging
+    /// secondary could return 404 for a freshly created container). On a
+    /// read that sent the hub-only header, 403/3 means "not the hub here".
+    fn classify_secondary(
+        self,
+        result: crate::error::Result<TransportResult>,
+        hub_only_read: bool,
+    ) -> HedgeClass {
+        match self.classify(result) {
+            HedgeClass::Final(tr)
+                if matches!(self, Self::Metadata)
+                    && !matches!(tr.outcome, TransportOutcome::Success { .. }) =>
+            {
+                HedgeClass::Transient
+            }
+            HedgeClass::Final(tr)
+                if hub_only_read
+                    && matches!(
+                        &tr.outcome,
+                        TransportOutcome::HttpError { status, .. } if status.is_write_forbidden()
+                    ) =>
+            {
+                HedgeClass::Transient
+            }
+            other => other,
+        }
+    }
+
+    /// A topology response invalidates the page's physical target. Surface it to
+    /// dataflow rather than accepting a page from a region still serving the old range.
+    fn result_is_final(self, tr: &TransportResult) -> bool {
+        match &tr.outcome {
+            TransportOutcome::Success { .. } => true,
+            TransportOutcome::HttpError { status, .. } => {
+                status.is_final_result()
+                    || (matches!(self, Self::RangeQueryPage)
+                        && status.is_partition_topology_change())
+            }
+            TransportOutcome::TransportError { .. } | TransportOutcome::DeadlineExceeded { .. } => {
+                false
+            }
+        }
     }
 }
 
@@ -3477,17 +3521,6 @@ fn is_capacity_throttle(result: &TransportResult) -> bool {
     matches!(&result.outcome, TransportOutcome::HttpError { status, .. }
         if status.is_throttled()
             && status.sub_status() == Some(crate::error::status_codes::substatus::SYSTEM_RESOURCE_UNAVAILABLE))
-}
-
-/// Non-consuming version of `classify_hedge_result` for the pre-threshold branch.
-fn result_is_final(tr: &TransportResult) -> bool {
-    match &tr.outcome {
-        TransportOutcome::Success { .. } => true,
-        TransportOutcome::HttpError { status, .. } => status.is_final_result(),
-        TransportOutcome::TransportError { .. } | TransportOutcome::DeadlineExceeded { .. } => {
-            false
-        }
-    }
 }
 
 /// Peeks at a hedge-leg's [`TransportResult`] for the partition-key-range-id
@@ -3504,7 +3537,7 @@ fn result_is_final(tr: &TransportResult) -> bool {
 /// `partition.is_none()`) and partition-level overrides could not be
 /// installed for later failures.
 ///
-/// Called at each `classify_hedge_result` site in [`execute_hedged`] to
+/// Called at each post-threshold classification site in [`execute_hedged`] to
 /// accumulate the first non-`None` id observed across either leg, which
 /// is then surfaced via
 /// [`HedgedRaceResult::BothTransient::partition_key_range_id`] for the
@@ -3548,10 +3581,11 @@ fn pk_range_id_from_result(
 fn finalize_hedge_attempt(
     result: Box<TransportResult>,
     diagnostics: DiagnosticsContextBuilder,
+    query_wire_range: Option<&str>,
 ) -> crate::error::Result<CosmosResponse> {
     match result.outcome {
-        outcome @ TransportOutcome::Success { .. } => {
-            build_cosmos_response(Box::new(TransportResult { outcome }), diagnostics, false)
+        TransportOutcome::Success { .. } => {
+            build_cosmos_response(result, diagnostics, false, query_wire_range)
         }
         TransportOutcome::HttpError {
             status,
@@ -3566,6 +3600,12 @@ fn finalize_hedge_attempt(
                 sub_status = ?status.sub_status(),
                 "non-retriable http error in hedging attempt",
             );
+            let mut diagnostics = diagnostics;
+            if status.is_partition_topology_change() {
+                // The last recorded request can belong to the cancelled or
+                // transient partner, not to the leg whose 410 we return.
+                diagnostics.set_operation_status(status.status_code(), status.sub_status());
+            }
             let diagnostics_ctx = Arc::new(diagnostics.complete());
             let base = build_service_error(&status, &cosmos_headers, &body);
             Err(crate::error::CosmosErrorBuilder::from_error(base)
@@ -3634,6 +3674,7 @@ fn finalize_hedge_attempt(
 fn maybe_upgrade_to_hedge<'a>(
     action: OperationAction,
     operation: &CosmosOperation,
+    overrides: &OperationOverrides,
     options: &OperationOptionsView<'_>,
     account_state: &AccountEndpointState,
     cross_region_hedging_disabled: bool,
@@ -3660,6 +3701,7 @@ fn maybe_upgrade_to_hedge<'a>(
 
     match evaluate_hedge_eligibility(
         operation,
+        overrides,
         options,
         account_state,
         primary,
@@ -4292,7 +4334,11 @@ async fn execute_hedged(
     // replication-lag race where a not-yet-consistent secondary returns 404/409
     // before a slow-but-good primary). Data-plane hedging keeps first-Final-wins.
     // The metadata pipeline is the only place the two metadata read pairs run.
-    let metadata_primary_authoritative = ctx.pipeline_type.is_metadata();
+    let policy = HedgeRacePolicy::for_operation(ctx.operation, ctx.overrides, ctx.pipeline_type);
+    let query_wire_range = match policy {
+        HedgeRacePolicy::RangeQueryPage => ctx.overrides.partition_key_range_id.as_deref(),
+        _ => None,
+    };
 
     tracing::debug!(
         activity_id = %ctx.activity_id,
@@ -4388,8 +4434,8 @@ async fn execute_hedged(
         Either::Left(((result, diag), _timer)) => {
             // Primary resolved before either timer. Short-circuiting
             // the secondary launch is only safe when the primary's
-            // outcome is **final** (HTTP success or application-classified
-            // error per `CosmosStatus::is_final_result`). A *retriable* outcome
+            // outcome is **final** (including a range page's topology change,
+            // which dataflow must handle). A *retriable* outcome
             // (5xx / 429 / 408 / 410 / 404-1002 / 403-with-sub /
             // transport error / deadline) must still race against the
             // secondary so a healthy alternate region can win —
@@ -4398,7 +4444,7 @@ async fn execute_hedged(
             // performed without the hedge upgrade.
             let primary_was_final = matches!(
                 &result,
-                Ok(tr) if result_is_final(tr),
+                Ok(tr) if policy.result_is_final(tr),
             );
             if primary_was_final {
                 // Zero-overhead happy path — no secondary attempt is
@@ -4437,18 +4483,19 @@ async fn execute_hedged(
                 // though the response now carries the resolved range.
                 let pk_range_id_for_feedback =
                     pk_range_id_from_result(&result).or_else(|| ctx.partition_key_range_id.clone());
+                let tr = result.expect("Ok by primary_was_final guard");
                 record_hedge_outcome(
                     ctx.location_state_store,
                     HedgeOutcome::PrimaryWin,
+                    &tr,
                     pk_range_id_for_feedback.as_ref(),
                     primary_region.as_ref(),
                 );
-                // result is Ok by the `primary_was_final` guard above.
-                let tr = result.expect("Ok by primary_was_final guard");
                 capture_session_token_for_winner(ctx, &tr);
                 return HedgedRaceResult::Terminal(finalize_hedge_attempt(
                     Box::new(tr),
                     parent_diagnostics,
+                    query_wire_range,
                 ));
             }
             // Primary resolved pre-threshold but transient (or `Err`). Do
@@ -4583,7 +4630,7 @@ async fn execute_hedged(
         (result, diag)
             if result.as_ref().is_ok_and(|throttle| {
                 is_pk_range_throttle(ctx.operation, throttle)
-                    && (!result_is_final(throttle) || !primary_first)
+                    && (!policy.result_is_final(throttle) || !primary_first)
             }) =>
         {
             apply_hedge_leg_effects(
@@ -4630,7 +4677,7 @@ async fn execute_hedged(
             if partner.as_ref().is_some_and(|(result, _)| {
                 result.as_ref().is_ok_and(|result| {
                     is_pk_range_throttle(ctx.operation, result)
-                        && (result_is_final(&throttle) || result_is_final(result))
+                        && (policy.result_is_final(&throttle) || policy.result_is_final(result))
                 })
             }) {
                 let (Ok(partner), partner_diag) = partner.expect("throttled partner completed")
@@ -4652,12 +4699,13 @@ async fn execute_hedged(
                     finalize_hedge_attempt(
                         Box::new(if primary_first { throttle } else { partner }),
                         parent_diagnostics,
+                        query_wire_range,
                     )
                 });
             }
             if partner.as_ref().is_none_or(|(result, _)| {
                 result.as_ref().is_ok_and(|result| {
-                    is_pk_range_throttle(ctx.operation, result) && !result_is_final(result)
+                    is_pk_range_throttle(ctx.operation, result) && !policy.result_is_final(result)
                 })
             }) {
                 parent_diagnostics.merge_hedge_attempt(diag);
@@ -4698,7 +4746,7 @@ async fn execute_hedged(
                 return HedgedRaceResult::Terminal(if deadline_elapsed(ctx.deadline) {
                     Err(application_cancelled_error(parent_diagnostics))
                 } else {
-                    finalize_hedge_attempt(Box::new(throttle), parent_diagnostics)
+                    finalize_hedge_attempt(Box::new(throttle), parent_diagnostics, query_wire_range)
                 });
             }
             parent_diagnostics.merge_hedge_attempt(diag);
@@ -4736,7 +4784,7 @@ async fn execute_hedged(
                 )
                 .await;
             }
-            match classify_secondary_hedge_result(primary_result, false, false) {
+            match policy.classify(primary_result) {
                 HedgeClass::Final(tr) => {
                     // Primary won post-threshold; drop secondary.
                     parent_diagnostics.set_hedge_diagnostics(
@@ -4768,13 +4816,18 @@ async fn execute_hedged(
                     record_hedge_outcome(
                         ctx.location_state_store,
                         HedgeOutcome::PrimaryWin,
+                        &tr,
                         captured_pk_range_id
                             .as_ref()
                             .or(ctx.partition_key_range_id.as_ref()),
                         primary_region.as_ref(),
                     );
                     capture_session_token_for_winner(ctx, &tr);
-                    HedgedRaceResult::Terminal(finalize_hedge_attempt(tr, parent_diagnostics))
+                    HedgedRaceResult::Terminal(finalize_hedge_attempt(
+                        tr,
+                        parent_diagnostics,
+                        query_wire_range,
+                    ))
                 }
                 HedgeClass::Transient => {
                     // Primary transient — wait for secondary (observing deadline).
@@ -4823,11 +4876,7 @@ async fn execute_hedged(
                         )
                         .await;
                     }
-                    match classify_secondary_hedge_result(
-                        secondary_result,
-                        metadata_primary_authoritative,
-                        hub_only_read,
-                    ) {
+                    match policy.classify_secondary(secondary_result, hub_only_read) {
                         HedgeClass::Final(tr) => {
                             parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
                                 strategy_config,
@@ -4847,6 +4896,7 @@ async fn execute_hedged(
                             record_hedge_outcome(
                                 ctx.location_state_store,
                                 HedgeOutcome::AlternateWin,
+                                &tr,
                                 captured_pk_range_id
                                     .as_ref()
                                     .or(ctx.partition_key_range_id.as_ref()),
@@ -4866,6 +4916,7 @@ async fn execute_hedged(
                             HedgedRaceResult::Terminal(finalize_hedge_attempt(
                                 tr,
                                 parent_diagnostics,
+                                query_wire_range,
                             ))
                         }
                         HedgeClass::Transient => {
@@ -4911,11 +4962,7 @@ async fn execute_hedged(
                 )
                 .await;
             }
-            match classify_secondary_hedge_result(
-                secondary_result,
-                metadata_primary_authoritative,
-                hub_only_read,
-            ) {
+            match policy.classify_secondary(secondary_result, hub_only_read) {
                 HedgeClass::Final(tr) => {
                     parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
                         strategy_config,
@@ -4944,6 +4991,7 @@ async fn execute_hedged(
                     record_hedge_outcome(
                         ctx.location_state_store,
                         HedgeOutcome::AlternateWin,
+                        &tr,
                         captured_pk_range_id
                             .as_ref()
                             .or(ctx.partition_key_range_id.as_ref()),
@@ -4960,7 +5008,11 @@ async fn execute_hedged(
                             .or(ctx.partition_key_range_id.as_ref()),
                     )
                     .await;
-                    HedgedRaceResult::Terminal(finalize_hedge_attempt(tr, parent_diagnostics))
+                    HedgedRaceResult::Terminal(finalize_hedge_attempt(
+                        tr,
+                        parent_diagnostics,
+                        query_wire_range,
+                    ))
                 }
                 HedgeClass::Transient => {
                     // Secondary transient — wait for primary (observing deadline).
@@ -5006,7 +5058,7 @@ async fn execute_hedged(
                         )
                         .await;
                     }
-                    match classify_secondary_hedge_result(primary_result, false, false) {
+                    match policy.classify(primary_result) {
                         HedgeClass::Final(tr) => {
                             parent_diagnostics.set_hedge_diagnostics(
                                 HedgeDiagnostics::primary_won_after_hedge(
@@ -5028,6 +5080,7 @@ async fn execute_hedged(
                             record_hedge_outcome(
                                 ctx.location_state_store,
                                 HedgeOutcome::PrimaryWin,
+                                &tr,
                                 captured_pk_range_id
                                     .as_ref()
                                     .or(ctx.partition_key_range_id.as_ref()),
@@ -5037,6 +5090,7 @@ async fn execute_hedged(
                             HedgedRaceResult::Terminal(finalize_hedge_attempt(
                                 tr,
                                 parent_diagnostics,
+                                query_wire_range,
                             ))
                         }
                         HedgeClass::Transient => {
@@ -5402,13 +5456,13 @@ mod tests {
     use super::{
         build_transport_request, container_recreation_retry_eligible,
         partition_key_range_id_from_overrides, prepare_session_token_for_attempt,
-        resolve_session_token_for_attempt, AttemptSessionToken, OperationOverrides,
-        TransportRequestContext,
+        resolve_session_token_for_attempt, AttemptSessionToken, HedgeRacePolicy,
+        OperationOverrides, TransportRequestContext,
     };
-    #[cfg(feature = "fault_injection")]
-    use crate::options::Region;
     use crate::{
-        diagnostics::ExecutionContext,
+        diagnostics::{
+            ExecutionContext, PipelineKind, TransportHttpVersion, TransportKind, TransportSecurity,
+        },
         driver::{
             cache::ContainerRoutingMap,
             pipeline::components::RoutingDecision,
@@ -5424,7 +5478,7 @@ mod tests {
             DefaultConsistencyLevel, EffectivePartitionKey, FeedRange, ItemReference, PartitionKey,
             PartitionKeyDefinition, PartitionKeyValue, SessionToken, SystemProperties,
         },
-        options::{PriorityLevel, ResolvedThroughputControl},
+        options::{PriorityLevel, Region, ResolvedThroughputControl},
         pipeline::transport::{
             cosmos_transport_client::HttpRequest, types::TransportMode,
             wrap_request_for_gateway_v2, EndpointKey, GatewayV2Headers,
@@ -12130,7 +12184,7 @@ mod tests {
     fn classify_hedge_result_success_is_final() {
         let tr = http_result(200, None);
         assert!(matches!(
-            super::classify_hedge_result(Ok(tr)),
+            HedgeRacePolicy::Standard.classify(Ok(tr)),
             super::HedgeClass::Final(_)
         ));
     }
@@ -12140,7 +12194,7 @@ mod tests {
         // 409 is a final HTTP error — terminates hedging.
         let tr = http_result(409, None);
         assert!(matches!(
-            super::classify_hedge_result(Ok(tr)),
+            HedgeRacePolicy::Standard.classify(Ok(tr)),
             super::HedgeClass::Final(_)
         ));
     }
@@ -12150,9 +12204,89 @@ mod tests {
         // 503 ServiceUnavailable is transient — keeps the other side racing.
         let tr = http_result(503, None);
         assert!(matches!(
-            super::classify_hedge_result(Ok(tr)),
+            HedgeRacePolicy::Standard.classify(Ok(tr)),
             super::HedgeClass::Transient
         ));
+    }
+
+    #[test]
+    fn topology_410_is_final_only_for_a_wire_range_targeted_document_query() {
+        let query = CosmosOperation::query_items(test_container(), Some(FeedRange::full()));
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk"), "doc");
+        let read = CosmosOperation::read_item(item);
+        let offers = CosmosOperation::query_offers(test_account());
+        let wire_range = OperationOverrides {
+            partition_key_range_id: Some("7".into()),
+            ..Default::default()
+        };
+        let logical = OperationOverrides {
+            resolved_partition_key_range_id: Some("7".into()),
+            logical_partition_key_target: true,
+            ..Default::default()
+        };
+        let topology = http_result(410, Some(1002));
+        for (operation, overrides, expected) in [
+            (&query, &wire_range, true),
+            (&query, &logical, false),
+            (&query, &OperationOverrides::default(), false),
+            (&read, &wire_range, false),
+            (&offers, &wire_range, false),
+        ] {
+            let policy = HedgeRacePolicy::for_operation(
+                operation,
+                overrides,
+                super::PipelineKind::DataPlane,
+            );
+            assert_eq!(policy.result_is_final(&topology), expected);
+        }
+    }
+
+    #[test]
+    fn range_query_page_topology_from_either_leg_preserves_the_service_error() {
+        let policy = HedgeRacePolicy::RangeQueryPage;
+        for substatus in [1002, 1007, 1008] {
+            for primary_topology in [true, false] {
+                // A transient partner, if observed first, must not take the
+                // both-transient path once the other leg reports a stale range.
+                for transient in [
+                    http_result(404, Some(1002)),
+                    http_result(503, None),
+                    http_result(410, Some(1000)),
+                ] {
+                    let partner = if primary_topology {
+                        policy.classify_secondary(Ok(transient), true)
+                    } else {
+                        policy.classify(Ok(transient))
+                    };
+                    assert!(matches!(partner, super::HedgeClass::Transient));
+                }
+                let status = crate::models::CosmosStatus::new(azure_core::http::StatusCode::Gone)
+                    .with_sub_status(substatus);
+                let topology = super::TransportResult::from_http_response(
+                    status,
+                    CosmosResponseHeaders {
+                        partition_key_range_id: Some("7".into()),
+                        ..Default::default()
+                    },
+                    b"retired physical range".to_vec(),
+                );
+                let selected = if primary_topology {
+                    policy.classify(Ok(topology))
+                } else {
+                    policy.classify_secondary(Ok(topology), true)
+                };
+                let super::HedgeClass::Final(result) = selected else {
+                    panic!("a topology response must terminate the page race immediately");
+                };
+                let err = super::finalize_hedge_attempt(result, test_diagnostics(), Some("7"))
+                    .unwrap_err();
+                assert_eq!(err.status(), status);
+                assert_eq!(err.diagnostics().unwrap().effective_status(), Some(status));
+                let headers = err.response().unwrap().headers();
+                assert_eq!(headers.partition_key_range_id.as_deref(), Some("7"));
+                assert!(err.to_string().contains("retired physical range"));
+            }
+        }
     }
 
     // ── classify_secondary_hedge_result (metadata primary-authoritative) ──
@@ -12163,7 +12297,7 @@ mod tests {
         // must NOT win — downgraded to Transient so the primary is awaited.
         let tr = http_result(404, None);
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(tr), true, false),
+            HedgeRacePolicy::Metadata.classify_secondary(Ok(tr), false),
             super::HedgeClass::Transient
         ));
     }
@@ -12173,7 +12307,7 @@ mod tests {
         // Data-plane (primary_authoritative = false) keeps first-Final-wins.
         let tr = http_result(404, None);
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(tr), false, false),
+            HedgeRacePolicy::Standard.classify_secondary(Ok(tr), false),
             super::HedgeClass::Final(_)
         ));
     }
@@ -12184,7 +12318,7 @@ mod tests {
         // (the latency benefit).
         let tr = http_result(200, None);
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(tr), true, false),
+            HedgeRacePolicy::Metadata.classify_secondary(Ok(tr), false),
             super::HedgeClass::Final(_)
         ));
     }
@@ -12193,7 +12327,7 @@ mod tests {
     fn secondary_transient_stays_transient_when_metadata() {
         let tr = http_result(503, None);
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(tr), true, false),
+            HedgeRacePolicy::Metadata.classify_secondary(Ok(tr), false),
             super::HedgeClass::Transient
         ));
     }
@@ -12201,16 +12335,16 @@ mod tests {
     #[test]
     fn secondary_write_forbidden_keeps_racing_only_on_hub_only_read() {
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(http_result(403, Some(3))), false, true),
+            HedgeRacePolicy::Standard.classify_secondary(Ok(http_result(403, Some(3))), true),
             super::HedgeClass::Transient
         ));
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(http_result(403, Some(3))), false, false),
+            HedgeRacePolicy::Standard.classify_secondary(Ok(http_result(403, Some(3))), false),
             super::HedgeClass::Final(_)
         ));
         // Only 403/3 means "not the hub"; other 403s stay final on a hub-only read.
         assert!(matches!(
-            super::classify_secondary_hedge_result(Ok(http_result(403, Some(5))), false, true),
+            HedgeRacePolicy::Standard.classify_secondary(Ok(http_result(403, Some(5))), true),
             super::HedgeClass::Final(_)
         ));
     }
@@ -12367,7 +12501,7 @@ mod tests {
         // 404/1002 ReadSessionNotAvailable is retriable.
         let tr = http_result(404, Some(1002));
         assert!(matches!(
-            super::classify_hedge_result(Ok(tr)),
+            HedgeRacePolicy::Standard.classify(Ok(tr)),
             super::HedgeClass::Transient
         ));
     }
@@ -12377,7 +12511,7 @@ mod tests {
         let tr =
             super::TransportResult::deadline_exceeded(crate::diagnostics::RequestSentStatus::Sent);
         assert!(matches!(
-            super::classify_hedge_result(Ok(tr)),
+            HedgeRacePolicy::Standard.classify(Ok(tr)),
             super::HedgeClass::Transient
         ));
     }
@@ -12388,7 +12522,7 @@ mod tests {
             .with_message("synthetic build error")
             .build();
         assert!(matches!(
-            super::classify_hedge_result(Err(err)),
+            HedgeRacePolicy::Standard.classify(Err(err)),
             super::HedgeClass::Transient
         ));
     }
@@ -12408,19 +12542,19 @@ mod tests {
     #[test]
     fn result_is_final_success_is_true() {
         let tr = http_result(200, None);
-        assert!(super::result_is_final(&tr));
+        assert!(HedgeRacePolicy::Standard.result_is_final(&tr));
     }
 
     #[test]
     fn result_is_final_409_conflict_is_true() {
         let tr = http_result(409, None);
-        assert!(super::result_is_final(&tr));
+        assert!(HedgeRacePolicy::Standard.result_is_final(&tr));
     }
 
     #[test]
     fn result_is_final_503_is_false() {
         let tr = http_result(503, None);
-        assert!(!super::result_is_final(&tr));
+        assert!(!HedgeRacePolicy::Standard.result_is_final(&tr));
     }
 
     #[test]
@@ -12429,31 +12563,32 @@ mod tests {
         // pre-threshold branch must NOT record PrimaryWin (per the
         // c328cf50 over-correction).
         let tr = http_result(404, Some(1002));
-        assert!(!super::result_is_final(&tr));
+        assert!(!HedgeRacePolicy::Standard.result_is_final(&tr));
     }
 
     #[test]
     fn result_is_final_deadline_exceeded_is_false() {
         let tr =
             super::TransportResult::deadline_exceeded(crate::diagnostics::RequestSentStatus::Sent);
-        assert!(!super::result_is_final(&tr));
+        assert!(!HedgeRacePolicy::Standard.result_is_final(&tr));
     }
 
     #[test]
     fn result_is_final_429_ru_budget_and_hot_partition_are_final() {
         // RU-budget / hot-partition throttles cannot be relieved by racing a
         // second region, so they short-circuit the race.
-        assert!(super::result_is_final(&http_result(429, Some(3200)))); // RU_BUDGET_EXCEEDED
-        assert!(super::result_is_final(&http_result(429, Some(3210)))); // RU_BUDGET_EXCEEDED_FOR_MASTER
-        assert!(super::result_is_final(&http_result(429, Some(3214)))); // HOT_PARTITION_KEY_THROTTLED
+        assert!(HedgeRacePolicy::Standard.result_is_final(&http_result(429, Some(3200)))); // RU_BUDGET_EXCEEDED
+        assert!(HedgeRacePolicy::Standard.result_is_final(&http_result(429, Some(3210)))); // RU_BUDGET_EXCEEDED_FOR_MASTER
+        assert!(HedgeRacePolicy::Standard.result_is_final(&http_result(429, Some(3214))));
+        // HOT_PARTITION_KEY_THROTTLED
     }
 
     #[test]
     fn result_is_final_429_generic_and_3092_are_transient() {
         // A generic 429 and the transient-capacity 3092 sub-status keep the
         // other leg racing — another region may have spare capacity.
-        assert!(!super::result_is_final(&http_result(429, None)));
-        assert!(!super::result_is_final(&http_result(429, Some(3092))));
+        assert!(!HedgeRacePolicy::Standard.result_is_final(&http_result(429, None)));
+        assert!(!HedgeRacePolicy::Standard.result_is_final(&http_result(429, Some(3092))));
     }
 
     /// Cross-check: every `Ok(tr)` shape that `classify_hedge_result`
@@ -12482,9 +12617,9 @@ mod tests {
             super::TransportResult::deadline_exceeded(crate::diagnostics::RequestSentStatus::Sent),
         ];
         for tr in cases {
-            let by_peek = super::result_is_final(&tr);
+            let by_peek = HedgeRacePolicy::Standard.result_is_final(&tr);
             let by_classify = matches!(
-                super::classify_hedge_result(Ok(tr)),
+                HedgeRacePolicy::Standard.classify(Ok(tr)),
                 super::HedgeClass::Final(_)
             );
             assert_eq!(
@@ -12497,10 +12632,52 @@ mod tests {
     // ── finalize_hedge_attempt (Part 4b) ──────────────────────────────
 
     #[test]
+    fn successful_leaf_marks_the_raw_attempt_before_aggregation() {
+        let endpoint = CosmosEndpoint::regional(
+            Region::WEST_US_2,
+            Url::parse("https://acct.example/").unwrap(),
+        );
+        for (target, returned, expected) in [
+            (Some("7"), Some("8"), Some("8")),
+            (Some("7"), None, Some("7")),
+            (None, Some("8"), None),
+        ] {
+            let mut parent = test_diagnostics();
+            let mut primary = parent.clone_for_hedge_attempt();
+            let handle = primary.start_request(
+                ExecutionContext::Initial,
+                PipelineKind::DataPlane,
+                TransportSecurity::Secure,
+                TransportKind::Gateway,
+                TransportHttpVersion::Http2,
+                &endpoint,
+            );
+            let headers = CosmosResponseHeaders {
+                partition_key_range_id: returned.map(str::to_owned),
+                ..Default::default()
+            };
+            let status = crate::models::CosmosStatus::new(azure_core::http::StatusCode::Ok);
+            primary.record_response(handle, status.status_code(), &headers);
+            parent.merge_hedge_attempt(primary);
+            let tr = super::TransportResult::from_http_response(status, headers, Vec::new());
+            let response = super::finalize_hedge_attempt(Box::new(tr), parent, target).unwrap();
+            let diagnostics = response.diagnostics();
+            assert!(!diagnostics.hedging_started());
+            let attempt = serde_json::to_value(&diagnostics.requests()[0]).unwrap();
+            assert_eq!(attempt["partition_key_range_id"].as_str(), expected);
+            assert_eq!(
+                attempt["served_query_page"].as_bool(),
+                expected.map(|_| true)
+            );
+            assert_eq!(attempt["region"], Region::WEST_US_2.as_str());
+        }
+    }
+
+    #[test]
     fn finalize_hedge_attempt_http_error_returns_error_with_status() {
         let tr = Box::new(http_result(409, None));
         let diagnostics = test_diagnostics();
-        let err = super::finalize_hedge_attempt(tr, diagnostics)
+        let err = super::finalize_hedge_attempt(tr, diagnostics, None)
             .expect_err("409 should be surfaced as an error");
         assert_eq!(u16::from(err.status().status_code()), 409);
     }
@@ -12511,7 +12688,7 @@ mod tests {
             crate::diagnostics::RequestSentStatus::Sent,
         ));
         let diagnostics = test_diagnostics();
-        let err = super::finalize_hedge_attempt(tr, diagnostics)
+        let err = super::finalize_hedge_attempt(tr, diagnostics, None)
             .expect_err("deadline should produce an error");
         assert!(err.to_string().contains("deadline exceeded"));
     }
