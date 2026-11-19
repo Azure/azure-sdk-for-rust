@@ -410,6 +410,15 @@ impl std::fmt::Debug for TestEndpointProbeFn {
     }
 }
 
+#[derive(Debug)]
+struct PkRangeFillOwner(Arc<PartitionKeyRangeCache>);
+
+impl Drop for PkRangeFillOwner {
+    fn drop(&mut self) {
+        self.0.abort_pending_fills();
+    }
+}
+
 /// Cosmos DB driver instance.
 ///
 /// A driver represents a connection to a specific Cosmos DB account. It is
@@ -424,6 +433,7 @@ impl std::fmt::Debug for TestEndpointProbeFn {
 #[derive(Debug)]
 pub struct CosmosDriver {
     self_weak: Weak<Self>,
+    _pk_range_fill_owner: Option<PkRangeFillOwner>,
     /// Reference to the parent runtime.
     runtime: Arc<CosmosDriverRuntime>,
     /// Driver-level options including account reference.
@@ -448,21 +458,21 @@ pub struct CosmosDriver {
     /// Cache for partition key range routing maps.
     /// Used to pre-resolve partition key range IDs for PPAF/PPCB
     /// before the first request attempt.
-    pk_range_cache: PartitionKeyRangeCache,
+    pk_range_cache: Arc<PartitionKeyRangeCache>,
     /// Region pins protecting the change-feed continuations held by
     /// `pk_range_cache`. See [`PkRangeRegionPins`].
-    pk_range_region_pins: PkRangeRegionPins,
+    pk_range_region_pins: Arc<PkRangeRegionPins>,
     /// Per-client ceiling on metadata operations making simultaneous cross-region attempts.
     /// Bounds the request amplification a hedging client can inflict on an
     /// alternate region during a brownout. See [`HedgeBudget`].
-    hedge_budget: HedgeBudget,
+    hedge_budget: Arc<HedgeBudget>,
     /// Session token cache for session consistency.
-    session_manager: SessionManager,
+    session_manager: Arc<SessionManager>,
     /// Set to `true` after [`initialize()`](Self::initialize) completes successfully.
     /// Operations check this flag to fail fast if the driver is used before
     /// initialization. In normal usage `create_driver` awaits `initialize()`
     /// before returning, so this guard only catches misuse.
-    initialized: AtomicBool,
+    initialized: Arc<AtomicBool>,
     /// User-Agent string stamped on every request issued by this driver.
     ///
     /// When the driver's [`DriverOptions::user_agent_suffix()`] is `None`, this
@@ -493,7 +503,7 @@ pub struct CosmosDriver {
     /// Native FFI query plan provider. Lazily loads the native library on
     /// first use; returns errors if unavailable.
     #[cfg(feature = "__internal_native_query_plan")]
-    native_query_plan_provider: crate::query_plan_native::NativeQueryPlanProvider,
+    native_query_plan_provider: Arc<crate::query_plan_native::NativeQueryPlanProvider>,
 }
 
 impl CosmosDriver {
@@ -1967,10 +1977,11 @@ impl CosmosDriver {
         // Read the hedge ceiling once, here: it is fixed for the driver's
         // lifetime, and `options` is moved into `Self` below.
         let hedge_budget = HedgeBudget::new(options.hedging_options());
-        let pk_range_cache = PartitionKeyRangeCache::new();
+        let pk_range_cache = Arc::new(PartitionKeyRangeCache::new());
 
         Ok(Arc::new_cyclic(|self_weak| Self {
             self_weak: self_weak.clone(),
+            _pk_range_fill_owner: Some(PkRangeFillOwner(Arc::clone(&pk_range_cache))),
             runtime,
             options,
             transport,
@@ -1981,18 +1992,49 @@ impl CosmosDriver {
             ))]
             endpoint_probe_fn: TestEndpointProbeFn(endpoint_probe_fn_for_tests),
             pk_range_cache,
-            pk_range_region_pins: Mutex::new(HashMap::new()),
-            hedge_budget,
-            session_manager: SessionManager::new(),
-            initialized: AtomicBool::new(false),
+            pk_range_region_pins: Arc::new(Mutex::new(HashMap::new())),
+            hedge_budget: Arc::new(hedge_budget),
+            session_manager: Arc::new(SessionManager::new()),
+            initialized: Arc::new(AtomicBool::new(false)),
             user_agent,
             client_id,
             http_client_factory,
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled,
             #[cfg(feature = "__internal_native_query_plan")]
-            native_query_plan_provider: crate::query_plan_native::NativeQueryPlanProvider::new(),
+            native_query_plan_provider: Arc::new(
+                crate::query_plan_native::NativeQueryPlanProvider::new(),
+            ),
         }))
+    }
+
+    // Share execution state, but never let a fill retain the client-lifetime owner.
+    fn metadata_worker(&self) -> Self {
+        Self {
+            self_weak: self.self_weak.clone(),
+            _pk_range_fill_owner: None,
+            runtime: Arc::clone(&self.runtime),
+            options: self.options.clone(),
+            transport: Arc::clone(&self.transport),
+            location_state_store: Arc::clone(&self.location_state_store),
+            #[cfg(all(
+                feature = "tokio",
+                any(test, feature = "__internal_in_memory_emulator")
+            ))]
+            endpoint_probe_fn: TestEndpointProbeFn(Arc::clone(&self.endpoint_probe_fn.0)),
+            pk_range_cache: Arc::clone(&self.pk_range_cache),
+            pk_range_region_pins: Arc::clone(&self.pk_range_region_pins),
+            hedge_budget: Arc::clone(&self.hedge_budget),
+            session_manager: Arc::clone(&self.session_manager),
+            initialized: Arc::clone(&self.initialized),
+            user_agent: Arc::clone(&self.user_agent),
+            client_id: self.client_id.clone(),
+            http_client_factory: Arc::clone(&self.http_client_factory),
+            #[cfg(feature = "fault_injection")]
+            fault_injection_enabled: self.fault_injection_enabled,
+            #[cfg(feature = "__internal_native_query_plan")]
+            native_query_plan_provider: Arc::clone(&self.native_query_plan_provider),
+        }
     }
 
     /// Returns the account reference.
@@ -2380,8 +2422,8 @@ impl CosmosDriver {
     /// An outer loop retries throttled pages with the same continuation,
     /// and activity ID, dropping batch diagnostics each time. The shared fill
     /// has no caller deadline; individual transport attempts remain bounded.
-    /// Signing has no SDK timeout, so a stalled credential can retain the driver
-    /// indefinitely; bounding credential preparation is deferred.
+    /// Signing has no SDK timeout. Dropping the last external driver owner
+    /// aborts its fills; credential preparation budgets remain deferred.
     ///
     /// Permanent errors (401 Unauthorized, 403 Forbidden, 404 NotFound) are
     /// terminal and returned to the caller.
@@ -2399,6 +2441,9 @@ impl CosmosDriver {
         crate::error::Result<Option<PkRangeFetchResult>>,
         Option<CosmosEndpoint>,
     ) {
+        let Some(driver) = driver.upgrade().map(|driver| driver.metadata_worker()) else {
+            return (Err(Self::pk_range_fill_stopped()), None);
+        };
         // Build the operation through the standard pipeline to get correct
         // URL construction, signing, and cross-region retry behavior.
         let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone())
@@ -2433,9 +2478,6 @@ impl CosmosDriver {
 
         let mut throttle_attempt_count = 0u32;
         let (result, serving_endpoint) = loop {
-            let Some(driver) = driver.upgrade() else {
-                return (Err(Self::pk_range_fill_stopped()), None);
-            };
             let result = driver
                 .execute_operation_direct(&operation, overrides.clone(), &options)
                 .await;
@@ -2443,8 +2485,6 @@ impl CosmosDriver {
                 .as_ref()
                 .ok()
                 .and_then(|response| driver.response_endpoint(response));
-            // Never retain the client across the unbounded throttling loop.
-            drop(driver);
             let Err(error) = &result else {
                 break (result, serving_endpoint);
             };

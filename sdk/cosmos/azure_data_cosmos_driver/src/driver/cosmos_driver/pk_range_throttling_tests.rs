@@ -35,6 +35,7 @@ use url::Url;
 
 #[derive(Clone, Debug)]
 struct PageAttempt {
+    path: String,
     token: Option<String>,
     host: String,
     activity_id: String,
@@ -66,6 +67,15 @@ struct PageClient {
     hedge_started: tokio::sync::Notify,
     page_throttles: Mutex<HashMap<String, u32>>,
     retry_after_ms: AtomicU64,
+    active_requests: AtomicU64,
+}
+
+struct ActivePageRequest<'a>(&'a AtomicU64);
+
+impl Drop for ActivePageRequest<'_> {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::SeqCst);
+    }
 }
 
 #[async_trait]
@@ -109,7 +119,10 @@ impl TransportClient for PageClient {
             .get_optional_str(&"if-none-match".into())
             .map(str::to_owned);
         let host = request.url.host_str().unwrap().to_owned();
+        self.active_requests.fetch_add(1, Ordering::SeqCst);
+        let _active = ActivePageRequest(&self.active_requests);
         self.attempts.lock().unwrap().push(PageAttempt {
+            path: request.url.path().to_owned(),
             token: token.clone(),
             host: host.clone(),
             activity_id: request
@@ -145,7 +158,10 @@ impl TransportClient for PageClient {
             }
             tokio::time::sleep(reply.delay).await;
             if reply.status != 200 {
-                headers.insert("x-ms-retry-after-ms", "0");
+                headers.insert(
+                    "x-ms-retry-after-ms",
+                    self.retry_after_ms.load(Ordering::SeqCst).to_string(),
+                );
                 if let Some(substatus) = reply.substatus {
                     headers.insert("x-ms-substatus", substatus.to_string());
                 }
@@ -288,6 +304,7 @@ async fn setup_with_topology_mode(
         hedge_started: tokio::sync::Notify::new(),
         page_throttles: Mutex::new(HashMap::new()),
         retry_after_ms: AtomicU64::new(0),
+        active_requests: AtomicU64::new(0),
     });
     let runtime = CosmosDriverRuntime::builder()
         .with_connection_pool(
@@ -1195,6 +1212,82 @@ async fn dropping_the_driver_reclaims_shared_fills_even_during_a_transport_attem
         tokio::time::sleep(Duration::from_millis(50)).await;
         assert_eq!(client.attempts.lock().unwrap().len(), attempts);
     }
+}
+
+#[tokio::test(start_paused = true)]
+async fn dropping_last_driver_stops_staggered_container_fills() {
+    let (driver, client, first) = setup(false, false).await;
+    let properties = ContainerProperties {
+        id: "other-items".into(),
+        partition_key: serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap(),
+        system_properties: Default::default(),
+    };
+    let second = ContainerReference::new(
+        driver.account().clone(),
+        "db",
+        "db-rid",
+        "other-items",
+        "other-items-rid",
+        &properties,
+    );
+    *client.cold_replies.lock().unwrap() = Some(vec![
+        ColdReply {
+            status: 429,
+            substatus: None,
+            delay: Duration::from_millis(100),
+            pending: false,
+        };
+        2
+    ]);
+    client.retry_after_ms.store(20, Ordering::SeqCst);
+    let mut operation_options = options(0, Duration::ZERO, false);
+    operation_options.max_failover_retry_count = Some(0);
+    let mut first_waiter =
+        Box::pin(driver.load_session_token_routing_map(&first, operation_options.clone(), None));
+    assert!(futures::poll!(&mut first_waiter).is_pending());
+    wait_for_page_attempts(&client, None, 1).await;
+    tokio::time::advance(Duration::from_millis(60)).await;
+    let mut second_waiter =
+        Box::pin(driver.load_session_token_routing_map(&second, operation_options, None));
+    assert!(futures::poll!(&mut second_waiter).is_pending());
+    wait_for_page_attempts(&client, None, 2).await;
+    drop(first_waiter);
+    drop(second_waiter);
+
+    let last_owner = Arc::clone(&driver);
+    let weak = Arc::downgrade(&driver);
+    drop(driver);
+    for _ in 0..15 {
+        if client.attempts.lock().unwrap().len() >= 6 {
+            break;
+        }
+        tokio::time::advance(Duration::from_millis(20)).await;
+        tokio::task::yield_now().await;
+    }
+    let attempts = client.attempts.lock().unwrap().clone();
+    assert!(
+        attempts.len() >= 6,
+        "both fills must keep retrying while owned"
+    );
+    let mut by_container = HashMap::new();
+    for attempt in &attempts {
+        *by_container.entry(&attempt.path).or_insert(0) += 1;
+    }
+    assert_eq!(by_container.len(), 2);
+    assert!(by_container.values().all(|count| *count >= 2));
+    assert_eq!(client.active_requests.load(Ordering::SeqCst), 2);
+    drop(last_owner);
+
+    for _ in 0..50 {
+        tokio::time::advance(Duration::from_millis(20)).await;
+        tokio::task::yield_now().await;
+    }
+    assert!(
+        weak.upgrade().is_none(),
+        "overlapping fills must not keep the driver alive for one another"
+    );
+    assert_eq!(client.active_requests.load(Ordering::SeqCst), 0);
+    assert_eq!(client.attempts.lock().unwrap().len(), attempts.len());
 }
 
 #[tokio::test]

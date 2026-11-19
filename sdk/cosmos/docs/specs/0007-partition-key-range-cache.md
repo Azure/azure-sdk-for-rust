@@ -515,14 +515,15 @@ discarded before the next retry. Non-429 failures keep the existing bounded
 pipeline retries, cold-recovery rules, and previous-map fallback.
 
 The cache owns an abort handle for each pending fill. Invalidating a container
-aborts that fill; dropping the cache aborts all remaining fills. Workers hold
-only weak driver references between pipeline batches, never across the unbounded
-throttling/backoff loop. An active batch holds a strong driver reference through
-signing and transport. A credential that never completes can therefore retain
-the driver and cache indefinitely after the last external client owner drops;
-the cache's drop-triggered abort cannot run while that reference is held.
-Explicit container invalidation can still abort the pending fill. Once signing
-completes, the batch's transport timeouts and retry limits apply as before.
+aborts that fill; dropping the cache aborts all remaining fills. The external
+driver owns a separate lifetime guard that also aborts all pending fills when
+its final owner drops. Workers share execution state, caches, routing state,
+and retry admission budgets, but never retain that lifetime guard or a strong
+reference to the external driver across signing, transport, or backoff.
+Overlapping fills therefore cannot keep the driver alive for one another.
+Signing can still wait indefinitely while an external owner remains alive;
+no credential preparation timeout is imposed. Once signing completes, the
+batch's transport timeouts and retry limits apply as before.
 
 ## 7. Async Caching Infrastructure
 

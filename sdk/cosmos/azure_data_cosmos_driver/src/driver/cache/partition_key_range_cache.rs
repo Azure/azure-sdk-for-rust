@@ -572,6 +572,13 @@ impl PartitionKeyRangeCache {
         self.cache.invalidate(container).await;
     }
 
+    pub(crate) fn abort_pending_fills(&self) {
+        self.pending
+            .lock()
+            .expect("pk-range fills mutex poisoned")
+            .clear();
+    }
+
     /// Reads initialized topology without fetching or waiting for a pending refresh.
     pub(crate) async fn cached_routing_map(
         &self,
