@@ -113,6 +113,7 @@ by `resource_group`, a unique `vault_name`, and your subscription's `location` a
 - [Update a vault](#update-a-vault)
 - [Handle errors](#handle-errors)
 - [Delete a vault](#delete-a-vault)
+- [Testing with fakes](#testing-with-fakes)
 
 ### Create a vault
 
@@ -211,7 +212,7 @@ Deleting a vault does not purge a soft-deleted vault.
 vaults.delete(&resource_group, &vault_name, None).await?;
 ```
 
-## Testing with fakes
+### Testing with fakes
 
 Enable the crate's `test` and `unstable_fake` features in your test dependencies.
 `unstable_fake` enables `test` automatically, but both are shown explicitly below.
@@ -301,7 +302,7 @@ let key = keys
 assert_eq!(key.name.as_deref(), Some("my-key"));
 ```
 
-### Fake service responses
+#### Fake service responses
 
 The experimental [fake server example] retrieves key metadata and simulates a service error
 without credentials or network access. Implement only the `KeyVaultKeysServer` operations
