@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added in-memory emulator service-style aggregate, GROUP BY, and canonical distinct-count plans and split-safe partition partials for account-free testing of the production query pipeline. ([#5552](https://github.com/Azure/azure-sdk-for-rust/pull/5552))
 - Added client-side merging of cross-partition aggregates, `GROUP BY`, and distinct counts from native or Gateway query plans, preserving live iteration and split recovery without introducing a retained-state memory cap. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Added server-side PATCH filter predicates to `PatchInstructions` through the standard `condition` request envelope, with explicit rejection when execution resolves to client-side read-modify-write. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
 - Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
@@ -16,6 +17,7 @@
 
 ### Bugs Fixed
 
+- Preserve complete single-partition emulator aggregate, GROUP BY, and DISTINCT results across pages, and retain quoted aliases and floating-point literals in query rewrites. ([#5552](https://github.com/Azure/azure-sdk-for-rust/pull/5552))
 - Apply `DISTINCT` to completed `GROUP BY` projections before result windows, preserving identical partition-local aggregate contributions and deduplicating equal final projections. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Preserve session tokens from query pages suppressed by `DISTINCT` or `OFFSET`, including terminal distinct-count results and empty-page flushes. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Normalize native query-plan partition bounds using the container's partition key kind and version, preventing malformed EPK errors during cross-partition queries. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
