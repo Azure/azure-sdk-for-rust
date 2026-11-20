@@ -10,7 +10,9 @@ use crate::{
     op_request::{build_request_with_operation, BuiltRequest, CosmosOperationRequest},
     string::{optional_text, CosmosStringView},
 };
+use azure_data_cosmos_driver::models::MaxItemCountHint;
 use azure_data_cosmos_driver::models::{ChangeFeedStartFrom, CosmosOperation};
+use std::num::NonZeroU32;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 /// Retained feed input. Initialize with `cosmos_cursor_request_init`.
@@ -30,6 +32,102 @@ pub struct CosmosCursorRequest {
     pub start_time: CosmosStringView,
     /// Must be zero.
     pub reserved: [u32; 4],
+}
+
+/// Additive retained-feed options. Initialize with [`cosmos_feed_options_init()`].
+///
+/// Unused payloads must be zero. All values are copied before submit returns.
+#[repr(C)]
+pub struct CosmosFeedOptions {
+    /// Readable record size, including zero-filled future extension bytes.
+    pub struct_size_bytes: u32,
+    /// Must be 1.
+    pub abi_version: u32,
+    /// 0 inherits the planner default; 1 applies the full `u64` value, including zero.
+    pub has_max_buffered_query_window: u8,
+    /// Maximum finite buffered query window. Ignored only when unset and zero.
+    pub max_buffered_query_window: u64,
+    /// 0 preserves the legacy hint; 1 is ServerDecides; 2 is a positive limit.
+    pub max_item_count_kind: u32,
+    /// 1..=u32::MAX for kind 2, otherwise zero. Explicit kinds require a negative legacy hint.
+    pub max_item_count_limit: u32,
+}
+
+/// Initializes additive feed options to inherited defaults.
+#[no_mangle]
+pub extern "C" fn cosmos_feed_options_init(out: *mut CosmosFeedOptions) {
+    if !out.is_null() {
+        // SAFETY: caller supplies writable storage for the complete record.
+        unsafe {
+            out.write(CosmosFeedOptions {
+                struct_size_bytes: std::mem::size_of::<CosmosFeedOptions>() as u32,
+                abi_version: 1,
+                has_max_buffered_query_window: 0,
+                max_buffered_query_window: 0,
+                max_item_count_kind: 0,
+                max_item_count_limit: 0,
+            });
+        }
+    }
+}
+
+pub(crate) unsafe fn build_cursor_request_v2(
+    input: *const CosmosCursorRequest,
+    options: *const CosmosFeedOptions,
+) -> Result<BuiltRequest, CosmosErrorCode> {
+    let invalid = CosmosErrorCode::CosmosErrorCodeInvalidOptionValue;
+    if options.is_null() {
+        // SAFETY: forwarded cursor input allocation contract.
+        return unsafe { build_cursor_request(input) };
+    }
+    if !options.is_aligned() {
+        return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+    }
+    // SAFETY: caller supplies the readable size/version prefix.
+    let size = unsafe { std::ptr::addr_of!((*options).struct_size_bytes).read() } as usize;
+    let known = std::mem::size_of::<CosmosFeedOptions>();
+    if size < known || size > isize::MAX as usize {
+        return Err(invalid);
+    }
+    // SAFETY: declared size covers the full record and extension bytes.
+    let (options, extension) = unsafe {
+        (
+            &*options,
+            std::slice::from_raw_parts(options.cast::<u8>().add(known), size - known),
+        )
+    };
+    if options.abi_version != 1 || extension.iter().any(|byte| *byte != 0) {
+        return Err(invalid);
+    }
+    match options.has_max_buffered_query_window {
+        0 if options.max_buffered_query_window == 0 => {}
+        1 => {}
+        _ => return Err(invalid),
+    }
+    let hint = match (options.max_item_count_kind, options.max_item_count_limit) {
+        (0, 0) => None,
+        (1, 0) => Some(MaxItemCountHint::ServerDecides),
+        (2, limit) => Some(MaxItemCountHint::Limit(
+            NonZeroU32::new(limit).ok_or(invalid)?,
+        )),
+        _ => return Err(invalid),
+    };
+    // SAFETY: all legacy input is copied and validated synchronously.
+    let mut built = unsafe { build_cursor_request(input)? };
+    if let Some(hint) = hint {
+        // SAFETY: build_cursor_request validated the full input allocation.
+        if unsafe { (*input).operation.max_item_count } >= 0 {
+            return Err(invalid);
+        }
+        built.operation = built.operation.with_max_item_count(hint);
+    }
+    if options.has_max_buffered_query_window == 1 {
+        // A window affects planning, never paging or checkpoint eligibility.
+        built.plan_options = built
+            .plan_options
+            .with_max_buffered_query_window(options.max_buffered_query_window);
+    }
+    Ok(built)
 }
 
 /// Initialize a caller-owned full-size cursor request.

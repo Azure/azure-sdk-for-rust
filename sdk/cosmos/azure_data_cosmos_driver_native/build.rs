@@ -105,6 +105,26 @@ fn generate_c_header() {
     // table can list the full naming policy in one place.
     let rename = HashMap::from([
         ("CosmosCursorRequest".into(), "cursor_request_t".into()),
+        ("CosmosFeedOptions".into(), "feed_options_t".into()),
+        (
+            "CosmosManagementOptions".into(),
+            "management_options_t".into(),
+        ),
+        ("CosmosOptionalU64".into(), "optional_u64_t".into()),
+        ("CosmosDuration".into(), "duration_t".into()),
+        (
+            "CosmosRuntimeOptionsV2".into(),
+            "runtime_options_v2_t".into(),
+        ),
+        (
+            "CosmosDriverOptionsConfigV3".into(),
+            "driver_options_config_v3_t".into(),
+        ),
+        ("CosmosFeedRangeInfo".into(), "feed_range_info_t".into()),
+        (
+            "CosmosFeedRangeRelation".into(),
+            "feed_range_relation_t".into(),
+        ),
         (
             "CosmosCursorCompletion".into(),
             "cursor_completion_t".into(),
@@ -146,6 +166,7 @@ fn generate_c_header() {
         ),
         ("FeedRange".into(), "feed_range_t".into()),
         ("FeedRangeHandle".into(), "feed_range_t".into()),
+        ("FeedRangeListHandle".into(), "feed_range_list_t".into()),
         ("DiagnosticsContext".into(), "diagnostics_t".into()),
         ("CosmosDiagnostics".into(), "diagnostics_t".into()),
         (

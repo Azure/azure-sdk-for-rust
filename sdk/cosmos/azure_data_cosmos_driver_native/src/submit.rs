@@ -34,6 +34,7 @@ use crate::account_ref::AccountRefHandle;
 use crate::completion::{
     CompletionQueue, CompletionQueueInner, OperationHandle, OperationInner, PendingCompletion,
 };
+use crate::configuration::{management_headers, CosmosManagementOptions};
 use crate::driver::DriverHandle;
 use crate::driver_options::DriverOptionsHandle;
 use crate::error::{CosmosErrorCode, CosmosStatusCode};
@@ -78,6 +79,7 @@ unsafe impl Send for SpawnContext {}
 
 /// The success payload a submit task produces, mapped into a completion.
 enum SuccessKind {
+    FeedRanges(Vec<azure_data_cosmos_driver::models::FeedRange>),
     /// A CRUD / feed response page (or a degenerate end-of-feed shell when
     /// `response` is `None`) plus an optional planner next-page token. The
     /// response is boxed to keep this enum small (it is otherwise dominated by
@@ -104,6 +106,9 @@ fn pre_flight_spawn(
     let Some(queue_inner) = CompletionQueue::inner_arc(queue) else {
         return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
     };
+    if queue_inner.cursor.is_some() {
+        return Err(CosmosErrorCode::CosmosErrorCodeQueueFormat);
+    }
     // Atomically validate the queue is accepting work and reserve an
     // in-flight slot for this op's whole submit → run → enqueue → drain
     // lifecycle. Reserving here (rather than only checking deque length and
@@ -184,6 +189,9 @@ fn spawn_oneshot<Fut, R>(
         let user_data = ctx.user_data.as_isize();
         let completion = match done {
             Ok(Ok(success)) => match success {
+                SuccessKind::FeedRanges(ranges) => {
+                    PendingCompletion::ok_feed_ranges(user_data, ctx.op_inner.clone(), ranges)
+                }
                 SuccessKind::Response {
                     response,
                     next_continuation,
@@ -270,6 +278,73 @@ fn spawn_oneshot<Fut, R>(
 // + `OperationOptions` internally and dispatches to the matching driver
 // method. These supersede the per-operation factory / mutator surface.
 // ─────────────────────────────────────────────────────────────────────────────
+
+/// Discovers ranges using the driver's routing cache and an ordinary completion queue.
+///
+/// `force_refresh` must be 0 or 1. Detach the result with
+/// `cosmos_completion_take_feed_ranges`; unresolved topology fails with HTTP 503.
+#[no_mangle]
+pub extern "C" fn cosmos_container_read_feed_ranges_submit(
+    driver: *const DriverHandle,
+    container: *const crate::container_ref::ContainerRefHandle,
+    force_refresh: u8,
+    queue: *mut CompletionQueue,
+    user_data: isize,
+    out_pre_error: *mut CosmosStatusCode,
+) -> *mut OperationHandle {
+    let prepare = || {
+        let driver = DriverHandle::inner_arc(driver)
+            .ok_or(CosmosErrorCode::CosmosErrorCodeInvalidArgument)?;
+        let container = crate::container_ref::ContainerRefHandle::from_ptr(container)
+            .ok_or(CosmosErrorCode::CosmosErrorCodeInvalidArgument)?
+            .inner
+            .clone();
+        if force_refresh > 1 {
+            return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
+        }
+        let (ctx, handle) = pre_flight_spawn(queue, user_data)?;
+        Ok((driver, container, ctx, handle))
+    };
+    let (driver, container, ctx, handle) = match prepare() {
+        Ok(prepared) => prepared,
+        Err(code) => {
+            if !out_pre_error.is_null() {
+                // SAFETY: caller supplies a writable status slot.
+                unsafe { *out_pre_error = code.as_status_code() };
+            }
+            return std::ptr::null_mut();
+        }
+    };
+    if !out_pre_error.is_null() {
+        // SAFETY: caller supplies a writable status slot.
+        unsafe { *out_pre_error = CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code() };
+    }
+    let runtime = Arc::clone(ctx.queue.runtime());
+    spawn_oneshot(
+        ctx,
+        runtime,
+        async move {
+            let ranges = driver
+                .inner
+                .resolve_all_partition_key_ranges(&container, force_refresh == 1)
+                .await?
+                .ok_or_else(|| {
+                    azure_data_cosmos_driver::error::CosmosError::builder()
+                        .with_status(azure_data_cosmos_driver::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::ServiceUnavailable,
+                        ))
+                        .with_message("container routing map could not be resolved")
+                        .build()
+                })?;
+            ranges
+                .iter()
+                .map(azure_data_cosmos_driver::models::FeedRange::try_from)
+                .collect()
+        },
+        SuccessKind::FeedRanges,
+    );
+    handle
+}
 
 /// Submits a feed-capable operation for asynchronous execution, binding to
 /// the driver's planner so a single page is produced per call.
@@ -476,9 +551,91 @@ pub extern "C" fn cosmos_submit_singleton_operation(
     {
         return cosmos_submit_operation(driver, request, queue, user_data, out_pre_error);
     }
-    submit_singleton_operation_with_builder(driver, queue, user_data, out_pre_error, || {
+    submit_singleton_operation_with_builder(driver, queue, user_data, out_pre_error, |_| {
         // SAFETY: caller guarantees the v1 request fields follow their contracts.
         unsafe { build_request(request) }
+    })
+}
+
+/// Submits a singleton with typed database/container creation throughput.
+///
+/// NULL or initialized-unset `management` preserves
+/// [`cosmos_submit_singleton_operation()`] behavior. Set options require a
+/// CreateDatabase or CreateContainer request. Manual and autoscale settings
+/// are mutually exclusive. Typed headers take precedence over custom headers
+/// without replacing the native-resolved custom-header map. An inherited
+/// opposite-mode throughput header is rejected rather than sending both modes.
+/// Set options capture native configuration at admission if no snapshot was supplied.
+///
+/// Request, options, handles, and borrowed inputs must remain valid until this
+/// call returns; inputs are copied before asynchronous execution. Completion,
+/// cancellation, and ownership follow [`cosmos_submit_singleton_operation()`].
+/// Invalid records or unsupported operation kinds fail before submission via
+/// `out_pre_error`. Other parameters have the same contracts as the v1 entry point.
+#[no_mangle]
+pub extern "C" fn cosmos_submit_singleton_operation_v2(
+    driver: *const DriverHandle,
+    request: *const CosmosOperationRequest,
+    management: *const CosmosManagementOptions,
+    queue: *mut CompletionQueue,
+    user_data: isize,
+    out_pre_error: *mut CosmosStatusCode,
+) -> *mut OperationHandle {
+    // SAFETY: caller keeps the versioned record readable until return.
+    let headers = match unsafe { management_headers(management) } {
+        Ok(Some(headers)) => headers,
+        Ok(None) => {
+            return cosmos_submit_singleton_operation(
+                driver,
+                request,
+                queue,
+                user_data,
+                out_pre_error,
+            );
+        }
+        Err(status) => {
+            if !out_pre_error.is_null() {
+                // SAFETY: caller supplies a writable status slot.
+                unsafe { *out_pre_error = status };
+            }
+            return std::ptr::null_mut();
+        }
+    };
+    submit_singleton_operation_with_builder(driver, queue, user_data, out_pre_error, |driver| {
+        // SAFETY: caller keeps the request and its borrowed inputs readable until return.
+        let mut built = unsafe { build_request(request)? };
+        // SAFETY: build_request validated the non-NULL request.
+        if !matches!(unsafe { (*request).kind }, 1 | 9) {
+            return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
+        }
+        if built.options.resolution_snapshot_view().is_none() {
+            let runtime = driver.runtime();
+            built.options = built.options.with_resolution_snapshot(
+                Arc::clone(runtime.env_override_operation_options()),
+                Arc::clone(runtime.env_operation_options()),
+                runtime.default_operation_options(),
+                Arc::clone(driver.options().operation_options()),
+            );
+        }
+        let opposite = azure_core::http::headers::HeaderName::from_static(
+            if headers.offer_throughput.is_some() {
+                "x-ms-cosmos-offer-autopilot-settings"
+            } else {
+                "x-ms-offer-throughput"
+            },
+        );
+        if driver
+            .operation_options_view(&built.options)
+            .custom_headers()
+            .is_some_and(|custom| custom.contains_key(&opposite))
+        {
+            return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
+        }
+        let mut request_headers = built.operation.request_headers().clone();
+        request_headers.offer_throughput = headers.offer_throughput;
+        request_headers.offer_autopilot_settings = headers.offer_autopilot_settings;
+        built.operation = built.operation.with_request_headers(request_headers);
+        Ok(built)
     })
 }
 
@@ -487,7 +644,7 @@ fn submit_singleton_operation_with_builder(
     queue: *mut CompletionQueue,
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
-    build: impl FnOnce() -> Result<crate::op_request::BuiltRequest, CosmosErrorCode>,
+    build: impl FnOnce(&CosmosDriver) -> Result<crate::op_request::BuiltRequest, CosmosErrorCode>,
 ) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
         if !out_pre_error.is_null() {
@@ -504,7 +661,7 @@ fn submit_singleton_operation_with_builder(
     };
     let driver_arc: Arc<CosmosDriver> = Arc::clone(&driver_inner.inner);
 
-    let built = match build() {
+    let built = match build(&driver_arc) {
         Ok(b) => b,
         Err(code) => {
             write_err(code);

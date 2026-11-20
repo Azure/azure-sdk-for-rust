@@ -65,6 +65,111 @@ for the full design.
 | Custom per-operation request headers | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
 | Driver fault injection | Supported through versioned `cosmos_driver_options_config_v2_t` records |
 
+## Feed ranges and additive options
+
+`cosmos_container_read_feed_ranges_submit` discovers ranges using native routing.
+Use an ordinary completion queue, with `force_refresh` set to 0 or 1. Detach the
+result with `cosmos_completion_take_feed_ranges`; unresolved routing returns 503.
+Discovery retains the driver's cache-refresh behavior: a failed refresh can return
+previously cached ranges instead of an error
+([#5637](https://github.com/Azure/azure-sdk-for-rust/issues/5637)).
+The detached list outlives its completion. `cosmos_feed_range_list_get` copies an
+independently owned handle; free each handle and the list with their matching
+`cosmos_feed_range_free` and `cosmos_feed_range_list_free` functions.
+
+Construct explicit bounds with `cosmos_feed_range_from_epk`. Bounds use even-length
+hexadecimal strings; the minimum may be empty, and equal bounds denote one EPK.
+`cosmos_feed_range_inspect` returns `cosmos_feed_range_info_t`: owned
+`min_inclusive` and `max_exclusive` strings, plus an `is_logical_partition` flag.
+Free both strings independently with `cosmos_string_free`; they outlive the range
+handle. The caller owns the result record and must free its previous strings
+before reusing it. Serialization also returns an owned string.
+Serialization uses the driver's base64 JSON format and preserves bounds only.
+Parsing does not restore logical partition-key identity. Preserve a partition key
+separately when logical routing is required. A range string is not a checkpoint.
+`cosmos_feed_range_relate(range, other, &relation)` returns both `is_subset`
+(the first range is a subset of the second) and `overlaps` in
+`cosmos_feed_range_relation_t`, without consuming either handle. Inspection and
+relation flags are 0 or 1. Both calls zero a non-NULL output record on failure.
+Comparisons use the driver's effective-bound semantics.
+Equal-bound comparisons retain the driver's existing boundary limitations
+([#5638](https://github.com/Azure/azure-sdk-for-rust/issues/5638)).
+
+Retained query and change-feed requests copy `operation.feed_range` before submit
+returns. Range scoping, checkpoint validation, and split/merge recovery stay in
+the driver; hosts must not widen a range after a service rejects its scope.
+Service errors, including unsupported change-feed scopes, remain errors.
+Equal-bound EPK scopes currently fail planning with native substatus 20302 for
+queries or 20305 for change feeds, before issuing a data request. They aren't
+widened to a physical range. Other narrowed scopes carry explicit EPK filters;
+unsupported service scopes preserve the service's status and diagnostics.
+
+Checkpoints retain the scoped EPK bounds, per-range positions, and change-feed
+start. Resume with the same container and scope. Driver topology recovery
+replaces split parents with intersecting children and handles merges without
+discarding the original scope. A range string alone carries none of this progress.
+
+`cosmos_cursor_open_submit_v2` accepts an optional `cosmos_feed_options_t` initialized
+with `cosmos_feed_options_init`. A set buffered window forwards the full `uint64_t`
+value, including zero, into fresh and resumed planning. Unset retains the native
+default of 1000. Finite buffered TOP and OFFSET-plus-take windows must fit the
+configured limit. Checkpoint support is independent: an unsupported checkpoint
+does not stop a retained buffered cursor.
+
+Page-hint kind 0 preserves the legacy field, kind 1 selects `ServerDecides`, and
+kind 2 accepts a positive limit through `UINT32_MAX`. Explicit kinds require a
+negative legacy page hint. Unused payloads, unknown kinds, and invalid versions
+are rejected rather than narrowed or silently ignored.
+
+Initialize one `cosmos_runtime_options_v2_t` with `cosmos_runtime_options_v2_init`,
+set its fields, and pass it to `cosmos_runtime_build_v2`. Initialize one
+`cosmos_driver_options_config_v3_t` with `cosmos_driver_options_config_v3_init`
+and pass it to `cosmos_driver_options_build_v3`. These self-contained records
+have no nested configuration records or initializers. Runtime fields expose
+identity, transport/pooling, and diagnostics defaults/retention. Client fields
+expose regions, fault-injection rules, resource-name validation, topology/failover,
+ordered bootstrap backups, and independent identity. Both accept the existing
+optional `cosmos_operation_options_t` pointer; NULL inherits.
+All borrowed strings, arrays, rules, and operation options are copied during
+construction. Initializers set the size/version prefix and unset sentinels;
+the client initializer also sets the fault-injection rule stride.
+Native builders retain environment/default precedence and validation.
+NULL/0 identity inherits; explicit empty goes through native suffix validation.
+Backup endpoint NULL/0 inherits the account list; non-NULL/0 clears it.
+
+Exact operation-duration defaults are inline fields on both construction records.
+Seconds plus normalized nanoseconds preserve precision
+for endpoint cooldown, throttle wait, and a positive hedge threshold. Unset
+payloads must be zero. Monotonic-clock overflow and native option bounds are
+rejected. Legacy records and entry points keep their published layouts and meanings.
+
+For database and container creation, `cosmos_submit_singleton_operation_v2`
+accepts `cosmos_management_options_t`, initialized with
+`cosmos_management_options_init`. Throughput kind 0 is unset, 1 selects positive
+`manual_throughput`, and 2 selects positive `autoscale_max_throughput`. Inactive
+payloads must be zero; manual and autoscale settings cannot be combined. Autoscale
+preserves absent or present-empty auto-upgrade policies, an optional nested
+throughput policy, and the full `uint32_t` increment percentage. Presence flags
+accept only 0 or 1; a nested policy requires its parent.
+
+These are native typed request headers: inherited runtime/client custom headers
+remain available, and typed throughput wins a conflicting header name. Do not
+inject typed throughput through the replacement `custom_headers` map. NULL or an
+initialized-unset record preserves v1 behavior. Reinitializing clears the typed
+override, not inherited custom headers. Inputs are copied before submit returns.
+An inherited opposite-mode throughput header is rejected before dispatch, so
+manual and autoscale headers are not sent together. Set options capture native
+configuration at admission when the request did not supply a snapshot.
+Use the existing operation `precondition_kind` and `precondition_etag` fields for
+typed If-Match/If-None-Match conditions; they also preserve header inheritance.
+
+These additive exports require a matching newly built native library and header;
+the published v0.3.0 platform modules do not contain them. A local build is not
+a published platform-module/header/checksum/provenance release.
+Use release builds for distribution. Debug driver builds can reject differing
+process-wide CPU sampling intervals with a runtime-construction error; release
+builds retain the first initialized interval, as in the published driver.
+
 ## Read-many cursors
 
 Initialize `cosmos_read_many_request_t` with `cosmos_read_many_request_init`,

@@ -9,10 +9,8 @@
 //! value / NULL pointer means "driver defaults for everything") and hands it to
 //! [`cosmos_runtime_build`], which validates each set field, bridges the
 //! driver-side build through the wrapper's own Tokio runtime, and returns a
-//! fresh `cosmos_runtime_t *`. Complex nested config (`with_client_options` /
-//! `with_connection_pool` /
-//! `with_fault_injection_rules`) is
-//! deliberately not surfaced yet — each requires its own flat options struct.
+//! fresh `cosmos_runtime_t *`. For connection pools, diagnostics, and exact
+//! operation durations, use [`cosmos_runtime_build_v2()`](crate::configuration::cosmos_runtime_build_v2).
 //!
 use crate::string::{optional_text, CosmosStringView};
 use std::time::Duration;
@@ -54,7 +52,7 @@ const CPU_REFRESH_INTERVAL_MAX_MS: u64 = 60_000;
 /// runtime failure maps to `CLIENT_FFI_RUNTIME_BUILD_FAILED`; a driver-side
 /// build failure surfaces the driver's own status verbatim. Callers must
 /// null-check `out_runtime` before calling.
-fn finish_runtime_build(
+pub(crate) fn finish_runtime_build(
     result: Result<*mut RuntimeContext, RuntimeBuildError>,
     out_runtime: *mut *mut RuntimeContext,
     out_error: *mut *mut CosmosError,
@@ -162,7 +160,7 @@ impl CosmosRuntimeOptions {
     ///
     /// Each string view must satisfy [`CosmosStringView`]'s allocation contract.
     /// Embedded NUL is rejected before field-specific parsing.
-    unsafe fn apply_to(
+    pub(crate) unsafe fn apply_to(
         &self,
         mut builder: CosmosDriverRuntimeBuilder,
     ) -> Result<CosmosDriverRuntimeBuilder, CosmosErrorCode> {
@@ -352,6 +350,28 @@ mod tests {
             CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert!(err.is_null());
+    }
+
+    #[test]
+    #[cfg(debug_assertions)]
+    fn driver_construction_panic_becomes_runtime_build_error() {
+        let mut runtime = ptr::null_mut();
+        assert_eq!(
+            cosmos_runtime_build(ptr::null(), &mut runtime, ptr::null_mut()),
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+        );
+        crate::runtime::cosmos_runtime_free(runtime);
+        runtime = ptr::null_mut();
+        let mut options = cosmos_runtime_options_default();
+        options.cpu_refresh_interval_ms = 1000;
+        let mut error = ptr::null_mut();
+        assert_eq!(
+            cosmos_runtime_build(&options, &mut runtime, &mut error),
+            CosmosErrorCode::CosmosErrorCodeRuntimeBuildFailed.as_status_code()
+        );
+        assert!(runtime.is_null());
+        assert!(!error.is_null());
+        crate::error::cosmos_error_free(error);
     }
 
     #[test]
