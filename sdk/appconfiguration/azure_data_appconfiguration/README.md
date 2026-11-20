@@ -1,7 +1,7 @@
 # Azure App Configuration client library for Rust
 
 Azure App Configuration centrally manages application settings and feature flags.
-This client library provides asynchronous operations for key-values, labels,
+This client library provides asynchronous operations for configuration settings, labels,
 revisions, locks, and snapshots.
 
 [Source code] | [Package (crates.io)] | [API reference documentation] | [Product documentation]
@@ -60,19 +60,19 @@ Use a managed identity in production. See [Azure Identity] for credential option
 ### Instantiate a client
 
 ```rust no_run
-use azure_data_appconfiguration::AppConfigurationClient;
+use azure_data_appconfiguration::ConfigurationClient;
 use azure_identity::DeveloperToolsCredential;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
-    let client = AppConfigurationClient::new(
+    let client = ConfigurationClient::new(
         "https://<store-name>.azconfig.io",
         credential,
         None,
     )?;
 
-    let setting = client.get_key_value("app:message", None).await?.into_model()?;
+    let setting = client.get_configuration_setting("app:message", None).await?.into_model()?;
     println!("Setting value: {:?}", setting.value);
     Ok(())
 }
@@ -80,7 +80,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Key concepts
 
-- A key-value stores a setting's key, value, content type, and tags.
+- A `ConfigurationSetting` stores a setting's key, value, content type, and tags.
 - Labels distinguish settings with the same key, such as settings for different
   environments. Set the operation's `label` option to select a label.
 - ETags enable conditional writes through the `if_match` and `if_none_match` options.
@@ -93,7 +93,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   [snapshot testing limitation](CONTRIBUTING.md#snapshot-testing-limitation).
 
 The default API version is `2026-04-01`. Set
-`AppConfigurationClientOptions::api_version` to override it.
+`ConfigurationClientOptions::api_version` to override it.
 
 ## Examples
 
@@ -102,19 +102,19 @@ The default API version is `2026-04-01`. Set
 ```rust no_run
 use azure_core::Result;
 use azure_data_appconfiguration::{
-    models::{AppConfigurationClientPutKeyValueOptions, KeyValue, PutKeyValueRequestContentType},
-    AppConfigurationClient,
+    models::{ConfigurationClientSetConfigurationSettingOptions, ConfigurationSetting, SetConfigurationSettingRequestContentType},
+    ConfigurationClient,
 };
 
-async fn set_setting(client: &AppConfigurationClient) -> Result<()> {
-    let setting = KeyValue {
+async fn set_setting(client: &ConfigurationClient) -> Result<()> {
+    let setting = ConfigurationSetting {
         value: Some("Hello from App Configuration".into()),
         ..Default::default()
     };
-    client.put_key_value(
-        PutKeyValueRequestContentType::ApplicationVndMicrosoftAppconfigKvJson,
+    client.set_configuration_setting(
+        SetConfigurationSettingRequestContentType::ApplicationVndMicrosoftAppconfigKvJson,
         "app:message",
-        Some(AppConfigurationClientPutKeyValueOptions {
+        Some(ConfigurationClientSetConfigurationSettingOptions {
             entity: Some(setting.try_into()?),
             label: Some("development".into()),
             ..Default::default()
@@ -132,13 +132,13 @@ continuation links automatically:
 ```rust no_run
 use azure_core::Result;
 use azure_data_appconfiguration::{
-    models::AppConfigurationClientListKeyValuesOptions,
-    AppConfigurationClient,
+    models::ConfigurationClientListConfigurationSettingsOptions,
+    ConfigurationClient,
 };
 use futures::TryStreamExt;
 
-async fn list_settings(client: &AppConfigurationClient) -> Result<()> {
-    let mut pages = client.list_key_values(Some(AppConfigurationClientListKeyValuesOptions {
+async fn list_settings(client: &ConfigurationClient) -> Result<()> {
+    let mut pages = client.list_configuration_settings(Some(ConfigurationClientListConfigurationSettingsOptions {
         key: Some("app:*".into()),
         label: Some("development".into()),
         ..Default::default()
@@ -157,12 +157,12 @@ async fn list_settings(client: &AppConfigurationClient) -> Result<()> {
 ```rust no_run
 use azure_core::Result;
 use azure_data_appconfiguration::{
-    models::AppConfigurationClientDeleteKeyValueOptions,
-    AppConfigurationClient,
+    models::ConfigurationClientDeleteConfigurationSettingOptions,
+    ConfigurationClient,
 };
 
-async fn delete_setting(client: &AppConfigurationClient) -> Result<()> {
-    client.delete_key_value("app:message", Some(AppConfigurationClientDeleteKeyValueOptions {
+async fn delete_setting(client: &ConfigurationClient) -> Result<()> {
+    client.delete_configuration_setting("app:message", Some(ConfigurationClientDeleteConfigurationSettingOptions {
         label: Some("development".into()),
         ..Default::default()
     })).await?;
@@ -180,7 +180,7 @@ combination doesn't exist. See the [REST API] for status codes and request optio
 
 The default feature enables Azure Core's default HTTP transport. Applications
 that disable default features must configure a transport through
-`AppConfigurationClientOptions::client_options`.
+`ConfigurationClientOptions::client_options`.
 
 ## Contributing
 

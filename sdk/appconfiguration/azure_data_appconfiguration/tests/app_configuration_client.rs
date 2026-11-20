@@ -5,25 +5,27 @@ use azure_core::{http::StatusCode, Result};
 use azure_core_test::{recorded, TestContext, SANITIZE_BODY_NAME};
 use azure_data_appconfiguration::{
     models::{
-        AppConfigurationClientDeleteKeyValueOptions, AppConfigurationClientGetKeyValueOptions,
-        AppConfigurationClientListKeyValuesOptions, AppConfigurationClientListKeysOptions,
-        AppConfigurationClientListLabelsOptions, AppConfigurationClientListRevisionsOptions,
-        AppConfigurationClientPutKeyValueOptions, KeyValue, PutKeyValueRequestContentType,
+        ConfigurationClientDeleteConfigurationSettingOptions,
+        ConfigurationClientGetConfigurationSettingOptions,
+        ConfigurationClientListConfigurationSettingsOptions, ConfigurationClientListKeysOptions,
+        ConfigurationClientListLabelsOptions, ConfigurationClientListRevisionsOptions,
+        ConfigurationClientSetConfigurationSettingOptions, ConfigurationSetting,
+        SetConfigurationSettingRequestContentType,
     },
-    AppConfigurationClient, AppConfigurationClientOptions,
+    ConfigurationClient, ConfigurationClientOptions,
 };
 use futures::TryStreamExt;
 use std::collections::HashMap;
 
-async fn client(ctx: &TestContext) -> Result<AppConfigurationClient> {
+async fn client(ctx: &TestContext) -> Result<ConfigurationClient> {
     let recording = ctx.recording();
     // AZSDK3447 sanitizes $.key, which is a synthetic setting name, not a secret.
     recording
         .remove_sanitizers(&[SANITIZE_BODY_NAME, "AZSDK3447"])
         .await?;
-    let mut options = AppConfigurationClientOptions::default();
+    let mut options = ConfigurationClientOptions::default();
     recording.instrument(&mut options.client_options);
-    AppConfigurationClient::new(
+    ConfigurationClient::new(
         recording.var("AZURE_APPCONFIG_ENDPOINT", None).as_str(),
         recording.credential(),
         Some(options),
@@ -31,14 +33,14 @@ async fn client(ctx: &TestContext) -> Result<AppConfigurationClient> {
 }
 
 async fn set_setting(
-    client: &AppConfigurationClient,
+    client: &ConfigurationClient,
     key: &str,
     value: &str,
-    options: Option<AppConfigurationClientPutKeyValueOptions<'_>>,
-) -> Result<KeyValue> {
+    options: Option<ConfigurationClientSetConfigurationSettingOptions<'_>>,
+) -> Result<ConfigurationSetting> {
     let mut options = options.unwrap_or_default();
     options.entity = Some(
-        KeyValue {
+        ConfigurationSetting {
             value: Some(value.into()),
             content_type: Some("text/plain".into()),
             tags: Some(HashMap::from([("language".into(), "rust".into())])),
@@ -47,8 +49,8 @@ async fn set_setting(
         .try_into()?,
     );
     client
-        .put_key_value(
-            PutKeyValueRequestContentType::ApplicationVndMicrosoftAppconfigKvJson,
+        .set_configuration_setting(
+            SetConfigurationSettingRequestContentType::ApplicationVndMicrosoftAppconfigKvJson,
             key,
             Some(options),
         )
@@ -68,7 +70,7 @@ async fn key_value_roundtrip(ctx: TestContext) -> Result<()> {
             &client,
             &key,
             "first",
-            Some(AppConfigurationClientPutKeyValueOptions {
+            Some(ConfigurationClientSetConfigurationSettingOptions {
                 label: Some(label.clone()),
                 if_none_match: Some("*".into()),
                 ..Default::default()
@@ -76,9 +78,9 @@ async fn key_value_roundtrip(ctx: TestContext) -> Result<()> {
         )
         .await?;
         let fetched = client
-            .get_key_value(
+            .get_configuration_setting(
                 &key,
-                Some(AppConfigurationClientGetKeyValueOptions {
+                Some(ConfigurationClientGetConfigurationSettingOptions {
                     label: Some(label.clone()),
                     ..Default::default()
                 }),
@@ -89,7 +91,7 @@ async fn key_value_roundtrip(ctx: TestContext) -> Result<()> {
             &client,
             &key,
             "second",
-            Some(AppConfigurationClientPutKeyValueOptions {
+            Some(ConfigurationClientSetConfigurationSettingOptions {
                 label: Some(label.clone()),
                 if_match: Some(format!(
                     "\"{}\"",
@@ -104,9 +106,9 @@ async fn key_value_roundtrip(ctx: TestContext) -> Result<()> {
     .await;
 
     let deleted = client
-        .delete_key_value(
+        .delete_configuration_setting(
             &key,
-            Some(AppConfigurationClientDeleteKeyValueOptions {
+            Some(ConfigurationClientDeleteConfigurationSettingOptions {
                 label: Some(label.clone()),
                 ..Default::default()
             }),
@@ -126,9 +128,9 @@ async fn key_value_roundtrip(ctx: TestContext) -> Result<()> {
     assert_ne!(updated.etag, fetched.etag);
     assert_eq!(deleted.value.as_deref(), Some("second"));
     let missing = client
-        .get_key_value(
+        .get_configuration_setting(
             &key,
-            Some(AppConfigurationClientGetKeyValueOptions {
+            Some(ConfigurationClientGetConfigurationSettingOptions {
                 label: Some(label),
                 ..Default::default()
             }),
@@ -152,7 +154,7 @@ async fn conditional_writes(ctx: TestContext) -> Result<()> {
             &client,
             &key,
             "duplicate",
-            Some(AppConfigurationClientPutKeyValueOptions {
+            Some(ConfigurationClientSetConfigurationSettingOptions {
                 if_none_match: Some("*".into()),
                 ..Default::default()
             }),
@@ -162,7 +164,7 @@ async fn conditional_writes(ctx: TestContext) -> Result<()> {
             &client,
             &key,
             "updated",
-            Some(AppConfigurationClientPutKeyValueOptions {
+            Some(ConfigurationClientSetConfigurationSettingOptions {
                 if_match: Some(etag.clone()),
                 ..Default::default()
             }),
@@ -172,18 +174,21 @@ async fn conditional_writes(ctx: TestContext) -> Result<()> {
             &client,
             &key,
             "stale",
-            Some(AppConfigurationClientPutKeyValueOptions {
+            Some(ConfigurationClientSetConfigurationSettingOptions {
                 if_match: Some(etag),
                 ..Default::default()
             }),
         )
         .await;
-        let fetched = client.get_key_value(&key, None).await?.into_model()?;
+        let fetched = client
+            .get_configuration_setting(&key, None)
+            .await?
+            .into_model()?;
         Ok((duplicate, updated, stale, fetched))
     }
     .await;
 
-    let cleanup = client.delete_key_value(&key, None).await;
+    let cleanup = client.delete_configuration_setting(&key, None).await;
     let (duplicate, updated, stale, fetched) = result?;
     cleanup?;
     assert_eq!(
@@ -211,27 +216,30 @@ async fn lock_and_unlock_key_value(ctx: TestContext) -> Result<()> {
 
     let result: Result<_> = async {
         set_setting(&client, &key, "original", None).await?;
-        let locked = client.put_lock(&key, None).await?.into_model()?;
+        let locked = client
+            .create_read_only_lock(&key, None)
+            .await?
+            .into_model()?;
         let rejected = set_setting(&client, &key, "rejected", None).await;
         Ok((locked, rejected))
     }
     .await;
 
-    let unlocked = client.delete_lock(&key, None).await;
+    let unlocked = client.delete_read_only_lock(&key, None).await;
     let updated = set_setting(&client, &key, "updated", None).await;
-    let cleanup = client.delete_key_value(&key, None).await;
+    let cleanup = client.delete_configuration_setting(&key, None).await;
     let (locked, rejected) = result?;
     let unlocked = unlocked?.into_model()?;
     let updated = updated?;
     cleanup?;
-    assert_eq!(locked.locked, Some(true));
+    assert_eq!(locked.is_read_only, Some(true));
     assert_eq!(
         rejected
             .expect_err("locked settings must reject writes")
             .http_status(),
         Some(StatusCode::Conflict)
     );
-    assert_eq!(unlocked.locked, Some(false));
+    assert_eq!(unlocked.is_read_only, Some(false));
     assert_eq!(updated.value.as_deref(), Some("updated"));
     Ok(())
 }
@@ -250,7 +258,7 @@ async fn list_key_values_keys_and_labels(ctx: TestContext) -> Result<()> {
                 &client,
                 key,
                 key,
-                Some(AppConfigurationClientPutKeyValueOptions {
+                Some(ConfigurationClientSetConfigurationSettingOptions {
                     label: Some(label.clone()),
                     ..Default::default()
                 }),
@@ -258,22 +266,24 @@ async fn list_key_values_keys_and_labels(ctx: TestContext) -> Result<()> {
             .await?;
         }
         let settings = client
-            .list_key_values(Some(AppConfigurationClientListKeyValuesOptions {
-                key: Some(format!("{prefix}*")),
-                label: Some(label.clone()),
-                ..Default::default()
-            }))?
+            .list_configuration_settings(Some(
+                ConfigurationClientListConfigurationSettingsOptions {
+                    key: Some(format!("{prefix}*")),
+                    label: Some(label.clone()),
+                    ..Default::default()
+                },
+            ))?
             .try_collect::<Vec<_>>()
             .await?;
         let listed_keys = client
-            .list_keys(Some(AppConfigurationClientListKeysOptions {
+            .list_keys(Some(ConfigurationClientListKeysOptions {
                 name: Some(format!("{prefix}*")),
                 ..Default::default()
             }))?
             .try_collect::<Vec<_>>()
             .await?;
         let labels = client
-            .list_labels(Some(AppConfigurationClientListLabelsOptions {
+            .list_labels(Some(ConfigurationClientListLabelsOptions {
                 name: Some(label.clone()),
                 ..Default::default()
             }))?
@@ -287,9 +297,9 @@ async fn list_key_values_keys_and_labels(ctx: TestContext) -> Result<()> {
     for key in &keys {
         cleanup_results.push(
             client
-                .delete_key_value(
+                .delete_configuration_setting(
                     key,
-                    Some(AppConfigurationClientDeleteKeyValueOptions {
+                    Some(ConfigurationClientDeleteConfigurationSettingOptions {
                         label: Some(label.clone()),
                         ..Default::default()
                     }),
@@ -328,7 +338,7 @@ async fn list_revisions(ctx: TestContext) -> Result<()> {
         set_setting(&client, &key, "first", None).await?;
         set_setting(&client, &key, "second", None).await?;
         client
-            .list_revisions(Some(AppConfigurationClientListRevisionsOptions {
+            .list_revisions(Some(ConfigurationClientListRevisionsOptions {
                 key: Some(key.clone()),
                 ..Default::default()
             }))?
@@ -337,7 +347,7 @@ async fn list_revisions(ctx: TestContext) -> Result<()> {
     }
     .await;
 
-    let cleanup = client.delete_key_value(&key, None).await;
+    let cleanup = client.delete_configuration_setting(&key, None).await;
     let revisions = result?;
     cleanup?;
     assert_eq!(revisions.len(), 2);

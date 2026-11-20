@@ -16,10 +16,17 @@ types used by the repository's `azure_core_test` infrastructure.
 ## Generation
 
 `tsp-location.yaml` identifies the App Configuration TypeSpec project and its
-base commit. The Rust emitter options, client-name customization, and content-type
+base commit. The Rust emitter options, public-name customizations, and content-type
 variant names used for this initial generation are local spec changes, not part
 of that commit.
 Update the pinned commit after those changes are committed upstream.
+
+Rust-scoped `@@clientName` customizations in `client.tsp` align public names with
+the .NET SDK, including `ConfigurationClient`, `ConfigurationSetting`,
+`ConfigurationSnapshot`, and `SettingLabel`. Collection methods retain Rust's
+`list_*` convention. The two lock operations are named `create_read_only_lock`
+and `delete_read_only_lock`; renaming alone doesn't add .NET's combined
+`SetReadOnly` convenience method. Wire names and other language SDKs are unchanged.
 
 Until then, regenerate from a local spec project containing those changes.
 Run these commands from the SDK repository root, replacing the placeholder with

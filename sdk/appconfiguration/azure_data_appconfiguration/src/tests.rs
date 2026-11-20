@@ -3,10 +3,14 @@
 
 use super::{
     models::{
-        AppConfigurationClientGetKeyValueOptions, AppConfigurationClientListKeyValuesOptions,
-        AppConfigurationClientPutKeyValueOptions, KeyValue, PutKeyValueRequestContentType,
+        ConfigurationClientGetConfigurationSettingOptions,
+        ConfigurationClientListConfigurationSettingsOptions,
+        ConfigurationClientSetConfigurationSettingOptions, ConfigurationSetting,
+        ConfigurationSettingsFilter, ConfigurationSnapshot, ConfigurationSnapshotStatus,
+        SetConfigurationSettingRequestContentType, SettingFields, SnapshotComposition,
+        SnapshotFields,
     },
-    AppConfigurationClient, AppConfigurationClientOptions,
+    ConfigurationClient, ConfigurationClientOptions,
 };
 use async_trait::async_trait;
 use azure_core::{
@@ -53,11 +57,11 @@ impl HttpClient for MockTransport {
     }
 }
 
-fn client(handler: fn(&Request) -> Result<AsyncRawResponse>) -> Result<AppConfigurationClient> {
-    AppConfigurationClient::new(
+fn client(handler: fn(&Request) -> Result<AsyncRawResponse>) -> Result<ConfigurationClient> {
+    ConfigurationClient::new(
         "https://example.azconfig.io",
         Arc::new(Credential),
-        Some(AppConfigurationClientOptions {
+        Some(ConfigurationClientOptions {
             client_options: ClientOptions {
                 transport: Some(Transport::new(Arc::new(MockTransport(handler)))),
                 ..Default::default()
@@ -74,27 +78,92 @@ fn response(body: &'static [u8]) -> AsyncRawResponse {
 #[test]
 fn rejects_invalid_endpoints() {
     for endpoint in ["not a url", "ftp://example.azconfig.io"] {
-        assert!(AppConfigurationClient::new(endpoint, Arc::new(Credential), None).is_err());
+        assert!(ConfigurationClient::new(endpoint, Arc::new(Credential), None).is_err());
     }
 }
 
 #[test]
-fn key_value_serialization() -> Result<()> {
-    let setting = KeyValue {
+fn configuration_setting_serialization() -> Result<()> {
+    let setting = ConfigurationSetting {
         key: Some("read-only-key".into()),
         value: Some("hello".into()),
         content_type: Some("text/plain".into()),
+        is_read_only: Some(true),
         ..Default::default()
     };
     let json = serde_json::to_value(setting)?;
     assert_eq!(json["value"], "hello");
     assert_eq!(json["content_type"], "text/plain");
+    assert_eq!(json["locked"], true);
+    assert!(json.get("is_read_only").is_none());
     assert!(json.get("key").is_none());
+    let setting: ConfigurationSetting =
+        serde_json::from_str(r#"{"value":"hello","locked":false}"#)?;
+    assert_eq!(setting.is_read_only, Some(false));
+    assert_eq!(setting.value.as_deref(), Some("hello"));
+    Ok(())
+}
+
+#[test]
+fn configuration_snapshot_preserves_wire_names() -> Result<()> {
+    let snapshot: ConfigurationSnapshot = serde_json::from_str(
+        r#"{
+            "name":"example",
+            "status":"ready",
+            "created":"2026-01-01T00:00:00Z",
+            "expires":"2026-02-01T00:00:00Z",
+            "items_count":2,
+            "size":128,
+            "composition_type":"key_label",
+            "filters":[{"key":"app:*","label":"development"}]
+        }"#,
+    )?;
+    assert_eq!(snapshot.status, Some(ConfigurationSnapshotStatus::Ready));
+    assert_eq!(snapshot.item_count, Some(2));
+    assert_eq!(snapshot.size_in_bytes, Some(128));
+    assert_eq!(
+        snapshot.created_on,
+        Some(OffsetDateTime::from_unix_timestamp(1767225600).unwrap())
+    );
+    assert_eq!(
+        snapshot.expires_on,
+        Some(OffsetDateTime::from_unix_timestamp(1769904000).unwrap())
+    );
+    assert_eq!(
+        snapshot.snapshot_composition,
+        Some(SnapshotComposition::KeyLabel)
+    );
+    let filter = &snapshot.filters.as_ref().unwrap()[0];
+    assert_eq!(filter.key.as_deref(), Some("app:*"));
+    assert_eq!(filter.label.as_deref(), Some("development"));
+    let json = serde_json::to_value(ConfigurationSnapshot {
+        snapshot_composition: Some(SnapshotComposition::Key),
+        filters: Some(vec![ConfigurationSettingsFilter {
+            key: Some("app:*".into()),
+            ..Default::default()
+        }]),
+        ..Default::default()
+    })?;
+    assert_eq!(json["composition_type"], "key");
+    assert_eq!(json["filters"][0]["key"], "app:*");
+    assert!(json.get("snapshot_composition").is_none());
+    assert_eq!(serde_json::to_value(SettingFields::IsReadOnly)?, "locked");
+    assert_eq!(
+        serde_json::to_value(SnapshotFields::SnapshotComposition)?,
+        "composition_type"
+    );
+    assert_eq!(serde_json::to_value(SnapshotFields::CreatedOn)?, "created");
+    assert_eq!(serde_json::to_value(SnapshotFields::ExpiresOn)?, "expires");
+    assert_eq!(serde_json::to_value(SnapshotFields::SizeInBytes)?, "size");
+    assert_eq!(
+        serde_json::to_value(SnapshotFields::ItemCount)?,
+        "items_count"
+    );
     Ok(())
 }
 
 #[tokio::test]
-async fn get_key_value_sends_options_and_authentication() -> Result<()> {
+async fn get_configuration_setting_sends_options_and_authentication() -> Result<()> {
     let client = client(|request| {
         assert_eq!(request.method(), Method::Get);
         assert_eq!(request.url().path(), "/kv/app:message");
@@ -115,9 +184,9 @@ async fn get_key_value_sends_options_and_authentication() -> Result<()> {
         ))
     })?;
     let setting = client
-        .get_key_value(
+        .get_configuration_setting(
             "app:message",
-            Some(AppConfigurationClientGetKeyValueOptions {
+            Some(ConfigurationClientGetConfigurationSettingOptions {
                 label: Some("development".into()),
                 if_match: Some("\"etag\"".into()),
                 sync_token: Some("token=abc;sn=1".into()),
@@ -132,7 +201,7 @@ async fn get_key_value_sends_options_and_authentication() -> Result<()> {
 }
 
 #[tokio::test]
-async fn put_key_value_sends_content_type_and_conditions() -> Result<()> {
+async fn set_configuration_setting_sends_content_type_and_conditions() -> Result<()> {
     let client = client(|request| {
         assert_eq!(request.method(), Method::Put);
         assert_eq!(request.url().path(), "/kv/app:message");
@@ -143,15 +212,15 @@ async fn put_key_value_sends_content_type_and_conditions() -> Result<()> {
         assert_eq!(request.headers().get_str(&"if-none-match".into())?, "*");
         Ok(response(br#"{"key":"app:message","value":"hello"}"#))
     })?;
-    let setting = KeyValue {
+    let setting = ConfigurationSetting {
         value: Some("hello".into()),
         ..Default::default()
     };
     let setting = client
-        .put_key_value(
-            PutKeyValueRequestContentType::ApplicationVndMicrosoftAppconfigKvJson,
+        .set_configuration_setting(
+            SetConfigurationSettingRequestContentType::ApplicationVndMicrosoftAppconfigKvJson,
             "app:message",
-            Some(AppConfigurationClientPutKeyValueOptions {
+            Some(ConfigurationClientSetConfigurationSettingOptions {
                 entity: Some(setting.try_into()?),
                 if_none_match: Some("*".into()),
                 ..Default::default()
@@ -164,7 +233,7 @@ async fn put_key_value_sends_content_type_and_conditions() -> Result<()> {
 }
 
 #[tokio::test]
-async fn list_key_values_follows_relative_continuation_links() -> Result<()> {
+async fn list_configuration_settings_follows_relative_continuation_links() -> Result<()> {
     let client = client(|request| {
         assert_eq!(request.method(), Method::Get);
         assert_eq!(request.url().path(), "/kv");
@@ -187,7 +256,7 @@ async fn list_key_values_follows_relative_continuation_links() -> Result<()> {
         }
     })?;
     let mut pages = client
-        .list_key_values(Some(AppConfigurationClientListKeyValuesOptions {
+        .list_configuration_settings(Some(ConfigurationClientListConfigurationSettingsOptions {
             key: Some("app:*".into()),
             ..Default::default()
         }))?
@@ -203,11 +272,11 @@ async fn list_key_values_follows_relative_continuation_links() -> Result<()> {
 #[tokio::test]
 async fn rejects_empty_keys_before_sending() -> Result<()> {
     let client = client(|_| panic!("empty keys must not send requests"))?;
-    assert!(client.get_key_value("", None).await.is_err());
-    assert!(client.delete_key_value("", None).await.is_err());
+    assert!(client.get_configuration_setting("", None).await.is_err());
+    assert!(client.delete_configuration_setting("", None).await.is_err());
     assert!(client
-        .put_key_value(
-            PutKeyValueRequestContentType::ApplicationVndMicrosoftAppconfigKvJson,
+        .set_configuration_setting(
+            SetConfigurationSettingRequestContentType::ApplicationVndMicrosoftAppconfigKvJson,
             "",
             None,
         )

@@ -13,82 +13,82 @@
 #![crate_name = "azure_data_appconfiguration"]
 #![crate_type = "lib"]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-pub struct AppConfigurationClient {
+pub struct ConfigurationClient {
 }
-impl AppConfigurationClient {
-    pub fn begin_create_snapshot(&self, content_type: CreateSnapshotRequestContentType, name: &str, entity: RequestContent<Snapshot>, options: Option<AppConfigurationClientBeginCreateSnapshotOptions<'_>>) -> Result<Poller<AppConfigurationClientBeginCreateSnapshotOperationStatus>>;
-    pub async fn check_key_value(&self, key: &str, options: Option<AppConfigurationClientCheckKeyValueOptions<'_>>) -> Result<Response<AppConfigurationClientCheckKeyValueResult, NoFormat>>;
-    pub async fn check_key_values(&self, options: Option<AppConfigurationClientCheckKeyValuesOptions<'_>>) -> Result<Response<AppConfigurationClientCheckKeyValuesResult, NoFormat>>;
-    pub async fn check_keys(&self, options: Option<AppConfigurationClientCheckKeysOptions<'_>>) -> Result<Response<AppConfigurationClientCheckKeysResult, NoFormat>>;
-    pub async fn check_labels(&self, options: Option<AppConfigurationClientCheckLabelsOptions<'_>>) -> Result<Response<AppConfigurationClientCheckLabelsResult, NoFormat>>;
-    pub async fn check_revisions(&self, options: Option<AppConfigurationClientCheckRevisionsOptions<'_>>) -> Result<Response<AppConfigurationClientCheckRevisionsResult, NoFormat>>;
-    pub async fn check_snapshot(&self, name: &str, options: Option<AppConfigurationClientCheckSnapshotOptions<'_>>) -> Result<Response<AppConfigurationClientCheckSnapshotResult, NoFormat>>;
-    pub async fn check_snapshots(&self, options: Option<AppConfigurationClientCheckSnapshotsOptions<'_>>) -> Result<Response<AppConfigurationClientCheckSnapshotsResult, NoFormat>>;
-    pub async fn delete_key_value(&self, key: &str, options: Option<AppConfigurationClientDeleteKeyValueOptions<'_>>) -> Result<Response<KeyValue>>;
-    pub async fn delete_lock(&self, key: &str, options: Option<AppConfigurationClientDeleteLockOptions<'_>>) -> Result<Response<KeyValue>>;
+impl ConfigurationClient {
+    pub fn begin_create_snapshot(&self, content_type: CreateSnapshotRequestContentType, name: &str, entity: RequestContent<ConfigurationSnapshot>, options: Option<ConfigurationClientBeginCreateSnapshotOptions<'_>>) -> Result<Poller<ConfigurationClientBeginCreateSnapshotOperationStatus>>;
+    pub async fn check_configuration_setting(&self, key: &str, options: Option<ConfigurationClientCheckConfigurationSettingOptions<'_>>) -> Result<Response<ConfigurationClientCheckConfigurationSettingResult, NoFormat>>;
+    pub async fn check_configuration_settings(&self, options: Option<ConfigurationClientCheckConfigurationSettingsOptions<'_>>) -> Result<Response<ConfigurationClientCheckConfigurationSettingsResult, NoFormat>>;
+    pub async fn check_keys(&self, options: Option<ConfigurationClientCheckKeysOptions<'_>>) -> Result<Response<ConfigurationClientCheckKeysResult, NoFormat>>;
+    pub async fn check_labels(&self, options: Option<ConfigurationClientCheckLabelsOptions<'_>>) -> Result<Response<ConfigurationClientCheckLabelsResult, NoFormat>>;
+    pub async fn check_revisions(&self, options: Option<ConfigurationClientCheckRevisionsOptions<'_>>) -> Result<Response<ConfigurationClientCheckRevisionsResult, NoFormat>>;
+    pub async fn check_snapshot(&self, name: &str, options: Option<ConfigurationClientCheckSnapshotOptions<'_>>) -> Result<Response<ConfigurationClientCheckSnapshotResult, NoFormat>>;
+    pub async fn check_snapshots(&self, options: Option<ConfigurationClientCheckSnapshotsOptions<'_>>) -> Result<Response<ConfigurationClientCheckSnapshotsResult, NoFormat>>;
+    pub async fn create_read_only_lock(&self, key: &str, options: Option<ConfigurationClientCreateReadOnlyLockOptions<'_>>) -> Result<Response<ConfigurationSetting>>;
+    pub async fn delete_configuration_setting(&self, key: &str, options: Option<ConfigurationClientDeleteConfigurationSettingOptions<'_>>) -> Result<Response<ConfigurationSetting>>;
+    pub async fn delete_read_only_lock(&self, key: &str, options: Option<ConfigurationClientDeleteReadOnlyLockOptions<'_>>) -> Result<Response<ConfigurationSetting>>;
     pub fn endpoint(&self) -> &Url;
-    pub async fn get_key_value(&self, key: &str, options: Option<AppConfigurationClientGetKeyValueOptions<'_>>) -> Result<Response<KeyValue>>;
-    pub async fn get_operation_details(&self, snapshot: &str, options: Option<AppConfigurationClientGetOperationDetailsOptions<'_>>) -> Result<Response<OperationDetails>>;
-    pub async fn get_snapshot(&self, name: &str, options: Option<AppConfigurationClientGetSnapshotOptions<'_>>) -> Result<Response<Snapshot>>;
-    pub fn list_key_values(&self, options: Option<AppConfigurationClientListKeyValuesOptions<'_>>) -> Result<Pager<KeyValueListResult>>;
-    pub fn list_keys(&self, options: Option<AppConfigurationClientListKeysOptions<'_>>) -> Result<Pager<KeyListResult>>;
-    pub fn list_labels(&self, options: Option<AppConfigurationClientListLabelsOptions<'_>>) -> Result<Pager<LabelListResult>>;
-    pub fn list_revisions(&self, options: Option<AppConfigurationClientListRevisionsOptions<'_>>) -> Result<Pager<KeyValueListResult>>;
-    pub fn list_snapshots(&self, options: Option<AppConfigurationClientListSnapshotsOptions<'_>>) -> Result<Pager<SnapshotListResult>>;
-    pub fn new(endpoint: &str, credential: Arc<dyn TokenCredential>, options: Option<AppConfigurationClientOptions>) -> Result<Self>;
-    pub async fn put_key_value(&self, content_type: PutKeyValueRequestContentType, key: &str, options: Option<AppConfigurationClientPutKeyValueOptions<'_>>) -> Result<Response<KeyValue>>;
-    pub async fn put_lock(&self, key: &str, options: Option<AppConfigurationClientPutLockOptions<'_>>) -> Result<Response<KeyValue>>;
-    pub async fn update_snapshot(&self, content_type: UpdateSnapshotRequestContentType, name: &str, entity: RequestContent<SnapshotUpdateParameters>, options: Option<AppConfigurationClientUpdateSnapshotOptions<'_>>) -> Result<Response<Snapshot>>;
+    pub async fn get_configuration_setting(&self, key: &str, options: Option<ConfigurationClientGetConfigurationSettingOptions<'_>>) -> Result<Response<ConfigurationSetting>>;
+    pub async fn get_operation_details(&self, snapshot: &str, options: Option<ConfigurationClientGetOperationDetailsOptions<'_>>) -> Result<Response<OperationDetails>>;
+    pub async fn get_snapshot(&self, name: &str, options: Option<ConfigurationClientGetSnapshotOptions<'_>>) -> Result<Response<ConfigurationSnapshot>>;
+    pub fn list_configuration_settings(&self, options: Option<ConfigurationClientListConfigurationSettingsOptions<'_>>) -> Result<Pager<ConfigurationSettingListResult>>;
+    pub fn list_keys(&self, options: Option<ConfigurationClientListKeysOptions<'_>>) -> Result<Pager<KeyListResult>>;
+    pub fn list_labels(&self, options: Option<ConfigurationClientListLabelsOptions<'_>>) -> Result<Pager<SettingLabelListResult>>;
+    pub fn list_revisions(&self, options: Option<ConfigurationClientListRevisionsOptions<'_>>) -> Result<Pager<ConfigurationSettingListResult>>;
+    pub fn list_snapshots(&self, options: Option<ConfigurationClientListSnapshotsOptions<'_>>) -> Result<Pager<SnapshotListResult>>;
+    pub fn new(endpoint: &str, credential: Arc<dyn TokenCredential>, options: Option<ConfigurationClientOptions>) -> Result<Self>;
+    pub async fn set_configuration_setting(&self, content_type: SetConfigurationSettingRequestContentType, key: &str, options: Option<ConfigurationClientSetConfigurationSettingOptions<'_>>) -> Result<Response<ConfigurationSetting>>;
+    pub async fn update_snapshot_status(&self, content_type: UpdateSnapshotRequestContentType, name: &str, entity: RequestContent<SnapshotUpdateParameters>, options: Option<ConfigurationClientUpdateSnapshotStatusOptions<'_>>) -> Result<Response<ConfigurationSnapshot>>;
 }
 #[derive(Clone, Debug)]
-pub struct AppConfigurationClientOptions {
+pub struct ConfigurationClientOptions {
     pub api_version: String,
     pub client_options: azure_core::http::ClientOptions,
 }
-impl Default for AppConfigurationClientOptions {
+impl Default for ConfigurationClientOptions {
     fn default() -> Self;
 }
 pub mod clients {
-    pub struct AppConfigurationClient {
+    pub struct ConfigurationClient {
     }
-    impl AppConfigurationClient {
-        pub fn begin_create_snapshot(&self, content_type: CreateSnapshotRequestContentType, name: &str, entity: RequestContent<Snapshot>, options: Option<AppConfigurationClientBeginCreateSnapshotOptions<'_>>) -> Result<Poller<AppConfigurationClientBeginCreateSnapshotOperationStatus>>;
-        pub async fn check_key_value(&self, key: &str, options: Option<AppConfigurationClientCheckKeyValueOptions<'_>>) -> Result<Response<AppConfigurationClientCheckKeyValueResult, NoFormat>>;
-        pub async fn check_key_values(&self, options: Option<AppConfigurationClientCheckKeyValuesOptions<'_>>) -> Result<Response<AppConfigurationClientCheckKeyValuesResult, NoFormat>>;
-        pub async fn check_keys(&self, options: Option<AppConfigurationClientCheckKeysOptions<'_>>) -> Result<Response<AppConfigurationClientCheckKeysResult, NoFormat>>;
-        pub async fn check_labels(&self, options: Option<AppConfigurationClientCheckLabelsOptions<'_>>) -> Result<Response<AppConfigurationClientCheckLabelsResult, NoFormat>>;
-        pub async fn check_revisions(&self, options: Option<AppConfigurationClientCheckRevisionsOptions<'_>>) -> Result<Response<AppConfigurationClientCheckRevisionsResult, NoFormat>>;
-        pub async fn check_snapshot(&self, name: &str, options: Option<AppConfigurationClientCheckSnapshotOptions<'_>>) -> Result<Response<AppConfigurationClientCheckSnapshotResult, NoFormat>>;
-        pub async fn check_snapshots(&self, options: Option<AppConfigurationClientCheckSnapshotsOptions<'_>>) -> Result<Response<AppConfigurationClientCheckSnapshotsResult, NoFormat>>;
-        pub async fn delete_key_value(&self, key: &str, options: Option<AppConfigurationClientDeleteKeyValueOptions<'_>>) -> Result<Response<KeyValue>>;
-        pub async fn delete_lock(&self, key: &str, options: Option<AppConfigurationClientDeleteLockOptions<'_>>) -> Result<Response<KeyValue>>;
+    impl ConfigurationClient {
+        pub fn begin_create_snapshot(&self, content_type: CreateSnapshotRequestContentType, name: &str, entity: RequestContent<ConfigurationSnapshot>, options: Option<ConfigurationClientBeginCreateSnapshotOptions<'_>>) -> Result<Poller<ConfigurationClientBeginCreateSnapshotOperationStatus>>;
+        pub async fn check_configuration_setting(&self, key: &str, options: Option<ConfigurationClientCheckConfigurationSettingOptions<'_>>) -> Result<Response<ConfigurationClientCheckConfigurationSettingResult, NoFormat>>;
+        pub async fn check_configuration_settings(&self, options: Option<ConfigurationClientCheckConfigurationSettingsOptions<'_>>) -> Result<Response<ConfigurationClientCheckConfigurationSettingsResult, NoFormat>>;
+        pub async fn check_keys(&self, options: Option<ConfigurationClientCheckKeysOptions<'_>>) -> Result<Response<ConfigurationClientCheckKeysResult, NoFormat>>;
+        pub async fn check_labels(&self, options: Option<ConfigurationClientCheckLabelsOptions<'_>>) -> Result<Response<ConfigurationClientCheckLabelsResult, NoFormat>>;
+        pub async fn check_revisions(&self, options: Option<ConfigurationClientCheckRevisionsOptions<'_>>) -> Result<Response<ConfigurationClientCheckRevisionsResult, NoFormat>>;
+        pub async fn check_snapshot(&self, name: &str, options: Option<ConfigurationClientCheckSnapshotOptions<'_>>) -> Result<Response<ConfigurationClientCheckSnapshotResult, NoFormat>>;
+        pub async fn check_snapshots(&self, options: Option<ConfigurationClientCheckSnapshotsOptions<'_>>) -> Result<Response<ConfigurationClientCheckSnapshotsResult, NoFormat>>;
+        pub async fn create_read_only_lock(&self, key: &str, options: Option<ConfigurationClientCreateReadOnlyLockOptions<'_>>) -> Result<Response<ConfigurationSetting>>;
+        pub async fn delete_configuration_setting(&self, key: &str, options: Option<ConfigurationClientDeleteConfigurationSettingOptions<'_>>) -> Result<Response<ConfigurationSetting>>;
+        pub async fn delete_read_only_lock(&self, key: &str, options: Option<ConfigurationClientDeleteReadOnlyLockOptions<'_>>) -> Result<Response<ConfigurationSetting>>;
         pub fn endpoint(&self) -> &Url;
-        pub async fn get_key_value(&self, key: &str, options: Option<AppConfigurationClientGetKeyValueOptions<'_>>) -> Result<Response<KeyValue>>;
-        pub async fn get_operation_details(&self, snapshot: &str, options: Option<AppConfigurationClientGetOperationDetailsOptions<'_>>) -> Result<Response<OperationDetails>>;
-        pub async fn get_snapshot(&self, name: &str, options: Option<AppConfigurationClientGetSnapshotOptions<'_>>) -> Result<Response<Snapshot>>;
-        pub fn list_key_values(&self, options: Option<AppConfigurationClientListKeyValuesOptions<'_>>) -> Result<Pager<KeyValueListResult>>;
-        pub fn list_keys(&self, options: Option<AppConfigurationClientListKeysOptions<'_>>) -> Result<Pager<KeyListResult>>;
-        pub fn list_labels(&self, options: Option<AppConfigurationClientListLabelsOptions<'_>>) -> Result<Pager<LabelListResult>>;
-        pub fn list_revisions(&self, options: Option<AppConfigurationClientListRevisionsOptions<'_>>) -> Result<Pager<KeyValueListResult>>;
-        pub fn list_snapshots(&self, options: Option<AppConfigurationClientListSnapshotsOptions<'_>>) -> Result<Pager<SnapshotListResult>>;
-        pub fn new(endpoint: &str, credential: Arc<dyn TokenCredential>, options: Option<AppConfigurationClientOptions>) -> Result<Self>;
-        pub async fn put_key_value(&self, content_type: PutKeyValueRequestContentType, key: &str, options: Option<AppConfigurationClientPutKeyValueOptions<'_>>) -> Result<Response<KeyValue>>;
-        pub async fn put_lock(&self, key: &str, options: Option<AppConfigurationClientPutLockOptions<'_>>) -> Result<Response<KeyValue>>;
-        pub async fn update_snapshot(&self, content_type: UpdateSnapshotRequestContentType, name: &str, entity: RequestContent<SnapshotUpdateParameters>, options: Option<AppConfigurationClientUpdateSnapshotOptions<'_>>) -> Result<Response<Snapshot>>;
+        pub async fn get_configuration_setting(&self, key: &str, options: Option<ConfigurationClientGetConfigurationSettingOptions<'_>>) -> Result<Response<ConfigurationSetting>>;
+        pub async fn get_operation_details(&self, snapshot: &str, options: Option<ConfigurationClientGetOperationDetailsOptions<'_>>) -> Result<Response<OperationDetails>>;
+        pub async fn get_snapshot(&self, name: &str, options: Option<ConfigurationClientGetSnapshotOptions<'_>>) -> Result<Response<ConfigurationSnapshot>>;
+        pub fn list_configuration_settings(&self, options: Option<ConfigurationClientListConfigurationSettingsOptions<'_>>) -> Result<Pager<ConfigurationSettingListResult>>;
+        pub fn list_keys(&self, options: Option<ConfigurationClientListKeysOptions<'_>>) -> Result<Pager<KeyListResult>>;
+        pub fn list_labels(&self, options: Option<ConfigurationClientListLabelsOptions<'_>>) -> Result<Pager<SettingLabelListResult>>;
+        pub fn list_revisions(&self, options: Option<ConfigurationClientListRevisionsOptions<'_>>) -> Result<Pager<ConfigurationSettingListResult>>;
+        pub fn list_snapshots(&self, options: Option<ConfigurationClientListSnapshotsOptions<'_>>) -> Result<Pager<SnapshotListResult>>;
+        pub fn new(endpoint: &str, credential: Arc<dyn TokenCredential>, options: Option<ConfigurationClientOptions>) -> Result<Self>;
+        pub async fn set_configuration_setting(&self, content_type: SetConfigurationSettingRequestContentType, key: &str, options: Option<ConfigurationClientSetConfigurationSettingOptions<'_>>) -> Result<Response<ConfigurationSetting>>;
+        pub async fn update_snapshot_status(&self, content_type: UpdateSnapshotRequestContentType, name: &str, entity: RequestContent<SnapshotUpdateParameters>, options: Option<ConfigurationClientUpdateSnapshotStatusOptions<'_>>) -> Result<Response<ConfigurationSnapshot>>;
     }
     #[derive(Clone, Debug)]
-    pub struct AppConfigurationClientOptions {
+    pub struct ConfigurationClientOptions {
         pub api_version: String,
         pub client_options: azure_core::http::ClientOptions,
     }
-    impl Default for AppConfigurationClientOptions {
+    impl Default for ConfigurationClientOptions {
         fn default() -> Self;
     }
 }
 pub mod models {
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
-    pub struct AppConfigurationClientBeginCreateSnapshotOperationStatus {
+    pub struct ConfigurationClientBeginCreateSnapshotOperationStatus {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub error: Option<azure_core::error::ErrorDetail>,
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -96,34 +96,34 @@ pub mod models {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub status: Option<super::OperationState>,
     }
-    impl StatusMonitor for super::AppConfigurationClientBeginCreateSnapshotOperationStatus {
+    impl StatusMonitor for super::ConfigurationClientBeginCreateSnapshotOperationStatus {
         type Format = JsonFormat;
-        type Output = Snapshot;
+        type Output = ConfigurationSnapshot;
         fn status(&self) -> PollerStatus;
     }
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientBeginCreateSnapshotOptions<'a> {
+    pub struct ConfigurationClientBeginCreateSnapshotOptions<'a> {
         pub method_options: azure_core::http::poller::PollerOptions<'a>,
         pub sync_token: Option<String>,
     }
-    impl AppConfigurationClientBeginCreateSnapshotOptions<'_> {
-        pub fn into_owned(self) -> AppConfigurationClientBeginCreateSnapshotOptions<'static>;
+    impl ConfigurationClientBeginCreateSnapshotOptions<'_> {
+        pub fn into_owned(self) -> ConfigurationClientBeginCreateSnapshotOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientCheckKeyValueOptions<'a> {
+    pub struct ConfigurationClientCheckConfigurationSettingOptions<'a> {
         pub accept_datetime: Option<String>,
         pub if_match: Option<String>,
         pub if_none_match: Option<String>,
         pub label: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
-        pub select: Option<Vec<super::KeyValueFields>>,
+        pub select: Option<Vec<super::SettingFields>>,
         pub sync_token: Option<String>,
         pub tags: Option<Vec<String>>,
     }
     #[derive(Debug)]
-    pub struct AppConfigurationClientCheckKeyValueResult;
+    pub struct ConfigurationClientCheckConfigurationSettingResult;
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientCheckKeyValuesOptions<'a> {
+    pub struct ConfigurationClientCheckConfigurationSettingsOptions<'a> {
         pub accept_datetime: Option<String>,
         pub after: Option<String>,
         pub if_match: Option<String>,
@@ -131,15 +131,15 @@ pub mod models {
         pub key: Option<String>,
         pub label: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
-        pub select: Option<Vec<super::KeyValueFields>>,
+        pub select: Option<Vec<super::SettingFields>>,
         pub snapshot: Option<String>,
         pub sync_token: Option<String>,
         pub tags: Option<Vec<String>>,
     }
     #[derive(Debug)]
-    pub struct AppConfigurationClientCheckKeyValuesResult;
+    pub struct ConfigurationClientCheckConfigurationSettingsResult;
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientCheckKeysOptions<'a> {
+    pub struct ConfigurationClientCheckKeysOptions<'a> {
         pub accept_datetime: Option<String>,
         pub after: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
@@ -147,57 +147,50 @@ pub mod models {
         pub sync_token: Option<String>,
     }
     #[derive(Debug)]
-    pub struct AppConfigurationClientCheckKeysResult;
+    pub struct ConfigurationClientCheckKeysResult;
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientCheckLabelsOptions<'a> {
+    pub struct ConfigurationClientCheckLabelsOptions<'a> {
         pub accept_datetime: Option<String>,
         pub after: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub name: Option<String>,
-        pub select: Option<Vec<super::LabelFields>>,
+        pub select: Option<Vec<super::SettingLabelFields>>,
         pub sync_token: Option<String>,
     }
     #[derive(Debug)]
-    pub struct AppConfigurationClientCheckLabelsResult;
+    pub struct ConfigurationClientCheckLabelsResult;
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientCheckRevisionsOptions<'a> {
+    pub struct ConfigurationClientCheckRevisionsOptions<'a> {
         pub accept_datetime: Option<String>,
         pub after: Option<String>,
         pub key: Option<String>,
         pub label: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
-        pub select: Option<Vec<super::KeyValueFields>>,
+        pub select: Option<Vec<super::SettingFields>>,
         pub sync_token: Option<String>,
         pub tags: Option<Vec<String>>,
     }
     #[derive(Debug)]
-    pub struct AppConfigurationClientCheckRevisionsResult;
+    pub struct ConfigurationClientCheckRevisionsResult;
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientCheckSnapshotOptions<'a> {
+    pub struct ConfigurationClientCheckSnapshotOptions<'a> {
         pub if_match: Option<String>,
         pub if_none_match: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub sync_token: Option<String>,
     }
     #[derive(Debug)]
-    pub struct AppConfigurationClientCheckSnapshotResult;
+    pub struct ConfigurationClientCheckSnapshotResult;
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientCheckSnapshotsOptions<'a> {
+    pub struct ConfigurationClientCheckSnapshotsOptions<'a> {
         pub after: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub sync_token: Option<String>,
     }
     #[derive(Debug)]
-    pub struct AppConfigurationClientCheckSnapshotsResult;
+    pub struct ConfigurationClientCheckSnapshotsResult;
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientDeleteKeyValueOptions<'a> {
-        pub if_match: Option<String>,
-        pub label: Option<String>,
-        pub method_options: azure_core::http::ClientMethodOptions<'a>,
-        pub sync_token: Option<String>,
-    }
-    #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientDeleteLockOptions<'a> {
+    pub struct ConfigurationClientCreateReadOnlyLockOptions<'a> {
         pub if_match: Option<String>,
         pub if_none_match: Option<String>,
         pub label: Option<String>,
@@ -205,22 +198,37 @@ pub mod models {
         pub sync_token: Option<String>,
     }
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientGetKeyValueOptions<'a> {
+    pub struct ConfigurationClientDeleteConfigurationSettingOptions<'a> {
+        pub if_match: Option<String>,
+        pub label: Option<String>,
+        pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub sync_token: Option<String>,
+    }
+    #[derive(Clone, Debug, Default)]
+    pub struct ConfigurationClientDeleteReadOnlyLockOptions<'a> {
+        pub if_match: Option<String>,
+        pub if_none_match: Option<String>,
+        pub label: Option<String>,
+        pub method_options: azure_core::http::ClientMethodOptions<'a>,
+        pub sync_token: Option<String>,
+    }
+    #[derive(Clone, Debug, Default)]
+    pub struct ConfigurationClientGetConfigurationSettingOptions<'a> {
         pub accept_datetime: Option<String>,
         pub if_match: Option<String>,
         pub if_none_match: Option<String>,
         pub label: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
-        pub select: Option<Vec<super::KeyValueFields>>,
+        pub select: Option<Vec<super::SettingFields>>,
         pub sync_token: Option<String>,
         pub tags: Option<Vec<String>>,
     }
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientGetOperationDetailsOptions<'a> {
+    pub struct ConfigurationClientGetOperationDetailsOptions<'a> {
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
     }
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientGetSnapshotOptions<'a> {
+    pub struct ConfigurationClientGetSnapshotOptions<'a> {
         pub if_match: Option<String>,
         pub if_none_match: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
@@ -228,7 +236,7 @@ pub mod models {
         pub sync_token: Option<String>,
     }
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientListKeyValuesOptions<'a> {
+    pub struct ConfigurationClientListConfigurationSettingsOptions<'a> {
         pub accept_datetime: Option<String>,
         pub after: Option<String>,
         pub if_match: Option<String>,
@@ -236,66 +244,66 @@ pub mod models {
         pub key: Option<String>,
         pub label: Option<String>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
-        pub select: Option<Vec<super::KeyValueFields>>,
+        pub select: Option<Vec<super::SettingFields>>,
         pub snapshot: Option<String>,
         pub sync_token: Option<String>,
         pub tags: Option<Vec<String>>,
     }
-    impl AppConfigurationClientListKeyValuesOptions<'_> {
-        pub fn into_owned(self) -> AppConfigurationClientListKeyValuesOptions<'static>;
+    impl ConfigurationClientListConfigurationSettingsOptions<'_> {
+        pub fn into_owned(self) -> ConfigurationClientListConfigurationSettingsOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientListKeysOptions<'a> {
+    pub struct ConfigurationClientListKeysOptions<'a> {
         pub accept_datetime: Option<String>,
         pub after: Option<String>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
         pub name: Option<String>,
         pub sync_token: Option<String>,
     }
-    impl AppConfigurationClientListKeysOptions<'_> {
-        pub fn into_owned(self) -> AppConfigurationClientListKeysOptions<'static>;
+    impl ConfigurationClientListKeysOptions<'_> {
+        pub fn into_owned(self) -> ConfigurationClientListKeysOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientListLabelsOptions<'a> {
+    pub struct ConfigurationClientListLabelsOptions<'a> {
         pub accept_datetime: Option<String>,
         pub after: Option<String>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
         pub name: Option<String>,
-        pub select: Option<Vec<super::LabelFields>>,
+        pub select: Option<Vec<super::SettingLabelFields>>,
         pub sync_token: Option<String>,
     }
-    impl AppConfigurationClientListLabelsOptions<'_> {
-        pub fn into_owned(self) -> AppConfigurationClientListLabelsOptions<'static>;
+    impl ConfigurationClientListLabelsOptions<'_> {
+        pub fn into_owned(self) -> ConfigurationClientListLabelsOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientListRevisionsOptions<'a> {
+    pub struct ConfigurationClientListRevisionsOptions<'a> {
         pub accept_datetime: Option<String>,
         pub after: Option<String>,
         pub key: Option<String>,
         pub label: Option<String>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
-        pub select: Option<Vec<super::KeyValueFields>>,
+        pub select: Option<Vec<super::SettingFields>>,
         pub sync_token: Option<String>,
         pub tags: Option<Vec<String>>,
     }
-    impl AppConfigurationClientListRevisionsOptions<'_> {
-        pub fn into_owned(self) -> AppConfigurationClientListRevisionsOptions<'static>;
+    impl ConfigurationClientListRevisionsOptions<'_> {
+        pub fn into_owned(self) -> ConfigurationClientListRevisionsOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientListSnapshotsOptions<'a> {
+    pub struct ConfigurationClientListSnapshotsOptions<'a> {
         pub after: Option<String>,
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
         pub name: Option<String>,
         pub select: Option<Vec<super::SnapshotFields>>,
-        pub status: Option<Vec<super::SnapshotStatus>>,
+        pub status: Option<Vec<super::ConfigurationSnapshotStatus>>,
         pub sync_token: Option<String>,
     }
-    impl AppConfigurationClientListSnapshotsOptions<'_> {
-        pub fn into_owned(self) -> AppConfigurationClientListSnapshotsOptions<'static>;
+    impl ConfigurationClientListSnapshotsOptions<'_> {
+        pub fn into_owned(self) -> ConfigurationClientListSnapshotsOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientPutKeyValueOptions<'a> {
-        pub entity: Option<azure_core::http::RequestContent<super::KeyValue>>,
+    pub struct ConfigurationClientSetConfigurationSettingOptions<'a> {
+        pub entity: Option<azure_core::http::RequestContent<super::ConfigurationSetting>>,
         pub if_match: Option<String>,
         pub if_none_match: Option<String>,
         pub label: Option<String>,
@@ -303,19 +311,92 @@ pub mod models {
         pub sync_token: Option<String>,
     }
     #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientPutLockOptions<'a> {
+    pub struct ConfigurationClientUpdateSnapshotStatusOptions<'a> {
         pub if_match: Option<String>,
         pub if_none_match: Option<String>,
-        pub label: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
         pub sync_token: Option<String>,
     }
-    #[derive(Clone, Debug, Default)]
-    pub struct AppConfigurationClientUpdateSnapshotOptions<'a> {
-        pub if_match: Option<String>,
-        pub if_none_match: Option<String>,
-        pub method_options: azure_core::http::ClientMethodOptions<'a>,
-        pub sync_token: Option<String>,
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    pub struct ConfigurationSetting {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub content_type: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub etag: Option<String>,
+        #[serde(rename = "locked", skip_serializing_if = "Option::is_none")]
+        pub is_read_only: Option<bool>,
+        #[serde(skip_serializing)]
+        pub key: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub label: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::time::rfc3339::option")]
+        pub last_modified: Option<azure_core::time::OffsetDateTime>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub tags: Option<std::collections::HashMap<String, String>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub value: Option<String>,
+    }
+    impl TryFrom<ConfigurationSetting> for azure_core::http::RequestContent<super::ConfigurationSetting> {
+        type Error = Error;
+        fn try_from(value: ConfigurationSetting) -> Result<Self>;
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
+    pub struct ConfigurationSettingListResult {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub etag: Option<String>,
+        #[serde(default)]
+        pub items: Vec<ConfigurationSetting>,
+        #[serde(rename = "@nextLink", skip_serializing_if = "Option::is_none")]
+        pub next_link: Option<String>,
+    }
+    #[async_trait]
+    impl Page for super::ConfigurationSettingListResult {
+        type IntoIter = <Vec<ConfigurationSetting> as IntoIterator>::IntoIter;
+        type Item = ConfigurationSetting;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    pub struct ConfigurationSettingsFilter {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub key: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub label: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub tags: Option<Vec<String>>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    pub struct ConfigurationSnapshot {
+        #[serde(default, rename = "created", skip_serializing, with = "azure_core::time::rfc3339::option")]
+        pub created_on: Option<azure_core::time::OffsetDateTime>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
+        #[serde(skip_serializing)]
+        pub etag: Option<String>,
+        #[serde(default, rename = "expires", skip_serializing, with = "azure_core::time::rfc3339::option")]
+        pub expires_on: Option<azure_core::time::OffsetDateTime>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub filters: Option<Vec<ConfigurationSettingsFilter>>,
+        #[serde(rename = "items_count", skip_serializing)]
+        pub item_count: Option<i64>,
+        #[serde(skip_serializing)]
+        pub name: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub retention_period: Option<i64>,
+        #[serde(rename = "size", skip_serializing)]
+        pub size_in_bytes: Option<i64>,
+        #[serde(rename = "composition_type", skip_serializing_if = "Option::is_none")]
+        pub snapshot_composition: Option<super::SnapshotComposition>,
+        #[serde(skip_serializing)]
+        pub status: Option<super::ConfigurationSnapshotStatus>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub tags: Option<std::collections::HashMap<String, String>>,
+    }
+    impl TryFrom<ConfigurationSnapshot> for azure_core::http::RequestContent<super::ConfigurationSnapshot> {
+        type Error = Error;
+        fn try_from(value: ConfigurationSnapshot) -> Result<Self>;
     }
     #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
     pub struct Error {
@@ -351,76 +432,6 @@ pub mod models {
         async fn into_items(self) -> Result<<Self as >::IntoIter>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
-    pub struct KeyValue {
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub content_type: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub description: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub etag: Option<String>,
-        #[serde(skip_serializing)]
-        pub key: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub label: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::time::rfc3339::option")]
-        pub last_modified: Option<azure_core::time::OffsetDateTime>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub locked: Option<bool>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub tags: Option<std::collections::HashMap<String, String>>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub value: Option<String>,
-    }
-    impl TryFrom<KeyValue> for azure_core::http::RequestContent<super::KeyValue> {
-        type Error = Error;
-        fn try_from(value: KeyValue) -> Result<Self>;
-    }
-    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
-    pub struct KeyValueFilter {
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub key: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub label: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub tags: Option<Vec<String>>,
-    }
-    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
-    #[non_exhaustive]
-    pub struct KeyValueListResult {
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub etag: Option<String>,
-        #[serde(default)]
-        pub items: Vec<KeyValue>,
-        #[serde(rename = "@nextLink", skip_serializing_if = "Option::is_none")]
-        pub next_link: Option<String>,
-    }
-    #[async_trait]
-    impl Page for super::KeyValueListResult {
-        type IntoIter = <Vec<KeyValue> as IntoIterator>::IntoIter;
-        type Item = KeyValue;
-        async fn into_items(self) -> Result<<Self as >::IntoIter>;
-    }
-    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
-    #[non_exhaustive]
-    pub struct Label {
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub name: Option<String>,
-    }
-    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
-    #[non_exhaustive]
-    pub struct LabelListResult {
-        #[serde(default)]
-        pub items: Vec<Label>,
-        #[serde(rename = "@nextLink", skip_serializing_if = "Option::is_none")]
-        pub next_link: Option<String>,
-    }
-    #[async_trait]
-    impl Page for super::LabelListResult {
-        type IntoIter = <Vec<Label> as IntoIterator>::IntoIter;
-        type Item = Label;
-        async fn into_items(self) -> Result<<Self as >::IntoIter>;
-    }
-    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
     pub struct OperationDetails {
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -431,82 +442,73 @@ pub mod models {
         pub status: Option<super::OperationState>,
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
-    pub struct Snapshot {
+    #[non_exhaustive]
+    pub struct SettingLabel {
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub composition_type: Option<super::CompositionType>,
-        #[serde(default, skip_serializing, with = "azure_core::time::rfc3339::option")]
-        pub created: Option<azure_core::time::OffsetDateTime>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub description: Option<String>,
-        #[serde(skip_serializing)]
-        pub etag: Option<String>,
-        #[serde(default, skip_serializing, with = "azure_core::time::rfc3339::option")]
-        pub expires: Option<azure_core::time::OffsetDateTime>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub filters: Option<Vec<KeyValueFilter>>,
-        #[serde(skip_serializing)]
-        pub items_count: Option<i64>,
-        #[serde(skip_serializing)]
         pub name: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub retention_period: Option<i64>,
-        #[serde(skip_serializing)]
-        pub size: Option<i64>,
-        #[serde(skip_serializing)]
-        pub status: Option<super::SnapshotStatus>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub tags: Option<std::collections::HashMap<String, String>>,
     }
-    impl TryFrom<Snapshot> for azure_core::http::RequestContent<super::Snapshot> {
-        type Error = Error;
-        fn try_from(value: Snapshot) -> Result<Self>;
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
+    pub struct SettingLabelListResult {
+        #[serde(default)]
+        pub items: Vec<SettingLabel>,
+        #[serde(rename = "@nextLink", skip_serializing_if = "Option::is_none")]
+        pub next_link: Option<String>,
+    }
+    #[async_trait]
+    impl Page for super::SettingLabelListResult {
+        type IntoIter = <Vec<SettingLabel> as IntoIterator>::IntoIter;
+        type Item = SettingLabel;
+        async fn into_items(self) -> Result<<Self as >::IntoIter>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
     pub struct SnapshotListResult {
         #[serde(default)]
-        pub items: Vec<Snapshot>,
+        pub items: Vec<ConfigurationSnapshot>,
         #[serde(rename = "@nextLink", skip_serializing_if = "Option::is_none")]
         pub next_link: Option<String>,
     }
     #[async_trait]
     impl Page for super::SnapshotListResult {
-        type IntoIter = <Vec<Snapshot> as IntoIterator>::IntoIter;
-        type Item = Snapshot;
+        type IntoIter = <Vec<ConfigurationSnapshot> as IntoIterator>::IntoIter;
+        type Item = ConfigurationSnapshot;
         async fn into_items(self) -> Result<<Self as >::IntoIter>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     pub struct SnapshotUpdateParameters {
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub status: Option<super::SnapshotStatus>,
+        pub status: Option<super::ConfigurationSnapshotStatus>,
     }
     impl TryFrom<SnapshotUpdateParameters> for azure_core::http::RequestContent<super::SnapshotUpdateParameters> {
         type Error = Error;
         fn try_from(value: SnapshotUpdateParameters) -> Result<Self>;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
-    pub enum CompositionType {
-        Key,
-        KeyLabel,
+    pub enum ConfigurationSnapshotStatus {
+        Archived,
+        Failed,
+        Provisioning,
+        Ready,
         UnknownValue(String),
     }
-    impl AsRef<str> for super::CompositionType {
+    impl AsRef<str> for super::ConfigurationSnapshotStatus {
         fn as_ref(&self) -> &str;
     }
-    impl Display for super::CompositionType {
+    impl Display for super::ConfigurationSnapshotStatus {
         fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
     }
-    impl FromStr for super::CompositionType {
+    impl FromStr for super::ConfigurationSnapshotStatus {
         type Err = Infallible;
         fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
     }
-    impl Serialize for super::CompositionType {
+    impl Serialize for super::ConfigurationSnapshotStatus {
         fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
     }
-    impl<'a> From<&'a CompositionType> for &'a str {
-        fn from(e: &'a CompositionType) -> Self;
+    impl<'a> From<&'a ConfigurationSnapshotStatus> for &'a str {
+        fn from(e: &'a ConfigurationSnapshotStatus) -> Self;
     }
-    impl<'de> Deserialize<'de> for super::CompositionType {
+    impl<'de> Deserialize<'de> for super::ConfigurationSnapshotStatus {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -657,62 +659,6 @@ pub mod models {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
-    pub enum KeyValueFields {
-        ContentType,
-        Description,
-        Etag,
-        Key,
-        Label,
-        LastModified,
-        Locked,
-        Tags,
-        Value,
-        UnknownValue(String),
-    }
-    impl AsRef<str> for super::KeyValueFields {
-        fn as_ref(&self) -> &str;
-    }
-    impl Display for super::KeyValueFields {
-        fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
-    }
-    impl FromStr for super::KeyValueFields {
-        type Err = Infallible;
-        fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
-    }
-    impl Serialize for super::KeyValueFields {
-        fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
-    }
-    impl<'a> From<&'a KeyValueFields> for &'a str {
-        fn from(e: &'a KeyValueFields) -> Self;
-    }
-    impl<'de> Deserialize<'de> for super::KeyValueFields {
-        fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
-    }
-    #[derive(Clone, Debug, Eq, PartialEq)]
-    pub enum LabelFields {
-        Name,
-        UnknownValue(String),
-    }
-    impl AsRef<str> for super::LabelFields {
-        fn as_ref(&self) -> &str;
-    }
-    impl Display for super::LabelFields {
-        fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
-    }
-    impl FromStr for super::LabelFields {
-        type Err = Infallible;
-        fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
-    }
-    impl Serialize for super::LabelFields {
-        fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
-    }
-    impl<'a> From<&'a LabelFields> for &'a str {
-        fn from(e: &'a LabelFields) -> Self;
-    }
-    impl<'de> Deserialize<'de> for super::LabelFields {
-        fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
-    }
-    #[derive(Clone, Debug, Eq, PartialEq)]
     pub enum OperationState {
         Canceled,
         Failed,
@@ -741,7 +687,7 @@ pub mod models {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    pub enum PutKeyValueRequestContentType {
+    pub enum SetConfigurationSettingRequestContentType {
         ApplicationAnyJson,
         ApplicationJson,
         ApplicationJsonPatchJson,
@@ -749,34 +695,115 @@ pub mod models {
         ApplicationVndMicrosoftAppconfigKvsetJson,
         TextJson,
     }
-    impl AsRef<str> for super::PutKeyValueRequestContentType {
+    impl AsRef<str> for super::SetConfigurationSettingRequestContentType {
         fn as_ref(&self) -> &str;
     }
-    impl Display for super::PutKeyValueRequestContentType {
+    impl Display for super::SetConfigurationSettingRequestContentType {
         fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
     }
-    impl FromStr for super::PutKeyValueRequestContentType {
+    impl FromStr for super::SetConfigurationSettingRequestContentType {
         type Err = Error;
         fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
     }
-    impl Serialize for super::PutKeyValueRequestContentType {
+    impl Serialize for super::SetConfigurationSettingRequestContentType {
         fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
     }
-    impl<'de> Deserialize<'de> for super::PutKeyValueRequestContentType {
+    impl<'de> Deserialize<'de> for super::SetConfigurationSettingRequestContentType {
+        fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub enum SettingFields {
+        ContentType,
+        Description,
+        Etag,
+        IsReadOnly,
+        Key,
+        Label,
+        LastModified,
+        Tags,
+        Value,
+        UnknownValue(String),
+    }
+    impl AsRef<str> for super::SettingFields {
+        fn as_ref(&self) -> &str;
+    }
+    impl Display for super::SettingFields {
+        fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
+    }
+    impl FromStr for super::SettingFields {
+        type Err = Infallible;
+        fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
+    }
+    impl Serialize for super::SettingFields {
+        fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
+    }
+    impl<'a> From<&'a SettingFields> for &'a str {
+        fn from(e: &'a SettingFields) -> Self;
+    }
+    impl<'de> Deserialize<'de> for super::SettingFields {
+        fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub enum SettingLabelFields {
+        Name,
+        UnknownValue(String),
+    }
+    impl AsRef<str> for super::SettingLabelFields {
+        fn as_ref(&self) -> &str;
+    }
+    impl Display for super::SettingLabelFields {
+        fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
+    }
+    impl FromStr for super::SettingLabelFields {
+        type Err = Infallible;
+        fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
+    }
+    impl Serialize for super::SettingLabelFields {
+        fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
+    }
+    impl<'a> From<&'a SettingLabelFields> for &'a str {
+        fn from(e: &'a SettingLabelFields) -> Self;
+    }
+    impl<'de> Deserialize<'de> for super::SettingLabelFields {
+        fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub enum SnapshotComposition {
+        Key,
+        KeyLabel,
+        UnknownValue(String),
+    }
+    impl AsRef<str> for super::SnapshotComposition {
+        fn as_ref(&self) -> &str;
+    }
+    impl Display for super::SnapshotComposition {
+        fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
+    }
+    impl FromStr for super::SnapshotComposition {
+        type Err = Infallible;
+        fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
+    }
+    impl Serialize for super::SnapshotComposition {
+        fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
+    }
+    impl<'a> From<&'a SnapshotComposition> for &'a str {
+        fn from(e: &'a SnapshotComposition) -> Self;
+    }
+    impl<'de> Deserialize<'de> for super::SnapshotComposition {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
     pub enum SnapshotFields {
-        CompositionType,
-        Created,
+        CreatedOn,
         Description,
         Etag,
-        Expires,
+        ExpiresOn,
         Filters,
-        ItemsCount,
+        ItemCount,
         Name,
         RetentionPeriod,
-        Size,
+        SizeInBytes,
+        SnapshotComposition,
         Status,
         Tags,
         UnknownValue(String),
@@ -800,33 +827,6 @@ pub mod models {
     impl<'de> Deserialize<'de> for super::SnapshotFields {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
-    #[derive(Clone, Debug, Eq, PartialEq)]
-    pub enum SnapshotStatus {
-        Archived,
-        Failed,
-        Provisioning,
-        Ready,
-        UnknownValue(String),
-    }
-    impl AsRef<str> for super::SnapshotStatus {
-        fn as_ref(&self) -> &str;
-    }
-    impl Display for super::SnapshotStatus {
-        fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
-    }
-    impl FromStr for super::SnapshotStatus {
-        type Err = Infallible;
-        fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
-    }
-    impl Serialize for super::SnapshotStatus {
-        fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
-    }
-    impl<'a> From<&'a SnapshotStatus> for &'a str {
-        fn from(e: &'a SnapshotStatus) -> Self;
-    }
-    impl<'de> Deserialize<'de> for super::SnapshotStatus {
-        fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
-    }
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub enum UpdateSnapshotRequestContentType {
         ApplicationJson,
@@ -848,63 +848,63 @@ pub mod models {
     impl<'de> Deserialize<'de> for super::UpdateSnapshotRequestContentType {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
-    pub trait AppConfigurationClientBeginCreateSnapshotOperationStatusHeaders: private::Sealed {
+    pub trait ConfigurationClientBeginCreateSnapshotOperationStatusHeaders: private::Sealed {
         fn content_type(&self) -> Result<Option<GetSnapshotResponseContentType>>;
         fn etag_header(&self) -> Result<Option<Etag>>;
         fn link(&self) -> Result<Option<String>>;
         fn operation_location(&self) -> Result<Option<String>>;
         fn sync_token(&self) -> Result<Option<String>>;
     }
-    pub trait AppConfigurationClientCheckKeyValueResultHeaders: private::Sealed {
+    pub trait ConfigurationClientCheckConfigurationSettingResultHeaders: private::Sealed {
         fn etag_header(&self) -> Result<Option<Etag>>;
         fn sync_token(&self) -> Result<Option<String>>;
     }
-    pub trait AppConfigurationClientCheckKeyValuesResultHeaders: private::Sealed {
+    pub trait ConfigurationClientCheckConfigurationSettingsResultHeaders: private::Sealed {
         fn etag_header(&self) -> Result<Option<Etag>>;
         fn sync_token(&self) -> Result<Option<String>>;
     }
-    pub trait AppConfigurationClientCheckKeysResultHeaders: private::Sealed {
+    pub trait ConfigurationClientCheckKeysResultHeaders: private::Sealed {
         fn sync_token(&self) -> Result<Option<String>>;
     }
-    pub trait AppConfigurationClientCheckLabelsResultHeaders: private::Sealed {
+    pub trait ConfigurationClientCheckLabelsResultHeaders: private::Sealed {
         fn sync_token(&self) -> Result<Option<String>>;
     }
-    pub trait AppConfigurationClientCheckRevisionsResultHeaders: private::Sealed {
+    pub trait ConfigurationClientCheckRevisionsResultHeaders: private::Sealed {
         fn etag_header(&self) -> Result<Option<Etag>>;
         fn sync_token(&self) -> Result<Option<String>>;
     }
-    pub trait AppConfigurationClientCheckSnapshotResultHeaders: private::Sealed {
+    pub trait ConfigurationClientCheckSnapshotResultHeaders: private::Sealed {
         fn etag_header(&self) -> Result<Option<Etag>>;
         fn link(&self) -> Result<Option<String>>;
         fn sync_token(&self) -> Result<Option<String>>;
     }
-    pub trait AppConfigurationClientCheckSnapshotsResultHeaders: private::Sealed {
+    pub trait ConfigurationClientCheckSnapshotsResultHeaders: private::Sealed {
+        fn sync_token(&self) -> Result<Option<String>>;
+    }
+    pub trait ConfigurationSettingHeaders: private::Sealed {
+        fn content_type(&self) -> Result<Option<GetKeyValueResponseContentType>>;
+        fn etag_header(&self) -> Result<Option<Etag>>;
+        fn request_id(&self) -> Result<Option<String>>;
+        fn sync_token(&self) -> Result<Option<String>>;
+    }
+    pub trait ConfigurationSettingListResultHeaders: private::Sealed {
+        fn content_type(&self) -> Result<Option<GetKeyValuesResponseContentType>>;
+        fn etag_header(&self) -> Result<Option<Etag>>;
+        fn sync_token(&self) -> Result<Option<String>>;
+    }
+    pub trait ConfigurationSnapshotHeaders: private::Sealed {
+        fn content_type(&self) -> Result<Option<GetSnapshotResponseContentType>>;
+        fn etag_header(&self) -> Result<Option<Etag>>;
+        fn link(&self) -> Result<Option<String>>;
+        fn request_id(&self) -> Result<Option<String>>;
         fn sync_token(&self) -> Result<Option<String>>;
     }
     pub trait KeyListResultHeaders: private::Sealed {
         fn content_type(&self) -> Result<Option<GetKeysResponseContentType>>;
         fn sync_token(&self) -> Result<Option<String>>;
     }
-    pub trait KeyValueHeaders: private::Sealed {
-        fn content_type(&self) -> Result<Option<GetKeyValueResponseContentType>>;
-        fn etag_header(&self) -> Result<Option<Etag>>;
-        fn request_id(&self) -> Result<Option<String>>;
-        fn sync_token(&self) -> Result<Option<String>>;
-    }
-    pub trait KeyValueListResultHeaders: private::Sealed {
-        fn content_type(&self) -> Result<Option<GetKeyValuesResponseContentType>>;
-        fn etag_header(&self) -> Result<Option<Etag>>;
-        fn sync_token(&self) -> Result<Option<String>>;
-    }
-    pub trait LabelListResultHeaders: private::Sealed {
+    pub trait SettingLabelListResultHeaders: private::Sealed {
         fn content_type(&self) -> Result<Option<GetLabelsResponseContentType>>;
-        fn sync_token(&self) -> Result<Option<String>>;
-    }
-    pub trait SnapshotHeaders: private::Sealed {
-        fn content_type(&self) -> Result<Option<GetSnapshotResponseContentType>>;
-        fn etag_header(&self) -> Result<Option<Etag>>;
-        fn link(&self) -> Result<Option<String>>;
-        fn request_id(&self) -> Result<Option<String>>;
         fn sync_token(&self) -> Result<Option<String>>;
     }
     pub trait SnapshotListResultHeaders: private::Sealed {
