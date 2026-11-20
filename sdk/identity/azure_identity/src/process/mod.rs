@@ -77,7 +77,7 @@ pub(crate) async fn shell_exec<T: OutputProcessor>(
         }
     };
 
-    let mut command_string = OsString::from("cd ");
+    let mut command_string = OsString::from(if cfg!(windows) { "cd /d " } else { "cd " });
     command_string.push(workdir);
     command_string.push(" && ");
     command_string.push(command);
