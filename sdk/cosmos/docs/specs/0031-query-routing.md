@@ -97,8 +97,10 @@ and the exceptions; protocol encodings are at the end.
 Point operations require a complete PK and do not fan out. Partial PK,
 FeedRange, and WHERE scope are not supported for their routing. The request
 must contain PK and must not contain PPK, backend EPK range filtering, or its
-read-key-type selector. Physical PKRID is optional; Gateway V2 independently
-derives the complete-PK routing EPK.
+read-key-type selector. Physical PKRID is also populated. For Gateway V2 the
+client independently derives the complete-PK routing EPK and sends it in the
+`x-ms-effective-partition-key` to the Gateway V2 Proxy. This header is
+mandatory in Gateway V2 for performance reasons.
 
 ### Query the selected documents
 
