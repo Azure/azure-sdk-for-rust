@@ -6,6 +6,10 @@
 
 - Added `GitHubActionsCredential` and `GitHubActionsCredentialOptions` for GitHub Actions workload identity federation.
 
+### Bugs Fixed
+
+- Fixed CLI credentials running outside the system directory on Windows when the working directory is on another drive ([#5631](https://github.com/Azure/azure-sdk-for-rust/issues/5631)).
+
 ## 1.1.0-beta.2 (2026-11-05)
 
 ### Breaking Changes
