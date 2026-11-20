@@ -4,7 +4,7 @@
 //! Topology provider adapter backed by the partition key range cache.
 
 use futures::future::BoxFuture;
-use std::time::Instant;
+use std::{sync::Arc, time::Instant};
 
 use crate::{
     driver::cache::{PartitionKeyRangeCache, PkRangeFetchResult},
@@ -24,12 +24,11 @@ use super::{PartitionRoutingRefresh, ResolvedRange, TopologyProvider};
 /// # Type parameters
 ///
 /// * `F` — `Fn(ContainerReference, Option<String>) -> Fut` that fetches
-///   pk-ranges from the service. Passed by reference to the cache so the
-///   adapter can call it repeatedly without requiring `Clone`.
+///   pk-ranges from the service. Shared with cache-owned fills.
 pub(crate) struct CachedTopologyProvider<'a, F> {
     cache: &'a PartitionKeyRangeCache,
     container: ContainerReference,
-    fetch_pk_ranges: F,
+    fetch_pk_ranges: Arc<F>,
     cache_only: bool,
     absolute_deadline: Option<Instant>,
 }
@@ -44,7 +43,7 @@ impl<'a, F> CachedTopologyProvider<'a, F> {
         Self {
             cache,
             container,
-            fetch_pk_ranges,
+            fetch_pk_ranges: Arc::new(fetch_pk_ranges),
             cache_only: false,
             absolute_deadline: None,
         }
@@ -64,8 +63,10 @@ impl<'a, F> CachedTopologyProvider<'a, F> {
 
 impl<F, Fut> TopologyProvider for CachedTopologyProvider<'_, F>
 where
-    F: Fn(ContainerReference, Option<String>) -> Fut + Send + Sync,
-    Fut: std::future::Future<Output = crate::error::Result<Option<PkRangeFetchResult>>> + Send,
+    F: Fn(ContainerReference, Option<String>) -> Fut + Send + Sync + 'static,
+    Fut: std::future::Future<Output = crate::error::Result<Option<PkRangeFetchResult>>>
+        + Send
+        + 'static,
 {
     fn resolve_ranges<'a>(
         &'a mut self,
@@ -84,15 +85,16 @@ where
                     .cached_overlapping_ranges(&self.container, epk_range)
                     .await?
             } else {
+                let fetch = Arc::clone(&self.fetch_pk_ranges);
                 self.cache
-                    .resolve_overlapping_ranges_result(
+                    .try_lookup_shared(
                         &self.container,
-                        epk_range,
                         force_refresh,
-                        &self.fetch_pk_ranges,
+                        move |container, continuation| fetch(container, continuation),
                         self.absolute_deadline,
                     )
                     .await?
+                    .map(|map| PartitionKeyRangeCache::overlapping_ranges(&map, epk_range))
             };
 
             let pk_ranges = match pk_ranges {

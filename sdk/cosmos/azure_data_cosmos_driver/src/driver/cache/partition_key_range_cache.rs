@@ -6,9 +6,20 @@
 //! Uses the driver's operation pipeline to fetch `/pkranges` from the service
 //! and caches the resulting [`ContainerRoutingMap`] per container RID.
 
-use std::{collections::HashMap, sync::Arc, time::Instant};
+use std::{
+    collections::HashMap,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex,
+    },
+    time::Instant,
+};
 
-use futures::{future::Either, pin_mut};
+use futures::{
+    channel::oneshot,
+    future::{AbortHandle, Abortable, BoxFuture, Either, Shared},
+    pin_mut, FutureExt,
+};
 
 use crate::models::{
     effective_partition_key::EffectivePartitionKey, partition_key_range::PkRangesResponse,
@@ -51,6 +62,25 @@ impl IntoPkRangeFetchOutcome for crate::error::Result<Option<PkRangeFetchResult>
 }
 
 type CachedRoutingMap = crate::error::Result<Arc<ContainerRoutingMap>>;
+type RoutingMapLookup = crate::error::Result<Option<Arc<ContainerRoutingMap>>>;
+
+struct PendingRoutingMap {
+    result: Shared<BoxFuture<'static, RoutingMapLookup>>,
+    abort: AbortHandle,
+    finished: Arc<AtomicBool>,
+}
+
+impl std::fmt::Debug for PendingRoutingMap {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PendingRoutingMap").finish_non_exhaustive()
+    }
+}
+
+impl Drop for PendingRoutingMap {
+    fn drop(&mut self) {
+        self.abort.abort();
+    }
+}
 
 fn is_caller_timeout(error: &crate::error::CosmosError) -> bool {
     error.status().sub_status()
@@ -69,14 +99,103 @@ fn is_caller_timeout(error: &crate::error::CosmosError) -> bool {
 pub(crate) struct PartitionKeyRangeCache {
     /// Keyed by [`ContainerReference`], which provides the container RID
     /// needed for the `x-ms-expected-rid` header on pkrange changefeed calls.
-    cache: AsyncCache<ContainerReference, CachedRoutingMap>,
+    cache: Arc<AsyncCache<ContainerReference, CachedRoutingMap>>,
+    pending: Mutex<HashMap<ContainerReference, PendingRoutingMap>>,
 }
 
 impl PartitionKeyRangeCache {
     /// Creates a new empty cache.
     pub fn new() -> Self {
         Self {
-            cache: AsyncCache::new(),
+            cache: Arc::new(AsyncCache::new()),
+            pending: Mutex::new(HashMap::new()),
+        }
+    }
+
+    /// Runs one cache-owned fill per container; dropping a waiter leaves it running.
+    pub(crate) async fn try_lookup_shared<F, Fut>(
+        &self,
+        container: &ContainerReference,
+        force_refresh: bool,
+        fetch_pk_ranges: F,
+        deadline: Option<Instant>,
+    ) -> RoutingMapLookup
+    where
+        F: Fn(ContainerReference, Option<String>) -> Fut + Send + Sync + 'static,
+        Fut: std::future::Future<Output = crate::error::Result<Option<PkRangeFetchResult>>>
+            + Send
+            + 'static,
+    {
+        let cached = if force_refresh {
+            None
+        } else {
+            self.cache.get(container).await
+        };
+        let lookup = {
+            let mut pending = self.pending.lock().expect("pk-range fills mutex poisoned");
+            if pending.get(container).is_some_and(|fill| {
+                fill.finished.load(Ordering::Acquire) || fill.result.peek().is_some()
+            }) {
+                pending.remove(container);
+            }
+            if !pending.contains_key(container) {
+                if let Some(Ok(map)) = cached.as_deref() {
+                    if !map.ranges().is_empty() {
+                        return Ok(Some(Arc::clone(map)));
+                    }
+                }
+            }
+            let fill = pending.entry(container.clone()).or_insert_with(|| {
+                let cache = Arc::clone(&self.cache);
+                let container = container.clone();
+                let (sender, receiver) = oneshot::channel();
+                let (abort, registration) = AbortHandle::new_pair();
+                let finished = Arc::new(AtomicBool::new(false));
+                let worker_finished = Arc::clone(&finished);
+                let worker = async move {
+                    let result =
+                        Self::lookup_inner(&cache, &container, force_refresh, fetch_pk_ranges)
+                            .await;
+                    let _ = sender.send(result);
+                    worker_finished.store(true, Ordering::Release);
+                };
+                // Abortable also cancels on runtimes whose task handle only detaches.
+                drop(
+                    azure_core::async_runtime::get_async_runtime().spawn(Box::pin(async move {
+                        let _ = Abortable::new(worker, registration).await;
+                    })),
+                );
+                PendingRoutingMap {
+                    result: async move {
+                        receiver.await.unwrap_or_else(|_| {
+                            tracing::error!("partition key range fill stopped before completion");
+                            Err(crate::error::CosmosError::builder()
+                                .with_status(
+                                    crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED,
+                                )
+                                .with_message("partition key range fill stopped before completion")
+                                .build())
+                        })
+                    }
+                    .boxed()
+                    .shared(),
+                    abort,
+                    finished,
+                }
+            });
+            fill.result.clone()
+        };
+        let timer = crate::driver::pipeline::operation_pipeline::deadline_signal(deadline);
+        pin_mut!(lookup, timer);
+        match futures::future::select(timer, lookup).await {
+            Either::Left(((), _)) => Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::from_parts(
+                    azure_core::http::StatusCode::RequestTimeout,
+                    Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
+                ))
+                .with_message("partition key range lookup exceeded the caller's deadline")
+                .build()),
+            Either::Right((result, _)) => result,
         }
     }
 
@@ -241,7 +360,7 @@ impl PartitionKeyRangeCache {
         Ok(Some(Self::overlapping_ranges(routing_map, epk_range)))
     }
 
-    fn overlapping_ranges(
+    pub(crate) fn overlapping_ranges(
         routing_map: &ContainerRoutingMap,
         epk_range: std::ops::Range<&EffectivePartitionKey>,
     ) -> Vec<crate::models::partition_key_range::PartitionKeyRange> {
@@ -344,7 +463,7 @@ impl PartitionKeyRangeCache {
         Fut: std::future::Future<Output = R>,
         R: IntoPkRangeFetchOutcome,
     {
-        let lookup = self.lookup_inner(container, force_refresh, fetch_pk_ranges);
+        let lookup = Self::lookup_inner(&self.cache, container, force_refresh, fetch_pk_ranges);
         let timer = crate::driver::pipeline::operation_pipeline::deadline_signal(deadline);
         pin_mut!(lookup, timer);
         match futures::future::select(timer, lookup).await {
@@ -360,7 +479,7 @@ impl PartitionKeyRangeCache {
     }
 
     async fn lookup_inner<F, Fut, R>(
-        &self,
+        cache: &AsyncCache<ContainerReference, CachedRoutingMap>,
         container: &ContainerReference,
         force_refresh: bool,
         fetch_pk_ranges: F,
@@ -374,7 +493,7 @@ impl PartitionKeyRangeCache {
 
         let cached_result = if force_refresh {
             // Retrieve the existing routing map for incremental refresh.
-            let previous_result = self.cache.get(&key).await;
+            let previous_result = cache.get(&key).await;
             let previous = previous_result
                 .as_deref()
                 .and_then(|result| result.as_ref().ok())
@@ -383,7 +502,7 @@ impl PartitionKeyRangeCache {
                 .as_ref()
                 .and_then(|m| m.change_feed_next_if_none_match.clone());
 
-            self.cache
+            cache
                 .get_or_refresh_with_if(
                     key.clone(),
                     |existing| {
@@ -411,7 +530,7 @@ impl PartitionKeyRangeCache {
                 .await
                 .expect("routing cache refresh requested")
         } else {
-            self.cache
+            cache
                 .get_or_insert_with_if(
                     key.clone(),
                     |previous| {
@@ -429,13 +548,13 @@ impl PartitionKeyRangeCache {
         let routing_map = match cached_result.as_ref() {
             Ok(routing_map) => Arc::clone(routing_map),
             Err(error) => {
-                self.cache.invalidate_if_same(&key, &cached_result).await;
+                cache.invalidate_if_same(&key, &cached_result).await;
                 return Err(error.clone());
             }
         };
 
         if routing_map.ranges().is_empty() {
-            self.cache.invalidate_if_same(&key, &cached_result).await;
+            cache.invalidate_if_same(&key, &cached_result).await;
             return Ok(None);
         }
 
@@ -446,7 +565,18 @@ impl PartitionKeyRangeCache {
     ///
     /// Call this when a partition split is detected (e.g., 410/1002 Gone response).
     pub async fn invalidate(&self, container: &ContainerReference) {
+        self.pending
+            .lock()
+            .expect("pk-range fills mutex poisoned")
+            .remove(container);
         self.cache.invalidate(container).await;
+    }
+
+    pub(crate) fn abort_pending_fills(&self) {
+        self.pending
+            .lock()
+            .expect("pk-range fills mutex poisoned")
+            .clear();
     }
 
     /// Reads initialized topology without fetching or waiting for a pending refresh.
@@ -915,6 +1045,59 @@ pub(crate) fn parse_pk_ranges_response(
 mod tests {
     use super::*;
     use crate::models::partition_key_range::PartitionKeyRange as PkRange;
+
+    #[tokio::test]
+    async fn cache_disposal_and_invalidation_cancel_unobserved_shared_fills() {
+        struct Dropped(Option<oneshot::Sender<()>>);
+        impl Drop for Dropped {
+            fn drop(&mut self) {
+                let _ = self.0.take().unwrap().send(());
+            }
+        }
+
+        for invalidate in [false, true] {
+            let cache = PartitionKeyRangeCache::new();
+            let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+            let started = Arc::new(tokio::sync::Notify::new());
+            let (sender, dropped) = oneshot::channel();
+            let guard = Arc::new(Dropped(Some(sender)));
+            let signal = Arc::clone(&started);
+            let mut waiter = Box::pin(cache.try_lookup_shared(
+                &container,
+                false,
+                move |_, _| {
+                    let guard = Arc::clone(&guard);
+                    let signal = Arc::clone(&signal);
+                    async move {
+                        let _guard = guard;
+                        signal.notify_one();
+                        futures::future::pending().await
+                    }
+                },
+                None,
+            ));
+            tokio::select! {
+                result = &mut waiter => panic!("fill unexpectedly completed: {result:?}"),
+                () = started.notified() => {}
+            }
+            drop(waiter);
+            if invalidate {
+                cache.invalidate(&container).await;
+                let map = cache
+                    .try_lookup_shared(&container, false, test_fetch, None)
+                    .await
+                    .unwrap()
+                    .unwrap();
+                assert!(!map.ranges().is_empty());
+            } else {
+                drop(cache);
+            }
+            tokio::time::timeout(std::time::Duration::from_secs(2), dropped)
+                .await
+                .expect("cache owner must cancel the worker")
+                .expect("worker resources must be released");
+        }
+    }
 
     #[tokio::test]
     async fn abandoned_owner_is_taken_over_once_by_concurrent_waiters() {

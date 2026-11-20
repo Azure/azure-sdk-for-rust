@@ -24,8 +24,9 @@ use crate::{
 use async_trait::async_trait;
 use azure_core::http::headers::Headers;
 use std::{
+    collections::HashMap,
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         Arc, Mutex,
     },
     time::{Duration, Instant},
@@ -34,9 +35,11 @@ use url::Url;
 
 #[derive(Clone, Debug)]
 struct PageAttempt {
+    path: String,
     token: Option<String>,
     host: String,
     activity_id: String,
+    started: Instant,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -62,6 +65,17 @@ struct PageClient {
     third_region: bool,
     hold_primary_until_hedge: AtomicBool,
     hedge_started: tokio::sync::Notify,
+    page_throttles: Mutex<HashMap<String, u32>>,
+    retry_after_ms: AtomicU64,
+    active_requests: AtomicU64,
+}
+
+struct ActivePageRequest<'a>(&'a AtomicU64);
+
+impl Drop for ActivePageRequest<'_> {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::SeqCst);
+    }
 }
 
 #[async_trait]
@@ -105,7 +119,10 @@ impl TransportClient for PageClient {
             .get_optional_str(&"if-none-match".into())
             .map(str::to_owned);
         let host = request.url.host_str().unwrap().to_owned();
+        self.active_requests.fetch_add(1, Ordering::SeqCst);
+        let _active = ActivePageRequest(&self.active_requests);
         self.attempts.lock().unwrap().push(PageAttempt {
+            path: request.url.path().to_owned(),
             token: token.clone(),
             host: host.clone(),
             activity_id: request
@@ -113,6 +130,7 @@ impl TransportClient for PageClient {
                 .get_str(&"x-ms-activity-id".into())
                 .unwrap()
                 .to_owned(),
+            started: Instant::now(),
         });
         self.attempted.notify_one();
         if token.is_none() && self.hold_primary_until_hedge.load(Ordering::SeqCst) {
@@ -140,7 +158,10 @@ impl TransportClient for PageClient {
             }
             tokio::time::sleep(reply.delay).await;
             if reply.status != 200 {
-                headers.insert("x-ms-retry-after-ms", "0");
+                headers.insert(
+                    "x-ms-retry-after-ms",
+                    self.retry_after_ms.load(Ordering::SeqCst).to_string(),
+                );
                 if let Some(substatus) = reply.substatus {
                     headers.insert("x-ms-substatus", substatus.to_string());
                 }
@@ -157,7 +178,19 @@ impl TransportClient for PageClient {
         if token.is_none() && host.contains("east") && self.hold_east_cold.load(Ordering::SeqCst) {
             self.release_east_cold.notified().await;
         }
-        let throttle = {
+        let page_throttle = {
+            let mut pages = self.page_throttles.lock().unwrap();
+            pages
+                .get_mut(token.as_deref().unwrap_or(""))
+                .is_some_and(|remaining| {
+                    if *remaining == 0 {
+                        return false;
+                    }
+                    *remaining -= 1;
+                    true
+                })
+        };
+        let throttle = page_throttle || {
             let mut remaining = self.remaining_throttles.lock().unwrap();
             if token.as_deref() == *self.throttle_token.lock().unwrap() && *remaining > 0 {
                 *remaining -= 1;
@@ -167,7 +200,10 @@ impl TransportClient for PageClient {
             }
         };
         if throttle {
-            headers.insert("x-ms-retry-after-ms", "0");
+            headers.insert(
+                "x-ms-retry-after-ms",
+                self.retry_after_ms.load(Ordering::SeqCst).to_string(),
+            );
             if self.capacity_throttle.load(Ordering::SeqCst) {
                 headers.insert("x-ms-substatus", "3092");
             }
@@ -235,6 +271,23 @@ async fn setup_with_metadata_timeout(
     timeout: Duration,
     third_region: bool,
 ) -> (Arc<CosmosDriver>, Arc<PageClient>, ContainerReference) {
+    setup_with_topology_mode(
+        hedge,
+        fail_pinned,
+        timeout,
+        third_region,
+        PartitionTopologyCacheMode::Lazy,
+    )
+    .await
+}
+
+async fn setup_with_topology_mode(
+    hedge: bool,
+    fail_pinned: bool,
+    timeout: Duration,
+    third_region: bool,
+    topology_mode: PartitionTopologyCacheMode,
+) -> (Arc<CosmosDriver>, Arc<PageClient>, ContainerReference) {
     let client = Arc::new(PageClient {
         attempts: Mutex::new(Vec::new()),
         remaining_throttles: Mutex::new(0),
@@ -249,6 +302,9 @@ async fn setup_with_metadata_timeout(
         third_region,
         hold_primary_until_hedge: AtomicBool::new(false),
         hedge_started: tokio::sync::Notify::new(),
+        page_throttles: Mutex::new(HashMap::new()),
+        retry_after_ms: AtomicU64::new(0),
+        active_requests: AtomicU64::new(0),
     });
     let runtime = CosmosDriverRuntime::builder()
         .with_connection_pool(
@@ -279,7 +335,7 @@ async fn setup_with_metadata_timeout(
                 })
                 .with_partition_failover_options(
                     PartitionFailoverOptions::builder()
-                        .with_partition_topology_cache_mode(PartitionTopologyCacheMode::Lazy)
+                        .with_partition_topology_cache_mode(topology_mode)
                         .with_circuit_breaker_enabled(false)
                         .build()
                         .unwrap(),
@@ -291,6 +347,7 @@ async fn setup_with_metadata_timeout(
     let properties = ContainerProperties {
         id: "items".into(),
         partition_key: serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap(),
+        vector_embedding_policy: None,
         system_properties: Default::default(),
     };
     let container =
@@ -904,8 +961,383 @@ async fn non_throttle_pinned_failure_still_restarts_cold() {
     assert!(attempts[1].token.is_none());
 }
 
+async fn wait_for_page_attempts(client: &PageClient, token: Option<&str>, count: usize) {
+    tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            if client
+                .attempts
+                .lock()
+                .unwrap()
+                .iter()
+                .filter(|attempt| attempt.token.as_deref() == token)
+                .count()
+                >= count
+            {
+                break;
+            }
+            client.attempted.notified().await;
+        }
+    })
+    .await
+    .expect("expected page attempts");
+}
+
 #[tokio::test]
-async fn page_deadline_stops_persistent_throttling_without_partial_publication() {
+async fn shared_eager_fill_survives_its_first_waiter_and_keeps_each_throttled_page() {
+    for timeout in [false, true] {
+        let (driver, client, container) = setup_with_topology_mode(
+            false,
+            false,
+            Duration::from_millis(100),
+            false,
+            PartitionTopologyCacheMode::Eager,
+        )
+        .await;
+        client.retry_after_ms.store(20, Ordering::SeqCst);
+        client.page_throttles.lock().unwrap().extend([
+            ("page-1".to_owned(), u32::MAX),
+            ("page-2".to_owned(), u32::MAX),
+        ]);
+        let mut first_options = options(0, Duration::ZERO, false);
+        first_options.end_to_end_latency_policy = Some(Duration::from_millis(60).into());
+        let mut first = Box::pin(driver.prime_partition_topology(&container, first_options));
+        tokio::select! {
+            result = &mut first => panic!("eager fill completed before throttled page: {result:?}"),
+            () = wait_for_page_attempts(&client, Some("page-1"), 2) => {}
+        }
+        if timeout {
+            assert!(first.await.unwrap_err().status().is_timeout());
+        } else {
+            drop(first);
+        }
+        assert!(driver
+            .pk_range_cache
+            .cached_routing_map(&container)
+            .await
+            .unwrap()
+            .is_none());
+
+        // A later transaction/session-topology caller must join the same fill.
+        let mut second = Box::pin(driver.load_session_token_routing_map(
+            &container,
+            options(0, Duration::ZERO, false),
+            Some(Instant::now() + Duration::from_secs(2)),
+        ));
+        assert!(futures::poll!(&mut second).is_pending());
+        *client
+            .page_throttles
+            .lock()
+            .unwrap()
+            .get_mut("page-1")
+            .unwrap() = 0;
+        tokio::select! {
+            result = &mut second => panic!("published before the final page completed: {result:?}"),
+            () = wait_for_page_attempts(&client, Some("page-2"), 2) => {}
+        }
+        assert!(driver
+            .pk_range_cache
+            .cached_routing_map(&container)
+            .await
+            .unwrap()
+            .is_none());
+        *client
+            .page_throttles
+            .lock()
+            .unwrap()
+            .get_mut("page-2")
+            .unwrap() = 0;
+        let map = second.await.unwrap().unwrap();
+        assert_eq!(
+            map.ranges()
+                .iter()
+                .map(|range| range.id.as_str())
+                .collect::<Vec<_>>(),
+            ["0", "1"]
+        );
+        let attempts = client.attempts.lock().unwrap();
+        assert_eq!(
+            attempts
+                .iter()
+                .filter(|attempt| attempt.token.is_none())
+                .count(),
+            1
+        );
+        for token in ["page-1", "page-2"] {
+            let page: Vec<_> = attempts
+                .iter()
+                .filter(|attempt| attempt.token.as_deref() == Some(token))
+                .collect();
+            assert!(page.len() >= 3);
+            assert!(page
+                .iter()
+                .all(|attempt| attempt.activity_id == page[0].activity_id
+                    && attempt.host == page[0].host));
+            assert!(page.windows(2).all(|pair| {
+                pair[1].started.duration_since(pair[0].started) >= Duration::from_millis(20)
+            }));
+        }
+    }
+}
+
+#[tokio::test]
+async fn unobserved_completed_fill_does_not_swallow_a_later_forced_refresh() {
+    let (driver, client, container) = setup(false, false).await;
+    *client.remaining_throttles.lock().unwrap() = u32::MAX;
+    let mut waiter = Box::pin(driver.load_session_token_routing_map(
+        &container,
+        options(0, Duration::ZERO, false),
+        None,
+    ));
+    tokio::select! {
+        result = &mut waiter => panic!("fill unexpectedly completed: {result:?}"),
+        () = wait_for_page_attempts(&client, Some("page-1"), 1) => {}
+    }
+    drop(waiter);
+    *client.remaining_throttles.lock().unwrap() = 0;
+    let published = tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            if let Some(map) = driver
+                .pk_range_cache
+                .cached_routing_map(&container)
+                .await
+                .unwrap()
+            {
+                break map;
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    client.attempts.lock().unwrap().clear();
+    let refreshed = driver
+        .lookup_partition_topology(&container, true, OperationOptions::default())
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(refreshed.ranges(), published.ranges());
+    let attempts = client.attempts.lock().unwrap();
+    assert_eq!(attempts.len(), 1);
+    assert_eq!(attempts[0].token.as_deref(), Some("page-2"));
+}
+
+#[tokio::test]
+async fn shared_refresh_outlives_deadline_without_replacing_the_previous_map_early() {
+    let (driver, client, container) = setup(false, false).await;
+    let previous = driver
+        .load_session_token_routing_map(&container, OperationOptions::default(), None)
+        .await
+        .unwrap()
+        .unwrap();
+    client.attempts.lock().unwrap().clear();
+    *client.throttle_token.lock().unwrap() = Some("page-2");
+    *client.remaining_throttles.lock().unwrap() = u32::MAX;
+    let mut first_options = options(0, Duration::ZERO, false);
+    first_options.end_to_end_latency_policy = Some(Duration::from_millis(50).into());
+    assert!(driver
+        .lookup_partition_topology(&container, true, first_options)
+        .await
+        .unwrap_err()
+        .status()
+        .is_timeout());
+    assert!(Arc::ptr_eq(
+        &previous,
+        &driver
+            .pk_range_cache
+            .cached_routing_map(&container)
+            .await
+            .unwrap()
+            .unwrap()
+    ));
+    let mut second = Box::pin(driver.load_session_token_routing_map(
+        &container,
+        OperationOptions::default(),
+        None,
+    ));
+    assert!(futures::poll!(&mut second).is_pending());
+    *client.remaining_throttles.lock().unwrap() = 0;
+    let refreshed = tokio::time::timeout(Duration::from_secs(2), second)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    assert_eq!(refreshed.ranges(), previous.ranges());
+    assert!(!Arc::ptr_eq(&refreshed, &previous));
+    let attempts = client.attempts.lock().unwrap();
+    assert!(attempts.len() > 1);
+    assert!(attempts
+        .iter()
+        .all(|attempt| attempt.token.as_deref() == Some("page-2")
+            && attempt.activity_id == attempts[0].activity_id));
+}
+
+#[tokio::test]
+async fn dropping_the_driver_reclaims_shared_fills_even_during_a_transport_attempt() {
+    for in_transport in [false, true] {
+        let (driver, client, container) = setup(false, false).await;
+        if in_transport {
+            *client.cold_replies.lock().unwrap() = Some(vec![
+                ColdReply {
+                    status: 403,
+                    substatus: None,
+                    delay: Duration::from_millis(100),
+                    pending: false,
+                };
+                2
+            ]);
+        }
+        *client.remaining_throttles.lock().unwrap() = u32::MAX;
+        let mut operation_options = options(0, Duration::ZERO, false);
+        operation_options.max_failover_retry_count = Some(0);
+        let mut waiter =
+            Box::pin(driver.load_session_token_routing_map(&container, operation_options, None));
+        tokio::select! {
+            result = &mut waiter => panic!("fill unexpectedly completed: {result:?}"),
+            () = wait_for_page_attempts(
+                &client,
+                if in_transport { None } else { Some("page-1") },
+                1,
+            ) => {}
+        }
+        drop(waiter);
+        let weak = Arc::downgrade(&driver);
+        drop(driver);
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while weak.upgrade().is_some() {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("a bounded metadata attempt must release the last driver reference");
+        let attempts = client.attempts.lock().unwrap().len();
+        tokio::time::sleep(Duration::from_millis(50)).await;
+        assert_eq!(client.attempts.lock().unwrap().len(), attempts);
+    }
+}
+
+#[tokio::test(start_paused = true)]
+async fn dropping_last_driver_stops_staggered_container_fills() {
+    let (driver, client, first) = setup(false, false).await;
+    let properties = ContainerProperties {
+        id: "other-items".into(),
+        partition_key: serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap(),
+        vector_embedding_policy: None,
+        system_properties: Default::default(),
+    };
+    let second = ContainerReference::new(
+        driver.account().clone(),
+        "db",
+        "db-rid",
+        "other-items",
+        "other-items-rid",
+        &properties,
+    );
+    *client.cold_replies.lock().unwrap() = Some(vec![
+        ColdReply {
+            status: 429,
+            substatus: None,
+            delay: Duration::from_millis(100),
+            pending: false,
+        };
+        2
+    ]);
+    client.retry_after_ms.store(20, Ordering::SeqCst);
+    let mut operation_options = options(0, Duration::ZERO, false);
+    operation_options.max_failover_retry_count = Some(0);
+    let mut first_waiter =
+        Box::pin(driver.load_session_token_routing_map(&first, operation_options.clone(), None));
+    assert!(futures::poll!(&mut first_waiter).is_pending());
+    wait_for_page_attempts(&client, None, 1).await;
+    tokio::time::advance(Duration::from_millis(60)).await;
+    let mut second_waiter =
+        Box::pin(driver.load_session_token_routing_map(&second, operation_options, None));
+    assert!(futures::poll!(&mut second_waiter).is_pending());
+    wait_for_page_attempts(&client, None, 2).await;
+    drop(first_waiter);
+    drop(second_waiter);
+
+    let last_owner = Arc::clone(&driver);
+    let weak = Arc::downgrade(&driver);
+    drop(driver);
+    for _ in 0..15 {
+        if client.attempts.lock().unwrap().len() >= 6 {
+            break;
+        }
+        tokio::time::advance(Duration::from_millis(20)).await;
+        tokio::task::yield_now().await;
+    }
+    let attempts = client.attempts.lock().unwrap().clone();
+    assert!(
+        attempts.len() >= 6,
+        "both fills must keep retrying while owned"
+    );
+    let mut by_container = HashMap::new();
+    for attempt in &attempts {
+        *by_container.entry(&attempt.path).or_insert(0) += 1;
+    }
+    assert_eq!(by_container.len(), 2);
+    assert!(by_container.values().all(|count| *count >= 2));
+    assert_eq!(client.active_requests.load(Ordering::SeqCst), 2);
+    drop(last_owner);
+
+    for _ in 0..50 {
+        tokio::time::advance(Duration::from_millis(20)).await;
+        tokio::task::yield_now().await;
+    }
+    assert!(
+        weak.upgrade().is_none(),
+        "overlapping fills must not keep the driver alive for one another"
+    );
+    assert_eq!(client.active_requests.load(Ordering::SeqCst), 0);
+    assert_eq!(client.attempts.lock().unwrap().len(), attempts.len());
+}
+
+#[tokio::test]
+async fn shared_fill_non_throttle_failures_terminate_and_allow_a_later_retry() {
+    for status in [403, 503] {
+        let (driver, client, container) = setup(false, false).await;
+        *client.cold_replies.lock().unwrap() = Some(vec![
+            ColdReply {
+                status,
+                substatus: None,
+                delay: Duration::ZERO,
+                pending: false,
+            };
+            2
+        ]);
+        let mut operation_options = options(0, Duration::ZERO, false);
+        operation_options.max_failover_retry_count = Some(1);
+        let error = tokio::time::timeout(
+            Duration::from_secs(2),
+            driver.load_session_token_routing_map(&container, operation_options, None),
+        )
+        .await
+        .expect("non-throttle retries must remain bounded")
+        .unwrap_err();
+        assert_eq!(u16::from(error.status().status_code()), status);
+        assert!(client.attempts.lock().unwrap().len() <= 2);
+        assert!(driver
+            .pk_range_cache
+            .cached_routing_map(&container)
+            .await
+            .unwrap()
+            .is_none());
+        *client.cold_replies.lock().unwrap() = None;
+        assert_eq!(
+            driver
+                .load_session_token_routing_map(&container, OperationOptions::default(), None)
+                .await
+                .unwrap()
+                .unwrap()
+                .ranges()
+                .len(),
+            2
+        );
+    }
+}
+
+#[tokio::test]
+async fn caller_deadline_stops_waiting_without_partial_publication() {
     let (driver, client, container) = setup(false, false).await;
     *client.remaining_throttles.lock().unwrap() = u32::MAX;
     let deadline = Instant::now() + Duration::from_millis(50);

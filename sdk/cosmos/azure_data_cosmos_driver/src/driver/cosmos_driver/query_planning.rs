@@ -215,6 +215,8 @@ fn build_gateway_query_plan_operation(
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "__internal_native_query_plan")]
+    use std::sync::Arc;
     use std::time::{Duration, Instant};
 
     use super::*;
@@ -261,13 +263,14 @@ mod tests {
             .build()
             .await
             .unwrap();
-        let mut driver = CosmosDriver::new(
+        let driver = CosmosDriver::new(
             runtime,
             crate::options::DriverOptions::builder(container.account().clone()).build(),
         )
         .unwrap();
+        let mut driver = Arc::try_unwrap(driver).expect("test driver has a single owner");
         driver.native_query_plan_provider =
-            crate::query_plan_native::NativeQueryPlanProvider::unavailable();
+            Arc::new(crate::query_plan_native::NativeQueryPlanProvider::unavailable());
         let operation =
             CosmosOperation::query_items(container.clone(), Some(crate::models::FeedRange::full()))
                 .with_body(br#"{"query":"SELECT * FROM c WHERE c.pk = 'a'"}"#.to_vec());

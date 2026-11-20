@@ -420,22 +420,20 @@ async fn setup_with_topology_mode(
         Url::parse("https://test.documents.azure.com/").unwrap(),
         "dGVzdA==",
     );
-    let driver = Arc::new(
-        CosmosDriver::new(
-            runtime,
-            DriverOptions::builder(account.clone())
-                .with_preferred_regions(vec![Region::new("East US"), Region::new("West US")])
-                .with_partition_failover_options(
-                    PartitionFailoverOptions::builder()
-                        .with_partition_topology_cache_mode(topology_mode)
-                        .with_circuit_breaker_enabled(false)
-                        .build()
-                        .unwrap(),
-                )
-                .build(),
-        )
-        .unwrap(),
-    );
+    let driver = CosmosDriver::new(
+        runtime,
+        DriverOptions::builder(account.clone())
+            .with_preferred_regions(vec![Region::new("East US"), Region::new("West US")])
+            .with_partition_failover_options(
+                PartitionFailoverOptions::builder()
+                    .with_partition_topology_cache_mode(topology_mode)
+                    .with_circuit_breaker_enabled(false)
+                    .build()
+                    .unwrap(),
+            )
+            .build(),
+    )
+    .unwrap();
     *client.driver.lock().unwrap() = Arc::downgrade(&driver);
     client.publish(properties).await;
     driver.initialized.store(true, Ordering::Release);

@@ -326,22 +326,36 @@ impl E2eTestFixture {
         let container_id = properties.id.to_string();
         management_client
             .create_database(&database_id, None)
-            .await?;
+            .await
+            .map_err(|error| format!("E2E fixture create_database '{database_id}': {error}"))?;
         let database = management_client.database_client(&database_id);
         let cleanup = DatabaseCleanup::new(management_client, database_id.clone());
         let setup: TestResult<_> = async {
-            database.create_container(properties, None).await?;
+            database
+                .create_container(properties, None)
+                .await
+                .map_err(|error| {
+                    format!("E2E fixture create_container '{database_id}/{container_id}': {error}")
+                })?;
             let container = client
                 .database_client(&database_id)
                 .container_client(&container_id, None)
-                .await?;
+                .await
+                .map_err(|error| {
+                    format!("E2E fixture resolve_container '{database_id}/{container_id}': {error}")
+                })?;
             if let Some(partition_key) = readiness_partition_key {
                 crate::framework::probe_data_plane_ready_with_partition_key(
                     "E2E data client",
                     &container,
                     partition_key,
                 )
-                .await?;
+                .await
+                .map_err(|error| {
+                    format!(
+                        "E2E fixture data-plane readiness '{database_id}/{container_id}': {error}"
+                    )
+                })?;
             }
             Ok(container)
         }
