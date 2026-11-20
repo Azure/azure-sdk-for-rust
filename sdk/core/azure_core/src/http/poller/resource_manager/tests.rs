@@ -1000,6 +1000,10 @@ async fn explicit_final_response_selection() {
             for location in [false, true] {
                 for strategy in strategies {
                     let final_url = if header == OPERATION_LOCATION
+                        && matches!(strategy, Some(FinalStateVia::OriginalUrl))
+                    {
+                        Some(RESOURCE_URL)
+                    } else if header == OPERATION_LOCATION
                         && location
                         && matches!(strategy, Some(FinalStateVia::Location))
                     {
@@ -1076,7 +1080,9 @@ async fn operation_location_resource_location_precedence() {
             Some(FinalStateVia::OriginalUrl),
             Some(FinalStateVia::OperationLocation(unexpected_extraction)),
         ] {
-            let final_url = if matches!(strategy, Some(FinalStateVia::Location)) {
+            let final_url = if matches!(strategy, Some(FinalStateVia::OriginalUrl)) {
+                RESOURCE_URL
+            } else if matches!(strategy, Some(FinalStateVia::Location)) {
                 LOCATION_URL
             } else {
                 RESOURCE_LOCATION_URL
@@ -1745,6 +1751,87 @@ async fn accepted_post_or_delete_requires_polling_headers() {
             error.to_string().contains("missing a polling URL"),
             "{error}"
         );
+        assert!(pending.lock().unwrap().is_empty());
+    }
+}
+
+#[tokio::test]
+async fn headerless_get_accepted_retries_original_url() {
+    let mut accepted_headers = Headers::new();
+    accepted_headers.insert(RETRY_AFTER, "0");
+    let mut final_headers = Headers::new();
+    final_headers.insert("x-ms-request-id", "final-resource");
+    let (pipeline, pending) = scripted_pipeline(vec![
+        (
+            Method::Get,
+            RESOURCE_URL,
+            AsyncRawResponse::from_bytes(StatusCode::Accepted, accepted_headers.clone(), ""),
+        ),
+        (
+            Method::Get,
+            RESOURCE_URL,
+            AsyncRawResponse::from_bytes(StatusCode::Accepted, accepted_headers, ""),
+        ),
+        (
+            Method::Get,
+            RESOURCE_URL,
+            AsyncRawResponse::from_bytes(
+                StatusCode::Ok,
+                final_headers.clone(),
+                br#"{"id":"finished"}"#.as_slice(),
+            ),
+        ),
+    ]);
+    let poller: Poller<ArmOperationStatus> = new_poller(
+        pipeline,
+        Request::new(RESOURCE_URL.parse().unwrap(), Method::Get),
+        None,
+        None,
+    );
+
+    let response = poller.await.unwrap();
+    assert_eq!(response.status(), StatusCode::Ok);
+    assert_eq!(response.headers(), &final_headers);
+    assert_eq!(response.body().as_ref(), br#"{"id":"finished"}"#);
+    assert_eq!(response.into_model().unwrap().id, "finished");
+    assert!(pending.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn operation_location_original_url_overrides_fallback_links() {
+    for (location, resource_location) in
+        [(false, false), (true, false), (false, true), (true, true)]
+    {
+        let body = if resource_location {
+            br#"{"status":"Succeeded","resourceLocation":"/results/2?api-version=other"}"#
+                .as_slice()
+        } else {
+            br#"{"status":"Succeeded"}"#.as_slice()
+        };
+        let (pipeline, pending) = scripted_pipeline(vec![
+            (
+                Method::Post,
+                RESOURCE_URL,
+                operation_response(OPERATION_LOCATION, location),
+            ),
+            (Method::Get, POLLING_URL, monitor_response(body)),
+            (
+                Method::Get,
+                RESOURCE_URL,
+                monitor_response(br#"{"id":"original"}"#),
+            ),
+        ]);
+        let poller: Poller<ArmOperationStatus> = new_poller(
+            pipeline,
+            Request::new(RESOURCE_URL.parse().unwrap(), Method::Post),
+            Some(FinalStateVia::OriginalUrl),
+            None,
+        );
+
+        let response = poller.await.unwrap();
+        assert_eq!(response.status(), StatusCode::Ok);
+        assert_eq!(response.body().as_ref(), br#"{"id":"original"}"#);
+        assert_eq!(response.into_model().unwrap().id, "original");
         assert!(pending.lock().unwrap().is_empty());
     }
 }
