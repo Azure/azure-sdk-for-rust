@@ -354,9 +354,13 @@ fn additive_buffered_window_controls_actual_planning_and_checkpoint_independence
         );
         drop(body);
         let opened = fixture.receive(op);
-        // SAFETY: opened is a live owned completion.
+        // SAFETY: receive transfers ownership of a completion allocated by the queue.
+        let status = unsafe { opened.as_ref() }
+            .expect("cursor open returned a null completion")
+            .common
+            .status;
         assert_eq!(
-            unsafe { (*opened).common.status == COSMOS_STATUS_SUCCESS },
+            status == COSMOS_STATUS_SUCCESS,
             succeeds,
             "{query}, window={window:?}"
         );
@@ -365,15 +369,23 @@ fn additive_buffered_window_controls_actual_planning_and_checkpoint_independence
         if succeeds {
             let checkpoint =
                 fixture.receive(cosmos_cursor_checkpoint_submit(cursor, 0, ptr::null_mut()));
-            // SAFETY: checkpoint is live. Unsupported checkpoint must not terminate the cursor.
-            assert_eq!(unsafe { (*checkpoint).common.status.0 & 0xffff }, 20124);
+            // SAFETY: receive transfers ownership of a completion allocated by the queue.
+            let status = unsafe { checkpoint.as_ref() }
+                .expect("checkpoint returned a null completion")
+                .common
+                .status;
+            assert_eq!(status.0 & 0xffff, 20124);
             cosmos_cursor_completion_free(checkpoint);
             let mut rows = Vec::new();
             loop {
                 let page = fixture.receive(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
-                // SAFETY: page is live.
-                assert_eq!(unsafe { (*page).common.status }, COSMOS_STATUS_SUCCESS);
-                let end = unsafe { (*page).result_kind == 4 };
+                let (status, end) = {
+                    // SAFETY: receive transfers ownership of a completion allocated by the queue.
+                    let completion =
+                        unsafe { page.as_ref() }.expect("cursor next returned a null completion");
+                    (completion.common.status, completion.result_kind == 4)
+                };
+                assert_eq!(status, COSMOS_STATUS_SUCCESS);
                 if !end {
                     rows.extend(documents(page));
                 }
@@ -477,8 +489,12 @@ fn additive_full_width_page_hint_executes_and_streaming_resume_keeps_options() {
             0,
             ptr::null_mut(),
         ));
-        // SAFETY: this test owns the completion.
-        assert_eq!(unsafe { (*opened).common.status }, COSMOS_STATUS_SUCCESS);
+        // SAFETY: receive transfers ownership of a completion allocated by the queue.
+        let status = unsafe { opened.as_ref() }
+            .expect("cursor open returned a null completion")
+            .common
+            .status;
+        assert_eq!(status, COSMOS_STATUS_SUCCESS);
         let mut cursor = cosmos_cursor_completion_take_cursor(opened);
         cosmos_cursor_completion_free(opened);
         let first = fixture.receive(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
@@ -487,10 +503,12 @@ fn additive_full_width_page_hint_executes_and_streaming_resume_keeps_options() {
         if !scripted {
             let checkpoint =
                 fixture.receive(cosmos_cursor_checkpoint_submit(cursor, 0, ptr::null_mut()));
-            // SAFETY: token remains live through synchronous input copying.
-            unsafe {
-                assert_eq!((*checkpoint).common.status, COSMOS_STATUS_SUCCESS);
-                request.operation.continuation_token = (*checkpoint).checkpoint;
+            {
+                // SAFETY: token remains live through synchronous input copying.
+                let completion =
+                    unsafe { checkpoint.as_ref() }.expect("checkpoint returned a null completion");
+                assert_eq!(completion.common.status, COSMOS_STATUS_SUCCESS);
+                request.operation.continuation_token = completion.checkpoint;
             }
             options.max_buffered_query_window = 0;
             let op = cosmos_cursor_open_submit_v2(
@@ -505,16 +523,24 @@ fn additive_full_width_page_hint_executes_and_streaming_resume_keeps_options() {
             cosmos_cursor_completion_free(checkpoint);
             cosmos_cursor_free(cursor);
             let opened = fixture.receive(op);
-            // SAFETY: this test owns the completion.
-            assert_eq!(unsafe { (*opened).common.status }, COSMOS_STATUS_SUCCESS);
+            // SAFETY: receive transfers ownership of a completion allocated by the queue.
+            let status = unsafe { opened.as_ref() }
+                .expect("resumed cursor open returned a null completion")
+                .common
+                .status;
+            assert_eq!(status, COSMOS_STATUS_SUCCESS);
             cursor = cosmos_cursor_completion_take_cursor(opened);
             cosmos_cursor_completion_free(opened);
         }
         loop {
             let page = fixture.receive(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
-            // SAFETY: this test owns the completion.
-            assert_eq!(unsafe { (*page).common.status }, COSMOS_STATUS_SUCCESS);
-            let end = unsafe { (*page).result_kind == 4 };
+            let (status, end) = {
+                // SAFETY: receive transfers ownership of a completion allocated by the queue.
+                let completion =
+                    unsafe { page.as_ref() }.expect("cursor next returned a null completion");
+                (completion.common.status, completion.result_kind == 4)
+            };
+            assert_eq!(status, COSMOS_STATUS_SUCCESS);
             if !end {
                 rows.extend(documents(page));
             }
@@ -646,38 +672,44 @@ fn epk_scopes_keep_exact_bounds_and_rejections_never_widen_including_points() {
                 0,
                 ptr::null_mut(),
             ));
-            // SAFETY: this test owns the completion and its diagnostic message.
-            unsafe {
-                if min == max {
-                    assert_eq!(
-                        (*opened).common.status.0 & 0xffff,
-                        if mode == 0 { 20302 } else { 20305 }
-                    );
-                    assert_eq!(gate.scoped_reads.load(Ordering::SeqCst), 0);
-                    cosmos_cursor_completion_free(opened);
-                    cosmos_feed_range_free(range);
-                    continue;
-                }
-                assert_eq!(
-                    (*opened).common.status,
-                    COSMOS_STATUS_SUCCESS,
-                    "min={min} max={max} mode={mode}: {:?}",
-                    std::ffi::CStr::from_ptr((*opened).common.message),
-                );
+            // SAFETY: receive transfers ownership of a completion allocated by the queue.
+            let status = unsafe { opened.as_ref() }
+                .expect("scoped cursor open returned a null completion")
+                .common
+                .status;
+            if min == max {
+                assert_eq!(status.0 & 0xffff, if mode == 0 { 20302 } else { 20305 });
+                assert_eq!(gate.scoped_reads.load(Ordering::SeqCst), 0);
+                cosmos_cursor_completion_free(opened);
+                cosmos_feed_range_free(range);
+                continue;
             }
+            // SAFETY: this test owns the completion until after diagnostics are read.
+            let message = unsafe { opened.as_ref() }
+                .expect("scoped cursor open returned a null completion")
+                .common
+                .message;
+            let message = (!message.is_null()).then(|| {
+                // SAFETY: a non-null message is NUL-terminated and owned by the live completion.
+                unsafe { std::ffi::CStr::from_ptr(message) }
+            });
+            assert_eq!(
+                status, COSMOS_STATUS_SUCCESS,
+                "min={min} max={max} mode={mode}: {message:?}",
+            );
             let cursor = cosmos_cursor_completion_take_cursor(opened);
             cosmos_cursor_completion_free(opened);
             cosmos_feed_range_free(range);
             let page = fixture.receive(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
             // SAFETY: this test owns the live completion until it is freed below.
-            unsafe {
-                if mode == 0 {
-                    assert_eq!((*page).common.status, COSMOS_STATUS_SUCCESS);
-                } else {
-                    assert_eq!((*page).common.http_status_code, 400);
-                    assert_eq!((*page).common.status.0 & 0xffff, 1001);
-                    assert_eq!((*page).common.is_from_wire, 1);
-                }
+            let completion =
+                unsafe { page.as_ref() }.expect("scoped cursor next returned a null completion");
+            if mode == 0 {
+                assert_eq!(completion.common.status, COSMOS_STATUS_SUCCESS);
+            } else {
+                assert_eq!(completion.common.http_status_code, 400);
+                assert_eq!(completion.common.status.0 & 0xffff, 1001);
+                assert_eq!(completion.common.is_from_wire, 1);
             }
             assert!(gate.scoped_reads.load(Ordering::SeqCst) >= 1);
             if mode != 0 {
