@@ -61,6 +61,8 @@ const CONTAINER: &str = "容器";
 const CONTAINER_PATH: &str = "/dbs/donn%C3%A9es/colls/%E5%AE%B9%E5%99%A8";
 const PARTITION_RANGES_PATH: &str = "/dbs/donn%C3%A9es/colls/%E5%AE%B9%E5%99%A8/pkranges";
 const ITEM_PATH: &str = "/dbs/donn%C3%A9es/colls/%E5%AE%B9%E5%99%A8/docs/item";
+const DELETE_PARTITION_PATH: &str =
+    "/dbs/donn%C3%A9es/colls/%E5%AE%B9%E5%99%A8/operations/partitionkeydelete";
 
 #[derive(Debug, Default)]
 struct MetadataTransport {
@@ -123,6 +125,20 @@ impl TransportClient for MetadataTransport {
             }
             PARTITION_RANGES_PATH => (304, serde_json::Value::Null),
             ITEM_PATH => (200, serde_json::json!({"id": "item", "pk": "tenant"})),
+            DELETE_PARTITION_PATH => {
+                assert_eq!(request.method, azure_core::http::Method::Post);
+                assert!(request.body.is_none());
+                assert_eq!(
+                    request.headers.get_optional_str(
+                        &azure_core::http::headers::HeaderName::from_static(
+                            "x-ms-documentdb-partitionkey"
+                        )
+                    ),
+                    Some("[\"tenant\"]")
+                );
+                headers.insert("x-ms-request-charge", "1.5");
+                (200, serde_json::Value::Null)
+            }
             _ => panic!("unexpected downstream request: {path}"),
         };
         Ok(HttpResponse {
@@ -275,6 +291,51 @@ fn submit_and_complete(fixture: &Fixture, request: &CosmosOperationRequest) -> C
     let completion = fixture.completion();
     cosmos_operation_handle_free(operation);
     completion
+}
+
+#[test]
+fn delete_by_partition_key_uses_existing_submission_and_completion() {
+    let fixture = Fixture::new();
+    let (mut request, container, key) = resolve_item_request(&fixture);
+    request.kind = CosmosOperationKind::CosmosOperationKindDeleteByPartitionKey as i32;
+    request.item_id = CosmosStringView::default();
+    let component = CosmosPartitionKeyComponent {
+        kind: CosmosPartitionKeyComponentKind::STRING.0,
+        value: CosmosPartitionKeyComponentValue {
+            string_value: view(b"tenant"),
+        },
+    };
+    for inline in [false, true] {
+        if inline {
+            request.partition_key = ptr::null();
+            request.partition_key_components = &component;
+            request.partition_key_len = 1;
+        }
+        let mut completion = submit_and_complete(&fixture, &request);
+        assert_eq!(
+            completion.outcome,
+            CosmosCompletionOutcome::CosmosCompletionOutcomeOk
+        );
+        assert_eq!(completion.http_status_code, 200);
+        assert!(completion.headers_len > 0);
+        cosmos_completion_queue_free_completions(&mut completion, 1);
+    }
+    request.partition_key_components = ptr::null();
+    request.partition_key_len = 0;
+    // SAFETY: all non-null request fields are borrowed live handles.
+    assert!(matches!(
+        unsafe { build_request(&request) },
+        Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument)
+    ));
+    request.partition_key = key;
+    request.container = ptr::null();
+    // SAFETY: the partition key handle remains live and the container is null.
+    assert!(matches!(
+        unsafe { build_request(&request) },
+        Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument)
+    ));
+    cosmos_partition_key_free(key);
+    cosmos_container_ref_free(container);
 }
 
 #[test]

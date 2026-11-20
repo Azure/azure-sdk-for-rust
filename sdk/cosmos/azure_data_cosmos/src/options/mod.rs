@@ -29,6 +29,8 @@ pub use batch::{
 };
 pub use change_feed::{ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom};
 pub(crate) use client::CosmosClientOptions;
+#[cfg(feature = "unstable_delete_by_partition_key")]
+pub use container::DeleteByPartitionKeyOptions;
 pub use container::{ContainerClientOptions, ReadContainerOptions};
 #[cfg(feature = "control_plane")]
 pub use container::{

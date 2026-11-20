@@ -17,6 +17,7 @@
 - `key_auth`
 - `native_tls`
 - `rustls`
+- `unstable_delete_by_partition_key`
 - `unstable_dtx`
 - `unstable_opentelemetry`
 - `unstable_patch`
@@ -301,6 +302,8 @@ pub mod clients {
     pub struct ContainerClient {
     }
     impl ContainerClient {
+        #[cfg(feature = "unstable_delete_by_partition_key")]
+        pub async fn begin_delete_by_partition_key<impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, options: Option<DeleteByPartitionKeyOptions>) -> crate::Result<DeleteByPartitionKeyResponse>;
         #[cfg(feature = "control_plane")]
         pub async fn begin_replace_throughput(&self, throughput: ThroughputProperties, options: Option<ThroughputOptions>) -> crate::Result<ThroughputPoller>;
         pub async fn create_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, item: T, options: Option<ItemWriteOptions>) -> crate::Result<ItemResponse>;
@@ -1528,6 +1531,17 @@ pub mod models {
         #[serde(flatten)]
         pub system_properties: crate::models::SystemProperties,
     }
+    #[cfg(feature = "unstable_delete_by_partition_key")]
+    #[derive(Debug)]
+    #[non_exhaustive]
+    pub struct DeleteByPartitionKeyResponse {
+    }
+    #[cfg(feature = "unstable_delete_by_partition_key")]
+    impl DeleteByPartitionKeyResponse {
+        pub fn diagnostics(&self) -> Arc<DiagnosticsContext>;
+        pub fn headers(&self) -> &ResponseHeaders;
+        pub fn status(&self) -> CosmosStatus;
+    }
     #[doc(inline)]
     #[derive(Clone, Debug, Eq)]
     pub struct EffectivePartitionKey(/* private fields */);
@@ -2524,6 +2538,16 @@ pub mod options {
     }
     #[cfg(feature = "control_plane")]
     impl CreateDatabaseOptions {
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
+    }
+    #[cfg(feature = "unstable_delete_by_partition_key")]
+    #[derive(Clone, Default)]
+    #[non_exhaustive]
+    pub struct DeleteByPartitionKeyOptions {
+        pub operation: azure_data_cosmos_driver::options::OperationOptions,
+    }
+    #[cfg(feature = "unstable_delete_by_partition_key")]
+    impl DeleteByPartitionKeyOptions {
         pub fn with_operation_options(self, operation: OperationOptions) -> Self;
     }
     #[cfg(feature = "control_plane")]

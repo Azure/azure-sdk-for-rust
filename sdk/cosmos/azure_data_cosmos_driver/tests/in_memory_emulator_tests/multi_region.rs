@@ -5,6 +5,193 @@
 
 use super::*;
 use azure_core::http::headers::HeaderName;
+use std::time::Duration;
+
+#[tokio::test]
+async fn delete_by_partition_key_reserves_the_complete_replication_batch() {
+    for delay in [Duration::ZERO, Duration::from_millis(20)] {
+        let config = VirtualAccountConfig::new(vec![
+            VirtualRegion::new("East US", Url::parse(GATEWAY_URL).unwrap()),
+            VirtualRegion::new(
+                "West US",
+                Url::parse("https://westus.emulator.local").unwrap(),
+            ),
+        ])
+        .unwrap()
+        .with_replication_config(ReplicationConfig::fixed(delay).with_max_buffered_replications(3));
+        let emulator = InMemoryEmulatorHttpClient::new(config);
+        let store = emulator.store();
+        store.create_database("testdb");
+        store.create_container("testdb", "testcoll", "/pk".into());
+        for id in ["one", "two", "three", "four", "five"] {
+            let request = create_item_request(
+                GATEWAY_URL,
+                "testdb",
+                "testcoll",
+                &serde_json::json!({"id": id, "pk": "target"}),
+                r#"["target"]"#,
+                false,
+            );
+            assert_eq!(
+                emulator.execute_request(&request).await.unwrap().status(),
+                StatusCode::Created
+            );
+        }
+        store.drain_pending_replications().await;
+        store.pause_replication("West US");
+        let control = create_item_request(
+            GATEWAY_URL,
+            "testdb",
+            "testcoll",
+            &serde_json::json!({"id": "control", "pk": "control"}),
+            r#"["control"]"#,
+            false,
+        );
+        assert_eq!(
+            emulator.execute_request(&control).await.unwrap().status(),
+            StatusCode::Created
+        );
+        store.drain_pending_replications().await;
+        let delete = delete_by_partition_key_request(GATEWAY_URL, r#"["target"]"#);
+        let response = emulator.execute_request(&delete).await.unwrap();
+        assert_eq!(response.status(), StatusCode::TooManyRequests);
+        assert_eq!(
+            response.headers().get_optional_str(&SUBSTATUS),
+            Some("3075")
+        );
+        for id in ["one", "two", "three", "four", "five"] {
+            let read = read_item_request(GATEWAY_URL, "testdb", "testcoll", id, r#"["target"]"#);
+            assert_eq!(
+                emulator.execute_request(&read).await.unwrap().status(),
+                StatusCode::Ok
+            );
+        }
+        assert_eq!(store.dropped_replications(), 0);
+        store.resume_replication("West US");
+        assert_eq!(
+            emulator.execute_request(&delete).await.unwrap().status(),
+            StatusCode::Ok
+        );
+        store.drain_pending_replications().await;
+        for endpoint in [GATEWAY_URL, "https://westus.emulator.local"] {
+            for id in ["one", "two", "three", "four", "five"] {
+                let read = read_item_request(endpoint, "testdb", "testcoll", id, r#"["target"]"#);
+                assert_eq!(
+                    emulator.execute_request(&read).await.unwrap().status(),
+                    StatusCode::NotFound
+                );
+            }
+            let read =
+                read_item_request(endpoint, "testdb", "testcoll", "control", r#"["control"]"#);
+            assert_eq!(
+                emulator.execute_request(&read).await.unwrap().status(),
+                StatusCode::Ok
+            );
+        }
+        assert_eq!(store.dropped_replications(), 0);
+    }
+}
+
+#[tokio::test]
+async fn delete_by_partition_key_reservations_block_competing_writes() {
+    let config = VirtualAccountConfig::new(vec![
+        VirtualRegion::new("East US", Url::parse(GATEWAY_URL).unwrap()),
+        VirtualRegion::new(
+            "West US",
+            Url::parse("https://westus.emulator.local").unwrap(),
+        ),
+    ])
+    .unwrap()
+    .with_replication_config(
+        ReplicationConfig::fixed(Duration::from_millis(20)).with_max_buffered_replications(2),
+    );
+    let emulator = InMemoryEmulatorHttpClient::new(config);
+    let store = emulator.store();
+    store.create_database("testdb");
+    store.create_container("testdb", "testcoll", "/pk".into());
+    for pk in ["first", "second"] {
+        for id in ["one", "two"] {
+            let request = create_item_request(
+                GATEWAY_URL,
+                "testdb",
+                "testcoll",
+                &serde_json::json!({"id": id, "pk": pk}),
+                &format!(r#"["{pk}"]"#),
+                false,
+            );
+            assert_eq!(
+                emulator.execute_request(&request).await.unwrap().status(),
+                StatusCode::Created
+            );
+        }
+    }
+    store.drain_pending_replications().await;
+    store.pause_replication("West US");
+    let first = delete_by_partition_key_request(GATEWAY_URL, r#"["first"]"#);
+    let second = delete_by_partition_key_request(GATEWAY_URL, r#"["second"]"#);
+    let (first_result, second_result) = tokio::join!(
+        emulator.execute_request(&first),
+        emulator.execute_request(&second),
+    );
+    let statuses = [
+        first_result.unwrap().status(),
+        second_result.unwrap().status(),
+    ];
+    assert_eq!(statuses.iter().filter(|s| **s == StatusCode::Ok).count(), 1);
+    assert_eq!(
+        statuses
+            .iter()
+            .filter(|s| **s == StatusCode::TooManyRequests)
+            .count(),
+        1
+    );
+    let write = create_item_request(
+        GATEWAY_URL,
+        "testdb",
+        "testcoll",
+        &serde_json::json!({"id": "later", "pk": "first"}),
+        r#"["first"]"#,
+        false,
+    );
+    assert_eq!(
+        emulator.execute_request(&write).await.unwrap().status(),
+        StatusCode::TooManyRequests
+    );
+    store.drain_pending_replications().await;
+    store.resume_replication("West US");
+    let retry = if statuses[0] == StatusCode::Ok {
+        &second
+    } else {
+        &first
+    };
+    assert_eq!(
+        emulator.execute_request(retry).await.unwrap().status(),
+        StatusCode::Ok
+    );
+    assert_eq!(
+        emulator.execute_request(&write).await.unwrap().status(),
+        StatusCode::Created
+    );
+    store.drain_pending_replications().await;
+    for endpoint in [GATEWAY_URL, "https://westus.emulator.local"] {
+        for pk in ["first", "second"] {
+            for id in ["one", "two"] {
+                let read =
+                    read_item_request(endpoint, "testdb", "testcoll", id, &format!(r#"["{pk}"]"#));
+                assert_eq!(
+                    emulator.execute_request(&read).await.unwrap().status(),
+                    StatusCode::NotFound
+                );
+            }
+        }
+        let read = read_item_request(endpoint, "testdb", "testcoll", "later", r#"["first"]"#);
+        assert_eq!(
+            emulator.execute_request(&read).await.unwrap().status(),
+            StatusCode::Ok
+        );
+    }
+    assert_eq!(store.dropped_replications(), 0);
+}
 
 #[tokio::test]
 async fn write_forbidden_403_3() {

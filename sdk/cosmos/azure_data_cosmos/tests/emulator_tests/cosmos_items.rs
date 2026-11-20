@@ -14,6 +14,10 @@ use azure_data_cosmos::models::{ContainerProperties, PartitionKeyVersion};
 use azure_data_cosmos::options::{
     ContentResponseOnWrite, ItemWriteOptions, OperationOptions, Precondition,
 };
+#[cfg(feature = "unstable_delete_by_partition_key")]
+use azure_data_cosmos::options::{
+    ItemReadOptions, OperationOptionsBuilder, QueryOptions, ReadConsistencyStrategy,
+};
 use azure_data_cosmos::PartitionKey;
 use azure_data_cosmos_driver::{
     models::{AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference},
@@ -26,6 +30,7 @@ use azure_data_cosmos_driver::{
 use framework::get_effective_hub_endpoint;
 use framework::TestRunContext;
 use framework::{TestClient, TestOptions};
+use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use serde_bytes::ByteBuf;
 use std::{borrow::Cow, error::Error};
@@ -369,6 +374,94 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 }
             }
 
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_inmemory")),
+    ignore = "requires test_category 'emulator' or 'emulator_inmemory'"
+)]
+#[cfg(feature = "unstable_delete_by_partition_key")]
+async fn begin_delete_by_partition_key() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container = create_container(run_context).await?;
+            let operation_options = OperationOptionsBuilder::new()
+                .with_read_consistency_strategy(ReadConsistencyStrategy::LatestCommitted)
+                .build();
+            let read_options =
+                ItemReadOptions::default().with_operation_options(operation_options.clone());
+            let query_options = QueryOptions::default().with_operation_options(operation_options);
+            for (pk, id) in [
+                ("target", "shared"),
+                ("target", "second"),
+                ("control", "shared"),
+            ] {
+                let item = serde_json::json!({"id": id, "partition_key": pk});
+                container.create_item(pk, id, &item, None).await?;
+                let stored: serde_json::Value = run_context
+                    .read_item(&container, pk, id, Some(read_options.clone()))
+                    .await?
+                    .into_model()?;
+                assert_eq!(stored["id"], id);
+                assert_eq!(stored["partition_key"], pk);
+            }
+            let response = container
+                .begin_delete_by_partition_key("target", None)
+                .await?;
+            assert!(response.status().is_success());
+            assert_eq!(
+                response.diagnostics().operation_name(),
+                Some("begin_delete_by_partition_key")
+            );
+
+            // Absence proves invisibility, not whether physical deletion or masking occurred.
+            for id in ["shared", "second"] {
+                let error = container
+                    .read_item("target", id, Some(read_options.clone()))
+                    .await
+                    .unwrap_err();
+                assert_eq!(error.status().status_code(), StatusCode::NotFound);
+            }
+            for (scope, expected) in [
+                (
+                    azure_data_cosmos::feed::FeedScope::partition("target"),
+                    Vec::<String>::new(),
+                ),
+                (
+                    azure_data_cosmos::feed::FeedScope::partition("control"),
+                    vec!["shared".to_owned()],
+                ),
+                (
+                    azure_data_cosmos::feed::FeedScope::full_container(),
+                    vec!["shared".to_owned()],
+                ),
+            ] {
+                let mut pages = container
+                    .query_items::<String>(
+                        "SELECT VALUE c.id FROM c",
+                        scope,
+                        Some(query_options.clone()),
+                    )
+                    .await?
+                    .into_pages();
+                let mut actual = Vec::new();
+                while let Some(page) = pages.next().await {
+                    actual.extend(page?.into_items());
+                }
+                assert_eq!(actual, expected);
+            }
+            let control: serde_json::Value = container
+                .read_item("control", "shared", Some(read_options))
+                .await?
+                .into_model()?;
+            assert_eq!(control["id"], "shared");
+            assert_eq!(control["partition_key"], "control");
             Ok(())
         },
         Some(TestOptions::for_emulator()),

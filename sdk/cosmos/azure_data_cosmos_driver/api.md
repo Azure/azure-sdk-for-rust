@@ -1488,6 +1488,7 @@ pub mod models {
         pub fn create_database(account: AccountReference) -> Self;
         pub fn create_item(item: ItemReference) -> Self;
         pub fn db_operation_name(&self) -> Option<&'static str>;
+        pub fn delete_by_partition_key(container: ContainerReference, partition_key: PartitionKey) -> Self;
         pub fn delete_container(container: ContainerReference) -> Self;
         pub fn delete_database(database: DatabaseReference) -> Self;
         pub fn delete_item(item: ItemReference) -> Self;
@@ -2312,6 +2313,7 @@ pub mod models {
         CommitDistributedTransaction,
         #[cfg(feature = "unstable_dtx")]
         ReadDistributedTransaction,
+        DeleteByPartitionKey,
     }
     impl OperationType {
         pub fn as_str(self) -> &'static str;

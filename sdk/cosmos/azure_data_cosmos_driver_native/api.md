@@ -599,6 +599,7 @@ pub mod op_request {
         CosmosOperationKindReplaceItem = 22,
         CosmosOperationKindDeleteItem = 23,
         CosmosOperationKindPatchItem = 24,
+        CosmosOperationKindDeleteByPartitionKey = 25,
     }
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
