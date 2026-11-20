@@ -3,3 +3,5 @@
 
 . "$PSScriptRoot\..\eng\scripts\Invoke-CosmosTestSetup.ps1"
 . "$PSScriptRoot\..\eng\scripts\Invoke-CosmosDefaultFeatureCheck.ps1"
+
+. "$PSScriptRoot\..\eng\scripts\Invoke-CosmosSpecTests.ps1"

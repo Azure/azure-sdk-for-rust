@@ -122,6 +122,8 @@ mod tests {
             timeout: None,
             #[cfg(feature = "fault_injection")]
             evaluation_collector: None,
+            #[cfg(feature = "__internal_transport_observer")]
+            observer_context: None,
         };
         let user_agent = HeaderValue::from_static("test-agent");
         let client_id = HeaderValue::from_static("00000000-0000-4000-8000-000000000000");
@@ -177,6 +179,8 @@ mod tests {
             timeout: None,
             #[cfg(feature = "fault_injection")]
             evaluation_collector: None,
+            #[cfg(feature = "__internal_transport_observer")]
+            observer_context: None,
         }
     }
 

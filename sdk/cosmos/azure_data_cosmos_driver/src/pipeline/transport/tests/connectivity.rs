@@ -92,6 +92,8 @@ async fn connectivity_retry_updates_progress_only_for_eligible_replays() {
         timeout: None,
         #[cfg(feature = "fault_injection")]
         evaluation_collector: None,
+        #[cfg(feature = "__internal_transport_observer")]
+        observer_context: None,
     };
     let dispatch = client
         .send_with_dispatch(&request, None, &endpoint_key, None)

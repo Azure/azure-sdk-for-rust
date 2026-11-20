@@ -60,6 +60,8 @@ pub(crate) fn wrap_request_for_gateway_v2(
         timeout: request.timeout,
         #[cfg(feature = "fault_injection")]
         evaluation_collector: request.evaluation_collector.clone(),
+        #[cfg(feature = "__internal_transport_observer")]
+        observer_context: request.observer_context.clone(),
     })
 }
 

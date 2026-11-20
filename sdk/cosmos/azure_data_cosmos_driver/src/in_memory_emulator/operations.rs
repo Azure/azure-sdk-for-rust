@@ -47,7 +47,8 @@ use crate::models::{
 };
 use crate::options::ReadConsistencyStrategy;
 use crate::query::ast::{
-    SqlCollection, SqlCollectionExpression, SqlQuery, SqlScalarExpression, SqlSelectSpec,
+    SqlCollection, SqlCollectionExpression, SqlOrderByClause, SqlQuery, SqlScalarExpression,
+    SqlSelectSpec, SqlSortOrder,
 };
 
 static OFFER_REPLACE_PENDING: HeaderName = HeaderName::from_static("x-ms-offer-replace-pending");
@@ -2529,6 +2530,190 @@ fn paginate_document_feed_items(
     Ok((page_items.into_iter().map(|item| item.body).collect(), next))
 }
 
+/// The position of one ORDER BY row in the backend's total order:
+/// ORDER BY keys, then the source document's `_rid` (in the first sort
+/// column's direction), then the document cursor, then the JOIN expansion
+/// index.
+///
+/// Unlike an offset, this position is meaningful on any subset of the rows, so
+/// a parent partition's continuation stays valid on each post-split child
+/// (the Cosmos contract the driver relies on when forwarding continuations).
+#[derive(Clone, Debug)]
+struct OrderByCursor {
+    keys: Vec<Option<serde_json::Value>>,
+    rid: Option<String>,
+    document: DocumentFeedCursor,
+    ordinal: usize,
+}
+
+struct OrderByFeedItem {
+    body: serde_json::Value,
+    cursor: OrderByCursor,
+}
+
+/// Serialized [`OrderByCursor`]. Each key is `[]` for `undefined` or
+/// `[value]` otherwise, so `undefined` and `null` stay distinct.
+#[derive(Deserialize, Serialize)]
+struct OrderByCursorToken {
+    kind: String,
+    keys: Vec<Vec<serde_json::Value>>,
+    rid: Option<String>,
+    epk: String,
+    id: String,
+    ordinal: usize,
+}
+
+const ORDER_BY_CURSOR_TOKEN_KIND: &str = "order_by_cursor_v1";
+
+impl OrderByCursor {
+    fn to_token(&self) -> String {
+        serde_json::to_string(&OrderByCursorToken {
+            kind: ORDER_BY_CURSOR_TOKEN_KIND.to_owned(),
+            keys: self
+                .keys
+                .iter()
+                .map(|key| key.iter().cloned().collect())
+                .collect(),
+            rid: self.rid.clone(),
+            epk: self.document.epk.to_hex(),
+            id: self.document.id.clone(),
+            ordinal: self.ordinal,
+        })
+        .expect("ORDER BY cursor token serialization cannot fail")
+    }
+
+    fn parse(token: &str, start: Instant) -> Result<Self, AsyncRawResponse> {
+        let token: OrderByCursorToken = serde_json::from_str(token)
+            .map_err(|_| invalid_continuation_response("Invalid continuation token", start))?;
+        if token.kind != ORDER_BY_CURSOR_TOKEN_KIND {
+            return Err(invalid_continuation_response(
+                "Invalid continuation token kind",
+                start,
+            ));
+        }
+        let mut keys = Vec::with_capacity(token.keys.len());
+        for key in token.keys {
+            if key.len() > 1 {
+                return Err(invalid_continuation_response(
+                    "Invalid continuation token ORDER BY key",
+                    start,
+                ));
+            }
+            keys.push(key.into_iter().next());
+        }
+        Ok(Self {
+            keys,
+            rid: token.rid,
+            document: DocumentFeedCursor {
+                epk: Epk::try_from(token.epk).map_err(|_| {
+                    invalid_continuation_response("Invalid continuation token EPK", start)
+                })?,
+                id: token.id,
+            },
+            ordinal: token.ordinal,
+        })
+    }
+
+    fn compare(&self, other: &Self, order_by: &SqlOrderByClause) -> std::cmp::Ordering {
+        crate::query::eval::compare_order_by_keys(&self.keys, &other.keys, order_by)
+            .then_with(|| match (&self.rid, &other.rid) {
+                (Some(a), Some(b)) => {
+                    let ascending = crate::models::resource_id::compare_document_rids(a, b);
+                    match order_by.items.first().map(|item| item.order) {
+                        Some(SqlSortOrder::Descending) => ascending.reverse(),
+                        _ => ascending,
+                    }
+                }
+                _ => std::cmp::Ordering::Equal,
+            })
+            .then_with(|| self.document.cmp(&other.document))
+            .then_with(|| self.ordinal.cmp(&other.ordinal))
+    }
+}
+
+/// Paginates sorted ORDER BY rows by position: a continuation resumes at the
+/// first row strictly after the cursor, so it skips exactly the rows already
+/// returned regardless of which partition (parent or post-split child) serves
+/// the resumed request.
+fn paginate_order_by_items(
+    items: Vec<OrderByFeedItem>,
+    order_by: &SqlOrderByClause,
+    max_item_count: Option<i32>,
+    continuation: Option<&str>,
+    start: Instant,
+) -> Result<(Vec<serde_json::Value>, Option<String>), AsyncRawResponse> {
+    let offset = match continuation {
+        Some(token) => {
+            let cursor = OrderByCursor::parse(token, start)?;
+            items.partition_point(|item| {
+                item.cursor.compare(&cursor, order_by) != std::cmp::Ordering::Greater
+            })
+        }
+        None => 0,
+    };
+
+    let total = items.len();
+    let limit = match max_item_count {
+        Some(n) if n > 0 => n as usize,
+        _ => total.saturating_sub(offset),
+    };
+    let end = offset.saturating_add(limit).min(total);
+    let mut items = items;
+    let page_items: Vec<_> = if offset >= total {
+        Vec::new()
+    } else {
+        items.drain(offset..end).collect()
+    };
+    let next = (end < total)
+        .then(|| page_items.last().map(|item| item.cursor.to_token()))
+        .flatten();
+    Ok((page_items.into_iter().map(|item| item.body).collect(), next))
+}
+
+/// Evaluates a plain ORDER BY query into position-carrying rows sorted in the
+/// backend's total order. Returns `Ok(None)` for any other query shape.
+fn query_order_by_feed_items(
+    query: &SqlQuery,
+    parameters: &[(String, serde_json::Value)],
+    documents: &[DocumentFeedItem],
+) -> crate::error::Result<Option<Vec<OrderByFeedItem>>> {
+    let Some(order_by) = &query.order_by else {
+        return Ok(None);
+    };
+    let bodies: Vec<&serde_json::Value> = documents.iter().map(|doc| &doc.body).collect();
+    let Some(rows) =
+        crate::query::eval::order_by_rows(query, parameters, &bodies).map_err(|e| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(StatusCode::BadRequest))
+                .with_message(e.to_string())
+                .build()
+        })?
+    else {
+        return Ok(None);
+    };
+    let mut items: Vec<OrderByFeedItem> = rows
+        .into_iter()
+        .map(|row| {
+            let document = &documents[row.source];
+            OrderByFeedItem {
+                body: row.value,
+                cursor: OrderByCursor {
+                    keys: row.keys,
+                    rid: document
+                        .body
+                        .get("_rid")
+                        .and_then(serde_json::Value::as_str)
+                        .map(str::to_owned),
+                    document: document.cursor.clone(),
+                    ordinal: row.ordinal,
+                },
+            }
+        })
+        .collect();
+    items.sort_by(|a, b| a.cursor.compare(&b.cursor, order_by));
+    Ok(Some(items))
+}
+
 #[derive(Clone, Copy)]
 struct FeedPageOptions<'a> {
     max_item_count: Option<i32>,
@@ -2581,30 +2766,7 @@ fn success_feed_response(
         Ok(v) => v,
         Err(response) => return response,
     };
-    let item_count = page.len() as u32;
-    let body = feed_to_json(envelope_name, page, rid);
-    let mut builder = success_response_with_format(
-        StatusCode::Ok,
-        &body,
-        format.is_binary(),
-        1.0,
-        &feed_headers.session_token,
-        start,
-    )
-    .with_item_count(item_count);
-    if let Some(lsn) = feed_headers.lsn {
-        builder = builder.with_lsn(lsn);
-    }
-    if let Some(id) = feed_headers.partition_key_range_id {
-        builder = builder.with_header_value(PARTITION_KEY_RANGE_ID.clone(), id);
-    }
-    if let Some(id) = feed_headers.internal_partition_id {
-        builder = builder.with_header_value(INTERNAL_PARTITION_ID.clone(), id);
-    }
-    if let Some(next) = next {
-        builder = builder.with_header_value(CONTINUATION.clone(), next);
-    }
-    builder.build()
+    feed_page_response(envelope_name, rid, page, next, feed_headers, format, start)
 }
 
 fn success_document_feed_response(
@@ -2625,6 +2787,18 @@ fn success_document_feed_response(
         Ok(v) => v,
         Err(response) => return response,
     };
+    feed_page_response(envelope_name, rid, page, next, feed_headers, format, start)
+}
+
+fn feed_page_response(
+    envelope_name: &str,
+    rid: impl Into<String>,
+    page: Vec<serde_json::Value>,
+    next: Option<String>,
+    feed_headers: FeedResponseHeaders,
+    format: ResponseFormat,
+    start: Instant,
+) -> AsyncRawResponse {
     let item_count = page.len() as u32;
     let body = feed_to_json(envelope_name, page, rid);
     let mut builder = success_response_with_format(
@@ -2907,6 +3081,62 @@ fn execute_document_query_feed(
             start,
         ),
         Ok(None) => {
+            let program = match crate::query::parse(&query) {
+                Ok(program) => program,
+                Err(e) => {
+                    return error_response(
+                        StatusCode::BadRequest,
+                        None,
+                        "BadRequest",
+                        &e.to_string(),
+                        0.0,
+                        "",
+                        start,
+                    )
+                    .build();
+                }
+            };
+            match query_order_by_feed_items(&program.query, &parameters, &documents) {
+                Ok(Some(items)) => {
+                    let order_by = program
+                        .query
+                        .order_by
+                        .as_ref()
+                        .expect("ORDER BY feed items imply an ORDER BY clause");
+                    let page_options = FeedPageOptions::from_request(parsed);
+                    return match paginate_order_by_items(
+                        items,
+                        order_by,
+                        page_options.max_item_count,
+                        page_options.continuation,
+                        start,
+                    ) {
+                        Ok((page, next)) => feed_page_response(
+                            envelope_name,
+                            rid,
+                            page,
+                            next,
+                            feed_headers,
+                            ResponseFormat::from(parsed.binary_response),
+                            start,
+                        ),
+                        Err(response) => response,
+                    };
+                }
+                Ok(None) => {}
+                Err(e) => {
+                    return error_response(
+                        StatusCode::BadRequest,
+                        None,
+                        "BadRequest",
+                        &e.to_string(),
+                        0.0,
+                        "",
+                        start,
+                    )
+                    .build();
+                }
+            }
             let values: Vec<_> = documents.into_iter().map(|doc| doc.body).collect();
             let results = match crate::query::eval::query_documents(&query, &parameters, &values) {
                 Ok(results) => results,
@@ -7058,6 +7288,82 @@ mod tests {
 
         assert_eq!(ids(&page), vec!["hash-e-0"]);
         assert!(next.is_none());
+        Ok(())
+    }
+
+    fn ranked_item(epk: &str, id: &str, rank: i64) -> crate::error::Result<DocumentFeedItem> {
+        let mut item = document_item(epk, id)?;
+        item.body = serde_json::json!({ "id": id, "rank": rank });
+        Ok(item)
+    }
+
+    fn order_by_page(
+        sql: &str,
+        documents: &[DocumentFeedItem],
+        max_item_count: i32,
+        continuation: Option<&str>,
+    ) -> (Vec<serde_json::Value>, Option<String>) {
+        let program = crate::query::parse(sql).unwrap();
+        let items = query_order_by_feed_items(&program.query, &[], documents)
+            .unwrap()
+            .expect("plain ORDER BY uses cursor continuations");
+        paginate_order_by_items(
+            items,
+            program.query.order_by.as_ref().unwrap(),
+            Some(max_item_count),
+            continuation,
+            Instant::now(),
+        )
+        .unwrap()
+    }
+
+    /// A parent partition's ORDER BY continuation, forwarded to every
+    /// post-split child, must resume each child after exactly the rows the
+    /// parent already returned. An offset continuation would instead skip the
+    /// first N rows of *each* child.
+    #[test]
+    fn order_by_cursor_survives_split_without_loss_or_duplicates() -> crate::error::Result<()> {
+        for sql in [
+            "SELECT * FROM c ORDER BY c.rank",
+            "SELECT * FROM c ORDER BY c.rank DESC",
+        ] {
+            let low = vec![
+                ranked_item("01", "a", 1)?,
+                ranked_item("02", "b", 2)?,
+                ranked_item("03", "c", 2)?,
+                ranked_item("04", "d", 5)?,
+            ];
+            let high = vec![
+                ranked_item("81", "e", 1)?,
+                ranked_item("82", "f", 2)?,
+                ranked_item("83", "g", 3)?,
+                ranked_item("84", "h", 4)?,
+            ];
+            let parent: Vec<_> = low.iter().chain(&high).cloned().collect();
+
+            let (all, _) = order_by_page(sql, &parent, 100, None);
+            let (first, continuation) = order_by_page(sql, &parent, 3, None);
+            let continuation = continuation.expect("more rows remain");
+
+            let (low_rest, low_next) = order_by_page(sql, &low, 100, Some(&continuation));
+            let (high_rest, high_next) = order_by_page(sql, &high, 100, Some(&continuation));
+            assert!(low_next.is_none() && high_next.is_none());
+
+            let mut resumed: Vec<_> = ids(&first);
+            resumed.extend(ids(&low_rest));
+            resumed.extend(ids(&high_rest));
+            resumed.sort_unstable();
+            let mut expected = ids(&all);
+            expected.sort_unstable();
+            assert_eq!(resumed, expected, "{sql}");
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn order_by_cursor_rejects_document_feed_token() -> crate::error::Result<()> {
+        let token = document_item("01", "a")?.cursor.to_token();
+        assert!(OrderByCursor::parse(&token, Instant::now()).is_err());
         Ok(())
     }
 

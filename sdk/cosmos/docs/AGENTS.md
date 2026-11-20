@@ -6,8 +6,8 @@
   only the documents relevant to the task. Do not load the entire documentation
   set.
 - Keep durable Cosmos design documentation under this directory.
-- Keep only `Project.md`, `Architecture.md`, `README.md`, and `AGENTS.md` at
-  the top level.
+- Keep only `Project.md`, `Architecture.md`, `SpecTests.md`, `README.md`, and
+  `AGENTS.md` at the top level.
 - Put mutable feature designs in `specs/` using the next available
   `NNNN-kebab-case-name.md` number.
 - Put only finalized, cross-cutting architecture decisions in `adrs/` using the

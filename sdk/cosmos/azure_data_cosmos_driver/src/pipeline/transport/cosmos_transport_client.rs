@@ -53,6 +53,11 @@ pub struct HttpRequest {
     /// header-based correlation.
     #[cfg(feature = "fault_injection")]
     pub(crate) evaluation_collector: Option<EvaluationCollector>,
+
+    /// The logical request this HTTP request carries, for transport observers.
+    #[cfg(feature = "__internal_transport_observer")]
+    pub(crate) observer_context:
+        Option<std::sync::Arc<crate::pipeline::transport::observer::RequestContext>>,
 }
 
 // ----------------------------------------------------------------------------

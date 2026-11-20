@@ -1188,6 +1188,8 @@ impl CosmosDriver {
             timeout: None,
             #[cfg(feature = "fault_injection")]
             evaluation_collector: None,
+            #[cfg(feature = "__internal_transport_observer")]
+            observer_context: None,
         };
         cosmos_headers::apply_cosmos_headers(&mut request, user_agent, client_id);
         request.headers.insert(
@@ -1804,6 +1806,18 @@ impl CosmosDriver {
             {
                 Arc::clone(runtime.http_client_factory())
             }
+        };
+        #[cfg(feature = "__internal_transport_observer")]
+        let http_client_factory: Arc<
+            dyn crate::pipeline::transport::http_client_factory::HttpClientFactory,
+        > = match options.transport_observer() {
+            Some(observer) => Arc::new(
+                crate::pipeline::transport::observer::ObservingHttpClientFactory::new(
+                    http_client_factory,
+                    Arc::clone(observer),
+                ),
+            ),
+            None => http_client_factory,
         };
 
         // Shared transport holder — used by both the driver and the refresh callback.
@@ -5021,6 +5035,8 @@ async fn probe_endpoint_connectivity(
         timeout: None,
         #[cfg(feature = "fault_injection")]
         evaluation_collector: None,
+        #[cfg(feature = "__internal_transport_observer")]
+        observer_context: None,
     };
     cosmos_headers::apply_cosmos_headers(&mut request, user_agent, client_id);
 

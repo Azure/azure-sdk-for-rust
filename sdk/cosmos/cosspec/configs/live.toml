@@ -1,0 +1,24 @@
+# Runs specs against the in-memory emulator and a live account.
+# Allows comparing in-memory behavior against live accounts, and validating real behavior against live accounts.
+# Each profile's `regions` maps its region aliases to the regions the account is deployed to.
+
+[backends.inmemory]
+enabled = true
+
+[backends.live]
+enabled = true
+
+[backends.live.profiles.SingleRegion]
+endpoint = "https://your-prefix-single-region.documents.azure.com:443/"
+auth = { kind = "key", key_env = "COSSPEC_SINGLE_REGION_KEY" }
+regions = { PrimaryReadWrite = "East US" }
+
+[backends.live.profiles.MultiRead]
+endpoint = "https://your-prefix-multi-read.documents.azure.com:443/"
+auth = { kind = "key", key_env = "COSSPEC_MULTI_READ_KEY" }
+regions = { PrimaryReadWrite = "East US", SecondaryReadOnly = "West US" }
+
+[backends.live.profiles.MultiWrite]
+endpoint = "https://your-prefix-multi-write.documents.azure.com:443/"
+auth = { kind = "key", key_env = "COSSPEC_MULTI_WRITE_KEY" }
+regions = { PrimaryReadWrite = "East US", SecondaryReadWrite = "West US" }

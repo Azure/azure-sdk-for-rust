@@ -193,6 +193,8 @@ impl Http2ConnectivityProbe {
             timeout: Some(self.timeout),
             #[cfg(feature = "fault_injection")]
             evaluation_collector: None,
+            #[cfg(feature = "__internal_transport_observer")]
+            observer_context: None,
         };
 
         let started = Instant::now();

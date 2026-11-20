@@ -634,6 +634,8 @@ if ($IsWindows) {
 
     # Set environment variables for the tests
     $env:AZURE_COSMOS_CONNECTION_STRING = "emulator"
+    # Tells Invoke-CosmosSpecTests.ps1 to run cosspec's emulator profile.
+    $env:AZURE_COSMOS_LEGACY_EMULATOR_READY = "1"
     $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`" --cfg=cosmos_aad_supported"
     Write-Host "RUSTFLAGS set to: $env:RUSTFLAGS"
 
@@ -687,6 +689,8 @@ elseif (Get-Command "docker" -ErrorAction SilentlyContinue) {
 
     # Set environment variables for the tests
     $env:AZURE_COSMOS_CONNECTION_STRING = "emulator"
+    # Tells Invoke-CosmosSpecTests.ps1 to run cosspec's emulator profile.
+    $env:AZURE_COSMOS_LEGACY_EMULATOR_READY = "1"
     $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`" --cfg=cosmos_aad_supported"
     Write-Host "RUSTFLAGS set to: $env:RUSTFLAGS"
 
