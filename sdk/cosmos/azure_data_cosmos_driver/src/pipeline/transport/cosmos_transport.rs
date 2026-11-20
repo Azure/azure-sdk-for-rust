@@ -191,6 +191,10 @@ impl CosmosTransport {
         self.negotiated_version
     }
 
+    pub(crate) fn metadata_request_timeout(&self) -> std::time::Duration {
+        self.connection_pool.max_metadata_request_timeout()
+    }
+
     /// Returns the transport for metadata operations.
     pub(crate) fn get_metadata_transport(
         &self,
