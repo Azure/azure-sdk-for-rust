@@ -23,9 +23,13 @@
 #![allow(clippy::needless_update)]
 
 use super::provider::{QueryPlanOptions, QueryPlanProvider};
-use super::{DistinctType, QueryInfo, QueryPlan, SortOrder};
-use crate::models::{
-    EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyKind, PartitionKeyValue,
+use super::{DistinctType, NativeQueryPlanProvider, QueryInfo, QueryPlan, SortOrder};
+use crate::{
+    driver::dataflow::query_plan::DCountInfo,
+    models::{
+        EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyKind, PartitionKeyValue,
+        PartitionKeyVersion,
+    },
 };
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -123,6 +127,105 @@ fn assert_query_info(actual: &QueryInfo, mut expected: QueryInfo) {
 #[test]
 fn create_service_provider_succeeds() {
     let _provider = create_provider();
+}
+
+#[test]
+fn production_provider_resolves_partition_bounds() {
+    let provider = NativeQueryPlanProvider::new();
+    for version in [PartitionKeyVersion::V1, PartitionKeyVersion::V2] {
+        let definition = PartitionKeyDefinition::from("/pk").with_version(version);
+        let full = provider
+            .get_query_plan(
+                &query_spec("SELECT VALUE COUNT(1) FROM c"),
+                &definition,
+                None,
+                QUERY_ENGINE_CONFIG,
+            )
+            .unwrap();
+        assert_eq!(full.query_ranges.len(), 1);
+        assert_eq!(full.query_ranges[0].min, "");
+        assert_eq!(full.query_ranges[0].max, "FF");
+
+        let point = provider
+            .get_query_plan(
+                &query_spec("SELECT VALUE COUNT(1) FROM c WHERE c.pk = 'tenant-a'"),
+                &definition,
+                None,
+                QUERY_ENGINE_CONFIG,
+            )
+            .unwrap();
+        let expected = EffectivePartitionKey::compute(
+            &[PartitionKeyValue::from("tenant-a")],
+            definition.kind(),
+            version,
+        )
+        .to_hex();
+        assert_eq!(point.query_ranges.len(), 1);
+        assert_eq!(point.query_ranges[0].min, expected);
+        assert_eq!(point.query_ranges[0].max, expected);
+    }
+
+    let definition = PartitionKeyDefinition::new(vec!["/tenant".into(), "/user".into()]);
+    let grouped = provider
+        .get_query_plan(
+            &query_spec(
+                "SELECT c.category, COUNT(1) AS count FROM c \
+                 WHERE c.tenant = 'tenant-a' AND c.user = 'user-a' GROUP BY c.category",
+            ),
+            &definition,
+            None,
+            QUERY_ENGINE_CONFIG,
+        )
+        .unwrap();
+    let expected = EffectivePartitionKey::compute(
+        &[
+            PartitionKeyValue::from("tenant-a"),
+            PartitionKeyValue::from("user-a"),
+        ],
+        definition.kind(),
+        definition.version(),
+    )
+    .to_hex();
+    assert_eq!(grouped.query_ranges.len(), 1);
+    assert_eq!(grouped.query_ranges[0].min, expected);
+    assert_eq!(grouped.query_ranges[0].max, expected);
+}
+
+#[test]
+fn production_provider_preserves_distinct_count_metadata() {
+    let provider = NativeQueryPlanProvider::new();
+    let definition = PartitionKeyDefinition::from("/pk");
+    for (projection, alias) in [
+        ("VALUE COUNT(1)", Some("")),
+        ("COUNT(1) AS count", Some("count")),
+        ("COUNT(1)", Some("$1")),
+    ] {
+        let plan = provider
+            .get_query_plan(
+                &query_spec(&format!(
+                    "SELECT {projection} FROM (SELECT DISTINCT VALUE c.category FROM c) AS t"
+                )),
+                &definition,
+                None,
+                QUERY_ENGINE_CONFIG,
+            )
+            .unwrap();
+        let info = plan.query_info.unwrap();
+        assert_eq!(
+            info.d_count_info,
+            Some(DCountInfo {
+                d_count_alias: alias.map(str::to_owned),
+            })
+        );
+        assert_eq!(info.distinct_type, DistinctType::Unordered);
+        assert!(!info.has_aggregates());
+        assert!(info
+            .rewritten_query
+            .as_ref()
+            .is_some_and(|query| !query.trim().is_empty()));
+        assert_eq!(plan.query_ranges[0].min, "");
+        assert_eq!(plan.query_ranges[0].max, "FF");
+    }
 }
 
 // =========================================================================

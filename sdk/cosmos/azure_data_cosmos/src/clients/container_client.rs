@@ -994,24 +994,31 @@ impl ContainerClient {
     ///
     /// # Cross-partition queries
     ///
+    /// When `scope` spans multiple partitions, the SDK obtains a query plan and composes the
+    /// client-side pipeline needed to execute it.
+    ///
     /// Supported features:
     ///
     /// - Projections and filters.
     /// - `TOP` and `OFFSET`/`LIMIT`.
     /// - Single- and multiple-column `ORDER BY`.
     /// - Ordered and unordered `DISTINCT`.
+    /// - `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, and `GROUP BY`.
+    /// - Distinct counts expressed as `COUNT` over a `DISTINCT` subquery.
     /// - Vector ordering with `ORDER BY VectorDistance(...)`.
     /// - Ranked full-text search with `ORDER BY RANK FullTextScore(...)`.
     /// - Weighted full-text and vector hybrid search with `RRF(...)`.
     ///
-    /// Unsupported features:
-    ///
-    /// - Aggregates and `GROUP BY` that require client-side aggregation.
-    /// - Continuation tokens for buffered queries, including vector ordering, ranked full-text,
-    ///   and hybrid search.
-    ///
     /// Vector ordering, ranked full-text, and hybrid queries buffer candidates before returning
     /// the first page. They require a finite `TOP` or `OFFSET`/`LIMIT` within
+    /// [`QueryOptions::max_buffered_query_window`].
+    ///
+    /// Buffered queries, cross-partition aggregates, and `GROUP BY` do not support continuation
+    /// tokens for resuming in another process. Aggregates and groups drain their input before
+    /// returning results;
+    /// `GROUP BY` can then return those results in multiple pages on the same live iterator.
+    /// Distinct-count queries drain their deduplicated input and return one terminal count.
+    /// Group and distinct-count state grows with input cardinality and is not bounded by
     /// [`QueryOptions::max_buffered_query_window`].
     ///
     /// # Examples
