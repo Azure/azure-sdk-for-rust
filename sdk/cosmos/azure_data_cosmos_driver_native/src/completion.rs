@@ -348,6 +348,7 @@ pub struct CosmosCompletion {
 /// it as an opaque forward-declared struct the C side only ever holds by
 /// pointer.
 pub struct CosmosCompletionBacking {
+    feed_ranges: Option<Box<crate::feed_range::FeedRangeListHandle>>,
     response: Option<CosmosResponse>,
     headers: OwnedResponseHeaders,
     message: Option<CString>,
@@ -361,6 +362,7 @@ pub struct CosmosCompletionBacking {
 /// handed to the host, converted to an FFI [`CosmosCompletion`] at drain time
 /// by [`PendingCompletion::into_ffi`].
 pub(crate) struct PendingCompletion {
+    feed_ranges: Option<Box<crate::feed_range::FeedRangeListHandle>>,
     outcome: CosmosCompletionOutcome,
     status: CosmosStatusCode,
     user_data: isize,
@@ -413,6 +415,7 @@ impl PendingCompletion {
     ) -> Self {
         let patch_tracking_id = op_inner.patch_tracking_id();
         Self {
+            feed_ranges: None,
             outcome,
             status,
             user_data,
@@ -507,6 +510,21 @@ impl PendingCompletion {
         p
     }
 
+    pub(crate) fn ok_feed_ranges(
+        user_data: isize,
+        op_inner: Arc<OperationInner>,
+        ranges: Vec<azure_data_cosmos_driver::models::FeedRange>,
+    ) -> Self {
+        let mut p = Self::base(
+            CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
+            COSMOS_STATUS_SUCCESS,
+            user_data,
+            op_inner,
+        );
+        p.feed_ranges = Some(Box::new(crate::feed_range::FeedRangeListHandle { ranges }));
+        p
+    }
+
     /// Error completion. When `include_details` is set the rich error fields
     /// (message, wire status, headers, backtrace) are flattened inline;
     /// otherwise only the packed `status` is populated.
@@ -587,6 +605,7 @@ impl PendingCompletion {
             .map_or(std::ptr::null_mut(), ContainerRefHandle::into_raw);
 
         let backing = Box::new(CosmosCompletionBacking {
+            feed_ranges: self.feed_ranges,
             response: self.response,
             headers: self.headers,
             message: self.message,
@@ -628,6 +647,23 @@ impl PendingCompletion {
             container,
             backing: Box::into_raw(backing),
         }
+    }
+}
+
+/// Detaches an owned discovery list once; returns NULL for other or already-detached completions.
+///
+/// Free the result with `cosmos_feed_range_list_free`. The list outlives the completion.
+#[no_mangle]
+pub extern "C" fn cosmos_completion_take_feed_ranges(
+    completion: *mut CosmosCompletion,
+) -> *mut crate::feed_range::FeedRangeListHandle {
+    // SAFETY: non-NULL completion and backing are live library-owned allocations.
+    unsafe {
+        completion
+            .as_mut()
+            .and_then(|completion| completion.backing.as_mut())
+            .and_then(|backing| backing.feed_ranges.take())
+            .map_or(std::ptr::null_mut(), Box::into_raw)
     }
 }
 

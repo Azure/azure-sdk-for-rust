@@ -10,12 +10,16 @@ use azure_data_cosmos_driver::test::{
     TransportClient, TransportError,
 };
 use std::sync::{
-    atomic::{AtomicU8, Ordering},
-    Arc,
+    atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering},
+    Arc, Mutex,
 };
 
 #[derive(Debug, Default)]
 pub(crate) struct Gate {
+    pub(crate) routing_reads: AtomicUsize,
+    pub(crate) routing_failure: AtomicBool,
+    pub(crate) expected_scope: Mutex<Option<(String, String)>>,
+    pub(crate) scoped_reads: AtomicUsize,
     pub(crate) entered: tokio::sync::Notify,
     pub(crate) release: tokio::sync::Notify,
     pub(crate) failure: AtomicU8,
@@ -104,8 +108,30 @@ impl TransportClient for ScriptedTransport {
             && header(request, "x-ms-cosmos-is-query-plan-request").is_none()
         {
             if let Some(gate) = &self.0 {
-                gate.entered.notify_one();
-                gate.release.notified().await;
+                let expected_scope = gate.expected_scope.lock().unwrap().clone();
+                if let Some((min, max)) = expected_scope {
+                    assert_eq!(header(request, "x-ms-start-epk"), Some(min.as_str()));
+                    assert_eq!(header(request, "x-ms-end-epk"), Some(max.as_str()));
+                    assert_eq!(
+                        header(request, "x-ms-read-key-type"),
+                        Some("EffectivePartitionKeyRange")
+                    );
+                    assert!(header(request, "x-ms-documentdb-partitionkey").is_none());
+                    gate.scoped_reads.fetch_add(1, Ordering::SeqCst);
+                    if header(request, "a-im").is_some() {
+                        let mut headers = Headers::new();
+                        headers.insert("x-ms-substatus", "1001");
+                        return Ok(HttpResponse {
+                            status: 400,
+                            headers,
+                            body: br#"{"code":"BadRequest","message":"unsupported EPK scope"}"#
+                                .to_vec(),
+                        });
+                    }
+                } else {
+                    gate.entered.notify_one();
+                    gate.release.notified().await;
+                }
                 match gate.failure.load(Ordering::Acquire) {
                     1 => panic!("scripted transport panic"),
                     2 => {
@@ -124,6 +150,13 @@ impl TransportClient for ScriptedTransport {
         let mut headers = Headers::new();
         let mut status = 200;
         let body = match request.url.path() {
+            "/dbs" | "/dbs/testdb/colls" => serde_json::json!({
+                "id":"created",
+                "inherited":header(request, "x-test-inherited"),
+                "throughput":header(request, "x-ms-offer-throughput"),
+                "autoscale":header(request, "x-ms-cosmos-offer-autopilot-settings"),
+                "ifMatch":header(request, "if-match")
+            }),
             "/" => serde_json::json!({
                 "id":"cursor-fixture", "_rid":"cursor-fixture", "_self":"",
                 "writableLocations":[{"name":"East US","databaseAccountEndpoint":"https://eastus.emulator.local/"}],
@@ -140,6 +173,20 @@ impl TransportClient for ScriptedTransport {
                 "partitionKey":{"paths":["/pk"],"kind":"Hash","version":2}
             }),
             path if path.ends_with("/pkranges") => {
+                if let Some(gate) = &self.0 {
+                    gate.routing_reads.fetch_add(1, Ordering::SeqCst);
+                    if gate.routing_failure.load(Ordering::Acquire) {
+                        headers.insert("x-ms-substatus", "1001");
+                        headers.insert("x-ms-request-charge", "3.5");
+                        return Ok(HttpResponse {
+                            status: 400,
+                            headers,
+                            body:
+                                br#"{"code":"BadRequest","message":"scripted discovery failure"}"#
+                                    .to_vec(),
+                        });
+                    }
+                }
                 if header(request, "if-none-match").is_some() {
                     status = 304;
                 }
@@ -158,9 +205,19 @@ impl TransportClient for ScriptedTransport {
                 if header(request, "x-ms-cosmos-is-query-plan-request") == Some("True")
                     || header(request, "x-ms-cosmos-is-query-plan-request") == Some("true")
                 {
+                    let query: serde_json::Value =
+                        serde_json::from_slice(request.body.as_ref().unwrap()).unwrap();
+                    let sql = query["query"].as_str().unwrap();
+                    let top = if sql.contains("TOP 1001") { 1001 } else { 6 };
+                    let mut info = serde_json::json!({"hasNonStreamingOrderBy":true,"orderBy":["Ascending"],"orderByExpressions":["c.rank"],"top":top,"rewrittenQuery":sql});
+                    if sql.contains("OFFSET 1000 LIMIT 1") {
+                        info.as_object_mut().unwrap().remove("top");
+                        info["offset"] = 1000.into();
+                        info["limit"] = 1.into();
+                    }
                     serde_json::json!({
                         "partitionedQueryExecutionInfoVersion":1,
-                        "queryInfo":{"hasNonStreamingOrderBy":true,"orderBy":["Ascending"],"orderByExpressions":["c.rank"],"top":6,"rewrittenQuery":"SELECT TOP 6 * FROM c ORDER BY c.rank"},
+                        "queryInfo":info,
                         "queryRanges":[{"min":"","max":"FF","isMinInclusive":true,"isMaxInclusive":false}]
                     })
                 } else if let Some(mode) = header(request, "a-im") {
@@ -215,10 +272,11 @@ impl TransportClient for ScriptedTransport {
                         .unwrap_or("0")
                         .parse()
                         .unwrap();
-                    let count: usize = header(request, "x-ms-max-item-count")
+                    let count: i64 = header(request, "x-ms-max-item-count")
                         .unwrap_or("2")
                         .parse()
                         .unwrap();
+                    let count = if count == -1 { 2 } else { count as usize };
                     let end = (start + count).min(ranks.len());
                     if end < ranks.len() {
                         headers.insert("x-ms-continuation", end.to_string());

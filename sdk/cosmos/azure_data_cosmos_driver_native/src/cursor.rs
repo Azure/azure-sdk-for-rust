@@ -410,6 +410,24 @@ pub extern "C" fn cosmos_cursor_open_submit(
     })
 }
 
+/// Opens a retained cursor with additive query-window and page-hint options.
+///
+/// NULL `options` preserves the legacy contract. All borrowed inputs may be freed on return.
+#[no_mangle]
+pub extern "C" fn cosmos_cursor_open_submit_v2(
+    driver: *const DriverHandle,
+    request: *const CosmosCursorRequest,
+    options: *const crate::cursor_request::CosmosFeedOptions,
+    queue: *mut CompletionQueue,
+    user_data: isize,
+    out_pre_error: *mut CosmosStatusCode,
+) -> *mut OperationHandle {
+    open_cursor(driver, queue, user_data, out_pre_error, || {
+        // SAFETY: caller supplies readable records and nested borrowed inputs.
+        unsafe { crate::cursor_request::build_cursor_request_v2(request, options) }
+    })
+}
+
 pub(crate) fn open_cursor(
     driver: *const DriverHandle,
     queue: *mut CompletionQueue,

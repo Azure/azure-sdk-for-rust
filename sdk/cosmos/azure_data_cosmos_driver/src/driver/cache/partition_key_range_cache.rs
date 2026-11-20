@@ -344,7 +344,41 @@ impl PartitionKeyRangeCache {
         Fut: std::future::Future<Output = R>,
         R: IntoPkRangeFetchOutcome,
     {
-        let lookup = self.lookup_inner(container, force_refresh, fetch_pk_ranges);
+        self.lookup_with_deadline(container, force_refresh, fetch_pk_ranges, deadline, true)
+            .await
+    }
+
+    /// Resolves discovery without reporting cached fallback as a successful refresh.
+    pub(crate) async fn try_lookup_strict<F, Fut, R>(
+        &self,
+        container: &ContainerReference,
+        force_refresh: bool,
+        fetch_pk_ranges: F,
+        deadline: Option<Instant>,
+    ) -> crate::error::Result<Option<Arc<ContainerRoutingMap>>>
+    where
+        F: Fn(ContainerReference, Option<String>) -> Fut,
+        Fut: std::future::Future<Output = R>,
+        R: IntoPkRangeFetchOutcome,
+    {
+        self.lookup_with_deadline(container, force_refresh, fetch_pk_ranges, deadline, false)
+            .await
+    }
+
+    async fn lookup_with_deadline<F, Fut, R>(
+        &self,
+        container: &ContainerReference,
+        force_refresh: bool,
+        fetch_pk_ranges: F,
+        deadline: Option<Instant>,
+        allow_stale: bool,
+    ) -> crate::error::Result<Option<Arc<ContainerRoutingMap>>>
+    where
+        F: Fn(ContainerReference, Option<String>) -> Fut,
+        Fut: std::future::Future<Output = R>,
+        R: IntoPkRangeFetchOutcome,
+    {
+        let lookup = self.lookup_inner(container, force_refresh, fetch_pk_ranges, allow_stale);
         let timer = crate::driver::pipeline::operation_pipeline::deadline_signal(deadline);
         pin_mut!(lookup, timer);
         match futures::future::select(timer, lookup).await {
@@ -364,6 +398,7 @@ impl PartitionKeyRangeCache {
         container: &ContainerReference,
         force_refresh: bool,
         fetch_pk_ranges: F,
+        allow_stale: bool,
     ) -> crate::error::Result<Option<Arc<ContainerRoutingMap>>>
     where
         F: Fn(ContainerReference, Option<String>) -> Fut,
@@ -433,6 +468,12 @@ impl PartitionKeyRangeCache {
                 return Err(error.clone());
             }
         };
+
+        if !allow_stale {
+            if let Some(error) = &routing_map.refresh_error {
+                return Err(error.clone());
+            }
+        }
 
         if routing_map.ranges().is_empty() {
             self.cache.invalidate_if_same(&key, &cached_result).await;
@@ -586,13 +627,19 @@ where
                         return Ok(refreshed.clone());
                     }
                 }
-                return Ok(previous_routing_map
+                let mut fallback = previous_routing_map
                     .as_deref()
                     .map(without_orphaned_continuation)
-                    .unwrap_or_else(ContainerRoutingMap::empty));
+                    .unwrap_or_else(ContainerRoutingMap::empty);
+                fallback.refresh_error = Some(refreshed.err().unwrap_or(error));
+                return Ok(fallback);
             }
             return match previous_routing_map {
-                Some(previous) => Ok((*previous).clone()),
+                Some(previous) => {
+                    let mut fallback = (*previous).clone();
+                    fallback.refresh_error = Some(error);
+                    Ok(fallback)
+                }
                 None => Err(error),
             };
         }
@@ -643,14 +690,18 @@ where
             }
             // Both the pinned and the cold attempt failed. Keep serving
             // the previously cached ranges, but drop the continuation.
-            return Ok(previous_routing_map
+            let mut fallback = previous_routing_map
                 .as_deref()
                 .map(without_orphaned_continuation)
-                .unwrap_or_else(ContainerRoutingMap::empty));
+                .unwrap_or_else(ContainerRoutingMap::empty);
+            fallback.refresh_error = Some(refreshed.err().unwrap_or_else(invalid_refresh));
+            return Ok(fallback);
         }
-        return Ok(previous_routing_map
+        let mut fallback = previous_routing_map
             .map(|p| (*p).clone())
-            .unwrap_or_else(ContainerRoutingMap::empty));
+            .unwrap_or_else(ContainerRoutingMap::empty);
+        fallback.refresh_error = Some(invalid_refresh());
+        return Ok(fallback);
     };
 
     // Incremental refresh: merge new ranges into the previous routing map.
@@ -658,6 +709,7 @@ where
         if all_ranges.is_empty() {
             let mut unchanged = (*prev).clone();
             unchanged.change_feed_next_if_none_match = continuation;
+            unchanged.refresh_error = None;
             return Ok(unchanged);
         }
         match prev.try_combine(all_ranges.into_values().collect(), continuation) {
@@ -703,11 +755,17 @@ where
         .await;
         return match refreshed {
             Ok(refreshed) if refreshed.ranges().is_empty() => {
-                Ok(without_orphaned_continuation(&prev))
+                let mut fallback = without_orphaned_continuation(&prev);
+                fallback.refresh_error = Some(invalid_refresh());
+                Ok(fallback)
             }
             Ok(refreshed) => Ok(refreshed),
             Err(error) if is_caller_timeout(&error) => Err(error),
-            Err(_) => Ok(without_orphaned_continuation(&prev)),
+            Err(error) => {
+                let mut fallback = without_orphaned_continuation(&prev);
+                fallback.refresh_error = Some(error);
+                Ok(fallback)
+            }
         };
     }
 
@@ -716,6 +774,13 @@ where
     // converge instead of being cached or returned as a usable map (see
     // `build_complete_map_with_retry`).
     build_complete_map_with_retry((all_ranges, continuation), container, fetch_pk_ranges).await
+}
+
+fn invalid_refresh() -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
+        .with_message("partition routing refresh returned no usable topology")
+        .build()
 }
 
 /// Runs one full change-feed drain starting from `start_continuation` (`None`
@@ -2686,6 +2751,72 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(after.ranges().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn strict_discovery_shares_refresh_error_without_evicting_usable_routing() {
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+        cache
+            .try_lookup(&container, false, two_range_fetch)
+            .await
+            .unwrap();
+        let entered = tokio::sync::Notify::new();
+        let release = tokio::sync::Notify::new();
+        let ordinary = cache.try_lookup_result(&container, true, |_, _| async {
+            entered.notify_one();
+            release.notified().await;
+            Err(crate::error::CosmosError::builder()
+                .with_status(
+                    crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
+                        .with_sub_status(1001),
+                )
+                .with_message("discovery fixture failure")
+                .build())
+        });
+        let strict = async {
+            entered.notified().await;
+            let lookup = cache.try_lookup_strict(
+                &container,
+                true,
+                |_, _| async {
+                    panic!("strict discovery should join the pending ordinary refresh");
+                    #[allow(unreachable_code)]
+                    None
+                },
+                None,
+            );
+            tokio::pin!(lookup);
+            assert!(futures::poll!(lookup.as_mut()).is_pending());
+            release.notify_one();
+            lookup.await
+        };
+        // A notification is not a semaphore: explicitly release each fetch invocation.
+        let retries = async {
+            entered.notified().await;
+            release.notify_one();
+        };
+        let (ordinary, strict, ()) = tokio::join!(ordinary, strict, retries);
+        assert_eq!(ordinary.unwrap().unwrap().ranges().len(), 2);
+        assert_eq!(
+            strict.unwrap_err().status().sub_status().unwrap().value(),
+            1001
+        );
+        let cached = cache
+            .try_lookup(&container, false, |_, _| async {
+                panic!("failed strict discovery must preserve the routing cache");
+                #[allow(unreachable_code)]
+                None
+            })
+            .await
+            .unwrap();
+        assert_eq!(cached.ranges().len(), 2);
+        let refreshed = cache
+            .try_lookup_strict(&container, true, two_range_fetch, None)
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(refreshed.refresh_error.is_none());
     }
 
     #[tokio::test]

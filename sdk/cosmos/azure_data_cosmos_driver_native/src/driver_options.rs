@@ -47,7 +47,7 @@ pub struct DriverOptionsHandle {
 }
 
 impl DriverOptionsHandle {
-    fn into_raw(inner: DriverOptions) -> *mut Self {
+    pub(crate) fn into_raw(inner: DriverOptions) -> *mut Self {
         Arc::into_raw(Arc::new(DriverOptionsHandle { inner })) as *mut Self
     }
 

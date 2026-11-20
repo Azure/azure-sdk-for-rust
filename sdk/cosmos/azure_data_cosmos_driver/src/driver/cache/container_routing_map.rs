@@ -53,6 +53,8 @@ pub(crate) struct ContainerRoutingMap {
     pub etag: Option<Etag>,
     /// Continuation token for incremental change feed fetches.
     pub change_feed_next_if_none_match: Option<String>,
+    /// Failed refresh provenance, independent of the still-usable cached topology.
+    pub refresh_error: Option<crate::error::CosmosError>,
 }
 
 /// Sentinel value for invalid/un-parseable partition key range IDs.
@@ -70,6 +72,7 @@ impl ContainerRoutingMap {
             highest_non_offline_pk_range_id: INVALID_PK_RANGE_ID,
             etag: None,
             change_feed_next_if_none_match: None,
+            refresh_error: None,
         }
     }
 
@@ -118,6 +121,7 @@ impl ContainerRoutingMap {
             highest_non_offline_pk_range_id,
             etag,
             change_feed_next_if_none_match,
+            refresh_error: None,
         }))
     }
 
@@ -278,6 +282,7 @@ impl ContainerRoutingMap {
             highest_non_offline_pk_range_id,
             etag: self.etag.clone(),
             change_feed_next_if_none_match,
+            refresh_error: None,
         }))
     }
 

@@ -4855,16 +4855,27 @@ impl CosmosDriver {
     ///
     /// # Errors
     ///
-    /// Returns `408/CLIENT_OPERATION_TIMEOUT` if a configured deadline expires during topology resolution.
-    ///
+    /// Returns routing fetch failures instead of silently returning stale ranges,
+    /// or `408/CLIENT_OPERATION_TIMEOUT` if a configured deadline expires.
     pub async fn resolve_all_partition_key_ranges(
         &self,
         container: &ContainerReference,
         force_refresh: bool,
     ) -> crate::error::Result<Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>>
     {
+        let options = OperationOptions::default();
+        let deadline = self
+            .operation_options_view(&options)
+            .end_to_end_latency_policy()
+            .map(|policy| Instant::now() + policy.timeout());
         let routing_map = self
-            .lookup_partition_topology(container, force_refresh, OperationOptions::default())
+            .pk_range_cache
+            .try_lookup_strict(
+                container,
+                force_refresh,
+                self.pk_range_page_fetcher(options, deadline),
+                deadline,
+            )
             .await?;
 
         let Some(routing_map) = routing_map else {

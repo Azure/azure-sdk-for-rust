@@ -207,14 +207,31 @@ impl FeedRange {
 
     /// Returns `true` if this feed range is entirely contained within `other`.
     pub fn is_subset_of(&self, other: &FeedRange) -> bool {
+        if self.min_inclusive() == self.max_exclusive() {
+            return if other.min_inclusive() == other.max_exclusive() {
+                self.min_inclusive() == other.min_inclusive()
+            } else {
+                other.min_inclusive() <= self.min_inclusive()
+                    && self.min_inclusive() < other.max_exclusive()
+            };
+        }
+        if other.min_inclusive() == other.max_exclusive() {
+            return false;
+        }
         other.min_inclusive() <= self.min_inclusive()
             && other.max_exclusive() >= self.max_exclusive()
     }
 
     /// Returns `true` if this feed range and `other` share any portion of the EPK space.
     ///
-    /// Two feed ranges overlap when one starts before the other ends and vice versa.
+    /// Equal-bound ranges denote a point, including at another range's inclusive lower bound.
     pub fn overlaps(&self, other: &FeedRange) -> bool {
+        if self.min_inclusive() == self.max_exclusive() {
+            return self.is_subset_of(other);
+        }
+        if other.min_inclusive() == other.max_exclusive() {
+            return other.is_subset_of(self);
+        }
         self.min_inclusive() < other.max_exclusive() && other.min_inclusive() < self.max_exclusive()
     }
 
