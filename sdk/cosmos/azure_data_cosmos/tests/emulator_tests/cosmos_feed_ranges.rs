@@ -13,7 +13,6 @@ use azure_data_cosmos::models::{
     ContainerProperties, EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyValue,
     ThroughputProperties,
 };
-use azure_data_cosmos::options::CreateContainerOptions;
 use azure_data_cosmos::{PartitionKey, Query};
 use base64::Engine;
 use futures::StreamExt;
@@ -32,7 +31,7 @@ use framework::{TestClient, TestOptions};
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
+    ignore = "vnext emulator does not implement request units needed for throughput-driven partitioning: https://learn.microsoft.com/en-us/azure/cosmos-db/emulator-linux#feature-support"
 )]
 pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -41,10 +40,9 @@ pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dy
 
             // Use 11000 RU/s to ensure at least 2 physical partitions (10000 RU/s per partition).
             let throughput = ThroughputProperties::manual(11000);
-            let options = CreateContainerOptions::default().with_throughput(throughput);
 
             let container_client = run_context
-                .create_container(db_client, properties, Some(options))
+                .create_container(db_client, properties, Some(throughput))
                 .await?;
 
             let ranges = container_client.read_feed_ranges(None).await?;
@@ -112,10 +110,9 @@ pub async fn feed_range_from_partition_key_maps_correctly() -> Result<(), Box<dy
 
             // Use 11000 RU/s to ensure at least 2 physical partitions.
             let throughput = ThroughputProperties::manual(11000);
-            let options = CreateContainerOptions::default().with_throughput(throughput);
 
             let container_client = run_context
-                .create_container(db_client, properties, Some(options))
+                .create_container(db_client, properties, Some(throughput))
                 .await?;
 
             // Get the physical partition ranges.
@@ -435,6 +432,16 @@ fn pk_definition() -> PartitionKeyDefinition {
     PartitionKeyDefinition::new(vec![Cow::Borrowed("/pk")])
 }
 
+fn hash_v2_successor(epk: &EffectivePartitionKey) -> Result<EffectivePartitionKey, Box<dyn Error>> {
+    let hex = epk.to_hex();
+    assert_eq!(hex.len(), 32, "expected a full-width Hash V2 EPK");
+    let value = u128::from_str_radix(&hex, 16)?;
+    let successor = value.checked_add(1).expect("Hash V2 EPK cannot overflow");
+    Ok(EffectivePartitionKey::try_from(format!(
+        "{successor:032X}"
+    ))?)
+}
+
 /// Runs a feed-range-scoped `SELECT *` and returns the set of returned ids.
 ///
 /// Drains the result set page-by-page (via [`into_pages`]) rather than
@@ -484,7 +491,7 @@ async fn drain_ids(
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
+    ignore = "vnext emulator returns items outside the requested EPK range: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/376"
 )]
 pub async fn feed_range_scope_restricts_cross_partition_query() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -567,18 +574,11 @@ pub async fn feed_range_scope_restricts_cross_partition_query() -> Result<(), Bo
                 got_c.difference(&expected_c).collect::<Vec<_>>()
             );
 
-            // Test D: a window that lies ENTIRELY in the gap between two adjacent
-            // EPKs must return zero documents. Appending a whole byte (`80`) to
-            // `X_mid`'s hex keeps `X_mid` as a byte prefix, so the result is
-            // strictly greater than `X_mid` and — because adjacent single-hash
-            // EPKs differ within their leading bytes — strictly less than
-            // `X_{mid+1}`. So `[X_mid || 0x80, X_{mid+1})` contains no doc's EPK.
-            // A full byte is required for valid hexadecimal. This guards against an off-by-one
-            // where the lower bound is treated as inclusive of `X_mid`.
-            let gap_start = EffectivePartitionKey::try_from(format!(
-                "{}80",
-                points[mid].1.min_inclusive().to_hex()
-            ))?;
+            // Test D: [successor(X_mid), X_{mid+1}) contains no seeded EPK.
+            // Keep the 16-byte Hash V2 width; appending a byte produces an over-width bound.
+            let gap_start = hash_v2_successor(points[mid].1.min_inclusive())?;
+            assert!(gap_start > *points[mid].1.min_inclusive());
+            assert!(gap_start < *points[mid + 1].1.min_inclusive());
             let window_d = FeedRange::new(gap_start, points[mid + 1].1.min_inclusive().clone())?;
             let got_d = drain_ids(&container, FeedScope::range(window_d)).await?;
             assert!(
@@ -594,4 +594,60 @@ pub async fn feed_range_scope_restricts_cross_partition_query() -> Result<(), Bo
         Some(TestOptions::for_emulator()),
     )
     .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        hash_v2_successor, pk_definition, EffectivePartitionKey, FeedRange, PartitionKey, DOC_COUNT,
+    };
+
+    #[test]
+    fn hash_v2_successor_preserves_width_and_carries() -> Result<(), Box<dyn std::error::Error>> {
+        for (input, expected) in [
+            (
+                "00000000000000000000000000000000",
+                "00000000000000000000000000000001",
+            ),
+            (
+                "23C57507EE92D198A6A61C0C7A22BBC2",
+                "23C57507EE92D198A6A61C0C7A22BBC3",
+            ),
+            (
+                "23C57507EE92D198A6A61C0C7A22BBFF",
+                "23C57507EE92D198A6A61C0C7A22BC00",
+            ),
+            (
+                "23C57507EE92D198FFFFFFFFFFFFFFFF",
+                "23C57507EE92D1990000000000000000",
+            ),
+        ] {
+            let epk = EffectivePartitionKey::try_from(input)?;
+            let successor = hash_v2_successor(&epk)?;
+            assert_eq!(successor.to_hex(), expected);
+            assert!(successor > epk);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn seeded_gap_is_nonempty_and_excludes_all_documents() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let definition = pk_definition();
+        let mut points: Vec<_> = (0..DOC_COUNT)
+            .map(|i| {
+                FeedRange::for_partition(PartitionKey::from(format!("doc-{i:03}")), &definition)
+            })
+            .collect();
+        points.sort_by(|a, b| a.min_inclusive().cmp(b.min_inclusive()));
+        let mid = points.len() / 2;
+        let start = hash_v2_successor(points[mid].min_inclusive())?;
+        let end = points[mid + 1].min_inclusive();
+        assert!(start > *points[mid].min_inclusive());
+        assert!(start < *end);
+        assert!(points
+            .iter()
+            .all(|point| { point.min_inclusive() < &start || point.min_inclusive() >= end }));
+        Ok(())
+    }
 }

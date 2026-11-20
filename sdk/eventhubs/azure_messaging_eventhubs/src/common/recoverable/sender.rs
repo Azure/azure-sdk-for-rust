@@ -29,6 +29,7 @@ use tracing::{instrument, warn};
 pub(crate) struct RecoverableSender {
     recoverable_connection: Weak<RecoverableConnection>,
     path: Url,
+    parent: Option<Arc<dyn azure_core::tracing::Span>>,
 }
 
 #[derive(Debug)]
@@ -49,6 +50,14 @@ impl From<SenderInvalidated> for AmqpError {
 }
 
 impl RecoverableSender {
+    pub(crate) fn with_parent(
+        mut self,
+        parent: Option<Arc<dyn azure_core::tracing::Span>>,
+    ) -> Self {
+        self.parent = parent;
+        self
+    }
+
     /// Creates a new RecoverableSender.
     ///
     /// # Arguments
@@ -59,6 +68,7 @@ impl RecoverableSender {
         Self {
             recoverable_connection,
             path,
+            parent: None,
         }
     }
 
@@ -175,13 +185,16 @@ impl RecoverableSender {
         captured.store(generation, Ordering::Release);
         // Preparation can run CBS recovery on this task. Let it finish before
         // racing the transport operation against the peer's notification.
-        let sender = connection.ensure_sender(&self.path).await.map_err(|e| {
-            AmqpError::from(azure_core::Error::with_error(
-                AzureErrorKind::Other,
-                e,
-                "Could not ensure sender",
-            ))
-        });
+        let sender = connection
+            .ensure_sender(&self.path, self.parent.clone())
+            .await
+            .map_err(|e| {
+                AmqpError::from(azure_core::Error::with_error(
+                    AzureErrorKind::Other,
+                    e,
+                    "Could not ensure sender",
+                ))
+            });
         let generation_current =
             connection.generation_is_current(generation) && invalidated.get().is_none();
         let sender = Self::finish_attempt(sender, generation_current)?;
@@ -218,9 +231,21 @@ impl AmqpSenderApis for RecoverableSender {
                 let message_clone = message_arc.clone();
                 async move {
                     self.with_current_sender(&generation, |sender| async move {
-                        let outcome = sender.send_ref(message_clone.as_ref(), options).await?;
+                        let connection = self
+                            .recoverable_connection
+                            .upgrade()
+                            .ok_or_else(|| AmqpError::with_message("Missing connection"))?;
+                        let mut telemetry = connection.diagnostics().start(
+                            "EventHubs.send.disposition",
+                            "send",
+                            azure_core::tracing::SpanKind::Client,
+                            self.parent.clone(),
+                        );
+                        let result = sender.send_ref(message_clone.as_ref(), options).await;
+                        telemetry.finish(&result, 0);
+                        let outcome = result?;
                         // We want to handle retries on the outcome - for instance, if we're throttled, the server rejects the send operation.
-                        match outcome {
+                        let result = match outcome {
                             azure_core_amqp::AmqpSendOutcome::Rejected(error) => {
                                 // If the error is described, return it as an AmqpDescribedError to let the retry logic
                                 // handle it appropriately.
@@ -243,7 +268,19 @@ impl AmqpSenderApis for RecoverableSender {
                                 }
                             }
                             _ => Ok(outcome),
+                        };
+                        match &result {
+                            Ok(AmqpSendOutcome::Modified(_) | AmqpSendOutcome::Released) => {
+                                // These dispositions did not accept the delivery. Preserve
+                                // the outcome for the caller, but report a failed send span.
+                                telemetry.finish(
+                                    &Err::<(), _>(AmqpError::with_message("Send was not accepted")),
+                                    0,
+                                );
+                            }
+                            _ => telemetry.finish(&result, 0),
                         }
+                        result
                     })
                     .await
                 }

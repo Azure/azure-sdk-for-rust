@@ -22,7 +22,7 @@ use std::time::Duration;
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::feed::{ContinuationToken, FeedScope};
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
-use azure_data_cosmos::options::{CreateContainerOptions, MaxItemCountHint, QueryOptions};
+use azure_data_cosmos::options::{MaxItemCountHint, QueryOptions};
 use framework::{MockItem, TestClient, TestOptions};
 use futures::StreamExt;
 
@@ -140,10 +140,7 @@ pub async fn skip_take_queries_preserve_global_windows_across_split() -> Result<
                     .create_container(
                         db_client,
                         properties,
-                        Some(
-                            CreateContainerOptions::default()
-                                .with_throughput(ThroughputProperties::manual(1000)),
-                        ),
+                        Some(ThroughputProperties::manual(1000)),
                     )
                     .await?,
             );
@@ -177,8 +174,14 @@ pub async fn skip_take_queries_preserve_global_windows_across_split() -> Result<
             let (tail_first, tail_token) =
                 capture_first_page(&container_client, TAIL_OFFSET_LIMIT_QUERY).await?;
 
-            let partitions_after =
-                force_split_and_wait(&container_client, partitions_before).await?;
+            let partitions_after = force_split_and_wait(
+                run_context,
+                db_client,
+                &container_client,
+                "SkipTakeAcrossSplit",
+                partitions_before,
+            )
+            .await?;
             assert!(
                 partitions_after > partitions_before,
                 "split must increase partition count: before={partitions_before}, \

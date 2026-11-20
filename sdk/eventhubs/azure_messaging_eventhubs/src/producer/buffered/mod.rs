@@ -849,6 +849,7 @@ pub mod builders {
     /// }
     /// ```
     pub struct BufferedProducerClientBuilder {
+        tracing_provider: Option<Arc<dyn azure_core::tracing::TracerProvider>>,
         application_id: Option<String>,
         retry_options: Option<RetryOptions>,
         custom_endpoint: Option<String>,
@@ -865,8 +866,28 @@ pub mod builders {
     }
 
     impl BufferedProducerClientBuilder {
+        /// Sets the provider used to trace background sends and AMQP links.
+        ///
+        /// Tracing is disabled by default. For OpenTelemetry, wrap the application's
+        /// `opentelemetry_sdk::trace::SdkTracerProvider` with
+        /// [`OpenTelemetryTracerProvider::new`](https://docs.rs/azure_core_opentelemetry/latest/azure_core_opentelemetry/struct.OpenTelemetryTracerProvider.html#method.new),
+        /// which implements [`TracerProvider`](azure_core::tracing::TracerProvider).
+        /// The application owns provider flushing and shutdown.
+        ///
+        /// This setting configures traces only. Configure a `tracing` subscriber
+        /// separately to export logs. With the `metrics` feature, install the
+        /// application's global OpenTelemetry meter provider before creating clients.
+        pub fn with_tracing_provider(
+            mut self,
+            provider: Arc<dyn azure_core::tracing::TracerProvider>,
+        ) -> Self {
+            self.tracing_provider = Some(provider);
+            self
+        }
+
         pub(super) fn new() -> Self {
             Self {
+                tracing_provider: None,
                 application_id: None,
                 retry_options: None,
                 custom_endpoint: None,
@@ -993,6 +1014,9 @@ pub mod builders {
             let handlers = self.build_handlers()?;
 
             let mut builder = ProducerClient::builder();
+            if let Some(provider) = self.tracing_provider {
+                builder = builder.with_tracing_provider(provider);
+            }
             if let Some(application_id) = self.application_id {
                 builder = builder.with_application_id(application_id);
             }
@@ -1039,6 +1063,9 @@ pub mod builders {
             let handlers = self.build_handlers()?;
 
             let mut builder = ProducerClient::builder();
+            if let Some(provider) = self.tracing_provider {
+                builder = builder.with_tracing_provider(provider);
+            }
             if let Some(application_id) = self.application_id {
                 builder = builder.with_application_id(application_id);
             }

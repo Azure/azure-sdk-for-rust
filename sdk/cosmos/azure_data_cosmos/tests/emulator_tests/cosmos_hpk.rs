@@ -406,9 +406,7 @@ pub async fn hpk_item_patch_full_key() -> Result<(), Box<dyn Error>> {
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: 400 BadRequest is returned for a partial-key point \
-              read, but without the x-ms-substatus 1001 PartitionKeyMismatch header (behavioral \
-              divergence)"
+    ignore = "vnext emulator rejects partial-key point reads without substatus 1001: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/377"
 )]
 pub async fn hpk_item_partial_key_point_op_fails() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -825,7 +823,7 @@ pub async fn hpk_query_single_partition_order_by_servable() -> Result<(), Box<dy
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
+    ignore = "vnext emulator returns aggregate query plans without advertised aggregate support: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/383"
 )]
 pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -877,6 +875,8 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
                 // gateway builds emit the same rejection with sub-status 0 (e.g. for
                 // `SELECT VALUE COUNT(1) FROM c`). Both encode the same product behavior, so
                 // this test asserts only on the HTTP status and tolerates either sub-status.
+                // With the native query planner the query is planned locally and the driver
+                // rejects it itself with sub-status 20113 (ClientUnsupportedQueryFeature).
                 assert_eq!(
                     status.status_code(),
                     StatusCode::BadRequest,
@@ -885,8 +885,9 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
                 if let Some(sub) = status.sub_status() {
                     assert!(
                         sub == azure_data_cosmos_driver::error::status_codes::substatus::CROSS_PARTITION_QUERY_NOT_SERVABLE
+                            || sub == azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
                             || sub == SubStatusCode::new(0),
-                        "expected sub-status 1004 or 0 for {query}, got {sub:?}"
+                        "expected sub-status 1004, 20113 or 0 for {query}, got {sub:?}"
                     );
                 }
             }
@@ -909,10 +910,6 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
-)]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn hpk_query_cross_partition_offset_limit_top_servable() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(

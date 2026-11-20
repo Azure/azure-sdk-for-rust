@@ -162,6 +162,19 @@ impl Harness {
     }
 
     async fn new_with_container(partition_key: PartitionKeyDefinition, throughput: u64) -> Self {
+        Self::new_with_runtime(partition_key, throughput, |emulator| {
+            emulator.runtime_builder()
+        })
+        .await
+    }
+
+    async fn new_with_runtime(
+        partition_key: PartitionKeyDefinition,
+        throughput: u64,
+        runtime_builder: impl FnOnce(
+            &Arc<InMemoryEmulatorHttpClient>,
+        ) -> azure_data_cosmos_driver::CosmosDriverRuntimeBuilder,
+    ) -> Self {
         let observer = Arc::new(RecordingObserver::default());
         let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
             "East US",
@@ -179,7 +192,7 @@ impl Harness {
         let diagnostics_handler = Arc::new(RecordingDiagnosticsHandler::default());
         let client = CosmosClientBuilder::new()
             .with_runtime(
-                CosmosRuntimeBuilder::from(emulator.runtime_builder())
+                CosmosRuntimeBuilder::from(runtime_builder(&emulator))
                     .build()
                     .await
                     .unwrap(),
@@ -727,4 +740,112 @@ async fn patch_restarts_after_container_recreation() {
         .unwrap();
     let patched: TestItem = response.into_model().unwrap();
     assert_eq!(patched, item("patch", 2));
+}
+
+#[cfg(feature = "fault_injection")]
+mod read_many_deadline {
+    use super::{intended_rid_transitions, item, Harness, TestItem};
+    use azure_data_cosmos::{
+        feed::ItemScope,
+        options::{
+            AvailabilityStrategy, EndToEndOperationLatencyPolicy, MaxItemCountHint,
+            OperationOptionsBuilder, ReadManyOptions,
+        },
+    };
+    use azure_data_cosmos_driver::fault_injection::{
+        FaultInjectionConditionBuilder, FaultInjectionResultBuilder, FaultInjectionRuleBuilder,
+        FaultOperationType,
+    };
+    use std::{num::NonZeroU32, sync::Arc, time::Duration};
+
+    #[tokio::test]
+    async fn read_many_uses_per_page_timeouts_and_allows_caller_collection_timeout() {
+        let delay = Duration::from_millis(300);
+        let rule = Arc::new(
+            FaultInjectionRuleBuilder::new(
+                "read-many-page-delay",
+                FaultInjectionResultBuilder::new().with_delay(delay).build(),
+            )
+            .with_condition(
+                FaultInjectionConditionBuilder::new()
+                    .with_operation_type(FaultOperationType::QueryItem)
+                    .build(),
+            )
+            .build(),
+        );
+        let harness = Harness::new_with_runtime("/pk".into(), 400, |emulator| {
+            emulator.runtime_builder_with_fault_rules(vec![rule.clone()])
+        })
+        .await;
+        let selection = ItemScope::Partitions(vec!["pk1".into()]);
+        let options = ReadManyOptions::default()
+            .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()))
+            .with_operation_options(
+                OperationOptionsBuilder::new()
+                    .with_availability_strategy(AvailabilityStrategy::Disabled)
+                    .with_end_to_end_latency_policy(EndToEndOperationLatencyPolicy::new(
+                        Duration::from_secs(1),
+                    ))
+                    .build(),
+            );
+        let pages = harness
+            .container
+            .read_many::<TestItem>(selection.clone(), Some(options.clone()))
+            .await
+            .unwrap();
+        let replacement = harness.recreate_with("/pk".into(), 400).await;
+        for i in 0..8 {
+            harness
+                .seed_raw("pk1", &item(&format!("item-{i}"), i))
+                .await;
+        }
+        let started = std::time::Instant::now();
+        let complete = tokio::time::timeout(Duration::from_secs(10), pages.collect_all())
+            .await
+            .expect("collection must not hang")
+            .expect("each page has its own operation timeout");
+        assert!(started.elapsed() > Duration::from_secs(1));
+        let mut ids = complete
+            .items()
+            .iter()
+            .map(|item| item.id.clone())
+            .collect::<Vec<_>>();
+        ids.sort();
+        assert_eq!(ids, (0..8).map(|i| format!("item-{i}")).collect::<Vec<_>>());
+        let requests = harness.observer.query_requests();
+        let transitions = intended_rid_transitions(&requests);
+        assert_eq!(
+            transitions.len(),
+            2,
+            "must execute stale and replacement container requests"
+        );
+        assert_eq!(
+            transitions.last().copied(),
+            replacement.system_properties.resource_id.as_deref()
+        );
+        let pages = harness
+            .container
+            .read_many::<TestItem>(selection, Some(options))
+            .await
+            .unwrap();
+        let requests_before = requests.len();
+        tokio::time::timeout(Duration::from_millis(750), pages.collect_all())
+            .await
+            .expect_err("the caller can bound the entire collection");
+        let requests = harness.observer.query_requests();
+        assert!(requests.len() > requests_before);
+        assert!(requests.len() - requests_before < 8);
+        let hits = rule.hit_count();
+        tokio::time::sleep(delay * 2).await;
+        assert_eq!(
+            rule.hit_count(),
+            hits,
+            "timed out collection must not launch more requests"
+        );
+        assert_eq!(
+            harness.observer.query_requests().len(),
+            requests.len(),
+            "cancelled delayed requests must not reach the emulator later"
+        );
+    }
 }

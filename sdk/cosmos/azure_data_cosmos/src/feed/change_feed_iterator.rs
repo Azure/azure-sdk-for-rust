@@ -288,12 +288,22 @@ impl<T: Send + DeserializeOwned + 'static> ChangeFeedPageIterator<T> {
     /// Captures the current iterator position as a [`ContinuationToken`].
     ///
     /// Pass the returned token to a subsequent
-    /// [`ContainerClient::query_change_feed`](crate::clients::ContainerClient::query_change_feed)
-    /// call (via [`ChangeFeedOptions::with_continuation_token`](crate::options::ChangeFeedOptions::with_continuation_token))
+    /// [`ContainerClient::query_change_feed()`](crate::clients::ContainerClient::query_change_feed)
+    /// call using [`ChangeFeedOptions::with_continuation_token()`](crate::options::ChangeFeedOptions::with_continuation_token)
     /// to resume the change feed at the same position.
     ///
-    /// Snapshotting is non-mutating; the iterator may continue to be used
-    /// afterwards.
+    /// Creating a token does not change the iterator or send requests to the
+    /// service. The iterator can continue reading pages after the token is saved.
+    ///
+    /// A token can also be saved before reading the first page. In that case,
+    /// it preserves the requested start position, not a position established
+    /// by reading changes. For example, with
+    /// [`ChangeFeedStartFrom::Now`](crate::options::ChangeFeedStartFrom::Now),
+    /// resuming such a token starts from when the resumed feed sends its
+    /// requests, not from when the token was saved.
+    ///
+    /// Treat the token as opaque and use a compatible SDK version when
+    /// resuming it after a restart or redeployment.
     ///
     /// # Errors
     ///

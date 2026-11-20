@@ -96,9 +96,12 @@ pub struct OperationOptions {
     /// and sent on subsequent requests for session consistency. Set to `Some(true)`
     /// to disable both automatic capture and automatic resolution.
     ///
-    /// Explicit tokens still apply. Gateway V2 may scope a compound token using
-    /// available topology, or fall back to classic Gateway with the original token.
-    /// This transport normalization does not read or update the session cache.
+    /// Explicit tokens still apply. Gateway V2 loads topology on demand to scope
+    /// compound tokens. If topology loads but safe scoping is unavailable, the
+    /// attempt omits the token and downgrades Session consistency to Eventual,
+    /// without a read-your-writes guarantee. Topology-loading failures still return
+    /// errors. Classic Gateway retains token passthrough. Scoping an explicit
+    /// token does not read or update the session cache.
     pub session_capturing_disabled: Option<bool>,
 
     /// Maximum number of session-consistency retries on 404/1002 errors.
@@ -256,6 +259,12 @@ impl OperationOptions {
 /// with a fresh throttle-retry budget. To bound the **total** time an
 /// operation can spend on retries, configure
 /// [`OperationOptions::end_to_end_latency_policy`].
+///
+/// Partition-key-range metadata page reads ignore both budgets, including zero.
+/// They retain the current page and retry 429 responses until success, a non-429
+/// result, the operation's absolute deadline, or cancellation by dropping the
+/// operation future. Without a deadline or cancellation, persistent throttling
+/// can wait indefinitely. Incomplete routing maps are never published.
 #[derive(CosmosOptions, Clone, Debug)]
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]
@@ -269,6 +278,7 @@ pub struct ThrottlingRetryOptions {
     ///
     /// **Default**: `9`. A value of `0` disables retrying throttled requests
     /// (the first 429 is surfaced to the caller).
+    /// Partition-key-range metadata page reads are exempt; see the type's scope.
     ///
     /// **Wire-request semantics**: a configured `max_retry_count = N`
     /// produces up to `N + 1` total HTTP requests on the wire (1 initial
@@ -290,6 +300,7 @@ pub struct ThrottlingRetryOptions {
     /// throttle retry is attempted.
     ///
     /// **Default**: 30 seconds.
+    /// Partition-key-range metadata page reads are exempt; see the type's scope.
     pub max_retry_wait_time: Option<Duration>,
 }
 

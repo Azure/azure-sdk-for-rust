@@ -261,7 +261,7 @@ interoperability is a validation target, not a compatibility guarantee of this p
 The driver already owns the client-side RNTBD codec (`RntbdRequestFrame::write`,
 `RntbdResponse::read`). This work promotes the currently test-only inverse halves
 (`RntbdRequestFrame::read`, `RntbdResponse::write`) to production, co-located in
-`src/driver/transport/rntbd/` behind the host feature (ADR-007). Because the driver's request
+`src/rntbd_encoding/` behind the host feature (ADR-007). Because the driver's request
 pipeline decides Gateway 2.0 purely from whether the endpoint advertises a Gateway 2.0 URL,
 advertising it plus serving RNTBD is sufficient — no driver routing change is required.
 
@@ -631,5 +631,5 @@ architecture decisions and are intentionally excluded from the ADR directory.
 - Gateway 2.0 spec: `sdk/cosmos/azure_data_cosmos_driver/docs/GATEWAY_V2_SPEC.md`
 - Transport pipeline spec:
   `sdk/cosmos/azure_data_cosmos_driver/docs/TRANSPORT_PIPELINE_SPEC.md`
-- RNTBD codec: `sdk/cosmos/azure_data_cosmos_driver/src/driver/transport/rntbd/`
+- RNTBD codec: `sdk/cosmos/azure_data_cosmos_driver/src/rntbd_encoding/`
 - Cosmos test setup: `sdk/cosmos/eng/scripts/Invoke-CosmosTestSetup.ps1`

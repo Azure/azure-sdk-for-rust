@@ -14,5 +14,8 @@ exclude.workspace = true
 [dev-dependencies]
 azure_canary.path = "../azure_canary"
 
+[package.metadata.docs.rs]
+all-features = true
+
 [lints]
 workspace = true

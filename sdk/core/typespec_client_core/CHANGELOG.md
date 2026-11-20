@@ -1,17 +1,11 @@
 # Release History
 
-## 1.2.0-beta.2 (Unreleased)
-
-### Features Added
-
-### Breaking Changes
+## 1.2.0-beta.2 (2026-11-05)
 
 ### Bugs Fixed
 
 - Avoided unnecessary error construction and backtrace capture in `Headers::get_optional_str()` when a header is absent ([#5446](https://github.com/Azure/azure-sdk-for-rust/pull/5446)).
 - Update TLS dependencies to distrust compromised emSign CAs
-
-### Other Changes
 
 ## 1.2.0-beta.1 (2026-09-04)
 

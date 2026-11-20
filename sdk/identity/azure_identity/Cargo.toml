@@ -42,10 +42,10 @@ tracing-subscriber.workspace = true
 
 [features]
 default = ["azure_core/default", "reqwest_rustls"]
-reqwest = ["dep:reqwest", "reqwest/rustls", "azure_core/reqwest"]
-# Enables the custom token proxy used by AKS workload identity binding.
+reqwest = ["dep:reqwest", "azure_core/reqwest"]
+# Enables the built-in token proxy client used by AKS workload identity binding.
 # Adds Reqwest and Azure Core's rustls-based Reqwest transport.
-reqwest_rustls = ["reqwest", "azure_core/reqwest_rustls"]
+reqwest_rustls = ["reqwest", "reqwest/rustls", "azure_core/reqwest_rustls"]
 tokio = ["dep:tokio", "azure_core/tokio", "tokio/process"]
 client_certificate = ["openssl"]
 

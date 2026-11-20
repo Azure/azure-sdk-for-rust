@@ -29,16 +29,21 @@ use azure_core::{
 use azure_core_test::{Recording, TestMode};
 use azure_storage_blob::{
     models::{
-        BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
-        EncryptionAlgorithmType,
+        BlobContainerClientListBlobsOptions, BlobItem, BlockBlobClientUploadOptions,
+        BlockBlobClientUploadResult, BlockLookupList, EncryptionAlgorithmType,
+        ListBlobsIncludeItem,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
     BlobServiceClient, BlobServiceClientOptions,
 };
+use futures::TryStreamExt;
 
 pub const KB: usize = 1024;
 pub const MB: usize = KB * 1024;
 pub const GB: usize = MB * 1024;
+
+/// The OAuth scope used for Entra ID authentication against Storage.
+pub const STORAGE_SCOPE: &str = "https://storage.azure.com/.default";
 
 /// Returns a valid customer-provided key tuple used by blob encryption tests.
 pub fn get_cpk() -> (EncryptionAlgorithmType, String, String) {
@@ -236,6 +241,21 @@ pub async fn create_test_blob(
                 .await
         }
     }
+}
+
+/// Lists blobs in `container_client` and returns every decoded item across all pages.
+pub async fn list_blobs_with_include(
+    container_client: &BlobContainerClient,
+    include: Option<Vec<ListBlobsIncludeItem>>,
+) -> Result<Vec<BlobItem>> {
+    let items = container_client
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            include,
+            ..Default::default()
+        }))?
+        .try_collect()
+        .await?;
+    Ok(items)
 }
 
 pub trait ClientOptionsExt {

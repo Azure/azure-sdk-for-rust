@@ -3,7 +3,7 @@
 
 //! Plan-time options for [`CosmosDriver::plan_operation`](crate::driver::CosmosDriver::plan_operation).
 
-use crate::options::QueryPlanMode;
+use crate::options::{FullTextScoreScope, QueryPlanMode};
 
 /// Default maximum fan-out for a fresh cross-partition operation.
 ///
@@ -23,6 +23,11 @@ pub const DEFAULT_MAX_BUFFERED_QUERY_WINDOW: u64 = 1000;
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct PlanOptions {
+    /// Partitions used to calculate ranked full-text statistics.
+    ///
+    /// Defaults to [`FullTextScoreScope::Global`].
+    pub full_text_score_scope: FullTextScoreScope,
+
     /// Maximum global OFFSET plus effective take for client-buffered queries.
     ///
     /// Requires a finite TOP or LIMIT; when both exist, the smaller is used.
@@ -56,6 +61,7 @@ pub struct PlanOptions {
 impl Default for PlanOptions {
     fn default() -> Self {
         Self {
+            full_text_score_scope: FullTextScoreScope::default(),
             max_buffered_query_window: DEFAULT_MAX_BUFFERED_QUERY_WINDOW,
             query_plan_mode: QueryPlanMode::LocalPreferred,
             max_fan_out: DEFAULT_MAX_FAN_OUT,
@@ -64,6 +70,12 @@ impl Default for PlanOptions {
 }
 
 impl PlanOptions {
+    /// Sets the partitions used to calculate ranked full-text statistics.
+    pub fn with_full_text_score_scope(mut self, scope: FullTextScoreScope) -> Self {
+        self.full_text_score_scope = scope;
+        self
+    }
+
     /// Sets the maximum global OFFSET plus effective take for client-buffered queries.
     pub fn with_max_buffered_query_window(mut self, max_buffered_query_window: u64) -> Self {
         self.max_buffered_query_window = max_buffered_query_window;

@@ -204,7 +204,9 @@ environment defaults and no authoritative environment override.
 
 When `__internal_native_query_plan` is enabled, the existing native-first behavior is preserved:
 
-1. Native FFI provider.
+1. Native FFI provider (the QueryPlanInterop library bundled by
+   `azure_cosmos_queryplan_sys`; skipped on targets without a bundled library,
+   including musl).
 2. Local Rust planner.
 3. Gateway query-plan endpoint.
 

@@ -6,7 +6,7 @@
 use azure_data_cosmos_driver::models::{FeedRange, PartitionKey, PartitionKeyDefinition};
 use serde::Serialize;
 
-/// Represents the scope of a query, which determines which partitions it targets.
+/// Determines which partitions a query or change feed targets.
 ///
 /// The Cosmos DB backend can only execute queries against a single physical partition at a time,
 /// so it is important to choose the appropriate scope for your query to ensure it is executed efficiently.
@@ -26,9 +26,9 @@ impl FeedScope {
     /// (multi-level) partition key to target a single logical partition, or only
     /// a *prefix* of the levels (e.g. `("USA", "CA")` on a `/country/state/city`
     /// container) to target every logical partition that shares that prefix. A
-    /// prefix scope is executed as a filtered cross-partition query bounded to the
-    /// prefix's effective-partition-key range, so it only returns items under the
-    /// prefix rather than scanning whole physical partitions.
+    /// prefix scope fans out across overlapping physical partitions, bounded to
+    /// the prefix's effective-partition-key range. Both queries and change feeds
+    /// return only items under that prefix.
     ///
     /// The logical partition-key identity is needed to recreate this scope.
     /// A serialized or stringified feed range retains only effective bounds and

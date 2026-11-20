@@ -109,6 +109,16 @@ Repository: <https://github.com/Azure/typespec-rust>
 
 The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
 
+### Shared generated-client requirements
+
+- [ ] Apply the shared fake-generation requirements tracked in the
+  [Secrets emitter follow-up](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/azure_security_keyvault_secrets/TODO.md) when
+  generating fake support: typed context arguments for path/query/header inputs,
+  and opaque body forwarding.
+  This Resource Manager prototype does not add fake implementations or features.
+- [ ] Retain `exclude.workspace = true` in package manifests. The workspace
+  excludes `TODO.md` so both prototypes' emitter instructions stay out of packages.
+
 ### Emitter configuration
 
 - [ ] Document and test support for the common `api-version` option used by the
@@ -206,7 +216,8 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   `CloudConfigurationExt as _` does not bring `Audience` into rustdoc scope.
   Remove the obsolete unsupported-cloud panic documentation.
   Use "Resource Manager" in public documentation and `resource_manager` in
-  module, field, function, method, and feature names. Retain the
+  module, field, function, and method names. Use `unstable_resource_manager`
+  for the Cargo feature. Retain the
   `azure_resourcemanager_*` crate prefix. Prefer nested `resource_manager`
   modules over `ResourceManager` type or variant prefixes when disambiguating
   from data-plane APIs; retain short names such as `PollerOptions` and `Audience`
@@ -223,7 +234,7 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   Caller examples do not need `CloudConfigurationExt`: configuring
   `CloudConfiguration`, `CustomConfiguration`, and `Audiences` is unchanged.
   Keep the shared `Audience` import for custom audience registration.
-- [ ] Generate a manifest dependency enabling `azure_core`'s `resource_manager`
+- [ ] Generate a manifest dependency enabling `azure_core`'s `unstable_resource_manager`
   feature, preserve `default-features = false`, and forward default transport
   features consistently. Require a core version containing both the polling
   helper and `cloud::resource_manager::CloudConfigurationExt` and `Audience`,
@@ -244,8 +255,9 @@ The prototype used `@azure-tools/typespec-rust` version `0.41.5`.
   cloud, allocating a default `Arc`, or hard-coding `AzurePublic`.
   Verify that ARM crates do not emit an `Audience` declaration and import
   `azure_core::cloud::resource_manager::CloudConfigurationExt as _` in constructors.
-  Verify that generated imports, rustdoc links, and manifest features use
-  `resource_manager`, while the crate name remains `azure_resourcemanager_keyvault`.
+  Verify that generated imports and rustdoc links use `resource_manager`,
+  while the manifest enables `unstable_resource_manager` and the crate name
+  remains `azure_resourcemanager_keyvault`.
   Call `endpoint()`, `audience()`, and `default_scope()` without audience type
   parameters rather than emitting inline cloud mappings, custom audience
   lookups, or scope construction.

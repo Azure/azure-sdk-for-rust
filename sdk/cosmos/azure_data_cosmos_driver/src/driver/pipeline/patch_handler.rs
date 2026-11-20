@@ -56,6 +56,23 @@ use std::time::Instant;
 /// `412 PreconditionFailed` to the caller.
 pub const DEFAULT_PATCH_MAX_ATTEMPTS: u8 = 5;
 
+pub(crate) fn unsupported_filter_predicate_error() -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+        .with_message(
+            "PATCH filter predicates require effective server-side execution; \
+             use PatchStrategy::ServerSide when client-side execution would otherwise be selected",
+        )
+        .build()
+}
+
+pub(crate) fn invalid_filter_predicate_error() -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+        .with_message("PATCH filter predicate must not be empty")
+        .build()
+}
+
 /// Internal abstraction for dispatching sub-operations from inside the
 /// PATCH handler's RMW loop.
 ///
@@ -192,13 +209,20 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
     let body = operation
         .body()
         .ok_or_else(|| missing_body_error("PATCH operation requires a PatchInstructions body"))?;
-    let spec: PatchInstructions = serde_json::from_slice(body).map_err(|err| {
+    let request = crate::models::parse_patch_request(body).map_err(|err| {
         crate::error::CosmosError::builder()
             .with_status(crate::error::status_codes::SERIALIZATION_REQUEST_BODY_INVALID)
             .with_message("failed to parse PATCH body as PatchInstructions")
             .with_source(err)
             .build()
     })?;
+    if let Some(condition) = request.filter_predicate() {
+        if condition.trim().is_empty() {
+            return Err(invalid_filter_predicate_error());
+        }
+        return Err(unsupported_filter_predicate_error());
+    }
+    let spec: PatchInstructions = request;
 
     if spec.operations.is_empty() {
         return Err(crate::error::CosmosError::builder()
@@ -507,15 +531,9 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
                 let replace_etag = replace_headers.etag.clone();
                 sub_op_diagnostics.push(replace_resp.diagnostics());
                 let replace_body = replace_resp.into_body();
-                // Replace responses are always single-payload (or empty when
-                // `content_response_on_write` is disabled). Collapse the
-                // typed body to `Vec<u8>` so the synthesis helper can treat
-                // "empty" uniformly across `NoPayload` and `Bytes(empty)`.
-                let replace_body_bytes: Vec<u8> = match replace_body {
-                    crate::models::ResponseBody::Bytes(b) => b.to_vec(),
-                    crate::models::ResponseBody::NoPayload
-                    | crate::models::ResponseBody::Items(_) => Vec::new(),
-                };
+                // A Replace response must be single-payload (or empty when
+                // `content_response_on_write` is disabled).
+                let replace_body_bytes = replace_body.single()?.to_vec();
                 // Aggregate the per-request diagnostics of every successful
                 // sub-op into a single DiagnosticsContext, so the synthesized
                 // response surfaces "one operation = one DiagnosticsContext"
@@ -1257,6 +1275,7 @@ mod tests {
         let props = ContainerProperties {
             id: "testcontainer".into(),
             partition_key: test_partition_key_definition("/pk"),
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         ContainerReference::new(
@@ -1503,6 +1522,7 @@ mod tests {
         let props = ContainerProperties {
             id: "multi_hash_container".into(),
             partition_key: pk_def,
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         let container = ContainerReference::new(
@@ -1533,6 +1553,7 @@ mod tests {
             let props = ContainerProperties {
                 id: "tracking_pk_container".into(),
                 partition_key: test_partition_key_definition(pk_path),
+                vector_embedding_policy: None,
                 system_properties: SystemProperties::default(),
             };
             let container = ContainerReference::new(
@@ -3120,6 +3141,28 @@ mod tests {
             error.status(),
             crate::error::status_codes::CLIENT_BAD_REQUEST
         );
+        assert!(dispatcher.calls().is_empty());
+    }
+
+    #[tokio::test]
+    async fn filter_predicate_is_rejected_before_read() {
+        let dispatcher = ScriptedDispatcher::new(vec![]);
+        let op = CosmosOperation::patch_item(test_item_ref()).with_body(
+            br#"{"condition":"from c where c.visits = 0","operations":[{"op":"incr","path":"/visits","value":1}]}"#
+                .to_vec(),
+        );
+
+        let error = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+            .await
+            .expect_err("client-side PATCH must reject filter predicates before I/O");
+
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::CLIENT_BAD_REQUEST
+        );
+        assert!(error.status().sub_status().is_none());
+        assert!(error.diagnostics().is_none());
+        assert!(error.patch_tracking_id().is_none());
         assert!(dispatcher.calls().is_empty());
     }
 

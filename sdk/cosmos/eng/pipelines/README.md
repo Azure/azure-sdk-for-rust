@@ -21,10 +21,11 @@ account endpoints and keys - stored once in an ADO secret - keep working
 indefinitely, with no per-run Azure authentication and no service-connection
 dependency at all for this leg.
 
-`Cosmos_live_test_aad` (the dedicated AAD/Entra ID leg) is **unaffected** by
-this change: it continues to deploy fresh accounts per run via
-`test-resources.bicep` against the existing service connection, exactly as
-before. Thin-client/GatewayV2 legs are also unaffected/out of scope.
+`Cosmos_live_test_aad` and `Cosmos_live_federated_aad` are intentionally not
+fixed-account jobs. They deploy fresh accounts through `test-resources.bicep`,
+set `disableLocalAuth`, and use the federated pipeline identity for both Cosmos
+data-plane RBAC and ARM resource management. Thin-client/GatewayV2 legs retain
+their existing configuration.
 
 ## How it fits together
 
@@ -77,12 +78,11 @@ before. Thin-client/GatewayV2 legs are also unaffected/out of scope.
    `eng/pipelines/templates/stages/archetype-sdk-client.yml` gained a
    `FixedAccountMatrixConfigs` parameter (a second, independent
    `LiveTestMatrixConfigs`-like list) so this only applies to the matrix
-   configs that opt in - `Cosmos_live_test_aad` keeps deploying real ARM
-   resources, unaffected.
+   configs that opt in. Federated AAD jobs keep deploying real ARM resources.
 9. `sdk/cosmos/ci.yml` wires `Cosmos_live_test` through
    `FixedAccountMatrixConfigs` with `PreTestRunSteps` pointing at
-   `resolve-test-account-steps.yml`, while `Cosmos_live_test_aad` remains on
-   `LiveTestMatrixConfigs` exactly as before.
+   `resolve-test-account-steps.yml`, while the AAD matrices remain on
+   `LiveTestMatrixConfigs`.
 
 ## Local testing
 
@@ -93,8 +93,8 @@ pwsh sdk/cosmos/eng/pipelines/resolve-cosmos-test-account.tests.ps1
 ```
 
 You can also invoke the resolver directly against the sample JSON. Dot-source
-it (note the leading `.` followed by a space) so the resolved variables land directly in your
-current shell instead of just being printed:
+it (note the leading `.` followed by a space) so the resolved variables land
+directly in your current shell instead of just being printed:
 
 ```powershell
 $env:COSMOS_ACCOUNTS_LOCAL = 'true'
@@ -132,15 +132,64 @@ without changing the existing suites. Ordinary emulator, vnext, in-memory,
 and codec-fuzz jobs do not use that resolver and do not enable the live gate.
 Legacy ARM/AAD jobs retain their existing categories.
 
+### Gateway V2 multi-range prefix change feed
+
+The `gateway_v2_prefix_change_feed_across_physical_ranges` test exercises
+hierarchical-prefix fan-out and checkpoint/resume on an **existing** topology.
+It does not change throughput, seed a large dataset, or trigger a partition
+split. Split-during-read recovery remains covered by the separate `split` suite.
+
+Use an existing Gateway V2 container with MultiHash V2 partition key paths
+`/tenant`, `/user`, `/device`. The selected tenant prefix must overlap at least
+two physical ranges; a container having multiple ranges is not sufficient.
+The test checks the actual range map and dynamically chooses two complete keys
+for that tenant on distinct ranges. Missing configuration or an unsuitable
+fixture fails explicitly.
+
+Set `AZURE_COSMOS_GW_V2_ENDPOINT` and `AZURE_COSMOS_GW_V2_KEY` securely, then run
+from the repository root:
+
+```powershell
+$env:AZURE_COSMOS_GW_V2_PREFIX_DATABASE = '<existing-database>'
+$env:AZURE_COSMOS_GW_V2_PREFIX_CONTAINER = '<existing-container>'
+$env:AZURE_COSMOS_GW_V2_PREFIX_TENANT = '<tenant-spanning-physical-ranges>'
+$env:RUSTFLAGS = '--cfg=test_category="gateway_v2_prefix"'
+cargo test -p azure_data_cosmos --all-features --test gateway_v2 gateway_v2_prefix_change_feed_across_physical_ranges
+```
+
+This explicit category enables the test without `--ignored`. Ordinary builds
+and the general Gateway V2 categories leave it ignored because credentials
+alone do not establish the required fixture. Automated execution still needs
+the fixture variables and category configured in the live-test job.
+
+Run serially for each selected tenant: no other writer or concurrent test may
+use that prefix. The test starts from Now, pins every leaf before writing,
+and creates two in-prefix items and an outside-prefix sentinel. It recreates
+the reader from a serialized checkpoint after every page, checks exact
+membership and no duplicates, verifies actual Gateway V2 transport, and deletes
+only its own three items. It does not delete the fixture database or container.
+
+For one-time fixture preparation, a live experiment reproduced a suitable
+topology by creating a one-range container at 1,000 RU/s, inserting 1,024 small
+items with tenant `prefix-control`, user `user-{i % 256}`, and device
+`device-{i % 1024}` for `i = 0..1023`, then raising throughput to 13,000 RU/s.
+Each item had a unique ID and 4,096 characters of padding excluded from
+indexing, totaling about 4 MB. A boundary inside that tenant appeared after
+approximately 5.5-6 minutes. Split timing and placement are not guaranteed:
+always verify the actual prefix overlap before retaining a reusable fixture.
+Provisioning is separate from routine test execution; scale down or delete
+temporary fixtures when they are no longer needed.
+
 ## Adding or rotating an account
 
 See `account-provisioning/README.md`.
 
 ## What this does *not* solve
 
-This mechanism only covers **key-based** tests. AAD-specific behavior
-requires a real Entra ID identity/tenant to authenticate against; fixed
-accounts don't remove that requirement, they only remove it for the tests
-that don't need AAD in the first place. `Cosmos_live_test_aad` still depends
-on the ephemeral tenant and the `azure-sdk-tests-cosmos` service connection,
-exactly as it did before this change.
+This mechanism only covers **key-based** tests. The fixed-account job generator
+explicitly sets `UseFederatedAuth: false`, so it cannot run the AAD integration,
+binary round-trip, or partition-merge legs. Those jobs require a real Entra ID
+identity and remain on the per-run ARM path through the
+`azure-sdk-tests-cosmos` service connection. Partition merge additionally
+requires a preview-enabled account and an ARM token for the merge operation,
+which is why it is not assigned to a fixed account.

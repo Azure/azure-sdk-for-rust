@@ -25,6 +25,7 @@
 //! page sequence, then asserts every emitted page body appears exactly once
 //! and the full expected set is present.
 
+use crate::driver::dataflow::PipelineResponse;
 use std::sync::Arc;
 
 use super::super::{
@@ -39,8 +40,7 @@ use crate::{
     models::{
         effective_partition_key::EffectivePartitionKey, AccountReference, ActivityId,
         ContainerProperties, ContainerReference, ContinuationToken, CosmosOperation,
-        CosmosResponse, CosmosResponseHeaders, CosmosStatus, FeedRange, ResolvedToken,
-        SystemProperties,
+        CosmosResponseHeaders, CosmosStatus, FeedRange, ResolvedToken, SystemProperties,
     },
     options::DiagnosticsOptions,
 };
@@ -59,6 +59,7 @@ fn test_container_props() -> ContainerProperties {
     ContainerProperties {
         id: Cow::Owned("coll".into()),
         partition_key: serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap(),
+        vector_embedding_policy: None,
         system_properties: SystemProperties::default(),
     }
 }
@@ -106,10 +107,10 @@ fn resolved(min: &str, max: &str, pk_range_id: &str) -> crate::error::Result<Res
     })
 }
 
-/// Builds a `CosmosResponse` with the given body bytes and optional
+/// Builds a `PipelineResponse` with the given body bytes and optional
 /// server continuation header. The body bytes act as a per-page "marker"
 /// the test can collect later to verify exactly-once delivery.
-fn page_response(body: &[u8], continuation: Option<&str>) -> CosmosResponse {
+fn page_response(body: &[u8], continuation: Option<&str>) -> PipelineResponse {
     let mut diagnostics = DiagnosticsContextBuilder::new(
         ActivityId::new_uuid(),
         Arc::new(DiagnosticsOptions::default()),
@@ -117,7 +118,7 @@ fn page_response(body: &[u8], continuation: Option<&str>) -> CosmosResponse {
     diagnostics.set_operation_status(azure_core::http::StatusCode::Ok, None);
     let mut headers = CosmosResponseHeaders::new();
     headers.continuation = continuation.map(str::to_owned);
-    CosmosResponse::new(
+    PipelineResponse::new(
         body.to_vec(),
         headers,
         CosmosStatus::new(azure_core::http::StatusCode::Ok),
@@ -166,10 +167,10 @@ async fn drain_pages(
 /// path a real caller takes between `to_continuation_token()` and
 /// `plan_operation(resume = ...)`.
 fn round_trip_state(state: PipelineNodeState, op: &CosmosOperation) -> PipelineNodeState {
-    let token = ContinuationToken::encode_v1(op, &state).expect("encode succeeds");
+    let token = ContinuationToken::encode(op, &state).expect("encode succeeds");
     let resolved = token.resolve().expect("decode succeeds");
     match resolved {
-        ResolvedToken::ClientV1(token_state) => {
+        ResolvedToken::Client(token_state) => {
             token_state
                 .is_valid_for_operation(op)
                 .expect("operation compatible");

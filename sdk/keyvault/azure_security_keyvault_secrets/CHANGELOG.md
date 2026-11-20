@@ -1,6 +1,6 @@
 # Release History
 
-## 1.1.0-beta.2 (Unreleased)
+## 1.1.0-beta.3 (Unreleased)
 
 ### Features Added
 
@@ -10,7 +10,16 @@
 
 ### Other Changes
 
+## 1.1.0-beta.2 (2026-11-18)
+
+### Features Added
+
+- Added optional `test` and `unstable_fake` features with experimental `clients::fake::SecretServer` and `SecretClient::with_fake()` APIs to build credential-free tests using the existing client.
+
+### Other Changes
+
 - Applied client options to bearer-token authorization so tests can opt in to authenticated HTTP connections with `ClientOptions::allow_insecure_connections`.
+- Upgraded to API service version `2026-07-01-preview`.
 
 ## 1.1.0-beta.1 (2026-10-21)
 
