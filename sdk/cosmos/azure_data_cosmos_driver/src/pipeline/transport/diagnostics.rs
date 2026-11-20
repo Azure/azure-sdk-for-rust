@@ -13,8 +13,7 @@ use super::{
 };
 use crate::{
     diagnostics::{
-        DiagnosticsContextBuilder, RequestDiagnosticsBuilder, RequestEvent, RequestEventType,
-        RequestSentStatus,
+        DiagnosticsContextBuilder, RequestDiagnosticsBuilder, RequestEventType, RequestSentStatus,
     },
     driver,
 };
@@ -37,8 +36,9 @@ pub(super) fn start_attempt<'a>(
     );
     let mut diagnostics = RequestDiagnosticsBuilder::new(handle, diagnostics);
     if let Some(reason) = request.routing_fallback {
-        diagnostics.add_event(
-            RequestEvent::new(RequestEventType::RoutingFallback).with_details(reason.as_str()),
+        diagnostics.record_event(
+            RequestEventType::RoutingFallback,
+            Some(reason.as_str().to_owned()),
         );
     }
     for failed in progress.failed_shards.iter().cloned() {
@@ -54,7 +54,7 @@ pub(super) fn start_attempt<'a>(
 // Inline the thin event adapter.
 #[inline(always)]
 pub(super) fn start_transport(diagnostics: &mut RequestDiagnosticsBuilder<'_>) {
-    diagnostics.add_event(RequestEvent::new(RequestEventType::TransportStart));
+    diagnostics.record_event(RequestEventType::TransportStart, None);
 }
 
 /// Records a completed dispatch's shard and, for responses, its headers-received event before decoding.
@@ -63,7 +63,7 @@ pub(super) fn record_dispatch(
     diagnostics: &mut RequestDiagnosticsBuilder<'_>,
 ) {
     if dispatch.result.is_ok() {
-        diagnostics.add_event(RequestEvent::new(RequestEventType::ResponseHeadersReceived));
+        diagnostics.record_event(RequestEventType::ResponseHeadersReceived, None);
     }
     if let Some(shard) = dispatch.shard_diagnostics.clone() {
         diagnostics.set_transport_shard(shard);
@@ -111,17 +111,15 @@ pub(super) fn complete_attempt(
         } => {
             let details = driver::error_chain_summary(error);
             if failed_after_headers {
-                diagnostics.add_event(RequestEvent::new(RequestEventType::ResponseHeadersReceived));
+                diagnostics.record_event(RequestEventType::ResponseHeadersReceived, None);
             }
-            diagnostics.add_event(
-                RequestEvent::new(RequestEventType::TransportFailed).with_details(details.clone()),
-            );
+            diagnostics.record_event(RequestEventType::TransportFailed, Some(details.clone()));
             diagnostics.fail_transport_request(details, *request_sent, *status);
         }
         TransportOutcome::DeadlineExceeded { .. } => {
-            diagnostics.add_event(
-                RequestEvent::new(RequestEventType::TransportFailed)
-                    .with_details("end-to-end operation timeout exceeded"),
+            diagnostics.record_event(
+                RequestEventType::TransportFailed,
+                Some("end-to-end operation timeout exceeded".to_owned()),
             );
             diagnostics.timeout_request();
         }
