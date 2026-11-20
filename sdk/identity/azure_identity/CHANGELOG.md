@@ -1,10 +1,16 @@
 # Release History
 
-## Unreleased
+## 1.1.0-beta.3 (Unreleased)
 
 ### Features Added
 
 - Added `GitHubActionsCredential` and `GitHubActionsCredentialOptions` for GitHub Actions workload identity federation.
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
 
 ## 1.1.0-beta.2 (2026-11-05)
 
