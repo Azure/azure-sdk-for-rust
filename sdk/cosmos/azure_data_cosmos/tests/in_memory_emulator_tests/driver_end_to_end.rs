@@ -205,7 +205,10 @@ async fn create_and_read_item_through_driver() {
 
 #[tokio::test]
 #[cfg_attr(
-    test_category = "emulator_vnext",
+    any(
+        test_category = "emulator_vnext",
+        test_category = "emulator_vnext_gateway_v2"
+    ),
     ignore = "vnext emulator metadata-create response bodies differ under return-minimal options: https://github.com/Azure/azure-cosmos-db-emulator-docker/issues/384"
 )]
 async fn create_database_and_container_through_driver() {
@@ -1427,9 +1430,7 @@ async fn try_real_failover_comparison(
     use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
     use azure_data_cosmos_driver::fault_injection::FaultInjectionRuleBuilder;
     use azure_data_cosmos_driver::models::{AccountReference, ConnectionString};
-    use azure_data_cosmos_driver::options::{
-        ConnectionPoolOptions, DriverOptionsBuilder, ServerCertificateValidation,
-    };
+    use azure_data_cosmos_driver::options::DriverOptionsBuilder;
     use std::sync::Arc;
 
     if std::env::var("AZURE_COSMOS_AUTH_MODE").is_ok_and(|value| value.eq_ignore_ascii_case("aad"))
@@ -1463,13 +1464,7 @@ async fn try_real_failover_comparison(
             .build(),
     );
 
-    let mut pool_builder = ConnectionPoolOptions::builder();
-    if conn_str.account_endpoint().contains("localhost") {
-        pool_builder = pool_builder.with_server_certificate_validation(
-            ServerCertificateValidation::RequiredUnlessEmulator,
-        );
-    }
-    let pool = pool_builder.build().ok()?;
+    let pool = super::external_connection_pool(conn_str.account_endpoint()).ok()?;
 
     let runtime = CosmosDriverRuntime::builder()
         .with_connection_pool(pool)

@@ -1,37 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! TRACKING MARKER #5240 — canary pinning the vnext emulator's lack of Cosmos
-//! binary JSON support.
-//!
-//! Reproduces the exact mechanism from #5240: the `create_seed_item` calls in
-//! `driver_patch::cosmos_patch_pk_guard` and
-//! `driver_patch::cosmos_patch_pk_guard_hierarchical`, which failed with
-//! `400/1001 PartitionKeyMismatch` once the document body went out binary. The
-//! emulator compares the partition key decoded from the body against the text
-//! `x-ms-documentdb-partitionkey` header, so failing to decode a binary body
-//! surfaces as a mismatch rather than a parse error.
-//!
-//! Those tests no longer reproduce it themselves — `patch_test_options()` pins
-//! binary off for the whole patch suite, and
-//! `framework::test_client::runtime_operation_options` pins it off for every
-//! other vnext run. This canary re-enables binary at the **operation** layer,
-//! which outranks both.
-//!
-//! Runs in vnext CI and asserts that binary writes succeed, so an emulator
-//! regression fails the pipeline rather than remaining ignored.
-//!
-//! **When it passes, vnext supports binary encoding.** That is the signal to
-//! drop `patch_test_options`'s binary override, `runtime_operation_options`,
-//! `effective_binary_encoding` (azure_data_cosmos framework), and this canary.
-//!
-//! Use these exact documents. The rejection is **document-shape dependent**,
-//! not blanket: a flat-PK document is accepted whenever `pk` immediately
-//! follows `id` in sorted key order (the binary writer emits members sorted),
-//! and rejected when another property sorts between them — `{id, pk, value}`
-//! is accepted while `{id, name, pk}` is not. Hierarchical PK is rejected
-//! unconditionally. A hand-rolled document is therefore liable to pass and
-//! report the limitation as lifted while it is still very much present.
+//! Regression coverage for #5240: binary writes with flat and hierarchical partition keys.
+//! Keep the exact documents: the original flat-PK failure depended on sorted member order.
 
 use crate::framework::DriverTestClient;
 use azure_data_cosmos_driver::{
@@ -40,14 +11,6 @@ use azure_data_cosmos_driver::{
 };
 use serde_json::json;
 use std::error::Error;
-
-/// The expected outcome while #5240 is open — normally `400/1001
-/// PartitionKeyMismatch`.
-const STILL_UNSUPPORTED: &str = "vnext emulator still rejects a binary-encoded item write, so \
-     #5240 remains open and the binary overrides in `patch_test_options` (driver \
-     tests/emulator_tests/driver_patch.rs), `runtime_operation_options` (driver \
-     tests/framework/test_client.rs) and `effective_binary_encoding` (azure_data_cosmos \
-     tests/framework/test_client.rs) must stay";
 
 /// Binary forced on at the operation layer, which outranks the runtime default
 /// applied by the framework and by `patch_test_options`.
@@ -59,8 +22,14 @@ fn binary_on() -> OperationOptions {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator_vnext"),
-    ignore = "vnext-only canary; requires test_category 'emulator_vnext'"
+    not(all(
+        test_category = "emulator_vnext_binary",
+        any(
+            test_category = "emulator_vnext",
+            test_category = "emulator_vnext_gateway_v2"
+        )
+    )),
+    ignore = "requires a vnext binary matrix cell"
 )]
 pub async fn vnext_supports_binary_encoded_writes() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
@@ -117,7 +86,9 @@ pub async fn vnext_supports_binary_encoded_writes() -> Result<(), Box<dyn Error>
                         binary_on(),
                     )
                     .await
-                    .map_err(|error| format!("[{label}] {STILL_UNSUPPORTED}: {error}"))?;
+                    .map_err(|error| {
+                        format!("[{label}] vnext binary write regression (#5240): {error}")
+                    })?;
             }
 
             Ok(())
