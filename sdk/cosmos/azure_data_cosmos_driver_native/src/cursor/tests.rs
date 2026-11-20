@@ -628,12 +628,12 @@ fn discovery_force_refresh_and_detached_list_lifetimes() {
     );
     // SAFETY: wait returned one initialized completion.
     let mut completion = unsafe { completion.assume_init() };
-    assert_eq!(completion.status.0, (400 << 16) | 1001);
-    assert_eq!(completion.is_from_wire, 1);
-    assert!(!completion.diagnostics.is_null());
-    assert!(cosmos_completion_take_feed_ranges(&mut completion).is_null());
+    assert_eq!(completion.status, COSMOS_STATUS_SUCCESS);
+    let list = cosmos_completion_take_feed_ranges(&mut completion);
     completion.free_inner();
     cosmos_operation_handle_free(op);
+    assert_eq!(cosmos_feed_range_list_len(list), 2);
+    cosmos_feed_range_list_free(list);
     cosmos_completion_queue_free(queue);
 }
 

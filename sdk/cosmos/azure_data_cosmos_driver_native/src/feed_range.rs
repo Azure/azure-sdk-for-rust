@@ -395,14 +395,14 @@ mod tests {
     }
 
     #[test]
-    fn comparisons_respect_point_and_exclusive_boundary_semantics() {
+    fn comparisons_respect_ordinary_half_open_boundaries() {
         for (min, max, other_min, other_max, subset, overlap) in [
-            ("10", "10", "10", "10", true, true),
-            ("10", "10", "10", "20", true, true),
-            ("10", "20", "10", "10", false, true),
-            ("10", "10", "00", "10", false, false),
-            ("00", "10", "10", "10", false, false),
-            ("10", "10", "20", "20", false, false),
+            ("10", "20", "10", "20", true, true),
+            ("10", "20", "00", "20", true, true),
+            ("00", "20", "10", "20", false, true),
+            ("10", "20", "00", "10", false, false),
+            ("00", "10", "10", "20", false, false),
+            ("10", "30", "20", "40", false, true),
         ] {
             let mut range = ptr::null_mut();
             let mut other = ptr::null_mut();

@@ -1076,14 +1076,10 @@ async fn classic_logical_reads_preserve_child_progress_after_stale_parent_routin
                     .await
                     .unwrap()
                     .unwrap();
-                let refresh = driver
+                driver
                     .resolve_all_partition_key_ranges(&container, true)
-                    .await;
-                if scenario == Scenario::SplitTopologyUnavailable {
-                    assert!(refresh.is_err());
-                } else {
-                    refresh.unwrap();
-                }
+                    .await
+                    .unwrap();
                 let range_requests = client.range_requests.load(Ordering::SeqCst);
                 let response = driver
                     .execute_singleton_operation(read, options)

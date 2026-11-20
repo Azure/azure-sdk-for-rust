@@ -70,6 +70,9 @@ for the full design.
 `cosmos_container_read_feed_ranges_submit` discovers ranges using native routing.
 Use an ordinary completion queue, with `force_refresh` set to 0 or 1. Detach the
 result with `cosmos_completion_take_feed_ranges`; unresolved routing returns 503.
+Discovery retains the driver's cache-refresh behavior: a failed refresh can return
+previously cached ranges instead of an error
+([#5637](https://github.com/Azure/azure-sdk-for-rust/issues/5637)).
 The detached list outlives its completion. `cosmos_feed_range_list_get` copies an
 independently owned handle; free each handle and the list with their matching
 `cosmos_feed_range_free` and `cosmos_feed_range_list_free` functions.
@@ -81,6 +84,8 @@ Serialization uses the driver's base64 JSON format and preserves bounds only.
 Parsing does not restore logical partition-key identity. Preserve a partition key
 separately when logical routing is required. A range string is not a checkpoint.
 Subset and overlap comparisons use the driver's effective-bound semantics.
+Equal-bound comparisons retain the driver's existing boundary limitations
+([#5638](https://github.com/Azure/azure-sdk-for-rust/issues/5638)).
 
 Retained query and change-feed requests copy `operation.feed_range` before submit
 returns. Range scoping, checkpoint validation, and split/merge recovery stay in
