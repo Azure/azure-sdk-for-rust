@@ -19,6 +19,7 @@ azure_core_opentelemetry
 azure_core_test
 azure_core_test_macros
 azure_cosmos_queryplan_sys
+azure_data_appconfiguration
 azure_data_cosmos
 azure_data_cosmos_benchmarks
 azure_data_cosmos_driver

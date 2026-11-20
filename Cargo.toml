@@ -1,8 +1,9 @@
-# cspell:ignore rustdoc
+# cspell:ignore rustdoc appconfiguration
 
 [workspace]
 resolver = "2"
 members = [
+  "sdk/appconfiguration/azure_data_appconfiguration",
   "sdk/core/typespec",
   "sdk/core/typespec_client_core",
   "sdk/core/typespec_macros",
