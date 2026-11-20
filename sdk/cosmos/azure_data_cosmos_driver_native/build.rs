@@ -113,28 +113,17 @@ fn generate_c_header() {
         ("CosmosOptionalU64".into(), "optional_u64_t".into()),
         ("CosmosDuration".into(), "duration_t".into()),
         (
-            "CosmosOperationOptionsV2".into(),
-            "operation_options_v2_t".into(),
-        ),
-        (
-            "CosmosConnectionPoolOptions".into(),
-            "connection_pool_options_t".into(),
-        ),
-        (
-            "CosmosDiagnosticsOptions".into(),
-            "diagnostics_options_t".into(),
-        ),
-        (
             "CosmosRuntimeOptionsV2".into(),
             "runtime_options_v2_t".into(),
         ),
         (
-            "CosmosPartitionFailoverOptions".into(),
-            "partition_failover_options_t".into(),
-        ),
-        (
             "CosmosDriverOptionsConfigV3".into(),
             "driver_options_config_v3_t".into(),
+        ),
+        ("CosmosFeedRangeInfo".into(), "feed_range_info_t".into()),
+        (
+            "CosmosFeedRangeRelation".into(),
+            "feed_range_relation_t".into(),
         ),
         (
             "CosmosCursorCompletion".into(),

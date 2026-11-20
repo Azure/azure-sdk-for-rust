@@ -79,11 +79,19 @@ independently owned handle; free each handle and the list with their matching
 
 Construct explicit bounds with `cosmos_feed_range_from_epk`. Bounds use even-length
 hexadecimal strings; the minimum may be empty, and equal bounds denote one EPK.
-Bounds inspection and serialization return owned strings for `cosmos_string_free`.
+`cosmos_feed_range_inspect` returns `cosmos_feed_range_info_t`: owned
+`min_inclusive` and `max_exclusive` strings, plus an `is_logical_partition` flag.
+Free both strings independently with `cosmos_string_free`; they outlive the range
+handle. The caller owns the result record and must free its previous strings
+before reusing it. Serialization also returns an owned string.
 Serialization uses the driver's base64 JSON format and preserves bounds only.
 Parsing does not restore logical partition-key identity. Preserve a partition key
 separately when logical routing is required. A range string is not a checkpoint.
-Subset and overlap comparisons use the driver's effective-bound semantics.
+`cosmos_feed_range_relate(range, other, &relation)` returns both `is_subset`
+(the first range is a subset of the second) and `overlaps` in
+`cosmos_feed_range_relation_t`, without consuming either handle. Inspection and
+relation flags are 0 or 1. Both calls zero a non-NULL output record on failure.
+Comparisons use the driver's effective-bound semantics.
 Equal-bound comparisons retain the driver's existing boundary limitations
 ([#5638](https://github.com/Azure/azure-sdk-for-rust/issues/5638)).
 
@@ -113,16 +121,24 @@ kind 2 accepts a positive limit through `UINT32_MAX`. Explicit kinds require a
 negative legacy page hint. Unused payloads, unknown kinds, and invalid versions
 are rejected rather than narrowed or silently ignored.
 
-Construct runtime configuration with `cosmos_runtime_build_v2` and client options
-with `cosmos_driver_options_build_v3`, using their typed initializers. Runtime
-records expose transport/pooling and diagnostics defaults/retention. Client records
-expose topology/failover, ordered bootstrap backups, and independent identity.
+Initialize one `cosmos_runtime_options_v2_t` with `cosmos_runtime_options_v2_init`,
+set its fields, and pass it to `cosmos_runtime_build_v2`. Initialize one
+`cosmos_driver_options_config_v3_t` with `cosmos_driver_options_config_v3_init`
+and pass it to `cosmos_driver_options_build_v3`. These self-contained records
+have no nested configuration records or initializers. Runtime fields expose
+identity, transport/pooling, and diagnostics defaults/retention. Client fields
+expose regions, fault-injection rules, resource-name validation, topology/failover,
+ordered bootstrap backups, and independent identity. Both accept the existing
+optional `cosmos_operation_options_t` pointer; NULL inherits.
+All borrowed strings, arrays, rules, and operation options are copied during
+construction. Initializers set the size/version prefix and unset sentinels;
+the client initializer also sets the fault-injection rule stride.
 Native builders retain environment/default precedence and validation.
 NULL/0 identity inherits; explicit empty goes through native suffix validation.
 Backup endpoint NULL/0 inherits the account list; non-NULL/0 clears it.
 
-Exact operation-duration defaults use `cosmos_operation_options_v2_t`, at runtime
-or client construction. Seconds plus normalized nanoseconds preserve precision
+Exact operation-duration defaults are inline fields on both construction records.
+Seconds plus normalized nanoseconds preserve precision
 for endpoint cooldown, throttle wait, and a positive hedge threshold. Unset
 payloads must be zero. Monotonic-clock overflow and native option bounds are
 rejected. Legacy records and entry points keep their published layouts and meanings.

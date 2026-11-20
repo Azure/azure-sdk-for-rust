@@ -137,27 +137,78 @@ pub mod completion {
 }
 pub mod configuration {
     #[no_mangle]
-    pub extern "C" fn cosmos_connection_pool_options_init(out: *mut CosmosConnectionPoolOptions);
-    #[no_mangle]
-    pub extern "C" fn cosmos_diagnostics_options_init(out: *mut CosmosDiagnosticsOptions);
-    #[no_mangle]
     pub extern "C" fn cosmos_driver_options_build_v3(account: *const crate::account_ref::AccountRefHandle, input: *const CosmosDriverOptionsConfigV3, out: *mut *mut crate::driver_options::DriverOptionsHandle) -> crate::error::CosmosStatusCode;
     #[no_mangle]
     pub extern "C" fn cosmos_driver_options_config_v3_init(out: *mut CosmosDriverOptionsConfigV3);
     #[no_mangle]
     pub extern "C" fn cosmos_management_options_init(out: *mut CosmosManagementOptions);
     #[no_mangle]
-    pub extern "C" fn cosmos_operation_options_v2_init(out: *mut CosmosOperationOptionsV2);
-    #[no_mangle]
-    pub extern "C" fn cosmos_partition_failover_options_init(out: *mut CosmosPartitionFailoverOptions);
-    #[no_mangle]
     pub extern "C" fn cosmos_runtime_build_v2(input: *const CosmosRuntimeOptionsV2, out: *mut *mut crate::runtime::RuntimeContext, error: *mut *mut crate::error::CosmosError) -> crate::error::CosmosStatusCode;
     #[no_mangle]
     pub extern "C" fn cosmos_runtime_options_v2_init(out: *mut CosmosRuntimeOptionsV2);
     #[repr(C)]
-    pub struct CosmosConnectionPoolOptions {
+    pub struct CosmosDriverOptionsConfigV3 {
         pub struct_size_bytes: u32,
         pub abi_version: u32,
+        pub preferred_regions: *const crate::string::CosmosStringView,
+        pub preferred_regions_len: usize,
+        pub operation_options: *const crate::op_request::CosmosOperationOptions,
+        pub fault_injection_rules: *const crate::fault_injection::CosmosFaultInjectionRule,
+        pub fault_injection_rules_len: usize,
+        pub fault_injection_rule_stride: usize,
+        pub resource_name_validation_enabled: i8,
+        pub backup_endpoints: *const crate::string::CosmosStringView,
+        pub backup_endpoints_len: usize,
+        pub user_agent_suffix: crate::string::CosmosStringView,
+        pub topology_cache_mode: u32,
+        pub circuit_breaker_enabled: i8,
+        pub read_failure_threshold: CosmosOptionalU64,
+        pub write_failure_threshold: CosmosOptionalU64,
+        pub consecutive_hedge_win_threshold: CosmosOptionalU64,
+        pub counter_reset_window: CosmosDuration,
+        pub partition_unavailability_duration: CosmosDuration,
+        pub failback_sweep_interval: CosmosDuration,
+        pub endpoint_unavailability_ttl: CosmosDuration,
+        pub max_throttle_retry_wait_time: CosmosDuration,
+        pub hedge_threshold: CosmosDuration,
+    }
+    #[derive(Clone, Copy, Default)]
+    #[repr(C)]
+    pub struct CosmosDuration {
+        pub is_set: u8,
+        pub seconds: u64,
+        pub nanoseconds: u32,
+    }
+    #[repr(C)]
+    pub struct CosmosManagementOptions {
+        pub struct_size_bytes: u32,
+        pub abi_version: u32,
+        pub throughput_kind: u32,
+        pub manual_throughput: u64,
+        pub autoscale_max_throughput: u64,
+        pub has_auto_upgrade_policy: u8,
+        pub has_throughput_policy: u8,
+        pub increment_percent: u32,
+    }
+    #[derive(Clone, Copy, Default)]
+    #[repr(C)]
+    pub struct CosmosOptionalU64 {
+        pub is_set: u8,
+        pub value: u64,
+    }
+    #[repr(C)]
+    pub struct CosmosRuntimeOptionsV2 {
+        pub struct_size_bytes: u32,
+        pub abi_version: u32,
+        pub workload_id: u8,
+        pub correlation_id: crate::string::CosmosStringView,
+        pub user_agent_suffix: crate::string::CosmosStringView,
+        pub wrapping_sdk_identifier: crate::string::CosmosStringView,
+        pub cpu_refresh_interval_ms: u64,
+        pub operation_options: *const crate::op_request::CosmosOperationOptions,
+        pub endpoint_unavailability_ttl: CosmosDuration,
+        pub max_throttle_retry_wait_time: CosmosDuration,
+        pub hedge_threshold: CosmosDuration,
         pub proxy_allowed: i8,
         pub is_http2_allowed: i8,
         pub gateway_v2_disabled: i8,
@@ -185,80 +236,9 @@ pub mod configuration {
         pub min_http2_connections_per_endpoint: CosmosOptionalU64,
         pub http2_consecutive_failure_threshold: CosmosOptionalU64,
         pub tcp_keepalive_retries: CosmosOptionalU64,
-    }
-    #[repr(C)]
-    pub struct CosmosDiagnosticsOptions {
-        pub struct_size_bytes: u32,
-        pub abi_version: u32,
-        pub default_verbosity: u32,
+        pub diagnostics_verbosity: u32,
         pub max_summary_size_bytes: CosmosOptionalU64,
         pub max_request_diagnostics: CosmosOptionalU64,
-    }
-    #[repr(C)]
-    pub struct CosmosDriverOptionsConfigV3 {
-        pub struct_size_bytes: u32,
-        pub abi_version: u32,
-        pub legacy: *const crate::driver_options::CosmosDriverOptionsConfigV2,
-        pub backup_endpoints: *const crate::string::CosmosStringView,
-        pub backup_endpoints_len: usize,
-        pub user_agent_suffix: crate::string::CosmosStringView,
-        pub partition_failover: *const CosmosPartitionFailoverOptions,
-        pub operation_options: *const CosmosOperationOptionsV2,
-    }
-    #[derive(Clone, Copy, Default)]
-    #[repr(C)]
-    pub struct CosmosDuration {
-        pub is_set: u8,
-        pub seconds: u64,
-        pub nanoseconds: u32,
-    }
-    #[repr(C)]
-    pub struct CosmosManagementOptions {
-        pub struct_size_bytes: u32,
-        pub abi_version: u32,
-        pub throughput_kind: u32,
-        pub manual_throughput: u64,
-        pub autoscale_max_throughput: u64,
-        pub has_auto_upgrade_policy: u8,
-        pub has_throughput_policy: u8,
-        pub increment_percent: u32,
-    }
-    #[repr(C)]
-    pub struct CosmosOperationOptionsV2 {
-        pub struct_size_bytes: u32,
-        pub abi_version: u32,
-        pub legacy: *const crate::op_request::CosmosOperationOptions,
-        pub endpoint_unavailability_ttl: CosmosDuration,
-        pub max_throttle_retry_wait_time: CosmosDuration,
-        pub hedge_threshold: CosmosDuration,
-    }
-    #[derive(Clone, Copy, Default)]
-    #[repr(C)]
-    pub struct CosmosOptionalU64 {
-        pub is_set: u8,
-        pub value: u64,
-    }
-    #[repr(C)]
-    pub struct CosmosPartitionFailoverOptions {
-        pub struct_size_bytes: u32,
-        pub abi_version: u32,
-        pub topology_cache_mode: u32,
-        pub circuit_breaker_enabled: i8,
-        pub read_failure_threshold: CosmosOptionalU64,
-        pub write_failure_threshold: CosmosOptionalU64,
-        pub consecutive_hedge_win_threshold: CosmosOptionalU64,
-        pub counter_reset_window: CosmosDuration,
-        pub partition_unavailability_duration: CosmosDuration,
-        pub failback_sweep_interval: CosmosDuration,
-    }
-    #[repr(C)]
-    pub struct CosmosRuntimeOptionsV2 {
-        pub struct_size_bytes: u32,
-        pub abi_version: u32,
-        pub legacy: *const crate::runtime_builder::CosmosRuntimeOptions,
-        pub connection_pool: *const CosmosConnectionPoolOptions,
-        pub diagnostics: *const CosmosDiagnosticsOptions,
-        pub operation_options: *const CosmosOperationOptionsV2,
     }
 }
 pub mod container_ref {
@@ -632,8 +612,6 @@ pub mod fault_injection {
 }
 pub mod feed_range {
     #[no_mangle]
-    pub extern "C" fn cosmos_feed_range_bounds(range: *const FeedRangeHandle, min: *mut *mut std::ffi::c_char, max: *mut *mut std::ffi::c_char) -> crate::error::CosmosStatusCode;
-    #[no_mangle]
     pub extern "C" fn cosmos_feed_range_for_partition_key(container: *const crate::container_ref::ContainerRefHandle, pk: *const crate::partition_key::PartitionKeyHandle, out_fr: *mut *mut FeedRangeHandle) -> crate::error::CosmosStatusCode;
     #[no_mangle]
     pub extern "C" fn cosmos_feed_range_free(fr: *mut FeedRangeHandle);
@@ -642,9 +620,7 @@ pub mod feed_range {
     #[no_mangle]
     pub extern "C" fn cosmos_feed_range_full(out_fr: *mut *mut FeedRangeHandle) -> crate::error::CosmosStatusCode;
     #[no_mangle]
-    pub extern "C" fn cosmos_feed_range_is_logical_partition(range: *const FeedRangeHandle, out: *mut u8) -> crate::error::CosmosStatusCode;
-    #[no_mangle]
-    pub extern "C" fn cosmos_feed_range_is_subset_of(range: *const FeedRangeHandle, other: *const FeedRangeHandle, out: *mut u8) -> crate::error::CosmosStatusCode;
+    pub extern "C" fn cosmos_feed_range_inspect(range: *const FeedRangeHandle, out: *mut CosmosFeedRangeInfo) -> crate::error::CosmosStatusCode;
     #[no_mangle]
     pub extern "C" fn cosmos_feed_range_list_free(list: *mut FeedRangeListHandle);
     #[no_mangle]
@@ -652,11 +628,24 @@ pub mod feed_range {
     #[no_mangle]
     pub extern "C" fn cosmos_feed_range_list_len(list: *const FeedRangeListHandle) -> usize;
     #[no_mangle]
-    pub extern "C" fn cosmos_feed_range_overlaps(range: *const FeedRangeHandle, other: *const FeedRangeHandle, out: *mut u8) -> crate::error::CosmosStatusCode;
-    #[no_mangle]
     pub extern "C" fn cosmos_feed_range_parse(serialized: crate::string::CosmosStringView, out: *mut *mut FeedRangeHandle) -> crate::error::CosmosStatusCode;
     #[no_mangle]
+    pub extern "C" fn cosmos_feed_range_relate(range: *const FeedRangeHandle, other: *const FeedRangeHandle, out: *mut CosmosFeedRangeRelation) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
     pub extern "C" fn cosmos_feed_range_serialize(range: *const FeedRangeHandle, out: *mut *mut std::ffi::c_char) -> crate::error::CosmosStatusCode;
+    #[derive(Default)]
+    #[repr(C)]
+    pub struct CosmosFeedRangeInfo {
+        pub min_inclusive: *mut std::ffi::c_char,
+        pub max_exclusive: *mut std::ffi::c_char,
+        pub is_logical_partition: u8,
+    }
+    #[derive(Default)]
+    #[repr(C)]
+    pub struct CosmosFeedRangeRelation {
+        pub is_subset: u8,
+        pub overlaps: u8,
+    }
     pub struct FeedRangeHandle {
     }
     pub struct FeedRangeListHandle {

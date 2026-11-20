@@ -4,9 +4,9 @@
 
 ### Features Added
 
-- Added native feed-range discovery, EPK construction, bounds inspection, comparisons, and bounds-only serialization with explicit list, handle, and string ownership.
+- Added native feed-range discovery, EPK construction, combined bounds/identity inspection, combined subset/overlap relations, and bounds-only serialization with explicit list, handle, and string ownership.
 - Added retained-feed options for exact buffered-window limits and distinct unset, server-decided, and full-width positive page hints without changing legacy layouts.
-- Added versioned runtime and client construction for transport, diagnostics retention, topology/failover, ordered backup endpoints, per-client identity, and nanosecond-precision operation-duration defaults.
+- Added flat versioned runtime and client construction, with one initializer per record, for transport, diagnostics retention, topology/failover, ordered backup endpoints, per-client identity, and nanosecond-precision operation-duration defaults.
 - Added versioned singleton submission with typed manual/autoscale creation throughput and complete auto-upgrade policies, preserving inherited custom headers and native header precedence.
 
 ### Breaking Changes

@@ -9,10 +9,11 @@ mod tests;
 use crate::{
     account_ref::AccountRefHandle,
     driver_options::{
-        cosmos_driver_options_build_v2, cosmos_driver_options_free, CosmosDriverOptionsConfigV2,
-        DriverOptionsHandle,
+        cosmos_driver_options_build_v2, cosmos_driver_options_config_v2_default,
+        cosmos_driver_options_free, DriverOptionsHandle,
     },
     error::{CosmosError, CosmosErrorCode, CosmosStatusCode, COSMOS_STATUS_SUCCESS},
+    fault_injection::CosmosFaultInjectionRule,
     op_request::{decode_tristate_bool, CosmosOperationOptions},
     runtime::RuntimeContext,
     runtime_builder::{finish_runtime_build, CosmosRuntimeOptions},
@@ -161,42 +162,22 @@ impl CosmosDuration {
     }
 }
 
-/// Exact-duration overrides for operation defaults at runtime or client construction.
-///
-/// NULL `legacy` preserves the enclosing runtime or client base. All nested inputs are copied.
-#[repr(C)]
-pub struct CosmosOperationOptionsV2 {
-    pub struct_size_bytes: u32,
-    pub abi_version: u32,
-    pub legacy: *const CosmosOperationOptions,
-    pub endpoint_unavailability_ttl: CosmosDuration,
-    pub max_throttle_retry_wait_time: CosmosDuration,
-    /// A positive threshold enables hedging; zero is rejected.
-    pub hedge_threshold: CosmosDuration,
-}
-
-pub(crate) unsafe fn operation_options(
-    input: *const CosmosOperationOptionsV2,
-    inherited: OperationOptions,
+fn operation_options(
+    mut options: OperationOptions,
+    endpoint_unavailability_ttl: CosmosDuration,
+    max_throttle_retry_wait_time: CosmosDuration,
+    hedge_threshold: CosmosDuration,
 ) -> Result<OperationOptions, CosmosStatusCode> {
-    // SAFETY: caller supplies readable versioned record and nested inputs.
-    let input = unsafe { record(input)? };
-    let mut options = if input.legacy.is_null() {
-        inherited
-    } else {
-        // SAFETY: legacy and nested borrowed arrays remain live for this call.
-        unsafe { (*input.legacy).to_driver() }.map_err(|e| e.as_status_code())?
-    };
-    if let Some(duration) = input.endpoint_unavailability_ttl.decode()? {
+    if let Some(duration) = endpoint_unavailability_ttl.decode()? {
         options.endpoint_unavailability_ttl = Some(duration);
     }
-    if let Some(duration) = input.max_throttle_retry_wait_time.decode()? {
+    if let Some(duration) = max_throttle_retry_wait_time.decode()? {
         options
             .throttling_retry_options
             .get_or_insert_default()
             .max_retry_wait_time = Some(duration);
     }
-    if let Some(duration) = input.hedge_threshold.decode()? {
+    if let Some(duration) = hedge_threshold.decode()? {
         let threshold = HedgeThreshold::new(duration).ok_or(INVALID.as_status_code())?;
         options.availability_strategy = Some(AvailabilityStrategy::Hedging(HedgingStrategy::new(
             threshold,
@@ -205,14 +186,28 @@ pub(crate) unsafe fn operation_options(
     Ok(options)
 }
 
-/// Typed connection-pool overrides. Unset fields preserve native environment/default resolution.
+/// Self-contained runtime construction options. Initialize with [`cosmos_runtime_options_v2_init()`].
 ///
 /// Boolean fields use 0 unset, 1 false, 2 true. Duration and numeric bounds are
-/// validated by the native pool builder; no host policy engine is required.
+/// validated by the native builders. All borrowed strings, arrays, and operation
+/// options are copied during construction. Unset fields retain native defaults.
 #[repr(C)]
-pub struct CosmosConnectionPoolOptions {
+pub struct CosmosRuntimeOptionsV2 {
     pub struct_size_bytes: u32,
     pub abi_version: u32,
+    /// 0 inherits; otherwise a workload identifier from 1 through 50.
+    pub workload_id: u8,
+    pub correlation_id: CosmosStringView,
+    pub user_agent_suffix: CosmosStringView,
+    pub wrapping_sdk_identifier: CosmosStringView,
+    /// 0 inherits; otherwise 1000 through 60000 milliseconds.
+    pub cpu_refresh_interval_ms: u64,
+    /// NULL inherits. Borrowed options and their inputs are copied during construction.
+    pub operation_options: *const CosmosOperationOptions,
+    pub endpoint_unavailability_ttl: CosmosDuration,
+    pub max_throttle_retry_wait_time: CosmosDuration,
+    /// A positive threshold enables hedging; explicit zero is rejected.
+    pub hedge_threshold: CosmosDuration,
     pub proxy_allowed: i8,
     pub is_http2_allowed: i8,
     pub gateway_v2_disabled: i8,
@@ -243,14 +238,20 @@ pub struct CosmosConnectionPoolOptions {
     pub min_http2_connections_per_endpoint: CosmosOptionalU64,
     pub http2_consecutive_failure_threshold: CosmosOptionalU64,
     pub tcp_keepalive_retries: CosmosOptionalU64,
+    /// 0 inherits; 1 selects summary; 2 selects detailed.
+    pub diagnostics_verbosity: u32,
+    pub max_summary_size_bytes: CosmosOptionalU64,
+    pub max_request_diagnostics: CosmosOptionalU64,
 }
 
-impl CosmosConnectionPoolOptions {
-    unsafe fn build(&self) -> Result<ConnectionPoolOptions, CosmosStatusCode> {
+impl CosmosRuntimeOptionsV2 {
+    unsafe fn connection_pool(&self) -> Result<Option<ConnectionPoolOptions>, CosmosStatusCode> {
         let mut builder = ConnectionPoolOptions::builder();
+        let mut configured = false;
         macro_rules! apply {
             ($decode:ident; $($field:ident => $setter:ident),+ $(,)?) => {$(
                 if let Some(value) = self.$field.$decode()? {
+                    configured = true;
                     builder = builder.$setter(value);
                 }
             )+};
@@ -281,18 +282,22 @@ impl CosmosConnectionPoolOptions {
         if let Some(value) =
             decode_tristate_bool(self.proxy_allowed).map_err(|e| e.as_status_code())?
         {
+            configured = true;
             builder = builder.with_proxy_allowed(value);
         }
         if let Some(value) =
             decode_tristate_bool(self.is_http2_allowed).map_err(|e| e.as_status_code())?
         {
+            configured = true;
             builder = builder.with_is_http2_allowed(value);
         }
         if let Some(value) =
             decode_tristate_bool(self.gateway_v2_disabled).map_err(|e| e.as_status_code())?
         {
+            configured = true;
             builder = builder.with_gateway_v2_disabled(value);
         }
+        configured |= self.server_certificate_validation != 0 || self.tls_backend != 0;
         builder = match self.server_certificate_validation {
             0 => builder,
             1 => builder.with_server_certificate_validation(ServerCertificateValidation::Required),
@@ -310,42 +315,43 @@ impl CosmosConnectionPoolOptions {
         if let Some(address) =
             unsafe { optional_text(self.local_address, INVALID) }.map_err(|e| e.as_status_code())?
         {
+            configured = true;
             builder =
                 builder.with_local_address(address.parse().map_err(|_| INVALID.as_status_code())?);
         }
-        builder
-            .build()
-            .map_err(|e| CosmosStatusCode::from_driver_error(&e))
+        if configured {
+            builder
+                .build()
+                .map(Some)
+                .map_err(|e| CosmosStatusCode::from_driver_error(&e))
+        } else {
+            Ok(None)
+        }
     }
 }
 
-/// Runtime diagnostics defaults and retention limits, applied at construction only.
+/// Self-contained client configuration. Initialize with [`cosmos_driver_options_config_v3_init()`].
+///
+/// Construction copies all strings, arrays, rules, and operation options. Unset
+/// fields retain native defaults; no runtime or sibling client is mutated.
 #[repr(C)]
-pub struct CosmosDiagnosticsOptions {
+pub struct CosmosDriverOptionsConfigV3 {
     pub struct_size_bytes: u32,
     pub abi_version: u32,
-    /// 0 inherits; 1 selects summary; 2 selects detailed.
-    pub default_verbosity: u32,
-    pub max_summary_size_bytes: CosmosOptionalU64,
-    pub max_request_diagnostics: CosmosOptionalU64,
-}
-
-/// Additive runtime construction. NULL nested records inherit defaults.
-#[repr(C)]
-pub struct CosmosRuntimeOptionsV2 {
-    pub struct_size_bytes: u32,
-    pub abi_version: u32,
-    pub legacy: *const CosmosRuntimeOptions,
-    pub connection_pool: *const CosmosConnectionPoolOptions,
-    pub diagnostics: *const CosmosDiagnosticsOptions,
-    pub operation_options: *const CosmosOperationOptionsV2,
-}
-
-/// Client-scoped topology and partition-failover overrides.
-#[repr(C)]
-pub struct CosmosPartitionFailoverOptions {
-    pub struct_size_bytes: u32,
-    pub abi_version: u32,
+    pub preferred_regions: *const CosmosStringView,
+    pub preferred_regions_len: usize,
+    /// NULL inherits. Borrowed options and their inputs are copied during construction.
+    pub operation_options: *const CosmosOperationOptions,
+    pub fault_injection_rules: *const CosmosFaultInjectionRule,
+    pub fault_injection_rules_len: usize,
+    pub fault_injection_rule_stride: usize,
+    /// 0 inherits, 1 disables validation, 2 enables validation.
+    pub resource_name_validation_enabled: i8,
+    /// NULL/0 inherits the account's backup endpoints; non-NULL/0 explicitly clears them.
+    pub backup_endpoints: *const CosmosStringView,
+    pub backup_endpoints_len: usize,
+    /// NULL/0 inherits runtime identity; explicit empty is validated by UserAgentSuffix.
+    pub user_agent_suffix: CosmosStringView,
     /// 0 inherits; 1 eager; 2 lazy.
     pub topology_cache_mode: u32,
     /// 0 inherits, 1 disables, 2 enables; native environment kill switches retain precedence.
@@ -356,22 +362,10 @@ pub struct CosmosPartitionFailoverOptions {
     pub counter_reset_window: CosmosDuration,
     pub partition_unavailability_duration: CosmosDuration,
     pub failback_sweep_interval: CosmosDuration,
-}
-
-/// Additive client construction, copying all nested records, strings, and ordered endpoints.
-#[repr(C)]
-pub struct CosmosDriverOptionsConfigV3 {
-    pub struct_size_bytes: u32,
-    pub abi_version: u32,
-    /// Required v2 base, preserving fault-injection and existing option behavior.
-    pub legacy: *const CosmosDriverOptionsConfigV2,
-    /// NULL/0 inherits the account's backup endpoints; non-NULL/0 explicitly clears them.
-    pub backup_endpoints: *const CosmosStringView,
-    pub backup_endpoints_len: usize,
-    /// NULL/0 inherits runtime identity; explicit empty is validated by UserAgentSuffix.
-    pub user_agent_suffix: CosmosStringView,
-    pub partition_failover: *const CosmosPartitionFailoverOptions,
-    pub operation_options: *const CosmosOperationOptionsV2,
+    pub endpoint_unavailability_ttl: CosmosDuration,
+    pub max_throttle_retry_wait_time: CosmosDuration,
+    /// A positive threshold enables hedging; explicit zero is rejected.
+    pub hedge_threshold: CosmosDuration,
 }
 
 unsafe fn record<'a, T>(input: *const T) -> Result<&'a T, CosmosStatusCode> {
@@ -417,94 +411,73 @@ pub extern "C" fn cosmos_runtime_options_v2_init(out: *mut CosmosRuntimeOptionsV
     unsafe { initialize(out) };
 }
 
-/// Initializes transport configuration to inherited defaults.
-#[no_mangle]
-pub extern "C" fn cosmos_connection_pool_options_init(out: *mut CosmosConnectionPoolOptions) {
-    // SAFETY: caller provides full writable storage for this zero-valid record.
-    unsafe { initialize(out) };
-}
-
-/// Initializes diagnostics configuration to inherited defaults.
-#[no_mangle]
-pub extern "C" fn cosmos_diagnostics_options_init(out: *mut CosmosDiagnosticsOptions) {
-    // SAFETY: caller provides full writable storage for this zero-valid record.
-    unsafe { initialize(out) };
-}
-
-/// Initializes partition-failover configuration to inherited defaults.
-#[no_mangle]
-pub extern "C" fn cosmos_partition_failover_options_init(out: *mut CosmosPartitionFailoverOptions) {
-    // SAFETY: caller provides full writable storage for this zero-valid record.
-    unsafe { initialize(out) };
-}
-
 /// Initializes client construction options to inherited defaults.
 #[no_mangle]
 pub extern "C" fn cosmos_driver_options_config_v3_init(out: *mut CosmosDriverOptionsConfigV3) {
     // SAFETY: caller provides full writable storage for this zero-valid record.
-    unsafe { initialize(out) };
-}
-
-/// Initializes exact-duration operation defaults to inherited settings.
-#[no_mangle]
-pub extern "C" fn cosmos_operation_options_v2_init(out: *mut CosmosOperationOptionsV2) {
-    // SAFETY: caller provides full writable storage for this zero-valid record.
-    unsafe { initialize(out) };
+    unsafe {
+        initialize(out);
+        if let Some(out) = out.as_mut() {
+            out.fault_injection_rule_stride = size_of::<CosmosFaultInjectionRule>();
+        }
+    }
 }
 
 unsafe fn runtime_builder(
     input: *const CosmosRuntimeOptionsV2,
 ) -> Result<CosmosDriverRuntimeBuilder, CosmosStatusCode> {
-    // SAFETY: input and all nested records are readable until return.
+    // SAFETY: input and its borrowed payloads are readable until return.
     let input = unsafe { record(input)? };
-    let mut builder = CosmosDriverRuntimeBuilder::new();
-    if !input.legacy.is_null() {
-        // SAFETY: legacy runtime options and their inputs remain live.
-        builder = unsafe { (*input.legacy).apply_to(builder) }.map_err(|e| e.as_status_code())?;
+    let legacy = CosmosRuntimeOptions {
+        workload_id: input.workload_id,
+        correlation_id: input.correlation_id,
+        user_agent_suffix: input.user_agent_suffix,
+        wrapping_sdk_identifier: input.wrapping_sdk_identifier,
+        cpu_refresh_interval_ms: input.cpu_refresh_interval_ms,
+        operation_options: std::ptr::null(),
+    };
+    // SAFETY: the input string views remain readable throughout construction.
+    let mut builder = unsafe { legacy.apply_to(CosmosDriverRuntimeBuilder::new()) }
+        .map_err(|e| e.as_status_code())?;
+    let mut diagnostics = DiagnosticsOptions::builder();
+    let mut configured = input.diagnostics_verbosity != 0;
+    diagnostics = match input.diagnostics_verbosity {
+        0 => diagnostics,
+        1 => diagnostics.with_default_verbosity(DiagnosticsVerbosity::Summary),
+        2 => diagnostics.with_default_verbosity(DiagnosticsVerbosity::Detailed),
+        _ => return Err(INVALID.as_status_code()),
+    };
+    if let Some(value) = input.max_summary_size_bytes.decode()? {
+        configured = true;
+        diagnostics = diagnostics.with_max_summary_size_bytes(value);
     }
-    if !input.connection_pool.is_null() {
-        // SAFETY: caller guarantees the nested record's allocation.
-        builder = builder.with_connection_pool(unsafe { record(input.connection_pool)?.build()? });
+    if let Some(value) = input.max_request_diagnostics.decode()? {
+        configured = true;
+        diagnostics = diagnostics.with_max_request_diagnostics(value);
     }
-    if !input.diagnostics.is_null() {
-        // SAFETY: caller guarantees the nested record's allocation.
-        let diagnostics = unsafe { record(input.diagnostics)? };
-        let mut options = DiagnosticsOptions::builder();
-        options = match diagnostics.default_verbosity {
-            0 => options,
-            1 => options.with_default_verbosity(DiagnosticsVerbosity::Summary),
-            2 => options.with_default_verbosity(DiagnosticsVerbosity::Detailed),
-            _ => return Err(INVALID.as_status_code()),
-        };
-        if let Some(value) = diagnostics.max_summary_size_bytes.decode()? {
-            options = options.with_max_summary_size_bytes(value);
-        }
-        if let Some(value) = diagnostics.max_request_diagnostics.decode()? {
-            options = options.with_max_request_diagnostics(value);
-        }
+    if configured {
         builder = builder.with_diagnostics_options(
-            options
+            diagnostics
                 .build()
                 .map_err(|e| CosmosStatusCode::from_driver_error(&e))?,
         );
     }
-    if !input.operation_options.is_null() {
-        let mut inherited = OperationOptions::default();
-        if !input.legacy.is_null() {
-            // SAFETY: the legacy base and nested options remain readable.
-            let legacy = unsafe { &*input.legacy };
-            if !legacy.operation_options.is_null() {
-                // SAFETY: the legacy operation record is readable until return.
-                inherited = unsafe { (*legacy.operation_options).to_driver() }
-                    .map_err(|e| e.as_status_code())?;
-            }
-        }
-        // SAFETY: caller guarantees nested operation inputs.
-        builder = builder.with_default_operation_options(unsafe {
-            operation_options(input.operation_options, inherited)?
-        });
+    // SAFETY: the input's optional local-address view remains readable.
+    if let Some(pool) = unsafe { input.connection_pool()? } {
+        builder = builder.with_connection_pool(pool);
     }
-    Ok(builder)
+    let operation = if input.operation_options.is_null() {
+        OperationOptions::default()
+    } else {
+        // SAFETY: the operation record and its borrowed payloads remain readable.
+        unsafe { (*input.operation_options).to_driver() }.map_err(|e| e.as_status_code())?
+    };
+    Ok(builder.with_default_operation_options(operation_options(
+        operation,
+        input.endpoint_unavailability_ttl,
+        input.max_throttle_retry_wait_time,
+        input.hedge_threshold,
+    )?))
 }
 
 /// Builds a runtime with typed transport, diagnostics, and precision-preserving defaults.
@@ -546,10 +519,20 @@ pub extern "C" fn cosmos_driver_options_build_v3(
     // SAFETY: caller supplies a writable output slot.
     unsafe { *out = std::ptr::null_mut() };
     let build = || {
-        // SAFETY: caller supplies readable versioned and nested records.
+        // SAFETY: caller supplies a readable versioned record and borrowed payloads.
         let input = unsafe { record(input)? };
+        let legacy = crate::driver_options::CosmosDriverOptionsConfigV2 {
+            preferred_regions: input.preferred_regions,
+            preferred_regions_len: input.preferred_regions_len,
+            operation_options: input.operation_options,
+            fault_injection_rules: input.fault_injection_rules,
+            fault_injection_rules_len: input.fault_injection_rules_len,
+            fault_injection_rule_stride: input.fault_injection_rule_stride,
+            resource_name_validation_enabled: input.resource_name_validation_enabled,
+            ..cosmos_driver_options_config_v2_default()
+        };
         let mut base = std::ptr::null_mut();
-        let status = cosmos_driver_options_build_v2(account, input.legacy, &mut base);
+        let status = cosmos_driver_options_build_v2(account, &legacy, &mut base);
         if status != COSMOS_STATUS_SUCCESS {
             return Err(status);
         }
@@ -593,19 +576,17 @@ pub extern "C" fn cosmos_driver_options_build_v3(
                 UserAgentSuffix::try_new(suffix).ok_or(INVALID.as_status_code())?,
             );
         }
-        if !input.operation_options.is_null() {
-            // SAFETY: nested inputs remain live until return.
-            builder = builder.with_operation_options(unsafe {
-                operation_options(
-                    input.operation_options,
-                    (**base.operation_options()).clone(),
-                )?
-            });
-        }
-        if !input.partition_failover.is_null() {
-            // SAFETY: nested record and prefix remain readable until return.
-            let config = unsafe { record(input.partition_failover)? };
+        builder = builder.with_operation_options(operation_options(
+            (**base.operation_options()).clone(),
+            input.endpoint_unavailability_ttl,
+            input.max_throttle_retry_wait_time,
+            input.hedge_threshold,
+        )?);
+        {
+            let config = input;
             let mut options = PartitionFailoverOptions::builder();
+            let mut configured =
+                config.topology_cache_mode != 0 || config.circuit_breaker_enabled != 0;
             options = match config.topology_cache_mode {
                 0 => options,
                 1 => options.with_partition_topology_cache_mode(PartitionTopologyCacheMode::Eager),
@@ -619,7 +600,10 @@ pub extern "C" fn cosmos_driver_options_build_v3(
             }
             macro_rules! apply {
                 ($($field:ident => $setter:ident),+ $(,)?) => {$(
-                    if let Some(value) = config.$field.decode()? { options = options.$setter(value); }
+                    if let Some(value) = config.$field.decode()? {
+                        configured = true;
+                        options = options.$setter(value);
+                    }
                 )+};
             }
             apply!(
@@ -630,11 +614,13 @@ pub extern "C" fn cosmos_driver_options_build_v3(
                 partition_unavailability_duration => with_partition_unavailability_duration,
                 failback_sweep_interval => with_failback_sweep_interval,
             );
-            builder = builder.with_partition_failover_options(
-                options
-                    .build()
-                    .map_err(|e| CosmosStatusCode::from_driver_error(&e))?,
-            );
+            if configured {
+                builder = builder.with_partition_failover_options(
+                    options
+                        .build()
+                        .map_err(|e| CosmosStatusCode::from_driver_error(&e))?,
+                );
+            }
         }
         Ok(builder.build())
     };

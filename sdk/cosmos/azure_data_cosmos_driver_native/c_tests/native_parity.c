@@ -148,28 +148,29 @@ cleanup:
 static int test_range_ownership(void) {
     int result = TEST_PASS;
     cosmos_feed_range_t *range = NULL, *parsed = NULL, *full = NULL;
-    char *text = NULL, *min = NULL, *max = NULL;
-    uint8_t comparison = 0;
+    char *text = NULL;
+    cosmos_feed_range_info_t info = {0};
+    cosmos_feed_range_relation_t relation = {0};
     REQUIRE(!cosmos_feed_range_from_epk(SV("10"), SV("80"), &range), "construct EPK range");
-    REQUIRE(!cosmos_feed_range_bounds(range, &min, &max), "copy bounds");
+    REQUIRE(!cosmos_feed_range_inspect(range, &info), "inspect range");
     REQUIRE(!cosmos_feed_range_serialize(range, &text), "serialize range");
     cosmos_feed_range_free(range);
     range = NULL;
-    ASSERT(!strcmp(min, "10") && !strcmp(max, "80"), "bounds outlive source handle");
+    ASSERT(!strcmp(info.min_inclusive, "10") && !strcmp(info.max_exclusive, "80"),
+        "bounds outlive source handle");
+    ASSERT(info.is_logical_partition == 0, "EPK range has no logical identity");
     REQUIRE(!cosmos_feed_range_parse(string_view(text), &parsed), "parse owned text");
     cosmos_string_free(text);
     text = NULL;
     REQUIRE(!cosmos_feed_range_full(&full), "full range");
-    REQUIRE(!cosmos_feed_range_is_subset_of(parsed, full, &comparison), "compare independent handles");
-    ASSERT(comparison == 1, "parsed range remains a subset");
-    REQUIRE(!cosmos_feed_range_is_logical_partition(parsed, &comparison), "inspect parsed semantics");
-    ASSERT(comparison == 0, "parsed range has EPK semantics");
+    REQUIRE(!cosmos_feed_range_relate(parsed, full, &relation), "compare independent handles");
+    ASSERT(relation.is_subset == 1 && relation.overlaps == 1, "combined relation returns both results");
     ASSERT(cosmos_feed_range_from_epk(SV("80"), SV("10"), &range) != 0 && !range,
         "inverted range rejects without creating a handle");
 cleanup:
     cosmos_string_free(text);
-    cosmos_string_free(min);
-    cosmos_string_free(max);
+    cosmos_string_free(info.min_inclusive);
+    cosmos_string_free(info.max_exclusive);
     cosmos_feed_range_free(range);
     cosmos_feed_range_free(parsed);
     cosmos_feed_range_free(full);
@@ -256,26 +257,53 @@ static int test_versioned_runtime_validation(void) {
     cosmos_runtime_t *runtime = NULL;
     cosmos_runtime_options_v2_t options;
     cosmos_runtime_options_v2_init(&options);
-    cosmos_connection_pool_options_t pool;
-    cosmos_connection_pool_options_init(&pool);
-    cosmos_operation_options_v2_t operation;
-    cosmos_operation_options_v2_init(&operation);
-    options.connection_pool = &pool;
-    options.operation_options = &operation;
-    operation.hedge_threshold.is_set = 1;
-    operation.hedge_threshold.nanoseconds = 1;
+    options.hedge_threshold.is_set = 1;
+    options.hedge_threshold.nanoseconds = 1;
     REQUIRE(!cosmos_runtime_build_v2(&options, &runtime, NULL), "build exact nanosecond defaults");
     cosmos_runtime_free(runtime);
     runtime = NULL;
-    pool.proxy_allowed = 9;
+    options.proxy_allowed = 9;
     ASSERT(cosmos_runtime_build_v2(&options, &runtime, NULL) != 0 && !runtime,
         "malformed tri-state rejects without runtime");
-    pool.proxy_allowed = 0;
-    operation.hedge_threshold.nanoseconds = 1000000000;
+    options.proxy_allowed = 0;
+    options.hedge_threshold.nanoseconds = 1000000000;
     ASSERT(cosmos_runtime_build_v2(&options, &runtime, NULL) != 0 && !runtime,
         "unnormalized duration rejects");
 cleanup:
     cosmos_runtime_free(runtime);
+    return result;
+}
+
+static int test_flat_client_validation(void) {
+    int result = TEST_PASS;
+    cosmos_account_ref_t *account = NULL;
+    cosmos_driver_options_t *built = NULL;
+    REQUIRE(!cosmos_account_ref_with_master_key(SV("https://primary.invalid"),
+        SV("ZW11bGF0b3Ita2V5"), &account, NULL), "create client account");
+    cosmos_driver_options_config_v3_t options;
+    cosmos_driver_options_config_v3_init(&options);
+    cosmos_string_view_t regions[] = {SV("East US")};
+    options.preferred_regions = regions;
+    options.preferred_regions_len = 1;
+    options.resource_name_validation_enabled = 1;
+    options.topology_cache_mode = 2;
+    options.hedge_threshold.is_set = 1;
+    options.hedge_threshold.nanoseconds = 1;
+    REQUIRE(!cosmos_driver_options_build_v3(account, &options, &built),
+        "one initializer configures flat client regions, topology, and exact defaults");
+    cosmos_driver_options_free(built);
+    built = NULL;
+    cosmos_driver_options_config_v3_init(&options);
+    options.read_failure_threshold.value = 2;
+    ASSERT(cosmos_driver_options_build_v3(account, &options, &built) != 0 && !built,
+        "unset inline field rejects nonzero payload");
+    cosmos_driver_options_config_v3_init(&options);
+    options.abi_version = 99;
+    ASSERT(cosmos_driver_options_build_v3(account, &options, &built) != 0 && !built,
+        "unknown client version rejects");
+cleanup:
+    cosmos_driver_options_free(built);
+    cosmos_account_ref_free(account);
     return result;
 }
 
@@ -284,4 +312,5 @@ TEST_SUITE_BEGIN("native_parity")
     TEST_REGISTER(range_ownership)
     TEST_REGISTER(discovery_and_additive_cursor)
     TEST_REGISTER(versioned_runtime_validation)
+    TEST_REGISTER(flat_client_validation)
 TEST_SUITE_END("native_parity")

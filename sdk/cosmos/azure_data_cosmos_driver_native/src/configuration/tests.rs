@@ -2,24 +2,21 @@
 // Licensed under the MIT License.
 
 use super::{
-    cosmos_connection_pool_options_init, cosmos_diagnostics_options_init,
     cosmos_driver_options_build_v3, cosmos_driver_options_config_v3_init,
-    cosmos_management_options_init, cosmos_operation_options_v2_init,
-    cosmos_partition_failover_options_init, cosmos_runtime_build_v2,
-    cosmos_runtime_options_v2_init, management_headers, runtime_builder,
-    CosmosConnectionPoolOptions, CosmosDiagnosticsOptions, CosmosDriverOptionsConfigV3,
-    CosmosDuration, CosmosManagementOptions, CosmosOperationOptionsV2, CosmosOptionalU64,
-    CosmosPartitionFailoverOptions, CosmosRuntimeOptionsV2, INVALID,
+    cosmos_management_options_init, cosmos_runtime_build_v2, cosmos_runtime_options_v2_init,
+    management_headers, runtime_builder, CosmosDriverOptionsConfigV3, CosmosDuration,
+    CosmosManagementOptions, CosmosOptionalU64, CosmosRuntimeOptionsV2, INVALID,
 };
 use crate::{
     account_ref::{cosmos_account_ref_free, cosmos_account_ref_with_master_key},
-    driver_options::{
-        cosmos_driver_options_config_v2_default, cosmos_driver_options_free, DriverOptionsHandle,
-    },
+    driver_options::{cosmos_driver_options_free, DriverOptionsHandle},
     error::COSMOS_STATUS_SUCCESS,
+    fault_injection::{
+        cosmos_fault_injection_condition_default, cosmos_fault_injection_result_default,
+        cosmos_fault_injection_rule_default,
+    },
     op_request::cosmos_operation_options_default,
     runtime::{cosmos_runtime_free, RuntimeContext},
-    runtime_builder::cosmos_runtime_options_default,
     string::view,
 };
 use async_trait::async_trait;
@@ -192,24 +189,26 @@ fn exact_durations_reject_invalid_payload_and_clock_overflow() {
 
 #[test]
 fn runtime_construction_reaches_pool_diagnostics_and_exact_defaults() {
-    let mut pool: CosmosConnectionPoolOptions = initialized(cosmos_connection_pool_options_init);
-    pool.max_connect_timeout = duration(4, 17);
-    pool.max_http2_streams_per_client = integer(17);
-    pool.proxy_allowed = 1;
-    pool.gateway_v2_disabled = 2;
-    pool.local_address = view(b"127.0.0.2");
-    let mut diagnostics: CosmosDiagnosticsOptions = initialized(cosmos_diagnostics_options_init);
-    diagnostics.default_verbosity = 2;
-    diagnostics.max_request_diagnostics = integer(16);
-    diagnostics.max_summary_size_bytes = integer(4096);
-    let mut operation: CosmosOperationOptionsV2 = initialized(cosmos_operation_options_v2_init);
-    operation.endpoint_unavailability_ttl = duration(0, 17);
-    operation.max_throttle_retry_wait_time = duration(0, 23);
-    operation.hedge_threshold = duration(0, 31);
+    let mut operation = cosmos_operation_options_default();
+    operation.max_failover_retry_count = 7;
     let mut options: CosmosRuntimeOptionsV2 = initialized(cosmos_runtime_options_v2_init);
-    options.connection_pool = &pool;
-    options.diagnostics = &diagnostics;
+    options.workload_id = 7;
+    options.correlation_id = view(b"native-flat");
+    options.user_agent_suffix = view(b"native-flat");
+    options.wrapping_sdk_identifier = view(b"native-flat-wrapper");
+    options.cpu_refresh_interval_ms = 5_000;
     options.operation_options = &operation;
+    options.max_connect_timeout = duration(4, 17);
+    options.max_http2_streams_per_client = integer(17);
+    options.proxy_allowed = 1;
+    options.gateway_v2_disabled = 2;
+    options.local_address = view(b"127.0.0.2");
+    options.diagnostics_verbosity = 2;
+    options.max_request_diagnostics = integer(16);
+    options.max_summary_size_bytes = integer(4096);
+    options.endpoint_unavailability_ttl = duration(0, 17);
+    options.max_throttle_retry_wait_time = duration(0, 23);
+    options.hedge_threshold = duration(0, 31);
     let mut runtime = ptr::null_mut();
     assert_eq!(
         cosmos_runtime_build_v2(&options, &mut runtime, ptr::null_mut()),
@@ -218,6 +217,13 @@ fn runtime_construction_reaches_pool_diagnostics_and_exact_defaults() {
     let runtime_owned = RuntimeContext::inner_arc(runtime).unwrap();
     cosmos_runtime_free(runtime);
     let runtime = &runtime_owned.driver;
+    assert!(runtime.workload_id().is_some());
+    assert!(runtime.correlation_id().is_some());
+    assert!(runtime
+        .user_agent()
+        .as_str()
+        .contains("native-flat-wrapper"));
+    assert!(runtime.user_agent().as_str().ends_with(" native-flat"));
     assert_eq!(
         runtime.connection_pool().max_connect_timeout(),
         Duration::new(4, 17)
@@ -238,6 +244,7 @@ fn runtime_construction_reaches_pool_diagnostics_and_exact_defaults() {
     );
     assert_eq!(runtime.diagnostics_options().max_request_diagnostics(), 16);
     let defaults = runtime.default_operation_options();
+    assert_eq!(defaults.max_failover_retry_count, Some(7));
     assert_eq!(
         defaults.endpoint_unavailability_ttl,
         Some(Duration::from_nanos(17))
@@ -257,25 +264,23 @@ fn runtime_construction_reaches_pool_diagnostics_and_exact_defaults() {
 
 #[test]
 fn runtime_rejects_invalid_enums_and_native_bounds() {
-    let mut pool: CosmosConnectionPoolOptions = initialized(cosmos_connection_pool_options_init);
     let mut options: CosmosRuntimeOptionsV2 = initialized(cosmos_runtime_options_v2_init);
     for field in [0, 1, 2, 3] {
         match field {
-            0 => pool.proxy_allowed = 3,
+            0 => options.proxy_allowed = 3,
             1 => {
-                pool.proxy_allowed = 0;
-                pool.tls_backend = 99;
+                options.proxy_allowed = 0;
+                options.tls_backend = 99;
             }
             2 => {
-                pool.tls_backend = 0;
-                pool.max_http2_streams_per_client = integer(u64::MAX);
+                options.tls_backend = 0;
+                options.max_http2_streams_per_client = integer(u64::MAX);
             }
             _ => {
-                pool.max_http2_streams_per_client = CosmosOptionalU64::default();
-                pool.max_connect_timeout = duration(0, 1);
+                options.max_http2_streams_per_client = CosmosOptionalU64::default();
+                options.max_connect_timeout = duration(0, 1);
             }
         }
-        options.connection_pool = &pool;
         let mut runtime = ptr::null_mut();
         assert_ne!(
             cosmos_runtime_build_v2(&options, &mut runtime, ptr::null_mut()),
@@ -297,15 +302,10 @@ fn client_configuration_copies_backups_preserves_identity_and_uses_native_topolo
         ),
         COSMOS_STATUS_SUCCESS
     );
-    let base = cosmos_driver_options_config_v2_default();
-    let mut topology: CosmosPartitionFailoverOptions =
-        initialized(cosmos_partition_failover_options_init);
-    topology.topology_cache_mode = 2;
-    topology.read_failure_threshold = integer(2);
-    topology.circuit_breaker_enabled = 1;
     let mut config: CosmosDriverOptionsConfigV3 = initialized(cosmos_driver_options_config_v3_init);
-    config.legacy = &base;
-    config.partition_failover = &topology;
+    config.topology_cache_mode = 2;
+    config.read_failure_threshold = integer(2);
+    config.circuit_breaker_enabled = 1;
     let mut overrides = Vec::new();
     for suffix in [Some("client-a"), Some("client-b"), None] {
         let endpoint_text = [
@@ -341,13 +341,9 @@ fn client_exact_overrides_preserve_legacy_defaults_and_allow_explicit_backup_cle
     let mut operation = cosmos_operation_options_default();
     operation.max_failover_retry_count = 7;
     operation.max_throttle_retry_count = 19;
-    let mut legacy = cosmos_driver_options_config_v2_default();
-    legacy.operation_options = &operation;
-    let mut exact: CosmosOperationOptionsV2 = initialized(cosmos_operation_options_v2_init);
-    exact.hedge_threshold = duration(0, 1);
     let mut input: CosmosDriverOptionsConfigV3 = initialized(cosmos_driver_options_config_v3_init);
-    input.legacy = &legacy;
-    input.operation_options = &exact;
+    input.operation_options = &operation;
+    input.hedge_threshold = duration(0, 1);
     let empty = [view(b"unused")];
     for clear in [false, true] {
         input.backup_endpoints = if clear { empty.as_ptr() } else { ptr::null() };
@@ -381,6 +377,99 @@ fn client_exact_overrides_preserve_legacy_defaults_and_allow_explicit_backup_cle
             Some(AvailabilityStrategy::Hedging(strategy)) if strategy.threshold().get() == Duration::from_nanos(1))
         );
     }
+    cosmos_account_ref_free(account);
+}
+
+#[test]
+fn flat_client_copies_regions_rules_and_operation_defaults() {
+    let account = Box::into_raw(Box::new(crate::account_ref::AccountRefHandle {
+        inner: azure_data_cosmos_driver::models::AccountReference::with_account_key(
+            "https://primary.invalid".parse().unwrap(),
+            "ZW11bGF0b3Ita2V5",
+        ),
+    }));
+    let copied = {
+        let region = String::from("East US");
+        let regions = [view(region.as_bytes())];
+        let id = String::from("flat-client-rule");
+        let condition = cosmos_fault_injection_condition_default();
+        let mut result = cosmos_fault_injection_result_default();
+        result.custom_status_code = 429;
+        let mut rule = cosmos_fault_injection_rule_default();
+        rule.id = view(id.as_bytes());
+        rule.condition = &condition;
+        rule.result = &result;
+        let mut operation = cosmos_operation_options_default();
+        operation.max_failover_retry_count = 7;
+        let mut input: CosmosDriverOptionsConfigV3 =
+            initialized(cosmos_driver_options_config_v3_init);
+        input.preferred_regions = regions.as_ptr();
+        input.preferred_regions_len = regions.len();
+        input.operation_options = &operation;
+        input.fault_injection_rules = &rule;
+        input.fault_injection_rules_len = 1;
+        input.resource_name_validation_enabled = 1;
+        let mut handle = ptr::null_mut();
+        assert_eq!(
+            cosmos_driver_options_build_v3(account, &input, &mut handle),
+            COSMOS_STATUS_SUCCESS
+        );
+        let copied = DriverOptionsHandle::inner_arc(handle).unwrap();
+        cosmos_driver_options_free(handle);
+        copied
+    };
+    cosmos_account_ref_free(account);
+    assert_eq!(copied.inner.preferred_regions()[0].as_str(), "eastus");
+    assert_eq!(
+        copied.inner.fault_injection_rules().unwrap()[0].id(),
+        "flat-client-rule"
+    );
+    assert_eq!(
+        copied.inner.operation_options().max_failover_retry_count,
+        Some(7)
+    );
+    assert!(!copied.inner.resource_name_validation_enabled());
+}
+
+#[test]
+fn unset_client_topology_preserves_native_environment_fallback() {
+    const CHILD: &str = "COSMOS_NATIVE_TEST_INVALID_TOPOLOGY_ENV";
+    if std::env::var_os(CHILD).is_none() {
+        let output = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "configuration::tests::unset_client_topology_preserves_native_environment_fallback",
+            ])
+            .env(CHILD, "1")
+            .env("AZURE_COSMOS_PPCB_READ_FAILURE_THRESHOLD", "0")
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stdout)
+        );
+        return;
+    }
+    let account = Box::into_raw(Box::new(crate::account_ref::AccountRefHandle {
+        inner: azure_data_cosmos_driver::models::AccountReference::with_account_key(
+            "https://primary.invalid".parse().unwrap(),
+            "ZW11bGF0b3Ita2V5",
+        ),
+    }));
+    let mut input: CosmosDriverOptionsConfigV3 = initialized(cosmos_driver_options_config_v3_init);
+    let mut handle = ptr::null_mut();
+    assert_eq!(
+        cosmos_driver_options_build_v3(account, &input, &mut handle),
+        COSMOS_STATUS_SUCCESS
+    );
+    cosmos_driver_options_free(handle);
+    input.topology_cache_mode = 2;
+    assert_ne!(
+        cosmos_driver_options_build_v3(account, &input, &mut handle),
+        COSMOS_STATUS_SUCCESS
+    );
+    assert!(handle.is_null());
     cosmos_account_ref_free(account);
 }
 
@@ -463,27 +552,19 @@ impl TransportClient for ConsumerTransport {
 
 #[tokio::test]
 async fn configured_consumers_bootstrap_in_order_load_lazy_and_retain_diagnostics() {
-    let mut pool: CosmosConnectionPoolOptions = initialized(cosmos_connection_pool_options_init);
-    pool.is_http2_allowed = 1;
-    pool.max_connect_timeout = duration(4, 17);
-    let mut diagnostics: CosmosDiagnosticsOptions = initialized(cosmos_diagnostics_options_init);
-    diagnostics.default_verbosity = 2;
-    diagnostics.max_request_diagnostics = integer(16);
     let mut legacy_operation = cosmos_operation_options_default();
     legacy_operation.binary_encoding_enabled = 1;
     legacy_operation.max_throttle_retry_count = 30;
-    let mut legacy_runtime = cosmos_runtime_options_default();
-    legacy_runtime.operation_options = &legacy_operation;
-    let mut exact: CosmosOperationOptionsV2 = initialized(cosmos_operation_options_v2_init);
-    exact.max_throttle_retry_wait_time = duration(1, 17);
-    exact.endpoint_unavailability_ttl = duration(0, 23);
     let mut runtime_options: CosmosRuntimeOptionsV2 = initialized(cosmos_runtime_options_v2_init);
-    runtime_options.legacy = &legacy_runtime;
-    runtime_options.connection_pool = &pool;
-    runtime_options.diagnostics = &diagnostics;
-    runtime_options.operation_options = &exact;
+    runtime_options.is_http2_allowed = 1;
+    runtime_options.max_connect_timeout = duration(4, 17);
+    runtime_options.diagnostics_verbosity = 2;
+    runtime_options.max_request_diagnostics = integer(16);
+    runtime_options.operation_options = &legacy_operation;
+    runtime_options.max_throttle_retry_wait_time = duration(1, 17);
+    runtime_options.endpoint_unavailability_ttl = duration(0, 23);
     let transport = Arc::new(ConsumerTransport::default());
-    // SAFETY: all nested versioned inputs remain readable throughout decoding.
+    // SAFETY: all borrowed payloads remain readable throughout decoding.
     let runtime = unsafe { runtime_builder(&runtime_options) }
         .unwrap()
         .with_mock_http_client_factory(Arc::new(ConsumerFactory(transport.clone())))
@@ -504,15 +585,10 @@ async fn configured_consumers_bootstrap_in_order_load_lazy_and_retain_diagnostic
         view(b"https://backup-one.invalid"),
         view(b"https://backup-two.invalid"),
     ];
-    let legacy = cosmos_driver_options_config_v2_default();
-    let mut topology: CosmosPartitionFailoverOptions =
-        initialized(cosmos_partition_failover_options_init);
-    topology.topology_cache_mode = 2;
     let mut input: CosmosDriverOptionsConfigV3 = initialized(cosmos_driver_options_config_v3_init);
-    input.legacy = &legacy;
     input.backup_endpoints = endpoints.as_ptr();
     input.backup_endpoints_len = endpoints.len();
-    input.partition_failover = &topology;
+    input.topology_cache_mode = 2;
     let mut client = ptr::null_mut();
     assert_eq!(
         cosmos_driver_options_build_v3(account, &input, &mut client),
@@ -578,10 +654,13 @@ async fn configured_consumers_bootstrap_in_order_load_lazy_and_retain_diagnostic
     // Both budgets also permit the driver's single forced-final retry.
     for (nanoseconds, attempts) in [(999_999, 2), (1_000_001, 3)] {
         transport.item_reads.store(0, Ordering::SeqCst);
-        exact.max_throttle_retry_wait_time = duration(0, nanoseconds);
-        // SAFETY: exact duration record and inherited legacy input remain readable.
-        let overrides =
-            unsafe { super::operation_options(&exact, OperationOptions::default()) }.unwrap();
+        let overrides = super::operation_options(
+            OperationOptions::default(),
+            CosmosDuration::default(),
+            duration(0, nanoseconds),
+            CosmosDuration::default(),
+        )
+        .unwrap();
         let error = driver
             .execute_singleton_operation(
                 CosmosOperation::read_item(ItemReference::from_name(
