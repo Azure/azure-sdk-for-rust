@@ -1,0 +1,14 @@
+{
+  "import": [
+    "../../.vscode/cspell.json"
+  ],
+  "ignoreWords": [
+    "appconfig",
+    "appconfiguration",
+    "azconfig",
+    "kvset",
+    "labelset",
+    "snapshotset",
+    "tspconfig"
+  ]
+}

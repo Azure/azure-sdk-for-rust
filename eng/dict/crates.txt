@@ -18,6 +18,7 @@ azure_core_macros
 azure_core_opentelemetry
 azure_core_test
 azure_core_test_macros
+azure_data_appconfiguration
 azure_data_cosmos
 azure_data_cosmos_benchmarks
 azure_data_cosmos_driver
