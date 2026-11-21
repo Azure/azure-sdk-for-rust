@@ -24,6 +24,7 @@ use std::{collections::HashMap, sync::Arc};
 #[recorded::test]
 async fn key_roundtrip(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    let name = recording.random_string::<24>(Some("kr"));
 
     let mut options = KeyClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -41,7 +42,7 @@ async fn key_roundtrip(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let key = client
-        .create_key("key-roundtrip", body.try_into()?, None)
+        .create_key(&name, body.try_into()?, None)
         .await?
         .into_model()?;
     assert!(matches!(key.key, Some(ref jwk) if jwk.e == Some(vec![1, 0, 1])));
@@ -50,7 +51,7 @@ async fn key_roundtrip(ctx: TestContext) -> Result<()> {
     let key_version = key.resource_id()?.version;
     let key = client
         .get_key(
-            "key-roundtrip",
+            &name,
             Some(KeyClientGetKeyOptions {
                 key_version,
                 ..Default::default()
@@ -66,6 +67,7 @@ async fn key_roundtrip(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn update_key_properties(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    let name = recording.random_string::<24>(Some("ukp"));
 
     let mut options = KeyClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -83,7 +85,7 @@ async fn update_key_properties(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let key = client
-        .create_key("update-key", body.try_into()?, None)
+        .create_key(&name, body.try_into()?, None)
         .await?
         .into_model()?;
     assert!(matches!(key.key, Some(ref jwk) if jwk.x.is_some()));
@@ -98,7 +100,7 @@ async fn update_key_properties(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let key = client
-        .update_key_properties("update-key", properties.try_into()?, None)
+        .update_key_properties(&name, properties.try_into()?, None)
         .await?
         .into_model()?;
     assert_eq!(
@@ -114,6 +116,10 @@ async fn list_keys(ctx: TestContext) -> Result<()> {
     use azure_core::http::RequestContent;
 
     let recording = ctx.recording();
+    let mut names = vec![
+        recording.random_string::<24>(Some("lk")),
+        recording.random_string::<24>(Some("lk")),
+    ];
 
     let mut options = KeyClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -125,10 +131,9 @@ async fn list_keys(ctx: TestContext) -> Result<()> {
     )?;
 
     // Create several EC keys.
-    let mut names = vec!["list-keys-1", "list-keys-2"];
     let secret1 = client
         .create_key(
-            names[0],
+            &names[0],
             RequestContent::from_str(r#"{"kty":"EC","curve":"P-384"}"#),
             None,
         )
@@ -138,7 +143,7 @@ async fn list_keys(ctx: TestContext) -> Result<()> {
 
     let secret2 = client
         .create_key(
-            names[1],
+            &names[1],
             RequestContent::from_str(r#"{"kty":"EC","curve":"P-384"}"#),
             None,
         )
@@ -151,7 +156,7 @@ async fn list_keys(ctx: TestContext) -> Result<()> {
     while let Some(key) = pager.try_next().await? {
         // Get the key name from the ID.
         let name = key.resource_id()?.name;
-        if let Some(idx) = names.iter().position(|n| name.eq(*n)) {
+        if let Some(idx) = names.iter().position(|n| name.eq(n)) {
             names.remove(idx);
         }
     }
@@ -163,6 +168,7 @@ async fn list_keys(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn purge_key(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    let name = recording.random_string::<24>(Some("pk"));
 
     let mut options = KeyClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -180,7 +186,7 @@ async fn purge_key(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let key = client
-        .create_key("purge-key", body.try_into()?, None)
+        .create_key(&name, body.try_into()?, None)
         .await?
         .into_model()?;
     assert!(matches!(key.key, Some(ref jwk) if jwk.e == Some(vec![1, 0, 1])));
@@ -220,6 +226,7 @@ async fn purge_key(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    let name = recording.random_string::<24>(Some("ed"));
 
     let mut options = KeyClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -237,10 +244,8 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
 
-    const NAME: &str = "encrypt-decrypt";
-
     let key = client
-        .create_key(NAME, body.try_into()?, None)
+        .create_key(&name, body.try_into()?, None)
         .await?
         .into_model()?;
     let key_version = key.resource_id()?.version.expect("key version required");
@@ -254,7 +259,7 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
     };
     let encrypted = client
         .encrypt(
-            NAME,
+            &name,
             parameters.clone().try_into()?,
             Some(KeyClientEncryptOptions {
                 key_version: Some(key_version.clone()),
@@ -268,7 +273,7 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
     // Decrypt ciphertext.
     parameters.value = encrypted.result;
     let decrypted = client
-        .decrypt(NAME, &key_version, parameters.try_into()?, None)
+        .decrypt(&name, &key_version, parameters.try_into()?, None)
         .await?
         .into_model()?;
     assert!(matches!(decrypted.result, Some(result) if result.eq(&plaintext)));
@@ -287,6 +292,7 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn encrypt_decrypt_latest_key_version(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    let name = recording.random_string::<24>(Some("edlkv"));
 
     let mut options = KeyClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -304,10 +310,8 @@ async fn encrypt_decrypt_latest_key_version(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
 
-    const NAME: &str = "encrypt-decrypt-latest";
-
     client
-        .create_key(NAME, body.try_into()?, None)
+        .create_key(&name, body.try_into()?, None)
         .await?
         .into_model()?;
 
@@ -319,7 +323,7 @@ async fn encrypt_decrypt_latest_key_version(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let encrypted = client
-        .encrypt(NAME, parameters.clone().try_into()?, None)
+        .encrypt(&name, parameters.clone().try_into()?, None)
         .await?
         .into_model()?;
     assert!(matches!(encrypted.result.as_ref(), Some(ciphertext) if !ciphertext.is_empty()));
@@ -327,7 +331,7 @@ async fn encrypt_decrypt_latest_key_version(ctx: TestContext) -> Result<()> {
     // Decrypt ciphertext using an empty key version (latest key).
     parameters.value = encrypted.result;
     let decrypted = client
-        .decrypt(NAME, "", parameters.try_into()?, None)
+        .decrypt(&name, "", parameters.try_into()?, None)
         .await?
         .into_model()?;
     assert!(matches!(decrypted.result, Some(result) if result.eq(&plaintext)));
@@ -340,6 +344,7 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
     use sha2::{Digest as _, Sha256};
 
     let recording = ctx.recording();
+    let name = recording.random_string::<24>(Some("sv"));
 
     let mut options = KeyClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -357,11 +362,10 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
 
-    const NAME: &str = "sign-verify";
     const ALG: Option<SignatureAlgorithm> = Some(SignatureAlgorithm::Es256);
 
     let key = client
-        .create_key(NAME, body.try_into()?, None)
+        .create_key(&name, body.try_into()?, None)
         .await?
         .into_model()?;
     let key_version = key.resource_id()?.version.expect("key version required");
@@ -377,7 +381,7 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
     };
     let signed = client
         .sign(
-            NAME,
+            &name,
             parameters.try_into()?,
             Some(KeyClientSignOptions {
                 key_version: Some(key_version.clone()),
@@ -396,7 +400,7 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let verified = client
-        .verify(NAME, &key_version, parameters.try_into()?, None)
+        .verify(&name, &key_version, parameters.try_into()?, None)
         .await?
         .into_model()?;
     assert_eq!(verified.value, Some(true));
@@ -407,6 +411,7 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    let name = recording.random_string::<24>(Some("wkuk"));
 
     let mut options = KeyClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -424,11 +429,10 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
 
-    const NAME: &str = "wrap-key-unwrap-key";
     const ALG: Option<EncryptionAlgorithm> = Some(EncryptionAlgorithm::RsaOaep256);
 
     let key = client
-        .create_key(NAME, body.try_into()?, None)
+        .create_key(&name, body.try_into()?, None)
         .await?
         .into_model()?;
     let key_version = key.resource_id()?.version.expect("key version required");
@@ -444,7 +448,7 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
     };
     let wrapped = client
         .wrap_key(
-            NAME,
+            &name,
             parameters.clone().try_into()?,
             Some(KeyClientWrapKeyOptions {
                 key_version: Some(key_version.clone()),
@@ -458,7 +462,7 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
     // Unwrap the DEK.
     parameters.value = wrapped.result;
     let unwrapped = client
-        .unwrap_key(NAME, &key_version, parameters.try_into()?, None)
+        .unwrap_key(&name, &key_version, parameters.try_into()?, None)
         .await?
         .into_model()?;
     assert!(matches!(unwrapped.result, Some(result) if result.eq(&dek)));
