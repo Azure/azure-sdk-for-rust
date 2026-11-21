@@ -229,8 +229,9 @@ async-trait = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
-Implement just the fake server operations your test needs. The root `KeyVaultServer`
-requires its child server traits; use empty implementations for unused child servers:
+Implement only the child servers and operations your test needs. Override the
+corresponding `KeyVaultServer` accessor to return each child server. Unused child
+servers need no implementation:
 
 ```rust ignore testing_with_fakes
 use azure_core::{
@@ -238,14 +239,7 @@ use azure_core::{
     Result,
 };
 use azure_resourcemanager_keyvault::{
-    clients::fake::{
-        KeyVaultKeysServer, KeyVaultManagedHsmKeysServer, KeyVaultManagedHsmsServer,
-        KeyVaultMHSMPrivateEndpointConnectionsServer, KeyVaultMHSMPrivateLinkResourcesServer,
-        KeyVaultMHSMRegionsServer, KeyVaultNetworkSecurityPerimeterConfigurationsServer,
-        KeyVaultOperationsServer, KeyVaultPrivateEndpointConnectionsServer,
-        KeyVaultPrivateLinkResourcesServer, KeyVaultSecretsServer, KeyVaultServer,
-        KeyVaultVaultsServer,
-    },
+    clients::fake::{KeyVaultKeysServer, KeyVaultServer},
     models::KeyVaultKeysClientGetOptions,
     KeyVaultClient,
 };
@@ -254,19 +248,11 @@ use std::sync::Arc;
 #[derive(Debug)]
 struct FakeKeyVaultServer;
 
-#[async_trait::async_trait]
-impl KeyVaultServer for FakeKeyVaultServer {}
-impl KeyVaultManagedHsmKeysServer for FakeKeyVaultServer {}
-impl KeyVaultManagedHsmsServer for FakeKeyVaultServer {}
-impl KeyVaultMHSMPrivateEndpointConnectionsServer for FakeKeyVaultServer {}
-impl KeyVaultMHSMPrivateLinkResourcesServer for FakeKeyVaultServer {}
-impl KeyVaultMHSMRegionsServer for FakeKeyVaultServer {}
-impl KeyVaultNetworkSecurityPerimeterConfigurationsServer for FakeKeyVaultServer {}
-impl KeyVaultOperationsServer for FakeKeyVaultServer {}
-impl KeyVaultPrivateEndpointConnectionsServer for FakeKeyVaultServer {}
-impl KeyVaultPrivateLinkResourcesServer for FakeKeyVaultServer {}
-impl KeyVaultSecretsServer for FakeKeyVaultServer {}
-impl KeyVaultVaultsServer for FakeKeyVaultServer {}
+impl KeyVaultServer for FakeKeyVaultServer {
+    fn as_key_vault_keys(&self) -> &dyn KeyVaultKeysServer {
+        self
+    }
+}
 
 #[async_trait::async_trait]
 impl KeyVaultKeysServer for FakeKeyVaultServer {
@@ -307,7 +293,7 @@ assert_eq!(key.name.as_deref(), Some("my-key"));
 The experimental [fake server example] retrieves key metadata and simulates a service error
 without credentials or network access. Implement only the `KeyVaultKeysServer` operations
 your application needs; the client uses its normal response and error handling.
-Unused operations panic by default.
+Calling an unimplemented child server accessor or operation panics by default.
 
 ```sh
 cargo run -p azure_resourcemanager_keyvault --example key_vault_client_fake --features test,unstable_fake

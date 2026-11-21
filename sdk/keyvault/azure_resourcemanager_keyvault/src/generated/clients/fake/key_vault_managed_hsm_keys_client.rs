@@ -100,7 +100,7 @@ pub(crate) fn capture_key_vault_managed_hsm_keys_client_list_versions(
 }
 /// Fake server for [`KeyVaultManagedHsmKeysClient`](crate::clients::KeyVaultManagedHsmKeysClient).
 ///
-/// Implement the operations used by your test. Implement unused child server traits with an empty `impl`.
+/// Implement the operations used by your test.
 ///
 /// # Panics
 /// Default operation implementations call [`unimplemented!()`].

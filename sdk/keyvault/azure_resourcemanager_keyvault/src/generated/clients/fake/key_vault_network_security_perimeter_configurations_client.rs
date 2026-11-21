@@ -69,7 +69,7 @@ pub(crate) fn capture_key_vault_network_security_perimeter_configurations_client
 }
 /// Fake server for [`KeyVaultNetworkSecurityPerimeterConfigurationsClient`](crate::clients::KeyVaultNetworkSecurityPerimeterConfigurationsClient).
 ///
-/// Implement the operations used by your test. Implement unused child server traits with an empty `impl`.
+/// Implement the operations used by your test.
 ///
 /// # Panics
 /// Default operation implementations call [`unimplemented!()`].
