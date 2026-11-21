@@ -657,6 +657,7 @@ mod tests {
                 r#"{"paths":["/pk"],"version":2}"#,
             )
             .unwrap(),
+            vector_embedding_policy: None,
             system_properties: Default::default(),
         };
         let container =

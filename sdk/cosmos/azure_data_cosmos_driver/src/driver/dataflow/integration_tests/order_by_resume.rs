@@ -49,6 +49,7 @@ fn test_container_props() -> ContainerProperties {
     ContainerProperties {
         id: Cow::Owned("coll".into()),
         partition_key: serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap(),
+        vector_embedding_policy: None,
         system_properties: SystemProperties::default(),
     }
 }

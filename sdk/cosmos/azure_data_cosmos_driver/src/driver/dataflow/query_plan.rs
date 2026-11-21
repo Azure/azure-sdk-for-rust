@@ -14,7 +14,10 @@ use serde::Deserialize;
 use serde::Serialize;
 
 use crate::error::{CosmosError, Result};
-use crate::models::{EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyValue};
+use crate::models::effective_partition_key::prefix_range_end_hex;
+use crate::models::{
+    EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyKind, PartitionKeyValue,
+};
 
 /// Deserializes a boolean from either a JSON boolean (`true`/`false`) or
 /// an integer (`0`/`1`). The native QueryPlanInterop library serializes
@@ -119,8 +122,8 @@ impl RawQueryPlan {
     pub(crate) fn resolve(self, pk_definition: &PartitionKeyDefinition) -> Result<QueryPlan> {
         let mut query_ranges = Vec::with_capacity(self.query_ranges.len());
         for raw in self.query_ranges {
-            let min = resolve_epk_bound(&raw.min, pk_definition)?;
-            let max = resolve_epk_bound(&raw.max, pk_definition)?;
+            let min = resolve_epk_bound(&raw.min, pk_definition, false)?;
+            let max = resolve_epk_bound(&raw.max, pk_definition, raw.min == raw.max)?;
             query_ranges.push(QueryRange {
                 min,
                 max,
@@ -128,7 +131,9 @@ impl RawQueryPlan {
                 is_max_inclusive: raw.is_max_inclusive,
             });
         }
-        query_ranges.sort_by(|a, b| a.min.cmp(&b.min));
+        // Sort and dedup: V1 hashes can collide (e.g. long `IN` strings).
+        query_ranges.sort_by(|a, b| a.min.cmp(&b.min).then_with(|| a.max.cmp(&b.max)));
+        query_ranges.dedup();
         Ok(QueryPlan {
             partitioned_query_execution_info_version: self.partitioned_query_execution_info_version,
             query_info: self.query_info,
@@ -139,10 +144,13 @@ impl RawQueryPlan {
 }
 
 /// Converts a single `queryRanges[].min|max` JSON value into the canonical
-/// EPK hex string the planner expects.
+/// EPK hex string the planner expects. When `prefix_point` is set (the max of a
+/// point range), a partial MultiHash key resolves to the end of its prefix
+/// range so every full key under the prefix is included.
 fn resolve_epk_bound(
     value: &serde_json::Value,
     pk_definition: &PartitionKeyDefinition,
+    prefix_point: bool,
 ) -> Result<String> {
     use serde_json::Value;
     match value {
@@ -170,6 +178,12 @@ fn resolve_epk_bound(
                 pk_definition.kind(),
                 pk_definition.version(),
             );
+            if prefix_point
+                && pk_definition.kind() == PartitionKeyKind::MultiHash
+                && pk_values.len() < pk_definition.paths().len()
+            {
+                return Ok(prefix_range_end_hex(epk.as_bytes()));
+            }
             Ok(epk.to_hex())
         }
         other => Err(CosmosError::builder()
@@ -237,11 +251,8 @@ fn json_type_name(v: &serde_json::Value) -> &'static str {
 
 /// The resolved query plan the planner consumes.
 ///
-/// Built from a [`RawQueryPlan`] via [`RawQueryPlan::resolve`] on the Gateway
-/// path. The native QueryPlanInterop path deserializes JSON directly into
-/// this type (it does not need the EPK-hashing step the Gateway path needs,
-/// because the native DLL emits ranges in a form `string_or_json` can flatten
-/// in place).
+/// Built from a [`RawQueryPlan`] via [`RawQueryPlan::resolve`] on both the
+/// Gateway and native QueryPlanInterop paths.
 #[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
 #[serde(default)]
 #[serde(rename_all = "camelCase")]
@@ -366,8 +377,8 @@ pub(crate) enum SortOrder {
 /// On the Gateway path, ranges arrive in canonical hex EPK form (`""`, `"FF"`,
 /// or a hash hex). On the native QueryPlanInterop path and the Gateway V2
 /// thin-client proxy path, ranges arrive as `PartitionKeyInternal` JSON values
-/// (arrays); `string_or_json` flattens those to the JSON text. The Gateway
-/// path additionally runs each `RawQueryRange` through
+/// (arrays); `string_or_json` flattens those to the JSON text. Both paths
+/// additionally run each `RawQueryRange` through
 /// [`RawQueryPlan::resolve`] to hash structured PK values into proper EPK hex.
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -614,8 +625,8 @@ mod tests {
         assert!(!plan.query_ranges[0].min.starts_with("FF"));
     }
 
-    /// Multi-path (HPK) container: a prefix PKI array resolves via MultiHash
-    /// V2 — each component hashed and concatenated.
+    /// Multi-path (HPK) container: a prefix point range covers every full key
+    /// under the prefix.
     #[test]
     fn resolves_concrete_multi_hash_prefix() {
         let json = r#"{
@@ -639,7 +650,30 @@ mod tests {
             pk_def.version(),
         );
         assert_eq!(plan.query_ranges[0].min, expected.to_hex());
-        assert_eq!(plan.query_ranges[0].max, expected.to_hex());
+        assert_eq!(
+            plan.query_ranges[0].max,
+            prefix_range_end_hex(expected.as_bytes())
+        );
+    }
+
+    /// Hash V1 truncates long strings, so distinct values can resolve to the
+    /// same range; duplicates are removed.
+    #[test]
+    fn resolves_deduplicates_identical_ranges() {
+        let (a, b) = (
+            format!("{}a", "x".repeat(100)),
+            format!("{}b", "x".repeat(100)),
+        );
+        let raw: RawQueryPlan = serde_json::from_value(serde_json::json!({
+            "queryRanges": [
+                { "min": [a], "max": [a], "isMinInclusive": true, "isMaxInclusive": true },
+                { "min": [b], "max": [b], "isMinInclusive": true, "isMaxInclusive": true }
+            ]
+        }))
+        .unwrap();
+        let pk_def: PartitionKeyDefinition =
+            serde_json::from_str(r#"{"paths":["/pk"],"kind":"Hash","version":1}"#).unwrap();
+        assert_eq!(raw.resolve(&pk_def).unwrap().query_ranges.len(), 1);
     }
 
     /// The resolver sorts ranges by `min` so the planner sees a stable order

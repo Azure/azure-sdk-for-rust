@@ -56,7 +56,7 @@ pub(crate) async fn shell_exec<T: OutputProcessor>(
     #[cfg_attr(not(windows), allow(unused_variables))] env: &Env,
     command: &OsStr,
 ) -> Result<AccessToken> {
-    let (workdir, program, c_switch) = {
+    let (workdir, program, c_switch, mut command_string) = {
         #[cfg(windows)]
         {
             let system_root = env.var_os("SYSTEMROOT").map_err(|_| {
@@ -65,7 +65,12 @@ pub(crate) async fn shell_exec<T: OutputProcessor>(
                     "SYSTEMROOT environment variable not set",
                 )
             })?;
-            (system_root, OsStr::new("cmd"), OsStr::new("/C"))
+            (
+                system_root,
+                OsStr::new("cmd"),
+                OsStr::new("/C"),
+                OsString::from("cd /d "),
+            )
         }
         #[cfg(not(windows))]
         {
@@ -73,11 +78,11 @@ pub(crate) async fn shell_exec<T: OutputProcessor>(
                 OsString::from("/bin"),
                 OsStr::new("/bin/sh"),
                 OsStr::new("-c"),
+                OsString::from("cd "),
             )
         }
     };
 
-    let mut command_string = OsString::from("cd ");
     command_string.push(workdir);
     command_string.push(" && ");
     command_string.push(command);

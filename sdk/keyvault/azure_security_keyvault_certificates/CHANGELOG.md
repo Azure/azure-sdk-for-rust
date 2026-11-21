@@ -1,14 +1,20 @@
 # Release History
 
-## 1.1.0-beta.3 (Unreleased)
+## 1.1.0-beta.4 (Unreleased)
 
 ### Features Added
-
-- Added fakes support for testing.
 
 ### Breaking Changes
 
 ### Bugs Fixed
+
+### Other Changes
+
+## 1.1.0-beta.3 (2026-11-18)
+
+### Features Added
+
+- Added fakes support for testing.
 
 ### Other Changes
 

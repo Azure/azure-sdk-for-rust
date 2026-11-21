@@ -133,6 +133,7 @@ The following section provides several code snippets using a `KeyClient` like we
 - [Delete a key](#delete-a-key)
 - [List keys](#list-keys)
 - [Encrypt and decrypt](#encrypt-and-decrypt)
+- [Testing with fakes](#testing-with-fakes)
 
 ### Create a key
 
@@ -286,7 +287,7 @@ let unwrapped = client
 assert!(matches!(unwrapped.result, Some(result) if result.eq(&dek)));
 ```
 
-## Testing with fakes
+### Testing with fakes
 
 Enable the crate's `test` and `unstable_fake` features in your test dependencies.
 `unstable_fake` enables `test` automatically, but both are shown explicitly below.
@@ -345,7 +346,7 @@ let key = client.get_key("my-key", None).await?.into_model()?;
 assert_eq!(key.key.and_then(|key| key.kty), Some(KeyType::Rsa));
 ```
 
-### Fake service responses
+#### Fake service responses
 
 The experimental [fake server example] retrieves a key and simulates a service error
 without credentials or network access. Implement only the `KeyServer` operations

@@ -12,24 +12,22 @@
 //! regression in any field is caught immediately. The `rewritten_query` field
 //! is normalized (the native DLL always returns `Some`, text varies by version).
 //!
-//! Tests are ignored by default. Opt in with `test_category`:
+//! The native library is bundled through `azure_cosmos_queryplan_sys`, so these
+//! tests run on every platform that has a prebuilt library (Windows, Linux and
+//! macOS on x86_64 and aarch64) and are compiled out elsewhere. They run
+//! independently of the `__internal_native_query_plan` feature flag:
 //!
-//! ```powershell
-//! # Windows
-//! $env:AZURE_COSMOS_QUERYPLANINTEROP_DIR = "Q:\QueryPlanInterop"
-//! $env:RUSTFLAGS = '--cfg test_category="native_query_plan"'
+//! ```bash
 //! cargo test -p azure_data_cosmos_driver --lib query_plan_native
-//!
-//! # Linux
-//! AZURE_COSMOS_QUERYPLANINTEROP_DIR=/path/to/lib \
-//!     RUSTFLAGS='--cfg test_category="native_query_plan"' \
-//!     cargo test -p azure_data_cosmos_driver --lib query_plan_native
 //! ```
 #![allow(clippy::needless_update)]
 
-use super::native::PartitionKind;
 use super::provider::{QueryPlanOptions, QueryPlanProvider};
 use super::{DistinctType, QueryInfo, QueryPlan, SortOrder};
+use crate::models::{
+    EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyKind, PartitionKeyValue,
+};
+use std::borrow::Cow;
 use std::collections::HashMap;
 
 // -------------------------------------------------------------------------
@@ -89,11 +87,12 @@ fn hash_options() -> QueryPlanOptions {
     }
 }
 
-fn multi_hash_options() -> QueryPlanOptions {
-    QueryPlanOptions {
-        partition_kind: PartitionKind::MultiHash,
-        ..hash_options()
-    }
+fn pk(paths: &[&'static str]) -> PartitionKeyDefinition {
+    PartitionKeyDefinition::new(paths.iter().map(|path| Cow::Borrowed(*path)).collect())
+}
+
+fn multi_hash_pk(paths: &[&'static str]) -> PartitionKeyDefinition {
+    pk(paths).with_kind(PartitionKeyKind::MultiHash)
 }
 
 /// Shorthand: the default QueryInfo with all fields at their zero/empty/false values.
@@ -122,10 +121,6 @@ fn assert_query_info(actual: &QueryInfo, mut expected: QueryInfo) {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn create_service_provider_succeeds() {
     let _provider = create_provider();
 }
@@ -135,29 +130,26 @@ fn create_service_provider_succeeds() {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn basic_select_constant() {
     let provider = create_provider();
     let info = provider
-        .get_partition_key_ranges(&query_spec("SELECT 5"), &["/key"], &hash_options(), None)
+        .get_partition_key_ranges(
+            &query_spec("SELECT 5"),
+            &pk(&["/key"]),
+            &hash_options(),
+            None,
+        )
         .expect("SELECT 5 should succeed");
     assert!(!info.query_ranges.is_empty());
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn basic_select_top_constant() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT TOP 2 5"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -166,16 +158,12 @@ fn basic_select_top_constant() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn basic_select_star() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -185,16 +173,12 @@ fn basic_select_star() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn basic_where_true() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c WHERE true"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -203,16 +187,12 @@ fn basic_where_true() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn basic_where_false() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c WHERE false"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -226,16 +206,12 @@ fn basic_where_false() {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn top_just_top() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT TOP 5 * FROM c"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -250,10 +226,6 @@ fn top_just_top() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn top_parameterized() {
     let provider = create_provider();
     let spec = query_spec_with_params(
@@ -261,7 +233,7 @@ fn top_parameterized() {
         serde_json::json!([{"name": "@TOPCOUNT", "value": 42}]),
     );
     let info = provider
-        .get_partition_key_ranges(&spec, &["/key"], &hash_options(), None)
+        .get_partition_key_ranges(&spec, &pk(&["/key"]), &hash_options(), None)
         .unwrap();
     assert_query_info(
         &info.query_info.unwrap(),
@@ -273,16 +245,12 @@ fn top_parameterized() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn top_with_non_partition_filter() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT TOP 5 * FROM c WHERE c.blah = 5"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -297,16 +265,12 @@ fn top_with_non_partition_filter() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn top_with_partition_filter() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT TOP 5 * FROM c WHERE c.key = 5"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -321,16 +285,12 @@ fn top_with_partition_filter() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn top_with_order_by() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT TOP 5 * FROM c ORDER BY c.blah"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -351,16 +311,12 @@ fn top_with_order_by() {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn offset_limit_basic() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c ORDER BY c.blah OFFSET 5 LIMIT 10"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -378,10 +334,6 @@ fn offset_limit_basic() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn offset_limit_parameterized() {
     let provider = create_provider();
     let spec = query_spec_with_params(
@@ -392,7 +344,7 @@ fn offset_limit_parameterized() {
         ]),
     );
     let info = provider
-        .get_partition_key_ranges(&spec, &["/key"], &hash_options(), None)
+        .get_partition_key_ranges(&spec, &pk(&["/key"]), &hash_options(), None)
         .unwrap();
     assert_query_info(
         &info.query_info.unwrap(),
@@ -411,16 +363,12 @@ fn offset_limit_parameterized() {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn order_by_non_partition_key_asc() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c ORDER BY c.blah"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -436,16 +384,12 @@ fn order_by_non_partition_key_asc() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn order_by_partition_key() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c ORDER BY c.key"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -461,16 +405,12 @@ fn order_by_partition_key() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn order_by_desc() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c ORDER BY c.blah DESC"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -486,16 +426,12 @@ fn order_by_desc() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn multi_order_by() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c ORDER BY c.a ASC, c.b DESC"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -511,16 +447,12 @@ fn multi_order_by() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn order_by_with_top_and_projection() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT TOP 5 c.blah FROM c ORDER BY c.blah"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -541,16 +473,12 @@ fn order_by_with_top_and_projection() {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn distinct_select_star() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT DISTINCT * FROM c"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -565,16 +493,12 @@ fn distinct_select_star() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn distinct_field() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT DISTINCT c.blah FROM c"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -594,16 +518,12 @@ fn distinct_field() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn distinct_value_with_order_by() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT DISTINCT VALUE c.blah FROM c ORDER BY c.blah"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -625,16 +545,12 @@ fn distinct_value_with_order_by() {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn aggregate_avg() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT VALUE AVG(c.blah) FROM c"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -650,16 +566,12 @@ fn aggregate_avg() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn aggregate_min() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT VALUE MIN(c.blah) FROM c"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -675,16 +587,12 @@ fn aggregate_min() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn aggregate_max() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT VALUE MAX(c.blah) FROM c"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -700,16 +608,12 @@ fn aggregate_max() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn aggregate_sum() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT VALUE SUM(c.blah) FROM c"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -725,16 +629,12 @@ fn aggregate_sum() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn aggregate_count() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT VALUE COUNT(1) FROM c"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -750,16 +650,12 @@ fn aggregate_count() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn aggregate_makelist() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT VALUE MAKELIST(c.blah) FROM c"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -775,16 +671,12 @@ fn aggregate_makelist() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn aggregate_makeset() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT VALUE MAKESET(c.blah) FROM c"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -800,16 +692,12 @@ fn aggregate_makeset() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn aggregate_no_partition_key() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT VALUE AVG(c.blah) FROM c"),
-            &[] as &[&str],
+            &pk(&[]),
             &hash_options(),
             None,
         )
@@ -825,16 +713,12 @@ fn aggregate_no_partition_key() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn aggregate_with_filter() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT VALUE AVG(c.blah) FROM c WHERE c.key = 5"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -850,16 +734,12 @@ fn aggregate_with_filter() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn aggregate_with_join() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT VALUE AVG(j) FROM c JOIN j IN c.blah"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -875,16 +755,12 @@ fn aggregate_with_join() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn aggregate_with_top() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT TOP 5 VALUE AVG(c.blah) FROM c"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -909,16 +785,12 @@ fn aggregate_with_top() {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn non_value_aggregate_min() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT MIN(c.blah) FROM c"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -937,16 +809,12 @@ fn non_value_aggregate_min() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn non_value_aggregate_multiple() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT MIN(c.blah), MAX(c.blah) FROM c"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -965,16 +833,12 @@ fn non_value_aggregate_multiple() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn non_value_aggregate_with_alias() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT MIN(c.blah) AS minBlah FROM c"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -993,16 +857,12 @@ fn non_value_aggregate_with_alias() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn non_value_aggregate_with_partition_filter() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT MIN(c.blah) FROM c WHERE c.key = 1"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1025,16 +885,12 @@ fn non_value_aggregate_with_partition_filter() {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn group_by_simple() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT c.age, c.name FROM c GROUP BY c.age, c.name"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1054,10 +910,6 @@ fn group_by_simple() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn group_by_with_aggregates() {
     let provider = create_provider();
     let info = provider
@@ -1065,7 +917,7 @@ fn group_by_with_aggregates() {
             &query_spec(
                 "SELECT c.team, COUNT(1) AS count, AVG(c.age) AS avg_age FROM c GROUP BY c.team",
             ),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1086,16 +938,12 @@ fn group_by_with_aggregates() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn group_by_value_count() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT VALUE COUNT(1) FROM c GROUP BY c.age"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1112,10 +960,6 @@ fn group_by_value_count() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn group_by_arbitrary_scalar() {
     let provider = create_provider();
     let info = provider
@@ -1123,7 +967,7 @@ fn group_by_arbitrary_scalar() {
             &query_spec(
                 "SELECT UPPER(c.name) AS name, AVG(c.income) AS income FROM c GROUP BY UPPER(c.name)",
             ),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1147,16 +991,12 @@ fn group_by_arbitrary_scalar() {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn like_simple() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c WHERE c.name LIKE '%test%'"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1165,10 +1005,6 @@ fn like_simple() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn like_parameterized() {
     let provider = create_provider();
     let spec = query_spec_with_params(
@@ -1176,22 +1012,18 @@ fn like_parameterized() {
         serde_json::json!([{"name": "@pattern", "value": "%test%"}]),
     );
     let info = provider
-        .get_partition_key_ranges(&spec, &["/key"], &hash_options(), None)
+        .get_partition_key_ranges(&spec, &pk(&["/key"]), &hash_options(), None)
         .unwrap();
     assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn like_with_partition_key_filter() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c WHERE c.key = 'abc' AND c.name LIKE '%test%'"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1204,16 +1036,12 @@ fn like_with_partition_key_filter() {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn multi_key_is_defined() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM Root r WHERE r.a.b.c"),
-            &["/a/b/c", "/a/c"],
+            &pk(&["/a/b/c", "/a/c"]),
             &hash_options(),
             None,
         )
@@ -1223,16 +1051,12 @@ fn multi_key_is_defined() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn multi_key_point_lookup() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM Root r WHERE r.a.b.c = null AND r.a.c = false"),
-            &["/a/b/c", "/a/c"],
+            &pk(&["/a/b/c", "/a/c"]),
             &hash_options(),
             None,
         )
@@ -1242,17 +1066,13 @@ fn multi_key_point_lookup() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn multi_hash_point_lookup() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c WHERE c.tenantId = 't1' AND c.userId = 'u1'"),
-            &["/tenantId", "/userId"],
-            &multi_hash_options(),
+            &multi_hash_pk(&["/tenantId", "/userId"]),
+            &hash_options(),
             None,
         )
         .unwrap();
@@ -1265,16 +1085,12 @@ fn multi_hash_point_lookup() {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn in_list_produces_multiple_ranges() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c WHERE c.key IN (1, 2, 3)"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1287,16 +1103,12 @@ fn in_list_produces_multiple_ranges() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn or_filter_produces_ranges() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c WHERE c.key = 1 OR c.key = 2"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1310,16 +1122,12 @@ fn or_filter_produces_ranges() {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn subquery_basic() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT (SELECT * FROM c) FROM c"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1328,16 +1136,12 @@ fn subquery_basic() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn subquery_with_filter_in_outer_query() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT (SELECT * FROM c) FROM c WHERE c.key = 42"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1346,16 +1150,12 @@ fn subquery_with_filter_in_outer_query() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn subquery_with_filter_in_inner_query() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT (SELECT * FROM c WHERE c.key = 42) FROM c"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1364,10 +1164,6 @@ fn subquery_with_filter_in_inner_query() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn subquery_as_filter() {
     let provider = create_provider();
     let info = provider
@@ -1375,7 +1171,7 @@ fn subquery_as_filter() {
             &query_spec(
                 "SELECT * FROM c WHERE (c.blah = (SELECT * FROM c WHERE c.key = 42 and c.id = 5)) and c.key = 32",
             ),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1388,16 +1184,12 @@ fn subquery_as_filter() {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn point_range_string_equality() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c WHERE c.key = 'value'"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1411,16 +1203,12 @@ fn point_range_string_equality() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn point_range_number_equality() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c WHERE c.key = 5"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1430,16 +1218,12 @@ fn point_range_number_equality() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn point_range_null_equality() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c WHERE c.key = null"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1449,16 +1233,12 @@ fn point_range_null_equality() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn point_range_bool_equality() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c WHERE c.key = true"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1472,16 +1252,12 @@ fn point_range_bool_equality() {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn system_function_abs() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c WHERE ABS(c.key) = 1"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1490,16 +1266,12 @@ fn system_function_abs() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn system_function_is_defined() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c WHERE IS_DEFINED(c.key)"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1512,15 +1284,11 @@ fn system_function_is_defined() {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn negative_bad_function() {
     let provider = create_provider();
     let result = provider.get_partition_key_ranges(
         &query_spec("SELECT BADFUNC(r.age) FROM Root r"),
-        &["/key"],
+        &pk(&["/key"]),
         &hash_options(),
         None,
     );
@@ -1532,16 +1300,12 @@ fn negative_bad_function() {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn rewritten_query_for_order_by() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c ORDER BY c.name"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1569,16 +1333,12 @@ fn rewritten_query_for_order_by() {
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn query_plan_json_round_trip() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT TOP 5 c.name FROM c ORDER BY c.name"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1590,20 +1350,97 @@ fn query_plan_json_round_trip() {
 }
 
 // =========================================================================
+// EPK resolution (native ranges hold partition-key values, not EPK hex)
+// =========================================================================
+
+#[test]
+fn native_query_plan_resolves_ranges_to_epk_hex() {
+    let pk = pk(&["/key"]);
+    let provider = super::NativeQueryPlanProvider::new();
+
+    let point = provider
+        .get_query_plan(
+            &query_spec("SELECT * FROM c WHERE c.key = 'value'"),
+            &pk,
+            None,
+            QUERY_ENGINE_CONFIG,
+        )
+        .unwrap();
+    let expected = EffectivePartitionKey::compute(
+        &[PartitionKeyValue::from("value".to_string())],
+        pk.kind(),
+        pk.version(),
+    )
+    .to_hex();
+    assert_eq!(point.query_ranges.len(), 1);
+    assert_eq!(point.query_ranges[0].min, expected);
+    assert_eq!(point.query_ranges[0].max, expected);
+
+    let full = provider
+        .get_query_plan(
+            &query_spec("SELECT * FROM c ORDER BY c.name"),
+            &pk,
+            None,
+            QUERY_ENGINE_CONFIG,
+        )
+        .unwrap();
+    assert_eq!(full.query_ranges.len(), 1);
+    assert_eq!(full.query_ranges[0].min, "");
+    assert_eq!(full.query_ranges[0].max, "FF");
+}
+
+// =========================================================================
+// Vector embedding policy (drives VectorDistance sort direction)
+// =========================================================================
+
+fn vector_policy(distance_function: &str) -> crate::models::VectorEmbeddingPolicy {
+    crate::models::VectorEmbeddingPolicy {
+        vector_embeddings: vec![crate::models::VectorEmbedding {
+            path: "/embedding".to_string(),
+            data_type: Some("float32".to_string()),
+            dimensions: Some(3),
+            distance_function: Some(distance_function.to_string()),
+            ..Default::default()
+        }],
+        ..Default::default()
+    }
+}
+
+#[test]
+fn vector_embedding_policy_sets_vector_distance_sort_order() {
+    let provider = super::NativeQueryPlanProvider::new();
+    let spec =
+        query_spec("SELECT TOP 5 c.id FROM c ORDER BY VectorDistance(c.embedding, [1, 2, 3])");
+    let order_for = |distance_function: &str| {
+        provider
+            .get_query_plan(
+                &spec,
+                &pk(&["/key"]),
+                Some(&vector_policy(distance_function)),
+                QUERY_ENGINE_CONFIG,
+            )
+            .unwrap()
+            .query_info
+            .unwrap()
+            .order_by
+    };
+
+    // Similarity scores sort descending; distances sort ascending.
+    assert_eq!(order_for("cosine"), vec![SortOrder::Descending]);
+    assert_eq!(order_for("euclidean"), vec![SortOrder::Ascending]);
+}
+
+// =========================================================================
 // Unicode and special character handling
 // =========================================================================
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn unicode_bmp_characters_in_query() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c WHERE c.name = '\u{4e16}\u{754c}'"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1612,16 +1449,12 @@ fn unicode_bmp_characters_in_query() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn unicode_surrogate_pair_in_query() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c WHERE c.name = '\u{1F600}'"),
-            &["/key"],
+            &pk(&["/key"]),
             &hash_options(),
             None,
         )
@@ -1630,16 +1463,12 @@ fn unicode_surrogate_pair_in_query() {
 }
 
 #[test]
-#[cfg_attr(
-    not(test_category = "native_query_plan"),
-    ignore = "requires test_category 'native_query_plan'"
-)]
 fn unicode_partition_key_path() {
     let provider = create_provider();
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c"),
-            &["/\u{00fc}ser"],
+            &pk(&["/\u{00fc}ser"]),
             &hash_options(),
             None,
         )

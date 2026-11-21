@@ -92,13 +92,7 @@ pub async fn lazy_point_operations_do_not_fetch_optional_partition_topology(
     .await
 }
 
-/// When `MetadataPartitionKeyRanges` fails transiently (503) for the first few
-/// requests but then recovers, subsequent data operations that trigger a fresh
-/// pkrange fetch should succeed and the routing map should be populated.
-///
-/// Verified by: injecting a hit-limited 503 on pkrange requests, executing
-/// enough data operations to exhaust the limit, then confirming operations
-/// continue to succeed normally.
+/// Transient PK-range refresh failures preserve routing and recover after the fault limit.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "emulator"),
@@ -121,9 +115,10 @@ pub async fn pkrange_fetch_transient_failure_then_recovers() -> Result<(), Box<d
             .with_hit_limit(3)
             .build(),
     );
+    // Eager container resolution requires topology; inject only after setup.
+    rule.disable();
     let rules = vec![Arc::clone(&rule)];
 
-    // PPCB must be enabled for the driver to actually fetch PK ranges.
     let partition_failover_options = PartitionFailoverOptions::builder()
         .with_circuit_breaker_enabled(true)
         .build()?;
@@ -136,14 +131,28 @@ pub async fn pkrange_fetch_transient_failure_then_recovers() -> Result<(), Box<d
             let container = context
                 .create_container(&database, &container_name, "/pk")
                 .await?;
+            let original = context
+                .resolve_all_partition_key_ranges(&container, false)
+                .await?
+                .expect("eager container resolution must populate the routing map");
+            assert!(!original.is_empty());
+            assert_eq!(
+                rule.hit_count(),
+                0,
+                "setup must not consume injected faults"
+            );
+            rule.enable();
 
-            // Create items — data operations succeed throughout because pkrange failure
-            // only affects pre-resolution, not the data operation itself.
             for i in 0..5 {
+                let refreshed = context
+                    .resolve_all_partition_key_ranges(&container, true)
+                    .await?
+                    .expect("transient refresh failures must retain the previous routing map");
+                assert_eq!(refreshed, original);
                 let body =
                     format!(r#"{{"id": "pkrange-transient-{i}", "pk": "pk1", "value": "test"}}"#);
                 context
-                    .create_seed_item(
+                    .create_item(
                         &container,
                         &format!("pkrange-transient-{i}"),
                         "pk1",
