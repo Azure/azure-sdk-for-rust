@@ -32,6 +32,7 @@ pub mod driver_options;
 pub mod error;
 pub mod fault_injection;
 pub mod feed_range;
+pub mod management;
 pub mod op_request;
 pub mod options_snapshot;
 pub mod partition_key;

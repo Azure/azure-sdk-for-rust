@@ -65,6 +65,31 @@ for the full design.
 | Custom per-operation request headers | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
 | Driver fault injection | Supported through versioned `cosmos_driver_options_config_v2_t` records |
 
+## Typed management throughput
+
+For database and container creation, `cosmos_submit_singleton_operation_v2`
+accepts `cosmos_management_options_t`, initialized with
+`cosmos_management_options_init`. Throughput kind 0 is unset, 1 selects positive
+`manual_throughput`, and 2 selects positive `autoscale_max_throughput`. Inactive
+payloads must be zero; manual and autoscale settings cannot be combined. Autoscale
+preserves absent or present-empty auto-upgrade policies, an optional nested
+throughput policy, and the full `uint32_t` increment percentage. Presence flags
+accept only 0 or 1; a nested policy requires its parent.
+
+These are native typed request headers: inherited runtime/client custom headers
+remain available, and typed throughput wins a conflicting header name. Do not
+inject typed throughput through the replacement `custom_headers` map. NULL or an
+initialized-unset record preserves v1 behavior. Reinitializing clears the typed
+override, not inherited custom headers. Inputs are copied before submit returns.
+An inherited opposite-mode throughput header is rejected before dispatch, so
+manual and autoscale headers are not sent together. Set options capture native
+configuration at admission when the request did not supply a snapshot.
+Use the existing operation `precondition_kind` and `precondition_etag` fields for
+typed If-Match/If-None-Match conditions; they also preserve header inheritance.
+
+These exports require a matching newly built native library and
+header; the published v0.3.0 platform modules do not contain them.
+
 ## Read-many cursors
 
 Initialize `cosmos_read_many_request_t` with `cosmos_read_many_request_init`,

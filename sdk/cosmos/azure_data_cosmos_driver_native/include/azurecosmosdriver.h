@@ -2097,6 +2097,42 @@ typedef struct cosmos_driver_options_config_v2_t {
 } cosmos_driver_options_config_v2_t;
 
 /**
+ * Typed throughput headers for database and container creation.
+ *
+ * Initialize or reset with [`cosmos_management_options_init()`]. Unset leaves
+ * inherited custom headers unchanged. Set values take precedence over conflicting
+ * custom headers without replacing their map. All inputs are copied during submit.
+ */
+typedef struct cosmos_management_options_t {
+  uint32_t struct_size_bytes;
+  uint32_t abi_version;
+  /**
+   * 0 unset, 1 manual, 2 autoscale. Inactive payloads must be zero.
+   */
+  uint32_t throughput_kind;
+  /**
+   * Positive RU/s when `throughput_kind` is 1; otherwise zero.
+   */
+  uint64_t manual_throughput;
+  /**
+   * Positive maximum RU/s when `throughput_kind` is 2; otherwise zero.
+   */
+  uint64_t autoscale_max_throughput;
+  /**
+   * 0 absent, 1 present. Only valid for autoscale.
+   */
+  uint8_t has_auto_upgrade_policy;
+  /**
+   * 0 absent, 1 present. Requires `has_auto_upgrade_policy` to be 1.
+   */
+  uint8_t has_throughput_policy;
+  /**
+   * Full unsigned percentage; zero when the throughput policy is absent.
+   */
+  uint32_t increment_percent;
+} cosmos_management_options_t;
+
+/**
  * One selected logical key, with an item id only for item selection.
  */
 typedef struct cosmos_read_many_identity_t {
@@ -2887,6 +2923,14 @@ cosmos_status_code_t cosmos_feed_range_for_partition_key(const struct cosmos_con
 void cosmos_feed_range_free(struct cosmos_feed_range_t *fr);
 
 /**
+ * Initializes or resets typed management overrides to unset.
+ *
+ * Resetting removes only these typed overrides, not inherited custom headers.
+ * `out` must be NULL or point to complete, aligned, writable record storage.
+ */
+void cosmos_management_options_init(struct cosmos_management_options_t *out);
+
+/**
  * Returns an all-unset [`CosmosOperationOptions`] by value. The host
  * mutates the fields it cares about and leaves the rest at their inherit
  * sentinels.
@@ -3182,6 +3226,30 @@ struct cosmos_operation_handle_t *cosmos_submit_singleton_operation(const struct
                                                                     struct cosmos_completion_queue_t *queue,
                                                                     intptr_t user_data,
                                                                     cosmos_status_code_t *out_pre_error);
+
+/**
+ * Submits a singleton with typed database/container creation throughput.
+ *
+ * NULL or initialized-unset `management` preserves
+ * [`cosmos_submit_singleton_operation()`] behavior. Set options require a
+ * CreateDatabase or CreateContainer request. Manual and autoscale settings
+ * are mutually exclusive. Typed headers take precedence over custom headers
+ * without replacing the native-resolved custom-header map. An inherited
+ * opposite-mode throughput header is rejected rather than sending both modes.
+ * Set options capture native configuration at admission if no snapshot was supplied.
+ *
+ * Request, options, handles, and borrowed inputs must remain valid until this
+ * call returns; inputs are copied before asynchronous execution. Completion,
+ * cancellation, and ownership follow [`cosmos_submit_singleton_operation()`].
+ * Invalid records or unsupported operation kinds fail before submission via
+ * `out_pre_error`. Other parameters have the same contracts as the v1 entry point.
+ */
+struct cosmos_operation_handle_t *cosmos_submit_singleton_operation_v2(const struct cosmos_driver_t *driver,
+                                                                       const struct cosmos_operation_request_t *request,
+                                                                       const struct cosmos_management_options_t *management,
+                                                                       struct cosmos_completion_queue_t *queue,
+                                                                       intptr_t user_data,
+                                                                       cosmos_status_code_t *out_pre_error);
 
 /**
  * Asynchronous variant of [`crate::driver::cosmos_driver_get_or_create_blocking`].

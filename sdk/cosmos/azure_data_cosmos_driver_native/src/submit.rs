@@ -37,6 +37,7 @@ use crate::completion::{
 use crate::driver::DriverHandle;
 use crate::driver_options::DriverOptionsHandle;
 use crate::error::{CosmosErrorCode, CosmosStatusCode};
+use crate::management::{management_headers, CosmosManagementOptions};
 use crate::op_request::{build_request, CosmosOperationRequest};
 use crate::options_snapshot::OperationOptionsSnapshot;
 use crate::runtime::RuntimeContext;
@@ -476,9 +477,91 @@ pub extern "C" fn cosmos_submit_singleton_operation(
     {
         return cosmos_submit_operation(driver, request, queue, user_data, out_pre_error);
     }
-    submit_singleton_operation_with_builder(driver, queue, user_data, out_pre_error, || {
+    submit_singleton_operation_with_builder(driver, queue, user_data, out_pre_error, |_| {
         // SAFETY: caller guarantees the v1 request fields follow their contracts.
         unsafe { build_request(request) }
+    })
+}
+
+/// Submits a singleton with typed database/container creation throughput.
+///
+/// NULL or initialized-unset `management` preserves
+/// [`cosmos_submit_singleton_operation()`] behavior. Set options require a
+/// CreateDatabase or CreateContainer request. Manual and autoscale settings
+/// are mutually exclusive. Typed headers take precedence over custom headers
+/// without replacing the native-resolved custom-header map. An inherited
+/// opposite-mode throughput header is rejected rather than sending both modes.
+/// Set options capture native configuration at admission if no snapshot was supplied.
+///
+/// Request, options, handles, and borrowed inputs must remain valid until this
+/// call returns; inputs are copied before asynchronous execution. Completion,
+/// cancellation, and ownership follow [`cosmos_submit_singleton_operation()`].
+/// Invalid records or unsupported operation kinds fail before submission via
+/// `out_pre_error`. Other parameters have the same contracts as the v1 entry point.
+#[no_mangle]
+pub extern "C" fn cosmos_submit_singleton_operation_v2(
+    driver: *const DriverHandle,
+    request: *const CosmosOperationRequest,
+    management: *const CosmosManagementOptions,
+    queue: *mut CompletionQueue,
+    user_data: isize,
+    out_pre_error: *mut CosmosStatusCode,
+) -> *mut OperationHandle {
+    // SAFETY: caller keeps the versioned record readable until return.
+    let headers = match unsafe { management_headers(management) } {
+        Ok(Some(headers)) => headers,
+        Ok(None) => {
+            return cosmos_submit_singleton_operation(
+                driver,
+                request,
+                queue,
+                user_data,
+                out_pre_error,
+            );
+        }
+        Err(status) => {
+            if !out_pre_error.is_null() {
+                // SAFETY: caller supplies a writable status slot.
+                unsafe { *out_pre_error = status };
+            }
+            return std::ptr::null_mut();
+        }
+    };
+    submit_singleton_operation_with_builder(driver, queue, user_data, out_pre_error, |driver| {
+        // SAFETY: caller keeps the request and its borrowed inputs readable until return.
+        let mut built = unsafe { build_request(request)? };
+        // SAFETY: build_request validated the non-NULL request.
+        if !matches!(unsafe { (*request).kind }, 1 | 9) {
+            return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
+        }
+        if built.options.resolution_snapshot_view().is_none() {
+            let runtime = driver.runtime();
+            built.options = built.options.with_resolution_snapshot(
+                Arc::clone(runtime.env_override_operation_options()),
+                Arc::clone(runtime.env_operation_options()),
+                runtime.default_operation_options(),
+                Arc::clone(driver.options().operation_options()),
+            );
+        }
+        let opposite = azure_core::http::headers::HeaderName::from_static(
+            if headers.offer_throughput.is_some() {
+                "x-ms-cosmos-offer-autopilot-settings"
+            } else {
+                "x-ms-offer-throughput"
+            },
+        );
+        if driver
+            .operation_options_view(&built.options)
+            .custom_headers()
+            .is_some_and(|custom| custom.contains_key(&opposite))
+        {
+            return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
+        }
+        let mut request_headers = built.operation.request_headers().clone();
+        request_headers.offer_throughput = headers.offer_throughput;
+        request_headers.offer_autopilot_settings = headers.offer_autopilot_settings;
+        built.operation = built.operation.with_request_headers(request_headers);
+        Ok(built)
     })
 }
 
@@ -487,7 +570,7 @@ fn submit_singleton_operation_with_builder(
     queue: *mut CompletionQueue,
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
-    build: impl FnOnce() -> Result<crate::op_request::BuiltRequest, CosmosErrorCode>,
+    build: impl FnOnce(&CosmosDriver) -> Result<crate::op_request::BuiltRequest, CosmosErrorCode>,
 ) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
         if !out_pre_error.is_null() {
@@ -504,7 +587,7 @@ fn submit_singleton_operation_with_builder(
     };
     let driver_arc: Arc<CosmosDriver> = Arc::clone(&driver_inner.inner);
 
-    let built = match build() {
+    let built = match build(&driver_arc) {
         Ok(b) => b,
         Err(code) => {
             write_err(code);

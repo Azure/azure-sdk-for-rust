@@ -1,5 +1,17 @@
 # Release History
 
+## 0.4.0 (Unreleased)
+
+### Features Added
+
+- Added `cosmos_submit_singleton_operation_v2` and `cosmos_management_options_init` for typed manual/autoscale database and container creation throughput with complete auto-upgrade policies, preserving inherited custom headers and native header precedence.
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.3.0 (2026-11-11)
 
 ### Features Added

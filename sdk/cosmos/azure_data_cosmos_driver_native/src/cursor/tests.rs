@@ -8,15 +8,17 @@ use super::{
     cosmos_cursor_status, fixture, CosmosCursorCompletion, CursorHandle, ResultData,
 };
 use crate::{
+    account_ref::{cosmos_account_ref_free, cosmos_account_ref_with_master_key},
     completion::{
         cosmos_completion_queue_create, cosmos_completion_queue_free,
-        cosmos_completion_queue_shutdown, cosmos_completion_queue_wait,
-        cosmos_operation_handle_free, cosmos_operation_handle_state,
+        cosmos_completion_queue_free_completions, cosmos_completion_queue_shutdown,
+        cosmos_completion_queue_wait, cosmos_operation_handle_free, cosmos_operation_handle_state,
         cosmos_operation_handle_status, CompletionQueue, CosmosCompletion,
         CosmosOperationHandleState, OperationHandle,
     },
     container_ref::{cosmos_container_ref_free, ContainerRefHandle},
     cursor_request::{build_cursor_request, cosmos_cursor_request_init, CosmosCursorRequest},
+    database_ref::{cosmos_database_ref_create, cosmos_database_ref_free},
     diagnostics::{
         cosmos_diagnostics_is_completed, cosmos_diagnostics_is_failure,
         cosmos_diagnostics_request_count, cosmos_diagnostics_to_json, CosmosDiagnosticsVerbosity,
@@ -24,7 +26,12 @@ use crate::{
     driver::{cosmos_driver_free, DriverHandle},
     error::{CosmosErrorCode, COSMOS_STATUS_SUCCESS},
     feed_range::{cosmos_feed_range_for_partition_key, cosmos_feed_range_free},
-    op_request::cosmos_operation_options_default,
+    management::{cosmos_management_options_init, CosmosManagementOptions},
+    op_request::{cosmos_operation_options_default, CosmosHeaderKv, CosmosOperationRequest},
+    options_snapshot::{
+        cosmos_operation_options_snapshot_create, cosmos_operation_options_snapshot_free,
+        cosmos_runtime_set_operation_options,
+    },
     partition_key::{
         cosmos_partition_key_free, CosmosPartitionKeyComponent, CosmosPartitionKeyComponentValue,
         PartitionKeyHandle,
@@ -36,6 +43,7 @@ use crate::{
     response_header::{CosmosHeaderId, CosmosValueKind},
     runtime::{cosmos_runtime_free, RuntimeContext},
     string::view,
+    submit::{cosmos_submit_singleton_operation, cosmos_submit_singleton_operation_v2},
 };
 use azure_data_cosmos_driver::options::OperationOptions;
 use std::{
@@ -45,6 +53,353 @@ use std::{
     sync::{atomic::Ordering, Arc},
     time::Duration,
 };
+
+#[test]
+fn typed_management_throughput_preserves_native_header_inheritance_and_copies_input() {
+    let fixture = Fixture::scripted();
+    let queue = cosmos_completion_queue_create(fixture.runtime, ptr::null());
+    let mut account = ptr::null_mut();
+    let mut database = ptr::null_mut();
+    assert_eq!(
+        cosmos_account_ref_with_master_key(
+            view(b"https://eastus.emulator.local"),
+            view(b"ZW11bGF0b3Ita2V5"),
+            &mut account,
+            ptr::null_mut()
+        ),
+        COSMOS_STATUS_SUCCESS
+    );
+    assert_eq!(
+        cosmos_database_ref_create(account, view(b"testdb"), &mut database),
+        COSMOS_STATUS_SUCCESS
+    );
+    let mut runtime_headers = [
+        CosmosHeaderKv {
+            name: view(b"x-test-inherited"),
+            value: view(b"runtime"),
+        },
+        CosmosHeaderKv {
+            name: view(b"x-ms-offer-throughput"),
+            value: view(b"111"),
+        },
+    ];
+    let mut client_headers = [
+        CosmosHeaderKv {
+            name: view(b"x-test-inherited"),
+            value: view(b"client"),
+        },
+        CosmosHeaderKv {
+            name: view(b"x-ms-offer-throughput"),
+            value: view(b"222"),
+        },
+    ];
+    let mut runtime_options = cosmos_operation_options_default();
+    runtime_options.binary_encoding_enabled = 1;
+    runtime_options.custom_headers = runtime_headers.as_ptr();
+    runtime_options.custom_headers_len = runtime_headers.len();
+    // SAFETY: fixture runtime and borrowed header views remain live.
+    assert_eq!(
+        unsafe { cosmos_runtime_set_operation_options(fixture.runtime, &runtime_options) },
+        COSMOS_STATUS_SUCCESS
+    );
+    let mut client = cosmos_operation_options_default();
+    client.custom_headers = client_headers.as_ptr();
+    client.custom_headers_len = client_headers.len();
+    for use_client in [false, true] {
+        for kind in [1, 9] {
+            for mode in 0..=8 {
+                let inherited_autoscale = (2..=4).contains(&mode) || mode == 7;
+                runtime_headers[1] = CosmosHeaderKv {
+                    name: view(if inherited_autoscale {
+                        b"x-ms-cosmos-offer-autopilot-settings"
+                    } else {
+                        b"x-ms-offer-throughput"
+                    }),
+                    value: view(if inherited_autoscale {
+                        b"{\"maxThroughput\":1111}"
+                    } else {
+                        b"111"
+                    }),
+                };
+                client_headers[1] = CosmosHeaderKv {
+                    name: runtime_headers[1].name,
+                    value: view(if inherited_autoscale {
+                        b"{\"maxThroughput\":2222}"
+                    } else {
+                        b"222"
+                    }),
+                };
+                // SAFETY: the live arrays are copied by this runtime-defaults call.
+                assert_eq!(
+                    unsafe {
+                        cosmos_runtime_set_operation_options(fixture.runtime, &runtime_options)
+                    },
+                    COSMOS_STATUS_SUCCESS
+                );
+                let mut snapshot = ptr::null_mut();
+                let mut timeout = -2;
+                // SAFETY: live fixture and header views; output slots are writable.
+                assert_eq!(
+                    unsafe {
+                        cosmos_operation_options_snapshot_create(
+                            fixture.runtime,
+                            if use_client { &client } else { ptr::null() },
+                            ptr::null(),
+                            &mut snapshot,
+                            &mut timeout,
+                        )
+                    },
+                    COSMOS_STATUS_SUCCESS
+                );
+                let mut request = fixture.request().operation;
+                request.kind = kind;
+                request.account = account;
+                request.database = database;
+                request.container = ptr::null();
+                request.partition_key = ptr::null();
+                request.options_snapshot = snapshot;
+                if mode == 1 && !use_client {
+                    request.options_snapshot = ptr::null();
+                }
+                request.precondition_kind = 1;
+                request.precondition_etag = view(b"typed-etag");
+                let body = br#"{"id":"created","partitionKey":{"paths":["/pk"],"kind":"Hash","version":2}}"#;
+                request.body = body.as_ptr();
+                request.body_len = body.len();
+                let mut management = MaybeUninit::<CosmosManagementOptions>::uninit();
+                cosmos_management_options_init(management.as_mut_ptr());
+                // SAFETY: initializer wrote every field.
+                let mut management = unsafe { management.assume_init() };
+                if mode == 1 || mode == 7 {
+                    management.throughput_kind = 1;
+                    management.manual_throughput = 400;
+                } else if (2..=4).contains(&mode) || mode == 8 {
+                    management.throughput_kind = 2;
+                    management.autoscale_max_throughput = 4000;
+                    management.has_auto_upgrade_policy = u8::from(mode >= 3);
+                    management.has_throughput_policy = u8::from(mode == 4);
+                    management.increment_percent = if mode == 4 { 25 } else { 0 };
+                } else if mode == 6 {
+                    management.throughput_kind = 1;
+                    management.manual_throughput = 400;
+                    cosmos_management_options_init(&mut management);
+                }
+                let mut status = COSMOS_STATUS_SUCCESS;
+                let op = if mode == 5 {
+                    cosmos_submit_singleton_operation(
+                        fixture.driver,
+                        &request,
+                        queue,
+                        42,
+                        &mut status,
+                    )
+                } else {
+                    cosmos_submit_singleton_operation_v2(
+                        fixture.driver,
+                        &request,
+                        if mode == 0 { ptr::null() } else { &management },
+                        queue,
+                        42,
+                        &mut status,
+                    )
+                };
+                if mode >= 7 {
+                    assert!(op.is_null());
+                    assert_eq!(
+                        status,
+                        CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
+                    );
+                    assert_no_completion(queue);
+                    // SAFETY: failed submit did not take ownership of this snapshot.
+                    unsafe { cosmos_operation_options_snapshot_free(snapshot) };
+                    continue;
+                }
+                assert!(!op.is_null());
+                assert_eq!(status, COSMOS_STATUS_SUCCESS);
+                if mode == 1 && !use_client {
+                    runtime_headers[1] = CosmosHeaderKv {
+                        name: view(b"x-ms-cosmos-offer-autopilot-settings"),
+                        value: view(b"{\"maxThroughput\":1111}"),
+                    };
+                    // SAFETY: typed submit already captured its configuration.
+                    assert_eq!(
+                        unsafe {
+                            cosmos_runtime_set_operation_options(fixture.runtime, &runtime_options)
+                        },
+                        COSMOS_STATUS_SUCCESS
+                    );
+                }
+                cosmos_management_options_init(&mut management);
+                // SAFETY: submit copied the snapshot; caller releases its owned handle.
+                unsafe { cosmos_operation_options_snapshot_free(snapshot) };
+                fixture.drive(op);
+                let mut completion = MaybeUninit::<CosmosCompletion>::uninit();
+                assert_eq!(
+                    cosmos_completion_queue_wait(queue, completion.as_mut_ptr(), 1, 1000),
+                    1
+                );
+                // SAFETY: queue initialized the completion and owns its live body bytes.
+                let mut completion = unsafe { completion.assume_init() };
+                assert_eq!(completion.status, COSMOS_STATUS_SUCCESS);
+                // SAFETY: the completion retains its body allocation until freed below.
+                let echoed: serde_json::Value = serde_json::from_slice(unsafe {
+                    std::slice::from_raw_parts(completion.body, completion.body_len)
+                })
+                .unwrap();
+                assert_eq!(
+                    echoed["inherited"],
+                    if use_client { "client" } else { "runtime" }
+                );
+                assert_eq!(echoed["ifMatch"], "typed-etag");
+                if mode == 1 {
+                    assert_eq!(echoed["throughput"], "400");
+                    assert!(echoed["autoscale"].is_null());
+                } else if (2..=4).contains(&mode) {
+                    assert!(echoed["throughput"].is_null());
+                    let expected = match mode {
+                        2 => serde_json::json!({"maxThroughput":4000}),
+                        3 => serde_json::json!({"maxThroughput":4000,"autoUpgradePolicy":{}}),
+                        _ => {
+                            serde_json::json!({"maxThroughput":4000,"autoUpgradePolicy":{"throughputPolicy":{"incrementPercent":25}}})
+                        }
+                    };
+                    assert_eq!(
+                        serde_json::from_str::<serde_json::Value>(
+                            echoed["autoscale"].as_str().unwrap()
+                        )
+                        .unwrap(),
+                        expected
+                    );
+                } else {
+                    assert_eq!(echoed["throughput"], if use_client { "222" } else { "111" });
+                }
+                cosmos_completion_queue_free_completions(&mut completion, 1);
+                cosmos_operation_handle_free(op);
+            }
+        }
+    }
+    runtime_options.custom_headers_len = 1;
+    // SAFETY: the live array is copied by this runtime-defaults call.
+    assert_eq!(
+        unsafe { cosmos_runtime_set_operation_options(fixture.runtime, &runtime_options) },
+        COSMOS_STATUS_SUCCESS
+    );
+    let mut management = MaybeUninit::<CosmosManagementOptions>::uninit();
+    cosmos_management_options_init(management.as_mut_ptr());
+    // SAFETY: initializer wrote every field.
+    let mut management = unsafe { management.assume_init() };
+    management.throughput_kind = 1;
+    management.manual_throughput = 400;
+    let body = br#"{"id":"created"}"#;
+    let mut request = fixture.request().operation;
+    request.account = account;
+    request.database = database;
+    request.container = ptr::null();
+    request.partition_key = ptr::null();
+    request.options_snapshot = ptr::null();
+    request.body = body.as_ptr();
+    request.body_len = body.len();
+    let mut request_headers = [
+        CosmosHeaderKv {
+            name: view(b"x-test-inherited"),
+            value: view(b"request"),
+        },
+        CosmosHeaderKv {
+            name: view(b"x-ms-cosmos-offer-autopilot-settings"),
+            value: view(b"{\"maxThroughput\":3333}"),
+        },
+    ];
+    let mut request_options = cosmos_operation_options_default();
+    request_options.custom_headers = request_headers.as_ptr();
+    request_options.custom_headers_len = request_headers.len();
+    request.options = &request_options;
+    let rejected = |request: &CosmosOperationRequest, out_pre_error: bool| {
+        let mut status = COSMOS_STATUS_SUCCESS;
+        assert!(cosmos_submit_singleton_operation_v2(
+            fixture.driver,
+            request,
+            &management,
+            queue,
+            0,
+            if out_pre_error {
+                &mut status
+            } else {
+                ptr::null_mut()
+            }
+        )
+        .is_null());
+        if out_pre_error {
+            assert_eq!(
+                status,
+                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
+            );
+        }
+        assert_no_completion(queue);
+    };
+    // Per-request opposite-mode headers conflict like inherited ones.
+    for kind in [1, 9] {
+        request.kind = kind;
+        rejected(&request, true);
+        rejected(&request, false);
+    }
+    // Kinds adjacent to CreateContainer and feed kinds stay unsupported.
+    request_options.custom_headers_len = 1;
+    request.options = &request_options;
+    for kind in [8, 10] {
+        request.kind = kind;
+        rejected(&request, true);
+    }
+    rejected(&fixture.request().operation, true);
+    request.kind = 9;
+    request_headers[1] = CosmosHeaderKv {
+        name: view(b"x-ms-offer-throughput"),
+        value: view(b"333"),
+    };
+    request_options.custom_headers = request_headers.as_ptr();
+    request_options.custom_headers_len = request_headers.len();
+    request.options = &request_options;
+    let mut status = COSMOS_STATUS_SUCCESS;
+    let op = cosmos_submit_singleton_operation_v2(
+        fixture.driver,
+        &request,
+        &management,
+        queue,
+        0,
+        &mut status,
+    );
+    assert!(!op.is_null());
+    assert_eq!(status, COSMOS_STATUS_SUCCESS);
+    fixture.drive(op);
+    let mut completion = MaybeUninit::<CosmosCompletion>::uninit();
+    assert_eq!(
+        cosmos_completion_queue_wait(queue, completion.as_mut_ptr(), 1, 1000),
+        1
+    );
+    // SAFETY: queue initialized the completion and owns its live body bytes.
+    let mut completion = unsafe { completion.assume_init() };
+    assert_eq!(completion.status, COSMOS_STATUS_SUCCESS);
+    // SAFETY: the completion retains its body allocation until freed below.
+    let echoed: serde_json::Value = serde_json::from_slice(unsafe {
+        std::slice::from_raw_parts(completion.body, completion.body_len)
+    })
+    .unwrap();
+    assert_eq!(echoed["inherited"], "request");
+    assert_eq!(echoed["throughput"], "400");
+    assert!(echoed["autoscale"].is_null());
+    cosmos_completion_queue_free_completions(&mut completion, 1);
+    cosmos_operation_handle_free(op);
+    cosmos_completion_queue_free(queue);
+    cosmos_database_ref_free(database);
+    cosmos_account_ref_free(account);
+}
+
+fn assert_no_completion(queue: *mut CompletionQueue) {
+    let mut completion = MaybeUninit::<CosmosCompletion>::uninit();
+    assert_eq!(
+        cosmos_completion_queue_wait(queue, completion.as_mut_ptr(), 1, 0),
+        0
+    );
+}
 
 #[tokio::test]
 async fn wrapped_faults_survive_cursor_error_delivery() {
