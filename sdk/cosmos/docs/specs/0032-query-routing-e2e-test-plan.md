@@ -341,13 +341,13 @@ Do not treat this as an unconstrained cross-product.
 
 | ID  | Query                                                 | Public request scope       | Range relation             | Expected result              | Expected backend carrier |
 | --- | ----------------------------------------------------- | -------------------------- | -------------------------- | ---------------------------- | ------------------------ |
-| Q1  | `SELECT COUNT(1) FROM c WHERE c.tenantId = "abc"`     | Full container             | N/A                        | `100000`                     | SQL only                 |
-| Q2  | `SELECT COUNT(1) FROM c`                              | PPK `["abc"]`              | Exact prefix               | `100000`                     | PPK                      |
-| Q3  | `SELECT COUNT(1) FROM c WHERE c.tenantId = "abc"`     | PPK `["abc"]`              | Matching                   | `100000`                     | PPK + SQL                |
-| Q4  | `SELECT COUNT(1) FROM c WHERE c.tenantId = "missing"` | PPK `["abc"]`              | Disjoint SQL               | One row with value `0`       | PPK + SQL                |
+| Q1  | `SELECT VALUE COUNT(1) FROM c WHERE c.tenantId = "abc"`     | Full container             | N/A                        | `100000`                     | SQL only                 |
+| Q2  | `SELECT VALUE COUNT(1) FROM c`                              | PPK `["abc"]`              | Exact prefix               | `100000`                     | PPK                      |
+| Q3  | `SELECT VALUE COUNT(1) FROM c WHERE c.tenantId = "abc"`     | PPK `["abc"]`              | Matching                   | `100000`                     | PPK + SQL                |
+| Q4  | `SELECT VALUE COUNT(1) FROM c WHERE c.tenantId = "missing"` | PPK `["abc"]`              | Disjoint SQL               | One row with value `0`       | PPK + SQL                |
 | Q5  | `SELECT * FROM c WHERE c.tenantId = "abc"`            | Full container             | N/A                        | Exact target IDs             | SQL only                 |
-| Q6a | `SELECT COUNT(1) FROM c`                              | Complete HPK `["abc", id]` | One logical partition      | `1`                          | PK                       |
-| Q6b | `SELECT COUNT(1) FROM c`                              | Hash PK `["abc"]`          | One logical partition      | `100000`                     | PK                       |
+| Q6a | `SELECT VALUE COUNT(1) FROM c`                              | Complete HPK `["abc", id]` | One logical partition      | `1`                          | PK                       |
+| Q6b | `SELECT VALUE COUNT(1) FROM c`                              | Hash PK `["abc"]`          | One logical partition      | `100000`                     | PK                       |
 | Q7  | `SELECT * FROM c`                                     | Whole physical PKRID       | Exact physical range       | Manifest PKRID count         | PKRID only               |
 | Q8  | `SELECT * FROM c`                                     | Strict FeedRange           | Subset                     | Manifest range IDs           | EPK-R                    |
 | Q9  | `SELECT * FROM c`                                     | Overlapping FeedRange      | Partial overlap            | Manifest range IDs           | EPK-R                    |
